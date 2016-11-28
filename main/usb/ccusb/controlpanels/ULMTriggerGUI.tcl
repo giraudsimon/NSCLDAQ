@@ -65,6 +65,9 @@ set path [lindex [array get params -configfile] 1]
 
 ATrigger2367 mygui 0 1 $host $port $module $slot $ring
 mygui SetupGUI . $path
+if {$path ne ""} {
+  mygui ReadConfigFile
+}
 
 # Configure some window manager details 
 wm protocol . WM_DELETE_WINDOW { mygui OnExit ; destroy . } 
