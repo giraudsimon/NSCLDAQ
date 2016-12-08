@@ -200,7 +200,7 @@ CV812::Initialize(CVMUSB& vme)
 	m_is812 = (type == V812Type) ? true : false;
 
 	cerr << "Located valid CAEN V" 
-	     << (m_is812 ? "812" : "895 module Serial number: ") << serial 
+	     << (m_is812 ? "812" : "895") << " module, Serial number: " << serial 
 	     << " version " << version << " at base address " 
 	     << hex << base() << dec << endl;
       }
