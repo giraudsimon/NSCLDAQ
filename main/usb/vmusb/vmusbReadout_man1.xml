@@ -7517,7 +7517,7 @@ XLMTimestamp cget <replaceable>name</replaceable>
       <example>
          <title>Simple setup of a single timestamp module</title>
          <programlisting>
-          xlmtstamp create tstamp -base [expr 10 << 27]
+          xlmtstamp create tstamp -base [expr 10 &lt;&lt; 27]
           xlmtstamp config tstamp -firmware /user/s800/server/fpga/stamp64.bit
          </programlisting>
       </example>
@@ -7724,7 +7724,7 @@ XLMFERA cget <replaceable>name</replaceable>
       <example>
          <title>Simple setup of a single timestamp module</title>
          <programlisting>
-          XLMFERA create myxlm -base [expr 10 << 27]
+          XLMFERA create myxlm -base [expr 10 &lt;&lt; 27]
           XLMFERA config myxlm -firmware /user/s800/server/fpga/xferajan.bit
          </programlisting>
       </example>
