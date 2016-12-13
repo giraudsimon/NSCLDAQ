@@ -275,9 +275,21 @@ start
 
 <!-- manpage 1compatibility -->
       <refentry id="manpage_compatibilitybuffer">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>compatibilitybuffer</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>compatiblitybuffer</refname>
@@ -348,9 +360,20 @@ compatibilitybuffer <optional>options</optional>
       </refentry>
     <!-- NSCLDAQ-11 - convert10to11 -->
       <refentry id="compatibility1_convert10to11">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname><personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
         <refmeta>
            <refentrytitle id="compatibility1_convert10to11_title">convert10to11</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>convert10to11</refname>
@@ -403,9 +426,20 @@ convert10to11
   
       
       <refentry id="manpage_compatibilitylogger">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname><personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
         <refmeta>
            <refentrytitle>compatibilitylogger</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>compatibilitylogger</refname>
@@ -484,9 +518,20 @@ compatibilitylogger <optional>options</optional>
       </refentry>
 
       <refentry id="manpage-eventlog-compat">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Jeromy</firstname>
+                    <surname>Tompkins</surname>
+                </personname><personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
         <refmeta>
            <refentrytitle>eventlog-compat</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>eventlog-compat</refname>
