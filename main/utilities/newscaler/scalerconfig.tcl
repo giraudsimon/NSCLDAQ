@@ -285,6 +285,13 @@ proc stripconfig args {
     foreach [list optname optvalue] $args {
         set ::scalerconfig::stripChartOptions($optname) $optvalue
     }
+    #  Check options for legal values.  It's a fatal error if an option is illegal.
+    #  at a later time, we may want to generalize this check but with only one
+    #  actual config parameter, it's not worth it yet.
+    
+    if {$::scalerconfig::stripChartOptions(-timeaxis) <= 0} {
+        error "Stripchart -timeaxis configuration option must be > 0"
+    }
 }
 
 #---------------------------------------------------------------------------
