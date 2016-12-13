@@ -1361,6 +1361,6 @@ CRingBuffer::notifyDisconnection()
 bool
 CRingBuffer::ringHeader(RingBuffer* p)
 {
-return strncmp(p->s_header.s_magicString, 
-	       MAGICSTRING, strlen(MAGICSTRING)) == 0;
+return strcmp(p->s_header.s_magicString, 
+	       MAGICSTRING) == 0;
 }
