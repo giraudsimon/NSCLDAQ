@@ -609,7 +609,6 @@ proc EVBC::onBegin {} {
         ::RingSourceMgr::resetSources
         vwait EVBC::pipefd;      # Will become empty on exit.
     }
-    catch [list ringbuffer create $EVBC::destRing] msg;  #ensure ring exists first.
     
     
     # IF needed, create the destination and the intermediate ring:
@@ -619,9 +618,13 @@ proc EVBC::onBegin {} {
 	catch {ringbuffer create $teering}
     }
     set destring [$EVBC::applicationOptions cget -destring]
+    if {$destring ne $EVBC::destRing} {
+        puts stderr "*** WARNING - -destring is $destring but EVBC::destRing is different: $EVBC::destRing - using -destring"
+    }
     if {$destring ne ""} {
         catch {ringbuffer create $destring}
     }
+    puts "Data ultimately goes into $destring"
     
     #  If needed restart the EVB and disable the GUI...if it exists
     
