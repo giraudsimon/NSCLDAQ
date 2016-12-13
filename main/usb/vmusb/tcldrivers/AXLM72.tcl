@@ -191,6 +191,7 @@ itcl::class AXLM72 {
         set timeout 1000
         while {($bBusOwner!=1) && $timeout>0} {
           set bBusOwner [Read vme [expr 0x10004]]
+	  incr timeout -1
         }
         if {$timeout==0} {
           return -code error "AXLM72::AccessBus timed out waiting for bus B"
@@ -201,6 +202,7 @@ itcl::class AXLM72 {
         set timeout 1000
         while {($xBusOwner!=1) && $timeout>0} {
           set xBusOwner [Read vme [expr 0x10008]]
+	  incr timeout -1
         }
         if {$timeout==0} {
           return -code error "AXLM72::AccessBus timed out waiting for bus X"
