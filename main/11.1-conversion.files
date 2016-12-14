@@ -2670,3 +2670,6 @@ utilities/conversion/c10p0to8p0mediatortests.cpp
 utilities/conversion/format_converter_options.ggo
 utilities/conversion/convert_format.py
 utilities/format/Makefile.am
+base/os/CSemaphore.h
+base/os/CSemaphore.cpp
+base/os/semaphoretests.cpp
