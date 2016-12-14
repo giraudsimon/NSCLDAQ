@@ -8,6 +8,7 @@
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -324,6 +325,7 @@ adc config adc1    -geo 12 -supressrange off  -ipl 0 -vector 0
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -456,6 +458,7 @@ caenchain config chain -base 0x10000000 -modules [list adc1 adc2 adc3]
                         <firstname>Ron</firstname>
                         <surname>Fox</surname>
                     </personname>
+		    <personblurb><para></para></personblurb>
                 </author>
                 <productname>NSCLDAQ</productname>
                 <productnumber></productnumber>
@@ -985,6 +988,7 @@ vmusb cget name
 			  <firstname>Ron</firstname>
 			  <surname>Fox</surname>
 		  </personname>
+		  <personblurb><para></para></personblurb>
 	  </author>
 	  <productname>NSCLDAQ</productname>
 	  <productnumber></productnumber>
@@ -1565,6 +1569,7 @@ addtcldriver <replaceable>name</replaceable>
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>

@@ -53,9 +53,21 @@
 <!-- vhq -->
 
 <refentry id="manpage.vhq">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>  
   <refmeta>
      <refentrytitle>vhq</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vhq</refname>
@@ -373,9 +385,21 @@ package require vhq
 <!-- vhqPanel -->
 
 <refentry id="manpage.vhqpanel">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>vhqPanel</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vhqPanel</refname>
@@ -736,9 +760,21 @@ vhqPanel <optional>?option option ...?   </optional>
 <!-- vhqControl1 -->
 
 <refentry id="manpage.vhqcontrol">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>  
   <refmeta>
      <refentrytitle>vhqControl</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vhqControl</refname>
@@ -773,9 +809,21 @@ $DAQHOME/Scripts/ControlApplications/vhqControl.tcl <optional>?config config ...
 <!-- vhqconfig5 -->
 
 <refentry id="manpage.vhqconfig">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
     <refmeta>
         <refentrytitle>vhqconfig</refentrytitle>
         <manvolnum>5tcl</manvolnum>
+        <refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
         <refname>vhqconfig</refname>

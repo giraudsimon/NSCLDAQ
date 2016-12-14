@@ -1,8 +1,20 @@
 <!-- manpage 1utilities -->
       <refentry id="utilities1-vmusbcaenupgrader">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='utilities1-vmusbcaenupgrader-title'>vmusbcaenupgrader</refentrytitle>
            <manvolnum>1utilties</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>vmusbcaenupgrader</refname>

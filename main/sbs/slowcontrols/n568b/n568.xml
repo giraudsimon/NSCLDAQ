@@ -92,9 +92,21 @@ lappend auto_path [file join $::env(DAQROOT) TclLibs]
 <!-- manpage 1tcl -->
 
 <refentry id="manpage.loadshaper">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
   <refmeta>
      <refentrytitle>loadshaper</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>loadshaper</refname>
@@ -134,9 +146,21 @@ loadshaper config-file
 
 
 <refentry id="manpage.n568control">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>n568Control</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>n568Control</refname>
@@ -184,9 +208,21 @@ n568Control.tcl <replaceable>?configFile ...?</replaceable>
 
 <!-- manpage 3tcl -->
 <refentry id="manpage.n568b">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
   <refmeta>
      <refentrytitle>n568b</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>n568b</refname>
@@ -516,9 +552,21 @@ package   require   n568b
 </refentry>
 
 <refentry id="manpage.n568panel">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>n568Panel</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>n568Panel</refname>
@@ -771,9 +819,21 @@ package require n568Panel
 <!-- manpage 5tcl -->
 
 <refentry id="manpage.n568configfile">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
   <refmeta>
      <refentrytitle>n568configfile</refentrytitle>
      <manvolnum>5</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>n568configfile</refname>

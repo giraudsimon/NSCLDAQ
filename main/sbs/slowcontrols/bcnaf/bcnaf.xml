@@ -58,9 +58,21 @@ export PATH=$PATH:$DAQROOT/bin
 <!-- manpage 1tcl -->
 
 <refentry id="manpage.cesbcnaf">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>cesbcnaf</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>cesbcnaf</refname>
@@ -99,9 +111,21 @@ cesbcnaf <replaceable>b c n a f</replaceable> <optional>d</optional>
 
 </refentry>
 <refentry id="manpage.wienerbcnaf">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
   <refmeta>
      <refentrytitle>wienerbcnaf</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>wienerbcnaf</refname>
@@ -141,9 +165,21 @@ wienercamac <replaceable>b c n a f</replaceable> <optional>d</optional>
 </refentry>
 
 <refentry id="manpage.bcnaf">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>bcnaf</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>bcnaf</refname>

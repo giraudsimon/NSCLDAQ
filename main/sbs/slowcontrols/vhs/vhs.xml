@@ -91,9 +91,21 @@ package require iSegVhs
 <!-- manpage 3tcl -->
 
 <refentry id="manpage.vhs">
+     <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>iSegVhs</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vhs</refname>
@@ -834,9 +846,21 @@ vhs::ChannelEventInputError
 
 </refentry>
 <refentry id="manpage.vhswidgets">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>VhsWidgets</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>VhsWidgets</refname>
@@ -996,9 +1020,21 @@ updateVhs 1000 $someWidget;  #   update every second.
 
 <!-- manpage 1tcl -->
 <refentry id="manpage.vhspanel">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>vhsPanel</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vhsPanel</refname>

@@ -139,9 +139,21 @@ if {[llength $modules] > 0} {
 
 <!-- manpage 1tcl -->
 <refentry id="manpage.vmetcl">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>SBS Vme Tcl package</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>vme</refname>

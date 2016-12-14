@@ -28,9 +28,21 @@
 <!-- /chapter -->
 <!-- manpage 1tcl -->
       <refentry>
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>cratelocator</refentrytitle>
            <manvolnum>1tcl</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>cratelocator</refname>

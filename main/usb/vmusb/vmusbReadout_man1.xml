@@ -1,8 +1,20 @@
 <!-- manpage 3vmusb -->
 	 <refentry id="vmusb3-CVMUSBRemote">
+	 <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>   
        <refmeta>
           <refentrytitle id='vmusb3-CVMUSBRemote-title'>CVMUSBRemote</refentrytitle>
           <manvolnum>3vmusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CVMUSBRemote</refname>
@@ -1126,9 +1138,22 @@ public:
      </refentry>     
          
         <refentry id="vmusb3-CConfigurableObject">
+ <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
+        	 
           <refmeta>
              <refentrytitle>CConfigurableObject</refentrytitle>
              <manvolnum>3vmusb</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
           </refmeta>
           <refnamediv>
              <refname>CConfigurableObject</refname>
@@ -2791,9 +2816,22 @@ bool myTypeChecker(std::string name, std::string value, void* arg)
            
         </refentry>
       <refentry id='vmusb3_ccontrolhardware'>
+	  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
+        
          <refmeta>
 	   <refentrytitle id='vmusb3_ccontrolhardware_title'>CControlHardware</refentrytitle>
 	   <manvolnum>3vmusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
 	 </refmeta>
 	 <refnamediv>
 	   <refname>CControlHardware</refname>
@@ -3256,9 +3294,21 @@ bool myTypeChecker(std::string name, std::string value, void* arg)
        </refentry>
 
       <refentry id="vmusb3-cvmusb-swig">
+	<refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
         <refmeta>
            <refentrytitle>cvmusb</refentrytitle>
            <manvolnum>3tcl</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>cvmusb</refname>
@@ -4635,9 +4685,21 @@ $controller <replaceable>some method</replaceable>
 
       </refentry>
             <refentry id="vmusb3-cvmusbreadoutlist-swig">
+	       <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
               <refmeta>
                  <refentrytitle>cvmusbreadoutlist</refentrytitle>
                  <manvolnum>3tcl</manvolnum>
+		 <refmiscinfo class='empty'></refmiscinfo>
               </refmeta>
               <refnamediv>
                  <refname>cvmusbreadoutlist</refname>
@@ -5528,9 +5590,21 @@ $controller <replaceable>some method</replaceable>
       
             </refentry>
       <refentry id="vmusb3-Module">
+	 <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>Module</refentrytitle>
            <manvolnum>3tcl</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>Module</refname>
@@ -6291,9 +6365,21 @@ Module cget <replaceable>name</replaceable>
 
       </refentry>
       <refentry id="vmusb3-watch">
+	 <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='vmusb3-watch-title'>watch</refentrytitle>
            <manvolnum>3vmusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>watch</refname>
@@ -6326,9 +6412,22 @@ watch <replaceable>name</replaceable>
       </refentry>
 
 <refentry id="vmusb3-delay">
+   
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>delay</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -6395,9 +6494,21 @@ delay create delay0 -value 4
 </refentry>
 
 <refentry id="vmusb3-CBDCamacBranch">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>CBDCamacBranch</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -6511,9 +6622,21 @@ CBDCamacBranch config branch0 -crates [list crate1 crate2]
 </refentry>
 
 <refentry id="vmusb3-CBDCamacCrate">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>CBDCamacCrate</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBDCamacCrate</refname>
@@ -6618,9 +6741,21 @@ CBDCamacBranch config branch0 -crates [list crate0]
 </refentry>
 
 <refentry id="vmusb3-CBDLeCroy4300B">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>CBDLeCroy4300B</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBDLeCroy4300B</refname>
@@ -6822,9 +6957,21 @@ CBDCamacBranch config branch0 -crates [list crate0]
 </refentry>
 
 <refentry id="vmusb3-CBDLeCroy4434">
+<refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>   
   <refmeta>
      <refentrytitle>CBDLeCroy4434</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBDLeCroy4434</refname>
@@ -6934,9 +7081,21 @@ CBDCamacBranch config branch0 -crates [list crate0]
 </refentry>
   
 <refentry id="vmusb3-CBDLeCroy2551">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>CBDLeCroy2551</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBDLeCroy2551</refname>
@@ -7040,9 +7199,21 @@ CBDCamacBranch config branch0 -crates [list crate0]
 </refentry>
 
 <refentry id="vmusb3-CBDULMTrigger">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
   <refmeta>
      <refentrytitle>CBDULMTrigger</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBDULMTrigger</refname>
@@ -7433,9 +7604,21 @@ CBDCamacBranch config branch0 -crates [list crate0]
 
   
 <refentry id="vmusb3-XLMTimestamp">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>XLMTimestamp</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+      <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>XLMTimestamp</refname>
@@ -7533,6 +7716,7 @@ XLMTimestamp cget <replaceable>name</replaceable>
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+		  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -7602,9 +7786,21 @@ marker cget <replaceable>name</replaceable>
       </refentry>
 
 <refentry id="vmusb3-XLMFERA">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>XLMFERA</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>XLMFERA</refname>
@@ -7735,9 +7931,21 @@ XLMFERA cget <replaceable>name</replaceable>
 </refentry>
 
 <refentry id="vmusb3-AXLM72ScalerControl">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>AXLM72ScalerControl</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>AXLM72ScalerControl</refname>
@@ -7905,9 +8113,21 @@ AXLM72ScalerControl <replaceable>name option value ...</replaceable>
 </refentry>
 
 <refentry id="vmusb3-XLM72ScalerGUI">
+   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>XLM72ScalerGUI</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>XLM72ScalerGUI</refname>
@@ -8080,9 +8300,21 @@ requests from the GUI. In the above example, the name of that module would be
 </refentry>
 
       <refentry id="vmusb3-AXLM72">
+	 <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>AXLM72</refentrytitle>
            <manvolnum>3vmusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>AXLM72</refname>
@@ -8541,9 +8773,21 @@ AXLM72 <replaceable>name slot</replaceable>
     </refentry>
 
       <refentry id="vmusb3-AXLM72Scaler">
+	 <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>AXLM72Scaler</refentrytitle>
            <manvolnum>3vmusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>AXLM72Scaler</refname>
@@ -8898,12 +9142,14 @@ AXLM72Scaler <replaceable>name slot</replaceable>
    <!-- caenchain command - aggregate 785's into CBLT chains -->
 
       <refentry id="vmusb3_v1495sc">
+	 
 	<refentryinfo>
 	  <author>
 		  <personname>
 			  <firstname>Ron</firstname>
 			  <surname>Fox</surname>
 		  </personname>
+		  <personblurb><para></para></personblurb>
 	  </author>
 	  <productname>NSCLDAQ</productname>
 	  <productnumber></productnumber>
@@ -9120,6 +9366,7 @@ v1495sc cget <replaceable>name</replaceable>
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
