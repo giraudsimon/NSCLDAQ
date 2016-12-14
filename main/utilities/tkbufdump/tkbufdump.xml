@@ -1,8 +1,20 @@
 <!-- manpage 1daq -->
 <refentry id="manpage.tkdumper">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>tkdumper</refentrytitle>
-     <manvolnum>1da1</manvolnum>
+     <manvolnum>1daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>tkdumper</refname>

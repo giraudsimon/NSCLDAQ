@@ -3,9 +3,21 @@
 <!-- client.tcl vm/ccusb client support -->
 
 <refentry id="vmusb3_controlclient">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb3_controlclient_title'>controlClient</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>controlClient</refname>
@@ -179,9 +191,21 @@ $object Monitor name
     </refsect1>
 </refentry>
 <refentry id="vmusb3_usbcontrolops">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb3_usbcontrolops_title'>USB Control operations</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>USB Control operations</refname>
@@ -275,9 +299,21 @@ listUSBControlServers <replaceable>host prefix</replaceable>
 </refentry>
 
 <refentry id="vmusb3_slowControlsPrompter">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id="vmusb3_slowControlsPrompter_title">slowControlsPrompter</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>slowControlsPrompter</refname>
@@ -444,9 +480,21 @@ slowControlsPrompter <replaceable>path ?options?</replaceable>
   </refsect1>
 </refentry>
 <refentry id="vmusb3_gdgcontrol">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb3_gdgcontrol_title'>gdgcontrol</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>gdbcontrol</refname>
@@ -802,9 +850,21 @@ set <replaceable>object</replaceable> [gdgcontrol <replaceable>name ?options?</r
 
 </refentry>
 <refentry id="vmusb3_gdgwidget">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb3_gdgwidget_title'>gdgwidget</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>gdgwidget</refname>
@@ -965,9 +1025,21 @@ gdgwidget <replaceable>path ?options...?</replaceable>
   </refsect1>
 </refentry>
 <refentry id="vmusb3_v6533">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb3_v6533_title'>V6533Driver</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>V6533Driver</refname>
@@ -1295,9 +1367,21 @@ set <replaceable>instance</replaceable> v6533 <replaceable>name ?options?</repla
 <!-- manpage 1vmusb -->
 </refentry>
 <refentry id="vmusb1_v812usbcontrol">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle id='vmusb1_v812usbcontrol_title'>VMUSB V812 control</refentrytitle>
      <manvolnum>1vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>VMUSB V812 control</refname>
@@ -1348,6 +1432,7 @@ vm895usbcontrol <replaceable>configfile</replaceable>
                         <firstname>Ron</firstname>
                         <surname>Fox</surname>
                 </personname>
+                <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>

@@ -62,6 +62,7 @@
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -300,6 +301,7 @@ tclsh DaqPortManager <replaceable>options...</replaceable>
                         <firstname>Ron</firstname>
                         <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -591,6 +593,7 @@ catch (CPortManagerException&amp; error) {
                         <firstname>Ron</firstname>
                         <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -847,6 +850,7 @@ catch (CPortManagerException&amp; e) {
                         <firstname>Ron</firstname>
                         <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -1049,6 +1053,7 @@ foreach allocation $usage {
                             <firstname>Ron</firstname>
                             <surname>Fox</surname>
                     </personname>
+		    <personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>

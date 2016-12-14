@@ -1845,9 +1845,21 @@ EVB::setDisconnectCallback disconnect                   <co id='evb_disconnect_c
 
 <!-- manpage 3daq -->
 	 <refentry id="daq3-evbclientfw-usercode">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
        <refmeta>
           <refentrytitle id='daq3-evbclientfw-usercode-title'>CEvbClientApp</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CEvbClientApp</refname>
@@ -2075,9 +2087,21 @@ class   <ooclass><classname>CEVBClientApp</classname></ooclass> {
         </refsect1>
      </refentry>     
 	 <refentry id="daq3-evbclientfw-api">
+            <refentryinfo>
+               <author>
+                   <personname>
+                       <firstname>Ron</firstname>
+                       <surname>Fox</surname>
+                   </personname>
+                   <personblurb><para></para></personblurb>
+               </author>
+               <productname>NSCLDAQ</productname>
+               <productnumber></productnumber>
+           </refentryinfo>   
        <refmeta>
           <refentrytitle id='daq3-evbclientfw-apititle'>CEVBClientFramework</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CEVBClientFramework</refname>
@@ -2168,9 +2192,21 @@ class   <ooclass><classname>CEVBClientFramework</classname></ooclass> {
 
      </refentry>     
 <refentry id="daq3-ceventorder">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
 <refmeta>
  <refentrytitle id="daq3-ceventorder-title">CEventOrderClient</refentrytitle>
  <manvolnum>3daq</manvolnum>
+ <refmiscinfo class='empty'></refmiscinfo>
 </refmeta>
 <refnamediv>
  <refname >CEventOrderClient</refname>
@@ -2476,9 +2512,21 @@ This data structure
 <!-- manpage 1evb -->
 
     <refentry id="evb1_barrierstats_incomplete">
+       <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
       <refmeta>
          <refentrytitle>EVB::BarrierStats::incomplete</refentrytitle>
          <manvolnum>1evb</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>EVB::BarrierStats::incomplete</refname>
@@ -2634,9 +2682,21 @@ EVB::BarrierStats::incomplete <replaceable>window ?options?</replaceable>
       </refsect1>
     </refentry>
       <refentry id="evb1_barrierstats_queueBarriers">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::BarrierStats::queueBarriers</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::BarrierStats::queueBarriers</refname>
@@ -2755,9 +2815,21 @@ EVB::BarrierStats::queueBarriers <replaceable>window ?options?</replaceable>
         </refsect1>
       </refentry>
       <refentry id="evb1_barrierstats_Summary">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::BarrierStats::Summary</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::BarrierStats::Summary</refname>
@@ -2820,9 +2892,21 @@ EVB::BarrierStats::Summary <replaceable>window ?options?</replaceable>
 
       </refentry>
       <refentry id="evb1_callbackmanager">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::CallbackManager</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::CallbackManager</refname>
@@ -2951,9 +3035,21 @@ $cbManager define mycallback;    # e.g.
 
       </refentry>
       <refentry id="evb1_evb_cconnectionlist">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::connectionList</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::connectionList</refname>
@@ -3028,9 +3124,21 @@ EVB::connectionList <replaceable>window ?options?</replaceable>
 
       </refentry>
       <refentry id="evb1_GUI_procs">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::GUI procs</refentrytitle>
            <manvolnum>evb1</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::GUI procs</refname>
@@ -3107,9 +3215,21 @@ EVB::maintainGUI <replaceable>window update-ms</replaceable>
 
       </refentry>
       <refentry id="evb1_inputstatistics_statusdisplay">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EVB::inputStatistics::statusDisplay</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::inputStatistics::statusDisplay</refname>
@@ -3429,10 +3549,22 @@ EVB::inputStatistics::statusDisplay <replaceable>window ?options?</replaceable>
         </refsect1>
       </refentry>
       <refentry id="evb1_inputstatistics_queuestats">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_inputstatistics_queuestats_title'>
             EVB::inputStatistics::queueStats</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::inputStatistics::queueStats</refname>
@@ -3608,11 +3740,23 @@ EVB::inputStatistics::queueStats window <replaceable>?options?</replaceable>
         </refsect1>
       </refentry>
       <refentry id="evb1_inputstatistics_queuedisplay">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_inputstatistics_queuedisplay_title'>
             ::EVB::inputStatistics::queueDisplay
            </refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>::EVB::inputStatistics::queueDisplay</refname>
@@ -3705,9 +3849,21 @@ package require EVB::inputStatistics
       </refentry>
       
       <refentry id="evb1_inputstatistics_summarydisplay">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_inputstatistics_summarydisplay_title'>EVB::inputStatistics::summaryDisplay</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::inputStatistics::summaryDisplay</refname>
@@ -3806,9 +3962,21 @@ EVB::inputStatistics::summaryDisplay <replaceable>window ?options?</replaceable>
 
 
       <refentry id="evb1_latefragments">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_latefragments_title'>EVB::lateFragments</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::lateFragments</refname>
@@ -3932,13 +4100,22 @@ EVB::LateFragments <replaceable>window ?options?</replaceable>
         </refsect1>
             
       </refentry>
-
-
-
       <refentry id="evb1_latesummary">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_latesummary_title'>EVB::lateSummary</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EVB::lateSummary</refname>
@@ -3999,9 +4176,21 @@ EVB::lateSummary <replaceable>window ?options?</replaceable>
 
       </refentry>
       <refentry id="evb1_outputstatistics">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>::EVB::outputStatistics</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>::EVB::outputStatistics</refname>
@@ -4164,9 +4353,21 @@ package require EVB::outputStatistics
 
       </refentry>
       <refentry id="evb1_outputsummary">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>::EVB::outputSummary</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>::EVB::outputSummary</refname>
@@ -4267,10 +4468,22 @@ package require outputStatistics
 
       </refentry>
       <refentry id="evb1_utillity_sortedpair">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="evb1_utillity_sortedpair_title">
                 ::EVB::utility::sortedPair</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>::EVB::utility::sortedPair</refname>
@@ -4447,9 +4660,21 @@ EVB::utility::sortedPair <replaceable>window ?options?</replaceable>
 
       </refentry>
       <refentry id="evb1_utility_sortedwidget">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="evb1_utility_sortedwidget_title">::EVB::utility::sortedWidget</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>::EVB::utility::sortedWidget</refname>
@@ -4687,9 +4912,21 @@ EVB::utility::sortedWidget <replaceable>window ?options?</replaceable>
         </refsect1>
       </refentry>
       <refentry id="evb1_eventbuilder">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>EventBuilder</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EventBuilder</refname>
@@ -5013,9 +5250,21 @@ EVB::startGretinaFragmentSource <replaceable>url id ?desc?</replaceable>
 
       </refentry>
       <refentry id="evb1_observer">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>Observer</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>Observer</refname>
@@ -5241,9 +5490,21 @@ snit::type MultipleObservers {
       </refentry>
 
       <refentry id="evb1_evborderer">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='evb1_evborderer_title'>EvbOrderer</refentrytitle>
            <manvolnum>1evb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>EvbOrderer</refname>

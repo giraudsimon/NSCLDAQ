@@ -74,9 +74,21 @@
 <!-- manpage 1epics -->
 
 <refentry id="manpage.controlpush">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
     <refmeta>
         <refentrytitle id='manpage.controlpush-title'>controlpush</refentrytitle>
         <manvolnum>1epics</manvolnum>
+	<refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
         <refname>controlpush</refname>

@@ -59,9 +59,21 @@
 <!-- manpage 1daq -->
 
       <refentry id="daq1_ccusbloader">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='daq1_ccusbloader_title'>ccusbloader</refentrytitle>
            <manvolnum>1daq</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>ccusbloader</refname>
@@ -104,9 +116,21 @@ ccusbloader <replaceable>firmware-filename <optional>serial-string</optional></r
 
       </refentry>
       <refentry id="daq1_vmusbloader">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='daq1_vmusbloader_title'>vmusbloader</refentrytitle>
            <manvolnum>1daq</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>vmusbloader</refname>

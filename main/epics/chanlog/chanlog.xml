@@ -31,9 +31,21 @@
 <!-- manpage 1epics -->
 
     <refentry id="manpage.chanlog">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>  
     <refmeta>
         <refentrytitle>chanlog</refentrytitle>
         <manvolnum>1epics</manvolnum>
+	<refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
         <refname>chanlog</refname>

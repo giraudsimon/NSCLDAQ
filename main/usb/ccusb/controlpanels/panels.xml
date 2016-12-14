@@ -1,8 +1,20 @@
 <!-- manpage 3ccusb -->
       <refentry id="ccusb3_ph7106widget">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="ccusb3_ph7106widget_title">ph7106Widget</refentrytitle>
            <manvolnum>3ccusb</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>ph7106Widget</refname>
@@ -235,9 +247,21 @@ ph7106Widget <replaceable>path ?options?</replaceable>
 
 <!-- manpage 1tcl -->
       <refentry id="tcl1_ledph7106">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="tcl1_ledph7106_title">ledph7106.tcl</refentrytitle>
            <manvolnum>1tcl</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>ledph7106.tcl</refname>

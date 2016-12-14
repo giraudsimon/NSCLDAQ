@@ -177,6 +177,7 @@ EVBC::registerRingSource tcp://localhost/fox2 {} 2 {Source 2} 1 1 <co id='evbbun
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -307,6 +308,7 @@ EVBC::start -glombuild on -glomdt 300 -destring built -teering fragments
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -389,6 +391,7 @@ EVB::reset
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -432,6 +435,7 @@ EBC::flush
                     <firstname>Jeromy</firstname>
                     <surname>Tompkins</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -614,6 +618,7 @@ EVBC::registerRingSource <replaceable>source-uri extractor-lib source-ids info e
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -731,6 +736,7 @@ EVBC::startRingSource <replaceable>source-uri extractor-lib source-id info</repl
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -779,6 +785,7 @@ EVBC::startS800Source <replaceable>ring-uri source-id ?info?</replaceable>
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -970,6 +977,7 @@ EVBC::initialize -glombuild yes -glomdt 200 -destring built -restart yes -gui on
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1018,6 +1026,7 @@ EVBC::onBegin
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1056,6 +1065,7 @@ EVBC::onBegin
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1138,6 +1148,7 @@ EVBC::configure <replaceable>option value ...</replaceable>
                             <firstname>Ron</firstname>
                             <surname>Fox</surname>
                     </personname>
+                    <personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -1245,6 +1256,7 @@ EVBC::configure <replaceable>option value ...</replaceable>
               <firstname>Jeromy</firstname>
               <surname>Tompkins</surname>
             </personname>
+            <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1534,6 +1546,7 @@ EVBC::configure <replaceable>option value ...</replaceable>
                             <firstname>Ron</firstname>
                             <surname>Fox</surname>
                     </personname>
+                    <personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -1585,6 +1598,7 @@ EVB::handleFragments <replaceable>file-descriptor</replaceable>
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1706,6 +1720,7 @@ EVB::inputStats clear
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1759,6 +1774,7 @@ EBB::outputStatistics clear
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1833,6 +1849,7 @@ EVB::dlatestats
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1893,6 +1910,7 @@ EVB::onDataLate
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -1959,6 +1977,7 @@ EVB::barriertrace incomplete ?<replaceable>script</replaceable>?
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -2007,6 +2026,7 @@ EVB::source ?<replaceable>socket id1...</replaceable>?
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -2045,6 +2065,7 @@ EVB::deadsource <replaceable>id</replaceable>
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -2085,6 +2106,7 @@ EVB::reviveSocket <replaceable>sock-name</replaceable>
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -2126,6 +2148,7 @@ EVB::flush
                           <firstname>Ron</firstname>
                           <surname>Fox</surname>
                   </personname>
+                  <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>

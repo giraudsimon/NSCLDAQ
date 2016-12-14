@@ -156,9 +156,21 @@ start
 
 <!-- manpage 1daq -->
     <refentry id="manpage.ringselector">
+	<refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
       <refmeta>
          <refentrytitle>ringselector</refentrytitle>
          <manvolnum>1daq</manvolnum>
+	 <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>ringselector</refname>

@@ -59,9 +59,21 @@
 
 <!-- manpage 1daq -->
 <refentry id="manpage.ringtostdout">
+    <refentryinfo>
+	<author>
+	    <personname>
+		<firstname>Ron</firstname>
+		<surname>Fox</surname>
+	    </personname>
+	    <personblurb><para></para></personblurb>
+	</author>
+	<productname>NSCLDAQ</productname>
+	<productnumber></productnumber>
+    </refentryinfo>  
   <refmeta>
      <refentrytitle>ringtostdout</refentrytitle>
      <manvolnum>1daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>ringtostdout</refname>
@@ -147,10 +159,22 @@ ringtostdout somering | od -xa
 </refentry>
 
 <refentry id="manpage.stdintoring">
-  <refmeta>
-     <refentrytitle>stdintoring</refentrytitle>
-     <manvolnum>1daq</manvolnum>
-  </refmeta>
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
+        <refmeta>
+           <refentrytitle>compatibilitybuffer</refentrytitle>
+           <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
+        </refmeta>  
   <refnamediv>
      <refname>stdintoring</refname>
      <refpurpose>Pipe stdin to a ring buffer.</refpurpose>

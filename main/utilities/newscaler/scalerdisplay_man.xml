@@ -1,10 +1,22 @@
 <!-- manpage 1daq -->
 
 <refentry id='daq1_scalerdisplay11'>
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Jeromy</firstname>
+                    <surname>Tompkins</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
     <refmeta>
         <refentrytitle id='daq1_scalerdisplay11_title'>Scaler Display program
 	<anchor id="manpage.scalerdisplay" /></refentrytitle>
         <manvolnum>1daq</manvolnum>
+	<refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
         <refname>ScalerDisplay</refname>
@@ -584,6 +596,7 @@ stripconfig <replaceable>option ?...?</replaceable>
 		    <firstname>Ron</firstname>
 		    <surname>Fox</surname>
 	    </personname>
+	    <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>

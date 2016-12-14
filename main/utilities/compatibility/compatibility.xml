@@ -13,7 +13,10 @@
         This is a unix filter.  <application>compatibilitybuffer</application>
         accepts a stream of ring items on its standard input and produces
         a stream of spectrodaq style nscl data buffers on its output.
-        A trivial application of this program allows you to convert a ring
+        A trivial application of this program allows you to convert a ringCAEN_DGTZ_ErrorCode status = CAEN_DGTZ_(
+	handle,
+);
+CheckStatus(status);
         event file to a spectrodaq event file as shown below:
     </para>
     <example id="compatibilitybuffer-ex1">
@@ -627,9 +630,21 @@ export EVENTLOGGER=/usr/opt/daq/10.0/bin/eventlog-compat
         </refsect1>
       </refentry>
       <refentry id="manpage-spectcldaq-compat">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>spectcldaq</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>spectcldaq</refname>
@@ -720,9 +735,21 @@ proc attachOnline host {
 
       </refentry>
       <refentry id="spectcldaq.server">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>spectcldaq.server</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>spectcldaq.server</refname>
@@ -843,9 +870,21 @@ proc attnet {host port} {
         </refsect1>
       </refentry>
       <refentry id="compatibility_buffertoring">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>BufferToRing</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>BufferToRing</refname>
@@ -984,9 +1023,21 @@ $DAQROOT/bin/BufferToRing <optional>buffer-size</optional>
 
       </refentry>
       <refentry id="compatibility1-bufdump">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle>bufdump</refentrytitle>
            <manvolnum>1compatibility</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>bufdump</refname>

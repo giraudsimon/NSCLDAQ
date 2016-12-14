@@ -66,9 +66,21 @@ serverauth add spdaq20.nscl.msu.edu
 
 
 <refentry id="manpage.tclserver">
+  <refentryinfo>
+	<author>
+	    <personname>
+		<firstname>Ron</firstname>
+		<surname>Fox</surname>
+	    </personname>
+	    <personblurb><para></para></personblurb>
+	</author>
+	<productname>NSCLDAQ</productname>
+	<productnumber></productnumber>
+    </refentryinfo>
   <refmeta>
      <refentrytitle>tclserver</refentrytitle>
      <manvolnum>1tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>tclserver</refname>
@@ -147,9 +159,21 @@ tclserver <optional><option>-p<replaceable>port</replaceable></option> <option>-
 
 </refentry>
 <refentry id="manpage.serverauth">
+    <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
   <refmeta>
      <refentrytitle>serverauth</refentrytitle>
      <manvolnum>1tclserver</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>serverauth</refname>
@@ -233,9 +257,21 @@ serverauth list
 <!-- manpage 3tcl -->
 
       <refentry id="tcl3_tclserver_class">
+	<refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="tcl3_tclserver_class_title">TclServer</refentrytitle>
            <manvolnum>3tcl</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>TclServer</refname>

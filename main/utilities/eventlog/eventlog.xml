@@ -78,9 +78,21 @@ eventlog --source=tcp://spdaq22/fox --path=/user/0400x/stagearea/current --onesh
 <!-- manpage 1daq -->
 
 <refentry id="manpage.eventlog">
+  <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>  
   <refmeta>
      <refentrytitle id='manpage.eventlog_title'>eventlog</refentrytitle>
      <manvolnum>1daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>eventlog</refname>
