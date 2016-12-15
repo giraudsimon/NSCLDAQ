@@ -21,6 +21,8 @@
 #include <ErrnoException.h>
 #include <RangeError.h>
 #include <StateException.h>
+#include <CSemaphore.h>
+#include <os.h>
 
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -38,8 +40,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <daqshm.h>
-#include <os.h>
-#include <semaphore.h>
+
+#include <iostream>
+
 
 using namespace std;
 
@@ -61,7 +64,8 @@ size_t CRingBuffer::m_defaultMaxConsumers(DEFAULT_MAX_CONSUMERS);
 CRingMaster* CRingBuffer::m_pMaster(NULL);
 pid_t        CRingBuffer::m_myPid(-1); // no pid has this.
 
-const char* semaphoreName = "/ringbuffer";
+// name of the ringbuffer semaphore to use
+static const char* semaphoreName = "/ringbuffer";
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -101,7 +105,8 @@ public:
 
 /*!
   Create a new ring buffer memory segment.  Note that all data that is in the
-  segment will be lost and conumers will get lost too.
+  segment will be lost and conumers will get lost too. This method is synchronized
+  with other methods running in different processes by a semaphore.
 
   \param name       - Name of the ring buffer.  Will have '/' prepended to it.
   \param dataBytes  - Number of data bytes in the file.  This will be extended to the
@@ -125,103 +130,87 @@ CRingBuffer::create(std::string name,
 		     bool   tempMasterConnection)
 {
 
-    sem_t* pMutex = sem_open(semaphoreName, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, 1);
-    if (pMutex == SEM_FAILED) {
-        throw CErrnoException(strerror(errno));
-    }
+    CPosixOperatingSystem os;
+    auto pSem = os.createSemaphore(semaphoreName, 1);
+    DAQ::OS::CScopedWait guard(*pSem);
 
-    int status = sem_wait(pMutex);
-    if (status<0) {
-        throw CErrnoException(strerror(errno));
-    }
+    // Figure out the entire size of the shared memory region and truncate the file to that
+    // size:
 
-    try {
-        // Figure out the entire size of the shared memory region and truncate the file to that
-        // size:
+    size_t rawSize   = dataBytes + sizeof(RingHeader) +
+            sizeof(ClientInformation)*(maxConsumer+1);
 
-        size_t rawSize   = dataBytes + sizeof(RingHeader) +
-                sizeof(ClientInformation)*(maxConsumer+1);
+    long   pageSize  = sysconf(_SC_PAGESIZE);
+    size_t pages     = (rawSize + (pageSize-1))/pageSize;
+    size_t shmSize   = pages*pageSize;
 
-        long   pageSize  = sysconf(_SC_PAGESIZE);
-        size_t pages     = (rawSize + (pageSize-1))/pageSize;
-        size_t shmSize   = pages*pageSize;
+    std::string memoryName = shmName(name);
 
-        std::string memoryName = shmName(name);
+    // If the shared memory does not exist, just create it:
 
-        // If the shared memory does not exist, just create it:
+    ssize_t existingSize = CDAQShm::size(memoryName);
 
-        ssize_t existingSize = CDAQShm::size(memoryName);
-
-        if (existingSize < 0) {
-            if(CDAQShm::create(shmName(memoryName), shmSize,
-                               CDAQShm::GroupRead | CDAQShm::GroupWrite | CDAQShm::OtherRead | CDAQShm::OtherWrite)) {
-                throw CErrnoException("Shared memory creation failed");
-            }
-
-
-            format(name, maxConsumer);
-        }  else if (isRing(name)) {
-            // If the memory region exists - and is a ring
-            //  *   If the ring master knows about it it's an error to make a new one.
-            //  *   If the ring master does not know about it and it's  ring, make it known to the ring master.
-
-            CRingMaster master;
-            bool exists = true;
-            try {
-                std::string usage = master.requestUsage();
-
-                // If the ring exists, the string "{ringname " will be present in
-                // the usage information:
-
-                std::string ifexists = "{";
-                ifexists += name;
-                ifexists += " ";
-                if (usage.find(ifexists) == std::string::npos) {
-                    exists = false;
-                }
-
-            }
-            catch (...) {
-                exists = false;		// Throws happen if the ring master does _not_ know about the ring
-            }
-            if (exists) {
-                errno  = EEXIST;
-                throw CErrnoException("Ring buffer already exists");
-            }
-
-
-        } else {
-            // If the memory region exists but is not a ring that's ean error.
-
-            errno = EEXIST;
-            throw CErrnoException("Shared memory region exists but is not formatted as a ring buffer");
+    if (existingSize < 0) {
+        if(CDAQShm::create(shmName(memoryName), shmSize,
+                           CDAQShm::GroupRead | CDAQShm::GroupWrite | CDAQShm::OtherRead | CDAQShm::OtherWrite)) {
+            throw CErrnoException("Shared memory creation failed");
         }
-        // Notify the ring master this has been created.
 
-        CRingMaster* pOld = m_pMaster;
-        m_pMaster = 0;
-        connectToRingMaster();
-        m_pMaster->notifyCreate(name);
+        unsynchedFormat(name, maxConsumer);
 
-        if (tempMasterConnection) {
-            delete m_pMaster;
-            m_pMaster = pOld;
+    }  else if (isRing(name)) {
+        // If the memory region exists - and is a ring
+        //  *   If the ring master knows about it it's an error to make a new one.
+        //  *   If the ring master does not know about it and it's  ring, make it known to the ring master.
+
+        CRingMaster master;
+        bool exists = true;
+        try {
+            std::string usage = master.requestUsage();
+
+            // If the ring exists, the string "{ringname " will be present in
+            // the usage information:
+
+            std::string ifexists = "{";
+            ifexists += name;
+            ifexists += " ";
+            if (usage.find(ifexists) == std::string::npos) {
+                exists = false;
+            }
+
         }
-    } catch (...) {
-        sem_post(pMutex);
-        sem_close(pMutex);
-        sem_unlink(semaphoreName);
+        catch (...) {
+            exists = false;		// Throws happen if the ring master does _not_ know about the ring
+        }
+        if (exists) {
+            errno  = EEXIST;
+            throw CErrnoException("Ring buffer already exists");
+        }
 
-        std::rethrow_exception(std::current_exception());
+
+    } else {
+        // If the memory region exists but is not a ring that's ean error.
+
+        errno = EEXIST;
+        throw CErrnoException("Shared memory region exists but is not formatted as a ring buffer");
     }
-    sem_post(pMutex);
-    sem_close(pMutex);
-    sem_unlink(semaphoreName);
+    // Notify the ring master this has been created.
+
+    CRingMaster* pOld = m_pMaster;
+    m_pMaster = 0;
+    connectToRingMaster();
+    m_pMaster->notifyCreate(name);
+
+    if (tempMasterConnection) {
+        delete m_pMaster;
+        m_pMaster = pOld;
+    }
 }
 
 /**
  * Utility function for ring producers.  If the specified ring does not exist, create it
- * then attach as the producer.
+ * then attach as the producer. This method is synchronized
+  with other methods running in different processes by a semaphore.
  *
  * @param name      - Name of the ring.
  * @param dataBytes - size of the ring data segment.
@@ -248,7 +237,9 @@ CRingBuffer::createAndProduce(std::string name, size_t dataBytes, size_t maxCons
 /*!
    Destroy an existing ring buffer.  Note that the shared memory segment 
    actually continues to live until all processes that hold maps and fds open
-   unmap/close their fds.
+   unmap/close their fds. This method is synchronized
+  with other methods running in different processes by a semaphore.
+
    \param name - The ring buffer name.
 
    \throw CErrnoException if the shm_unlink fails.
@@ -257,68 +248,52 @@ CRingBuffer::createAndProduce(std::string name, size_t dataBytes, size_t maxCons
 void
 CRingBuffer::remove(string name)
 {
-    sem_t* pMutex = sem_open(semaphoreName, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, 1);
-    if (pMutex == SEM_FAILED ) {
-        throw CErrnoException(strerror(errno));
+    CPosixOperatingSystem os;
+    auto pSem = os.createSemaphore(semaphoreName, 1);
+    DAQ::OS::CScopedWait guard(*pSem);
+
+    if (!isRing(name)) {
+        errno = ENOENT;
+        throw CErrnoException("CRingBuffer::remove - not a ring");
     }
 
-    int status = sem_wait(pMutex);
-    if (status<0) {
-        throw CErrnoException(strerror(errno));
+
+    // If _I_ don't own the ring don't allow deletion (unless I'm root).
+
+    struct stat shmInfo;
+    int status = CDAQShm::stat(name, &shmInfo);
+    if (status == -1) {
+        throw CErrnoException("CRingBuffer::remove - Getting info about shared memory");
+    }
+    uid_t me = getuid();
+    if ((me != 0) && (me != shmInfo.st_uid)) {
+        errno = EPERM;
+        throw CErrnoException("CRingBuffer::remove - checking ringbuffer ownership");
+    }
+    // Connect to the ring master:
+
+    connectToRingMaster();
+
+    // At this point RM has acked so we can kill the ring itself:
+    // Tell the ringmaster to forget the ring and kill the clients
+
+    m_pMaster->notifyDestroy(name);
+
+    // Delete the ring shared memory special file.
+
+    string fullName   = shmName(name);
+
+    if (CDAQShm::remove(fullName)) {
+        throw CErrnoException("Shared memory deletion failed");
+
     }
 
-    try {
-        if (!isRing(name)) {
-            errno = ENOENT;
-            throw CErrnoException("CRingBuffer::remove - not a ring");
-        }
-
-
-        // If _I_ don't own the ring don't allow deletion (unless I'm root).
-
-        struct stat shmInfo;
-        int status = CDAQShm::stat(name, &shmInfo);
-        if (status == -1) {
-            throw CErrnoException("CRingBuffer::remove - Getting info about shared memory");
-        }
-        uid_t me = getuid();
-        if ((me != 0) && (me != shmInfo.st_uid)) {
-            errno = EPERM;
-            throw CErrnoException("CRingBuffer::remove - checking ringbuffer ownership");
-        }
-        // Connect to the ring master:
-
-        connectToRingMaster();
-
-        // At this point RM has acked so we can kill the ring itself:
-        // Tell the ringmaster to forget the ring and kill the clients
-
-        m_pMaster->notifyDestroy(name);
-
-        // Delete the ring shared memory special file.
-
-        string fullName   = shmName(name);
-
-        if (CDAQShm::remove(fullName)) {
-            throw CErrnoException("Shared memory deletion failed");
-
-        }
-
-    } catch (...) {
-        sem_post(pMutex);
-        sem_close(pMutex);
-        sem_unlink(semaphoreName);
-
-        std::rethrow_exception(std::current_exception());
-    }
-
-    sem_post(pMutex);
-    sem_close(pMutex);
-    sem_unlink(semaphoreName);
 }
 
 /*!
-   Format an existing ring buffer.
+   Format an existing ring buffer, but without synchronization. This is
+   the implemenation of the format logic.
+
    - Open the shared memory segment
    - Map the shared memory segment to the full size.
    - Format the front of the ring so that there's no producer or consumers.
@@ -330,52 +305,76 @@ CRingBuffer::remove(string name)
    \throw CErrnoException
 
 */
-void 
+void CRingBuffer::unsynchedFormat(std::string name, size_t maxConsumer)
+{
+    string fullName = shmName(name);
+    size_t memSize = CDAQShm::size(fullName);
+
+    // Now map the ring:
+
+    pRingBuffer      pRing      = reinterpret_cast<pRingBuffer>(CDAQShm::attach(fullName));
+
+
+    // Map the ring:
+
+    pRingHeader        pHeader   = reinterpret_cast<pRingHeader>(pRing);
+    pClientInformation pProducer = reinterpret_cast<pClientInformation>(pHeader + 1);
+    pClientInformation pClients  = pProducer + 1;
+
+    // Fill in the header:
+
+    strcpy(pHeader->s_magicString, MAGICSTRING);
+
+    pHeader->s_maxConsumer       = maxConsumer;
+    pHeader->s_producerInfo      = (reinterpret_cast<char*>(pProducer) -
+                    reinterpret_cast<char*>(pHeader));
+    pHeader->s_firstConsumer     = (reinterpret_cast<char*>(pClients) -
+                    reinterpret_cast<char*>(pHeader));
+    pHeader->s_topOffset         = memSize-1;
+    pHeader->s_dataOffset        = sizeof(RingHeader) +
+                                   sizeof(ClientInformation)*(maxConsumer+1);
+    pHeader->s_dataBytes         = memSize - pHeader->s_dataOffset;
+
+    // Fill in the client information data structures:
+
+    pProducer->s_offset          = pHeader->s_dataOffset;
+    pProducer->s_pid             = -1;
+
+    for (int i=0; i < maxConsumer; i++) {
+      pClients->s_offset         = pHeader->s_dataOffset;
+      pClients->s_pid            = -1;
+      pClients++;
+    }
+    CDAQShm::detach(pRing, fullName, memSize);
+}
+
+/*!
+   Format an existing ring buffer.
+   - Open the shared memory segment
+   - Map the shared memory segment to the full size.
+   - Format the front of the ring so that there's no producer or consumers.
+   - So that the header matches the layout of the buffer.
+
+   This method is synchronized with other methods running in different
+   processes by a semaphore.
+
+   \param name         - Name of the ring buffer. (a / will be prepended).
+   \param maxConsumers - Maximum number of supported consumers.
+
+   \throw CErrnoException
+
+*/
+void
 CRingBuffer::format(std::string name,
 		    size_t maxConsumer)
 {
+    CPosixOperatingSystem os;
+    auto pSem = os.createSemaphore(semaphoreName, 1);
+    DAQ::OS::CScopedWait guard(*pSem);
 
-  // need the memory size for initialization.
+    // need the memory size for initialization.
 
-  string fullName = shmName(name);
-  size_t memSize = CDAQShm::size(fullName);
-
-  // Now map the ring:
-
-  pRingBuffer      pRing      = reinterpret_cast<pRingBuffer>(CDAQShm::attach(fullName));
-
-
-  // Map the ring:
-
-  pRingHeader        pHeader   = reinterpret_cast<pRingHeader>(pRing);
-  pClientInformation pProducer = reinterpret_cast<pClientInformation>(pHeader + 1);
-  pClientInformation pClients  = pProducer + 1;
-
-  // Fill in the header:
-
-  strcpy(pHeader->s_magicString, MAGICSTRING);
-
-  pHeader->s_maxConsumer       = maxConsumer;
-  pHeader->s_producerInfo      = (reinterpret_cast<char*>(pProducer) - 
-				  reinterpret_cast<char*>(pHeader));
-  pHeader->s_firstConsumer     = (reinterpret_cast<char*>(pClients) -
-				  reinterpret_cast<char*>(pHeader));
-  pHeader->s_topOffset         = memSize-1;
-  pHeader->s_dataOffset        = sizeof(RingHeader) + 
-                                 sizeof(ClientInformation)*(maxConsumer+1);
-  pHeader->s_dataBytes         = memSize - pHeader->s_dataOffset;
-
-  // Fill in the client information data structures:
-
-  pProducer->s_offset          = pHeader->s_dataOffset;
-  pProducer->s_pid             = -1;
-
-  for (int i=0; i < maxConsumer; i++) {
-    pClients->s_offset         = pHeader->s_dataOffset;
-    pClients->s_pid            = -1;
-    pClients++;
-  }
-  CDAQShm::detach(pRing, fullName, memSize);
+    unsynchedFormat(name, maxConsumer);
 
 }
 /*!
@@ -481,6 +480,9 @@ CRingBuffer::defaultRingUrl()
    Construct a ring buffer object. This will represent a consumer or a
    producer on the specified ring.
 
+   This method is synchronized with other methods running in different
+   processes by a semaphore.
+
    \param name - name of the ring buffer, "/" will be prepended.
    \param mode - Type of access requested.  This should be one of:
                - CRingBuffer::producer for producer access.
@@ -499,6 +501,10 @@ CRingBuffer::CRingBuffer(string name, CRingBuffer::ClientMode mode) :
   m_pollInterval(DEFAULT_POLLMS),
   m_ringName(name)
 {
+    CPosixOperatingSystem os;
+    auto pSem = os.createSemaphore(semaphoreName, 1);
+    DAQ::OS::CScopedWait guard(*pSem);
+
   if (!isRing(name)) {
     errno = ENOENT;
     throw CErrnoException("CRingBuffer::CRingBuffer - not a ring");
@@ -558,9 +564,17 @@ CRingBuffer::CRingBuffer(string name, CRingBuffer::ClientMode mode) :
 }
 /*!
    Destructor ... release our our client info and unmap.
+
+   This method is synchronized with other methods running in different
+   processes by a semaphore.
+
 */
 CRingBuffer::~CRingBuffer()
 {
+
+  CPosixOperatingSystem os;
+  auto pSem = os.createSemaphore(semaphoreName, 1);
+  DAQ::OS::CScopedWait guard(*pSem);
 
   string ringname = m_ringName;
   if (m_mode != manager) {
@@ -962,6 +976,7 @@ CRingBuffer::availableData()
 CRingBuffer::Usage
 CRingBuffer::getUsage()
 {
+
   pRingHeader         pHead      = &(m_pRing->s_header);
   pClientInformation  pProducer  = &(m_pRing->s_producer);
   pClientInformation  pConsumers = m_pRing->s_consumers;

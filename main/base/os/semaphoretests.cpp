@@ -50,7 +50,7 @@ protected:
   // check that this fails.
    void wait_0() {
 
-       Os::CPosixSemaphore startUp("start", 0);
+       DAQ::OS::CPosixSemaphore startUp("start", 0);
 
 
        int pid = fork();
@@ -64,7 +64,7 @@ protected:
 
 //           std::cout << "child running" << std::endl;
 
-           Os::CPosixSemaphore sem("test", 1);
+           DAQ::OS::CPosixSemaphore sem("test", 1);
            sem.wait();
 
            // parent is now allowed to wake up.
@@ -80,7 +80,7 @@ protected:
        } else {
 
            // parent
-           Os::CPosixSemaphore sem("test", 1);
+           DAQ::OS::CPosixSemaphore sem("test", 1);
 
 //           std::cout << "parent waiting on child" << std::endl;
            startUp.wait();
@@ -121,7 +121,7 @@ protected:
        }
 
        {
-           Os::CPosixSemaphore sem("/___test", 1);
+           DAQ::OS::CPosixSemaphore sem("/___test", 1);
        }
 
        file.open("/dev/shm/sem.___test");
@@ -133,7 +133,7 @@ protected:
    // Test that we can effectively retrieve the count of the semaphore.
    void getCount_0() {
 
-       Os::CPosixSemaphore sem("/____test", 23);
+       DAQ::OS::CPosixSemaphore sem("/____test", 23);
        EQMSG("count", 23, sem.getCount());
    }
 
