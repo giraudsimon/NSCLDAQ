@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libdaqshm.la
 
-libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp
-include_HEADERS      = daqshm.h os.h io.h CTimeout.h
+libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp
+include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h
 
 noinst_HEADERS	     = Asserts.h
 
@@ -18,7 +18,7 @@ EXTRA_DIST=shm.xml
 
 noinst_PROGRAMS    = unittests
 unittests_SOURCES = TestRunner.cpp createTests.cpp removeTests.cpp attachTests.cpp \
-        detachTests.cpp timeoutTests.cpp
+        detachTests.cpp timeoutTests.cpp semaphoretests.cpp
 
 unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 

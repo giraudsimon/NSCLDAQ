@@ -11,7 +11,7 @@
             <listitem>
                 <para>
                     The <literal>vhq</literal> package provides primitive device
-                    control.  See <link linkend="manpage.vhq">vhq(3tcl)</link> for reference
+                    control.  See <olink linkend="manpage.vhq">vhq(3tcl)</link> for reference
                     information.
                 </para>
             </listitem>
@@ -805,7 +805,7 @@ $DAQHOME/Scripts/ControlApplications/vhqControl.tcl <optional>?config config ...
         <title>DESCRIPTION</title>
         <para>
             The
-            <link linkend='manpage.vhqcontrol'>vhqControl(1)</link>
+            <olink targetdocent='refentry' linkend='manpage.vhqcontrol'>vhqControl(1)</olink>
             application uses configuration files both to form a connection to vhq 2xx modules it
        is controlling and to load previously saved settings.  These configuration files are  Tcl  scripts  that
        set agreed upon variables to the needed configuration values.

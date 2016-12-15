@@ -188,3 +188,27 @@ Os::getfqdn(const char* host)
 
   return fqhostname;
 }
+
+
+CPosixOperatingSystem&
+CPosixOperatingSystem::operator=(const CPosixOperatingSystem& rhs)
+{
+    // the class has no state associated with it, so this is trivial.
+    return *this;
+}
+
+/*!
+ * \brief Create a named semaphore
+ *
+ * \param name          name of the semaphore
+ * \param initCount     initial value of semaphore if created
+ *
+ * \return unique ptr owning newly allocated CPosixSemaphore
+ *
+ * See DAQ::OS::CPosixSemaphore for the semantics of the semaphore.
+ */
+std::unique_ptr<DAQ::OS::CSemaphore>
+CPosixOperatingSystem::createSemaphore(const std::string& name, int initCount)
+{
+    return std::unique_ptr<DAQ::OS::CSemaphore>(new DAQ::OS::CPosixSemaphore(name, initCount));
+}
