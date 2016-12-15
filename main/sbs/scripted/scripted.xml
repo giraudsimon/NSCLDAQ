@@ -1091,9 +1091,21 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
 <!-- module command -->
 
       <refentry id='sbsreadout3_module'>
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='sbsreadout3_module_title'>module</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>module</refname>
@@ -1166,9 +1178,21 @@ module -types
 
 <!-- module subcommands -->
       <refentry id="sbsreadout3_modulesubcommands">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='sbsreadout3_modulesubcommands_title'>Module Subcommands</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>Module Subcommands</refname>
@@ -1275,9 +1299,21 @@ module -types
 <!-- readout command -->
 
       <refentry id="sbsreadout3_readout">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='sbsreadout3_readout_title'>readout</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>readout</refname>
@@ -1444,9 +1480,21 @@ readout remove <replaceable>module-name</replaceable>
 <!-- v775 -->
 
       <refentry id="sbsreadout3_v775_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_v775_module_title">caenv775</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>caenv775</refname>
@@ -1660,9 +1708,21 @@ module create <replaceable>name</replaceable> caenv775 <replaceable>?options...?
 
 <!-- v785 -->
       <refentry id="sbsreadout3_v785_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_v785_module_title">caenv785</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>caenv785</refname>
@@ -1848,9 +1908,21 @@ module create <replaceable>name</replaceable> caenv785 <replaceable>?options...?
 
 <!-- v792 -->
       <refentry id="sbsreadout3_v792_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_v792_module_title">caenv792</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>caenv792</refname>
@@ -2053,9 +2125,21 @@ module create <replaceable>name</replaceable> caenv792 <replaceable>?options...?
 <!-- v830 -->
 
       <refentry id="sbsreadout3_v830_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id='sbsreadout3_v830_module_title'>caenv830</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>caenv830</refname>
@@ -2295,9 +2379,21 @@ module create <replaceable>name</replaceable> caenv830 <replaceable>?options...?
 
 <!-- packet -->
       <refentry id="sbsreadout3_packet_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_packet_module_title">packet</refentrytitle>
            <manvolnum>sbsreadout3</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>packet</refname>
@@ -2356,9 +2452,21 @@ module create <replaceable>name</replaceable> packet <replaceable>?options...</r
 
 <!-- sis3300 -->
       <refentry id="sbsreadout3_sis3300_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_sis3300_module_title">sis3300</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>sis3300</refname>
@@ -2572,9 +2680,21 @@ module create <replaceable>name</replaceable> sis3300 <replaceable>?options...?<
 <!-- 1x90 -->
 
       <refentry id="sbsreadout3_v1x90_module">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
            <refentrytitle id="sbsreadout3_v1x90_module_title">v1x90</refentrytitle>
            <manvolnum>3sbsreadout</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>v1x90</refname>
@@ -2868,9 +2988,21 @@ module create <replaceable>name</replaceable> v1x90 <replaceable>?option...?</re
 
 <!-- CDigitizerModule base class -->
 	 <refentry id="sbsreadout3_digitizer_class">
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
        <refmeta>
           <refentrytitle id="sbsreadout3_digitizer_class_title">CDigitizerModule</refentrytitle>
           <manvolnum>3sbsreadout</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CDigitizerModule</refname>
@@ -3202,9 +3334,21 @@ module create <replaceable>name</replaceable> v1x90 <replaceable>?option...?</re
 <!-- CConfigurationParameter -->
 
 	 <refentry id="sbsreadout3_cconfigurationparameter_class">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>    
        <refmeta>
           <refentrytitle id="sbsreadout3_cconfigurationparameter_class_title">CConfigurationParameter</refentrytitle>
           <manvolnum>3sbsreadout</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CConfigurationParameter</refname>
@@ -4662,9 +4806,21 @@ module create <replaceable>name</replaceable> v1x90 <replaceable>?option...?</re
 <!-- SConfigurableObject -->
 
 	 <refentry id='sbsreadout3_sconfigurableobject_class'>
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
        <refmeta>
           <refentrytitle id='sbsreadout3_sconfigurableobject_class_title'>SConfigurableObject</refentrytitle>
           <manvolnum>3</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>SConfigurableObject</refname>
@@ -5724,9 +5880,21 @@ for (int = 0; i &lt;  size(); i++) {
      </refentry>     
 <!-- CModuleCreator base class -->
 	 <refentry id="sbsreadout3_cmodule_creator_class">
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>    
        <refmeta>
           <refentrytitle id="sbsreadout3_cmodule_creator_class_title"> CModuleCreator </refentrytitle>
           <manvolnum>3sbsreadout</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname> CModuleCreator </refname>
@@ -5974,9 +6142,21 @@ foreach modulecreator
 <!-- CScriptedSegment base class -->
 
 	 <refentry id="sbsreadout3_cscriptedsegment_class">
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
        <refmeta>
           <refentrytitle id="sbsreadout3_cscriptedsegment_class_title">CScriptedSegment</refentrytitle>
           <manvolnum>3sbsreadout</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CScriptedSegment</refname>
@@ -6174,9 +6354,21 @@ foreach modulecreator
 <!-- CScriptedScalers base class -->
 
 	 <refentry id="sbsreadout3_cscriptedscalers_class">
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
        <refmeta>
           <refentrytitle id="sbsreadout3_cscriptedscalers_class_title">CScriptedScalers</refentrytitle>
           <manvolnum>3sbsreadout</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CScriptedScalers</refname>

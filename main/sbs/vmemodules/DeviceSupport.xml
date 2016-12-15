@@ -34,9 +34,21 @@
 <!-- manpage 3daq -->
 
         <refentry id="CADC2530">
+	   <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo> 
           <refmeta>
              <refentrytitle>CADC2530</refentrytitle>
              <manvolnum>3DeviceSupport</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
           </refmeta>
           <refnamediv>
              <refname>CADC2530</refname>
@@ -660,6 +672,7 @@
        </refentry>
     
     <refentry id="CAENcard">
+	
           <refentryinfo>
             <author>
                 <personname>
@@ -1736,10 +1749,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CBD8210">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CBD8210</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -2171,10 +2195,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
         <refentry id="CCAENV1x90">
-            
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
             <refmeta>
                 <refentrytitle>CCAENV1x90</refentrytitle>
                 <manvolnum>3DeviceSupport</manvolnum>
+		<refmiscinfo class='empty'></refmiscinfo>
             </refmeta>
             
             <refnamediv>
@@ -4746,15 +4781,27 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
             </refsect1>
         </refentry>
         <refentry id="CCAENV560">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAENV560</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
             <refname>CCAENV560</refname>
             <refpurpose>Support the CCAENV560 non-latching scaler.</refpurpose>
+	    
         </refnamediv>
         
         <refsynopsisdiv>
@@ -4965,10 +5012,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCAENV830">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAENV830</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -5602,10 +5660,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         
     </refentry>
     <refentry id="CCAENV977">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAENV977</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6106,10 +6175,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCAMACScalerLRS2551">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAMACScalerLRS2551</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6234,10 +6314,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCAMACScalerLRS4434">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAMACScalerLRS4434</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6373,10 +6464,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCAMACStatusModule">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAMACStatusModule</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6543,10 +6645,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCAMACTrigger">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCAMACTrigger</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6633,10 +6746,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCamac">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCamac</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -6739,10 +6863,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1> 
     </refentry>
         <refentry id="CCamacModule">
-            
+            <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
             <refmeta>
                 <refentrytitle>CCamacModule</refentrytitle>
                 <manvolnum>3DeviceSupport</manvolnum>
+		<refmiscinfo class='empty'></refmiscinfo>
             </refmeta>
             
             <refnamediv>
@@ -7034,10 +7169,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
             
         </refentry>
     <refentry id="CCamacNimout">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCamacNimout</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -7128,10 +7274,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
         </refsect1>
     </refentry>
     <refentry id="CCrateController">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CCrateController</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -7476,10 +7633,21 @@ at the NSCL at <ulink url="http://groups.nscl.msu.edu/nscl_library/manuals/caen/
  
     </refentry>
     <refentry id="CSIS3600">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CSIS3600</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -7957,10 +8125,21 @@ catch (std::string msg) {
         
     </refentry>
     <refentry id="CSIS3820">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CSIS3820</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -8792,10 +8971,21 @@ catch (std::string msg) {
         </refsect1>        
     </refentry>
      <refentry id="CScaler">
-         
+         <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
          <refmeta>
              <refentrytitle>CScaler</refentrytitle>
              <manvolnum>3DeviceSupport</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
          </refmeta>
          
          <refnamediv>
@@ -8937,10 +9127,21 @@ catch (std::string msg) {
          
      </refentry>
     <refentry id="CStatusModule">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CStatusModule</refentrytitle>
             <manvolnum>3DeviceControl</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -9042,10 +9243,21 @@ catch (std::string msg) {
         
     </refentry>
     <refentry id="CTrigger">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CTrigger</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -9094,10 +9306,21 @@ catch (std::string msg) {
         
     </refentry>
     <refentry id="CVME">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CVME</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -9516,10 +9739,21 @@ catch (std::string msg) {
         </refsect1>
     </refentry>
      <refentry id="CVMEScalerLRS1151">
-         
+         <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
          <refmeta>
              <refentrytitle>CVMEScalerLRS1151</refentrytitle>
              <manvolnum>3DeviceSupport</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
          </refmeta>
          
          <refnamediv>
@@ -9651,10 +9885,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
          
      </refentry>
     <refentry id="CVMEStatusModule">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CVMEStatusModule</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -9756,10 +10001,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
         </refsect1>
     </refentry>
     <refentry id="CVMETrigger">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CVMETrigger</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -9822,10 +10078,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
         </refsect1>
     </refentry>
      <refentry id="CVMEptr">
-         
+         <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
          <refmeta>
              <refentrytitle>CVMEptr</refentrytitle>
              <manvolnum>3DeviceSupport</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
          </refmeta>
          
          <refnamediv>
@@ -10183,10 +10450,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
          
      </refentry>
     <refentry id="CaenIO">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CaenIO</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -10337,10 +10615,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
         </refsect1>        
     </refentry>
     <refentry id="CMmapError">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CMmapError</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -10391,10 +10680,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
         </refsect1>        
     </refentry>
     <refentry id="CNimout">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CNimout</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -10701,10 +11001,21 @@ CMyExperiment::SetupScalers(CExperiment&amp; rExperiment)
         </refsect1>
     </refentry>
     <refentry id="CVmeModule">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CVmeModule</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>
@@ -10992,10 +11303,21 @@ private:
         
     </refentry>
     <refentry id="CSIS3300">
-        
+        <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
         <refmeta>
             <refentrytitle>CSIS3300</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         
         <refnamediv>

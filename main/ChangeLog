@@ -1135,6 +1135,15 @@ Work on 11.0-rc11 begins
 	* Bug #6248 enable keepalive and shorten timing parameters for ring2stdin
 	when stdin is a socket so remote failures can be seen and seen
 	reasonably quickly.
+11.1-010
+  * Fixes issue in CRemoteAccess that caused failures when the fqdn returned
+	the same as the hostname.
+	* Got rid of a bunch of docbook errors.
+	* Fix bug #6555 - ensure all bus access check loops timeout.
+	* Fix bug #6404 - Prevent -timeaxis negative or zero - fail
+	program if so.
+	* Fix Bug #6395 - extend the MAGIC string check in the ring buffer
+	isHeader method to detect non 11.x ringbuffers.
 11.2-000
 	* CRingBuffer constructor throws if it fails to map the shared memory
 	region and thereby avoiding delayed failures.
@@ -1143,3 +1152,11 @@ Work on 11.0-rc11 begins
 	* Issues #6516 & #6519  Failure logic for REGISTER and UNREGISTER loosened in RingMaster.
 	* Adds CSemaphore infrastructure and synchronization to the RingBuffer
 	API.
+  * Fixes issue in CRemoteAccess that caused failures when the fqdn returned
+	the same as the hostname.
+	* Got rid of a bunch of docbook errors.
+	* Fix bug #6555 - ensure all bus access check loops timeout.
+	* Fix bug #6404 - Prevent -timeaxis negative or zero - fail
+	program if so.
+	* Fix Bug #6395 - extend the MAGIC string check in the ring buffer
+	isHeader method to detect non 11.x ringbuffers.
