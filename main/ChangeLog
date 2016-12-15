@@ -1141,3 +1141,5 @@ Work on 11.0-rc11 begins
 	* RingMaster logging facilities enhanced. RingMaster logs now to 
 	/var/log/nscldaq/ringmaster.log by default at startup.
 	* Issues #6516 & #6519  Failure logic for REGISTER and UNREGISTER loosened in RingMaster.
+	* Adds CSemaphore infrastructure and synchronization to the RingBuffer
+	API.
