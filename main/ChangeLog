@@ -1160,3 +1160,5 @@ Work on 11.0-rc11 begins
 	program if so.
 	* Fix Bug #6395 - extend the MAGIC string check in the ring buffer
 	isHeader method to detect non 11.x ringbuffers.
+	* Issue #6459 The ULM trigger reads the state of device at startup if no configfile is
+	provided. Otherwise, it reads the file and updates the module to 	its values.
