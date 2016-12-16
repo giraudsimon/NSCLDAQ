@@ -67,6 +67,8 @@ ATrigger2367 mygui 0 1 $host $port $module $slot $ring
 mygui SetupGUI . $path
 if {$path ne {}} {
   mygui ReadConfigFile
+} else {
+  mygui ReadStatus
 }
 
 # Configure some window manager details 
