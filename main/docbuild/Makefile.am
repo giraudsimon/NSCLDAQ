@@ -36,7 +36,9 @@ clean-local:
 	-rm -f *.pdf
 	-rm -f daq.xml
 	-rm -f $(MANSECTS)
-	-rm -f daq.html daq.mans tutorial.pdf tutorial.html
+	-rm -f daq.html daq.mans tutorial.pdf tutorial.html 1usbReadout.xml 1sbsReadout.xml
+	-rm -rf tuthtml
+	-rm -rf man
 
 daq.pdf: daq.xml
 	$(TOPDF) daq.xml

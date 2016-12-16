@@ -852,9 +852,7 @@ $DAQHOME/Scripts/ControlApplications/vhqControl.tcl <optional>?config config ...
     <refsect1>
         <title>DESCRIPTION</title>
         <para>
-            The
-            <olink targetdocent='refentry' linkend='manpage.vhqcontrol'>vhqControl(1)</olink>
-            application uses configuration files both to form a connection to vhq 2xx modules it
+            The vhqControl(1) application uses configuration files both to form a connection to vhq 2xx modules it
        is controlling and to load previously saved settings.  These configuration files are  Tcl  scripts  that
        set agreed upon variables to the needed configuration values.
 
