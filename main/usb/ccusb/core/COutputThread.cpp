@@ -106,6 +106,7 @@ COutputThread::COutputThread(const char* pRing, CSystemControl& sysControl) :
   m_nEventsSeen(0),
   m_pEvtTimestampExtractor(0),
   m_pSclrTimestampExtractor(0),
+  m_pBeginRunCallback(nullptr),
   m_systemControl(sysControl)
 {
   
