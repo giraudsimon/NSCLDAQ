@@ -21,9 +21,11 @@ AX_CXX_COMPILE_STDCXX_11([noext])
 
 AC_ARG_ENABLE([docs],
               AS_HELP_STRING([--enable-docs],[Build the documentation]),
-              [ENABLE_DOCS=yes],[ENABLE_DOCS=no])
-if test "x$ENABLE_DOCS" == "xyes"
+              [], [enable_docs=no])
+
+if test "x$enable_docs" == "xyes"
 then
+  AC_MSG_NOTICE([Documentation enabled])
 
   AC_CHECK_PROG(HAVE_DOCBOOK2PDF, [docbook2pdf], [true], [false])
   if test "$HAVE_DOCBOOK2PDF" == "false"
@@ -60,6 +62,7 @@ then
   AM_CONDITIONAL([BUILD_DOCS],[true])
 else
   AM_CONDITIONAL([BUILD_DOCS],[false])
+  AC_MSG_NOTICE([Documentation disabled])
 fi
 
 AC_CHECK_LIB([X11], [XSetWindowBackground])

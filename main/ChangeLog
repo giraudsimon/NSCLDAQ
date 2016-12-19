@@ -1164,3 +1164,5 @@ Work on 11.0-rc11 begins
 	provided. Otherwise, it reads the file and updates the module to 	its values.
 	* Bug #6567 - Begin run callback pointer is zero initialized to avoid
 	segmentation fault at beginning of run in CCUSBReadout.
+	* Bug #6573 - --enable-docs option given the standard semantics of
+	an autotools option. 
