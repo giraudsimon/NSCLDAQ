@@ -167,6 +167,7 @@ public:
 
   // Utility functions:
 private:
+  void        attach();
   size_t      availableData(ClientInformation* pInfo);
   void        unMapRing();
   void        allocateConsumer();

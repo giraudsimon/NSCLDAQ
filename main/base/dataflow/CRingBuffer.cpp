@@ -248,6 +248,7 @@ CRingBuffer::createAndProduce(std::string name, size_t dataBytes, size_t maxCons
 void
 CRingBuffer::remove(string name)
 {
+  std::cout << "remove" << std::endl;
     CPosixOperatingSystem os;
     auto pSem = os.createSemaphore(semaphoreName, 1);
     DAQ::OS::CScopedWait guard(*pSem);
@@ -472,6 +473,43 @@ CRingBuffer::defaultRingUrl()
     
 }
 
+/*!
+ * \brief Attach and manipulate the header of the ringbuffer 
+ *
+ * This should be done with synchronization. It is expected that a semaphore
+ * has been locked already in the process that called it. 
+ *
+ * If the CRingBuffer object is has a manager mode, then this is a no-op.
+ * Producers and consumers on the other hand cause the ringbuffer header
+ * to be manipulated.
+ *
+ * \throws CErrnoException when attempting to add a second producer
+ * \throws CErrnoException when mode is neither producer, consumer, or manager
+ *
+ */
+void CRingBuffer::attach() {
+
+  if (m_mode == producer) {
+    if (m_pRing->s_producer.s_pid == -1) {
+      m_pClientInfo         = &(m_pRing->s_producer);
+      m_pClientInfo->s_pid  = getpid(); // leave the offset where it was.
+      __sync_synchronize();		  // And flush to shm.
+    }
+    else {
+      errno = EACCES;
+      throw CErrnoException("CRingBuffer::CRingBuffer - already a producer");
+    }
+  } 
+  else if (m_mode == consumer) {
+    allocateConsumer();
+  } else if (m_mode == manager) {
+  }
+  else {			// Invalid connection mode.
+    errno = EINVAL;
+    throw CErrnoException("CRingBuffer::CRingBuffer - invalid connection mode");
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Constructors and canonicals.
 
@@ -501,69 +539,48 @@ CRingBuffer::CRingBuffer(string name, CRingBuffer::ClientMode mode) :
   m_pollInterval(DEFAULT_POLLMS),
   m_ringName(name)
 {
+
+    if (!isRing(name)) {
+      errno = ENOENT;
+      throw CErrnoException("CRingBuffer::CRingBuffer - not a ring");
+    }
+    m_pRing = mapRingBuffer(shmName(name));
+    if (m_pRing == nullptr) {
+      throw std::string("CRingBuffer::CRingBuffer - failed to map shared memory region.");
+    }
+
+    if (m_mode == manager) return;
+
     CPosixOperatingSystem os;
     auto pSem = os.createSemaphore(semaphoreName, 1);
     DAQ::OS::CScopedWait guard(*pSem);
 
-  if (!isRing(name)) {
-    errno = ENOENT;
-    throw CErrnoException("CRingBuffer::CRingBuffer - not a ring");
-  }
-  m_pRing = mapRingBuffer(shmName(name));
-  if (m_pRing == nullptr) {
-    throw std::string("CRingBuffer::CRingBuffer - failed to map shared memory region.");
-  }
-
-  // Now that we're mapped the remainder of the constructor must execute in a try
-  // block so that failure will allow us to unmap the ring.
-  //
-  try {
-    if (m_mode == producer) {
-      if (m_pRing->s_producer.s_pid == -1) {
-	m_pClientInfo         = &(m_pRing->s_producer);
-	m_pClientInfo->s_pid  = getpid(); // leave the offset where it was.
-	__sync_synchronize();		  // And flush to shm.
-
-      }
-      else {
-	errno = EACCES;
-	throw CErrnoException("CRingBuffer::CRingBuffer - already a producer");
-      }
-    } 
-    else if (m_mode == consumer) {
-      allocateConsumer();
+    // Now that we're mapped the remainder of the constructor must execute in a try
+    // block so that failure will allow us to unmap the ring.
+    //
+    try {
+      attach();
+    } catch (...) {
+      unMapRing();
+      throw;
     }
-    else if (m_mode == manager) {
-      
-    }
-    else {			// Invalid connection mode.
-      errno = EINVAL;
-      throw CErrnoException("CRingBuffer::CRingBuffer - invalid connection mode");
-    }
-  }
-  catch (...) {
-    unMapRing();
-    throw;
-  }
-  // We got this far we have a connection.  If this is not a manager connection,
-  // we can register with the ringmaster:
+    // We got this far we have a connection.  If this is not a manager connection,
+    // we can register with the ringmaster:
 
-  try {
-    if (mode != manager) {
+    try {
       connectToRingMaster();	// This will only really connect the first time.
       notifyConnection();		// Let the ring master know of our connection
     }
-  }
-  catch(...) {
-    // on any failure, we give up the ring and throw:
+    catch(...) {
+      // on any failure, we give up the ring and throw:
 
-    m_pClientInfo->s_pid = -1;
-    unMapRing();
-    throw;
-  }
+      m_pClientInfo->s_pid = -1;
+      unMapRing();
+      throw;
+    }
 }
 /*!
-   Destructor ... release our our client info and unmap.
+  Destructor ... release our our client info and unmap.
 
    This method is synchronized with other methods running in different
    processes by a semaphore.
@@ -574,20 +591,20 @@ CRingBuffer::~CRingBuffer()
 
   CPosixOperatingSystem os;
   auto pSem = os.createSemaphore(semaphoreName, 1);
-  DAQ::OS::CScopedWait guard(*pSem);
-
-  string ringname = m_ringName;
   if (m_mode != manager) {
-    m_pClientInfo->s_pid = -1;
-    // Let the ringmaster know we're disconnecting.
-    // the client pointer is still valid as is the map so the notification
-    // can still find the 'slot number.
-    
-    notifyDisconnection();
+    DAQ::OS::CScopedWait guard(*pSem);
 
+    string ringname = m_ringName;
+    if (m_mode != manager) {
+      m_pClientInfo->s_pid = -1;
+      // Let the ringmaster know we're disconnecting.
+      // the client pointer is still valid as is the map so the notification
+      // can still find the 'slot number.
+
+      notifyDisconnection();
+
+    }
   }
-
-  
   
   // Unmap the ring and ensure that any use of this ring will fail utterly.
 
