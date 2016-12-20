@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libdaqshm.la
 
-libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp
-include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h
+libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp CPosixBlockingRecordLock.cpp
+include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h CPosixBlockingRecordLock.cpp
 
 noinst_HEADERS	     = Asserts.h
 

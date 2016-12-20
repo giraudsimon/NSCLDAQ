@@ -49,6 +49,29 @@
 #include <unistd.h>
 
 
+/*!
+ *  \brief A simple class to open and close a shm file using RAII
+ */
+class CScopedDAQShm {
+  private:
+    int m_fd;
+
+  public:
+    /*! \brief Open the file and cache the fd
+     *
+     * Any errors will arise from CDAQShm::open().
+     */
+    CScopedDAQShm(std::string name, int oflag);
+
+    /*! \brief Close the file descriptor
+     */
+    ~CScopedDAQShm();
+
+    /*! \returns the open file descriptor */
+    int getFd() { return m_fd; }
+};
+
+
 /**
  * CDAQShm provides an operating system independent interface for'
  * creating and accessing shared memory segments.  The specific
@@ -69,6 +92,7 @@ public:
   static int         lastError();
   static std::string errorMessage(int errorCode);
   static int         stat(std::string name, struct stat* pStat);
+  static int         open(std::string name, int oflag);
   
 
 private:

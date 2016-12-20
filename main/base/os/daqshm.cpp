@@ -74,6 +74,17 @@ const int    CDAQShm::m_nMessages  = sizeof(pMessages)/sizeof(const char*);
 // This is Linux specific -- directory holding the shared memory files.:
 
 
+CScopedDAQShm::CScopedDAQShm(std::string name, int oflags)
+  : m_fd(-1)
+{
+  m_fd = CDAQShm::open(name, oflags);
+}
+
+CScopedDAQShm::~CScopedDAQShm()
+{
+  close(m_fd);
+  m_fd = -1;
+}
 
 /**
  * Create a new shared memory region.
@@ -380,6 +391,12 @@ CDAQShm::stat(std::string name, struct stat* pStat)
   return result;
   
 }
+
+int CDAQShm::open(std::string name, int oflag)
+{
+  return shm_open(name.c_str(), oflag, 0);
+}
+
 
 /*-----------------------------------------------------------------------------------*/
 /* Private methods:                                                                 */

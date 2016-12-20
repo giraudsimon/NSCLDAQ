@@ -21,8 +21,8 @@
 #include <ErrnoException.h>
 #include <RangeError.h>
 #include <StateException.h>
-#include <CSemaphore.h>
 #include <os.h>
+#include <CPosixBlockingRecordLock.h>
 
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -64,8 +64,6 @@ size_t CRingBuffer::m_defaultMaxConsumers(DEFAULT_MAX_CONSUMERS);
 CRingMaster* CRingBuffer::m_pMaster(NULL);
 pid_t        CRingBuffer::m_myPid(-1); // no pid has this.
 
-// name of the ringbuffer semaphore to use
-static const char* semaphoreName = "/ringbuffer";
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -130,15 +128,12 @@ CRingBuffer::create(std::string name,
 		     bool   tempMasterConnection)
 {
 
-    CPosixOperatingSystem os;
-    auto pSem = os.createSemaphore(semaphoreName, 1);
-    DAQ::OS::CScopedWait guard(*pSem);
-
     // Figure out the entire size of the shared memory region and truncate the file to that
     // size:
+    size_t headerSize = sizeof(RingHeader) +
+      sizeof(ClientInformation)*(maxConsumer+1);
 
-    size_t rawSize   = dataBytes + sizeof(RingHeader) +
-            sizeof(ClientInformation)*(maxConsumer+1);
+    size_t rawSize   = dataBytes + headerSize;
 
     long   pageSize  = sysconf(_SC_PAGESIZE);
     size_t pages     = (rawSize + (pageSize-1))/pageSize;
@@ -150,11 +145,24 @@ CRingBuffer::create(std::string name,
 
     ssize_t existingSize = CDAQShm::size(memoryName);
 
+    bool created = false;
     if (existingSize < 0) {
         if(CDAQShm::create(shmName(memoryName), shmSize,
                            CDAQShm::GroupRead | CDAQShm::GroupWrite | CDAQShm::OtherRead | CDAQShm::OtherWrite)) {
             throw CErrnoException("Shared memory creation failed");
+        } else {
+          created = true;
         }
+    }
+
+    // lock
+    
+    CScopedDAQShm shmemFile(shmName(name), O_RDWR);
+    DAQ::OS::CPosixBlockingRecordLock lock(shmemFile.getFd(),
+                                  DAQ::OS::CPosixBlockingRecordLock::Write,
+                                  DAQ::OS::CPosixBlockingRecordLock::BEG,
+                                  0, headerSize); 
+    if (created) {
 
         unsynchedFormat(name, maxConsumer);
 
@@ -205,6 +213,8 @@ CRingBuffer::create(std::string name,
         delete m_pMaster;
         m_pMaster = pOld;
     }
+    
+
 }
 
 /**
@@ -248,16 +258,11 @@ CRingBuffer::createAndProduce(std::string name, size_t dataBytes, size_t maxCons
 void
 CRingBuffer::remove(string name)
 {
-  std::cout << "remove" << std::endl;
-    CPosixOperatingSystem os;
-    auto pSem = os.createSemaphore(semaphoreName, 1);
-    DAQ::OS::CScopedWait guard(*pSem);
 
     if (!isRing(name)) {
         errno = ENOENT;
         throw CErrnoException("CRingBuffer::remove - not a ring");
     }
-
 
     // If _I_ don't own the ring don't allow deletion (unless I'm root).
 
@@ -271,8 +276,17 @@ CRingBuffer::remove(string name)
         errno = EPERM;
         throw CErrnoException("CRingBuffer::remove - checking ringbuffer ownership");
     }
-    // Connect to the ring master:
 
+    // lock
+    size_t headerSize = sizeof(RingHeader) +
+      sizeof(ClientInformation)*(m_defaultMaxConsumers+1);
+    CScopedDAQShm shmemFile(shmName(name), O_RDWR);
+    DAQ::OS::CPosixBlockingRecordLock lock(shmemFile.getFd(),
+                                  DAQ::OS::CPosixBlockingRecordLock::Write,
+                                  DAQ::OS::CPosixBlockingRecordLock::BEG,
+                                  0, headerSize); 
+
+    // Connect to the ring master:
     connectToRingMaster();
 
     // At this point RM has acked so we can kill the ring itself:
@@ -286,7 +300,6 @@ CRingBuffer::remove(string name)
 
     if (CDAQShm::remove(fullName)) {
         throw CErrnoException("Shared memory deletion failed");
-
     }
 
 }
@@ -369,9 +382,14 @@ void
 CRingBuffer::format(std::string name,
 		    size_t maxConsumer)
 {
-    CPosixOperatingSystem os;
-    auto pSem = os.createSemaphore(semaphoreName, 1);
-    DAQ::OS::CScopedWait guard(*pSem);
+  // lock
+    size_t headerSize = sizeof(RingHeader) +
+      sizeof(ClientInformation)*(maxConsumer+1);
+    CScopedDAQShm shmemFile(shmName(name), O_RDWR);
+    DAQ::OS::CPosixBlockingRecordLock lock(shmemFile.getFd(),
+                                  DAQ::OS::CPosixBlockingRecordLock::Write,
+                                  DAQ::OS::CPosixBlockingRecordLock::BEG,
+                                  0, headerSize); 
 
     // need the memory size for initialization.
 
@@ -551,9 +569,14 @@ CRingBuffer::CRingBuffer(string name, CRingBuffer::ClientMode mode) :
 
     if (m_mode == manager) return;
 
-    CPosixOperatingSystem os;
-    auto pSem = os.createSemaphore(semaphoreName, 1);
-    DAQ::OS::CScopedWait guard(*pSem);
+    // lock
+    size_t headerSize = sizeof(RingHeader) +
+      sizeof(ClientInformation)*(m_defaultMaxConsumers+1);
+    CScopedDAQShm shmemFile(shmName(name), O_RDWR);
+    DAQ::OS::CPosixBlockingRecordLock lock(shmemFile.getFd(),
+                                  DAQ::OS::CPosixBlockingRecordLock::Write,
+                                  DAQ::OS::CPosixBlockingRecordLock::BEG,
+                                  0, headerSize); 
 
     // Now that we're mapped the remainder of the constructor must execute in a try
     // block so that failure will allow us to unmap the ring.
@@ -589,27 +612,34 @@ CRingBuffer::CRingBuffer(string name, CRingBuffer::ClientMode mode) :
 CRingBuffer::~CRingBuffer()
 {
 
-  CPosixOperatingSystem os;
-  auto pSem = os.createSemaphore(semaphoreName, 1);
   if (m_mode != manager) {
-    DAQ::OS::CScopedWait guard(*pSem);
+    //lock
+    size_t headerSize = sizeof(RingHeader) +
+      sizeof(ClientInformation)*(m_defaultMaxConsumers+1);
+    CScopedDAQShm shmemFile(shmName(m_ringName), O_RDWR);
+    DAQ::OS::CPosixBlockingRecordLock lock(shmemFile.getFd(),
+                                  DAQ::OS::CPosixBlockingRecordLock::Write,
+                                  DAQ::OS::CPosixBlockingRecordLock::BEG,
+                                  0, headerSize); 
 
     string ringname = m_ringName;
-    if (m_mode != manager) {
-      m_pClientInfo->s_pid = -1;
-      // Let the ringmaster know we're disconnecting.
-      // the client pointer is still valid as is the map so the notification
-      // can still find the 'slot number.
+    m_pClientInfo->s_pid = -1;
+    // Let the ringmaster know we're disconnecting.
+    // the client pointer is still valid as is the map so the notification
+    // can still find the 'slot number.
 
-      notifyDisconnection();
+    notifyDisconnection();
 
-    }
+    // Unmap the ring and ensure that any use of this ring will fail utterly.
+
+    unMapRing();
+
+  } else {
+    // Unmap the ring and ensure that any use of this ring will fail utterly.
+
+    unMapRing();
   }
   
-  // Unmap the ring and ensure that any use of this ring will fail utterly.
-
-  unMapRing();
-
   // Zeroing pointers ensures that attempts to use this object will segflt.
 
   m_pRing       = 0;	      
