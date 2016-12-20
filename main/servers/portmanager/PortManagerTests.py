@@ -133,7 +133,10 @@ class PortManagerTests(unittest.TestCase):
     def test_list_base(self):
         pm    = PortManager.PortManager('localhost', 30000)
         ports = pm.listPorts()
-        self.assertEquals(1, len(ports))
+        message = None
+        if len(ports) != 1:
+            message = 'Number of ports... found ports {}'.format(ports)
+        self.assertEquals(1, len(ports), msg=message)
         rm = ports[0]
         self.assertEquals('RingMaster', rm['service'])
     
@@ -149,7 +152,11 @@ class PortManagerTests(unittest.TestCase):
         iam    = getpass.getuser()
         
         info   = pm.listPorts()
-        self.assertEquals(3, len(info))
+        message = None
+        if len(info) != 3:
+            message = 'Number of ports... found ports {}'.format(info)
+
+        self.assertEquals(3, len(info), msg=message)
         
         # Toss the data up into a dict keyed by service name.
         
