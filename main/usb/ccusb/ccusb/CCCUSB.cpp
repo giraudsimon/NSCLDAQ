@@ -18,6 +18,7 @@
 
 #include "CCCUSB.h"
 #include "CCCUSBReadoutList.h"
+#include <CMutex.h>
 #include <usb.h>
 #include <errno.h>
 #include <string.h>
@@ -31,8 +32,6 @@
 #include <stdexcept>
 
 #include <pthread.h>
-
-
 
 using namespace std;
 
@@ -72,6 +71,8 @@ static bool usbInitialized(false);
 //
 const uint16_t CCCUSB::Q(1);
 const uint16_t CCCUSB::X(2);
+
+CMutex *CCCUSB::m_pGlobalMutex = nullptr;
 
 /////////////////////////////////////////////////////////////////////
 /*!
@@ -160,16 +161,29 @@ CCCUSB::serialNo(struct usb_device* dev)
     Destruction of the interface involves releasing the claimed
     interface, followed by closing the device.
 */
-CCCUSB::~CCCUSB()
-{
-}
+CCCUSB::~CCCUSB() {}
 
+/*! \brief Retrieve the global mutex for synchronizing operations with the CCUSB
+ *
+ * To synchronize sets of operations involving the CCUSB. This is different
+ * than the finer grained synchronization that is built into the CCCUSBusb
+ * class.
+ *
+ * The global mutex is accessed and controlled using a modified singleton
+ * pattern. This is the sole means for accessing the mutex. The first
+ * call of the method causes the mutex to be constructed.
+ */
+CMutex& CCCUSB::getGlobalMutex() {
+  if (m_pGlobalMutex == nullptr) {
+    m_pGlobalMutex = new CMutex;
+  }
+
+  return *m_pGlobalMutex;
+}
 
 ////////////////////////////////////////////////////////////////////
 //////////////////////// Register operations ///////////////////////
 ////////////////////////////////////////////////////////////////////
-
-
 
 /********************************************************************************/
 /*!

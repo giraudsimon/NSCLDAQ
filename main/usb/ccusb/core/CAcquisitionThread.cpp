@@ -33,6 +33,7 @@
 #include <CConfiguration.h>
 #include <os.h>
 #include <Events.h>
+#include <CMutex.h>
 #include <tcl.h>
 
 #include <iostream>
@@ -357,6 +358,7 @@ CAcquisitionThread::processBuffer(DataBuffer* pBuffer)
 void
 CAcquisitionThread::startDaq()
 {
+  CriticalSection lock(CCCUSB::getGlobalMutex());
   char junk[100000];
   size_t moreJunk;
   m_pCamac->usbRead(junk, sizeof(junk), &moreJunk, 1*1000); // One second timeout.
@@ -436,6 +438,7 @@ CAcquisitionThread::startDaq()
 void
 CAcquisitionThread::stopDaq()
 {
+  CriticalSection lock(CCCUSB::getGlobalMutex());
 
   int actionRegister = 0;
   if (m_haveScalerStack) actionRegister |= CCCUSB::ActionRegister::scalerDump;
@@ -459,6 +462,7 @@ CAcquisitionThread::stopDaq()
 void
 CAcquisitionThread::pauseDaq()
 {
+  CriticalSection lock(CCCUSB::getGlobalMutex());
   CControlQueues* queues = CControlQueues::getInstance();
   stopDaq();
   CRunState* pState = CRunState::getInstance();
