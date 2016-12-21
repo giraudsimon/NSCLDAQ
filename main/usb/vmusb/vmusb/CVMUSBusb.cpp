@@ -651,6 +651,11 @@ CVMUSBusb::openVMUsb()
       throw msg;
     }
 
+    usb_clear_halt(m_handle, ENDPOINT_IN);
+    usb_clear_halt(m_handle, ENDPOINT_OUT);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
     // reset the module
     writeActionRegister(ActionRegister::clear);
 
@@ -683,5 +688,5 @@ CVMUSBusb::openVMUsb()
     // - is the only way to ensure the m_irqMask value matches the register.
     // - ensures m_irqMask actually gets set:
 
-   writeIrqMask(0xff);   /* Seems to like to timeout */
+   writeIrqMask(0x7f);   /* Seems to like to timeout */
 }
