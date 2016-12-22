@@ -478,7 +478,6 @@ CAcquisitionThread::stopDaq()
 void
 CAcquisitionThread::pauseDaq()
 {
-  CriticalSection lock(CCCUSB::getGlobalMutex());
   CControlQueues* queues = CControlQueues::getInstance();
   stopDaq();
   CRunState* pState = CRunState::getInstance();
