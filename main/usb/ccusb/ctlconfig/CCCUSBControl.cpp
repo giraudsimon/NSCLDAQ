@@ -154,7 +154,7 @@ CCCUSBControl::Set(CCCUSB& vme, string parameter, string value)
       msg += "usb_bulk_write failed: ";
     }
     else {
-      msg += "usb_bulk_read faild: ";
+      msg += "usb_bulk_read failed: ";
     }
     char errorMessage[1000];
     strerror_r(ecode, errorMessage, sizeof(errorMessage)); // Safest to use in threaded code.
@@ -165,8 +165,8 @@ CCCUSBControl::Set(CCCUSB& vme, string parameter, string value)
   catch (string msg) {    // Deep calls throw a string error message:
     string error  = "ERROR - ";
     error        += msg;
+    delete [] readdata;
     throw error;
-    delete readdata;
   }
 }
 /**

@@ -114,7 +114,7 @@ CAcquisitionThread::start(CCCUSB* usb)
   // starting the thread will eventually get operator() called and that
   // will do all the rest of the work in thread context.
 
-  getInstance()->Thread::start();
+  getInstance()->CSynchronizedThread::start();
   
 }
 
@@ -281,7 +281,7 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command)
   CControlQueues* queues = CControlQueues::getInstance();
 
   if (command == CControlQueues::ACQUIRE) {
-    stopDaq();
+    stopDaqImpl();
     queues->Acknowledge();
     CControlQueues::opCode release  = queues->getRequest();
     assert(release == CControlQueues::RELEASE);
@@ -359,6 +359,7 @@ void
 CAcquisitionThread::startDaq()
 {
   CriticalSection lock(CCCUSB::getGlobalMutex());
+
   char junk[100000];
   size_t moreJunk;
   m_pCamac->usbRead(junk, sizeof(junk), &moreJunk, 1*1000); // One second timeout.
@@ -429,30 +430,45 @@ CAcquisitionThread::startDaq()
   CCusbToAutonomous();
 
 }
+
 /*!
    Stop data taking this involves:
    - Forcing a scaler trigger (action register write)
    - Setting clearing the DAQ start bit (action register write)
    - draining data from the VMUSB:
 */
+void CAcquisitionThread::stopDaqImpl()
+{
+    int actionRegister = 0;
+    if (m_haveScalerStack) actionRegister |= CCCUSB::ActionRegister::scalerDump;
+    m_pCamac->writeActionRegister(actionRegister);
+
+
+    drainUsb();
+
+    std::vector<CReadoutModule*> Stacks = Globals::pConfig->getStacks();
+    for(int i =0; i < Stacks.size(); i++) {
+      CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
+      assert(pStack);
+      pStack->onEndRun(*m_pCamac);    // Call onEndRun for daq hardware associated with the stack.
+    }
+}
+
+/*!
+   Stop data taking this involves:
+   - Forcing a scaler trigger (action register write)
+   - Setting clearing the DAQ start bit (action register write)
+   - draining data from the VMUSB:
+
+   \see stopDaqImpl for the logical implementation of stopping the DAQ.
+   this just delegates that logic to it after acquiring a lock.
+*/
 void
 CAcquisitionThread::stopDaq()
 {
   CriticalSection lock(CCCUSB::getGlobalMutex());
 
-  int actionRegister = 0;
-  if (m_haveScalerStack) actionRegister |= CCCUSB::ActionRegister::scalerDump;
-  m_pCamac->writeActionRegister(actionRegister);
-
-
-  drainUsb();
-
-  std::vector<CReadoutModule*> Stacks = Globals::pConfig->getStacks();
-  for(int i =0; i < Stacks.size(); i++) {
-    CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
-    assert(pStack);
-    pStack->onEndRun(*m_pCamac);    // Call onEndRun for daq hardware associated with the stack.
-  }
+  stopDaqImpl();
 }
 /*!
   Pause the daq. This means doing a stopDaq() and fielding 

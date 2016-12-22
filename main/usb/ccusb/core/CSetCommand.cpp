@@ -14,6 +14,9 @@
 	     East Lansing, MI 48824-1321
 */
 
+
+#define VERBOSE
+
 #include <config.h>
 #include "CSetCommand.h"
 #include "CCtlConfiguration.h"
@@ -26,6 +29,7 @@
 #include <CMutex.h>
 #include <tcl.h>
 
+#include <iostream>
 using namespace std;
 
 /*!
@@ -74,19 +78,31 @@ CSetCommand::operator()(CTCLInterpreter& interp,
     return TCL_ERROR;
   }
 
-  CriticalSection lock(CCCUSB::getGlobalMutex());
+  CMutex& mutex = CCCUSB::getGlobalMutex();
+  CriticalSection lock(mutex);
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
   bool mustRelease(false);
   if (CRunState::getInstance()->getState() == CRunState::Active) {
-    mustRelease = true;
-    CControlQueues::getInstance()->AcquireUsb();
+      mustRelease = true;
+      CControlQueues::getInstance()->AcquireUsb();
   }
 
+  string result;
+  try {
   // Now try the command returning any string error that is thrown:
-  string result = pModule->Set(m_Vme, point.c_str(), value.c_str());
+    result = pModule->Set(m_Vme, point.c_str(), value.c_str());
+  } catch (std::exception& exc) {
+    result = exc.what();
+  } catch (std::string message) {
+      result = message;
+  } catch (...) {
+      result = "ERROR - Caught unknown exception";
+  }
+
   interp.setResult( result);
+
 
   // if we need to, put the vmusb back into acquisition mode
   if (mustRelease) {
