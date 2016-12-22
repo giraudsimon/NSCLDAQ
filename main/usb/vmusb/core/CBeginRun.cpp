@@ -20,6 +20,7 @@
 #include <TCLInterpreterObject.h>
 #include <TCLVariable.h>
 #include <Globals.h>
+#include <CMutex.h>
 #include "tclUtil.h"
 #include <CAcquisitionThread.h>
 #include <CRunState.h>
@@ -62,6 +63,16 @@ CBeginRun::~CBeginRun()
 /////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// Command execution /////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+
+/*!
+ * \brief Reconnect to the VMUSB with thread synchronization
+ */
+void CBeginRun::reconnect()
+{
+    CriticalSection lock(CVMUSB::getGlobalMutex());
+    Globals::pUSBController->reconnect();
+}
+
 
 /*!
    Process the begin run.
@@ -174,7 +185,7 @@ CBeginRun::operator()(CTCLInterpreter& interp,
 
   // Reconnect the VM-USB:
 
-  Globals::pUSBController->reconnect();
+  reconnect();
 
   CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
   pReadout->start(Globals::pUSBController);

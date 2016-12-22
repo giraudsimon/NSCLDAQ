@@ -18,6 +18,7 @@
 
 #include "CVMUSB.h"
 #include "CVMUSBReadoutList.h"
+#include <CMutex.h>
 #include <usb.h>
 #include <errno.h>
 #include <string.h>
@@ -43,6 +44,7 @@ static const int ENDPOINT_IN(0x86);
 // Timeouts:
 
 static const int DEFAULT_TIMEOUT(2000);	// ms.
+
 
 // The register offsets:
 
@@ -81,6 +83,9 @@ static const uint16_t TAVcsID12SHIFT(4);
 //   The following flag determines if enumerate needs to init the libusb:
 
 static bool usbInitialized(false);
+
+
+CMutex *CVMUSB::m_pGlobalMutex = nullptr;
 
 /////////////////////////////////////////////////////////////////////
 /*!
@@ -162,6 +167,27 @@ CVMUSB::serialNo(struct usb_device* dev)
   }
 
 }
+
+/*!
+ * \brief Retrieve the mutex for high level synchronization
+ *
+ * The global mutex is different than the mutex that is used for individual
+ * accesses to the module. Instead, it is used for synchronizing sets of
+ * operations that should occur as a unit.
+ *
+ * If the global mutex has not been constructed yet, this constructs it.
+ *
+ * \return the global mutex
+ */
+CMutex& CVMUSB::getGlobalMutex()
+{
+    if (m_pGlobalMutex == nullptr) {
+        m_pGlobalMutex = new CMutex;
+    }
+
+    return *m_pGlobalMutex;
+}
+
 ////////////////////////////////////////////////////////////////////
 /*!
   Construct the CVMUSB object.  This involves storing the

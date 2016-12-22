@@ -486,16 +486,25 @@ CCCUSBusb::openUsb()
 
   uint8_t buffer[8192*2];  // Biggest possible CC-USB buffer.
   size_t  bytesRead;
+  int retriesLeft = 50;
 
   // flush the data first with a read. For some reason, the
   // CCUSB can get into a funk that disallows a write before 
   // a read occurs.
-  usbRead(buffer, sizeof(buffer), &bytesRead);
-
-  writeActionRegister(0);
-
-  while(usbRead(buffer, sizeof(buffer), &bytesRead) == 0) {
-    fprintf(stderr, "Flushing CCUSB Buffer\n");
+  while (retriesLeft) {
+      try {
+          usbRead(buffer, sizeof(buffer), &bytesRead, 1);
+          writeActionRegister(0);     // Turn off data taking.
+          break;                      // done if success.
+      } catch (...) {
+          retriesLeft--;
+      }
+  }
+  if (!retriesLeft) {
+      std::cerr << "** Warning - not able to stop data taking CC-USB may need to be power cycled\n";
   }
 
+  while(usbRead(buffer, sizeof(buffer), &bytesRead) == 0) {
+       fprintf(stderr, "Flushing CCUSB Buffer\n");
+  }
 }

@@ -62,12 +62,14 @@ private:
   CBeginRun& operator=(const CBeginRun& rhs);
   int operator==(const CBeginRun& rhs) const;
   int operator!=(const CBeginRun& rhs) const;
-public:
 
-  // Process the command:
 protected:
+  // Process the command:
   virtual int operator()(CTCLInterpreter& interp,
 			 std::vector<CTCLObject>& objv);
+
+private:
+  void reconnect();
 
 };
 

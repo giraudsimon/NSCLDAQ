@@ -1168,3 +1168,5 @@ Work on 11.0-rc11 begins
 	an autotools option. 
 	* RingBuffer API now uses file locking to synchronize creation, deletion,
 	and attaching operations across processes.
+	* Bug #6579 Fixes synchronization when beginning a run in CCUSBReadout and
+	VMUSBReadout.

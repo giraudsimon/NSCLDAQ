@@ -71,6 +71,7 @@
 #endif
 #endif
 
+class CMutex;
 
 /*!
   This class is the low level support for the Wiener/JTEC CCUSB module.
@@ -119,14 +120,10 @@ public:
     static std::vector<struct usb_device*> enumerate();
     static std::string serialNo(struct usb_device* dev);
 
-    // Constructors and other canonical functions.
-    // Note that since destruction closes the handle and there's no
-    // good way to share usb objects, copy construction and
-    // assignment are forbidden.
-    // Furthermore, since constructing implies a usb_claim_interface()
-    // and destruction implies a usb_release_interface(),
-    // equality comparison has no useful meaning either:
+private:
+  static CMutex *m_pGlobalMutex;
 
+public:
     virtual ~CCCUSB();		// Although this is probably a final class.
 
     // Disallowed functions as described above.
@@ -136,6 +133,8 @@ private:
     int operator!=(const CCCUSB& rhs) const;
 public:
 
+
+    static CMutex& getGlobalMutex();
 
     virtual void reconnect() = 0;
 

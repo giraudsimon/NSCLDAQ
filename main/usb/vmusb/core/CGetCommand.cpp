@@ -25,6 +25,7 @@
 #include <CRunState.h>
 #include <CControlQueues.h>
 #include <CVMUSB.h>
+#include <CMutex.h>
 #include <tcl.h>
 
 using namespace std;
@@ -73,6 +74,7 @@ CGetCommand::operator()(CTCLInterpreter& interp,
     return TCL_ERROR;
   }
 
+  CriticalSection lock(CVMUSB::getGlobalMutex());
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
