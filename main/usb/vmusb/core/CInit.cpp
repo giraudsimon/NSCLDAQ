@@ -24,6 +24,7 @@
 #include <CAcquisitionThread.h>
 #include <CRunState.h>
 #include <CConfiguration.h>
+#include <CMutex.h>
 #include <iostream>
 #include <TclServer.h>
 
@@ -95,6 +96,8 @@ CInit::operator()(CTCLInterpreter& interp,
 		   usage);
     return TCL_ERROR;
   }
+
+  CriticalSection lock(CVMUSB::getGlobalMutex());
 
   // Initialize the Modules loaded into the tclserver 
   // via the controlconfig.tcl script 

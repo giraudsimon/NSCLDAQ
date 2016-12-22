@@ -77,6 +77,7 @@ private:
 public:
   void stopDaq();		// public for the exit handler.
 private:
+  void stopDaqImpl();
   void pauseDaq();
   void VMusbToAutonomous();
   void drainUsb();

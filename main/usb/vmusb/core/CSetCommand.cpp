@@ -23,6 +23,7 @@
 #include <CRunState.h>
 #include <CControlQueues.h>
 #include <CVMUSB.h>
+#include <CMutex.h>
 #include <tcl.h>
 
 using namespace std;
@@ -73,6 +74,7 @@ CSetCommand::operator()(CTCLInterpreter& interp,
     return TCL_ERROR;
   }
 
+  CriticalSection lock(CVMUSB::getGlobalMutex());
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
@@ -82,9 +84,18 @@ CSetCommand::operator()(CTCLInterpreter& interp,
     CControlQueues::getInstance()->AcquireUsb();
   }
 
+  string result;
+  try {
   // Now try the command returning any string error that is thrown:
-  string result = pModule->Set(m_Vme, point.c_str(), value.c_str());
+  result = pModule->Set(m_Vme, point.c_str(), value.c_str());
   interp.setResult( result);
+  } catch (std::string msg) {
+      result = msg;
+  } catch (std::exception& exc) {
+      result = exc.what();
+  } catch (...) {
+      result = "ERROR - caught unknown exception";
+  }
 
   // if we need to, put the vmusb back into acquisition mode
   if (mustRelease) {

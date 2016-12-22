@@ -42,6 +42,7 @@
 struct usb_device;
 struct usb_dev_handle;
 
+class CMutex;
 
 /*!
    This class is part of the support package for the Wiener/JTEC VM-USB 
@@ -94,6 +95,8 @@ class CVMUSB
       ShadowRegisters() : interruptVectors(9,0) {}
     };
 
+    static CMutex* m_pGlobalMutex;
+
 // The register offsets:
 
     static const unsigned int FIDRegister = (0);       // Firmware id.
@@ -126,6 +129,8 @@ private:
 public:
     static std::vector<struct usb_device*> enumerate();
     static std::string serialNo(struct usb_device* dev);
+
+    static CMutex& getGlobalMutex();
 
     // Constructors and other canonical functions.
     // Note that since destruction closes the handle and there's no
