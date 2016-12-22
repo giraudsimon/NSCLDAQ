@@ -123,6 +123,7 @@ public:
 private:
   static CMutex *m_pGlobalMutex;
 
+public:
     virtual ~CCCUSB();		// Although this is probably a final class.
 
     // Disallowed functions as described above.
