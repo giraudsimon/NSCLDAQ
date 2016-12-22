@@ -1170,3 +1170,6 @@ Work on 11.0-rc11 begins
 	and attaching operations across processes.
 	* Bug #6579 Fixes synchronization when beginning a run in CCUSBReadout and
 	VMUSBReadout.
+	* Adds back usb_clear_halt operations to CVMUSBusb::openVMusb() method that
+	was removed in version 11.1-009. This seems to fix a bunch of things that
+	got broken.
