@@ -1,8 +1,20 @@
 <!-- manpage 3ccusb -->
     <refentry id='ccusb3-addtcldriver'>
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
         <refmeta>
            <refentrytitle>addtcldriver</refentrytitle>
            <manvolnum>3ccusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>addtcldriver</refname>
@@ -51,9 +63,21 @@ addtclcommand sometclinstance
 
 
 	 <refentry id="ccusb3-ad811">
+	   <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo> 
 	   <refmeta>
 	      <refentrytitle>ad811</refentrytitle>
 	      <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
 	   </refmeta>
 	   <refnamediv>
 	      <refname>ad811</refname>
@@ -168,9 +192,21 @@ ad811  create adc -slot 2 -id 2
 	 </refentry>
          
 <refentry id="ccusb3-c1205">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>  
   <refmeta>
      <refentrytitle>c1205</refentrytitle>
      <manvolnum>3ccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>c1205</refname>
@@ -410,9 +446,21 @@ c1205 config <replaceable>module-name</replaceable>
 </refentry>
 
 <refentry id="ccusb3-c257">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>
   <refmeta>
      <refentrytitle>c257</refentrytitle>
      <manvolnum>cccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>c257</refname>
@@ -563,9 +611,21 @@ c257 cget <replaceable>name</replaceable>
 
 </refentry>
       <refentry id="ccusb3_ccusb_command">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
         <refmeta>
            <refentrytitle id='ccusb3_ccusb_command_title'>ccusb (command)</refentrytitle>
            <manvolnum>3ccusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>ccusb (command)</refname>
@@ -1113,9 +1173,21 @@ ccusb cget name
       </refentry>
 
 	 <refentry id="lccusb3-rs2228">
+	   <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo> 
 	   <refmeta>
 	      <refentrytitle>lrs2228</refentrytitle>
 	      <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
 	   </refmeta>
 	   <refnamediv>
 	      <refname>lrs2228</refname>
@@ -1229,9 +1301,21 @@ lrs2228 create tdc -slot 6 -id 4
 	 </refentry>
 	 
 	 <refentry id="ccusb3-lrs2249">
+	    <refentryinfo>
+		<author>
+		    <personname>
+			<firstname>Ron</firstname>
+			<surname>Fox</surname>
+		    </personname>
+		    <personblurb><para></para></personblurb>
+		</author>
+		<productname>NSCLDAQ</productname>
+		<productnumber></productnumber>
+	      </refentryinfo>
 	   <refmeta>
 	      <refentrytitle>lrs2249</refentrytitle>
 	      <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
 	   </refmeta>
 	   <refnamediv>
 	      <refname>lrs2249</refname>
@@ -1326,9 +1410,21 @@ lrs2249 cget <replaceable>module-name</replaceable>
 	   </refsect1>
         </refentry>
 	 <refentry id="ccusb3-lrs2551">
+	   <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo> 
 	   <refmeta>
 	      <refentrytitle>lrs2551</refentrytitle>
 	      <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
 	   </refmeta>
 	   <refnamediv>
 	      <refname>lrs2551</refname>
@@ -1470,6 +1566,7 @@ lrs2551 create counters -slot 4
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -1536,9 +1633,21 @@ marker cget <replaceable>name</replaceable>
 </refentry>
 
          <refentry id="ccusb3-ph7xxx">
+	   <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo> 
            <refmeta>
               <refentrytitle>ph7xxx</refentrytitle>
               <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
            </refmeta>
            <refnamediv>
               <refname>ph7xxx</refname>
@@ -1876,9 +1985,21 @@ ph7xxx config adc1 -hlt [list 3000 3000 3000 3000 3000 3000 3000 \
 
          </refentry>
          <refentry id="ccusb3-stack">
+	   <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
            <refmeta>
               <refentrytitle>stack</refentrytitle>
               <manvolnum>3ccusb</manvolnum>
+	      <refmiscinfo class='empty'></refmiscinfo>
            </refmeta>
            <refnamediv>
               <refname>stack</refname>
@@ -2145,9 +2266,21 @@ stack config events -delay 10 -lamtimeout 8                 <co id ="timing" />
            </refsect1>
          </refentry>
       <refentry id="ccusb3-Module">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
         <refmeta>
            <refentrytitle>Module</refentrytitle>
            <manvolnum>3ccusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>Module</refname>
@@ -2240,9 +2373,21 @@ Module cget <replaceable>name</replaceable>
         </refentry>
 
         <refentry id="ccusb3-CamacCrate">
+	  <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo> 
           <refmeta>
             <refentrytitle>CamacCrate</refentrytitle>
             <manvolnum>3ccusb</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
           </refmeta>
 
           <refnamediv>
@@ -2339,9 +2484,21 @@ CamacCrate config crate0 -modules [list sclr]
 </refentry>
 
 <refentry id="ccusb3-LeCroy4300B">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>   
   <refmeta>
      <refentrytitle>LeCroy4300B</refentrytitle>
      <manvolnum>3ccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>LeCroy4300B</refname>
@@ -2545,9 +2702,21 @@ LeCroy4300B config fera -camacclear off
 </refentry>
 
 <refentry id="ccusb3-LeCroy4434">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>
   <refmeta>
      <refentrytitle>LeCroy4434</refentrytitle>
      <manvolnum>3ccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>LeCroy4434</refname>
@@ -2644,9 +2813,21 @@ LeCroy4434 create sclr -slot 10
 </refentry>
   
 <refentry id="ccusb3-LeCroy2551">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>  
   <refmeta>
      <refentrytitle>LeCroy2551</refentrytitle>
      <manvolnum>3ccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>LeCroy2551</refname>
@@ -2725,9 +2906,21 @@ LeCroy2551 create sclr -slot 10
 </refentry>
 
 <refentry id="ccusb3-ULMTrigger">
+  <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>  
   <refmeta>
      <refentrytitle>ULMTrigger</refentrytitle>
      <manvolnum>3ccusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>ULMTrigger</refname>
@@ -3041,9 +3234,21 @@ ULMTrigger config trig -eventwiseClear off
 
       </refentry>
       <refentry id="ccusb3-ControlProtocol">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
         <refmeta>
            <refentrytitle>Slow controls protocol</refentrytitle>
            <manvolnum>3ccusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>Slow controls protocol</refname>
@@ -3260,9 +3465,21 @@ Get <replaceable>name parameter</replaceable>
       </refentry>
          
 	 <refentry id="ccusb3-CCCUSB">
+	 <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>   
        <refmeta>
           <refentrytitle>CCCUSB</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>  
        </refmeta>
        <refnamediv>
           <refname>CCCUSB</refname>
@@ -7155,9 +7372,21 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
      </refentry>
 
 	 <refentry id="ccusb3-CCCUSBusb">
+	 <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
        <refmeta>
           <refentrytitle>CCCUSBusb</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CCCUSBusb</refname>
@@ -7433,10 +7662,22 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
             </para>
         </refsect1>
      </refentry>
-	 <refentry id="ccusb3-CCCUSBRemote">
+    <refentry id="ccusb3-CCCUSBRemote">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
        <refmeta>
           <refentrytitle>CCCUSBRemote</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CCCUSBRemote</refname>
@@ -7838,10 +8079,22 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
         </refsect1>
      </refentry>
          
-	 <refentry id="ccusb3-CCCUSBReadoutList">
+     <refentry id="ccusb3-CCCUSBReadoutList">
+       <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>    
        <refmeta>
           <refentrytitle>CCCUSBReadoutList</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CCCUSBReadoutList</refname>
@@ -8528,9 +8781,21 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
     </refentry>
          
     <refentry id="ccusb3-CConfigurableObject">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
        <refmeta>
           <refentrytitle id="ccusb3-CConfigurableObject-title">CConfigurableObject</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CConfigurableObject</refname>
@@ -10207,9 +10472,21 @@ bool myConstraintChecker(std::string name, std::string newValue,
         </refsect1>
      </refentry>
        <refentry id="ccusb3-cccusb">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
          <refmeta>
             <refentrytitle>cccusb</refentrytitle>
             <manvolnum>3ccusb</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
          </refmeta>
          <refnamediv>
             <refname>cccusb</refname>
@@ -11497,9 +11774,21 @@ for {set i 0} {$i &lt; $nRead} {incr i} {
         </refsect1>
        </refentry>
        <refentry id="ccusb3-cccusbreadoutlist">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
          <refmeta>
             <refentrytitle>cccusbreadoutlist</refentrytitle>
             <manvolnum>3ccusb</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
          </refmeta>
          <refnamediv>
             <refname>cccusbreadoutlist</refname>
