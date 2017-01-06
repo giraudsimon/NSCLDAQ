@@ -21,4 +21,16 @@ rm -rf libtcl
 
 git clone $baseURL libtcl
 (cd libtcl; git checkout tags/$1)
+
+# the above is all well and good for the tags imported from svn.
+# but native git tags tag the whole repo so we need to extract only
+# the libtclplus subdir:
+
+if [ -d libtcl/libtclplus ]
+then
+    mv libtcl __temp__
+    mv __temp__/libtclplus libtcl
+    rm -rf __temp__
+fi
+
 (cd libtcl; autoreconf -i)
