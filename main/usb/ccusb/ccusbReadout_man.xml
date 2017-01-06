@@ -12244,9 +12244,21 @@ $l addWrite16 $n $a $f $d
 <!-- #include &lt;CModuleFactory.h&gt;           -->
 
 	 <refentry id="ccusb3-cmodulefactory">
+    	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>	    
        <refmeta>
           <refentrytitle id="ccusb3-cmodulefactory-title">CModuleFactory</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	    <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CModuuleFactory</refname>
@@ -12398,9 +12410,21 @@ $l addWrite16 $n $a $f $d
 <!-- #include &lt;CModuleCreator.h&gt;     -->
 
 	 <refentry id="ccusb3-cmodulecreator">
+	  <refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>  
        <refmeta>
           <refentrytitle id="ccusb3-cmodulecreator-title">CModuleCreator</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CModuleCreator</refname>
@@ -12470,9 +12494,21 @@ $l addWrite16 $n $a $f $d
 
 <!-- #include &lt;CControlHardware.h&gt;    -->
 	 <refentry id="ccusb3-ccontrolhardware">
+	    <refentryinfo>
+		<author>
+		    <personname>
+			<firstname>Ron</firstname>
+			<surname>Fox</surname>
+		    </personname>
+		    <personblurb><para></para></personblurb>
+		</author>
+		<productname>NSCLDAQ</productname>
+		<productnumber></productnumber>
+	      </refentryinfo>
        <refmeta>
           <refentrytitle id="ccusb3-ccontrolhardware-title">CControlHardware</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CControlHardware</refname>
@@ -12832,9 +12868,21 @@ $l addWrite16 $n $a $f $d
        </refsect1>
      </refentry>     
 	 <refentry id="ccusb3-ccontrolmodule">
+	    <refentryinfo>
+		<author>
+		    <personname>
+			<firstname>Ron</firstname>
+			<surname>Fox</surname>
+		    </personname>
+		    <personblurb><para></para></personblurb>
+		</author>
+		<productname>NSCLDAQ</productname>
+		<productnumber></productnumber>
+	      </refentryinfo>
        <refmeta>
           <refentrytitle id="ccusb3-ccontrolmodule-title">CControlModule</refentrytitle>
           <manvolnum>3ccusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CControlModule</refname>
@@ -12927,9 +12975,21 @@ $l addWrite16 $n $a $f $d
      </refentry>     
 
      <refentry id="ccusb3-CCCUSBControl">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
        <refmeta>
          <refentrytitle id="ccusb3-CCCUSBControl-title">CCCUSBControl</refentrytitle>
          <manvolnum>3ccusb</manvolnum>
+	 <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
          <refname>CCCUSBControl</refname>
@@ -13045,9 +13105,22 @@ $l addWrite16 $n $a $f $d
 
      </refentry>     
      <refentry id="manpage.ccusbcamac">
+	<refentryinfo>
+	    <author>
+		<personname>
+		    <firstname>Ron</firstname>
+		    <surname>Fox</surname>
+		</personname>
+		<personblurb><para></para></personblurb>
+	    </author>
+	    <productname>NSCLDAQ</productname>
+	    <productnumber></productnumber>
+	  </refentryinfo>
        <refmeta>
          <refentrytitle>ccusbcamac</refentrytitle>
          <manvolnum>3ccusb</manvolnum>
+	 <refmiscinfo class='empty'></refmiscinfo>
+	 <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
          <refname>ccusbcamac</refname>

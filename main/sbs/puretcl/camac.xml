@@ -118,9 +118,22 @@ lappend auto_path [file join $env(DAQROOT) TclLibs]
 
 <!-- manpage 3tcl -->
 <refentry id="manpage.camactcl">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle>camac</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>camac</refname>

@@ -41,14 +41,21 @@ package require ring
 
 <!-- manpage 3tcl -->
 <refentry id="manpage.tclring">
+      <refentryinfo>
+	<author>
+	    <personname>
+		<firstname>Ron</firstname>
+		<surname>Fox</surname>
+	    </personname>
+	    <personblurb><para></para></personblurb>
+	</author>
+	<productname>NSCLDAQ</productname>
+	<productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle  id='manpage.tclring.title'>
         TCL Ring package.
-        <author>
-            <firstname>Ron</firstname> <surname>Fox</surname>
-        </author>
-        <productname>NSCLDAQ</productname>
-        <productnumber></productnumber>
      </refentrytitle>
      <manvolnum>3tcl</manvolnum>
      <refmiscinfo class='empty'></refmiscinfo>

@@ -175,9 +175,22 @@ makecvtblock(data.s_lsig, data.s_ssig, &amp;conversionBlock);
 <!-- manpage 3daq -->
 
 <refentry id="manpage.cvt">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
     <refmeta>
          <refentrytitle>cvt</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
        <refname>cvt</refname>

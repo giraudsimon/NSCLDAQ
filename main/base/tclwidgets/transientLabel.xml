@@ -2,10 +2,11 @@
 <refentry id="tcl3.transientlabel">
         <refentryinfo>
           <author>
-                  <personname>
-                          <firstname>Ron</firstname>
-                          <surname>Fox</surname>
-                  </personname>
+                <personname>
+                        <firstname>Ron</firstname>
+                        <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -17,7 +18,7 @@
         </refmeta>
         <refnamediv>
            <refname>TransientLabel</refname>
-           <refpurpose>Label widget that transforms to defau.</refpurpose>
+           <refpurpose>Label widget that transforms to default.</refpurpose>
         </refnamediv>
         <refsynopsisdiv>
                 <cmdsynopsis>
@@ -48,7 +49,7 @@ TransientLabel <replaceable>path ?options?</replaceable>
                 After a specified timeout, the text modified reverts to some
                 default text.  This can be useful when a label normally showing
                 some fixed information doubles as a status line.  The status
-                information can then be displayee for some fixed amount of time
+                information can then be displayed for some fixed amount of time
                 before the label reverts to its normal function.
             </para>
         </refsect1>

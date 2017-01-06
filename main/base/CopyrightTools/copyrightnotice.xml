@@ -1,9 +1,22 @@
 <!-- manpage 3daq -->
 
     <refentry id="manpage.copyrightnotice">
+        <refentryinfo>
+	  <author>
+	      <personname>
+		  <firstname>Ron</firstname>
+		  <surname>Fox</surname>
+	      </personname>
+	      <personblurb><para></para></personblurb>
+	  </author>
+	  <productname>NSCLDAQ</productname>
+	  <productnumber></productnumber>
+	</refentryinfo>
+      
       <refmeta>
          <refentrytitle>CopyrightNotice</refentrytitle>
          <manvolnum>3daq</manvolnum>
+	 <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CopyrightNotice</refname>

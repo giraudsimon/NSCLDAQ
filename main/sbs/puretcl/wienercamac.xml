@@ -314,9 +314,22 @@ wienercamac::cssa $module 26 0
 <!-- manpage 3tcl -->
 
 <refentry id="manpage.wienercamac">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle>wienercamac</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>wienercamac</refname>

@@ -6071,6 +6071,7 @@ $DAQROOT/bin/s800toring <replaceable>host port ring</replaceable>
                             <firstname>Jeromy</firstname>
                             <surname>Tompkins</surname>
                     </personname>
+                    <personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>

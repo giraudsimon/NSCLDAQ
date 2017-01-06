@@ -146,9 +146,22 @@ g++ -o urltest -I$DAQROOT/include urltest.cpp -L$DAQROOT/lib -lurl \
 <!-- manpage 3daq -->
 
 <refentry id="manpage.url">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle>URL</refentrytitle>
      <manvolnum>3daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>URL</refname>
