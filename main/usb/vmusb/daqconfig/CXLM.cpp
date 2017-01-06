@@ -452,7 +452,7 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
     nRemainingBytes -= blockSize*sizeof(uint32_t);
     // Write the block:
 
-    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, 2048*sizeof(uint32_t));
+    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
     if (retData.size() == 0) {
       string error = strerror(errno);
       string msg   = "XLM::CFirmwareLoader::loadSRAMA - list execution failed to load the SRAM: ";
@@ -476,7 +476,7 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
     }
     // Write the block:
 
-    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, 2048*sizeof(uint32_t));
+    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
     if (retData.size() == 0) {
       string error = strerror(errno);
       string msg   = "CXM::loadSRAMA - list execution failed to load the SRAM: ";
@@ -499,7 +499,7 @@ void CFirmwareLoader::loadSRAM1(uint32_t destAddr, uint32_t* image, uint32_t nBy
   CVMUSBReadoutList loadList;
   loadList.addBlockWrite32(destAddr, blockTransferAmod, image, nBytes/sizeof(uint32_t));
   loadList.dump(dump);
-  std::vector<uint8_t> retData = m_ctlr.executeList(loadList, 2048*sizeof(uint32_t));
+  std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
   if (retData.size() == 0) {
     string error = strerror(errno);
     string msg   = "XLM::CFirmwareLoader::loadSRAMA - list execution failed to load the SRAM: ";
@@ -590,7 +590,7 @@ void CFirmwareLoader::acquireBusses()
 
 
   // run the list:
-  vector<uint8_t> retData = m_ctlr.executeList(initList, sizeof(uint32_t));
+  vector<uint8_t> retData = m_ctlr.executeList(initList, sizeof(uint16_t));
   if (retData.size() == 0) {
     string reason = strerror(errno);
     string msg = "XLM::CFirmwareLoader::initialize - failed to execute initialization list: ";
@@ -620,7 +620,7 @@ void CFirmwareLoader::bootFPGA()
   bootList.addWrite32(m_baseAddr + Interrupt, registerAmod, uint32_t(0) );	// Release FPGA reset 
 
   // send the commands to the VM-USB
-  auto retData = m_ctlr.executeList(bootList, sizeof(size_t));
+  auto retData = m_ctlr.executeList(bootList, sizeof(uint16_t));
   if (retData.size() == 0) {
     string reason = strerror(errno);
     string message = "XLM::CFirmwareLoader::bootFPGA failed to execute reset list ";
@@ -636,7 +636,7 @@ void CFirmwareLoader::releaseBusses()
   list.addWrite32(m_baseAddr + BusRequest, registerAmod, uint32_t(0));	// Release bus request.
   list.addWrite32(m_baseAddr + ForceOffBus, registerAmod, uint32_t(0)); // Remove force
 
-  auto retData = m_ctlr.executeList(list, sizeof(size_t));
+  auto retData = m_ctlr.executeList(list, sizeof(uint16_t));
   if (retData.size() == 0) {
     string reason = strerror(errno);
     string message = "XLM::CFirmwareLoader::releaseBusses failed to execute reset list ";
