@@ -501,7 +501,6 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     long bytesRead = status;
     auto pReadCursor = reinterpret_cast<char*>(readPacket);
 
-//    std::cout << "Read " << bytesRead<< " bytes " << std::endl;
     // Copy the newly read data into the output buffer
     pReadCursor = std::copy(buf, buf + status, pReadCursor);
 
@@ -514,6 +513,7 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
         // return 0 bytes. Adjust to try at least 1 extra time if needed.
         maxAttempts += 1;
 
+//        std::cout << "Read " << bytesRead<< " bytes " << std::endl;
 //        std::cout << "need to try again " << maxAttempts << " times"
 //                  << " for all " << readSize << " bytes requested" << std::endl;
     }
@@ -524,7 +524,7 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
       status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
       if (status < 0) {
-          if ( errno != ETIMEDOUT) {
+          if ( status != -ETIMEDOUT) {
 //              std::cout << "failed" << std::endl;
               // read failures are only bad if they are not timeouts
               errno = -status;
