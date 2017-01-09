@@ -1922,6 +1922,7 @@ addtcldriver <replaceable>name</replaceable>
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -2047,6 +2048,7 @@ sis3820 create scaler1 0x38000000
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -2370,6 +2372,7 @@ v830 create scaler 0x80000000
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -2648,6 +2651,7 @@ well formed Tcl list that consists of option name value pairs.
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -2775,6 +2779,7 @@ sis3804 config scaler1 -refpulser true
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -2911,6 +2916,7 @@ hira cget <replaceable>name</replaceable>
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -3273,6 +3279,7 @@ hytec config adc -lld 0.0 -hld 8.191 -events 1 -id 0xadc1 -zerosuppress on
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -3503,6 +3510,7 @@ package require VMUSBDriverSupport
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -3985,6 +3993,7 @@ madc config adc -thresholds $thresholds                  <co id="madcthresholds"
                   <firstname>Ron</firstname>
                   <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
               </author>
               <productname>NSCLDAQ</productname>
               <productnumber></productnumber>
@@ -4663,6 +4672,18 @@ madc config adc -thresholds $thresholds                  <co id="madcthresholds"
       </refentry>
 
       <refentry id="vmusb3-mqdc">
+	    <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Jeromy</firstname>
+		      <surname>Tompkins</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
+	  
         <refmeta>
           <refentrytitle>mqdc</refentrytitle>
           <manvolnum>3vmusb</manvolnum>
@@ -5504,6 +5525,7 @@ stack config evt -modules {qdc} -trigger interrupt -ipl 1 -vector 0 <co id="mqdc
               <firstname>Ron</firstname>
               <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -5690,6 +5712,7 @@ stack config event -modules [list chain] -trigger interrupt -ipl 1 -vector 0
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+		<personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -5774,6 +5797,7 @@ madcscaler cget <replaceable>name</replaceable>
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -5912,9 +5936,22 @@ mase cget <replaceable>name</replaceable>
 
 
 <refentry id="vmusb3-tdcv1x90">
+    <refentryinfo>
+      <author>
+	  <personname>
+	      <firstname>Ron</firstname>
+	      <surname>Fox</surname>
+	  </personname>
+	  <personblurb><para></para></personblurb>
+      </author>
+      <productname>NSCLDAQ</productname>
+      <productnumber></productnumber>
+    </refentryinfo>
+  
   <refmeta>
      <refentrytitle>tdc1x90</refentrytitle>
      <manvolnum>3vmusb</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>tdc1x90</refname>
@@ -6392,10 +6429,23 @@ tdc1x90 cget name
   </refsect1>
 
 </refentry>
+	  
         <refentry id="vmusb3-v1729a">
+	    <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Ron</firstname>
+		      <surname>Fox</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
           <refmeta>
              <refentrytitle>v1729a</refentrytitle>
              <manvolnum>3vmusb</manvolnum>
+	     <refmiscinfo class='empty'></refmiscinfo>
           </refmeta>
           <refnamediv>
              <refname>v1729a</refname>
@@ -6614,9 +6664,22 @@ v1729a cget <replaceable>name</replaceable>
         </refentry>
 
       <refentry id="vmusb3-stack">
+	    <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Ron</firstname>
+		      <surname>Fox</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
+	  
         <refmeta>
            <refentrytitle>stack</refentrytitle>
            <manvolnum>3vmusb</manvolnum>
+	   <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
            <refname>stack</refname>
@@ -6935,9 +6998,22 @@ stack config scalers -trigger scaler -modules $scalers -period 2
       </refentry>
       
 	 <refentry id="vmusb3-CVMUSB">
+	    <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Ron</firstname>
+		      <surname>Fox</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
+	  
        <refmeta>
           <refentrytitle id='vmusb3-CVMUSB-title'>CVMUSB</refentrytitle>
           <manvolnum>3vmusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CVMUSB</refname>
@@ -9222,9 +9298,22 @@ list.size() * sizeof(uint32_t)/sizeof(uint16_t) + 4
      </refentry>
          
 	 <refentry id="vmusb3-CVMUSBReadoutList">
+	    <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Ron</firstname>
+		      <surname>Fox</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
+	  
        <refmeta>
           <refentrytitle id='vmusb3-CVMUSBReadoutList-title'>CVMUSBReadoutList</refentrytitle>
           <manvolnum>3vmusb</manvolnum>
+	  <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CVMUSBReadoutList</refname>

@@ -2,10 +2,11 @@
       <refentry id="tcl3.framemanager">
         <refentryinfo>
           <author>
-                  <personname>
-                          <firstname>Ron</firstname>
-                          <surname>Fox</surname>
-                  </personname>
+              <personname>
+                      <firstname>Jeromy</firstname>
+                      <surname>Tompkins</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>
@@ -144,10 +145,11 @@ FrameManager <replaceable>path ?option value...?</replaceable>
       <refentry id="tcl3.FrameSequencer">
         <refentryinfo>
           <author>
-                  <personname>
-                          <firstname>Ron</firstname>
-                          <surname>Fox</surname>
-                  </personname>
+              <personname>
+                  <firstname>Jeromy</firstname>
+                  <surname>Tompkins</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
           </author>
           <productname>NSCLDAQ</productname>
           <productnumber></productnumber>

@@ -1,9 +1,22 @@
 <!-- manpage 5daq -->
 
 <refentry id="daq5-evbprotocol">
+    <refentryinfo>
+      <author>
+          <personname>
+              <firstname>Ron</firstname>
+              <surname>Fox</surname>
+          </personname>
+          <personblurb><para></para></personblurb>
+      </author>
+      <productname>NSCLDAQ</productname>
+      <productnumber></productnumber>
+    </refentryinfo>
+  
   <refmeta>
      <refentrytitle id='daq5-evbprotocol-title'>eventorderer</refentrytitle>
      <manvolnum>5daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>eventorderer</refname>

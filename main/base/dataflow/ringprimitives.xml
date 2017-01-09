@@ -344,9 +344,21 @@ int main(int argc, char** argv)
 
 <!-- manpage 3daq -->
     <refentry id="manpage.cringbuffer">
+      <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>  
       <refmeta>
          <refentrytitle>CRingBuffer</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingBuffer</refname>

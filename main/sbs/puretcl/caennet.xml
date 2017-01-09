@@ -112,9 +112,22 @@ delete $cn;                  # caennet::delete
 <!-- manpage 3tcl -->
 
 <refentry id="manpage.caennet">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle>caennet</refentrytitle>
      <manvolnum>3tcl</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>caennet</refname>

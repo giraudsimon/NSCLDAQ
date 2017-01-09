@@ -251,6 +251,7 @@
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
             </personname>
+            <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -1611,6 +1612,7 @@ enum State {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -1790,6 +1792,7 @@ enum State {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -1969,6 +1972,7 @@ enum State {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -2139,6 +2143,7 @@ enum State {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -2343,6 +2348,7 @@ enum State {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>

@@ -259,6 +259,7 @@ g++ -o myprogram obj1.o obj2.o obj3.o -L$DAQHOME/lib -ldaqshm \
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -426,6 +427,7 @@ g++ -o myprogram obj1.o obj2.o obj3.o -L$DAQHOME/lib -ldaqshm \
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -672,9 +674,22 @@ g++ -o myprogram obj1.o obj2.o obj3.o -L$DAQHOME/lib -ldaqshm \
 </refentry>     
 
 	 <refentry id="daqshm-manpage">
+              <refentryinfo>
+                <author>
+                    <personname>
+                        <firstname>Ron</firstname>
+                        <surname>Fox</surname>
+                    </personname>
+                    <personblurb><para></para></personblurb>
+                </author>
+                <productname>NSCLDAQ</productname>
+                <productnumber></productnumber>
+              </refentryinfo>
+            
        <refmeta>
           <refentrytitle>CDAQShm</refentrytitle>
           <manvolnum>3</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CDAQShm</refname>

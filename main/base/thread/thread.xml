@@ -681,6 +681,7 @@ while(1) {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -901,6 +902,7 @@ while(1) {
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+            <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -1052,9 +1054,22 @@ while(1) {
        
     </refentry>     
     <refentry id="manpage.synchronizable">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>Synchronizable</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>Synchronizable</refname>
@@ -1189,9 +1204,22 @@ while(1) {
 
 
     <refentry id="manpage.syncguard">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>SyncGuard</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>SyncGuard</refname>
@@ -1461,9 +1489,22 @@ Macros:
       </refsect1>
    </refentry>
 	 <refentry id="manpage.cmutex">
+              <refentryinfo>
+                <author>
+                    <personname>
+                        <firstname>Ron</firstname>
+                        <surname>Fox</surname>
+                    </personname>
+                    <personblurb><para></para></personblurb>
+                </author>
+                <productname>NSCLDAQ</productname>
+                <productnumber></productnumber>
+              </refentryinfo>
+            
        <refmeta>
           <refentrytitle id="manpage.cmutex-title">CMutex</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CMutex</refname>
@@ -1834,6 +1875,7 @@ Macros:
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -1893,9 +1935,22 @@ CMutex guard;
    </refsect1>
 </refentry>     
 	 <refentry id="manpage.ccondition">
+              <refentryinfo>
+                <author>
+                    <personname>
+                        <firstname>Ron</firstname>
+                        <surname>Fox</surname>
+                    </personname>
+                    <personblurb><para></para></personblurb>
+                </author>
+                <productname>NSCLDAQ</productname>
+                <productnumber></productnumber>
+              </refentryinfo>
+            
        <refmeta>
           <refentrytitle id="manpage.ccondition-title">CCondition</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CCondition</refname>
@@ -2340,9 +2395,22 @@ CMutex guard;
         </refsect1>
      </refentry>
 <refentry id="manpage.gaurdedobject">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle id='manpage.gaurdedobject-title'>CGaurdedObject</refentrytitle>
      <manvolnum>3daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CGaurdedObject</refname>
@@ -2442,9 +2510,22 @@ CMutex guard;
   </refsect1>
 </refentry>     
 <refentry id="manpage.bufferqueue">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
   <refmeta>
      <refentrytitle id='manpage.bufferqueue-title'>CBufferQueue</refentrytitle>
      <manvolnum>3daq</manvolnum>
+     <refmiscinfo class='empty'></refmiscinfo>
   </refmeta>
   <refnamediv>
      <refname>CBufferQueue</refname>

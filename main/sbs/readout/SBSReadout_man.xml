@@ -1,9 +1,22 @@
 <!-- manpage 3sbsReadout -->
 
     <refentry id="manpage.cbusy">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CBusy</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CBusy</refname>
@@ -85,9 +98,22 @@
 
 
     <refentry id="manpage.ccaenv262busy">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CCAENV262Busy</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CCAENV262Busy</refname>
@@ -270,9 +296,22 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
    </refentry>
 
     <refentry id="manpage.ccaenv262trigger">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CCAENV262Triger</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CCAENV262Triger</refname>
@@ -422,9 +461,22 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
     
     
     <refentry id="manpage.ccompoundeventsegment">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CCompoundEventSegment</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CCompoundEventSegment</refname>
@@ -871,9 +923,22 @@ segment.visit(visitor);  // Visitor ensures deep visitation.
 
 
     <refentry id="manpage.cdocumentedpacket">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CDocumentedPacket</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CDocumentedPacket</refname>
@@ -1224,9 +1289,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.ceventpacket">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CEventPacket</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CEventPacket</refname>
@@ -1369,9 +1447,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.ceventsegment">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle id="manpage.ceventsegment_title">CEventSegment</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CEventSegment</refname>
@@ -1711,12 +1802,14 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.ceventtrigger">
+      
         <refentryinfo>
             <author>
                 <personname>
                     <firstname>Ron</firstname>
                     <surname>Fox</surname>
                 </personname>
+                <personblurb><para></para></personblurb>
             </author>
             <productname>NSCLDAQ</productname>
             <productnumber></productnumber>
@@ -1799,9 +1892,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.cexperiment">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CExperiment</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CExperiment</refname>
@@ -2134,9 +2240,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
 
 
     <refentry id="manpage.cinvalidpacketstateexception">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CInvalidPacketStateException</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CInvalidPacketStateException</refname>
@@ -2269,9 +2388,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.cnulltrigger">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CNullTrigger</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CNullTrigger</refname>
@@ -2299,9 +2431,22 @@ MySegment::read(void* pBuffer, size_t maxlen)
    </refentry>
 
     <refentry id="manpage.creadoutexception">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CReadoutException</refentrytitle>
          <manvolnum>3sbsreadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CReadoutException</refname>
@@ -2352,9 +2497,22 @@ catch (CReadoutException&amp; error) {
    </refentry>
 
     <refentry id="manpage.cscalerbank">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CScalerBank</refentrytitle>
          <manvolnum>3sbsreadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CScalerBank</refname>
@@ -2777,9 +2935,22 @@ public:
    </refentry>
 
     <refentry id="manpage.ctimedtrigger">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CTimedTrigger</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CTimedTrigger</refname>
@@ -2899,9 +3070,22 @@ public:
    </refentry>
 
     <refentry id="manpage.cv977busy">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CV977Busy</refentrytitle>
          <manvolnum>volnum</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CV977Busy</refname>
@@ -3051,9 +3235,22 @@ public:
 
 
     <refentry id="manpage.cv977trigger">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CV977Trigger</refentrytitle>
          <manvolnum>volnum</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CV977Trigger</refname>
@@ -3182,9 +3379,22 @@ public:
    </refentry>
 
     <refentry id="manpage.runstate">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>RunState</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>RunState</refname>
@@ -3338,9 +3548,22 @@ std::cout &lt;&lt; " The run is currently "
    </refentry>
 
     <refentry id="manpage.cscaler">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
       <refmeta>
          <refentrytitle>CScaler</refentrytitle>
          <manvolnum>3sbsReadout</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CScaler</refname>

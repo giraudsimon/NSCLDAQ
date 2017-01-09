@@ -219,9 +219,22 @@ package require runSequencer             <co id="chapter.sequencer.require" />
 <!-- manpage 3tcl -->
 
 <refentry id="manpage.sequencer">
+      <refentryinfo>
+	<author>
+	    <personname>
+		<firstname>Ron</firstname>
+		<surname>Fox</surname>
+	    </personname>
+	    <personblurb><para></para></personblurb>
+	</author>
+	<productname>NSCLDAQ</productname>
+	<productnumber></productnumber>
+      </refentryinfo>
+    
     <refmeta>
         <refentrytitle>sequencer</refentrytitle>
         <manvolnum>3tcl</manvolnum>
+	<refmiscinfo class='empty'></refmiscinfo>
     </refmeta>
     <refnamediv>
         <refname>sequencer</refname>

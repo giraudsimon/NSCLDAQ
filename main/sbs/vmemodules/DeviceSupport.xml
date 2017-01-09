@@ -673,16 +673,18 @@
     
     <refentry id="CAENcard">
 	
-          <refentryinfo>
-            <author>
-                <personname>
-                    <firstname>Ron</firstname>
-                    <surname>Fox</surname>
-                </personname>
-            </author>
-            <productname>NSCLDAQ</productname>
-            <productnumber></productnumber>
-          </refentryinfo>
+            <refentryinfo>
+	      <author>
+		  <personname>
+		      <firstname>Ron</firstname>
+		      <surname>Fox</surname>
+		  </personname>
+		  <personblurb><para></para></personblurb>
+	      </author>
+	      <productname>NSCLDAQ</productname>
+	      <productnumber></productnumber>
+	    </refentryinfo>
+	  
         <refmeta>
             <refentrytitle>CAENcard</refentrytitle>
             <manvolnum>3DeviceSupport</manvolnum>

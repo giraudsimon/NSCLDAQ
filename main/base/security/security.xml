@@ -273,9 +273,22 @@ g++ -o myapplication ... -L$DAQROOT/lib -lSecurity -Wl,"-rpath=$DAQROOT/lib"...
 <!-- Interactors: -->
 
     <refentry id="manpage.cauthenticator">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CAuthenticator</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CAuthenticator</refname>
@@ -431,9 +444,22 @@ g++ -o myapplication ... -L$DAQROOT/lib -lSecurity -Wl,"-rpath=$DAQROOT/lib"...
 
    </refentry>
     <refentry id="manpage.cpasswordcheck">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CPasswordCheck</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CPasswordCheck</refname>
@@ -673,9 +699,22 @@ g++ -o myapplication ... -L$DAQROOT/lib -lSecurity -Wl,"-rpath=$DAQROOT/lib"...
    </refentry>
 
     <refentry id="manpage.cunixusercheck">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CUnixUserCheck</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CUnixUserCheck</refname>
@@ -949,9 +988,22 @@ g++ -o myapplication ... -L$DAQROOT/lib -lSecurity -Wl,"-rpath=$DAQROOT/lib"...
       </refsect1>
    </refentry>
     <refentry id="manpage.ctclaccesslistcheck">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CTclAccessListCheck</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CTclAccessListCheck</refname>
@@ -1096,9 +1148,22 @@ g++ -o myapplication ... -L$DAQROOT/lib -lSecurity -Wl,"-rpath=$DAQROOT/lib"...
       </refsect1>
    </refentry>
     <refentry id="manpage.caccesslistcheck">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CAccessListCheck</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CAccessListCheck</refname>
@@ -1302,9 +1367,22 @@ public:
    </refentry>
 
     <refentry id="manpage.chostlistcheck">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CHostListCheck</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CHostListCheck</refname>
@@ -1550,9 +1628,22 @@ public:
    </refentry>
 
     <refentry id="manpage.cinteractor">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CInteractor</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CInteractor</refname>
@@ -1779,9 +1870,22 @@ public:
       </refsect1>
    </refentry>
     <refentry id="manpage.cstringinteractor">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CStringInteractor</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CStringInteractor</refname>
@@ -2011,9 +2115,22 @@ if (pString) {
       </refsect1>
    </refentry>
    <refentry id="manpage.cfdinteractor">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
+    
       <refmeta>
          <refentrytitle>CFdInteractor</refentrytitle>
 	 <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CFdInteractor</refname>
@@ -2182,9 +2299,22 @@ if (pString) {
        </refsect1>
    </refentry>
     <refentry id="manpage.ciointeractor">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
       <refmeta>
          <refentrytitle>CIOInteractor</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CIOInteractor</refname>

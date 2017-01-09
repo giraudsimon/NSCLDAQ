@@ -2,10 +2,11 @@
 <refentry id='tcl3.tclsourcefilter' >
     <refentryinfo>
         <author>
-                <personname>
-                        <firstname>Ron</firstname>
-                        <surname>Fox</surname>
-                </personname>
+	    <personname>
+		    <firstname>Jeromy</firstname>
+		    <surname>Tompkins</surname>
+	    </personname>
+	    <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>

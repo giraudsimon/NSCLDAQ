@@ -1279,9 +1279,21 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
 <!-- manpage 3daq -->
 
     <refentry id='manpage.cringitem'>
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingItem</refname>
@@ -1964,10 +1976,23 @@ delete item;                                           <co id="cringitem.delete"
          </calloutlist>
       </refsect1>
    </refentry>
+    
     <refentry id="manpage.cringscaleritem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingScalerItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingScalerItem</refname>
@@ -2538,9 +2563,21 @@ delete pItem;                                                <co id="scaler.dele
       </refsect1>
    </refentry>
     <refentry id="manpage.cringstatechangeitem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingStateChangeItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingStateChangeItem</refname>
@@ -3054,9 +3091,21 @@ item.commitToRing(aring);
    </refentry>
 
     <refentry id="manpage.cringtextitem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingTextItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingTextItem</refname>
@@ -3441,9 +3490,21 @@ item.commitToRing(aring);
 
    </refentry>
     <refentry id="manpage.cphysicseventitem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CPhysicsEventItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CPhysicsEventitem</refname>
@@ -3700,9 +3761,21 @@ item.commitToRing(aring);
       </refsect1>
     </refentry>     
     <refentry id="manpage.cringphysicseventcountitem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingPhysicsEventCountItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingPhysicsEventCountItem</refname>
@@ -4095,9 +4168,21 @@ item.commitToRing(aring);
       </refsect1>
    </refentry>
     <refentry id="manpage.cringfragmentitem">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle id='manpage.cringfragmentitem.title'>CRingFragmentItem</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingFragmentItem</refname>
@@ -4576,9 +4661,21 @@ item.commitToRing(aring);
       </refsect1>
     </refentry>
 	 <refentry id="manpage.cunknownfragment">
+          <refentryinfo>
+    <author>
+        <personname>
+            <firstname>Ron</firstname>
+            <surname>Fox</surname>
+        </personname>
+        <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>
        <refmeta>
           <refentrytitle>CUnknownFragment</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CUnknownFragment</refname>
@@ -4686,9 +4783,21 @@ item.commitToRing(aring);
        </refsect1>
      </refentry>     
 	 <refentry id="manpage.cdataformatitem">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
        <refmeta>
           <refentrytitle>CDataFomatItem</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CDataFomatItem</refname>
@@ -5013,9 +5122,21 @@ item.commitToRing(aring);
        </refsect1>
      </refentry>         
 	 <refentry id="manpage.cglomparameters">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
        <refmeta>
           <refentrytitle>CGlomParameters</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CGlomParameters</refname>
@@ -5377,6 +5498,7 @@ item.commitToRing(aring);
                 <firstname>Ron</firstname>
                 <surname>Fox</surname>
             </personname>
+            <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
@@ -5676,9 +5798,21 @@ item.commitToRing(aring);
       </refsect1>
     </refentry>     
     <refentry id="manpage.cringselectionpredicate">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CRingSelectionPredicate</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CRingSelectionPredicate</refname>
@@ -6111,9 +6245,21 @@ item.commitToRing(aring);
       </refsect1>
    </refentry>
     <refentry id="manpage.callbutpredicate">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CAllButPredicate</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CAllButPredicate</refname>
@@ -6334,9 +6480,21 @@ item.commitToRing(aring);
 
    </refentry>
     <refentry id="manpage.cdesiredtypespredicate">
+      <refentryinfo>
+        <author>
+            <personname>
+                <firstname>Ron</firstname>
+                <surname>Fox</surname>
+            </personname>
+            <personblurb><para></para></personblurb>
+        </author>
+        <productname>NSCLDAQ</productname>
+        <productnumber></productnumber>
+      </refentryinfo>
       <refmeta>
          <refentrytitle>CDesiredTypesPredicate</refentrytitle>
          <manvolnum>3daq</manvolnum>
+         <refmiscinfo class='empty'></refmiscinfo>
       </refmeta>
       <refnamediv>
          <refname>CDesiredTypesPredicate</refname>
@@ -6548,9 +6706,21 @@ item.commitToRing(aring);
       </refsect1>
    </refentry>
     	 <refentry id="ref-dataformat">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
            <refmeta>
               <refentrytitle id='ref-dataformat-title'>DataFormat.h</refentrytitle>
               <manvolnum>3daq</manvolnum>
+              <refmiscinfo class='empty'></refmiscinfo>
            </refmeta>
            <refnamediv>
               <refname>DataFormat.h</refname>
@@ -7784,9 +7954,21 @@ typedef strucst _AbnormalEndItem {
             </refsect1>
          </refentry>
         <refentry id="dataformat3-formatfunctions">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
           <refmeta>
              <refentrytitle>format  Functions</refentrytitle>
              <manvolnum>3dataformat</manvolnum>
+             <refmiscinfo class='empty'></refmiscinfo>
           </refmeta>
           <refnamediv>
              <refname>format Functions</refname>
@@ -8983,9 +9165,22 @@ typedef strucst _AbnormalEndItem {
           </refsect1>
         </refentry>
 	 <refentry id="daq3_cdatasource">
+            <refentryinfo>
+              <author>
+                  <personname>
+                      <firstname>Ron</firstname>
+                      <surname>Fox</surname>
+                  </personname>
+                  <personblurb><para></para></personblurb>
+              </author>
+              <productname>NSCLDAQ</productname>
+              <productnumber></productnumber>
+            </refentryinfo>
+          
        <refmeta>
           <refentrytitle id='daq3_cdatasource_title'>CDataSource</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CDataSource</refname>
@@ -9055,9 +9250,22 @@ typedef strucst _AbnormalEndItem {
      </refentry>     
 
 	 <refentry id="daq3_cringdatasource">
+            <refentryinfo>
+              <author>
+                  <personname>
+                      <firstname>Ron</firstname>
+                      <surname>Fox</surname>
+                  </personname>
+                  <personblurb><para></para></personblurb>
+              </author>
+              <productname>NSCLDAQ</productname>
+              <productnumber></productnumber>
+            </refentryinfo>
+          
        <refmeta>
           <refentrytitle id="daq3_cringdatasource_title">CRingDataSource</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CRingDataSource</refname>
@@ -9168,9 +9376,22 @@ typedef strucst _AbnormalEndItem {
      </refentry>     
 
       <refentry id="daq3_cfiledatasource">
+          <refentryinfo>
+            <author>
+                <personname>
+                    <firstname>Ron</firstname>
+                    <surname>Fox</surname>
+                </personname>
+                <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+          </refentryinfo>
+        
        <refmeta>
           <refentrytitle id="daq3_cfiledatasource_title">CFileDataSource</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CFileDataSource</refname>
@@ -9258,9 +9479,22 @@ typedef strucst _AbnormalEndItem {
      </refentry>
       
      <refentry id="daq3_cdatasourcefactory">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
        <refmeta>
           <refentrytitle id="daq3_cdatasourcefactory_title">CDataSourceFactory"</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CDataSourceFactory</refname>
@@ -9353,9 +9587,22 @@ typedef strucst _AbnormalEndItem {
        </refsect1>
      </refentry>
     <refentry id="daq3_cringitemfactory">
+        <refentryinfo>
+          <author>
+              <personname>
+                  <firstname>Ron</firstname>
+                  <surname>Fox</surname>
+              </personname>
+              <personblurb><para></para></personblurb>
+          </author>
+          <productname>NSCLDAQ</productname>
+          <productnumber></productnumber>
+        </refentryinfo>
+      
        <refmeta>
           <refentrytitle id="daq3_cringitemfactory_title">CRingItemFactory</refentrytitle>
           <manvolnum>3daq</manvolnum>
+          <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
           <refname>CRingItemFactory</refname>
@@ -9522,6 +9769,7 @@ typedef strucst _AbnormalEndItem {
             <firstname>Ron</firstname>
             <surname>Fox</surname>
         </personname>
+        <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -9657,16 +9905,18 @@ typedef strucst _AbnormalEndItem {
   </refsect1>
 </refentry>
 <refentry id="daq3_cfiledatasink">
-  <refentryinfo>
-    <author>
-        <personname>
-            <firstname>Ron</firstname>
-            <surname>Fox</surname>
-        </personname>
-    </author>
-    <productname>NSCLDAQ</productname>
-    <productnumber></productnumber>
-  </refentryinfo>
+    <refentryinfo>
+      <author>
+          <personname>
+              <firstname>Ron</firstname>
+              <surname>Fox</surname>
+          </personname>
+          <personblurb><para></para></personblurb>
+      </author>
+      <productname>NSCLDAQ</productname>
+      <productnumber></productnumber>
+    </refentryinfo>
+  
   <refmeta>
      <refentrytitle id='daq3_cfiledatasink_title'>CFileDataSink</refentrytitle>
      <manvolnum>3daq</manvolnum>
@@ -9863,16 +10113,18 @@ typedef strucst _AbnormalEndItem {
   </refsect1>
 </refentry>     
 <refentry id="daq3_cringdatasink">
-  <refentryinfo>
-    <author>
-        <personname>
-            <firstname>Ron</firstname>
-            <surname>Fox</surname>
-        </personname>
-    </author>
-    <productname>NSCLDAQ</productname>
-    <productnumber></productnumber>
-  </refentryinfo>
+    <refentryinfo>
+      <author>
+          <personname>
+              <firstname>Ron</firstname>
+              <surname>Fox</surname>
+          </personname>
+          <personblurb><para></para></personblurb>
+      </author>
+      <productname>NSCLDAQ</productname>
+      <productnumber></productnumber>
+    </refentryinfo>
+  
   <refmeta>
      <refentrytitle id="daq3_cringdatasink_title">CRingDataSink</refentrytitle>
      <manvolnum>3daq</manvolnum>
@@ -10004,16 +10256,18 @@ typedef strucst _AbnormalEndItem {
   </refsect1>
 </refentry>
 <refentry id="daq3_cdatasinkfactory">
-  <refentryinfo>
-    <author>
-        <personname>
-            <firstname>Ron</firstname>
-            <surname>Fox</surname>
-        </personname>
-    </author>
-    <productname>NSCLDAQ</productname>
-    <productnumber></productnumber>
-  </refentryinfo>
+    <refentryinfo>
+      <author>
+          <personname>
+              <firstname>Ron</firstname>
+              <surname>Fox</surname>
+          </personname>
+          <personblurb><para></para></personblurb>
+      </author>
+      <productname>NSCLDAQ</productname>
+      <productnumber></productnumber>
+    </refentryinfo>
+  
   <refmeta>
      <refentrytitle id="daq3_cdatasinkfactory_title">CDataSinkFactory</refentrytitle>
      <manvolnum>3daq</manvolnum>

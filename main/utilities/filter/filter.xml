@@ -393,6 +393,7 @@ int main(int argc, char* argv[])
         <firstname>Jeromy</firstname>
         <surname>Tompkins</surname>
       </personname>
+      <personblurb><para></para></personblurb>
     </author>
     <productname>NSCLDAQ</productname>
     <productnumber></productnumber>
@@ -679,6 +680,7 @@ int main(int argc, char* argv[])
                         <firstname>Jeromy</firstname>
                         <surname>Tompkins</surname>
                 </personname>
+                <personblurb><para></para></personblurb>
         </author>
         <productname>NSCLDAQ</productname>
         <productnumber></productnumber>
