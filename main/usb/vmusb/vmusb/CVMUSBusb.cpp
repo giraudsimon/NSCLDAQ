@@ -504,8 +504,14 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     // Copy the newly read data into the output buffer
     pReadCursor = std::copy(buf, buf + status, pReadCursor);
 
+    int nAttempts = 0;
+    int maxAttempts = readSize/getBufferSize();
+
+    if (bytesRead<readSize) {
+      std::cout << "Did not read all of the requested data...need further reads" << std::endl;
+    }
     // iteratively read until we have the data we desire
-    while (bytesRead < readSize) {
+    while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
       status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
       if (status < 0) {
         errno = -status;
@@ -519,6 +525,7 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
 
       // set status so that we return the total number of bytes read
       status = bytesRead;
+      nAttempts++;
     }
 
  //   std::cout << "done" << std::endl;
@@ -607,24 +614,15 @@ CVMUSBusb::writeRegister(unsigned int address, uint32_t data)
 void
 CVMUSBusb::openVMUsb()
 {
-    // Since we might be re-opening the device we're going to
-    // assume only the serial number is right and re-enumerate
-    
-    std::vector<struct usb_device*> devices = enumerate();
-    m_device = 0;
-    for (int i = 0; i < devices.size(); i++) {
-        if (serialNo(devices[i]) == m_serial) {
-            m_device = devices[i];
-            break;
-        }
+    enumerateAndIdentify();
+    m_handle  = usb_open(m_device);
+    if (!m_handle) {
+      throw "CVMUSBusb::CVMUSBusb  - unable to open the device";
     }
-    if (!m_device) {
-        std::string msg = "The VM-USB with serial number ";
-        msg += m_serial;
-        msg += " could not be enumerated";
-        throw msg;
-    }
-    
+
+    resetVMUSB(); 
+
+    enumerateAndIdentify();
     
     m_handle  = usb_open(m_device);
     if (!m_handle) {
@@ -651,22 +649,25 @@ CVMUSBusb::openVMUsb()
       throw msg;
     }
 
-    usb_clear_halt(m_handle, ENDPOINT_IN);
-    usb_clear_halt(m_handle, ENDPOINT_OUT);
+    //if (usbRead(buffer, sizeof(buffer), &bytesRead, 1) != 0) {
+    //  std::cout << "clearing halt" << std::endl;
+    //    usb_clear_halt(m_handle, ENDPOINT_IN);
+    //    usb_clear_halt(m_handle, ENDPOINT_OUT);
+    //}
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // reset the module
     writeActionRegister(ActionRegister::clear);
 
-    // Turn off DAQ mode and flush any data that might be trapped in the VMUSB
-    // FIFOS.  To write the action register may require at least one read of the FIFO.
-    //
-    
+//    // Turn off DAQ mode and flush any data that might be trapped in the VMUSB
+//    // FIFOS.  To write the action register may require at least one read of the FIFO.
+//    //
+//    
     int retriesLeft = DRAIN_RETRIES;
     uint8_t buffer[1024*13*2];  // Biggest possible VM-USB buffer.
     size_t  bytesRead;
-    
+
     while (retriesLeft) {
         try {
             usbRead(buffer, sizeof(buffer), &bytesRead, 1);
@@ -688,5 +689,53 @@ CVMUSBusb::openVMUsb()
     // - is the only way to ensure the m_irqMask value matches the register.
     // - ensures m_irqMask actually gets set:
 
-   writeIrqMask(0x7f);   /* Seems to like to timeout */
+   //writeIrqMask(0x7f);   /* Seems to like to timeout */
+
+   // Read the state of the module
+//   initializeShadowRegisters();
+}
+
+
+void CVMUSBusb::initializeShadowRegisters()
+{
+    readGlobalMode();
+    readDAQSettings();
+    readLEDSource();
+    readDeviceSource();
+    readDGG_A();
+    readDGG_B();
+    readDGG_Extended();
+    for (int i=1; i<5; ++i) readVector(i);
+    readIrqMask();
+    readBulkXferSetup();
+    readEventsPerBuffer();
+}
+
+void CVMUSBusb::resetVMUSB()
+{
+  int status = usb_reset(m_handle);
+  if (status < 0) {
+    throw std::runtime_error("CVMUSB::resetVMUSB() failed to reset the device");
+  }
+}
+
+void CVMUSBusb::enumerateAndIdentify()
+{
+  // Since we might be re-opening the device we're going to
+  // assume only the serial number is right and re-enumerate
+
+  std::vector<struct usb_device*> devices = enumerate();
+  m_device = 0;
+  for (int i = 0; i < devices.size(); i++) {
+    if (serialNo(devices[i]) == m_serial) {
+      m_device = devices[i];
+      break;
+    }
+  }
+  if (!m_device) {
+    std::string msg = "The VM-USB with serial number ";
+    msg += m_serial;
+    msg += " could not be enumerated";
+    throw msg;
+  }
 }

@@ -241,7 +241,7 @@ CVMUSB::CVMUSB(struct usb_device* device) :
     // - is the only way to ensure the m_irqMask value matches the register.
     // - ensures m_irqMask actually gets set:
 
-    writeIrqMask(0xff);
+    writeIrqMask(0x7f);
 }
 ////////////////////////////////////////////////////////////////
 /*!
@@ -639,6 +639,52 @@ CVMUSB::readEventsPerBuffer(void)
   m_regShadow.eventsPerBuffer = readRegister(ExtractMask);
   return m_regShadow.eventsPerBuffer; 
 }
+
+
+
+int CVMUSB::getBufferSize() const
+{
+    int value = (m_regShadow.globalMode & 0xf);
+    int size = 0;
+    switch(value) {
+    case 0:
+        size = 13*1024;
+        break;
+    case 1:
+        size = 8*1024;
+        break;
+    case 2:
+        size = 4*1024;
+        break;
+    case 3:
+        size = 2*1024;
+        break;
+    case 4:
+        size = 1024;
+        break;
+    case 5:
+        size = 512;
+        break;
+    case 6:
+        size = 256;
+        break;
+    case 7:
+        size = 128;
+        break;
+    case 8:
+        size = 56;
+        break;
+    case 9:
+        size = 0;
+        break;
+    default:
+        size = 13*1024;
+        break;
+    }
+
+    return size;
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////// VME Transfer Ops ////////////////////////////

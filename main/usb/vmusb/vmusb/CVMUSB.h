@@ -306,6 +306,8 @@ public:
       return result;
     }
 
+    int getBufferSize() const;
+
     // List operations.
   
 public:

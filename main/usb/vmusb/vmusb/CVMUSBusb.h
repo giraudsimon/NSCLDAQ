@@ -126,6 +126,10 @@ private:
 
     int transaction(void* writePacket, size_t writeSize,
 		                void* readPacket,  size_t readSize);
+
+    void initializeShadowRegisters();
+    void resetVMUSB();
+    void enumerateAndIdentify();
 };
 
 #endif
