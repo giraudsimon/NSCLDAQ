@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 #include <pthread.h>
 

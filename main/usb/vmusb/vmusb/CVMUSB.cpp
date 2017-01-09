@@ -675,7 +675,7 @@ int CVMUSB::getBufferSize() const
         size = 56;
         break;
     case 9:
-        size = 0;
+        size = -1;
         break;
     default:
         size = 13*1024;
