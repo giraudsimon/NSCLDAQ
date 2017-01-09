@@ -501,23 +501,36 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     long bytesRead = status;
     auto pReadCursor = reinterpret_cast<char*>(readPacket);
 
+//    std::cout << "Read " << bytesRead<< " bytes " << std::endl;
     // Copy the newly read data into the output buffer
     pReadCursor = std::copy(buf, buf + status, pReadCursor);
 
     int nAttempts = 0;
-    int maxAttempts = readSize/getBufferSize();
+    int maxAttempts = readSize/std::min(int(sizeof(buf)),getBufferSize()*2);
+
+
+    if (bytesRead < readSize) {
+        // looks like there might be a bug that causes the first read to
+        // return 0 bytes. Adjust to try at least 1 extra time if needed.
+        maxAttempts += 1;
+
+//        std::cout << "need to try again " << maxAttempts << " times"
+//                  << " for all " << readSize << " bytes requested" << std::endl;
+    }
     // if in events buffering mode, then getBufferSize() returns -1. This
     // short circuits the while loop below because the maxAttempts will be negative.
 
     // iteratively read until we have the data we desire
     while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
       status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
-      if (status != 0) {
+      if (status < 0) {
           if ( errno != ETIMEDOUT) {
+//              std::cout << "failed" << std::endl;
               // read failures are only bad if they are not timeouts
               errno = -status;
               return -2;
           } else {
+//              std::cout << "timed out" << std::endl;
               // timeouts after the first read is just the end of data.
               // return the number of bytes received prior to the last
               // read operation.
@@ -525,16 +538,15 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
           }
       }
 
+//      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
       pReadCursor = std::copy(buf, buf+status, pReadCursor);
 
       bytesRead += status;
 
-      // set status so that we return the total number of bytes read
-      status = bytesRead;
       nAttempts++;
     }
 
-    return status;
+    return bytesRead;
 }
 
 /*
