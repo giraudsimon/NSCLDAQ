@@ -174,6 +174,11 @@ void TclServer::init()
       	 << err.ReasonText() << " while " << err.WasDoing() << endl;
     m_systemControl.scheduleExit(EXIT_FAILURE);
   }
+  catch (std::exception& exc) {
+    cerr << "TclServer thread caught an exception: "
+      << exc.what() << endl;
+    m_systemControl.scheduleExit(EXIT_FAILURE);
+  }
   catch (...) {
     cerr << "TclServer thread caught some other exception type.\n";
     m_systemControl.scheduleExit(EXIT_FAILURE);
