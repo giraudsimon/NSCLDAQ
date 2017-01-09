@@ -641,7 +641,16 @@ CVMUSB::readEventsPerBuffer(void)
 }
 
 
-
+/*!
+ * \brief Read the global mode buffer size from the shadow register
+ *
+ * \retval the size of the buffer in 16-bit word units (if appropriate)
+ * \retval -1 if the buffering mode is set to be in units of events
+ *
+ * If the size of the buffer cannot be determined, it is assumed to be
+ * in 13 kiloword buffering mode.
+ *
+ */
 int CVMUSB::getBufferSize() const
 {
     int value = (m_regShadow.globalMode & 0xf);
