@@ -278,6 +278,7 @@ private:
 		  size_t    dataWords);
   std::vector<std::pair<int, int> >  getChannelAdjustments();
   static bool validateChannelOffsets(std::string name, std::string value, void* arg);
+  void validateModule(CVMUSB& controller, uint32_t base);
  
 
   // Static functions that create the various enumeration maps:

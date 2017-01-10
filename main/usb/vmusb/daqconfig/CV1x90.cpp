@@ -289,6 +289,7 @@ CV1x90::Initialize(CVMUSB& controller)
 
 
   // Reset the module, 
+  validateModule(controller, base);
 
   controller.vmeWrite16(base + CCAENV1x90Registers::WReset, initamod, (uint16_t)0);
   WaitMicro(controller, base);
@@ -337,18 +338,18 @@ CV1x90::Initialize(CVMUSB& controller)
   }
 
   registerWrites.addWrite16(base + CCAENV1x90Registers::WControlRegister, 
-			    initamod, controlRegister);
-  
+                initamod, controlRegister);
+
   // Interrupt level, interrupt vector, virtual slot, high water mark, and the
   // ecl output control are from the configuration:
 
   registerWrites.addWrite16(base + CCAENV1x90Registers::WInterruptLevel , 
 			    initamod, (uint16_t)ipl);
-  registerWrites.addWrite16(base + CCAENV1x90Registers::WInterruptVector, 
+  registerWrites.addWrite16(base + CCAENV1x90Registers::WInterruptVector,
 			    initamod, (uint16_t)ivector);
-  registerWrites.addWrite16(base + CCAENV1x90Registers::WVirtualSlot,     
+  registerWrites.addWrite16(base + CCAENV1x90Registers::WVirtualSlot,
 			    initamod, (uint16_t)vsn);
-  registerWrites.addWrite16(base + CCAENV1x90Registers::WAlmostFullLevel, 
+  registerWrites.addWrite16(base + CCAENV1x90Registers::WAlmostFullLevel,
 			    initamod, (uint16_t)highWater);
 
   // figure out the correct settings for the OUT_PROG control register:
@@ -368,24 +369,24 @@ CV1x90::Initialize(CVMUSB& controller)
     out_prog = CCAENV1x90Registers::OutputControl::ERROR;
   }
   registerWrites.addWrite16(base + CCAENV1x90Registers::WOutputControl, 
-			    initamod, out_prog);
+                initamod, out_prog);
 
   // Do that list:
 
   size_t dummy;
   controller.executeList(registerWrites,
-			 &dummy,
-			 sizeof(dummy),
-			 &dummy);
+             &dummy,
+             sizeof(dummy),
+             &dummy);
 
   // Before setting anything else up, we should put the device in
   // trigger matching mode:
 
   uint16_t data[128];		// I think that's the biggest data buffer we'll need.
   WriteMicro(controller,
-	     base,
-	     CCAENV1x90Opcodes::TRG_MATCH,
-	     data, 0);
+         base,
+         CCAENV1x90Opcodes::TRG_MATCH,
+         data, 0);
 
   // Set the trigger window width, th offset, extra search margin, and reject margin:
 
@@ -738,6 +739,7 @@ CV1x90::WaitMicro(CVMUSB& controller, uint32_t base)
     if (status & CCAENV1x90Registers::MicroHandshake::WRITE_OK) return;
     
   }
+
 }
 /*
 **  Many transactions with the module involve writing an operation code and
@@ -907,6 +909,55 @@ CV1x90::validateChannelOffsets(string name, string value, void* arg)
   Tcl_Free((char*)listContents);
   return false;
 }
+
+
+/*!
+ * \brief CV1x90::validateModule
+ *
+ * \param controller    the vmusb controller
+ * \param base          base address of the device
+ *
+ * Reads back the constant value registers in the config prom to ensure that they
+ * are what is expected. If the values are different than expected, then this
+ * throws an exception.
+ *
+ * \throws std::string when data returned from read operation does not match our expectations.
+ *
+ */
+void CV1x90::validateModule(CVMUSB &controller, uint32_t base)
+{
+    // check that the values of the config prom are what we expect based on the manual.
+    // the manual does not quite give us all the information... the module does not return
+    // exactly what is described. Rather, we need to mask off the upper byte of the
+    // 16-bits returned by each read.
+
+    using namespace CCAENV1x90Registers;
+    uint32_t configBase = base + ConfigRom;
+    uint16_t value;
+    int status = controller.vmeRead16(configBase + WConstant2, 0x09, &value);
+    if (status < 0) {
+        throw std::string("CV1x90::validateModule() failed while reading config prom constant 2");
+    } else if ((value&0xff) != 0x83) {
+        throw std::string("CV1x90::validateModule() failed to identify device as a V1x90");
+    }
+
+    status = controller.vmeRead16(configBase + WConstant1, 0x09, &value);
+    if (status < 0) {
+        throw std::string("CV1x90::validateModule() failed while reading config prom constant 1");
+    } else if ((value&0xff) != 0x84) {
+        throw std::string("CV1x90::validateModule() failed to identify device as a V1x90");
+    }
+
+    status = controller.vmeRead16(configBase + WConstant0, 0x09, &value);
+    if (status < 0) {
+        throw std::string("CV1x90::validateModule() failed while reading config prom constant 0");
+    } else if ((value&0xff) != 0x01) {
+        throw std::string("CV1x90::validateModule() failed to identify device as a V1x90");
+    }
+
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 //  Map maker map maker make me a map
 //    - Sorry couldn't resist that allusion.

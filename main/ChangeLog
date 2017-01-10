@@ -1172,3 +1172,5 @@ Work on 11.0-rc11 begins
 	VMUSBReadout.
 	* Adds usb_reset operations to the CVMUSBusb::openVMusb() method that
 	was broken in version 11.1-009. 
+	* Fixes bug #6605 to ensure that the driver fails if it is not communicating
+	with a valid V1x90 device.
