@@ -464,6 +464,8 @@ AC_CONFIG_FILES([Makefile
     simplesetups/v775/Makefile
     simplesetups/v785/Makefile
     simplesetups/vmusb/Makefile
+    simplesetups/vmusb/src/Makefile
+    simplesetups/vmusb/src/Example_Makefile
     sbs/Makefile
     sbs/driver/Makefile
     sbs/driver/src/Makefile

@@ -1,0 +1,14 @@
+
+sharedir = @prefix@/share/src/vmusb_simple_setup
+
+share_DATA = CRawADCUnpacker.cpp \
+    CRawADCUnpacker.h \
+    CRawUnpacker.cpp \
+    CRawUnpacker.h \
+    MySpecTclApp.cpp \
+    MySpecTclApp.h \
+    SpecTclRC.tcl
+
+install-data-local:
+    $(mkinstalldir) $(sharedir)
+    $(INSTALL_DATA) Example_Makefile $(sharedir)/Makefile

@@ -3151,3 +3151,6 @@ usb/vmusb/event.h
 usb/vmusb/Globals.cpp
 usb/vmusb/Globals.h
 usb/vmusb/server.h
+simplesetups/vmusb/src/Makefile
+simplesetups/vmusb/src/Example_Makefile.in
+simplesetups/vmusb/src/Makefile.am

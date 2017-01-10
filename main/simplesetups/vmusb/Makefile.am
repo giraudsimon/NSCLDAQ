@@ -1,3 +1,5 @@
+SUBDIRS = src
+
 DOCS    = @srcdir@/vmusbsetup.xml @srcdir@/vmusb_bookinfo.xml
 FIGURES =  @srcdir@/figures/sis3820blockdiagram.dia  \
 					 @srcdir@/figures/sis3820blockdiagram.jpg \
