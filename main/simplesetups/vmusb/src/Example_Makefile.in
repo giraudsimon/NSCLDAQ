@@ -1,4 +1,4 @@
-INSTDIR=@prefix@
+INSTDIR=TOP_LEVEL_SPECTCL_INSTALL_PATH
 
 include $(INSTDIR)/etc/SpecTcl_Makefile.include
 
@@ -28,17 +28,17 @@ OBJECTS=MySpecTclApp.o CRawUnpacker.o CRawADCUnpacker.o
 
 
 SpecTcl: $(OBJECTS)
-        $(CXXLD)  -o SpecTcl $(OBJECTS) $(USERLDFLAGS) \
-        $(LDFLAGS)
+	$(CXXLD)  -o SpecTcl $(OBJECTS) $(USERLDFLAGS) \
+			$(LDFLAGS)
 
 
 clean:
-        rm -f $(OBJECTS) SpecTcl
+	rm -f $(OBJECTS) SpecTcl
 
 depend:
-        makedepend $(USERCXXFLAGS) *.cpp *.c
+	makedepend $(USERCXXFLAGS) *.cpp *.c
 
 help:
-        echo "make                 - Build customized SpecTcl"
-        echo "make clean           - Remove objects from previous builds"
-        echo "make depend          - Add dependencies to the Makefile. "
+	echo "make                 - Build customized SpecTcl"
+	echo "make clean           - Remove objects from previous builds"
+	echo "make depend          - Add dependencies to the Makefile. "
