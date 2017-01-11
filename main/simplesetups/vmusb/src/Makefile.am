@@ -10,8 +10,7 @@ share_DATA = CRawADCUnpacker.cpp \
 	MySpecTclApp.h \
 	SpecTclRC.tcl
 
-installdirs : mkinstalldirs
-	$(mkinstalldirs) $(sharedir)
 
 install-data-local:
+	$(mkinstalldirs) $(sharedir)
 	$(INSTALL_DATA) Example_Makefile $(sharedir)/Makefile
