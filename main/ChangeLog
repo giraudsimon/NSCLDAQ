@@ -1174,3 +1174,5 @@ Work on 11.0-rc11 begins
 	was broken in version 11.1-009. 
 	* Fixes bug #6605 to ensure that the driver fails if it is not communicating
 	with a valid V1x90 device.
+	* Fixes bug #6602. The source code for the VMUSBReadout simple setup
+	tutorial is included during the installation of NSCLDAQ for users.

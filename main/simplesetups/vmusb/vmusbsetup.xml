@@ -769,31 +769,61 @@ Index         Counts                 Rate
       demonstrate a modern style of implementing C++ that leverages some newer
       C++11 features, like the range-based for loop.
     </para>
+
+    <para>
+      The tutorial will describe an example implementation of SpecTcl to parse the
+      data outputted by the VMUSBReadout already configured. The complete source
+      code is available and will be referred to often.
+    </para>
+
     <section>
-      <title>Acquiring the Skeleton</title>
+      <title>What you will need to get started</title>
 
-      <para>
-        There is a good deal of boilerplate code that goes into developing a
-        tailored SpecTcl. To avoid rewriting a lot of that code, you can start
-        from the "skeleton" implementation. This provides a fully functional
-        SpecTcl application that can be easily modified to support our specific
-        needs. Getting the skeleton can be achieved by doing:
-      </para>
+      <orderedlist>
+        <listitem>
+          <para>
+            Create a directory in which to develop your SpecTcl implementation.
+          </para>
+        </listitem>
 
-      <screen>
-<literal>spdaqXX&gt;</literal> <command>mkdir MySpecTcl</command>
-<literal>spdaqXX&gt;</literal> <command>cd MySpecTcl</command>
-<literal>spdaqXX&gt;</literal> <command>cp /usr/opt/spectcl/3.4/Skel/* .</command>
-      </screen>
+        <listitem>
+          <para>
+            Locate the example directory containing the <em>complete source code</em> for the
+            SpecTcl implementation described in this section. The directory 
+            is available in any recent NSCLDAQ installation (newer than 11.1-009)
+            at PREFIX/share/src/vmusb_simple_setup, where PREFIX is the top-level 
+            installation directory of NSCLDAQ. At the NSCL, PREFIX is
+            /usr/opt/nscldaq/VERSION, where VERSION is the version
+            number identifier (e.g. 11.1-010).
+          </para>
+        </listitem>
 
-      <para>
-        It does not matter all that much which specific version is used so long
-        as it is at least version 3.4. Prior to version 3.4 there was no support
-        for the NSCLDAQ 11.0 data format. Because our data has been acquired
-        using an 11.0 version VMUSBReadout, it is therefore not possible to
-        analyze it using an older version of SpecTcl.
-      </para>
-      
+        <listitem>
+          <para>
+            Copy all files from the example directory into your development
+            directory created in step 1.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Open the file named "Makefile" and edit the first line by replacing
+            the text "TOP_LEVEL_SPECTCL_INSTALL_PATH" with the install path of
+            the SpecTcl you wish to link against. The following tutorial
+            expects a SpecTcl whose version is less than 5.0 but greater than
+            3.4. At the NSCL, the path would be /usr/opt/spectcl/VERSION, where
+            VERSION is the version number identifier (e.g. 3.4-005). Save the
+            edited version of this file.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Type "make" at the command line to compile the project.
+          </para>
+        </listitem>
+      </orderedlist>
+
     </section>
 
 
