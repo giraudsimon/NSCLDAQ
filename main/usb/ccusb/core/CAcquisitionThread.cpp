@@ -102,11 +102,7 @@ void
 CAcquisitionThread::start(CCCUSB* usb)
 
 {
-  CRunState* pState = CRunState::getInstance();
-  pState->setState(CRunState::Active);
 
-
-  CAcquisitionThread* pThread = getInstance();
   m_pCamac = usb;
 
 
@@ -358,7 +354,13 @@ CAcquisitionThread::processBuffer(DataBuffer* pBuffer)
 void
 CAcquisitionThread::startDaq()
 {
+    std::cout << "startDaq acquiring" << std::flush << std::endl;
   CriticalSection lock(CCCUSB::getGlobalMutex());
+
+  CRunState* pState = CRunState::getInstance();
+  pState->setState(CRunState::Active);
+
+  std::cout << "startDaq acquired " << std::flush << std::endl;
 
   char junk[100000];
   size_t moreJunk;
@@ -428,7 +430,7 @@ CAcquisitionThread::startDaq()
  
 
   CCusbToAutonomous();
-
+std::cout << "startDaq done" << std::flush << std::endl;
 }
 
 /*!

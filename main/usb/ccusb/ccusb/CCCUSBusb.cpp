@@ -507,4 +507,6 @@ CCCUSBusb::openUsb()
   while(usbRead(buffer, sizeof(buffer), &bytesRead) == 0) {
        fprintf(stderr, "Flushing CCUSB Buffer\n");
   }
+
+  Os::usleep(10000); // sleep 10 ms
 }

@@ -31,6 +31,8 @@
 #include <CCCUSBReadoutList.h>
 #include <CReadoutModule.h>
 
+#include <thread>
+#include <chrono>
 
 static const size_t MAX_STACK_STORAGE(1024);
 
@@ -64,9 +66,11 @@ CBeginRun::~CBeginRun()
 
 void CBeginRun::reconnect()
 {
+    std::cout << "Begin reconnect acquiring" << std::flush << std::endl;
     CriticalSection lock(CCCUSB::getGlobalMutex());
-
+    std::cout << "Begin reconnect acquired" << std::flush << std::endl;
     Globals::pUSBController->reconnect();
+    std::cout << "Begin done " << std::flush << std::endl;
 }
 
 /*!

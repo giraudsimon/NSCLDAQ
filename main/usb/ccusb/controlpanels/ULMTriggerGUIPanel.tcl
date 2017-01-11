@@ -761,6 +761,7 @@ itcl::body ATrigger2367::ReadStatus {} {
 	global module function address
 	global variable bit inspect increment
 	# Read all available data
+
 	foreach v [array names address] {
 		set variable($v) [lindex [wienercfsa $module $function($v) $address($v)] 0]
 	}
