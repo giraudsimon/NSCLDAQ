@@ -788,7 +788,7 @@ Index         Counts                 Rate
 
         <listitem>
           <para>
-            Locate the example directory containing the <em>complete source code</em> for the
+            Locate the example directory containing the <emphasis>complete source code</emphasis> for the
             SpecTcl implementation described in this section. The directory 
             is available in any recent NSCLDAQ installation (newer than 11.1-009)
             at PREFIX/share/src/vmusb_simple_setup, where PREFIX is the top-level 
