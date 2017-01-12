@@ -27,6 +27,7 @@
 #include <os.h>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 
 
 
@@ -398,33 +399,100 @@ int
 CCCUSBusb::transaction( void* writePacket, size_t writeSize,
                         void* readPacket,  size_t readSize)
 {
-  CriticalSection s(*m_pMutex);
-  int status = usb_bulk_write( m_handle, ENDPOINT_OUT,
-                               static_cast<char*>(writePacket), 
-                               writeSize, m_timeout);
-  dumpRequest(writePacket, writeSize, readSize);
+    char buf[8192];
 
-  if (status < 0) {
-    errno = -status;
-    return -1;    // Write failed!!
-  }
+      CriticalSection s(*m_pMutex);
+      int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
+                                          static_cast<char*>(writePacket), writeSize,
+                                  m_timeout);
+      if (status < 0) {
+        errno = -status;
+        return -1;		// Write failed!!
+      }
 
-  status = usb_bulk_read( m_handle, ENDPOINT_IN,
-                          static_cast<char*>(readPacket), 
-                          readSize, m_timeout);
+      status    = usb_bulk_read(m_handle, ENDPOINT_IN,
+                                    buf, sizeof(buf), m_timeout);
+      if (status < 0) {
+        errno = -status;
+        return -2;
+      }
 
-  if (status < 0) {
-    errno = -status;
-    return -2;
-  }
-#ifdef TRACE
-  if (status == 0) {
-    fprintf(stderr, "usb_bulk_read returned 0\n");
-  } else {
-    dumpResponse(readPacket, status);
-  }
-#endif
-  return status;
+      long bytesRead = status;
+      auto pReadCursor = reinterpret_cast<char*>(readPacket);
+
+      // Copy the newly read data into the output buffer
+      pReadCursor = std::copy(buf, buf + status, pReadCursor);
+
+      int nAttempts = 0;
+      int maxAttempts = readSize/sizeof(buf);
+
+      if (bytesRead < readSize) {
+          // looks like there might be a bug that causes the first read to
+          // return 0 bytes. Adjust to try at least 1 extra time if needed.
+          maxAttempts += 1;
+
+  //        std::cout << "Read " << bytesRead<< " bytes " << std::endl;
+  //        std::cout << "need to try again " << maxAttempts << " times"
+  //                  << " for all " << readSize << " bytes requested" << std::endl;
+      }
+      // if in events buffering mode, then getBufferSize() returns -1. This
+      // short circuits the while loop below because the maxAttempts will be negative.
+
+      // iteratively read until we have the data we desire
+      while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
+        status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
+        if (status < 0) {
+            if ( status != -ETIMEDOUT) {
+  //              std::cout << "failed" << std::endl;
+                // read failures are only bad if they are not timeouts
+                errno = -status;
+                return -2;
+            } else {
+  //              std::cout << "timed out" << std::endl;
+                // timeouts after the first read is just the end of data.
+                // return the number of bytes received prior to the last
+                // read operation.
+                return bytesRead;
+            }
+        }
+
+  //      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
+        pReadCursor = std::copy(buf, buf+status, pReadCursor);
+
+        bytesRead += status;
+
+        nAttempts++;
+      }
+
+      return bytesRead;
+
+//  CriticalSection s(*m_pMutex);
+//  int status = usb_bulk_write( m_handle, ENDPOINT_OUT,
+//                               static_cast<char*>(writePacket),
+//                               writeSize, m_timeout);
+//  dumpRequest(writePacket, writeSize, readSize);
+
+//  if (status < 0) {
+//    errno = -status;
+//    return -1;    // Write failed!!
+//  }
+
+//  status = usb_bulk_read( m_handle, ENDPOINT_IN,
+//                          static_cast<char*>(readPacket),
+//                          readSize, m_timeout);
+
+//  if (status < 0) {
+//    errno = -status;
+//    return -2;
+//  }
+//#ifdef TRACE
+//  if (status == 0) {
+//    fprintf(stderr, "usb_bulk_read returned 0\n");
+//  } else {
+//    dumpResponse(readPacket, status);
+//  }
+//#endif
+//  return status;
 }
 
 
@@ -444,28 +512,20 @@ CCCUSBusb::transaction( void* writePacket, size_t writeSize,
 void
 CCCUSBusb::openUsb()
 {
-  // Re-enumerate and get the right value in m_device or throw
-  // if our serial number is no longer there:
-
-  std::vector<struct usb_device*> devices = enumerate();
-  m_device = 0;
-  for (int i = 0; i < devices.size(); i++) {
-    if (serialNo(devices[i]) == m_serial) {
-      m_device = devices[i];
-      break;
-    }
-  }
-  if (!m_device) {
-    std::string msg = "CC-USB with serial number ";
-    msg += m_serial;
-    msg += " cannot be located";
-    throw msg;
-  }
-
-  m_handle  = usb_open(m_device);
+    enumerateAndIdentify();
+    m_handle  = usb_open(m_device);
   if (!m_handle) {
     throw "CCCUSBusb::CCCUSBusb  - unable to open the device";
   }
+
+  resetUSB();
+
+  enumerateAndIdentify();
+  m_handle  = usb_open(m_device);
+  if (!m_handle) {
+      throw "CCCUSBusb::CCCUSBusb  - unable to open the device";
+  }
+
   // Now claim the interface.. again this could in theory fail.. but.
 
   usb_set_configuration(m_handle, 1);
@@ -477,10 +537,8 @@ CCCUSBusb::openUsb()
   if (status == -ENOMEM) {
     throw "CCCUSBusb::CCCUSBusb - claim failed for lack of memory";
   }
-  usb_clear_halt(m_handle, ENDPOINT_IN);
-  usb_clear_halt(m_handle, ENDPOINT_OUT);
 
-  Os::usleep(100);
+  Os::usleep(10000);
 
   // Turn off data taking and flush any data in the buffer:
 
@@ -509,4 +567,53 @@ CCCUSBusb::openUsb()
   }
 
   Os::usleep(10000); // sleep 10 ms
+}
+
+
+/*!
+ * \brief Reset the already opened VMUSB
+ *
+ * The reset operation destroys the enumeration so that the caller must
+ * reenumerate the devices.
+ *
+ * \throws std::runtime_error if reset operation failed.
+ */
+void CCCUSBusb::resetUSB()
+{
+  int status = usb_reset(m_handle);
+  if (status < 0) {
+    throw std::runtime_error("CCCUSB::resetCCUSB() failed to reset the device");
+  }
+}
+
+
+/*!
+ * \brief Enumerate and locate the device by serial number
+ *
+ * It is expected that the serial number of the device has already been
+ * specified. This will enumerate the USB busses and then locate the
+ * device on it with a matching serial number. If found, the device is
+ * stored by the class for later use.
+ *
+ * \throws std::string if no device with a matching serial number is found
+ */
+void CCCUSBusb::enumerateAndIdentify()
+{
+  // Since we might be re-opening the device we're going to
+  // assume only the serial number is right and re-enumerate
+
+  std::vector<struct usb_device*> devices = enumerate();
+  m_device = 0;
+  for (int i = 0; i < devices.size(); i++) {
+    if (serialNo(devices[i]) == m_serial) {
+      m_device = devices[i];
+      break;
+    }
+  }
+  if (!m_device) {
+    std::string msg = "The CC-USB with serial number ";
+    msg += m_serial;
+    msg += " could not be enumerated";
+    throw msg;
+  }
 }

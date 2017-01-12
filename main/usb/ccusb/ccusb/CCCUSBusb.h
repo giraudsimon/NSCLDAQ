@@ -278,6 +278,8 @@ class CCCUSBusb : public CCCUSB
      */
     void openUsb();
 
+    void resetUSB();
+    void enumerateAndIdentify();
 
 };
 
