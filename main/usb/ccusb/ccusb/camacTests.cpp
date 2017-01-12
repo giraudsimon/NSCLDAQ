@@ -14,7 +14,7 @@
 
 using namespace std;
 
-static Warning msg(string("regTests requires at least one CC-USB interface"));
+static Warning msg(string("camactests requires a CC-USB interface and a Kinetic Systems 3821 in slot 5"));
 
 class registerTests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(registerTests);
@@ -147,23 +147,34 @@ void registerTests::qstop_0() {
 
 
 void registerTests::qscan_0() {
+
     int status;
     uint16_t value;
     uint16_t qx;
 
-    m_pInterface->c();
-    m_pInterface->simpleControl(16,0, 25, qx);
+    m_pInterface->simpleWrite16(5, 0, 17, 0, qx);
+
+    m_pInterface->simpleWrite16(5, 0, 16, 0, qx);
+    m_pInterface->simpleWrite16(5, 0, 16, 1, qx);
+    m_pInterface->simpleWrite16(5, 0, 16, 2, qx);
+    m_pInterface->simpleWrite16(5, 0, 16, 3, qx);
+
+
+    m_pInterface->simpleWrite16(5, 0, 17, 0, qx);
+    m_pInterface->simpleWrite16(5, 1, 17, 1, qx);
+    m_pInterface->simpleWrite16(5, 2, 17, 2, qx);
+    m_pInterface->simpleWrite16(5, 3, 17, 3, qx);
 
     CCCUSBReadoutList list;
-    list.addQScan(16,0,0,12);
+    list.addQScan(5,0,0,4);
 
     uint16_t data[16];
     size_t nRead;
     status = m_pInterface->executeList(list, data, sizeof(data), &nRead);
 
-    EQMSG("nRead", sizeof(uint16_t)*12, nRead);
-    for (int i=0; i<12; ++i) {
-        EQMSG("value", uint16_t(1), data[i]);
+    EQMSG("nRead", sizeof(uint16_t)*4, nRead);
+    for (int i=0; i<4; ++i) {
+        EQMSG("value", uint16_t(i), data[i]);
     }
 }
 
