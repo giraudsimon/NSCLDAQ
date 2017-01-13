@@ -19,7 +19,7 @@
 # baseURL to be git://git.code.sf.net/p/nscldaq/libtclplus
 #
 
-baseURL="https://git.nscl.msu.edu/daqdev/libtclplus"
+baseURL="http://git.nscl.msu.edu/daqdev/libtclplus"
 
 tag="$1"
 
