@@ -1179,3 +1179,5 @@ Work on 11.0-rc11 begins
 	* Improves synchronization for CCUSB/VMUSBReadout between readout thread and
 	tclserver.
 	* Changes the interaction logic for the CCUSB to make it more stable.
+	* Fixes bug #6617 Removes warnings from tar that originated from time
+	skews between the local machine and the NFS server.

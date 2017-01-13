@@ -460,7 +460,7 @@ proc ::EventLog::_finalizeRun {} {
         #  Now what's left gets recursively/link-followed copied to the destDir
         #  using tar.
         
-        set tarcmd "(cd $srcdir; tar chf - .) | (cd $destDir; tar xpf -)"
+        set tarcmd "(cd $srcdir; tar chf - .) | (cd $destDir; tar --warning=no-timestamp -xpf -)"
         set tarStatus [catch {exec sh << $tarcmd} msg]
         if {$tarStatus} {
             tk_messageBox -title {Tar Failed} -icon error -type ok \
