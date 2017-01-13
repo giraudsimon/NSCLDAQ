@@ -6361,6 +6361,90 @@ Module cget <replaceable>name</replaceable>
                     VMUSBReadout program.
                 </para>
             </refsect2>
+
+            <refsect2>
+              <title>xlm</title>
+
+              <para>
+                The xlm module is a means for loading firmware into an XLM device.
+                If created, firmware will be loaded at the start of the VMUSBReadout
+                program. It will then be able to be reloaded later on demand using the
+                <command>init</command> command. The user must provide the path to the firmware
+                and also information regarding any validation steps.
+              </para>
+
+              <refsect3>
+                <title>Options</title>
+                <variablelist>
+
+                  <varlistentry>
+                    <term><literal>-base</literal> <parameter>address</parameter></term>
+                    <listitem>
+                      <para>
+                        The base address of the XLM that will be loaded with firmware.
+                        The base address of most XLMs is geographical in nature. If so, it
+                        can be computed by shifting the slot number to the left 27 bits
+                        (i.e. address = (slot &lt;&lt; 27)).
+                      </para>
+
+                      <para>
+                        The default value is 0.
+                      </para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term><literal>-firmware</literal> <parameter>path</parameter></term>
+                    <listitem>
+                      <para>
+                        The user should provide the path to the firmware file that is to 
+                        be loaded.
+                      </para>
+
+                      <para>
+                        The default value of this is an empty string.
+                      </para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term><literal>-validate</literal> <parameter>boolean</parameter></term>
+                    <listitem>
+                      <para>
+                        Enables or disables the validation stage following the loading
+                        of the firmware. The option takes a boolean value as an argument.
+                        If enabled, the validation stage will read a signature value from
+                        the first register of the FPGA in the XLM. The user supplied value
+                        to the <option>-signature</option> option will be compared against the
+                        read value. If they match, the firmware load will be considered a success.
+                        Otherwise, the firmware load will be considered a failure.
+                      </para>
+                      <para>
+                        The default value of this option is false.
+                      </para>
+                    </listitem>
+                  </varlistentry>
+
+                  <varlistentry>
+                    <term><literal>-signature</literal> <parameter>value</parameter></term>
+                    <listitem>
+                      <para>
+                        The value that will be compared to the first register of the FPGA to
+                        check for a successful firmware load. The value is only used if the
+                        user enables validation by passing a true value to the <option>-validate</option>
+                        option.
+                      </para>
+
+                      <para>
+                        The default value of this option is 0.
+                      </para>
+                    </listitem>
+                  </varlistentry>
+
+
+                </variablelist>
+              </refsect3>
+            </refsect2>
         </refsect1>
 
       </refentry>
