@@ -194,7 +194,7 @@ set adcThresh [list 10 10 10 10  10 10 10 10 \
                     10 10 10 10  10 10 10 10 \
                     10 10 10 10  10 10 10 10 ]  <co id="vmusb-ss-v785-thresh"/>
 adc create v785 0x11110000                      <co id="vmusb-ss-v785-create"/>
-adc config v785 -geo 10 -threshold $adcThresh   <co id="vmusb-ss-v785-config"/>
+adc config v785 -geo 10 -thresholds $adcThresh   <co id="vmusb-ss-v785-config"/>
       </programlisting>
 
       <calloutlist>
@@ -246,7 +246,7 @@ set tdcThresh [list 10 10 10 10  10 10 10 10 \
                     10 10 10 10  10 10 10 10 \
                     10 10 10 10  10 10 10 10 ]
 adc create v775 0x22220000                      <co id="vmusb-ss-v775-create"/>
-adc config v775 -geo 11 -threshold $tdcThresh   
+adc config v775 -geo 11 -thresholds $tdcThresh   
 adc config v775 -timescale 150                  <co id="vmusb-ss-v775-config"/>
       </programlisting>
 
@@ -511,7 +511,7 @@ $DAQBIN/VMUSBReadout --daqconfig=$PWD/daqconfig.tcl --ctlconfig=$PWD/ctlconfig.t
     </para>
 
     <screen>
-<literal>spdaqXX&gt;</literal> <command>dumper</command>
+<literal>spdaqXX&gt;</literal> <command>$DAQBIN/dumper</command>
     </screen>
 
     <para>
@@ -524,7 +524,7 @@ $DAQBIN/VMUSBReadout --daqconfig=$PWD/daqconfig.tcl --ctlconfig=$PWD/ctlconfig.t
     </para>
 
     <screen>
-<literal>spdaqXX&gt;</literal> <command>dumper --count=10</command>
+<literal>spdaqXX&gt;</literal> <command>$DAQBIN/dumper --count=10</command>
     </screen>
 
     <section>
@@ -537,10 +537,7 @@ $DAQBIN/VMUSBReadout --daqconfig=$PWD/daqconfig.tcl --ctlconfig=$PWD/ctlconfig.t
       <computeroutput>
 -----------------------------------------------------------
 Event 34 bytes long
-Body Header:
-Timestamp:    5764974207242862948
-SourceID:     0
-Barrier Type: 0
+No body header
 0010 0100 5200 4d7f 5001 0c08 5400 0100
 5a00 4de4 5801 0c05 5c00 ffff ffff ffff
 ffff
