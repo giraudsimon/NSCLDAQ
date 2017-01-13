@@ -13,7 +13,13 @@
 #
 # Last used with libtclplus-v2.0-000
 
-baseURL="http://git.code.sf.net/p/nscldaq/git"
+##
+# Note the repository specified below only is accessible
+# within NSCL/FRIB.  To access externally, define the
+# baseURL to be git://git.code.sf.net/p/nscldaq/libtclplus
+#
+
+baseURL="https://git.nscl.msu.edu/daqdev/libtclplus"
 
 tag="$1"
 
@@ -22,15 +28,5 @@ rm -rf libtcl
 git clone $baseURL libtcl
 (cd libtcl; git checkout tags/$1)
 
-# the above is all well and good for the tags imported from svn.
-# but native git tags tag the whole repo so we need to extract only
-# the libtclplus subdir:
-
-if [ -d libtcl/libtclplus ]
-then
-    mv libtcl __temp__
-    mv __temp__/libtclplus libtcl
-    rm -rf __temp__
-fi
 
 (cd libtcl; autoreconf -i)
