@@ -1189,4 +1189,7 @@ Work on 11.0-rc11 begins
 	* Fixes performance regression in CCUSB driver that was introduced in 11.2-001.
 	* ULMTriggerGUI prompts user at start up for interaction with ULM unless a
 	new commandline option is specified.
+11.2-003
+	* Fixes broken behavior in the ULMTriggerGUI that was not quite correct in
+	11.2-002.
 
