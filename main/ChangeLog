@@ -1186,3 +1186,4 @@ Work on 11.0-rc11 begins
 	* Fixes bugs #6585, #6588, and #6591. Updates the VMUSBReadout simple setup
 	to make it easier to follow by fixing incomplete or inaccurate content.
 11.2-002
+	* Fixes performance regression in CCUSB driver that was introduced in 11.2-001.

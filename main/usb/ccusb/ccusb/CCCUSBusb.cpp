@@ -423,76 +423,9 @@ CCCUSBusb::transaction( void* writePacket, size_t writeSize,
       // Copy the newly read data into the output buffer
       pReadCursor = std::copy(buf, buf + status, pReadCursor);
 
-      int nAttempts = 0;
-      int maxAttempts = readSize/sizeof(buf);
-
-      if (bytesRead < readSize) {
-          // looks like there might be a bug that causes the first read to
-          // return 0 bytes. Adjust to try at least 1 extra time if needed.
-          maxAttempts += 1;
-
-  //        std::cout << "Read " << bytesRead<< " bytes " << std::endl;
-  //        std::cout << "need to try again " << maxAttempts << " times"
-  //                  << " for all " << readSize << " bytes requested" << std::endl;
-      }
-      // if in events buffering mode, then getBufferSize() returns -1. This
-      // short circuits the while loop below because the maxAttempts will be negative.
-
-      // iteratively read until we have the data we desire
-      while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
-        status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
-        if (status < 0) {
-            if ( status != -ETIMEDOUT) {
-  //              std::cout << "failed" << std::endl;
-                // read failures are only bad if they are not timeouts
-                errno = -status;
-                return -2;
-            } else {
-  //              std::cout << "timed out" << std::endl;
-                // timeouts after the first read is just the end of data.
-                // return the number of bytes received prior to the last
-                // read operation.
-                return bytesRead;
-            }
-        }
-
-  //      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
-        pReadCursor = std::copy(buf, buf+status, pReadCursor);
-
-        bytesRead += status;
-
-        nAttempts++;
-      }
 
       return bytesRead;
 
-//  CriticalSection s(*m_pMutex);
-//  int status = usb_bulk_write( m_handle, ENDPOINT_OUT,
-//                               static_cast<char*>(writePacket),
-//                               writeSize, m_timeout);
-//  dumpRequest(writePacket, writeSize, readSize);
-
-//  if (status < 0) {
-//    errno = -status;
-//    return -1;    // Write failed!!
-//  }
-
-//  status = usb_bulk_read( m_handle, ENDPOINT_IN,
-//                          static_cast<char*>(readPacket),
-//                          readSize, m_timeout);
-
-//  if (status < 0) {
-//    errno = -status;
-//    return -2;
-//  }
-//#ifdef TRACE
-//  if (status == 0) {
-//    fprintf(stderr, "usb_bulk_read returned 0\n");
-//  } else {
-//    dumpResponse(readPacket, status);
-//  }
-//#endif
-//  return status;
 }
 
 
