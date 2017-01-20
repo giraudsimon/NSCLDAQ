@@ -81,6 +81,7 @@ if {$path ne {}} {
       mygui ReadConfigFile
     }
   } else {
+    mygui LockGUI 0
     mygui ReadConfigFile
   }
 } else {
