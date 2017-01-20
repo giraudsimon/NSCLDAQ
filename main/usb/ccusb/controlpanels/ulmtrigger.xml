@@ -94,6 +94,10 @@ Module create ccusb remoteHandler
         <para>Configuration file name</para>
       </listitem>
 
+      <listitem>
+        <para>Whether to interact with the ULM at start up</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>
@@ -126,7 +130,7 @@ $DAQBIN/ULMTriggerGUI --module remoteHandler --slot 10
     </para>
 
     <programlisting>
-$DAQBIN/ULMTriggerGUI --moduel remoteHandler --port 27000 --host localhost --ring USERNAME --slot 10
+$DAQBIN/ULMTriggerGUI --module remoteHandler --port 27000 --host localhost --ring USERNAME --slot 10
     </programlisting>
 
     <para>
@@ -146,6 +150,21 @@ $DAQBIN/ULMTriggerGUI --moduel remoteHandler --port 27000 --host localhost --rin
       </figure>
     </para>
   </section>
+
+  <para>
+    By default the ULMTriggerGUI will prompt the user about communicating with the 
+    ULM it has been associated with at startup. The reason for these prompts is to
+    prevent the unsuspecting person from starting up the GUI in the middle of
+    an active run and possibly ruining the run. It is understood that being
+    prompted over and over again may become annoying behavior. For that reason,
+    the user can disable the prompts by passing 1 the
+    <option>--nostartprompts</option> command line option. This might look
+    like: 
+  </para>
+
+    <programlisting>
+$DAQBIN/ULMTriggerGUI --module remoteHandler --slot 10 --nostartprompts 1
+    </programlisting>
 
   <section>
     <title>Overview of Basic Operation</title>

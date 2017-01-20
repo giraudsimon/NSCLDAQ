@@ -26,6 +26,7 @@ set options {
   {-port.arg  27000       "port the slow-controls server is listening on" }
   {-ring.arg "" "name of ring VMUSBReadout is filling <your username>" }
   {-configfile.arg ""  "name of file to write GUI state to" }
+  {-nostartprompts.arg 0  "whether to prompt user at startup regarding ULM communication" }
 }
 
 set usage " --module value ?option value? :"
@@ -61,14 +62,40 @@ set host [lindex [array get params -host] 1]
 set port [lindex [array get params -port] 1]
 set ring [lindex [array get params -ring] 1]
 set path [lindex [array get params -configfile] 1]
+set noPrompt [lindex [array get params -nostartprompts] 1]
+puts "no prompt = $noPrompt"
 
 
 ATrigger2367 mygui 0 1 $host $port $module $slot $ring
 mygui SetupGUI . $path
 if {$path ne {}} {
-  mygui ReadConfigFile
+
+  if {! $noPrompt} {
+    set msg "Do you want to write the config file settings to the ULM at startup?"
+    append msg "\n\nWARNING: Choose 'NO' if a run is in progress."
+    set preference [tk_messageBox -icon question \
+      -message $msg -type yesno]
+
+    if {$preference eq "yes"} {
+      mygui LockGUI 0
+      mygui ReadConfigFile
+    }
+  } else {
+    mygui ReadConfigFile
+  }
 } else {
-  mygui ReadStatus
+
+  if {! $noPrompt} {
+    set msg "Do you want the GUI to display the current ULM state at start up?"
+    append msg "\n\nWARNING: Choose 'NO' if a run is in progress!"
+    set preference [tk_messageBox -icon question \
+      -message $msg -type yesno]
+    if {$preference eq "yes"} {
+      mygui ReadStatus
+    }
+  } else {
+    mygui ReadStatus
+  }
 }
 
 # Configure some window manager details 
