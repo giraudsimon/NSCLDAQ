@@ -1061,12 +1061,12 @@ extern "C" {                                    <co id="vmusb-dev-getEvtTstamp-e
       <para>
         Sometimes it may be useful to label the scaler data with a timestamp as
         well. It is not necessary but is useful. You have two options for
-        implementing the scaler timestamp (these technically also applies to the
+        implementing the scaler timestamp (these technically also apply to the
         event timestamp):
       </para>
       <orderedlist>
         <listitem>
-          <para>Always return zero</para>
+          <para>Always return NULL_TIMESTAMP</para>
         </listitem>
         <listitem>
           <para>Returning computed value</para>
@@ -1075,8 +1075,9 @@ extern "C" {                                    <co id="vmusb-dev-getEvtTstamp-e
 
       <para>
        If you have implemented a timestamp extractor for event data and you do
-       not care about have a precise timestamp labeling your scaler data, the
-       first option is a good one. A zero timestamp is treated specially by the
+       not care about having a precise timestamp labeling your scaler data, the
+       first option is a good one. The NULL_TIMESTAMP value as defined in the 
+       DataFormat.h file is treated specially by the
        event builder in that the corresponding event will simply be labeled with
        timestamp of the event preceding it. In other words, it gets dealt with
        in the order it was received.
@@ -1128,6 +1129,7 @@ extern "C" {                                    <co id="vmusb-dev-getEvtTstamp-e
         </para>
 
         <programlisting>
+#include &lt;DataFormat.h&gt;
 // ...
 extern "C" {
   uint64_t getEventTimestamp(void* pBuffer)
@@ -1136,12 +1138,20 @@ extern "C" {
   }
 
   uint64_t getScalerTimestamp(void* pBuffer) {
-    return uint64_t(0);
+    return NULL_TIMESTAMP;
   }
 
 } // end of extern
         </programlisting>
+
+        <para>
+          Because the DataFormat.h header has been included, the compiler
+          will need to be told where it lives. That file lives in the $DAQROOT/include
+          directory. So if you add "-I$DAQROOT/include" to your compilation
+          recipe, then you should be fine.
+        </para>
       </example>
+
     </section>
 
     <section>
@@ -1283,8 +1293,23 @@ extern "C" {
         </para>
 
         <screen>
-<literal>spdaqXX&gt;</literal> <command>g++ -std=c++11 -fPIC -shared -o mytstamplib.so mytstamplib.cpp</command>
+          <literal>spdaqXX&gt;</literal> <command>g++ -std=c++11 -fPIC -shared -I$DAQROOT/include -o mytstamplib.so mytstamplib.cpp</command>
         </screen>
+
+        <para>
+          It has been assumed that the DAQROOT environment variable has been set. It 
+          gets set by sourcing the daqsetup.bash script in the installation direcotry
+          of your NSCLDAQ version. At the NSCL, this is going to look something like:
+        </para>
+
+        <screen>
+          <literal>spdaqXX&gt;</literal> <command>source /usr/opt/nscldaq/11.2-003/daqsetup.bash -f</command>
+        </screen>
+        <para>
+          The <command>-f</command> option forces any existing version to be overridden by the script. More
+          often than not, it is the desired behavior.
+        </para>
+
       </section>
     </section>
   </section>

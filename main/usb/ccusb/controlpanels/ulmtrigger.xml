@@ -149,7 +149,6 @@ $DAQBIN/ULMTriggerGUI --module remoteHandler --port 27000 --host localhost --rin
         </mediaobject>
       </figure>
     </para>
-  </section>
 
   <para>
     By default the ULMTriggerGUI will prompt the user about communicating with the 
@@ -166,6 +165,7 @@ $DAQBIN/ULMTriggerGUI --module remoteHandler --port 27000 --host localhost --rin
 $DAQBIN/ULMTriggerGUI --module remoteHandler --slot 10 --nostartprompts 1
     </programlisting>
 
+  </section>
   <section>
     <title>Overview of Basic Operation</title>
 
