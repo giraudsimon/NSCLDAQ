@@ -1,0 +1,250 @@
+<!-- manpage 3vmusb -->
+<refentry id="vmusb3-controlscript">
+  <refentryinfo>
+    <author>
+      <personname>
+        <firstname>Jeromy</firstname>
+        <surname>Tompkins</surname>
+      </personname>
+      <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle id='vmusb3-controlscript-title'>controlscript</refentrytitle>
+    <manvolnum>3vmusb</manvolnum>
+    <refmiscinfo class='empty'></refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>controlscript</refname>
+    <refpurpose>Virtual slow controls module to execute TCL scripts</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>
+        controlscript name
+      </command>
+      <group>
+        <arg>-controllertype</arg>
+        <replaceable> type</replaceable>
+      </group>
+      <group>
+      <arg>-initscript</arg>
+      <replaceable> path</replaceable>
+      </group>
+      <group>
+        <arg>-updatescript</arg>
+        <replaceable> path</replaceable>
+      </group>
+      <group>
+        <arg>-monitorscript</arg>
+        <replaceable> path</replaceable>
+      </group>
+      <group>
+        <arg>-monitorproc</arg>
+        <replaceable> proc</replaceable>
+      </group>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+    <para>
+      The <command>controlscript</command> package provides a snit::type called
+      controlscript that can be used to source Tcl scripts as a result of slow
+      control requests. The idea is that the user can create an instance of 
+      the snit::type and then register it as a Module with type=tcl. The behavior
+      can be useful you have special Tcl code that might need to execute on the server
+      side during a run. It is also a means for the using some of the low-level
+      Tcl drivers provided by the CCUSBReadout and VMUSBReadout. 
+    </para>
+    <para>
+      The only required option is <parameter>-controllertype</parameter>, whose
+      argument specifies whether the driver will be handling VMUSB or CCUSB 
+      requests. The rest of the options are truly optional.
+    </para>
+    <para>
+      The scripts that are passed
+    </para>
+   
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+        <term>-controllertype <replaceable>type</replaceable></term>
+        <listitem>
+          <para>
+            The -controllertype parameter is the only required option. Its argument,
+            <option>type</option>, must be either "vmusb" or "ccusb". If neither
+            is provided, an error will occur.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-initscript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-initscript</option> option specifies the path to a Tcl
+            script that will be evaluated in the global scope. It is executed at
+            the startup of the slow controls server (i.e. at program startup) and
+            any time the user calls the <command>init</command> from within the
+            Readout program it is associated with. If this option is not provided
+            ,it will be ignored.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aController</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. The object
+            is a cvmusb::CVMUSBusb object and has methods provided by the 
+            cvmusb package.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-updatescript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-updatescript</option> option specifies the path to a Tcl
+            script that will be evaluated in the global scope. It is executed
+            whenever an update request is received for the associated
+            slow-controls module. If this option is not provided, it will be
+            ignored.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aController</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. The object
+            is a cvmusb::CVMUSBusb object and has methods provided by the 
+            cvmusb package.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-monitorscript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-monitorscript</option> option specifies the path to a
+            Tcl script that will be evaluated in the global scope. It is only
+            meaningful in the context of VMUSBReadout. In this script, you should
+            add stack commands to the "Globals::aReadoutList" object, which is a
+            CVMUSBReadout object. The commands that are added to the stack will
+            be executed periodically during the run and the resulting data will
+            be processed by the proc identified in the
+            <option>-monitorproc</option> option. This will be executed on at
+            program startup. If this option is not provided, it will be ignored.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aReadoutList</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. It can be
+            manipulated using the methods provided in the cvmusbreadoutlist
+            package.
+          </para>
+        </listitem>
+      </varlistentry>
+      
+
+      <varlistentry>
+        <term>-monitorproc <replaceable>proc</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-monitorproc</option> option specifies a proc that will
+            be used to parse the data generated by the commands added in the script
+            passed as an argument to the <option>-monitorscript</option> option. It
+            should parse the byte data and then return the number of bytes that it
+            processed.
+          </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLE</title>
+    
+    <example>
+      <title>
+       An example usage in VMUSBReadout 
+      </title>
+      <para>
+        Consider that you are running VMUSBReadout and need to execute some code
+        contained in a file myScript.tcl at the startup of the program. After the initial
+        program startup, you do not require it to be executed again unless you choose to
+        do so via an init command. In this case, you would want to use the controlscript.
+        This should go in your ctlscript and it might look something like:
+      </para>
+
+      <programlisting>
+        lappend auto_path [file join $::env(DAQROOT) TclLibs] <co id="ctlscript.ex.0"/>
+        lappend auto_path $::env(DAQLIB)
+
+        package require cvmusb    
+        package require cvmusbreadoutlist   
+        package require controlscript                         <co id="ctlscript.ex.1"/>
+        
+        controlscript _myScript -controllertype vmusb         <co id="ctlscript.ex.2"/>
+        _myScript configure -initscript [file join /path to myScript.tcl]
+
+        Module create tcl myScript                            <co id="ctlscript.ex.3"/>
+        Module config myScript -ensemble _myScript
+      </programlisting>
+      <calloutlist>
+        <callout arearefs="ctlscript.ex.0">
+          <para>
+            The first two rows ensure that the cvmusb and controlscript package
+            can be found. This assumes that the DAQROOT and DAQLIB environment
+            variables point to the NSCLDAQ installation of you choosing. 
+          </para>
+        </callout>
+        <callout arearefs="ctlscript.ex.1">
+          <para>
+            Here we need to require the packages that might be used. The cvmusb and 
+            cvmusbreadoutlist packages are necessary in order to manipulate the
+            Globals::aController or Globals::aReadoutList objects. We also need
+            to require the controlscript package so that we can use it.
+          </para>
+        </callout>
+        <callout arearefs="ctlscript.ex.2">
+          <para>
+            An instance of the controlscript snit::type is instantiated. It is told that
+            it is dealing with the VMUSB device and also that the script it is to
+            source is located at /path/to/myScript.tcl.
+          </para>
+        </callout>
+        <callout arearefs="ctlscript.ex.3">
+          <para>
+            Finally we need to register a tcl module to the slow controls server
+            that will call the controlscript object we just created. It will repsond
+            to slow-control requests sent to the module named myScript.
+          </para>
+        </callout>
+      </calloutlist>
+
+      <para>
+        Your myScript.tcl file might look something like this if it were to
+        write 1 to a register in some module (address=0xa2020100) using A32
+        single data access (0x09) and then verify that the write succeeded.
+      </para>
+
+      <programlisting>
+        set ctlr $::Globals::aController
+
+        # write, read, and then print some value from a module at address
+        $ctlr vmeWrite16 0xa2020100 0x09 1
+        set newValue [$ctlr vmeRead16 0xa2020100 0x09]
+
+        if {$newValue != 1} {
+          puts "ERROR! Write did not successfully set the value in the module"
+        }
+      </programlisting>
+    </example> 
+  </refsect1>
+</refentry>
+
+
+<!--- /manpage -->

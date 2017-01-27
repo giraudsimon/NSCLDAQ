@@ -72,6 +72,7 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/usb/vmusb/controlpanels \
 						@top_srcdir@/usb/ccusb/controlpanels \
 						@top_srcdir@/usb/ccusb/tclpackage \
+						@top_srcdir@/usb/common/tcldrivers \
 						@top_srcdir@/sbs \
 						@top_srcdir@/sbs/readout \
 						@top_srcdir@/sbs/vmemodules  \
