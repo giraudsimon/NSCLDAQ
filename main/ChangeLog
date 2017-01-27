@@ -1192,4 +1192,4 @@ Work on 11.0-rc11 begins
 11.2-003
 	* Fixes broken behavior in the ULMTriggerGUI that was not quite correct in
 	11.2-002.
-
+	* Fixes #6671, Action parser can now recover after failures.
