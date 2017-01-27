@@ -1787,7 +1787,7 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
         <programlisting>
           package require ReadoutGuiRemoteControl   <co id='remote_control_package' />
 
-          RemoteControlClient::initalize <co id='remote_control_initialize' />
+          RemoteControlClient::initialize <co id='remote_control_initialize' />
         </programlisting>
       </informalexample>
       <calloutlist>
