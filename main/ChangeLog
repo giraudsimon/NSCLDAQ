@@ -1200,3 +1200,5 @@ Work on 11.0-rc11 begins
 	function in the docs.
 	* Fixes #6638, Removes the debugging output that was introduced in earlier 11.2
 	patches.
+	* Fixes #6641 and #6644. Adds docs for the readoutscript and controlscript 
+	packages.

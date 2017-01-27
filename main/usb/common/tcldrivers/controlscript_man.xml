@@ -65,9 +65,6 @@
       argument specifies whether the driver will be handling VMUSB or CCUSB 
       requests. The rest of the options are truly optional.
     </para>
-    <para>
-      The scripts that are passed
-    </para>
    
   </refsect1>
   <refsect1>
@@ -92,15 +89,15 @@
             script that will be evaluated in the global scope. It is executed at
             the startup of the slow controls server (i.e. at program startup) and
             any time the user calls the <command>init</command> from within the
-            Readout program it is associated with. If this option is not provided
-            ,it will be ignored.
+            Readout program it is associated with. If this option is not provided,
+            it will be ignored.
           </para>
           <para>
             While the script executes, the
             <command>Globals::aController</command> variable will refer to the
-            VMUSB or CCUSB object managed by the Readout program. The object
-            is a cvmusb::CVMUSBusb object and has methods provided by the 
-            cvmusb package.
+            VMUSB or CCUSB object managed by the Readout program. The object is
+            either a cvmusb::CVMUSBusb or cccusb::CCCUSBusb object and has
+            methods provided by the cvmusb or cccusb package, respectively.
           </para>
         </listitem>
       </varlistentry>
@@ -119,8 +116,8 @@
             While the script executes, the
             <command>Globals::aController</command> variable will refer to the
             VMUSB or CCUSB object managed by the Readout program. The object
-            is a cvmusb::CVMUSBusb object and has methods provided by the 
-            cvmusb package.
+            is either a cvmusb::CVMUSBusb or cccusb::CCCUSBusb object and has methods provided by the 
+            cvmusb or cccusb package, respectively.
           </para>
         </listitem>
       </varlistentry>
@@ -144,7 +141,7 @@
             <command>Globals::aReadoutList</command> variable will refer to the
             VMUSB or CCUSB object managed by the Readout program. It can be
             manipulated using the methods provided in the cvmusbreadoutlist
-            package.
+            or cccusbreadoutlist package.
           </para>
         </listitem>
       </varlistentry>
@@ -234,7 +231,7 @@
       <programlisting>
         set ctlr $::Globals::aController
 
-        # write, read, and then print some value from a module at address
+        # write, read, and then check the value
         $ctlr vmeWrite16 0xa2020100 0x09 1
         set newValue [$ctlr vmeRead16 0xa2020100 0x09]
 

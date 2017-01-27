@@ -1,0 +1,287 @@
+<!-- manpage 3vmusb -->
+<refentry id="vmusb3-readoutscript">
+  <refentryinfo>
+    <author>
+      <personname>
+        <firstname>Jeromy</firstname>
+        <surname>Tompkins</surname>
+      </personname>
+      <personblurb><para></para></personblurb>
+    </author>
+    <productname>NSCLDAQ</productname>
+    <productnumber></productnumber>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle id='vmusb3-readoutscript-title'>readoutscript</refentrytitle>
+    <manvolnum>3vmusb</manvolnum>
+    <refmiscinfo class='empty'></refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>readoutscript</refname>
+    <refpurpose>Virtual driver to execute TCL scripts</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>
+        readoutscript name
+      </command>
+      <group>
+        <arg>-controllertype</arg>
+        <replaceable> type</replaceable>
+      </group>
+      <group>
+      <arg>-initscript</arg>
+      <replaceable> path</replaceable>
+      </group>
+      <group>
+        <arg>-rdolistcript</arg>
+        <replaceable> path</replaceable>
+      </group>
+      <group>
+        <arg>-onendscript</arg>
+        <replaceable> path</replaceable>
+      </group>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+    <para>
+      The <command>readoutscript</command> package provides a snit::type called
+      readoutscript that can be used to source Tcl scripts to configure modules
+      for readout. It can also be used to add commands to the stack during the
+      readout. The idea is that the user can create an instance of 
+      the snit::type and then register it as a Tcl driver. It is the means 
+      by which drivers such as ACrdcXLM72, APpacXLM72, and ACAENV288 are intended
+      to be used. The driver is generic and can be used in either the 
+      VMUSBReadout or CCUSBReadout programs.
+    </para>
+    <para>
+      The only required option is <parameter>-controllertype</parameter>, whose
+      argument specifies whether the driver will be handling VMUSB or CCUSB 
+      requests. The rest of the options are truly optional.
+    </para>
+   
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+        <term>-controllertype <replaceable>type</replaceable></term>
+        <listitem>
+          <para>
+            The -controllertype parameter is the only required option. Its argument,
+            <option>type</option>, must be either "vmusb" or "ccusb". If neither
+            is provided, an error will occur.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-initscript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-initscript</option> option specifies the path to a Tcl
+            script that will be evaluated in the global scope. It is executed
+            at the startup of the slow controls server (i.e. at program
+            startup) and any time the user calls the <command>init</command>
+            from within the Readout program it is associated with. If this
+            option is not provided, it will be ignored.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aController</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. The object is
+            either a cvmusb::CVMUSBusb or ccusb::CCCUSB object and has methods
+            provided by the cvmusb or ccusb package, respectively.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-rdolistscript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-rdolistscript</option> option specifies the path to a
+            Tcl script that will be evaluated in the global scope.  In this
+            script, you should add stack commands to the
+            "Globals::aReadoutList" object, which is either a CCCUSBReadout or
+            CVMUSBReadout object provided by the cccusb or cvmusb package. The
+            commands that are added to the stack will be executed whenever the
+            associated trigger occurs.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aReadoutList</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. It can be
+            manipulated using the methods provided in the cvmusbreadoutlist or
+            cccusbreadoulist package.
+          </para>
+        </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+        <term>-onendscript <replaceable>path</replaceable></term>
+        <listitem>
+          <para>
+            The <option>-onendscript</option> option specifies the path to a
+            Tcl script that will be evaluated in the global scope. It is
+            executed immediately after a run is ended. If this option is not
+            provided, it will be ignored.
+          </para>
+          <para>
+            While the script executes, the
+            <command>Globals::aController</command> variable will refer to the
+            VMUSB or CCUSB object managed by the Readout program. The object is
+            either a cvmusb::CVMUSBusb or cccusb::CCCUSBusb object and has
+            methods provided by the cvmusb or cccusb package, respectively.
+          </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLE</title>
+    
+    <example>
+      <title>
+       An example usage in VMUSBReadout 
+      </title>
+      <para>
+        Consider that you are running VMUSBReadout and want to add control the 
+        configuration and readout of a module completely throw low-level scripts.
+        To do so, you would specify all of the logic in a set of scripts. The
+        code to configure the module for readout might be in a file called
+        init.tcl, the code for specifying how to read the module out would be
+        in a file called event.tcl, and the code to shutdown the module's readout
+        mode would be in a file called end.tcl. You would start by creating a
+        daqconfig.tcl that has the following contents.
+      </para>
+
+      <programlisting>
+        lappend auto_path [file join $::env(DAQROOT) TclLibs] <co id="rdoscript.ex.0"/>
+        lappend auto_path $::env(DAQLIB)
+
+        package require cvmusb    
+        package require cvmusbreadoutlist   
+        package require readoutscript                         <co id="rdoscript.ex.1"/>
+        
+        readoutscript mydriver -controllertype vmusb          <co id="rdoscript.ex.2"/>
+        mydriver configure -initscript [file join /path to init.tcl]
+        mydriver configure -rdolistscript [file join /path to event.tcl]
+        mydriver configure -onendscript [file join /path to end.tcl]
+
+        addtcldriver mydriver                                 <co id="rdoscript.ex.3"/>
+
+        stack create evtStack
+        stack config evtStack -modules [list mydriver] -trigger nim1 <co id="rdoscript.ex.4"/>
+      </programlisting>
+      <calloutlist>
+        <callout arearefs="rdoscript.ex.0">
+          <para>
+            The first two rows ensure that the cvmusb and controlscript package
+            can be found. This assumes that the DAQROOT and DAQLIB environment
+            variables point to the NSCLDAQ installation of you choosing. 
+          </para>
+        </callout>
+        <callout arearefs="rdoscript.ex.1">
+          <para>
+            Here we need to require the packages that might be used. The cvmusb and 
+            cvmusbreadoutlist packages are necessary in order to manipulate the
+            Globals::aController or Globals::aReadoutList objects. We also need
+            to require the controlscript package so that we can use it.
+          </para>
+        </callout>
+        <callout arearefs="rdoscript.ex.2">
+          <para>
+            An instance of the readoutscript snit::type is instantiated and configured. It is told that
+            it is dealing with the VMUSB device and also where the required scripts are
+            located.
+          </para>
+        </callout>
+        <callout arearefs="rdoscript.ex.3">
+          <para>
+            The instance of the readoutscript snit::type is not actually useful
+            until we turn it into a Tcl driver. That is accomplished with the 
+            <command>addtcldriver</command> command.
+          </para>
+        </callout>
+        <callout arearefs="rdoscript.ex.4">
+          <para>
+            Now that we have the driver configured, we can add it to the stack
+            for use. If it is not added to the stack, it is useless and is ignored
+            by the Readout program. 
+          </para>
+        </callout>
+      </calloutlist>
+
+      <para>
+        For the init.tcl file, the logic will be extremely simple. I am going to
+        assume that there is only one register to write to put the device into
+        a state that suitable for data taking. Of course this is absurd and a real
+        example would require a bit more than writing one register. Here we assume
+        that writing 1 to a register at address 0xa2020100 using A32
+        single data access (0x09) is sufficient. We will also check via a read that
+        it got set appropriately.
+      </para>
+
+      <programlisting>
+        set ctlr $::Globals::aController
+
+        # write, read, and then check the value
+        $ctlr vmeWrite16 0xa2020100 0x09 1
+        set newValue [$ctlr vmeRead16 0xa2020100 0x09]
+
+        if {$newValue != 1} {
+          puts "ERROR! Write did not successfully set the value in the module"
+        }
+      </programlisting>
+
+
+      <para>
+        Next we want read out the device when a trigger arrives. Let's assume
+        that involves a block read with 34 transfers from address 0xa202000 and
+        then a write to reset it.  For the block read we need to use the 0x0b
+        address modifier because the device is accessed using A32 addressing.
+        We will also add some markers to bookend the data for easy
+        identification.  Here is what that would look like in the event.tcl
+        file.
+      </para>
+
+      <programlisting>
+        set stack $::Globals::aReadoutList
+
+        $stack addMarker 0xabcd
+        $stack addBlockRead32 0xa202000 0x0b 34  ;# 32 transfer BLT
+        $stack addWrite32 0xa20200200 0x09 1  ; # clear the module for a new event
+        $stack addMarker 0xbbcd
+      </programlisting>
+
+
+      <para>
+        Finally, the end.tcl script is going to be used to take the device
+        out of acquisition mode. Let's assume that this is accomplished
+        in a manner that is opposite to what was done in init.tcl. So instead
+        of writing a 1, we are going to write 0. Here is the end.tcl file:
+      </para>      
+
+      <programlisting>
+        set ctlr $::Globals::aController
+
+        # write, read, and then check the value
+        $ctlr vmeWrite16 0xa2020100 0x09 0
+        set newValue [$ctlr vmeRead16 0xa2020100 0x09]
+
+        if {$newValue != 0} {
+          puts "ERROR! Write did not successfully set the value in the module"
+        }
+      </programlisting>
+
+    </example> 
+  </refsect1>
+</refentry>
+
+
+<!--- /manpage -->
