@@ -85,7 +85,16 @@ snit::type Actions {
     # a newline if there was none to begin with.
     set input [chan read $fd ]
 
-    return [$self processInput $input]
+    if {[catch {$self processInput $input} msg]} {
+      $self handleError "Error while parsing '$input'"
+      $self handleError "Error: $msg"
+      $self handleError "Resetting parser state"
+      set accumulatedInput {}
+      set accumulatedOutMsg {}
+      set incomplete 0
+    }
+
+    return $msg
   }
 
   ## Adjust the number of lines we have to process

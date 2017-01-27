@@ -102,6 +102,7 @@ OUTPUT 4 ijkl}
   $action buildPacket $line
 } -result {OUTPUT abcd 4}
 
+
 namespace eval testHandlers {
   variable line {}
   proc handleLog msg { variable line;  append line "log \"$msg\""}
@@ -195,6 +196,36 @@ tcltest::test handlePainfulMessage {Test that directive data is properly handled
 } -result {output ""tcl "puts "mean msg
 ""}
 
+tcltest::test failInBuildPacketIsRecoverable-0 {Test that directive data is properly handled
+} -setup {
+  set action [::Actions %AUTO% -actionbundle testHandlers]
+  tcltest::makeFile  "abcdef\nERRMSG 4 ghij\n" ".testing"
+  set ::testHandlers::line {}
+} -cleanup {
+  $action destroy
+  snit::method ::Actions buildPacket $old_args $old_body
+} -body {
+  set old_args [$action info args buildPacket]
+  set old_body [$action info body buildPacket]
+  snit::method ::Actions buildPacket $old_args {
+     error "forced failure"
+  }
+
+  set file [open ".testing" r]
+  $action handleReadable $file
+  close $file
+
+  snit::method ::Actions buildPacket $old_args $old_body
+
+  set file [open ".testing" r]
+  $action handleReadable $file
+  set ::testHandlers::line
+} -result {error "Error while parsing 'abcdef
+ERRMSG 4 ghij
+'"error "Error: forced failure"error "Resetting parser state"output "abcdef
+"error "ghij"}
+
+
 tcltest::test handleSingleNewlineMessage {Test that we can produce a simple newline msg
 } -setup {
   set action [::Actions %AUTO% -actionbundle testHandlers]
@@ -278,6 +309,88 @@ tcltest::test handleMessageDBG {test handleDirective for DBGMSG
   $action handleMessage $parsedmsg
   set ::testHandlers::line
 } -result {debug "my message"}
+
+tcltest::test buildPktAfterNonProtocol {Test that we can ignore the non protocol stuff
+} -setup {
+  set action [::Actions %AUTO% -actionbundle testHandlers]
+  set ::testHandlers::line {}
+  set line {asdf
+asdfasdasdf
+asdf
+OUTPUT 4 abcd
+OUTPUT 4 efgh
+OUTPUT 4 ijkl
+}
+} -cleanup {
+  $action destroy
+} -body {
+  $action processInput $line
+  set ::testHandlers::line
+} -result {output "asdf
+"output "asdfasdasdf
+"output "asdf
+"output "abcd"output "efgh"output "ijkl"}
+
+tcltest::test testS800FilterOutput-0 {s800 filter processing does always work, make sure it does
+} -setup {
+  set action [::Actions %AUTO% -actionbundle testHandlers]
+  set ::testHandlers::line {}
+  set line {LOGMSG 27  SET ERROR COUNTERS TO ZERO
+
+ERROR COUNTER RESULTS
+ERROR 1. Number of fragments in RingItem is not 2:                           1
+ERROR 2. Fragment with no head:                                              0
+ERROR 3. Duplicated source ID:                                               0
+ERROR 4. Corrupted timestamp = 0:                                            0
+ERROR 5. Uncorrelated fragments (different timestamps):                      0
+ERROR 6. Body size value from body and header differ (OBSOLETE):             0
+ERROR 7. Missing end-of-packet tag:                                          0
+ERROR 8. Duplicated packet tag:                                              0
+ERROR 9. Timestamp from header different than decoded timestamp from body:   0
+ERROR 10. Incomplete RingItem (missing packet tags):                         0
+ERROR 11. Unknown word found in fragment body:                               0
+ERROR 12. Unknown controller type:                                           0
+ERROR 13. Unknown PAD detector type:                                         0
+ERROR 14. Too many pads in PAD detector:                                     0
+ERROR 15. Too many MTDC channels (OBSOLETE):                                 0
+ERROR 16. Non-contiguous event number:                                       0
+ERROR 17. Non-increasing XLM timestamp:                                      0
+ERROR 18. Non-increasing ULM timestamp:                                      0
+
+TOTAL NUMBER OF EVENTS:                                                    38711
+----------------------------------------
+}
+} -cleanup {
+  $action destroy
+} -body {
+  $action processInput $line
+  set ::testHandlers::line
+} -result {log " SET ERROR COUNTERS TO ZERO"output "
+"output "ERROR COUNTER RESULTS
+"output "ERROR 1. Number of fragments in RingItem is not 2:                           1
+"output "ERROR 2. Fragment with no head:                                              0
+"output "ERROR 3. Duplicated source ID:                                               0
+"output "ERROR 4. Corrupted timestamp = 0:                                            0
+"output "ERROR 5. Uncorrelated fragments (different timestamps):                      0
+"output "ERROR 6. Body size value from body and header differ (OBSOLETE):             0
+"output "ERROR 7. Missing end-of-packet tag:                                          0
+"output "ERROR 8. Duplicated packet tag:                                              0
+"output "ERROR 9. Timestamp from header different than decoded timestamp from body:   0
+"output "ERROR 10. Incomplete RingItem (missing packet tags):                         0
+"output "ERROR 11. Unknown word found in fragment body:                               0
+"output "ERROR 12. Unknown controller type:                                           0
+"output "ERROR 13. Unknown PAD detector type:                                         0
+"output "ERROR 14. Too many pads in PAD detector:                                     0
+"output "ERROR 15. Too many MTDC channels (OBSOLETE):                                 0
+"output "ERROR 16. Non-contiguous event number:                                       0
+"output "ERROR 17. Non-increasing XLM timestamp:                                      0
+"output "ERROR 18. Non-increasing ULM timestamp:                                      0
+"output "
+"output "TOTAL NUMBER OF EVENTS:                                                    38711
+"output "----------------------------------------"}
+
+
+
 
 
 
