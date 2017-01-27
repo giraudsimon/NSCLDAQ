@@ -1192,4 +1192,7 @@ Work on 11.0-rc11 begins
 11.2-003
 	* Fixes broken behavior in the ULMTriggerGUI that was not quite correct in
 	11.2-002.
+11.2-004
 	* Fixes #6671, Action parser can now recover after failures.
+	* Fixes #6662, Corrects a typo in the documentation for adding remote
+	control functionality to the ReadoutGUI.
