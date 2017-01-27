@@ -79,9 +79,7 @@ CSetCommand::operator()(CTCLInterpreter& interp,
   }
 
   CMutex& mutex = CCCUSB::getGlobalMutex();
-  std::cout << "Set acquiring" << std::flush << std::endl;
   CriticalSection lock(mutex);
-  std::cout << "Set acquired" << std::flush << std::endl;
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
   bool mustRelease(false);
@@ -109,6 +107,5 @@ CSetCommand::operator()(CTCLInterpreter& interp,
     CControlQueues::getInstance()->ReleaseUsb();
   }
 
-  std::cout << "Set done" << std::flush << std::endl;
   return TCL_OK;
 }

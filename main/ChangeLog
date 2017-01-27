@@ -1198,3 +1198,5 @@ Work on 11.0-rc11 begins
 	control functionality to the ReadoutGUI.
 	* Fixes #6659, Improves the recommendation for the getScalerTimestamp()
 	function in the docs.
+	* Fixes #6638, Removes the debugging output that was introduced in earlier 11.2
+	patches.

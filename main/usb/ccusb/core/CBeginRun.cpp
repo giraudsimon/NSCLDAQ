@@ -66,11 +66,8 @@ CBeginRun::~CBeginRun()
 
 void CBeginRun::reconnect()
 {
-    std::cout << "Begin reconnect acquiring" << std::flush << std::endl;
     CriticalSection lock(CCCUSB::getGlobalMutex());
-    std::cout << "Begin reconnect acquired" << std::flush << std::endl;
     Globals::pUSBController->reconnect();
-    std::cout << "Begin done " << std::flush << std::endl;
 }
 
 /*!
