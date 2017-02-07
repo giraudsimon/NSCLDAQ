@@ -231,7 +231,7 @@ Actions::COutputThread::COutputThread(CBufferQueue<Actions::ActionItem>* pQ) :
         Actions::OutputMessage, Actions::DebugMessage, Actions::TclCommand
     };
     const char* actnames[] = {
-         "ERRMSG ", "LOGMSG ", "WARNMSG ", "OUTPUT ", "DBGMSG ", "TCLCMD " , 0
+         "ERRMSG ", "LOGMSG ", "WRNMSG ", "OUTPUT ", "DBGMSG ", "TCLCMD " , 0
     };
      
     Actions::ActionType* pActs = acts;
