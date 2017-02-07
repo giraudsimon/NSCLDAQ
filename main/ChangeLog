@@ -1202,3 +1202,6 @@ Work on 11.0-rc11 begins
 	patches.
 	* Fixes #6641 and #6644. Adds docs for the readoutscript and controlscript 
 	packages.
+	* Fixes #6779. Actions.cpp was inserting the wrong directive word for
+	warning message and was therefore not being parsed correctly. This is now
+	fixed.
