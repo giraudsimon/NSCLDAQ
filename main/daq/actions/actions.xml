@@ -159,6 +159,21 @@
       ReadoutGUI. These function merely format the message and output it on
       stderr.
     </para>
+
+    <para>
+      The user should be aware that mixing naked calls to output on
+      std::cerr (or stderr) with Actions package calls is strongly discouraged.
+      Instead, if the user is to make use of the Actions package, he/she
+      should commit to using it for all of his/her output needs.
+      The reason for this is that the Actions package launches a separate thread
+      from which it will output to std::cerr. If the user chooses to output on the
+      main thread by explicit calls to std::cerr and then also uses the
+      Actions package, there will be no gaurantee that the integrity of the
+      messages is kept. The reason for this is that the std::cerr object
+      will be accessed from multiple threads without synchronization. The situation
+      is called a data race, and the C++ standard says undefined behavior will
+      follow.
+    </para>
   </section>
 
   <section>
