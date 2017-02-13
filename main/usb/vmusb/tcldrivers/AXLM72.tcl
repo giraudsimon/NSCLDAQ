@@ -97,7 +97,7 @@ itcl::class AXLM72 {
   # @param address offset to add to the dev argument
   # 
   # @returns the value read from the module 
-	public method Read {dev address} {
+  public method Read {dev address} {
       return [$device vmeRead32 [expr [set $dev]+$address] 0x09]
   }
 
@@ -115,7 +115,7 @@ itcl::class AXLM72 {
   # @retval -1 - USB write failed
   # @retval -2 - USB read failed
   # @retval -3 - VME Bus error
-	public method Write {dev address data} { 
+  public method Write {dev address data} { 
       return [$device vmeWrite32 [expr [set $dev]+$address] 0x09 [expr $data]]
   }
 
@@ -130,7 +130,7 @@ itcl::class AXLM72 {
   # @param address  address offset begin BLT read from
   # @param words    number of transfers to include in the BLT
   #
-	public method ReadSBLT {dev address words}
+  public method ReadSBLT {dev address words}
 
   #we are going to see if we can get away with not implementing this.
 #	public method ReadFBLT {dev address blocks} {i
@@ -156,7 +156,7 @@ itcl::class AXLM72 {
   # @return a Tcl List
   # @retval the data returned from the entire operation parsed into 32-bit words
   # 
-	public method ReadNBLT {ndev nadd mask dev address} 
+  public method ReadNBLT {ndev nadd mask dev address} 
 
   ##
   # AccessBus
@@ -169,7 +169,7 @@ itcl::class AXLM72 {
   # 
   # @param code   the code for the internal address 
   # 
-	public method AccessBus {code} {
+  public method AccessBus {code} {
       Write vme [expr 0xc] 1
       Write vme 0 $code; 
       set aBusOwner [Read vme [expr 0x10000]]
@@ -219,7 +219,7 @@ itcl::class AXLM72 {
   # request and bus inhibit addresses.
   # 
   # 
-	public method ReleaseBus {} {
+  public method ReleaseBus {} {
       Write vme 0 0; 
       Write vme [expr 0xc] 0
   }
@@ -236,7 +236,7 @@ itcl::class AXLM72 {
   # @warning Bus ownership should have already been obtained
   #
   #
-	public method BootFPGA {}
+  public method BootFPGA {}
 
   ## 
   # SetFPGABoot
@@ -254,7 +254,7 @@ itcl::class AXLM72 {
   #
   # @param source  the integer code for the boot source
   #
-	public method SetFPGABoot {source} {
+  public method SetFPGABoot {source} {
     Write vme 8 $source
   }
   
@@ -265,7 +265,7 @@ itcl::class AXLM72 {
   #
   # @param filename  name of firmware file (.bit) to load
   #
-	public method Configure {filename}
+  public method Configure {filename}
 
 
   ##
@@ -296,7 +296,7 @@ itcl::class AXLM72 {
   #
   # No return value.
   #
-	public method sRead {stack dev add} {$stack addRead32 [expr [set $dev]+$add] 9}
+  public method sRead {stack dev add} {$stack addRead32 [expr [set $dev]+$add] 9}
   
   ##
   # sWrite
@@ -309,7 +309,7 @@ itcl::class AXLM72 {
   #
   # No return value.
   # 
-	public method sWrite {stack dev add data} {$stack addWrite32  [expr [set $dev]+$add] 9 $data}
+  public method sWrite {stack dev add data} {$stack addWrite32  [expr [set $dev]+$add] 9 $data}
 
   ## 
   # sReadSBLT
@@ -324,7 +324,7 @@ itcl::class AXLM72 {
   #
   # No return value. 
   #
-	public method sReadSBLT {stack dev add words}
+  public method sReadSBLT {stack dev add words}
 
 
   # We are going to see if we can get away without this.
@@ -348,7 +348,7 @@ itcl::class AXLM72 {
   #
   # No return value. 
   #
-	public method sReadNBLT {stack ndev nadd mask dev add}
+  public method sReadNBLT {stack ndev nadd mask dev add}
 
   ##
   # sAccessBus
@@ -362,7 +362,7 @@ itcl::class AXLM72 {
   # 
   # No return value
   #
-	public method sAccessBus {stack code} {sWrite $stack vme 0 $code}; # sWrite $stack vme 0xc 1
+  public method sAccessBus {stack code} {sWrite $stack vme 0 $code}; # sWrite $stack vme 0xc 1
 
   ##
   # sReleaseBus
@@ -374,7 +374,7 @@ itcl::class AXLM72 {
   #
   # No return value.
   #
-	public method sReleaseBus {stack} {sWrite $stack vme 0 0}; # sWrite $stack vme 0xc 0
+  public method sReleaseBus {stack} {sWrite $stack vme 0 0}; # sWrite $stack vme 0xc 0
 }
 
 
