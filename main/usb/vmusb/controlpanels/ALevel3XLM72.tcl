@@ -1,11 +1,11 @@
 #===================================================================
 # class ALevel3XLM72
 #===================================================================
-itcl::class ALevel3XLM72 {
-	inherit AXLM72
+itcl::class ALevel3XLM72Gui {
+	inherit AXLM72GenericProxy
 
-	constructor {de sl} {
-		AXLM72::constructor $de $sl
+	constructor {name} {
+		AXLM72::constructor $name
 		global l3 diagnostics
 # set initial variables
 		set l3(module) "select XLM"
@@ -93,22 +93,9 @@ itcl::class ALevel3XLM72 {
 	public method Children {w state}
 	public method FreeGUI {}
 # stack methods
-	public method sTrigger {stack}
-	public method sStamp {stack}
+
 }
 
-itcl::body ALevel3XLM72::sTrigger {stack} {
-	sAccessBus $stack 0x10000
-	sRead $stack fpga 88
-	sReleaseBus $stack
-}
-
-itcl::body ALevel3XLM72::sStamp {stack} {
-	sAccessBus $stack 0x10000
-	sRead $stack fpga 72
-	sRead $stack fpga 84
-	sReleaseBus $stack
-}
 	
 itcl::body ALevel3XLM72::Xget {name addr format} {
 # adding bit masking to make fit with 64 bit system
@@ -116,19 +103,19 @@ itcl::body ALevel3XLM72::Xget {name addr format} {
     switch $format {
         u {
 #            $name get -l $addr
-            expr [Read base $addr]&0xffffffff
+            expr [Read $addr]&0xffffffff
         }
         d {
 #            format %\#d [$name get -l $addr]
-            format %\#d [expr [Read base $addr]&0xffffffff]
+            format %\#d [expr [Read $addr]&0xffffffff]
         }
         x {
 #            format %\#x [$name get -l $addr]
-            format %\#x [expr [Read base $addr]&0xffffffff]
+            format %\#x [expr [Read  $addr]&0xffffffff]
         }
         default {
 #            $name get -l $addr
-            expr [Read base $addr]&0xffffffff
+            expr [Read $addr]&0xffffffff
         }
     }
 }
@@ -137,19 +124,19 @@ itcl::body ALevel3XLM72::Xget16 {name addr format} {
     switch $format {
         u {
 #            $name get -l $addr
-            Read16 base $addr
+            Read16 $addr
         }
         d {
 #            format %\#d [$name get -l $addr]
-            format %\#d [Read16 base $addr]
+            format %\#d [Read16  $addr]
         }
         x {
 #            format %\#x [$name get -l $addr]
-            format %\#x [Read16 base $addr]
+            format %\#x [Read16  $addr]
         }
         default {
 #            $name get -l $addr
-            Read16 base $addr
+            Read16 $addr
         }
     }
 }

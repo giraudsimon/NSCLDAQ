@@ -101,7 +101,9 @@ itcl::body AXLM72Generic::Initialize vme {
 #
 # @param vme - vme controller object.
 #
-itcl::body AXLM72Generic::Update vme {}
+itcl::body AXLM72Generic::Update vme {
+    setController $vme
+}
 
 ##
 # addMonitorList
@@ -113,7 +115,9 @@ itcl::body AXLM72Generic::Update vme {}
 #
 # @param vme - Device controller object.
 #
-itcl::body AXLM72Generic::addMonitorList vme {}
+itcl::body AXLM72Generic::addMonitorList vme {
+    setController $vme
+}
 
 ##
 # processMonitorList
