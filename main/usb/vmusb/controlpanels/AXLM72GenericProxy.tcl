@@ -53,6 +53,7 @@ itcl::class AXLM72GenericProxy {
         set host $svrhost
         set port $svrport
         set socket [socket $host $port]
+        fconfigure $socket -buffering line
     }
     ##
     # Methods we proxy:
@@ -100,11 +101,18 @@ itcl::body AXLM72GenericProxy::_buildMessage {t what {value {}}} {
 # @return string - the reply string.
 #
 itcl::body AXLM72GenericProxy::_transaction message {
+    puts "Transaction sending $message"
     if {[catch {puts $socket $message} msg]} {
+        puts "Error: $msg"
         error "Communication failure (send) '$msg'"
     }
     if {[catch {gets $socket} msg]} {
+        puts "Receive error: $msg"
         error "Communication failure (receive) '$msg'"
+    }
+    puts "Got back $msg"
+    if {[string range $msg 0 4] eq "ERROR"} {
+        error "Error response from remote: $msg"
     }
     return $msg
 }

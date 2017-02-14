@@ -1,73 +1,81 @@
 package provide ALevel3XLM72GUI 1.0
 package require Itcl
 package require AXLM72GenericProxy
+package require Tk
+
 
 #===================================================================
 # class ALevel3XLM72
 #===================================================================
-itcl::class ALevel3XLM72Gui {
+itcl::class ALevel3XLM72 {
 	inherit AXLM72GenericProxy
+	global l3 diagnostics
 
-	constructor {name} {
-		AXLM72GenericProxy::constructor $name
-		global l3 diagnostics
 # set initial variables
-		set l3(module) "select XLM"
-		set l3(selA) "select output"
-		set l3(selB) "select output"
-		set l3(selC) "select output"
-		set l3(selD) "select output"
-		set l3(varA) 1
-		set l3(varB) 2
-		set l3(varC) 4
-		set l3(varD) 8
-		set l3(loadfile) "none selected"
-		set l3(bitdir) "~/server/fpga"
+	set l3(module) "select XLM"
+	set l3(selA) "select output"
+	set l3(selB) "select output"
+	set l3(selC) "select output"
+	set l3(selD) "select output"
+	set l3(varA) 1
+	set l3(varB) 2
+	set l3(varC) 4
+	set l3(varD) 8
+	set l3(loadfile) "none selected"
+	set l3(bitdir) "~/server/fpga"
 # new bit file for 12011 and 11028
-		set l3(bitfile) /user/sweeper/server/fpga/mlsc_timestamp_v3-1.bit
+	set l3(bitfile) /user/sweeper/server/fpga/mlsc_timestamp_v3-1.bit
 # line below edited for e11027
 #		set l3(bitfile) $l3(bitdir)/mlsv_timestamp_v2-5-6.bit
-		set l3(valuesfile) $l3(bitdir)/xlm_values_level3.dat
-		set l3(readflag) false
-		set l3(setflag) false
-		set l3(state) ""
+	set l3(valuesfile) $l3(bitdir)/xlm_values_level3.dat
+	set l3(readflag) false
+	set l3(setflag) false
+	set l3(state) ""
+	
+	array set diagnostics {
+	    0x0    	""
+	    0x1    	"latched_thin" 
+	    0x2    	"latched_potscint"
+	    0x4    	"latched_mona_trigger"
+	    0x8    	"latched_lisa_trigger"
+	    0x10   	"latched_mona_valid"
+	    0x20   	"latched_lisa_valid"
+	    0x40   	"sweeper_busy"
+	    0x80  	"mona_busy"
+	    0x100  	"lisa_busy" 
+	    0x200  	"overlap"
+	    0x400 	"system_trigger"
+	    0x800 	"gate"
+	    0x1000 	"system_clear"
+	    0x2000 	"system_busy"
+	    0x4000	"late_system_busy"
+	    0x8000	"ts_counter_low(0)"
+	    0x10000	"raw_thin"
+	    0x20000	"raw_pot"
+	    0x40000	"raw_mona"
+	    0x80000	"raw_lisa"
+	    0x100000	"raw_mona_valid"
+	    0x200000	"raw_lisa_valid"
+	    0x400000	"latched_overlap"
+	    0x800000	"latched_overlap_endgate"
+	    0x1000000	"or_of_busy"
+	    0x2000000	"mona_lisa_trigger_busy"
+	    0x4000000	"runstop"
+	    0x8000000	"no_overlap_pulse"
+	    0x10000000	"watchdog_pulse"
+	    0x20000000	"latched_caesar_valid"
+	    0x40000000	"latched_caesar_busy"
+	    0x80000000	"latched_ds"
+	}
+	set l3(dssingles) 0
+	set l3(triggeroption) 0
+	constructor {name} {
+		AXLM72GenericProxy::constructor $name
+		
 
-		array set diagnostics {
-		    0x0    	""
-		    0x1    	"latched_thin" 
-		    0x2    	"latched_potscint"
-		    0x4    	"latched_mona_trigger"
-		    0x8    	"latched_lisa_trigger"
-		    0x10   	"latched_mona_valid"
-		    0x20   	"latched_lisa_valid"
-		    0x40   	"sweeper_busy"
-		    0x80  	"mona_busy"
-		    0x100  	"lisa_busy" 
-		    0x200  	"overlap"
-		    0x400 	"system_trigger"
-		    0x800 	"gate"
-		    0x1000 	"system_clear"
-		    0x2000 	"system_busy"
-		    0x4000	"late_system_busy"
-		    0x8000	"ts_counter_low(0)"
-		    0x10000	"raw_thin"
-		    0x20000	"raw_pot"
-		    0x40000	"raw_mona"
-		    0x80000	"raw_lisa"
-		    0x100000	"raw_mona_valid"
-		    0x200000	"raw_lisa_valid"
-		    0x400000	"latched_overlap"
-		    0x800000	"latched_overlap_endgate"
-		    0x1000000	"or_of_busy"
-		    0x2000000	"mona_lisa_trigger_busy"
-		    0x4000000	"runstop"
-		    0x8000000	"no_overlap_pulse"
-		    0x10000000	"watchdog_pulse"
-		    0x20000000	"latched_caesar_valid"
-		    0x40000000	"latched_caesar_busy"
-		    0x80000000	"latched_ds"
-		}
-	} {}
+	} {
+		
+	}
 
 	public method SetupGUI {main args}
 	public method ControlMenu {loc}
@@ -634,7 +642,7 @@ itcl::body ALevel3XLM72::SetupGUI {main args} {
 	-command "$this SetFPGABoot 0x0; $this BootFPGA; puts \"Level3 XLM has been rebooted, you have to reload configuration.\""
 #	    BootXLM 0 $slot flash0
     button $base.2.a.readsn -width 12 -text "Read s/n" \
-	-command "puts \"S/N is [$this Read base 0x820048]\""
+	-command "puts \"S/N is [$this Read  0x820048]\""
     pack $base.2.a.load $base.2.a.boot $base.2.a.readsn -side left
     
 #    frame  $base.2.b
