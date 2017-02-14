@@ -34,7 +34,9 @@ puts $auto_path
 
 package require ALevel3XLM72GUI
 package require AXLM72GenericProxy
+package require Tk
 
+withdraw .
 
 proc Usage {} {
     puts stderr "Usage:"
