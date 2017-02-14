@@ -44,7 +44,7 @@ proc Usage {} {
     puts stderr "      name - the name of a mona level 3 trigger gui."
 }
 
-if {[llength $argv] != 2} {
+if {[llength $argv] != 1} {
     Usage
     exit 1
 }
