@@ -1,3 +1,7 @@
+package provide ALevel3XLM72GUI 1.0
+package require Itcl
+package require AXLM72GenericProxy
+
 #===================================================================
 # class ALevel3XLM72
 #===================================================================
@@ -5,7 +9,7 @@ itcl::class ALevel3XLM72Gui {
 	inherit AXLM72GenericProxy
 
 	constructor {name} {
-		AXLM72::constructor $name
+		AXLM72GenericProxy::constructor $name
 		global l3 diagnostics
 # set initial variables
 		set l3(module) "select XLM"
