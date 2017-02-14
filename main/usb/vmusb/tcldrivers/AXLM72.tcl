@@ -97,9 +97,8 @@ itcl::class AXLM72 {
   # @param address offset to add to the dev argument
   # 
   # @returns the value read from the module 
-    public method Read {dev address} {
-	catch {$device vmeRead32 [expr [set $dev]+$address] 0x09} result
-	return $result
+  public method Read {dev address} {
+      return [$device vmeRead32 [expr [set $dev]+$address] 0x09]
   }
 
   ##
@@ -444,7 +443,6 @@ itcl::body AXLM72::BootFPGA {} {
 # to execute.
 #
 itcl::body AXLM72::Configure {filename} {
-    puts "Configure $filename"
 	set file [open $filename r]
 	fconfigure $file -translation binary
 	set config [read $file]
@@ -453,12 +451,10 @@ itcl::body AXLM72::Configure {filename} {
 	binary scan $config c$size bytes
 # Detect first 0xff in file
 	set index 0
-    while {[lindex $bytes $index] != -1} {incr index}
-    puts "found 0xff"
+	while {[lindex $bytes $index] != -1} {incr index}
 
 # Determine number of 256 bytes blocks
-    set nblocks [expr int(($size-$index+1)/64)+1]
-    puts "$nblocks remaining"
+	set nblocks [expr int(($size-$index+1)/64)+1]
 
 # Stack is made of 16 bits words
 	set stacksize [expr $nblocks*128+8]
@@ -484,7 +480,8 @@ itcl::body AXLM72::Configure {filename} {
 
   # let it rest for a 100 ms before computing. This should allow it to 
   # complete anything it needs to do
-	after 500
+	after 100
+	ReleaseBus;               # FPGA needs to get at SRAMA to load.
 
 # Now boot the FPGA from SRAMA
 	SetFPGABoot [expr 0x10000]

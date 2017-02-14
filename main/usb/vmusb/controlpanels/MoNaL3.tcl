@@ -36,13 +36,12 @@ package require ALevel3XLM72GUI
 package require AXLM72GenericProxy
 package require Tk
 
-withdraw .
+
 
 proc Usage {} {
     puts stderr "Usage:"
-    puts stderr "   MonaL3  name widget"
-    puts stderr "      name - the name of a mon alevel 3 trigger gui."
-    puts stderr "      widget - Name of the gui Widge to create"
+    puts stderr "   MonaL3  name"
+    puts stderr "      name - the name of a mona level 3 trigger gui."
 }
 
 if {[llength $argv] != 2} {
@@ -50,9 +49,9 @@ if {[llength $argv] != 2} {
     exit 1
 }
 set name [lindex $argv 0]
-set widget [lindex $argv 1]
 
 
 ALevel3XLM72 level3 $name
 
-level3 SetupGUI $widget
+level3 SetupGUI .
+

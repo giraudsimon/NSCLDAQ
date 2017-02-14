@@ -174,7 +174,6 @@ itcl::body AXLM72Generic::getMonitoredData {} {
 #
 
 itcl::body AXLM72Generic::Set {vme what value} {
-    puts "Set $vme $what $value"
     SetController $vme
     
     #  Decode what and dispatch accordingly:
@@ -191,7 +190,6 @@ itcl::body AXLM72Generic::Set {vme what value} {
     } elseif {$what eq "BootSource" } {
         SetFPGABoot $value
     } elseif {$what eq "Configure"} {
-	puts "Configuring $value"
         Configure $value
     } else {
         return "ERROR - AXLMGeneric::Set $what $value - invalid value for 'what'."
@@ -208,9 +206,7 @@ itcl::body AXLM72Generic::Set {vme what value} {
 # @return value - the value or a string beginning "ERROR -"
 #
 itcl::body AXLM72Generic::Get {vme what} {
-    puts "Get $vme $what"
     SetController $vme
     set result [Read base $what]
-    puts "Result: $result"
     return  $result
 }

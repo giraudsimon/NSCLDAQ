@@ -9,7 +9,7 @@ package require Tk
 #===================================================================
 itcl::class ALevel3XLM72 {
 	inherit AXLM72GenericProxy
-	global  l3
+	global l3
 	global diagnostics
 
 	constructor {name} {
@@ -17,8 +17,7 @@ itcl::class ALevel3XLM72 {
 		
 
 	} {
-	    global l3 diagnostics
-
+		global l3 diagnostics
 # set initial variables
 		set l3(module) "select XLM"
 		set l3(selA) "select output"
@@ -30,7 +29,7 @@ itcl::class ALevel3XLM72 {
 		set l3(varC) 4
 		set l3(varD) 8
 		set l3(loadfile) "none selected"
-		set l3(bitdir) "/user/sweeper/server/fpga"
+		set l3(bitdir) "~/server/fpga"
 	# new bit file for 12011 and 11028
 		set l3(bitfile) /user/sweeper/server/fpga/mlsc_timestamp_v3-1.bit
 	# line below edited for e11027
@@ -76,8 +75,8 @@ itcl::class ALevel3XLM72 {
 		    0x80000000	"latched_ds"
 		}
 		set l3(dssingles) 0
-	    set l3(triggeroption) 0
-	       set l3(singlesmode) 1
+		set l3(triggeroption) 0
+		
 	}
 
 	public method SetupGUI {main args}
@@ -87,7 +86,7 @@ itcl::class ALevel3XLM72 {
 	public method SetValues {}
 	public method Xget {name addr format}
 	public method Xget16 {name addr format}
-	public method Xset {name addr data} {Write $addr $data}
+	public method Xset {name addr data} {Write  $addr $data}
 	public method Xset16 {name addr data} {Write16  $addr $data}
 	public method BG_yellow {wind} {$wind config -bg yellow}
 	public method BG_green {wind} {$wind config -bg green}
@@ -113,7 +112,6 @@ itcl::class ALevel3XLM72 {
 
 	
 itcl::body ALevel3XLM72::Xget {name addr format} {
-    puts "XGet $name $addr $format"
 # adding bit masking to make fit with 64 bit system
 # {expr [Read var $addr]&0xffffffff}
     switch $format {
@@ -137,7 +135,6 @@ itcl::body ALevel3XLM72::Xget {name addr format} {
 }
 
 itcl::body ALevel3XLM72::Xget16 {name addr format} {
-    puts "XGet16 $name $addr $format"
     switch $format {
         u {
 #            $name get -l $addr
@@ -218,8 +215,7 @@ itcl::body ALevel3XLM72::SelectTrigger {}	{
     	set l3(caesar_disable) 0
     	set l3(ds_disable) 0
     	set l3(singlesmode) 0
-    }
-    puts "Singles mode: $l3(singlesmode)"
+    }	
     Changed yes
 }
 itcl::body ALevel3XLM72::ReadTrigger {}	{
@@ -516,8 +512,14 @@ itcl::body ALevel3XLM72::SetupGUI {main args} {
     set base 0
 #    label $main
 #    pack $main
-	toplevel $main
-    wm title $main "TS level 3 XLM control"
+	if {$main ne "."} {
+		toplevel $main;    # don't create if it's .
+		wm title $main "TS level 3 XLM control"
+	} else {
+		 set main ""
+		 wm title . "TS Level 3 XLM control"
+	}
+    
 #    puts "$main"
 
 #    source $InstallDir/tabnbook.tcl
@@ -648,7 +650,7 @@ itcl::body ALevel3XLM72::SetupGUI {main args} {
 	-command "$this SetFPGABoot 0x0; $this BootFPGA; puts \"Level3 XLM has been rebooted, you have to reload configuration.\""
 #	    BootXLM 0 $slot flash0
     button $base.2.a.readsn -width 12 -text "Read s/n" \
-	-command "puts \"S/N is [Read 0x820048]\""
+	-command "puts \"S/N is [$this Read  0x820048]\""
     pack $base.2.a.load $base.2.a.boot $base.2.a.readsn -side left
     
 #    frame  $base.2.b
@@ -683,8 +685,7 @@ itcl::body ALevel3XLM72::SetupGUI {main args} {
 #    label $base.2.g.one.label1 -text "LV1 bitfile:" -width 12
     label $base.2.g.two.label2 -text "LV3 bitfile:" -width 12
     label $base.2.g.three.label3 -text "values file:" -width 12
-    #    button $base.2.g.one.level1 -text $bitfile1 -relief sunken -command {newbitfile "1"} -width 55
-    parray l3
+#    button $base.2.g.one.level1 -text $bitfile1 -relief sunken -command {newbitfile "1"} -width 55 
     button $base.2.g.two.level2 -text $l3(bitfile) -relief sunken -command "$this newbitfile 2" -width 55
     button $base.2.g.three.file -text $l3(valuesfile) -relief sunken -command "$this newbitfile 0" -width 55
 
@@ -783,7 +784,6 @@ itcl::body ALevel3XLM72::SetupGUI {main args} {
     pack $loc
 
     pack $base.3 -in $root 
-
 }
 
 itcl::body ALevel3XLM72::ReadFile {} {
@@ -828,8 +828,7 @@ itcl::body ALevel3XLM72::ReadFile {} {
   #  set dssingles [gets $f]
 
    # close $f
-
-
+ 
 }
 
 itcl::body ALevel3XLM72::AreYouSure {} {
