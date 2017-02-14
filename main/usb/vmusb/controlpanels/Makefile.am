@@ -16,6 +16,7 @@ install-exec-local:
 	for f in $(PACKAGES); do $(INSTALL_SCRIPT) @srcdir@/$$f @prefix@/TclLibs/vmusbcontrol; done
 	echo pkg_mkIndex -verbose @prefix@/TclLibs/vmusbcontrol "*.tcl" | tclsh
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@/`basename $$f .tcl`;  done
+	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@;  done    # Compatible installation
 	$(INSTALL_SCRIPT) @srcdir@/v812usbcontrol.tcl @bindir@/v895usbcontrol.tcl	
 	$(INSTALL_SCRIPT) @srcdir@/XLM72ScalerGUI.tcl @bindir@/XLM72ScalerGUI	
 	$(INSTALL_SCRIPT) @srcdir@/MDGG16Control.tcl @bindir@/MDGG16Control	
