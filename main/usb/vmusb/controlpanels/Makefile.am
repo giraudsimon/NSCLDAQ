@@ -6,7 +6,8 @@ PACKAGES=client.tcl configfile.tcl gdgcontrol.tcl gdgwidget.tcl sclclient.tcl xl
 				ALevel3XLM72.tcl
 
 
-APPS=gdgpanel.tcl v812usbcontrol.tcl MDGG16Control.tcl MoNaL3.tcl
+APPS=gdgpanel.tcl v812usbcontrol.tcl MDGG16Control.tcl MoNaL3.tcl  \
+	XLM72ScalerGUI.tcl MDGG16Control.tcl XLM72GateDelayControl.tcl
 
 TCL_TESTS = tclTests.tcl mdgg16gui.test mdgg16guiapp.test
 
@@ -18,9 +19,7 @@ install-exec-local:
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@/`basename $$f .tcl`;  done
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@;  done    # Compatible installation
 	$(INSTALL_SCRIPT) @srcdir@/v812usbcontrol.tcl @bindir@/v895usbcontrol.tcl	
-	$(INSTALL_SCRIPT) @srcdir@/XLM72ScalerGUI.tcl @bindir@/XLM72ScalerGUI	
-	$(INSTALL_SCRIPT) @srcdir@/MDGG16Control.tcl @bindir@/MDGG16Control	
-	$(INSTALL_SCRIPT) @srcdir@/XLM72GateDelayControl.tcl @bindir@/XLM72GateDelayControl
+	$(INSTALL_SCRIPT) @srcdir@/v812usbcontrol.tcl @bindir@/v895usbcontrol
 	$(mkinstalldirs) @prefix@/share/html/figures
 	$(INSTALL_DATA) @srcdir@/gd16_startup.png @prefix@/share/html/figures/.
 
