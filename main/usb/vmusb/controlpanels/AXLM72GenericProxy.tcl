@@ -171,7 +171,7 @@ itcl::body AXLM72GenericProxy::BootFPGA {} {
 #
 itcl::body AXLM72GenericProxy::SetFPGABoot which {
     set message [_buildMessage Set BootSource $which]
-    return [_transaction $mesage]
+    return [_transaction $message]
 }
 ##
 # Configure
@@ -180,7 +180,7 @@ itcl::body AXLM72GenericProxy::SetFPGABoot which {
 # @param file - name of the firmare file.
 #
 itcl::body AXLM72GenericProxy::Configure filename {
-    set message [_buildMessage Set BootSource  $filename]
+    set message [_buildMessage Set Configure  $filename]
     return [_transaction $message]
 }
 ##

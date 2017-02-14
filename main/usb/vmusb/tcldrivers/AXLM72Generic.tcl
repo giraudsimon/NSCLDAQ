@@ -60,6 +60,7 @@ itcl::class AXLM72Generic {
     # @param slot - Slot the XLM lives in.  Base is slot << 27.
     #
     constructor {dev slot} {
+
         AXLM72::constructor $dev $slot
     } {
         set base [expr $slot << 27]
@@ -91,7 +92,8 @@ itcl::class AXLM72Generic {
 # @param vme - VME device controller.  We'll set that in our base:
 #
 itcl::body AXLM72Generic::Initialize vme {
-    setController $vme
+
+    SetController [::VMUSBDriverSupport::convertVmUSB $vme]
 }
 
 ##
@@ -102,7 +104,8 @@ itcl::body AXLM72Generic::Initialize vme {
 # @param vme - vme controller object.
 #
 itcl::body AXLM72Generic::Update vme {
-    setController $vme
+
+    SetController [::VMUSBDriverSupport::convertVmUSB $vme]
 }
 
 ##
@@ -113,10 +116,10 @@ itcl::body AXLM72Generic::Update vme {
 #    later on.  This method would be used to add registers/RAM etc. that
 #    would be read in that list.
 #
-# @param vme - Device controller object.
+# @param vme - VMELlist.
 #
-itcl::body AXLM72Generic::addMonitorList vme {
-    setController $vme
+itcl::body AXLM72Generic::addMonitorList vmelist {
+
 }
 
 ##
@@ -171,22 +174,24 @@ itcl::body AXLM72Generic::getMonitoredData {} {
 #
 
 itcl::body AXLM72Generic::Set {vme what value} {
-    setController $vme
+    puts "Set $vme $what $value"
+    SetController $vme
     
     #  Decode what and dispatch accordingly:
     
     if {[string is integer -strict $what]} {
         
-        Write $base $what $value
-    } else if {$what eq "Access"} {
+        Write base $what $value
+    } elseif {$what eq "Access"} {
         AccessBus $value
-    } else if {$what eq "Release"} {
+    } elseif {$what eq "Release"} {
         ReleaseBus
-    } else if {$what eq "Boot"} {
+    } elseif {$what eq "Boot"} {
         BootFPGA
-    } else if {$what eq "BootSource" } {
+    } elseif {$what eq "BootSource" } {
         SetFPGABoot $value
-    } else if {$what eq "Configure"} {
+    } elseif {$what eq "Configure"} {
+	puts "Configuring $value"
         Configure $value
     } else {
         return "ERROR - AXLMGeneric::Set $what $value - invalid value for 'what'."
@@ -203,6 +208,9 @@ itcl::body AXLM72Generic::Set {vme what value} {
 # @return value - the value or a string beginning "ERROR -"
 #
 itcl::body AXLM72Generic::Get {vme what} {
-    setController $vme
-    return [Read $base $what]
+    puts "Get $vme $what"
+    SetController $vme
+    set result [Read base $what]
+    puts "Result: $result"
+    return  $result
 }
