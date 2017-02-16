@@ -6,7 +6,7 @@ PACKAGES=client.tcl configfile.tcl gdgcontrol.tcl gdgwidget.tcl sclclient.tcl xl
 				ALevel3XLM72.tcl
 
 
-APPS=gdgpanel.tcl v812usbcontrol.tcl MDGG16Control.tcl MoNaL3.tcl  \
+APPS=gdgpanel.tcl v812usbcontrol.tcl MDGG16Control.tcl monal3.tcl  \
 	XLM72ScalerGUI.tcl MDGG16Control.tcl XLM72GateDelayControl.tcl
 
 TCL_TESTS = tclTests.tcl mdgg16gui.test mdgg16guiapp.test
