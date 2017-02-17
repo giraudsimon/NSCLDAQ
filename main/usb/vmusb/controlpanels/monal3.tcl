@@ -62,6 +62,12 @@ package require ALevel3XLM72GUI
 package require AXLM72GenericProxy
 package require Tk
 
+#  Set up the application icon.
+
+set iconPath [file normalize [file join $here .. share images]]
+set icon [image create photo -format png -file [file join $iconPath l3trigicon.png]]
+
+wm iconphoto . $icon
 
 
 proc Usage {} {
