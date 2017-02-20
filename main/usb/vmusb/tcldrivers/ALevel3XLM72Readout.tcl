@@ -43,7 +43,7 @@ itcl::body ALevel3XLM72::RunStop stop {
 }
 
 itcl::body ALevel3XLM72::sStamp stack {
-    sAccessBuss $stack 0x10000
+    sAccessBus  $stack 0x10000
     sRead       $stack fpga 72
     sRead       $stack fpga 84
     sReleaseBus $stack
