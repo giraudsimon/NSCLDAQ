@@ -151,7 +151,7 @@ snit::type ReadoutGUIAppLauncher {
 	# \return name of the created button
 	method appendButton {label commandString} {
 		set btn [$view createButton $label]
-		dict set commandDict $btn [dict create button $btn command $commandString pids {}]
+		dict set commandDict $btn [dict create button $btn command $commandString]
 
 		set geo [$view getGeometry]
 		set nButtons [$view getNumberOfButtons]
