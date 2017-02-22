@@ -1,5 +1,5 @@
 #
-#   ALEvel3XLM72 for readout:
+#   ALevel3XLM72 for readout:
 #
 
 package provide ALevel3XLM72Readout 1.0
@@ -27,9 +27,9 @@ itcl::class ALevel3XLM72 {
 itcl::body ALevel3XLM72::ResetTS {} {
     AccessBus 0x10000
 
-    XSet XLM 0x400050 1;	# Toggle the reset bit.
-    XSet XLM 0x400050 0
-    XSet XLM 0x40004c 1;	# Enable the timestamp counter.
+    XSet base 0x400050 1;	# Toggle the reset bit.
+    XSet base 0x400050 0
+    XSet base 0x40004c 1;	# Enable the timestamp counter.
     
     ReleaseBus
 }
@@ -37,7 +37,7 @@ itcl::body ALevel3XLM72::ResetTS {} {
 itcl::body ALevel3XLM72::RunStop stop {
     AccessBus 0x10000
 
-    XSet XLM 0x400010 $stop
+    XSet base 0x400010 $stop
 
     ReleaseBus
 }
@@ -55,6 +55,6 @@ itcl::body ALevel3XLM72::sTrigger stack {
     sReleaseBus $stack
 }
 
-itcl::body ALevel3XLM72::XSet {name address data} {
-    Write base $addr $data
+itcl::body ALevel3XLM72::XSet {name addr data} {
+    Write $name $addr $data
 }
