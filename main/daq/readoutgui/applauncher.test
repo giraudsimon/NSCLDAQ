@@ -42,6 +42,7 @@ tcltest::test  appendButton-0 {test that we can append a button
 } -result {button .test.button0 command ls pids {}}
 
 
+if {0} {
 tcltest::test onClick-0 {test that a clicked button does the correct stuff
 } -setup {
 	ReadoutGUIAppLauncher launcher .test 1
@@ -57,7 +58,6 @@ tcltest::test onClick-0 {test that a clicked button does the correct stuff
 } -result 1
 
 
-if {0} {
 tcltest::test onClick-1 {test that a clicked button does not restart the associated process if it is already running
 } -setup {
 	ReadoutGUIAppLauncher launcher .test 1
