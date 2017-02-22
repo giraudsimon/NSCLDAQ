@@ -1,0 +1,112 @@
+package require ReadoutGUIAppLauncher
+package require tcltest
+
+snit::widget AppLauncherView {
+
+	option -count -default 0
+	option -rows -default 1
+	option -cols -default 1
+
+	constructor {name args} {
+	}
+
+	method setButton {btn row col} {
+	}
+
+	method getNumberOfButtons {} {
+		return $options(-count)
+	} 
+
+	method getGeometry {} {
+		return [list $options(-cols) $options(-rows)]
+	}
+
+	method createButton {label} {
+		set name $win.button$options(-count)
+		incr options(-count)	
+		return $name
+	}
+}
+
+tcltest::test  appendButton-0 {test that we can append a button
+} -setup {
+	ReadoutGUIAppLauncher launcher .test 1
+} -cleanup {
+	launcher destroy
+} -body {
+	launcher appendButton b0 ls 
+
+	set cmdDict [launcher _getCommandDict]
+
+	dict get $cmdDict .test.button0
+} -result {button .test.button0 command ls pids {}}
+
+
+tcltest::test onClick-0 {test that a clicked button does the correct stuff
+} -setup {
+	ReadoutGUIAppLauncher launcher .test 1
+	launcher appendButton b0 ls 
+} -cleanup {
+	launcher destroy
+} -body {
+	launcher onClick .test.button0
+
+	set cmdDict [launcher _getCommandDict]
+
+	expr {[dict get $cmdDict .test.button0 pids] ne {}}
+} -result 1
+
+
+if {0} {
+tcltest::test onClick-1 {test that a clicked button does not restart the associated process if it is already running
+} -setup {
+	ReadoutGUIAppLauncher launcher .test 1
+	launcher _setCommandDict {.test.button0 {button .test.button0 command ls pids -1}}
+} -cleanup {
+	launcher destroy
+} -body {
+	set status [catch {launcher onClick .test.button0}]
+
+	set cmdDict [launcher _getCommandDict]
+
+        # the pid should be the same as it was originally... 
+ 	list $status [dict get $cmdDict .test.button0 pids]
+} -result {1 -1}
+
+
+
+tcltest::test onDestroy-0 {test that running processes stop at destruction
+} -setup {
+	ReadoutGUIAppLauncher launcher .test 1
+
+	# launch a tclsh (tclsh will run indefinitely)
+	launcher appendButton b0 tclsh
+} -cleanup {
+	# launcher is already destroyed so don't do it again
+} -body {
+	launcher onClick .test.button0
+
+	set pids [dict get [launcher _getCommandDict] .test.button0 pids]
+
+	# destroy our object... this should kill off the tclsh that is running
+	launcher destroy
+
+	set pid [lindex $pids 0]
+	set exists [file exists [file join /proc $pid]]
+	
+	set cmdline {}
+	if {$exists} {
+		set f [open [file join /proc $pid cmdline] r]
+		chan get $f name
+		set cmdline $name
+	}
+	
+	set cmdline [string trimright $cmdline]
+	set result [expr {$cmdline ne "tclsh"}]
+
+	set result
+} -result 1 
+}
+
+
+tcltest::cleanupTests
