@@ -1919,15 +1919,16 @@ package require ReadoutGUIAppLauncher
            <para>
              The ReadoutGUIAppLauncher is a snit::type, so usage of it follows all of the same semantics
              of other snit::types. Also, the ReadoutGUIAppLauncher that gets instantiated is not the
-             actual widget to be displayed. Instead, the object is simply an interface to that widget
+             actual widget to be displayed. Instead, the object is simply an interface to the widget it manages
+             (a.k.a. the view)
              and handles all of the logic for it. This is written just so that you understand there is 
-             a difference at the most fundamental level, however, it is best to treat the object as though
-             it were the widget itself. The expectation is that you should need
-             no direct access to the widget it manages.
+             a difference at the most fundamental level between the ReadoutGUIAppLauncher and the widget
+             displayed. However, it is best to treat the launcher object as though it were the view itself.
+             The expectation is that you should need no direct access to the view.
            </para>
 
            <para>
-             The ReadoutGUIAppLauncher assumes that the parent widge it is being added to has a layout
+             The ReadoutGUIAppLauncher assumes that the parent widget its view is being added to has a layout
              managed by the grid algorithm. It will be DISASTROUS to use this class if the parent
              widget's layout is being managed by the pack algorithm. There is no problem if you are
              planning to use this with the ReadoutGUI, because that uses the grid algorithm. 
