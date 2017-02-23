@@ -46,7 +46,11 @@ proc setIcon {file {format png} {top .}} {
 	set fullName [file normalize [file join $dir $file]]
 	if {[file readable $fullName]} {
 	    set image [image create  photo -format $format -file $fullName]
-	    wm iconphoto $top $image
+	    #
+	    #  The after is an attempt to be sure the top level actually
+	    #  materializes first.
+	    #
+	    after 200 wm iconphoto $top $image
 	    return
 	}
     }
