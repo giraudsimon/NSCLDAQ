@@ -45,7 +45,7 @@ TCLPACKAGES=Configuration.tcl \
   offlineProvider.tcl \
 	multilogger.tcl \
 	stageareaValidation.tcl \
-	ReadoutGUIAppLauncher.tcl
+	ReadoutGUIAppLauncher.tcl icon.tcl
 
 
 
