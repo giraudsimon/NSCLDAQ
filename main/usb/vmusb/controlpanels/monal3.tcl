@@ -1,7 +1,7 @@
 #!/bin/sh
 # -*- tcl -*-
 # The next line is executed by /bin/sh, but not tcl \
-exec tclsh "$0" ${1+"$@"}
+exec wish "$0" ${1+"$@"}
 
 #    This software is Copyright by the Board of Trustees of Michigan
 #    State University (c) Copyright 2014.
@@ -61,13 +61,16 @@ puts $auto_path
 package require ALevel3XLM72GUI
 package require AXLM72GenericProxy
 package require Tk
+package require icon
+
+setIcon l3trigicon.png
 
 #  Set up the application icon.
 
-set iconPath [file normalize [file join $here .. share images]]
-set icon [image create photo -format png -file [file join $iconPath l3trigicon.png]]
-
-wm iconphoto . $icon
+#set iconPath [file normalize [file join $here .. share images]]
+#set icon [image create photo -format png -file [file join $iconPath l3trigicon.#png]]
+#
+#wm iconphoto . $icon
 
 
 proc Usage {} {
