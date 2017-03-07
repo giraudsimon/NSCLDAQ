@@ -240,7 +240,7 @@ snit::widgetadaptor ::SSHPipe::ParameterPromptDialog {
             set state [$form.dir cget -state]
             $form.dir configure -state normal
             
-            set program [$form.program get]
+            set program [string trim [$form.program get]]
             if {$program ne ""} {
                 set wd [file dirname $program]
                 $form.dir delete 0 end
@@ -288,7 +288,8 @@ proc ::SSHPipe::promptParameters {} {
         array set optionlookup [list host -host path -program \
             parameters -parameters wdir -defaultdir]
         dict for {key value} $result {
-            dict lappend result $key [list] [.sshpipeprompt cget $optionlookup($key)]
+          set val [.sshpipeprompt cget $optionlookup($key)]
+            dict lappend result $key [list] [string trim $val]
         }
         
     } else {
