@@ -1223,6 +1223,7 @@ snit::type Stopwatch {
     variable calledAlarms -array [list]
     
     variable timerResolution 250;   # Ms per tick.
+    variable stopTimeMs 0
     
     ##
     # destructor needs to kill off any after scheduled so it does not call into
@@ -1239,17 +1240,34 @@ snit::type Stopwatch {
     # Start the timer.  Note the elapsed time is not reset.  This is because
     # we are allowed to pause the timer (stop/restart)...e.g. if a run is paused.
     #
+    # @param resetStartTime   boolean indicating whether to reset the start time
+    #
     # @throw  if the timer is already running
     #
-    method start {} {
+    method start {{resetStartTime 1}} {
         if {![$self isRunning] } {
+          puts "timer is not running...starting"
             $self _startTimer
-            set startMs [clock milliseconds]
+            if {$resetStartTime} {
+              set startMs [clock milliseconds]
+            }
             array set calledAlarms [list]
         } else {
             error "Timer is already running!"
         }
     }
+
+    ##
+    # Resume the timer. This is the same as starting the timer, but it does
+    # not reset the startMs. This makes sure that we continue right where 
+    # things left off.
+    #
+    method resume {} {
+      set now [clock milliseconds]
+      set startMs [expr $startMs + ($now - $stopTimeMs)] 
+      $self start 0
+    }
+
     ##
     # Stop the timer.
     #
@@ -1257,7 +1275,9 @@ snit::type Stopwatch {
     #
     method stop {} {
         if {[$self isRunning]} {
-            $self _stopTimer
+          puts "timer is running...stopping"
+          $self _stopTimer
+          set stopTimeMs [clock milliseconds]
         } else {
             error "Timer is already stopped"
         }
@@ -1270,6 +1290,7 @@ snit::type Stopwatch {
     method reset {} {
         set elapsedTimeMs 0
         set startMs [clock milliseconds]
+        set stopTimeMs $startMs
         array unset calledAlarms 
         array set calledAlarms [list]
     }
@@ -1376,6 +1397,8 @@ snit::type Stopwatch {
     #    Invokes all the scripts set for this elapsed time.
     #
     method _callScripts {} {
+      puts "all alarms    : [array names alarms]"
+      puts "called alarms : [array names calledAlarms]"
 
         foreach name [array names alarms] {
             if {$name ni [array names calledAlarms]} {
@@ -1502,6 +1525,7 @@ snit::widgetadaptor ElapsedTimeDisplay {
 #
 namespace eval  ::ElapsedTime {
     variable theInstance ""
+    variable previousState ""
     namespace export attach enter leave
 }
 
@@ -1555,7 +1579,7 @@ proc ::ElapsedTime::enter  {from to} {
         $timer reset
         $timer start
     } elseif {($from eq "Paused") && ($to eq "Active")} {
-        $timer start
+        $timer resume
     }
 }
 ##
