@@ -189,10 +189,17 @@ itcl::body ALevel3XLM72::CheckStatus {} {
 }
 itcl::body ALevel3XLM72::UpdateState {}	{
     global l3	
+    # this code is used for some buttons that are not currently in use.
+    # Because it is possible taht someone will want to use the buttons
+    # again, I am going to simply comment out the code. This should fix
+    # the tcl error that occurs when reading the file prior to reading
+    # the XLM
+    if {0} {
     if {$l3(stoppedstate) == 0} {
     	set l3(state) "running"
     } else {
     	set l3(state) "stopped"
+    }
     }
 }
 itcl::body ALevel3XLM72::SelectTrigger {}	{
