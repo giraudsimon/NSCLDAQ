@@ -1246,7 +1246,6 @@ snit::type Stopwatch {
     #
     method start {{resetStartTime 1}} {
         if {![$self isRunning] } {
-          puts "timer is not running...starting"
             $self _startTimer
             if {$resetStartTime} {
               set startMs [clock milliseconds]
@@ -1275,7 +1274,6 @@ snit::type Stopwatch {
     #
     method stop {} {
         if {[$self isRunning]} {
-          puts "timer is running...stopping"
           $self _stopTimer
           set stopTimeMs [clock milliseconds]
         } else {
@@ -1397,8 +1395,6 @@ snit::type Stopwatch {
     #    Invokes all the scripts set for this elapsed time.
     #
     method _callScripts {} {
-      puts "all alarms    : [array names alarms]"
-      puts "called alarms : [array names calledAlarms]"
 
         foreach name [array names alarms] {
             if {$name ni [array names calledAlarms]} {
