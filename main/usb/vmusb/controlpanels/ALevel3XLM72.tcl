@@ -2,6 +2,7 @@ package provide ALevel3XLM72GUI 1.0
 package require Itcl
 package require AXLM72GenericProxy
 package require Tk
+package require RunStateObserver
 
 
 #===================================================================
@@ -11,10 +12,10 @@ itcl::class ALevel3XLM72 {
 	inherit AXLM72GenericProxy
 	global l3
 	global diagnostics
+  variable runObserver
 
-	constructor {name} {
-		AXLM72GenericProxy::constructor $name
-		
+	constructor {module host port ring} {
+		AXLM72GenericProxy::constructor $module $host $port
 
 	} {
 		global l3 diagnostics
@@ -76,7 +77,16 @@ itcl::class ALevel3XLM72 {
 		}
 		set l3(dssingles) 0
 		set l3(triggeroption) 0
-		
+
+
+    if {$ring ne {}} {
+      set runObserver [RunStateObserver %AUTO% -ringurl $ring \
+                                                -onbegin [list $this OnBegin] \
+                                                -onpause [list $this OnPause] \
+                                                -onresume [list $this OnResume] \
+                                                -onend [list $this OnEnd]]
+      $runObserver attachToRing
+    }
 	}
 
 	public method SetupGUI {main args}
@@ -106,6 +116,10 @@ itcl::class ALevel3XLM72 {
 	public method LockGUI {}
 	public method Children {w state}
 	public method FreeGUI {}
+  public method OnBegin item
+  public method OnEnd item 
+  public method OnPause item
+  public method OnResume item 
 # stack methods
 
 }
@@ -913,4 +927,18 @@ itcl::body ALevel3XLM72::Children {w state} {
 itcl::body ALevel3XLM72::FreeGUI {} {
 	global l3
 	Children $l3(toplevel) normal
+}
+
+
+itcl::body ALevel3XLM72::OnBegin item {
+  LockGUI
+}
+itcl::body ALevel3XLM72::OnEnd item {
+  FreeGUI
+}
+itcl::body ALevel3XLM72::OnPause item {
+  FreeGUI
+}
+itcl::body ALevel3XLM72::OnResume item {
+  LockGUI
 }
