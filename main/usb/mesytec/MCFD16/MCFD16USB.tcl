@@ -697,6 +697,21 @@ snit::type MCFD16USB {
     set m_needsUpdate 0
   }
 
+  method SetGlobalCoincTime {val} {
+    if { $val != 0 && (![Utils::isInRange 3 136 $val]) } {
+      return -code error {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+    }
+
+    return [$self _Transaction "SC $val"]
+  }
+
+  method GetGlobalCoincTime {} {
+    if {$m_needsUpdate} {
+      $self Update
+    }
+    return [dict get $m_moduleState globalcoinc]
+  }
+
   #---------------------------------------------------------------------------#
   # Utility methods
   #
@@ -846,7 +861,7 @@ snit::type MCFD16USB {
     # we don't really care about the gate/delay gen state
     # lappend parsedResponse [$self _ParseSimpleLine [lindex $lines 13]]
     # we don't really care about the coinc time
-    # lappend parsedResponse [$self _ParseSimpleLine [lindex $lines 14]]
+    lappend parsedResponse [$self _ParseGlobalCoinc [lindex $lines 14]]
 
     # operating mode
     lappend parsedResponse [$self _ParseSimpleLine [lindex $lines 15]]
@@ -906,6 +921,12 @@ snit::type MCFD16USB {
     return [dict create name fast_veto values $state]
   }
 
+  method _ParseGlobalCoinc {line} {
+    set result [$self _SplitAndTrim $line ":"]
+    set value [lindex [lindex $result 1] 0]
+
+    return [dict create name globalcoinc values $value]
+  }
 
   method _ParseOredPattern line {
     set parse1 [$self _SplitAndTrim $line ","]

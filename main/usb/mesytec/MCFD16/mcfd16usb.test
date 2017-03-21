@@ -140,6 +140,7 @@ set parsedDSDict [dict create Threshold {0 20 20 40 20 20 20 20 20 20 20 20 20 2
                        Polarity {neg neg neg pos neg neg neg neg neg} \
                        {Mask register} 48 \
                        Discrimination {Constant fraction} \
+                       globalcoinc 20 \
                        {Operating mode} Common \
                        {Bandwidth limit} Off \
                        {Remote Control} Off \
@@ -1194,6 +1195,49 @@ tcltest::test getFastVeto-0 {Ensure we can retrieve the fast veto cached value
 } -body {
     dev GetFastVeto
 } -result 0
+
+tcltest::test setGlobalCoincTime-0 {Ensure that we can set the global coinc time
+} -setup {
+    setup
+} -cleanup {
+    tearDown
+} -body {
+    dev SetGlobalCoincTime 3
+    dev SetGlobalCoincTime 0
+    dev SetGlobalCoincTime 136
+    tcltest::viewFile $::serialFile
+} -result {SC 3
+SC 0
+SC 136}
+
+tcltest::test setGlobalCoincTime-1 {Ensure that one past valid range is bad
+} -setup {
+    setup
+} -cleanup {
+    tearDown
+} -body {
+    dev SetGlobalCoincTime 137
+} -returnCodes 1 -result {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+
+tcltest::test setGlobalCoincTime-3 {Ensure that one under valid range is bad
+} -setup {
+    setup
+} -cleanup {
+    tearDown
+} -body {
+    dev SetGlobalCoincTime 2 
+} -returnCodes 1 -result {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+
+
+tcltest::test getGlobalCoincTime-0 {Ensure that we can retrieve the global coinc time
+} -setup {
+    setup
+} -cleanup {
+    tearDown
+} -body {
+    dev GetGlobalCoincTime
+} -result 20
+
 
 tcltest::test parseDTResponse {Check that we can parse the DT response 
 } -setup {

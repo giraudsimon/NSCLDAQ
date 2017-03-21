@@ -632,6 +632,43 @@ tcltest::test getFastVeto-0 {Check that we can write fast veto
 } -result {{Write 77 0} {Write 77 1} {Read 77}}
 
 #---------
+
+tcltest::test setGlobalCoinc-0 {Check that we can write global coinc time
+} -setup {
+  setup
+} -cleanup {
+  tearDown
+} -body {
+  ::dev SetGlobalCoincTime 0
+  ::dev SetGlobalCoincTime 3
+  ::dev SetGlobalCoincTime 136 
+  ::dev GetGlobalCoincTime
+  ::comObj getRecord
+} -result {{Write 76 0} {Write 76 3} {Write 76 136} {Read 76}}
+
+#---------
+
+tcltest::test setGlobalCoinc-1 {Check that invalid parameter for global coinc time fails
+} -setup {
+  setup
+} -cleanup {
+  tearDown
+} -body {
+  ::dev SetGlobalCoincTime 1
+} -returnCodes 1 -result {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+
+#---------
+
+tcltest::test setGlobalCoinc-2 {Check that invalid parameter for global coinc time fails
+} -setup {
+  setup
+} -cleanup {
+  tearDown
+} -body {
+  ::dev SetGlobalCoincTime 137
+} -returnCodes 1 -result {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+
+#---------
 #
 tcltest::test computeAddress-0 {Given a parameter and ch, return proper addr
 } -setup {
