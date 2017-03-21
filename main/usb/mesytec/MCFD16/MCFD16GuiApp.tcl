@@ -416,6 +416,11 @@ snit::type MCFD16GuiApp {
 
     $_handle SetMode individual
     $_handle SetChannelMask 255
+    $_handle SetTriggerOrPattern 0 1
+    $_handle SetTriggerOrPattern 1 2
+    $_handle SetTriggerSource 0 pat_or_0 0
+    $_handle SetTriggerSource 1 pat_or_1 1
+    $_handle SetGlobalCoincTime 0
   }
 
   ## @brief Load a config file into the GUI

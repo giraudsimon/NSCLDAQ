@@ -2320,11 +2320,12 @@ snit::type ORPatternPanelPresenter {
 
     for {set ch 0} {$ch < 16} {incr ch} {
       set bit [expr {($pattern & ( 1<<$ch) ) >> $ch}]
+      $view SetChannelEnabled $ch $bit
     }
 
     # check that we are configured correctly!
-    if {[$handle GetGlobalCoincTime] ne 0} {
-      tk_messageBox -icon information -message "The MCFD-16 has a global coincidence setting enabled.\nIt will be disabled now."
+    if {[$handle GetGlobalCoincTime] != 0} {
+      tk_messageBox -icon info -message "The MCFD-16 has a global coincidence setting enabled.\nIt will be disabled now."
       $handle SetGlobalCoincTime 0
 
     }
