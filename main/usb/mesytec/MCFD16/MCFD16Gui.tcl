@@ -2282,6 +2282,7 @@ snit::type ORPatternPanelPresenter {
 
     set veto [$view GetVetoEnabled]
     $handle SetTriggerSource $options(-patternid) pat_or_$options(-patternid) $veto
+    $handle SetGlobalCoincTime 0
 
     set value 0
     for {set ch 0} {$ch < 16} {incr ch} {
@@ -2319,7 +2320,13 @@ snit::type ORPatternPanelPresenter {
 
     for {set ch 0} {$ch < 16} {incr ch} {
       set bit [expr {($pattern & ( 1<<$ch) ) >> $ch}]
-      $view SetChannelEnabled $ch $bit
+    }
+
+    # check that we are configured correctly!
+    if {[$handle GetGlobalCoincTime] ne 0} {
+      tk_messageBox -icon information -message "The MCFD-16 has a global coincidence setting enabled.\nIt will be disabled now."
+      $handle SetGlobalCoincTime 0
+
     }
 
     set triggerSource [$handle GetTriggerSource $options(-patternid)]
@@ -2370,6 +2377,8 @@ snit::type ORPatternPanelPresenter {
     if {[lindex $state 0] ne "pat_or_$id"} {
       $val SetTriggerSource $id pat_or_$id 0 
     }
+
+    $val SetGlobalCoincTime 0
 
     # we have a view already, then update!
     set view [$self cget -view]
