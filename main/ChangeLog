@@ -1205,3 +1205,6 @@ Work on 11.0-rc11 begins
 	* Fixes #6779. Actions.cpp was inserting the wrong directive word for
 	warning message and was therefore not being parsed correctly. This is now
 	fixed.
+	* Fixes trigger OR outputs in MCFD16. These were misbehaving because 
+	the global coincidence time was not being set to 0. Support was added
+	to the MCFD16 to set and get the global coinc time.
