@@ -2,6 +2,7 @@ package provide ALevel3XLM72GUI 1.0
 package require Itcl
 package require AXLM72GenericProxy
 package require Tk
+package require RunStateObserver
 
 
 #===================================================================
@@ -11,10 +12,10 @@ itcl::class ALevel3XLM72 {
 	inherit AXLM72GenericProxy
 	global l3
 	global diagnostics
+  variable runObserver
 
-	constructor {name} {
-		AXLM72GenericProxy::constructor $name
-		
+	constructor {module host port ring} {
+		AXLM72GenericProxy::constructor $module $host $port
 
 	} {
 		global l3 diagnostics
@@ -76,7 +77,16 @@ itcl::class ALevel3XLM72 {
 		}
 		set l3(dssingles) 0
 		set l3(triggeroption) 0
-		
+
+
+    if {$ring ne {}} {
+      set runObserver [RunStateObserver %AUTO% -ringurl $ring \
+                                                -onbegin [list $this OnBegin] \
+                                                -onpause [list $this OnPause] \
+                                                -onresume [list $this OnResume] \
+                                                -onend [list $this OnEnd]]
+      $runObserver attachToRing
+    }
 	}
 
 	public method SetupGUI {main args}
@@ -106,6 +116,10 @@ itcl::class ALevel3XLM72 {
 	public method LockGUI {}
 	public method Children {w state}
 	public method FreeGUI {}
+  public method OnBegin item
+  public method OnEnd item 
+  public method OnPause item
+  public method OnResume item 
 # stack methods
 
 }
@@ -189,10 +203,17 @@ itcl::body ALevel3XLM72::CheckStatus {} {
 }
 itcl::body ALevel3XLM72::UpdateState {}	{
     global l3	
+    # this code is used for some buttons that are not currently in use.
+    # Because it is possible taht someone will want to use the buttons
+    # again, I am going to simply comment out the code. This should fix
+    # the tcl error that occurs when reading the file prior to reading
+    # the XLM
+    if {0} {
     if {$l3(stoppedstate) == 0} {
     	set l3(state) "running"
     } else {
     	set l3(state) "stopped"
+    }
     }
 }
 itcl::body ALevel3XLM72::SelectTrigger {}	{
@@ -906,4 +927,18 @@ itcl::body ALevel3XLM72::Children {w state} {
 itcl::body ALevel3XLM72::FreeGUI {} {
 	global l3
 	Children $l3(toplevel) normal
+}
+
+
+itcl::body ALevel3XLM72::OnBegin item {
+  LockGUI
+}
+itcl::body ALevel3XLM72::OnEnd item {
+  FreeGUI
+}
+itcl::body ALevel3XLM72::OnPause item {
+  FreeGUI
+}
+itcl::body ALevel3XLM72::OnResume item {
+  LockGUI
 }
