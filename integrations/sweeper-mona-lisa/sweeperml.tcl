@@ -32,16 +32,16 @@ namespace eval EventBuilderParameters {
     variable destring    built
     
     variable sweeperhost spdaq34.nscl.msu.edu
-    variable sweeperring sweeperbuilt
-    variable sweepersid  0x5900
+    variable sweeperring sweeper
+    variable sweepersid  [list 1 2]
 
     variable monahost    spdaq40.nscl.msu.edu
-    variable monarsid    0x5a00
-    variable monaring    $::tcl_platform(user)
+    variable monasid    40
+    variable monaring   mona
 
     variable lisahost    spdaq42.nscl.msu.edu
-    variable lisasid     0x5b00
-    variable lisaring    $::tcl_platform(user)
+    variable lisasid     42
+    variable lisaring    lisa
 }
 
 #
@@ -73,13 +73,14 @@ proc _ringUri {host ring} {
 #   Should be called from OnStart to setup the event builder.
 #
 proc Integration::OnStart {} {
-
+    puts "Starting combined event builder (norestart)"
     # Initialize the event builder.
     
     EVBC::initialize -restart false -glombuild true           \
 	-glomdt   $::EventBuilderParameters::glomdt           \
 	-destring $::EventBuilderParameters::destring         \
-	-glomid   $::EventBuilderParameters::glomid
+	-glomid   $::EventBuilderParameters::glomid           \
+	-teering ""
 
     #  Register the three sources in order for the sweeper, mona and
     #  lisa DAQs.
