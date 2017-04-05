@@ -1841,6 +1841,214 @@ if {$result eq "Ok"} {
             </calloutlist>
         </refsect1>
       </refentry>
+
+      <refentry id="rdogui3_readoutguiapplauncher">
+        <refentryinfo>
+            <author>
+                    <personname>
+                            <firstname>Jeromy</firstname>
+                            <surname>Tompkins</surname>
+                    </personname>
+                    <personblurb><para></para></personblurb>
+            </author>
+            <productname>NSCLDAQ</productname>
+            <productnumber></productnumber>
+        </refentryinfo>
+        <refmeta>
+           <refentrytitle id='rdogui3_readoutguiapplauncher_title'>ReadoutGUIAppLauncher</refentrytitle>
+           <manvolnum>1tcl</manvolnum>
+           <refmiscinfo class='empty'></refmiscinfo>
+        </refmeta>
+        <refnamediv>
+           <refname>ReadoutGUIAppLauncher</refname>
+           <refpurpose>Simplify the process of adding application launcher buttons to a ReadoutGUI</refpurpose>
+        </refnamediv>
+        
+        <refsynopsisdiv>
+          <cmdsynopsis>
+            <command>
+package require ReadoutGUIAppLauncher
+            </command>
+          </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+::ReadoutGUIAppLauncher <replaceable>name widget_name <optional>nCols 1</optional></replaceable>
+                </command>
+            </cmdsynopsis>
+
+            <cmdsynopsis>
+                <command>
+<replaceable>name</replaceable> destroy
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+                  <replaceable>name</replaceable> appendButton <replaceable>label commandString</replaceable>
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+                  <replaceable>name</replaceable> disableButton <replaceable>buttonName</replaceable>
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+                  <replaceable>name</replaceable> enableButton <replaceable>buttonName</replaceable>
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+                  <replaceable>name</replaceable> addViewToParentGUI <replaceable><optional>parent .</optional></replaceable>
+                </command>
+            </cmdsynopsis>
+
+        </refsynopsisdiv>
+        <refsect1>
+           <title>DESCRIPTION</title>
+           <para>
+             The ReadoutGUIAppLauncher provides a convenient tool for adding buttons to a ReadoutGUI
+             or any parent widget. The intention is to support users who want to add buttons
+             on a ReadoutGUI that launch programs for configuring hardware in their DAQ. For example, one
+             might have a Mesytec MCFD-16 in his/her system to configure. Rather than running
+             the MCFD16Control program from the command line and having to remember all of the arguments
+             to pass, a button could be added to launch the program the same way
+             every time. Such an implementation makes it easier for people to use a system and also makes
+             it more robust.
+           </para>
+
+           <para>
+             The ReadoutGUIAppLauncher is a snit::type, so usage of it follows all of the same semantics
+             of other snit::types. Also, the ReadoutGUIAppLauncher that gets instantiated is not the
+             actual widget to be displayed. Instead, the object is simply an interface to the widget it manages
+             (a.k.a. the view)
+             and handles all of the logic for it. This is written just so that you understand there is 
+             a difference at the most fundamental level between the ReadoutGUIAppLauncher and the widget
+             displayed. However, it is best to treat the launcher object as though it were the view itself.
+             The expectation is that you should need no direct access to the view.
+           </para>
+
+           <para>
+             The ReadoutGUIAppLauncher assumes that the parent widget its view is being added to has a layout
+             managed by the grid algorithm. It will be DISASTROUS to use this class if the parent
+             widget's layout is being managed by the pack algorithm. There is no problem if you are
+             planning to use this with the ReadoutGUI, because that uses the grid algorithm. 
+           </para>
+        </refsect1>
+        <refsect1>
+           <title>
+             COMMANDS
+           </title>
+           <variablelist>
+                <varlistentry>
+                  <term><command>ReadoutGUIAppLauncher</command> <replaceable>name view_name <optional>nCols 1</optional></replaceable></term>
+                    <listitem>
+                        <para>
+                          Construct an instance of the ReadoutGUIAppLauncher snit::type. After invoking this
+                          command, a new command ensemble will be created that begins with <parameter>name</parameter>.
+                          The following items in this list of commands explain the various subcommands made available
+                          in that newly created ensemble. This method will also create a new widget called 
+                          <parameter>view_name</parameter> that will be managed by the ReadoutGUIAppLauncher object.
+                          The application launcher will be a set a buttons arranged as a grid in a frame. By default,
+                          the number of columns in that grid will be 1, but the user can specify otherwise. The
+                          <parameter>nCols</parameter> can be used to set the number of columns. Once this is 
+                          constructed, there is no support for changing the number of columns displayed.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                  <term><replaceable>name</replaceable> <command>destroy</command></term>
+                    <listitem>
+                        <para>
+                          The destructor should be called when the user is done with the object. It will 
+                          destroy the view widget that it manages.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                  <term><replaceable>name</replaceable> <command>appendButton</command> <replaceable>label commandString</replaceable></term>
+                    <listitem>
+                        <para>
+                          A new button will be appended to the view. Buttons are added in a left to right, top to bottom fashion. 
+                          If the user intends to enable or disable the button that is created, he/she should use the
+                          value returned by this class to do so. The value returned by this class is the name of the newly created
+                          ttk::button.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                  <term><replaceable>name</replaceable> <command>disableButton</command> <replaceable>buttonName</replaceable></term>
+                    <listitem>
+                        <para>
+                          Disabling the button is the same as setting the state of the button to disabled. The user
+                          should use the value returned by the appendButton method to pass as the <parameter>buttonName</parameter>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+
+                <varlistentry>
+                  <term><replaceable>name</replaceable> <command>enableButton</command> <replaceable>buttonName</replaceable></term>
+                    <listitem>
+                        <para>
+                          Enabling the button is the same as setting the state of the button to !disabled. The user
+                          should use the value returned by the appendButton method to pass as the <parameter>buttonName</parameter>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                
+                <varlistentry>
+                  <term><replaceable>name</replaceable> <command>addViewToParentGUI</command> <replaceable><optional>parent .</optional></replaceable></term>
+                    <listitem>
+                        <para>
+                          This effectively grids the view widgets to a parent. The placement of the view on the parent is 
+                          fairly simple. It makes it span the full number of columns of the parent and then sets as a new
+                          row. A very important point to make is that this assumes the parent's layout is being managed
+                          by the grid algorithm. If that is not the case, DO NOT USE THIS!!
+                        </para>
+                    </listitem>
+                </varlistentry>
+
+           </variablelist>
+
+        </refsect1>
+        <refsect1>
+          <title>EXAMPLE</title>
+
+          <example>
+            <title>Simple usage of the ReadoutGUIAppLauncher package</title>
+
+            <programlisting>
+              package require ReadoutGUIAppLauncher
+
+
+              # construct the launcher with a view called .launcher and 2 columns
+              ReadoutGUIAppLauncher launcher .launcher 2
+
+              # add 3 buttons
+              launcher appendButton "Launch Program0" "/path/to/program0 -option0 asdf"
+              launcher appendButton "Launch Program1" "/path/to/program1 -option0 asdf -bool-flag"
+              set btn2 [launcher appendButton "Launch Program2" "/path/to/program2"]
+
+
+              # grid the widget on the ReadoutGUI
+              launcher addViewToParentGUI
+
+              # disable the button for /path/to/program2
+              # by default, all buttons are enabled to start
+              launcher disableButton $btn2
+
+              # make sure the GUI updates before waiting 10 seconds
+              update
+
+              # wait 10 seconds before enabling it again
+              after 10000
+
+              # reenable the button for /path/to/program2
+              launcher enableButton $btn2
+            </programlisting>
+          </example>
+
+        </refsect1>
+      </refentry>
       
       <refentry id="rdogui3_diagnostics">
         <refentryinfo>
