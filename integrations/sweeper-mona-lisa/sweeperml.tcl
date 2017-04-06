@@ -102,6 +102,19 @@ proc ::Integration::makeSourceDict {system id} {
     ]
 }
 ##
+# clearExistingSources
+#   remove all the data sources from the data source manager singleton.
+#
+proc ::Integration::clearExistingDataSources {} {
+    set dsources [DataSourcemanagerSingleton %AUTO%]
+    set sources [$dsources sources]
+    foreach source $sources {
+	set id [dict get $source sourceid]
+	$dsources removeSource $id
+    }
+    $dsources destroy
+}
+##
 # setDataSources
 #   Replaces the data sources read in from .settings with those we want.
 #   Note that in order to do this we need to know that the 'r' command exists
@@ -115,6 +128,8 @@ proc ::Integration::setDataSources {} {
         return
     }
     #  The GUI has been built.  Construct the list of required dicts.
+    
+    ::Integration::clearExistingDataSources
     
     set sources [list]
     set sid -1
@@ -192,6 +207,8 @@ proc _ringUri {host ring} {
 proc Integration::OnStart {} {
     puts "Starting combined event builder (norestart)"
     # Initialize the event builder.
+
+    puts "Using: $EventBuilderParameters::systems"
     
     EVBC::initialize -restart false -glombuild true           \
 	-glomdt   $::EventBuilderParameters::glomdt           \
