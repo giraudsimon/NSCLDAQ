@@ -136,6 +136,13 @@ proc ::Integration::setDataSources {} {
     foreach system $::EventBuilderParameters::systems {
         lappend sources [::Integration::makeSourceDict $system [incr sid]]
     }
+    #
+    #  We must always enslave the sweeper... since it controls the trigger..s
+    #
+    if {"sweeper" ni $::EventBuilderParameters::systems} {
+	lappend sources [::Integration::makeSourceDict sweeper [incr sid]]
+    }
+    
     r _setSources dataSources $sources
 }
 
