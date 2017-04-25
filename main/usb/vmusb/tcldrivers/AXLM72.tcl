@@ -362,7 +362,6 @@ itcl::class AXLM72 {
   # 
   # No return value
   #
-  public method sAccessBus {stack code} {sWrite $stack vme 0 $code}; # sWrite $stack vme 0xc 1
   public method sAccessBus {stack code} {
     sWrite $stack vme 0xc 1
     sWrite $stack vme 0 $code
@@ -378,7 +377,10 @@ itcl::class AXLM72 {
   #
   # No return value.
   #
-  public method sReleaseBus {stack} {sWrite $stack vme 0 0}; # sWrite $stack vme 0xc 0
+  public method sReleaseBus {stack} {
+    sWrite $stack vme 0 0 
+    sWrite $stack vme 0xc 0
+  }
 }
 
 
