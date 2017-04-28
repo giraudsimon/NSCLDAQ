@@ -39,7 +39,7 @@ install-data-local:
 	echo "Version: "NSCLDAQ-$(VERSION) built on `hostname` `date` > @prefix@/VERSION
 	$(INSTALL_SCRIPT) daqsetup.bash @prefix@
 	$(INSTALL_DATA) @srcdir@/figures/*.png @prefix@/share/html/figures
-	echo "`git rev-parse HEAD`" > @prefix@/GIT_COMMIT
+	(cd @top_srcdir@ ; echo "`git rev-parse HEAD`" > @prefix@/GIT_COMMIT )
 
 
 EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) 
