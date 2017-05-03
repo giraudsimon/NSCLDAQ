@@ -36,7 +36,7 @@ namespace eval ::EVBC {
     variable pipefd    "";            # Holds the fd to the pipe to the evbpipeline
     variable evbpids   [list];        # Holds list of PIDS that are the event builder.
     
-    variable InitialDt 1;             # Initial/default glom dt value.
+    #variable InitialDt 1;             # Initial/default glom dt value.
     
     # Figure out where we are and hence the root of the daq system:
     # We assume we are in one directory below TclLibs in computing this:
@@ -51,40 +51,13 @@ namespace eval ::EVBC {
     #
     #  Application options passed to initialize:
     #
+    #  The runningEVBOptions variable stores a snit::type holding the currently 
+    #  running version of the parameters. If a user wants to start the parameters
+    #
     variable applicationOptions ""
+    variable runningEVBOptions ""
     
 
-    #  These are parameters for the event builder.  Each one has a 'prior'
-    #  one as well.  If the event builder is persistent, and prior differs
-    #  from the values shown below, the event builder pipeline will nonetheless
-    #  be restarted (and prior updated from current).
-    #  Otherwise it's not possible to make changes to event builder parameters
-    #  for persistent event builders.
-    
-    
-    
-    variable buildEvents          0
-    variable priorBuildEvents     0
-    
-    variable intermediateRing     0
-    variable priorIntermediateRing 0
-    
-    variable intermediateRingName ""
-    variable priorIntermediateRingName ""
-    
-    variable destRing             $::tcl_platform(user)
-    variable priorDestRing        $::tcl_platform(user)
-    
-    variable setsEvtlogSource    1
-    variable priorSetsEvtlogSource 1
-    
-    variable glomTsPolicy        earliest
-    variable priorGlomTsPolicy   earliest
-
-    #  glom's dt parameters is held as an option.
-    
-    variable priorGlomDt          $::EVBC::InitialDt
-    
     # Communicating with the output ring monitoring thread:
     
     variable monitorTid            "";            # Thread id
@@ -124,8 +97,9 @@ namespace eval ::EVBC {
 #    * -glomid    - Source id to assign to built physics events
 snit::type EVBC::StartOptions {
     option -teering   0
-    option -glombuild 0
-    option -glomdt
+    option -teeringname "" 
+    option -glombuild -configuremethod checkGlomBuild -default 0
+    option -glomdt 1 
     option -glomid -default 0
     option -glomtspolicy -configuremethod checkTsPolicy -default earliest
     option -destring $::tcl_platform(user)
@@ -140,7 +114,6 @@ snit::type EVBC::StartOptions {
     #  -glomdt to its default value which is external to allow for some DRYness
     #
     constructor args {
-        set options(-glomdt) $::EVBC::InitialDt
         $self configurelist $args
     }
     ##
@@ -162,6 +135,16 @@ snit::type EVBC::StartOptions {
     #
     method getGlomTsPolicies {} {
         return $policyValues
+    }
+
+
+    ##
+    # checkGlomBuild
+    #
+    # This just makes sure that the value stored in -glombuild is either 0 or 1
+    #
+    method checkGlomBuild {opt val} {
+      set options(-glombuild) [string is true $val]
     }
     
 }
@@ -267,8 +250,8 @@ proc EVBC::start args {
     #  If -teering is not null hook teering into the pipeline:
     
     set intermediateRing [$options cget -teering]
-    if {$intermediateRing ne ""} {
-        set teering "[file join $bindir teering] --ring=$intermediateRing"
+    if {$intermediateRing} {
+        set teering "[file join $bindir teering] --ring=[$options cget -teeringname]"
         append pipecommand " | " $teering
     }
     #
@@ -335,7 +318,6 @@ proc EVBC::start args {
     set me $::tcl_platform(user)
     for {set i 0} {$i < 100} {incr i} {
 	set allocations [$ports listPorts]
-        puts $allocations
 	foreach allocation $allocations {
 	    set name [lindex $allocation 1]
 	    set owner [lindex $allocation 2]
@@ -350,11 +332,8 @@ proc EVBC::start args {
 	    set i 100
 	}
     }
-    puts "Found"
     $ports destroy
-    puts "Portmgr object destroyed"
     destroy .waiting
-    puts "Marked waiting for delete"
     if {!$found} {
 	error "Event builder failed to start within timeout"
     }
@@ -549,43 +528,34 @@ proc EVBC::startS800Source {ringUrl id {desc {S800 USB data}}} {
 # @param args - Optional configuration options.
 #
 proc EVBC::initialize args {
-	puts "initialize"
     #
     # Create and optionally configure the application objects.
     #
     if {!$EVBC::initialized} {
-	puts "0"
         set EVBC::initialized true
         set EVBC::applicationOptions [EVBC::AppOptions %AUTO%]
         
-	puts "1"
         if {[llength $args] > 0} {
             $EVBC::applicationOptions configure {*}$args
         }
-	puts "2"
         EVBC::_ValidateOptions $EVBC::applicationOptions
         
-	puts "3"
         # if -gui is true, start it and paste it:
         
         if {[$EVBC::applicationOptions cget -gui] && [$EVBC::applicationOptions cget -restart]} {
             EVBC::_StartGui
         }
 
-	puts "4"
         # if -gui is true, start it
         if {[$EVBC::applicationOptions cget -gui] && ![::EVBC::_guiExists]} {
             EVBC::_StartGui
         }
-
-	puts "5"
-         
     }
     #
     #  If the app is being destroyed kill the event builder too:
     
     bind . <Destroy> +[list EVBC::_Exiting %W]
-    
+
 }
 #------------------------------------------------------------------------------
 ##
@@ -614,23 +584,21 @@ proc EVBC::onBegin {} {
     # IF needed, create the destination and the intermediate ring:
 
     set teering [$EVBC::applicationOptions cget -teering]
+    set teeringname [$EVBC::applicationOptions cget -teeringname]
     if {$teering ne ""} {
-	catch {ringbuffer create $teering}
+	catch {ringbuffer create $teeringname}
     }
     set destring [$EVBC::applicationOptions cget -destring]
-    if {$destring ne $EVBC::destRing} {
-        puts stderr "*** WARNING - -destring is $destring but EVBC::destRing is different: $EVBC::destRing - using -destring"
-    }
     if {$destring ne ""} {
         catch {ringbuffer create $destring}
     }
-    puts "Data ultimately goes into $destring"
     
     #  If needed restart the EVB and disable the GUI...if it exists
     
     if {$EVBC::pipefd eq ""} {
         EVBC::start \
             -teering   $teering   \
+            -teeringname  $teeringname   \
             -glombuild [$EVBC::applicationOptions cget -glombuild] \
             -glomdt    [$EVBC::applicationOptions cget -glomdt]    \
             -glomid    [$EVBC::applicationOptions cget -glomid]    \
@@ -671,10 +639,6 @@ proc EVBC::onBegin {} {
 #   - reenables the gui if it exists.
 proc EVBC::onEnd {} {
     catch {EVBC::flush} ;  # Catch in case the evb exited badly.
-    
-    # Wait for the monitor thread to signal the end runs balanced the begin runs:
-    
-    
     
     if {[::EVBC::_guiExists]} {
             EVBC::_EnableGUI
@@ -756,36 +720,22 @@ proc EVBC::isRunning {} {
 #  This can be used to see if an event builder restart is required.
 #
 proc EVBC::_paramsChanged {} {
-    if {$::EVBC::buildEvents != $::EVBC::priorBuildEvents} {
-        #puts "BuildEvents $::EVBC::buildEvents  $::EVBC::priorBuildEvents"
-        return true
+
+    # if the runningEVBOptions does not exist yet because this is the first time around,
+    # skip the check...
+    if {$::EVBC::runningEVBOptions eq {}} {
+      return false
     }
-    if {$::EVBC::intermediateRing != $::EVBC::priorIntermediateRing} {
-        #puts "intermed ring $::EVBC::intermediateRing  $::EVBC::priorIntermediateRing"
+
+    set options [$EVBC::applicationOptions info options]
+    # check to see if any of the app options are different than the currently running event builder
+    foreach opt $options {
+      if {[$::EVBC::applicationOptions cget $opt] != [$::EVBC::runningEVBOptions cget $opt]} {
         return true
+      }
     }
-    if {$::EVBC::intermediateRingName != $::EVBC::priorIntermediateRingName} {
-        #puts "intermedringname $::EVBC::intermediateRingName  $::EVBC::priorIntermediateRingName"
-        return true
-    }
-    if {$::EVBC::destRing != $::EVBC::priorDestRing} {
-        #puts "destring $::EVBC::destRing != $::EVBC::priorDestRing"
-        return true
-    }
-    if {$::EVBC::setsEvtlogSource != $::EVBC::priorSetsEvtlogSource} {
-        #puts "evtlogsource $::EVBC::setsEvtlogSource != $::EVBC::priorSetsEvtlogSource"
-        return true
-    }
-    if {$::EVBC::glomTsPolicy != $::EVBC::priorGlomTsPolicy} {
-        #puts "tspolicy $::EVBC::glomTsPolicy != $::EVBC::priorGlomTsPolicy"
-        return true
-    }
-    if {$::EVBC::priorGlomDt != [$::EVBC::applicationOptions cget -glomdt]} {
-        #puts "dt $::EVBC::priorGlomDt != [$::EVBC::applicationOptions cget -glomdt]"
-        return true
-    }
-    #puts "No changes"
-    return false    
+    return false;
+    
 }
 ##
 # EVBC::_updatePriorParams
@@ -798,13 +748,16 @@ proc EVBC::_paramsChanged {} {
 #    and there's no mechanism to change them once they've started.
 #
 proc EVBC::_updatePriorParams {} {
-    set ::EVBC::priorBuildEvents        $::EVBC::buildEvents
-    set ::EVBC::priorIntermediateRing   $::EVBC::intermediateRing
-    set ::EVBC::priorIntermediateRingName $::EVBC::intermediateRingName
-    set ::EVBC::priorDestRing           $::EVBC::destRing
-    set ::EVBC::priorSetsEvtlogSource   $::EVBC::setsEvtlogSource
-    set ::EVBC::priorGlomTsPolicy       $::EVBC::glomTsPolicy
-    set ::EVBC::priorGlomDt             [$::EVBC::applicationOptions cget -glomdt]
+
+    # the EVBC::runningEVBOptions object will be created the first time this proc gets called
+    if {$::EVBC::runningEVBOptions eq {}} {
+      set ::EVBC::runningEVBOptions [::EVBC::AppOptions %AUTO%]
+    }
+
+    set options [$::EVBC::applicationOptions info options]
+    foreach opt $options {
+      $::EVBC::runningEVBOptions configure $opt [$::EVBC::applicationOptions cget $opt]
+    }
 }
 
 #------------------------------------------------------------------------------
@@ -894,14 +847,17 @@ proc EVBC::_ValidateOptions options  {
 # ::EVBC::_checkWarnRestart
 #    Determines if the user needs to be warned about an event builder restart.
 #    *   A warning dialog is popped up if there's not been a change yet
-#        (indicating the proposed change is the first), and the event builder
-#        -restart option is not set.
+#        (indicating the proposed change is the first), the event builder
+#        -restart option is not set, and the event builder has already been started
+#        at least once
 #
 #  @return boolean  true if the proposed change should be backed out.
 #
 proc ::EVBC::_checkWarnRestart {} {
     
-    if {(![::EVBC::_paramsChanged]) && (![$::EVBC::applicationOptions cget -restart]) } {
+    # EVBC::runningEVBOptions is created when the event builder is started
+    if {(![::EVBC::_paramsChanged]) && (![$::EVBC::applicationOptions cget -restart]) \
+        && ($::EVBC::runningEVBOptions ne {})} {
         set result [tk_messageBox                   \
             -title {EVB Restart needed}             \
             -message {A change to event builder parameters will require the
@@ -927,10 +883,9 @@ proc ::EVBC::_checkWarnRestart {} {
 #
 proc ::EVBC::_onTsPolicyChanged {w policy} {
     if {![::EVBC::_checkWarnRestart]} {
-        set ::EVBC::glomTsPolicy $policy
         $::EVBC::applicationOptions configure -glomtspolicy $policy
     } else {
-        $w configure -tspolicy $::EVBC::glomTsPolicy; # Restore the UI
+        $w configure -tspolicy [$::EVBC::applicationOptions cget -glomtspolicy]
     }
 }
 ##
@@ -945,11 +900,10 @@ proc ::EVBC::_onTsPolicyChanged {w policy} {
 #
 proc ::EVBC::_onGlomParamsChanged {w build dt} {
     if {![::EVBC::_checkWarnRestart]} {
-        set ::EVBC::buildEvents $build
         $::EVBC::applicationOptions configure -glomdt $dt
         $::EVBC::applicationOptions configure -glombuild $build
     } else {
-        $w configure -build $::EVBC::buildEvents
+        $w configure -build [$::EVBC::applicationOptions cget -glombuild]
         $w configure -dt    [$::EVBC::applicationOptions cget -glomdt]
     }
 }
@@ -966,18 +920,11 @@ proc ::EVBC::_onGlomParamsChanged {w build dt} {
 #
 proc ::EVBC::_onTeeChange w {
     if {![::EVBC::_checkWarnRestart]} {
-        set ::EVBC::intermediateRing [$w cget -tee]
-        set ::EVBC::intermediateRingName [$w cget -ring]
-        
-        if {$::EVBC::intermediateRing } {
-            $::EVBC::applicationOptions configure -teering $::EVBC::intermediateRingName
-        } else {
-            $::EVBC::applicationOptions configure -teering 0
-        }
-        
+        $::EVBC::applicationOptions configure -teering [$w cget -tee]
+        $::EVBC::applicationOptions configure -teeringname [$w cget -ring]
     } else {
-        $w configure -tee $::EVBC::intermediateRing
-        $w configure -ring $::EVBC::intermediateRingName
+        $w configure -tee [$::EVBC::applicationOptions cget -teering]
+        $w configure -ring [$::EVBC::applicationOptions cget -teeringname]
     }
 }
 ##
@@ -989,17 +936,15 @@ proc ::EVBC::_onTeeChange w {
 #
 proc ::EVBC::_onDestRingChanged w {
     if {![::EVBC::_checkWarnRestart]} {
-        set ::EVBC::destRing         [$w cget -ring]
-        set ::EVBC::setsEvtlogSource [$w cget -record]
-        $::EVBC::applicationOptions configure -destring $::EVBC::destRing
+        $::EVBC::applicationOptions configure -destring [$w cget -ring]
         $::EVBC::applicationOptions configure \
-            -setdestringasevtlogsource $::EVBC::setsEvtlogSource
+            -setdestringasevtlogsource [$w cget -record] 
         if {[$EVBC::applicationOptions cget -setdestringasevtlogsource] } {
-            ::Configuration::Set EventLoggerRing "tcp://localhost/$EVBC::destRing"
+            ::Configuration::Set EventLoggerRing "tcp://localhost/[$::EVBC::applicationOptions cget -destring]"
         }
     } else {
-        $w configure -ring $::EVBC::destRing
-        $w configure -record $::EVBC::setsEvtlogSource
+        $w configure -ring [$::EVBC::applicationOptions cget -destring]
+        $w configure -record [$::EVBC::applicationOptions cget -setdestringasevtlogsource]
     }
 }
 
@@ -1017,8 +962,6 @@ proc ::EVBC::_onDestRingChanged w {
 #   *  An entry for the name of that ring.
 #
 proc EVBC::_StartGui {} {
-    set EVBC::destRing [$EVBC::applicationOptions cget -destring]
-    ::EVBC::_updatePriorParams
     
     ::EVBC::eventbuildercp .evbcp
     grid .evbcp -sticky nsew -padx 9 -pady 9 
@@ -1027,54 +970,42 @@ proc EVBC::_StartGui {} {
     #  Connect .evbcp to the glom parameters, and set the initial values
     #  of the UI:
     
-    .evbcp configure -tspolicy $::EVBC::glomTsPolicy
-    .evbcp configure -build    $::EVBC::buildEvents
-    .evbcp configure -dt       [$::EVBC::applicationOptions cget -glomdt]
+    ::EVBC::updateGuiFromOptions $::EVBC::applicationOptions
+}
+##
+# updateGuiFromOptions
+#
+#   Sets the value of the event builder GUI to be consistent with the EVBC::AppOptions
+#   object that is passed in as a parameter.
+#
+#   It is up to the caller to ensure that the GUI and its fields exist.
+#
+#   \param appOpts an EVBC::AppOptions object
+#
+proc ::EVBC::updateGuiFromOptions {appOpts} {
+    
+    #  Connect .evbcp to the glom parameters, and set the initial values
+    #  of the UI:
+    
+    .evbcp configure -tspolicy [$appOpts cget -glomtspolicy]
+    .evbcp configure -build    [$appOpts cget -glombuild]
+    .evbcp configure -dt       [$appOpts cget -glomdt]
     
     .evbcp configure -tscommand [list ::EVBC::_onTsPolicyChanged .evbcp %P] 
     .evbcp configure -glomcmd   [list ::EVBC::_onGlomParamsChanged .evbcp %B %T]
     
     #  Connect the tee ring controls and set initial values of the UI:
     
-    .evbcp configure -tee     $::EVBC::intermediateRing
-    .evbcp configure -teering $::EVBC::intermediateRingName
+    .evbcp configure -tee     [$appOpts cget -teering]
+    .evbcp configure -teering [$appOpts cget -teeringname]
     .evbcp configure -teecommand [list ::EVBC::_onTeeChange %W]
     
     # Connect the output ring controls and set the UI's initial values.
     
-    .evbcp configure -oring  $::EVBC::destRing
-    .evbcp configure -record $::EVBC::setsEvtlogSource
+    .evbcp configure -oring   [$appOpts cget -destring]
+    .evbcp configure -record  [$appOpts cget -setdestringasevtlogsource]
     .evbcp configure -oringcommand [list ::EVBC::_onDestRingChanged %W]
     
-
-}
-##
-# updateGuiFromOptions
-#
-#   Sets the value of the event builder GUI from its current option values
-#   It is up to the caller to ensure that the GUI and its fields exist.
-#
-proc ::EVBC::updateGuiFromOptions {} {
-    
-    if {[$EVBC::applicationOptions cget -glombuild]} {
-        set ::EVBC::buildEvents 1
-        
-    } else {
-        set ::EVBC::buildEvents 0
-    }
-    
-    set teering [$EVBC::applicationOptions cget -teering]
-    set EVBC::intermediateRingName $teering
-
-    if {$teering eq ""} {
-        set EVBC::intermediateRing 0
-    } else {
-        set EVBC::intermediateRing 1
-    }
-    
-    set EVBC::destRing [$EVBC::applicationOptions cget -destring]
-
-    EVBC::_updatePriorParams
 }
 # @fn EVBC::_EnableGUI
 #
@@ -1259,7 +1190,7 @@ proc ::EVBC::configure args {
     # If the GUI is active we must update its elements
     
     if {[::EVBC::_guiExists]} {
-        ::EVBC::updateGuiFromOptions
+        ::EVBC::updateGuiFromOptions $::EVBC::applicationOptions
     }
 }
 
