@@ -73,11 +73,12 @@ namespace eval ::RdoCallouts10 {
     namespace eval ::Experiment {
         proc spectrodaqURL system {
             
-            puts "Calling the right url getter: $EVBC::destRing"
-            catch [list ringbuffer create $EVBC::destRing] msg;  #ensure ring exists first.
-            puts "Ringmsg $EVBC::destRing: $msg"
+            set destRing [$::EVBC::applicationOptions cget -destring]
+            puts "Calling the right url getter: $destRing"
+            catch [list ringbuffer create $destRing] msg;  #ensure ring exists first.
+            puts "Ringmsg $destRing: $msg"
  
-            return "tcp://localhost/$EVBC::destRing"
+            return "tcp://localhost/$destRing"
         }
     } 
 }
