@@ -23,7 +23,7 @@ if {[catch {
 }
 
 
-tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC::destRing} -setup {
+tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC destRing} -setup {
       # set RINGNAME to something
       array set env [list RINGNAME elephant]
 
@@ -31,15 +31,15 @@ tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC::destRing} -setup {
       set EVBC::setsEvtlogSource true
 
       # set destRing to something... 
-      set EVBC::destRing hehehe
+      $::EVBC::applicationOptions configure -destring hehehe
 
 } -body {
    # this calls the switches
    set switches [::EventLog::_computeLoggerSwitches 11.0-rc12]
    return [lindex $switches 0] 
-} -result "--source=tcp://localhost/$EVBC::destRing"
+} -result "--source=tcp://localhost/[$::EVBC::applicationOptions cget -destring]"
 
-tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC::destRing} -setup {
+tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC destRing} -setup {
 
       # set RINGNAME to something
       array set env [list RINGNAME elephant]
@@ -48,7 +48,7 @@ tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC::destRing} -s
       set EVBC::setsEvtlogSource false
 
       # set destRing to something... 
-      set EVBC::destRing hehehe
+      $::EVBC::applicationOptions configure -destring hehehe
 
 } -body {
    # this calls the switches
