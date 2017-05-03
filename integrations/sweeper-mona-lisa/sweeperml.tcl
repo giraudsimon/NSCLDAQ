@@ -24,6 +24,8 @@ package require Tk
 package require snit
 package require DataSourceUI;      # For dialogwrapper.
 
+
+
 EVBC::useEventBuilder
 
 #----------------------------------------------------------------------------
@@ -153,7 +155,7 @@ proc ::Integration::setDataSources {} {
 #  after doing the package require:
 
 namespace eval EventBuilderParameters {
-    variable glomdt      100
+    variable glomdt      2
     variable glomid      0x5910
     variable destring    built
     
@@ -180,6 +182,10 @@ set EventBuilderParameters::systems  [::Integration::getSystemConfiguration]
 wm deiconify .
 
 ::Integration::setDataSources
+
+
+package require multilogger
+
 
 #
 # The procs live in the Integration namespace.  If this is the only thing
@@ -217,7 +223,7 @@ proc Integration::OnStart {} {
 
     puts "Using: $EventBuilderParameters::systems"
     
-    EVBC::initialize -restart false -glombuild true           \
+    EVBC::initialize -restart false  -glombuild true           \
 	-glomdt   $::EventBuilderParameters::glomdt           \
 	-destring $::EventBuilderParameters::destring         \
 	-glomid   $::EventBuilderParameters::glomid           \
@@ -252,6 +258,7 @@ proc Integration::OnStart {} {
         $lisaRingUri "" $EventBuilderParameters::lisasid       \
         "LISA Data" 1
     }
+    EVBC::configParams window 100
 	
 }
 
