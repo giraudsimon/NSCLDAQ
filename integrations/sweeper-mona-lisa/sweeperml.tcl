@@ -155,7 +155,7 @@ proc ::Integration::setDataSources {} {
 #  after doing the package require:
 
 namespace eval EventBuilderParameters {
-    variable glomdt      2
+    variable glomdt      1
     variable glomid      0x5910
     variable destring    built
     
