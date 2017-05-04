@@ -2,7 +2,7 @@ SUBDIRS=cv6533 figures
 
 PACKAGES=client.tcl configfile.tcl gdgcontrol.tcl gdgwidget.tcl sclclient.tcl xlm72scalerpanel.tcl \
 				 MDGG16Gui.tcl MDGG16Proxy.tcl MDGG16GuiApp.tcl AGD16XLM72Panel.tcl \
-				runStateObserver.tcl ALevel3XLM72.tcll AXLM72GenericProxy.tcl \
+				runStateObserver.tcl ALevel3XLM72.tcl AXLM72GenericProxy.tcl \
 				ALevel3XLM72.tcl
 
 
