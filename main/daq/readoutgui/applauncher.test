@@ -39,7 +39,7 @@ tcltest::test  appendButton-0 {test that we can append a button
 	set cmdDict [launcher _getCommandDict]
 
 	dict get $cmdDict .test.button0
-} -result {button .test.button0 command ls pids {}}
+} -result {button .test.button0 command ls}
 
 
 if {0} {
