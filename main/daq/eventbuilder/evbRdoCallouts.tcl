@@ -585,7 +585,7 @@ proc EVBC::onBegin {} {
 
     set teering [$EVBC::applicationOptions cget -teering]
     set teeringname [$EVBC::applicationOptions cget -teeringname]
-    if {$teering ne ""} {
+    if {$teering} {
 	catch {ringbuffer create $teeringname}
     }
     set destring [$EVBC::applicationOptions cget -destring]
