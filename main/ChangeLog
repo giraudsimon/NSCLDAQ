@@ -1210,3 +1210,6 @@ Work on 11.0-rc11 begins
 	to the MCFD16 to set and get the global coinc time.
 	* Adds GIT_COMMIT file to the installation containing the current hash of
 	HEAD.
+	* Ensure MADC32 initialization stack does not end in a
+	delay. VMUSB does not like it when it does.
+	

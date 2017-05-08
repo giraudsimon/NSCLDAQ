@@ -477,8 +477,12 @@ CMADC32::Initialize(CVMUSB& controller)
   list.addDelay(MADCDELAY);
   list.addWrite16(base + InitFifo,     initamod, (uint16_t)0);
   list.addDelay(MADCDELAY);
-  list.addWrite16(base + StartAcq, initamod, (uint16_t)1 );
 
+  // The VMUSB does not like lists that end in a delay so:
+  
+  //  list.addWrite16(base + StartAcq, initamod, (uint16_t)1 );
+  
+  list.addWrite16(base + StartAcq, initamod, (uint16_t)1 );
 
 
 
