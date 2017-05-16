@@ -448,7 +448,7 @@ snit::type EVB::ConnectionManager {
     option -port;		# Port on which we listen for connections.
     option -connectcommand   -default [list]  -configuremethod _SetCallback
     option -disconnectcommand -default [list] -configuremethod _SetCallback
-    option -sourcetimeout    -default 10
+    option -sourcetimeout    -default 60
 
     variable serverSocket;	           # Socket run by us.
     variable connections -array {};        # Key is connection, value last received timestamp.
