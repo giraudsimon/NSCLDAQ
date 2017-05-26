@@ -7,11 +7,14 @@
 #***************************************************************************//**
 # 
 
+
+
 ##
 # @file MTDC32.cpp
 # @brief Support for the Mesytec MTDC32  (implementation)
 # @author Ron Fox (rfoxkendo@gmail.com)
 */
+
 
 #include "CMTDC32.h"
 #include <CVMUSB.h>
@@ -22,6 +25,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <errno.h> 
 #include <string.h>
 
@@ -123,6 +128,10 @@ static const uint16_t bank0TriggerSrcRegisterValues[] = {
 static const char** bank1TriggerSources             = bank0TriggerSources;
 static const uint16_t* bank1TriggerSrcRegisterValues = bank0TriggerSrcRegisterValues;
 
+
+// for debugging :
+
+static void dumpRegisters(CVMUSB& controller, uint32_t base);
 
 /**
  * constructor
@@ -275,6 +284,7 @@ CMTDC32::onAttach(CReadoutModule& configuration)
 void
 CMTDC32::Initialize(CVMUSB& controller)
 {
+  bool joinedbanks = m_pConfiguration->getBoolParameter("-joinedbanks");
     // Reset the device and wait for it to settle.
 
   //  std::cerr << std::hex;
@@ -298,6 +308,110 @@ CMTDC32::Initialize(CVMUSB& controller)
     // built into a list.
     
     CVMUSBReadoutList list;
+
+    // Unipolar channel discriminator levels:
+
+    addWrite(list, base+MTDCBank0InputThr,
+	     m_pConfiguration->getIntegerParameter("-bank0threshold"));
+    if (!joinedbanks) {
+      addWrite(list, base+MTDCBank1InputThr,
+	       m_pConfiguration->getIntegerParameter("-bank1threshold"));
+    }
+
+    // Set up the operation mode registers
+    
+    addWrite(list, base+BankOperation, static_cast<uint16_t>(joinedbanks ? 0 : 1));
+    addWrite(list, base+Resolution,
+	     resolutionRegisterValues[m_pConfiguration->getEnumParameter("-resolution", resolutionValues)]);
+
+    addWrite(list, base+OutputFormat,
+        formatRegisterValues[m_pConfiguration->getEnumParameter("-format", formatValues)]);
+
+    addWrite(list, base+MTDCBank0TrigSource,
+        bank0TriggerSrcRegisterValues[m_pConfiguration->getEnumParameter("-bank0triggersource", bank0TriggerSources)]);
+    if (!joinedbanks) {
+      addWrite(list, base+MTDCBank1TrigSource,
+	       bank1TriggerSrcRegisterValues[m_pConfiguration->getEnumParameter("-bank1triggersource", bank1TriggerSources)]);
+    }
+
+    
+    uint16_t firstHit = 0;
+    if (m_pConfiguration->getBoolParameter("-bank0firsthit")) {
+        firstHit |= 1;
+    }
+    if (m_pConfiguration->getBoolParameter("-bank1firsthit")) {
+        firstHit |= 2;
+    }
+    addWrite(list, base+MTDCFirstHitOnly, firstHit);
+    
+    // Program inputs and outputs - Assumes jumpers are for differential inputs.
+
+    if (m_pConfiguration->cget("-edge") == std::string("falling")) {
+        addWrite(list, base+MTDCEdgeSelect, 0);
+    } else {
+        addWrite(list, base+MTDCEdgeSelect, 3);
+    }
+
+    
+   addWrite(list, base+ECLTermination, getTermination());
+
+   addWrite(list, base+ECLGate1OrTiming, static_cast<uint16_t>(
+        m_pConfiguration->getBoolParameter("-ecltrig1isoscillator") ? 1 : 0));
+    addWrite(list, base+MTDCTriggerSelect, static_cast<uint16_t>(
+        m_pConfiguration->getBoolParameter("-trigfromecl") ? 1 : 0
+    ));
+    
+    addWrite(list, base+NIMGate1OrTiming, static_cast<uint16_t>(
+        m_pConfiguration->getBoolParameter("-nimtrig1isoscillator" )? 1 : 0
+    ));
+    addWrite(list, base+NIMBusyFunction,
+        busyRegisterValues[m_pConfiguration->getEnumParameter("-busy", busyValues)]
+    );
+    
+    // Support the pulser for test purposes.
+    
+    if (m_pConfiguration->getBoolParameter("-pulseron")) {
+        addWrite(list, base+TestPulser, 1);
+        addWrite(
+            list, base+MTDCPulserPattern,
+            m_pConfiguration->getIntegerParameter("-pulserpattern")
+        );
+    } else {
+        addWrite(list, base+TestPulser, 0);
+    }
+
+    
+    // The multiplicity requirements:
+
+    addWrite(list, base+MTDCBank0HighLimit, m_pConfiguration->getIntegerParameter("-multhi0"));
+    addWrite(list, base+MTDCBank0LowLimit,  m_pConfiguration->getIntegerParameter("-multlow0"));
+    if (!joinedbanks) {
+      addWrite(list, base+MTDCBank1HighLimit, m_pConfiguration->getIntegerParameter("-multhi1"));
+      addWrite(list, base+MTDCBank1LowLimit,  m_pConfiguration->getIntegerParameter("-multlow1"));
+    }
+
+
+    // Set the trigger matching windows:
+
+    for (int i =0; i < 5; i++) {
+      addWrite(list, base+MTDCBank0WinStart, m_pConfiguration->getIntegerParameter("-bank0winstart"));
+      addWrite(list, base+MTDCBank0WinWidth, m_pConfiguration->getIntegerParameter("-bank0winwidth"));
+      if (!joinedbanks) {
+	addWrite(list, base+MTDCBank1WinStart, m_pConfiguration->getIntegerParameter("-bank1winstart"));
+	addWrite(list, base+MTDCBank1WinWidth, m_pConfiguration->getIntegerParameter("-bank1winwidth"));
+      }
+    }
+    // Program the counters.  Note that timestamps will come from the
+    // Chain via the broadcast so that all modules are simultaneously
+    // cleared.
+
+    if(m_pConfiguration->cget("-timingsource") == std::string("vme")) {
+        addWrite(list, base+TimingSource, 0);
+    } else {
+        addWrite(list, base+TimingSource, 1);
+    }
+    addWrite(list, base+TimingDivisor, m_pConfiguration->getIntegerParameter("-tsdivisor"));
+
     
     // Module id register:
     
@@ -319,89 +433,7 @@ CMTDC32::Initialize(CVMUSB& controller)
     addWrite(list, base+MarkType,
         markTypeRegisterValues[m_pConfiguration->getEnumParameter("-marktype", markTypes)]);
     
-    
-    // Set up the operation mode registers
-    
-    addWrite(list, base+BankOperation, static_cast<uint16_t>(
-        m_pConfiguration->getBoolParameter("-joinedbanks") ? 0 : 1));
-    addWrite(list, base+Resolution,
-	     resolutionRegisterValues[m_pConfiguration->getEnumParameter("-resolution", resolutionValues)]);
-    addWrite(list, base+OutputFormat,
-        formatRegisterValues[m_pConfiguration->getEnumParameter("-format", formatValues)]);
-    addWrite(list, base+MTDCBank0WinStart, m_pConfiguration->getIntegerParameter("-bank0winstart"));
-    addWrite(list, base+MTDCBank1WinStart, m_pConfiguration->getIntegerParameter("-bank1winstart"));
-    addWrite(list, base+MTDCBank0WinWidth, m_pConfiguration->getIntegerParameter("-bank0winwidth"));
-    addWrite(list, base+MTDCBank1WinWidth, m_pConfiguration->getIntegerParameter("-bank1winwidth"));
-    addWrite(list, base+MTDCBank0TrigSource,
-        bank0TriggerSrcRegisterValues[m_pConfiguration->getEnumParameter("-bank0triggersource", bank0TriggerSources)]);
-    addWrite(list, base+MTDCBank1TrigSource,
-        bank1TriggerSrcRegisterValues[m_pConfiguration->getEnumParameter("-bank1triggersource", bank1TriggerSources)]);
-    uint16_t firstHit = 0;
-    if (m_pConfiguration->getBoolParameter("-bank0firsthit")) {
-        firstHit |= 1;
-    }
-    if (m_pConfiguration->getBoolParameter("-bank1firsthit")) {
-        firstHit |= 2;
-    }
-    addWrite(list, base+MTDCFirstHitOnly, firstHit);
-    
-    // Program inputs and outputs:
-    
-    if (m_pConfiguration->cget("-edge") == std::string("falling")) {
-        addWrite(list, base+MTDCEdgeSelect, 3);
-    } else {
-        addWrite(list, base+MTDCEdgeSelect, 0);
-    }
-    addWrite(list, base+ECLTermination, getTermination());
-    addWrite(list, base+ECLGate1OrTiming, static_cast<uint16_t>(
-        m_pConfiguration->getBoolParameter("-ecltrig1isoscillator") ? 1 : 0));
-    addWrite(list, base+MTDCTriggerSelect, static_cast<uint16_t>(
-        m_pConfiguration->getBoolParameter("-trigfromecl") ? 1 : 0
-    ));
-    addWrite(list, base+NIMGate1OrTiming, static_cast<uint16_t>(
-        m_pConfiguration->getBoolParameter("-nimtrig1isoscillator" )? 1 : 0
-    ));
-    addWrite(list, base+NIMBusyFunction,
-        busyRegisterValues[m_pConfiguration->getEnumParameter("-busy", busyValues)]
-    );
-    
-    // Support the pulser for test purposes.
-    
-    if (m_pConfiguration->getBoolParameter("-pulseron")) {
-        addWrite(list, base+TestPulser, 1);
-        addWrite(
-            list, base+MTDCPulserPattern,
-            m_pConfiguration->getIntegerParameter("-pulserpattern")
-        );
-    } else {
-        addWrite(list, base+TestPulser, 0);
-    }
-    // Unipolar channel discriminator levels:
-    
-    addWrite(list, base+MTDCBank0InputThr,
-        m_pConfiguration->getIntegerParameter("-bank0threshold"));
-    addWrite(list, base+MTDCBank1InputThr,
-        m_pConfiguration->getIntegerParameter("-bank1threshold"));
-    
-    // Program the counters.  Note that timestamps will come from the
-    // Chain via the broadcast so that all modules are simultaneously
-    // cleared.
-    
-    if(m_pConfiguration->cget("-timingsource") == std::string("vme")) {
-        addWrite(list, base+TimingSource, 0);
-    } else {
-        addWrite(list, base+TimingSource, 1);
-    }
-    addWrite(list, base+TimingDivisor, m_pConfiguration->getIntegerParameter("-tsdivisor"));
-    
-    // The multiplicity requirements:
-    
-    addWrite(list, base+MTDCBank0HighLimit, m_pConfiguration->getIntegerParameter("-multhi0"));
-    addWrite(list, base+MTDCBank0LowLimit,  m_pConfiguration->getIntegerParameter("-multlow0"));
-    addWrite(list, base+MTDCBank1HighLimit, m_pConfiguration->getIntegerParameter("-multhi1"));
-    addWrite(list, base+MTDCBank1LowLimit,  m_pConfiguration->getIntegerParameter("-multlow1"));
-    
-    
+        
     // Finally, reset the readout again and start daq:
     
     addWrite(list, base+ReadoutReset, 1);
@@ -416,6 +448,8 @@ CMTDC32::Initialize(CVMUSB& controller)
     uint8_t rdBuffer[128];
 
     int status = controller.executeList(list, &rdBuffer, sizeof(rdBuffer), &readSize);
+
+    //    dumpRegisters(controller, base);
 
     if (status != 0) {
       std::cerr << "MTDC initialization list failed " << status << std::endl;
@@ -444,7 +478,7 @@ CMTDC32::addReadoutList(CVMUSBReadoutList& list)
 
   list.addFifoRead32(base + eventBuffer, readamod, (size_t)1024); // really 256 is maximum in single event mode I think.
   list.addWrite16(base + ReadoutReset, initamod, (uint16_t)1);
-  list.addDelay(5);
+  //  list.addDelay(5);
     
 }
 /**
@@ -590,7 +624,7 @@ CMTDC32::addWrite(CVMUSBReadoutList& list, uint32_t address, uint16_t value)
   int delay = m_pConfiguration->getIntegerParameter("-initdelay");
   //  std::cerr << (address & 0xffff) << " " << value << std::endl;
     list.addWrite16(address, initamod, value);
-    list.addDelay(delay);
+    //    list.addDelay(delay);
 }
 /**
  * computeMultiEventRegister
@@ -631,4 +665,117 @@ CMTDC32::getTermination()
     if(m_pConfiguration->getBoolParameter("-resetterminated")) result |=4;
     
     return result;
+}
+
+//--------------------------------------------------------------------
+
+/**
+ * dumpRegisters
+ *   Dumps the register values to a file named:  MTDC_base  where
+ *   base is the base address of the module.
+ *   The registers dumped are driven by the static data structure below.
+ *
+ * @param controller Controller used to read the module.
+ * @param base       MOdule base address.
+ */
+
+// Vector of pairs of register names and values:
+
+
+
+static std::vector<std::pair<std::string, uint32_t> > registersToDump = {
+{"AddressSource",        0x6000},
+{"Address",              0x6002},
+{"ModuleId",             0x6004},
+{"FirmwareRev",          0x600e},
+
+{"Ipl",                  0x6010},
+{"Vector",               0x6012},
+{"IrqTest",              0x6014},
+{"IrqReset",             0x6016},
+{"IrqThreshold",         0x6018},
+{"MaxTransfer",          0x601a},
+{"WithdrawIrqOnEmpty",   0x601c},
+
+{"CbltMcstControl",      0x6020},
+{"CbltAddress",          0x6022},
+{"McstAddress",          0x6024},
+
+
+{"DataFormat",           0x6032},
+{"ReadoutReset",         0x6034},
+{"MultiEvent",           0x6036},
+{"MarkType",             0x6038},
+
+{"BankOperation",        0x6040},
+{"Resolution",           0x6042},
+{"OutputFormat",         0x6044},
+
+{"MTDCBank0WinStart",    0x6050},
+
+{"MTDCBank1WinStart",    0x6052},
+
+{"MTDCBank0WinWidth",    0x6054},
+
+{"MTDCBank1WinWidth",    0x6056},
+
+{"MTDCBank0TrigSource",  0x6058},
+{"MTDCBank1TrigSource",  0x605a},
+{"MTDCFirstHitOnly",     0x605c},
+
+{"MTDCEdgeSelect",       0x6060},
+
+{"ECLTermination",       0x6062},
+{"ECLGate1OrTiming",     0x6064},   // Set timing source too.
+{"ECLFCOrTimeReset",     0x6066},
+
+
+{"MTDCTriggerSelect",   0x6068},
+
+
+{"NIMGate1OrTiming",     0x606a},   // Set timing source too.
+{"NIMFCOrTimeReset",     0x606c},
+{"NIMBusyFunction",      0x606e},
+
+{"TestPulser",           0x6070}, // In order to ensure it's off !
+{"MTDCPulserPattern",    0x6072},
+{"MTDCBank0InputThr",    0x6078},
+{"MTDCBank1InputThr",    0x607a},
+
+{"MTDCBank0HighLimit",   0x60b0},
+{"MTDCBank0LowLimit",    0x60b2},
+{"MTDCBank1HighLimit",     0x60b4},
+{"MTDCBank1LowLimit",    0x60b6}
+  
+};
+
+static void
+dumpRegisters(CVMUSB& controller, uint32_t base)
+{
+  // Construct the name of and open the output file.
+
+  std::stringstream filename;
+  filename  << "MTDC_" << std::hex << base << ".registers";
+  std::ofstream f(filename.str().c_str(), std::ios_base::out); 
+  f << std::hex;                        // All numeric  data in hex.
+  
+  // Iterate through the registersToDump array dumping Name (Offset) = Value to file
+  // for each entry.
+
+  for (auto i =0; i < registersToDump.size(); i++) {
+    std::string name = registersToDump[i].first;
+    uint32_t    offset = registersToDump[i].second;
+    uint32_t    addr = base  + offset;
+    uint16_t    data;
+    controller.vmeRead16(addr, initamod, &data);
+    f << name << " (" << offset << ") = " << data << std::endl;
+    
+  }
+
+    
+    
+
+  // The file closes on object construction
+
+  
 }
