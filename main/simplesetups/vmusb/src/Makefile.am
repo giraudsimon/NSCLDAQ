@@ -14,3 +14,5 @@ share_DATA = CRawADCUnpacker.cpp \
 install-data-local:
 	$(mkinstalldirs) $(sharedir)
 	$(INSTALL_DATA) Example_Makefile $(sharedir)/Makefile
+
+EXTRA_DIST=$(share_DATA)
