@@ -116,14 +116,6 @@ snit::type MCFD16Memorizer {
     return [dict get $_memory fast_veto]
   }
 
-  method SetGlobalCoincTime {value} {
-    dict set _memory globalcoinc $value
-  }
-
-  method GetGlobalCoincTime {} {
-    return [dict get $_memory globalcoinc]
-  }
-
   ## @brief Construct the structure of the dictionary
   #
   # Each parameter name has a key associated with it. Parameters that have
@@ -163,7 +155,6 @@ snit::type MCFD16Memorizer {
     dict set _memory or0_pattern NA
     dict set _memory or1_pattern NA
     dict set _memory fast_veto NA
-    dict set _memory globalcoinc NA
   }
 
   ## @brief Utilty method for adding a parameter with channel to the dict

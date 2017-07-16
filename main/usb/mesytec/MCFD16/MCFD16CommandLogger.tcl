@@ -218,13 +218,6 @@ snit::type MCFD16CommandLogger {
     chan puts $_logFile "[$self cget -name] GetFastVeto"
   }
 
-  method SetGlobalCoincTime {value} {
-    chan puts $_logFile "[$self cget -name] SetGlobalCoincTime $value"
-  }
-
-  method GetGlobalCoincTime {} {
-    chan puts $_logFile "[$self cget -name] GetGlobalCoincTime"
-  }
 
   ## @brief Convenience wrapper around a "chan flush" command
   method Flush {} {

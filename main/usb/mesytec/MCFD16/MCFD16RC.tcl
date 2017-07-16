@@ -581,21 +581,6 @@ snit::type MCFD16RC {
     return $value
   }
 
-  method SetGlobalCoincTime {value} {
-
-    if { $value != 0 && (![Utils::isInRange 3 136 $value]) } {
-      return -code error {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
-    }
-
-    return [$_proxy Write [dict get $offsetsMap globalcoinc] $value]    
-  }
-
-  method GetGlobalCoincTime {} {
-    set value [$_proxy Read [dict get $offsetsMap globalcoinc]]
-    return $value
-  }
-
-
   ## @brief Set the remote control mode
   #
   # @param on   desired rc state (must be boolean)
@@ -646,7 +631,6 @@ snit::type MCFD16RC {
                                 polarity  {indiv 56 common 70} \
                                 mode      72 \
                                 rc        73 \
-                                globalcoinc 76 \
                                 fast_veto 77 \
                                 mask      83 \
                                 pulser    118 \
