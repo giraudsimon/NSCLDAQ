@@ -131,6 +131,7 @@ Trig2:  0   0   0   0   0   0   0   0
 mcfd-16>
 }
 
+if {0} {
 set parsedDSDict [dict create Threshold {0 20 20 40 20 20 20 20 20 20 20 20 20 20 20 20 20} \
                        Gain {1 1 1 1 3 1 1 1 1} \
                        Width {100 50 40 50 50 50 50 50 50} \
@@ -141,6 +142,22 @@ set parsedDSDict [dict create Threshold {0 20 20 40 20 20 20 20 20 20 20 20 20 2
                        {Mask register} 48 \
                        Discrimination {Constant fraction} \
                        globalcoinc 20 \
+                       {Operating mode} Common \
+                       {Bandwidth limit} Off \
+                       {Remote Control} Off \
+                       {Test pulser} On \
+                       WidthRaw {72 45 39 45 45 45 45 45 45} \
+                       DeadtimeRaw {45 45 45 45 117 45 45 45 27}]
+}              ;           # no globalcoinc
+set parsedDSDict [dict create Threshold {0 20 20 40 20 20 20 20 20 20 20 20 20 20 20 20 20} \
+                       Gain {1 1 1 1 3 1 1 1 1} \
+                       Width {100 50 40 50 50 50 50 50 50} \
+                       Deadtime {50 50 50 50 202 50 50 50 20} \
+                       Delay {3 3 3 3 1 3 3 3 2} \
+                       Fraction {20 40 40 40 40 40 40 40 40} \
+                       Polarity {neg neg neg pos neg neg neg neg neg} \
+                       {Mask register} 48 \
+                       Discrimination {Constant fraction} \
                        {Operating mode} Common \
                        {Bandwidth limit} Off \
                        {Remote Control} Off \
@@ -1196,6 +1213,8 @@ tcltest::test getFastVeto-0 {Ensure we can retrieve the fast veto cached value
     dev GetFastVeto
 } -result 0
 
+if 0 {
+
 tcltest::test setGlobalCoincTime-0 {Ensure that we can set the global coinc time
 } -setup {
     setup
@@ -1238,6 +1257,7 @@ tcltest::test getGlobalCoincTime-0 {Ensure that we can retrieve the global coinc
     dev GetGlobalCoincTime
 } -result 20
 
+};                           # Global coinc time not implemented.
 
 tcltest::test parseDTResponse {Check that we can parse the DT response 
 } -setup {

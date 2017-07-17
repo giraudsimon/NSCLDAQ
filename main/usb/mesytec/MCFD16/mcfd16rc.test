@@ -16,6 +16,7 @@
 
 package require tcltest
 
+
 tcltest::test pkgrequire-0 {Ensures that the package can be required
 } {package require mcfd16rc} 1.0
 
@@ -633,7 +634,10 @@ tcltest::test getFastVeto-0 {Check that we can write fast veto
 
 #---------
 
-tcltest::test setGlobalCoinc-0 {Check that we can write global coinc time
+if 0 {
+
+tcltest::test setGlobalCoinc-0 {Check that we can write global coinc time \
+-constraints {supportGlobalCoinc}            \
 } -setup {
   setup
 } -cleanup {
@@ -667,6 +671,8 @@ tcltest::test setGlobalCoinc-2 {Check that invalid parameter for global coinc ti
 } -body {
   ::dev SetGlobalCoincTime 137
 } -returnCodes 1 -result {Invalid argument provided. Coincidence time must be either 0 or in range [3,136].}
+
+}                           ; # Disabling global coincidence tests.
 
 #---------
 #
