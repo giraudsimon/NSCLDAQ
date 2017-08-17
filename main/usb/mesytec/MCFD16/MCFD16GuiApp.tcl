@@ -83,26 +83,25 @@ snit::type MCFD16GuiApp {
   # @param args   the option-value pairs
   #
   constructor {args} {
-    install _options using MCFD16AppOptions %AUTO% 
-
-    $self configurelist $args
-
-    # Constructs the mcfd16 driver
-    $self processCmdlineOptions
-
-    $self setUpMenu
-    $self BuildGUI
-
-    if {[$_options cget -configfile] ne ""} {
-      set path [$_options cget -configfile]
-      if {[file exists $path]} {
-        $self LoadConfigFile $path
-      } else {
-        set msg "Cannot load config file because "
-        append msg "$path does not exist."
-        tk_messageBox -icon error -message $msg
+      install _options using MCFD16AppOptions %AUTO% 
+      
+      $self configurelist $args
+      
+      # Constructs the mcfd16 driver
+      $self processCmdlineOptions
+      
+      $self setUpMenu
+      $self BuildGUI
+      if {[$_options cget -configfile] ne ""} {
+	  set path [$_options cget -configfile]
+	  if {[file exists $path]} {
+	      $self LoadConfigFile $path
+	  } else {
+	      set msg "Cannot load config file because "
+	      append msg "$path does not exist."
+	      tk_messageBox -icon error -message $msg
+	  }
       }
-    }
 
   }
 
@@ -207,7 +206,7 @@ snit::type MCFD16GuiApp {
     set _enableFr [$self BuildEnableDisableFrame $_sequencer]
     set _orPatternFr [$self BuildOrPatternFrame $_sequencer]
 
-    # load the frames into the FrameSequencer in a proper order.
+      # load the frames into the FrameSequencer in a proper order.
     $_sequencer staticAdd config $_configFr {}
     $_sequencer staticAdd save $_saveFr config
     $_sequencer staticAdd load $_loadFr config
@@ -291,7 +290,6 @@ snit::type MCFD16GuiApp {
   method BuildOrPatternFrame {top} {
     set orPatternFr $top.orPattern
     ORPatternConfiguration $orPatternFr -handle $_handle
-    
     return $orPatternFr
   }
 
@@ -423,9 +421,9 @@ snit::type MCFD16GuiApp {
   # @param top  the parent widget
   #
   # @returns the name of the LoadFromFileForm instance
-  method LoadConfigFile {path} {
-    LoadFromFilePresenter loader $_controlPrsntr
-    loader Load $path
+    method LoadConfigFile {path} {
+	LoadFromFilePresenter loader $_controlPrsntr
+	loader Load $path
   }
 
 }

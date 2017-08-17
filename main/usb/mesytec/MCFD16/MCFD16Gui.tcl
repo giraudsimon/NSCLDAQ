@@ -1360,17 +1360,17 @@ snit::type LoadFromFilePresenter {
       set msg "Cannot load from $path, because file is not readable."
       tk_messageBox -icon error -message $msg
     }
-
     set f [open $path r]
-    set content [chan read $f]
-    catch {close $f}
+      set content [chan read $f]
+      catch {close $f}
 
     set executableLines [$self FilterOutNonAPICalls $content]
 
+      
     # determine the first
-    set devName [$self ExtractDeviceName [lindex $executableLines 0]]
+      set devName [$self ExtractDeviceName [lindex $executableLines 0]]
     if {[llength [info commands $devName]]>0} {
-      if {[$_contentFr cget -handle] ne $devName} {
+	if {[$_contentFr cget -handle] ne $devName} {
         rename $devName {}
       } else {
         set msg "Device driver instance in load file shares same name "
@@ -2461,7 +2461,7 @@ snit::widget ORPatternConfiguration {
     $panel0Presenter Update 
     $panel1Presenter Update 
 
-    set fastVeto [[$self cget -handle] GetFastVeto]
+      set fastVeto [[$self cget -handle] GetFastVeto]
   }
 
   method CommitViewToModel {} {
