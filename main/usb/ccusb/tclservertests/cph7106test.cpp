@@ -64,7 +64,7 @@ void CPH7106Tests::create_0 () {
 
 void CPH7106Tests::onAttach_0 () {
 
-  CControlModule module("name",std::move(m_cmd));
+  CControlModule module("name", m_cmd.get());
 
   CPPUNIT_ASSERT_NO_THROW(module.cget("-slot"));
 }
@@ -75,7 +75,7 @@ void CPH7106Tests::onAttach_0 () {
 // tested indirectly with the initialize_0
 void CPH7106Tests::initialize_0 () 
 {
-  CControlModule module("name",std::move(m_cmd));
+  CControlModule module("name", m_cmd.get());
   module.configure("-slot", "12");
 
   CMockCCUSB ctlr;

@@ -407,10 +407,10 @@ CV6533::Get(CVMUSB& vme, string parameter)
  *
  * @param rhs - the object to clone into *this
  */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CV6533::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CV6533(*this));
+  return (new CV6533(*this));
 }
 
 void CV6533::copy(const CV6533& rhs)

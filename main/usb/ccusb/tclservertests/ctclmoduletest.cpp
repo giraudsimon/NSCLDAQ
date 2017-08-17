@@ -65,7 +65,7 @@ void CTclControlModuleTests::create_0 () {
 
 void CTclControlModuleTests::onAttach_0 () {
 
-  CControlModule module("name",std::move(m_cmd));
+  CControlModule module("name", m_cmd.get());
 
   CPPUNIT_ASSERT_NO_THROW(module.cget("-ensemble"));
 }

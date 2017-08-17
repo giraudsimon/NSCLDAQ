@@ -60,7 +60,7 @@ void CXLMControlsTests::construct_0() {
 void CXLMControlsTests::cget_0() {
 
   unique_ptr<XLM::CXLMControls> bus(new XLM::CXLMControls);
-  CControlModule mod("test",move(bus));
+  CControlModule mod("test", bus.get());
 
   CPPUNIT_ASSERT_NO_THROW( mod.cget("-firmware") );
 }

@@ -177,10 +177,10 @@ CVMUSBModule::Get(CVMUSB& vme, string parameter)
 }
 /**
  */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CVMUSBModule::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CVMUSBModule(*this));
+  return (new CVMUSBModule(*this));
 }
 
 

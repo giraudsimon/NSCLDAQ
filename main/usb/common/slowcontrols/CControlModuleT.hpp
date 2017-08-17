@@ -16,7 +16,7 @@
 
 #include <config.h>
 #include <CControlHardware.h>
-
+#include <iostream>
 using namespace std;
 
 /*!
@@ -31,9 +31,9 @@ using namespace std;
 */
 template<class Ctlr>
 CControlModuleT<Ctlr>::CControlModuleT(string name, 
-                    std::unique_ptr<CControlHardwareT<Ctlr>> hardware) :
+                    CControlHardwareT<Ctlr>* hardware) :
   CConfigurableObject(name),
-  m_pHardware(std::move(hardware))
+  m_pHardware(hardware)
 {
   m_pHardware->onAttach(*this);
 }
@@ -80,7 +80,9 @@ template<class Ctlr>
 void
 CControlModuleT<Ctlr>::Initialize(Ctlr& ctlr)
 {
+
   m_pHardware->Initialize(ctlr);
+
 }
 
 /*!

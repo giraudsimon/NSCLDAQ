@@ -50,7 +50,7 @@ public:
   void setUp() {
     auto hdwr = unique_ptr<CControlHardware>(new CMxDCRCBus);
     m_pModule = unique_ptr<CControlModule>(
-        new CControlModule("test", move(hdwr) ));
+					   new CControlModule("test", hdwr.get() ));
 
     m_pModule->configure("-base","0xff000000");
 

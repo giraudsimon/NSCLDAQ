@@ -180,10 +180,10 @@ CCCUSBControl::Get(CCCUSB& vme, string parameter)
 /**
  * Clone is a noop.
  */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CCCUSBControl::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CCCUSBControl);
+  return (new CCCUSBControl);
 }
 
 

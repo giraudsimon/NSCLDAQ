@@ -268,10 +268,10 @@ ChicoTrigger::Get(CVMUSB& vme, string parameter)
 /**
  * Create a new copy of the rhs into this.
  */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 ChicoTrigger::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new ChicoTrigger(*this));
+  return (new ChicoTrigger(*this));
 }
 /**
  * Return the base address.

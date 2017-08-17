@@ -59,7 +59,7 @@ void CV6533Tests::construct_0() {
 void CV6533Tests::update_0() {
 
   unique_ptr<CV6533> hdwr(new CV6533);
-  CControlModule module("name",std::move(hdwr));
+  CControlModule module("name", hdwr.get());
   module.configure("-base","0xffff0000");
 
   CMockVMUSB ctlr;

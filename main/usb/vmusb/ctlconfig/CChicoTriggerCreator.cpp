@@ -26,8 +26,8 @@
  *
  * @return CControlHardware*
  */
-  std::unique_ptr<CControlHardware>
+CControlHardware*
 CChicoTriggerCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new ChicoTrigger);
+  return new ChicoTrigger;
 }

@@ -34,7 +34,7 @@ class CXLMControls : public ::CControlHardware
   public:
   CXLMControls();
 
-  virtual std::unique_ptr<CControlHardware> clone() const; 
+  virtual CControlHardware* clone() const; 
 
   virtual void onAttach (CControlModule& config);
   virtual void Initialize(CVMUSB& controller);

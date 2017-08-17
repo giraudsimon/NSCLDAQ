@@ -8,8 +8,9 @@
 /////////////////////// CMxDCRCBusCreator ///////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-std::unique_ptr<CControlHardware> CMxDCRCBusCreator::operator()()
+CControlHardware* CMxDCRCBusCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CMxDCRCBus);
+  CMxDCRCBus* pItem = new CMxDCRCBus;
+  return pItem;
 }
 

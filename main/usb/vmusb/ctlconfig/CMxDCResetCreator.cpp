@@ -8,8 +8,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-std::unique_ptr<CControlHardware> CMxDCResetCreator::operator()()
+CControlHardware*CMxDCResetCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CMxDCReset);
+  return (new CMxDCReset);
 }
 

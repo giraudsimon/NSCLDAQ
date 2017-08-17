@@ -78,7 +78,7 @@ public:
 			  std::string value);            //!< Set parameter value
   virtual std::string Get(CVMUSB& vme, 
 			  std::string parameter);        //!< Get parameter value.
-  virtual std::unique_ptr<CControlHardware> clone() const;	     //!< Virtual copy constr.
+  virtual CControlHardware* clone() const;	     //!< Virtual copy constr.
 
 private:
   uint32_t base();

@@ -132,7 +132,7 @@ class CControlHardwareT
      *  \return unique_ptr holding new object 
      *
      */
-    virtual std::unique_ptr<CControlHardwareT> clone() const = 0;
+    virtual CControlHardwareT* clone() const = 0;
 
 
     /**! \brief Adds parameters to CControlModule

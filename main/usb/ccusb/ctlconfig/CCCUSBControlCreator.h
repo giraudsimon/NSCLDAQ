@@ -38,7 +38,7 @@
 class CCCUSBControlCreator : public CModuleCreator
 {
 public:
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 

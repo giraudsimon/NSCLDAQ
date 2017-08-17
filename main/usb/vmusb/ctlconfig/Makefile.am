@@ -81,7 +81,7 @@ noinst_HEADERS			=	\
 
 
 libVMUSBCtlConfig_la_LIBADD	= \
- 					@top_builddir@/usb/vmusb/vmusb/libVMUSB.la \
+					@top_builddir@/usb/vmusb/vmusb/libVMUSB.la \
 					@top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la \
 					@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 					@LIBTCLPLUS_LDFLAGS@	\
@@ -107,7 +107,7 @@ bin_PROGRAMS = unittests
 
 unittests_SOURCES = \
 			TestRunner.cpp \
-   		cctlconfigurationtest.cpp
+		cctlconfigurationtest.cpp
 
 unittests_CXXFLAGS = \
 	    -I@top_srcdir@/base/headers \

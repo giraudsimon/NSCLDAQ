@@ -74,7 +74,7 @@ public:
 			  std::string value);            //!< Set parameter value
   virtual std::string Get(CCCUSB& vme, 
 			  std::string parameter);        //!< Get parameter value.
-  virtual std::unique_ptr<CControlHardware> clone() const;	     //!< Virtual
+  virtual CControlHardware* clone() const;	     //!< Virtual
 
   // utilities:
 private:

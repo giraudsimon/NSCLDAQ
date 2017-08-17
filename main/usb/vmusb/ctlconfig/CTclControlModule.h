@@ -70,7 +70,7 @@ public:
                   			  std::string value);
   virtual std::string Get(CVMUSB& vme, 
                   			  std::string parameter);
-  virtual std::unique_ptr<CControlHardware> clone() const;
+  virtual CControlHardware* clone() const;
 
   // Interface to support monitoring.
 

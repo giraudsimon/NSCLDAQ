@@ -31,10 +31,10 @@ void CMxDCReset::Initialize(CVMUSB& controller)
   sleep(1);
 }
 
-std::unique_ptr<CControlHardware> 
+CControlHardware*
 CMxDCReset::clone()  const
 {
-  return std::unique_ptr<CControlHardware>(new CMxDCReset(*this));
+  return (new CMxDCReset(*this));
 }
 
 string CMxDCReset::Update(CVMUSB& controller)

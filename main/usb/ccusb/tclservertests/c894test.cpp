@@ -66,7 +66,7 @@ void C894Tests::create_0 () {
 }
 
 void C894Tests::onAttach_0 () {
-  CControlModule module("test", std::move(m_cmd));
+  CControlModule module("test", m_cmd.get());
 
   CPPUNIT_ASSERT_NO_THROW( module.cget("-slot") );
   CPPUNIT_ASSERT_NO_THROW( module.cget("-file") );
@@ -78,7 +78,7 @@ void C894Tests::onAttach_0 () {
  * method
  */
 void C894Tests::initialize_0 () {
-  CControlModule module("test", std::move(m_cmd));
+  CControlModule module("test", m_cmd.get());
   module.configure("-slot","10");
 
   CMockCCUSB ctlr;
@@ -106,7 +106,7 @@ void C894Tests::update_0 () {
   m_cmd->m_inhibits = 10;
   m_cmd->m_majority = 1; // --> 5
 
-  CControlModule module("test", std::move(m_cmd));
+  CControlModule module("test", m_cmd.get());
   module.configure("-slot","10");
 
   CMockCCUSB ctlr;

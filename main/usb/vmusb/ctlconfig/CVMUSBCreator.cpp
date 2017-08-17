@@ -25,8 +25,8 @@
  * @param name - The name of the  module.
  * @return CControlHardware* - Pointer to the created CVMUSBModule.
  */
-  std::unique_ptr<CControlHardware>
+CControlHardware*
 CVMUSBCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CVMUSBModule);
+  return (new CVMUSBModule);
 }

@@ -59,7 +59,7 @@ void CGDGTests::construct_0() {
 void CGDGTests::update_0() {
 
   unique_ptr<CGDG> hdwr(new CGDG);
-  CControlModule module("name",std::move(hdwr));
+  CControlModule module("name", hdwr.get());
   module.configure("-base","0xffff0000");
 
   CMockVMUSB ctlr;

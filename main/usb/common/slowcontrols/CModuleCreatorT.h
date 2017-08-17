@@ -43,7 +43,7 @@ public:
    *
    * \returns new instance of type derived from CControlHardwareT<Ctlr>
    */
-  virtual std::unique_ptr<CControlHardwareT<Ctlr>> operator()() = 0; 
+  virtual CControlHardwareT<Ctlr>* operator()() = 0; 
 };
 
 

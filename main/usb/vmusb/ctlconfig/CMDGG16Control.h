@@ -171,7 +171,7 @@ namespace WienerMDGG16
        *
        * \returns copy of this object
        */
-      virtual std::unique_ptr<CControlHardware> clone() const;	     //!< Virtual
+      virtual CControlHardware* clone() const;	     //!< Virtual
 
 
     private:

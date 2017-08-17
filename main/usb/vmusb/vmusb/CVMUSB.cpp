@@ -182,7 +182,8 @@ CVMUSB::serialNo(struct usb_device* dev)
 CMutex& CVMUSB::getGlobalMutex()
 {
     if (m_pGlobalMutex == nullptr) {
-        m_pGlobalMutex = new CMutex;
+      CMutexAttr attribs;
+      m_pGlobalMutex = new CMutex();
     }
 
     return *m_pGlobalMutex;

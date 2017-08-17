@@ -94,7 +94,7 @@ class CModuleFactoryT {
      *
      * \returns instance of hardware associated with type
      */
-    std::unique_ptr<CControlHardwareT<Ctlr>> create(std::string type);
+    CControlHardwareT<Ctlr>* create(std::string type);
 
 
 };

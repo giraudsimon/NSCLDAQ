@@ -17,6 +17,7 @@
 #include <config.h>
 
 using std::string;
+#include <iostream>
 
 #ifndef TRUE
 #define TRUE -1
@@ -41,6 +42,7 @@ CControlHardwareT<Ctlr>::CControlHardwareT(const CControlHardwareT<Ctlr>& rhs)
 template<class Ctlr>
 CControlHardwareT<Ctlr>::~CControlHardwareT()
 {
+  std::cerr << "Templated destruct\n";
 }
 
 template<class Ctlr>

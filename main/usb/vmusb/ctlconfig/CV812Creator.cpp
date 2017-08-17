@@ -25,8 +25,8 @@
  *
  * @return CControlHardware* - pointer to a CV812
  */
-  std::unique_ptr<CControlHardware>
+  CControlHardware*
 CV812Creator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CV812);
+  return (new CV812);
 }

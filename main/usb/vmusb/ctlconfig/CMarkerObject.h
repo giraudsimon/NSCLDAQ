@@ -89,7 +89,8 @@ public:
     virtual void* processMonitorList(void* pData, size_t remaining);  
 
     
-    virtual void clone(const CControlHardware& rhs);	     //!< Virtual copy constr.   
+    virtual CControlHardware* clone() const;	     //!< Virtual copy constr.
+    void    copyIn(const CMarkerObject& rhs);
 };
 
 #endif

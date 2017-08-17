@@ -35,7 +35,7 @@
 class CVMUSBCreator : public CModuleCreator
 {
 public:
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 #endif

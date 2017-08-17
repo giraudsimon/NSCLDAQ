@@ -45,7 +45,8 @@ CMarkerObject::CMarkerObject() :
 CMarkerObject::CMarkerObject(const CMarkerObject& rhs) :
     CControlHardware(rhs)
 {
-    // Not sure what to do here given ownership or lack thereof.
+  onAttach(*new CControlModule(rhs.m_pConfiguration->getName(), this));
+
 }
 /**
  * destructor
@@ -61,7 +62,8 @@ CMarkerObject&
 CMarkerObject::operator=(const CMarkerObject& rhs)
 {
  if (this != &rhs) {
-    clone(rhs);
+   CControlHardware::operator=(rhs);
+    copyIn(rhs);
   }
   return *this;    
 }
@@ -175,10 +177,19 @@ CMarkerObject::processMonitorList(void* pData, size_t remaining)
  *
  *  @param rhs - Item we are trying to build a clone of.
  */
-void
-CMarkerObject::clone(const CControlHardware& rhs)
+CControlHardware*
+CMarkerObject::clone() const
 {
-    const CMarkerObject& mRhs(reinterpret_cast<const CMarkerObject&>(rhs));
-    
-    m_pConfiguration = new CControlModule(*(mRhs.m_pConfiguration)); // Already has has config params registered.    
+  return new CMarkerObject(*this);
+
+}
+/**
+ * copyIn
+ *    Copy rhs (with appropriate duplication) to this.
+ *
+ */
+void
+CMarkerObject::copyIn(const CMarkerObject& rhs)
+{
+  onAttach(*(new CControlModule(rhs.m_pConfiguration->getName(), this)));
 }

@@ -42,7 +42,7 @@
 class CCAEN894Creator : public CModuleCreator
 {
 public:
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 #endif

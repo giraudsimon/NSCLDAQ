@@ -42,7 +42,7 @@ class CTclModuleCreator : public CModuleCreator
 
 public:
   CTclModuleCreator(CTCLInterpreter& interp);
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 

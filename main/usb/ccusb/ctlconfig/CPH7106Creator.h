@@ -60,7 +60,7 @@
 class CPH7106Creator : public CModuleCreator
 {
 public:
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 

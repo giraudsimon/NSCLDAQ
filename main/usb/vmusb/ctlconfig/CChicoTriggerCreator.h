@@ -34,7 +34,7 @@
  */
 class CChicoTriggerCreator : public CModuleCreator
 {
-  virtual std::unique_ptr<CControlHardware> operator()();
+  virtual CControlHardware* operator()();
 };
 
 #endif

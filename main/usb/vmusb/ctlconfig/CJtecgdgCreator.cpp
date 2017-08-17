@@ -26,8 +26,8 @@
  *
  * @return CControlHardware* - Pointer to a CGDG.
  */
-  std::unique_ptr<CControlHardware>
+  CControlHardware*
 CJtecgdgCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CGDG);
+  return new CGDG;
 }

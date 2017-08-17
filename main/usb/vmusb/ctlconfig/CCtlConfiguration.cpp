@@ -54,9 +54,9 @@ void CCtlConfiguration::addCommand(unique_ptr<CTCLObjectProcessor> pCommand)
   m_Commands.push_back( move(pCommand) );
 }
 
-void CCtlConfiguration::addModule(unique_ptr<CControlModule> pModule)
+void CCtlConfiguration::addModule(CControlModule* pModule)
 {
-  m_Modules.push_back( move(pModule) );
+  m_Modules.push_back( pModule );
 }
 
 CControlModule* CCtlConfiguration::findModule(const string& name)
@@ -69,13 +69,13 @@ CControlModule* CCtlConfiguration::findModule(const string& name)
 ////////////////////////////////////////////////////////////////////////////
 
 CControlModule* 
-CCtlConfiguration::find(const std::vector<unique_ptr<CControlModule> >& modules,
+CCtlConfiguration::find(const std::vector<CControlModule* >& modules,
 		                    std::string name)
 {
   auto itFound = find_if(modules.begin(), modules.end(), MatchName(name));
       
   if(itFound != modules.end()) {
-    return itFound->get();
+    return *itFound;
   } 
   else {
     return nullptr;
@@ -84,7 +84,7 @@ CCtlConfiguration::find(const std::vector<unique_ptr<CControlModule> >& modules,
 
 
 bool
-CCtlConfiguration::MatchName::operator()(const unique_ptr<CControlModule>& pModule)
+CCtlConfiguration::MatchName::operator()(const CControlModule* pModule)
 {
   return (pModule->getName() == m_name);
 }

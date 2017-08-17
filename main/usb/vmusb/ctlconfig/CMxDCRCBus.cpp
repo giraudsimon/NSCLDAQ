@@ -43,9 +43,9 @@ CMxDCRCBus& CMxDCRCBus::operator=(const CMxDCRCBus& rhs)
   return *this;
 }
 
-std::unique_ptr<CControlHardware> CMxDCRCBus::clone() const
+CControlHardware* CMxDCRCBus::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CMxDCRCBus(*this));
+  return (new CMxDCRCBus(*this));
 }
 
 /** Perform specific copy operations for the derived instance
@@ -169,7 +169,7 @@ void CMxDCRCBus::activate(CVMUSB& ctlr) {
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(data), &nBytesRead);
+  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
 
   if (status<0) {
     stringstream errmsg;
@@ -333,7 +333,7 @@ void CMxDCRCBus::initiateWrite(CVMUSB& ctlr,
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(data), &nBytesRead);
+  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
   if (status<0) {
     stringstream errmsg;
     errmsg << "ERROR - ";
@@ -357,7 +357,7 @@ void CMxDCRCBus::initiateRead(CVMUSB& ctlr,
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(data), &nBytesRead);
+  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
   if (status<0) {
     stringstream errmsg;
     errmsg << "ERROR - ";

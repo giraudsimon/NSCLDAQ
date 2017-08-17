@@ -90,13 +90,12 @@ CModuleFactoryT<Ctlr>::addCreator(std::string type,
  * @retval NULL - no such type.
  */
 template <class Ctlr>
-std::unique_ptr<CControlHardwareT<Ctlr>>
+CControlHardwareT<Ctlr>*
 CModuleFactoryT<Ctlr>::create(std::string type)
 {
   auto p = m_Creators.find(type);
   if (p != m_Creators.end()) {
     auto& creator = p->second;
- //   return std::unique_ptr<CControlHardwareT<Ctlr>>(creator->operator()());
     return creator->operator()();
   } else {
     return nullptr;

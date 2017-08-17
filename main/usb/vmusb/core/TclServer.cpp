@@ -357,11 +357,17 @@ TclServer::initModules()
     CControlQueues::getInstance()->AcquireUsb();
   }
 
-  auto& modules = m_config.getModules();
+  auto& modules( m_config.getModules());
+
+  for (auto p = modules.begin(); p != modules.end(); p++) {
+    auto module = (*p);
+    module->Initialize(*m_pVme);
+  }
+#if 0  
   for ( auto& module : modules ) {
     module->Initialize(*m_pVme);
   }
-
+#endif
   if (mustRelease) {
     CControlQueues::getInstance()->ReleaseUsb();
   }

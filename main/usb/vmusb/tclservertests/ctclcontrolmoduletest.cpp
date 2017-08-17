@@ -50,7 +50,7 @@ void CTclControlModuleTests::construct_0() {
 void CTclControlModuleTests::cget_0() {
   CTCLInterpreter interp;
   unique_ptr<CTclControlModule> bus(new CTclControlModule(interp));
-  CControlModule module("test",move(bus));
+  CControlModule module("test", bus.get());
 
   CPPUNIT_ASSERT_NO_THROW( module.cget("-ensemble"));
 }

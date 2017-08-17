@@ -35,8 +35,8 @@ CTclModuleCreator::CTclModuleCreator(CTCLInterpreter& interp)
  * @param name - Name of the module.
  * @return CControlHardware* Pointer to the newly created module.
  */
-  std::unique_ptr<CControlHardware>
+  CControlHardware*
 CTclModuleCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CTclControlModule(m_interp));
+  return (new CTclControlModule(m_interp));
 }

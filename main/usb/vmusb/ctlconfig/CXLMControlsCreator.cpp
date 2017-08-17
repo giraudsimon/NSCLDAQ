@@ -12,9 +12,9 @@ namespace XLM
 ///////////////////////////////////////////////////////////////////////////////
 
 
-  std::unique_ptr<CControlHardware> CXLMControlsCreator::operator()()
+  CControlHardware* CXLMControlsCreator::operator()()
   {
-    return std::unique_ptr<CControlHardware>(new CXLMControls);
+    return (new CXLMControls);
   }
 
 

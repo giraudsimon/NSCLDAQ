@@ -56,10 +56,10 @@ void CXLMControls::Initialize(CVMUSB& controller)
 
 }
 
-std::unique_ptr<CControlHardware> 
+CControlHardware* 
 CXLMControls::clone()  const
 {
-  return std::unique_ptr<CControlHardware>(new CXLMControls(*this));
+  return (new CXLMControls(*this));
 }
 
 string CXLMControls::Update(CVMUSB& controller)

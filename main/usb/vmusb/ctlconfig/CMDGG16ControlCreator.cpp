@@ -11,9 +11,9 @@
 namespace WienerMDGG16
 {
 
-  std::unique_ptr<CControlHardware> CControlCreator::operator()()
+  CControlHardware* CControlCreator::operator()()
   {
-    return std::unique_ptr<CControlHardware>(new CControlHdwr);
+    return new CControlHdwr;
   }
 
 }

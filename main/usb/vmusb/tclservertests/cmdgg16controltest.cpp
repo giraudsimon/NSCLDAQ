@@ -52,7 +52,7 @@ class CMDGG16ControlTests : public CppUnit::TestFixture {
 
       // create control module and pass ownership of hardware to the 
       // CControlModule
-      m_pMod.reset(new CControlModule("test", move(hdwr)) );
+      m_pMod.reset(new CControlModule("test", (hdwr.get()) ));
       m_pMod->configure("-base","0xff000000");
     }
     void tearDown() {

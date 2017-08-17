@@ -208,10 +208,10 @@ CDriverTemplate::Get(CCCUSB& crate, string parameter)
 /*!
   At present, cloning is a no-op.
 */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CDriverTemplate::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CDriverTemplate(*this));
+  return (new CDriverTemplate(*this));
 }
 
 //////////////////////////////////////////////////////////////////////////////////

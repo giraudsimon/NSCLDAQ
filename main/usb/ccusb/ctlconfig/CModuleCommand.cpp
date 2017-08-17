@@ -142,14 +142,14 @@ CModuleCommand::create(CTCLInterpreter& interp,
   }
 
   CModuleFactory* pFact = CModuleFactory::instance();
-  unique_ptr<CControlHardware> pHdwr = pFact->create(type);
+  CControlHardware* pHdwr = pFact->create(type);
   if (!pHdwr) {
     interp.setResult("Module create: Invalid type, must be one of caen894, ph7106, tcl, or ccusb.");
     return TCL_ERROR;
   }
 
-  unique_ptr<CControlModule> upConfig(new CControlModule(name, std::move(pHdwr)));
-  m_config.addModule( move(upConfig) );
+  CControlModule* upConfig(new CControlModule(name, pHdwr));
+  m_config.addModule(pConfig );
   interp.setResult(name);
 
   return TCL_OK;

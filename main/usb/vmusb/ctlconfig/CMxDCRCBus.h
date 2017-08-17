@@ -28,7 +28,7 @@ class CMxDCRCBus : public ::CControlHardware
     /**! Virtual Copy Constructor
      *
      */
-    virtual std::unique_ptr<CControlHardware> clone() const;
+    CControlHardware* clone() const;
 
     /**! \brief Add configuration parameters to CControlModule owning this
      *

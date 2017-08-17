@@ -42,7 +42,7 @@ class CCtlConfiguration
 {
 private:
   std::vector<std::unique_ptr<CTCLObjectProcessor> > m_Commands; //!< tcl command extensions
-  std::vector<std::unique_ptr<CControlModule> >      m_Modules;  //!< instantiated control modules
+  std::vector<CControlModule*>      m_Modules;  //!< instantiated control modules
 
   //
   // Canonicals:
@@ -78,7 +78,7 @@ public:
    *
    * \param module  pointer to the module
    */
-  void addModule(std::unique_ptr<CControlModule> module);
+  void addModule(CControlModule* module);
 
   /*! \brief Retrieve a register module by its name
    *
@@ -94,7 +94,7 @@ public:
   CControlModule* findModule(const std::string& name);
 
   /*! \brief Retrieve the list of modules */
-  std::vector<unique_ptr<CControlModule> >& getModules() { return m_Modules; }
+  std::vector<CControlModule*>& getModules() { return m_Modules; }
 
 private:
   /*! \brief Utility method to help finding modules
@@ -102,7 +102,7 @@ private:
    *  \param modules  list of modules to search
    *  \param name     name of module to search for
    */
-  CControlModule* find(const std::vector<std::unique_ptr<CControlModule> >& modules,
+  CControlModule* find(const std::vector<CControlModule*> & modules,
                        std::string name);
 
   // A callable class that is matches the name of a CControlModule
@@ -115,7 +115,7 @@ private:
         m_name(name) {}
       MatchName(const MatchName& rhs) :
         m_name(rhs.m_name) {}
-      bool operator()(const std::unique_ptr<CControlModule>& pModule);
+      bool operator()(const CControlModule* pModule);
   };
 
 };

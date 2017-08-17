@@ -18,7 +18,7 @@ namespace WienerMDGG16
   {
     public:
       /**! The factory method */
-      virtual std::unique_ptr<CControlHardware> operator()(); 
+      virtual CControlHardware* operator()(); 
   };
 
 } // end namespace 

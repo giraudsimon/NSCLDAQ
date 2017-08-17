@@ -360,10 +360,10 @@ CGDG::Get(CVMUSB& vme, string parameter)
 /*!
     Clone oursevles... a no op at this point
 */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CGDG::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CGDG(*this));
+  return (new CGDG(*this));
 }
 
 ////////////////////////////////////////////////////////////////////////////

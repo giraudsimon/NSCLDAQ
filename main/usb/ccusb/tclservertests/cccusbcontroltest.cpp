@@ -63,7 +63,7 @@ void CCCUSBControlTests::create_0 () {
 
 void CCCUSBControlTests::set_0 () {
 
-  CControlModule module("name",std::move(m_cmd));
+  CControlModule module("name", m_cmd.get());
 
   CMockCCUSB ctlr;
   ctlr.addReturnDatum(1);

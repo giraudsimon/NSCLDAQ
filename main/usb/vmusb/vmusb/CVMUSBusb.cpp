@@ -335,7 +335,7 @@ CVMUSBusb::executeList(CVMUSBReadoutList&     list,
   else {
     *bytesRead = 0;
   }
-  return (status >= 0) ? 0 : status;
+  return status;
   
 }
 

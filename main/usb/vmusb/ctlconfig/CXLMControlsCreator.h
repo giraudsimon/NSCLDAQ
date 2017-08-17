@@ -18,7 +18,7 @@ class CXLMControlsCreator : public ::CModuleCreator
 {
   public:
    /**! The factory method */
-   virtual std::unique_ptr<CControlHardware> operator()(); 
+   virtual CControlHardware* operator()(); 
 };
 
 

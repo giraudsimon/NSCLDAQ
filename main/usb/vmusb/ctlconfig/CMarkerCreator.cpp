@@ -22,8 +22,8 @@
 #include "CMarkerCreator.h"
 #include "CMarkerObject.h"
 
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CMarkerCreator::operator()()
 {
-  return std::unique_ptr<CControlHardware>();
+  return new CMarkerObject;
 }

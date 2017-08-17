@@ -23,8 +23,8 @@
  * @brief Implements the creational for a CV6533 HV control module.
  */
 
-  std::unique_ptr<CControlHardware>
+  CControlHardware*
 CV6533Creator::operator()()
 {
-  return std::unique_ptr<CControlHardware>(new CV6533);
+  return (new CV6533);
 }

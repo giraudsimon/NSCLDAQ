@@ -393,10 +393,10 @@ CV812::Get(CVMUSB& vme, string parameter)
 /*!
   At present, cloning is a no-op.
 */
-std::unique_ptr<CControlHardware>
+CControlHardware*
 CV812::clone() const
 {
-  return std::unique_ptr<CControlHardware>(new CV812(*this));
+  return (new CV812(*this));
 }
 
 //////////////////////////////////////////////////////////////////////////////////

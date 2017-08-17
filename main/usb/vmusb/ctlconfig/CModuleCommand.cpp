@@ -175,7 +175,7 @@ CModuleCommand::create(CTCLInterpreter& interp,
   // If we made it here, the module doesn't already exist. We can not safely 
   // create it.
   CModuleFactory*   pFact = CModuleFactory::instance();
-  unique_ptr<CControlHardware> pHdwr = pFact->create(type);
+  CControlHardware* pHdwr(pFact->create(type));
   if (!pHdwr) {
     interp.setResult("Module create: Invalid type, must be one of jtecgdg, caenv812, caenvg895, vmusb, chicotrigger, v6533, xlm");
     return TCL_ERROR;
@@ -183,9 +183,9 @@ CModuleCommand::create(CTCLInterpreter& interp,
 
   // Hardware was successfully created, wrap it into a CControlModule and
   // register it with the CCtlConfiguration
-  auto pModule = make_unique(new CControlModule(name,std::move(pHdwr)));
+  auto pModule = new CControlModule(name, pHdwr);
 
-  m_config.addModule( move(pModule) );
+  m_config.addModule( pModule );
   interp.setResult(name);
   
 

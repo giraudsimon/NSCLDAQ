@@ -283,12 +283,12 @@ namespace WienerMDGG16
   /*!
     At present, cloning is a no-op.
     */
-  std::unique_ptr<CControlHardware>
-    CControlHdwr::clone() const
-    {
-      return std::unique_ptr<CControlHardware>(new CControlHdwr(*this));
-    }
-
+  CControlHardware*
+  CControlHdwr::clone() const
+  {
+    return (new CControlHdwr(*this));
+  }
+  
   //////////////////////////////////////////////////////////////////////////////////
   ///////////////// private utilities //////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////
