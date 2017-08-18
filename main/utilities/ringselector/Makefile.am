@@ -52,7 +52,8 @@ check_PROGRAMS	=	stringstointtests selectortests
 
 stringstointtests_SOURCES	=	TestRunner.cpp str2int.cpp 
 
-stringstointtests_CPPFLAGS	= @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/utilities/common
+stringstointtests_CPPFLAGS	= @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/utilities/common \
+				-I@top_srcdir@/daq/format
 
 stringstointtests_LDADD		= -L$(libdir)			\
 				@top_builddir@/utilities/common/libUtilCommon.la \

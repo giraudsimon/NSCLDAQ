@@ -6,7 +6,7 @@
 #include <StringsToIntegers.h>
 
 #include <CInvalidArgumentException.h>
-// #include <DataFormat.h>
+#include <DataFormat.h>
 
 using namespace std;
 
