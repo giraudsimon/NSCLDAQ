@@ -149,7 +149,7 @@ CModuleCommand::create(CTCLInterpreter& interp,
   }
 
   CControlModule* upConfig(new CControlModule(name, pHdwr));
-  m_config.addModule(pConfig );
+  m_config.addModule(upConfig );
   interp.setResult(name);
 
   return TCL_OK;

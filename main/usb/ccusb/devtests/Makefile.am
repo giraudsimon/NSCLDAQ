@@ -18,6 +18,7 @@ unittests_LDADD =  \
 
 
 unittests_CPPFLAGS = \
+		-I@top_srcdir@/usb/common/configurableobject	\
 		@TCL_CPPFLAGS@ \
 		$(CPPUNIT_INCLUDES) \
 		$(THREADCXX_FLAGS) \

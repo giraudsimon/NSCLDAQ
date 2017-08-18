@@ -32,7 +32,7 @@ using namespace std;
 template<class Ctlr>
 CControlModuleT<Ctlr>::CControlModuleT(string name, 
                     CControlHardwareT<Ctlr>* hardware) :
-  CConfigurableObject(name),
+  XXUSB::CConfigurableObject(name),
   m_pHardware(hardware)
 {
   m_pHardware->onAttach(*this);
@@ -51,7 +51,7 @@ CControlModuleT<Ctlr>::~CControlModuleT()
 */
 template<class Ctlr>
 CControlModuleT<Ctlr>::CControlModuleT(const CControlModuleT<Ctlr>& rhs) :
-  CConfigurableObject(rhs)
+  XXUSB::CConfigurableObject(rhs)
 {
   m_pHardware = rhs.m_pHardware->clone();
   m_pHardware->onAttach(*this);
@@ -66,7 +66,7 @@ CControlModuleT<Ctlr>::operator=(const CControlModuleT<Ctlr>& rhs)
 {
   if (this != &rhs) {
     this->clearConfiguration();
-    CConfigurableObject::operator=(rhs);
+    XXUSB::CConfigurableObject::operator=(rhs);
     m_pHardware = rhs.m_pHardware->clone();
     m_pHardware->onAttach(*this);
   }

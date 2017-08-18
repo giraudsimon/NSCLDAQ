@@ -4,7 +4,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 #include <algorithm>
 
 using namespace std;
@@ -29,10 +29,10 @@ class configtest : public CppUnit::TestFixture {
 
 
 private:
-  CConfigurableObject* m_pObject;
+  XXUSB::CConfigurableObject* m_pObject;
 public:
   void setUp() {
-    m_pObject = new CConfigurableObject("testObject");
+    m_pObject = new XXUSB::CConfigurableObject("testObject");
   }
   void tearDown() {
     delete m_pObject;
@@ -100,7 +100,7 @@ void configtest::configseveral() {
   m_pObject->addParameter("three", NULL, NULL);
   m_pObject->configure("three", "three");
 
-  CConfigurableObject::ConfigurationArray info = m_pObject->cget();
+  XXUSB::CConfigurableObject::ConfigurationArray info = m_pObject->cget();
 
   // Each of these items should be findable, and have the right values.
   //
@@ -113,17 +113,17 @@ void configtest::configseveral() {
   EQMSG("three", true, find(info.begin(), info.end(), three) != info.end());
 
 }
-// Integer parameters are  parameters that have CConfigurableObject::isInteger
+// Integer parameters are  parameters that have XXUSB::CConfigurableObject::isInteger
 // as the validator. There are a couple of cases
 // with and without range checking.
 //
 void configtest::intparam()
 {
   // No range checking.
-  m_pObject->addParameter("int", CConfigurableObject::isInteger, NULL, "0");
-  CConfigurableObject::Limits range(CConfigurableObject::limit(0),
-				    CConfigurableObject::limit(10));
-  m_pObject->addParameter("zerototen", CConfigurableObject::isInteger, &range, "0");
+  m_pObject->addParameter("int", XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  XXUSB::CConfigurableObject::Limits range(XXUSB::CConfigurableObject::limit(0),
+				    XXUSB::CConfigurableObject::limit(10));
+  m_pObject->addParameter("zerototen", XXUSB::CConfigurableObject::isInteger, &range, "0");
 
   // Legal configuratiuon of int:
 
@@ -199,7 +199,7 @@ void configtest::boolparam()
   good.push_back("off");
   good.push_back("disabled");
 
-  m_pObject->addParameter("bool", CConfigurableObject::isBool, NULL, "1");
+  m_pObject->addParameter("bool", XXUSB::CConfigurableObject::isBool, NULL, "1");
 
   // legal values:
 
@@ -238,13 +238,13 @@ void configtest::boolparam()
 //
 void configtest::listparam()
 {
-  CConfigurableObject::limit none;
-  CConfigurableObject::ListSizeConstraint constraint  = {none, none};
-  CConfigurableObject::TypeCheckInfo      notype(NULL, NULL);
+  XXUSB::CConfigurableObject::limit none;
+  XXUSB::CConfigurableObject::ListSizeConstraint constraint  = {none, none};
+  XXUSB::CConfigurableObject::TypeCheckInfo      notype(NULL, NULL);
 
-  CConfigurableObject::isListParameter nochecks(constraint, notype);
+  XXUSB::CConfigurableObject::isListParameter nochecks(constraint, notype);
 
-  m_pObject->addParameter("list", CConfigurableObject::isList,
+  m_pObject->addParameter("list", XXUSB::CConfigurableObject::isList,
 			  &nochecks, "");
   // Legal list
 
@@ -273,12 +273,12 @@ void configtest::listparam()
 
   // Now a param that has at least 1 and at most 5 elements
 
-  CConfigurableObject::limit low(1);
-  CConfigurableObject::limit high(5);
-  CConfigurableObject::ListSizeConstraint constrained = {low, high};
-  CConfigurableObject::isListParameter sizeChecked(constrained, notype);
+  XXUSB::CConfigurableObject::limit low(1);
+  XXUSB::CConfigurableObject::limit high(5);
+  XXUSB::CConfigurableObject::ListSizeConstraint constrained = {low, high};
+  XXUSB::CConfigurableObject::isListParameter sizeChecked(constrained, notype);
 
-  m_pObject->addParameter("constrained", CConfigurableObject::isList,
+  m_pObject->addParameter("constrained", XXUSB::CConfigurableObject::isList,
 			  &sizeChecked, "two");
 
   try {
@@ -317,10 +317,10 @@ void configtest::listparam()
 
 void configtest::boollistparam()
 {
-  CConfigurableObject::limit none;
-  CConfigurableObject::ListSizeConstraint sizes={none, none};
+  XXUSB::CConfigurableObject::limit none;
+  XXUSB::CConfigurableObject::ListSizeConstraint sizes={none, none};
 
-  m_pObject->addParameter("boollist", CConfigurableObject::isBoolList,
+  m_pObject->addParameter("boollist", XXUSB::CConfigurableObject::isBoolList,
 			  &sizes, "");
   
   // Legal bools:
@@ -352,10 +352,10 @@ void configtest::boollistparam()
 //
 void configtest::intlistparam()
 {
-  CConfigurableObject::limit none;
-  CConfigurableObject::ListSizeConstraint s = {none, none};
+  XXUSB::CConfigurableObject::limit none;
+  XXUSB::CConfigurableObject::ListSizeConstraint s = {none, none};
 
-  m_pObject->addParameter("intlist", CConfigurableObject::isIntList, &s, "");
+  m_pObject->addParameter("intlist", XXUSB::CConfigurableObject::isIntList, &s, "");
 
   // legal list:
 
@@ -385,9 +385,9 @@ void configtest::intlistparam()
 
 void configtest::stringlist()
 {
-  CConfigurableObject::limit none;
-  CConfigurableObject::ListSizeConstraint s = {none, none};
-  m_pObject->addParameter("stringlist", CConfigurableObject::isStringList, &s);
+  XXUSB::CConfigurableObject::limit none;
+  XXUSB::CConfigurableObject::ListSizeConstraint s = {none, none};
+  m_pObject->addParameter("stringlist", XXUSB::CConfigurableObject::isStringList, &s);
   
 
   bool thrown(false);
@@ -409,27 +409,27 @@ void configtest::fpvalid()
 
   // limit contituents.
 
-  CConfigurableObject::flimit low(1.0), high(2.0);
-  CConfigurableObject::flimit nolow, nohigh;
+  XXUSB::CConfigurableObject::flimit low(1.0), high(2.0);
+  XXUSB::CConfigurableObject::flimit nolow, nohigh;
 
   // none       --  Fully open limits.
   // lowOpen    --  Limits open on the low end.
   // highOpen   --  Limits open onthe high end.
   // fullClosed --  Fully closed limit set.
 
-  CConfigurableObject::FloatingLimits none(nolow, nohigh);
-  CConfigurableObject::FloatingLimits lowOpen(nolow, high);
-  CConfigurableObject::FloatingLimits highOpen(low, nohigh);
-  CConfigurableObject::FloatingLimits fullClosed(low, high);
+  XXUSB::CConfigurableObject::FloatingLimits none(nolow, nohigh);
+  XXUSB::CConfigurableObject::FloatingLimits lowOpen(nolow, high);
+  XXUSB::CConfigurableObject::FloatingLimits highOpen(low, nohigh);
+  XXUSB::CConfigurableObject::FloatingLimits fullClosed(low, high);
 
   // add parameters to check against, one for each of the limits above,
   // and one with no checker provided.
 
-  m_pObject->addParameter("norange", CConfigurableObject::isFloat, (void*)NULL);
-  m_pObject->addParameter("none", CConfigurableObject::isFloat, &none);
-  m_pObject->addParameter("lowopen", CConfigurableObject::isFloat, &lowOpen);
-  m_pObject->addParameter("highopen", CConfigurableObject::isFloat, &highOpen);
-  m_pObject->addParameter("closed",   CConfigurableObject::isFloat, &fullClosed);
+  m_pObject->addParameter("norange", XXUSB::CConfigurableObject::isFloat, (void*)NULL);
+  m_pObject->addParameter("none", XXUSB::CConfigurableObject::isFloat, &none);
+  m_pObject->addParameter("lowopen", XXUSB::CConfigurableObject::isFloat, &lowOpen);
+  m_pObject->addParameter("highopen", XXUSB::CConfigurableObject::isFloat, &highOpen);
+  m_pObject->addParameter("closed",   XXUSB::CConfigurableObject::isFloat, &fullClosed);
   
   
   
