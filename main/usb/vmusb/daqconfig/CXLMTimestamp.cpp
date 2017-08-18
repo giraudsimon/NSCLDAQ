@@ -93,9 +93,9 @@ CXLMTimestamp::~CXLMTimestamp()
  * This function is called when an instance of the driver has been associated with
  * its configuration database.  The template code stores that in m_pConfiguration
  * The configuration is a CReadoutModule which in turn is derived from
- * CConfigurableObject which encapsulates the configuration database.
+ * XXUSB::CConfigurableObject which encapsulates the configuration database.
  *
- *  You need to invoke methods from CConfigurableObject to create configuration parameters.
+ *  You need to invoke methods from XXUSB::CConfigurableObject to create configuration parameters.
  *  by convention a configuration parameter starts with a -.  To illustrate this,
  *  template code will create a -base parameter that captures the base address of the module.
  *  In addition we'll create an -id parameter which will be the value of a marker that will

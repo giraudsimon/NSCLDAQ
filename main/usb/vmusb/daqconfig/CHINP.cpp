@@ -101,10 +101,10 @@ void
 CHINP::onAttach(CReadoutModule& configuration)
 {
   CXLM::onAttach(configuration); // base class stuff too.
-  configuration.addParameter("-readsramb", CConfigurableObject::isBool, 
+  configuration.addParameter("-readsramb", XXUSB::CConfigurableObject::isBool, 
 			     NULL, "false");
-  configuration.addParameter("-havefadc", CConfigurableObject::isBool, NULL, "true");
-  configuration.addParameter("-clearveto", CConfigurableObject::isBool, NULL, "true");
+  configuration.addParameter("-havefadc", XXUSB::CConfigurableObject::isBool, NULL, "true");
+  configuration.addParameter("-clearveto", XXUSB::CConfigurableObject::isBool, NULL, "true");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

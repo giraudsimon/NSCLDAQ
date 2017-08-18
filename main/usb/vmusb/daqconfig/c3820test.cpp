@@ -51,7 +51,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(c3820test);
 
 // Attaching should give me a single configuration parameter: -base:
 void c3820test::attach() {
-  CConfigurableObject::ConfigurationArray citems = m_pConfig->cget();
+  XXUSB::CConfigurableObject::ConfigurationArray citems = m_pConfig->cget();
   EQMSG("no. items", (size_t)1, citems.size());
 
   EQMSG("Config param name", string("-base"), citems[0].first);

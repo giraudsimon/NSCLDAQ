@@ -1,23 +1,23 @@
 lib_LTLIBRARIES		= libCCUSBCore.la
 libCCUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
-													CControlQueues.cpp \
-													COutputThread.cpp \
-													CRunState.cpp \
-													DataBuffer.cpp  \
-													CSystemControl.cpp \
-													CBeginRun.cpp \
-													CEndRun.cpp \
-													CPauseRun.cpp \
-													CResumeRun.cpp \
-													CInit.cpp \
-													CExit.cpp  \
-													TclServer.cpp \
-													Server.cpp \
-													serverinstance.cpp \
-													CGetCommand.cpp  \
-													CSetCommand.cpp  \
-													CUpdateCommand.cpp  \
-													tclUtil.cpp
+				CControlQueues.cpp \
+				COutputThread.cpp \
+				CRunState.cpp \
+				DataBuffer.cpp  \
+				CSystemControl.cpp \
+				CBeginRun.cpp \
+				CEndRun.cpp \
+				CPauseRun.cpp \
+				CResumeRun.cpp \
+				CInit.cpp \
+				CExit.cpp  \
+				TclServer.cpp \
+				Server.cpp \
+				serverinstance.cpp \
+				CGetCommand.cpp  \
+				CSetCommand.cpp  \
+				CUpdateCommand.cpp  \
+				tclUtil.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
 										CControlQueues.h \
@@ -42,6 +42,7 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 
 libCCUSBCore_la_CPPFLAGS = \
 		  @THREADCXX_FLAGS@ \
+			-I@top_srcdir@/usb/common/configurableobject \
 			-I@top_srcdir@/usb/ccusb/ccusb		\
 			-I@top_srcdir@/usb/ccusb/daqconfig	\
 			-I@top_srcdir@/usb/ccusb/ctlconfig	\
@@ -64,7 +65,8 @@ libCCUSBCore_la_CPPFLAGS = \
 libCCUSBCore_la_LIBADD	= \
 			@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la	\
 			@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la	\
-		  @top_builddir@/usb/ccusb/ccusb/libCCUSB.la		\
+			@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+		 	 @top_builddir@/usb/ccusb/ccusb/libCCUSB.la		\
 			@LIBTCLPLUS_LDFLAGS@					\
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@top_builddir@/base/os/libdaqshm.la	\

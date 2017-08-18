@@ -51,27 +51,27 @@ static const uint16_t UT_ENABLE (0x04);
 
 // Configuration value constraints.
 
-static CConfigurableObject::limit One(1); 
-static CConfigurableObject::limit Zero(0);
-static CConfigurableObject::limit FourK(4095);
-static CConfigurableObject::limit FULL16(0xffff);
-static CConfigurableObject::limit LastSlot(23);
-static CConfigurableObject::limit ChannelCount(16);
+static XXUSB::CConfigurableObject::limit One(1); 
+static XXUSB::CConfigurableObject::limit Zero(0);
+static XXUSB::CConfigurableObject::limit FourK(4095);
+static XXUSB::CConfigurableObject::limit FULL16(0xffff);
+static XXUSB::CConfigurableObject::limit LastSlot(23);
+static XXUSB::CConfigurableObject::limit ChannelCount(16);
 
-static CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
-static CConfigurableObject::Limits ParamLimits(Zero, FourK); // Ped, llt, hlt.
-static CConfigurableObject::Limits IdLimits(Zero, FULL16);
+static XXUSB::CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
+static XXUSB::CConfigurableObject::Limits ParamLimits(Zero, FourK); // Ped, llt, hlt.
+static XXUSB::CConfigurableObject::Limits IdLimits(Zero, FULL16);
 
 // The parameter arrays need to be constrained to have exactly
 // ParamLimits elements, all of whom are in the range ParamLimits.
 
-static CConfigurableObject::ListSizeConstraint ParamListSize = {ChannelCount,
+static XXUSB::CConfigurableObject::ListSizeConstraint ParamListSize = {ChannelCount,
 								ChannelCount};
 static 
-CConfigurableObject::TypeCheckInfo ParamsOk(CConfigurableObject::isInteger,
+XXUSB::CConfigurableObject::TypeCheckInfo ParamsOk(XXUSB::CConfigurableObject::isInteger,
 					   &ParamLimits);
 static 
-CConfigurableObject::isListParameter ParamValidity = {ParamListSize,
+XXUSB::CConfigurableObject::isListParameter ParamValidity = {ParamListSize,
 						      ParamsOk};
 						  
 
@@ -151,30 +151,30 @@ CPH7xx::onAttach(CReadoutModule& configuration)
 
   // Create the parameters:
 
-  configuration.addParameter("-slot", CConfigurableObject::isInteger,
+  configuration.addParameter("-slot", XXUSB::CConfigurableObject::isInteger,
 			     &SlotLimits, "0");
-  configuration.addParameter("-sparse", CConfigurableObject::isBool,
+  configuration.addParameter("-sparse", XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
-  configuration.addParameter("-readhits", CConfigurableObject::isBool,
+  configuration.addParameter("-readhits", XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
 
 
-  configuration.addParameter("-pedestals", CConfigurableObject::isIntList,
+  configuration.addParameter("-pedestals", XXUSB::CConfigurableObject::isIntList,
 			     &ParamValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
-  configuration.addParameter("-llt", CConfigurableObject::isIntList,
+  configuration.addParameter("-llt", XXUSB::CConfigurableObject::isIntList,
 			     &ParamValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
-  configuration.addParameter("-hlt", CConfigurableObject::isIntList,
+  configuration.addParameter("-hlt", XXUSB::CConfigurableObject::isIntList,
 			     &ParamValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
-  configuration.addParameter("-usellt", CConfigurableObject::isBool,
+  configuration.addParameter("-usellt", XXUSB::CConfigurableObject::isBool,
 			     NULL, "false");
-  configuration.addParameter("-usehlt", CConfigurableObject::isBool,
+  configuration.addParameter("-usehlt", XXUSB::CConfigurableObject::isBool,
 			     NULL, "false");
-  configuration.addParameter("-usepedestals", CConfigurableObject::isBool,
+  configuration.addParameter("-usepedestals", XXUSB::CConfigurableObject::isBool,
 			     NULL, "false");
-  configuration.addParameter("-id", CConfigurableObject::isInteger,
+  configuration.addParameter("-id", XXUSB::CConfigurableObject::isInteger,
 			     &IdLimits, "0");
 			 
 }

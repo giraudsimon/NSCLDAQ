@@ -28,10 +28,10 @@ CXLMControls::CXLMControls()
 void CXLMControls::onAttach(CControlModule& config)
 {
   m_pConfig = &config;
-  m_pConfig->addParameter("-base", CConfigurableObject::isInteger, NULL, "0");
+  m_pConfig->addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
   m_pConfig->addParameter("-firmware", Utils::validFirmwareFile, NULL, "");
   m_pConfig->addBooleanParameter("-validate", false);
-  m_pConfig->addParameter("-signature", CConfigurableObject::isInteger, NULL, "0");
+  m_pConfig->addParameter("-signature", XXUSB::CConfigurableObject::isInteger, NULL, "0");
 }
 
 void CXLMControls::Initialize(CVMUSB& controller)

@@ -100,27 +100,27 @@ static const char* bufferLengthValues[] = {
 
 // widths:
 
-static CConfigurableObject::limit minwidth(1);
-static CConfigurableObject::limit maxwidth(65535);
-static CConfigurableObject::Limits WidthLimits(minwidth, maxwidth);
+static XXUSB::CConfigurableObject::limit minwidth(1);
+static XXUSB::CConfigurableObject::limit maxwidth(65535);
+static XXUSB::CConfigurableObject::Limits WidthLimits(minwidth, maxwidth);
 
 // gdga delay:
 
-static CConfigurableObject::limit mindelay(0);
-static CConfigurableObject::limit maxdelaya(0x7fffffff);
-static CConfigurableObject::limit maxdelayb(0x7fffffff);
-static CConfigurableObject::Limits DelayA(mindelay, maxdelaya);
-static CConfigurableObject::Limits DelayB(mindelay, maxdelayb);
+static XXUSB::CConfigurableObject::limit mindelay(0);
+static XXUSB::CConfigurableObject::limit maxdelaya(0x7fffffff);
+static XXUSB::CConfigurableObject::limit maxdelayb(0x7fffffff);
+static XXUSB::CConfigurableObject::Limits DelayA(mindelay, maxdelaya);
+static XXUSB::CConfigurableObject::Limits DelayB(mindelay, maxdelayb);
 
 // Limits for number of buffers to transfer 
-static CConfigurableObject::limit minbufs2transfer(-1);
-static CConfigurableObject::limit maxbufs2transfer(255);
-static CConfigurableObject::Limits BulkTransferLimits(minbufs2transfer, 
+static XXUSB::CConfigurableObject::limit minbufs2transfer(-1);
+static XXUSB::CConfigurableObject::limit maxbufs2transfer(255);
+static XXUSB::CConfigurableObject::Limits BulkTransferLimits(minbufs2transfer, 
                                                       maxbufs2transfer);
 // uav bulk transfer timeout limits
-static CConfigurableObject::limit mintransfertimeout(-1);
-static CConfigurableObject::limit maxtransfertimeout(15);
-static CConfigurableObject::Limits BulkTransferTimeoutLimits(mintransfertimeout, 
+static XXUSB::CConfigurableObject::limit mintransfertimeout(-1);
+static XXUSB::CConfigurableObject::limit maxtransfertimeout(15);
+static XXUSB::CConfigurableObject::Limits BulkTransferTimeoutLimits(mintransfertimeout, 
                                                             maxtransfertimeout);
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -191,16 +191,16 @@ CCCUSBModule::onAttach(CReadoutModule& configuration)
   // The gate generator width/delay parameters:
 
   configuration.addParameter("-gdgawidth",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &WidthLimits, "1");
   configuration.addParameter("-gdgbwidth",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &WidthLimits, "1");
   configuration.addParameter("-gdgadelay", 
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &DelayA, "0");
   configuration.addParameter("-gdgbdelay",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &DelayB, "0");
 
   // LED parameters:
@@ -246,9 +246,9 @@ CCCUSBModule::onAttach(CReadoutModule& configuration)
   // Control the bulk transfer
   configuration.addEnumParameter("-bulktransfermode", 
                                   bulkTransferModeValues, "default");
-  configuration.addParameter("-nbuffers2transfer", CConfigurableObject::isInteger,
+  configuration.addParameter("-nbuffers2transfer", XXUSB::CConfigurableObject::isInteger,
                           &BulkTransferLimits,"-1");
-  configuration.addParameter("-bulktransfertimeout", CConfigurableObject::isInteger,
+  configuration.addParameter("-bulktransfertimeout", XXUSB::CConfigurableObject::isInteger,
                           &BulkTransferTimeoutLimits,"-1");
 
   // Control buffer size

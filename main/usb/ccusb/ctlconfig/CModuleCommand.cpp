@@ -239,7 +239,7 @@ CModuleCommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
   // The two cases:
 
   if (objv.size() == 3) {	// module cget name - dump the lot.
-    CConfigurableObject::ConfigurationArray config = pModule->cget();
+    XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
     Tcl_Obj* result = Tcl_NewListObj(0, NULL);
     for (int i =0; i < config.size(); i++) {
       string key   = config[i].first;

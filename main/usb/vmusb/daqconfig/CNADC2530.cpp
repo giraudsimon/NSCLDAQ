@@ -79,8 +79,8 @@ static const uint8_t readamod(CVMUSBReadoutList::a32UserBlock);
 
 // Useful common values:
 
-static CConfigurableObject::limit zero(0);
-static CConfigurableObject::limit maxint16(0xffff);
+static XXUSB::CConfigurableObject::limit zero(0);
+static XXUSB::CConfigurableObject::limit maxint16(0xffff);
 
 // The register base addresss is in A24 space so it must  live between
 // 0x00000000 and 0x00ffffff.
@@ -88,43 +88,43 @@ static CConfigurableObject::limit maxint16(0xffff);
 
 
 
-static CConfigurableObject::limit maxCsr(0x00ffffff);
-static CConfigurableObject::Limits CsrLimits(zero, maxCsr);
+static XXUSB::CConfigurableObject::limit maxCsr(0x00ffffff);
+static XXUSB::CConfigurableObject::Limits CsrLimits(zero, maxCsr);
 
 
 // The IPL must be in the range [0..7]
 
-static CConfigurableObject::limit maxIPL(7);
-static CConfigurableObject::Limits IPLLimits(zero, maxIPL);
+static XXUSB::CConfigurableObject::limit maxIPL(7);
+static XXUSB::CConfigurableObject::Limits IPLLimits(zero, maxIPL);
 
 // The 16 bit vector must be in the range [0..7].
 
-static CConfigurableObject::Limits VectorLimits(zero, maxint16);
+static XXUSB::CConfigurableObject::Limits VectorLimits(zero, maxint16);
 
 // For now we won't accept more than 
 
 
 // For now we won't accept more than 10 events at a time...
 
-static CConfigurableObject::limit minEvents(1);
-static CConfigurableObject::limit maxEvents(10);
-static CConfigurableObject::Limits EventLimits(minEvents, maxEvents);
+static XXUSB::CConfigurableObject::limit minEvents(1);
+static XXUSB::CConfigurableObject::limit maxEvents(10);
+static XXUSB::CConfigurableObject::Limits EventLimits(minEvents, maxEvents);
 
 
 // Limits on the thresholds...these are set in V/mv or V and converted so these
 // are floating point limits.
 
 
-CConfigurableObject::flimit fzero(0.0);
-CConfigurableObject::flimit lldhigh(819.2); // some slop for fp compares
-CConfigurableObject::flimit hldhigh(8.192); // some slop for fp compares.
+XXUSB::CConfigurableObject::flimit fzero(0.0);
+XXUSB::CConfigurableObject::flimit lldhigh(819.2); // some slop for fp compares
+XXUSB::CConfigurableObject::flimit hldhigh(8.192); // some slop for fp compares.
 
-static CConfigurableObject::FloatingLimits lldLimits(fzero, lldhigh);
-static CConfigurableObject::FloatingLimits hldLimits(fzero, hldhigh);
+static XXUSB::CConfigurableObject::FloatingLimits lldLimits(fzero, lldhigh);
+static XXUSB::CConfigurableObject::FloatingLimits hldLimits(fzero, hldhigh);
 
 // Limits on the value of the ID 16 bit word:
 
-static CConfigurableObject::Limits idLimits(zero, maxint16);
+static XXUSB::CConfigurableObject::Limits idLimits(zero, maxint16);
 
 
 // The mask on the word count.  A spectroscopy event should
@@ -208,9 +208,9 @@ CNADC2530::onAttach(CReadoutModule& configuration)
   // program the data memory addresss.  Only the top 11 bits are meaningful.
   // the rest will be forced -> 0.
 
-  m_pConfiguration->addParameter("-csr", CConfigurableObject::isInteger, 
+  m_pConfiguration->addParameter("-csr", XXUSB::CConfigurableObject::isInteger, 
 				 static_cast<void*>(&CsrLimits), "0");
-  m_pConfiguration->addParameter("-memory", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-memory", XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
 
   //  Next set of parameters determine how the module interrupts.  This includes
@@ -223,9 +223,9 @@ CNADC2530::onAttach(CReadoutModule& configuration)
   //           response of the module to the interrupt acknowledge cycle.
   // 
 
-  m_pConfiguration->addParameter("-ipl", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-ipl", XXUSB::CConfigurableObject::isInteger,
 				 static_cast<void*>(&IPLLimits), "0");
-  m_pConfiguration->addParameter("-vector", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-vector", XXUSB::CConfigurableObject::isInteger,
 				 static_cast<void*>(&VectorLimits), "0");
 
   //  Set up the discriminator values.
@@ -233,9 +233,9 @@ CNADC2530::onAttach(CReadoutModule& configuration)
   // -hld  - The high level discriminator.
   //  These are floating parameters, so that they can be set in 'sensible' units.
 
-  m_pConfiguration->addParameter("-lld", CConfigurableObject::isFloat,
+  m_pConfiguration->addParameter("-lld", XXUSB::CConfigurableObject::isFloat,
 				 static_cast<void*>(&lldLimits), "0.0");
-  m_pConfiguration->addParameter("-hld", CConfigurableObject::isFloat,
+  m_pConfiguration->addParameter("-hld", XXUSB::CConfigurableObject::isFloat,
 				 static_cast<void*>(&hldLimits), "8.191");
 
   // The module is a multi-event adc, in interrupt mode, we can determine how many events
@@ -245,19 +245,19 @@ CNADC2530::onAttach(CReadoutModule& configuration)
   // analysis software to deal with the fact that multiple events can occur in one VM-USB superevent.
   //
 
-  m_pConfiguration->addParameter("-events", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-events", XXUSB::CConfigurableObject::isInteger,
 				 static_cast<void*>(&EventLimits), "1");
 
   // The module can zero suppress the data  That's controlled by the 
   // -zerosuppress bool:
 
-  m_pConfiguration->addParameter("-zerosuppress", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-zerosuppress", XXUSB::CConfigurableObject::isBool,
 				 static_cast<void*>(0), "on");
 
   // A marker word will precede the ADC data in order to unambiguously identify
   // the data from an adc:
 
-  m_pConfiguration->addParameter("-id", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-id", XXUSB::CConfigurableObject::isInteger,
 				static_cast<void*>(&idLimits), "0");
 
 }

@@ -134,16 +134,16 @@ C3804::onAttach(CReadoutModule& configuration)
   // Define configuraton parameters we recognize:
 
   m_pConfiguration->addParameter("-base",
-				 CConfigurableObject::isInteger,
+				 XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
   m_pConfiguration->addParameter("-refpulser",
-				 CConfigurableObject::isBool,
+				 XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
   m_pConfiguration->addParameter("-disables",
-				 CConfigurableObject::isInteger,
+				 XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
   m_pConfiguration->addParameter("-autoclear",
-				 CConfigurableObject::isBool,
+				 XXUSB::CConfigurableObject::isBool,
 				 NULL, "true");
 }
 

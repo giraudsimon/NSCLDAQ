@@ -62,19 +62,19 @@ static const uint8_t readAmod(CVMUSBReadoutList::a32UserBlock);
 // Limits for the configuration parameters:
 
 
-CConfigurableObject::limit zero(0);
-CConfigurableObject::limit sixteenBits(0xffff);
+XXUSB::CConfigurableObject::limit zero(0);
+XXUSB::CConfigurableObject::limit sixteenBits(0xffff);
 
-CConfigurableObject::limit geoMax(0x1f);
-CConfigurableObject::Limits geoRange(zero, geoMax);
+XXUSB::CConfigurableObject::limit geoMax(0x1f);
+XXUSB::CConfigurableObject::Limits geoRange(zero, geoMax);
 
-CConfigurableObject::limit iplMax(0x7);
-CConfigurableObject::Limits iplRange(zero, iplMax);
+XXUSB::CConfigurableObject::limit iplMax(0x7);
+XXUSB::CConfigurableObject::Limits iplRange(zero, iplMax);
 
-CConfigurableObject::limit vectorMax(0xff);
-CConfigurableObject::Limits vectorRange(zero, vectorMax);
+XXUSB::CConfigurableObject::limit vectorMax(0xff);
+XXUSB::CConfigurableObject::Limits vectorRange(zero, vectorMax);
 
-CConfigurableObject::Limits highwaterRange(zero, sixteenBits);
+XXUSB::CConfigurableObject::Limits highwaterRange(zero, sixteenBits);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -165,27 +165,27 @@ void C830::onAttach(CReadoutModule& configuration)
 
   // Set up the options and their validators.
 
-  m_pConfiguration->addParameter("-base",      CConfigurableObject::isInteger, NULL, "0");
-  m_pConfiguration->addParameter("-channels",  CConfigurableObject::isInteger, NULL, "0xffffffff");
-  m_pConfiguration->addParameter("-dwelltime", CConfigurableObject::isInteger, NULL, "0");
-  m_pConfiguration->addParameter("-header",    CConfigurableObject::isBool,    NULL, "false");
+  m_pConfiguration->addParameter("-base",      XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  m_pConfiguration->addParameter("-channels",  XXUSB::CConfigurableObject::isInteger, NULL, "0xffffffff");
+  m_pConfiguration->addParameter("-dwelltime", XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  m_pConfiguration->addParameter("-header",    XXUSB::CConfigurableObject::isBool,    NULL, "false");
 
   // Need the list oif valid trigger strings:
 
-  static CConfigurableObject::isEnumParameter validTriggers;
+  static XXUSB::CConfigurableObject::isEnumParameter validTriggers;
   validTriggers.insert("random");
   validTriggers.insert("periodic");
   validTriggers.insert("vme");
 
-  m_pConfiguration->addParameter("-trigger",   CConfigurableObject::isEnum,   &validTriggers , "vme");
-  m_pConfiguration->addParameter("-wide",      CConfigurableObject::isBool,   NULL,            "true");
-  m_pConfiguration->addParameter("-autoreset", CConfigurableObject::isBool,   NULL,            "true");
-  m_pConfiguration->addParameter("-geo",       CConfigurableObject::isInteger,&geoRange,       "0");
-  m_pConfiguration->addParameter("-setgeo",    CConfigurableObject::isBool,   NULL,            "false");
-  m_pConfiguration->addParameter("-ipl",       CConfigurableObject::isInteger, &iplRange,      "0");
-  m_pConfiguration->addParameter("-vector",    CConfigurableObject::isInteger, &vectorRange,   "0");
+  m_pConfiguration->addParameter("-trigger",   XXUSB::CConfigurableObject::isEnum,   &validTriggers , "vme");
+  m_pConfiguration->addParameter("-wide",      XXUSB::CConfigurableObject::isBool,   NULL,            "true");
+  m_pConfiguration->addParameter("-autoreset", XXUSB::CConfigurableObject::isBool,   NULL,            "true");
+  m_pConfiguration->addParameter("-geo",       XXUSB::CConfigurableObject::isInteger,&geoRange,       "0");
+  m_pConfiguration->addParameter("-setgeo",    XXUSB::CConfigurableObject::isBool,   NULL,            "false");
+  m_pConfiguration->addParameter("-ipl",       XXUSB::CConfigurableObject::isInteger, &iplRange,      "0");
+  m_pConfiguration->addParameter("-vector",    XXUSB::CConfigurableObject::isInteger, &vectorRange,   "0");
   m_pConfiguration->addParameter("-highwatermark",
-				               CConfigurableObject::isInteger, &highwaterRange, "1");
+				               XXUSB::CConfigurableObject::isInteger, &highwaterRange, "1");
   
 
 }

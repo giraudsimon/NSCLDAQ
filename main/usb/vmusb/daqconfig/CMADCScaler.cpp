@@ -95,7 +95,7 @@ CMADCScaler::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration;
 
-  m_pConfiguration->addParameter("-base", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-base", XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
 
 }

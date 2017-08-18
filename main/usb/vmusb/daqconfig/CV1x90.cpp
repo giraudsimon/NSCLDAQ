@@ -57,103 +57,103 @@ static const uint8_t readamod(CVMUSBReadoutList::a32UserBlock);
 // Constraints to set on configuration parameters:
 
 
-static CConfigurableObject::limit zero(0);	// A useful lower limit.
-static CConfigurableObject::limit noLimit;     // No limit.
+static XXUSB::CConfigurableObject::limit zero(0);	// A useful lower limit.
+static XXUSB::CConfigurableObject::limit noLimit;     // No limit.
 
 // The virtual slot number is constrained to be 0..31
 
-static CConfigurableObject::limit  vsnMax(31);
-static CConfigurableObject::Limits vsnLimits(zero, vsnMax);
+static XXUSB::CConfigurableObject::limit  vsnMax(31);
+static XXUSB::CConfigurableObject::Limits vsnLimits(zero, vsnMax);
 
 // The IPL is constrained to be  0..7
 
-static CConfigurableObject::limit iplMax(7);
-static CConfigurableObject::Limits iplLimits(zero, iplMax);
+static XXUSB::CConfigurableObject::limit iplMax(7);
+static XXUSB::CConfigurableObject::Limits iplLimits(zero, iplMax);
 
 // The vector is constrained to be 0..255:
 
-static CConfigurableObject::limit   vectorMax(255);
-static CConfigurableObject::Limits  vectorLimits(zero, vectorMax);
+static XXUSB::CConfigurableObject::limit   vectorMax(255);
+static XXUSB::CConfigurableObject::Limits  vectorLimits(zero, vectorMax);
 
 //  Termination is an enumeration:
 
 static const char* terminationStrings[] = {"none", "switch", "on", NULL};
-static CConfigurableObject::isEnumParameter 
-                 terminationValues(CConfigurableObject::makeEnumSet(terminationStrings));
+static XXUSB::CConfigurableObject::isEnumParameter 
+                 terminationValues(XXUSB::CConfigurableObject::makeEnumSet(terminationStrings));
 
 // The interrupt high water mark is constrained to be 0...65535:
 
-static CConfigurableObject::limit   highWaterMax(65535);
-static CConfigurableObject::Limits  highWaterLimits(zero, highWaterMax);
+static XXUSB::CConfigurableObject::limit   highWaterMax(65535);
+static XXUSB::CConfigurableObject::Limits  highWaterLimits(zero, highWaterMax);
 
 // The ECL output pin is an enum:
 
 static const char* eclOutputStrings[] = {"ready", "full", "almostfull", "error", NULL};
-static CConfigurableObject::isEnumParameter
-                eclOutputValues(CConfigurableObject::makeEnumSet(eclOutputStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+                eclOutputValues(XXUSB::CConfigurableObject::makeEnumSet(eclOutputStrings));
 
 
 // The trigger matching window is in the range 0..4095:
 
-static CConfigurableObject::limit   windowMax(4095);
-static CConfigurableObject::Limits  windowLimits(zero, windowMax);
+static XXUSB::CConfigurableObject::limit   windowMax(4095);
+static XXUSB::CConfigurableObject::Limits  windowLimits(zero, windowMax);
 
 
 // The window offset parameter runs -2048..40:
 
-static CConfigurableObject::limit   offsetLow(-2048);
-static CConfigurableObject::limit   offsetMax(40);
-static CConfigurableObject::Limits  offsetLimits(offsetLow, offsetMax);
+static XXUSB::CConfigurableObject::limit   offsetLow(-2048);
+static XXUSB::CConfigurableObject::limit   offsetMax(40);
+static XXUSB::CConfigurableObject::Limits  offsetLimits(offsetLow, offsetMax);
 
 // The extra search margin is in the range 0..4095, as is the reject margin:
 
-static CConfigurableObject::limit  marginMax(4095);
-static CConfigurableObject::Limits marginLimits(zero, marginMax);
+static XXUSB::CConfigurableObject::limit  marginMax(4095);
+static XXUSB::CConfigurableObject::Limits marginLimits(zero, marginMax);
 
 // Edge detect parameters are an enum:
 
 static const char* edgeDetectStrings[] = {"pair", "leading", "trailing", "both", NULL};
-static CConfigurableObject::isEnumParameter
-               edgeDetectValues(CConfigurableObject::makeEnumSet(edgeDetectStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+               edgeDetectValues(XXUSB::CConfigurableObject::makeEnumSet(edgeDetectStrings));
 
 // The edge detection resolution is an enum:
 
 static const char* edgeResolutionStrings[] = {"800ps", "200ps", "100ps", "25ps", NULL};
-static CConfigurableObject::isEnumParameter
-     edgeResolutionValues(CConfigurableObject::makeEnumSet(edgeResolutionStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+     edgeResolutionValues(XXUSB::CConfigurableObject::makeEnumSet(edgeResolutionStrings));
 
 // The leading edge resolution is also an enumeration:
 
 static const char* leResolutionStrings[] = {"100ps", "200ps", "400ps", "800ps", "1.6ns", "3.12ns",
 				     "6.25ns", "12.5ns", NULL};
-CConfigurableObject::isEnumParameter
-     leResolutionValues(CConfigurableObject::makeEnumSet(leResolutionStrings));
+XXUSB::CConfigurableObject::isEnumParameter
+     leResolutionValues(XXUSB::CConfigurableObject::makeEnumSet(leResolutionStrings));
 
 // pair width resolution is also an enum... along one:
 
 static const char* pairResolutionStrings[] = {"100ps", "200ps", "400ps", "800ps", "1.6ns", 
 				       "3.2ns", "6.25ns", "12.5ns", "25ns", "50ns",
 				       "100ns", "200ns", "400ns", "800ns", NULL};
-static CConfigurableObject::isEnumParameter
-     pairResolutionValues(CConfigurableObject::makeEnumSet(pairResolutionStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+     pairResolutionValues(XXUSB::CConfigurableObject::makeEnumSet(pairResolutionStrings));
 
 // Dead time resolution:
 
 static const char* deadtimeStrings[] = {"5ns", "10ns", "30ns", "100ns", NULL};
-static CConfigurableObject::isEnumParameter
-           deadtimeValues(CConfigurableObject::makeEnumSet(deadtimeStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+           deadtimeValues(XXUSB::CConfigurableObject::makeEnumSet(deadtimeStrings));
 
 // The maximum number of hits is actually an enum too:
 
 static const char* maxHitStrings[] = {"0", "1", "2", "4", "8", "16", "32", "64", "128", 
 			       "infinite", NULL};
-static CConfigurableObject::isEnumParameter
-     maxHitValues(CConfigurableObject::makeEnumSet(maxHitStrings));
+static XXUSB::CConfigurableObject::isEnumParameter
+     maxHitValues(XXUSB::CConfigurableObject::makeEnumSet(maxHitStrings));
 
 // The global offset  must be two integers:
 
-static const CConfigurableObject::limit listSize(2);
-static  CConfigurableObject::ListSizeConstraint globalListSize = {listSize, listSize};
+static const XXUSB::CConfigurableObject::limit listSize(2);
+static  XXUSB::CConfigurableObject::ListSizeConstraint globalListSize = {listSize, listSize};
 
 
 
@@ -570,51 +570,51 @@ CV1x90::clone() const
 void
 CV1x90::createConfiguration()
 {
-  m_pConfiguration->addParameter("-base", CConfigurableObject::isInteger, NULL, "0");
-  m_pConfiguration->addParameter("-vsn",  CConfigurableObject::isInteger, &vsnLimits, "0");
-  m_pConfiguration->addParameter("-ipl",  CConfigurableObject::isInteger, &iplLimits, "0");
-  m_pConfiguration->addParameter("-vector", CConfigurableObject::isInteger, &vectorLimits, "0");
+  m_pConfiguration->addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  m_pConfiguration->addParameter("-vsn",  XXUSB::CConfigurableObject::isInteger, &vsnLimits, "0");
+  m_pConfiguration->addParameter("-ipl",  XXUSB::CConfigurableObject::isInteger, &iplLimits, "0");
+  m_pConfiguration->addParameter("-vector", XXUSB::CConfigurableObject::isInteger, &vectorLimits, "0");
   m_pConfiguration->addParameter("-termination",
-				 CConfigurableObject::isEnum, &terminationValues, "on");
-  m_pConfiguration->addParameter("-tagtime", CConfigurableObject::isBool, NULL, "on");
+				 XXUSB::CConfigurableObject::isEnum, &terminationValues, "on");
+  m_pConfiguration->addParameter("-tagtime", XXUSB::CConfigurableObject::isBool, NULL, "on");
   m_pConfiguration->addParameter("-highwatermark",
-				 CConfigurableObject::isInteger, &highWaterLimits, "1");
-  m_pConfiguration->addParameter("-ecloutput", CConfigurableObject::isEnum, &eclOutputValues, "ready");
-  m_pConfiguration->addParameter("-window", CConfigurableObject::isInteger, &windowLimits, "40");
-  m_pConfiguration->addParameter("-offset", CConfigurableObject::isInteger, &offsetLimits, "-40");
-  m_pConfiguration->addParameter("-extramargin", CConfigurableObject::isInteger, &marginLimits, "8");
-  m_pConfiguration->addParameter("-rejectmargin", CConfigurableObject::isInteger, &marginLimits, "4");
-  m_pConfiguration->addParameter("-triggerrelative", CConfigurableObject::isBool, NULL, "true");
-  m_pConfiguration->addParameter("-edgedetect", CConfigurableObject::isEnum, &edgeDetectValues, 
+				 XXUSB::CConfigurableObject::isInteger, &highWaterLimits, "1");
+  m_pConfiguration->addParameter("-ecloutput", XXUSB::CConfigurableObject::isEnum, &eclOutputValues, "ready");
+  m_pConfiguration->addParameter("-window", XXUSB::CConfigurableObject::isInteger, &windowLimits, "40");
+  m_pConfiguration->addParameter("-offset", XXUSB::CConfigurableObject::isInteger, &offsetLimits, "-40");
+  m_pConfiguration->addParameter("-extramargin", XXUSB::CConfigurableObject::isInteger, &marginLimits, "8");
+  m_pConfiguration->addParameter("-rejectmargin", XXUSB::CConfigurableObject::isInteger, &marginLimits, "4");
+  m_pConfiguration->addParameter("-triggerrelative", XXUSB::CConfigurableObject::isBool, NULL, "true");
+  m_pConfiguration->addParameter("-edgedetect", XXUSB::CConfigurableObject::isEnum, &edgeDetectValues, 
 				 "leading");
   m_pConfiguration->addParameter("-edgeresolution",
-				 CConfigurableObject::isEnum, &edgeResolutionValues, "100ps");
+				 XXUSB::CConfigurableObject::isEnum, &edgeResolutionValues, "100ps");
   m_pConfiguration->addParameter("-leresolution",
-				 CConfigurableObject::isEnum, &leResolutionValues, "100ps");
+				 XXUSB::CConfigurableObject::isEnum, &leResolutionValues, "100ps");
   m_pConfiguration->addParameter("-widthresolution", 
-				 CConfigurableObject::isEnum, &pairResolutionValues, "100ps");
-  m_pConfiguration->addParameter("-deadtime", CConfigurableObject::isEnum,
+				 XXUSB::CConfigurableObject::isEnum, &pairResolutionValues, "100ps");
+  m_pConfiguration->addParameter("-deadtime", XXUSB::CConfigurableObject::isEnum,
 				 &deadtimeValues, "5ns");
   m_pConfiguration->addParameter("-encapsulatechip",
-				 CConfigurableObject::isBool, NULL, "on");
+				 XXUSB::CConfigurableObject::isBool, NULL, "on");
   m_pConfiguration->addParameter("-maxhits",
-				 CConfigurableObject::isEnum, &maxHitValues, "infinite");
+				 XXUSB::CConfigurableObject::isEnum, &maxHitValues, "infinite");
   m_pConfiguration->addParameter("-errormark",
-				 CConfigurableObject::isBool, NULL, "on");
+				 XXUSB::CConfigurableObject::isBool, NULL, "on");
   m_pConfiguration->addParameter("-errorbypass",
-				 CConfigurableObject::isBool, NULL, "on");
+				 XXUSB::CConfigurableObject::isBool, NULL, "on");
   m_pConfiguration->addParameter("-globaloffset", 
-				 CConfigurableObject::isIntList, &globalListSize, "0 0");
+				 XXUSB::CConfigurableObject::isIntList, &globalListSize, "0 0");
   m_pConfiguration->addParameter("-channeladjusts", 
 				 validateChannelOffsets, NULL, "");
     
 
   m_pConfiguration->addParameter("-refchannel", 
-				 CConfigurableObject::isInteger, NULL, "0");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "0");
   m_pConfiguration->addParameter("-depth", 
-				 CConfigurableObject::isInteger, NULL, "16");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "16");
   m_pConfiguration->addParameter("-channelcount",
-				 CConfigurableObject::isInteger, NULL,
+				 XXUSB::CConfigurableObject::isInteger, NULL,
 				 "");
 
 }

@@ -122,7 +122,7 @@ ChicoTrigger::onAttach(CControlModule& configuration)
 {
   m_pConfiguration = &configuration;
   configuration.addParameter("-base", 
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     NULL, string("0"));
 }
 /**

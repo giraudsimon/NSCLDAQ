@@ -21,7 +21,7 @@
 #include "CConfiguration.h"
 #include <CStack.h>
 #include <CReadoutModule.h>
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 
 #include <stdlib.h>
 #include <errno.h>
@@ -238,7 +238,7 @@ CStackCommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage("No such  module", objv);
     return TCL_ERROR;
   }
-  CConfigurableObject::ConfigurationArray config = pModule->cget();
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
 
   Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
 

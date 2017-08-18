@@ -44,22 +44,22 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////////
 // Data that drives parameter validity checks.
 
-static CConfigurableObject::limit Zero(0);    // Useful for many of the integer limits.
-static CConfigurableObject::limit Byte(0xff);
+static XXUSB::CConfigurableObject::limit Zero(0);    // Useful for many of the integer limits.
+static XXUSB::CConfigurableObject::limit Byte(0xff);
 // Module id:
 
-static CConfigurableObject::limit IdMax(255);
-static CConfigurableObject::Limits IdLimits(Zero, IdMax);
+static XXUSB::CConfigurableObject::limit IdMax(255);
+static XXUSB::CConfigurableObject::Limits IdLimits(Zero, IdMax);
 
 // Interrupt priority level:
 
-static CConfigurableObject::limit IPLMax(7);
-static CConfigurableObject::Limits IPLLimit(Zero, IPLMax);
+static XXUSB::CConfigurableObject::limit IPLMax(7);
+static XXUSB::CConfigurableObject::Limits IPLLimit(Zero, IPLMax);
 
 // Interrupt vector:
 
-static CConfigurableObject::limit VectorMax(255);
-static CConfigurableObject::Limits VectorLimit(Zero, VectorMax);
+static XXUSB::CConfigurableObject::limit VectorMax(255);
+static XXUSB::CConfigurableObject::Limits VectorLimit(Zero, VectorMax);
 
 // List parameters have constraints on their sizes (HoldListSize),
 // Value types, and parameters to the type checker (e.g. range limitations).
@@ -67,29 +67,29 @@ static CConfigurableObject::Limits VectorLimit(Zero, VectorMax);
 //
 // Thresholds, are 32 element lists with values [0,0xfff].
 
-static CConfigurableObject::limit ThresholdMax(0xfff);
-static CConfigurableObject::Limits ThresholdLimits(Zero, ThresholdMax);
-static CConfigurableObject::ListSizeConstraint ThresholdListSize = {32, 32};
-static CConfigurableObject::TypeCheckInfo ThresholdValuesOk(CConfigurableObject::isInteger,
+static XXUSB::CConfigurableObject::limit ThresholdMax(0xfff);
+static XXUSB::CConfigurableObject::Limits ThresholdLimits(Zero, ThresholdMax);
+static XXUSB::CConfigurableObject::ListSizeConstraint ThresholdListSize = {32, 32};
+static XXUSB::CConfigurableObject::TypeCheckInfo ThresholdValuesOk(XXUSB::CConfigurableObject::isInteger,
 							    &ThresholdLimits);
-static CConfigurableObject::isListParameter ThresholdValidity(ThresholdListSize,
+static XXUSB::CConfigurableObject::isListParameter ThresholdValidity(ThresholdListSize,
 							      ThresholdValuesOk);
 
 
 // hold delays are a two element integer array, with no limits.
 
 
-static CConfigurableObject::ListSizeConstraint HoldListSize = {2, 2};
-static CConfigurableObject::Limits HoldLimits(Zero, Byte);
-static CConfigurableObject::TypeCheckInfo HoldValueOk(CConfigurableObject::isInteger,
+static XXUSB::CConfigurableObject::ListSizeConstraint HoldListSize = {2, 2};
+static XXUSB::CConfigurableObject::Limits HoldLimits(Zero, Byte);
+static XXUSB::CConfigurableObject::TypeCheckInfo HoldValueOk(XXUSB::CConfigurableObject::isInteger,
 						      &HoldLimits);
-static CConfigurableObject::isListParameter HoldValidity(Zero, Byte, 
+static XXUSB::CConfigurableObject::isListParameter HoldValidity(Zero, Byte, 
 							 HoldValueOk);
 
 // Limits on irqthreshold:
 
-static CConfigurableObject::limit irqThresholdMax(956); // that's what the manual says 
-static CConfigurableObject::Limits irqThresholdLimits(Zero, irqThresholdMax);
+static XXUSB::CConfigurableObject::limit irqThresholdMax(956); // that's what the manual says 
+static XXUSB::CConfigurableObject::Limits irqThresholdLimits(Zero, irqThresholdMax);
 
 
 
@@ -114,8 +114,8 @@ static const int   TimingSourceNumValues = sizeof(TimingSourceValues)/sizeof(cha
 
 // Legal values for the timing divisor (0-15)
 
-static CConfigurableObject::limit divisorLimit(0xffff);
-static CConfigurableObject::Limits DivisorLimits(Zero, divisorLimit);
+static XXUSB::CConfigurableObject::limit divisorLimit(0xffff);
+static XXUSB::CConfigurableObject::Limits DivisorLimits(Zero, divisorLimit);
 
 // Legal values for the resolution...note in this case the default is explicitly defined as 8k
 
@@ -177,85 +177,85 @@ CMADC32::onAttach(CReadoutModule& configuration)
 
   // Create the configuration parameters.
 
-  m_pConfiguration->addParameter("-base", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-base", XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
-  m_pConfiguration->addParameter("-id",   CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-id",   XXUSB::CConfigurableObject::isInteger,
 				 &IdLimits, "0");
-  m_pConfiguration->addParameter("-ipl", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-ipl", XXUSB::CConfigurableObject::isInteger,
 				 &IPLLimit, "0");
-  m_pConfiguration->addParameter("-vector", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-vector", XXUSB::CConfigurableObject::isInteger,
 				 &VectorLimit, "0");
-  m_pConfiguration->addParameter("-timestamp", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-timestamp", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
 
   // Create the enumeration and register the -gatemode parameter.
 
-  static CConfigurableObject::isEnumParameter ValidGateMode;
+  static XXUSB::CConfigurableObject::isEnumParameter ValidGateMode;
   for (int i=0; i < GateModeNumValues; i++) {
     ValidGateMode.insert(GateModeValues[i]);
   }
-  m_pConfiguration->addParameter("-gatemode", CConfigurableObject::isEnum,
+  m_pConfiguration->addParameter("-gatemode", XXUSB::CConfigurableObject::isEnum,
 				 &ValidGateMode, GateModeValues[0]);
 
   // the hold delays and widths have the same list constraints.
   // just different default values.
 
-  m_pConfiguration->addParameter("-holddelays", CConfigurableObject::isIntList,
+  m_pConfiguration->addParameter("-holddelays", XXUSB::CConfigurableObject::isIntList,
 				 &HoldValidity, "15 15");
-  m_pConfiguration->addParameter("-holdwidths", CConfigurableObject::isIntList,
+  m_pConfiguration->addParameter("-holdwidths", XXUSB::CConfigurableObject::isIntList,
 				 &HoldValidity, "20 20");
 
-  m_pConfiguration->addParameter("-gategenerator", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-gategenerator", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
   // Input range:
 
-  static CConfigurableObject::isEnumParameter ValidInputRange;
+  static XXUSB::CConfigurableObject::isEnumParameter ValidInputRange;
   for (int i = 0; i < InputRangeNumValues; i++) {
     ValidInputRange.insert(InputRangeValues[i]);
   }
-  m_pConfiguration->addParameter("-inputrange", CConfigurableObject::isEnum,
+  m_pConfiguration->addParameter("-inputrange", XXUSB::CConfigurableObject::isEnum,
 				 &ValidInputRange, InputRangeValues[0]);
 
 
-  m_pConfiguration->addParameter("-ecltermination", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-ecltermination", XXUSB::CConfigurableObject::isBool,
 				 NULL, "true");
-  m_pConfiguration->addParameter("-ecltiming",      CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-ecltiming",      XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
-  m_pConfiguration->addParameter("-nimtiming",      CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-nimtiming",      XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
   // The timing source enum..
 
-  static CConfigurableObject::isEnumParameter ValidTimingSource;
+  static XXUSB::CConfigurableObject::isEnumParameter ValidTimingSource;
   for (int i = 0; i < TimingSourceNumValues; i++) {
     ValidTimingSource.insert(TimingSourceValues[i]);
   }
-  m_pConfiguration->addParameter("-timingsource", CConfigurableObject::isEnum,
+  m_pConfiguration->addParameter("-timingsource", XXUSB::CConfigurableObject::isEnum,
 				 &ValidTimingSource, TimingSourceValues[0]);
 
-  m_pConfiguration->addParameter("-timingdivisor", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-timingdivisor", XXUSB::CConfigurableObject::isInteger,
 				 &DivisorLimits, "15");
 
 
-  m_pConfiguration->addParameter("-thresholds", CConfigurableObject::isIntList,
+  m_pConfiguration->addParameter("-thresholds", XXUSB::CConfigurableObject::isIntList,
 				 &ThresholdValidity,
     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
 
-  m_pConfiguration->addParameter("-pulser", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-pulser", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
 
 
   // Parameters to support multi-event/irq mode
 
-  m_pConfiguration->addParameter("-multievent", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-multievent", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
-  m_pConfiguration->addParameter("-irqthreshold", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-irqthreshold", XXUSB::CConfigurableObject::isInteger,
 				 &irqThresholdLimits, "0");
 
-  static CConfigurableObject::isEnumParameter validResolution;
+  static XXUSB::CConfigurableObject::isEnumParameter validResolution;
   for(int i = 0; i < resolutionsNumValues; i++) {
     validResolution.insert(resolutions[i]);
   }
-  m_pConfiguration->addParameter("-resolution", CConfigurableObject::isEnum,
+  m_pConfiguration->addParameter("-resolution", XXUSB::CConfigurableObject::isEnum,
 				 &validResolution, "8k");
 
 }

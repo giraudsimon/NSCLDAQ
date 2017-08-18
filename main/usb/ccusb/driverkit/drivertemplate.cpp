@@ -147,7 +147,7 @@ CTemplateDriver::CTemplateDriver(const CTemplateDriver& rhs)
 
   m_pConfiguration = 0;
   if (rhs.m_pConfiguration) {
-    m_pConfiguration = new CReadoutModule(*(rhs.m_pConfiguration));
+    m_pConfiguration = new CReadoutModule(*(rhs.m_pConfiguration));'
   }
 
   /*  Any data you declared as instance data must be copied from the
@@ -176,9 +176,9 @@ CTemplateDriver::~CTemplateDriver()
  * This function is called when an instance of the driver has been associated with
  * its configuration database.  The template code stores that in m_pConfiguration
  * The configuration is a CReadoutModule which in turn is derived from
- * CConfigurableObject which encapsulates the configuration database.
+ * XXUSB::CConfigurableObject which encapsulates the configuration database.
  *
- *  You need to invoke methods from CConfigurableObject to create configuration parameters.
+ *  You need to invoke methods from XXUSB::CConfigurableObject to create configuration parameters.
  *  by convention a configuration parameter starts with a -.  To illustrate this,
  *  template code will create a -slot configuration parameter that captures the
  *  CAMAC slot number of the device. The slot will be confined to valid CAMAC slot numbers.

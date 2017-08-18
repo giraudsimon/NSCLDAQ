@@ -130,7 +130,7 @@ void print_vectors(const vector<T>& expected, const vector<T>& actual) {
   cout.flags(ios::dec);
 }
 
-// if the flags do not exist, then CConfigurableObject will throw.
+// if the flags do not exist, then XXUSB::CConfigurableObject will throw.
 // This just checks to see that after we have attached our hardware
 // to the m_pMod control module, that the required flags have been added and 
 // are locatable.

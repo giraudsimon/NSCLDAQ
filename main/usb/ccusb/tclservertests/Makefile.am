@@ -6,9 +6,9 @@ unittests_SOURCES = @srcdir@/TestRunner.cpp  @srcdir@/modulecommandtest.cpp \
 		@srcdir@/ctclmoduletest.cpp
 
 unittests_LDADD = @top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
+		@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 		@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la \
 		@top_builddir@/usb/ccusb/core/libCCUSBCore.la \
-		@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 		@top_builddir@/base/tcpip/libTcp.la                   \
 		@LIBTCLPLUS_LDFLAGS@                                  \
 		@LIBEXCEPTION_LDFLAGS@                                \
@@ -26,8 +26,7 @@ unittests_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb  \
 		 @TCL_FLAGS@
 
 
-check-TESTS : $(UNITTEST_MODULES)
-		./unittests
+TESTS = unittests
 
 
 EXTRA_DIST = FakeGlobals.h

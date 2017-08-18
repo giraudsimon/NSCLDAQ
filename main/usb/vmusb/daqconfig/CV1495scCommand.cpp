@@ -21,7 +21,7 @@
 #include "CConfiguration.h"
 #include <CV1495sc.h>
 #include <CReadoutModule.h>
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 
 #include <stdlib.h>
 #include <errno.h>

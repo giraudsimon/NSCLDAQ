@@ -18,7 +18,7 @@
 #define __CREADOUTMODULE_H
 
 #ifndef __CCONFIGURABLEOBJECT_h
-#include "CConfigurableObject.h"
+#include "XXUSBConfigurableObject.h"
 #endif
 
 // Forward classes:
@@ -40,7 +40,7 @@ class CCCUSBReadoutList;
    \note these objects are fully copyable, as the hardware objects
          are suposed to also be copyable.
 */
-class CReadoutModule : public CConfigurableObject
+class CReadoutModule : public XXUSB::CConfigurableObject
 {
   CReadoutHardware* m_pHardware;	        //!< The actual hardware object.
 public:

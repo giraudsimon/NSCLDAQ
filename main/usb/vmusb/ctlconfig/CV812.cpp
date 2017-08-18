@@ -142,7 +142,7 @@ void
 CV812::onAttach(CControlModule& configuration)
 {
   m_pConfiguration = &configuration;
-  configuration.addParameter("-base", CConfigurableObject::isInteger, NULL, string("0"));
+  configuration.addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, string("0"));
   configuration.addParameter("-file", (typeChecker)NULL, NULL , string(""));
 
 }

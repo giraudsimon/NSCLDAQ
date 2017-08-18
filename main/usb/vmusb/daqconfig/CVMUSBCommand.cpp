@@ -21,7 +21,7 @@
 #include "CConfiguration.h"
 #include <CVMUSBControl.h>
 #include <CReadoutModule.h>
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 
 #include <stdlib.h>
 #include <errno.h>
@@ -215,7 +215,7 @@ CVMUSBCommand::cget(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
   }
   // Get the configuration and continue.
 
-  CConfigurableObject::ConfigurationArray config = pModule->cget();
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
 
   CTCLObject result;
   result.Bind(interp);

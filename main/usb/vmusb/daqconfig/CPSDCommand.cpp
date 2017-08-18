@@ -22,7 +22,7 @@
 #include "CConfiguration.h"
 #include <CXLM.h>
 #include <CReadoutModule.h>
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 
 #include <stdlib.h>
 #include <errno.h>

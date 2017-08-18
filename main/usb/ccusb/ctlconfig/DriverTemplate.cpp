@@ -100,7 +100,7 @@ void
 CDriverTemplate::onAttach(CControlModule& configuration)
 {
   m_pConfig = &configuration;
-  configuration.addParameter("-slot", CConfigurableObject::isInteger, NULL, string("0"));
+  configuration.addParameter("-slot", XXUSB::CConfigurableObject::isInteger, NULL, string("0"));
 
 
 }

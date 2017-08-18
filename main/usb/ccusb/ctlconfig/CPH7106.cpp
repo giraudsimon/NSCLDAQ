@@ -105,7 +105,7 @@ CPH7106::onAttach(CControlModule& configuration)
 {
   m_pConfig = &configuration;
   configuration.addParameter("-slot",
-			     CConfigurableObject::isInteger, NULL,  string("0"));
+			     XXUSB::CConfigurableObject::isInteger, NULL,  string("0"));
 
 }
 

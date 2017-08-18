@@ -28,9 +28,9 @@
 using namespace std;
 
 
-static CConfigurableObject::limit valueLow(0);
-static CConfigurableObject::limit valueHigh(0xffff);
-static CConfigurableObject::Limits valueLimits(valueLow, valueHigh);
+static XXUSB::CConfigurableObject::limit valueLow(0);
+static XXUSB::CConfigurableObject::limit valueHigh(0xffff);
+static XXUSB::CConfigurableObject::Limits valueLimits(valueLow, valueHigh);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ CMarker::onAttach(CReadoutModule& configuration)
   m_pConfiguration = &configuration;
 
   m_pConfiguration->addParameter(
-    "-value", CConfigurableObject::isInteger, &valueLimits, "0"
+    "-value", XXUSB::CConfigurableObject::isInteger, &valueLimits, "0"
   );
 
 }

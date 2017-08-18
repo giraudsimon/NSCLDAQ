@@ -193,7 +193,7 @@ CV6533::onAttach(CControlModule& configuration)
 {
   m_pConfiguration = &configuration;
   configuration.addParameter("-base", \
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     NULL, std::string("0"));
 }
 /**
@@ -541,17 +541,17 @@ CV6533::getMonitoredData()
  * Convert a string to a boolean..throws an exception if the string is not a valid bool.
  * @param value - value to convert.
  * @return bool
- * @retval true - if the string is a valid representation of true (as defined by CConfigurableObject).
- * @retval false - if the string is a valid representatino of false (as defined by CConfigurableObject).
+ * @retval true - if the string is a valid representation of true (as defined by XXUSB::CConfigurableObject).
+ * @retval false - if the string is a valid representatino of false (as defined by XXUSB::CConfigurableObject).
  * @throw string if the string is not a valid bool.
  */
 bool
 CV6533::strToBool(string value)
 {
-  if (!CConfigurableObject::isBool("null", value, NULL)) {
+  if (!XXUSB::CConfigurableObject::isBool("null", value, NULL)) {
     throw string(" Invalid booleanvalue");
   }
-  return CConfigurableObject::strToBool(value);
+  return XXUSB::CConfigurableObject::strToBool(value);
 }
 /**
  * Get the base address of the module from the configuration.

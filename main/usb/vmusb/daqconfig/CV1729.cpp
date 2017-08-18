@@ -14,7 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-// Implementation of the C785 class VM-USB support for the CAEN V785.
+// Implementation of the V1729 support class for the V1729 waveform digitizer.
 
 
 #include <config.h>
@@ -104,13 +104,13 @@ Const(MODE_AUTO_RESTART) 4;
 
 // Configuration constraints.
 
-static CConfigurableObject::limit ZERO(0); // Frequently used lower limit.
+static XXUSB::CConfigurableObject::limit ZERO(0); // Frequently used lower limit.
 
-static CConfigurableObject::limit ThreshHi(0xfff);
-static CConfigurableObject::Limits ThreshLimits(ZERO, ThreshHi);
+static XXUSB::CConfigurableObject::limit ThreshHi(0xfff);
+static XXUSB::CConfigurableObject::Limits ThreshLimits(ZERO, ThreshHi);
 
-static CConfigurableObject::limit TimeMax(0xffff);
-static CConfigurableObject::Limits TimeLimit(ZERO, TimeMax); // Pretrig/posttrig
+static XXUSB::CConfigurableObject::limit TimeMax(0xffff);
+static XXUSB::CConfigurableObject::Limits TimeLimit(ZERO, TimeMax); // Pretrig/posttrig
 
 
 // For all enums, the first item will be the default:
@@ -148,14 +148,14 @@ static const unsigned samplingMap[] = {
 
 
 
-static CConfigurableObject::limit ChanMaskMax(0xf);
-static CConfigurableObject::Limits ChanMask(ZERO, ChanMaskMax);
+static XXUSB::CConfigurableObject::limit ChanMaskMax(0xf);
+static XXUSB::CConfigurableObject::Limits ChanMask(ZERO, ChanMaskMax);
 
-static CConfigurableObject::limit ColsMax(128);
-static CConfigurableObject::Limits Columns(ZERO, ColsMax);
+static XXUSB::CConfigurableObject::limit ColsMax(128);
+static XXUSB::CConfigurableObject::Limits Columns(ZERO, ColsMax);
 
-static CConfigurableObject::limit PostStopMax(0xff);
-static CConfigurableObject::Limits PostStop(ZERO, PostStopMax);
+static XXUSB::CConfigurableObject::limit PostStopMax(0xff);
+static XXUSB::CConfigurableObject::Limits PostStop(ZERO, PostStopMax);
 
 
 // Address modifiers used to access the board:
@@ -219,37 +219,37 @@ CV1729::onAttach(CReadoutModule& configuration)
   // Create and limit the configuraton parameters:
 
   m_pConfiguration->addParameter("-base",
-				 CConfigurableObject::isInteger, NULL, "0");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "0");
 
   m_pConfiguration->addParameter("-irqenable",
-				 CConfigurableObject::isBool, NULL, "false");
+				 XXUSB::CConfigurableObject::isBool, NULL, "false");
   m_pConfiguration->addParameter("-threshold",
-				 CConfigurableObject::isInteger, &ThreshLimits, "4095");
+				 XXUSB::CConfigurableObject::isInteger, &ThreshLimits, "4095");
   m_pConfiguration->addParameter("-pretrigger",
-				 CConfigurableObject::isInteger, &TimeLimit, "10240");
+				 XXUSB::CConfigurableObject::isInteger, &TimeLimit, "10240");
   m_pConfiguration->addParameter("-posttrigger",
-				 CConfigurableObject::isInteger, &TimeLimit, "64");
+				 XXUSB::CConfigurableObject::isInteger, &TimeLimit, "64");
 
   m_pConfiguration->addEnumParameter("-triggersource",
 				     triggerSource);
   m_pConfiguration->addEnumParameter("-triggeredge",
 				     triggerEdge);
   m_pConfiguration->addParameter("-triggermask",
-				 CConfigurableObject::isBool, NULL, "off");
+				 XXUSB::CConfigurableObject::isBool, NULL, "off");
 
   m_pConfiguration->addParameter("-triggerchannels",
-				 CConfigurableObject::isInteger, &ChanMask, "0xf");
+				 XXUSB::CConfigurableObject::isInteger, &ChanMask, "0xf");
 
 
   m_pConfiguration->addParameter("-poststoplatency",
-				       CConfigurableObject::isInteger, &PostStop, "4");
+				       XXUSB::CConfigurableObject::isInteger, &PostStop, "4");
   m_pConfiguration->addParameter("-postlatencypretrig", 
-					CConfigurableObject::isInteger, &PostStop, "1");
+					XXUSB::CConfigurableObject::isInteger, &PostStop, "1");
 
   m_pConfiguration->addEnumParameter("-samplingfreq", samplingFrequency);
 
   m_pConfiguration->addParameter("-delay", 
-					CConfigurableObject::isInteger, NULL, "0");
+					XXUSB::CConfigurableObject::isInteger, NULL, "0");
   
 }
 /**

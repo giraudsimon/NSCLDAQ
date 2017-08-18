@@ -15,7 +15,6 @@ libCCUSBDaqConfig_la_SOURCES	= \
 				CUserCommand.cpp	\
 				CAddTclDriver.cpp 	\
 				CMarkerCommand.cpp	\
-			 	CConfigurableObject.cpp	\
 				CReadoutModule.cpp	\
 				CReadoutHardware.cpp	\
 				CPH7xx.cpp	\
@@ -53,7 +52,6 @@ noinst_HEADERS		= \
 				CUserCommand.h		\
 				CAddTclDriver.h		\
 				CMarkerCommand.h \
-				CConfigurableObject.h	\
 				CReadoutModule.h 	\
 				CReadoutHardware.h 	\
 				CStack.h		\

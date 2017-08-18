@@ -57,7 +57,7 @@ void  CLeCroy4434<Controller,RdoList>::onAttach(CReadoutModule& config)
 //    m_pConfig->addIntegerParameter("-slot",0);
 
     m_pConfig->addParameter("-slot",
-                            CConfigurableObject::isInteger,
+                            XXUSB::CConfigurableObject::isInteger,
                             &SlotLimits,
                             "1");
 

@@ -19,6 +19,7 @@ VMUSBReadout_CXXFLAGS= \
 	-I@top_srcdir@/usb/vmusb/daqconfig \
 	-I@top_srcdir@/usb/vmusb/ctlconfig \
 	-I@top_srcdir@/usb/common/slowcontrols	\
+	-I@top_srcdir@/usb/common/configurableobject \
 	@LIBTCLPLUS_CFLAGS@ \
 	-I@top_srcdir@/base/thread	\
 	-I@top_srcdir@/base/headers	\

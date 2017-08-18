@@ -45,7 +45,7 @@ using namespace std;
         \em will delete it on destruction.
 */
 CReadoutModule::CReadoutModule(string name, const CReadoutHardware& hardware) :
-  CConfigurableObject(name),
+  XXUSB::CConfigurableObject(name),
   m_pHardware(hardware.clone())
 {
   m_pHardware->onAttach(*this);
@@ -56,7 +56,7 @@ CReadoutModule::CReadoutModule(string name, const CReadoutHardware& hardware) :
    - invoke its onAttach member.
 */
 CReadoutModule::CReadoutModule(const CReadoutModule& rhs) :
-  CConfigurableObject(rhs.getName()),
+  XXUSB::CConfigurableObject(rhs.getName()),
   m_pHardware(rhs.m_pHardware->clone())
 {
   m_pHardware->onAttach(*this);
@@ -76,7 +76,7 @@ CReadoutModule::operator=(const CReadoutModule& rhs)
 {
   if (this != &rhs) {
     delete m_pHardware;
-    CConfigurableObject::operator=(rhs);
+    XXUSB::CConfigurableObject::operator=(rhs);
     m_pHardware = rhs.m_pHardware->clone();
     clearConfiguration();
     m_pHardware->onAttach(*this); // Re-setup the configuration.

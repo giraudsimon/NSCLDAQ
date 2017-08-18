@@ -274,7 +274,7 @@ CCAEN257Command::cget(CTCLInterpreter& interp,
     Usage("No such  module", objv);
     return TCL_ERROR;
   }
-  CConfigurableObject::ConfigurationArray config = pModule->cget();
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
 
   Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
 

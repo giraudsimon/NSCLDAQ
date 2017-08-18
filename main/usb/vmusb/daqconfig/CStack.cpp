@@ -46,29 +46,29 @@ bool   CStack::m_incrementalScaler(true);
 
 // -ipl is in the range 1-7 (as 0 is disables the trigger).
 
-static CConfigurableObject::limit iplLow(1);
-static CConfigurableObject::limit iplHigh(7);
-static CConfigurableObject::Limits iplRange(iplLow, iplHigh);
+static XXUSB::CConfigurableObject::limit iplLow(1);
+static XXUSB::CConfigurableObject::limit iplHigh(7);
+static XXUSB::CConfigurableObject::Limits iplRange(iplLow, iplHigh);
 
 // -stack is in the range 2-7.
 
-static CConfigurableObject::limit stackLow(2);
-static CConfigurableObject::limit stackHigh(7);
-static CConfigurableObject::Limits stackRange(stackLow, stackHigh);
+static XXUSB::CConfigurableObject::limit stackLow(2);
+static XXUSB::CConfigurableObject::limit stackHigh(7);
+static XXUSB::CConfigurableObject::Limits stackRange(stackLow, stackHigh);
 
 // -vector is in the range 0x0 to 0x7f as there are only 8 bits...and I have to
 //         mulitiply it by 2.
 
-static CConfigurableObject::limit vectorLow(0);
-static CConfigurableObject::limit vectorHigh(0xffff);    // 16bit vector (Bug #5879).
-static CConfigurableObject::Limits vectorRange(vectorLow, vectorHigh);
+static XXUSB::CConfigurableObject::limit vectorLow(0);
+static XXUSB::CConfigurableObject::limit vectorHigh(0xffff);    // 16bit vector (Bug #5879).
+static XXUSB::CConfigurableObject::Limits vectorRange(vectorLow, vectorHigh);
 
 // -delay is in the range 0 - 0xff  number of microseconds of delay 
 //        between trigger and list start (to allow for ADC conversinos).
 //
-static CConfigurableObject::limit delayLow(0);
-static CConfigurableObject::limit delayHigh(0xff);
-static CConfigurableObject::Limits delayRange(delayLow, delayHigh);
+static XXUSB::CConfigurableObject::limit delayLow(0);
+static XXUSB::CConfigurableObject::limit delayHigh(0xff);
+static XXUSB::CConfigurableObject::Limits delayRange(delayLow, delayHigh);
 
 ////////////////////////////////////////////////////////////////////////////////
 /////////////////////////// Canonicals /////////////////////////////////////////
@@ -164,28 +164,28 @@ CStack::onAttach(CReadoutModule& configuration)
 
   // set up the trigger option.
 
-  static CConfigurableObject::isEnumParameter validTriggers;
+  static XXUSB::CConfigurableObject::isEnumParameter validTriggers;
   validTriggers.insert("nim1");
   validTriggers.insert("scaler");
   validTriggers.insert("interrupt");
 
   m_pConfiguration->addParameter("-trigger", 
-				 CConfigurableObject::isEnum, &validTriggers,
+				 XXUSB::CConfigurableObject::isEnum, &validTriggers,
 				 "nim1");
 
   // All the remaining options except the -modules option are integers with and without
   // range checking.
 
   m_pConfiguration->addParameter("-period",
-				 CConfigurableObject::isInteger, NULL, "2");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "2");
   m_pConfiguration->addParameter("-stack",
-				 CConfigurableObject::isInteger, &stackRange, "2");
+				 XXUSB::CConfigurableObject::isInteger, &stackRange, "2");
   m_pConfiguration->addParameter("-delay",
-				 CConfigurableObject::isInteger, &delayRange, "0");
+				 XXUSB::CConfigurableObject::isInteger, &delayRange, "0");
   m_pConfiguration->addParameter("-vector",
-				 CConfigurableObject::isInteger, &vectorRange, "0");
+				 XXUSB::CConfigurableObject::isInteger, &vectorRange, "0");
   m_pConfiguration->addParameter("-ipl",
-				 CConfigurableObject::isInteger, &iplRange, "6");
+				 XXUSB::CConfigurableObject::isInteger, &iplRange, "6");
   m_pConfiguration->addParameter("-modules",
 				CStack::moduleChecker, NULL, "");
   m_pConfiguration->addBooleanParameter("-incremental", "true");

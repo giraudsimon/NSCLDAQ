@@ -129,7 +129,7 @@ namespace WienerMDGG16
     CControlHdwr::onAttach(CControlModule& configuration)
     {
       m_pConfig = &configuration;
-      configuration.addParameter("-base", CConfigurableObject::isInteger, NULL, 
+      configuration.addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, 
           string("0"));
 
       configuration.addEnumParameter("-mode", modeEnum, "explicit");

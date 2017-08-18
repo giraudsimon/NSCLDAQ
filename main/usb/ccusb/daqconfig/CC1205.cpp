@@ -43,42 +43,42 @@ using namespace std;
 /************************************************************************/
 // Configuration value constants and limits:
 
-static CConfigurableObject::limit One(1); 
-static CConfigurableObject::limit Zero(0);
-static CConfigurableObject::limit FULL16(0xffff);
-static CConfigurableObject::limit LastSlot(23);
+static XXUSB::CConfigurableObject::limit One(1); 
+static XXUSB::CConfigurableObject::limit Zero(0);
+static XXUSB::CConfigurableObject::limit FULL16(0xffff);
+static XXUSB::CConfigurableObject::limit LastSlot(23);
 
-static CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
+static XXUSB::CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
 
 
 //
 //  Threshold and resolution limits for list parameters:
 
-static CConfigurableObject::limit  FourK(0xfff);
-static CConfigurableObject::Limits ThreshLimits(Zero, FourK);
-static CConfigurableObject::limit Loped(0);
-static CConfigurableObject::limit Hiped(4095);
-static CConfigurableObject::Limits PedLimits(Loped, Hiped);
+static XXUSB::CConfigurableObject::limit  FourK(0xfff);
+static XXUSB::CConfigurableObject::Limits ThreshLimits(Zero, FourK);
+static XXUSB::CConfigurableObject::limit Loped(0);
+static XXUSB::CConfigurableObject::limit Hiped(4095);
+static XXUSB::CConfigurableObject::Limits PedLimits(Loped, Hiped);
 
-static CConfigurableObject::limit ChannelCount(16);
-static CConfigurableObject::ListSizeConstraint ChannelListSize = {ChannelCount,
+static XXUSB::CConfigurableObject::limit ChannelCount(16);
+static XXUSB::CConfigurableObject::ListSizeConstraint ChannelListSize = {ChannelCount,
 							          ChannelCount};
-static CConfigurableObject::TypeCheckInfo ThresholdOk(CConfigurableObject::isInteger,
+static XXUSB::CConfigurableObject::TypeCheckInfo ThresholdOk(XXUSB::CConfigurableObject::isInteger,
 						      &ThreshLimits);
-static CConfigurableObject::TypeCheckInfo PedestalOk(CConfigurableObject::isInteger,
+static XXUSB::CConfigurableObject::TypeCheckInfo PedestalOk(XXUSB::CConfigurableObject::isInteger,
 						     &PedLimits);
 
-static CConfigurableObject::isListParameter threshValidity = {ChannelListSize,
+static XXUSB::CConfigurableObject::isListParameter threshValidity = {ChannelListSize,
 							      ThresholdOk};
 
-static CConfigurableObject::isListParameter pedestalValidity = {ChannelListSize,
+static XXUSB::CConfigurableObject::isListParameter pedestalValidity = {ChannelListSize,
 								PedestalOk};
 								
 
 
 
-static CConfigurableObject::limit FULL8(0xff);
-static CConfigurableObject::Limits IdLimits(Zero, FULL8);
+static XXUSB::CConfigurableObject::limit FULL8(0xff);
+static XXUSB::CConfigurableObject::Limits IdLimits(Zero, FULL8);
 
 
 // The array  below contain the possible rangemode enum values, and their
@@ -181,36 +181,36 @@ CC1205::onAttach(CReadoutModule& configuration)
   // Create the parameters and validations:
 
   configuration.addParameter("-slot", 
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &SlotLimits, "0");
   configuration.addParameter("-id",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &IdLimits, "0");
 
   configuration.addParameter("-usepedestals",
-			     CConfigurableObject::isBool,
+			     XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
   configuration.addParameter("-hires",
-			     CConfigurableObject::isBool,
+			     XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
 
   // The threshold, lopedestals, midpedestals and hipedestals are arrays
 
   configuration.addParameter("-thresholds",
-			     CConfigurableObject::isIntList,
+			     XXUSB::CConfigurableObject::isIntList,
 			     &threshValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
 
   configuration.addParameter("-lopedestals",
-			     CConfigurableObject::isIntList,
+			     XXUSB::CConfigurableObject::isIntList,
 			     &pedestalValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
   configuration.addParameter("-midpedestals",
-			     CConfigurableObject::isIntList,
+			     XXUSB::CConfigurableObject::isIntList,
 			     &pedestalValidity,
 			      "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
   configuration.addParameter("-hipedestals",
-			     CConfigurableObject::isIntList,
+			     XXUSB::CConfigurableObject::isIntList,
 			     &pedestalValidity,
 			     "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
 
@@ -228,7 +228,7 @@ CC1205::onAttach(CReadoutModule& configuration)
   // Now define the enum:
 
   configuration.addParameter("-rangemode",
-			     CConfigurableObject::isEnum,
+			     XXUSB::CConfigurableObject::isEnum,
 			     &rangeValues,
 			     "auto");
 			     

@@ -110,60 +110,60 @@ Const(EventsPerRead)  1;
 
 // -geo is a 5 bit unsigned field:
 
-static CConfigurableObject::limit GeoLow(0);
-static CConfigurableObject::limit GeoHigh(0x1f);
-static CConfigurableObject::Limits GeoLimits(GeoLow, GeoHigh);
+static XXUSB::CConfigurableObject::limit GeoLow(0);
+static XXUSB::CConfigurableObject::limit GeoHigh(0x1f);
+static XXUSB::CConfigurableObject::Limits GeoLimits(GeoLow, GeoHigh);
 
 // -threshold requires 32 integers in the range [0, 0xff]
 
-static CConfigurableObject::limit ThreshLow(0);  
-static CConfigurableObject::limit ThreshHi(0xff);
-static CConfigurableObject::Limits ThreshLimits(ThreshLow, ThreshHi);
-static CConfigurableObject::limit  thresholdSize(32);
-static CConfigurableObject::ListSizeConstraint threshListSize = {thresholdSize,
+static XXUSB::CConfigurableObject::limit ThreshLow(0);  
+static XXUSB::CConfigurableObject::limit ThreshHi(0xff);
+static XXUSB::CConfigurableObject::Limits ThreshLimits(ThreshLow, ThreshHi);
+static XXUSB::CConfigurableObject::limit  thresholdSize(32);
+static XXUSB::CConfigurableObject::ListSizeConstraint threshListSize = {thresholdSize,
                                                                  thresholdSize};
-CConfigurableObject::TypeCheckInfo threshValueOk(CConfigurableObject::isInteger,
+XXUSB::CConfigurableObject::TypeCheckInfo threshValueOk(XXUSB::CConfigurableObject::isInteger,
 						 &ThreshLimits);
-static CConfigurableObject::isListParameter threshValidity(thresholdSize,
+static XXUSB::CConfigurableObject::isListParameter threshValidity(thresholdSize,
 							   thresholdSize,
 							   threshValueOk);
 
 							      
 // -ipl is in the range 0-7
 
-static CConfigurableObject::limit iplLow(0);
-static CConfigurableObject::limit iplHigh(7);
-static CConfigurableObject::Limits iplRange(iplLow, iplHigh);
+static XXUSB::CConfigurableObject::limit iplLow(0);
+static XXUSB::CConfigurableObject::limit iplHigh(7);
+static XXUSB::CConfigurableObject::Limits iplRange(iplLow, iplHigh);
 
 // - vector is in the range 0 0xff
 
-static CConfigurableObject::limit vectorLow(0);
-static CConfigurableObject::limit vectorHigh(0xff);
-static CConfigurableObject::Limits vectorRange(vectorLow, vectorHigh);
+static XXUSB::CConfigurableObject::limit vectorLow(0);
+static XXUSB::CConfigurableObject::limit vectorHigh(0xff);
+static XXUSB::CConfigurableObject::Limits vectorRange(vectorLow, vectorHigh);
 
 // -highwater is in the range 0 through MEBDepth.
 
-static CConfigurableObject::limit hwlow(0);
-static CConfigurableObject::limit hwhigh(MEBDepth);
-static CConfigurableObject::Limits hwRange(hwlow, hwhigh);
+static XXUSB::CConfigurableObject::limit hwlow(0);
+static XXUSB::CConfigurableObject::limit hwhigh(MEBDepth);
+static XXUSB::CConfigurableObject::Limits hwRange(hwlow, hwhigh);
 
 // -fastclear is in the range 0 through 0x3ff.
 
-static CConfigurableObject::limit  fcLow(0);
-static CConfigurableObject::limit  fcHigh(0x3ff);
-static CConfigurableObject::Limits fcRange(fcLow, fcHigh);
+static XXUSB::CConfigurableObject::limit  fcLow(0);
+static XXUSB::CConfigurableObject::limit  fcHigh(0x3ff);
+static XXUSB::CConfigurableObject::Limits fcRange(fcLow, fcHigh);
 
 // -timescale is from 140-1200.
 
-static CConfigurableObject::limit tsLow(140);
-static CConfigurableObject::limit tsHigh(1200);
-static CConfigurableObject::Limits tsRange(tsLow, tsHigh);
+static XXUSB::CConfigurableObject::limit tsLow(140);
+static XXUSB::CConfigurableObject::limit tsHigh(1200);
+static XXUSB::CConfigurableObject::Limits tsRange(tsLow, tsHigh);
 
 // -iped is from 0-255.
 
-static CConfigurableObject::limit ipedLow(0);
-static CConfigurableObject::limit ipedHigh(255);
-static CConfigurableObject::Limits ipedRange(ipedLow, ipedHigh);
+static XXUSB::CConfigurableObject::limit ipedLow(0);
+static XXUSB::CConfigurableObject::limit ipedHigh(255);
+static XXUSB::CConfigurableObject::Limits ipedRange(ipedLow, ipedHigh);
 
 //////////////////////////////////////////////////////////////////////
 /////////////////// Canonical class/object operations ////////////////
@@ -299,40 +299,40 @@ C785::onAttach(CReadoutModule& configuration)
 
   // Create the parameters... setting defaults as neeed.
 
-  m_pConfiguration->addParameter("-base", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-base", XXUSB::CConfigurableObject::isInteger,
 				 NULL, "0");
-  m_pConfiguration->addParameter("-geo", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-geo", XXUSB::CConfigurableObject::isInteger,
 				 &GeoLimits);
-  m_pConfiguration->addParameter("-thresholds", CConfigurableObject::isIntList,
+  m_pConfiguration->addParameter("-thresholds", XXUSB::CConfigurableObject::isIntList,
 				 &threshValidity,
 		 "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
-  m_pConfiguration->addParameter("-smallthresholds", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-smallthresholds", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
-  m_pConfiguration->addParameter("-ipl", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-ipl", XXUSB::CConfigurableObject::isInteger,
 				 &iplRange, "6");
-  m_pConfiguration->addParameter("-vector", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-vector", XXUSB::CConfigurableObject::isInteger,
 				 &vectorRange, "0x80");
 
   // The high water mark default is computed for cleanliness.
 
   char hwdefault[100];
   sprintf(hwdefault, "%d", MEBDepth*3/4);
-  m_pConfiguration->addParameter("-highwater", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-highwater", XXUSB::CConfigurableObject::isInteger,
 				 &hwRange, string(hwdefault));
 
-  m_pConfiguration->addParameter("-fastclear", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-fastclear", XXUSB::CConfigurableObject::isInteger,
 				 &fcRange, "0");
-  m_pConfiguration->addParameter("-supressrange", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-supressrange", XXUSB::CConfigurableObject::isBool,
 				 NULL, "true");
-  m_pConfiguration->addParameter("-timescale", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-timescale", XXUSB::CConfigurableObject::isInteger,
 				 &tsRange, "600");
 
-  m_pConfiguration->addParameter("-iped", CConfigurableObject::isInteger,
+  m_pConfiguration->addParameter("-iped", XXUSB::CConfigurableObject::isInteger,
 				 &ipedRange, "180");
 
-  m_pConfiguration->addParameter("-requiredata", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-requiredata", XXUSB::CConfigurableObject::isBool,
 				 NULL, "true");
-  m_pConfiguration->addParameter("-commonstop", CConfigurableObject::isBool,
+  m_pConfiguration->addParameter("-commonstop", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
   
 }

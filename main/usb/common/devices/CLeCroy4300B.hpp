@@ -44,7 +44,7 @@ void  CLeCroy4300B<Controller,RdoList>::onAttach(CReadoutModule& config)
 //    std::cout << "Attaching CLeCroy4300B" << std::endl;
     m_pConfig = &config;
     m_pConfig->addParameter("-slot",
-                            CConfigurableObject::isInteger,
+                            XXUSB::CConfigurableObject::isInteger,
                             &SlotLimits,
                             "1");
 

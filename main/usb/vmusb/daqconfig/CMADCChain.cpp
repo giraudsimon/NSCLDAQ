@@ -32,9 +32,9 @@
 #include <unistd.h>
 using namespace std;
 
-static CConfigurableObject::limit Zero(0);
-static CConfigurableObject::limit MaxWords(1024); // should fit in a VM-USB buffer with 12modules.
-static CConfigurableObject::Limits WordLimit(Zero, MaxWords);
+static XXUSB::CConfigurableObject::limit Zero(0);
+static XXUSB::CConfigurableObject::limit MaxWords(1024); // should fit in a VM-USB buffer with 12modules.
+static XXUSB::CConfigurableObject::Limits WordLimit(Zero, MaxWords);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Canonical method implementatinos.
@@ -92,13 +92,13 @@ CMADCChain::onAttach(CReadoutModule& configuration)
 {
   m_pConfig  = &configuration;
   configuration.addParameter("-cbltaddress",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     NULL, "0");
   configuration.addParameter("-mcastaddress",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     NULL, "0");
   configuration.addParameter("-maxwordspermodule",
-			     CConfigurableObject::isInteger,
+			     XXUSB::CConfigurableObject::isInteger,
 			     &WordLimit, "512");
   configuration.addParameter("-modules",
 			     CMADCChain::moduleChecker,

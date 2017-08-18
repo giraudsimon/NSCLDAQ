@@ -90,7 +90,7 @@ CUserDriver::CUserDriver() :
  * onAttach
  *   Called when a driver instance is attached to the software.  This
  *   is where we maintain a pointer to our configuration (CControlModule) and
- *   provide configurable options.  The CControlModule is a CConfigurableObject
+ *   provide configurable options.  The CControlModule is a XXUSB::CConfigurableObject
  *   so that part works just like a readout driver.
  *
  * @param configuration - Reference to the configuration object.

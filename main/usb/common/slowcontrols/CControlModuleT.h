@@ -18,7 +18,7 @@
 #ifndef CCONTROLMODULET_H
 #define CCONTROLMODULET_H
 
-#include <CConfigurableObject.h>
+#include <XXUSBConfigurableObject.h>
 
 #include <string>
 
@@ -57,7 +57,7 @@ template<class Ctlr> class CControlHardwareT;
   however, if some other controller implements the proper functionality.
   */
 template<class Ctlr>
-class CControlModuleT : public CConfigurableObject
+class CControlModuleT : public XXUSB::CConfigurableObject
 {
  private:
     CControlHardwareT<Ctlr>*         m_pHardware; //!< Hardware

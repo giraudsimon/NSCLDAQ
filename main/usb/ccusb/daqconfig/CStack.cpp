@@ -39,13 +39,13 @@ using namespace std;
 // -delay is in the range 0 - 0xff  number of microseconds of delay 
 //        between trigger and list start (to allow for ADC conversinos).
 //
-static CConfigurableObject::limit delayLow(0);
-static CConfigurableObject::limit delayHigh(0x7f);
-static CConfigurableObject::Limits delayRange(delayLow, delayHigh);
+static XXUSB::CConfigurableObject::limit delayLow(0);
+static XXUSB::CConfigurableObject::limit delayHigh(0x7f);
+static XXUSB::CConfigurableObject::Limits delayRange(delayLow, delayHigh);
 
-static CConfigurableObject::limit lamtoLow(0);
-static CConfigurableObject::limit lamtoHigh(0xff);
-static CConfigurableObject::Limits lamtoRange(lamtoLow, lamtoHigh);
+static XXUSB::CConfigurableObject::limit lamtoLow(0);
+static XXUSB::CConfigurableObject::limit lamtoHigh(0xff);
+static XXUSB::CConfigurableObject::Limits lamtoRange(lamtoLow, lamtoHigh);
 
 bool CStack::m_incrementalScalers(true);
 
@@ -120,13 +120,13 @@ CStack::onAttach(CReadoutModule& configuration)
 
   // set up the stack type valid options:
 
-  static CConfigurableObject::isEnumParameter validTypes;
+  static XXUSB::CConfigurableObject::isEnumParameter validTypes;
   validTypes.insert("event");
   validTypes.insert("scaler");
 
 
   m_pConfiguration->addParameter("-type", 
-				 CConfigurableObject::isEnum, &validTypes,
+				 XXUSB::CConfigurableObject::isEnum, &validTypes,
 				 "event");
 
 
@@ -137,16 +137,16 @@ CStack::onAttach(CReadoutModule& configuration)
   // options valid for event stacks:
 
   m_pConfiguration->addParameter("-lams", 
-				 CConfigurableObject::isInteger, NULL, "0");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "0");
  m_pConfiguration->addParameter("-delay",
-				 CConfigurableObject::isInteger, &delayRange, "0");
+				 XXUSB::CConfigurableObject::isInteger, &delayRange, "0");
  m_pConfiguration->addParameter("-lamtimeout",
-				CConfigurableObject::isInteger, &lamtoRange, "0");
+				XXUSB::CConfigurableObject::isInteger, &lamtoRange, "0");
 
  // options only valid for scaler sacks:
 
   m_pConfiguration->addParameter("-period",
-				 CConfigurableObject::isInteger, NULL, "2");
+				 XXUSB::CConfigurableObject::isInteger, NULL, "2");
 
   m_pConfiguration->addBooleanParameter("-incremental", "true");
 

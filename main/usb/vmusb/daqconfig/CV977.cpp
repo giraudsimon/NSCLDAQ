@@ -80,17 +80,17 @@ Const(CSR_OrMask)         0x0004;
 
 //  Parameters for validity checking.
 
-static CConfigurableObject::limit Zero(0);
-static CConfigurableObject::limit Uint16(0xffff);
-static CConfigurableObject::limit Byte(0xff);
-static CConfigurableObject::limit IPLHigh(7);
+static XXUSB::CConfigurableObject::limit Zero(0);
+static XXUSB::CConfigurableObject::limit Uint16(0xffff);
+static XXUSB::CConfigurableObject::limit Byte(0xff);
+static XXUSB::CConfigurableObject::limit IPLHigh(7);
 
-static CConfigurableObject::Limits Short(Zero, Uint16);
-static CConfigurableObject::Limits VectorValues(Zero, Byte);
-static CConfigurableObject::Limits IPLLimits(Zero, IPLHigh);
+static XXUSB::CConfigurableObject::Limits Short(Zero, Uint16);
+static XXUSB::CConfigurableObject::Limits VectorValues(Zero, Byte);
+static XXUSB::CConfigurableObject::Limits IPLLimits(Zero, IPLHigh);
 
 
-static CConfigurableObject::isEnumParameter readModeValues;
+static XXUSB::CConfigurableObject::isEnumParameter readModeValues;
 
 // The trick below initializes the readModeValues set once and forever:
 
@@ -166,27 +166,27 @@ void CV977::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration;
 
-  configuration.addParameter("-base", CConfigurableObject::isInteger,
+  configuration.addParameter("-base", XXUSB::CConfigurableObject::isInteger,
 			     NULL, "0");
-  configuration.addParameter("-inputmask", CConfigurableObject::isInteger,
+  configuration.addParameter("-inputmask", XXUSB::CConfigurableObject::isInteger,
 			     &Short, "0");
-  configuration.addParameter("-readmode", CConfigurableObject::isEnum,
+  configuration.addParameter("-readmode", XXUSB::CConfigurableObject::isEnum,
 			     &readModeValues, "singlehit");
-  configuration.addParameter("-outputmask", CConfigurableObject::isInteger,
+  configuration.addParameter("-outputmask", XXUSB::CConfigurableObject::isInteger,
 			     &Short, "0");
-  configuration.addParameter("-interruptmask", CConfigurableObject::isInteger,
+  configuration.addParameter("-interruptmask", XXUSB::CConfigurableObject::isInteger,
 			     &Short, "0");
-  configuration.addParameter("-readandclear", CConfigurableObject::isBool,
+  configuration.addParameter("-readandclear", XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
-  configuration.addParameter("-ipl", CConfigurableObject::isInteger,
+  configuration.addParameter("-ipl", XXUSB::CConfigurableObject::isInteger,
 			     &IPLLimits, "0");
-  configuration.addParameter("-vector", CConfigurableObject::isInteger,
+  configuration.addParameter("-vector", XXUSB::CConfigurableObject::isInteger,
 			     &VectorValues, "0");
-  configuration.addParameter("-pattern", CConfigurableObject::isBool,
+  configuration.addParameter("-pattern", XXUSB::CConfigurableObject::isBool,
 			     NULL, "false");
-  configuration.addParameter("-gate", CConfigurableObject::isBool,
+  configuration.addParameter("-gate", XXUSB::CConfigurableObject::isBool,
 			     NULL, "true");
-  configuration.addParameter("-ormask", CConfigurableObject::isBool,
+  configuration.addParameter("-ormask", XXUSB::CConfigurableObject::isBool,
 			     NULL, "false");
 
 

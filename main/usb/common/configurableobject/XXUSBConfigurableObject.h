@@ -61,6 +61,12 @@
 
 typedef bool (*typeChecker)(std::string name, std::string value, void* arg);
 
+
+// This namespace disambiguates this class from the  CConfigurableObject
+// hiding in libTclPlus TODO - merge the capabilities of that class.
+
+namespace XXUSB {
+
 /*!
    Configurable object consist of a name and a configuration.
    A configuration is a set of name value pairs.  Each name value
@@ -274,5 +280,5 @@ private:
   static void releaseLimitsConstraint(void* pConstraint);
 };
 
-
+};
 #endif

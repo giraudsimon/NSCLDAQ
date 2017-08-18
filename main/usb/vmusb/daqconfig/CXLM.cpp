@@ -148,7 +148,7 @@ CXLM::onAttach(CReadoutModule& configuration)
 
   // Define our base configuration parameters.
 
-  configuration.addParameter("-base", CConfigurableObject::isInteger, NULL, "0");
+  configuration.addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
 
   configuration.addParameter("-firmware",
 			     Utils::validFirmwareFile, NULL, "");

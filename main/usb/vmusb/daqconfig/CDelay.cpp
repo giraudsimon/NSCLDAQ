@@ -30,9 +30,9 @@
 #include <CVMUSBReadoutList.h>
 #include <stdlib.h>
 
-static CConfigurableObject::limit valueLow(0);
-static CConfigurableObject::limit valueHigh(255);
-static CConfigurableObject::Limits valueLimits(valueLow, valueHigh);
+static XXUSB::CConfigurableObject::limit valueLow(0);
+static XXUSB::CConfigurableObject::limit valueHigh(255);
+static XXUSB::CConfigurableObject::Limits valueLimits(valueLow, valueHigh);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ CDelay::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration;
 
-  m_pConfiguration->addParameter("-value", CConfigurableObject::isInteger, &valueLimits, "0");
+  m_pConfiguration->addParameter("-value", XXUSB::CConfigurableObject::isInteger, &valueLimits, "0");
 
 }
 /*!

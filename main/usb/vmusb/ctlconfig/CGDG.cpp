@@ -184,7 +184,7 @@ void
 CGDG::onAttach(CControlModule& configuration)
 {
   m_pConfiguration = &configuration;
-  configuration.addParameter("-base", CConfigurableObject::isInteger, NULL, 
+  configuration.addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, 
 			     string("0"));
 
 }

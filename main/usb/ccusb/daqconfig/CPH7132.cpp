@@ -40,10 +40,10 @@ using namespace std;
 
 // Configuration value constants and limits:
 
-static CConfigurableObject::limit One(1); 
-static CConfigurableObject::limit LastSlot(23);
+static XXUSB::CConfigurableObject::limit One(1); 
+static XXUSB::CConfigurableObject::limit LastSlot(23);
 
-static CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
+static XXUSB::CConfigurableObject::Limits SlotLimits(One, LastSlot); // CAMAC crate.
 
 
 /**********************************************************************/
@@ -117,7 +117,7 @@ CPH7132::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration;
 
-  configuration.addParameter("-slot", CConfigurableObject::isInteger,
+  configuration.addParameter("-slot", XXUSB::CConfigurableObject::isInteger,
 			     &SlotLimits, "0");
 }
 /*!

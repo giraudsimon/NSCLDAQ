@@ -158,22 +158,22 @@ CV1495sc::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration;
 
-  m_pConfiguration->addParameter("-base", CConfigurableObject::isInteger, NULL, "0");
-  m_pConfiguration->addParameter("-exttrig", CConfigurableObject::isBool, NULL, "false");
-  m_pConfiguration->addParameter("-inttrig", CConfigurableObject::isBool, NULL, "false");
-  m_pConfiguration->addParameter("-vmetrigger", CConfigurableObject::isBool, NULL, "true");
+  m_pConfiguration->addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  m_pConfiguration->addParameter("-exttrig", XXUSB::CConfigurableObject::isBool, NULL, "false");
+  m_pConfiguration->addParameter("-inttrig", XXUSB::CConfigurableObject::isBool, NULL, "false");
+  m_pConfiguration->addParameter("-vmetrigger", XXUSB::CConfigurableObject::isBool, NULL, "true");
   m_pConfiguration->addEnumParameter("-inputlevel", inputLevels,
 				     "nim");
-  m_pConfiguration->addParameter("-autoreset", CConfigurableObject::isBool, NULL, "true");
+  m_pConfiguration->addParameter("-autoreset", XXUSB::CConfigurableObject::isBool, NULL, "true");
   m_pConfiguration->addEnumParameter("-g1_mode",
 				     g1Modes, "inhibit");
-  m_pConfiguration->addParameter("-includetime", CConfigurableObject::isBool, NULL, "false");
-  m_pConfiguration->addParameter("-bank1enables", CConfigurableObject::isInteger, NULL, "0xffffffff");
-  m_pConfiguration->addParameter("-bank2enables", CConfigurableObject::isInteger, NULL, "0xffffffff");
-  m_pConfiguration->addParameter("-bank3enables", CConfigurableObject::isInteger, NULL, "0xffffffff");
-  m_pConfiguration->addParameter("-bank4enables", CConfigurableObject::isInteger, NULL, "0xffffffff");
+  m_pConfiguration->addParameter("-includetime", XXUSB::CConfigurableObject::isBool, NULL, "false");
+  m_pConfiguration->addParameter("-bank1enables", XXUSB::CConfigurableObject::isInteger, NULL, "0xffffffff");
+  m_pConfiguration->addParameter("-bank2enables", XXUSB::CConfigurableObject::isInteger, NULL, "0xffffffff");
+  m_pConfiguration->addParameter("-bank3enables", XXUSB::CConfigurableObject::isInteger, NULL, "0xffffffff");
+  m_pConfiguration->addParameter("-bank4enables", XXUSB::CConfigurableObject::isInteger, NULL, "0xffffffff");
 
-  m_pConfiguration->addParameter("-dwelltime", CConfigurableObject::isInteger, NULL, "0x2000000");
+  m_pConfiguration->addParameter("-dwelltime", XXUSB::CConfigurableObject::isInteger, NULL, "0x2000000");
   
 }
 /**

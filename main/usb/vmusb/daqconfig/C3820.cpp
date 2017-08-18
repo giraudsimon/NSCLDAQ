@@ -130,10 +130,10 @@ C3820::onAttach(CReadoutModule& configuration)
   // Add the base parameter:
 
   m_pConfiguration->addParameter("-base",
-				 CConfigurableObject::isInteger, 
+				 XXUSB::CConfigurableObject::isInteger, 
 				 NULL, "0");
   m_pConfiguration->addParameter("-timestamp",
-                                CConfigurableObject::isBool, NULL, "off");
+				 XXUSB::CConfigurableObject::isBool, NULL, "off");
 }
 /*!
    Called to setup the module for data taking. We'll make a small setup list

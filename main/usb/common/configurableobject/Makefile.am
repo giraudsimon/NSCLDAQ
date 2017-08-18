@@ -1,6 +1,6 @@
 lib_LTLIBRARIES 		= libConfigurableObject.la
-libConfigurableObject_la_SOURCES	= 	CConfigurableObject.cpp
-include_HEADERS	= 	CConfigurableObject.h	
+libConfigurableObject_la_SOURCES	= 	XXUSBConfigurableObject.cpp
+include_HEADERS	= 	XXUSBConfigurableObject.h	
 
 libConfigurableObject_la_CXXFLAGS=@THREADCXX_FLAGS@ @TCL_FLAGS@ @LIBTCLPLUS_CFLAGS@		
 

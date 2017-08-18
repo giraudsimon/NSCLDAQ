@@ -22,6 +22,7 @@ CCUSBReadout_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb \
 	 -I@top_srcdir@/usb/ccusb/ctlconfig \
 	 -I@top_srcdir@/usb/ccusb/core \
 	-I@top_srcdir@/usb/common/slowcontrols  \
+	-I@top_srcdir@/usb/common/configurableobject \
 	-I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@ \
 	-I@top_srcdir@/base/thread \
 	-I@top_srcdir@/base/dataflow	                       \
@@ -37,6 +38,7 @@ CCUSBReadout_LDADD	= \
 	@top_builddir@/servers/portmanager/libPortManager.la \
 	@top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/thread/libdaqthreads.la		\
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 	@LIBTCLPLUS_LDFLAGS@	\
 	@TCL_LDFLAGS@ @THREADLD_FLAGS@ 
 
