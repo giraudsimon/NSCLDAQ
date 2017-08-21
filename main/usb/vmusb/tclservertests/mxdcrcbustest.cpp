@@ -22,7 +22,7 @@ using namespace std;
 class CMxDCRCBusTests : public CppUnit::TestFixture {
   private:
     CMxDCRCBus* m_pHdwr;
-    unique_ptr<CControlModule> m_pModule;
+    CControlModule* m_pModule;
     unique_ptr<CMockVMUSB> m_pCtlr;
 
   public:
@@ -48,9 +48,8 @@ class CMxDCRCBusTests : public CppUnit::TestFixture {
 
 public:
   void setUp() {
-    auto hdwr = unique_ptr<CControlHardware>(new CMxDCRCBus);
-    m_pModule = unique_ptr<CControlModule>(
-					   new CControlModule("test", hdwr.get() ));
+     m_pHdwr = new CMxDCRCBus;
+    m_pModule =    new CControlModule("test", m_pHdwr);
 
     m_pModule->configure("-base","0xff000000");
 

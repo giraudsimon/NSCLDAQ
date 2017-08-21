@@ -21,7 +21,7 @@ using namespace std;
 
 class CMDGG16ControlTests : public CppUnit::TestFixture {
   private:
-    unique_ptr<CControlModule> m_pMod;
+    CControlModule* m_pMod;
 
   public:
     CPPUNIT_TEST_SUITE(CMDGG16ControlTests);
@@ -48,11 +48,12 @@ class CMDGG16ControlTests : public CppUnit::TestFixture {
   public:
     void setUp() {
       // create the control hardware
-      unique_ptr<CControlHardware> hdwr(new WienerMDGG16::CControlHdwr);
+      CControlHardware* hdwr = (new WienerMDGG16::CControlHdwr);
 
       // create control module and pass ownership of hardware to the 
       // CControlModule
-      m_pMod.reset(new CControlModule("test", (hdwr.get()) ));
+
+      m_pMod = new CControlModule("test", hdwr);
       m_pMod->configure("-base","0xff000000");
     }
     void tearDown() {
