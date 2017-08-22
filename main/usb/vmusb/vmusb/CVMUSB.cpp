@@ -889,13 +889,12 @@ CVMUSB::executeList(CVMUSBReadoutList& list, int maxBytes)
 
   int status = this->executeList(list, result.data(), result.size(), &nRead);
 
-  if (status == 0) {
+  if (status >= 0) {
     result.resize(nRead);
   } else {
     // failure ... get 
-    result.resize(0);
+    result.resize(0); 
   }
-
   return result;
 }
 
