@@ -590,12 +590,23 @@ void CFirmwareLoader::acquireBusses()
 
 
   // run the list:
-  vector<uint8_t> retData = m_ctlr.executeList(initList, sizeof(uint16_t));
+  
+  unsigned  retries = 10;
+  vector<uint8_t> retData;
+  do {
+    retries--;
+    retData = m_ctlr.executeList(initList, sizeof(uint16_t));
+  } while ((retries > 0) && (retData.size() == 0) && (errno == EAGAIN));
+
+  // Success or retries exhausted.
+  
   if (retData.size() == 0) {
     string reason = strerror(errno);
     string msg = "XLM::CFirmwareLoader::initialize - failed to execute initialization list: ";
     msg       += reason;
-
+    if (retries == 0) {
+      msg += " (retries exhausted)";
+    } 
     throw msg;
   }
 
