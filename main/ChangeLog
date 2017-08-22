@@ -1213,3 +1213,13 @@ Work on 11.0-rc11 begins
 	* Ensure MADC32 initialization stack does not end in a
 	delay. VMUSB does not like it when it does.
 	
+11.2-006:
+	* Fix problems with the Cbus controller.
+	* Fix once and for all SEGFAULT problems on slow control system.
+	* Fix Bug #7146 - There are several CConfigurableObject classes
+	and conflicts can cause segfaults as well.  Put the one in
+	main/usb/common/configurableobject in the XXUSB namespace and use
+	that in the xxUSBReadout programs -- everywhere.
+	* In CXLM - firmware loader - got an EAGAIN from the init list; So
+	retry a few times if EAGAIN happens.
+	
