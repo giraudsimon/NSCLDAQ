@@ -213,23 +213,7 @@ CXLMFERA::Initialize(CVMUSB& controller)
 
         initializeFPGA(controller);
 
-        //        // Adds some delay to test if the bad sramA[0] value is 
-        //        // due to incomplete initialization
-        //        CVMUSBReadoutList list;
-        //        list.addDelay(100);
-        //        list.addDelay(100);
-        //        uint32_t dummy;
-        //        size_t dsize;
-        //
-        //        int status = controller.executeList(list,(void*)&dummy,sizeof(dummy),&dsize);
-        //
-        //        if (status<0) {
-        //            std::ostringstream errmsg;
-        //            errmsg << "CXLMFERA::Initialize(CVMUSB&) ";
-        //            errmsg << "failed to execute list on delay with error ";
-        //            errmsg << "(status=" << status << ")";
-        //            throw errmsg.str(); 
-        //        } 
+        
 
     }
     catch (std::string& what) {
@@ -350,15 +334,16 @@ void CXLMFERA::bootFPGA(CVMUSB& controller)
     size_t nbytes = 0;
     int status = controller.executeList(list,(void*)&data,sizeof(data),&nbytes);
 
-    // Sleep for a while before any more io operations
-    // This is time for the fpga to boot
-    ::usleep(1000000); 
 
     if (status < 0) {
 
         throw std::string("CXLMFERA::bootFPGA(CVMUSB&) failed to boot FPGA");
     }
 
+    // Sleep for a while before any more io operations
+    // This is time for the fpga to boot
+    
+    ::usleep(1000000); 
 }
 
 void CXLMFERA::initializeFPGA(CVMUSB& controller)
@@ -461,7 +446,10 @@ bool CXLMFERA::isConfigured(CVMUSB& controller)
     uint32_t data[2];
     size_t nBytesRead=0;
 
-    controller.executeList(cmdList,&data,sizeof(data),&nBytesRead);
+    int status = controller.executeList(cmdList,&data,sizeof(data),&nBytesRead);
+    if (status < 0) {
+        throw std::string("CXLMFERA::isConfigured list execution failed");
+    }
 
     return (data[0]==configID);
 

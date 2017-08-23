@@ -374,11 +374,13 @@ CV1x90::Initialize(CVMUSB& controller)
   // Do that list:
 
   size_t dummy;
-  controller.executeList(registerWrites,
+  int status = controller.executeList(registerWrites,
              &dummy,
              sizeof(dummy),
              &dummy);
-
+  if (status < 0) {
+    throw std::string("CCAENV1x90 initialization register writ list failed");
+  }
   // Before setting anything else up, we should put the device in
   // trigger matching mode:
 
@@ -388,7 +390,7 @@ CV1x90::Initialize(CVMUSB& controller)
          CCAENV1x90Opcodes::TRG_MATCH,
          data, 0);
 
-  // Set the trigger window width, th offset, extra search margin, and reject margin:
+  // Set the trigger window width,  offset, extra search margin, and reject margin:
 
   WriteMicro(controller,
 	     base,

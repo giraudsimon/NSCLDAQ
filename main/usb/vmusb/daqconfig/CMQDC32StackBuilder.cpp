@@ -20,6 +20,7 @@ namespace MQDC32 {
     addWriteAcquisitionState(*pList,0);
     addResetReadout(*pList);
     ctlr.executeList(*pList, 8);
+
   }
 
   void CMQDC32StackBuilder::doSoftReset(CVMUSB& ctlr) {

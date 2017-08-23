@@ -252,7 +252,7 @@ CV977::Initialize(CVMUSB& controller)
   
   int status = controller.executeList(list, &inBuffer, sizeof(inBuffer),
 				      &bytesRead);
-  if (status != 0) {
+  if (status < 0) {
     int errorValue = errno;
     string message = "CV977::Initialization list execution failed on: ";
     if (status == -1) {

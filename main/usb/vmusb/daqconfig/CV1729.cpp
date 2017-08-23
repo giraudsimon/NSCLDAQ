@@ -343,7 +343,7 @@ CV1729::Initialize(CVMUSB& controller)
 				      &rbuffer, 
 				      sizeof(rbuffer),
 				      &readSize);
-  if(status != 0) {
+  if(status < 0) {
     throw std::string(strerror(errno)) + std::string("CV1729::Initialize - list execution failed");
   }
 

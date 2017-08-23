@@ -451,10 +451,10 @@ CMTDC32::Initialize(CVMUSB& controller)
 
     //    dumpRegisters(controller, base);
 
-    if (status != 0) {
+    if (status < 0) {
       std::cerr << "MTDC initialization list failed " << status << std::endl;
       std::cerr << strerror(errno) << std::endl;
-      throw std::string("Init failed");
+      throw std::string("Init failed - list execution failed");
     }
     
 

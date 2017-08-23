@@ -251,7 +251,7 @@ CV1495sc::Initialize(CVMUSB& controller)
   size_t  bytesread;
   int status  = controller.executeList(list, &buffer, sizeof(buffer), &bytesread);
   
-  if(status) {
+  if(status < 0) {
     throw std::string("V1495sc initialization list execution failed");
   }
   

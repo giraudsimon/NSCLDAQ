@@ -207,7 +207,7 @@ C3820::Initialize(CVMUSB& controller)
   size_t   bytesRead;
   status = controller.executeList(initList,
 				      &inBuffer, sizeof(inBuffer), &bytesRead);
-  if (status) {
+  if (status < 0) {
     throw string("C3820::Could not initialize via executeList.");
   }
 }
