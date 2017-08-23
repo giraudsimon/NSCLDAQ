@@ -5818,6 +5818,17 @@ Module cget <replaceable>name</replaceable>
                 "Set mymod d20a10 23" to the slow-controls server. To read the value
                 back, the client would write "Get mymod d20a10" to the slow-controls server.
               </para>
+		<note>
+			<title>IMPORTANT NOTE</title>
+			<para>
+				If the module used to control the RC-bus is an
+				MADC32 that is used to readout data. Be sure to
+				set the <option>-nimbusy</option> for that module
+				to <literal>cbus</literal>.  If this is not done,
+				you will no longer be able to control anything
+				on the RC-bus after the first run is started.
+			</para>
+		</note>
               <refsect3>
                 <title>OPTIONS</title>
                 <para>

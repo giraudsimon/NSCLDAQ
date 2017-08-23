@@ -3878,6 +3878,85 @@ madc cget <replaceable>name</replaceable>
 		     </para>
                   </listitem>
                 </varlistentry>
+		  <varlistentry>
+            <term><option>-nimbusy</option> <replaceable>busyselecst</replaceable></term>
+            <listitem>
+                <para>
+				This option selects which signal is presented at the
+				NIM busy output connector.  Note that this can interact with
+				the mxdcrcbus driver.  See more below. 
+                </para>
+			 <para>
+				Legal values for this parameter are:
+			 </para>
+			 <variablelist>
+				<varlistentry>
+					<term><literal>busy</literal></term>
+					<listitem>
+					    <para>
+							The default.  The output reflects the module
+							busy. Busy is asserted when the module is converting
+							as a result of a gate or when the module's buffer
+							is full. 
+					    </para>
+					    <para>
+						For single event mode, full means that the event most
+						recently converted has not yet been read out.  For
+						multi event mode, this means that there is not
+						sufficient buffer space for a maximally sized next
+						event.
+					    </para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+					<term>
+						<literal>gate0</literal>
+					</term>
+					<listitem>
+					    <para>
+						The Gate0 signal.  Note that if the internal gate
+						and delay generator is in use, this will reflect
+						the output of that gate generator.  This allows
+						you to see if the delay and width parameters of
+						the gate generator is properly set.
+					    </para>
+					</listitem>
+				</varlistentry>
+				<varlistentry>
+                    <term>
+					<literal>gate1</literal>
+				</term>
+                    <listitem>
+                        <para>
+					The Gate1 signal.  Again if the gate generator is
+					enabled, you can use this to monitor the gate signal
+					<emphasis>after</emphasis> it has been modified
+					by the gate and delay generator.
+                        </para>
+                    </listitem>
+                </varlistentry>
+				<varlistentry>
+                    <term><literal>cbus</literal></term>
+                    <listitem>
+                        <para>
+					The Busy output is used as a CBus master.  See
+					the <literal>IMPORTANT NOTE</literal> below.
+                        </para>
+                    </listitem>
+                </varlistentry>
+			 </variablelist>
+			 <note>
+				<title>IMPORTANT NOTE:</title>
+				<para>
+					If this module is being used as the master for the CBus
+					in a mxdcrcbus slow control module, this <emphasis>must</emphasis>
+					be set to <literal>cbus</literal>.  Otherwise once the first
+					run starts, you will no longer be able to perform
+					control operations over Cbus connected moduls
+				</para>
+			 </note>
+            </listitem>
+          </varlistentry>
 	       <varlistentry>
                   <term><option>-multievent</option> <replaceable>boolean</replaceable></term>
                   <listitem>

@@ -128,6 +128,15 @@ static const char* resolutions[5] = {
 };
 static const int resolutionsNumValues = sizeof(resolutions)/sizeof(char*);
 
+// Legal values for the -nimbusy switch and corresponding register values:
+
+static const char* nimbusycodes[] = { // -nimbusy enum values.
+  "busy", "gate0", "gate1", "cbus", 0
+};
+static const int nimbusyvalues[] = { //  Corresponding values of 0x6060e (NIM_BUSY reg).
+  0, 1, 2, 3
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Constructors and implemented canonical operations:
 
@@ -257,7 +266,7 @@ CMADC32::onAttach(CReadoutModule& configuration)
   }
   m_pConfiguration->addParameter("-resolution", XXUSB::CConfigurableObject::isEnum,
 				 &validResolution, "8k");
-
+  m_pConfiguration->addEnumParameter("-nimbusy",nimbusycodes, "busy");
 }
 /*!
    Initialize the module prior to data taking.  We will get the initialization
@@ -315,6 +324,7 @@ CMADC32::Initialize(CVMUSB& controller)
   bool        multiEvent  = m_pConfiguration->getBoolParameter("-multievent");
   string      resolution  = m_pConfiguration->cget("-resolution");
   int         irqThreshold= m_pConfiguration->getIntegerParameter("-irqthreshold");
+  int         nimBusyRegValue = nimbusyvalues[m_pConfiguration->getEnumParameter("-nimbusy", nimbusycodes)];
 
   // module ID:
 
@@ -441,9 +451,9 @@ CMADC32::Initialize(CVMUSB& controller)
   }
   list.addDelay(MADCDELAY);
   
-  // Ensure that busy is on the busy connector:
+  //  program NIM busy according to -nimbusy - note users of the rc bus must set this to cbus.
 
-  list.addWrite16(base + NIMBusyFunction, initamod, (uint16_t)0);
+  list.addWrite16(base + NIMBusyFunction, initamod, (uint16_t)nimBusyRegValue);
   list.addDelay(MADCDELAY);
 
   // Process -resolution, -irqthreshold and -multievent
@@ -492,7 +502,7 @@ CMADC32::Initialize(CVMUSB& controller)
   char readBuffer[100];		// really a dummy as these are all write...
   size_t bytesRead;
   int status = controller.executeList(list, readBuffer, sizeof(readBuffer), &bytesRead);
-  if (status != 0) {
+  if (status  < 0) {
      throw string("List excecution to initialize an MADC32 failed");
    }
 
