@@ -209,10 +209,14 @@ CMADC32::onAttach(CReadoutModule& configuration)
   // the hold delays and widths have the same list constraints.
   // just different default values.
 
-  m_pConfiguration->addParameter("-holddelays", XXUSB::CConfigurableObject::isIntList,
-				 &HoldValidity, "15 15");
-  m_pConfiguration->addParameter("-holdwidths", XXUSB::CConfigurableObject::isIntList,
-				 &HoldValidity, "20 20");
+	m_pConfiguration->addIntListParameter("-holddelays", 0, 255, 2, 2, 2, 15);
+	m_pConfiguration->addIntListParameter("-holdwidths", 0, 255, 2, 2, 2, 20);
+	
+	// Old style ...
+  //m_pConfiguration->addParameter("-holddelays", XXUSB::CConfigurableObject::isIntList,
+	//			 &HoldValidity, "15 15");
+  //m_pConfiguration->addParameter("-holdwidths", XXUSB::CConfigurableObject::isIntList,
+	//			 &HoldValidity, "20 20");
 
   m_pConfiguration->addParameter("-gategenerator", XXUSB::CConfigurableObject::isBool,
 				 NULL, "false");
@@ -365,7 +369,11 @@ CMADC32::Initialize(CVMUSB& controller)
     list.addWrite16(base + HoldWidth1, initamod, (uint16_t)holdwidths[1]);
     list.addDelay(MADCDELAY);
     
-    list.addWrite16(base + EnableGDG, initamod, (uint16_t)1);
+		uint16_t gdgenables = 1;                 // Always turn on gdg0
+		if (gatemode == "separate") {
+			gdgenables |= 2;                      // Only turno n gdg1 on split mode.
+		}
+    list.addWrite16(base + EnableGDG, initamod, (uint16_t)gdgenables); // Enable both gdgs.
     list.addDelay(MADCDELAY);
 
   } else {
