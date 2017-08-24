@@ -674,7 +674,7 @@ CVMUSB::doVMERead(CVMUSBReadoutList& list, T* datum)
 {
   size_t actualRead;
   int status = executeList(list, datum, sizeof(T), &actualRead);
-  return status;
+  return status > 0 ? 0 : status;
 }
 
 #endif

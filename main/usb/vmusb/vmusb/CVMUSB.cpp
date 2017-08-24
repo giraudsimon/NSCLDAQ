@@ -1027,7 +1027,7 @@ CVMUSB::doVMEWrite(CVMUSBReadoutList& list)
   if ((status == 0) && (reply == 0)) {
     status = -3;
   }
-  return status;
+  return status > 0 ? 0 : status;
 }
 
 

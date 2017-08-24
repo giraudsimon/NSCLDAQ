@@ -453,6 +453,8 @@ CMADC32::Initialize(CVMUSB& controller)
   
   //  program NIM busy according to -nimbusy - note users of the rc bus must set this to cbus.
 
+	
+	std::cerr << "Busy register: " << std::hex << nimBusyRegValue << std::dec << std::endl;
   list.addWrite16(base + NIMBusyFunction, initamod, (uint16_t)nimBusyRegValue);
   list.addDelay(MADCDELAY);
 
