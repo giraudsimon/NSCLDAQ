@@ -149,7 +149,7 @@ static const int nimbusyvalues[] = { //  Corresponding values of 0x6060e (NIM_BU
 static const char* gategencodes[] = {
 	"on", "true", "yes", "1", "enabled",
 	"off", "false", "no", "0", "disabled",
-	"gdg1", "gdg2", 0
+	"gdg0", "gdg1", 0
 };
 
 //  This set of values for the use_gg register gets modified for on
@@ -158,8 +158,8 @@ static const char* gategencodes[] = {
 
 static const int GDG_ENABLE_BOTH(3);
 static const int GDG_DISABLE_BOTH(0);
-static const int GDG_ENABLE1(1);
-static const int GDG_ENABLE2(2);
+static const int GDG_ENABLE1(1);     // Sorry go be confusing enable gdg0
+static const int GDG_ENABLE2(2);     // enable gdg1.
 
 static const int gategenvalues[]  = {
 	GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH,

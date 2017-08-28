@@ -3728,6 +3728,61 @@ madc cget <replaceable>name</replaceable>
 		  <para>
 		    By default, the value of this parameters is <literal>false</literal>.
 		  </para>
+		  <para>
+			Beginning with 11.2-006, a new set of values has been added, in
+			addition to the valid booleans.  The full list of values and
+			behaviors is as follows:
+		  </para>
+		  <variablelist>
+			<varlistentry>
+                <term><literal>on, true, yes, 1, enabled</literal></term>
+                <listitem>
+                    <para>
+					If <option>-gatemode</option> is <literal>common</literal>,
+					gate generator 0 only is enabled, otherwise, both
+					gate generators are enabled.  Note in this and
+					the following discussions, gate generator 1 can only be
+					enabled if <option>-gatemode</option> is
+					<literal>separate</literal>.  This is stated in the
+					MADC32 manual.
+                    </para>
+                </listitem>
+            </varlistentry>
+		  <varlistentry>
+            <term><literal>off, false, no, 0, disabled</literal></term>
+            <listitem>
+                <para>
+				Neither gate generator is enabled, regardless of
+				<option>-gatemode</option>
+                </para>
+            </listitem>
+          </varlistentry>
+		  <varlistentry>
+            <term><literal>gdg0</literal></term>
+            <listitem>
+                <para>
+				Regardless of <option>-gatemode</option>, gate generator 0
+				is enabled.  Gate generator 1 is not enabled.
+                </para>
+            </listitem>
+          </varlistentry>
+		  <varlistentry>
+            <term><literal>gdg1</literal></term>
+            <listitem>
+                <para>
+				If <option>-gatemode</option> is separate, gate generator
+				 1 is enabled.  If <option>-gatemode</option> is
+				 <literal>common</literal>, an error is thrown when you
+				 try to start the run. 
+                </para>
+			 <para>
+				The error is thrown then because there's no other time that
+				drivers can perform validations across more than one
+				option.
+			 </para>
+            </listitem>
+          </varlistentry>
+		  </variablelist>
                 </listitem>
               </varlistentry>
               <varlistentry>
