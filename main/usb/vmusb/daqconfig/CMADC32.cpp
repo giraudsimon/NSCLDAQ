@@ -143,8 +143,13 @@ static const int nimbusyvalues[] = { //  Corresponding values of 0x6060e (NIM_BU
 //  gdg1 - Enable gdg1 only.  Always allowed.
 //  gdg2 - Only enable geg2 - Only allowed if gate mode is separate.
 //
+//  The excessive number of values is because we want to keep this compatible
+//  with the old bool type prior to 11.2-006:
+// 
 static const char* gategencodes[] = {
-	"on", "off", "gdg1", "gdg2", 0
+	"on", "true", "yes", "1", "enabled",
+	"off", "false", "no", "0", "disabled",
+	"gdg1", "gdg2", 0
 };
 
 //  This set of values for the use_gg register gets modified for on
@@ -157,7 +162,9 @@ static const int GDG_ENABLE1(1);
 static const int GDG_ENABLE2(2);
 
 static const int gategenvalues[]  = {
-	GDG_ENABLE_BOTH, GDG_DISABLE_BOTH, GDG_ENABLE1, GDG_ENABLE2
+	GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH, GDG_ENABLE_BOTH,
+	GDG_DISABLE_BOTH, GDG_DISABLE_BOTH, GDG_DISABLE_BOTH, GDG_DISABLE_BOTH, GDG_DISABLE_BOTH,
+	GDG_ENABLE1, GDG_ENABLE2
 };
 
 ////////////////////////////////////////////////////////////////////////////////
