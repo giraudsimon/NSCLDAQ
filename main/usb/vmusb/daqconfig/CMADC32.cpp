@@ -137,6 +137,29 @@ static const int nimbusyvalues[] = { //  Corresponding values of 0x6060e (NIM_BU
   0, 1, 2, 3
 };
 
+//  Possible values for -gategenerator - note some values are not always legal:
+//  on - enable all the gate generators appropriate to the -gatemode.
+//  off - disable all gate generators.
+//  gdg1 - Enable gdg1 only.  Always allowed.
+//  gdg2 - Only enable geg2 - Only allowed if gate mode is separate.
+//
+static const char* gategencodes[] = {
+	"on", "off", "gdg1", "gdg2", 0
+};
+
+//  This set of values for the use_gg register gets modified for on
+//  depending on gatemode.  The values in the table assume -gatemode separate.
+//
+
+static const int GDG_ENABLE_BOTH(3);
+static const int GDG_DISABLE_BOTH(0);
+static const int GDG_ENABLE1(1);
+static const int GDG_ENABLE2(2);
+
+static const int gategenvalues[]  = {
+	GDG_ENABLE_BOTH, GDG_DISABLE_BOTH, GDG_ENABLE1, GDG_ENABLE2
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Constructors and implemented canonical operations:
 
@@ -218,8 +241,11 @@ CMADC32::onAttach(CReadoutModule& configuration)
   //m_pConfiguration->addParameter("-holdwidths", XXUSB::CConfigurableObject::isIntList,
 	//			 &HoldValidity, "20 20");
 
-  m_pConfiguration->addParameter("-gategenerator", XXUSB::CConfigurableObject::isBool,
-				 NULL, "false");
+  //m_pConfiguration->addParameter("-gategenerator", XXUSB::CConfigurableObject::isBool,
+	//			 NULL, "false");
+	
+	m_pConfiguration->addEnumParameter("-gategenerator", gategencodes, "off" );
+	
   // Input range:
 
   static XXUSB::CConfigurableObject::isEnumParameter ValidInputRange;
@@ -316,7 +342,8 @@ CMADC32::Initialize(CVMUSB& controller)
   string      gatemode    = m_pConfiguration->cget("-gatemode");
   vector<int> holddelays  = m_pConfiguration->getIntegerList("-holddelays");
   vector<int> holdwidths  = m_pConfiguration->getIntegerList("-holdwidths");
-  bool        gdg         = m_pConfiguration->getBoolParameter("-gategenerator");
+  //bool        gdg         = m_pConfiguration->getBoolParameter("-gategenerator");
+	int         gdg         = gategenvalues[m_pConfiguration->getEnumParameter("-gategenerator", gategencodes)];
   string      inputrange  = m_pConfiguration->cget("-inputrange");
   bool        termination = m_pConfiguration->getBoolParameter("-ecltermination");
   bool        ecltimeinput= m_pConfiguration->getBoolParameter("-ecltiming");
@@ -330,6 +357,10 @@ CMADC32::Initialize(CVMUSB& controller)
   int         irqThreshold= m_pConfiguration->getIntegerParameter("-irqthreshold");
   int         nimBusyRegValue = nimbusyvalues[m_pConfiguration->getEnumParameter("-nimbusy", nimbusycodes)];
 
+	// The gdg value needs to be modified or errored depending on the -gatemode value:
+	
+	gdg = computeUseGGregister(gdg, gatemode);
+	
   // module ID:
 
   list.addWrite16(base + ModuleId, initamod, id); // Module id.
@@ -358,29 +389,20 @@ CMADC32::Initialize(CVMUSB& controller)
   // If the gate generator is on, we need to program the hold delays and widths
   // as well as enable it.
 
-  if(gdg) {
-    list.addWrite16(base + HoldDelay0, initamod, (uint16_t)holddelays[0]);
-    list.addDelay(MADCDELAY);
-    list.addWrite16(base + HoldDelay1, initamod, (uint16_t)holddelays[1]);
-    list.addDelay(MADCDELAY);
 
-    list.addWrite16(base + HoldWidth0, initamod, (uint16_t)holdwidths[0]);
-    list.addDelay(MADCDELAY);
-    list.addWrite16(base + HoldWidth1, initamod, (uint16_t)holdwidths[1]);
-    list.addDelay(MADCDELAY);
-    
-		uint16_t gdgenables = 1;                 // Always turn on gdg0
-		if (gatemode == "separate") {
-			gdgenables |= 2;                      // Only turno n gdg1 on split mode.
-		}
-    list.addWrite16(base + EnableGDG, initamod, (uint16_t)gdgenables); // Enable both gdgs.
-    list.addDelay(MADCDELAY);
+	list.addWrite16(base + HoldDelay0, initamod, (uint16_t)holddelays[0]);
+	list.addDelay(MADCDELAY);
+	list.addWrite16(base + HoldDelay1, initamod, (uint16_t)holddelays[1]);
+	list.addDelay(MADCDELAY);
 
-  } else {
-    list.addWrite16(base + EnableGDG, initamod, (uint16_t)0);
-    list.addDelay(MADCDELAY);
-  }
-  
+	list.addWrite16(base + HoldWidth0, initamod, (uint16_t)holdwidths[0]);
+	list.addDelay(MADCDELAY);
+	list.addWrite16(base + HoldWidth1, initamod, (uint16_t)holdwidths[1]);
+	list.addDelay(MADCDELAY);
+	list.addWrite16(base + EnableGDG, initamod, (uint16_t)gdg); // enable the appropriate gdgs.
+	list.addDelay(MADCDELAY);
+
+
   if (pulser) {
     list.addWrite16(base+TestPulser, initamod, (uint16_t)2);
   }
@@ -686,4 +708,33 @@ CMADC32::resolutionValue(string selector)
   string msg = "Invalid value for resolution parameter: ";
   msg       +=  selector;
   throw msg;
+}
+/**
+ * computeUseGGregister
+ *    Given the value of the gdg register selected by the user and the gate mode:
+ *    -  Error if the gate mode is not compatible with the request.
+ *    -  If GDG_ENABLE_BOTH is selected but gate mode is common, we need to instead
+ *       set GDG_ENABLE1.
+ *
+ *  @param gdgEnables - enables selected by the user
+ *  @param gatemode   - -gatemode value
+ *  @return int       - Possibly modified gdgEnables value.
+ *  @throw std::string - if gdgEnables == GDG_ENABLE2 but -gatemode is "combined"
+ */
+int
+CMADC32::computeUseGGregister(int gdgEnables, std::string gatemode)
+{
+	// Check and throw if configuration is illegal:
+	
+	if ((gdgEnables == GDG_ENABLE2)  && (gatemode == "common")) {
+		throw std::string("-gategenerator gdg2 is only legal when  -gatemode is 'separate'");
+	}
+	// If gate mode is commona dn  gdgEnables are GDG_ENABLE_BOTH, silently map
+	// this to GDG_ENABLE1:
+	
+	if ((gdgEnables == GDG_ENABLE_BOTH) && (gatemode == "common")) {
+		gdgEnables = GDG_ENABLE1;
+	}
+	
+	return gdgEnables;
 }

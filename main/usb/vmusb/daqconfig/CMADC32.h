@@ -67,7 +67,7 @@ class CVMUSBReadoutList;
                                             independent or common.
    -holddelays          int[2]              Delay between trigger and gate for each bank.
    -holdwidths          int[2]              Lengths of generated gates.
-   -gategenerator       bool                Enable gate generator (hold stuff)
+   -gategenerator       on, off, gdg1, gdg2 Enable gate generator (hold stuff)
    -inputrange          enum (4v,8v,10v)    ADC input range.
    -ecltermination      bool                Enable termination of the ECL inputs.
    -ecltming            bool                Enables ECL timestamp inputs
@@ -117,6 +117,7 @@ public:
   // Utilities:
 
   int resolutionValue(std::string selector); // Resolution string to register value.
+  int computeUseGGregister(int gdgEnables, std::string gatemode);
 };
 
 
