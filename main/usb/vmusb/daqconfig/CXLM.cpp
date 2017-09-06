@@ -435,16 +435,20 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
 
   if (nRemainingBytes == 0) return;	// Stupid edge case but we'll handle it correctly.
 
+#ifdef DUMPDEBUG  
+
   std::ofstream dump("fwloader.txt");
   dump << hex << setfill('0');
-
+#endif  
   uint32_t* p  = image;
   while (nRemainingBytes > blockSize*sizeof(uint32_t)) {
     CVMUSBReadoutList  loadList;
     for (int i =0; i < blockSize; i++) {
+#ifdef DUMPDEBUG      
       dump << "\n" << setw(8) << destAddr 
            << " " << setw(2)  << static_cast<int>(sramaAmod)
            << " " << setw(8) << *p;
+#endif      
       loadList.addWrite32(destAddr, sramaAmod,  *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
       destAddr += sizeof(uint32_t);
@@ -466,9 +470,11 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
   if (nRemainingBytes > 0) {
     CVMUSBReadoutList loadList;
     while (nRemainingBytes > 0) {
+#ifdef DUMPDEBUG     
       dump << "\n" << setw(8) << destAddr 
            << " " << setw(2)  << static_cast<int>(sramaAmod)
            << " " << setw(8) << *p;
+#endif      
       loadList.addWrite32(destAddr, sramaAmod, *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
       destAddr += sizeof(uint32_t);
@@ -484,7 +490,9 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
       throw msg;
     }
   }
+#ifdef DUMPDEBUG  
   dump << endl;
+#endif  
 }
 
 void CFirmwareLoader::loadSRAM1(uint32_t destAddr, uint32_t* image, uint32_t nBytes)
@@ -493,12 +501,15 @@ void CFirmwareLoader::loadSRAM1(uint32_t destAddr, uint32_t* image, uint32_t nBy
 
   if (nBytes == 0) return;	// Stupid edge case but we'll handle it correctly.
 
+#ifdef DUMPDEBUG
   std::ofstream dump("fwloader.txt");
   dump << hex << setfill('0');
-
+#endif
   CVMUSBReadoutList loadList;
   loadList.addBlockWrite32(destAddr, blockTransferAmod, image, nBytes/sizeof(uint32_t));
+#ifdef DUMPDEZBUG
   loadList.dump(dump);
+#endif 
   std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
   if (retData.size() == 0) {
     string error = strerror(errno);

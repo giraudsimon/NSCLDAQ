@@ -1230,3 +1230,4 @@ Work on 11.0-rc11 begins
 	values works.
 	* In MADC32 VMUSBReadout driver - if split gate mode is selecdted
 	and gate generators are in use, enable both ggs.
+	* Remove XLM firmware debug output.
