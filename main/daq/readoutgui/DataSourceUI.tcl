@@ -473,7 +473,9 @@ proc DataSourceUI::getParameters {provider parameters} {
         #  The provider has a prompter of its own!
         
         package require $providerPrompter
-        return [${provider}::promptParameters]
+        set params [${provider}::promptParameters]
+        # puts "Dialog gave me: $params"
+        return $params
     } else {
         #  Use the generic ugly prompter.
         #

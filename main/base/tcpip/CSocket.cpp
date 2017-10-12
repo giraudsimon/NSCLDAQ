@@ -134,7 +134,11 @@ CSocket::CSocket ()
 CSocket::~CSocket ( )  //Destructor - Delete dynamic objects
 {
   if(m_State == Connected) {
-    Shutdown();
+    try {
+      Shutdown();
+    }
+    catch (...) {		//  In case the state lies.
+    }
   }
   if(m_Fd > 0) {
     close(m_Fd);
@@ -522,8 +526,10 @@ CSocket::Read(void* pBuffer, size_t nBytes)
     throw CTCPConnectionLost(this, "CSocket::Read: from read(2)");
   }
   // Check for error:
+
   // TODO:  Not all errors are fatal (EWOULDBLOCK, EAGAIN, EINTR)
   // TODO:  Must close/reopen too (see above)
+
   if(nB < 0) {
     m_State = Disconnected;
     throw CErrnoException("CSocket::Read failed read(2)");
@@ -567,6 +573,7 @@ CSocket::Write(const void* pBuffer, size_t nBytes)
 {
   // Require that the socket is connected:
 
+
   if(m_State != Connected) {
     vector<CSocket::State> allowedStates;
     allowedStates.push_back(Connected);
@@ -575,6 +582,7 @@ CSocket::Write(const void* pBuffer, size_t nBytes)
   }
   // Write the data mapping the exceptions as appropriate.
   
+
   try {
     io::writeData(m_Fd, pBuffer, nBytes);
     return nBytes;

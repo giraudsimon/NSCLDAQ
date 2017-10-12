@@ -28,6 +28,7 @@ exec tclsh "$0" ${1+"$@"}
 package provide evbui 1.0
 package require Tk
 package require snit
+package require nsclspinbox
 
 namespace eval ::EVBC {
     
@@ -158,7 +159,7 @@ snit::widgetadaptor ::EVBC::buildparams {
         ttk::checkbutton $win.build -text Build \
             -variable [myvar options(-build)] -onvalue 1 -offvalue 0  \
             -command [mymethod _onCheckChanged]
-        ttk::spinbox $win.dt -text {coincidence interval} \
+        nscl::spinbox $win.dt -text {coincidence interval} \
             -command [mymethod _spinChanged ] \
             -validatecommand [mymethod _validateSpin %P] -validate all          \
             -from 1 -to 100000 -width 5 -state disabled
