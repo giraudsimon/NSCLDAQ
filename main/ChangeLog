@@ -1234,3 +1234,5 @@ Work on 11.0-rc11 begins
 11.2-007
 	* Fix Bug #7179 - Glom dt spinbox was not sensitive to changes
 	from the keyboard - only up/down arrows.
+        * Reorder initialization in vmusb readout - first prime everything
+	  then initialize.
