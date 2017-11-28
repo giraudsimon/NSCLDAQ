@@ -287,7 +287,7 @@ CV812::Update(CVMUSB& vme)
 
   int status = vme.executeList(list, &dummy, sizeof(dummy), &dummysize);
 
-  if (status != 0) {
+  if (status < 0) {
     return string("ERROR - Could not execute update list in VM-USB");
   }
   else {

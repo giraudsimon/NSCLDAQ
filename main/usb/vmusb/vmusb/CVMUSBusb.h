@@ -120,7 +120,7 @@ public:
     // Other administrative functions:
 
     void setDefaultTimeout(int ms); // Can alter internally used timeouts.
-
+    int   getDefaultTimeout() const {return m_timeout;}
 private:
     void openVMUsb();
 

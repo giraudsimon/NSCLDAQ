@@ -18,6 +18,7 @@
 #include "CVMUSBModule.h"
 #include "CControlModule.h"
 #include "CVMUSB.h"
+#include "CVMUSBusb.h"
 #include "CVMUSBReadoutList.h"	// for the AM codes.
 
 #include <TCLInterpreter.h>
@@ -120,8 +121,9 @@ CVMUSBModule::Update(CVMUSB& vme)
  *   ERROR - reason   not successful.
  */
 string
-CVMUSBModule::Set(CVMUSB& vme, string parameter, string value)
+CVMUSBModule::Set(CVMUSB& controller, string parameter, string value)
 {
+  CVMUSBusb& vme(dynamic_cast<CVMUSBusb&>(controller));
   if (parameter != "list") {
     return string ("ERROR - Invalid parameter name, must be 'list'");
   }
@@ -138,10 +140,13 @@ CVMUSBModule::Set(CVMUSB& vme, string parameter, string value)
     readdata                      = new uint8_t[maxBuffer];
     vector<uint32_t> listContents = decodeList(value);
     CVMUSBReadoutList theList(listContents);
+    int oldTimeout = vme.getDefaultTimeout();
+    vme.setDefaultTimeout(100);
     int status                    = vme.executeList(theList,
 						    readdata,
 						    maxBuffer, &bytesread);
-    if (status == 0) {
+    vme.setDefaultTimeout(oldTimeout);
+    if (status >= 0) {
       string result =  marshallOutput(readdata, bytesread);
       delete []readdata;
       return result;

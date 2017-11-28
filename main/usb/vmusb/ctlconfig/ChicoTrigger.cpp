@@ -197,7 +197,7 @@ ChicoTrigger::Set(CVMUSB& vme, string parameter, string value)
     int status = vme.executeList(l, &buffer,
 				 sizeof(buffer),
 				 &buffer);
-    if (status != 0) {
+    if (status < 0) {
       return "ERROR - VME operation failed";
     }
     return "OK";
@@ -245,7 +245,7 @@ ChicoTrigger::Get(CVMUSB& vme, string parameter)
 
   int status = vme.executeList(l, buffer, sizeof(buffer), &actuallyRead);
 
-  if (status != 0) {
+  if (status <  0) {
     return "ERROR - VME operation failed";
   }
 

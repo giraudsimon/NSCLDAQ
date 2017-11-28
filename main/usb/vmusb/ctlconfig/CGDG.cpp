@@ -274,7 +274,7 @@ CGDG::Update(CVMUSB& vme)
   uint32_t inputData[16];	// Data buffer for the list.
   size_t   readSize;
   int status = vme.executeList(ops, inputData, sizeof(inputData), &readSize);
-  if (status != 0) {
+  if (status < 0) {
     return string("ERROR - Could not execute Update List");
   }
   
