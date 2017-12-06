@@ -48,7 +48,7 @@
 #include <ctime>
 #include <chrono>
 #include <cassert>
-
+#include <numeric>
 
 using namespace std;
 

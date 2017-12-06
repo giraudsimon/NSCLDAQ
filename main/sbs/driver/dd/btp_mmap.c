@@ -562,7 +562,11 @@ struct page *bt_vmnopage(
 
     get_page(page_p);
     if (type_p != NULL) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)      
         *type_p = VM_FAULT_MINOR;
+#else
+	*type_p = 0;
+#endif
     }
 
     FEXIT(page_p);

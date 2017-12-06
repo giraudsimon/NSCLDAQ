@@ -42,7 +42,11 @@ void btk_isr(intr_arg_t arg);
 /* A type return is now required for ISRs in the 2.6 kernel */
 #if     LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,69)
 #include <linux/interrupt.h>
+#if    LINUX_VERSIOLN_CODE <= KERNEL_VERSION(4,9,0)
 irqreturn_t btk_isr(int irq, void *vunit_p, struct pt_regs *regs);
+#else
+irqreturn_t btk_isr(int irq, void* vunit_p);
+#endif
 #else
 void btk_isr(int irq, void *vunit_p, struct pt_regs *regs);
 #endif
@@ -151,9 +155,13 @@ void btk_isr(
 #else
 irqreturn_t btk_isr(
 #endif
-    int irq,
+#if LINKUX_VERSIONL_CODE < KERNEL_VERSION(4,9,0)
+		    int irq,
     void *vunit_p,
     struct pt_regs *regs)
+#else
+int irq, *vunit_p)
+#endif
 
 #elif defined (__lynxos)
 void btk_isr(

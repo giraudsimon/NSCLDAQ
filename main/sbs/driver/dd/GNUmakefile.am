@@ -3,7 +3,7 @@ BTDRIVER=$(shell (cd @srcdir@; pwd))
 
 
 all-local:
-	make -C @KERNEL_SOURCE_DIR@ SUBDIRS=$(BTDRIVER) modules BTDRIVER=$(BTDRIVER)/.. NODATEWARN=@NODATEWARN@ 
+	make -C @KERNEL_SOURCE_DIR@ SUBDIRS=$(BTDRIVER) modules BTDRIVER=$(BTDRIVER)/.. NODATEWARN=@NODATEWARN@ CFLAGS="-Wno-error=incompatible-pointer-types
 
 clean-local:
 	rm -f *.o *.ko

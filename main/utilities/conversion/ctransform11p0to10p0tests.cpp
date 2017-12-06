@@ -56,6 +56,8 @@
 #include <iterator>
 #include <algorithm>
 #include <stdexcept>
+#include <numeric>
+
 
 using namespace std;
 using namespace DAQ;
