@@ -102,7 +102,7 @@ public:
     void  writeRegister(unsigned int address, uint32_t data);
     uint32_t readRegister(unsigned int address);
 
-    int executeListCVMUSBReadoutList& list,
+    int executeList(CVMUSBReadoutList& list,
 		    void*               pReadBuffer,
 		    size_t              readBufferSize,
 		    size_t*             bytesRead);
