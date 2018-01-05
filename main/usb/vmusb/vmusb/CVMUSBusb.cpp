@@ -478,6 +478,7 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
 		    void* readPacket,  size_t readSize)
 { 
   char buf[8192];
+  size_t bytesToTransfer;
 
   //print_stack(reinterpret_cast<char*>(writePacket), 
   //    reinterpret_cast<char*>(writePacket)+writeSize, sizeof(uint16_t));
@@ -492,17 +493,24 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     } 
     
     status    = usb_bulk_read(m_handle, ENDPOINT_IN,
-                  			      buf, sizeof(buf), m_timeout);
+			      buf, sizeof(buf), m_timeout);
     if (status < 0) {
-      errno = -status;
-      return -2;
+      if ((status == EINTR) || (status == EAGAIN)) {
+	status = 0;                 // can try again.
+      } else {
+	errno = -status;
+	return -2;
+      }
     } 
 
-    long bytesRead = status;
+    bytesToTransfer =  std::min(static_cast<size_t>(status ), readSize);
+    
+    long bytesRead = bytesToTransfer;
     auto pReadCursor = reinterpret_cast<char*>(readPacket);
-
     // Copy the newly read data into the output buffer
-    pReadCursor = std::copy(buf, buf + status, pReadCursor);
+    pReadCursor = std::copy(
+        buf,
+	buf + bytesToTransfer, pReadCursor);
 
     int nAttempts = 0;
     int maxAttempts = readSize/std::min(int(sizeof(buf)),getBufferSize()*2);
@@ -522,26 +530,29 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
 
     // iteratively read until we have the data we desire
     while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
-      status = usb_bulk_read(m_handle, ENDPOINT_IN, buf, sizeof(buf), m_timeout);
+      size_t bytesLeft = readSize - bytesRead;
+      status = usb_bulk_read(m_handle, ENDPOINT_IN, buf,
+			     sizeof(buf), m_timeout);
       if (status < 0) {
           if ( status != -ETIMEDOUT) {
-//              std::cout << "failed" << std::endl;
-              // read failures are only bad if they are not timeouts
+	    if ( (status == EAGAIN) || (status == EINTR)) {
+	      status = 0;                               // can try again.
+	    } else {
               errno = -status;
               return -2;
+	    }
           } else {
-//              std::cout << "timed out" << std::endl;
-              // timeouts after the first read is just the end of data.
-              // return the number of bytes received prior to the last
-              // read operation.
               return bytesRead;
           }
       }
 
 //      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
-      pReadCursor = std::copy(buf, buf+status, pReadCursor);
+      bytesToTransfer = std::min(static_cast<size_t>(status), bytesLeft);
+      pReadCursor = std::copy(
+           buf,
+	   buf+bytesToTransfer, pReadCursor);
 
-      bytesRead += status;
+      bytesRead += bytesToTransfer;
 
       nAttempts++;
     }
