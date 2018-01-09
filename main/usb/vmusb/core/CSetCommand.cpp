@@ -87,8 +87,8 @@ CSetCommand::operator()(CTCLInterpreter& interp,
   string result;
   try {
   // Now try the command returning any string error that is thrown:
-  result = pModule->Set(m_Vme, point.c_str(), value.c_str());
-  interp.setResult( result);
+    result = pModule->Set(m_Vme, point.c_str(), value.c_str());
+
   } catch (std::string msg) {
       result = msg;
   } catch (std::exception& exc) {
@@ -96,7 +96,7 @@ CSetCommand::operator()(CTCLInterpreter& interp,
   } catch (...) {
       result = "ERROR - caught unknown exception";
   }
-
+  interp.setResult(result);
   // if we need to, put the vmusb back into acquisition mode
   if (mustRelease) {
     CControlQueues::getInstance()->ReleaseUsb();

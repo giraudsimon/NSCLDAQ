@@ -270,7 +270,7 @@ void CVMUSBusb::writeActionRegister(uint16_t data)
 
   int outSize = pOut - outPacket;
   int status = usb_bulk_write(m_handle, ENDPOINT_OUT, 
-      outPacket, outSize, m_timeout);
+      outPacket, outSize, DEFAULT_TIMEOUT);
   if (status < 0) {
     string message = "Error in usb_bulk_write, writing action register ";
     message == strerror(-status);
@@ -378,7 +378,7 @@ CVMUSBusb::loadList(uint8_t  listNumber, CVMUSBReadoutList& list, off_t listOffs
   uint16_t* outPacket = listToOutPacket(ta, list, &packetSize, listOffset);
   int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
 			      reinterpret_cast<char*>(outPacket),
-			      packetSize, m_timeout);
+			      packetSize, DEFAULT_TIMEOUT);
   if (status < 0) {
     errno = -status;
     status= -1;
@@ -486,7 +486,7 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
     CriticalSection s(*m_pMutex);
     int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
 		                        		static_cast<char*>(writePacket), writeSize, 
-                                m_timeout);
+                                DEFAULT_TIMEOUT);
     if (status < 0) {
       errno = -status;
       return -1;		// Write failed!!

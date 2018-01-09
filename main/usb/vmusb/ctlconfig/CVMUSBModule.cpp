@@ -151,7 +151,7 @@ CVMUSBModule::Set(CVMUSB& controller, string parameter, string value)
       delete []readdata;
       return result;
     }
-    string msg = "ERROR - ";
+    string msg;
     int ecode  = errno;
     if (status == -1) {
       msg += "usb_bulk_write failed: ";
@@ -165,11 +165,11 @@ CVMUSBModule::Set(CVMUSB& controller, string parameter, string value)
     throw msg;
     
   }
-  catch (string msg) {		// Deep calls throw a string error message:
-    string error  = "ERROR - ";
+  catch (string msg) {		// Return to the caller rather than re-throw.
+    string error  = "ERROR - "; // That returns the status to the ultimate caller.
     error        += msg;
-    throw error;
     delete readdata;
+    return error;
   }
 }
 /**
