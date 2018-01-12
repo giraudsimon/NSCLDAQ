@@ -1361,7 +1361,355 @@ set <replaceable>instance</replaceable> v6533 <replaceable>name ?options?</repla
     
 </refentry>
 
-  
+<refentry>
+    <refmeta>
+        <refentrytitle>VMUSB VME access</refentrytitle>
+        <manvolnum>3tcl</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>VMUSB</refname>
+        <refname>VMERemote</refname>
+        <refname>enumerateVMUSB</refname>
+        <refpurpose>Provide VME access via VMUSB</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+package require vmelocal ?1.0?
+
+set deviceInfo [enumerateVMUSB]
+set vmusb      [VMUSB name options...]
+
+package require vmeremote ?1.0?
+set vmusb      [VMUSBRemote name options...]
+
+$vmusb operation ...
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            These two packages provide access to simple VME operations via the
+            VM-USB.  In addition to the <methodname>enumerateVMUSB</methodname>
+            proc, which provides information about the VM-USB controllers attached
+            to the system, the two classes <classname>VMUSB</classname> and
+            <classname>VMUSBRemote</classname> provide two highly compatible
+            classes that allow you to perform operations both directly to a
+            VM-USB and remotely via a slow control server running in a
+            VMUSBReadout program.
+        </para>
+        <para>
+          This package therefore allows you to write slow controls GUIs that
+          can work both without a VMUSBReadout program and with one that does
+          not necessarily have a suitable slow controls driver installed.s
+        </para>
+        <para>
+          Before we continue with the discussion of the OPTIONS and METHODS
+          each class provides a bit on the <methodname>enumerateVMUSB</methodname>
+          proc.  This proc returns a list of controller information for each
+          powered up VMUSB controller attached to the local system.
+        </para>
+        <para>
+          The elements of the list are two element sublists.  The first element
+          of each list is the serial number of a VMUSB.  The second element
+          of the list is the device handle needed to instantiate
+          a <classname>VMUSB</classname> object connected directly to that
+          VMUSB.
+        </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         The classes provided by these packages have options that must be
+         set at construction time. In addition, there are 
+         options shared between the two classes that can affect runtime
+         behavior.
+      </para>
+      <para>    
+        The <classname>VMUSB</classname> class only requires a
+        <option>-device</option> option at construction time.
+        The value of this option (which once set is readonly) is the
+        device handle used to connect to the selected VM-USB device.
+        Note that if <methodname>enumerateVMUSB</methodname> is used
+        to list the VMUSB devices this will be the second element of a sublist
+        that describes one of the devices.
+      </para>
+      <para>
+        Connection with <classname>VMUSBRemote</classname> is a bit of a trickier
+        concept and can be dynamically managed.  The options needed to
+        specify the actual connection are
+      </para>
+      <variablelist>
+        <varlistentry>
+            <term><option>-host</option></term>
+            <listitem>
+                <para>
+                  The system (IP or DNS name) on which the VMUSBReadout
+                  program managing the VMUSB for us is located.  If not
+                  specified, this defaults to <literal>localhost</literal>
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term><option>-port</option></term>
+            <listitem>
+                <para>
+                  The TCP/IP port on which the VMUSBReadout's slow control
+                  server is listening for connections (specified by its own
+                  --port command line option).  This defaults to
+                  <literal>27000</literal> which is the default used by
+                  VMUSBReadout.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term><option>-module</option></term>
+            <listitem>
+                <para>
+                  The name of the module defined by the control configuration
+                  file for the VMUSBReadout program as a vmusb module.
+                  See the Module command for more information.  The definition
+                  of one of these is mandatory.s
+                </para>
+            </listitem>
+            
+        </varlistentry>
+      </variablelist>
+      <para>
+        In addition to these class specific construction/connection time
+        options both classes share the following options that are used
+        at run-time by applications once connected to a VMUSB or
+        slow controls server:
+      </para>
+      <variablelist>
+        <varlistentry>
+            <term><option>-amod</option></term>
+            <listitem>
+                <para>
+                  The value of this specifies the address modifier used
+                  to access the VME bus.  The VME bus is divided into a number
+                  of orthogonal address spaces that are specified by the number
+                  of bits of address used and the privilege mode of the
+                  program attempting access.
+                </para>
+                <para>
+                  Most modules don't enforce privilege restrictions.  The
+                  address modifiers allowed here are therefore simplified to
+                  only specify the width of the address bus.  Valid values are:
+                </para>
+                <variablelist>
+                  <varlistentry>
+                    <term><literal>a32</literal></term>
+                    <listitem>
+                        <para>
+                          The target module accepts all 32 bits of address.
+                          This address space is commonly called
+                          <firstterm>extended</firstterm> address space.
+                          User mode access is used.
+                        </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                    <term><literal>a24</literal></term>
+                    <listitem>
+                        <para>
+                          The target module only accepts 24 bits of
+                          address.  This is commonly called
+                          <firstterm>standard</firstterm> address space because
+                          initial versions of the VME bus standard did not
+                          support 32 bit addressing.
+                        </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                    <term><literal>a16</literal></term>
+                    <listitem>
+                        <para>
+                          The target module only accepts 16 bits of address.
+                          This is commonly called <firstterm>short IO</firstterm>
+                          space; because it's intended for use by very simple
+                          peripherals that don't have a need for more than
+                          256 bytes of addresssing (the standard only requires a
+                          short IO Module to actually decode the top 8 bits of the
+                          16 bit address as a module select).
+                        </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term><option>-persist</option></term>
+            <listitem>
+                <para>
+                  This option has no affect on <classname>VMUSB</classname> object,
+                  but is supplied for compatibility to allow scripts that can
+                  use either.  Used with a <classname>VMERemote</classname> object,
+                  it is a boolean that
+                  describes the strategy for managing the TCP/IP connection
+                  with the remote control server.
+                </para>
+                <para>
+                  If <option>-persist</option> is a Tcl false value (the default),
+                  each operation connects to and then disconnects from the
+                  server.  This provides maximum reliability (VMUSBReadout
+                  can be restarted between operations without the application
+                  being aware of that).  It also is very inefficiebnt.
+                </para>
+                <para>
+                  If <option>-persist</option> is a Tcl true value,
+                  the first operation connects to the server and the connection
+                  is maintained until an operation is done with the
+                  <option>-persist</option> set to false again.  This mode is
+                  efficient but not tolerant of exist in the VMUSBreadout.
+                </para>
+                <para>
+                  One approach to the use of <option>-persist</option> that
+                  can make sense is a hybrid approach.  When many operations
+                  need to be done in a short time; first set <option>-persist</option>
+                  to true, perform all but the last of those, set <option>-persist</option>
+                  to false and then perform the last operation in the sequence.
+                  This has the effect of maintaining the connection for the
+                  entire sequence of operations and then dropping it after the
+                  last operation.  This achieves a good compromise between
+                  fault tolerance and performance.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+        Both classes have the same methods and parameter signatures.  The idea
+        is that the only difference between running a direct connection to the
+        VMUSB and one handled by a VMUSBReadout is which type of object you
+        instantiate.
+      </para>
+      <variablelist>
+        <varlistentry>
+            <term>
+              <literal>
+$object readFirmwareID
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Returns the contents of the firmware ID register.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <literal>
+$object vmeRead32 address
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Reads the 32 bit at the VME address defined by
+                  <parameter>address</parameter>.  The address modifier
+                  used for the operation is determined by the value of the
+                  <option>-amod</option> option.
+                </para>
+                <para>
+                  You must know that the target module is capable of 32 bit
+                  transfers to use this method.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <literal>
+$object vmeRead16 address
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Reads the 16 bit value at the VME address defined by
+                  <parameter>address</parameter>. The address modifier used
+                  for the operation is determined by the value of the
+                  <option>-amod</option> option.
+                </para>
+                <para>
+                  You must know the module is capable of performing 16 bit
+                  transfers to successfully use this method.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+$object vmeRead8 address
+            </term>
+            <listitem>
+                <para>
+                  Reads the 8 bit value at the VME address defined by
+                  <parameter>address</parameter>.  The address modifier
+                  used for the operation is determined by the
+                  <option>-amod</option> option.  
+                </para>
+                <para>
+                  You must know the module is capable of performing 16 bit
+                  transfers to successfully use this methods.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <literal>
+$object vmeWrite32 address data
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Writes the 32 bit <parameter>data</parameter> parameter to the
+                  <parameter>address</parameter>.  The address modifier is
+                  selected by the <option>-amod</option> options.  It is
+                  your script's responsibility to know that the module
+                  can accept a 32 bit write operation at this address.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <literal>
+$object vmeWrite16 address data
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Writes the 16 bit <parameter>data</parameter> parameter to the
+                  <parameter>address</parameter>.  The address modifier is
+                  selected by the <option>-amod</option> options.  It is
+                  your script's responsibility to know that the module
+                  can accept a 16 bit write operation at this address.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <literal>
+$object vmeWrite8 address data
+              </literal>
+            </term>
+            <listitem>
+                <para>
+                  Writes the 8 bit <parameter>data</parameter> parameter to the
+                  <parameter>address</parameter>.  The address modifier is
+                  selected by the <option>-amod</option> options.  It is
+                  your script's responsibility to know that the module
+                  can accept a 8 bit write operation at this address.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+        
+      </para>
+    </refsect1>
+</refentry>  
   
 <!-- /manpage -->
 <!-- manpage 1vmusb -->
