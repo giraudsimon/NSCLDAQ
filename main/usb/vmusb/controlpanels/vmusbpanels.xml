@@ -1370,7 +1370,7 @@ set <replaceable>instance</replaceable> v6533 <replaceable>name ?options?</repla
         <refname>VMUSB</refname>
         <refname>VMERemote</refname>
         <refname>enumerateVMUSB</refname>
-        <refpurpose>Provide VME access via VMUSB</refpurpose>
+        <refpurpose>Provide Tcl VME access via VMUSB or control server</refpurpose>
     </refnamediv>
     <refsynopsisdiv>
         <synopsis>

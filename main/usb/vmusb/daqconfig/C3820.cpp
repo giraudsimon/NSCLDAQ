@@ -198,7 +198,7 @@ C3820::Initialize(CVMUSB& controller)
     
   initList.addWrite32(base+AcqMode, CVMUSBReadoutList::a32UserData,
 		      acq32Bit    | lne   | acqArmWithFP | acqSRAMMemory |
-		       inpmode | acqOutModeled | acqModeLatch | clearing);
+		       inpmode | acqOutMode50Mhz | acqModeLatch | clearing);
   initList.addWrite32(base+KeyArm, CVMUSBReadoutList::a32UserData, (uint32_t)0);
   initList.addWrite32(base+KeyEnable, CVMUSBReadoutList::a32UserData, (uint32_t)0);
 
