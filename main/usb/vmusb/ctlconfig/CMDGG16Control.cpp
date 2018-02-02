@@ -170,7 +170,7 @@ namespace WienerMDGG16
       // execute the list
       size_t nRead=0;
       uint32_t buf[8];
-      int status = vme.executeList(*pList, buf, sizeof(buf), &nRead);
+      int status = vme.executeList(*pList, buf, sizeof(uint16_t), &nRead);
 
       if (status < 0) {
         std::stringstream errmsg;
@@ -212,7 +212,7 @@ namespace WienerMDGG16
       // Execute the list.
       size_t nRead=0;
       uint32_t buf[8];
-      int status = vme.executeList(*pList, buf, sizeof(buf), &nRead);
+      int status = vme.executeList(*pList, buf, sizeof(uint16_t), &nRead);
       if (status<0) {
         std::string retval("ERROR - executeList returned status = ");
         retval += std::to_string(status);
@@ -254,8 +254,8 @@ namespace WienerMDGG16
 
     // execute list
     size_t nRead=0;
-    uint32_t buf[8];
-    int status = vme.executeList(*pList, buf, sizeof(buf), &nRead);
+    uint32_t buf;
+    int status = vme.executeList(*pList, &buf, sizeof(buf), &nRead);
     if (status<0) {
       std::string retval("ERROR - executeList returned status = ");
       retval += std::to_string(status);
@@ -268,12 +268,8 @@ namespace WienerMDGG16
     if (nLongs>0) {
       // reset the value
       result = "";
-      for (size_t i=0; i<nLongs; ++i) {
-        result += std::to_string(buf[i]);
-        if (i<(nLongs-1)) {
-          result += " ";
-        } 
-      }
+      result += std::to_string(buf);
+      
     }
     return result;
 
