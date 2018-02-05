@@ -2020,7 +2020,169 @@ sis3820 cget <replaceable>name</replaceable>
 		    this module will be put in the event stack.
                 </para>
             </listitem>
-	 </varlistentry>
+		</varlistentry>
+			<varlistentry>
+                <term><option>-inputmode</option> <parameter>mode</parameter></term>
+                <listitem>
+                    <para>
+					Sets the input mode for the module.  The input mode
+					determines the meaning of the NIM inputs on the
+					module.  Note that the default value for this depends
+					on the value of <option>-timestamp</option>.
+					Valid values for <parameter>mode</parameter> are:
+                    </para>
+				<variablelist>
+					<varlistentry>
+						<term><literal>default</literal></term>
+						<listitem>
+						    <para>
+							 Choose the  appropriate default value for the
+							 the input mode depending on the value of
+							 <option>-timestamp</option>.  See the discussion
+							 of the default value below.
+						    </para>
+						</listitem>
+					</varlistentry>
+					<varlistentry>
+						<term><literal>None</literal></term>
+						<listitem>
+						    <para>
+							 Selects input mode 0.  None of the inputs have
+							 any meaning.
+						    </para>
+						</listitem>
+					</varlistentry>
+					<varlistentry>
+						<term><literal>LNEInhLNE</literal></term>
+						<listitem>
+						    <para>
+							Selects input mode 1.  In this input mode,
+							input 1 latches the scaler value and
+							input 4 inhibits that signal.  The other
+							inputs are connected to external user bit 1
+							and 2 and are irrelevant because this driver
+							does not provide access to those bits..
+						    </para>
+						</listitem>
+					 </varlistentry>
+					 <varlistentry>
+						<term><literal>LNEInhboth</literal></term>
+						<listitem>
+						    <para>
+							Selects input mode 2.  This mode is identical
+							to <literal>LNEInhLNE</literal> except that
+							input 3 additionaly inhibits all scaler
+							channels from counting.
+						    </para>
+						</listitem>
+					  </varlistentry>
+						<varlistentry>
+							<term><literal>LNEInhCount</literal></term>
+							<listitem>
+							    <para>
+								Selects input mode 3. In this mode,
+								input 1 is the latch input and input
+								4 inhibits all scaler channels from
+								counting
+							    </para>
+							</listitem>
+						 </varlistentry>
+						<varlistentry>
+                            <term><literal>Inh4s</literal></term>
+                            <listitem>
+                                <para>
+							The inputs inhibit 4 banks of 8 scalers
+							(Mode 4).  As there is no input dedicated
+							to LNE (latch) using this mode in timestamp
+							mode will result in a warning.  Input 1
+							inhibits channels 0-7, Input 2 8-15 and so on.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+					<varlistentry>
+                        <term><literal>LNEHiScal</literal></term>
+                        <listitem>
+                            <para>
+						Mode 5.  Input 1 is a latch input, input 1
+						starts the module Hiscal count.  This mode is
+						not supported by NSCLDAQ at present.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+					<varlistentry>
+                        <term><literal>LNEInhClr</literal></term>
+                        <listitem>
+                            <para>
+						Mode 6.  Input 1 is a latch pulse, Input
+						2 inhibits counting in all channels
+						Input 3 clears all scalers.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+				</variablelist>
+				<para>
+					The default value for this parameter depends on the
+					value of <option>-timestamp</option> and is computed
+					at the start of each run, if necessary.
+					In timestamp mode the default value is
+					<literal>LNEInhLNE</literal>.  If not timestamp mode,
+					the default is <literla>Inh4s</literla>.
+				</para>
+                </listitem>
+            </varlistentry>
+			<varlistentry>
+                <term><option>-outputmode</option> <parameter>mode</parameter></term>
+                <listitem>
+                    <para>
+					Configures the module's oputput mode; The meaning
+					of the outputs.  If not configured
+					<literal>clock50Mhz</literal> (mode 1) is used
+					by default.  Legal values for the
+					<parameter>mode</parameter> are:
+                    </para>
+				<variablelist>
+					<varlistentry>
+                        <term><literal>clock50Mhz</literal></term>
+                        <listitem>
+                            <para>
+						Mode 1 (default), Output 5 echoes the LNE.
+						Outupt 7 is a 50MHz clock. 
+                            </para>
+                        </listitem>
+                    </varlistentry>
+				<varlistentry>
+                    <term><literal>LNEAndLed</literal></term>
+                    <listitem>
+                        <para>
+					Mode 0 - Output 5 echoes the LNE and
+					output 8 is the user output (not used by this
+					software).
+                        </para>
+                    </listitem>
+                </varlistentry>
+			<varlistentry>
+                <term><literal>clock2x10Mhz</literal></term>
+                <listitem>
+                    <para>
+					Mode 2 - Output 5 is the LNE.  Output 6,7 are both
+					10MHz clocks.   Output 8 is the user LED (not
+					used by this software).
+                    </para>
+                </listitem>
+            </varlistentry>
+			<varlistentry>
+                <term><literal>clock1x10Mhz</literal></term>
+                <listitem>
+                    <para>
+					Mode3 - Output 5 is the LNE, output 6 a
+					10MHz clock.  Output 7,8 are not usable by this
+					software.
+                    </para>
+                </listitem>
+            </varlistentry>
+				</variablelist>
+                </listitem>
+            </varlistentry>
            </variablelist>
          </refsect1>
          <refsect1>
