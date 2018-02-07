@@ -130,13 +130,13 @@ static std::set<uint32_t> goodTsInputModes = {
 // clock out on an output.
 
 static const char* outputModeStrings[] = {
-  "clock50Mhz", "modeAndLed", "clock2x10Mhz", "clock1x10Mhz",
+  "clock50Mhz", "LNEAndLed", "clock2x10Mhz", "clock1x10Mhz",
   nullptr
 };
 
 static std::map<std::string, uint32_t> outputModeValues = {
   {"clock50Mhz", acqOutMode50Mhz},
-  {"modeAndLed", acqOutModeled},
+  {"LNEAndLed", acqOutModeled},
   {"clock2x10Mhz", acqOutMode2x10Mhz},
   {"clock1x10Mhz", acqoutMode1x10Mhz}
 };

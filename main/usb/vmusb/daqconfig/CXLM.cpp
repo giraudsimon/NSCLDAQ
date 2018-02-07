@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
+#include <sstream>
 
 using namespace std;
 
@@ -176,7 +177,8 @@ void
 CXLM::loadFirmware(CVMUSB& controller, string path) throw(std::string)
 {
   uint32_t base = m_pConfiguration->getUnsignedParameter("-base");
-
+  std::cout << "XLM::loadFirmware " << path << " for module at "
+    << std::hex << base << std::dec <<std::endl;
   CFirmwareLoader loader(controller, base);
   loader(path);
 }
@@ -623,13 +625,21 @@ void CFirmwareLoader::acquireBusses()
 
   // I should have bus A:
   uint32_t busAOwner =0;
-  m_ctlr.vmeRead32(m_baseAddr + BUSAOwner, registerAmod, &busAOwner);
-  if (busAOwner != 1)  {
-    string reason = strerror(errno);
-    string msg = "CXLM::CFirmwareLoader::initialize - failed to acquire bus A ";
-    msg       += reason;
+  int status = m_ctlr.vmeRead32(m_baseAddr + BUSAOwner, registerAmod, &busAOwner);
+  
+  if ((busAOwner & 3) != 1)  {
+    std::stringstream msg;
+    msg << "CXLM::CFirmwareLoader::initialize - failed to acquire bus A ";
+    msg << std::hex << " Expected 1 got " << busAOwner << std::endl;
+    msg << " Read from " << m_baseAddr + BUSAOwner << std::dec << std::endl;
+    msg << " Claim bus gave " << (int)retData[0] << " " << (int)retData[1];
+    if (status < 0) {
+      string reason = strerror(errno);
+      msg << " VME Read 32 failed: " << reason;
+    }
+    
 
-    throw msg;
+    throw msg.str();
   }
 
 }

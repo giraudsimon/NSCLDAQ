@@ -44,6 +44,9 @@ int CCBD8210CrateController::simpleWrite16(int n, int a, int f, uint16_t data, u
             std::cerr << "CCBD8210CrateController::simpleWrite16(int,int,int,uint16_t,uint16_t&)";
             std::cerr << " failed vmeWrite16 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << " d = " << data << std::endl;
         }
         bool q = qTest();
         bool x = xTest();
@@ -75,6 +78,9 @@ int CCBD8210CrateController::simpleWrite24(int n, int a, int f, uint32_t data, u
             std::cerr << "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)";
             std::cerr << " failed vmeWrite32 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << " d = " << data << std::endl;
         }
 
         status = m_ctlr->vmeWrite16(addr|word16bit, CVMUSBReadoutList::a24UserData, lodata);
@@ -82,6 +88,10 @@ int CCBD8210CrateController::simpleWrite24(int n, int a, int f, uint32_t data, u
             std::cerr << "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)";
             std::cerr << " failed vmeWrite32 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << " d = " << data << std::endl;
+
         }
 
         bool q = qTest();
@@ -115,6 +125,9 @@ int CCBD8210CrateController::simpleRead16( int n, int a, int f, uint16_t& data, 
             std::cerr << "CCBD8210CrateController::simpleRead16(int,int,int,uint16_t&,uint16_t&)";
             std::cerr << " failed vmeRead16 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << std::endl;
         }
 
         bool q = qTest();
@@ -141,6 +154,9 @@ int CCBD8210CrateController::simpleRead24( int n, int a, int f, uint32_t& data, 
             std::cerr << "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)";
             std::cerr << " failed vmeRead32 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << std::endl;
         }
 
         status = m_ctlr->vmeRead16(addr|word16bit, CVMUSBReadoutList::a24UserData,&lodata);
@@ -148,6 +164,9 @@ int CCBD8210CrateController::simpleRead24( int n, int a, int f, uint32_t& data, 
             std::cerr << "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)";
             std::cerr << " failed vmeRead32 with error = " << status;
             std::cerr << std::endl;
+            std::cerr << "b = " << m_branch << " c = " << m_crate
+                      << " n = " << n << " a = " << a << " f = " << f
+                      << std::endl;
         }
 
         data  = (  lodata & 0xffff );

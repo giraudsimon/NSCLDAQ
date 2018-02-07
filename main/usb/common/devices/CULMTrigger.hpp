@@ -295,7 +295,7 @@ CULMTrigger<Controller,RdoList>::loadFirmware2(Controller& controller,
 
     // load body of firmware into rdolist
     RdoList* body = controller.createReadoutList();
-    uint32_t dummy;
+    uint16_t dummy;
     size_t nbytes;
     int status = -100;
     
