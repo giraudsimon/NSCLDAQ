@@ -148,18 +148,9 @@ CXLMFERA::~CXLMFERA()
 void
 CXLMFERA::onAttach(CReadoutModule& configuration)
 {
-    // superclass adds the -base and -firmware flags
-    CXLM::onAttach(configuration);
+  
+  CXLM::onAttach(configuration);      // superclass adds the -base and -firmware flags
 
-  // The -id parameter is the value of the marker inserted in the event.
-  // This sets bounds on the limits of the configuration id read at FPGA address
-  uint32_t max = 2147483647; // 2^31 - 1f
-  /*
-  m_pConfiguration->addIntegerParameter("-configurationID",
-                                        0,
-                                        max,
-                                        0x54000041);
-  */
   configuration.addParameter("-configurationID",
 			     XXUSB::CConfigurableObject::isInteger,
 			     NULL, "0");
@@ -199,7 +190,7 @@ CXLMFERA::Initialize(CVMUSB& controller)
         int status = 0;
         if (forceFirmwareLoad || ! isConfigured(controller)) {
           
-          std::cout << "    Loading firmware" << std::flush;
+          std::cout << "Unconfigured and firmware load forced. Loading firmware" << std::flush;
           XLM::CFirmwareLoader loader(controller, base);
           loader(firmwareFname);
           controller.vmeWrite32(base + XLM::Interrupt, registerAmod, XLM::InterruptResetDSP);
@@ -240,155 +231,6 @@ CXLMFERA::Initialize(CVMUSB& controller)
   /* END MODIFICATIONS */
 
 }
-
-void CXLMFERA::myloadFirmware(CVMUSB& controller, std::string fname)
-{
-    using namespace std;
-
-    const size_t AXLM72V_CES_CONFIG_LENGTH = 220000;
-	FILE *file;
-	int i, j;
-	uint32_t word, llow, lhigh, check;
-	unsigned char blow, bhigh;
-	unsigned char bytes[AXLM72V_CES_CONFIG_LENGTH];
-	file = fopen(fname.c_str(), "r");
-	if (!file) {
-		cout << "Failed to open configuration file " << fname << endl;
-		exit(1);
-	}
-	int length = fread(bytes, 1, AXLM72V_CES_CONFIG_LENGTH, file);
-	if (!feof(file)) {
-		cout << "Failed to reach EOF of configuration file " << fname << endl;
-		cout << "Length read is: " << length << endl;
-		exit(1);
-	}
-	fclose(file);
-	// Detect first 0xFF in file
-	for (i=0; i< length; i++) {
-		if (bytes[i] == 0xFF) break;
-	}
-
-    // Busses to request 
-    const uint32_t busses = REQ_A | REQ_X;
-
-    // Acquire the bus:
-    // 1. inhibit FPGA and DSP
-    // 2. Request busses A and X
-    CXLMBusController lock(controller,*this,busses,1,0);
-
-    CVMUSBReadoutList list;
-    list.clear();
-
-	// Translate and write configuration to SRAMA
-    
-    std::cout << std::endl;
-
-    unsigned writes = 0;
-	for (j=i; j<length; j++) {
-        blow = bytes[j]&0xF;
-        bhigh = (bytes[j]&0xF0)>>4;
-        llow = ((blow&0x7)<<2) + ((blow&0x8)<<7);
-        lhigh = ((bhigh&0x7)<<2) + ((bhigh&0x8)<<7);
-        word = llow + (lhigh<<16);
-    
-        list.addWrite32(sramA()+(j)*sizeof(uint32_t),
-            CVMUSBReadoutList::a32UserData,
-            word);       
-        list.addRead32(sramA()+(j)*sizeof(uint32_t),
-            CVMUSBReadoutList::a32UserData);
-        if (((j-i) % BLOCK_SIZE == 0) && writes) {
-          std::cout << j << "(" << writes << ")\r";
-          std::cout.flush();
-          uint32_t data[BLOCK_SIZE];             // Don't buffer more data than we read.
-          size_t nbytes;
-          int status = controller.executeList(list,
-              data,
-              writes*sizeof(uint32_t), &nbytes);
-          if (status < 0) {
-            std::stringstream msg;
-            msg << "\n000 CXLM::loadSRAMA - list execution failed to load the SRAM: "
-                << "loc " << i << " through " << j << " out of " << length
-                << "status = " << status << " " << strerror(errno) << std::endl;
-            
-            throw msg.str();
-          }
-          usleep(1000);
-          writes = 0;
-          list.clear();
-          i = j+1;
-        } else {
-            writes++;
-        }
-    }
-
-    // set boot src
-    uint32_t bootSrcAddr = Interface() + BootSrc; 
-    list.addWrite32(bootSrcAddr, registerAmod, BootSRAMA);
-    list.addRead32(bootSrcAddr,CVMUSBReadoutList::a32UserData);       
-
-    uint32_t data[BLOCK_SIZE+128];
-    size_t nbytes;
-    // The number of longs to expect back are writes +1
-    int status = controller.executeList(list,
-            data,
-            (writes+1)*sizeof(uint32_t), &nbytes);
-    if (status < 0) {
-        std::stringstream msg;
-        msg << "\n111 CXLM::loadSRAMA - list execution failed to load the SRAM: "
-            << "loc " << i << " through " << j << " out of " << length
-            << "status = " << status << " " << strerror(errno) << std::endl;
-        
-        throw msg.str();
-    }
-    std::cout << "SRAM Loaded\n";
-    usleep(1000);
-    list.clear();
-
-    bootFPGA(controller);
-
-    // bus releases automagically.
-}
-
-
-void CXLMFERA::bootFPGA(CVMUSB& controller)
-{
-    uint32_t base = m_pConfiguration->getUnsignedParameter("-base");
-    
-    // Acquire busses A and X
-    CVMUSBReadoutList list;
-
-    // reset fpga
-    uint32_t resetAddr = Interface() + Interrupt; 
-    list.addWrite32(resetAddr, registerAmod, uint32_t(1));
-    
-
-    // execute list
-    uint16_t data = 0;
-    size_t nbytes = 0;
-    int status = controller.executeList(list,(void*)&data,sizeof(data),&nbytes);
-
-
-    if (status < 0) {
-
-        throw std::string("CXLMFERA::bootFPGA(CVMUSB&) failed to put FPGA in reset.");
-    }
-    usleep(1000);                    // Hold reset for macroscopic time.
-    list.clear();
-    list.addWrite32(resetAddr, registerAmod, uint32_t(0));
-    status = controller.executeList(list,(void*)&data,sizeof(data),&nbytes);
-
-
-    if (status < 0) {
-
-        throw std::string("CXLMFERA::bootFPGA(CVMUSB&) failed to Boot FPGA.");
-    }
-
-    // Sleep for a while before any more io operations
-    // This is time for the fpga to boot
-    
-    ::usleep(1500000); 
-}
-
 void CXLMFERA::initializeFPGA(CVMUSB& controller)
 {
     // Begin XFERA::Initialize
@@ -469,7 +311,6 @@ void CXLMFERA::addClear(CVMUSBReadoutList& list)
 bool CXLMFERA::isConfigured(CVMUSB& controller)
 {
 
-    std::cout << "--- Validating FPGA configuration ..." << std::flush;
 
     uint32_t configID 
         = m_pConfiguration->getUnsignedParameter("-configurationID");
@@ -497,9 +338,11 @@ bool CXLMFERA::isConfigured(CVMUSB& controller)
         throw std::string("CXLMFERA::isConfigured - didn't get data back from the read");
     }
 
-    std::cout << std::hex
-        << "Expected a config id of " << configID << " got " << data
-        << std::dec << std::endl;
+    if (data != configID) {
+        std::cout << std::hex
+            << "Expected a config id of " << configID << " got " << data
+            << std::dec << std::endl;
+    }
     return (data==configID);
 
 }

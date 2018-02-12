@@ -2126,7 +2126,7 @@ sis3820 cget <replaceable>name</replaceable>
 					at the start of each run, if necessary.
 					In timestamp mode the default value is
 					<literal>LNEInhLNE</literal>.  If not timestamp mode,
-					the default is <literla>Inh4s</literla>.
+					the default is <literal>Inh4s</literal>.
 				</para>
                 </listitem>
             </varlistentry>

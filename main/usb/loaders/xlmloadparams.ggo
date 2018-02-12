@@ -1,0 +1,20 @@
+package "xlmload"
+version "1.0"
+purpose "Load firmware into XLM modules."
+
+args "-F xlmloadparams  -u"
+
+#  Mutually exclusive:
+
+defgroup "select" groupdesc="Select how to define which XLM to load" required
+groupoption "base" b "Base address of XLM to load" group="select" int
+groupoption "slot" s "Slot number of XLM to load" group="select" int
+
+defmode "local" modedesc="Local connection to VMUSB"
+defmode "remote" modedesc="Load via VMUSBReadout slow controls server"
+
+modeoption "serial" n "VMUSB Serial number" string mode="local" optional
+
+modeoption "host" h "VMUSBReadout host"  string mode="remote" required
+modeoption "port" p "VMUSBReadout control server port" int    mode="remote" optional default="27000"
+modeoption "module" m "VMUSBReadout VMUSB module name " string mode="remote" required
