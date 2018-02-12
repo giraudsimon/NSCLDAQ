@@ -28,6 +28,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <fragment.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 static const std::string EventBuilderService("ORDERER"); // Advertised service name.
 
@@ -119,6 +121,17 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
   void* pConnectMessage(0);
   try {
     m_pConnection->Connect(m_host, std::string(portNumber));
+    
+    // Now ensure the socket does not get propagated to anything we exec
+    // (or fork/exec for that matter).  This ensures that if we
+    // access a remote ring, the socket won't get duplicated into a
+    // stdintoring causing no harm but consternation.
+    
+    int fd = m_pConnection->getSocketFd();
+    int fdFlags;
+    fdFlags = fcntl(fd, F_GETFD, NULL);
+    fdFlags |= FD_CLOEXEC;                    // Close on exec.
+    fcntl(fd, F_SETFD, fdFlags);
 
     // figure out the length of the connection body and allocated it:
 
