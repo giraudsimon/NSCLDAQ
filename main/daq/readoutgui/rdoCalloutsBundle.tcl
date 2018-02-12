@@ -58,6 +58,7 @@ namespace eval ::rdoCallouts {
     variable stateMachine ""
     namespace export attach enter leave
     namespace ensemble create
+    variable  runNumber;               # Memorized at run start.
 }
 #-------------------------------------------------------------------------------
 #
@@ -107,14 +108,14 @@ proc ::rdoCallouts::enter {from to} {
     
     if {($from in [list Active Paused]) && ($to eq "Halted")} {
         if {[info procs ::OnEnd] ne ""} {
-            uplevel #0 ::OnEnd [::ReadoutGUIPanel::getRun]
+            uplevel #0 ::OnEnd $rdoCallouts::runNumber
         }
     }
     # ->Paused : OnPaused
     
     if {$to eq "Paused"} {
         if {[info procs ::OnPause] ne ""} {
-            uplevel #0 ::OnPause [::ReadoutGUIPanel::getRun]
+            uplevel #0 ::OnPause $rdoCallouts::runNumber
         }
     }
 }
@@ -133,13 +134,14 @@ proc ::rdoCallouts::leave {from to} {
     
     if {($from eq "Halted") &&($to eq "Active")} {
         if {[info procs ::OnBegin] ne ""} {
-            uplevel #0 ::OnBegin [::ReadoutGUIPanel::getRun]
+            set rdoCallouts::runNumber [::ReadoutGUIPanel::getRun]
+            uplevel #0 ::OnBegin $rdoCallouts::runNumber
         }
     }
     # Paused -> Active : OnResume
     if {($from eq "Paused") && ($to eq "Active")} {
         if {[info procs ::OnResume] ne ""} {
-            uplevel #0 ::OnResume [::ReadoutGUIPanel::getRun]
+            uplevel #0 ::OnResume $rdoCallouts::runNumber
         }
     }
 }
