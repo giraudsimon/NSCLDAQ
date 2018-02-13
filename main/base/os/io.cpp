@@ -26,7 +26,10 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <set>
-
+#include <sstream>
+#include <sys/types.h>
+#include <dirent.h>
+#include <stdlib.h>
 
 
 static std::set<int>                 okErrors;	// Acceptable errors in I/O operations.
@@ -157,5 +160,51 @@ void writeData (int fd, const void* pData , size_t size)
 }
 
 
+/**
+ * closeUnusedFiles
+ *     This function is intended for use by forked/execed processes..
+ *     It is linux specific.  It uses /proc/pid/fd to
+ *     close all file descriptors that are not in the set provided.
+ *     Normally a forked/exece'd program will ask that all file descriptors
+ *     other than STDIN_FILENO, STDOUT_FILENO and STDERR_FILENO be
+ *     closed, but this method is policy agnostic.
+ *
+ *  @paraqm keepOpen - Set of file descriptors to keep open.
+ */
+void
+closeUnusedFiles(std::set<int> keepOpen)
+{
+  // construct the directory name /proc/mypid/fd.
+
+  std::stringstream dirnameStr;
+  dirnameStr << "/proc/" << getpid() << "/fd";
+  std::string dirname = dirnameStr.str();
+  
+  // Construct the vector of fds to close.  Note that we use
+  // readdir_r in the unlikely case that we're running in a threaded program
+  // that also reads directories:
+  
+  struct dirent nextEntry, *status;
+  DIR* pDir = opendir(dirname.c_str());
+  if (!pDir) throw errno;                 // Open failed.
+  
+  // We need to add the fd open on the dir to the
+  // keepOpen set otherwise we may yank the directory stream out from underneath
+  // us.
+  
+  keepOpen.insert(dirfd(pDir));
+  do {
+    int stat = readdir_r(pDir, &nextEntry, &status);
+    if (stat) throw errno;               // Failure
+    if (status) {                        // have a dir.
+      int fd = atoi(nextEntry.d_name);       // FD the process has open.
+      if (!keepOpen.count(fd)) {         // not in the list to keep open.
+        close(fd);
+      }
+    }
+  } while (status);
+  
+  closedir(pDir);                       // Also closes our dir fd.
+}
 
 }

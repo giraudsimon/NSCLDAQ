@@ -30,6 +30,7 @@
 #endif
 #endif
 
+#include <set>
 /**
  * @file io.h
  * @brief Commonly used I/O method definitions.
@@ -39,6 +40,7 @@
 namespace io {
   void writeData (int fd, const void* pData , size_t size);
   size_t readData (int fd, void* pBuffer,  size_t nBytes);
+  void closeUnusedFiles(std::set<int> keepOpen);
 }
 
 
