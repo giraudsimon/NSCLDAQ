@@ -18,6 +18,8 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
+#include <io.h>
+#include <set>
 
 using namespace std;
 
@@ -381,6 +383,15 @@ mainLoop(string ring, int timeout, int mindata)
 
 int main(int argc, char** argv)
 {
+  // Close all files but the std ones:
+  
+  std::set<int> keepOpen;
+  keepOpen.insert(FILENO_STDIN);
+  keepOpen.insert(FILENO_STDOUT);
+  keepOpen.insert(FILENO_STDERR);
+  
+  io::closeUnusedFiles(keepOpen);
+  
   // Turn off pipe signal:
 
   if (Os::blockSignal(SIGPIPE)) {
