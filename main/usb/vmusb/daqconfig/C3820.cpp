@@ -47,10 +47,12 @@ static const uint32_t AcqMode    = 0x00000100; // Acquisition mode register.
 static const uint32_t HighBits   = 0x00000210;
 
 
-static const uint32_t KeyReset   = 0x00000400;     // Writing here resets.
-static const uint32_t KeyLNE     = 0x00000410;
-static const uint32_t KeyArm     = 0x00000414;
-static const uint32_t KeyEnable  = 0x00000418;
+static const uint32_t KeyReset         = 0x00000400;     // Writing here resets.
+static const uint32_t KeyFifoReset     = 0x00000404;   // Clear memory fifo logic.
+static const uint32_t KeyClearCounters = 0x00000040c; // Clear scaler counters
+static const uint32_t KeyLNE           = 0x00000410;
+static const uint32_t KeyArm           = 0x00000414;
+static const uint32_t KeyEnable        = 0x00000418;
 
 
 static const uint32_t ShadowCounters = 0x00000800;
@@ -276,6 +278,8 @@ C3820::Initialize(CVMUSB& controller)
   initList.addWrite32(base+AcqMode, CVMUSBReadoutList::a32UserData,
 		      acq32Bit    | lne   | acqArmWithFP | acqSRAMMemory |
 		       inpmode | outputMode | acqModeLatch | clearing);
+  initList.addWrite32(base+KeyFifoReset, CVMUSBReadoutList::a32UserData, uint32_t(0));
+  initList.addWrite32(base+KeyClearCounters, CVMUSBReadoutList::a32UserData, uint32_t(0));
   initList.addWrite32(base+KeyArm, CVMUSBReadoutList::a32UserData, (uint32_t)0);
   initList.addWrite32(base+KeyEnable, CVMUSBReadoutList::a32UserData, (uint32_t)0);
 
