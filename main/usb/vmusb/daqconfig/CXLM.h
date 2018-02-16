@@ -199,7 +199,16 @@ class CFirmwareLoader
     bool validate(uint32_t signatureAddr, uint32_t expectedSignature);
 
     uint32_t getBaseAddress() const { return m_baseAddr; }
+    /**! \brief Acquire busses and hold FPGA interrupt 
+     *
+     *  - Acquires bus A for SramA communication.
+     *  - Forces the FPGA off the bus.
+     *  - Verifies that we own bus A 
+     */
+    void acquireBusses();
 
+    /**! \brief Release busses and FPGA interrupt */
+    void releaseBusses();
   private:
     /**! 
      * Implements the firmware loading algorithm for the  
@@ -266,16 +275,7 @@ class CFirmwareLoader
      * */
     uint8_t* skipHeader(uint8_t* contents);
 
-    /**! \brief Acquire busses and hold FPGA interrupt 
-     *
-     *  - Acquires bus A for SramA communication.
-     *  - Forces the FPGA off the bus.
-     *  - Verifies that we own bus A 
-     */
-    void acquireBusses();
 
-    /**! \brief Release busses and FPGA interrupt */
-    void releaseBusses();
 
     /**! \brief Changes the boot source of the FPGA */
     void setBootSource();

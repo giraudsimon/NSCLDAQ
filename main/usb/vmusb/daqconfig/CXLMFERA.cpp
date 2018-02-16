@@ -180,6 +180,7 @@ CXLMFERA::Initialize(CVMUSB& controller)
 
     std::cout << hex << "\n*** CXLMFERA @ base=0x" << base << ") " << dec;
     bool success = true;
+    XLM::CFirmwareLoader loader(controller, base);
     try {
 
         std::string firmwareFname = m_pConfiguration->cget("-firmware"); 
@@ -191,7 +192,7 @@ CXLMFERA::Initialize(CVMUSB& controller)
         if (forceFirmwareLoad || ! isConfigured(controller)) {
           
           std::cout << "Unconfigured and firmware load forced. Loading firmware" << std::flush;
-          XLM::CFirmwareLoader loader(controller, base);
+          
           loader(firmwareFname);
           controller.vmeWrite32(base + XLM::Interrupt, registerAmod, XLM::InterruptResetDSP);
           // Was previously the AXLM72V_CES::Configure
@@ -217,6 +218,8 @@ CXLMFERA::Initialize(CVMUSB& controller)
         }
        
         initializeFPGA(controller);
+        Clear(controller);
+        loader.releaseBusses();           // Be damned sure we're off the buses
 
     }
     
@@ -379,6 +382,11 @@ void CXLMFERA::addSramAReadout(CVMUSBReadoutList& list)
     const uint32_t busses = REQ_A;
     addBusAccess(list,busses,0);
 
+
+    // >>> DEBUGGING <<<< - read the bus ownership register into the data
+    // for SRAM A - should be 1 indicating ownership by VME by now:
+    
+    list.addRead32(Interface() + BusAOwner,  registerAmod);    // SRAMA bus owner.
 
     // Dynamically read out data stored in sramA given the number
     // stored at sramA  
