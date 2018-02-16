@@ -21,6 +21,7 @@
 #include <io.h>
 #include <set>
 
+
 using namespace std;
 
 // Item header:
@@ -386,9 +387,9 @@ int main(int argc, char** argv)
   // Close all files but the std ones:
   
   std::set<int> keepOpen;
-  keepOpen.insert(FILENO_STDIN);
-  keepOpen.insert(FILENO_STDOUT);
-  keepOpen.insert(FILENO_STDERR);
+  keepOpen.insert(STDIN_FILENO);
+  keepOpen.insert(STDOUT_FILENO);
+  keepOpen.insert(STDERR_FILENO);
   
   io::closeUnusedFiles(keepOpen);
   
