@@ -58,7 +58,7 @@ namespace eval ::rdoCallouts {
     variable stateMachine ""
     namespace export attach enter leave
     namespace ensemble create
-    variable  runNumber;               # Memorized at run start.
+    variable  runNumber 0;               # Memorized at run start.
 }
 #-------------------------------------------------------------------------------
 #
