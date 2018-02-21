@@ -385,9 +385,9 @@ void CXLMFERA::addSramAReadout(CVMUSBReadoutList& list)
 
     // >>> DEBUGGING <<<< - read the bus ownership register into the data
     // for SRAM A - should be 1 indicating ownership by VME by now:
-    
+#ifdef ENABLE_DEBUGGING    
     list.addRead32(Interface() + BusAOwner,  registerAmod);    // SRAMA bus owner.
-
+#endif
     // Dynamically read out data stored in sramA given the number
     // stored at sramA  
     uint32_t sramAAddr = sramA();
