@@ -278,7 +278,7 @@ static int destroy_unit(bt_unit_t *unit_p);
 extern unsigned long bt_kvm2bus(void * vm_addr_p);
 extern bt_error_t btk_irq_qs_init(bt_unit_t *unit_p, size_t q_size);
 extern void btk_irq_qs_fini(bt_unit_t *unit_p, size_t q_size);
-#if LINUX_VERSION_CODE < LINUX_VERSION(4,9,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
 extern irqreturn_t btk_isr(int irq, void *vunit_p, struct pt_regs *regs);
 #else
 extern irqreturn_t btk_isr(int irq, void* vunit_p);

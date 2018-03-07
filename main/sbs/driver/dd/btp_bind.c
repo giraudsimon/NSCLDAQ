@@ -199,6 +199,9 @@ bt_error_t btp_bind(
         retval = BT_ENOMEM;
         goto exit_bind;
     }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
+# define page_cache_release(a) put_page(a)
+#endif
 #define BTP_FREE_MREG \
     { \
         int i; \
@@ -228,12 +231,12 @@ bt_error_t btp_bind(
     ** store in scatter/gather list
     */
     down_read(&current->mm->mmap_sem);
-#if LINUX_VERSION_CODE < LINUX_VERSION(4,9,0)    
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)    
     ret = get_user_pages(current, current->mm, (unsigned long) addr,
         nr_pages, 1, 0, pages, NULL);
 #else
-    ret = get_user_pages(current, current->mm, (unsigned long) addr,
-    nr_pages,FOLL_WRITE , pages, NULL);
+    ret = get_user_pages((unsigned long) addr,
+    nr_pages, FOLL_WRITE , pages, NULL);
 #endif
     up_read(&current->mm->mmap_sem);
     if (ret < nr_pages) {

@@ -307,7 +307,7 @@ extern ssize_t btp_write(struct file *file_p, const char *data_p, size_t length,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
 extern int btp_ioctl(struct inode *inode_p, struct file *file_p, unsigned int cmd, unsigned long args);
 #else
-extern int btp_ioctl(struct file *file_p, unsigned int cmd, unsigned long args);
+extern long btp_ioctl(struct file *file_p, unsigned int cmd, unsigned long args);
 #endif
 /* 
 ** btp_mmap.c 
