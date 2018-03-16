@@ -15,6 +15,7 @@
 #include <time.h>
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 
 using namespace std;
 using namespace DAQ::V10;

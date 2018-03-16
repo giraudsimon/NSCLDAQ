@@ -28,7 +28,9 @@ static const char revcntrl[] = "@(#)"__FILE__"  $Revision: 2330 $" ;
 #include "btdd.h"
 
 const char *no_unit_p = "Unit not initialized.\n";
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
+# define page_cache_release(a) put_page(a)
+#endif
 /*
 **  Function prototypes of external functions used within
 */
@@ -727,8 +729,13 @@ static int btp_xfer(
         ** store in scatter/gather list
         */
         down_read(&current->mm->mmap_sem);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
         ret = get_user_pages(current, current->mm, (unsigned long) usr_data_p,
             nr_pages, write, 1, pages, NULL);
+#else
+	ret = get_user_pages(usr_data_p, nr_pages,
+			     write ? FOLL_WRITE : 0, pages, NULL);
+ #endif
         up_read(&current->mm->mmap_sem);
         if (ret < nr_pages) {
             WARN_STR("Failed to create scatter/gather list for user buffer.\n");

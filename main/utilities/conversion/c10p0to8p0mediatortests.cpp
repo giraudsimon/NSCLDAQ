@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <ctime>
 #include <chrono>
+#include <numeric>
 
 using namespace std;
 

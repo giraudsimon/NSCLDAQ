@@ -60,7 +60,7 @@ static const char driver_version[] = "$Name: 1003v3p1pC 1003v3p1pB $";
 #define DMA_32BIT_MASK (DMA_BIT_MASK(32))
 #endif
 
-static int btp_suspend(struct pci_dev *dev, u32 state);
+static int btp_suspend(struct pci_dev *dev, pm_message_t state);
 
 static int btp_resume(struct pci_dev *dev);
 
@@ -278,7 +278,11 @@ static int destroy_unit(bt_unit_t *unit_p);
 extern unsigned long bt_kvm2bus(void * vm_addr_p);
 extern bt_error_t btk_irq_qs_init(bt_unit_t *unit_p, size_t q_size);
 extern void btk_irq_qs_fini(bt_unit_t *unit_p, size_t q_size);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
 extern irqreturn_t btk_isr(int irq, void *vunit_p, struct pt_regs *regs);
+#else
+extern irqreturn_t btk_isr(int irq, void* vunit_p);
+#endif
 extern void btk_setup(bt_unit_t *unit_p);
 
 /*
@@ -481,9 +485,10 @@ void __exit btp_exit(void)
 *****************************************************************************/
 static int btp_suspend(
     struct pci_dev *dev, 
-    u32 state)
+    pm_message_t s_state)
 
 {
+  int state = s_state.event;
     return -EBUSY;
 }
 

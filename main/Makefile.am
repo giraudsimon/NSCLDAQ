@@ -1,8 +1,5 @@
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=subdir-objects
-if BUILD_SBS_DRIVER
-  SBSDIRS=sbs
-endif
 
 if BUILD_EPICS_TOOLS
 if EPICS
@@ -20,7 +17,7 @@ endif
 
 SUBDIRS =	 base caenfw-common servers base/dataflow  \
 		daq utilities $(DOCDIR) \
-		$(SBSDIRS) $(EPICSDIRS) $(USBDIR)
+		sbs  $(EPICSDIRS) $(USBDIR)
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
 							 docbuild docconfig simplesetups sbs epics usb

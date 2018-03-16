@@ -30,6 +30,7 @@ static const char* Copyright = "(C) Copyright Michigan State University 2014, Al
 
 #include "CFilter.h"
 #include "CFatalException.h"
+#include <ErrnoException.h>
 
 #include <unistd.h>
 #include <wait.h>
@@ -53,8 +54,8 @@ class CFilterMainTest : public CppUnit::TestFixture
 
   public:
     CPPUNIT_TEST_SUITE( CFilterMainTest );
-    CPPUNIT_TEST ( testBadSourceFail );
-    CPPUNIT_TEST ( testBadSinkFail );
+     CPPUNIT_TEST ( testBadSourceFail );
+     CPPUNIT_TEST ( testBadSinkFail );
     CPPUNIT_TEST ( testSkipTransmitted );
     CPPUNIT_TEST ( testCountTransmitted );
 //    CPPUNIT_TEST ( testOneShot );
@@ -67,9 +68,9 @@ class CFilterMainTest : public CppUnit::TestFixture
     void setUp();
     void tearDown();
 
-    void testBadSourceFail();
+    void testBadSourceFail();  // bad test URL.cpp intervenes
     void testNoSourceFail();
-    void testBadSinkFail();
+    void testBadSinkFail();   // bad test URL.cpp intervenes.
     void testSkipTransmitted();
     void testCountTransmitted();
 
@@ -95,7 +96,7 @@ void CFilterMainTest::testBadSourceFail()
 {
   int argc = 2;
   const char* argv[] = {"Main",
-                      "--source=badproto://nofile"};
+                      "--source=badproto:///nofile/"};
 
   // Ensure that this thing only throws a CFatalException
   CPPUNIT_ASSERT_THROW( CFilterMain app(argc,
@@ -180,7 +181,7 @@ void CFilterMainTest::testMultiProducersOnRingIsFatal()
    if (! pid) {
      // child process
      CPPUNIT_ASSERT_THROW( CFilterMain app(argc,const_cast<char**>(argv)),
-         CFatalException );
+         CErrnoException );
    } else {
      // Parent process
 

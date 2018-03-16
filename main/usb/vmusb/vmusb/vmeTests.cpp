@@ -9,6 +9,7 @@
 #include <vector>
 #include <iomanip>
 #include <iterator>
+#include <numeric>
 
 #include <stdio.h>
 #include <stdlib.h>

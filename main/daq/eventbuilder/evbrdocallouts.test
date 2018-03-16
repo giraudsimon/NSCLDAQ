@@ -30,14 +30,16 @@ tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC destRing} -setup {
       # choose to use the dest ring
       set EVBC::setsEvtlogSource true
 
-      # set destRing to something... 
+      # set destRing to something...
+      EVBC::initialize -gui 0
       $::EVBC::applicationOptions configure -destring hehehe
 
 } -body {
    # this calls the switches
    set switches [::EventLog::_computeLoggerSwitches 11.0-rc12]
-   return [lindex $switches 0] 
-} -result "--source=tcp://localhost/[$::EVBC::applicationOptions cget -destring]"
+   set srcSB  "--source=tcp://localhost/[$::EVBC::applicationOptions cget -destring]"
+   return [expr {[lindex $switches 0] eq $srcSB}]
+} -result 1
 
 tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC destRing} -setup {
 
@@ -53,9 +55,10 @@ tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC destRing} -se
 } -body {
    # this calls the switches
    set switches [::EventLog::_computeLoggerSwitches 11.0-rc12]
-   return [lindex $switches 0] 
-} -result "--source=[::Configuration::get EventLoggerRing]"
+   set srcSB "--source=[::Configuration::get EventLoggerRing]"
+   return [expr {[lindex $switches 0]  eq $srcSB}]
 
+} -result 1
 
 tcltest::test isRunning-0 {Test that we can set running
 } {
