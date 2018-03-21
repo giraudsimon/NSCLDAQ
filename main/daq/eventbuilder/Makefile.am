@@ -13,9 +13,12 @@ COMPILATION_FLAGS =  \
 	@THREADCXX_FLAGS@ @TCL_FLAGS@
 
 
-lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la 
+lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
 
 
+libFragmentIndex_la_SOURCES=FragmentIndex.cpp
+
+libFragmentIndex_la_CXXFLAGS=-I@top_srddir@/daq/format @LIBTCLPLUS_CFLAGS@
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \
@@ -49,7 +52,7 @@ FRAMEWORK_SKELETON =  $(FRAMEWORK_SOURCEFILES)
 
 
 include_HEADERS = CEventOrderClient.h fragment.h CEVBClientApp.h EVBFramework.h \
-	CEVBFrameworkApp.h  GetOpt.h fragio.h
+	CEVBFrameworkApp.h  GetOpt.h fragio.h FragmentIndex.h
 
 
 noinst_HEADERS = CFragmentHandlerCommand.h CFragmentHandler.h  \

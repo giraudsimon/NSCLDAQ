@@ -3,7 +3,9 @@
 
 AC_PREREQ(2.61)
 
-AC_INIT(nscldaq,11.2-010, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+
+AC_INIT(nscldaq,11.2-009, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+
 
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
@@ -532,6 +534,8 @@ AC_CONFIG_FILES([Makefile
 		 docbuild/Makefile
 		 docbuild/images/Makefile
 		 docbuild/images/callouts/Makefile
-		 docconfig/Makefile])
+		 docconfig/Makefile
+     examples/Makefile
+     examples/ReadNSCLDAQFiles/Makefile])
 
 AC_OUTPUT

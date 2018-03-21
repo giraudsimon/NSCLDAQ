@@ -17,10 +17,10 @@ endif
 
 SUBDIRS =	 base caenfw-common servers base/dataflow  \
 		daq utilities $(DOCDIR) \
-		sbs  $(EPICSDIRS) $(USBDIR)
+		sbs $(EPICSDIRS) $(USBDIR) examples
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
-							 docbuild docconfig simplesetups sbs epics usb
+		 docbuild docconfig simplesetups sbs epics usb examples
 
 INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
 								@srcdir@/figures/intro-data-flow-diagram-diagnostics.png 

@@ -201,7 +201,23 @@ accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
   // See if we need to flush:
 
   uint64_t timestamp = pFrag->s_header.s_timestamp;
-  if (nobuild || (!firstEvent && ((timestamp - firstTimestamp) > dt))) {
+
+  // This bit of kludgery is because we've observed that the
+  // s800 emits data 'out of order' from its filter. Specifically,
+  // it emits scaler data with larger timestamps than the next
+  // physics event.  This causes second level event builders to
+  // declare an out of order/data late condition which can result in
+  // slightly out of order fragments.
+  // We're going to compute timestamp differences in 'both directions'
+  // and consider ourselves inside dt if either of them makes the
+  // window.
+  //
+  
+  uint64_t tsdiff1    = timestamp-firstTimestamp;
+  uint64_t tsdiff2    = firstTimestamp - timestamp;
+  uint64_t tsdiff     = (tsdiff1 < tsdiff2) ? tsdiff1 : tsdiff2;
+  
+  if (nobuild || (!firstEvent && ((tsdiff) > dt))) {
     flushEvent();
   }
   // If firstEvent...our timestamp starts the interval:
