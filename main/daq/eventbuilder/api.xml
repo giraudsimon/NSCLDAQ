@@ -2508,6 +2508,397 @@ This data structure
  </refsect1>
 </refentry>
 
+<refentry id='daq3_fragmentindex'>
+    <refmeta>
+        <refentrytitle id='daq3_fragmentindex_title'>FragmentIndex</refentrytitle>
+        <manvolnum>3daq\</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>FragmentIndex</refname>
+        <refpurpose>Iterator for event built data.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;FragmentIndex.h&gt;
+
+// Add -lFragmentIndex -ldataformat -lException to the link command.
+// Add -I$DAQROOT/include to compilation.
+
+
+
+struct FragmentInfo
+{
+  uint64_t s_timestamp;
+  uint32_t s_sourceId;
+  uint32_t s_size;
+  uint32_t s_barrier;
+  uint16_t* s_itemhdr;
+  uint16_t* s_itembody;
+};
+
+
+class FragmentIndex
+{
+public:
+  typedef Container::iterator iterator;
+  typedef Container::const_iterator const_iterator;
+
+public:
+
+  FragmentIndex();
+  FragmentIndex(uint16_t* data);
+
+  FragmentInfo getFragment(size_t i);
+  size_t getNumberFragments() const;
+  void indexFragments(uint16_t* begin, uint16_t* end);
+  void indexFragments(uint16_t* data, size_t max_bytes);
+
+  iterator begin();
+  const_iterator begin() const;
+
+  iterator end();
+  const_iterator end() const;
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class provides a simple method to iterate over the fragments
+            in an event built event.  It provides both indexing and iteration
+            based approaches.
+        </para>
+        <para>
+            Each fragment is represented by  a <type>FragmwentInfo</type>
+            struct that contains information from the fragment's header as
+            well as a pointer to the fragment's body.  The fragment's body,
+            in this case means the data past the fragment's ring item body header,
+            that is the actual payload of the fragment.  A pointer to the body
+            header is also provided.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>FragmentIndex</methodname>
+                        <void />
+                    </constructorsynopsis>
+                </term>
+                <term>
+                    <constructorsynopsis>
+                        <methodname> FragmentIndex</methodname>
+                        <methodparam>
+                            <type>uint16_t* </type><parameter>data</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs fragment info objects.  The first, default,
+                        constructor constructs an empty fragment.  The user
+                        must later call one of the
+                        <methodname>indexFragments</methodname> methods to
+                        parse an event into fragments.
+                    </para>
+                    <para>
+                        The second event passes in a pointer to the event
+                        built data.  This is like doing a default constructor and
+                        then calling <methodname>indexFragments</methodname> using
+                        <parameter>data</parameter> as the <parameter>data</parameter>
+                        parameter and dereferencing a 32 bit unsigned integer the
+                        <parameter>data</parameter> to compute the
+                        <parameter>max_bytes</parameter>
+                        parameter.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>indexFragments</methodname>
+                        <methodparam>
+                            <type>uint16_t* </type><parameter>begin</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>uint16_t* </type><parameter>end</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>indexFragments</methodname>
+                        <methodparam>
+                            <type>uint16_t* </type><parameter>data</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>max_bytes</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        These two methods parse an event and  create a list of
+                        fragments.  It is safe to call this several times
+                        as the internal fragment list is cleared first.
+                    </para>
+                    <para>
+                        The first version of this method takes
+                        <parameter>begin</parameter>, a pointer to the
+                        event builder data and <parameter>end</parameter>
+                        a pointer just past the end of the event builder data.
+                        These are used to map out the extent of the event
+                        that will be processed.
+                    </para>
+                    <para>
+                        The second version of this method takes a
+                        <parameter>data</parameter> pointer to the start of the
+                        event built data and a size, <parameter>max_bytes</parameter>,
+                        of the part of the event that contains the fragments.
+                        The size should not include the event size that is the
+                        first 32 bits of the what <parameter>data</parameter>
+                        points to.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodsynopsis>
+                    <modifier></modifier>
+                    <type>size_t </type>
+                    <methodname>getNumberFragments</methodname>
+                    <void />
+                    <modifier>const</modifier>
+                </methodsynopsis></term>
+                <listitem>
+                    <para>
+                        Returns the number of fragments in the event.  If there
+                        is no parsed event (the default constructor was used
+                        to make the object and <methodname>indexFragments</methodname>
+                        was never called), this will return <literal>0</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>FragmentInfo </type>
+                        <methodname>getFragment</methodname>
+                        <methodparam>
+                            <type>size_t </type><parameter>i</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns a copy of the fragment information data
+                        structure for fragment number <parameter>i</parameter>
+                        (numbered from 0).  See <literal>Data structures</literal>
+                        below for a description of the <type>FragmeintInfo</type>
+                        structure.
+                    </para>
+                    <para>
+                        If <parameter>i</parameter> is out of range of the fragments
+                        that have been parsed out of the event, the
+                        <structfield>s_itembody</structfield> field of
+                        the <type>FragmentInfo</type> struct returned will
+                        be a null pointer.
+                    </para>
+                </listitem>
+           </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>FragmentIndex::iterator </type>
+                        <methodname>begin</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>FragmentIndex::const_iterator </type>
+                        <methodname>begin</methodname>
+                        <void />
+                        <modifier>const</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns an iterator (in the STL sense of the word)
+                        that 'points' to the first fragment accumulated from the
+                        event.  If there are no fragments, this will compare
+                        as equal to the return value from <methodname>end</methodname>
+                    </para>
+                    <para>
+                        The iterator supports pointer dereferencing which provides
+                        access to a <type>FragmentInfo</type> struct.  It
+                        also support the <literal>++</literal> operator which
+                        points it to the next fragment info struct.  If there are no
+                        more fragment info structs, the resulting iterator compares
+                        as equal to the return value from
+                        <methodname>end</methodname>
+                    </para>
+                    <para>
+                        The only difference between these two versions is
+                        that a <type>FragmentIndex::const_iterator</type>
+                        does not allow the <type>FragmentInfo</type> it points
+                        to to be modified.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>FragmentIndex::iterator </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>FragmentIndex::const_iterator </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier>const</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns an iterator that is just off the end of the
+                        list of fragments parsed by the object from the event.
+                    </para>
+                </listitem>
+            </varlistentry>  
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>Data structures</title>
+        <para>
+            The key data structure the header provides is the
+            <type>FragmentInfo</type> struct.  This struct provides
+            information from both the fragment's header and pointers into
+            useful parts of the event fragment.
+        </para>
+        <para>
+            The <type>FragInfo</type> struct has the following fields:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>uint64_t </type><structfield>s_timestamp</structfield></term>
+                <listitem>
+                    <para>
+                        The fragment's timestamp from the fragment's fragment
+                        header.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint32_t </type><structfield>s_sourceId</structfield></term>
+                <listitem>
+                    <para>
+                        The id of the fragment's source, from the fragment's
+                        fragment header.  This value is defined by each experiment
+                        and describes the creator of the fragment.  Fragment ids
+                        should be unique experiment wide.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint32_t </type><structfield>s_size</structfield></term>
+                <listitem>
+                    <para>
+                        Provides the number of bytes in the fragment body. 
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint32_t </type><structfield>s_barrier</structfield></term>
+                <listitem>
+                    <para>
+                        If nonzero, this fragment required the event orderer to
+                        perform a data barrier with all known data sources for
+                        barrier fragments with the same barrier type.
+                    </para>
+                    <para>
+                        At present a barrier type of <literal>1</literal>
+                        is a begin run barrier while a barrier of
+                        type <literal>2</literal> is an end of run.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint16_t* </type><structfield>s_itemhdr</structfield></term>
+                <listitem>
+                    <para>
+                        If <structfield>s_itembody</structfield> is not null,
+                        this points to the ring item body  header.
+                        This will either point to a <type>uint32_t</type> of
+                        zero, if the Fragment has no body header, or
+                        a <type>BodyHeader</type> struct as defubed in
+                        <filename>DataFormat.h</filename>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint16_t* </type><structfield>s_itembody</structfield></term>
+                <listitem>
+                    <para>
+                        Points to the actual body of the fragment.  The
+                        structure of these data depend on the data source.
+                        The Special null value indicates that the
+                        fragment information struct is invalid.  That is that
+                        it does not represent any actual fragment in the event.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The fragments are parsed from the event and put into
+            an opaque <type>Container</type> type.  The
+            <classname>FragmentIndex</classname> class defines two nested types
+            that support iteration of the elements of the class.  These iterators
+            'point' to <type>FragmentInfo</type> structs.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>FragmentInfo::iterator</type></term>
+                <listitem>
+                    <para>
+                        Is an iterator that allows the contents of the
+                        <type>FragmentInfo</type> struct it
+                        'points to' to be modified.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>FragmentInfo::const_iterator</type></term>
+                <listitem>
+                    <para>
+                        Just like <type>FragmentInfo::iterator</type>, however
+                        access to the <type>FragmentInfo</type> struct is
+                        limited to read-only.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 <!-- manpage 1evb -->
 
