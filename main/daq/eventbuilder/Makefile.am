@@ -18,7 +18,7 @@ lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
 
 libFragmentIndex_la_SOURCES=FragmentIndex.cpp
 
-libFragmentIndex_la_CXXFLAGS=-I@top_srddir@/daq/format @LIBTCLPLUS_CFLAGS@
+libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \
