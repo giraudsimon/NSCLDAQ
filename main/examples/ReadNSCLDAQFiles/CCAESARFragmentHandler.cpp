@@ -110,17 +110,7 @@ CCAESARFragmentHandler::operator()(FragmentInfo& frag)
         //  If we have a timetamp packet construct and output the timestamp:
         
         if (subPktType == 0x2303) {
-            std::uint64_t timestamp(0);
-            std::uint64_t part;
-            std::uint16_t* pTimestamp = &(p[2]);
-            for (int i = 0; i < 4; i++) {
-                part = *pTimestamp;
-                timestamp  |= (part << (16*i));
-                
-                pTimestamp++;
-            }
-            std::cout << "   Timestamp value from packet: " << timestamp << std::endl;
-            
+	  timestampPacket(p);
         }
         
         // Point to next packet or possbily done.
@@ -128,4 +118,23 @@ CCAESARFragmentHandler::operator()(FragmentInfo& frag)
         p = PacketUtils::nextPacket(remaining, p);
     }
     
+}
+/**
+ * timestampPacket
+ *    Processes the timestamp packets.
+ *  @param pPacket - points to the timestamp packet.
+ */
+void
+CCAESARFragmentHandler::timestampPacket(std::uint16_t* pPacket)
+{
+  std::uint64_t timestamp(0);
+  std::uint64_t part;
+  std::uint16_t* pTimestamp = &(pPacket[2]);
+  for (int i = 0; i < 4; i++) {
+    part = *pTimestamp;
+    timestamp  |= (part << (16*i));
+    
+    pTimestamp++;
+  }
+  std::cout << "   Timestamp value from packet: " << timestamp << std::endl;  
 }
