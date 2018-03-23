@@ -20,7 +20,7 @@
 static const char revcntrl[] = "@(#)"__FILE__"  $Revision: 2330 $ ";
 #endif  /* LINT */
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/io.h>
 #include <linux/pagemap.h>      /* Needed for page_address() */
 #include <linux/device.h>

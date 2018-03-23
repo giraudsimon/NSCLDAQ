@@ -23,7 +23,7 @@ static const char revcntrl[] = "@(#)"__FILE__"  $Revision: 2330 $" ;
 
 #include "btdd.h"
 
-#include <asm/uaccess.h> /* Required for copy_to/from_user() */
+#include <linux/uaccess.h> /* Required for copy_to/from_user() */
 
 /* 
 ** Some constants used in this module 
