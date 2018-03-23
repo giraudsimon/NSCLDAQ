@@ -2681,7 +2681,7 @@ public:
                 <listitem>
                     <para>
                         Returns the number of fragments in the event.  If there
-                        is no parsed event (the default constructor was used
+                        is no parsed event (the default constructor was usedq
                         to make the object and <methodname>indexFragments</methodname>
                         was never called), this will return <literal>0</literal>.
                     </para>

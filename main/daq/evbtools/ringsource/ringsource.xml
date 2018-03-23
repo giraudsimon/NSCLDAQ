@@ -1,11 +1,11 @@
 <!-- manpage 1daq -->
-      <refentry id="s800ringsource">
+      <refentry id="ringsource">
         <refmeta>
-           <refentrytitle>S800 Ring fragment data source</refentrytitle>
+           <refentrytitle id="ringsource_title">Ring fragment data source</refentrytitle>
            <manvolnum>1daq</manvolnum>
         </refmeta>
         <refnamediv>
-           <refname>s800ringsource</refname>
+           <refname>ringFragmentSource</refname>
            <refpurpose>Event builder ring fragment source from s800</refpurpose>
         </refnamediv>
         

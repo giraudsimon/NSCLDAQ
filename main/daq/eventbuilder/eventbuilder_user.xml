@@ -1,7 +1,7 @@
 <!-- chapter user-guide -->
 
-<chapter>
-  <title>Event Builder</title>
+<chapter id="ch_event_builder">
+  <title id='ch_event_builder_title'>Event Builder</title>
 
   <section>
     <title>Introduction</title>

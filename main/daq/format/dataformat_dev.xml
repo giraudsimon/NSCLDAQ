@@ -870,7 +870,7 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
         -ldataformat -lDataFlow -Wl,"-rpath=$DAQROOT/lib"
             </command></screen>
         </example>
-        <para>
+        <para id='cringbuffer_links'>
             The following classes manage data formatting:
         </para>
         <variablelist>
