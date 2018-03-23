@@ -1,0 +1,1486 @@
+<!-- chapter user-guide -->
+<chapter>
+    <title>Examples (Beginning 11.2-009).</title>
+    <para>
+        This chapter describse examples that are installed with NSCLDAQ.
+        These examples can be found in <filename>DAQROOT/share/examples</filename>.
+    </para>
+    <para>
+        The exmamples are intended to provide complete programs or scripts that
+        can be used by you as a starting point for your own applications.
+        Examples have been written to provide examples of best practices in
+        writing software that uses NSCLDAQ.
+    </para>
+    <para>
+        If you want to help us improve this documentation, if you have suggestions
+        for examples you'd like to see, send us email at
+        <literal>scientificsoftware at nscl.msu.edu</literal> (I'm sure you
+        can figure out how to de-spamify this email addresss and I hope
+        web scraping programs cannot).
+    </para>
+    <para>
+        At present the following examples are distributed with NSCLDAQ:
+    </para>
+    <variablelist>
+        <varlistentry>
+            <term><filename>ReadNSCLDAQFiles</filename> - analyze NSCLDAQ data</term>
+            <listitem>
+                <para>
+                    Provides a program and a framework for analyzing event builder
+                    output from the NSCLDAQ.  The framework is encapsulated
+                    in a program that can read data from file or online ring buffers.
+                    The framework can be embedded into Root or SpecTcl without much
+                    trouble.
+                </para>
+            </listitem>
+        </varlistentry>
+    </variablelist>
+    <section>
+        <title><filename>ReadNSCLDAQFiles</filename> - analyze NSCLDAQ data (released 11.2-009)</title>
+        <para>
+            This example provides a framework for analyzing NSCLDAQ data.
+            It consists of the following parts:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    A framework for picking apart ring items that come from
+                    some source into event fragments.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Sample handlers for fragments from an actual experiment
+                    run at the NSCL in April of 2018.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A program that uses the framework to read data directly either
+                    from file or from file.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Suggestions for using this framework in SpecTcl.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            Each sub-section below describs one of these elements.  Sub-sections
+            are organized as follows.
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    The problem to be solved is described.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    The tools that NSCLDAQ provides to help you solve the problem
+                    are described with pointers to their reference documentation.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A tour through the code that implements our solution.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <section>
+            <title>A framework for analyzing fragments from and event</title>
+            <para>
+                Data from the NSCL event builder are ring items that
+                with bodies that are composed of event fragments.
+                <link linkend='ch_event_builder' endterm='ch_event_builder_title' />
+                describes the structure of an event in detail.  Each event fragment
+                contains a header and a payload. Each payload is a ring item.
+                Beginning with nscldaq-11.0 each ring item body can have a
+                body  header.  Normally the event builder client software
+                (<link linkend='daq3_cringdatasource' endterm='daq3_cringdatasource_title' />)
+                uses the
+                contents of this body header to build the fragment header.  Thus
+                there is some data repetition.
+            </para>
+            <para>
+                We want to provide a framework that knows as little as possible
+                about the format of the underlying data so that we can be
+                insensitive to changes in the data format as NSCLDAQ evolves.
+                To maintain this insensitivity we're going to use two chunks of
+                the NSCLDAQ API:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term>
+                        <link linkend='daq3_fragmentindex'><classname>FragmentIndex</classname> </link>
+                    </term>
+                    <listitem>
+                        <para>
+                            This class provide support for iterating through
+                            the event builder fragments in a ring item body.
+                            It insulates us from having to know the structure
+                            of data created by the event builder. 
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><link linkend='manpage.cringitem'>CRingItem</link></term>
+                    <listitem>
+                        <para>
+                            The base class of a hierarchy of classes that
+                            insulate us from the actual struture of the
+                            various NSCLDAQ ring items.  The list of class
+                            references, with links to the reference pages
+                            are described
+                            <link linkend='cringbuffer_links'>here</link>.
+                        </para>
+                        <para>
+                            Using these classes insulates us from the format
+                            of the ring item parts of each event builder fragment.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><link linkend='daq3_cringitemfactory' endterm='daq3_cringitemfactory_title' /></term>
+                    <listitem>
+                        <para>
+                            The <classname>CRingItem</classname> class is a
+                            concrete class and, high level software like,
+                            e.g. SpecTcl does not need to know much more than
+                            the ring item type.  Your analysis software will
+                            need to turn a <classname>CRingItem</classname> base
+                            class item into an object from the class hierarchy that
+                            accurately reflects the contents of the item.
+                        </para>
+                        <para>
+                            The two tools you have for this are the ring item
+                            types in the header <link linkend='ref-dataformat'>DataFormat.h</link>
+                            and the the <classname>CRingItemFactory</classname>.
+                            The <filename>DataFormat.h</filename> header
+                            describes the detailed structure of each ring item
+                            type, but we're hoping to use the <classname>CRingItem</classname>
+                            class hierarchy to avoid knowing about that.  It also
+                            provides symbolic definitions for the ring item types.
+                        </para>
+                        <para>
+                            The <classname>CRingItemFactory</classname> knows
+                            how to take either a <classname>CRingItem</classname>
+                            base class object or a pointer to a raw ring item
+                            and turn it in to an appropriately typed ring item object.
+                            For example, if the type of a <classname>CRingItem</classname>
+                            object is <literal>BEGIN_RUN</literal>, the factor
+                            can produce a <classname>CRingStateChange</classname>
+                            object.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Our framework is going to accept a ring item.  If the ring item
+                is a <literal>PHYSICS_EVENT</literal>, it will iterate over
+                the event builder fragments in the body.  For each fragment, it
+                will invoke an appropriate handler object, if registered.
+                After iterating over all the fragments, it will invoke an
+                end of event handler, if one is registered.
+            </para>
+            <para>
+                The idea is that each event fragment handler knows about
+                the format of the data in its fragment.  The end of event
+                handler, if needed, can compute data that has been marshalled
+                across all the fragment handlers.
+            </para>
+            <para>
+                The files that make up the framework are:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term><filename>CFragmentHandler.h</filename></term>
+                    <listitem>
+                        <para>
+                            Defines an abstract base class that framework
+                            users derive from to create specific fragment handlers.
+                            We'll look at this in detail when we look at the
+                            sample handlers in the next section.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><filename>CEndOfEventHandler.h</filename></term>
+                    <listitem>
+                        <para>
+                            Defines an abstract base class that framework
+                            users derive from to create a specific
+                            end of event handler.  Again, we'll look at this
+                            base class in detail in the next section.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><filename>CRingItemDecoder.{cpp,h}</filename></term>
+                    <listitem>
+                        <para>
+                            Defines and implements the
+                            <classname>CRingItemDecoder</classname> which
+                            is the actual framework class.  The remainder
+                            of this section will be devoted to this
+                            class.  Note that you should get the code itself
+                            from the <filename>examples/ReadNSCLDAQFiles</filename>
+                            source as we've omitted chunks of code that don't
+                            add to understanding here.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Let's look at the class definition for <classname>CRingItemDecoder</classname>
+                (<filename>CRingItemDecoder.h</filename>).
+            </para>
+            <informalexample>
+                <programlisting>
+class CRingItemDecoder {
+private:
+    std::map&lt;std::uint32_t, CFragmentHandler*&gt; m_fragmentHandlers; <co id='ridec_handlerdict' />
+    CEndOfEventHandler* m_endHandler;                                    <co id='ridec_endhandler' />
+
+public:
+    void registerFragmentHandler(
+        std::uint32_t sourceId, CFragmentHandler* pHandler             <co id='ridec_reghandler' />
+    );
+    void registerEndHandler(CEndOfEventHandler* pHandler);             <co id='ridec_regend' />
+    void operator()(CRingItem* pItem);                                 <co id='ridec_functor' />
+
+protected:
+
+    void decodePhysicsEvent(CPhysicsEventItem* pItem);                <co id='ridec_physics' />
+    void decodeOtherItems(CRingItem* pItem);                          <co id='ridec_other' />
+};
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='ridec_handlerdict'>
+                    <para>
+                        The class maintains a dictionary that maps fragment
+                        source ids to fragment handler objects.  Entries in
+                        this dict are pointers to those fragment handlers.
+                        Indices are source ids from the fragment headers.
+                    </para>
+                    <para>
+                        The map is a trade off between lookup performance and
+                        space requirements.  A vector could be used, with unused
+                        slots having null pointers.  This would have O(1) lookup
+                        performance.   It could also get large if source ids
+                        are large.  The map only uses the elements it needs, however
+                        the tradeoff is that the lookup performance is O(log2(n))
+                        where n is the number of handlers that have been established.
+                        Since typically very few handler are needed, this is
+                        an acceptable trade-off.
+                    </para>
+                    <para>
+                        For O(1) lookup without the space requirements of a
+                        vector an std::unordered_map could be used for some
+                        suitable definition of a hashing function.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_endhandler'>
+                    <para>
+                        If not null, the user has established an end of event
+                        handler.  The end of event handler is an object that
+                        is invoked (we'll see later what invoked means) when
+                        all fragments in an event have been processed.  It allows
+                        computations that span the fragments, given cooperating
+                        fragment handlers.
+                    </para>
+                    <para>
+                        In applications of this framework to SpecTcl the
+                        functions performed by an end of event handler could
+                        be done more simply with another event processor.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_reghandler'>
+                    <para>
+                        If we have a set of fragment handlers we need an
+                        mechanism to add new fragment handlers.
+                        <parameter>sourceId</parameter> is the source id our handler
+                        will work on.  The source id defines where the fragment
+                        came from, and therefore the payload contents.
+                        <parameter>pHandler</parameter> is a pointer to the
+                        object that will be invoked for fragments that
+                        have a matching <parameter>sourceId</parameter>.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_regend'>
+                    <para>
+                        Similarly provides a mechanis to register
+                        an end of event handler.
+                        <parameter>pHandler</parameter> is a pointer to the
+                        actual handler object.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_functor'>
+                    <para>
+                        The <methodname>operator()</methodname> makes instances
+                        of this class a <firstterm>functor</firstterm>.
+                        Functors are objects that can be called as if they
+                        were functions.  Since these are full objects, they can
+                        also hold and use state (like the handler information).
+                    </para>
+                    <para>
+                        This method is used to pass a ring item from the outside
+                        to the the framework. This design separates obtaining
+                        ring items from processing them.  It is this separation
+                        that allows us to transplant the framework into e.g.
+                        Root or SpecTcl.  As long as we can get our hands on
+                        a stream of ring items, this framework can be
+                        used to process them.
+                    </para>
+                    <para>
+                        This illustrates a software design principle that is very
+                        important called <firstterm>Separation of concerns</firstterm>.
+                        (see e.g. <ulink url='https://en.wikipedia.org/wiki/Separation_of_concerns'>https://en.wikipedia.org/wiki/Separation_of_concerns</ulink>).
+                        When concerns are not separated the resulting software
+                        can be very fragile or hard to adapt to other
+                        environments.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_physics'>
+                    <para>
+                        Called by <methodname>operator()</methodname> to
+                        process <literal>PHYSICS_EVENT</literal> ring items.
+                        We'll look into this more when we look at
+                        the implementation of the class.
+                    </para>
+                </callout>
+                <callout arearefs='ridec_other'>
+                    <para>
+                        Called by <methodname>operator()</methodname> to process
+                        ring items that are not <literal>PHYSICS_EVENT</literal>
+                        items.  We'll examine this in more detail when as we
+                        study the implementation of the class.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                Let's look at the implementation source code (<filename>CRingItemDecoder.cpp</filename>).
+                We'll divide this into:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Examining code to establish handlers.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Examining code that processes ring items (the function
+                        call operator and the methods it call).
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <section>
+                <title>Handler registration</title>
+                <para>
+                    Two methods are responsible for handler registration. Both
+                    are quite trivial:
+                </para>
+                <informalexample>
+                    <programlisting>
+...
+void
+CRingItemDecoder::registerFragmentHandler(std::uint32_t sourceId, CFragmentHandl
+er* pHandler)
+{
+    m_fragmentHandlers[sourceId] = pHandler;         <co id='rideci_fragreg' />
+}
+...
+void
+CRingItemDecoder::registerEndHandler(CEndOfEventHandler* pHandler)
+{
+    m_endHandler = pHandler;                         <co id='rideci_endreg' />
+}
+
+
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='rideci_fragreg'>
+                        <para>
+                            Fragments are registered by entering them in the
+                            <varname>m_fragmentHandlers</varname> map
+                            using the sourceId they handle as the index.
+                            This implies that registering a fragment
+                            handler overrides any pre-existing fragment
+                            handler for that source id.
+                        </para>
+                        <para>
+                            As we will see later, registering a null fragment
+                            handler removes any fragment handler.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_endreg'>
+                        <para>
+                            The end handler registration just stores the pointer
+                            in <varname>m_endHandler</varname>.  Again, as we'll
+                            see later, registering a null handler is the same as
+                            cancelling the handler.  Note that we've not shown the
+                            class constructor, however it explicitly initializes
+                            <varname>m_endHandler</varname> to be a null pointer.
+                        </para>
+                    </callout>
+                </calloutlist>
+
+            </section>
+            <section>
+                <title>
+                    Ring item processing.
+                </title>
+                <para>
+                    Next let's turn our attention to the function call
+                    operator (<methodname>operator()</methodname>).  This
+                    method is repsonsible for dispatching the ring item
+                    it receives to either <methodname>decodePhysicsEvent</methodname>
+                    or <methodname>decodeOtherItems</methodname>.  Naturally,
+                    this scheme can be extended to dispatch to other
+                    methods (such as state change handlers).
+                </para>
+                <para>
+                    Let's look at the implementation code:
+                </para>
+                <informalexample>
+                    <programlisting>
+void
+CRingItemDecoder::operator()(CRingItem* pItem)
+{
+    std::uint32_t itemType = pItem->type();               <co id='rideci_gettype' />
+    CRingItem* pActualItem =
+        CRingItemFactory::createRingItem(*pItem);         <co id='rideci_convert' />
+
+    if (itemType == PHYSICS_EVENT) {
+        CPhysicsEventItem* pPhysics =
+            dynamic_cast&lt;CPhysicsEventItem*&gt;(pActualItem); <co id='redeci_dyncast' />
+        if (!pPhysics) {
+            std::cerr &lt;&lt; "Error item type was PHYSICS_EVENT but factory could no
+t convert it";
+            return;
+        }
+        decodePhysicsEvent(pPhysics);                  <co id='rideci_phys' />
+    } else {
+        decodeOtherItems(pActualItem);                 <co id='rideci_other' />
+    }
+    delete pActualItem;                                <co id='rideci_free' />
+}
+
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='rideci_gettype'>
+                        <para>
+                            Ring items have types that are defined
+                            symbolically
+                            <filename>DataFormat.h</filename>.  The base class
+                            <classname>CRingItem</classname> provides the
+                            <methodname>type</methodname> method to extract the
+                            type from the ring item it encapsulates.  
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_convert'>
+                        <para>
+                            The ring item passed in to <methodname>operator()</methodname>
+                            is a base class object.  In order to make produtive
+                            use of it, it needs to be converted to an object of the
+                            actual type of the underlying ring item.
+                        </para>
+                        <para>
+                            The <classname>CRingItemFactory</classname> class
+                            provides static methods for creating appropriate
+                            ring item objects from either a pointer to a raw
+                            unencapsulated ring item or a pointer to a base
+                            class ring item.
+                        </para>
+                        <para>
+                            Be aware that the resulting pointer points to a
+                            dynamically allocated ring item that must be
+                            <literal>delete</literal>d when no longer needed.
+                        </para>
+                    </callout>
+                    <callout arearefs='redeci_dyncast'>
+                        <para>
+                            The <classname>CRingItem</classname>::<methodname>createRingItem</methodname>
+                            method returns a pointer to the actual underlying
+                            ring item but, because of how C++ works, the type of
+                            that pointer needs to be <type>CRingItem*</type>.
+                            To actually <emphasis>call</emphasis> methods in the
+                            actual ring item type that are not defined in the base
+                            class, that pointer must be cast
+                            to a pointer to the actual object type.
+                        </para>
+                        <para>
+                            The method of choice for this is a
+                            <literal>dynamic_cast</literal> that method uses
+                            C++ run time type information (RTTI) to determine if
+                            the cast is actually proper.  If not a null pointer is
+                            returned.  While we already know this is a physics
+                            event item, safe programming says we should ensure
+                            the dynamic cast succeeded.
+                        </para>
+                        <para>
+                            Dynamic casts can also cast to references, however
+                            in that case, failure results in an exception
+                            of type <classname>std::bad_cast</classname> being
+                            thrown.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_phys'>
+                        <para>
+                            Now that we've produced the actual physics event item,
+                            we can invoke
+                            <methodname>decodePhysicsEvent</methodname> to
+                            decode the actual event.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_other'>
+                        <para>
+                            Ring items that are not of type
+                            <literal>PHYSICS_EVENT</literal> get passed to
+                            <methodname>decodeOtherItems</methodname>.  In
+                            environments where you want to handle specific
+                            items other than physics events, best practices would
+                            be for <methodname>operator()</methodname> to
+                            follow the template shown for <literal>PHYSICS_EVENT</literal>
+                            and provide a specific method to process each
+                            class of ring item type that needs special processing.
+                        </para>
+                        <para>
+                            Note that the pointer to the actual ring item type is
+                            passed so that polymorphism will work properly.
+                            More about this when we look at the implementation
+                            of <methodname>decodeOtherItems</methodname>.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_free'>
+                        <para>
+                            Once the ring item created by the
+                            <classname>CRingItemFactory</classname> is
+                            fully processed, it must be deleted in order to
+                            avoid memory leaks.  If you use the C++11 standard,
+                            you could also have  created an
+                            <classname>std::unique_ptr</classname>
+                            from the return value of CRingItemFactory, then
+                            destruction of that object would have meant
+                            automatic destruction of the object it pointed to.
+                        </para>
+                        <para>
+                            For more on <classname>std::unique_ptr</classname>
+                            check out
+                            <ulink url='std::unique_ptr'>the online documentation of that class</ulink>.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    The <methodname>operator()</methodname> method dispatched
+                    control to either <methodname>decodePhysicsEvent</methodname>
+                    or <methodname>decodeOtherItems</methodname> depending on the
+                    ring item type.  The simplest of these methods is
+                    <methodname>decodeOtheritems</methodname>.  Let's look at it
+                    first:
+                </para>
+                <informalexample>
+                    <programlisting>
+void
+CRingItemDecoder::decodeOtherItems(CRingItem* pItem)
+{
+
+    std::cout &lt;&lt; pItem->toString() &lt;&lt; std::endl; 
+}
+
+                    </programlisting>
+                </informalexample>
+                <para>
+                    This method just outputs the string representation of
+                    the ring item.   This is the representation you see when
+                    you use <application>dumper</application>.  
+                </para>
+                <para>
+                    The <methodname>toString</methodname> method is why we needed
+                    to pass the output of
+                    <classname>CRingItemFactsory</classname>::<methodname>createRingItem</methodname>
+                    to this method rather than the pointer passsed to
+                    <methodname>operator()</methodname>.
+                </para>
+                <para>
+                    The <methodname>toString</methodname> method is a virtual
+                    method that is implemented differently for each ring item
+                    class type.  When a virtual method is referenced in pointer or
+                    reference dereferenciung, the method for the class of the underlying
+                    object is called.  This is commonly referred to
+                    as <firstterm>polymorphism</firstterm>.
+                </para>
+                <para>
+                    If we had passed the pointer that was passed in to
+                    <methodname>operator()</methodname>, that would be pointing
+                    at an object of class <classname>CRingItem</classname> which
+                    knows nothing of how to format ring items.  Its implementation
+                    of <methodname>toString</methodname> is a very simple byte by byte
+                    hex dump of the ring item body, which is not what we wanted to present.
+                </para>
+                <para>
+                    The end result of all of this is that
+                    <methodname>decodOtherItems</methodname> just output
+                    what <application>dumper</application> would output
+                    to standard output.
+                </para>
+                <para>
+                    
+                </para>
+                <informalexample>
+                    <programlisting>
+void
+CRingItemDecoder::decodePhysicsEvent(CPhysicsEventItem* pItem)
+{
+    if (! pItem->hasBodyHeader()) {                    <co id='rideci_bodyhdrcheck' />
+        std::cerr &lt;&lt; "Warning - an event has no body header - won't be processed
+\n";
+        return;
+    }
+
+    std::uint64_t timestamp = pItem->getEventTimestamp();
+    std::uint32_t srcid     = pItem->getSourceId();       <co id='rideci_bodyheaderinfo' />
+    std::uint32_t btype     = pItem->getBarrierType();
+    
+    
+    <co id='rideci_fragindex_info' />
+
+    FragmentIndex iterator(reinterpret_cast&lt;std::uint16_t*&gt;(pItem->getBodyPointer()));
+    size_t  nFrags = iterator.getNumberFragments();
+
+    for (size_t i = 0; i &lt; nFrags; i++) {
+        FragmentInfo f = iterator.getFragment(i);
+        CFragmentHandler* h = m_fragmentHandlers[f.s_sourceId];  <co id='rideci_fraghandler_dispatch' />
+        if (h) (*h)(f); 
+    }
+
+    if (m_endHandler) (*m_endHandler)(pItem);              <co id='rideci_endhandler_dispatch' />
+}
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='rideci_bodyhdrcheck'>
+                        <para>
+                            This code assumes that the ring items
+                            it is processing have body headers.  Body headers
+                            were introduce in NSCLDAQ-11.0.  They provide
+                            a standard structure in which information needed
+                            by the event builder can be stored.  Body headers
+                            allow <application>ringFragmentSource</application>
+                            to operate without a timestamp extraction library.
+                            The inclusion of a body header in a ring items is
+                            optional.
+                        </para>
+                        <para>
+                            If the ring item does not have a body header,
+                            <classname>CRingItem</classname>::<methodname>hasBodyHeader</methodname>
+                            is true if the body header is present,
+                            a warning message is emitted and we return
+                            at once. 
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_bodyheaderinfo'>
+                        <para>
+                            Extracts the information from the body header.
+                            The sample code does not do anything with this information.
+                            Another option above would have been to continue
+                            execution if there was no body header, just conditionalize
+                            this code on the body header being present.
+                        </para>
+                        <para>
+                            The ring item classes understand how to deal with
+                            ring items that have and don't have body headers.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_fragindex_info'>
+                        <para>
+                            <classname>FragmentIndex</classname>, when constructed
+                            with a pointer to the body of a ring item,
+                            parses the data,  assuming that it is the output
+                            of the NSCLDAQ event builder.  For each event
+                            fragment in the event, a <structname>FragmentInfo</structname>
+                            struct is created and stored in the object.
+                        </para>
+                        <para>
+                            Note that
+                            <classname>CRingItem</classname>::<methodname>getBodyPointer</methodname>
+                            returns a pointer to the ring item's data.  If the
+                            item has a body header, this pointer will point just
+                            past that body header.  If there is no body  header,
+                            this pointer will point just past the field that indicates
+                            this.
+                        </para>
+                    </callout>
+                    <callout arearefs='rideci_fraghandler_dispatch'>
+                        <para>
+                            This loop iterates over the fragments that were
+                            parsed by the FragmentIndex object. Each fragment's
+                            source id is used as to lookup a pointer to the
+                            handler for that fragment's source id.
+                            <varname>m_fragmentHandlers</varname>
+                        </para>
+                        <para>
+                            A bit of explanation is needed as we never test to
+                            see if a handler was registered.  We only check
+                            that the resulting pointrer is not null, and, if so,
+                            dispatch to that handler's <methodname>operator()</methodname>.
+                        </para>
+                        <para>
+                            <classname>std::map</classname>::<methodname>operator[]</methodname>,
+                            the map indexing operator has defined behavior if
+                            there is not yet a map entry with the index it is
+                            passed.  In that case, an entry is created by invoking
+                            the default constructor for the type of object
+                            stored in the map.
+                        </para>
+                        <para>
+                            C++ defines value initializationon for all scalar
+                            types (pointers are scalar types). These
+                            initializations create an object with all bits set to zero.
+                            See e.g. <ulink url='http://en.cppreference.com/w/cpp/language/value_initialization'>
+                            case 4 of this link</ulink>
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+        </section>
+        <section>
+            <title>Sample handlers for fragment types.</title>
+            <para>
+                In this section we'll look at a  pair of sample fragment handlers.
+                Specifically, we'll look at  fragment handlers for the S800
+                and CAESAR data acquisition systems as they were for the NSCL
+                run in April of 2018.
+            </para>
+            <para>
+                In order to register fragment and end handlers, we need to
+                set up a class hierarchy of polymorphic classes.  This requires
+                the definition of an abstract base class that defines a pure
+                virtual method that concrete fragment handlers will implement.
+            </para>
+            <para>
+                The <classname>CRingItemDecoder</classname> class stores pointers
+                to handlers.  Dereferencing these pointers will invoke the
+                actual virtual method of the implemented class.
+            </para>
+            <para>
+                These base classe are defined in
+                <filename>CFragmentHandler.h</filename>, for fragment handlers
+                and <filename>CEndOfEventHandler.h</filename> for
+                the end of event handlers.  Their definitions are trivial and
+                both are shown below.
+            </para>
+            <informalexample>
+                <programlisting>
+class CFragmentHandler {
+
+public:
+    virtual void operator()(FragmentInfo&amp; frag) = 0;
+};
+
+class CEndOfEventHandler {
+
+public:
+    virtual void operator()(CRingItem* pItem) = 0;
+};
+                    
+                </programlisting>
+            </informalexample>
+            <para>
+                Fragment handler and end of event handler implementations must
+                define and implement the function call operator
+                (<methodname>operator()</methodname>), which is polymorphic
+                over their class hierarcies.
+            </para>
+            <para>
+                Let's look at a trivial end of event handler's definition
+                and implementation (definition in
+                <filename>CMyEndOfEventHandler.h</filename> implementation
+                in <filename>CMyEndOfEventHandler.cpp</filename>):
+            </para>
+            <informalexample>
+                <programlisting>
+// CMyEndOfEventHandler.h:
+
+class CMyEndOfEventHandler : public CEndOfEventHandler
+{
+public:
+    void operator()(CRingItem* pItem);            <co id='meh_def' />
+};
+
+// CMyEndOfEventHandler.cpp:
+
+void
+CMyEndOfEventHandler::operator()(CRingItem* pItem)  <co id='meh_imp' />
+{
+    std::cout &lt;&lt; "--------------------End of Event -----------------------\n";
+}
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='meh_def'>
+                    <para>
+                        Note that the class definition shows that:
+                        <orderedlist>
+                            <listitem>
+                                <para>
+                                    The class is derived from the
+                                    <classname>CEndOfEventHandler</classname> base class.
+                                </para>
+                            </listitem>
+                            <listitem>
+                                <para>
+                                    Declares the intent to provide an implementation
+                                    for the <methodname>operator()</methodname> method.
+                                </para>
+                            </listitem>
+                        </orderedlist>
+                    </para>
+                    <para>
+                        These two conditions are required for
+                        <classname>CMyEventHandler</classname> to function
+                        properly.
+                    </para>
+                </callout>
+                <callout arearefs='meh_imp'>
+                    <para>
+                        The actual implementation is trivial, simply outputting
+                        a string that indicates the event is fully processed.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                Before looking at the individual fragment handlers, let's step
+                back and think about the structure of the data from the S800
+                and CAESAR.  Both of these data acquisition systems, at the time,
+                used <firstterm>tagged item</firstterm> formats.  A tagged item
+                is something very much like a ring item.  A tagged item
+                is an item with a size (self, inlcusive, units of <type>uint16_t</type>),
+                a type, (16 bits), and a body that depends on the type.
+            </para>
+            <para>
+                Both systems produce an event that consists of a tagged item
+                type with tagged items living inside of that outer item.
+                While the item types and their contents differ between CAESAR and
+                the S800, item identification and iteration over the subitems
+                present does not.
+            </para>
+            <para>
+                As our fragment handlers will just make a formatted dump of the
+                data (a very sketchy dump at that), we can imagine common methods
+                for packet type to string lookup and iteration over the subpackets.
+            </para>
+            <para>
+                These are defined and implemented in
+                <filename>PacketUtils.h</filename> (definition) and
+                <filename>PacketUtils.cpp</filename>.   The definition file
+                contains:
+            </para>
+            <informalexample>
+                <programlisting>
+namespace PacketUtils {
+    std::uint16_t* nextPacket(std::uint16_t&amp; nRemaining, std::uint16_t* here);
+    std::string    packetName(
+        std::uint16_t type, const std::map&lt;std::uint16_t,
+        std::string&gt;&amp; typeMap, const char* defaultName);
+}
+
+                </programlisting>
+            </informalexample>
+            <para>
+                This header defines a namespace in which the utility functions
+                will be isolated and two functions:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term>
+                        <funcsynopsis>
+                        <funcprototype><funcdef><type>std::uint16_t*</type>
+                        <function>nextPacket</function></funcdef>
+                        <paramdef>
+                          <type>std::uint16_t&amp;</type><parameter>nRemaining</parameter>
+                        </paramdef>
+                        <paramdef>
+                            <type>std::uint16_t*</type><parameter>here</parameter>
+                        </paramdef>
+                        </funcprototype>
+                        </funcsynopsis>
+                    </term>
+                    <listitem>
+                        <para>
+                            Given a pointer to the start of a packet;
+                            <parameter>here</parameter>
+                            and the
+                            number of words remaining in the event;
+                            <parameter>nRemaining</parameter>
+                        </para>
+                        <itemizedlist>
+                            <listitem>
+                                <para>
+                                    Updates <parameter>nRemaining</parameter> to the
+                                    number of words remaining after the end of
+                                    the packet pointed to by <parameter>here</parameter>.
+                                </para>
+                            </listitem>
+                            <listitem>
+                                <para>
+                                    Returns a pointer to the next packet in the
+                                    event.  If there is no next packet, a
+                                    <literal>nullptr</literal> is returned.
+                                </para>
+                                <para>
+                                    The function assumes that there is no
+                                    data between packets. 
+                                </para>
+                            </listitem>
+                        </itemizedlist>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <funcsynopsis>
+                        <funcprototype><funcdef><type>std::string</type>
+                        <function>packetName</function></funcdef>
+                        <paramdef>
+                          <type>std::uint16_t </type><parameter>type</parameter>
+                        </paramdef>
+                        <paramdef>
+                            <type>const std::map&lt;std::uint16_t std::string&gt;&amp;</type>
+                            <parameter>typeMap</parameter>
+                        </paramdef>
+                        <paramdef>
+                            <type>const char*</type><parameter>defaultName</parameter>
+                        </paramdef>
+                        </funcprototype>
+                        </funcsynopsis>
+                    </term>
+                    <listitem>
+                        <para>
+                            Given a packet type code (<parameter>type</parameter>) and
+                            a map of type codes to type names, returns the name of
+                            the packet type.   If there is no entry in the map
+                            for <parameter>type</parameter>, the value
+                            <parameter>defaultName</parameter> is returned.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Armed with this, let's look at the CAESAR fragment handler
+                first.  <filename>CCAESARFragmentHandler.h</filename> has the
+                class definition:
+            </para>
+            <informalexample>
+                <programlisting>
+class CCAESARFragmentHandler : public CFragmentHandler
+{
+private:
+    /**
+     * maps packet ids to packet name strings.
+     */
+    std::map&lt;std::uint16_t, std::string&lt; m_packetNames; <co id='cfhd_map' />
+public:
+    CCAESARFragmentHandler();
+
+    void operator()(FragmentInfo&amp; frag);
+private:
+    void timestampPacket(std::uint16_t* pPacket);            <co id='chfd_tspacket' />
+};
+
+                </programlisting>
+            </informalexample>
+            <para>
+                This is about what we'd expect to see, a couple of points:
+            </para>
+            <calloutlist>
+                <callout arearefs='cfhd_map'>
+                    <para>
+                        This map will contain the packet type/packet name
+                        correspondences passed in to
+                        <classname>PacketUtils</classname>::packetName.
+                    </para>
+                </callout>
+                <callout arearefs='chfd_tspacket'>
+                    <para>
+                        For the most part our implementation will just trivially
+                        show which packets are present.  For timestamp packets,
+                        however the timestamp will be extracted and output as well.
+                        We've therefore defined a separate method to handle timestamp
+                        packets.
+                    </para>
+                    <para>
+                        It's certainly possible to cram all the code for all
+                        packets into the <methodname>operator()</methodname>
+                        method.  That's especially true for this trivial example.
+                        As what we do with packets becomes more complicated
+                        (extracting parameters e.g.), eventually the
+                        <methodname>operator()</methodname> will be come
+                        unmanageable and hard to maintain.  Pushing non-trivial
+                        packet handling off into separate methods captures
+                        the separation of concerns better than a monolithic
+                        <methodname>operator()</methodname>.
+                    </para>
+                    <para>
+                        One interesting rule of thumb that's often used
+                        is that if a function requires more than one or two
+                        screen lengths it's probably too big and should
+                        be split into smaller units.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                On to the implementation.  We're not going to show the constructor,
+                all that does is fill <varname>m_packetNames</varname>.   Here's
+                the <methodname>operator()</methodname> implementation:
+            </para>
+            <informalexample>
+                <programlisting>
+void
+CCAESARFragmentHandler::operator()(FragmentInfo&amp; frag)
+{
+    std::cout &lt;&lt; "==== CEASAR Fragment: \n";
+    std::cout &lt;&lt; "   Timestamp: " &lt;&lt; frag.s_timestamp &lt;&lt; std::endl;
+    std::cout &lt;&lt; "   Sourceid:  " &lt;&lt; std::hex &lt;&lt; frag.s_sourceId &lt;&lt; std::dec &lt;&lt; "(hex)\n";
+
+    std::uint16_t* p = frag.s_itembody;                <co id='cfhi_getbody' />
+    p += sizeof(std::uint32_t)/sizeof(std::uint16_t);   
+
+    std::uint16_t remaining = *p++;                     
+    std::uint16_t caesarType = *p++;                   <co id='chfi_toppacket' />
+    remaining -= 2;                                     
+
+    if (caesarType != 0x2300) {
+        std::cout &lt;&lt; " *** Error - CAESAR packet id should be 0x2300 but was: "
+            &lt;&lt; std::hex &lt;&lt; caesarType &lt;&lt; std::dec &lt;&lt; std::endl;
+        return;
+    }
+    p += 2;                                         <co id='chfi_firstsubpkt' />
+    remaining -= 2;
+
+    while (p) {
+        std::uint16_t subPktSize = *p;
+        std::uint16_t subPktType = p[1];
+                                                   <co id='chfi_idsubpkt' />
+        std::string subPacketTypeName =
+            PacketUtils::packetName(subPktType, m_packetNames, "Unknown");
+
+        std::cout &lt;&lt; "   Subpacket for " &lt;&lt; subPacketTypeName &lt;&lt; " " &lt;&lt; subPktSize &lt;&lt; " words long\n";
+
+        if (subPktType == 0x2303) {
+          timestampPacket(p);                    <co id='chfi_tsdispatch' />
+        }
+
+        p = PacketUtils::nextPacket(remaining, p);  <co id='chfi_nextsub' />
+    }
+
+}
+
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='cfhi_getbody'>
+                    <para>
+                        The <methodname>operator()</methodname> method is
+                        passed a reference to a <structname>FragmentInfo</structname>
+                        struct.  The <structfield>s_itembody</structfield>  is a pointer
+                        to the fragment body.  This is the body after any
+                        body header the body may have.
+                    </para>
+                    <para>
+                        Other than outputting information in the
+                        <structname>FragmentInfo</structname> struct that
+                        <classname>FragmentIndex</classname> extracted for us,
+                        we're not really interested in the contents of the fragment
+                        or body header.
+                    </para>
+                </callout>
+                <callout arearefs='chfi_toppacket'>
+                    <para>
+                        The body of CAESAR data consists of a uint32_t that
+                        contains the total length of the event. The remainder of
+                        the event is a top level packet with type
+                        <literal>0x2300</literal>.
+                    </para>
+                    <para>
+                        This section of code extracts the length of that packet
+                        and its type.  If the packet type isn't what is expected,
+                        an error is emitted and we don't process the remainder of
+                        the fragments.
+                    </para>
+                    <para>
+                        The <code>remaining -= 2</code> makes the variable
+                        <varname>remaining</varname> a count of the number of
+                        words of data in the body of the packet.
+                    </para>
+                </callout>
+                <callout arearefs='chfi_firstsubpkt'>
+                    <para>
+                        The top level of thre packet consists of two words we don't
+                        care about followed by a sequence of subpackets.
+                        These two statements set up to iterate over the
+                        subpackets.  The implicit assumption is that there is
+                        at least one subpacket.
+                    </para>
+                    <para>
+                        The following <code>while</code> loop iterates over
+                        the subpackets.
+                    </para>
+                </callout>
+                <callout arearefs='chfi_idsubpkt'>
+                    <para>
+                        The two lines above extract the size of the packet and
+                        the packet type.  The 
+                        <function> PacketUtils::packetName</function> function
+                        is then used to get the packet name.  This basic information,
+                        packet size and packet type name are then output.
+                    </para>
+                </callout>
+                <callout arearefs='chfi_tsdispatch'>
+                    <para>
+                        If the packet was a timestamp packet, it is processed by
+                        invoking <methodname>timestampPacket</methodname>
+                    </para>
+                </callout>
+                <callout arearefs='chfi_nextsub'>
+                    <para>
+                        The <function>PacketUtils::nextPacket</function>
+                        returns a pointer to the next packet or a null pointer
+                        if we're done.
+                    </para>
+                </callout>
+            </calloutlist>
+        </section>
+        <section>
+            <title>
+                A simple program that uses the framework.  
+            </title>
+            <para>
+                This section shows how the framework can be used in a simple
+                program.  The program simply takes a stream of ring items
+                from a data source (online or file) and invokes a
+                <classname>CRingItemDecoder</classname> for each item as
+                it arrives.  The full source code is in
+                <filename>Main.cpp</filename>.
+            </para>
+            <para>
+                This file includes a function <function>usage</function>
+                which outputs simple help describing how to invoke the program.
+                We're not going to show that function here.   The program
+                takes a single parameter which is the URI of a source of
+                ring items.  The URI can be a <literal>tcp</literal> URI
+                to accept data from the online system or a
+                <literal>file</literal> URI to accept data from file.
+            </para>
+            <para>
+                Here's the <function>main</function> function in
+                <filename>Main.cpp</filename>
+                
+            </para>
+            <informalexample>
+                <programlisting>
+int
+main(int argc, char**argv)
+{
+    if (argc != 2) {                      <co id="ringdecmain_checkarg" />
+        usage();
+        std::exit(EXIT_FAILURE);
+    }
+    std::string uri(argv[1]);
+    std::vector&lt;uint16_t&gt; sample = {PHYSICS_EVENT};   // means nothing from file.
+    std::vector&lt;uint16_t&gt; exclude;                    // get all ring item types:
+
+    CDataSource* pSource;
+    try {
+        pSource = CDataSourceFactory::makeSource(uri, sample, exclude); <co id='ringdecmain_makesource'/>
+    }
+    catch (...) {
+        std::cerr &lt;&lt; "Failed to open the data source.  Check that your URI is valid and exists\n";
+        std::exit(EXIT_FAILURE);
+    }
+
+    CDataSource&amp; source(*pSource);
+
+    CRingItemDecoder       decoder;
+    CS800FragmentHandler   s800handler;
+    CCAESARFragmentHandler caesarhandler;        <co id='ringdecmain_instantiations' />
+    CMyEndOfEventHandler   endhandler;
+
+    decoder.registerFragmentHandler(2, &amp;s800handler);
+    decoder.registerFragmentHandler(0x2300, &amp;caesarhandler); <co id='ringdecmain_registrations'/>
+    decoder.registerEndHandler(&amp;endhandler);
+
+    try {
+        CRingItem* pItem;
+        while (pItem = source.getItem()) {
+            decoder(pItem);                         <co id='ringdecmain_processitems' />
+            delete pItem;
+        }
+        if (errno != ESUCCESS) throw errno;         <co id='ringdecmain_endinput' />
+
+        std::exit(EXIT_SUCCESS);
+    }
+    catch (int errcode) {                          <co id='ringdecmain_errors' />
+
+        std::cerr &lt;&lt; "Ring item read failed: " &lt;&lt; std::strerror(errcode) &lt;&lt; std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+    catch (std::string msg) {
+        std::cout &lt;&lt; msg &lt;&lt; std::endl;
+        std::exit(EXIT_FAILURE);
+    }                                             <co id='ringdecmain_fallthrough' />
+    std::cerr &lt;&lt; "BUG - control fell to the bottom of the main\n";
+    std::exit(EXIT_FAILURE);
+}
+
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='ringdecmain_checkarg'>
+                    <para>
+                        The program must have exactly one command line parameter.
+                        If this is not the case, the program usage information
+                        is output (via <function>usage</function>), and the program
+                        exits reporting an error.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_makesource'>
+                    <para>
+                        This method uses the <classname>CDataSourceFactory</classname>
+                        to create a data source.  A data source is an object
+                        that can retrieve a sequence of ring items from some
+                        source.  
+                    </para>
+                    <para>
+                        The factory uses the protocol of the URI to
+                        create the right specific factory type; a
+                        <classname>CFileDataSource</classname> if the URI
+                        uses the <literal>file</literal> protocol or
+                        a <classname>CRingDataSource</classname> for
+                        <literal>tcp</literal> data sources.
+                    </para>
+                    <para>
+                        Note that the factory throws exceptions to report errors.
+                        In this sample  we've just reported a generic error.  You
+                        can get better error messages by catching
+                        <classname>std::string</classname> exceptions and outputting
+                        the string.  Similarly, if there are errors in the format
+                        of the URI, they will be reported as
+                        <classname>CURIFormatException</classname> exceptions.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_instantiations'>
+                    <para>
+                        To analyze data gotten from the data source we'll
+                        want to have a <classname>CRingItemDecoder</classname>
+                        object and appropriate fragment and end handlers.
+                        This section of code creates those objects.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_registrations'>
+                    <para>
+                        The fragment handlers and end handlers must be made known
+                        to the decoder.  These sections of code perform the necessary
+                        registrations.  Note that the CAESAR source id is
+                        <literal>0x2300</literal> while the s800 source id
+                        is <literal>2</literal>.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_processitems'>
+                    <para>
+                        This loop gets successive ring items from the
+                        data source, processes them and deletes them.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_endinput'>
+                    <para>
+                        When the last ringitem has been received (e.g.
+                        because an end of file was encountered on a file data source),
+                        the data source returns a null pointer.  If it does so,
+                        without an error code in <varname>errno</varname>,
+                        the program exits normally.  If not the actuall error
+                        code is thrown.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_errors'>
+                    <para>
+                        These exception handlers handle the two main exception
+                        types.  <type>int</type> errors are <varname>errno</varname>
+                        values which get via <function>strerror</function>.
+                        <classname>std::string</classname> exceptions, on the
+                        other hand are error message strings.
+                    </para>
+                </callout>
+                <callout arearefs='ringdecmain_fallthrough'>
+                    <para>
+                        Control should not fall through out of the loop.
+                        Either the program should have exited normally due
+                        to end of data, or it should have thrown an exception
+                        and exited due to that.  This last bit of defensive programming
+                        catches any other case.
+                    </para>
+                </callout>
+            </calloutlist>
+        </section>
+        <section>
+            <title>Suggestions for embedding the framework in SpecTcl or Root</title>
+            <para>
+                It's reasonable to want to use this framework as a starting
+                point for SpecTcl event processors that decode data from the
+                event builder.  Note that it's also reasonable to want to use this
+                framework to unpack data read into Root.  This section is going
+                to outline mechanisms to do both with minimal code changes
+                when switching from between SpecTcl and Root.
+            </para>
+            <para>
+                The key to doing this is, again separation of concerns.  Analysis
+                of data in either framework requires:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Iterating over the event fragments in a ring item
+                        invoking processors for each fragment;
+                        <classname>RingItemDecoder</classname> does this.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        In each fragment processor, decoding the raw event
+                        structure of the fragment into a set of parameters.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Making those decoded parameter available to the
+                        analysis framework (SpecTcl or Root).
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                Where almost all attempts to do this fall over is by combining
+                the last two concerns into a single class (e.g. having event processors
+                that directly fill in <classname>CTreeParameter</classname> objects
+                while decoding raw data).
+            </para>
+            <para>
+                An approach that better separates concerns is to unpack the
+                raw event fragments into some struct or other object that
+                is independent of Root or SpecTcl in one class and then having
+                classes for SpecTcl and Root that unpack <emphasis>that</emphasis>
+                object in to tree parameters or trees.
+            </para>
+            <para>
+                SpecTcl's event processors offer a simple mechanism to do this.
+                My recommendation is that at least three event processors be
+                used to unpack raw data to tree parameters:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        The first event processor would be based on the framework
+                        described in this example.  It would create structs or
+                        objects containing the raw parameters in the event.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The second event processor would embed an object
+                        that would compute parameters that require more than
+                        one event fragment (for example timestamp differences).
+                        These too would go into a struct or object.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The remaining event processor(s) would marshall data
+                        from these intermediate structs/objects into tree parameters
+                        so that SpecTcl can use them.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                This approach can be transplanted into Root, by using the
+                framework to process ring items.  After each ring item
+                is processed, the object embedded into the second event processor
+                would be run.   That would be followed by code to marshall
+                data from the structs into Root trees.
+            </para>
+            <para>
+                In the remainder of this section we'll look at an event processor
+                that embeds the <classname>CRingItemDecoder</classname>
+                processing framework.   This code will be fragmentary and incomplete.
+                It is intended to give you a direction from which you can
+                embed this framework.
+            </para>
+            <para>
+                Here's some sample code that shows how to get from an event
+                processor into the ring item decoder.  We're going to assume
+                that the constructor, or <methodname>OnAttach</methodname>
+                has created an instance of the decoder in
+                <varname>m_pEventDecoder</varname> and that the fragment
+                handlers have already been registered.
+            </para>
+            <para>
+                All we need to do is to get a pointer to the ring item and
+                pass that to the decoder as a <classname>CRingItem</classname>.
+                To do this we use the facts that:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        The <classname>CBufferDecoder</classname> for ring item
+                        data sources is a <classname>CRRingBufferDecoder</classname>.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The <classname>CRingItemFactory</classname> can construct
+                        a <classname>CRingItem</classname> from a pointer
+                        to a raw ring item
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <informalexample>
+                <programlisting>
+Bool_t
+CFrameworkEventProcessor::operator()(const Address_t pEvent,
+			    CEvent&amp; rEvent,
+			    CAnalyzer&amp; rAnalyzer,
+			    CBufferDecoder&amp; rDecoder
+)
+{
+    ....
+    CRingBufferDecoder&amp; actualDecoder(dynamic_cast&lt;CRingBufferDecoder&amp;&gt;(rDecoder);
+    void* pRawRingItem = actualDecodrer.getItemPointer();
+    CRingItem pRingItem = CRingItemDecoder::createRingItem(pRawRingItem);
+    (*m_pEventDecoder)(pRingItem);
+    delete pRingItem;
+    ....
+    
+    return kfTRUE;
+}
+                </programlisting>
+            </informalexample>
+            <para>
+                After casting the decoder to a ring item decoder, the
+                decoder is used to get a pointer to the raw ring item. By raw
+                ring item we mean an item like one described in
+                <filename>DataFormat.h</filename>.  Once we have that,
+                the ring item factory can create a ring item object which can
+                be passed to the decoder and then deleted.
+            </para>
+        </section>
+        
+<!--- end of ReadNSCLDAQFilesExample  -->
+        
+    </section>
+    
+</chapter>
+
+<!-- /chapter -->
+
