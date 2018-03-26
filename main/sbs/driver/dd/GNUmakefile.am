@@ -3,6 +3,7 @@ BTDRIVER=$(shell pwd)
 
 
 all-local:
+	cp @srcdir@/Makefile .
 	make -C @KERNEL_SOURCE_DIR@ SUBDIRS=$(BTDRIVER) modules BTDRIVER=$(BTDRIVER)/..
 
 clean-local:
