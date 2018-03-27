@@ -1,4 +1,4 @@
-
+BTDRIVER=@srcdir@/..
 
 
 obj-m := btp.o
