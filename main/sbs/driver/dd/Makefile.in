@@ -1,0 +1,17 @@
+
+
+
+obj-m := btp.o
+
+btp-objs :=	@srcdir@/bt_bit.o @srcdir@/bt_delay.o @srcdir@/bt_diag.o \
+	@srcdir@/bt_event.o @srcdir@/bt_icbr_thread.o \
+	@srcdir@/bt_isr.o @srcdir@/bt_llist.o @srcdir@/bt_mem.o \
+	@srcdir@/bt_mutex.o @srcdir@/bt_nbus.o @srcdir@/bt_param.o \
+	@srcdir@/bt_rwlck.o @srcdir@/bt_setup.o @srcdir@/bt_xfer.o \
+	@srcdir@/btp_bind.o @srcdir@/btp_cfg.o @srcdir@/btp_ioctl.o \
+	@srcdir@/btp_lowio.o @srcdir@/btp_mmap.o @srcdir@/btp_open.o \
+	@srcdir@/btp_rdwr.o @srcdir@/btp_version.o
+
+EXTRA_CFLAGS += -g  -DBT1003 -I$(BTDRIVER)/dd -I$(BTDRIVER)/include \
+	-fno-strength-reduce -Wall -Wstrict-prototypes -fno-common
+
