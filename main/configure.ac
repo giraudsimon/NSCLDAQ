@@ -473,7 +473,6 @@ AC_CONFIG_FILES([Makefile
     sbs/driver/src/Makefile
     sbs/driver/include/Makefile
     sbs/driver/dd/GNUmakefile
-    sbs/driver/dd/Makefile
     sbs/nsclapi/Makefile
     sbs/tclpackage/Makefile
     sbs/puretcl/Makefile

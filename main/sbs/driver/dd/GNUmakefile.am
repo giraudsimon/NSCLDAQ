@@ -1,9 +1,8 @@
 
-BTDRIVER=$(shell pwd)
+BTDRIVER=$(shell (cd @srcdir@; pwd))
 
 
 all-local:
-	- cp -u @srcdir@/Makefile .
 	make -C @KERNEL_SOURCE_DIR@ SUBDIRS=$(BTDRIVER) modules BTDRIVER=$(BTDRIVER)/..
 
 clean-local:
@@ -58,7 +57,6 @@ bt_setup.c \
 bt_trace.h \
 btunit.h \
 bt_xfer.c \
-mkbtp	\
-Makefile
+mkbtp
 
 
