@@ -19,7 +19,7 @@ install-exec-local:
 
 install-data-local:
 	$(mkinstalldirs) $(prefix)/include
-	$(INSTALL_DATA) *.h $(prefix)/include
+	$(INSTALL_DATA) @srcdir@/*.h $(prefix)/include
 
 EXTRA_DIST=bt_assert.h \
 bt_bit.c \
