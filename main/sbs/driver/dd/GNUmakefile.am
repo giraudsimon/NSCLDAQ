@@ -57,6 +57,6 @@ bt_setup.c \
 bt_trace.h \
 btunit.h \
 bt_xfer.c \
-mkbtp
+mkbtp Makefile
 
 
