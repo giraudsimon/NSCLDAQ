@@ -4,7 +4,7 @@
 AC_PREREQ(2.61)
 
 
-AC_INIT(nscldaq,11.2-009, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,11.2-010, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 
@@ -440,6 +440,7 @@ AC_CONFIG_FILES([Makefile
     utilities/newscaler/Makefile
     utilities/newscaler/ScalerDisplay.tcl
     utilities/scalersum/Makefile
+    utilities/reglom/Makefile
     epics/chanlog/Makefile
     epics/controlpush/Makefile
     epics/epicsdisplay/Makefile

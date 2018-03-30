@@ -1,0 +1,9 @@
+package "reglom"
+version "1.0"
+purpose "Offline event building from data source files"
+
+option "dt"               t "Coincidence window in ticks" int required
+option "timestamp-policy" p "How to derive timestamp of built events"
+    values="earliest","latest","average" enum optional default="earliest"
+option  "sourceid"        s "Source id of built events" int optional default="0"
+option "output"           o "Output file" string required

@@ -56,6 +56,8 @@ namespace eval ::EVB {
     array set lastinputstats [list]
     
     variable ooWidget
+    
+    set lastLateInfo [list]
 }
 
 #-----------------------------------------------------------------------------
@@ -621,6 +623,7 @@ proc EVB::maintainGUI {widget {ms 2000}} {
     set errors           [$widget getErrorStats]
     set incompleteWidget [$errors getIncompleteStatistics]
     set lateWidget       [$errors getLateStatistics]
+
     
     # Update the output ring status:
     

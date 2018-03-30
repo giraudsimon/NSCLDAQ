@@ -209,7 +209,7 @@ CMQDC32RdoHdwr::Initialize(CVMUSB& controller)
   unique_ptr<CVMUSBReadoutList> pList(controller.createReadoutList());
   m_logic.addWriteAcquisitionState(*pList,0);
   auto result = ctlr.executeList(*pList, 8);
-  if (result.size() < 0) {
+  if (result.size() == 0) {
     throw std::runtime_error("Failure while disabling MQDC32 acquisition mode.");
   }
 
