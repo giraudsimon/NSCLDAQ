@@ -39,7 +39,7 @@ unittests_CXXFLAGS=-DSRCDIR='"@srcdir@/"'
 #       only here to support unit tests for skipHeader.
 #
 
-EXTRA_DIST=vmeusb_0A00_031713.bit vmeusb_0A00_031913.bin ccusb_0600_072012.bit \
+EXTRA_DIST=vmeusb_0A00_031913.bin vmeusb_0A00_031913.bin ccusb_0600_072012.bit \
     usbloaders.xml xlmloadparams.ggo
 
 
