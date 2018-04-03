@@ -57,7 +57,10 @@ namespace eval ::EVB {
     
     variable ooWidget
     
-    set lastLateInfo [list]
+    variable lastLateSummary [list 0  0]
+    variable lastIncompleteStats [list]
+    variable lastLatewidgetStats [list]
+    
 }
 
 #-----------------------------------------------------------------------------
@@ -466,6 +469,9 @@ snit::widgetadaptor EVB::statusNotebook {
     delegate option * to hull
     delegate method * to hull
     
+    variable outOfOrderTabno
+    variable errorTabNo
+    
     ##
     # constructor
     #
@@ -493,22 +499,46 @@ snit::widgetadaptor EVB::statusNotebook {
         
         install ooStats using OutOfOrderWindow $win.oo
         $hull add $ooStats -text {Out of order}
+        set outOfOrderTabno 3
         
         install barrierStats using EVB::barrierStatistics $win.barrier
         $hull add $barrierStats -text {Barriers}
         
         install errorStats using EVB::errorStatistics  $win.errors
         $hull add $errorStats -text {Errors}
+        set errorTabno 5
         
         $self configurelist $args
 
         grid rowconfigure $win 0 -weight 1
         grid columnconfigure $win 0 -weight 1
-
+        
+        # Load the red.gif image so that we can set the color of error-ing
+        # tabs to red:
+        
+        image create photo redbackground -file [file join $here red.gif]
+        
+        #  If the tab changes to one of the red-able tabs, turn it back:
+        
+        bind $win <<NotebookTabChanged>> [mymethod _normalizeTabColor]
     }
     #------------------------------------------------------------------------
     # Public methods:
     
+    method setLateRed {} {
+        $win tab $outOfOrderTabno -image redbackground -compound center
+    }
+    method setLateNormal {} {
+        $win tab $outOfOrderTabno -compound text
+        
+    }
+    method setErrorsRed {} {
+        $win tab $errorTabno -image redbackground -compound center
+        
+    }
+    method setErrorsNormal {} {
+        $win tab $errorTabno -compound text
+    }
     
     ##
     # getRingStats
@@ -555,7 +585,25 @@ snit::widgetadaptor EVB::statusNotebook {
         return $errorStats
     }
 }
+#-----------------------------------------------------------------------------
+#  Private methods
+#
 
+##
+# _normalizeTabColor
+#    Called when tab changes.  Get the current tab.  If it's either of
+#    outofOrderTabno or errorTabno, set the tab color to normal.
+#
+method _normalizeTabColor {} {
+    set current [$win tab index current]
+    
+    if {$current == $outOfOrderTabno} {
+        $self setLateNormal
+    }
+    if {$current == $errorTabno} {
+        setErrorsNormal
+    }
+}
 
 #-----------------------------------------------------------------------------
 #
@@ -800,9 +848,13 @@ proc EVB::maintainGUI {widget {ms 2000}} {
 	-heterogenouscount [lindex $completeBarriers 2]
 
     $lateWidget configure -count [lindex $lateStats 0] -worst [lindex $lateStats 1]
+    if {$lateStats ne $lastLatewidgetStats} {
+        $widget setErrorsRed
+    }
+    set lastLatewidgetStats $lateStats
 
 
-    # Fill in the source  statitics page:
+    # Fill in the source  statistics page:
 
     set iQStats [$source getQueueStatistics]
     set iBStats [$source getBarrierStatistics]
@@ -863,15 +915,23 @@ proc EVB::maintainGUI {widget {ms 2000}} {
 	if {[dict exists $sourceStatistics($source)  incompletebarriers]} {
 	    set stats [dict get $sourceStatistics($source) incompletebarriers]
 	    $incompleteWidget setItem $source [lindex $stats 1]
+        if {$stats ne $lastIncompleteStats} {
+            $widget setErrorsRed
+        }
+        set lastIncompleteStats $stats
 	}
 	# Data late information:
 
 	if {[dict exists $sourceStatistics($source) late]} {
 	    set stats [dict get $sourceStatistics($source) late]
+        if {$stats != $lastLateSummary}    {
+            $widget setLateRed
+        }
 	    $lateWidget source $source [lindex $stats 1] [lindex $stats 2]
+        set lastLateSummary $stats
 	}
 
-    }
+    
 
 
     after $ms [list EVB::maintainGUI $widget $ms]
