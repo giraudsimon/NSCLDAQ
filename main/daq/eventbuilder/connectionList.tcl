@@ -33,7 +33,6 @@ snit::widgetadaptor EVB::connectionList {
     delegate option -text to hull
 
     constructor args {
-        puts "Making connectionlist"
         installhull using ttk::labelframe
         
 	##
@@ -59,9 +58,7 @@ snit::widgetadaptor EVB::connectionList {
   $self configurelist $args
 	$self _update;			# Stock the table and reschedule the update periodicity.
     }
-    destructor {
-        puts "Destroying connection list"
-    }
+    
     #-----------------------------------------------------------------------
     # Internal (private) methods.
 

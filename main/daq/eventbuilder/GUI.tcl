@@ -869,9 +869,10 @@ proc EVB::maintainGUI {widget {ms 2000} } {
 	-heterogenouscount [lindex $completeBarriers 2]
 
     $lateWidget configure -count [lindex $lateStats 0] -worst [lindex $lateStats 1]
-    if {$lateStats ne $::EVB::lastLatewidgetStats} {
+    if {($lateStats ne $::EVB::lastLatewidgetStats) && ($::EVB::lastLatewidgetStats ne "")} {
         $widget setErrorsRed
     }
+
     set ::EVB::lastLatewidgetStats $lateStats
 
 
@@ -945,7 +946,7 @@ proc EVB::maintainGUI {widget {ms 2000} } {
     
         if {[dict exists $sourceStatistics($source) late]} {
             set stats [dict get $sourceStatistics($source) late]
-            if {$stats != $::EVB::lastLateSummary}    {
+            if {$stats ne $::EVB::lastLateSummary}    {
                 $widget setLateRed
             }
             $lateWidget source $source [lindex $stats 1] [lindex $stats 2]
