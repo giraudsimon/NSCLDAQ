@@ -38,6 +38,7 @@ set DEBUG 0
 namespace eval EVB {
     variable eventBuilder
 }
+puts "In eventOrderer"
 ##
 #  The event builder basically ties everything together in to 
 #  a single type that represents the event building application.
