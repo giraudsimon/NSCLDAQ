@@ -525,17 +525,37 @@ snit::widgetadaptor EVB::statusNotebook {
     #------------------------------------------------------------------------
     # Public methods:
     
+    
+    ##$
+    # Set the out of order stats tab red.   This only will be done if that's not the
+    # current tab:
+    #
     method setLateRed {} {
-        $win tab $outOfOrderTabno -image redbackground -compound center
+        if {[$win index current] != $outOfOrderTabno} {
+            $win tab $outOfOrderTabno -image redbackground -compound center    
+        }
+        
     }
+    ##
+    # Set the out of order stats tab to normal background.
+    #
     method setLateNormal {} {
         $win tab $outOfOrderTabno -compound text
         
     }
+    ##
+    #  Set the error counters tab to red background.
+    #  This is only done if the tab is not currently displayed:
+    #
     method setErrorsRed {} {
-        $win tab $errorTabno -image redbackground -compound center
+        if {[$win index current] != $errorTabno} {
+            $win tab $errorTabno -image redbackground -compound center
+        }
         
     }
+    ##
+    # Set the error counters tab background to normal.
+    #
     method setErrorsNormal {} {
         $win tab $errorTabno -compound text
     }
