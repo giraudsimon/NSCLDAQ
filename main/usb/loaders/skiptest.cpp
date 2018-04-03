@@ -34,7 +34,7 @@
 #include <arpa/inet.h>
 
 
-static const char* pBitFile = SRCDIR "vmeusb_0A00_031713.bit";
+static const char* pBitFile = SRCDIR "ccusb_0603_123117.bit";
 static const char* pBinFile = SRCDIR "vmeusb_0A00_031913.bin";
 static const char* pOldBitFile = SRCDIR "ccusb_0600_072012.bit";
 
