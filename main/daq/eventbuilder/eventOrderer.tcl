@@ -197,7 +197,7 @@ proc EVB::_NotifyEOF {fd who} {
 	tk_messageBox -icon error -title "Pipe EOF" -message "$who exited" -type ok
     } else {
 	if ($::DEBUG) {
-	    puts [read $fd];	# debugging.
+	    puts stderr [read $fd];	# debugging.
 	} else {
 	    read $fd
 	}
