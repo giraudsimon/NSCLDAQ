@@ -22,7 +22,7 @@ reglom_LDFLAGS=$(common_ldflags)
 
 
 BUILT_SOURCES=reglomopts.c 
-EXTRA_DIST=reglompots.ggo offlinereglom.tcl reglom_ref.xml
+EXTRA_DIST=reglomopts.ggo offlinereglom.tcl reglom_ref.xml
 
 
 reglomopts.c: reglomopts.h
