@@ -340,6 +340,7 @@ mainLoop(string ring, int timeout, int mindata)
 	  if(firstItemSize > mindata) {
 	    if (firstItemSize > use.s_bufferSpace) {
 	      cerr << "Exiting because I just got an event that won't fit in the ring..enlarge the ring\n";
+        dumpWords(pHeader, 200);                     // Dump part of the ring.
 	      exit(EXIT_FAILURE);
 	    } else {
 	      cerr << "item larger than --minsize, reallocating bufer to " << firstItemSize + readOffset << endl;
