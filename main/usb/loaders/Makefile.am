@@ -40,7 +40,7 @@ unittests_CXXFLAGS=-DSRCDIR='"@srcdir@/"'
 #
 
 EXTRA_DIST=ccusb_0600_072012.bit  ccusb_0603_123117.bit  vmeusb_0A00_031913.bin \
-	ccusb_0602_071916.bit  ccusb_122917.bit       vmeusb_41210a03_040218.bit \
+	ccusb_0602_071916.bit  ccusb_122917.bit \
 	usbloaders.xml xlmloadparams.ggo
 
 
