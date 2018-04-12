@@ -1,0 +1,10 @@
+1  #crateID
+7  #number of modules
+2  #slot for mod 0
+3
+4
+5
+6
+7
+8
+/user/ddas/ddasDaq/standard/ddasdevel_snl/readout/crate_1/Pin_1442_9.set

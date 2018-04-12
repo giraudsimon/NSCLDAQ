@@ -1,0 +1,3 @@
+SUBDIRS=readout readout-extclock
+
+

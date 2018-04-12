@@ -1,0 +1,13 @@
+#!/bin/sh 
+
+SETFILES=`find . -name "*.set"`
+if [ "$SETFILES" == "" ] ; then
+    echo "YOU DON'T HAVE ANY SET FILES!"
+    echo -n "Do you want to continue? Enter [y or n] : "
+    read CONTINUE
+    if [ "$CONTINUE" != "y" ] ; then exit ; fi;
+fi
+
+export EVENTS="/user/ddas/stagearea"
+export DAQHOST="spdaq01"
+export RDOFILE="/user/ddas/ddasDaq/standard/ddasdevel_snl/readout/crate_1/Readout"

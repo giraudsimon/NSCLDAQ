@@ -1,0 +1,7 @@
+(Pixie_InitSystem): Host computer speed (ns per cycle) = 0.000000		[Tue Mar  8 09:11:25 2016]
+*ERROR* (Pixie_InitSystem): Can't find any PLX devices, PlxPci_DeviceFind rc=516		[Tue Mar  8 09:11:25 2016]
+*ERROR* (Pixie16InitSystem): failed to initialize system, retval=-3		[Tue Mar  8 09:11:25 2016]
+*ERROR* (Pixie16IMbufferIO): invalid DSP internal memory address 0		[Tue Mar  8 09:11:41 2016]
+(Pixie_InitSystem): Host computer speed (ns per cycle) = 0.000000		[Wed Mar  9 06:52:02 2016]
+*ERROR* (Pixie_InitSystem): Can't find any PLX devices, PlxPci_DeviceFind rc=516		[Wed Mar  9 06:52:02 2016]
+*ERROR* (Pixie16InitSystem): failed to initialize system, retval=-3		[Wed Mar  9 06:52:02 2016]

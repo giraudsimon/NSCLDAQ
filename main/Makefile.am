@@ -15,12 +15,16 @@ if BUILD_DOCS
    DOCDIR=docbuild docconfig simplesetups
 endif
 
+if BUILD_DDAS
+  DDASDIR=ddas
+endif
+
 SUBDIRS =	 base caenfw-common servers base/dataflow  \
 		daq utilities $(DOCDIR) \
-		sbs $(EPICSDIRS) $(USBDIR) examples
+		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) examples
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
-		 docbuild docconfig simplesetups sbs epics usb examples
+		 docbuild docconfig simplesetups sbs epics usb ddas examples
 
 INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
 								@srcdir@/figures/intro-data-flow-diagram-diagnostics.png 

@@ -4,7 +4,7 @@
 AC_PREREQ(2.61)
 
 
-AC_INIT(nscldaq,11.2-010, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,11.3, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 
@@ -261,6 +261,79 @@ else
 fi
 
 #
+#  The DDAS Software will only be built if --enable-ddas=ddas-install-dir
+#  is supplied by the user.  This will attempt to locate the plx software
+#  but if that can't be found, --with-plx-sdk can be used to provide it.
+#  What we provide to the makefiles:
+#
+#  BUILD_DDAS   - if this flag is provided that's defined
+#                  to allow the top level makefile
+#                  to enable the ddas support software build.
+
+#   
+#  DDAS_INSTDIR - the value provided to ddas-install-dir
+#  PLX_LDFLAGS   - The flags needed to build with the PLX driver support libraries.
+
+BUILD_DDAS="no"
+AC_ARG_ENABLE([ddas],
+    AS_HELP_STRING([--enable-ddas=ddas-install-dir],
+                   [Build the DDAS SUpport software using libs etc in ddas-install-dir]),
+    [BUILD_DDAS="yes"
+    DDAS_INSTDIR="$enableval"]
+)
+
+
+if test "x$BUILD_DDAS" == "xyes"
+then
+   AC_MSG_NOTICE([The XIA-DDAS Support software will be built support software in ${DDAS_INSTDIR}])
+   
+   #  If --with-plx-sdk was provided we're done and that's that.
+   #  If not:
+   #
+   #  See if we can find PLX_SDK_DIR -- we try /usr/opt/plx and
+   #  $(prefix)/../../plx
+   #
+   #  If that fails, error out suggesting the user give us --with-plx-sdk
+   #
+   
+   AC_ARG_WITH([plx-sdk],
+      [ --with-plx-sdk=path-to-plx-sdk],
+      [PLX_SDK_DIR=$withval], [PLX_SKD_DIR=""]
+   )
+   
+   if test -z "$PLX_SDK_DIR"
+   then
+      for d in /usr/opt/plx $(prefix)/../../plx
+      do
+         if test -z "$PLX_SDK_DIR"
+         then
+            AC_CHECK_FILE([$d/PlxApi/Library/libPlxApi.a], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+         fi
+      done
+   fi
+   
+   #  If PLX_SDK_DIR is still "" then we toss an error:
+   
+   if test -z "$PLX_SDK_DIR"
+   then
+      AC_MSG_FAILURE([Could not locate the PLX SDK directory, use --with-plx-sdk to help me])
+   fi
+   
+   #  If found then:
+   
+   PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi"
+   
+   #  Now export all the variables to the Makefile.
+   
+   AM_CONDITIONAL([BUILD_DDAS], [true])
+   AC_SUBST(DDAS_INSTDIR)
+   AC_SUBST(PLX_LDFLAGS)
+   
+else
+   AM_CONDITIONAL([BUILD_DDAS],[false])
+fi
+
+#
 #  The SBS software will only be built if
 #  --enable-sbs=kernel-source-dir was supplied.
 #  In that case, the configured kernel source is assumed to be in 
@@ -281,9 +354,9 @@ AC_ARG_ENABLE([sbs],
 
 if test "$BUILD_SBS" == "yes"
 then
-  echo Building SBS software with kernel source at: $KERNEL_SOURCE_DIR
+  AC_MSG_NOTICE([Building SBS software with kernel source at: $KERNEL_SOURCE_DIR])
 else
-  echo SBS software support not selected!
+  AC_MSG_NOTICE([SBS software support not selected!])
 fi
 
 
@@ -516,27 +589,30 @@ AC_CONFIG_FILES([Makefile
     usb/ccusb/tclpackage/Makefile
     usb/ccusb/tcldrivers/Makefile
     usb/ccusb/driverkit/Makefile
-		 usb/ccusb/driverkit/Makefile-template
-		 usb/ccusb/driverkit/CCUSBDriverIncludes
-		 usb/ccusb/controlpanels/Makefile
-		 usb/ccusb/devtests/Makefile
-		 usb/ccusb/tclservertests/Makefile
-		 usb/caenfwloader/Makefile
-		 usb/common/Makefile
-		 usb/common/tcldrivers/Makefile
-		 usb/common/devices/Makefile
-		 usb/common/configurableobject/Makefile
-		 usb/common/slowcontrols/Makefile
-		 usb/mesytec/Makefile
-		 usb/mesytec/MCFD16/Makefile
-		 usb/mesytec/MCFD16/figures/Makefile
-		 usb/mesytec/MSCF16/Makefile
-		 usb/mesytec/MSCF16/figures/Makefile
-		 docbuild/Makefile
-		 docbuild/images/Makefile
-		 docbuild/images/callouts/Makefile
-		 docconfig/Makefile
-     examples/Makefile
-     examples/ReadNSCLDAQFiles/Makefile])
+    usb/ccusb/driverkit/Makefile-template
+    usb/ccusb/driverkit/CCUSBDriverIncludes
+    usb/ccusb/controlpanels/Makefile
+    usb/ccusb/devtests/Makefile
+    usb/ccusb/tclservertests/Makefile
+    usb/caenfwloader/Makefile
+    usb/common/Makefile
+    usb/common/tcldrivers/Makefile
+    usb/common/devices/Makefile
+    usb/common/configurableobject/Makefile
+    usb/common/slowcontrols/Makefile
+    usb/mesytec/Makefile
+    usb/mesytec/MCFD16/Makefile
+    usb/mesytec/MCFD16/figures/Makefile
+    usb/mesytec/MSCF16/Makefile
+    usb/mesytec/MSCF16/figures/Makefile
+    docbuild/Makefile
+    docbuild/images/Makefile
+    docbuild/images/callouts/Makefile
+    docconfig/Makefile
+    examples/Makefile
+    examples/ReadNSCLDAQFiles/Makefile
+    ddas/Makefile ddas/readout/Makefile
+    ddas/readout-extclock/Makefile
+    ])
 
 AC_OUTPUT
