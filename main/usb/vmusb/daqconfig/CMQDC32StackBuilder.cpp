@@ -19,14 +19,14 @@ namespace MQDC32 {
     unique_ptr<CVMUSBReadoutList> pList(ctlr.createReadoutList());
     addWriteAcquisitionState(*pList,0);
     addResetReadout(*pList);
-    ctlr.executeList(*pList, 8);
+    ctlr.executeList(*pList, 2);
 
   }
 
   void CMQDC32StackBuilder::doSoftReset(CVMUSB& ctlr) {
     unique_ptr<CVMUSBReadoutList> pList(ctlr.createReadoutList());
     addSoftReset(*pList);
-    ctlr.executeList(*pList, 8);
+    ctlr.executeList(*pList, 2);
     sleep(1);
   }
 
@@ -43,8 +43,11 @@ namespace MQDC32 {
     list.addRead16(m_base + Reg::StartAcq, initamod);
   }
 
+    // Actual value really should depend on the -multievent mode.
+    // this is correct for single event
+    
   void CMQDC32StackBuilder::addResetReadout(CVMUSBReadoutList& list) {
-    list.addWrite16(m_base + Reg::ReadoutReset, initamod, 1);
+    list.addWrite16(m_base + Reg::ReadoutReset, initamod, 0);
   }
 
   void CMQDC32StackBuilder::addDisableInterrupts(CVMUSBReadoutList& list) 

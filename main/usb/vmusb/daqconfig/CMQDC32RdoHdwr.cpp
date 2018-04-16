@@ -208,7 +208,7 @@ CMQDC32RdoHdwr::Initialize(CVMUSB& controller)
   // delay to the stack after the write.
   unique_ptr<CVMUSBReadoutList> pList(controller.createReadoutList());
   m_logic.addWriteAcquisitionState(*pList,0);
-  auto result = ctlr.executeList(*pList, 8);
+  auto result = ctlr.executeList(*pList, 2);
   if (result.size() == 0) {
     throw std::runtime_error("Failure while disabling MQDC32 acquisition mode.");
   }
@@ -252,7 +252,7 @@ CMQDC32RdoHdwr::Initialize(CVMUSB& controller)
   // 3. start acquisition
   m_logic.addInitializeFifo(*pList);
 
-  result = ctlr.executeList(*pList, 8);
+  result = ctlr.executeList(*pList, 2);
   if (result.size()==0) {
     throw std::runtime_error("Failure while executing list.");
   }
@@ -265,7 +265,7 @@ CMQDC32RdoHdwr::Initialize(CVMUSB& controller)
   pList->clear();
   m_logic.addWriteAcquisitionState(*pList,true);
   m_logic.addResetReadout(*pList);
-  result = ctlr.executeList(*pList, 8);
+  result = ctlr.executeList(*pList, 2);
   if (result.size()==0) {
     throw std::runtime_error("Failure while executing list.");
   }
@@ -648,9 +648,11 @@ CMQDC32RdoHdwr::configureCounterReset(CVMUSBReadoutList& list)
 void
 CMQDC32RdoHdwr::addReadoutList(CVMUSBReadoutList& list)
 {
-  uint32_t base = m_pConfig->getBoolParameter("-base");
+  uint32_t base = getBase();
+  m_logic.setBase(base);
   int index = m_pConfig->getEnumParameter("-multievent", MultiEventModeValues);
   string mode = MultiEventModeValues[index];
+
   if (mode == "limited") {
     uint32_t maxTransfers = m_pConfig->getUnsignedParameter("-maxtransfers");
     m_logic.addFifoRead(list,maxTransfers+40);
@@ -661,6 +663,8 @@ CMQDC32RdoHdwr::addReadoutList(CVMUSBReadoutList& list)
   }
   m_logic.addResetReadout(list);
   list.addDelay(5);
+
+
 }
 
 /*! Operations to do after a run has ended. This is intended to turn of 
@@ -675,7 +679,7 @@ CMQDC32RdoHdwr::onEndRun(CVMUSB& ctlr) {
   m_logic.addWriteAcquisitionState(*pList,false);
   m_logic.addResetReadout(*pList);
 
-  ctlr.executeList(*pList,8);
+  ctlr.executeList(*pList,2);
 }
 
 // Cloning supports a virtual copy constructor.
