@@ -22,7 +22,7 @@ DDASReadout_extcl_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
-	-fPIC -DFIRMWARE_FILE=\"$(SHAREDIR)/DDASFirmwareVersions.txt\"
+	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions-ExtClock.txt\"
 
 DDASReadout_extcl_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
@@ -34,21 +34,3 @@ DDASReadout_extcl_LDFLAGS= \
 	-Wl,"-rpath=@DDAS_INSTDIR@/lib"
 
 
-#libddastimestampextractor_la_SOURCES=ddastimestamp.cpp
-#libddastimestampextractor_la_CPPFLAGS=$(Readout_extcl_CPPFLAGS) $(CXXFLAGS)
-
-
-#
-#   *  Install the firmware versions file in @prefix@/share/readout
-#   *  Install the crate_1 dir in @prefix@/share/readout/crate_1
-#
-
-SHAREDIR=@prefix@/share/ddasreadout-extcl
-
-install-exec-hook:
-	$(mkinstalldirs) $(SHAREDIR)
-	$(mkinstalldirs) $(SHAREDIR)/crate_1
-	$(INSTALL_DATA) DDASFirmwareVersions_ExtClock.txt $(SHAREDIR)
-
-
-EXTRA_DIST= DDASFirmwareVersions_ExtClock.txt.in 

@@ -24,7 +24,7 @@ DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
-	-fPIC -DFIRMWARE_FILE=\"$(SHAREDIR)/DDASFirmwareVersions.txt\"
+	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\"
 
 DDASReadout_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
@@ -51,6 +51,5 @@ install-exec-hook:
 	$(mkinstalldirs) $(SHAREDIR)/crate_1
 	$(INSTALL_DATA) @srcdir@/crate_1/*       $(SHAREDIR)/crate_1
 	$(INSTALL_DATA) @srcdir@/envset          $(SHAREDIR)
-	$(INSTALL_DATA) DDASFirmwareVersions.txt $(SHAREDIR)
 
-EXTRA_DIST=crate_1 DDASFirmwareVersions.txt.in envset README
+EXTRA_DIST=crate_1 envset README
