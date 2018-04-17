@@ -102,7 +102,7 @@ snit::type EVBC::StartOptions {
     option -glombuild -configuremethod checkGlomBuild -default 0
     option -glomdt 1 
     option -glomid -default 0
-    option -glomtspolicy -configuremethod checkTsPolicy -default earliest
+    option -glomtspolicy -configuremethod checkTsPolicy -default latest
     option -destring -default $::tcl_platform(user) -configuremethod updateLoggerRing
     
     variable policyValues [list earliest latest average]
