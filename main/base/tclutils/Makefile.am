@@ -14,7 +14,8 @@ libWait_la_LIBADD =  @LIBTCLPLUS_LDFLAGS@ \
 
 DRIVERDest=@prefix@/TclLibs/tclutils
 
-TCLDRIVERS= Utils.tcl BlockCompleter.tcl TclSourceFilter.tcl Process.tcl
+TCLDRIVERS= Utils.tcl BlockCompleter.tcl TclSourceFilter.tcl Process.tcl \
+   Orphan.tcl
 TCLTESTS= utils.test blockcompleter.test tclsourcefilter.test wait.test
 
 install-exec-local:
