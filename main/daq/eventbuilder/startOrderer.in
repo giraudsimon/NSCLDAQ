@@ -10,6 +10,7 @@ package require Tk
 package require EventBuilder
 package require EVB::connectionList
 package require EVB::GUI
+package require orphan
 
 
 # Any command line parameter is a port name suffix used to register with the
@@ -50,4 +51,8 @@ if {$frame == 1} {
 }
   start 
 }
+
+#  If our parent exits, we exit too:
+
+Orphan  %AUTO% -script exit
 
