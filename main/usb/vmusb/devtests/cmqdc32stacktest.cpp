@@ -145,7 +145,7 @@ void cmqdc32stacktest::resetAll_0()
     "executeList::end",
     "executeList::begin",
     "addWrite16 4000603a 09 0",
-    "addWrite16 40006034 09 1",
+    "addWrite16 40006034 09 0",
     "executeList::end"
   };
 

@@ -202,7 +202,7 @@ void cmqdc32test::initialize_0()
     "executeList::end",
     "executeList::begin",
     "addWrite16 8000603a 09 1",
-    "addWrite16 80006034 09 1",
+    "addWrite16 80006034 09 0",
     "executeList::end"};
 
 
