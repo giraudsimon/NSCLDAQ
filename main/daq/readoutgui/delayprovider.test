@@ -79,6 +79,18 @@ tcltest::test end-0 {Test that end of run delay is as long we expect
 
 } -result 1 -returnCodes 0
 
+tcltest::test end-1 {Short delay works} \
+-body {
+  set ::Delay::endDelayTime 1
+  set start [clock milliseconds]
+  ::Delay::end 0
+  set stop [clock milliseconds]
+
+  set elapsed [expr $stop-$start]
+  expr {$elapsed>=10} 
+
+} -result 1 -returnCodes 0
+
 tcltest::test init-0 {Just call it for kicks to make sure it isn't broken
 } -body {
   ::Delay::init 0

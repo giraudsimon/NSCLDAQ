@@ -126,38 +126,34 @@ proc ::Delay::capabilities {} {
 
 proc ::Delay::_delayWithFeedback {duration} {
   if {[winfo exists .delay]} {
-    if {$::Delay::destroyCmd != 0} {
-      after cancel $::Delay::destroyCmd
-      set ::Delay::destroyCmd 0
-    }
+    catch {after cancel $::Delay::destroyCmd}
+    destroy .delay
 
-    .delay.progress configure -maximum $duration -value 0
-
-  } else {
-
-    toplevel .delay
-    ttk::label .delay.title -text "Delay in progress"
-    ttk::progressbar .delay.progress -orient horizontal -mode determinate \
-      -maximum $duration -value 0
-    grid .delay.title -sticky new -padx 8 -pady 8
-    grid .delay.progress -sticky new -padx 8 -pady 8
-    grid rowconfigure .delay 0 -weight 1
-    grid columnconfigure .delay 0 -weight 1
-  }
-
-  update
+  } 
+  toplevel .delay
+  ttk::label .delay.title -text "Delay in progress"
+  ttk::progressbar .delay.progress -orient horizontal -mode determinate \
+    -maximum $duration -value 0
+  grid .delay.title -sticky new -padx 8 -pady 8
+  grid .delay.progress -sticky new -padx 8 -pady 8
+  grid rowconfigure .delay 0 -weight 1
+  grid columnconfigure .delay 0 -weight 1
+  
+  
+  
 
   set increment [expr $duration/10]
+  if {$increment == 0} {set increment 1}
+  
   for {set elapsed 0} {$elapsed < $duration} {incr elapsed $increment} {
     after $increment
     .delay.progress configure -value $elapsed
     update
   }
-  after [expr $duration%10]
   .delay.progress configure -value $duration
   .delay.title configure -text "Delay complete"
   update
-
-  set ::Delay::destroyCmd [after 1000 {destroy .delay}]
+  set ::Delay::destroyCmd [after 1000 destroy .delay]
+  
 }
 
