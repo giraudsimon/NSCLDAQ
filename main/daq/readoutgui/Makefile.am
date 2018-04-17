@@ -7,12 +7,9 @@ install-exec-hook:
 	for f in $(TCLAPPS); do $(INSTALL_SCRIPT) @srcdir@/$$f  $(prefix)/bin/`basename $$f .tcl`; done
 	$(INSTALL_SCRIPT) @srcdir@/RunReadout.sh  $(prefix)/TclLibs
 	echo "pkg_mkIndex -verbose $(prefix)/TclLibs/Stager *.tcl" | $(TCLSH_CMD)
-	echo Adjusting installation location of libWait.so compiled tcl extension.
-	mv $(prefix)/lib/libWait.* $(prefix)/TclLibs
 	$(INSTALL_DATA) @srcdir@/RunState.jpg @srcdir@/RunState.eps @prefix@/share/html
 	$(INSTALL_DATA) @srcdir@/readoutshell.jpg @srcdir@/readoutshell.eps @prefix@/share/html
 	$(INSTALL_DATA) @srcdir@/eventlogsettings.jpg @srcdir@/eventlogsettings.eps @prefix@/share/html
-	echo "pkg_mkIndex -verbose $(prefix)/TclLibs *.so" | $(TCLSH_CMD)
 	$(INSTALL_SCRIPT) ReadoutShell.tcl @bindir@/ReadoutShell
 	$(INSTALL_SCRIPT) @srcdir@/start.bash @bindir@/start.bash
 
@@ -90,15 +87,4 @@ SecretTk_CPPFLAGS=$(COMPILATION_FLAGS)
 SecretTk_LDFLAGS= $(TCL_LDFLAGS) $(X11LIBS)
 
 
-lib_LTLIBRARIES = libWait.la
-libWait_la_SOURCES = WaitPackage.cpp
-libWait_la_CPPFLAGS=$(COMPILATION_FLAGS)
-
-libWait_la_LDFLAGS =	@LIBTCLPLUS_LDFLAGS@	\
-			@top_builddir@/base/CopyrightTools/libLicense.la	 \
-			-version-info $(SOVERSION)
-
-libWait_la_LIBADD =  @LIBTCLPLUS_LDFLAGS@ \
-	$(TCL_LDFLAGS)	$(X11LIBS)  -lLicense  \
-	-lm -lstdc++ -lgcc -lc
 

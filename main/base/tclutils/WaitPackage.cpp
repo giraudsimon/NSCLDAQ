@@ -68,14 +68,14 @@
 #include <TCLApplication.h>
 #include <TCLInterpreter.h>
 #include <TCLProcessor.h>
+#include <TCLObjectProcessor.h>
+#include <TCLObject.h>
 
 
 using namespace std;
 
 
 
-static const char* pInstDir=HOME;
-static const char* pScriptSubDir="/Scripts";
 
 static const char* version="1.0";
 
@@ -110,10 +110,24 @@ public:
 
 };
 
+/**
+ *  CTCLGetPPId - get process parent id.
+ * 
+ */
+class CTCLGetPPId : public CTCLObjectProcessor
+{
+public:
+  CTCLGetPPId(CTCLInterpreter* pInterp, const char* command = "ppid");
+  virtual int operator()(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+  );
+  
+};
+
 extern "C" {
   int Wait_Init(Tcl_Interp* pInterp)
   {
-    CopyrightNotice::Notice(cerr, "Wait", version, "2003");
+    CopyrightNotice::Notice(cerr, "Wait", version, "2003, 2018");
     CopyrightNotice::AuthorCredit(cerr, "Wait", "Ron Fox", NULL);
 
     // Wrap the interpreter into an object so we can manipulate it.:
@@ -126,6 +140,8 @@ extern "C" {
 
     CTCLPipe* pPipe = new CTCLPipe(&rInterp);
     pPipe->Register();
+    
+    new CTCLGetPPId(&rInterp);
 
     return TCL_OK;
   }
@@ -273,5 +289,41 @@ CTCLPipe::operator()(CTCLInterpreter& rInterp,
   rResult.AppendElement(Tcl_GetChannelName(readable));
   rResult.AppendElement(Tcl_GetChannelName(writable));
 
+  return TCL_OK;
+}
+/*----------------------------------------------------------------------------
+ * Implementation of CTCLGetPPId
+ *---------------------------------------------------------------------------*/
+
+/**
+ * constructor
+ *    @param pInterp - pointer to the wrapped interpreter object.
+ *    @param name    - command name.
+ */
+CTCLGetPPId::CTCLGetPPId(CTCLInterpreter* pInterp, const char* name) :
+  CTCLObjectProcessor(*pInterp, name, true)
+  {}
+  
+/**
+ * operator()
+ *    Process the command - we get unhappy if there are any
+ *    command parameters.  Otherwise, just return getppid as the
+ *    result.
+ *
+ *  @param interp - reference to the interpreter executing the command.
+ *  @param objv   - Vector of parameters.
+ *  @return int   - TCL_OK on success, TCL_ERROR on failure.
+ */
+int
+CTCLGetPPId::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+  if(objv.size() != 1) {
+    interp.setResult("ppid does not accept any parameters");
+    return TCL_ERROR;
+  }
+  
+  int id = getppid();
+  Tcl_Obj* res = Tcl_NewIntObj(id);
+  interp.setResult(res);
   return TCL_OK;
 }

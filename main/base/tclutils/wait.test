@@ -1,0 +1,102 @@
+#!/usr/bin/tclsh
+#
+#   This file contains tests for scripts and packages in this directory.
+#
+package require tcltest
+
+
+
+puts "Testing the wait package: "
+tcltest::test Wait-1 {Wait - Test loading the package} {
+    catch "package require Wait"
+} 0
+tcltest::test Wait-2 {Wait - Check status ok.} {
+    set pid [exec ls >/dev/null &]
+    set status [Wait]
+    lindex $status 1
+} 0
+tcltest::test Wait-3 {Wait - check pid ok.} {
+    set pid [exec ls >/dev/null &]
+    set status [Wait]
+    set rpid [lindex $status 0]
+    expr $pid == $rpid
+} 1 
+tcltest::test Wait-4 {Wait - wait for specific pid} {
+    set pid [exec ls > /dev/null &]
+    set status [Wait -pid $pid]
+    set rpid [lindex $status 0]
+    expr $pid == $rpid
+} 1
+tcltest::test Wait-5 {Wait - incorrect pid should error} {
+    set stat [catch "Wait -pid 1"]       ;# init.
+} 1
+tcltest::test Wait-6 {Wait - should give right error message} {
+    set stat [catch "Wait -pid 1" msg]
+    set msg
+} "ECHILD:no children"
+tcltest::test Wait-7 {Wait - poll with no completion.} {
+    set pid [exec sleep 1 &] 
+    set result [Wait -pid $pid -poll]
+} "0 0"
+Wait
+
+tcltest::test Wait-8 {Wait - polll with eventual completion} {
+    set pid [exec sleep 1 &]
+    set done 0
+    after 1100 "set done 1"
+    vwait done
+    set result [Wait -pid $pid ]
+    expr [lindex $result 0] == $pid
+}  1
+  
+puts "Wait package tests complete."
+
+puts "Testing Pipe command"
+
+tcltest::test Pipe-1 {Pipe - Test existence of command} {
+    Pipe
+    set resut 0
+} 0
+tcltest::test Pipe-2 {Pipe - Should get 2 element list back} {
+    set result [Pipe]
+    set chans [llength $result]
+    foreach channel $result {
+	close $channel
+    }
+    set chans
+} 2
+tcltest::test Pipe-2 {Pipe - Check data transmission} {
+    set files [Pipe]
+    set r [lindex $files 0]
+    set w [lindex $files 1]
+    puts $w "This is a test"
+    flush $w
+    set output [gets $r]
+    close $r
+    close $w
+    set output
+} "This is a test"
+
+puts "Done with pipe tests"
+
+puts "Combined tests"
+
+tcltest::test Combined-1 {Combined - Wait and pipe together} {
+    set files [Pipe]
+    set r [lindex $files 0]
+    set w [lindex $files 1]
+    set pid [exec ls -l >&@ $w &]
+    close $w
+    while {![eof $r] && ![fblocked $r]} {
+	set line [gets $r]
+    }
+    close $r
+    set done [Wait  -pid $pid]
+    expr [lindex $done 0] == $pid
+} 1
+
+
+puts "Done with combined tests"
+
+
+tcltest::cleanupTests
