@@ -13,7 +13,7 @@
             <productnumber></productnumber>
         </refentryinfo>
     <refmeta>
-        <refentrytitle id='daq1_scalerdisplay11_title'>Scaler Display program
+        <refentrytitle id='daq1_scalerdisplay11_title'>ScalerDisplay
 	<anchor id="manpage.scalerdisplay" /></refentrytitle>
         <manvolnum>1daq</manvolnum>
 	<refmiscinfo class='empty'></refmiscinfo>
