@@ -344,6 +344,7 @@ main(int argc, char**  argv)
   */
 
   bool firstBarrier(true);
+  bool consecutiveBarrier(false);
   try {
     while (1) {
       EVB::pFragment p = CFragIO::readFragment(STDIN_FILENO);
@@ -364,15 +365,26 @@ main(int argc, char**  argv)
       if (p->s_header.s_barrier) {
         flushEvent();
         outputBarrier(p);
-            // First barrier is most likely the begin run...put the glom parameters
-        // right after that.
         
-        if(firstBarrier) {
+        
+        // Barrier type of 1 is a begin run.
+        // First begin run barrier will result in
+        // emitting a glom parameter record.
+
+        
+        if(firstBarrier && (p->s_header.s_barrier == 1)) {
             outputGlomParameters(dtInt, !nobuild);
             firstBarrier = false;
         }
       } else {
 
+        // Once we have a non barrier, reset firstBarrier so that we'll
+        // emit a glom parameters next time we have a barrier.
+        // This is needed if the event builder is run in persistent mode.
+        // see gitlab issue #11 for nscldaq.
+        
+        firstBarrier = true;
+        
         // If we can determine this is a valid ring item other than
         // an event fragment it goes out out of band but without flushing
         // the event.
