@@ -43,6 +43,8 @@ static bool            nobuild(false);
 static enum enum_timestamp_policy timestampPolicy;
 static unsigned        stateChangeNesting(0);
 
+static unsigned  maxFragments;  // See gitlab issue lucky 13.
+
 static void
 dump(std::ostream& o, void* pData, size_t nBytes)
 {
@@ -240,7 +242,15 @@ accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
   uint64_t tsdiff2    = firstTimestamp - timestamp;
   uint64_t tsdiff     = (tsdiff1 < tsdiff2) ? tsdiff1 : tsdiff2;
   
-  if (nobuild || (!firstEvent && ((tsdiff) > dt))) {
+  /**
+   * Flush the currently accumulated event if any of the following
+   * hold:
+   *    *   We're not in --build mode so fragemts are events.
+   *    *   This fragment's timestamp is outside the coincidence interval
+   *    *   There are just too many fragments (timestamp stuck).
+   */
+  
+  if (nobuild || (!firstEvent && ((tsdiff) > dt)) || (fragmentCount > maxFragments)) {
     flushEvent();
   }
   // If firstEvent...our timestamp starts the interval:
@@ -317,6 +327,7 @@ main(int argc, char**  argv)
   nobuild      = args.nobuild_given;
   timestampPolicy = args.timestamp_policy_arg;
   sourceId       = args.sourceid_arg;
+  maxFragments   = args.maxfragments_arg;
 
   outputEventFormat();
   
