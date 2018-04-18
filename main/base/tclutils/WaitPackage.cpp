@@ -19,7 +19,7 @@
    Provides a Tcl loadable package that exposes some
    unix  system services.
    
-  The package is called Unix
+  The package is called Wait
 
    The commands exposed are
     
@@ -30,7 +30,7 @@
    process to complete.  Otherwise:
    - pid == -1  Implies wait for any process.
    - pid > 0    pid is the process id of a single child process to wait for.
-   - pid == 0   Wait for  any child process in our poroces group.
+   - pid == 0   Wait for  any child process in our process group.
    - pid < -1   Wait for any process in the process group |pid|.
 
    If -poll is specified, wait will return immediately even if no process

@@ -1,2 +1,270 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!-- manpage 3tcl -->
+<refentry>
+    <refmeta>
+        <refentrytitle>wait</refentrytitle>
+        <manvolnum>3tc;</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>wait</refname>
+        <refpurpose>Wait/reap for subprocess completion</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+<cmdsynopsis>
+    <command>
+package require Wait
+    </command>
+</cmdsynopsis>        </synopsis>
+        <synopsis>
+<cmdsynopsis>
+    <command>
+wait ?<option>-pid</option> <replaceable>pid</replaceable>? ?<option>-poll</option>?
+    </command>
+</cmdsynopsis>        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            In unix in most cases child processes don't completely disappear
+            when they exit.  After exit, they can deliver status information
+            to their parent.  The Unix <function>wait</function>(2) and
+            <function>waitpid</function>(2) functions are the mechanism
+            by which the parent process obtains this status.
+            Obtaining child status is also sometimes called "reaping".
+        </para>
+        <para>
+            In most cases, child processes created by Tcl's
+            <command>exec</command> or <command>open</command> commands
+            are reaped by the interpreter's event handling subsystem.  Subprocesse
+            started by other means are not automatically reaped and this
+            <command>wait</command> command can be used
+            to perform that task.  
+        </para>
+        <para>
+            The command returns a two element list containing the
+            process id of the process that satisfied the wait and
+            the status code returned by the process.  If no matching process
+            exited, the list contains a pair of zeroes (<code>list 0 0</code>).
+            Any errors returned from the underlying wait system service
+            result in a POSIX like Tcl error.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Note that all options are optional.  By default, the command
+            blocks until the next 
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><option>-pid</option> pid</term>
+                <listitem>
+                    <para>
+                        Specifies what to wait for.
+                    </para>
+                    <itemizedlist>
+                        <listitem>
+                            <para>
+                                A value of <literal>-1</literal> waits for the
+                                next exiting child process.  This the
+                                default when no <option>-pid</option> option
+                                is supplied.
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>
+                                A value greater than zero waits for only the
+                                process with the specified PID to exit.
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>
+                                A value of 0 waits for any process in the
+                                process group of which we are a member to exit.
+                            </para>
+                        </listitem>
+                        <listitem>
+                            <para>
+                                A value less than zero waits for any process
+                                in the process group that is the absolute value
+                                of <parameter>pid</parameter>.
+                            </para>
+                        </listitem>
+                    </itemizedlist>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-poll</option></term>
+                <listitem>
+                    <para>
+                        If this option is provided, the command returns
+                        immediately.  Otherwise it blocks until a process matching
+                        the <option>-pid</option> specification exits.  This
+                        is equivalent to the
+                        <literal>WNOHANG</literal> flag described in the
+                        <function>wait</function>(2) manpage.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>Pipe</refentrytitle>
+        <manvolnum>3tcl</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>Pipe</refname>
+        <refpurpose>Make a unix pipe</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+            <cmdsynopsis>
+                <command>
+package require Wait
+                </command>
+            </cmdsynopsis>            
+            <cmdsynopsis>
+                <command>
+set fds [Pipe]
+set readpipe [lindex $fds 0]
+set writepipe [lindex $fds 1]
+                </command>
+            </cmdsynopsis>            
 
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Produces a unix pipe and binds both the readable and writeable
+            sides of the pipe to Tcl channels.  One use case for this is
+            to setup a communications channel between Tcl threads (see
+            <command>thread::trasnfer</command> in the Tcl thread package).
+        </para>
+        <para>
+            Other use cases include ssetting up pipes to capture output, or error
+            of intermediate stages of Tcl  pipelines created with
+            <command>exec</command> or <command>open</command>.
+        </para>
+        <para>
+            This command never failas.  It produces a two element list.
+            The first element of the list is the read side of the pipe and
+            the second the write side.  This matches the implementation of
+            the Unix <function>pipe</function>(2) system service.
+        </para>
+    </refsect1>
+</refentry>
+
+<refentry>
+    <refmeta>
+        <refentrytitle>ppid</refentrytitle>
+        <manvolnum>3tcl</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>ppid</refname>
+        <refpurpose>Get parent process id.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+            <cmdsynopsis>
+                <command>
+package require Wait                    
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+set parent [ppid]            
+                </command>
+            </cmdsynopsis>
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Returns the parent process for the process.  Normally if the parent
+            has exited this will be <literal>1</literal>, the pid of the
+            <literal>init</literal> process.  See the <literal>oprhan</literal>
+            packagre for a useful application of this command.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>Orphan</refentrytitle>
+        <manvolnum>3tcl</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>Orphan</refname>
+        <refpurpose>Run script when the process is orphaned</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+package require orphan
+            </command>
+        </cmdsynopsis>
+        <cmdsynopsis>
+            <command>
+set o [Orphan %AUTO% ?<option>-script</option><replaceable> script</replaceable>?
+            </command>
+        </cmdsynopsis>
+        <cmdsynopsis>
+            <command>
+$o configure <option>-script</option>  <replaceable>newscript</replaceable>
+            </command>
+        </cmdsynopsis>
+        <cmdsynopsis>
+            <command>
+$o destroy
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The <literal>oprhan</literal> package provides an object oriented
+            scheme to execute a Tcl script when the process's parent process
+            changes.  Normall this happens when the process is orphaned (that is
+            its parent process exited).
+        </para>
+        <para>
+            When the <classname>Orphan</classname> object is created, it
+            captures the parent's process id and uses the <command>after</command>
+            command to poll for changes in the parent's id every second.  The
+            <option>-script</option> option, used at construction time or
+            in the <command>configure</command> subcommand provides a script
+            to execute at the global level when the parent process id changes.
+            An empty script causes the object to continue to poll, however if the
+            parent process id changes no script is executed.
+        </para>
+        <para>
+            This implementation, therefore has a few potential problems:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    If the parent changes prior to creating the
+                    <classname>Orphan</classname> object, no script is called.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    If the parent changes while the <option>-script</option>
+                    option value is empty, when <option>-script</option> is
+                    provided, it will never be called.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            The limitations above suggest that the best way to use this
+            facility is to create an <classname>Orphan</classname> object with
+            a script early in script execution.
+        </para>
+    </refsect1>
+
+</refentry>
+<!-- /manpage -->
+    
