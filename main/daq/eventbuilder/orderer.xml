@@ -579,11 +579,22 @@ EVBC::registerRingSource <replaceable>source-uri extractor-lib source-ids info e
                     <term><replaceable>oneshot</replaceable></term>
                     <listitem>
                       <para>
-                        This is a boolean value specifying whether the
-                        ringFragmentSource should exit after a symmetric number
-                        of begin and end run items have been observed. Default
-                        value is <literal>false</literal>.
+                        This is an integer value or an empty string.
+			If the string is empty, the fragment source
+			attempts to be persistent.  It will only exit
+			if it loses connection with the event orderer.
+			If an integer, once the fragment source recieves that
+			many end run items, it will exit.  
                       </para>
+		      <para>
+			In general, if not
+			<literal>""</literal>, this value should be one for
+			sources that feed the first level event builder.
+			For systems using additional levels of event building,
+			you should calculate the number of end runs produced
+			by prior stages of the event builder and use that
+			for the number of expected end run items.
+		      </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
