@@ -24,6 +24,8 @@ package provide caenn568b 11.0
 
 package require Itcl
 package require Utils
+package require md5
+
 
 
 ## @brief Device driver for the CAEN N568B Spec Amp
@@ -267,6 +269,7 @@ itcl::class ACAENN568B {
   #
   # @throws error if unable to communicate with device (@see TestCommunication)
   public method Init {filename aname}
+  public method InitIfChanged {filename aname hash}
 
 
   ## @brief Return the value of a nested variable name 
@@ -690,4 +693,42 @@ itcl::body ACAENN568B::Init {filename aname} {
   }
   DisableMUX
 }
-
+##
+# InitIfChanged
+#
+# Init with hash
+#   Initializes only if the input file has changed.
+#
+# @param filename - configuration file name.
+# @param aname    - Name of the array containing the config data.
+# @param hashfile - Name of file with hash of filename.
+#
+itcl::body ACAENN568B::InitIfChanged {filename aname hashfile} {
+  set mustLoad 0;              # Assume we're lucky.
+  set newhash [::md5::md5 -hex -file $filename];  # almost always need this
+  
+  # Figure out if we need to reload/recompute:
+  
+  if {[file exists $hashfile]} {
+    set hashfd [file open $hashfile r]
+    set oldhash [gets $hashfd]
+    close $hashfd
+    
+    if {$newhash != $oldhash} {
+      set mustLoad 1
+    } else {
+      set mustLoad 1
+    }
+  }
+  #  At this point mustLoad is true if we must reload/recompute:
+  
+  if {$mustLoad} {
+    Init $filename $aname
+    
+    # Rewrite the hash file with the updated has.
+    
+    set hashfd [file open $hashfile w]
+    puts $hahsfd $newhash
+    close $hashfd
+  }
+}
