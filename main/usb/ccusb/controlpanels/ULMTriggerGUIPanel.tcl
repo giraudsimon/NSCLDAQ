@@ -639,7 +639,7 @@ itcl::body ATrigger2367::Toggle {var} {
 		set variable(ClockBox) $data
 		set variable($var) [expr ($data & $mask)>>$bit($var)]
 	}
-    	if {[string match *Synck $var] == 1} {
+    	if {[string match *Sync $var] == 1} {
 		set mask [expr 1<<$bit($var)]
 		if {$variable($var) == 1} {
 			set data [expr $variable(SyncBox) | $mask]
@@ -898,11 +898,12 @@ itcl::body ATrigger2367::ReadConfigFile {} {
 #		}
 		if {[string match *Clock $v] == 1} {
 			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
+		    set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
+		}
 		if {[string match *Sync $v] == 1} {
 			set mask [expr 1<<$bit($v)]
 			set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
-		}		}
+		}		
 	    
 	}
 	UpdateWires $wtrigger

@@ -709,26 +709,28 @@ itcl::body ACAENN568B::InitIfChanged {filename aname hashfile} {
   
   # Figure out if we need to reload/recompute:
   
-  if {[file exists $hashfile]} {
-    set hashfd [file open $hashfile r]
-    set oldhash [gets $hashfd]
-    close $hashfd
-    
-    if {$newhash != $oldhash} {
-      set mustLoad 1
+    if {[file exists $hashfile]} {
+	set hashfd [open $hashfile r]
+	set oldhash [gets $hashfd]
+	close $hashfd
+	
+	if {$newhash != $oldhash} {
+	    set mustLoad 1
+	} else {
+	    set mustLoad 0
+	}
     } else {
-      set mustLoad 1
+	set mustLoad 1
     }
-  }
-  #  At this point mustLoad is true if we must reload/recompute:
-  
-  if {$mustLoad} {
-    Init $filename $aname
+    #  At this point mustLoad is true if we must reload/recompute:
     
-    # Rewrite the hash file with the updated has.
-    
-    set hashfd [file open $hashfile w]
-    puts $hahsfd $newhash
-    close $hashfd
-  }
+    if {$mustLoad} {
+	Init $filename $aname
+	
+	# Rewrite the hash file with the updated has.
+		
+	set hashfd [open $hashfile w]
+	puts $hashfd $newhash
+	close $hashfd
+    }
 }
