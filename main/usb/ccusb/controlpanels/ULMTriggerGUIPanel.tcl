@@ -196,7 +196,12 @@ itcl::body ATrigger2367::DeclareVariables {} {
 #	set address(BusyBox) 13
 	set variable(ClockBox) 0
 	set function(ClockBox) 0
-	set address(ClockBox) 12
+        set address(ClockBox) 12
+
+    set variable(SyncBox) 0
+    set function(SyncBox) 0
+    set address(SyncBox)  13
+    
 	set variable(Inspect1) 0
 	set variable(Inspect2) 0
 	set variable(Inspect3) 0
@@ -314,6 +319,11 @@ itcl::body ATrigger2367::DeclareVariables {} {
 	set variable(SelectClock) 0
 	set bit(SelectClock) 0
 
+    # External sync
+
+    set variable(SelectExtSync) 0
+    set bit(SelectExtSync) 0
+    
 	# ADC Gate width
 	set variable(ADCWidth) 0
 	set increment(ADCWidth) 100
@@ -418,7 +428,8 @@ itcl::body ATrigger2367::DrawTrigger {c title} {
 	$c create line 910 200 910 285 915 285 -width $lwidth -tags wire19
 
 	DrawLatches $c 800 180
-	DrawCheckButton $c 800 285 clock SelectClock "External time\nstamp clock" lightgray
+    DrawCheckButton $c 500 350 clock SelectClock "External time\nstamp clock" lightgray
+    DrawCheckButton $c 620 350 sync SelectExtSync "External sync\n select" lightgray
 
 	$c create line 755 150 800 150 -width $lwidth -tags wire15
 	$c create line 775 150 775 90 800 90 -width $lwidth -tags wire15
@@ -621,9 +632,25 @@ itcl::body ATrigger2367::Toggle {var} {
 		} else {
 			set data [expr $variable(ClockBox) & ~$mask]
 		}
-		wienercfsa $module [expr $function(ClockBox)+16] $address(ClockBox) $data
-		set data [lindex [wienercfsa $module $function(ClockBox) $address(ClockBox)] 0]
+	    wienercfsa $module [expr $function(ClockBox)+16] \
+		    $address(ClockBox) $data
+	    set data [lindex [wienercfsa $module $function(ClockBox) \
+				  $address(ClockBox)] 0]
 		set variable(ClockBox) $data
+		set variable($var) [expr ($data & $mask)>>$bit($var)]
+	}
+    	if {[string match *Synck $var] == 1} {
+		set mask [expr 1<<$bit($var)]
+		if {$variable($var) == 1} {
+			set data [expr $variable(SyncBox) | $mask]
+		} else {
+			set data [expr $variable(SyncBox) & ~$mask]
+		}
+	    wienercfsa $module [expr $function(SyncBox)+16] \
+		    $address(SyncBox) $data
+	    set data [lindex [wienercfsa $module $function(SyncBox) \
+				  $address(SyncBox)] 0]
+		set variable(SyncBox) $data
 		set variable($var) [expr ($data & $mask)>>$bit($var)]
 	}
 }
@@ -787,6 +814,9 @@ itcl::body ATrigger2367::ReadStatus {} {
 			set mask [expr 1<<$bit($v)]
 			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
 		}
+	    if {[string match *Sync $v] == 1} {
+			set mask [expr 1<<$bit($v)]
+			set variable($v) [expr ($variable(SyncBox) & $mask)>>$b	    }
 	}
 	UpdateWires $wtrigger
 }
@@ -869,7 +899,11 @@ itcl::body ATrigger2367::ReadConfigFile {} {
 		if {[string match *Clock $v] == 1} {
 			set mask [expr 1<<$bit($v)]
 			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
-		}
+		if {[string match *Sync $v] == 1} {
+			set mask [expr 1<<$bit($v)]
+			set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
+		}		}
+	    
 	}
 	UpdateWires $wtrigger
 }

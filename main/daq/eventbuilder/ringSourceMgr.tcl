@@ -187,6 +187,9 @@ proc ::RingSourceMgr::startSource {sourceRingUrl timestampExtractorLib id info
   # set a fileevent on it so that we get output and errors and eof.
   # The trick with cat below ensures that we get both stderr and stdout.
   #
+
+  puts "Starting '$ringSource'"
+  
   set fd [open "| $ringSource |& cat" r]
   chan configure $fd -buffering line -blocking 0
   chan event $fd readable [list ::RingSourceMgr::_HandleDataSourceInput $fd $info $id]
@@ -336,7 +339,9 @@ proc ::RingSourceMgr::_computeRingSourceSwitches {port url tstampExtractor ids
   }
   
   if {$oneshot ne ""} {
-    append switches " --oneshot=$oneshot"
+      if {$oneshot > 0} {
+	  append switches " --oneshot=$oneshot"
+      }
   }
   if {$timeout ne ""} {
     append switches " --timeout=$timeout"
