@@ -50,16 +50,8 @@ is then thrown if any exceptions occured.
 // Include files:
 //
 
-#ifndef __EXCEPTION_H
 #include <Exception.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>        //Required for include files  
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 class CReadException : public CException     

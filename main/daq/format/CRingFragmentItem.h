@@ -49,7 +49,7 @@ public:
 		    uint32_t payloadSize, 
 		    const void* pBody,
 		    uint32_t barrier=0);
-  CRingFragmentItem(const CRingItem& rhs) throw(std::bad_cast);
+  CRingFragmentItem(const CRingItem& rhs) ;
   CRingFragmentItem(const CRingFragmentItem& rhs);
 
   virtual ~CRingFragmentItem();

@@ -81,13 +81,27 @@ typedef OS_EVENT * bt_event_t;
 
 #elif defined(__linux__)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+typedef struct_timer_list bt_event_timer_list_t;
+#else
+
+typedef struct _bt_event_timer_list_t {
+  struct timer_list   timer;
+  void*               data;
+  void(*function)(unsigned long);
+} bt_event_timer_list_t;
+
+
+#endif
+
 typedef struct {
     int			irq_excl;	/* == 0 if not used from IRQ */
     struct semaphore 	sem;		/* Semaphore */
     unsigned int	timed_out;	/* Flag: Have we timed out */
 
-    struct timer_list 	timer;		/* Used for timeout function */
+    bt_event_timer_list_t timer;		/* Used for timeout function */
 } bt_event_t;
+
 
 #elif defined (__lynxos)
 

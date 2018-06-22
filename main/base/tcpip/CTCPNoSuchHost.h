@@ -293,17 +293,10 @@ DAMAGES.
 
 // Headers:
 
-#ifndef __EXCEPTION_H
 #include <Exception.h>
-#endif
 
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
+
 
 /*!
    Encapsulates an exception which indicates a failure to translate a host

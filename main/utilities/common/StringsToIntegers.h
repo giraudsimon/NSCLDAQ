@@ -40,5 +40,5 @@
 /*! Convert list of strings to integers.
  */
 std::vector<int>
-stringListToIntegers(std::string items) throw(CInvalidArgumentException);
+stringListToIntegers(std::string items) ;
 #endif

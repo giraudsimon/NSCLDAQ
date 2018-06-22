@@ -43,6 +43,19 @@ static const char revcntrl[] = "@(#)"__FILE__"  $Revision: 2330 $ ";
 #include <assert.h>
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+/* Need a jacket to wrap the call to the real timeout: */
+static void
+bt_event_timeout_wrapper(struct timer_list* pList)
+{
+  /* Get a pointer to the event and then call the actual function: */
+
+  bt_event_timer_list_t* pTimer = (bt_event_timer_list_t*)pList;
+  struct bt_event_t*     pEvent = pTimer->data;
+  (*pTimer->function)((unsigned long)pEvent);
+}
+#endif
+
 #else
 
 #include <assert.h>
@@ -720,16 +733,31 @@ bt_error_t btk_event_wait(
 	    /* Need to timeout if we don't get the lock */
 
 	    /* Create a timeout timer */
+
+	  event_p->timed_out = FALSE;         /* Not yet timed out */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)	  
 	    init_timer(&event_p->timer);
 	    event_p->timer.expires  = jiffies + timeout;
 	    event_p->timer.data = (unsigned long) event_p;
 	    event_p->timer.function = timeout_event;
 
-	    event_p->timed_out = FALSE;
 
 	    add_timer(&event_p->timer);
+
 	    down_ret = down_interruptible(&event_p->sem);
 	    del_timer(&event_p->timer);
+#else
+	    event_p->timer.timer.expires =  jiffies + timeout;
+	    event_p->timer.data          = event_p;
+	    event_p->timer.function      = timeout_event;
+
+	    timer_setup(&(event_p->timer.timer), bt_event_timeout_wrapper, 0);
+
+	    down_ret = down_interruptible(&event_p->sem);
+	    del_timer(&event_p->timer.timer);
+	    
+#endif
 
 #if	defined(DEBUG)
 	    TRC_MSG(BT_TRC_KLIB, (LOG_FMT "down_ret = %d, timed_out = %d.\n", 

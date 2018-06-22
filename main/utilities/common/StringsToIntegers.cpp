@@ -83,7 +83,7 @@ convertOne(string aNumber)
  * \throw CInvalidArgumentException
  */
 vector<int>
-stringListToIntegers(string items) throw(CInvalidArgumentException)
+stringListToIntegers(string items) 
 {
     size_t      start = 0;
     vector<int> result;

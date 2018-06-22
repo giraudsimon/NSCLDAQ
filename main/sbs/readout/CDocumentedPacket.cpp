@@ -59,8 +59,7 @@ CDocumentedPacket::CDocumentedPacket (unsigned short nTag,
 CDocumentedPacket::~CDocumentedPacket()
 {
   if(m_fPacketInProgress) {
-    throw CInvalidPacketStateException(m_fPacketInProgress,
-			      "Packet must be closed to destroy");
+    fprintf(stderr,  "Warning, packate %s not closed  when destroyed\n", m_sName.c_str());
   }
   CDocumentedPacketManager::getInstance()->DeletePacket(m_sName);
 }

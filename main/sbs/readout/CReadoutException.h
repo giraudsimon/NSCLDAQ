@@ -18,9 +18,7 @@
 #ifndef __CREADOUTEXCEPTION_H  
 #define __CREADOUTEXCEPTION_H
                                
-#ifndef __EXCEPTION_H
 #include <Exception.h>
-#endif
 
 /*!
    This class is an ABC for the exceptions which can be thrown by the readout subsystem.

@@ -130,7 +130,7 @@ CRingScalerItem::CRingScalerItem(
   \param rhs - const reference to a RingItem.  We are doing an upcast to 
   a scaler buffer.
 */ 
-CRingScalerItem::CRingScalerItem(const CRingItem& rhs) throw(bad_cast) :
+CRingScalerItem::CRingScalerItem(const CRingItem& rhs)  :
   CRingItem(rhs)
 {
   if (type() != PERIODIC_SCALERS) {
@@ -339,7 +339,7 @@ CRingScalerItem::getTimestamp() const
   \throw CRangError if channel is too big.
 */
 void
-CRingScalerItem::setScaler(uint32_t channel, uint32_t value) throw(CRangeError)
+CRingScalerItem::setScaler(uint32_t channel, uint32_t value) 
 {
     throwIfInvalidChannel(channel, "Attempting to set a scaler value");
     pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
@@ -354,7 +354,7 @@ CRingScalerItem::setScaler(uint32_t channel, uint32_t value) throw(CRangeError)
   \throw CRangeError - if the channel number is out of range.
 */
 uint32_t
-CRingScalerItem::getScaler(uint32_t channel) const throw(CRangeError) 
+CRingScalerItem::getScaler(uint32_t channel) const 
 {
     throwIfInvalidChannel(channel, "Attempting to get a scaler value");
     pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
@@ -486,7 +486,7 @@ CRingScalerItem::bodySize(size_t n)
 */
 void
 CRingScalerItem::throwIfInvalidChannel(uint32_t channel,
-				       const char* message) const throw(CRangeError)
+				       const char* message) const 
 {
     pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
 

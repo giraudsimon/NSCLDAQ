@@ -63,7 +63,7 @@ public:
   CPhysicsEventItem(uint64_t timestamp, uint32_t source, uint32_t barrier,
                     size_t maxBody=8192);
 
-  CPhysicsEventItem(const CRingItem& rhs) throw(std::bad_cast);
+  CPhysicsEventItem(const CRingItem& rhs) ;
   CPhysicsEventItem(const CPhysicsEventItem& rhs);
   virtual ~CPhysicsEventItem();
 

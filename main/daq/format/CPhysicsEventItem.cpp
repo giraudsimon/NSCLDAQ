@@ -41,7 +41,7 @@ CPhysicsEventItem::CPhysicsEventItem(
     
 }
 
-CPhysicsEventItem::CPhysicsEventItem(const CRingItem& rhs) throw(std::bad_cast)
+CPhysicsEventItem::CPhysicsEventItem(const CRingItem& rhs) 
   : CRingItem(rhs)
 {
   if (type() != PHYSICS_EVENT) {

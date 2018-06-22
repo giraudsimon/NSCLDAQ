@@ -40,7 +40,26 @@ BT_FILE_NUMBER(TRACE_BT_DELAY_C);
 **
 *****************************************************************************/
 #if defined (__linux__)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 static struct timer_list timeout_data;
+#else
+struct btk_timer_list {
+  struct timer_list   timeout;
+  unsigned long       data;
+  void(*function)(unsigned long);
+};
+static struct btk_timer_list timeout_data;
+
+/*
+ *  We also need a jacket to call the actual timeout function:
+ */
+static void btk_timeout_jacket(struct timer_list* pData)
+{
+  struct btk_timer_list* pInfo = (struct btk_timer_list*)pData;
+
+  (*pInfo->function)(pInfo->data);
+}
+#endif
 #endif /* defined (__linux__) */
 
 extern void btk_delay(int usec);
@@ -383,13 +402,22 @@ btk_timeout_t btk_timeout(
 }
 
 #elif defined (__linux__)
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
     init_timer(&timeout_data);
     timeout_data.function = (void (*)(unsigned long)) f_time_expire;
     timeout_data.data = (unsigned long) arg_p;
     timeout_data.expires = btk_tck_get() + btk_msec2tck(usec / 1000);
     add_timer(&timeout_data);
+ #else
+    /* Probably I'm doing too much initialization */
     
+    timeout_data.timeout.expires = btk_tck_get() + btk_msec2tck(usec / 1000);
+    timeout_data.timeout.function = btk_timeout_jacket;
+    timeout_data.data             = (unsigned long)arg_p;
+    timeout_data.function         = (void (*)(unsigned long))f_time_expire;
+
+    timer_setup(&timeout_data.timeout, btk_timeout_jacket, 0);
+ #endif
 
 #elif defined (BT_NTDRIVER)
 
@@ -481,8 +509,10 @@ bt_error_t btk_untimeout(
 }
 
 #elif defined (__linux__)
-
-    del_timer(&timeout_data);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+    del_timer(&timeout_data.timeout);
+#else
+#endif
     
 #elif defined (BT_NTDRIVER)
 
