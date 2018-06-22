@@ -510,8 +510,9 @@ bt_error_t btk_untimeout(
 
 #elif defined (__linux__)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-    del_timer(&timeout_data.timeout);
+    del_timer(&timeout_data);
 #else
+    del_timer(&timeout_data.timeout);
 #endif
     
 #elif defined (BT_NTDRIVER)

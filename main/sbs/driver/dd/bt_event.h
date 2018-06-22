@@ -82,7 +82,7 @@ typedef OS_EVENT * bt_event_t;
 #elif defined(__linux__)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
-typedef struct_timer_list bt_event_timer_list_t;
+typedef struct timer_list bt_event_timer_list_t;
 #else
 
 typedef struct _bt_event_timer_list_t {
