@@ -6,7 +6,6 @@
     (GPL).  The terms of this license are described at:
 
      http://www.gnu.org/licenses/gpl.txt
-
      Author:
              Ron Fox
 	     NSCL
@@ -436,8 +435,7 @@ CMADC32::Initialize(CVMUSB& controller)
 
   list.addWrite16(base + TimingDivisor, initamod, (uint16_t)timedivisor);
   list.addDelay(MADCDELAY);
-  list.addWrite16(base + TimestampReset, initamod, (uint16_t)3); // Reset both counters.
-  list.addDelay(MADCDELAY);
+
 
   // Turn on or off ECL termination.  In fact the module provides much more control
   // over this featuer.. but for now we're all or nothing.
@@ -486,6 +484,8 @@ CMADC32::Initialize(CVMUSB& controller)
   else {
     list.addWrite16(base + TimingSource, initamod, (uint16_t)1);
   }
+  list.addDelay(MADCDELAY);
+  list.addWrite16(base + TimestampReset, initamod, (uint16_t)3); // Reset both counters.
   list.addDelay(MADCDELAY);
   
   //  program NIM busy according to -nimbusy - note users of the rc bus must set this to cbus.
