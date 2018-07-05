@@ -12,6 +12,7 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/eventlogsettings.jpg @srcdir@/eventlogsettings.eps @prefix@/share/html
 	$(INSTALL_SCRIPT) ReadoutShell.tcl @bindir@/ReadoutShell
 	$(INSTALL_SCRIPT) @srcdir@/start.bash @bindir@/start.bash
+	$(INSTALL_SCRIPT) @srcdir@/evbwizard.tcl @bindir@/evbwizard
 
 
 TCLPACKAGES=Configuration.tcl \
@@ -42,7 +43,8 @@ TCLPACKAGES=Configuration.tcl \
   offlineProvider.tcl \
 	multilogger.tcl \
 	stageareaValidation.tcl \
-	ReadoutGUIAppLauncher.tcl icon.tcl
+	ReadoutGUIAppLauncher.tcl icon.tcl \
+	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl 
 
 
 

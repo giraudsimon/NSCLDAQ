@@ -27,7 +27,7 @@ exec tclsh "$0" ${1+"$@"}
 
 package provide evbparameters 1.0
 
-lappend auto_path [file join $env(DAQROOT) TclLibs]
+
 package require Tk
 package require snit
 package require evbui

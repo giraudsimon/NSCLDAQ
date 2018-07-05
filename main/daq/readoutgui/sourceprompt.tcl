@@ -22,7 +22,7 @@
 # */
 package provide guisourceprompt 1.0
 
-lappend auto_path [file join $::env(DAQROOT) TclLibs]
+
 
 package require Tk
 package require snit

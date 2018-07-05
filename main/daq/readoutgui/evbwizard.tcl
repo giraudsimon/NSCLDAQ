@@ -18,6 +18,8 @@ exec tclsh "$0" ${1+"$@"}
 #	     Michigan State University
 #	     East Lansing, MI 48824-1321
 
+lappend auto_path [file join $::env(DAQROOT) TclLibs]
+
 
 ##
 # @file EVBWizard.tcl
