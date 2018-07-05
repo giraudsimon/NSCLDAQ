@@ -6668,5 +6668,45 @@ $outputMonitor configure -host spdaq123.nscl.msu.edu
                 </para>
             </refsect1>
         </refentry>
-      
+         <refentry>
+            <refmeta>
+                <refentrytitle>evbwizard</refentrytitle>
+                <manvolnum>1tcl</manvolnum>
+            </refmeta>
+            <refnamediv>
+                <refname>evbwizard</refname>
+                <refpurpose>Set up readout GUI and event builder.</refpurpose>
+            </refnamediv>
+            <refsynopsisdiv>
+                <synopsis>
+$DAQBIN/evbwizard
+                </synopsis>
+            </refsynopsisdiv>
+            <refsect1>
+                <title>DESCRIPTION</title>
+                <para>
+<command>evbwizard</command>  is a GUI tool that sets up ReadoutGUI data sources
+and an event builder start script.  The tools is intended to be self documented.
+                </para>
+            </refsect1>
+            <refsect1>
+              <title>FILES</title>
+              <simplelist>
+               <member>
+                  <filename>ReadoutCallouts.tcl</filename> is written by this tool/
+                  it is a starting point for the experiment's
+                  <filename>ReadoutCallouts.tcl</filename> file.  It initializes
+                  and starts the event builder as well as setting up all data sources.
+               </member>
+               <member>
+                <filename>settings.tcl</filename> contains the ReadoutGUI data
+                source definitions.  In most cases this is just copied to
+                <filename>~/stagearea/.setttings.tcl</filename>. Note that if
+                that file exists, it may be better to append the contents of
+                <filename>settings.tcl</filename> to the end of the existing
+                file.
+               </member>
+              </simplelist>
+            </refsect1>
+        </refentry>
 <!-- /manpage -->
