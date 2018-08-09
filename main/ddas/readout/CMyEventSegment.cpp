@@ -168,7 +168,13 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig)
     // Initialize the Pixie16 modules
     cout << "Trying to initialize pixie16 " << endl << flush;
 
-    m_config = *(Configuration::generate(FIRMWARE_FILE, "cfgPixie16.txt", "modevtlen.txt"));
+    const char* fwFile =  FIRMWARE_FILE;   // Default.
+    char* alternateFirmwareFile = getenv("FIRMWARE_FILE");
+    if (alternateFirmwareFile) fwFile = alternateFirmwareFile;
+ 
+    m_config = *(Configuration::generate(
+        fwFile, "cfgPixie16.txt", "modevtlen.txt"
+    ));
 
     m_config.print(std::cout);
     std::cout << std::endl;
