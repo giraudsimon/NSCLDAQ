@@ -662,7 +662,7 @@ CMQDC32RdoHdwr::addReadoutList(CVMUSBReadoutList& list)
     m_logic.addFifoRead(list, 1024);
   }
   m_logic.addResetReadout(list);
-  list.addDelay(5);
+  //  list.addDelay(5);
 
 
 }

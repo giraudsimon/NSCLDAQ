@@ -562,7 +562,7 @@ CMADC32::addReadoutList(CVMUSBReadoutList& list)
 
   list.addFifoRead32(base + eventBuffer, readamod, (size_t)45);
   list.addWrite16(base + ReadoutReset, initamod, (uint16_t)1);
-  list.addDelay(5);
+  //  list.addDelay(5);
 }
 
 // Cloning supports a virtual copy constructor.
