@@ -62,7 +62,7 @@ noinst_HEADERS = CFragmentHandlerCommand.h CFragmentHandler.h  \
 	CBarrierTraceCommand.h CPartialBarrierCallback.h CSourceCommand.h CDeadSourceCommand.h \
 	CReviveSocketCommand.h CFragReader.h CFragWriter.h CFlushCommand.h CResetCommand.h \
 	CConfigure.h fragio.h CDuplicateTimeStatCommand.h CXonXOffCallbackCommand.h \
-	COutOfOrderTraceCommand.h COutputThread.h
+	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h
 
 
 

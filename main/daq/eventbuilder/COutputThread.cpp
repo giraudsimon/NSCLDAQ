@@ -51,7 +51,7 @@ COutputThread::run()
 {
     while (1) {
         std::vector<EVB::pFragment>* pFrags = getFragments();
-	m_nInflightCount -= (pFrags->size());
+        m_nInflightCount -= (pFrags->size());
         {
             CriticalSection c(m_observerGuard);
             for (auto p = m_observers.begin(); p != m_observers.end(); p++) {
@@ -107,7 +107,7 @@ COutputThread::removeObserver(CFragmentHandler::Observer* o)
  *                  processing.
  */
 void
-COutputThread::queueFragments(std::vector<EVB::pFragment>* pFrags)
+COutputThread::queueFragments(std::list<std::pair<time_t, EVB::pFragment> >* pFrags)
 {
     m_nInflightCount += pFrags->size();
     m_inputQueue.queue(pFrags);
@@ -137,7 +137,17 @@ COutputThread::getInflightCount() const
 std::vector<EVB::pFragment>*
 COutputThread::getFragments()
 {
-    return m_inputQueue.get();
+    std::list<std::pair<time_t, EVB::pFragment> >* pFragmentList =
+        m_inputQueue.get();
+    std::vector<EVB::pFragment>& result(*(new std::vector<EVB::pFragment>));
+
+    for(auto f = pFragmentList->begin(); f != pFragmentList->end(); f++) {
+        result.push_back(f->second);
+    }
+    delete pFragmentList;  // Only the list, not what the fragment pointers point to.
+    return &result;        // result is a ref dynamically created so this is ok.
+    
+    
 }
 /**
  * freeFragments

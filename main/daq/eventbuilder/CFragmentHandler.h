@@ -125,7 +125,7 @@ private:
     std::uint64_t                                        s_bytesDeQd;
     std::uint64_t                                        s_totalBytesQd;
     std::uint64_t                                        s_lastTimestamp;
-    std::queue<std::pair<time_t,  EVB::pFragment> > s_queue;
+    std::list<std::pair<time_t,  EVB::pFragment> > s_queue;
     void reset() {
         s_newestTimestamp = 0;
 //        s_lastPoppedTimestamp = std::numeric_limits<std::uint64_t>::max();
@@ -375,21 +375,29 @@ public:
 private:
   void flushQueues(bool completely=false);
   std::pair<time_t, ::EVB::pFragment>* popOldest();
-  void   observe(std::vector<EVB::pFragment>& event); // pass built events on down the line.
+  void   observe(std::list<std::pair<time_t, EVB::pFragment> >& event); // pass built events on down the line.
   void   dataLate(const ::EVB::Fragment& fragment);		    // Data late handler.
   void   addFragment(EVB::pFlatFragment pFragment);
   size_t totalFragmentSize(EVB::pFragmentHeader pHeader);
   bool   queuesEmpty();
   bool   noEmptyQueue();
 
-  BarrierSummary generateBarrier(std::vector<EVB::pFragment>& outputList);
-  void generateMalformedBarrier(std::vector<EVB::pFragment>& outputList);
+  BarrierSummary generateBarrier(
+      std::list<std::pair<time_t, EVB::pFragment> >& outputList
+  );
+  void generateMalformedBarrier(
+    std::list<std::pair<time_t, EVB::pFragment> >& outputList
+  );
   //   void generateCompleteBarrier(std::vector<EVB::pFragment>& ouptputList); 156
   
-  void goodBarrier(std::vector<EVB::pFragment>& outputList);
-  void partialBarrier(std::vector<std::pair<std::uint32_t, std::uint32_t> >& types, 
-		 std::vector<std::uint32_t>& missingSources);
-  void observeGoodBarrier(std::vector<std::pair<std::uint32_t, std::uint32_t> >& types);
+  void goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList);
+  void partialBarrier(
+      std::vector<std::pair<std::uint32_t, std::uint32_t> >& types, 
+      std::vector<std::uint32_t>& missingSources
+  );
+  void observeGoodBarrier(
+    std::vector<std::pair<std::uint32_t, std::uint32_t> >& types
+  );
   void observeDuplicateTimestamp(std::uint32_t sourceId, std::uint64_t timestamp);
   void observeOutOfOrderInput(unsigned sourceId, std::uint64_t prior, std::uint64_t bad);
   void Xoff();
@@ -405,12 +413,28 @@ private:
   void checkBarrier(bool complete);
   time_t oldestBarrier();
 
-  // Static private methods:
-
-  static void IdlePoll(ClientData obj);
   size_t inFlightFragmentCount();
   void checkXoff();
   void checkXon();
+  
+  uint64_t findStampMark();
+
+
+  void DequeueUntilStamp(
+      std::list<std::pair<time_t,  EVB::pFragment> >& result,
+      std::list<std::pair<time_t,  EVB::pFragment> >& q,
+      uint64_t timestamp
+  );
+  void DequeueUntilAbsTime(
+    std::list<std::pair<time_t,  EVB::pFragment> >& result,
+    std::list<std::pair<time_t,  EVB::pFragment> >& q,
+    time_t time
+  );
+
+  // Static private methods:
+
+  static void IdlePoll(ClientData obj);
+  
 };
 
 

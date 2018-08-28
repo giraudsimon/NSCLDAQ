@@ -58,7 +58,7 @@ class COutputThread : public Thread
 private:
     // Buffer queue between the fragment source and us:
     
-    CBufferQueue<std::vector<EVB::pFragment>* > m_inputQueue;
+    CBufferQueue<std::list<std::pair<time_t, EVB::pFragment> >* > m_inputQueue;
     
     // The mutex guard and the list of observers it guards:
     
@@ -85,7 +85,7 @@ public:
 
     // Make fragments available to the thread:
 public:
-    void queueFragments(std::vector<EVB::pFragment>* pFrags);
+    void queueFragments(std::list<std::pair<time_t, EVB::pFragment> >* pFrags);
     size_t getInflightCount() const;
     
     // Private utilities:

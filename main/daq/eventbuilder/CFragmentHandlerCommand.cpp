@@ -105,7 +105,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
       msgBody = new uint8_t[msgLength];
       n    = Tcl_Read(pChannel, reinterpret_cast<char*>(msgBody), msgLength);
       if(n != msgLength) {
-	throw std::string("Message Body could not be completely read");
+        throw std::string("Message Body could not be completely read");
       }
       
       // Dispatch the body as the flattened fragments they are:
