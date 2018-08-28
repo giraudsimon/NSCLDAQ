@@ -431,6 +431,11 @@ private:
     time_t time
   );
 
+  void updateQueueStatistics(
+    SourceQueue& queue,
+    std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
+  );
+  
   // Static private methods:
 
   static void IdlePoll(ClientData obj);

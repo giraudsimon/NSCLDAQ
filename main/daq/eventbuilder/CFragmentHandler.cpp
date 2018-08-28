@@ -888,6 +888,7 @@ CFragmentHandler::flushQueues(bool completely)
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
       std::list<std::pair<time_t, EVB::pFragment> > partialSort;
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
+      updateQueueStatistics(p->second, partialSort);
       sortedFragments.merge(partialSort, TsCompare);
     }
   }
@@ -928,6 +929,7 @@ CFragmentHandler::flushQueues(bool completely)
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     std::list<std::pair<time_t, EVB::pFragment> > partialSort;
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+    updateQueueStatistics(p->second, partialSort);
     sortedFragments.merge(partialSort, TsCompare);
   }   
 #if 0
@@ -1857,4 +1859,41 @@ CFragmentHandler::DequeueUntilAbsTime(
   // If the front of the queue is a barrier, then we have barrier in progress.
   
   m_fBarrierPending = q.front().second->s_header.s_barrier != 0;
+}
+
+/**
+ * updateQueuestatistis
+ *    Updates the statistics associated with a queue given the set of fragments
+ *    that will be dequeued for it.  Items updated:
+ *
+ *    - s_lastPoppedTimestamp - timestamp at the tail of the set of frags popped.
+ *    - s_bytesDeQd - increased by the total of the payloads.
+ *    - s_bytesInQ  - decreased by the total of the payloads.
+ *
+ * @param queue - References the queue whos' statistics we're updating.
+ * @param justDequeued - a list of elements that were just dequeued from the
+ *               queue.
+ */
+void
+CFragmentHandler::updateQueueStatistics(
+    SourceQueue& queue,
+    std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
+)
+{
+  // Pull off the timestamp from the last fragment in justDequeued
+  // that's the new s_lastPopppedTimestamp:
+  
+  std::pair<time_t, EVB::pFragment>& tail(justDequeued.back());
+  std::uint64_t lastStamp = tail.second->s_header.s_timestamp;
+  queue.s_lastPoppedTimestamp = lastStamp;
+  
+  // We need the total number of payload bytes in justDequeued.
+  
+  std::uint64_t payloadBytes(0);
+  for (auto p = justDequeued.begin(); p != justDequeued.end(); p++) {
+    payloadBytes += p->second->s_header.s_size;
+  }
+  
+  queue.s_bytesDeQd += payloadBytes;
+  queue.s_bytesInQ  -= payloadBytes;
 }
