@@ -23,6 +23,7 @@
 #include "COutputThread.h"
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 /**
  * Constructor
@@ -59,7 +60,7 @@ COutputThread::run()
                 (*pO)(*pFrags);
             }
         }
-        freeFragments(pFrags); 
+        freeFragments(pFrags);
     }
 }
 /*---------------------------------------------------------------------------
@@ -139,6 +140,7 @@ COutputThread::getFragments()
 {
     std::list<std::pair<time_t, EVB::pFragment> >* pFragmentList =
         m_inputQueue.get();
+    
     std::vector<EVB::pFragment>& result(*(new std::vector<EVB::pFragment>));
 
     for(auto f = pFragmentList->begin(); f != pFragmentList->end(); f++) {

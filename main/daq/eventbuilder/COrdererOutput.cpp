@@ -17,6 +17,7 @@
 #include <TCLInterpreter.h>
 #include <iostream>
 #include <io.h>
+#include <iostream>
 
 #include <string>
 #include "fragment.h"
@@ -67,12 +68,19 @@ COrdererOutput::~COrdererOutput()
 void
 COrdererOutput::operator()(const std::vector<EVB::pFragment>& event)
 {
+  std::cerr << "Outputting " << event.size() << " fragments\n";
   for (int i = 0; i < event.size(); i++) {
     EVB::pFragment p = event[i];
 //    std::cerr << "Frag @ " << p->s_header.s_timestamp << std::endl;
-    io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
-    io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
 
+    try {
+       io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
+       io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
+    }
+    catch(int er) {
+      std::cerr << " Caught an output exception " << er << std::endl;
+      throw;
+    }
   }
 
 

@@ -180,6 +180,7 @@ static bool first(true);
 void
 CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
 {
+  
     m_nNow = time(NULL);
     if (m_nNow < m_nOldestReceived) {
       m_nOldestReceived = m_nNow; // Really done first time.
@@ -197,11 +198,11 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
       srcid = pHeader->s_sourceId;
       size_t fragmentSize = totalFragmentSize(pHeader);
       if((pHeader->s_size + sizeof(EVB::FragmentHeader)) > nSize) {
-	std::stringstream s;
-	s << "Last fragment has too many bytes: " << nSize
-	  << " bytes in fragment group but " << fragmentSize
-	  << " bytes are in the last fragment!";
-	throw s.str();
+        std::stringstream s;
+        s << "Last fragment has too many bytes: " << nSize
+          << " bytes in fragment group but " << fragmentSize
+          << " bytes are in the last fragment!";
+        throw s.str();
       }
 
 
@@ -223,7 +224,9 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
     if (m_nNow-timeOfFirstSubmission > m_nStartupTimeout) {
       // Don't flush until we have allowed time for all data sources to 
       // establish themselves
+     
       flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
+      
     }
     checkXoff();
 }
@@ -870,7 +873,7 @@ void
 CFragmentHandler::flushQueues(bool completely)
 {
  
-
+  
 
   // Ensure there's at least one fragment available:
 
@@ -884,14 +887,18 @@ CFragmentHandler::flushQueues(bool completely)
   // stamp mark
   
   if (noEmptyQueue()) {
+    
     uint64_t mark  = findStampMark();
+    
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
+    
       std::list<std::pair<time_t, EVB::pFragment> > partialSort;
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
       updateQueueStatistics(p->second, partialSort);
       sortedFragments.merge(partialSort, TsCompare);
     }
   }
+  
 #if 0  
   while (noEmptyQueue() // || (m_nNow - m_nOldestReceived > m_nBuildWindow)
 	  || completely ) {
@@ -926,11 +933,15 @@ CFragmentHandler::flushQueues(bool completely)
   
   m_nNow = time(NULL);
   time_t windowEnd = m_nNow - m_nBuildWindow;
+  
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     std::list<std::pair<time_t, EVB::pFragment> > partialSort;
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+    std::cerr << "DequeueUntilAbsTime returned ok\n";  std::cerr.flush();
     updateQueueStatistics(p->second, partialSort);
+    std::cerr << "Stats updated\n"; std::cerr.flush();
     sortedFragments.merge(partialSort, TsCompare);
+    std::cerr << "Frags merged\n"; std::cerr.flush();
   }   
 #if 0
   findOldest();     // Previous code could have made oldest uh.. newer.
@@ -978,8 +989,11 @@ CFragmentHandler::flushQueues(bool completely)
 
   // Observe the fragments we have now:
   
-
-  observe(sortedFragments);
+  
+  if (sortedFragments.size()) {
+    observe(sortedFragments);
+  }
+  
   
   
   // If XOFed and below the low water mark, XON:
@@ -1134,6 +1148,7 @@ CFragmentHandler::dataLate(const ::EVB::Fragment& fragment)
 void
 CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 {
+  
     bool     assigned            = false;
     uint64_t priorOldest         = m_nOldest;
 
@@ -1219,10 +1234,10 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 
     
     if ((timestamp < m_nOldest)) {
-	if ((m_nOldest - timestamp) > 0x100000000ll && (m_nOldest != 0xffffffffffffffff)) {
-	  std::cerr << "addFragment... timestamp taking a big step back from : " << std::hex
-		    << m_nOldest << " to " << timestamp << std::dec << std::endl;
-	}
+      if ((m_nOldest - timestamp) > 0x100000000ll && (m_nOldest != 0xffffffffffffffff)) {
+        std::cerr << "addFragment... timestamp taking a big step back from : " << std::hex
+            << m_nOldest << " to " << timestamp << std::dec << std::endl;
+      }
 #ifdef DEBUG
 	std::cerr << "add fragment decreasing oldest timestamp from: "
 		  << std::hex << m_nOldest << " to: " 
@@ -1462,6 +1477,7 @@ CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFra
 void
 CFragmentHandler::goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
 {
+  
   BarrierSummary bs = generateBarrier(outputList);
 
   // If there's a non empty missing sources this is a partial barrier actually.
@@ -1768,6 +1784,7 @@ CFragmentHandler::findStampMark()
   uint64_t result = UINT64_MAX;
   
   for(auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
+
     if (p->second.s_lastTimestamp < result) result = p->second.s_lastTimestamp;
   }
   
@@ -1788,9 +1805,10 @@ class TsLargerThan {
 private:
   uint64_t m_timestamp;
 public:
-  TsLargerThan(uint64_t ts) : m_timestamp(ts) {}
+  TsLargerThan(uint64_t ts) : m_timestamp(ts) {
+  }
   bool operator()(std::pair<time_t, EVB::pFragment>& qel) {
-    return (m_timestamp > qel.second->s_header.s_timestamp ) ||
+    return (m_timestamp < qel.second->s_header.s_timestamp ) ||
           (qel.second->s_header.s_barrier != 0);
   }
 };
@@ -1807,7 +1825,7 @@ private:
 public:
   TimeLargerThan(time_t t) : m_time(t) {}
   bool operator()(std::pair<time_t, EVB::pFragment>& qel) {
-    return (m_time > qel.first)     ||
+    return (m_time < qel.first)     ||
        (qel.second->s_header.s_barrier != 0);
   }
 };
@@ -1829,12 +1847,18 @@ CFragmentHandler::DequeueUntilStamp(
   uint64_t timestamp
 )
 {
+  std::cerr << "Dequeue until stamp\n";
+  std::cerr.flush();
   TsLargerThan pred(timestamp);
   CopyPopUntil(q, result, pred);
-  
+  std::cerr << "Got " << result.size() << " frags \n";
+  std::cerr << "Remaining frags: " << q.size() << std::endl;
+  std::cerr.flush();
   // If the front of the queue is a barrier, then we have barrier in progress.
   
-  m_fBarrierPending = q.front().second->s_header.s_barrier != 0;
+  m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
+  std::cerr << "barrier pending: " << m_fBarrierPending << std::endl;
+  std::cerr.flush();
 }
 /**
  * DequeueUntilAbsTime
@@ -1853,13 +1877,21 @@ CFragmentHandler::DequeueUntilAbsTime(
   time_t time
 )
 {
+  std::cerr << "Dequeue until abstime\n";
+  std::cerr.flush();
   TimeLargerThan pred(time);
   CopyPopUntil(q, result, pred);
   
+  std::cerr << "Got " << result.size() << " frags \n";
+  std::cerr << "Remaining frags: " << q.size() << std::endl;  
+  
   // If the front of the queue is a barrier, then we have barrier in progress.
   
-  m_fBarrierPending = q.front().second->s_header.s_barrier != 0;
+  m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
+  std::cerr << "barrier pending: " << m_fBarrierPending << std::endl;
+  std::cerr.flush();
 }
+
 
 /**
  * updateQueuestatistis
@@ -1880,6 +1912,7 @@ CFragmentHandler::updateQueueStatistics(
     std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
 )
 {
+  if (justDequeued.empty()) return;
   // Pull off the timestamp from the last fragment in justDequeued
   // that's the new s_lastPopppedTimestamp:
   
