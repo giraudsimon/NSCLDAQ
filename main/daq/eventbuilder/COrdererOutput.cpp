@@ -68,7 +68,6 @@ COrdererOutput::~COrdererOutput()
 void
 COrdererOutput::operator()(const std::vector<EVB::pFragment>& event)
 {
-  std::cerr << "Outputting " << event.size() << " fragments\n";
   for (int i = 0; i < event.size(); i++) {
     EVB::pFragment p = event[i];
 //    std::cerr << "Frag @ " << p->s_header.s_timestamp << std::endl;

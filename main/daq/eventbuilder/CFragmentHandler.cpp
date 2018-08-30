@@ -937,11 +937,8 @@ CFragmentHandler::flushQueues(bool completely)
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     std::list<std::pair<time_t, EVB::pFragment> > partialSort;
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-    std::cerr << "DequeueUntilAbsTime returned ok\n";  std::cerr.flush();
     updateQueueStatistics(p->second, partialSort);
-    std::cerr << "Stats updated\n"; std::cerr.flush();
     sortedFragments.merge(partialSort, TsCompare);
-    std::cerr << "Frags merged\n"; std::cerr.flush();
   }   
 #if 0
   findOldest();     // Previous code could have made oldest uh.. newer.
@@ -1076,7 +1073,7 @@ CFragmentHandler::popOldest()
       // If this queue has been emptied mark that time:
 
       if (pOldestQ->second.s_queue.empty()) {
-	m_nMostRecentlyEmptied = time(NULL);
+        m_nMostRecentlyEmptied = time(NULL);
       }
       findOldest();
 
@@ -1744,6 +1741,7 @@ CFragmentHandler::IdlePoll(ClientData data)
 size_t
 CFragmentHandler::inFlightFragmentCount()
 {
+  
   return m_nTotalFragmentSize + m_outputThread.getInflightCount();
 }
 /**
@@ -1847,18 +1845,12 @@ CFragmentHandler::DequeueUntilStamp(
   uint64_t timestamp
 )
 {
-  std::cerr << "Dequeue until stamp\n";
   std::cerr.flush();
   TsLargerThan pred(timestamp);
   CopyPopUntil(q, result, pred);
-  std::cerr << "Got " << result.size() << " frags \n";
-  std::cerr << "Remaining frags: " << q.size() << std::endl;
-  std::cerr.flush();
   // If the front of the queue is a barrier, then we have barrier in progress.
   
   m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
-  std::cerr << "barrier pending: " << m_fBarrierPending << std::endl;
-  std::cerr.flush();
 }
 /**
  * DequeueUntilAbsTime
@@ -1877,19 +1869,13 @@ CFragmentHandler::DequeueUntilAbsTime(
   time_t time
 )
 {
-  std::cerr << "Dequeue until abstime\n";
   std::cerr.flush();
   TimeLargerThan pred(time);
   CopyPopUntil(q, result, pred);
-  
-  std::cerr << "Got " << result.size() << " frags \n";
-  std::cerr << "Remaining frags: " << q.size() << std::endl;  
-  
+    
   // If the front of the queue is a barrier, then we have barrier in progress.
   
   m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
-  std::cerr << "barrier pending: " << m_fBarrierPending << std::endl;
-  std::cerr.flush();
 }
 
 
@@ -1929,4 +1915,6 @@ CFragmentHandler::updateQueueStatistics(
   
   queue.s_bytesDeQd += payloadBytes;
   queue.s_bytesInQ  -= payloadBytes;
+  
+  m_nTotalFragmentSize -= justDequeued.size();
 }
