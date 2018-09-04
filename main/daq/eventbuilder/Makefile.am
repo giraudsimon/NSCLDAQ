@@ -22,7 +22,7 @@ libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \
-	CInputStatsCommand.cpp COrdererOutput.cpp fragment.c \
+	CInputStatsCommand.cpp COrdererOutput.cpp fragment.cpp \
 	COutputStatsObserver.cpp COutputStatsCommand.cpp CDataLateStatistics.cpp \
 	CDLateStatsCommand.cpp CLateScriptObserver.cpp COnLateDataCommand.cpp  \
 	CBarrierStatsCommand.cpp CBarrierStats.cpp CIncompleteBarrierStats.cpp \
@@ -59,7 +59,7 @@ Orderer_LDFLAGS =  @LIBTCLPLUS_LDFLAGS@	\
 
 
 
-libEventBuilderClient_la_SOURCES=CEventOrderClient.cpp fragment.c \
+libEventBuilderClient_la_SOURCES=CEventOrderClient.cpp fragment.cpp \
 	CEVBClientApp.cpp  CEVBFrameworkApp.cpp \
 	EVBFramework.cpp GetOpt.cpp fragio.cpp
 
@@ -108,7 +108,7 @@ TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl
 
 
-TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl evbRdoCallouts10.tcl EVBStateCallouts.tcl \
+TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl  EVBStateCallouts.tcl \
 			 ringSourceMgr.tcl endrunmon.tcl
 
 TCL_TEST_FILES=tclTests.tcl cbmanagerTests.test cmanagerCallbacks.test ringsourcemgr.test
@@ -163,8 +163,8 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
 
 ordertests_SOURCES = TestRunner.cpp orderTests.cpp duptscmdtest.cpp \
-	configcmdtests.cpp tclflowtest.cpp \
-	CFragmentHandler.cpp fragment.c CDuplicateTimeStatCommand.cpp \
+	configcmdtests.cpp tclflowtest.cpp fragalloctest.cpp \
+	CFragmentHandler.cpp fragment.cpp CDuplicateTimeStatCommand.cpp \
 	CConfigure.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp
 
 
