@@ -21,6 +21,7 @@
  */
 
 #include <tcl.h>
+#include <TCLApplication.h>
 #include <TCLInterpreter.h>
 #include <unistd.h>
 #include "CFragmentHandlerCommand.h"
@@ -86,4 +87,4 @@ int Eventbuilder_Init(Tcl_Interp* pInterp)
 
   return TCL_OK;
 }
-int gpTCLApplication = 0;
+CTCLApplication* gpTCLApplication = 0;

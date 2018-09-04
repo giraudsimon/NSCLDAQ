@@ -1,4 +1,4 @@
-bin_PROGRAMS= frag2ring
+bin_PROGRAMS= frag2ring Orderer
 
 COMPILATION_FLAGS =  \
 	-I@top_srcdir@/daq/format \
@@ -10,7 +10,7 @@ COMPILATION_FLAGS =  \
 	-I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread \
 	@LIBTCLPLUS_CFLAGS@ \
-	@THREADCXX_FLAGS@ @TCL_FLAGS@
+	@THREADCXX_FLAGS@ @TCL_FLAGS@ 
 
 
 lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
@@ -31,7 +31,33 @@ libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFra
 	CFlushCommand.cpp CResetCommand.cpp CConfigure.cpp CDuplicateTimeStatCommand.cpp \
 	COutOfOrderTraceCommand.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp
 
-libEventBuilder_la_CPPFLAGS=$(COMPILATION_FLAGS)
+
+
+
+libEventBuilder_la_CPPFLAGS=$(COMPILATION_FLAGS)   
+libEventBuilder_la_LIBADD = @LIBTCLPLUS_LDFLAGS@	\
+	@top_builddir@/base/thread/libdaqthreads.la 	\
+	@top_builddir@/base/os/libdaqshm.la    \
+	@TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+libEventBuilder_la_LDFLAGS=  @LIBTCLPLUS_LDFLAGS@
+
+
+Orderer_SOURCES= Orderer.cpp $(libEventBuilder_la_SOURCES)
+
+Orderer_CPPFLAGS=$(libEventBuilder_la_CPPFLAGS) $(TCL_CPPFLAGS) 
+
+#Orderer_LDADD =	@LIBTCLPLUS_LDFLAGS@	\
+#	@top_builddir@/base/thread/libdaqthreads.la 	\
+#	@top_builddir@/base/os/libdaqshm.la    \
+#	@TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+Orderer_LDFLAGS =  @LIBTCLPLUS_LDFLAGS@	\
+	@top_builddir@/base/thread/libdaqthreads.la 	\
+	@top_builddir@/base/os/libdaqshm.la    \
+	@TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+
 
 libEventBuilderClient_la_SOURCES=CEventOrderClient.cpp fragment.c \
 	CEVBClientApp.cpp  CEVBFrameworkApp.cpp \
@@ -74,12 +100,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 	@top_builddir@/base/os/libdaqshm.la		\
 	@LIBTCLPLUS_LDFLAGS@ 
 
-libEventBuilder_la_LIBADD = @LIBTCLPLUS_LDFLAGS@	\
-	@top_builddir@/base/thread/libdaqthreads.la 	\
-	@top_builddir@/base/os/libdaqshm.la    \
-	@TCL_LDFLAGS@ @THREADLD_FLAGS@
 
-libEventBuilder_la_LDFLAGS=@LIBTCLPLUS_LDFLAGS@
 
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	connectionList.tcl observer.tcl barriers.tcl GUI.tcl inputStatistics.tcl \

@@ -1845,7 +1845,7 @@ CFragmentHandler::DequeueUntilStamp(
   uint64_t timestamp
 )
 {
-  std::cerr.flush();
+
   TsLargerThan pred(timestamp);
   CopyPopUntil(q, result, pred);
   // If the front of the queue is a barrier, then we have barrier in progress.
@@ -1869,7 +1869,6 @@ CFragmentHandler::DequeueUntilAbsTime(
   time_t time
 )
 {
-  std::cerr.flush();
   TimeLargerThan pred(time);
   CopyPopUntil(q, result, pred);
     

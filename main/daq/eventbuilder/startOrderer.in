@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start Tclsh \
-exec @TCLSH_CMD@ ${0} ${@}
+exec @prefix@/bin/Orderer ${0} ${@}
 
 
 

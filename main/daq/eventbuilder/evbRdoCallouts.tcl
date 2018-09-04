@@ -261,7 +261,8 @@ proc EVBC::start args {
     set bindir [file join $EVBC::daqtop bin]
     set ::EVBC::appNameSuffix [clock seconds]
     set orderer [file join $bindir startOrderer]
-    set pipecommand "tclsh 2>orderer.err";        # TODO - this should be @TCLSH_CMD@
+    set program [file join $bindir Orderer]
+    set pipecommand "valgrind --tool=callgrind $program 2>orderer.err";        # TODO - this should be @TCLSH_CMD@
     
     #  If -teering is not null hook teering into the pipeline:
     
@@ -332,21 +333,22 @@ proc EVBC::start args {
     set hunting $appName
     set found 0
     set me $::tcl_platform(user)
-    for {set i 0} {$i < 100} {incr i} {
-	set allocations [$ports listPorts]
-	foreach allocation $allocations {
-	    set name [lindex $allocation 1]
-	    set owner [lindex $allocation 2]
-	    if {($name eq $hunting) && ($me eq $owner)} {
-		set found 1
-	    }
-	}
-	if {!$found} {
-	    update idletasks
-	    after 500
-	} else {
-	    set i 100
-	}
+    set timeoutPasses 1000
+    for {set i 0} {$i < $timeoutPasses} {incr i} {
+        set allocations [$ports listPorts]
+        foreach allocation $allocations {
+            set name [lindex $allocation 1]
+            set owner [lindex $allocation 2]
+            if {($name eq $hunting) && ($me eq $owner)} {
+            set found 1
+            }
+        }
+        if {!$found} {
+            update idletasks
+            after 500
+        } else {
+            set i $timeoutPasses
+        }
     }
     $ports destroy
     destroy .waiting
