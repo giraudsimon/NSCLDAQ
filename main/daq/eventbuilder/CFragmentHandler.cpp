@@ -33,8 +33,9 @@
 using std::uint32_t;
 using std::uint64_t;
 
-
-
+namespace EVB {
+ extern bool debug;
+}
 /*---------------------------------------------------------------------
 ** Static  data:
 */
@@ -102,6 +103,7 @@ CFragmentHandler::CFragmentHandler() :
   m_outputThread(*(new COutputThread()))
 
 {
+  // EVB::debug = true;      // Uncomment for fragment pool debug output.
     m_outputThread.start();
     m_nBuildWindow = DefaultBuildWindow;
     m_nStartupTimeout = DefaultStartupTimeout;
@@ -894,7 +896,8 @@ CFragmentHandler::flushQueues(bool completely)
     
       std::list<std::pair<time_t, EVB::pFragment> > partialSort;
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
-      if (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped) {
+      if (!partialSort.empty() &&
+          (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped)) {
         dataLate(*partialSort.front().second);
       }
       updateQueueStatistics(p->second, partialSort);
@@ -940,7 +943,8 @@ CFragmentHandler::flushQueues(bool completely)
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     std::list<std::pair<time_t, EVB::pFragment> > partialSort;
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-    if (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped) {
+    if (!partialSort.empty() &&
+        (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped)) {
       dataLate(*partialSort.front().second);
     }
     updateQueueStatistics(p->second, partialSort);
