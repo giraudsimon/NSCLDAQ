@@ -47,15 +47,11 @@ Orderer_SOURCES= Orderer.cpp $(libEventBuilder_la_SOURCES)
 
 Orderer_CPPFLAGS=$(libEventBuilder_la_CPPFLAGS) $(TCL_CPPFLAGS) 
 
-#Orderer_LDADD =	@LIBTCLPLUS_LDFLAGS@	\
-#	@top_builddir@/base/thread/libdaqthreads.la 	\
-#	@top_builddir@/base/os/libdaqshm.la    \
-#	@TCL_LDFLAGS@ @THREADLD_FLAGS@
 
 Orderer_LDFLAGS =  @LIBTCLPLUS_LDFLAGS@	\
-	@top_builddir@/base/thread/libdaqthreads.la 	\
 	@top_builddir@/base/os/libdaqshm.la    \
-	@TCL_LDFLAGS@ @THREADLD_FLAGS@
+	@top_builddir@/base/thread/libdaqthreads.la 	\
+	@TCL_LDFLAGS@ @THREADLD_FLAGS@ 
 
 
 
@@ -98,6 +94,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 	@top_builddir@/servers/portmanager/libPortManager.la   \
 	@top_builddir@/base/tcpip/libTcp.la	\
 	@top_builddir@/base/os/libdaqshm.la		\
+	@top_builddir@/base/thread/libdaqthreads.la
 	@LIBTCLPLUS_LDFLAGS@ 
 
 
