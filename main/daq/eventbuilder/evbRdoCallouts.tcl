@@ -262,8 +262,8 @@ proc EVBC::start args {
     set ::EVBC::appNameSuffix [clock seconds]
     set orderer [file join $bindir startOrderer]
     set program [file join $bindir Orderer]
-    set pipecommand "valgrind --tool=callgrind $program 2>orderer.err";        # TODO - this should be @TCLSH_CMD@
-    
+   # set pipecommand "valgrind --tool=callgrind $program 2> orderer.err ";        # TODO - this should be @TCLSH_CMD@
+    set pipecommand "$program 2> orderer.err ";        # TODO - this should be @TCLSH_CMD@
     #  If -teering is not null hook teering into the pipeline:
     
     set intermediateRing [$options cget -teering]
@@ -281,7 +281,7 @@ proc EVBC::start args {
     }
     append glom " --sourceid=[$options cget -glomid]"
     append glom " --timestamp-policy=[$options cget -glomtspolicy] "
-    append pipecommand " | $glom"
+    append pipecommand " | $glom  "
     #
     #  Ground the pipeline in the -destring 
     #
@@ -333,7 +333,7 @@ proc EVBC::start args {
     set hunting $appName
     set found 0
     set me $::tcl_platform(user)
-    set timeoutPasses 1000
+    set timeoutPasses 10000
     for {set i 0} {$i < $timeoutPasses} {incr i} {
         set allocations [$ports listPorts]
         foreach allocation $allocations {
