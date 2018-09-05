@@ -51,7 +51,7 @@ void
 COutputThread::run()
 {
     while (1) {
-        std::vector<EVB::pFragment>* pFrags = getFragments();
+        std::list<std::pair<time_t, EVB::pFragment> >* pFrags = getFragments();
         m_nInflightCount -= (pFrags->size());
         {
             CriticalSection c(m_observerGuard);
@@ -135,19 +135,14 @@ COutputThread::getInflightCount() const
  *    observers.
  * @return std::vector<EVB::pFragment>*
  */
-std::vector<EVB::pFragment>*
+std::list<std::pair<time_t, EVB::pFragment> >*
 COutputThread::getFragments()
 {
     std::list<std::pair<time_t, EVB::pFragment> >* pFragmentList =
         m_inputQueue.get();
     
-    std::vector<EVB::pFragment>& result(*(new std::vector<EVB::pFragment>));
-
-    for(auto f = pFragmentList->begin(); f != pFragmentList->end(); f++) {
-        result.push_back(f->second);
-    }
-    delete pFragmentList;  // Only the list, not what the fragment pointers point to.
-    return &result;        // result is a ref dynamically created so this is ok.
+   
+    return pFragmentList;        // result is a ref dynamically created so this is ok.
     
     
 }
@@ -161,13 +156,14 @@ COutputThread::getFragments()
  *        *  The vector itself was dynamically allocated:
  */
 void
-COutputThread::freeFragments(std::vector<EVB::pFragment>* frags)
+COutputThread::freeFragments(std::list<std::pair<time_t, EVB::pFragment> >*frags)
 {
-    std::vector<EVB::pFragment>& fs(*frags);
+    std::list<std::pair<time_t, EVB::pFragment> >& fs(*frags);
     // free storage associated with each fragment.
     
-    for (int i = 0; i < fs.size(); i++) {
-        freeFragment(fs[i]);
+    for (auto p = fs.begin(); p != fs.end(); p++) {
+        EVB::pFragment frag = p->second;
+        freeFragment(frag);
     }
     // and now the vector itself:
     

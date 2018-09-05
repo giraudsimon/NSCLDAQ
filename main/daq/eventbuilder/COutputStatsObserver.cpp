@@ -55,12 +55,12 @@ COutputStatsObserver::~COutputStatsObserver()
  * @param event - the fragments passed in.
  */
 void
-COutputStatsObserver::operator()(const std::vector<EVB::pFragment>& event)
+COutputStatsObserver::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event)
 {
   m_nTotalFragments += event.size();
   CriticalSection c(m_perSourceStatGuard);
-  for (std::vector<EVB::pFragment>::const_iterator p = event.begin(); p != event.end(); p++) {
-    EVB::pFragment pf = *p;
+  for (auto p = event.begin(); p != event.end(); p++) {
+    EVB::pFragment pf = p->second;
     uint32_t sourceId = pf->s_header.s_sourceId;
     m_perSourceStatistics[sourceId]++;
   }

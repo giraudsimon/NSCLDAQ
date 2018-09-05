@@ -66,10 +66,11 @@ COrdererOutput::~COrdererOutput()
  * @param event - vector of fragments to output.
  */
 void
-COrdererOutput::operator()(const std::vector<EVB::pFragment>& event)
+COrdererOutput::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event)
 {
-  for (int i = 0; i < event.size(); i++) {
-    EVB::pFragment p = event[i];
+  
+  for (auto i =event.begin(); i != event.end(); i++) {
+    EVB::pFragment p = i->second;;
 
     try {
        io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));

@@ -333,7 +333,7 @@ proc EVBC::start args {
     set hunting $appName
     set found 0
     set me $::tcl_platform(user)
-    set timeoutPasses 10000
+    set timeoutPasses 1000
     for {set i 0} {$i < $timeoutPasses} {incr i} {
         set allocations [$ports listPorts]
         foreach allocation $allocations {

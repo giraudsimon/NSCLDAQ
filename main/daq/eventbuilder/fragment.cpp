@@ -19,11 +19,12 @@
 
 #include <list>
 #include <vector>
-#include <mutex>
-
+#include <CMutex.h>
+#include <thread>
+#include <iostream>
 
 namespace EVB {
-
+bool debug=false;
 /**
  * The following data structures are used to re-use both fragment headers
  * (easy) and their bodies.  This is done because profiling showed that
@@ -61,7 +62,7 @@ FragmentHeaderPool fragmentHeaderPool;
 
 std::vector<FragmentBodyPool> fragmentBodyPools;
 
-static std::mutex poolProtector;             // So we're threadsafe.
+CMutex poolProtector;             // So we're threadsafe.
 
 /**
  *  resetFragmentPool
@@ -121,12 +122,21 @@ getPoolNumber(unsigned size)
 static FragmentBodyPool&
 getPool(unsigned poolNo)
 {
-    std::list<void*> emptyList;           // Used to expand the pools.
+    
+   static std::list<void*> emptyList;           // Used to expand the pools. 
+
     while (poolNo >= fragmentBodyPools.size()) {
+      
       fragmentBodyPools.push_back(emptyList);
     }
-    
-    return fragmentBodyPools[poolNo];
+    try {
+      return fragmentBodyPools.at(poolNo);
+    }
+    catch (...) {
+      std::cerr << "getPool - no fragmentBody Pool for " << poolNo << std::endl;
+      std::cerr.flush();
+      throw;               // Likely crashes us.
+    }
 }
 /**
  * poolSize
@@ -185,11 +195,14 @@ getFragmentBody(size_t bytes)
   FragmentBodyPool& pool(getPool(poolNo));          // Makes more pools if needed.
   
   if (pool.empty()) {
+    if (debug) std::cerr << std::this_thread::get_id() << " pool " << poolNo << " empty\n";
     result = malloc(poolSize(poolNo));
   } else {
+    if (debug) std::cerr << std::this_thread::get_id() << " Satsified body from pool\n";
     result = pool.front();
     pool.pop_front();
   }
+  if (debug) std::cerr.flush();
   return result;
 }
 
@@ -217,7 +230,7 @@ freeFragmentBody(pFragment pFrag)
 extern "C" {
 void freeFragment(pFragment p) 
 {
-  std::lock_guard<std::mutex> lock(poolProtector);
+  CriticalSection l(poolProtector);
   freeFragmentBody(p);
   p->s_pBody = 0;
   freeFragmentHeader(p);
@@ -238,7 +251,7 @@ void freeFragment(pFragment p)
 extern "C" {
 pFragment allocateFragment(pFragmentHeader pHeader)
 {
-  std::lock_guard<std::mutex> lock(poolProtector);
+  CriticalSection l(poolProtector);
   pFragment p = getFragmentDescription();
   memcpy(&(p->s_header), pHeader, sizeof(FragmentHeader));
 

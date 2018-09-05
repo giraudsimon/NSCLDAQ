@@ -91,8 +91,8 @@ public:
     // Private utilities:
     
 private:
-    std::vector<EVB::pFragment>* getFragments();
-    void freeFragments(std::vector<EVB::pFragment>* frags);
+    std::list<std::pair<time_t, EVB::pFragment> >* getFragments();
+    void freeFragments(std::list<std::pair<time_t, EVB::pFragment> >* frags);
     
 };
 

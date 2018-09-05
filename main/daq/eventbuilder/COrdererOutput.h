@@ -62,7 +62,7 @@ private:
   // Entries required of observers:
 
 public:
-  virtual void operator()(const std::vector<EVB::pFragment>& event);
+  virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event);
 
   // Utilities:
 private:

@@ -96,7 +96,7 @@ private:
 
   // Object methods:
 public:
-  virtual void operator()(const std::vector<EVB::pFragment>& event);
+  virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event);
   void clear();
   Statistics getStatistics() const;
 };
