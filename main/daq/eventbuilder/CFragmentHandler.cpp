@@ -894,6 +894,9 @@ CFragmentHandler::flushQueues(bool completely)
     
       std::list<std::pair<time_t, EVB::pFragment> > partialSort;
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
+      if (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped) {
+        dataLate(*partialSort.front().second);
+      }
       updateQueueStatistics(p->second, partialSort);
       sortedFragments.merge(partialSort, TsCompare);
     }
@@ -937,6 +940,9 @@ CFragmentHandler::flushQueues(bool completely)
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     std::list<std::pair<time_t, EVB::pFragment> > partialSort;
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+    if (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped) {
+      dataLate(*partialSort.front().second);
+    }
     updateQueueStatistics(p->second, partialSort);
     sortedFragments.merge(partialSort, TsCompare);
   }   
@@ -1883,7 +1889,9 @@ CFragmentHandler::DequeueUntilAbsTime(
  *    Updates the statistics associated with a queue given the set of fragments
  *    that will be dequeued for it.  Items updated:
  *
- *    - s_lastPoppedTimestamp - timestamp at the tail of the set of frags popped.
+ *    - s_lastPoppedTimestamp - timestamp at the tail of the set of frags popped
+ *    - m_nMostRecentlyPopped  - Max of tail timestamp and current value.
+ *                               max because it's possible there are data lates.
  *    - s_bytesDeQd - increased by the total of the payloads.
  *    - s_bytesInQ  - decreased by the total of the payloads.
  *
@@ -1904,6 +1912,7 @@ CFragmentHandler::updateQueueStatistics(
   std::pair<time_t, EVB::pFragment>& tail(justDequeued.back());
   std::uint64_t lastStamp = tail.second->s_header.s_timestamp;
   queue.s_lastPoppedTimestamp = lastStamp;
+  if (lastStamp > m_nMostRecentlyPopped) m_nMostRecentlyPopped = lastStamp;
   
   // We need the total number of payload bytes in justDequeued.
   
