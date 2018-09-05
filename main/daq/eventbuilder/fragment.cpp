@@ -64,6 +64,27 @@ std::vector<FragmentBodyPool> fragmentBodyPools;
 static std::mutex poolProtector;             // So we're threadsafe.
 
 /**
+ *  resetFragmentPool
+ *     For testing purposes - frees all elements of the header and body pools:
+ */
+void
+resetFragmentPool()
+{
+  while(!fragmentHeaderPool.empty()) {
+    free(fragmentHeaderPool.front());
+    fragmentHeaderPool.pop_front();
+  }
+  while(!fragmentBodyPools.empty()) {
+    FragmentBodyPool& pool(fragmentBodyPools.back());
+    while(!pool.empty()) {
+      free(pool.front());
+      pool.pop_front();
+    }
+    fragmentBodyPools.pop_back();
+  }
+}
+
+/**
  * getPoolNumber
  *    Return the index of the pool in fragmentBodyPools that will have
  *    the smallest storage region at least as big as the size passed in.
@@ -196,7 +217,7 @@ freeFragmentBody(pFragment pFrag)
 extern "C" {
 void freeFragment(pFragment p) 
 {
-  std::lock_guard<std::mutex> lock(poolProtector);;
+  std::lock_guard<std::mutex> lock(poolProtector);
   freeFragmentBody(p);
   p->s_pBody = 0;
   freeFragmentHeader(p);
