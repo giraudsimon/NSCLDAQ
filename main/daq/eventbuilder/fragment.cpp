@@ -54,8 +54,8 @@ bool threadsafe=true;   // By default threadsafe.
   
 // The pool below is for fragment headers:
 
-typedef std::list<pFragment> FragmentHeaderPool;
-typedef std::list<void*>     FragmentBodyPool;
+typedef std::vector<pFragment> FragmentHeaderPool;
+typedef std::vector<void*>     FragmentBodyPool;
 
 FragmentHeaderPool fragmentHeaderPool;
 
@@ -74,14 +74,14 @@ void
 resetFragmentPool()
 {
   while(!fragmentHeaderPool.empty()) {
-    free(fragmentHeaderPool.front());
-    fragmentHeaderPool.pop_front();
+    free(fragmentHeaderPool.back());
+    fragmentHeaderPool.pop_back();
   }
   while(!fragmentBodyPools.empty()) {
     FragmentBodyPool& pool(fragmentBodyPools.back());
     while(!pool.empty()) {
-      free(pool.front());
-      pool.pop_front();
+      free(pool.back());
+      pool.pop_back();
     }
     fragmentBodyPools.pop_back();
   }
@@ -125,7 +125,7 @@ static FragmentBodyPool&
 getPool(unsigned poolNo)
 {
     
-   static std::list<void*> emptyList;           // Used to expand the pools. 
+   static std::vector<void*> emptyList;           // Used to expand the pools. 
 
     while (poolNo >= fragmentBodyPools.size()) {
       
@@ -162,8 +162,8 @@ getFragmentDescription()
 {
   pFragment result(0);
   if (!fragmentHeaderPool.empty()) {
-    result = fragmentHeaderPool.front();
-    fragmentHeaderPool.pop_front();
+    result = fragmentHeaderPool.back();
+    fragmentHeaderPool.pop_back();
   } else {
     result = static_cast<pFragment>(malloc(sizeof(Fragment)));
   }
@@ -201,8 +201,8 @@ getFragmentBody(size_t bytes)
     result = malloc(poolSize(poolNo));
   } else {
     if (debug) std::cerr << std::this_thread::get_id() << " Satsified body from pool\n";
-    result = pool.front();
-    pool.pop_front();
+    result = pool.back();
+    pool.pop_back();
   }
   if (debug) std::cerr.flush();
   return result;

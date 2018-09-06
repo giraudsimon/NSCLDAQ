@@ -275,6 +275,7 @@ proc EVBC::start args {
     #  Figure out the glom command and hook it in.
     #
     
+    # set glom "valgrind --tool=callgrind [file join $bindir glom] --dt=[$options cget -glomdt] "
     set glom "[file join $bindir glom] --dt=[$options cget -glomdt] "
     if {![$options cget -glombuild]} {
         append glom " --nobuild "
