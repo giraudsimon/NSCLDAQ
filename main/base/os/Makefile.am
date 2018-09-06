@@ -20,7 +20,8 @@ EXTRA_DIST=shm.xml
 
 noinst_PROGRAMS    = unittests
 unittests_SOURCES = TestRunner.cpp createTests.cpp removeTests.cpp attachTests.cpp \
-        detachTests.cpp timeoutTests.cpp semaphoretests.cpp closeunusedtests.cpp
+        detachTests.cpp timeoutTests.cpp semaphoretests.cpp closeunusedtests.cpp \
+	testBufferedOutput.cpp
 
 unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
