@@ -79,6 +79,7 @@ CBufferedOutput::put(const void* pData, size_t nBytes)
         nBytes -= putCount;
         p      += putCount;
         m_nBytesInBuffer += putCount;
+        m_pInsert += putCount;
         
         if (m_nBytesInBuffer == m_nBufferSize) flush();
     }
