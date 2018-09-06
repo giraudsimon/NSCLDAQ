@@ -37,13 +37,43 @@ static uint64_t fragmentCount;
 static uint32_t sourceId;
 
 static bool     firstEvent(true);
-static uint8_t*        pAccumulatedEvent(0);
+
+// We don't need threadsafe event fragment pools so:
+
+namespace EVB {
+    extern bool threadsafe;
+}
+
+
+/**
+ *  The next items are used to minimize the dynamic storage manipulations
+ *  requred by Glom as profiling shows the realloc of pAccumulatedEvent
+ *  to have been a significant part of the glom time:
+ *
+ *  pAccumulatedEvent - this is storage into which event fragments are buit into
+ *  events.
+ *
+ *  pCurosr - this indicates where in pAccumulatedEvent the next chunk of  data
+ *            should be put.
+ *
+ *  eventStorageSize - indicates the current size of pAccumulatedEvent.
+ *
+ *  totalEventSize - is the number of bytes that are actually present in
+ *                   pAccumulatedEvent.
+ */
+
+static uint8_t*        pAccumulatedEvent(0);   
+static uint8_t*        pCursor(0);
+static size_t          eventStorageSize;
 static size_t          totalEventSize(0);
+
 static bool            nobuild(false);
 static enum enum_timestamp_policy timestampPolicy;
 static unsigned        stateChangeNesting(0);
 
 static unsigned  maxFragments;  // See gitlab issue lucky 13.
+
+
 
 static void
 dump(std::ostream& o, void* pData, size_t nBytes)
@@ -62,6 +92,60 @@ dump(std::ostream& o, void* pData, size_t nBytes)
     }
     
     o << std::dec << std::endl;
+}
+/**
+ * expandAccumulatedEvent
+ *    Increase the accumulated event storage by the indicated amount.
+ *
+ * @param nBytes - Amount of storage to add to pAccumulated event.
+ * @note  pCursor is recomputed as is eventStorageSize
+ */
+static void expandAccumulatedEvent(size_t nBytes)
+{
+    eventStorageSize += nBytes;
+    pAccumulatedEvent =
+        static_cast<uint8_t*>(realloc(pAccumulatedEvent, eventStorageSize));
+    pCursor = pAccumulatedEvent + totalEventSize;
+}
+
+/**
+ * resetAccumulatedEvent
+ *    Resets pCursor to the beginning of the accumulated event and
+ *    sets totalEventSize -> 0
+ *
+ *    Doing this, rather than free, allows this storage to be re-used by the
+ *    next event.
+ */
+static void
+resetAccumulatedEvent()
+{
+    pCursor = pAccumulatedEvent;
+    totalEventSize = 0;
+}
+/**
+ * addDataToAccumulatedEvent
+ *    Adds more data to the accumulated event.
+ *    - If the data won't fit, realloc is done and pCursor/eventStorageSize
+ *      are adjusted,
+ *    - Data are copied into the pAccumulatedEvent at pCursor
+ *      and pCurosr/totalEventSize adjusted accordingly
+ *
+ * @param pData - pointer to the data to insert.
+ * @param nBytes - Number of bytes of data to insert.
+ *
+ * @note the idea is that eventually the storage required by the
+ * pAccumluated event will equilibrate to the largest event in the data stream.
+ * Thus over time, there will be fewer and fewer realloc's.
+ */
+static void
+addDataToAccumulatedEvent(void* pData, size_t nBytes)
+{
+    if ((nBytes + totalEventSize) > eventStorageSize) {
+        expandAccumulatedEvent(nBytes);   // too big is just fine.
+    }
+    memcpy(pCursor, pData, nBytes);
+    totalEventSize += nBytes;
+    pCursor        += nBytes;
 }
 
 /**
@@ -130,9 +214,7 @@ flushEvent()
     io::writeData(STDOUT_FILENO, &eventSize,  sizeof(uint32_t));
     io::writeData(STDOUT_FILENO, pAccumulatedEvent, 
 		  totalEventSize);
-    free(pAccumulatedEvent);
-    pAccumulatedEvent = 0;
-    totalEventSize    = 0;
+    resetAccumulatedEvent();
     firstEvent        = true;
   }
 }
@@ -265,30 +347,12 @@ accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
   fragmentCount++;
   
   timestampSum    += timestamp;
+
   
-  // Figure out how much we're going to add to the
-  // event:
-
-  uint32_t fragmentSize = sizeof(EVB::FragmentHeader) +
-    pFrag->s_header.s_size;
-
-  // expand the event (or allocate it) and append
-  // this data to it.
-
-  uint8_t* pEvent  = 
-    reinterpret_cast<uint8_t*>(realloc(pAccumulatedEvent, 
-					totalEventSize + fragmentSize));
-  uint8_t* pAppendPointer = pEvent + totalEventSize;
-  memcpy(pAppendPointer, &(pFrag->s_header), 
-	 sizeof(EVB::FragmentHeader));
-  pAppendPointer += sizeof(EVB::FragmentHeader);
-  memcpy(pAppendPointer, pFrag->s_pBody, 
-	 pFrag->s_header.s_size);
-
-  // finish off the book keeping;
-
-  totalEventSize += fragmentSize;
-  pAccumulatedEvent = pEvent;
+    // Add the data to the accumulated event:
+  
+  addDataToAccumulatedEvent(&pFrag->s_header, sizeof(EVB::FragmentHeader));
+  addDataToAccumulatedEvent(pFrag->s_pBody, pFrag->s_header.s_size);
 
 }
 
@@ -329,6 +393,8 @@ main(int argc, char**  argv)
   sourceId       = args.sourceid_arg;
   maxFragments   = args.maxfragments_arg;
 
+  EVB::threadsafe = false;     // Don't need threadsafe fragment pools.
+  
   outputEventFormat();
   
 
