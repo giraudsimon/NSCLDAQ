@@ -22,9 +22,11 @@
 #include <CMutex.h>
 #include <thread>
 #include <iostream>
+#include <memory>
 
 namespace EVB {
 bool debug=false;
+bool threadsafe=true;   // By default threadsafe.
 /**
  * The following data structures are used to re-use both fragment headers
  * (easy) and their bodies.  This is done because profiling showed that
@@ -230,7 +232,8 @@ freeFragmentBody(pFragment pFrag)
 extern "C" {
 void freeFragment(pFragment p) 
 {
-  CriticalSection l(poolProtector);
+  std::unique_ptr<CriticalSection> l;
+  if (threadsafe) l.reset(new CriticalSection(poolProtector));
   freeFragmentBody(p);
   p->s_pBody = 0;
   freeFragmentHeader(p);
@@ -251,7 +254,8 @@ void freeFragment(pFragment p)
 extern "C" {
 pFragment allocateFragment(pFragmentHeader pHeader)
 {
-  CriticalSection l(poolProtector);
+  std::unique_ptr<CriticalSection> l;
+  if (threadsafe) l.reset(new CriticalSection(poolProtector));
   pFragment p = getFragmentDescription();
   memcpy(&(p->s_header), pHeader, sizeof(FragmentHeader));
 
