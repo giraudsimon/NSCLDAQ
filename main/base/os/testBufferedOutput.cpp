@@ -58,6 +58,8 @@ protected:
   
   void flush_1();
   void flush_2();
+  
+  void insert_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(testBufferedOutput);
@@ -169,4 +171,11 @@ void testBufferedOutput::flush_2()
   for (int i = 0; i < nRead; i++) {
     EQ(data[i], readData[i]);
   }    
+}
+
+/// Insert is like put:
+
+void testBufferedOutput::insert_1()
+{
+  
 }
