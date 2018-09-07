@@ -14,6 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 #include "COrdererOutput.h"
+#include <CBufferedOutput.h>
 #include <TCLInterpreter.h>
 #include <iostream>
 #include <io.h>
@@ -22,6 +23,7 @@
 #include <string>
 #include "fragment.h"
 
+static const int BUFFERSIZE=8192;  // Hard coded for now.
 /*------------------------------------------------------------------------
 **  Canonical methods
 */
@@ -37,7 +39,8 @@
  * @param fd  - File descriptor on which to write dta.
  */
 COrdererOutput::COrdererOutput(int fd) :
-  m_OutputChannel(fd)
+  m_OutputChannel(fd),
+  m_Output(*(new io::CBufferedOutput(fd, BUFFERSIZE))) 
 {
 
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
@@ -51,6 +54,7 @@ COrdererOutput::COrdererOutput(int fd) :
 COrdererOutput::~COrdererOutput()
 {
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
+  delete &m_Output;
   pHandler->removeObserver(this);
 }
 /*------------------------------------------------------------------------
@@ -61,7 +65,8 @@ COrdererOutput::~COrdererOutput()
  * operator()
  *    Receives a vector of events from the fragment handler.
  *    These events are time ordered, unless there are time order
- *    errors.  The events are output the Tcl_Channel m_OutputChannel.
+ *    errors.  The events are output the file descriptor m_OutputChannel
+ *    via the buffered I/O package.
  *
  * @param event - vector of fragments to output.
  */
@@ -73,14 +78,17 @@ COrdererOutput::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& 
     EVB::pFragment p = i->second;;
 
     try {
-       io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
-       io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
+      m_Output.put(&(p->s_header), sizeof(EVB::FragmentHeader));
+      m_Output.put(p->s_pBody, p->s_header.s_size);
+       //io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
+       //io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
     }
     catch(int er) {
       std::cerr << " Caught an output exception " << er << std::endl;
       throw;
     }
   }
+  m_Output.flush();
 
 
 }

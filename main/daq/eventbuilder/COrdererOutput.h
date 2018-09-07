@@ -30,6 +30,9 @@
 // Forward definitions:
 
 class CTCLInterpreter;
+namespace io {
+class CBufferedOutput;
+}
 
 /**
  * The orderer output stage is instantiated on a 
@@ -43,7 +46,8 @@ class CTCLInterpreter;
 class COrdererOutput : public CFragmentHandler::Observer
 {
 private:
-  int  m_OutputChannel;	// where we write the data.
+  int              m_OutputChannel;	// where we write the data.
+  io::CBufferedOutput& m_Output;  
 
   // canonicals:
 

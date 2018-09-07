@@ -212,8 +212,10 @@ flushEvent()
     io::writeData(STDOUT_FILENO, &header, sizeof(header));
     io::writeData(STDOUT_FILENO, &bHeader, sizeof(BodyHeader));
     io::writeData(STDOUT_FILENO, &eventSize,  sizeof(uint32_t));
+    
     io::writeData(STDOUT_FILENO, pAccumulatedEvent, 
 		  totalEventSize);
+
     resetAccumulatedEvent();
     firstEvent        = true;
   }
