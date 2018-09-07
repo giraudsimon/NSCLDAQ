@@ -48,9 +48,8 @@ CopyPopUntil(c1type& c1, c2type& c2, UnaryPredicate& pred)
         if (pred(*e)) break;
         e++;
     }
-    // The range [s, e] must be moved...unless e is end
+    // The range [s, e) must be moved...unless e is end
     
-    if (e != c1.end()) e++;      // [s, e) must be moved
     c2.splice(c2.end(), c1, s, e);  // Move not copies .. must be a list though.
 }
 

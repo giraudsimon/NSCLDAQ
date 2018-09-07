@@ -31,7 +31,7 @@
  *   constructor.
  */
 COutputThread::COutputThread() :
-Thread(std::string("OutputThread")),
+Thread(*(new std::string("OutputThread"))),
 m_nInflightCount(0)
 {
     

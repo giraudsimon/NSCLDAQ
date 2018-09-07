@@ -27,6 +27,8 @@
 #include <cstdint>
 #include <time.h>
 #include "COutputThread.h"
+#include "CSortThread.h"
+
 
 #include "CopyPopUntil.h"
 
@@ -78,13 +80,6 @@ static void dumpFragment(EVB::pFragment p) {
 
 }
 
-// Timestamp comparison for sorted merge:
-
-static bool
-TsCompare(std::pair<time_t, EVB::pFragment>& q1, std::pair<time_t, EVB::pFragment>& q2)
-{
-  return q1.second->s_header.s_timestamp < q2.second->s_header.s_timestamp ;
-}
 
 /*--------------------------------------------------------------------------
  ** Creationals: Note this is a singleton, constructors are private.
@@ -100,11 +95,13 @@ TsCompare(std::pair<time_t, EVB::pFragment>& q1, std::pair<time_t, EVB::pFragmen
  *   - m_pInstance -> this.
  */
 CFragmentHandler::CFragmentHandler() :
-  m_outputThread(*(new COutputThread()))
+  m_outputThread(*(new COutputThread())),
+  m_sorter(*(new CSortThread()))
 
 {
   // EVB::debug = true;      // Uncomment for fragment pool debug output.
     m_outputThread.start();
+    m_sorter.start();
     m_nBuildWindow = DefaultBuildWindow;
     m_nStartupTimeout = DefaultStartupTimeout;
     m_pInstance = this;
@@ -875,15 +872,8 @@ void
 CFragmentHandler::flushQueues(bool completely)
 {
  
-  
+  CSortThread::Fragments* pFrags = new CSortThread::Fragments;
 
-  // Ensure there's at least one fragment available:
-
-
-  //std::vector<EVB::pFragment>& sortedFragments(*(new std::vector<EVB::pFragment>));
-  
-  std::list<std::pair<time_t, EVB::pFragment> >&
-    sortedFragments(*(new std::list<std::pair<time_t, EVB::pFragment> >));
   
   // If there are fragments in all queues, we can dequeue up until the
   // stamp mark
@@ -894,38 +884,24 @@ CFragmentHandler::flushQueues(bool completely)
     
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     
-      std::list<std::pair<time_t, EVB::pFragment> > partialSort;
+      CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
-      if (!partialSort.empty() &&
-          (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped)) {
-        dataLate(*partialSort.front().second);
+      if (!partialSort.empty()) {
+           if (partialSort.front().second->s_header.s_timestamp <
+                m_nMostRecentlyPopped) {
+            dataLate(*partialSort.front().second);
+          }
+          updateQueueStatistics(p->second, partialSort);
+          pFrags->push_back(&partialSort);    
+      } else {
+        delete &partialSort;
       }
-      updateQueueStatistics(p->second, partialSort);
-      sortedFragments.merge(partialSort, TsCompare);
+      
+      
     }
   }
   
-#if 0  
-  while (noEmptyQueue() // || (m_nNow - m_nOldestReceived > m_nBuildWindow)
-	  || completely ) {
-    if (queuesEmpty()) {
-      break;	// Done if there are no more frags.
-    }
-    std::pair<time_t, ::EVB::pFragment>* p = popOldest();
-    if (p) {
-      if (p->second->s_header.s_timestamp < m_nMostRecentlyPopped) {
-        dataLate(*(p->second));        
-      } else {
-        m_nMostRecentlyPopped = p->second->s_header.s_timestamp;
-      }
-      m_nTotalFragmentSize--;
-      sortedFragments.push_back(p->second);
-      delete p;
-    } else {
-      break;		// If there are more fragments they are barriers.
-    }
-  }
-#endif
+
 
   // Now we need to flush all fragments that are older than the build window.
   // This deals with the case of a source that just doesn't emit fragments
@@ -941,64 +917,45 @@ CFragmentHandler::flushQueues(bool completely)
   time_t windowEnd = m_nNow - m_nBuildWindow;
   
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
-    std::list<std::pair<time_t, EVB::pFragment> > partialSort;
+    CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-    if (!partialSort.empty() &&
-        (partialSort.front().second->s_header.s_timestamp < m_nMostRecentlyPopped)) {
-      dataLate(*partialSort.front().second);
-    }
-    updateQueueStatistics(p->second, partialSort);
-    sortedFragments.merge(partialSort, TsCompare);
-  }   
-#if 0
-  findOldest();     // Previous code could have made oldest uh.. newer.
-  time_t firstOldest = m_nOldestReceived;
-  m_nNow = time(NULL);
-  if ((m_nNow - m_nOldestReceived) >= m_nBuildWindow) {
-    while (!queuesEmpty() && ((m_nNow - m_nOldestReceived) >= m_nBuildWindow) ) {
-      std::pair<time_t, ::EVB::pFragment>* p = popOldest();
-      findOldest();
-      if (p) {
-        if (p->second->s_header.s_timestamp < m_nMostRecentlyPopped) {
-          dataLate(*(p->second));        
-        } else {
-          m_nMostRecentlyPopped = p->second->s_header.s_timestamp;
-        }
-        m_nTotalFragmentSize--;
-        sortedFragments.push_back(p->second);
-        delete p;
-      } else {
-        break;
+    if (!partialSort.empty()) {
+      if (partialSort.front().second->s_header.s_timestamp <
+          m_nMostRecentlyPopped) {
+        dataLate(*partialSort.front().second);
       }
-    }
-#ifdef DEBUG
-    if (queuesEmpty()) {
-      std::cerr << "Empty queues\n";
+      updateQueueStatistics(p->second, partialSort);
+      pFrags->push_back(&partialSort);
     } else {
-      std::cerr << "Not empty\n";
+      delete &partialSort;
     }
-#endif
-  }
-#endif  
+    
+  }   
 
   // If completely, flush all remaining fragments - this is for a planned
   // exit.
   
   if (completely) {
     for(auto q = m_FragmentQueues.begin(); q != m_FragmentQueues.end(); q++) {
-      std::list<std::pair<time_t, EVB::pFragment> > partialSort(
+      CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList(
         q->second.s_queue.begin(), q->second.s_queue.end()
-      );
+      ));
       q->second.s_queue.clear();              // Clear the queue.
-      sortedFragments.merge(partialSort, TsCompare);
+      if (!partialSort.empty()) {
+        pFrags->push_back(&partialSort);  
+      } else {
+        delete &partialSort;
+      }
     }
   }
 
-  // Observe the fragments we have now:
+  // Send the frags to the sorting thread:
   
   
-  if (sortedFragments.size()) {
-    observe(sortedFragments);
+  if (pFrags->size()) {
+    m_sorter.queueFragments(*pFrags);
+  } else {
+    delete pFrags;            // No need to queue empty vector.
   }
   
   

@@ -78,7 +78,7 @@
 #include <limits>
 
 class COutputThread;
-
+class CSortThread;
 // Forward definitions:
 
 namespace EVB {
@@ -287,7 +287,9 @@ private:
   bool                         m_fXoffed;
   size_t                       m_nTotalFragmentSize;
 
+  
   COutputThread&               m_outputThread;
+  CSortThread&                 m_sorter;
 
   // Canonicals/creationals. Note that since this is a singleton, construction
   // is private.
@@ -369,13 +371,13 @@ public:
   void reviveSocket(std::string sockName);
   void resetTimestamps();
   void clearQueues();
+  void observe(std::list<std::pair<time_t, EVB::pFragment> >& event); // pass built events on down the line.
 
   // utility methods:
 
 private:
   void flushQueues(bool completely=false);
   std::pair<time_t, ::EVB::pFragment>* popOldest();
-  void   observe(std::list<std::pair<time_t, EVB::pFragment> >& event); // pass built events on down the line.
   void   dataLate(const ::EVB::Fragment& fragment);		    // Data late handler.
   void   addFragment(EVB::pFlatFragment pFragment);
   size_t totalFragmentSize(EVB::pFragmentHeader pHeader);

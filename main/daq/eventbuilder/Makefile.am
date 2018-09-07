@@ -29,7 +29,8 @@ libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFra
 	CCompleteBarrierCallback.cpp CBarrierTraceCommand.cpp CPartialBarrierCallback.cpp \
 	CSourceCommand.cpp CDeadSourceCommand.cpp CReviveSocketCommand.cpp \
 	CFlushCommand.cpp CResetCommand.cpp CConfigure.cpp CDuplicateTimeStatCommand.cpp \
-	COutOfOrderTraceCommand.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp
+	COutOfOrderTraceCommand.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp \
+	CSortThread.cpp
 
 
 
@@ -84,7 +85,7 @@ noinst_HEADERS = CFragmentHandlerCommand.h CFragmentHandler.h  \
 	CBarrierTraceCommand.h CPartialBarrierCallback.h CSourceCommand.h CDeadSourceCommand.h \
 	CReviveSocketCommand.h CFragReader.h CFragWriter.h CFlushCommand.h CResetCommand.h \
 	CConfigure.h fragio.h CDuplicateTimeStatCommand.h CXonXOffCallbackCommand.h \
-	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h
+	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h CSortThread.h
 
 
 
@@ -162,7 +163,7 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 ordertests_SOURCES = TestRunner.cpp orderTests.cpp duptscmdtest.cpp \
 	configcmdtests.cpp tclflowtest.cpp fragalloctest.cpp \
 	CFragmentHandler.cpp fragment.cpp CDuplicateTimeStatCommand.cpp \
-	CConfigure.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp
+	CConfigure.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp CSortThread.cpp
 
 
 ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
