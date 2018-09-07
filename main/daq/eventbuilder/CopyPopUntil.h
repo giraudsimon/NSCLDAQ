@@ -41,14 +41,17 @@ template <class c1type, class c2type, class UnaryPredicate>
 void
 CopyPopUntil(c1type& c1, c2type& c2, UnaryPredicate& pred)
 {
-    while (!c1.empty()) {
-        if (! pred(c1.front())) {
-            c2.push_back(c1.front());
-            c1.pop_front();
-        } else {
-            return;
-        }
+    
+    auto s = c1.begin();
+    auto e = s;
+    while (e != c1.end()) {
+        if (pred(*e)) break;
+        e++;
     }
+    // The range [s, e] must be moved...unless e is end
+    
+    if (e != c1.end()) e++;      // [s, e) must be moved
+    c2.splice(c2.end(), c1, s, e);  // Move not copies .. must be a list though.
 }
 
 

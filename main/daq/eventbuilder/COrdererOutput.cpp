@@ -23,7 +23,7 @@
 #include <string>
 #include "fragment.h"
 
-static const int BUFFERSIZE=8192;  // Hard coded for now.
+static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
 /*------------------------------------------------------------------------
 **  Canonical methods
 */
