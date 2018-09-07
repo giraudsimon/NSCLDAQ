@@ -31,6 +31,7 @@ class testBufferedOutput : public CppUnit::TestFixture {
   CPPUNIT_TEST(flush_2);
   
   CPPUNIT_TEST(insert_1);    // Tests of << operator.
+  CPPUNIT_TEST(insert_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -60,6 +61,7 @@ protected:
   void flush_2();
   
   void insert_1();
+  void insert_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(testBufferedOutput);
@@ -177,5 +179,49 @@ void testBufferedOutput::flush_2()
 
 void testBufferedOutput::insert_1()
 {
+  io::CBufferedOutput& o(*m_pBuffer);
+  for (uint16_t i = 0; i < 256; i++) {
+    o << i;
+  }
+  delete m_pBuffer;
+  m_pBuffer = nullptr;                 //All this flushed as well.
   
+  uint16_t buf[256];
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  ASSERT(fd > 0);
+  
+  size_t nRead = io::readData(fd, buf, 256*sizeof(uint32_t));  //Try to read too much.
+  
+  EQ(nRead, 256*sizeof(uint16_t));   // Should only get this.
+  
+  for (uint16_t i =0; i < 256; i++) {
+    EQ(i, buf[i]);
+  }
+}
+// Insert some non primitive type -- should not be a problem.
+
+void testBufferedOutput::insert_2()
+{
+  struct atest {
+    int    a;
+    float  b;
+    char   c;
+  } data = {123, 3.1416, 'd'};
+  
+  io::CBufferedOutput& o(*m_pBuffer);
+  o << data;
+  
+  delete m_pBuffer;
+  m_pBuffer = nullptr;                 //All this flushed as well.
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  ASSERT(fd > 0);
+  
+  atest buffer[2];
+  size_t nRead = io::readData(fd, buffer, sizeof(buffer));
+  EQ(nRead, sizeof(atest));
+  
+  EQ(123, buffer[0].a);
+  EQ(float(3.1416), buffer[0].b);
+  EQ('d', buffer[0].c);
 }
