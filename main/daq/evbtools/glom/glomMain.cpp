@@ -27,6 +27,7 @@
 #include <CRingItemFactory.h>
 #include <exception>
 #include <CAbnormalEndItem.h>
+#include <CBufferedOutput.h>
 
 // File scoped  variables:
 
@@ -37,6 +38,7 @@ static uint64_t fragmentCount;
 static uint32_t sourceId;
 
 static bool     firstEvent(true);
+static io::CBufferedOutput* outputter;
 
 // We don't need threadsafe event fragment pools so:
 
@@ -44,6 +46,7 @@ namespace EVB {
     extern bool threadsafe;
 }
 
+static const unsigned BUFFER_SIZE=1024*1024;
 
 /**
  *  The next items are used to minimize the dynamic storage manipulations
@@ -61,6 +64,7 @@ namespace EVB {
  *  totalEventSize - is the number of bytes that are actually present in
  *                   pAccumulatedEvent.
  */
+
 
 static uint8_t*        pAccumulatedEvent(0);   
 static uint8_t*        pCursor(0);
@@ -161,7 +165,7 @@ outputGlomParameters(uint64_t dt, bool building)
 {
     pGlomParameters p = formatGlomParameters(dt, building ? 1 : 0,
                                              timestampPolicy);
-    io::writeData(STDOUT_FILENO, p, p->s_header.s_size);
+    outputter->put( p, p->s_header.s_size);
 }
 
 /**
@@ -209,12 +213,11 @@ flushEvent()
     header.s_type = PHYSICS_EVENT;
     uint32_t eventSize = totalEventSize + sizeof(uint32_t);
 
-    io::writeData(STDOUT_FILENO, &header, sizeof(header));
-    io::writeData(STDOUT_FILENO, &bHeader, sizeof(BodyHeader));
-    io::writeData(STDOUT_FILENO, &eventSize,  sizeof(uint32_t));
+    outputter->put(&header, sizeof(header));
+    outputter->put(&bHeader, sizeof(BodyHeader));
+    outputter->put(&eventSize,  sizeof(uint32_t));
     
-    io::writeData(STDOUT_FILENO, pAccumulatedEvent, 
-		  totalEventSize);
+    outputter->put(pAccumulatedEvent,  totalEventSize);
 
     resetAccumulatedEvent();
     firstEvent        = true;
@@ -247,7 +250,7 @@ outputBarrier(EVB::pFragment p)
     // ring item.
     
 
-    io::writeData(STDOUT_FILENO, pH, pH->s_size);
+    outputter->put( pH, pH->s_size);
     
     if (pH->s_type == BEGIN_RUN) stateChangeNesting++;
     if (pH->s_type == END_RUN)   stateChangeNesting--;
@@ -265,9 +268,10 @@ outputBarrier(EVB::pFragment p)
       sizeof(EVB::FragmentHeader) + p->s_header.s_size;
     unknownHdr.s_size = size;
 
-    io::writeData(STDOUT_FILENO, &unknownHdr, sizeof(RingItemHeader));
-    io::writeData(STDOUT_FILENO, p, sizeof(EVB::FragmentHeader));
-    io::writeData(STDOUT_FILENO, p->s_pBody, p->s_header.s_size);
+    outputter->put( &unknownHdr, sizeof(RingItemHeader));
+    outputter->put( p, sizeof(EVB::FragmentHeader));
+    outputter->put(p->s_pBody, p->s_header.s_size);
+    outputter->flush();  // So end runs are always seen quickly.
   }
 }
 /**
@@ -368,7 +372,7 @@ static void outputEventFormat()
     format.s_majorVersion = FORMAT_MAJOR;
     format.s_minorVersion = FORMAT_MINOR;
     
-    io::writeData(STDOUT_FILENO, & format, sizeof(format));
+    outputter->put( & format, sizeof(format));
 }
 
 /**
@@ -396,6 +400,9 @@ main(int argc, char**  argv)
   maxFragments   = args.maxfragments_arg;
 
   EVB::threadsafe = false;     // Don't need threadsafe fragment pools.
+
+  outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
+  outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
   
   outputEventFormat();
   
