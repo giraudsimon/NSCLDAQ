@@ -38,7 +38,8 @@ namespace io {
  *  @param nBytes - Buffer size.
  */
 CBufferedOutput::CBufferedOutput(int fd, size_t nBytes) :
-    m_nFd(fd), m_pBuffer(nullptr), m_pInsert(nullptr), m_nBytesInBuffer(0), m_nBufferSize(nBytes)
+    m_nFd(fd), m_pBuffer(nullptr), m_pInsert(nullptr), m_nBytesInBuffer(0),
+    m_nBufferSize(nBytes), m_nTimeout(0)
 {
     m_pBuffer = new uint8_t[nBytes];
     reset();
@@ -54,6 +55,7 @@ CBufferedOutput::~CBufferedOutput()
 {
     if (m_nBytesInBuffer) flush();
     delete []m_pBuffer;
+    m_lastFlushTime = time(nullptr);
 }
 
 /**
@@ -83,6 +85,27 @@ CBufferedOutput::put(const void* pData, size_t nBytes)
         
         if (m_nBytesInBuffer == m_nBufferSize) flush();
     }
+    // If there's a timeout and it's been exceeded, then flush regardless.
+    // We do that here because then flushes forced by the buffer full
+    // will have times close to now.
+    
+    if (m_nTimeout && ((time_t(nullptr) - m_lastFlushTime) > m_nTimeout)) {
+        flush();
+    }
+}
+/**
+ *  setTimeout
+ *     Set the buffer flush timeout.
+ *  @param timeout - new timeout in seconds.  Note that timeout of 0 disables the timeout
+ *                   logic.
+ *  @return unsigned - prior timeout value.
+ */
+unsigned
+CBufferedOutput::setTimeout(unsigned timeout)
+{
+    unsigned result = m_nTimeout;
+    m_nTimeout = timeout;
+    return result;
 }
 /**
  * flush
@@ -93,6 +116,7 @@ CBufferedOutput::flush()
 {
     io::writeData(m_nFd, m_pBuffer, m_nBytesInBuffer);
     reset();
+    m_lastFlushTime = time(nullptr);
 }
 
 /**

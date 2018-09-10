@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <time.h>
 
 /**
  * @file CBufferedOutput.h
@@ -45,6 +46,8 @@ private:
     uint8_t* m_pInsert;         // New data are inserted at this point.
     size_t   m_nBytesInBuffer;  // Contains the number of bytes in the buffer.
     size_t   m_nBufferSize;     // Size of the data buffer.
+    unsigned m_nTimeout;        // Seconds after which flush is done regardless.
+    time_t   m_lastFlushTime;   // When last flushed.
     
 public:
     CBufferedOutput(int fd, size_t nBytes);
@@ -52,6 +55,7 @@ public:
     
     void put(const void* pData, size_t nBytes);
     void flush();
+    unsigned setTimeout(unsigned timeout);
 
 
 private:
