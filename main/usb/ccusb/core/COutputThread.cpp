@@ -740,7 +740,15 @@ COutputThread::event(void* pData)
 void
 COutputThread::attachRing()
 {
-  m_pRing = CRingBuffer::createAndProduce(m_ringName);
+  try {
+    m_pRing = CRingBuffer::createAndProduce(m_ringName);
+  } catch (CException& e) {
+    std::cerr << "Unable to attach ring buffer  " << m_ringName << " "
+      << e.ReasonText() << std::endl;
+    std::cerr << "Note: Permission denied can mean another Readout is "
+      << "attached to the ringbuffer\n";
+    exit(EXIT_FAILURE);
+  }
 
 }
 /**
