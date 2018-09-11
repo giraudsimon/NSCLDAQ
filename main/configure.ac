@@ -126,6 +126,12 @@ AC_CHECK_FUNCS([ftruncate munmap])
 AC_FUNC_MMAP
 AC_FUNC_STAT
 
+# Bits and pieces of NSCDAQ can do logging via boostlog.  This stuff tells us if that's present and if so,
+# how to incorporate it:
+
+AX_BOOST_BASE
+AX_BOOST_LOG
+
 
 # Automake:
 

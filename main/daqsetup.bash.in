@@ -11,7 +11,7 @@ function set_env() {
     export DAQROOT=@prefix@
     export DAQBIN=$DAQROOT/bin
     export DAQLIB=$DAQROOT/lib
-
+    export DAQINC=$DAQROOT/include
     export PYTHONPATH=$DAQROOT/pythonLibs:$PYTHONPATH
 }
 
