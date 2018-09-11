@@ -515,7 +515,7 @@ void CRingBuffer::attach() {
     }
     else {
       errno = EACCES;
-      throw CErrnoException("CRingBuffer::CRingBuffer - already a producer");
+      throw CErrnoException("CRingBuffer::CRingBuffer - already has a producer");
     }
   } 
   else if (m_mode == consumer) {

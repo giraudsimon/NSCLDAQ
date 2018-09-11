@@ -28,6 +28,7 @@
 #include <CDataFormatItem.h>
 
 #include <RunState.h>
+#include <Exception.h>
 #include <StateException.h>
 #include <string.h>
 #include <CCompoundEventSegment.h>
@@ -48,6 +49,7 @@
 #include <CMutex.h>
 
 #include <CVMEInterface.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -94,7 +96,15 @@ CExperiment::CExperiment(string ringName,
   m_nDataBufferSize(eventBufferSize),
   m_nDefaultSourceId(0)
 {
-  m_pRing = CRingBuffer::createAndProduce(ringName);
+  try {
+    m_pRing = CRingBuffer::createAndProduce(ringName);
+  } catch (CException& e) {
+    std::cerr << "Could not attach ringbuffer : " << ringName << " "
+      << e.ReasonText() << std::endl;
+    std::cerr << "Note: Permission denied can mean another Readout is "
+      << "attached to the ringbuffer\n";
+    exit(EXIT_FAILURE);
+  }
   m_pRunState = RunState::getInstance();
 
   // ensure that the variable buffers know what source id to use.
