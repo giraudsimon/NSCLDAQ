@@ -45,7 +45,7 @@ then
     AC_SUBST(DOCBOOK2HTML,[docbook2html])
   fi
 
-  AC_CHECK_PROG(HAVE_XMLTO, [xmlto], [true], [false])
+-  AC_CHECK_PROG(HAVE_XMLTO, [xmlto], [true], [false])
   if test "$HAVE_XMLTO" == "false"
   then
     AC_MSG_FAILURE([xmlto is required to build documentation but was not found])
@@ -129,8 +129,10 @@ AC_FUNC_STAT
 # Bits and pieces of NSCDAQ can do logging via boostlog.  This stuff tells us if that's present and if so,
 # how to incorporate it:
 
-AX_BOOST_BASE
+AX_BOOST_BASE([], [BOOST_EXTRA_CPPFLAGS="-DBOOST_ALL_DYN_LINK"], [BOOST_EXTRA_CPPFLAGS=""])
 AX_BOOST_LOG
+AC_SUBST(BOOST_EXTRA_CPPFLAGS)
+
 
 
 # Automake:
