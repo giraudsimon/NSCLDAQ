@@ -574,9 +574,10 @@ proc start {} {
   set machine [RunstateMachineSingleton %AUTO%]
   # Transition NotReady -> Starting
   if { [catch { $machine transition Starting } msg] } {
+    set trace $::errorInfo
     forceFailure
     $machine destroy
-    error "start failed with message : $msg"
+    error "start failed with message : $msg : $trace"
   }
 
   $machine destroy
@@ -585,9 +586,10 @@ proc start {} {
   after idle {
     set machine [RunstateMachineSingleton %AUTO%]
     if {[catch {$machine transition Halted} msg]} {
+      set trace $::errorInfo
       forceFailure
       $machine destroy
-      error "transition to halted failed with message : $msg"
+      error "transition to halted failed with message : $msg : $trace"
     }
     $machine destroy
   }
@@ -597,8 +599,9 @@ proc start {} {
 proc begin {} {
   set machine [RunstateMachineSingleton %AUTO%]
   if { [catch { $machine transition Active } msg] } {
+    set trace $::errorInfo
     forceFailure
-    error "begin failed with message : $msg"
+    error "begin failed with message : $msg : $trace"
   }
   $machine destroy
 }
@@ -606,8 +609,9 @@ proc begin {} {
 proc end {} {
   set machine [RunstateMachineSingleton %AUTO%]
   if { [catch { $machine transition Halted } msg] } {
+    set trace $::errorInfo
     forceFailure
-    error "end failed with message : $msg"
+    error "end failed with message : $msg : $trace"
   }
   $machine destroy
 }
@@ -615,8 +619,9 @@ proc end {} {
 proc pause {} {
   set machine [RunstateMachineSingleton %AUTO%]
   if { [catch { $machine transition Paused } msg] } {
+    set trace $::errorInfo
     forceFailure
-    error "pause failed with message : $msg"
+    error "pause failed with message : $msg : $trace"
   }
   $machine destroy
 }
@@ -624,8 +629,9 @@ proc pause {} {
 proc resume {} {
   set machine [RunstateMachineSingleton %AUTO%]
   if { [catch { $machine transition Active } msg] } {
+    set trace $::errorInfo
     forceFailure
-    error "resume failed with message : $msg"
+    error "resume failed with message : $msg : $trace"
   }
   $machine destroy
 }

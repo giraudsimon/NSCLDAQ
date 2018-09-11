@@ -92,6 +92,9 @@ snit::type StateManager {
     ##
     # save
     #   Saves the configuration.
+    #   Note saves the file in #$options(-filename)#
+    #   Only if the save totally works, do we move the new file on top of
+    #   any old file.
     #   * -file must  have been configured.
     #   * The registered variables are itereated over and the getter
     #     for each is called.
@@ -102,22 +105,37 @@ snit::type StateManager {
         if {$options(-file) eq ""} {
             error {Cannot save prior to configuring -file}
         }
-        set fd [open $options(-file) w]
         
-        # Now iterate over the variables, getting values and writing
-        # set commands.
+        # Figure out the temp file name:
         
-        foreach variable $registeredVariables {
+        set path [file dirname $options(-file)]
+        set name [file tail $options(-file)]
+        set tempName [file join $path #$name#]
+        
+        set status [catch {
+            set fd [open $tempName w]
             
-            set varname [lindex $variable 0]
-            set getter  [lindex $variable 1]
-            set value [{*}$getter $varname]
-            puts $fd [list set $varname $value]
+            # Now iterate over the variables, getting values and writing
+            # set commands.
+            
+            foreach variable $registeredVariables {
+                
+                set varname [lindex $variable 0]
+                set getter  [lindex $variable 1]
+                set value [{*}$getter $varname]
+                puts $fd [list set $varname $value]
+            }
+            
+            #  Close the file
+            
+            close $fd
+        } msg]
+        if {$status} {
+            tk_messageBox -icon warning -type ok -title {settings file save failed} \
+                -message "Could not save $options(-file) prior file is unchanged $msg"
+        } else {
+            file rename -force $tempName $options(-file)
         }
-        
-        #  Close the file
-        
-        close $fd
     }
     ##
     # restore
