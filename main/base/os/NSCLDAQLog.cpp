@@ -26,6 +26,8 @@
 #include <config.h>
 #include <stdexcept>
 #include <CMutex.h>
+#include <time.h>
+#include <string.h>
 
 #ifdef HAVE_BOOST_LOG
 
@@ -41,7 +43,8 @@
 // is instantiated.  They must be set to valid values before the first
 // logging call is initiated; else logic_error is thrown.
 
-static daqlog::logLevel loggingLevel(daqlog::Info);
+static daqlog::logLevel defaultLevel(daqlog::Info);
+static daqlog::logLevel loggingLevel(defaultLevel);
 static std::string logFile;
 
 // Since no header is supplied, this class is only used by
@@ -55,6 +58,10 @@ static std::string logFile;
 namespace daqlog {
 
     class BoostLogWrapper {
+#ifdef HAVE_BOOST_LOG
+    private:
+       boost::shared_ptr< boost::log::sinks::synchronous_sink< boost::log::sinks::text_file_backend > > m_pLogSink ;
+#endif
     private:
         static BoostLogWrapper* m_pInstance;
         BoostLogWrapper();
@@ -67,7 +74,9 @@ namespace daqlog {
     public:
 #ifdef HAVE_BOOST_LOG
         static boost::log::trivial::severity_level mapSeverity(logLevel level);
+        static const char* severityString(logLevel level);
 #endif
+    friend void daqlog::reset();
 };                           // daqlog::BoostLogWrapper
 
 };                           // daqlog
@@ -89,7 +98,9 @@ daqlog::BoostLogWrapper::BoostLogWrapper()
         throw std::logic_error("daqlog::BoostLogWrapper - no log file set");
     }
 #ifdef HAVE_BOOST_LOG
-    boost::log::add_file_log(logFile.c_str());
+    m_pLogSink = boost::log::add_file_log(
+        boost::log::keywords::file_name = logFile.c_str()
+        );
     boost::log::core::get()->set_filter(
         boost::log::trivial::severity >= mapSeverity(loggingLevel)
     );
@@ -128,13 +139,38 @@ daqlog::BoostLogWrapper::getInstance()
 void
 daqlog::BoostLogWrapper::Log(daqlog::logLevel level, const char*msg)
 {
+#ifdef HAVE_BOOST_LOG
     boost::log::trivial::severity_level sev = mapSeverity(level);
-    
+    time_t now = time(nullptr);
+    char timebuf[256];
+    ctime_r(&now, timebuf);
+    timebuf[strlen(timebuf) - 1] = '\0';  // Kill the \n
     BOOST_LOG_STREAM_WITH_PARAMS(
         ::boost::log::trivial::logger::get(),
         (boost::log::keywords::severity = sev)
-    ) << msg;
-
+    )
+     << "(" << timebuf << ")  " <<  severityString(level)  << " : "  << msg ;
+    m_pLogSink->flush();
+#endif
+}
+/**
+ * severityString
+ *    Return a const char* pointing at a string matching the severit passed in.
+ *  @param s - severity level
+ *  @return const char*
+ */
+const char*
+daqlog::BoostLogWrapper::severityString(daqlog::logLevel s) {
+    switch (s) {
+    case Trace: return "Trace";
+    case Debug: return "Debug";
+    case Info:  return "Info";
+    case Warning: return "Warning";
+    case Error: return "Error";
+    case Fatal: return "Fatal";
+    default:
+        return "*Invalid severity level*";
+    }
 }
 /**
  * mapSeverity
@@ -228,4 +264,17 @@ daqlog::BoostLogWrapper::mapSeverity(daqlog::logLevel level)
  void daqlog::setLogLevel(daqlog::logLevel level)
  {
     loggingLevel = level;
+ }
+ 
+ // For testing.
+ 
+ namespace daqlog {
+ void reset()
+ {
+    loggingLevel = defaultLevel;
+    logFile = "";
+    
+    delete daqlog::BoostLogWrapper::m_pInstance;
+    daqlog::BoostLogWrapper::m_pInstance = nullptr;
+ }
  }
