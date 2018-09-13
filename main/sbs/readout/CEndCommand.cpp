@@ -19,6 +19,8 @@
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <StateException.h>
+#include <CReadoutMain.h>
+
 #include <tcl.h>
 
 using namespace std;
@@ -76,6 +78,10 @@ CEndCommand::operator()(CTCLInterpreter&    interp,
 
 tuple<int, string> CEndCommand::end() 
 {
+
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  pMain->logStateChangeRequest("Ending run");
+  
   // Get the package and cast it to a CRunControlPackage:
 
   CTCLObjectPackage*   pPack       = getPackage();
@@ -108,7 +114,11 @@ tuple<int, string> CEndCommand::end()
     error = true;
     result = "Some unanticipated exception was caught while attempting to end the run";
   }
-
+  if (error) {
+      pMain->logStateChangeStatus("End run failed.");        
+  } else {
+      pMain->logStateChangeStatus("Run successfully ended");
+  }
   return make_tuple((error ? TCL_ERROR : TCL_OK), result);
 }
 
