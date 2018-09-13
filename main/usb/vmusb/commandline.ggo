@@ -11,3 +11,6 @@ option "enumerate" e "Enumerate VM-USB modules and exit" optional
 option "sourceid"  i "Data source Id for timestamped data" int optional default="0"
 option "timestamplib" t "Path to shared library that can extract timestamps from events" string optional
 option "init-script"   f "Initialization script file" string optional
+option "log"       l "Log filename - setting enables logging" string optional
+option "debug"     V "Specifies the verbosity of the log" int optional default="0"
+

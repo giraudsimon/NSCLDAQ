@@ -58,6 +58,8 @@ private:
   Tcl_ThreadId         m_threadId;
 
   CSystemControl      m_systemControl;
+  std::string         m_logFile;
+  unsigned            m_logLevel;
 
 public:
   // Canonicals
@@ -75,7 +77,12 @@ public:
   virtual int operator()(int argc, char** argv);
 
   const CSystemControl& getSystemControl() const { return m_systemControl;}
+  static CTheApplication* getInstance();
 
+  void logStateChangeRequest(const char* msg);           // info
+  void logStateChangeStatus(const char* msg);            // debug
+  void logProgress(const char* msg);                     // trace.
+  
   // Segments of operation.
 private:
   void startOutputThread(std::string ring);
@@ -85,6 +92,7 @@ private:
   void setConfigFiles();
   void initializeBufferPool();
   void enumerateVMUSB();
+  void initializeLogging();
 
   // static functions:
 

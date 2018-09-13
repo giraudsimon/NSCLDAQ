@@ -24,6 +24,7 @@ class CConfiguration;
 class CVMUSB;
 class TclServer;
 class CTCLInterpreter;
+class CTheApplication;
 
 
 namespace Globals {
@@ -39,4 +40,5 @@ namespace Globals {
   char*              pTimestampExtractor = 0;
   Tcl_ThreadId           mainThreadId = 0;
   CTCLInterpreter*       pMainInterpreter = 0;
+  CTheApplication*   pApplication;
 };

@@ -36,7 +36,7 @@ class CConfiguration;
 class CVMUSB;
 class TclServer;
 class CTCLInterpreter;
-
+class CTheApplication;
 
 /*!
   This namespace defines global variables.  We've tried to keep this to minimum.
@@ -62,6 +62,7 @@ namespace Globals {
   extern char*           pTimestampExtractor;
   extern Tcl_ThreadId           mainThreadId;
   extern CTCLInterpreter*       pMainInterpreter;
+  extern CTheApplication* pApplication;
 };
 
 #endif
