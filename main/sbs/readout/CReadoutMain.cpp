@@ -41,6 +41,7 @@
 #include <sys/types.h>
 
 #include <iostream>
+#include <NSCLDAQLog.h>
 
 using namespace std;
 
@@ -89,6 +90,15 @@ CReadoutMain::getExperiment()
   CReadoutMain* pApp = dynamic_cast<CReadoutMain*>(gpTCLApplication);
   return pApp->m_pExperiment;
 }
+/**
+ * getInstance -
+ *  @return CReadoutMain* - instance pointer.
+ */
+CReadoutMain*
+CReadoutMain::getInstance()
+{
+  return static_cast<CReadoutMain*>(gpTCLApplication);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -112,6 +122,8 @@ CReadoutMain::operator()()
     struct gengetopt_args_info   parsedArgs;
     getProgramArguments(argc, argv);
     cmdline_parser(argc, argv, &parsedArgs);
+    
+    
     
     
     // Initialize the application;
@@ -157,7 +169,12 @@ CReadoutMain::operator()()
         }
         getInterpreter()->EvalFile(parsedArgs.init_script_arg);
     }
-
+    // Set up logging:
+    
+    if (parsedArgs.log_given) m_logFile = parsedArgs.log_arg;
+    m_nDebugLevel = parsedArgs.debug_arg;
+    
+    setupLogging();
     
     // Setup our eventloop.
     
@@ -265,8 +282,78 @@ CReadoutMain::addCommands(CTCLInterpreter* pInterp) {
   CVariableBuffers* pVarbufs = new CVariableBuffers(*pInterp);
 
 }
+/**
+ * logStateChangeRequest
+ *    Outputs a message logging a state change request.
+ *
+ *  @param msg - the message to output.
+ */
+void
+CReadoutMain::logStateChangeRequest(const char* message)
+{
+  if (!m_logFile.empty()) daqlog::info(message);
+}
+/**
+ * logStateChangeSatus
+ *   Outputs a message logging the status of a state change request
+ *   (hopefully successful).
+ *
+ * @param msg - the message to output.
+ */
+void
+CReadoutMain::logStateChangeStatus(const char* message)
+{
+  if (!m_logFile.empty()) daqlog::debug(message);
+}
+/**
+ * logProgress
+ *    Logs the progress of some operation (usually a state change).
+ *
+ *  @param msg - message to log
+ */
+void
+CReadoutMain::logProgress(const char* msg)
+{
+   if (!m_logFile.empty()) daqlog::trace(msg);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * setupLogging
+ *    Sets up the logging. Note that our log values.
+ *    NOTE:
+ *    -  logStateChangeRequest - logs at Info level.
+ *    -  logStateChangeStatus  - logs at Debug level
+ *    -  logProgress - logs at Trace level.
+ */
+void
+CReadoutMain::setupLogging()
+{
+  // No logging if no log file:
+  
+  if (!m_logFile.empty()) {
+    daqlog::setLogFile(m_logFile);
+    daqlog::logLevel level;
+    switch (m_nDebugLevel) {
+      case 0:
+        level = daqlog::Info;
+        break;
+      case 1:
+        level = daqlog::Debug;
+        break;
+      case 2:
+        level = daqlog::Trace;
+        break;
+      default:
+        std::cerr << "Error Invalid debug level, must be 0-3 was: "
+          << m_nDebugLevel <<std::endl;
+        exit(EXIT_FAILURE);
+    }
+    daqlog::setLogLevel(level);
+  }
+}
 
 /*!
    Starts the Tcl server component. 
