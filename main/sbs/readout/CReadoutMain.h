@@ -50,8 +50,11 @@ class CExperiment;
 
 class CReadoutMain : public CTCLApplication
 {
+private:
   CTCLServer*   m_pTclServer;
   CExperiment*  m_pExperiment;
+  std::string   m_logFile;          // Empty means no logging.
+  unsigned      m_nDebugLevel;      // 0, 1, 2
 public:
   CReadoutMain();
   virtual ~CReadoutMain();
@@ -61,7 +64,14 @@ public:
 
   CTCLServer*  getTclServer();
   static CExperiment* getExperiment();
-
+  static CReadoutMain* getInstance();
+  
+   // These methods allow logging; they do the filtering as needed.
+  
+  void logStateChangeRequest(const char* message);
+  void logStateChangeStatus(const char* message);
+  void logProgress(const char* message);
+  
   // Entry point
 
   virtual int operator()();
@@ -73,8 +83,13 @@ protected:
   virtual void          SetupScalers(CExperiment* pExperiment);
   virtual void          addCommands(CTCLInterpreter* pInterp);
   virtual void          addCommands();
+  
+
+  
+  
 
 protected:
+  void setupLogging();
   void startTclServer(std::string port);
   std::string getRingName(struct gengetopt_args_info& arguments);
 };

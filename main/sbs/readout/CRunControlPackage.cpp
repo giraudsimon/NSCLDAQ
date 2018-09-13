@@ -30,6 +30,7 @@
 #include "CInitCommand.h"
 #include <TCLTimer.h>
 
+
 using namespace std;
 
 /*------------------------------------------------
@@ -111,11 +112,16 @@ CRunControlPackage::getInstance(CTCLInterpreter& interp)
 void
 CRunControlPackage::begin()
 {
+  CReadoutMain* pInstance = CReadoutMain::getInstance();
   if (m_pTheState->m_state == RunState::inactive) {
+    pInstance->logProgress("Asking experiment to start the run");
     m_pTheExperiment->Start(false);	// not a resume.
+    pInstance->logProgress("Experiment started the run");
     m_pTimer = new RunTimer(m_pInterp);
+    pInstance->logProgress("New run timer created");
   }
   else {
+    pInstance->logStateChangeStatus("Attempted start of run when not inactive");
     throw CStateException(m_pTheState->stateName().c_str(),
 			 RunState::stateName(RunState::inactive).c_str(),
 			 "Attempting to start a run");
