@@ -19,6 +19,7 @@
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <StateException.h>
+#include <CReadoutMain.h>
 #include <tcl.h>
 
 using namespace std;
@@ -65,7 +66,8 @@ CResumeCommand::operator()(CTCLInterpreter&    interp,
     interp.setResult(result);
     return TCL_ERROR;
   }
-
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  
   // Get the package and cast it to a CRunControlPackage:
 
   CTCLObjectPackage*   pPack       = getPackage();
@@ -77,7 +79,9 @@ CResumeCommand::operator()(CTCLInterpreter&    interp,
   bool error = false;
   string result;
   try {
+    pMain->logStateChangeRequest("Resuming run");
     pRunControl.resume();
+    pMain->logStateChangeStatus("Run successfully resumed");
   }
   catch (CStateException& e) {
     error   = true;
@@ -98,7 +102,9 @@ CResumeCommand::operator()(CTCLInterpreter&    interp,
     error = true;
     result = "Some unanticipated exception was caught while attempting to resume the run";
   }
-
+  if (error) {
+      pMain->logStateChangeStatus("Run failed to resume");
+  }
   interp.setResult(result);
 
   return error ? TCL_ERROR : TCL_OK;

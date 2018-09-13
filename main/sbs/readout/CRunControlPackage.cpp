@@ -185,11 +185,16 @@ CRunControlPackage::pause()
 void
 CRunControlPackage::resume()
 {
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+
   if (m_pTheState->m_state == RunState::paused) {
+    pMain->logProgress("Asking the experiment to Start");  
     m_pTheExperiment->Start(true);
     m_pTimer = new RunTimer(m_pInterp);
+    pMain->logProgress("Created a new experiment run timer");
   }
   else {
+    pMain->logStateChangeStatus("Resum attempted when run was not paused");
     throw CStateException(m_pTheState->stateName().c_str(),
 			  m_pTheState->stateName(RunState::paused).c_str(),
 			  "Attempting to resume a run");
