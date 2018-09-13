@@ -26,6 +26,7 @@
 #include <CRingTextItem.h>
 #include <CRingPhysicsEventCountItem.h>
 #include <CDataFormatItem.h>
+#include <CReadoutMain.h>
 
 #include <RunState.h>
 #include <Exception.h>
@@ -174,15 +175,19 @@ CExperiment::getBufferSize() const
 void
 CExperiment::Start(bool resume)
 {
-
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  pMain->logProgress("CExperiment::Start entered");
+  
   // The run must be in the correct state:
-
+  
   if (resume && (m_pRunState->m_state != RunState::paused)) {
+    pMain->logStateChangeStatus("Asked to resume but state is not paused");
     throw CStateException(m_pRunState->stateName().c_str(),
 			  RunState::stateName(RunState::paused).c_str(),
 			  "Starting data taking");
   }
   if (!resume && (m_pRunState->m_state != RunState::inactive)) {
+    pMain->logStateChangeStatus("Asked to begin but state not inactive");
     throw CStateException(m_pRunState->stateName().c_str(),
 			  RunState::stateName(RunState::inactive).c_str(),
 			  "Starting data taking");
@@ -194,22 +199,28 @@ CExperiment::Start(bool resume)
   // Can only start it if the triggers have been established:
   
   if (m_pEventTrigger && m_pScalerTrigger) {
-
+    
  
     //create the trigger loop object
 
     if (!m_pTriggerLoop) {
       m_pTriggerLoop = new CTriggerLoop(*this);
+      pMain->logProgress("Created trigger loop thread object");
     }
+    
     // Initialize/clear the hardware:
     
     if (m_pReadout) {
       m_pReadout->initialize();
+      pMain->logProgress("Initialized the event hardware");
       m_pReadout->clear();
+      pMain->logProgress("Cleared the event hardware");
     }
     if (m_pScalers) {
       m_pScalers->initialize();
+      pMain->logProgress("Initialized the scaler hardware");
       m_pScalers->clear();
+      pMain->logProgress("Cleared the scalers");
     }
 
     // If not resuming we'll also output a ring format item so that the
@@ -218,6 +229,7 @@ CExperiment::Start(bool resume)
     
     CDataFormatItem format;
     format.commitToRing(*m_pRing);
+    pMain->logProgress("Emitted the data format item");
     
     // Begin run zeroes the previous scaler time, and ring buffer item sequence.
     // 
@@ -233,8 +245,11 @@ CExperiment::Start(bool resume)
       
     }
     if (resume) {
+      pMain->logProgress("This is a resume run");
       m_nPausedmSeconds += (msTime - m_nLastScalerTime);
       m_nLastScalerTime = msTime;
+    } else {
+      pMain->logProgress("This is a begin run");
     }
 
     uint32_t elapsedTime = (msTime - m_nRunStartStamp - m_nPausedmSeconds)/1000;
@@ -244,7 +259,8 @@ CExperiment::Start(bool resume)
         elapsedTime, stamp,
         std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE));
     item.commitToRing(*m_pRing);
-
+    pMain->logProgress("Emitted the state change object");
+    
     // Now invoke either onBegin or onResume in the event segment.
 
     if (m_pReadout) {
@@ -256,33 +272,42 @@ CExperiment::Start(bool resume)
     }
     
     DocumentPackets();		// output a documentation packet.
+    pMain->logProgress("Emitted initial documentation item(s)");
     
     // emit a physics event count item that indicates no events have been sent yet
     // if this is a start run:
     
     if (!resume) {
-    CRingPhysicsEventCountItem count(NULL_TIMESTAMP, 
-        getSourceId(), 
-        BARRIER_NOTBARRIER,
-        0, // count
-        0, // time offset
-        static_cast<uint32_t>(time(NULL)), // time now
-        1);
-
-
-    count.commitToRing(*m_pRing);
+      CRingPhysicsEventCountItem count(NULL_TIMESTAMP, 
+          getSourceId(), 
+          BARRIER_NOTBARRIER,
+          0, // count
+          0, // time offset
+          static_cast<uint32_t>(time(NULL)), // time now
+          1);
+  
+  
+      count.commitToRing(*m_pRing);
+      pMain->logProgress("Emitted physics event count item on resume");
     }
     
     
     m_pTriggerLoop->start();
+    pMain->logProgress("Scheduled the trigger loop thread to run");
     if (m_pBusy) {
       m_pBusy->GoClear();
+      pMain->logProgress("Cleared the busy");
     }
     
     // The run is now active if looked at by the outside world:
     
     m_pRunState->m_state = RunState::active;
+    pMain->logProgress("Marked the experimentt's state to active");
     
+  } else {
+    pMain->logStateChangeStatus(
+      "Start is missing event or scaler trigger - won't start the trigger thread"
+    );
   }
 
 

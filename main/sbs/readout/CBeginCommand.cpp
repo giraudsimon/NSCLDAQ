@@ -25,9 +25,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <tcl.h>
+#include <CReadoutMain.h>
 
 using namespace std;
-
 
 /*!
    Constructor.. we need to register ourself as the begin command:
@@ -81,7 +81,11 @@ CBeginCommand::operator()(CTCLInterpreter&    interp,
   //
   bool error = false;
   string result;
+  CReadoutMain* pMain = CReadoutMain::getInstance();
   try {
+    
+    pMain->logStateChangeRequest("Beginning run");
+     
     // Set values for the title and run number if these Tcl variables are set:
 
     RunState* pState =  RunState::getInstance();
@@ -101,14 +105,16 @@ CBeginCommand::operator()(CTCLInterpreter&    interp,
       }
 
     }
+    pMain->logProgress("Run  number set");
     if (titleValue && (pState->m_state == RunState::inactive)) {
       delete []pState->m_pTitle;
       pState->m_pTitle = new char[strlen(titleValue)+1];
       strcpy(pState->m_pTitle, titleValue);
       
     }
-    
+    pMain->logProgress("Run title set");
     pRunControl.begin();
+    pMain->logStateChangeStatus("Run successfully begun");
   }
   catch (CStateException& e) {
     error   = true;
@@ -130,6 +136,11 @@ CBeginCommand::operator()(CTCLInterpreter&    interp,
     result = "Some unanticipated exception was caught while attempting to start the run";
   }
 
+  if (error) {
+      std::string msg = "Begin run failed ";
+      msg += result;
+      pMain->logStateChangeStatus(msg.c_str());
+  }
   interp.setResult(result);
 
   return error ? TCL_ERROR : TCL_OK;
