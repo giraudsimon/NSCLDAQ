@@ -15,6 +15,8 @@
 */
 #include <config.h>
 #include "CPauseCommand.h"
+#include <CReadoutMain.h>
+
 #include "CRunControlPackage.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
@@ -70,6 +72,7 @@ CPauseCommand::operator()(CTCLInterpreter&    interp,
 
   // Get the package and cast it to a CRunControlPackage:
 
+  CReadoutMain*        pMain       = CReadoutMain::getInstance();
   CTCLObjectPackage*   pPack       = getPackage();
   CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
 
@@ -79,7 +82,9 @@ CPauseCommand::operator()(CTCLInterpreter&    interp,
   bool error = false;
   string result;
   try {
+    pMain->logStateChangeRequest("Pausing a run");
     pRunControl.pause();
+    pMain->logStateChangeStatus("Run successfully paused");
   }
   catch (CStateException& e) {
     error   = true;
@@ -100,7 +105,9 @@ CPauseCommand::operator()(CTCLInterpreter&    interp,
     error = true;
     result = "Some unanticipated exception was caught while attempting to pause the run";
   }
-
+  if (error) {
+     pMain->logStateChangeStatus("Run failed to pause");
+  }
   interp.setResult(result);
 
   return error ? TCL_ERROR : TCL_OK;

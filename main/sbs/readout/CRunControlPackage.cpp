@@ -134,13 +134,19 @@ CRunControlPackage::begin()
 void
 CRunControlPackage::end()
 {
+  CReadoutMain* pMain = CReadoutMain::getInstance();
   RunState::State state = m_pTheState->m_state;
   if((state == RunState::active) || (state == RunState::paused)) {
+    pMain->logProgress("Asking the experiment to stop the run");
     m_pTheExperiment->Stop(false);	// Not a pause.
     delete m_pTimer;
+    pMain->logProgress("Experiment timer deleted");
     m_pTimer = reinterpret_cast<RunTimer*>(0);
   }
   else {
+    pMain->logStateChangeStatus(
+      "Failed to end a run because state was neither active nor paused"
+    );
     string validstates = RunState::stateName(RunState::active);
     validstates += " or ";
     validstates += RunState::stateName(RunState::paused);
@@ -155,12 +161,18 @@ CRunControlPackage::end()
 void
 CRunControlPackage::pause()
 {
+  CReadoutMain* pMain = CReadoutMain::getInstance();
   if(m_pTheState->m_state == RunState::active) {
+    pMain->logProgress("Asking the experiment to stop");
     m_pTheExperiment->Stop(true);
     delete m_pTimer;
+    pMain->logProgress("Deleted the experiment timer");
     m_pTimer = reinterpret_cast<RunTimer*>(0);
   }
   else {
+    pMain->logStateChangeStatus(
+      "Attempting to pause the run when the state is not active"
+    );
     throw CStateException(m_pTheState->stateName().c_str(),
 			 m_pTheState->stateName(RunState::active).c_str(),
 			 "Attempting to pause a run");

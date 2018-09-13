@@ -324,12 +324,16 @@ CExperiment::Start(bool resume)
 void
 CExperiment::Stop(bool pause)
 {
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  pMain->logProgress("CExperiment::Stop entered");
   if (pause && (m_pRunState->m_state != RunState::active)) {
+    pMain->logStateChangeStatus("Pause attemped with state not active");
     throw CStateException(m_pRunState->stateName().c_str(),
 			  RunState::stateName(RunState::active).c_str(),
 			  "Stopping data taking");
   }
   if (!pause && (m_pRunState->m_state == RunState::inactive)) {
+    pMain->logStateChangeStatus("End attempted wit state not inactive");
     string validStates;
     validStates  = RunState::stateName(RunState::active);
     validStates += ", ";
@@ -344,10 +348,12 @@ CExperiment::Stop(bool pause)
   if (m_pTriggerLoop) {
     if (m_pRunState->m_state == RunState::active) {
       m_pTriggerLoop->stop(pause); // run is active
+      pMain->logProgress("Asked the trigger loop to end");
     }
     else {
+      pMain->logProgress("Trigger loop was never started");
       syncEndRun(false);
-      
+      pMain->logProgress("End run scalers and end run item emitted directly");
     }
 
   }
@@ -362,19 +368,26 @@ void
 CExperiment::syncEndRun(bool pause)
 {
 
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  pMain->logProgress("Trigger loop exited. syncEndRun called");
   readScalers();		// last scaler read.
+  pMain->logProgress("Final scaler item emitted - if there are scalers");
 
   // Disable the hardware:
 
   if (m_pScalers) {
     m_pScalers->disable();
+    pMain->logProgress("Scalers are disabled");
   }
   if (m_pReadout) {
     m_pReadout->disable();
+    pMain->logProgress("Event hardware disabled");
     if (pause) {
       m_pReadout->onPause();
+      pMain->logProgress("CExperiment::onPause executed");
     } else {
       m_pReadout->onEnd();
+      pMain->logProgress("CExperiment::onEnd executed");
     }
   }
 
@@ -407,11 +420,12 @@ CExperiment::syncEndRun(bool pause)
 			    now,
 			    std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE));
   item.commitToRing(*m_pRing);
-
+  pMain->logProgress("State change item emitted");
 
   // The run is in the appropriate inactive state if looked at by the outside world
 
   m_pRunState->m_state = finalState;
+  pMain->logStateChangeStatus("Experiment state set. -- data taking fully halted");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
