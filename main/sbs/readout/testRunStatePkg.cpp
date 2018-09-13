@@ -57,7 +57,11 @@ CReadoutMain::getExperiment()
   return pMe->m_pExperiment;
 }
 
+
+
 // truly stubs:
+CReadoutMain*
+CReadoutMain::getInstance() {return nullptr; }
 int
 CReadoutMain::operator()() { return 0; }
 CExperiment* 
@@ -74,6 +78,9 @@ void
 CReadoutMain::addCommands() {}
 
 void CReadoutMain::addCommands(CTCLInterpreter* p) {}
+void CReadoutMain::logStateChangeRequest(const char*msg) {}
+void CReadoutMain::logStateChangeStatus(const char* msg) {}
+void CReadoutMain::logProgress(const char* msg) {}
 
 
 class ReadoutTestHarness : public CReadoutMain
