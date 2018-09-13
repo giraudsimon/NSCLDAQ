@@ -20,6 +20,7 @@
 #include <TCLInterpreter.h>
 #include <CRunState.h>
 #include <CControlQueues.h>
+#include <CTheApplication.h>
 #include <tclUtil.h>
 
 using std::string;
@@ -71,17 +72,22 @@ CPauseRun::operator()(CTCLInterpreter& interp,
   }
   // check the state:
 
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Pausing run");
   CRunState* pState = CRunState::getInstance();
   if (pState->getState() != CRunState::Active) {
     tclUtil::Usage(interp,
 		   "To pause, the run must be active",
 		   objv,
 		   usage);
+    pApp->logStateChangeStatus("Run was not active - could not pause");
     return TCL_ERROR;
   }
   CControlQueues* pRequest = CControlQueues::getInstance();
 
+  pApp->logProgress("Requesing acquisition thread pause run");
   pRequest->PauseRun();
+  pApp->logStateChangeStatus("Run is paused");
 
   return TCL_OK;
 }

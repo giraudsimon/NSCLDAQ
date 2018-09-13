@@ -30,6 +30,7 @@
 #include <CVMUSBReadoutList.h>
 #include <CReadoutModule.h>
 #include <TclServer.h>
+#include <CTheApplication.h>
 
 using std::vector;
 using std::string;
@@ -102,13 +103,16 @@ CBeginRun::operator()(CTCLInterpreter& interp,
 		   usage);
     return TCL_ERROR;
   }
-
+  
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Begin run");
   CRunState* pState = CRunState::getInstance();
   if (pState->getState() != CRunState::Idle) {
     tclUtil::Usage(interp,
 		   "Invalid run state for begin be sure to stop the run",
 		   objv,
 		   usage);
+    pApp->logStateChangeStatus("Run state was not idle");
     return TCL_ERROR;
   }
   // Set the state to match the appropriate set of variables:
@@ -121,13 +125,15 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   uint16_t runNumber;
   sscanf(runNumberString, "%hu", &runNumber);
   pState->setRunNumber(runNumber);
-
+  pApp->logProgress("New run number set");
+  
   CTCLVariable title(&interp, "title", false);
   const char *titleString = title.Get(TCL_GLOBAL_ONLY);
   if (!titleString) {
     titleString = "No Title Set"; // If no title variable default it.
   }
   pState->setTitle(string(titleString));
+  pApp->logProgress("New title set");
   
   // Now we can start the run.
 
@@ -135,26 +141,31 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   string errorMessage = "begin - Configuration file processing failed: ";
   try {
     Globals::pConfig->processConfiguration(Globals::configurationFilename);
+    pApp->logProgress("Successfully processed the daq configuration file");
   }
   catch (string msg) {
     errorMessage += msg;
     tclUtil::setResult(interp,  errorMessage);
+    pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (const char* msg) {
     errorMessage += msg;
     tclUtil::setResult(interp, errorMessage);
+    pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (CException& e) {
     errorMessage += e.ReasonText();
     tclUtil::setResult(interp, errorMessage);
+    pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (...) {
     // Configuration file processing error of some sort...
 
     tclUtil::setResult(interp, errorMessage);
+    pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
 		       
   }
@@ -178,19 +189,25 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   if ((fullstack.size() + headerSize) > MAX_STACK_STORAGE) {
     tclUtil::setResult(interp,
         "***  Your readout configuration overflows the available stack space ***");
+    pApp->logProgress("Stacks won't fit in VMUSB");
     return TCL_ERROR;
   }
+  pApp->logProgress("Stacks fit in the VMUSB");
   
   pState->setState(CRunState::Starting);     // Prevent monitor thread for accessing.
-
+  pApp->logProgress("Set state to starting");
+  
   // Reconnect the VM-USB:
 
   reconnect();
+  pApp->logProgress("Reconnected VMUSB");
 
   CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
   pReadout->start(Globals::pUSBController);
+  pApp->logProgress("Scheduled the Acquisition thread to run");
 
   tclUtil::setResult(interp, string("Begin - Run started"));
+  pApp->logStateChangeStatus("Begin command was successful.");
   return TCL_OK;
 }
 

@@ -26,7 +26,7 @@
 #include <Globals.h>
 #include <TclServer.h>
 #include <CAcquisitionThread.h>
-
+#include <CTheApplication.h>
 /**
  * constructor
  *   Create the 'exit' command which should now override the Tcl exit
@@ -61,7 +61,9 @@ CExit::~CExit() {}
 int
 CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
+    CTheApplication* pApp = CTheApplication::getInstance();
     try {
+        pApp->logStateChangeRequest("Requested exit of Readout");
         bindAll(interp, objv);
         requireAtMost(objv, 2, "exit takes at most the status parameters");
         
@@ -73,9 +75,13 @@ CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
         }
         
         CExit::exit(status);
+        pApp->logStateChangeStatus("Exiting - successful.");
     }
     catch (std::string msg) {
         interp.setResult(msg);
+        std::string log = "Some part of exiting did not succeed: ";
+        log += msg;
+        pApp->logStateChangeStatus(log.c_str());
     }
     
     return TCL_ERROR;
@@ -83,21 +89,28 @@ CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 
 void CExit::exit(int status) 
 {
-  // Send an event to the TclServer proces's interpreter asking it to exit.
+  // Send an event to the TclServer process's interpreter asking it to exit.
+  
   TclServer* pServer = ::Globals::pTclServer;
+  CTheApplication* pApp = CTheApplication::getInstance();
   if (pServer) {
+    pApp->logProgress("Halting Tcl Server");
     pServer->scheduleExit();
     pServer->join();
+    pApp->logProgress("Tcl Server halted");
   }
 
   // End the run and join with the acquisition thread
   auto pReadout = CAcquisitionThread::getInstance();
   if (pReadout->isRunning()) {
+    pApp->logProgress("Ending run and stopping acquisition thread");
     CControlQueues::getInstance()->EndRun();
     CAcquisitionThread::getInstance()->join();
+    pApp->logProgress("Acquisition thread exited");
   }
 
   // Exit the program:
 
+  pApp->logStateChangeStatus("Exiting for real now.");
   Tcl_Exit(status);
 }

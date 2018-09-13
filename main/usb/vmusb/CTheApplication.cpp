@@ -144,7 +144,7 @@ int CTheApplication::operator()(int argc, char** argv)
     m_logFile = parsedArgs.log_arg;
   }
   m_logLevel  = parsedArgs.debug_arg;
-  
+  initializeLogging();
   // Save the data source id:
   
   Globals::sourceId = parsedArgs.sourceid_arg;
