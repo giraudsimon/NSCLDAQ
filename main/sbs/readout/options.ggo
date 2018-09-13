@@ -6,4 +6,7 @@ purpose "Reads out experimental data to spectrodaq"
 option "port" p "Enable tcl server functionality, next parameter is the port" string no
 option "ring" r "Ring buffer name, defaults to your username"                 string no
 option "sourceid" i "Source Id for event builder sources"  optional int default="0"
-option "init-script" s "Initialization script"             optional string 
+option "init-script" s "Initialization script"             optional string
+option "log" l "Log file - if logging desired" optional string
+option "debug" d "Debug level 0-2" optional int default="0"
+
