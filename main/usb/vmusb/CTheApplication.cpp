@@ -37,7 +37,9 @@
 #include <CRunState.h>
 #include <CControlQueues.h>
 
+
 #include <CPortManager.h>
+#include <CMutex.h>
 
 #include <vector>
 #include <cstdlib>
@@ -53,11 +55,13 @@
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
+#include <NSCLDAQLog.h>
 
 #include "cmdline.h"
 
 
 #include <string>
+
 
 
 #ifndef NULL
@@ -76,6 +80,10 @@ static const uint32_t bufferCount(32);                      // Number of buffers
 static const uint32_t bufferSize(13*1024*sizeof(uint16_t)); // 13kword buffers...+pad
 static       int      tclServerPort(27000);		    // Default value.
 
+
+// Mutext log logging:
+
+static CMutex loggingLock;
 
 // Static member variables and initialization.
 
@@ -125,11 +133,17 @@ int CTheApplication::operator()(int argc, char** argv)
 {
   m_Argc   = argc;		// In case someone else wants them.
   m_Argv   = argv; 
-
+  Globals::pApplication = this;
+  
   // Process them via gengetopt:
 
   struct gengetopt_args_info parsedArgs;
   cmdline_parser(argc, argv, &parsedArgs);	// Actually fails if the commandline is incorrect.
+  
+  if (parsedArgs.log_given) {
+    m_logFile = parsedArgs.log_arg;
+  }
+  m_logLevel  = parsedArgs.debug_arg;
   
   // Save the data source id:
   
@@ -275,6 +289,62 @@ int CTheApplication::operator()(int argc, char** argv)
   }
   return EX_SOFTWARE; // keep compiler happy, startInterpreter should not return.
 }
+/**
+ * getInstance
+ *    Convenience method to return the application instance to the caller.
+ *
+ *  @return CTheApplication*
+ */
+CTheApplication*
+CTheApplication::getInstance()
+{
+  return Globals::pApplication;
+}
+/**
+ * logStateChangeRequest
+ *    issue a log item for state change request level severity (info).
+ * @param msg - the message to log.
+ * @note we do this in a critical section on loggingLock
+ */
+void
+CTheApplication::logStateChangeRequest(const char* msg)
+{
+  if (!m_logFile.empty() ) {
+    CriticalSection l(loggingLock);
+    
+    daqlog::info(msg);
+  }
+}
+/**
+ * logStateChangeStatus
+ *
+ * logs the completion status of a state change.
+ *
+ * @param msg - the message to log
+ */
+void
+CTheApplication::logStateChangeStatus(const char* msg)
+{
+  if (!m_logFile.empty() ) {
+    CriticalSection l(loggingLock);
+    
+    daqlog::debug(msg);
+  }  
+}
+/**
+ * logProgress
+ *    Logs progress through an operation.
+ * @param msg - the message.
+ */
+void
+CTheApplication::logProgress(const char* msg)
+{
+  if (!m_logFile.empty() ) {
+    CriticalSection l(loggingLock);
+    
+    daqlog::trace(msg);
+  }
+}
 
 /*
    Start the output thread.  This thread is responsible for 
@@ -351,6 +421,38 @@ CTheApplication::enumerateVMUSB()
     std::cerr << "Unable to enumerate VM-USB modules: " << msg << std::endl;
   }
 }
+/**
+ *  initializeLogging
+ *      Given the parsed values, initialize the logging system.
+ */
+void
+CTheApplication::initializeLogging()
+{
+  if (!m_logFile.empty()) {
+    daqlog::setLogFile(m_logFile);
+    switch (m_logLevel) {
+      case 0:
+        daqlog::setLogLevel(daqlog::Info);
+        break;
+      case 1:
+        daqlog::setLogLevel(daqlog::Debug);
+        break;
+      case 2:
+        daqlog::setLogLevel(daqlog::Trace);
+        break;
+      default:
+        std::cerr << "Invalid log level "
+          << m_logLevel
+          << "Must be 0, 1, or 2\n";
+        exit(EXIT_FAILURE);
+    }
+  }
+ 
+}
+/*---------------------------------------------------------------------------
+ *   Static utilties.
+ */
+
 /* 
   Set the configuration files to the global storage
 */
