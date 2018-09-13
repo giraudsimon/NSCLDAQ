@@ -28,6 +28,7 @@
 #include <CMutex.h>
 #include <time.h>
 #include <string.h>
+#include <ios>
 
 #ifdef HAVE_BOOST_LOG
 
@@ -99,7 +100,8 @@ daqlog::BoostLogWrapper::BoostLogWrapper()
     }
 #ifdef HAVE_BOOST_LOG
     m_pLogSink = boost::log::add_file_log(
-        boost::log::keywords::file_name = logFile.c_str()
+        boost::log::keywords::file_name = logFile.c_str(),
+        boost::log::keywords::open_mode = std::ios_base::app | std::ios_base::out
         );
     boost::log::core::get()->set_filter(
         boost::log::trivial::severity >= mapSeverity(loggingLevel)
