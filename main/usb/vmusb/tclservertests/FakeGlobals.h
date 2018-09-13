@@ -59,9 +59,6 @@ namespace Globals {
   CTCLInterpreter*       pMainInterpreter = 0;
 };
 
-namespace CTheApplication {
 
-  void AcquisitionErrorHandler(Tcl_Event* pEvent, int flags) {}
-}
 
 #endif

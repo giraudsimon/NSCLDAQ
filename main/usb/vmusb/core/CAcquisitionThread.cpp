@@ -33,6 +33,7 @@ East Lansing, MI 48824-1321
 #include <assert.h>
 #include <time.h>
 #include <string>
+#include <sstream>
 #include <Exception.h>
 #include <TclServer.h>
 #include <os.h>
@@ -132,9 +133,9 @@ CAcquisitionThread::start(CVMUSB* usb)
 void CAcquisitionThread::init()
 {
   m_tid = getId();
-
+  CTheApplication* pApp = CTheApplication::getInstance();
   try {
-
+    pApp->logProgress("Acquisition thread running");
     cout << "CAcquisitionThread::init started" << endl;
 
     Globals::running = true;
@@ -143,26 +144,34 @@ void CAcquisitionThread::init()
     m_Running = true;   // Thread is off and running now.
 
     startDaq();
+    pApp->logProgress("Started data taking mode");
     beginRun();     // Emit begin run buffer.
+    pApp->logProgress("Emitted begin item");
   
     cout << "CAcquisitionThread::init done" << endl;
   }
     catch (string msg) {
     Globals::running = false;
     cerr << "CAcquisition thread caught a string exception: " << msg << endl;
+    pApp->logStateChangeStatus(msg.c_str());
   }
   catch (char* msg) {
     Globals::running = false;
     cerr << "CAcquisition thread caught a char* exception: " << msg << endl;
+    pApp->logStateChangeStatus(msg);
   }
   catch (CException& err) {
     Globals::running = false;
     cerr << "CAcquisition thread caught a daq exception: "
       << err.ReasonText() << " while " << err.WasDoing() << endl;
+    pApp->logStateChangeStatus(err.ReasonText());
   }
   catch (...) {
     Globals::running = false;
     cerr << "CAcquisition thread caught some other exception type.\n";
+    pApp->logStateChangeStatus(
+      "CAcquisition thread caught an exception in initialization"
+    );
   }
 
 }
@@ -191,23 +200,29 @@ CAcquisitionThread::waitExit()
 void CAcquisitionThread::operator()()
 {
   std::string errorMessage;
+  CTheApplication* pApp = CTheApplication::getInstance();
   try {
-
+    pApp->logProgress("Entering main acquisition loop");
     mainLoop();     // Enter the main processing loop.
+    pApp->logProgress("Exited main acquisition loop");
   }
   catch (std::string msg) {
+    pApp->logProgress("Stopping daq on receipt of a string exception");
     stopDaq();                       // Ensure we're not in ACQ moe.
     errorMessage = msg;
   }
   catch (const char* msg) {
+    pApp->logProgress("Stopping daq on receipt of a const char* exception");
     stopDaq();                       // Ensure we're not in ACQ moe.
     errorMessage = msg;
   }
-  catch (CException err) {
+  catch (CException& err) {
+    pApp->logProgress("Stopping daq on receipt of a CException");
     stopDaq();                       // Ensure we're not in ACQ moe.
     errorMessage = err.ReasonText();
   }
   catch (...) {
+    pApp->logProgress("Caught the normal exit exception.");
     //  This is a normal exit...
   }
   Globals::running = false;
@@ -215,6 +230,7 @@ void CAcquisitionThread::operator()()
   CRunState* pState = CRunState::getInstance();
   pState->setState(CRunState::Idle);
   endRun();			// Emit end run buffer.
+  pApp->logProgress("Emitted end item");
 
 
   m_Running = false;		// Exiting.
@@ -222,6 +238,7 @@ void CAcquisitionThread::operator()()
   // If there's an error message report the error to the main thread:
 
   if (errorMessage != "") {
+    pApp->logStateChangeStatus(errorMessage.c_str());
     reportErrorToMainThread(errorMessage);
     return;
   }
@@ -229,7 +246,7 @@ void CAcquisitionThread::operator()()
   Globals::running = false;
   pState->setState(CRunState::Idle);
   m_Running = false;
-
+  pApp->logProgress("Acquisition thread exiting");
 }
 
 /*!
@@ -241,7 +258,9 @@ void CAcquisitionThread::operator()()
 CAcquisitionThread::mainLoop()
 {
   DataBuffer*     pBuffer   = gFreeBuffers.get();
-  CControlQueues* pCommands = CControlQueues::getInstance(); 
+  CControlQueues* pCommands = CControlQueues::getInstance();
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logProgress("Acquisition main loop started");
   try {
     unsigned int consecutiveTimeouts = 0;
     while (true) {
@@ -293,6 +312,7 @@ CAcquisitionThread::mainLoop()
     gFreeBuffers.queue(pBuffer);  // Don't lose buffers!!
     throw;
   }
+  pApp->logProgress("Application main loope exiting");
 }
 /*!
   Process a command from our command queue.  The command can be one of the
@@ -309,6 +329,8 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command)
   CControlQueues* queues = CControlQueues::getInstance();
   CRunState* pState = CRunState::getInstance();
   pState->setState(CRunState::Stopping);
+  CTheApplication* pApp = CTheApplication::getInstance();
+  
   if (command == CControlQueues::ACQUIRE) {
     stopDaqImpl();
     queues->Acknowledge();
@@ -319,13 +341,17 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command)
     pState->setState(CRunState::Active);
   }
   else if (command == CControlQueues::END) {
+    pApp->logProgress("Acquisition thread reacting to an end run request");  
     stopDaq();
     queues->Acknowledge();
+    pApp->logStateChangeStatus("Acquisitino thread ended data taking");
     throw 0;
   }
   else if (command == CControlQueues::PAUSE) {
+    pApp->logProgress("Acquisitino thread reacting to a pause run request");
     pauseRun();
     pauseDaq();
+    pApp->logStateChangeStatus("Acquisition thread paused data taking.");
 
   }
   else {
@@ -394,7 +420,10 @@ CAcquisitionThread::processBuffer(DataBuffer* pBuffer)
   void
 CAcquisitionThread::startDaq()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
   CriticalSection lock(CVMUSB::getGlobalMutex());
+  pApp->logProgress("startDaq VMUSB Global mutex acquired - will auto-release ");
+  
 
   //  First do a bulk read just to flush any crap that's in the VM-USB
   // output fifo..as it appears to sometimes leave crap there.
@@ -405,7 +434,8 @@ CAcquisitionThread::startDaq()
   char junk[1000];
   size_t moreJunk;
   m_pVme->usbRead(junk, sizeof(junk), &moreJunk, 1*1000); // One second timeout.
-
+  pApp->logProgress("Flushed trash from VMUSB");
+  
   cerr << "Starting VM-USB initialization\n";
 
 
@@ -413,6 +443,7 @@ CAcquisitionThread::startDaq()
 
   //  m_pVme->writeActionRegister(CVMUSB::ActionRegister::sysReset);
   m_pVme->writeActionRegister(0);
+  pApp->logProgress("Ensured data taking is off");
 
   // Set up the buffer size and mode:
 
@@ -434,6 +465,7 @@ CAcquisitionThread::startDaq()
                                   CVMUSB::GlobalModeRegister::bufferLenShift));
 
 
+   pApp->logProgress("bulk XFEr an global mode registers default setup done");
 
   // Process the configuration. This must be done in a way that preserves the
   // Interpreter since loadStack and Initialize for each stack will need the
@@ -441,16 +473,22 @@ CAcquisitionThread::startDaq()
 
   Globals::pConfig = new CConfiguration;
   Globals::pConfig->processConfiguration(Globals::configurationFilename);
+  pApp->logProgress("Configuration file processed in acq thread");
   m_Stacks = Globals::pConfig->getStacks();
 
   //  Get all of the stacks.  load and enable them.  First we'll reset the
   // stack load offset.
 
   CStack::resetStackOffset();
+  pApp->logProgress("Preparing to load stacks");
 
   cerr << "Loading " << m_Stacks.size() << " stacks to vm-usb\n";
   m_haveScalerStack = false;
   for(int i =0; i < m_Stacks.size(); i++) {
+    std::stringstream stackmsg;
+    stackmsg << "Processing stack " << i << " : ";
+    pApp->logProgress(stackmsg.str().c_str());
+    
     CStack* pStack = dynamic_cast<CStack*>(m_Stacks[i]->getHardwarePointer());
    
     assert(pStack);
@@ -458,9 +496,13 @@ CAcquisitionThread::startDaq()
       m_haveScalerStack = true;
     }
     pStack->loadStack(*m_pVme);     // Load into VM-USB
+    pApp->logProgress("stack loaded");
     pStack->enableStack(*m_pVme);   // Enable the trigger logic for the stack.
+    pApp->logProgress("stack enabled");
     pStack->Initialize(*m_pVme);    // INitialize daq hardware associated with the stack.
-
+    pApp->logProgress("stack initialized");
+    
+    pApp->logProgress("Stack processed");
 
   }
 
@@ -472,12 +514,14 @@ CAcquisitionThread::startDaq()
     std::cerr << "Loading monitor stack of size: " << list.size() << " at offset: " << CStack::getOffset() << std::endl;
     size_t currentOffset = CStack::getOffset();
     m_pVme->loadList(7, list, currentOffset); // The tcl server will periodically trigger the list.
+    pApp->logProgress("Tcl Server stack for monitored devices loaded");
   }
 
 
   // Start the VMUSB in data taking mode:
 
   VMusbToAutonomous();
+  pApp->logStateChangeStatus("VMUSB is now in autonomous (data taking) mode");
 
 }
 /*!
@@ -489,23 +533,32 @@ CAcquisitionThread::startDaq()
  */
   void CAcquisitionThread::stopDaqImpl()
   {
+    CTheApplication* pApp = CTheApplication::getInstance();
+    
       if (m_haveScalerStack) {
           m_pVme->writeActionRegister(CVMUSB::ActionRegister::scalerDump);
+          pApp->logProgress("Final scaler dump forced");
       }
       m_pVme->writeActionRegister(0);
+      pApp->logProgress("VMUSB is no longer in autonomous (DAQ) mode");
       drainUsb();
-
+      pApp->logProgress("In flight buffers have been drained from the VMUSB");
+      
       cerr << "Running on end routines" << endl;
       for(int i =0; i < m_Stacks.size(); i++) {
           CStack* pStack = dynamic_cast<CStack*>(m_Stacks[i]->getHardwarePointer());
 
           assert(pStack);
           pStack->onEndRun(*m_pVme);   // Enable the trigger logic for the stack.
+          std::stringstream erinfo;
+          erinfo << "End of run routine for stack " << i << " has been run\n";
+          pApp->logProgress(erinfo.str().c_str());
       }
 
       // turn off interrupts so that interrupts don't continue to trigger if the
       // user chose to turn them off between runs
       disableInterrupts();
+      pApp->logProgress("VMUSB interrupt handling disabled");
   }
 
   /*!
@@ -517,7 +570,10 @@ CAcquisitionThread::startDaq()
   void
 CAcquisitionThread::stopDaq()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logProgress("Stopping data taking");
   CriticalSection lock(CVMUSB::getGlobalMutex());
+  pApp->logProgress("Acquired the VMUSB mutext -- will auto release");
   stopDaqImpl();
 }
 
@@ -539,12 +595,18 @@ void CAcquisitionThread::disableInterrupts()
   void
 CAcquisitionThread::pauseDaq()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
+  
   CControlQueues* queues = CControlQueues::getInstance();
   CRunState* pState = CRunState::getInstance();
   pState->setState(CRunState::Stopping); // No monitoring for now.
+  pApp->logProgress("Stopping data acquisition for pause");
   stopDaq();
+  pApp->logProgress("Data taking paused");
   pState->setState(CRunState::Paused);    // Fully paused.
   queues->Acknowledge();
+  pApp->logProgress("Command request for stop acknowledged");
+  pApp->logStateChangeStatus("Run is paused in acquisition thread");
   
 
   while (1) {
@@ -569,9 +631,13 @@ CAcquisitionThread::pauseDaq()
       pauseRun();
     }
     else if (req == CControlQueues::RESUME) {
+      pApp->logProgress("Acquisition thread received request to resume run");
       resumeRun();             // Bug #5882
+      pApp->logProgress("Resume item emitted");
       startDaq();
+      pApp->logProgress("Data taking resumed");
       queues->Acknowledge();
+      pApp->logStateChangeStatus("Acquisition thread resumed run");
       return;
     }
     else {

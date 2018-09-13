@@ -20,6 +20,8 @@
 #include <TCLInterpreterObject.h>
 #include <Globals.h>
 #include <CAcquisitionThread.h>
+#include <CTheApplication.h>
+
 #include "tclUtil.h"
 
 #include <CControlQueues.h>
@@ -67,24 +69,32 @@ CEndRun::operator()(CTCLInterpreter& interp,
 		   objv,usage);
     return TCL_ERROR;
   }
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Ending run");
+  
   CRunState* pState = CRunState::getInstance();
   if ((pState->getState() != CRunState::Active) && (pState->getState() != CRunState::Paused)) {
     tclUtil::Usage(interp,
 		   "Invalid state for end run must be active or paused (may be still initializing).",
 		   objv, usage);
+    pApp->logStateChangeStatus(
+      "End run, state must be paused or active and is neither"
+    );
     return TCL_ERROR;
   }
   // Now stop the run...that is if the acquisition thread is still running
 
   if(CAcquisitionThread::getInstance()->isRunning()) {
     CControlQueues* pRequest = CControlQueues::getInstance();
+    pApp->logProgress("Asking the acquisition thread to end");
     pRequest->EndRun();
   
   
     CAcquisitionThread::waitExit();
+    pApp->logProgress("Acquisition thread exited");
   }
 
   pState->setState(CRunState::Idle);
-
+  pApp->logStateChangeStatus("Run successfully ended");
   return TCL_OK;
 }
