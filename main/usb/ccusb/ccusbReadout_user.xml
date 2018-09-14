@@ -1566,6 +1566,30 @@ CC-USB scriptable readout version V2.0
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term><option>--log</option></term>
+                <listitem>
+                    <para>
+                        Specifies a log file to which CCUSB will append logging
+                        information.  If this is not specified, no log file
+                        will be produced/appended. See also
+                        <option>--debug</option> below.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--debug</option></term>
+                <listitem>
+                    <para>
+                        Used in conjunction with <option>--log</option> to
+                        specify the verbosity of the log file.  The value of
+                        this option must be an integer with a value of
+                        <literal>0</literal>, <literal>1</literal> or
+                        <literal>2</literal>. Larger numbers imply increasing
+                        verbosity.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </section>
     <section>
