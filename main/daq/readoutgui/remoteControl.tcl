@@ -934,7 +934,7 @@ namespace eval RemoteControlClient {
 
     # define a new proc called end that will handle whether to forward or not
     proc ::end {} {
-      ::ReadoutGUIPanel::Log Master output "Substitute end"
+      ::ReadoutGUIPanel::Log Master debug "Substitute end"
     # get the connection status
       set connectionStatus [$::RemoteControlClient::control getConnectionStatus]
 

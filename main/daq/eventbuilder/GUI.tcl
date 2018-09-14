@@ -151,6 +151,7 @@ snit::widgetadaptor ::EVB::summary {
     delegate option -coldestoutcount to outputSummary as -coldestcount
     delegate option -outbytes        to outputSummary
     delegate option -outrate         to outputSummary
+    delegate option -window          to outputSummary
    
     # Delegate barrier summary
     
@@ -862,7 +863,8 @@ proc EVB::maintainGUI {widget {ms 2000} } {
 	-incompletebarriers [lindex $incompleteBarriers 0]            \
 	-mixedbarriers      [lindex $completeBarriers 2]              \
 	-outfragments $totalFrags                                     \
-        -queuedbytes $totalin -outbytes $totalout -outrate $outputRate
+        -queuedbytes $totalin -outbytes $totalout -outrate $outputRate  \
+        -window [EVB::config get window]
 
     $barriers configure -incompletecount [lindex $incompleteBarriers 0] \
 	-completecount [lindex $completeBarriers 0] \
