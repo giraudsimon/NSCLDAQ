@@ -61,7 +61,7 @@ proc ::RemoteGUI::start params {
     variable user
     variable sourceid
     variable outputMonitor
-
+    ::ReadoutGUIPanel::Log RemoteGUI output "start '$params'"
     set host [dict get $params host]
     set user [dict get $params user]
 
@@ -98,6 +98,7 @@ proc ::RemoteGUI::check id {
 #
 proc ::RemoteGUI::stop id {
     variable outputMonitor
+    ::ReadoutGUIPanel::Log RemoteGUI output "stop $id"
     # If still alive and necessary stop the run.
     set rctl [::S800::_getConnectionObject $id]
     set state [::S800::_getState $id]
@@ -133,6 +134,7 @@ proc ::RemoteGUI::stop id {
 # @param title
 #
 proc ::RemoteGUI::begin {id run title} {
+    ::ReadoutGUIPanel::Log RemoteGUI output "begin $id $run $title"
     ::S800::begin $id $run $title
 
 }
@@ -142,6 +144,7 @@ proc ::RemoteGUI::begin {id run title} {
 # @param id - the source id
 #
 proc ::RemoteGUI::end id {
+    ::ReadoutGUIPanel::Log RemoteGUI output "End $id"
     ::S800::end $id
 }
 
@@ -151,6 +154,7 @@ proc ::RemoteGUI::end id {
 # @param id - the source id
 #
 proc ::RemoteGUI::init id {
+    ::ReadoutGUIPanel::Log RemoteGUI output "Init $id"
     ::S800::init $id
 }
 ##

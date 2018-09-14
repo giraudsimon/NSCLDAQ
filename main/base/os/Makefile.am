@@ -8,7 +8,7 @@ include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h \
 noinst_HEADERS	     = Asserts.h
 
 libdaqshm_la_LIBADD = @top_builddir@/base/thread/libdaqthreads.la \
-	@THREADLD_FLAGS@ -lcrypt @LIBEXCEPTION_LDFLAGS@ \
+        @THREADLD_FLAGS@ -lcrypt @LIBEXCEPTION_LDFLAGS@ \
 	@BOOST_LDFLAGS@ @BOOST_LOG_LIB@
 
 COMPILATION_FLAGS   = @THREADCXX_FLAGS@ @LIBTCLPLUS_CFLAGS@ @BOOST_CPPFLAGS@ @BOOST_EXTRA_CPPFLAGS@

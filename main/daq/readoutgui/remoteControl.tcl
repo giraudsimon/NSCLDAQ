@@ -132,6 +132,8 @@ snit::type ReadoutGuiRemoteControl {
       set requestReply ""
 
       # send the command
+      
+      ::ReadoutGUIPanel::Log RemoteControl debug "Sending '$script' to master"
       puts $requestfd $script
 
       # A response will be received from the peer and that will be handled by
@@ -140,6 +142,8 @@ snit::type ReadoutGuiRemoteControl {
       # on that variable.
       vwait [myvar requestReplyReceived]
       
+      ::ReadoutGUIPanel::Log \
+        RemoteControl debug "Received master reply $requestReply"
       return $requestReply
     } else {
       # there was no connection... therefore I cannot send!
@@ -184,6 +188,7 @@ snit::type ReadoutGuiRemoteControl {
       $rctlPanel master            
       $timePanel setSlave 0
     }
+    ::ReadoutGUIPanel::Log RemoteControl output "Leaving slave mode"
   }
 
   # _onConnection
@@ -243,11 +248,13 @@ snit::type ReadoutGuiRemoteControl {
         set msg "ReadoutGUIRemoteControl::_onConnection Unable to locate "
         append msg "s800rctl service on $clientaddr"
         puts stderr $msg
+        ::ReadoutGUIPanel::Log RemoteControl output $msg
       } else {
         set msg "ReadoutGUIRemoteControl::_onConnection Multiple s800rctl services"
         append msg " on $clientaddr\n"
         append msg "Can't determine which one to connect to"
         puts stderr $msg
+        ::ReadoutGUIPanel::Log RemoteControl output $msg
       }
       
       $allocator destroy
@@ -267,6 +274,7 @@ snit::type ReadoutGuiRemoteControl {
       #   the client disconnects.
       set priorRunNumber [::ReadoutGUIPanel::getRun]
       set priorTitle     [::ReadoutGUIPanel::getTitle]
+      ::ReadoutGUIPanel::Log RemoteControl output "Entering slave mode from $clientaddr"
     }
   }
   ##
@@ -282,6 +290,7 @@ snit::type ReadoutGuiRemoteControl {
   # @note the reply is a list not just textual glomming.
   #
   method _reply {status {tail ""}} {
+    ReadoutGUIPanel::Log RemoteControl debug "Reply to master '$status $tail'"
     set message $status
     if {$tail ne ""} {
       lappend message $tail
@@ -319,6 +328,7 @@ snit::type ReadoutGuiRemoteControl {
     set tail [lrange $line 1 end]
 
     $self _$verb {*}$tail;    # The executors are responsible for replying.
+    ::ReadoutGUIPanel::Log RemoteControl debug "Executing '$line'"
   }
 
   ##
@@ -337,6 +347,7 @@ snit::type ReadoutGuiRemoteControl {
       catch {close $requestfd}
       set requestfd -1
     }
+    ::ReadoutGUIPanel::Log RemoteControl output "Master disconnected regaining control"
     ::ReadoutGUIPanel::setRun $priorRunNumber
     ::ReadoutGUIPanel::setTitle $priorTitle
     $statusmanager setMessage $statusbar "Remote controlled by: nobody"
@@ -360,6 +371,8 @@ snit::type ReadoutGuiRemoteControl {
     if {$line eq ""} {
       return
     }
+    ::ReadoutGUIPanel::Log \
+      RemoteControl debug "Received request '$line' from master"
     if {[$self _isLegalCommand [lindex $line 0]]} {
       $self _executeCommand $line
     } else {
@@ -484,6 +497,7 @@ snit::type ReadoutGuiRemoteControl {
   # @param value - The new value for the item.
   method _set {what value} {
 
+  ::ReadoutGUIPanel::Log RemoteControl output "_set '$what' '$value'"
   # None of these are legal if the run is not halted:
 
   set sm [::RunstateMachineSingleton %AUTO%]
@@ -594,6 +608,7 @@ snit::type ReadoutGuiRemoteControl {
   #       the rest.
   #
   method _begin {} {
+    ::ReadoutGUIPanel::Log RemoteControl output _begin
     if {![$self _slaveMode]} {
       $self _reply ERROR "Not in slave mode"
       return
@@ -616,6 +631,7 @@ snit::type ReadoutGuiRemoteControl {
   #     everything else.
   #
   method _end {} {
+    ::ReadoutGUIPanel::Log RemoteControl output _end
     flush stdout
     if {![$self _slaveMode]} {
       $self _reply ERROR "Not in slave mode"
@@ -642,12 +658,16 @@ snit::type ReadoutGuiRemoteControl {
   # @param to   state to transition to
   #
   method _masterTransition {to} {
+    
+      
     if {![$self _slaveMode]} {
       $self _reply ERROR "Not in slave mode"
       return
     }
     set sm [::RunstateMachineSingleton %AUTO%]
     set currentState [$sm getState]
+    ::ReadoutGUIPanel::Log \
+      RemoteControl output "State transition from '$currentState' to '$to'"
     if {[catch {$sm masterTransition $to} msg]} {
       $self _reply ERROR "The current state ($currentState) does not allow transition to $to state $msg"
     } else {
@@ -663,6 +683,7 @@ snit::type ReadoutGuiRemoteControl {
   #   * Let the data source manager singleton do the rest of the work
   #
   method _init {} {
+    ::ReadoutGUIPanel::Log RemoteControl output "_init"
     if {![$self _slaveMode]} {
       $self _reply ERROR "Not in slave mode"
       return
@@ -693,6 +714,7 @@ snit::type ReadoutGuiRemoteControl {
   #   *   slave - boolean true if we are in slave mode.
   #
   method _get what {
+    ::ReadoutGUIPanel::Log RemoteControl debug "_get '$what'"
     if {$what eq "state"} {
       flush stdout
       set sm [::RunstateMachineSingleton %AUTO%]
@@ -725,6 +747,7 @@ snit::type ReadoutGuiRemoteControl {
   #     everything else.
   #
   method _transitionTo {state} {
+    ::ReadoutGUIPanel::Log RemoteControl output "_transitionTo '$state'"
     flush stdout
     if {![$self _slaveMode]} {
       $self _reply ERROR "Not in slave mode"
@@ -911,12 +934,13 @@ namespace eval RemoteControlClient {
 
     # define a new proc called end that will handle whether to forward or not
     proc ::end {} {
-
+      ::ReadoutGUIPanel::Log Master output "Substitute end"
     # get the connection status
       set connectionStatus [$::RemoteControlClient::control getConnectionStatus]
 
       if {[lindex $connectionStatus 1]} {
       # connection to send requests on is good... go ahead and forward
+        ::ReadoutGUIPanel::Log Master output "Asking client to end"
         $::RemoteControlClient::control send "end"
       } else {
       # not connected so don't try to forward... just end as normal
@@ -928,6 +952,7 @@ namespace eval RemoteControlClient {
 
     ## Define a new proc to send state transitions
     proc ::masterTransition to {
+      ::RedaoutGUIPanel::Log Master output "masterTransition  '$to'"
       set stateMachine [::RunstateMachineSingleton %AUTO%]
       $stateMachine masterTransition $to
       $stateMachine destroy

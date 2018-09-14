@@ -15,7 +15,7 @@ COMPILATION_FLAGS = -I@top_srcdir@/base/headers -DUSE_PTHREADS @LIBTCLPLUS_CFLAG
 
 libdaqthreads_la_LDFLAGS = -version-info $(SOVERSION) \
 		-Wl,"-rpath-link=$(libdir)"	\
-		@LIBTCLPLUS_LDFLAGS@		\
+		@LIBEXCEPTION_LDFLAGS@		\
 		$(THREADLD_FLAGS)
 libdaqthreads_la_CXXFLAGS=$(THREADCXX_FLAGS) $(COMPILATION_FLAGS)
 
