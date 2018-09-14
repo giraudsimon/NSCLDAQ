@@ -96,6 +96,9 @@ namespace eval ::EVBC {
 #    * -destring  - Final destination ring of glom's output.
 #                   defaults to the users's name.
 #    * -glomid    - Source id to assign to built physics events
+#    * -maxfragments - maximum number of fragments glombuilds into an event.
+#                   prevents stuck timestamps from crashing.
+#
 snit::type EVBC::StartOptions {
     option -teering   0
     option -teeringname "" 
@@ -104,6 +107,7 @@ snit::type EVBC::StartOptions {
     option -glomid -default 0
     option -glomtspolicy -configuremethod checkTsPolicy -default latest
     option -destring -default $::tcl_platform(user) -configuremethod updateLoggerRing
+    option -maxfragments -default 1000;    #Same default as program.
     
     variable policyValues [list earliest latest average]
     
@@ -276,12 +280,13 @@ proc EVBC::start args {
     #
     
     # set glom "valgrind --tool=callgrind [file join $bindir glom] --dt=[$options cget -glomdt] "
-    set glom "[file join $bindir glom] --dt=[$options cget -glomdt] "
+    set glom "[file join $bindir glom] --dt=[$options cget -glomdt]"
     if {![$options cget -glombuild]} {
         append glom " --nobuild "
     }
     append glom " --sourceid=[$options cget -glomid]"
     append glom " --timestamp-policy=[$options cget -glomtspolicy] "
+    append glom "  --maxfragments [$options cget -maxfragments]"
     append pipecommand " | $glom  "
     #
     #  Ground the pipeline in the -destring 
@@ -622,7 +627,7 @@ proc EVBC::onBegin {} {
             -glomdt    [$EVBC::applicationOptions cget -glomdt]    \
             -glomid    [$EVBC::applicationOptions cget -glomid]    \
             -glomtspolicy [$EVBC::applicationOptions cget -glomtspolicy] \
-            -destring  $destring
+            -destring  $destring -maxfragments [$EVBC::applicationOptions cget -maxfragments]
         
         
         if {[::EVBC::_guiExists]} {
@@ -704,7 +709,7 @@ proc EVBC::configParams {parameter value} {
     
     if {$::EVBC::pipefd ne ""}  {
         # send the command and flush the pipe:
-        puts "Sending: EVB::config set $parameter $value"
+        
         puts $EVBC::pipefd "EVB::config set $parameter $value"
         ::flush $EVBC::pipefd
     }
@@ -916,14 +921,20 @@ proc ::EVBC::_onTsPolicyChanged {w policy} {
 # @param w - widget that is the control panel.
 # @param build - Boolean indicating if event building should be done.
 # @param dt    - Coincidence window for the build.
+# @param maxf  - max frags
 #
-proc ::EVBC::_onGlomParamsChanged {w build dt} {
+proc ::EVBC::_onGlomParamsChanged {w build dt maxf} {
+    
     if {![::EVBC::_checkWarnRestart]} {
+    
         $::EVBC::applicationOptions configure -glomdt $dt
         $::EVBC::applicationOptions configure -glombuild $build
+        $::EVBC::applicationOptions configure -maxfragments $maxf
     } else {
+    
         $w configure -build [$::EVBC::applicationOptions cget -glombuild]
         $w configure -dt    [$::EVBC::applicationOptions cget -glomdt]
+        $w configure -maxfragments $maxf
     }
 }
 ##
@@ -1009,9 +1020,11 @@ proc ::EVBC::updateGuiFromOptions {appOpts} {
     .evbcp configure -tspolicy [$appOpts cget -glomtspolicy]
     .evbcp configure -build    [$appOpts cget -glombuild]
     .evbcp configure -dt       [$appOpts cget -glomdt]
+    .evbcp configure -maxfragments [$appOpts cget -maxfragments]
     
     .evbcp configure -tscommand [list ::EVBC::_onTsPolicyChanged .evbcp %P] 
-    .evbcp configure -glomcmd   [list ::EVBC::_onGlomParamsChanged .evbcp %B %T]
+    .evbcp configure -glomcmd   [list ::EVBC::_onGlomParamsChanged .evbcp %B %T %M]
+    
     
     #  Connect the tee ring controls and set initial values of the UI:
     

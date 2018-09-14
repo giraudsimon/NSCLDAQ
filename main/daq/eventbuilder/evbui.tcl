@@ -142,6 +142,7 @@ snit::widgetadaptor ::EVBC::tsselector {
 #     -dt     - Time interval if building.
 #     -state  - Widget state (note that the dt widget is also disabled if
 #               building is off).
+#     -maxfragments
 #     -command - Script to invoke on UI changes:
 #                 - %B - build boolena.
 #                 - %T - coincidence interval.
@@ -150,6 +151,8 @@ snit::widgetadaptor ::EVBC::buildparams {
     option -build -default 1  -configuremethod _config10
     option -dt    -default 1     -type [list snit::integer -min 1] \
             -configuremethod _configdt
+    option -maxfragments -default 1000 -type [list snit::integer -min 1] \
+        -configuremethod _configmaxfrag
     option -command -default [list]
     option -state -default normal -configuremethod _configState
     
@@ -163,10 +166,15 @@ snit::widgetadaptor ::EVBC::buildparams {
             -command [mymethod _spinChanged ] \
             -validatecommand [mymethod _validateSpin %P] -validate all          \
             -from 1 -to 100000 -width 5 -state disabled
+        nscl::spinbox $win.maxfrag -text {max frags} \
+            -command [mymethod _maxChanged] \
+            -validatecommand [mymethod _validateSpin %P] -validate all \
+            -from 1 -to 100000 -width 6
         $win.dt set 1
-	ttk::label $win.dtlabel -text {Coincidence interval}
-     
-        grid $win.build $win.dt $win.dtlabel -sticky w   
+	    ttk::label $win.dtlabel -text {Coincidence interval}
+        ttk::label $win.maxlabel -text {Max Frags}
+        grid $win.build $win.dt $win.dtlabel -sticky w
+        grid $win.maxfrag $win.maxlabel -sticky w
 	
 	$self configurelist $args
     }
@@ -219,6 +227,16 @@ snit::widgetadaptor ::EVBC::buildparams {
         $win.dt set $value
     }
     ##
+    # _configmaxfrag
+    #    Change the max fragments.
+    # @param optname
+    # @param optval
+    #
+    method _configmaxfrag {optname optval} {
+        set options($optname) $optval
+        $win.maxfrag set $optval
+    }
+    ##
     # _configState
     #    Validate that the state is either normal or disabled and
     #    set the widgets to the proper state:
@@ -227,11 +245,13 @@ snit::widgetadaptor ::EVBC::buildparams {
     # @param value   - Proposed value.
     #
     method _configState {optname value} {
+        puts "Config STate"
         if {$value ni {normal disabled} } {
             error "$optname's value must be normal or disabled, was $value"
         }
         set options($optname) $value
-        foreach w [list build dt] {
+        foreach w [list build dt maxfrag] {
+            puts "configure $win.$w state: $value"
             $win.$w configure -state $value
             
             #  This adjusts the state of the det widget sothat it's going to be
@@ -252,7 +272,7 @@ snit::widgetadaptor ::EVBC::buildparams {
     method _onChanged {} {
         set cmd $options(-command)
         if {$cmd ne ""} {
-            set cmd [string map [list %B $options(-build) %T $options(-dt)] $cmd]
+            set cmd [string map [list %B $options(-build) %T $options(-dt) %M $options(-maxfragments)] $cmd]
             uplevel #0 $cmd
         }
     }
@@ -277,6 +297,13 @@ snit::widgetadaptor ::EVBC::buildparams {
     #
     method _spinChanged {} {
         set options(-dt) [$win.dt get]
+        $self _onChanged
+    }
+    ##
+    # _maxChanged - max fragments changed.
+    #
+    method _maxChanged {} {
+        set options(-maxfragments) [$win.maxfrag get]
         $self _onChanged
     }
     #---------------------------------------------------------------------------
@@ -324,6 +351,7 @@ snit::widgetadaptor ::EVBC::glomparams {
     delegate option -build to buildparams
     delegate option -dt    to buildparams
     delegate option -buildcommand to buildparams as -command
+    delegate option -maxfragments to buildparams
 
     delegate option -title to hull as -text
     delegate option -relief to hull
@@ -657,6 +685,7 @@ snit::widgetadaptor EVBC::eventbuildercp {
     delegate option -policy    to glomparams
     delegate option -tscommand to glomparams
     delegate option -tspolicy  to glomparams as -policy
+    delegate option -maxfragments to glomparams
 
 
     delegate option -teetitle   to tee as -title
