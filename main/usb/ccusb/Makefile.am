@@ -26,6 +26,7 @@ CCUSBReadout_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb \
 	-I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@ \
 	-I@top_srcdir@/base/thread \
 	-I@top_srcdir@/base/dataflow	                       \
+	-I@top_srcdir@/base/os				\
         -I@top_srcdir@/servers/portmanager \
 	$(TCL_FLAGS) @THREADCXX_FLAGS@ 
 
