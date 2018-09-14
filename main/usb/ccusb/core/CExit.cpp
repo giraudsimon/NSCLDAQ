@@ -23,6 +23,7 @@
 #include "CExit.h"
 #include <TCLInterpreter.h>
 #include <TCLInterpreterObject.h>
+#include <CTheApplication.h>
 #include <Globals.h>
 #include <TclServer.h>
 #include <CAcquisitionThread.h>
@@ -61,12 +62,14 @@ CExit::~CExit() {}
 int
 CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
+    CTheApplication* pApp = CTheApplication::getInstance();
     try {
         bindAll(interp, objv);
         requireAtMost(objv, 2, "exit takes at most the status parameters");
         
         // Default the exit status and override it if there is a param:
         
+        pApp->logStateChangeRequest("Exiting");
         int status = 0;
         if (objv.size() == 2) {
             status = objv[1];                // Throws if not integer.
@@ -76,6 +79,9 @@ CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     }
     catch (std::string msg) {
         interp.setResult(msg);
+        std::string log = "Exit failed : ";
+        log += msg;
+        pApp->logStateChangeStatus(log.c_str());
     }
     
     return TCL_ERROR;
@@ -83,11 +89,14 @@ CExit::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 
 void CExit::exit(int status)
 {
+    CTheApplication* pApp = CTheApplication::getInstance();
+    
   // Send an event to the TclServer proces's interpreter asking it to exit.
   TclServer* pServer = ::Globals::pTclServer;
   if (pServer) {
     pServer->scheduleExit();
     pServer->join();
+    pApp->logProgress("Tcl server exited");
   }
 
   // End the run and join with the acquisition thread
@@ -95,9 +104,11 @@ void CExit::exit(int status)
   if (pReadout->isRunning()) {
     CControlQueues::getInstance()->EndRun();
     CAcquisitionThread::getInstance()->join();
+    pApp->logProgress("Acquisition thread exited");
   }
 
   // Exit the program:
 
+  pApp->logStateChangeStatus("exiting normally");
   Tcl_Exit(status);
 }

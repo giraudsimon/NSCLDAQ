@@ -17,6 +17,7 @@
 #include <config.h>
 #include "CEndRun.h"
 #include <TCLInterpreter.h>
+#include <CTheApplication.h>
 #include <TCLInterpreterObject.h>
 #include <Globals.h>
 #include <CAcquisitionThread.h>
@@ -67,11 +68,15 @@ CEndRun::operator()(CTCLInterpreter& interp,
 		   objv,usage);
     return TCL_ERROR;
   }
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Ending run");
+  
   CRunState* pState = CRunState::getInstance();
   if (pState->getState() == CRunState::Idle) {
     tclUtil::Usage(interp,
 		   "Invalid state for end run. must not already be idle",
 		   objv, usage);
+    pApp->logStateChangeStatus("Run was already ended");
     return TCL_ERROR;
   }
 
@@ -80,14 +85,17 @@ CEndRun::operator()(CTCLInterpreter& interp,
   if(CAcquisitionThread::getInstance()->isRunning()) {
     
     CControlQueues* pRequest = CControlQueues::getInstance();
+    pApp->logProgress("Asking acquisition thread to end run");
     pRequest->EndRun();
  
 
     CAcquisitionThread::waitExit();
+    pApp->logStateChangeStatus("Acquisition thread is exited");
   }
   //  delete Globals::pConfig;	// Delete the old configuration database.
 
   pState->setState(CRunState::Idle);
+  pApp->logProgress("Run state set to idle");
 
   return TCL_OK;
 }

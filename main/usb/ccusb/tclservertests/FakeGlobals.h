@@ -59,9 +59,5 @@ namespace Globals {
   CTCLInterpreter*       pMainInterpreter = 0;
 };
 
-namespace CTheApplication {
-
-  void HandleAcqThreadError(Tcl_Event* pEvent, int flags) {}
-}
 
 #endif
