@@ -30,6 +30,7 @@
 #include <CCCUSB.h>
 #include <CCCUSBReadoutList.h>
 #include <CReadoutModule.h>
+#include <CTheApplication.h>
 
 #include <thread>
 #include <chrono>
@@ -99,13 +100,15 @@ CBeginRun::operator()(CTCLInterpreter& interp,
                        usage);
         return TCL_ERROR;
     }
-
+    CTheApplication* pApp = CTheApplication::getInstance();
     CRunState* pState = CRunState::getInstance();
+    pApp->logStateChangeRequest("Begin run");
     if (pState->getState() != CRunState::Idle) {
         tclUtil::Usage(interp,
                        "Invalid run state for begin be sure to stop the run",
                        objv,
                        usage);
+        pApp->logStateChangeStatus("Run state is not idle begin failed");
         return TCL_ERROR;
     }
     // Set the state to match the appropriate set of variables:
@@ -118,6 +121,7 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     uint16_t runNumber;
     sscanf(runNumberString, "%hu", &runNumber);
     pState->setRunNumber(runNumber);
+    pApp->logProgress("Run number set");
 
     CTCLVariable title(&interp, "title", false);
     const char *titleString = title.Get(TCL_GLOBAL_ONLY);
@@ -125,10 +129,12 @@ CBeginRun::operator()(CTCLInterpreter& interp,
         titleString = "No Title Set"; // If no title variable default it.
     }
     pState->setTitle(string(titleString));
-
+    pApp->logProgress("Title set");
+    
     // Re-establish connection to the controller:
 
     reconnect();
+    pApp->logProgress("CCUSB re-connected");
 
     // Check that the configuration file processes correctly:
 
@@ -137,26 +143,33 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     string errorMessage = "Begin - configuration file processing failed: ";
     try {
         pConfig->processConfiguration(Globals::configurationFilename);
+        pApp->logProgress(
+            "Configuration file sucessfully processed by Begin command"
+        );
     }
     catch (string msg) {
         errorMessage += msg;
         tclUtil::setResult(interp, errorMessage);
+        pApp->logStateChangeStatus(errorMessage.c_str());
         return TCL_ERROR;
     }
     catch (const char* msg) {
         errorMessage += msg;
         tclUtil::setResult(interp, errorMessage);
+        pApp->logStateChangeStatus(errorMessage.c_str());
         return TCL_ERROR;
     }
     catch (CException& e) {
         errorMessage += e.ReasonText();
         tclUtil::setResult(interp, errorMessage);
+        pApp->logStateChangeStatus(errorMessage.c_str());
         return TCL_ERROR;
     }
     catch (...) {
         // Configuration file processing error of some sort...
 
         tclUtil::setResult(interp, errorMessage);
+        pApp->logStateChangeStatus(errorMessage.c_str());
         return TCL_ERROR;
 
     }
@@ -174,8 +187,10 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     }
     if (stacks.size() > MAX_STACK_STORAGE) {
         tclUtil::setResult(interp, "**** Your configuration file exceeds the maximum stack storage space ****");
+        pApp->logStateChangeStatus("Begin failed - stacks are too large for CCUSB");
         return TCL_ERROR;
     }
+    pApp->logProgress("Stacks will fit in CCUSB stack memory");
 
     // It did so we can kill it off and start the run.
     // we kill it off because supporting Tcl drivers requires the configuration be processed a bit specially
@@ -186,8 +201,9 @@ CBeginRun::operator()(CTCLInterpreter& interp,
 
     CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
     pReadout->start(Globals::pUSBController);
-
+    pApp->logProgress("Scheduled the acquisition thread to complete startup");
     tclUtil::setResult(interp, string("Begin - Run started"));
+    pApp->logStateChangeStatus("Begin command successfully initiated run start");
     return TCL_OK;
 }
 

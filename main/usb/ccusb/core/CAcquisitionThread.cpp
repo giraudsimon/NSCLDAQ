@@ -19,6 +19,7 @@
 #include <CTheApplication.h>
 #include <CSystemControl.h>
 #include <CReadoutModule.h>
+#include <CTheApplication.h>
 #include <CStack.h>
 #include <CCCUSB.h>
 #include <CCCUSBReadoutList.h>
@@ -42,7 +43,7 @@
 
 #include <string.h>
 #include <errno.h>
-
+#include <sstream>
 using namespace std;
 
 
@@ -138,12 +139,16 @@ CAcquisitionThread::waitExit()
 void
 CAcquisitionThread::init()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logProgress("Acquisition thread running");
   std::string errorMessage;
   try {
     // Thread is off and running now. 
     m_Running = true;	//	(End run command causes endRun() to execute)
     startDaq();  		// Setup and start data taking.
+    pApp->logProgress("Data Acquisition initialized and started");
     beginRun();			// Emit begin run buffer.
+    pApp->logStateChangeStatus("Begin run emitted");
   }
   catch (string msg) {
     cerr << "CAcquisition thread caught a string exception: " << msg << endl;
@@ -170,6 +175,9 @@ CAcquisitionThread::init()
     //
     if (errorMessage != "") {
         reportErrorToMainThread(errorMessage);
+        std::string log = "Acquisition startup failed: ";
+        log += errorMessage;
+        pApp->logStateChangeStatus(log.c_str());
     }
 }
 
@@ -180,9 +188,12 @@ void
 CAcquisitionThread::operator()()
 {
   std::string errorMessage;
+  CTheApplication* pApp = CTheApplication::getInstance();
+
   try {
-    
+    pApp->logProgress("Entering Acquisition thread main loop");    
     mainLoop();			// Enter the main processing loop.
+    pApp->logProgress("Acquisition thread main loop exited");
   }
   catch (string msg) {
     cerr << "CAcquisition thread caught a string exception: " << msg << endl;
@@ -199,6 +210,7 @@ CAcquisitionThread::operator()()
   }
   catch(int i) {
     // normal end run.
+    pApp->logStateChangeStatus("Acquisition thread ended the run");
   }
   catch (...) {			// exceptions are used to exit the main loop.?
     std::cerr << "Caught unexpected condition\n";
@@ -207,6 +219,9 @@ CAcquisitionThread::operator()()
   endRun();			// Emit end run buffer.
   m_Running = false;		// Exiting.
   if (errorMessage != "") {
+    std::string log = "Acquisition thread forcing program exit: ";
+    log += errorMessage;
+    pApp->logStateChangeRequest(log.c_str());
     reportErrorToMainThread(errorMessage);
     usleep(1*1000*1000);   // Let the error get processed.
     exit(EXIT_FAILURE);
@@ -253,7 +268,7 @@ CAcquisitionThread::mainLoop()
       CControlQueues::opCode request;
       bool   gotOne = pCommands->testRequest(request);
       if (gotOne) {
-	processCommand(request);
+        processCommand(request);
       }
     }
   }
@@ -275,7 +290,7 @@ void
 CAcquisitionThread::processCommand(CControlQueues::opCode command)
 {
   CControlQueues* queues = CControlQueues::getInstance();
-
+  CTheApplication* pApp = CTheApplication::getInstance();
   if (command == CControlQueues::ACQUIRE) {
     stopDaqImpl();
     queues->Acknowledge();
@@ -286,13 +301,18 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command)
   }
   else if (command == CControlQueues::END) {
     if (m_Running) {
+      pApp->logStateChangeRequest("Acquisition thread asked to end run");
       stopDaq();
+      pApp->logProgress("Data taking stopped by acquisition thread");
     }
     queues->Acknowledge();
+    pApp->logStateChangeStatus("End run acknowledgement sent to requestor");
     throw 1;
   }
   else if (command == CControlQueues::PAUSE) {
+    pApp->logStateChangeRequest("Acquisition thread asked to pause a run");
     pauseRun();
+    pApp->logProgress("Pause run item passed to output thread");
     pauseDaq();
 
   }
@@ -354,17 +374,23 @@ CAcquisitionThread::processBuffer(DataBuffer* pBuffer)
 void
 CAcquisitionThread::startDaq()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
   CriticalSection lock(CCCUSB::getGlobalMutex());
+  pApp->logProgress(
+    "Acquisition thread locked ccusb - will automatically release"
+  );
 
   CRunState* pState = CRunState::getInstance();
   pState->setState(CRunState::Active);
-
+  pApp->logProgress("Set state active");
+  
   char junk[100000];
   size_t moreJunk;
   m_pCamac->usbRead(junk, sizeof(junk), &moreJunk, 1*1000); // One second timeout.
-
+  pApp->logProgress("Read any junk stuck in the CCUSB FIFO");
+  
   m_pCamac->writeActionRegister(CCCUSB::ActionRegister::clear);
-
+  pApp->logProgress("Action register clear performed");
 
   uint32_t fware;
   int status;
@@ -399,6 +425,9 @@ CAcquisitionThread::startDaq()
       CCCUSB::OutputSourceRegister::nimO2Acquire |
       CCCUSB::OutputSourceRegister::nimO3BusyEnd);
 
+  pApp->logProgress(
+    "Default values for bulk xfer, gblmode and output selectors written"
+  );
   // Process the configuration. This must be done in a way that preserves the
   // Interpreter since loadStack and Initialize for each stack will need the
   // interpreter for our support of tcl drivers.
@@ -406,7 +435,7 @@ CAcquisitionThread::startDaq()
   Globals::pConfig = new CConfiguration;
   Globals::pConfig->processConfiguration(Globals::configurationFilename);
   std::vector<CReadoutModule*> Stacks = Globals::pConfig->getStacks();
-
+  pApp->logProgress("Configuration file processed in acquisition thread");
 
   // The CCUSB has two stacks to load; an event stack and a scaler stack.
   // though the loop below makes you believe it might have an arbitrary number...
@@ -415,18 +444,26 @@ CAcquisitionThread::startDaq()
   cerr << "Loading " << Stacks.size() << " Stacks to cc-usb\n";
   m_haveScalerStack = false;
   for(int i =0; i < Stacks.size(); i++) {
+    std::stringstream stackmsg;
+    stackmsg << "Processing stack " << i;
+    pApp->logProgress(stackmsg.str().c_str());
+    
     CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
     assert(pStack);
     if (pStack->getTriggerType() == CStack::Scaler) {
       m_haveScalerStack = true;
     }
     pStack->Initialize(*m_pCamac);    // INitialize daq hardware associated with the stack.
+    pApp->logProgress("Stack initialized");
     pStack->loadStack(*m_pCamac);     // Load into CC-USB .. The stack knows if it is event or scaler
+    pApp->logProgress("Stack loaded");
     pStack->enableStack(*m_pCamac);   // Enable the trigger logic for the stack.
+    pApp->logProgress("Stack enabled");
   }
  
 
   CCusbToAutonomous();
+  pApp->logStateChangeStatus("CCUSB is now in data taking mode");
 }
 
 /*!
@@ -437,18 +474,29 @@ CAcquisitionThread::startDaq()
 */
 void CAcquisitionThread::stopDaqImpl()
 {
+  CTheApplication* pApp = CTheApplication::getInstance();
     int actionRegister = 0;
-    if (m_haveScalerStack) actionRegister |= CCCUSB::ActionRegister::scalerDump;
+    if (m_haveScalerStack) {
+      actionRegister |= CCCUSB::ActionRegister::scalerDump;
+    }
     m_pCamac->writeActionRegister(actionRegister);
+    pApp->logProgress(
+      "Wrote action register to stop acquisition and dump scalers if needed"
+    );
 
 
     drainUsb();
-
+    pApp->logProgress("CCUSB Fifo Drained of buffers");
+    
     std::vector<CReadoutModule*> Stacks = Globals::pConfig->getStacks();
     for(int i =0; i < Stacks.size(); i++) {
+      std::stringstream smsg;
+      smsg << "Processing stack: " << i;
+      pApp->logProgress(smsg.str().c_str());
       CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
       assert(pStack);
       pStack->onEndRun(*m_pCamac);    // Call onEndRun for daq hardware associated with the stack.
+      pApp->logProgress("End run processing completed");
     }
 }
 
@@ -465,8 +513,13 @@ void
 CAcquisitionThread::stopDaq()
 {
   CriticalSection lock(CCCUSB::getGlobalMutex());
-
+  CTheApplication::getInstance()->logProgress(
+    "Acquisition thread stopDaq locked CCUSB - it will auto unlock"
+  );
   stopDaqImpl();
+  CTheApplication::getInstance()->logStateChangeStatus(
+    "Data taking halted in acquisition thread"
+  );
 }
 /*!
   Pause the daq. This means doing a stopDaq() and fielding 
@@ -477,10 +530,15 @@ void
 CAcquisitionThread::pauseDaq()
 {
   CControlQueues* queues = CControlQueues::getInstance();
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Stopping data acquisition for pause");
   stopDaq();
+  pApp->logProgress("stopped");
   CRunState* pState = CRunState::getInstance();
   pState->setState(CRunState::Paused);
+  pApp->logProgress("State marked paused");
   queues->Acknowledge();
+  pApp->logStateChangeStatus("Pause ack sent to requestor");
 
   while (1) {
     CControlQueues::opCode req = queues->getRequest();
@@ -496,15 +554,21 @@ CAcquisitionThread::pauseDaq()
       queues->Acknowledge();
     }
     else if (req == CControlQueues::END) {
+      pApp->logStateChangeRequest("End run requested in paused acq thread");
       queues->Acknowledge();
       pState->setState(CRunState::Idle);
+      pApp->logStateChangeStatus("Paused run ended in acq thread");
       throw 0;
     }
     else if (req == CControlQueues::RESUME) {
+      pApp->logStateChangeRequest("Resume of paused run requested in acq thread");
       resumeRun();
+      pApp->logProgress("Resume item queued for output thread");
       startDaq();
+      pApp->logProgress("Data taking initiated in CCUSB");
       queues->Acknowledge();
       pState->setState(CRunState::Active);
+      pApp->logStateChangeStatus("Resume run completed in acquisition thread");
       return;
     }
     else {

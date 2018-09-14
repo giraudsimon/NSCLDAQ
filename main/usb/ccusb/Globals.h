@@ -36,7 +36,7 @@ class CConfiguration;
 class CCCUSB;
 class TclServer;
 class CTCLInterpreter;
-
+class CTheApplication;
 
 
 
@@ -64,7 +64,8 @@ namespace Globals {
   extern char*           pTimestampExtractor;
   extern TclServer*      pTclServer;
   extern CTCLInterpreter* pMainInterpreter;
-  extern Tcl_ThreadId           mainThread;   
+  extern Tcl_ThreadId           mainThread;
+  extern CTheApplication*  pApplication;
 };
 
 #endif

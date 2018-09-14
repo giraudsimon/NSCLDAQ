@@ -39,6 +39,7 @@ CCUSBReadout_LDADD	= \
 	@top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+	@top_builddir@/base/os/libdaqshm.la \
 	@LIBTCLPLUS_LDFLAGS@	\
 	@TCL_LDFLAGS@ @THREADLD_FLAGS@ 
 

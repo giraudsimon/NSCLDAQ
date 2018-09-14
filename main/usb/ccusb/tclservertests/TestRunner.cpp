@@ -28,3 +28,28 @@ int main(int argc, char** argv)
   }
   return !wasSucessful;
 }
+/// Stub application singleton.
+
+class CTheApplication {
+private:
+  static CTheApplication* m_pInstance;
+  CTheApplication() {}
+  ~CTheApplication() {}
+public:
+  static   CTheApplication* getInstance();
+  void HandleAcqThreadError(Tcl_Event* pEvent, int flags);
+  void logStateChangeRequest(const char*);
+  void logStateChangeStatus(const char*);
+  void logProgress(const char*);
+};
+
+CTheApplication* CTheApplication::m_pInstance(nullptr);
+CTheApplication* CTheApplication::getInstance()
+{
+  if (!m_pInstance) m_pInstance = new CTheApplication;
+  return m_pInstance;
+}
+void CTheApplication::HandleAcqThreadError(Tcl_Event* pEvent, int flags) {}
+void CTheApplication::logStateChangeRequest(const char* m) {}
+void CTheApplication::logStateChangeStatus(const char* m) {}
+void CTheApplication::logProgress(const char* m) {}

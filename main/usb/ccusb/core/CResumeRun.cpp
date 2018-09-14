@@ -20,6 +20,7 @@
 #include <TCLInterpreter.h>
 #include <CRunState.h>
 #include <CControlQueues.h>
+#include <CTheApplication.h>
 #include <tclUtil.h>
 
 using std::string;
@@ -65,18 +66,22 @@ CResumeRun::operator()(CTCLInterpreter& interp,
 		   usage);
     return TCL_ERROR;
   }
+  CTheApplication* pApp = CTheApplication::getInstance();
+  pApp->logStateChangeRequest("Resuming run");
   CRunState* pState = CRunState::getInstance();
   if (pState->getState() != CRunState::Paused) {
     tclUtil::Usage(interp,
 		   "Invalid run state, to resume must be paused",
 		   objv, usage);
+    pApp->logStateChangeStatus("Cannot resume run - it's not paused");
     return TCL_ERROR;
   }
   // resume the run:
 
   CControlQueues* pRequest = CControlQueues::getInstance();
   pRequest->ResumeRun();
-  
+  pApp->logProgress("Asked the acquisition thread to resume data taking");
+  pApp->logStateChangeStatus("resume command processing completed successfully");
 
   return TCL_OK;
 }

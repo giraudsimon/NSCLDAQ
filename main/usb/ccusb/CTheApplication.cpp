@@ -40,6 +40,8 @@
 #include <CAcquisitionThread.h>
 #include <CRunState.h>
 #include <CControlQueues.h>
+#include <NSCLDAQLog.h>
+#include <CMutex.h>
 
 #include <CPortManager.h>
 #include <Events.h>
@@ -73,6 +75,7 @@ static  string daqConfigBasename("daqconfig.tcl");
 static  string ctlConfigBasename("controlconfig.tcl");
 static const uint32_t bufferCount(32); // Number of buffers that can be inflight.
 
+CMutex logLock;
 
 // Static member variables and initialization.
 
@@ -127,6 +130,13 @@ int CTheApplication::operator()(int argc, char** argv)
   // Parse the command line parameters.  This exits on failure:
 
   cmdline_parser(argc, argv, &arg_struct);
+  
+  // Set up logging data and logger:
+  
+  if (arg_struct.log_given) m_logFile = arg_struct.log_arg;
+  m_logLevel = arg_struct.debug_arg;
+  setupLogging();
+  Globals::pApplication = this;
 
   // Save the data source id:
   
@@ -233,8 +243,59 @@ int CTheApplication::operator()(int argc, char** argv)
   
   return EX_SOFTWARE; // keep compiler happy, startInterpreter should not return.
 }
+/**
+ * getInstance
+ *    Returns the the application instance.
+ * @return CTheApplication*
+ */
+CTheApplication*
+CTheApplication::getInstance()
+{
+  return Globals::pApplication;
+}
 
-
+/**
+ * logStateChangeRequest
+ *    Log (info level) a state change request message.
+ *
+ *  @param msg -log message.
+ */
+void
+CTheApplication::logStateChangeRequest(const char* msg)
+{
+  if(!m_logFile.empty()) {
+    CriticalSection l(logLock);
+    daqlog::info(msg);
+  }
+}
+/**
+ * logStateChangeStatus
+ *    Logs the final status of a state change (debug).
+ *
+ *  @param msg - the message to log.
+ */
+void
+CTheApplication::logStateChangeStatus(const char* msg)
+{
+  if (!m_logFile.empty()) {
+    CriticalSection l(logLock);
+    daqlog::debug(msg);
+  }
+}
+/**
+ * logProgress
+ *   Logs progress (trace) through a state transition.
+ *
+ * @param msg - message to log.
+ */
+void
+CTheApplication::logProgress(const char* msg)
+{
+  if(!m_logFile.empty()) {
+    CriticalSection l(logLock);
+    daqlog::trace(msg);
+  }
+}
 /*
    Start the output thread.  This thread is responsible for 
    reformatting and transferring buffers of data from the CC-USB to 
@@ -479,6 +540,32 @@ CTheApplication::destinationRing(const char* pRingName)
   }
 }
 
+/**
+ * setupLogging
+ *    Do whatever logging initialization is required.
+ */
+void
+CTheApplication::setupLogging()
+{
+   if (!m_logFile.empty()) {
+    daqlog::setLogFile(m_logFile);
+    switch (m_logLevel) {
+      case 0:
+        daqlog::setLogLevel(daqlog::Info);
+        break;
+      case 1:
+        daqlog::setLogLevel(daqlog::Debug);
+        break;
+      case 2:
+        daqlog::setLogLevel(daqlog::Trace);
+        break;
+      default:
+        std::cerr << "Invalid log level : " << m_logLevel
+          << " must be 0,1,2\n";
+        exit(EXIT_FAILURE);
+    }
+   }
+}
 ///**
 // * ExitHandler
 // *

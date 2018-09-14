@@ -24,6 +24,7 @@ using std::string;
 class CConfiguration;
 class CCCUSB;
 class TclServer;
+class CTheApplication;
 
 namespace Globals {
   CConfiguration*    pConfig;
@@ -37,4 +38,5 @@ namespace Globals {
   TclServer*         pTclServer;
   CTCLInterpreter*   pMainInterpreter(0);
   Tcl_ThreadId           mainThread;
+  CTheApplication*   pApplication;
 };

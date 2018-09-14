@@ -53,6 +53,9 @@ private:
   char**               m_Argv;
   CTCLInterpreter*     m_pInterpreter;
   CSystemControl       m_sysControl;
+  
+  std::string          m_logFile;
+  unsigned             m_logLevel;
 public:
   // Canonicals
 
@@ -70,6 +73,12 @@ public:
   virtual int operator()(int argc, char** argv);
 
   const CSystemControl& getSystemControl() const { return m_sysControl;}
+  
+  static CTheApplication* getInstance();
+  
+  void logStateChangeRequest(const char* msg);   // info
+  void logStateChangeStatus(const char* msg);    // debug
+  void logProgress(const char* msg);             // trace.
 
   // Segments of operation.
 private:
@@ -82,7 +91,8 @@ private:
   void initializeBufferPool();
   void enumerate();
   std::string destinationRing(const char* pRingName);
-
+  void setupLogging();
+  
   // static functions:
 
   static std::string makeConfigFile(std::string baseName);
