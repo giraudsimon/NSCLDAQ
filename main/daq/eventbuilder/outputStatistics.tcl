@@ -60,6 +60,7 @@ namespace eval EVB {
 #  - -coldestcount     - Number of fragments output by -coldestid.
 #  - -outbytes         - Total number of bytes output.
 #  - -outrate          - Output rate.
+#  - -window           - Displayed maximum build window.
 #
 #
 #  LAYOUT:
@@ -67,6 +68,7 @@ namespace eval EVB {
 # \verbatim
 #
 #   +-----------------------------------------+
+#   |Build window             bwindow
 #   |Total Fragments          <fragcount>     |
 #   |Total bytes              <outbytes>      |
 #   |Output Rate              <outrate>       |
@@ -84,6 +86,7 @@ snit::widgetadaptor ::EVB::outputSummary {
     option -coldestcount -default "" -configuremethod _unsignedOption
     option -outbytes     -default 0  -configuremethod _unsignedOption
     option -outrate      -default 0.0
+    option -window       -default 20
     
     delegate option -text to hull
     
@@ -92,6 +95,7 @@ snit::widgetadaptor ::EVB::outputSummary {
         
         #  Create the widgets (all ttk::label s)
         
+        ttk::label $win.winl    -text {Build Window sec}
         ttk::label $win.fragl   -text {Total Fragments}
         ttk::label $win.bytesl  -text {Total bytes}
         ttk::label $win.ratel   -text {Output rate}
@@ -100,7 +104,7 @@ snit::widgetadaptor ::EVB::outputSummary {
         ttk::label $win.hotl    -text {Hottest}
         ttk::label $win.coldl   -text {Coldest}
 
-        
+        ttk::label $win.win      -textvariable [myvar options(-window)]
         ttk::label $win.frag           -textvariable ${selfns}::options(-fragments)
         ttk::label $win.bytes          -textvariable ${selfns}::options(-outbytes)
         ttk::label $win.rate           -textvariable ${selfns}::options(-outrate)
@@ -111,12 +115,13 @@ snit::widgetadaptor ::EVB::outputSummary {
         
         # Lay them out
         
-        grid $win.fragl   -           $win.frag
-        grid $win.bytesl  -           $win.bytes
-        grid $win.ratel   -           $win.rate
-        grid x            $win.idl    $win.countl
-        grid $win.hotl    $win.hotid  $win.hotcount  
-        grid $win.coldl   $win.coldid $win.coldcount 
+        grid $win.winl    -           $win.win   -sticky w
+        grid $win.fragl   -           $win.frag -sticky w
+        grid $win.bytesl  -           $win.bytes -sticky w
+        grid $win.ratel   -           $win.rate -sticky w
+        grid x            $win.idl    $win.countl -sticky w
+        grid $win.hotl    $win.hotid  $win.hotcount   -sticky w
+        grid $win.coldl   $win.coldid $win.coldcount  -sticky w
         grid columnconfigure $win {0 1 2 3} -weight 1 -uniform a 
 
         # Process the initial configuration.
