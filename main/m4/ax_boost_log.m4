@@ -106,13 +106,16 @@ AC_DEFUN([AX_BOOST_LOG],
 						[link_log="no"])
 				done
 			fi
-
+#
+#  NSCLDAQ modifications.
+#   If boost::log does not exist it's ok.  Our logging code will just turn off.
+#
 			if test "x$ax_lib" = "x"; then
-				AC_MSG_ERROR(Could not find a version of the library!)
+				AC_MSG_WARN([Could not find a version of boost::log - logging disabled])
 			fi
 
 			if test "x$link_log" = "xno"; then
-				AC_MSG_ERROR(Could not link against $ax_lib !)
+				AC_MSG_WARN([Could not link against $ax_lib ! - logging disabled])
 			fi
 		fi
 
