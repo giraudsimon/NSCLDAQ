@@ -77,10 +77,14 @@ AC_DEFUN([AX_BOOST_LOG],
 		])
 
 		if test "x$ax_cv_boost_log" = "xyes"; then
-			AC_SUBST(BOOST_CPPFLAGS)
 
-			AC_DEFINE(HAVE_BOOST_LOG,,[define if the Boost::Log library is available])
-			BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+		   	# NSCLDAQ modification - note:  In debian distros, it's possible
+			# to have /usr/include/boost/log/trivial.hpp but not have
+			# the library installed.  Therefore we defer the definition of
+			# BOOST_CPPFLAGS and HAVE_BOOST_LOG until
+			# we can verify the library is installed.
+			
+			BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`			
 
 			if test "x$ax_boost_user_log_lib" = "x"; then
 				for libextension in `ls $BOOSTLIBDIR/libboost_log*.so* $BOOSTLIBDIR/libboost_log*.dylib* $BOOSTLIBDIR/libboost_log*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_log.*\)\.so.*$;\1;' -e 's;^lib\(boost_log.*\)\.dylib.*$;\1;' -e 's;^lib\(boost_log.*\)\.a.*$;\1;'` ; do
@@ -106,6 +110,10 @@ AC_DEFUN([AX_BOOST_LOG],
 						[link_log="no"])
 				done
 			fi
+			if test "$link_log" = "yes"; then
+	   		   AC_SUBST(BOOST_CPPFLAGS)
+			   AC_DEFINE(HAVE_BOOST_LOG,,[define if the Boost::Log library is available])
+			fi						
 #
 #  NSCLDAQ modifications.
 #   If boost::log does not exist it's ok.  Our logging code will just turn off.
@@ -117,9 +125,12 @@ AC_DEFUN([AX_BOOST_LOG],
 			if test "x$link_log" = "xno"; then
 				AC_MSG_WARN([Could not link against $ax_lib ! - logging disabled])
 			fi
+
 		fi
 
 		CPPFLAGS="$CPPFLAGS_SAVED"
 		LDFLAGS="$LDFLAGS_SAVED"
 	fi
+
+
 ])
