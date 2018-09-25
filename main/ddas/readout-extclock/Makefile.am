@@ -22,7 +22,7 @@ DDASReadout_extcl_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
-	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions-ExtClock.txt\"
+	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions_ExtClock.txt\"
 
 DDASReadout_extcl_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
