@@ -624,7 +624,9 @@ COutputThread::processStrings(DataBuffer& buffer, StringsBuffer& strings)
 void
 COutputThread::outputTriggerCount(uint32_t runOffset)
 {
-  CRingPhysicsEventCountItem item(m_nEventsSeen, runOffset);
+  time_t now = time(nullptr);
+  CRingPhysicsEventCountItem item(NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER
+				  ,m_nEventsSeen, runOffset, now);
   item.commitToRing(*m_pRing);
 }
 
