@@ -43,7 +43,7 @@ install-data-local:
 	(cd @top_srcdir@ ; echo "`git rev-parse HEAD`" > @prefix@/GIT_COMMIT )
 
 
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) 
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks
 
 check-TESTS:
 	@top_srcdir@/dotests $(SUBDIRS)
