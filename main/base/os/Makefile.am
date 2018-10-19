@@ -14,8 +14,6 @@ libdaqshm_la_LIBADD = @top_builddir@/base/thread/libdaqthreads.la \
 COMPILATION_FLAGS   = @THREADCXX_FLAGS@ @LIBTCLPLUS_CFLAGS@ @BOOST_CPPFLAGS@ @BOOST_EXTRA_CPPFLAGS@ -I@top_srcdir@/base/thread
 
 
-# -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK
-
 libdaqshm_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
 

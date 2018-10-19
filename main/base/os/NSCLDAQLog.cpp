@@ -75,9 +75,9 @@ namespace daqlog {
     public:
 #ifdef HAVE_BOOST_LOG
         static boost::log::trivial::severity_level mapSeverity(logLevel level);
+        static const char* severityString(logLevel level);
 #endif
 
-        static const char* severityString(logLevel level);
     friend void daqlog::reset();
 };                           // daqlog::BoostLogWrapper
 
@@ -280,4 +280,6 @@ daqlog::BoostLogWrapper::mapSeverity(daqlog::logLevel level)
     delete daqlog::BoostLogWrapper::m_pInstance;
     daqlog::BoostLogWrapper::m_pInstance = nullptr;
  }
+
  }
+

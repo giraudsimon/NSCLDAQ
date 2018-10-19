@@ -85,6 +85,8 @@ AC_DEFUN([AX_BOOST_LOG],
 			# we can verify the library is installed.
 			
 			BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`			
+			AC_SUBST(BOOST_CPPFLAGS)
+
 
 			if test "x$ax_boost_user_log_lib" = "x"; then
 				for libextension in `ls $BOOSTLIBDIR/libboost_log*.so* $BOOSTLIBDIR/libboost_log*.dylib* $BOOSTLIBDIR/libboost_log*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_log.*\)\.so.*$;\1;' -e 's;^lib\(boost_log.*\)\.dylib.*$;\1;' -e 's;^lib\(boost_log.*\)\.a.*$;\1;'` ; do
@@ -110,6 +112,7 @@ AC_DEFUN([AX_BOOST_LOG],
 						[link_log="no"])
 				done
 			fi
+
 			if test "$link_log" = "yes"; then
 	   		   AC_SUBST(BOOST_CPPFLAGS)
 			   AC_DEFINE(HAVE_BOOST_LOG,,[define if the Boost::Log library is available])
@@ -126,11 +129,11 @@ AC_DEFUN([AX_BOOST_LOG],
 				AC_MSG_WARN([Could not link against $ax_lib ! - logging disabled])
 			fi
 
+
 		fi
 
 		CPPFLAGS="$CPPFLAGS_SAVED"
 		LDFLAGS="$LDFLAGS_SAVED"
 	fi
-
 
 ])
