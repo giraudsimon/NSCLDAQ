@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+                      "file:///usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd
+"
+>
+<book>
+    <bookinfo>
+      <title>The NSCLDAQ cookbook</title>
+      <author><firstname>Ron</firstname><surname>Fox</surname></author>
+      <revhistory>
+          <revision>
+             <revnumber>0.1</revnumber>
+             <date>October 20, 2018</date>
+             <authorinitials>RF</authorinitials>
+             <revremark>Original Release</revremark>
+          </revision>
+      </revhistory>
+    </bookinfo>
+    <chapter>
+        <title>Introduction</title>
+        <para>
+            This document describes several programs that are distributed with NSCLDAQ since 11.3-006.  These programs are intended to show how to use NSCLDAQ and it support libraries to perform some common tasks.  I anticipate that the set of examples and this documentation will grow with time.
+        </para>
+        <para>
+            The programs described in this cookbook are tested and available, along with Makefiles in the directory tree <filename>$DAQROOT/share/recipes </filename>.  Each of the following chapters will describe one of these recipes as well as provide the actual directory in which the program lives.
+        </para>
+        <para>
+            At the time this is being written the following recipes are available:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <link linkend='ch.readrings' endterm='ch.readrings.title' /> describes how to read NSCLDAQ data.  THe program presented can read data from either an event file or an online ringbuffer.  This file is the basis of all of the following NSCLDAQ I/O recipes.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <link linkend='ch.writerings' endterm='ch.writerings.title' /> describes how to write ring
+                    items.  The program presented expands on readrings above to filter out some ring items and write others to either a file or another ringbuffer, from which online programs can
+                    consume them.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <link linkend='ch.process'  endterm='ch.process' /> describes a very simple processing framework that reads data from either a file or rinbuffer and does ring item type specific processing.  This program could be used as the basis of a custom program that transforms NSCLDAQ data into trees in a root file.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </chapter>
+    <chapter id='ch.readrings'>
+        <title id='ch.readrings.title'>Reading NSCLDAQ data sources</title>
+        <para>
+            This chapter presents a program that reads NSCLDAQ ring items from a data source.  The full source code for the program is in <filename>$DAQROOT/share/recipies/readrings</filename> a
+            Makefile is included.   <link linkend='sec.readbackground' endterm='sec.readbackground.title' />
+            provides some background.  If you just want to dive into the source code, by all means, just skip ahead to <link linkend='sec.readcode' endterm='sec.readcocde.title' /> where the code is presented and deescribed.
+        </para>
+        <section id='sec.readbackground'>
+            <title id='sec.readbackground.title'>Background</title>
+            <para>
+                This program introduces severa class families that are used throughout the NSCLDAQ software.  The <classname>CRingItem</classname> class is the
+                base class for objects that are data items created by the data acquisition system.
+            </para>
+            <para>
+                Since we're reading ring items from a data source, the classes that are important to that process are:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term><classname>CDataSource</classname></term>
+                    <listitem>
+                        <para>
+                            The base class for sources of data in the NSCLDAQ.  These are objects that provide a source of data.  This class is an abstract base class.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><classname>CFileDataSource</classname></term>
+                    <listitem>
+                        <para>
+                            Is a concrete data source that provides data from a file.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><classname>CRingDataSource</classname></term>
+                    <listitem>
+                        <para>
+                            Is a concrete data source that provides data from a ring buffer.  Note that the ringbufer could be a local ringbuffer or a remote ring buffer.  If necessary, the class will setup the proxy ring and feeder processes needed to transfer data
+                            from a remote ringbuffer to the proxy ringbuffer in  the local host.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>CDataSourceFactory</term>
+                    <listitem>
+                        <para>
+                            In the NSCLDAQ, data sources are described via
+                            <firstterm>Uniform Resource Identifiers</firstterm> (URIs).  File data sources have URIs that look like <literal>file:///path/to/the/file</literal>.  Ring buffer URIs on the other hand, look like
+                            <literal>tcp://hostname/ringbuffername</literal>.
+                        </para>
+                        <para>
+                            The <classname>CDataSourceFactory</classname> class accepts an NSCLDAQ data source URI and returns a pointer to the appropriate type of
+                            <classname>CDataSource</classname>.
+                        </para>
+                        <para>
+                            Once your program is finished using a data source, it should be
+                            <literal>delete</literal>d.  In the case of a ring data source, the destruction of that object also disconnects as a consumer of the ringbuffer.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                So we have a mechanism to get something from an NSCLDAQ file or ring buffer:  Use the data source factory to create a data source.  But what do we get from data sources?
+                Data sources return pointers to <classname>CRingItem</classname> objects.
+                <classname>CRingItem</classname> is the base class of a hierarchy of classes that exist for each of the supported ring item classes.  in
+                <link linkend='ch.process'  endterm='ch.process' />   we'll  look in greater detail at this
+                class hierarchy and how to use it.
+            </para>
+        </section>
+        <section id='sec.readcode'>
+            <title id='sec.readcode.title'>The code</title>
+            <para>
+                The program we're going to present and annotate here:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Accepts a data source URI on the command line as the sole program argument.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Uses the data source factory to create a ring data source from wich
+                        ring items can be gotten.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Gets ring items from the data source until there are no more items (that can only happen for file data sources).  As each Ring item is received,  it is passsed off to a processing function.  The processing function just indicates
+                        when physics events are received.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                A secondary lesson from this program is the use of the
+                <classname>std::unique_ptr</classname> template class of the C++ standard library to do storage management.  We'll say more about that as we look at the code.
+            </para>
+            <para>
+                Let's look at the includes and declarations:
+            </para>
+            <informalexample>
+                <programlisting>
+#include &lt;CDataSource.h&gt;               <co id='reader.dsource' />
+#include &lt;CDataSourceFactory.h&gt;        <co id='reader.factory' />
+#include &lt;CRingItem.h&gt;                 <co id='reader.ringitem' />
+#include &lt;DataFormat.h&gt;                <co id='reader.dataformat' />
+#include &lt;Exception.h&gt;                 <co id='reader.exceptionbase' />
+
+                                        
+
+#include &lt;iostream&gt;                          <co id='reader.standard' />
+#include &lt;cstdlib&gt;
+#include &lt;memory&gt;
+#include &lt;vector&gt;
+#include &lt;cstdint&gt;
+
+static void
+processRingItem(CRingItem&amp; item);       <co id='reader.forwardprocess' />
+
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='reader.dsource'>
+                    <para>
+                        The <filename>CDataSource.h</filename> header defines the data source base class. We don't need to include the headers for the concrete classes because we're only going to be dealing with pointers so the base class object shape is all the compiler needs to see.
+                    </para>
+                </callout>
+                <callout arearefs='reader.factory'>
+                    <para>
+                        <filename>CDataSourceFactory.h</filename> defines the data source factory class that we're going to use to create our data source given the data source URI the user passes on the command line.
+                    </para>
+                </callout>
+                <callout arearefs='reader.ringitem'>
+                    <para>
+                        Since the data source is going to give us
+                        <classname>CRingItem</classname> objects and since we're going to invoke methods on that object we also need to include the class definition for
+                        <classname>CRingITem</classname>
+                    </para>
+                </callout>
+                <callout arearefs='reader.dataformat'>
+                    <para>
+                        The <filename>DataFormat.h</filename> header contains detailed structure definitions for the ring items.  We won't need that information because the
+                        <classname>CRingItem</classname> class insulates us from the details of ring item formats.  What we <emphasis>do</emphasis> need from this header are symbolic definitions for the ring item types.
+                    </para>
+                </callout>
+                <callout arearefs='reader.exceptionbase'>
+                    <para>
+                        <classname>CException</classname> defined in the
+                        <filename>Exception.h</filename> header is a base class for the exceptions NSCLDAQ throws.  Several of the object methods we invoke can throw exceptions that are derived from this base class.  We'll just catch <classname>CException&amp;</classname> so that we only need to know the base class interface.
+                    </para>
+                </callout>
+                <callout arearefs='reader.standard'>
+                    <para>
+                        These headers are part of the C++ standard run time library.  In some cases (e.g.
+                        <filename>cstdlib</filename>), we could use C standard run time library headers instead had we chosen.  The reason we don't is that we want to illustrate how C standard library functions are encapsulated in the
+                        <literal>std</literal> namespace that the C++ standard run-time library uses.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                We'll use a helper function <function>usage</function> to output program usage and exit in error.  Here's the definition and implementation of that function.
+            </para>
+            <informalexample>
+                <programlisting>
+static void
+usage(std::ostream&amp; o, const char* msg)
+{
+    o &lt;&lt; msg &lt;&lt; std::endl;
+    o &lt;&lt; "Usage:\n";
+    o &lt;&lt; "  readrings uri\n";
+    o &lt;&lt; "      uri - the file: or tcp: URI that describes where data comes from\n";
+    std::exit(EXIT_FAILURE);
+}
+
+                </programlisting>
+            </informalexample>
+        </section>
+        <para>
+            Nothing really remarkable about this.  Note, however how the <function>exit</function>(3) function is encapsulated in the <literal>std</literal> namespace though the return codes it supports are not.  This is because those return codes are preprocessor descriptions and those can't easily be embedded in a namespace.
+        </para>
+        <para>
+            The first part of the main program ensures we have a URI parameter so that we won't segfault trying to reference an argument that does not exist.  We then use that argument to create a data source:
+        </para>
+        <informalexample>
+            <programlisting>
+int
+main(int argc, char** argv)
+{
+    if (argc != 2) {                           <co id='reader.needuri' />
+        usage(std::cerr, "Not enough command line parameters");
+    }
+    std::vector&lt;std::uint16_t&gt; sample;      <co id='reader.samplevector' />
+    std::vector&lt;std::uint16_t&gt; exclude;     <co id='reader.excludevector' />
+    CDataSource* pDataSource;
+    try {
+        pDataSource =                             <co id='reader.makedatasource' />
+            CDataSourceFactory::makeSource(argv[1], sample, exclude);
+    }
+    catch (CException&amp; e) {                  <co id='reader.factoryerrorhandling' />
+        usage(std::cerr, "Failed to open ring source");
+    }
+
+            </programlisting>
+        </informalexample>
+        <calloutlist>
+            <callout arearefs='reader.needuri'>
+                <para>
+                    This code ensures a parameter was provided on the  command line for the data source URI.  If not the <function>usage</function> function is called to output an error message and to exit.
+                </para>
+            </callout>
+            <callout arearefs='reader.samplevector'>
+                <para>
+                    Data sources that are online can be told to sample data of various types.  By sampling we mean that if the consumer gets behind the producer, the data source is allowed to skip data of that type.  The <varname>sample</varname> vector will hold the set of ring item types that can be sampled.  Our example doesn't want to skip any ring item types so this vector will be empty.
+                </para>
+            </callout>
+            <callout arearefs='reader.excludevector' >
+                <para>
+                    In addition to specifying that some ring item types are elligible for sampling, a data source can filter out some ring item types altogether.  The <varname>exclude</varname>
+                    vector will be a vector of the ring item types that can be filtered out.  Once more, we don't want to miss any of the ring item types, so we leave the vector empty.
+                </para>
+            </callout>
+            <callout arearefs='reader.makedatasource'>
+                <para>
+                    This call uses the data source factory to create and return a pointer to a data source of the appropriate type.  The <methodname>makeSource</methodname> static method analyzes the URI passed as its first parameter and uses that to create the appropriate data source.  Note that there's a special case.  If, instead of a URI, the data source name is
+                    <literal>-</literal>, data will be taken from standard input allowing the
+                    program to be a pipeline element.
+                </para>
+                <para>
+                    The additional parameters specify the ring item types that can be sampled or filtered out entirely.  
+                </para>
+                <para>
+                    The creation of the data source is done inside a <literal>try</literal> block because it reports errors by throwing exceptions that are objects subclassed from
+                    <classname>CException</classname>.
+                </para>
+            </callout>
+            <callout arearefs='reader.factoryerrorhandling'>
+                <para>
+                    This catch block is executed if
+                    <classname>CDataSourceFactory</classname>::<methodname>makeSource</methodname> throws an exception.  In this example, it only uses <function>usage</function> to output a generic message and exit.  If you want a more informative error message, you can construct one
+                    using the <methodname>ReasonText</methodname> method of <lcassname>CException</lcassname> as that method returns a string that describes the reason the exception was thrown.
+                </para>
+            </callout>
+        </calloutlist>
+        <para>
+            Now that we've created a data source, let's look at the main loop of the program.  The loop accepts data from the data source and passes it off to <function>processRingItem</function> for processing.
+        </para>
+        <informalexample>
+            <programlisting>
+    CRingItem*  pItem;
+    while ((pItem = pDataSource-&gt;getItem() )) {       <co id='reader.mainloop' />
+        std::unique_ptr&lt;CRingItem&gt; item(pItem);    <co id='reader.unique_ptr' />
+        processRingItem(*item);                          <co id='reader.process' />
+    }
+
+    std::exit(EXIT_SUCCESS);
+}
+            </programlisting>
+        </informalexample>
+        <callout arearefs='reader.mainloop'>
+            <para>
+                The main loop accepts <classname>CRingItem</classname> objects from the data source.  If the data source has no more items (can only happen for file data sources),
+                <methodname>getItem</methodname> returns a null pointer and the while loop exits.
+            </para>
+        </callout>
+        <callout arearefs='reader.unique_ptr'>
+            <para>
+                The pointer returned from <methodname>getItem</methodname> has to be deleted once you are done with it as it was dynamically allocated.  The templated class
+                <classnames>std::unique_ptr</classnames> is a pointer like object that manages a dynamically allocated pointer.  Once destroyed (as it is automatically when it goes out of scope at the end of the block controlled by the <literal>while</literal> loop), it also destroys the pointer it manages.
+            </para>
+            <para>
+                The <classname>std::unique_ptr</classname> is called pointer like because it implements
+                the unary <methodname>operator*</methodname> and <methodname>operator-&gt;</methodname>.  These operators are implemented in such a way that a
+                <classname>std::unique_ptr</classname> is virtually indistinguishable from the pointer it manages.
+            </para>
+            <para>
+                The name <classname>std::unique_ptr</classname> means that only one of these should
+                manage any given pointer.  To that end, the object does not support assignment or copy construction.  If you need more relaxed semantics you can look at
+                <classname>std::shared_ptr</classname> which uses reference counting to determine when to delete the managed pointer.
+            </para>
+        </callout>
+        <callout arearefs='reader.process'>
+            <para>
+                Dereferencing the unique pointer produces a reference to the ring item, which is what
+                <function>processRingItem</function> expects.  So, for each ring item received from the data source, <function>processRingItem</function> is used to do whatever processing is desired.
+            </para>
+        </callout>
+        <para>
+            Finally the <function>processsRingItem</function> function.  This is really just a placeholder for whatever processing you'd like to perform.    All we do in the example is determine if the ring item was a physics event (response to an experiment trigger) and, if so output that fact.
+        </para>
+        <informalexample>
+            <programlisting>
+static void
+processRingItem(CRingItem&amp; item)
+{
+    if (item.type() == PHYSICS_EVENT) {
+        std::cout &lt;&lt; "Got a physics item\n";
+    }
+}
+            </programlisting>
+        </informalexample>
+        <para>
+            The constant <literal>PHYSICS_EVENT</literal> is defined in the header
+            <filename>DataFormat.h</filename>.  It is one of several supported ring item types.  The
+            <methodname>type</methodname> method of <classname>CRingITem</classname> returns the ring items's type.
+        </para>
+    </chapter>
+    <chapter id='ch.writerings'>
+        <title id='ch.writerings.title'>Writing ring items to a data sink</title>
+        <para>
+            In this chapter we're going to show how to write NSCL DAQ data.  NSCLDAQ data is composed of ring items.  A ring item is a payload of data preceded by a header.  This header, called the \
+            <firstterm>ring item header</firstterm> has a self inclusive size and a ring item type.  Furthermore, since NSCLDAQ 11.0, the payload of most ring items contains a <firstterm>body header</firstterm>.  The body header was introduced to make event building easier.  It holds information like timestamps, source ids and barrier types used by the event builder to sort fragments and glue them together into events.
+        </para>
+        <para>
+             As before, this chapter consists of two parts.  The first part,
+             <link linkend='sec.writebackground' endterm='sec.writebackground.title' /> provides some background information on the important library classes our program will use.  Note that we assume you've mastered the previous chapter and will not re-introduce the classes used there.
+             <link linkend='sec.writecode' endterm='sec.writecode' /> presents the code and explanation.
+        </para>
+        <para>
+            The code and Makefile for this example are in
+            <filename>$DAQROOT/share/recipes/writerings</filename>.
+        </para>
+        <section id='sec.writebackground'>
+            <title id='sec.writebackground.title'>Background</title>
+            <para>
+                In addition to the NSCLDAQ library classes we used in the ring reading program, we are going
+                to use additional classes designed to make writing ring items easy.  Just as the data source classes and factory support reading ring items from a data source, data sink classes and a factory support writing ring items to a sink of ring items.
+            </para>
+            <variablelist>
+                <varlistitem>
+                    <term><classname>CDataSink</classname></term>
+                    <listitem>
+                        <para>
+                            This is an abstract base class for all ring item sinks.  A ring item sink is an
+                            object that can be given a stream of ring items and will dispose of them to some consumer.   
+                        </para>
+                    </listitem>
+                </varlistitem>
+                <varlistitem>
+                    <term><classname>CFileDataSink</classname></term>
+                    <para>
+                        A data sink that writes ring items to a file descriptor.
+                    </para>
+                </varlistitem>
+                <varlistitem>
+                    <term><classname>CRingDataSink</classname></term>
+                    <para>
+                        A data sink that puts ring items into a ring buffer.
+                    </para>
+                </varlistitem>
+            </variablelist>
+            <para>
+                As with data sources, there is a factory, <classname>CDataSinkFactory</classname>,
+                that will generate the right type of data sink given a URI.   URI's can have either <filename>file:</filename> protocol to write ring items to file or <filename>tcp:</filename> protocols to write ring items to a ring buffers. 
+            </para>
+            <para>
+                Note that since you can only write ring items to a local ring buffer the host part of a
+                <filename>tcp:</filename> URI must be either empty or <literal>localhost</literal>.   The factor can also accept the special string <literal>-</literal> to create a data sink that's connected to the program's standard output.  This allows you to use the techniques
+                described in this chapter to build filters or pipeline elements.
+            </para>
+        </section>
+        <section id='sec.writecode'>
+            <title id='sec.writecode.title'>The code</title>
+            <para>
+                
+            </para>
+        </section>
+    </chapter>
+</book>
