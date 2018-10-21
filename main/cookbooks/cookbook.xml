@@ -410,8 +410,182 @@ processRingItem(CRingItem&amp; item)
         <section id='sec.writecode'>
             <title id='sec.writecode.title'>The code</title>
             <para>
-                
+                Let's look at the heading for the source file:
             </para>
+            <informalexample>
+                <programlisting>
+#include &lt;CDataSource.h&gt;             
+#include &lt;CDataSourceFactory.h&gt;      
+#include &lt;CDataSink.h&gt;                   <co id='write.datasinkheader' />
+#include &lt;CDataSinkFactory.h&gt;            <co id='write.datasinkfactheader' />
+#include &lt;CRingItem.h&gt;                
+#include &lt;DataFormat.h&gt;               
+#include &lt;Exception.h&gt;                
+
+#include &lt;iostream&gt;
+#include &lt;cstdlib&gt;
+#include &lt;memory&gt;
+#include &lt;vector&gt;
+#include &lt;cstdint&gt;
+
+static void                           <co id='write.processproto' />
+processRingItem(CDataSink&amp; sink, CRingItem&amp; item);
+
+
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='write.datasinkheader'>
+                    <para>
+                        <filename>CDataSink.h</filename> defines the
+                        <classname>CDataSink</classname> class.  That's the abstract base class of the classes that dispose of ring items to some output sink.
+                    </para>
+                </callout>
+                <callout arearefs='write.datasinkfactheader'>
+                    <para>
+                        Similarly, <filename>CDataSinkFactory.h</filename> defines the data sink factory that produces data sinks given a URI.
+                    </para>
+                </callout>
+                <callout arearefs='write.processproto'>
+                    <para>
+                        Note that we've added a sink parameter to the
+                        <function>procdessRingItem</function> function prototype.  This is because our ring item processing will involve writing input ring items to the data sink we created.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                The <function>usage</function> function has been modified to document the fact that we now need two URIs, one for the data source and one for the sink:
+            </para>
+            <informalexample>
+                <programlisting>
+static void
+usage(std::ostream&amp; o, const char* msg)
+{
+    o &lt;&lt; msg &lt;&lt; std::endl;
+    o &lt;&lt; "Usage:\n";
+    o &lt;&lt; "  readrings input-uri output-uri\n";
+    o &lt;&lt; "      input-uri - The file: or tcp: URI that describes where data comes from\n";
+    o &lt;&lt; "                   Note that the special value '-' makes the source get data from\n";
+    o &lt;&lt; "                   standard input.\n";
+    o &lt;&lt; "      output-uri - The file: or tcp: URI that describes where data will be written\n";
+    o &lt;&lt; "                   If the URI is a tcp: uri, the host part of the URI must either be\n";
+    o &lt;&lt; "                   empty or 'localhost\n";
+    o &lt;&lt; "                   Note that the special value '-' makes the source put data to\n";
+    o &lt;&lt; "                   standard output\n";
+    std::exit(EXIT_FAILURE);
+}
+
+                </programlisting>
+            </informalexample>
+            <para>
+                Very little of the main program is modified.  We'll point those bits out below and annotate them.
+            </para>
+            <informalexample>
+                <programlisting>
+int
+main(int argc, char** argv)
+{
+    if (argc != 3) {                             <co id='write.need3args' />
+        usage(std::cerr, "Incorrect number of command line parameters");
+    }
+    std::vector&lt;std::uint16_t&gt; sample;    
+    std::vector&lt;std::uint16_t&gt; exclude;   
+    CDataSource* pDataSource;
+    try {
+        pDataSource =
+        CDataSourceFactory::makeSource(argv[1], sample, exclude);
+    }
+    catch (CException&amp; e) {
+        std::cerr &lt;&lt; "Failed to open ring source: ";
+        usage(std::cerr, e.ReasonText());
+    }
+
+    CDataSink* pSink;
+    try {
+        CDataSinkFactory factory;
+        pSink = factory.makeSink(argv[2]);      <co id='write.codemakesink'  />
+    }
+    catch (CException&amp; e) {
+        std::cerr &lt;&lt; "Failed to create data sink: ";
+        usage(std::cerr, e.ReasonText());
+    }
+    std::unique_ptr&lt;CDataSink&gt; sink(pSink);
+
+    CRingItem*  pItem;
+    while ((pItem = pDataSource->getItem() )) {
+        std::unique_ptr&gt;CRingItem&lt; item(pItem);   
+        processRingItem(*sink, *item);            <co id='write.codeprocesscall' />
+    }
+
+    std::exit(EXIT_SUCCESS);
+}
+
+                </programlisting>
+            </informalexample>
+            <calloutlist>
+                <callout arearefs='write.need3args'>
+                    <para>
+                        This time we need three command line words.  The program name, the data source URI and the data sink URI.
+                    </para>
+                </callout>
+                <callout arearefs='write.codemakesink'>
+                    <para>
+                        This code just creates the data sink.  Exception handling will report any errors an exit.  Note that the pointer to the sink is embedded in an
+                        <classnames>std::unique_ptr</classnames>.  This ensures its destruction when
+                        <function>main</function> exits normally or via exception.  Deletion of a data sink
+                        flushes any internal buffers that might stand between the application and the physical data sink ensuring that all data are written to the output sink.
+                    </para>
+                </callout>
+                <callout arearefs='write.codeprocesscall'>
+                    <para>
+                        The call to <function>processRingItem</function> now also includes the data sink so that function can write the data.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                The <function>processRingItem</function>, instead of just outputting a message when a physics item is seen, writes it to the sink.  The resulting ring buffer, file or whatever the data sink is attached to, will therefore contain only physics event ring items.  The ring items themselves are not altered:
+            </para>
+            <informalexample>
+                <programlisting>
+static void
+processRingItem(CDataSink&amp; sink, CRingItem&amp; item)
+{
+    if (item.type() == PHYSICS_EVENT) {
+        sink.putItem(item);
+    }
+}
+                </programlisting>
+            </informalexample>
         </section>
+        <para>
+            An important program design note.  We've essentially used the pattern from the previous chapter unmodified to generate a new program that only differs in what happesn to ring items.  This pattern will continue through at least the next two chapters.  This pattern basically boils down to:
+        </para>
+        <informalexample>
+            <programlisting>
+create a ring data source
+while the data source has ring items
+   do something to each ring item.
+            </programlisting>
+        </informalexample>
+        <para>
+            I encourage you to use that pattern in your own programs... starting with the code provided if that helps.
+        </para>
+    </chapter>
+    <chapter id='ch.process'>
+        <title id='ch.process.title'>Peforming type independent processing</title>
+        <para>
+            A real program may want to perform type dependent processing on its ring items.  While the <classname>CRingItem</classname> objects returned from data sources have bodies that can be decoded using the structures defined in <filename>DataFormat.h</filename>,  each ring item type defined by that header has a corresponding class whose methods will return the bits and pieces the ring items store.  If the format of the underlying ring items evolves over time (as it did moving from nscldaq-10 to nscldaq-11) these classess form a stable interface into the data those items contain.
+        </para>
+        <para>
+            As usual this chapter is divided into two sections:
+            <link linkend='sec.process.background' endterm='sec.process.background.title' /> which provides expository background information and
+            <link linkend='sec.process.code' endterm='sec.process.code' /> which annotates the actual code.
+        </para>
+        <para>
+            The actual code and Makefile are installed in
+            <filename>$DAQROOT/share/recipes/process</filename>.  The code is divided into a main program which does the I/O and produces the specific subclass objects of
+            <classname>CRingItem</classname> and a class definition and implementation for a processing class.
+            In <link linkend='sec.process.code' endterm='sec.process.code' /> we'll also describe a few tactics that can be used to adopt this example to your specific needs.
+        </para>
     </chapter>
 </book>
