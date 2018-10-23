@@ -42,7 +42,13 @@
             </listitem>
             <listitem>
                 <para>
-                    <link linkend='ch.process'  endterm='ch.process' /> describes a very simple processing framework that reads data from either a file or rinbuffer and does ring item type specific processing.  This program could be used as the basis of a custom program that transforms NSCLDAQ data into trees in a root file.
+                    <link linkend='ch.process'  endterm='ch.process.title' /> describes a very simple processing framework that reads data from either a file or rinbuffer and does ring item type specific processing.  This program could be used as the basis of a custom program that transforms NSCLDAQ data into trees in a root file.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <link linkend='ch.fragindex' endterm='ch.fragindex.title' />
+                    describes how to process event built data.  
                 </para>
             </listitem>
         </itemizedlist>
@@ -52,7 +58,7 @@
         <para>
             This chapter presents a program that reads NSCLDAQ ring items from a data source.  The full source code for the program is in <filename>$DAQROOT/share/recipies/readrings</filename> a
             Makefile is included.   <link linkend='sec.readbackground' endterm='sec.readbackground.title' />
-            provides some background.  If you just want to dive into the source code, by all means, just skip ahead to <link linkend='sec.readcode' endterm='sec.readcocde.title' /> where the code is presented and deescribed.
+            provides some background.  If you just want to dive into the source code, by all means, just skip ahead to <link linkend='sec.readcode' endterm='sec.readcode.title' /> where the code is presented and deescribed.
         </para>
         <section id='sec.readbackground'>
             <title id='sec.readbackground.title'>Background</title>
@@ -112,7 +118,7 @@
                 So we have a mechanism to get something from an NSCLDAQ file or ring buffer:  Use the data source factory to create a data source.  But what do we get from data sources?
                 Data sources return pointers to <classname>CRingItem</classname> objects.
                 <classname>CRingItem</classname> is the base class of a hierarchy of classes that exist for each of the supported ring item classes.  in
-                <link linkend='ch.process'  endterm='ch.process' />   we'll  look in greater detail at this
+                <link linkend='ch.process'  endterm='ch.process.title' />   we'll  look in greater detail at this
                 class hierarchy and how to use it.
             </para>
         </section>
@@ -223,7 +229,6 @@ usage(std::ostream&amp; o, const char* msg)
 
                 </programlisting>
             </informalexample>
-        </section>
         <para>
             Nothing really remarkable about this.  Note, however how the <function>exit</function>(3) function is encapsulated in the <literal>std</literal> namespace though the return codes it supports are not.  This is because those return codes are preprocessor descriptions and those can't easily be embedded in a namespace.
         </para>
@@ -286,7 +291,7 @@ main(int argc, char** argv)
                 <para>
                     This catch block is executed if
                     <classname>CDataSourceFactory</classname>::<methodname>makeSource</methodname> throws an exception.  In this example, it only uses <function>usage</function> to output a generic message and exit.  If you want a more informative error message, you can construct one
-                    using the <methodname>ReasonText</methodname> method of <lcassname>CException</lcassname> as that method returns a string that describes the reason the exception was thrown.
+                    using the <methodname>ReasonText</methodname> method of <classname>CException</classname> as that method returns a string that describes the reason the exception was thrown.
                 </para>
             </callout>
         </calloutlist>
@@ -305,34 +310,37 @@ main(int argc, char** argv)
 }
             </programlisting>
         </informalexample>
-        <callout arearefs='reader.mainloop'>
-            <para>
-                The main loop accepts <classname>CRingItem</classname> objects from the data source.  If the data source has no more items (can only happen for file data sources),
-                <methodname>getItem</methodname> returns a null pointer and the while loop exits.
-            </para>
-        </callout>
-        <callout arearefs='reader.unique_ptr'>
-            <para>
-                The pointer returned from <methodname>getItem</methodname> has to be deleted once you are done with it as it was dynamically allocated.  The templated class
-                <classnames>std::unique_ptr</classnames> is a pointer like object that manages a dynamically allocated pointer.  Once destroyed (as it is automatically when it goes out of scope at the end of the block controlled by the <literal>while</literal> loop), it also destroys the pointer it manages.
-            </para>
-            <para>
-                The <classname>std::unique_ptr</classname> is called pointer like because it implements
-                the unary <methodname>operator*</methodname> and <methodname>operator-&gt;</methodname>.  These operators are implemented in such a way that a
-                <classname>std::unique_ptr</classname> is virtually indistinguishable from the pointer it manages.
-            </para>
-            <para>
-                The name <classname>std::unique_ptr</classname> means that only one of these should
-                manage any given pointer.  To that end, the object does not support assignment or copy construction.  If you need more relaxed semantics you can look at
-                <classname>std::shared_ptr</classname> which uses reference counting to determine when to delete the managed pointer.
-            </para>
-        </callout>
-        <callout arearefs='reader.process'>
-            <para>
-                Dereferencing the unique pointer produces a reference to the ring item, which is what
-                <function>processRingItem</function> expects.  So, for each ring item received from the data source, <function>processRingItem</function> is used to do whatever processing is desired.
-            </para>
-        </callout>
+        <calloutlist>
+            <callout arearefs='reader.mainloop'>
+                <para>
+                    The main loop accepts <classname>CRingItem</classname> objects from the data source.  If the data source has no more items (can only happen for file data sources),
+                    <methodname>getItem</methodname> returns a null pointer and the while loop exits.
+                </para>
+            </callout>
+            <callout arearefs='reader.unique_ptr'>
+                <para>
+                    The pointer returned from <methodname>getItem</methodname> has to be deleted once you are done with it as it was dynamically allocated.  The templated class
+                    <classname>std::unique_ptr</classname> is a pointer like object that manages a dynamically allocated pointer.  Once destroyed (as it is automatically when it goes out of scope at the end of the block controlled by the <literal>while</literal> loop), it also destroys the pointer it manages.
+                </para>
+                <para>
+                    The <classname>std::unique_ptr</classname> is called pointer like because it implements
+                    the unary <methodname>operator*</methodname> and <methodname>operator-&gt;</methodname>.  These operators are implemented in such a way that a
+                    <classname>std::unique_ptr</classname> is virtually indistinguishable from the pointer it manages.
+                </para>
+                <para>
+                    The name <classname>std::unique_ptr</classname> means that only one of these should
+                    manage any given pointer.  To that end, the object does not support assignment or copy construction.  If you need more relaxed semantics you can look at
+                    <classname>std::shared_ptr</classname> which uses reference counting to determine when to delete the managed pointer.
+                </para>
+            </callout>
+            <callout arearefs='reader.process'>
+                <para>
+                    Dereferencing the unique pointer produces a reference to the ring item, which is what
+                    <function>processRingItem</function> expects.  So, for each ring item received from the data source, <function>processRingItem</function> is used to do whatever processing is desired.
+                </para>
+            </callout>
+
+        </calloutlist>
         <para>
             Finally the <function>processsRingItem</function> function.  This is really just a placeholder for whatever processing you'd like to perform.    All we do in the example is determine if the ring item was a physics event (response to an experiment trigger) and, if so output that fact.
         </para>
@@ -352,6 +360,8 @@ processRingItem(CRingItem&amp; item)
             <filename>DataFormat.h</filename>.  It is one of several supported ring item types.  The
             <methodname>type</methodname> method of <classname>CRingITem</classname> returns the ring items's type.
         </para>
+        </section>
+
     </chapter>
     <chapter id='ch.writerings'>
         <title id='ch.writerings.title'>Writing ring items to a data sink</title>
@@ -362,7 +372,7 @@ processRingItem(CRingItem&amp; item)
         <para>
              As before, this chapter consists of two parts.  The first part,
              <link linkend='sec.writebackground' endterm='sec.writebackground.title' /> provides some background information on the important library classes our program will use.  Note that we assume you've mastered the previous chapter and will not re-introduce the classes used there.
-             <link linkend='sec.writecode' endterm='sec.writecode' /> presents the code and explanation.
+             <link linkend='sec.writecode' endterm='sec.writecode.title' /> presents the code and explanation.
         </para>
         <para>
             The code and Makefile for this example are in
@@ -375,7 +385,7 @@ processRingItem(CRingItem&amp; item)
                 to use additional classes designed to make writing ring items easy.  Just as the data source classes and factory support reading ring items from a data source, data sink classes and a factory support writing ring items to a sink of ring items.
             </para>
             <variablelist>
-                <varlistitem>
+                <varlistentry>
                     <term><classname>CDataSink</classname></term>
                     <listitem>
                         <para>
@@ -383,19 +393,23 @@ processRingItem(CRingItem&amp; item)
                             object that can be given a stream of ring items and will dispose of them to some consumer.   
                         </para>
                     </listitem>
-                </varlistitem>
-                <varlistitem>
+                </varlistentry>
+                <varlistentry>
                     <term><classname>CFileDataSink</classname></term>
-                    <para>
-                        A data sink that writes ring items to a file descriptor.
-                    </para>
-                </varlistitem>
-                <varlistitem>
+                    <listitem>
+                        <para>
+                            A data sink that writes ring items to a file descriptor.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><classname>CRingDataSink</classname></term>
-                    <para>
-                        A data sink that puts ring items into a ring buffer.
-                    </para>
-                </varlistitem>
+                    <listitem>
+                        <para>
+                            A data sink that puts ring items into a ring buffer.
+                        </para>
+                    </listitem>
+                </varlistentry>
             </variablelist>
             <para>
                 As with data sources, there is a factory, <classname>CDataSinkFactory</classname>,
@@ -531,7 +545,7 @@ main(int argc, char** argv)
                 <callout arearefs='write.codemakesink'>
                     <para>
                         This code just creates the data sink.  Exception handling will report any errors an exit.  Note that the pointer to the sink is embedded in an
-                        <classnames>std::unique_ptr</classnames>.  This ensures its destruction when
+                        <classname>std::unique_ptr</classname>.  This ensures its destruction when
                         <function>main</function> exits normally or via exception.  Deletion of a data sink
                         flushes any internal buffers that might stand between the application and the physical data sink ensuring that all data are written to the output sink.
                     </para>
@@ -556,7 +570,6 @@ processRingItem(CDataSink&amp; sink, CRingItem&amp; item)
 }
                 </programlisting>
             </informalexample>
-        </section>
         <para>
             An important program design note.  We've essentially used the pattern from the previous chapter unmodified to generate a new program that only differs in what happesn to ring items.  This pattern will continue through at least the next two chapters.  This pattern basically boils down to:
         </para>
@@ -570,6 +583,8 @@ while the data source has ring items
         <para>
             I encourage you to use that pattern in your own programs... starting with the code provided if that helps.
         </para>
+        </section>
+
     </chapter>
     <chapter id='ch.process'>
         <title id='ch.process.title'>Peforming type independent processing</title>
@@ -579,13 +594,1074 @@ while the data source has ring items
         <para>
             As usual this chapter is divided into two sections:
             <link linkend='sec.process.background' endterm='sec.process.background.title' /> which provides expository background information and
-            <link linkend='sec.process.code' endterm='sec.process.code' /> which annotates the actual code.
+            <link linkend='sec.process.code' endterm='sec.process.code.title' /> which annotates the actual code.
         </para>
         <para>
             The actual code and Makefile are installed in
             <filename>$DAQROOT/share/recipes/process</filename>.  The code is divided into a main program which does the I/O and produces the specific subclass objects of
             <classname>CRingItem</classname> and a class definition and implementation for a processing class.
-            In <link linkend='sec.process.code' endterm='sec.process.code' /> we'll also describe a few tactics that can be used to adopt this example to your specific needs.
+            In <link linkend='sec.process.code' endterm='sec.process.code.title' /> we'll also describe a few tactics that can be used to adopt this example to your specific needs.
         </para>
+        <section id='sec.process.background' >
+            <title id='sec.process.background.title'>Background</title>
+            <para>
+                We're going to divide the code up into a pair of modules.
+                The main module, in <filename>process.cpp</filename> is
+                essentially the <filename>readerings</filename> code with
+                a fixed <function>processRingItemn</function> implementation.
+            </para>
+            <para>
+                The <function>processRingItem</function> implementation will
+                use the <classname>CRingItemFactory</classname> to figure out
+                which actual ring item type to create.  A giant switch statement
+                will then dispatch the resulting ring item for further processing.
+            </para>
+            <para>
+                The second module, <filename>processor.h</filename> and
+                <filename>processor.cpp</filename> define and implement a ring
+                item processing class;
+                <classname>CRingItemProcessor</classname>.   The class defines and implements
+                methods for handling each of the ring item types.  The
+                <function>processRingItem</function> function in
+                <filename>process.cpp</filename> therefore simply calls the
+                correct method of this class depending on the actual
+                ring item type.
+            </para>
+            <para>
+                The methods of <classname>CRingItemProcessor</classname> are
+                declared as virtual.  You could, therefore either make this
+                program do what you want (e.g. make Root trees) either by
+                directly modifying this class or by deriving a subclass and
+                instantiating that class in the <function>main</function> of
+                <classname>process.cpp</classname>
+            </para>
+            <para>
+                The 'clean' object oriented way to operate would be to build up
+                a library of <classname>CRingItemProcessor</classname> subclasses
+                and a factory that can instantiate one given a name for that
+                factory.  You could then pass the name of the analyzer you want
+                to run on the command line of your program.
+            </para>
+            <para>
+                SpecTcl-5.0 (and planned for nscldaq-12) provide  a class called
+                an extensible factory that you could use for that purpose.
+                See, e.g.
+                <filename>/usr/opt/spectcl/5.0-011/include/CExtensibleFactory.h</filename>
+                which is heavily commented (no docs yet, sorry) and self
+                contained (no library needs to be linked).
+            </para>
+        </section>
+        <section id='sec.process.code'>
+            <title id='sec.process.code.title'>Annotated Code.</title>
+            <para>
+                In this section we're going to look at the code that
+                implements this program.  This section is divided into subsections.
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        <link linkend='sec.process.main' endterm='sec.process.main.title' />
+                        describes the main program.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <link linkend='sec.process.class' endterm='sec.process.class.title' />
+                        describes the code defining and implementing the
+                        <classname>CRingItemProcessor</classname> class.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <section id='sec.process.main' >
+                <title id='sec.process.main.title'>
+                    The <filename>process.cpp</filename> file
+                </title>
+                <para>
+                    Let's start by lookcing at the changes we needed to make
+                    in the heading part of the main relative to
+                    the ring reader example:
+                </para>
+                <informalexample>
+                    <programlisting>
+#include &lt;CDataSource.h&gt;             
+#include &lt;CDataSourceFactory.h&gt;      
+#include &lt;CRingItem.h&gt;               
+#include &lt;DataFormat.h&gt;              
+#include &lt;Exception.h&gt;               
+
+#include &lt;CRingItemFactory.h&gt;           <co id='process.rifactheader' />
+#include &lt;CRingScalerItem.h&gt;          
+#include &lt;CRingStateChangeItem.h&gt;     
+#include &lt;CRingTextItem.h&gt;            
+#include &lt;CPhysicsEventItem.h&gt;           <co id='process.ringitemheaders' />
+#include &lt;CRingPhysicsEventCountItem.h&gt; 
+#include &lt;CDataFormatItem.h&gt;          
+#include &lt;CGlomParameters.h&gt;          
+#include &lt;CDataFormatItem.h&gt;          
+
+#include "processor.h"                         <co id ='process.processorheader'/>
+
+#include &lt;iostream&gt;
+#include &lt;cstdlib&gt;
+#include &lt;memory&gt;
+#include &lt;vector&gt;
+#include &lt;cstdint&gt;
+
+static void                                  <co id='process.processorprototype' />
+processRingItem(CRingItemProcessor&amp; procesor, CRingItem&amp; item); 
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='process.rifactheader'>
+                        <para>
+                            This header defines the ring item factory class.
+                            We'll see it in use when we look at the
+                            implementation of the
+                            <function>processRingItem</function>
+                            static function.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.ringitemheaders'>
+                        <para>
+                            This set of headers, from
+                            <filename>CRingScalerItem.h</filename> trough
+                            <filename>CDataFormatItem.h</filename> define
+                            the specialized subclasses of
+                            <classname>CRingItem</classname>.  We'll see them
+                            used in <function>processRingItem</function> below.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.processorprototype'>
+                        <para>
+                            We now pass a <classname>CRingItemProcessor</classname>
+                            object by reference to the
+                            <function>processRingItem</function> function.
+                            The pass by reference allows the polymorphism of
+                            a hypothetical class hierarchy based on a
+                            <classname>CRingItemProcessor</classname> base
+                            class to function.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    The next change in the main program is just to
+                    instantiate a <classname>CRingItemProcessor</classname> and
+                    to pass it to the <function>processRingItem</function>
+                    function:
+                </para>
+                <informalexample>
+                    <programlisting>
+...
+    CRingItem*  pItem;
+    CRingItemProcessor processor;             <co id='process.ripinstantiate' />
+
+    while ((pItem = pDataSource-&gt;getItem() )) {
+        std::unique_ptr&lt;CRingItem&gt; item(pItem);    
+        processRingItem(processor, *item);  <co id='process.rippassed' />
+    }
+...                        
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='process.ripinstantiate'>
+                        <para>
+                            This instantiates the
+                            <classname>CRingItemProcessor</classname> that does
+                            the real work of analysis.  In  production program,
+                            you might pass a processor name as a command parameter
+                            and then use a factory class/method to produce an
+                            object from the appropriate sub-class
+                            of <classname>CRingItemProcessor</classname>.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    The biggest change is in the implementatino of
+                    <function>processRingItem</function>:
+                </para>
+                <informalexample>
+                    <programlisting>
+static void
+processRingItem(CRingItemProcessor&amp; processor, CRingItem&amp; item)
+{
+    // Create a dynamic ring item that can be dynamic cast to a specific one:
+
+    CRingItem* castableItem =                                <co id='process.usefactory' />
+        CRingItemFactory::createRingItem(item);
+    std::unique_ptr&lt;CRingItem&gt; autoDeletedItem(castableItem); <co id='processfactitemsautofree' />
+
+    // Depending on the ring item type dynamic_cast the ring item to the
+    // appropriate final class and invoke the correct handler.
+    // the default case just invokes the unknown item type handler.
+
+    switch (castableItem-&gt;type()) {                   <co id='process.typedependent' />
+        case PERIODIC_SCALERS:                           <co id='process.periodicscaler' />
+            {
+                CRingScalerItem&amp; scaler(             <co id='process.scalerdyncast' />
+                    dynamic_cast&lt;CRingScalerItem&amp;&gt;(*castableItem)
+                );
+                processor.processScalerItem(scaler);     <co id='process.processscaler' />
+                break;
+            }
+        case BEGIN_RUN:              // All of these are state changes:
+        case END_RUN:
+        case PAUSE_RUN:
+        case RESUME_RUN:
+            {
+                CRingStateChangeItem&amp; statechange(dynamic_cast&lt;CRingStateChangeItem&amp;&gt;(*castableItem));
+                processor.processStateChangeItem(statechange);
+                break;
+            }
+        case PACKET_TYPES:                   // Both are textual item types
+        case MONITORED_VARIABLES:
+            {
+                CRingTextItem&amp; text(dynamic_cast&lt;CRingTextItem&amp;&gt;(*castableItem));
+                processor.processTextItem(text);
+                break;
+            }
+        case PHYSICS_EVENT:
+            {
+                CPhysicsEventItem&amp; event(dynamic_cast&lt;CPhysicsEventItem&amp;&gt;(*castableItem));
+                processor.processEvent(event);
+                break;
+            }
+        case PHYSICS_EVENT_COUNT:
+            {
+                CRingPhysicsEventCountItem&amp;
+                    eventcount(dynamic_cast&lt;CRingPhysicsEventCountItem&amp;&gt;(*castableItem));
+                processor.processEventCount(eventcount);
+                break;
+            }
+        case RING_FORMAT:
+            {
+                CDataFormatItem&amp; format(dynamic_cast&lt;CDataFormatItem&amp;&gt;(*castableItem));
+                processor.processFormat(format);
+                break;
+            }
+        case EVB_GLOM_INFO:
+            {
+                CGlomParameters&amp; glomparams(dynamic_cast&lt;CGlomParameters&amp;&gt;(*castableItem));
+                processor.processGlomParams(glomparams);
+                break;
+            }
+        default:                             <co id='process.unrecognized' />
+            {
+                processor.processUnknownItemType(item);
+                break;
+            }
+    }
+}
+
+                    </programlisting>
+                </informalexample>
+                <para>
+                    While this function is rather long, much of the processing
+                    has the same flavor.  We will therefore only show detailed
+                    processing for scaler items.
+                </para>
+                <calloutlist>
+                    <callout arearefs='process.usefactory'>
+                        <para>
+                            This line shows the use of the ring item factory to
+                            take an undifferentiated ring item and to
+                            construct from it a new ring item that is appropriately
+                            specialized.  As C++ is not a dynamically typed
+                            language, the resulting object is returned to the
+                            user as a <classname>CRingItem*</classname>.
+                            In cases in the switch statement, we shall see
+                            type safe <firstterm>up-casts</firstterm> done
+                            once the actual item type is known.
+                        </para>
+                    </callout>
+                    <callout arearefs='processfactitemsautofree'>
+                        <para>
+                            Once again, we see the use of the
+                            <classname>std::unique_ptr</classname> to ensure
+                            the dynamically allocated object returned by the
+                            factory is destroyed regardless how the
+                            <function>processRingItem</function> function
+                            exits.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.typedependent'>
+                        <para>
+                            This switch statement is used to perform
+                            processing that is dependent on the actual type of
+                            the ring item.  We'll look in detail at the
+                            way in which <literal>PERIODIC_SCALER</literal>
+                            items are handled, though the processing of all
+                            item types is pretty much the same.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.periodicscaler'>
+                        <para>
+                            This case label indicates we're processing periodic
+                             scaler ring items.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.scalerdyncast'>
+                        <para>
+                            Now that we know the actual ring item type, we can
+                            do a dynamic cast of the dereferenced pointer construct
+                            a reference to a <classname>CRingScalerItem</classname>
+                            object because we now know that this is the type of
+                            object our <varname>castableItem</varname> actually
+                            points at.
+                        </para>
+                        <para>
+                            Using a dynamic cast rathe rthan the alternative
+                            ensures that type checking is done by the cast at
+                            run-time to ensure this is a legal type conversion.
+                            If the underlying type is not actually a
+                            <classname>CRingScalerItem</classname> object of from
+                            a class that is a subclass of that class, the dynamic
+                            cast would throw an exception (<classname>std::bad_cast</classname>).
+                        </para>
+                    </callout>
+                    <callout arearefs='process.processscaler'>
+                        <para>
+                            The appropriate method of the processor class
+                            is called to do type dependent processing.  Our work
+                            so-far allowed us to pass in a reference to a
+                            periodic scaler item.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.unrecognized'>
+                        <para>
+                            This code handles ring item types that are not known
+                            at the time the program was written.  This code
+                            can be reached if the set of ring item types is extended
+                            either by future NSCLDAQ versions or by users
+                            emitting ring items with types greater than or equal to
+                            <literal>FIRST_USER_ITEM_CODE</literal>. 
+                        </para>
+                    </callout>
+                </calloutlist>
+            </section>
+            <section id='sec.process.class'>
+                <title id='sec.process.class.title'>
+                    The <classname>CRingITemProcessor</classname> class
+                </title>
+                <para>
+                    Let's look at the <classname>CRingProcessor</classname> class.
+                    First the header, as it does point to an interesting program
+                    design philosophy.  <filename>processor.h</filename> contains:
+                </para>
+                <informalexample>
+                    <programlisting>
+#ifndef PROCESSOR_H                    <co id='process.header.guard' />
+#define PROCESSOR_H
+
+class CRingScalerItem;
+class CRingStateChangeItem;
+class CRingTextItem;
+class CPhysicsEventItem;              <co id='process.header.forward' />
+class CRingPhysicsEventCountItem;
+class CDataFormatItem;
+class CGlomParameters;
+class CRingItem;
+
+class CRingItemProcessor
+{
+public:
+    virtual void processScalerItem(CRingScalerItem&amp; item);
+    virtual void processStateChangeItem(CRingStateChangeItem&amp; item);
+    virtual void processTextItem(CRingTextItem&amp; item);
+    virtual void processEvent(CPhysicsEventItem&amp; item);   <co id='process.header.processors' />
+    virtual void processEventCount(CRingPhysicsEventCountItem&amp; item);
+    virtual void processFormat(CDataFormatItem&amp; item);
+    virtual void processGlomParams(CGlomParameters&amp; item);
+    virtual void processUnknownItemType(CRingItem&amp; item);
+};
+
+
+
+#endif
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='process.header.guard'>
+                        <para>
+                            The C++ compiler will throw errors if any of a number
+                            of entities (e.g. class definitions) appears more than
+                            once in a compilation unit.  This <literal>#ifdef</literal>
+                            block ensures that this cannot happen, no matter how
+                            many headers may include this file.  
+                        </para>
+                        <para>
+                            This pattern is called an <firstterm>include guard</firstterm>.
+                            Using include guards is good programming practice.
+                            If you do use them, choose a convention for the
+                            name of the preprocessor symbol you will be defining
+                            as collisions with include guard names can be
+                            incredibly hard to sort out.
+                        </para>
+                        <para>
+                            The include guard name shown is the convention followed
+                            in NSCLDAQ itself as well as several other open source
+                            projects.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.header.forward'>
+                        <para>
+                            This pattern is a second example of good programming
+                            practice.  Wherever possible, declare classes or
+                            structs to be defined elsewhere rather than just
+                            including their headers.  This is especially true
+                            in header files.
+                        </para>
+                        <para>
+                            This is a good practice because:
+                        </para>
+                        <orderedlist>
+                            <listitem>
+                                <para>
+                                    Headers are often included in more than one
+                                    place and the recompilation of headers included
+                                    in headers and so on, can slow down
+                                    compilation times.
+                                </para>
+                            </listitem>
+                            <listitem>
+                                <para>
+                                    More importantly, including headers can
+                                    lead to circular dependencies.  That is
+                                    file A includes B which includes A that
+                                    can be tough for the compiler to untangle.
+                                </para>
+                                <para>
+                                    The rule I follow is that if the compiler
+                                    does not need to know the shape of a class
+                                    or other entity, or its methods, I usd a forward
+                                    definition rather than an
+                                    <literal>#include</literal>.
+                                </para>
+                            </listitem>
+                        </orderedlist>
+                    </callout>
+                    <callout arearefs='process.header.processors'>
+                        <para>
+                            THese definitions define the methods that
+                            are called by the cases in the big switch
+                            in <function>processRingItem</function>.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <para>
+                    Now lets look at the implementation file
+                    <filename>processor.cpp</filename>.
+                    Here's the head of that file:
+                </para>
+                <informalexample>
+                    <programlisting>
+#include "processor.h"                           <co id='processor.includehdr' />
+
+
+#include &lt;CRingItem.h&gt;
+#include &lt;CRingScalerItem.h&gt;
+#include &lt;CRingTextItem.h&gt;
+#include &lt;CRingStateChangeItem.h&gt;        <co id='processor.concreteheaders' />
+#include &lt;CPhysicsEventItem.h&gt;
+#include &lt;CRingPhysicsEventCountItem.h&gt;
+#include &lt;CDataFormatItem.h&gt;
+#include &lt;CGlomParameters.h&gt;
+
+
+#include &lt;iostream&gt;
+#include &lt;map&gt;
+#include &lt;string&gt;
+
+#include &lt;ctime&gt;
+
+                                             <co id='processor.glomtspolicymap' />
+static std::map&lt;CGlomParameters::TimestampPolicy, std::string&gt; glomPolicyMap = {
+    {CGlomParameters::first, "first"},
+    {CGlomParameters::last, "last"},
+    {CGlomParameters::average, "average"}
+};
+                    </programlisting>
+                </informalexample>
+                <calloutlist>
+                    <callout arearefs='processor.includehdr'>
+                        <para>
+                            In general, if I implement a class, I include the
+                            class definition header first.  This allows me
+                            (well the compiler actually) to determine if the
+                            class header is complete and independent of other
+                            headers.  If I have errors in the class header
+                            include, rather than first including other headers 
+                            (that other class clients may not know about),
+                            I just fix the header to ensure it's complete and
+                            stands by itself.
+                        </para>
+                    </callout>
+                    <callout arearefs='processor.concreteheaders'>
+                        <para>
+                            Recall that I did not include the concrete subclass
+                            headers for <classname>CRingItem</classname> in the
+                            class definition header.  I do need to include them here
+                            as I'm going to be invoking method functions on each of them.
+                        </para>
+                        <para>
+                            If I was just going to pass these objects by reference
+                            or pointers to methods or functions implemented in a
+                            separate file I probably would not include the definitions
+                            in this file as it would not be necessary.
+                        </para>
+                    </callout>
+                    <callout arearefs='processor.glomtspolicymap'>
+                        <para>
+                            This map provides a lookup table between the symbolic
+                            Glom timestamp policies and their textual names.
+                            We'll use this when processing glom parameter
+                            ring items.
+                        </para>
+                    </callout>              
+                </calloutlist>
+                <para>
+                    Let's look at the implementations of the type dependent
+                    processing methods one by one.  For the most part,
+                    just exploit the methods available to the subclass
+                    ring item types to output some partial or complete dump
+                    of the items.
+                </para>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processScalerItem</methodname>
+                    </title>
+                    <programlisting>
+                void
+CRingItemProcessor::processScalerItem(CRingScalerItem&amp; item)
+{
+    time_t ts = item.getTimestamp();                   <co id='process.scalertsget' />
+    std::cout &lt;&lt; "Scaler item recorded "
+        &lt;&lt; ctime(&amp;ts) &lt;&lt; std::endl;    <co id='process.scalertformat' />
+    for (int i = 0; i &lt; item.getScalerCount(); i++) { <co id='process.dumpscalers' />
+        std::cout &lt;&lt; "Channel " &lt;&lt; i &lt;&lt; " had "
+            &lt;&lt; item.getScaler(i) &lt;&lt; " counts\n";
+    }
+}
+        
+                    </programlisting>
+                </example>
+                <calloutlist>
+                    <callout arearefs='process.scalertsget'>
+                        <para>
+                            <methodname>getTimestamp</methodname>, where
+                            defined, gets the unix timestamp at which a ring
+                            item was created.  Don't confuse this with
+                            <methodname>getEventTimestamp</methodname> defined
+                            in the <classname>CRingItem</classname> base class
+                            which returns the high precision event timestamp
+                            used in event building.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.scalertformat'>
+                        <para>
+                            <function>ctime</function> is defined in the
+                            <filename>ctime</filename> header and produces a
+                            formatted string representation of the
+                            pointer to a <type>time_t</type> it is passed.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.dumpscalers'>
+                        <para>
+                            <methodname>getScalerCount</methodname> returns
+                            the number of scaler vlues in the item.  This
+                            controls the loop which uses
+                            <methodname>getScaler</methodname> to
+                            get the specified scaler value.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processStateChangeItem</methodname>
+                    </title>
+                    <programlisting>
+void
+CRingItemProcessor::processStateChangeItem(CRingStateChangeItem&amp; item)
+{
+    time_t tm = item.getTimestamp();
+    std::cout &lt;&lt; item.typeName()      <co id='process.rstypename' />
+        &lt;&lt; " item recorded for run "
+        &lt;&lt; item.getRunNumber() &lt;&lt; std::endl; <co id='process.rsrrunnum' />
+    std::cout &lt;&lt; "Title: "
+        &lt;&lt; item.getTitle() &lt;&lt; std::endl;     <co id ='process.rstitle' />
+    std::cout &lt;&lt; "Occured at: " &lt;&lt; std::ctime(&amp;tm)
+        &lt;&lt; " " &lt;&lt; item.getElapsedTime()      <co id='process.rseltime' />
+        &lt;&lt; " sec. into the run\n";
+}
+
+                    </programlisting>
+                </example>
+                <para>
+                    State change items indicate a change in the run state.  These
+                    differ only in the ring item type.
+                </para>
+                <calloutlist>
+                    <callout arearefs='process.rstypename'>
+                        <para>
+                            The <classname>CRingItem</classname> class has
+                            a method that return s a text string that describes
+                            the item type.   We use this to indicate which
+                            transition this record reflects.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.rsrrunnum'>
+                        <para>
+                            All state change items have a run number.  The
+                            <methodname>getRunNumber</methodname> method
+                            for <classname>CRingStateChangeItem</classname> returns
+                            that run number.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.rstitle'>
+                        <para>
+                            Similarly, all state change items have a title
+                            an <methodname>getTitle</methodname> returns
+                            that as a <classname>std::string</classname>.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.rseltime'>
+                        <para>
+                            All state change items also record how deep into
+                            the run they occured.
+                            <methodname>getElapsedTime</methodname> returns
+                            this value in seconds.  Naturally,
+                            <literal>BEGIN_RUN</literal> items have an
+                            elapsed time of <literal>0</literal>.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <example><title>
+                    <classname>CRingItemProcessor</classname>::<methodname>processTextItem</methodname>
+                    </title>
+                    <programlisting>
+void
+CRingItemProcessor::processTextItem(CRingTextItem&amp; item)
+{
+    time_t tm = item.getTimestamp();
+    std::cout &lt;&lt; item.typeName() &lt;&lt; " item recorded at "
+        &lt;&lt; std::ctime(&amp;tm) &lt;&lt; " " &lt;&lt; item.getTimeOffset()
+        &lt;&lt; " seconds into the run\n";
+    std::cout &lt;&lt; "Here are the recorded strings: \n";
+
+    std::vector&lt;std::string&gt; strings = item.getStrings(); 
+    for (int i =0; i &lt; strings.size(); i++) {
+        std::cout &lt;&lt; i &lt;&lt; ": '" &lt;&lt; strings[i] &lt;&lt; "'\n";
+    }
+}
+
+                    </programlisting>
+                </example>
+                <para>
+                    <classname>CRingTextItem</classname> objects contain
+                    a sequence of null terminated strings.  These are used to
+                    document aspects of the generating program.  For example,
+                    if you use documented packages in the SBS readout
+                    framework, you will get a string for each of those
+                    packets in a <literal>PACKET_TYPES</literal> item.
+                </para>
+                <para>
+                    Similarly, if you create some run variables that are externally
+                    modified via a readout framework's TclServer component, these
+                    variables and their values
+                    will be periodically logged in a
+                    <literal>MONITORED_VARIABLES</literal> item.
+                    Note that each variable will be logged in a string that
+                    could be sourced into a Tcl interpreter to re-define that
+                    variable.
+                </para>
+                <para>
+                    Regardles of the type of ring item,
+                    <methodname>getStrings</methodname> returns a
+                    <classname>std::vector&lt;std::string&gt;</classname>
+                    that contains the strings in the item.
+                </para>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processEvent</methodname>
+                    </title>
+
+                        <programlisting>
+void
+CRingItemProcessor::processEvent(CPhysicsEventItem&amp; item)
+{
+    std::cout &lt;&lt; "Event:\n";
+    std::cout &lt;&lt; item.toString() &lt;&lt; std::endl;
+}
+
+                        </programlisting>
+                </example>
+                <para>
+                    All items have a <methodname>toString</methodname>
+                    method that is polymorphic in the base calss
+                    <classname>CRingItem</classname>.  This is used
+                    by dumper and now by us to create a textual dump of the
+                    event.
+                </para>
+                <para>
+                    Typically this is where you'd put the real work of unpacking
+                    the physics event and doing something useful with it, like
+                    making a root tree.
+                </para>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processEventCount</methodname>
+                    </title>
+
+                        <programlisting>
+void
+CRingItemProcessor::processEventCount(CRingPhysicsEventCountItem&amp; item)
+{
+    time_t tm = item.getTimestamp();
+    std::cout &lt;&lt; "Event count item";
+    if (item.hasBodyHeader()) {
+        std::cout &lt;&lt; " from source id: " &lt;&lt; item.getSourceId();
+    }
+    std::cout &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Emitted at: " &lt;&lt; std::ctime(&amp;tm) &lt;&lt; " "
+        &lt;&lt; item.getTimeOffset() &lt;&lt; " seconds into the run \n";
+    std::cout &lt;&lt; item.getEventCount() &lt;&lt; " events since lastone\n";
+}                            
+                        </programlisting>
+                </example>
+                <para>
+                    <classname>CRingPhysicEventCountItem</classname> objects
+                    are periodically emitted by readout frameworks during an active
+                    run.  They provide information about the number of triggers
+                    processed since the last such item, or the beginning of the
+                    run for the first one.
+                </para>
+                <para>
+                    The intent is that these items can provide an idea of the
+                    trigger rate as well as information about how many items
+                    were skipped when the consumer is sampling physics items.
+                    Well that's the idea anyway.  This all becomes a bit more
+                    complicated with event built data, and even more complicated
+                    with multilevel event building.
+                </para>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processFormat</methodname>
+                    </title>
+
+                        <programlisting>
+void
+CRingItemProcessor::processFormat(CDataFormatItem&amp; item)
+{
+    std::cout &lt;&lt; " Data format is for: "
+        &lt;&lt; item.getMajor() &lt;&lt; "." &lt;&lt; item.getMinor() &lt;&lt; std::endl;
+}
+
+                        </programlisting>
+                </example>
+                <para>
+                    Since NSCLDAQ-11.0, data producers have started to emit
+                    data format records so that software (and humans) know
+                    how to handle data files as the formats evolve.
+                    The format record contains only a major and minor format
+                    version.  These match the version of NSCLDAQ in which the
+                    data format was introduced.
+                </para>
+                <para>
+                    <methodname>getMajor</methodname> returns the major version number
+                    and <methodname>getMinor</methodname> returns the minor version.
+                </para>
+                <example>
+                    <title><classname>CRingItemProcessor</classname>::<methodname>processGlomParams</methodname></title>
+                    <programlisting>
+void
+CRingItemProcessor::processGlomParams(CGlomParameters&amp; item)
+{
+    std::cout &lt;&lt; "Event built data.  Glom is: ";
+    if (item.isBuilding()) {             <co id='process.glombuilding' />
+        std::cout &lt;&lt; "building with coincidece interval: "
+            &lt;&lt; item.coincidenceTicks()  <co id='process.glomticks' />
+            &lt;&lt; std::endl;
+        std::cout &lt;&lt; "Timestamp policy: "
+            &lt;&lt; glomPolicyMap[item.timestampPolicy()] <co id='process.glompolicy' />
+            &lt;&lt; std::endl;
+    } else {
+        std::cout &lt;&lt; "operating in passthrough (non-building) mode\n";
+    }
+}
+
+                    </programlisting>
+                </example>
+                <para>
+                    When experiments use the event builder, the last stage
+                    of the event builder, glom, emits a glom parameters item.
+                    This item describes how glom was told to function.
+                </para>
+                <para>
+                    Glom can glue fragments together into events, given a
+                    coincidence interval (in timestamp units), or it can
+                    operate in non-building, passthrough mode, where the
+                    fragments are just passed on through to the output.
+                </para>
+                <calloutlist>
+                    <callout arearefs='process.glombuilding'>
+                        <para>
+                            The method <methodname>isBuilding</methodname>
+                            returns boolean true if glom has been asked to glue
+                            fragments togehter.  If not, none of the other
+                            glom parameters are relevant.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.glomticks'>
+                        <para>
+                            In build mode, <methodname>coincidenceTicks</methodname>
+                            returns the number of timestamp ticks in the
+                            event building coincidence window.  If not building,
+                            the return value from this method is meaningless.
+                        </para>
+                    </callout>
+                    <callout arearefs='process.glompolicy'>
+                        <para>
+                            In build mode, Glom assigns a timestamp to the
+                            output event based on the timestamp policy its been
+                            handed when it starts.  The return value from
+                            <methodname>timestampPolicy</methodname> is an
+                            enumerated value that describes this policy.  This
+                            is used as a key to lookup the textual version of
+                            that policy.
+                        </para>
+                    </callout>
+                </calloutlist>
+                <example>
+                    <title>
+                        <classname>CRingItemProcessor</classname>::<methodname>processUnknownItemType</methodname>
+                    </title>
+                    <programlisting>
+void
+CRingItemProcessor::processUnknownItemType(CRingItem&amp; item)
+{
+    std::cout &lt;&lt; item.toString() &lt;&lt; std::endl;
+}
+
+                    </programlisting>
+                </example>
+                <para>
+                    If we have receiged a ring item type that we don't know
+                    about, we just use the <methodname>toString</methodname>
+                    method to dump it to stdout.
+                </para>
+            </section>
+        </section>
+    </chapter>
+    <chapter id='ch.fragindex' >
+        <title id='ch.fragindex.title' >Processing Event Built data</title>
+        <para>
+            This chapter builds on the examples so far to show how to process
+            events that have come from an event builder.  We specifically
+            build this on the framework in the example:
+            <link linkend='ch.process' endterm='ch.process.title' />.
+        </para>
+        <para>
+            The only differences between event built and non-event-built data are
+            how the <literal>PHYSICS_EVENT</literal> ring item bodies are
+            constructed.  For event built data, these bodies consist of a size
+            followed by a sequence of fragments.  Each fragment has a header and
+            a body.  The body of each fragment is, itself, just another
+            <literal>PHYSICS_EVENT</literal> ring item.
+        </para>
+        <para>
+            NSCLDAQ supplies the <classname>FragmentIndex</classname> class.
+            This class is able to unravel event built data for you.  In this
+            chapter, we're going to look at the changes to the
+            <filename>processor.cpp</filename> file needed to make
+            <methodname>processEvent</methodname> capable of dealing with
+            an event that has been glued together from fragments by the
+            event builder.
+        </para>
+        <para>
+            The full code for this example is installed in
+            <filename>$DAQROOT/share/recipes/eventbuilt</filename>
+        </para>
+        <para>
+            Here are the additions we needed to make to the top part of
+            <filename>processor.cpp</filename>
+        </para>
+        <informalexample>
+            <programlisting>
+#include &lt;FragmentIndex.h&gt;
+#include &lt;CRingItemFactory.h&gt;
+
+            </programlisting>
+        </informalexample>
+        <para>
+            <filename>FragmentIndex.h</filename> defines the
+            <classname>FragmentIndex</classname> class we'll use to pick apart
+            the raw physics items.  Once we've done that,
+            we'll use a <classname>CRingItemFactory</classname>
+            (defined in <filename>CRingItemFactory.h</filename>) to
+            construct a <classname>CPHysicsEventItem</classname> from a pointer to
+            the ring item in each fragment.
+        </para>
+        <para>
+            Let's now look at the <methodname>processEvent</methodname> code.
+        </para>
+        <informalexample>
+            <programlisting>
+void
+CRingItemProcessor::processEvent(CPhysicsEventItem&amp; item)
+{
+    std::cout &lt;&lt; "Event:\n";
+    std::cout &lt;&lt; "Time stamp: "  &lt;&lt; item.getEventTimestamp()
+        &lt;&lt; " Output SourceId: "  &lt;&lt; item.getSourceId() &lt;&lt; std::endl;
+
+    FragmentIndex indexer(                         <co id='evb.fragindex' />
+        static_cast&lt;uint16_t*&gt;(item.getBodyPointer())
+    );
+    std::cout &lt;&lt; "Event has "
+        &lt;&lt; indexer.getNumberFragments()       <co id='evb.fragcount' />
+        &lt;&lt; " fragments\n";
+
+    CRingItemFactory itemFactory;
+    for (size_t i = 0; i &lt; indexer.getNumberFragments(); i++) {
+        FragmentInfo fragment(indexer.getFragment(i));   <co id='evb.gefragment' />
+        std::cout &lt;&lt; "Fragment: " &lt;&lt; i &lt;&lt; " source id : " &lt;&lt; fragment.s_sourceId
+            &lt;&lt; " timestamp: " &lt;&lt; fragment.s_timestamp &lt;&lt; std::endl;
+
+        // Each item is a ring item.  The itemhdr points to the ring item.
+        // s_itembody points to the item body.
+
+        uint8_t* pRawFrag =                            <co id='evb.fraghdr' />
+            reinterpret_cast&lt;uint8_t*&gt;(fragment.s_itemhdr); 
+
+                     <co id='evb.makephysicsitem' />
+
+        CRingItem* pRawItem = itemFactory.createRingItem(pRawFrag);
+        std::unique_ptr&lt;CPhysicsEventItem&gt;
+            fragItem(dynamic_cast&lt;CPhysicsEventItem*&gt;(pRawItem));
+        std::cout &lt;&lt; "Fragment: \n" &lt;&lt; fragItem-&gt;toString() &lt;&lt; std::endl;
+
+        uint16_t* pBody = fragment.s_itembody;     <co id='evb.itembody' />
+
+    } 
+}
+
+            </programlisting>
+        </informalexample>
+        <calloutlist>
+            <callout arearefs='evb.fragindex'>
+                <para>
+                    The simplest way to construct a
+                    <classname>FragmentIndex</classname> object is to pass
+                    it a pointer to the body of the ring item.  The
+                    <classname>FragmentIndex</classname> class allows you
+                    to iterate over the fragments either using STL like
+                    iteration or by getting the size and indexing each fragment.
+                </para>
+            </callout>
+            <callout arearefs='evb.fragcount'>
+                <para>
+                    We've chosen the indexing version of iteration.  This
+                    gets us the number of fragments in the event.  Each fragment,
+                    recall is a fragment header followed by a fragment payload
+                    which is a <literal>PHYSICS_EVENT</literal> ring item.
+                </para>
+            </callout>
+            <callout arearefs='evb.gefragment'>
+                <para>
+                    Indexing a fragment returns a
+                    <structname>FragmentInfo</structname> structure.
+                    This has the following fields:
+                </para>
+                <variablelist>
+                    <varlistentry>
+                        <term><type>uint64_t</type> <structfield>s_timestamp</structfield></term>
+                        <listitem>
+                            <para>
+                                The timestamp of the fragment.  All of the
+                                fragment timestamps will be within the
+                                Glom coincidence window of the first fragment.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><type>uint32_t</type> <structfield>s_sourceId</structfield></term>
+                        <listitem>
+                            <para>
+                                The id of the sourcea that produced this fragment.
+                                Note the event builder allows fragments from the
+                                same sourcea to appear more than once in the
+                                event.  This is an intentional feature.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><type>uint32_t</type> <structfield>s_size</structfield></term>
+                        <listitem>
+                            <para>
+                                The size of the fragment payload.  This should
+                                match the size field of the embedded ring item.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><type>uint32_t</type> <structfield>s_barrier</structfield></term>
+                        <listitem>
+                            <para>
+                                The barrier type of the fragment.  This
+                                should always be zero as physics events are not
+                                barrier events.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><type>uint16_t*</type> <structfield>s_itemhdr</structfield></term>
+                        <listitem>
+                            <para>
+                                Points to the items header.  
+                                This is the ring item header of the ring item
+                                that is the fragment payload.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><type>uint16_t*</type> <structfield>s_itemBody</structfield></term>
+                        <listitem>
+                            <para>
+                                Pointer to the body of the ring item.  This is
+                                correctly computed for items with and without
+                                body headers. 
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </callout>
+            <callout arearefs='evb.fraghdr'>
+                <para>
+                    This line extracts a pointer to the ring item from the fragment.
+                </para>
+            </callout>
+            <callout arearefs='evb.makephysicsitem'>
+                <para>
+                    If the ring item factory is handed a pointer to a raw ring
+                    item, it will construct the appropriate concrete ring item
+                    class (in this case a <classname>CPhysicsEvent</classname>).
+                    Since that ring item is dynamically allocated, we wrap it in
+                    a <classname>std::unique_ptr</classname> to ensure it is
+                    destroyed when the block exits.
+                </para>    
+            </callout>
+            <callout arearefs='evb.itembody'>
+                <para>
+                    There are actually two ways to get a pointer to the event
+                    body for later analysis.  <structfield>s_itembody</structfield>
+                    in the fragment description struct points to it.  The
+                    <classname>CRingItem</classname> base class method
+                    <methodname>getBodyPointer</methodname> also returns a
+                    pointer to the body.
+                </para>
+                <para>
+                    Both are correct even if the event has no body header
+                </para>
+            </callout>
+        </calloutlist>
+
     </chapter>
 </book>
