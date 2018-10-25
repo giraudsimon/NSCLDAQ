@@ -2511,7 +2511,7 @@ This data structure
 <refentry id='daq3_fragmentindex'>
     <refmeta>
         <refentrytitle id='daq3_fragmentindex_title'>FragmentIndex</refentrytitle>
-        <manvolnum>3daq\</manvolnum>
+        <manvolnum>3daq</manvolnum>
     </refmeta>
     <refnamediv>
         <refname>FragmentIndex</refname>
@@ -2846,11 +2846,11 @@ public:
                 <term><type>uint16_t* </type><structfield>s_itemhdr</structfield></term>
                 <listitem>
                     <para>
+                        <!-- daqdev/NSCLDAQ#984 -->
                         If <structfield>s_itembody</structfield> is not null,
-                        this points to the ring item body  header.
-                        This will either point to a <type>uint32_t</type> of
-                        zero, if the Fragment has no body header, or
-                        a <type>BodyHeader</type> struct as defubed in
+                        this points to the ring item header.
+                        See the definition of 
+                        <type>RingItemHeader</type> struct as defined in
                         <filename>DataFormat.h</filename>.
                     </para>
                 </listitem>
