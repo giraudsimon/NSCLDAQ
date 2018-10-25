@@ -229,15 +229,25 @@ CVMUSBusb::~CVMUSBusb()
  * this is done by closing the device and then invoking
  * openVMUSBUsb which has code common to us and
  * the construtor.
+ *   If we can read the firmware register in the VMUSB we assume we don't need
+ *   to reconnect.
+ *   
+ *   @return bool - true if necessary.false if not
  */
-void
+bool
 CVMUSBusb::reconnect()
 {
-  usb_release_interface(m_handle, 0);
-  usb_close(m_handle);
-  Os::usleep(1000);			// Let this all happen
-  openVMUsb();
-
+  try {
+    int fwid = readFirmwareID();
+    return true;                      // Success so don't need to reconnect.
+  }
+  catch (...) {
+    usb_release_interface(m_handle, 0);
+    usb_close(m_handle);
+    Os::usleep(1000);			// Let this all happen
+    openVMUsb();
+    return true;
+  }
 }
 
 /*!

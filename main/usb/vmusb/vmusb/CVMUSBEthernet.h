@@ -98,7 +98,7 @@ private:
     int operator==(const CVMUSBEthernet& rhs) const;
     int operator!=(const CVMUSBEthernet& rhs) const;
 public:
-    void reconnect();
+    bool reconnect();
 
     std::string getLastError() {
       return m_lastError;

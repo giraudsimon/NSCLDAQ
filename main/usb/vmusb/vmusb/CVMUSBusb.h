@@ -93,7 +93,7 @@ private:
     int operator==(const CVMUSBusb& rhs) const;
     int operator!=(const CVMUSBusb& rhs) const;
 public:
-    virtual void reconnect();
+    virtual bool reconnect();
 
     // List operations.
 

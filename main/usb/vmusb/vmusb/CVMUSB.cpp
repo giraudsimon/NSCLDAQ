@@ -259,11 +259,14 @@ CVMUSB::~CVMUSB()
 }
 /**
  * Close and re-open the VM-USB interface:
- * Onlly subclasses can implement this.
+ * Olly subclasses can implement this.
+ *   @return bool - true if reconnection was needed false if not.
  */
-void
+bool
 CVMUSB::reconnect()
-{}
+{
+    return true;
+}
 
 ////////////////////////////////////////////////////////////////////
 //////////////////////// Register operations ///////////////////////
