@@ -5,8 +5,12 @@
 #include "CMyTrigger.h"
 #include <stdlib.h>
 
+
 #include "pixie16app_export.h"
 #include "pixie16sys_export.h"
+
+
+#define TRIGGER_TIMEOUT_SECS 5        // If no triggers in 5 seconds, auto-trigger.
 
 //#ifdef HAVE_STD_NAMESPACE
 using namespace std;
@@ -34,7 +38,9 @@ CMyTrigger::~CMyTrigger()
 
 void CMyTrigger::setup()
 {
-    // nothing to be done at start of data taking regarding trigger
+    // Start the trigger timeout now:
+    
+    m_lastTriggerTime = time(nullptr);
 }
 
 void CMyTrigger::teardown()
@@ -69,6 +75,7 @@ bool CMyTrigger::operator()()
            segment, continue processing the data buffer.  Return a true trigger 
            to pass control back the event segment. */
         if(m_retrigger){
+            m_lastTriggerTime = time(nullptr);   // Reset the trigger timeout.
             return true;
         } else {
             /* If there are no buffers currently being processed in the event segment 
@@ -93,6 +100,7 @@ bool CMyTrigger::operator()()
                     std::cout << "CMyTrigger:: trig satisfied...mod=" << i << " nwords=" << nFIFOWords << std::endl;
 #endif
                     m_retrigger = true;
+                    m_lastTriggerTime = time(nullptr);
                     return true;
                 }
 
@@ -100,14 +108,25 @@ bool CMyTrigger::operator()()
 
         }
 
+        // If the trigger has timed out, then trigger anyway:
+        
+        time_t now = time(nullptr);
+        if ((now - m_lastTriggerTime)  > TRIGGER_TIMEOUT_SECS) {
+          m_lastTriggerTime = now;
+          return true;
+        }
         return false;	// Currently not enough data to trigger
 
     }
     catch(...){
         cout << "exception in trigger " << endl;
     }
-
-    return false;
+  time_t now = time(nullptr);
+  if ((now - m_lastTriggerTime)  > TRIGGER_TIMEOUT_SECS) {
+    m_lastTriggerTime = now;
+    return true;
+  }
+  return false;
 }
 
 

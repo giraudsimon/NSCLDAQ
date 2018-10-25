@@ -11,6 +11,7 @@ private:
   int NumberOfModules;        // number of pixie16 modules
   unsigned short ModNum;      // pixie16 module number
   unsigned       m_fifoThreshold;
+	time_t   m_lastTriggerTime;   // Last time operator() returned true.
 public:
 	// Constructors, destructors and other cannonical operations: 
   

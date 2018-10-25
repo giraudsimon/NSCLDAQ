@@ -1,6 +1,5 @@
 #include <CEventTrigger.h>
 #include <time.h>
-#include "pixie16sys_export.h"
 
 class CMyTrigger : public CEventTrigger
 {
@@ -11,8 +10,8 @@ private:
   unsigned int nFIFOWords;   // words in pixie16 output data buffer
   int NumberOfModules;        // number of pixie16 modules
   unsigned short ModNum;      // pixie16 module number
-
-  unsigned       m_fifoThreshold; 
+  unsigned       m_fifoThreshold;
+	time_t   m_lastTriggerTime;   // Last time operator() returned true.
 public:
 	// Constructors, destructors and other cannonical operations: 
   
