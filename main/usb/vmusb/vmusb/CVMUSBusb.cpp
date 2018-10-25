@@ -239,7 +239,7 @@ CVMUSBusb::reconnect()
 {
   try {
     int fwid = readFirmwareID();
-    return true;                      // Success so don't need to reconnect.
+    return false;                      // Success so don't need to reconnect.
   }
   catch (...) {
     usb_release_interface(m_handle, 0);
