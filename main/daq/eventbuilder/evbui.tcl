@@ -149,7 +149,7 @@ snit::widgetadaptor ::EVBC::tsselector {
 #
 snit::widgetadaptor ::EVBC::buildparams {
     option -build -default 1  -configuremethod _config10
-    option -dt    -default 1     -type [list snit::integer -min 1] \
+    option -dt    -default 1     -type [list snit::integer -min 0] \
             -configuremethod _configdt
     option -maxfragments -default 1000 -type [list snit::integer -min 1] \
         -configuremethod _configmaxfrag
@@ -164,11 +164,11 @@ snit::widgetadaptor ::EVBC::buildparams {
             -command [mymethod _onCheckChanged]
         nscl::spinbox $win.dt -text {coincidence interval} \
             -command [mymethod _spinChanged ] \
-            -validatecommand [mymethod _validateSpin %P] -validate all          \
-            -from 1 -to 100000 -width 5 -state disabled
+            -validatecommand [mymethod _validateSpin %P 0] -validate all          \
+            -from 0 -to 100000 -width 5 -state disabled
         nscl::spinbox $win.maxfrag -text {max frags} \
             -command [mymethod _maxChanged] \
-            -validatecommand [mymethod _validateSpin %P] -validate all \
+            -validatecommand [mymethod _validateSpin %P 1] -validate all \
             -from 1 -to 100000 -width 6
         $win.dt set 1
 	    ttk::label $win.dtlabel -text {Coincidence interval}
@@ -245,13 +245,12 @@ snit::widgetadaptor ::EVBC::buildparams {
     # @param value   - Proposed value.
     #
     method _configState {optname value} {
-        puts "Config STate"
         if {$value ni {normal disabled} } {
             error "$optname's value must be normal or disabled, was $value"
         }
         set options($optname) $value
         foreach w [list build dt maxfrag] {
-            puts "configure $win.$w state: $value"
+
             $win.$w configure -state $value
             
             #  This adjusts the state of the det widget sothat it's going to be
@@ -312,17 +311,18 @@ snit::widgetadaptor ::EVBC::buildparams {
     ##
     #  _validateSpin
     #
-    #    Ensures the spin box has a valid integers (1 or more).
+    #    Ensures the spin box has a valid integers (0 or more).
     #
     # @param proposed - the new proposed value.
+    # @param minval   - minimum allowed value (introduced to allow -dt = 0)
     # @return boolean - true if proposed is an integer >=1.
     #
-    method _validateSpin proposed {
+    method _validateSpin {proposed minval} {
         if {![string is integer -strict $proposed]} {
             bell
             return 0
         }
-        if {$proposed < 1} {
+        if {$proposed < $minval} {
             bell
             return 0
         }
