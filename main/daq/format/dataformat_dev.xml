@@ -4795,12 +4795,12 @@ item.commitToRing(aring);
             <productnumber></productnumber>
           </refentryinfo>
        <refmeta>
-          <refentrytitle>CDataFomatItem</refentrytitle>
+          <refentrytitle>CDataFormatItem</refentrytitle>
           <manvolnum>3daq</manvolnum>
           <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
-          <refname>CDataFomatItem</refname>
+          <refname>CDataFormatItem</refname>
           <refpurpose>Describe the format of a stream of ringitems.</refpurpose>
        </refnamediv>
        
@@ -4870,11 +4870,11 @@ item.commitToRing(aring);
                 <modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
-                <type>uint16_t</type><methodname>major</methodname><void />
+                <type>uint16_t</type><methodname>getMajor</methodname><void />
                 <modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
-                <type>uint16_t</type><methodname>minor</methodname><void />
+                <type>uint16_t</type><methodname>getMinor</methodname><void />
                 <modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
@@ -5065,7 +5065,7 @@ item.commitToRing(aring);
             <varlistentry>
                 <term>
                     <methodsynopsis>
-                        <type>uint16_t</type><methodname>major</methodname><void />
+                        <type>uint16_t</type><methodname>getMajor</methodname><void />
                         <modifier>const</modifier>
                     </methodsynopsis>
                 </term>
@@ -5078,7 +5078,7 @@ item.commitToRing(aring);
             <varlistentry>
                 <term>
                     <methodsynopsis>
-                        <type>uint16_t</type><methodname>minor</methodname><void />
+                        <type>uint16_t</type><methodname>getMinor</methodname><void />
                         <modifier>const</modifier>
                     </methodsynopsis>
                 </term>
