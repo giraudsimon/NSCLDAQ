@@ -136,7 +136,7 @@ public:
 
     static CMutex& getGlobalMutex();
 
-    virtual void reconnect() = 0;
+    virtual bool reconnect() = 0;
 
     virtual CCCUSBReadoutList* createReadoutList() const 
     { return new CCCUSBReadoutList; }

@@ -13,3 +13,6 @@ option "timestamplib" t "Path to shared library that can extract timestamps from
 option "init-script"  f "Path to initialization script"  string optional
 option "log" l "Log file path (enables logging)." string optional
 option "debug" V  "Logging verbosity" int optional default="0"
+option "quickstart" q "Use daqconfig digesting to determine if relaods are needed BEWARE
+If your daqconfig file is not self contained (does not rely on other files) this may not
+reload the configuration when necessary" values="on","off" enum optional default="off"

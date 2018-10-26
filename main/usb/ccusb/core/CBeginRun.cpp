@@ -65,10 +65,11 @@ CBeginRun::~CBeginRun()
 /////////////////////////////////////////////////////////////////////////////
 
 
-void CBeginRun::reconnect()
+bool
+CBeginRun::reconnect()
 {
     CriticalSection lock(CCCUSB::getGlobalMutex());
-    Globals::pUSBController->reconnect();
+    return Globals::pUSBController->reconnect();
 }
 
 /*!
@@ -133,7 +134,7 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     
     // Re-establish connection to the controller:
 
-    reconnect();
+    bool reconnected = reconnect();
     pApp->logProgress("CCUSB re-connected");
 
     // Check that the configuration file processes correctly:
@@ -200,6 +201,7 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     Globals::pConfig = 0;
 
     CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
+    pReadout->setReconnected(reconnected);
     pReadout->start(Globals::pUSBController);
     pApp->logProgress("Scheduled the acquisition thread to complete startup");
     tclUtil::setResult(interp, string("Begin - Run started"));

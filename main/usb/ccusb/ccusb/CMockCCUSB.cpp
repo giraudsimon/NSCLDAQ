@@ -8,8 +8,9 @@
 using namespace std;
 
 
-void CMockCCUSB::reconnect() {
+bool CMockCCUSB::reconnect() {
   m_record.push_back("reconnect");
+  return true;
 }
 
 

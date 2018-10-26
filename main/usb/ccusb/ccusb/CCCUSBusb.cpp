@@ -117,14 +117,20 @@ CCCUSBusb::~CCCUSBusb()
  * have been power cycled.
 I*
 */
-void
+bool
 CCCUSBusb::reconnect()
 {
-  usb_release_interface(m_handle, 0);
-  usb_close(m_handle);
-  Os::usleep(1000);
-
-  openUsb();
+  uint32_t fw;
+  if (readFirmware(fw) != 0) {
+    usb_release_interface(m_handle, 0);
+    usb_close(m_handle);
+    Os::usleep(1000);
+  
+    openUsb();
+    return true;
+  } else {
+    return false;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

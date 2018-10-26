@@ -131,6 +131,26 @@ int CTheApplication::operator()(int argc, char** argv)
 
   cmdline_parser(argc, argv, &arg_struct);
   
+  // Save the state of  the --quickstart flag and warn the user if they've
+  // enabled it:
+  
+  if (arg_struct.quickstart_arg == quickstart_arg_off) {
+    m_quickstartEnabled = false;
+  } else if (arg_struct.quickstart_arg == quickstart_arg_on) {
+    m_quickstartEnabled = true;
+    
+    std::cerr << "** WARNING - you have enabled the --quickstart option.\n";
+    std::cerr << "   This will only turn out well for you if you have a self-contained\n";
+    std::cerr << "   daqconfig file.  That is a daqconfig file that does not \n";
+    std::cerr << "   depend in *any* way on external files.  If you are not sure\n";
+    std::cerr << "   if this is the case, don't enable this flag.  If you *are*\n";
+    std::cerr << "   sure this is the case you may have improved run start times\n";
+    std::cerr << "YOU. HAVE. BEEN. WARNED!!!\n";
+  } else {
+    std::cerr << "Invalid value for --quickstart\n";
+    exit(EXIT_FAILURE);
+  }
+  
   // Set up logging data and logger:
   
   if (arg_struct.log_given) m_logFile = arg_struct.log_arg;

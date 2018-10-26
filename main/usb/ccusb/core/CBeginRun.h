@@ -69,7 +69,7 @@ protected:
 			 std::vector<CTCLObject>& objv);
 
 private:
-  void reconnect();
+  bool reconnect();
 
 };
 
