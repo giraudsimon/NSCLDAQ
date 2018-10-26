@@ -125,7 +125,7 @@ class CCCUSBusb : public CCCUSB
     * Releases the usb device and then tries
     * to open it again. 
     */
-    virtual void reconnect();
+    virtual bool reconnect();
 
     // Register I/O operations.
   public:

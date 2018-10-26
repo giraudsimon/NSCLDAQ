@@ -126,12 +126,17 @@ CCCUSBRemote::~CCCUSBRemote()
   disconnect(); 
 }
 
-void CCCUSBRemote::reconnect()
+bool CCCUSBRemote::reconnect()
 {
-  if (m_pSocket) {
-    disconnect();
+  uint32_t fware;
+  if (readFirmware(fware) != 0) {
+    if (m_pSocket) {
+      disconnect();
+    }
+    connect();
+    return true;                         // Actually did reconnect,.
   }
-  connect();
+  return false;                          // Didn't need to reconnect.
 }
 
 

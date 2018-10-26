@@ -40,6 +40,8 @@ struct DataBuffer;
 */
 class CAcquisitionThread : public CSynchronizedThread
 {
+    // Static member data.
+    
 private:
   static bool                   m_Running;	//!< thread is running.
   static unsigned long          m_tid;          //!< ID of thread when running.
@@ -47,8 +49,12 @@ private:
   
   static std::vector<CReadoutModule*>  m_Stacks;       //!< the stacks to run.
 
+  // Per object data (really don't need this 'cause it's a singleton).
+  
 private:
   bool                         m_haveScalerStack;
+  bool                         m_controllerReset;
+  std::string                  m_lastChecksum;
 
   //Singleton pattern stuff:
 private:
@@ -64,9 +70,12 @@ public:
   static void start(CVMUSB* usb);
   static bool isRunning();
   static void waitExit();	/* Wait for this thread to exit (join). */
-//  virtual void run();		/* Adapt between nextgen  spectrodaq thread model. */
   virtual void init(); /* thread-unsafe operations */
 
+  void setControllerResetState(bool value) {
+    m_controllerReset = value;
+  }
+  
 protected:
   virtual void operator()();
 private:
@@ -88,6 +97,9 @@ private:
   void bootToTheHead();
   void reportErrorToMainThread(std::string msg);
   void disableInterrupts();
+  bool mustReload();
+  bool isChecksumChanged();
+  std::string computeMd5(const char* filename);
 };
 
 #endif

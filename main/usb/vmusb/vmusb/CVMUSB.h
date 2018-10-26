@@ -157,7 +157,7 @@ public:
     virtual CVMUSBReadoutList* createReadoutList() const { return new CVMUSBReadoutList(); }
 
 
-    virtual void     reconnect(); /* Drop USB/open USb. */
+    virtual bool     reconnect(); /* Drop USB/open USb. */
 
     // Register I/O operations.
 public:

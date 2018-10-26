@@ -478,7 +478,7 @@ $abell destroy
         </refentryinfo>
         <refmeta>
            <refentrytitle id='rdogui3_configuration_title'>Configuration</refentrytitle>
-           <manvolnum>rdogui3</manvolnum>
+           <manvolnum>3rdogui</manvolnum>
            <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
@@ -639,7 +639,7 @@ Configuration::readConfigFile <replaceable>path</replaceable>
         </refentryinfo>
         <refmeta>
            <refentrytitle id='rdogui3_daqparameters_title'>DAQParameters</refentrytitle>
-           <manvolnum>rdogui3</manvolnum>
+           <manvolnum>3rdogui</manvolnum>
            <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
@@ -1856,7 +1856,7 @@ if {$result eq "Ok"} {
         </refentryinfo>
         <refmeta>
            <refentrytitle id='rdogui3_readoutguiapplauncher_title'>ReadoutGUIAppLauncher</refentrytitle>
-           <manvolnum>1tcl</manvolnum>
+           <manvolnum>3rdogui</manvolnum>
            <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
@@ -2064,7 +2064,7 @@ package require ReadoutGUIAppLauncher
         </refentryinfo>
         <refmeta>
            <refentrytitle id='rdogui3_diagnostics_title'>Diagnostics</refentrytitle>
-           <manvolnum>1tcl</manvolnum>
+           <manvolnum>3rdogui</manvolnum>
            <refmiscinfo class='empty'></refmiscinfo>
         </refmeta>
         <refnamediv>
@@ -5114,7 +5114,294 @@ $status setMessage $msg {Some text} -foreground green
             </para>
         </refsect1>
       </refentry>
+        <refentry id="rdogui3_readoutguioutputclient">
+            <refentryinfo>
+                <author>
+                        <personname>
+                                <firstname>Ron</firstname>
+                                <surname>Fox</surname>
+                        </personname>
+                        <personblurb><para></para></personblurb>
+                </author>
+                <productname>NSCLDAQ</productname>
+                <productnumber></productnumber>
+            </refentryinfo>
+          <refmeta>
+             <refentrytitle id="rdogui3_readoutguioutputclient_title">ReadoutGUIOutputClient</refentrytitle>
+             <manvolnum>3rdogui</manvolnum>
+             <refmiscinfo class='empty'></refmiscinfo>
+          </refmeta>
+          <refnamediv>
+             <refname>ReadoutGUIOutputClient</refname>
+             <refpurpose>Readout gui output monitor client.</refpurpose>
+          </refnamediv>
+          
+          <refsynopsisdiv>
+            <cmdsynopsis>
+                <command>
+ReadoutGUIOutputClient <replaceable>name ?options?</replaceable>
+                </command>
+            </cmdsynopsis>
+            <cmdsynopsis>
+                <command>
+<replaceable>name method params</replaceable>                    
+                </command>
+            </cmdsynopsis>
 
+          </refsynopsisdiv>
+          <refsect1>
+             <title>DESCRIPTION</title>
+             <para>
+                <classname>ReadoutGUIOutputClient</classname> provides a packaged
+                client for the output  monitor for applications that use the event
+                loop.  Note that Tcl/Tk applications by default use the event loop.
+                When a client object is constructed, it creates a new command ensemble
+                whose sub commands are the method names of the object.  The command
+                name can either be specified or a unique one can be assigned by
+                specifying the special object name <literal>%AUTO%</literal>.
+                Regardless the constructor returns the name of the command as its
+                result.  Thus e.g.:
+             </para>
+             <informalexample>
+                <programlisting>
+set outputMonitor [ReadoutGUIOutputClient %AUTO%]
+$outputMonitor configure -host spdaq123.nscl.msu.edu
+                </programlisting>
+             </informalexample>
+             <para>
+                is a pretty common pattern.
+             </para>
+          </refsect1>
+          <refsect1>
+             <title>
+                OPTIONS
+             </title>
+             <para>
+                <classname>ReadoutGUIOutputClient</classname> objects include
+                the <command>configure</command> and <command>cget</command>
+                commands that manipulate and query configuration options of the
+                object.  Normally one configures the object and then invokes
+                the <command>connect</command> method to start processing
+                data.  See METHODS for more about <command>connect</command>.
+             </para>
+             <variablelist>
+                <varlistentry>
+                    <term><option>-host</option></term>
+                    <listitem>
+                        <para>
+                            Specifies the name or IP address of the host that
+                            is running the server.  The default value, if not
+                            explicitly configured is <literal>localhost</literal>
+                            which corresponds to the system running the application.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>-user</option></term>
+                    <listitem>
+                        <para>
+                            Specifies the user that is running the server application.
+                            If not configured, the default value is the current
+                            logged in user; <literal>$::tcl_platform(user)</literal>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><command>-outputcmd</command></term>
+                    <listitem>
+                        <para>
+                            The value of this option is a script that is executed
+                            whenever something was output to the server's output
+                            window.  The text that was output is passed as an
+                            additional argument to the script.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>-closecmd</option></term>
+                    <listitem>
+                        <para>
+                            The value of this option is a script that is executed
+                            when the object loses connection with the command server.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                
+                
+             </variablelist>
+          </refsect1>
+            <refsect1>
+                <title>METHODS</title>
+                <para>
+                    There is only one method <methodname>connect</methodname>
+                    it has no additional parameters and should be invoked once
+                    the object is configured.  <methodname>connect</methodname>
+                    attempts to make the connection with the server and
+                    sets up the fileevents to invoke the <option>-outputcmd</option>
+                    and <option>-closecmd</option> scripts at appropriate times.
+                </para>
+                <para>
+                    Failures result in an error signal.
+                </para>
+            </refsect1>
+        </refentry>
+
+         <refentry>
+            <refmeta>
+                <refentrytitle>multilogger</refentrytitle>
+                <manvolnum>3rdogui</manvolnum>
+            </refmeta>
+            <refnamediv>
+                <refname>multilogger</refname>
+                <refpurpose>Log data from multiple ring buffers</refpurpose>
+            </refnamediv>
+            <refsynopsisdiv>
+              <synopsis>
+##
+#   Add this line to your ReadoutCallouts.tcl file:
+# 
+package require multilogger
+              </synopsis>
+            </refsynopsisdiv>
+            <refsect1>
+                <title>DESCRIPTION</title>
+                <para>
+                    The NSCL ReadoutShell has the concept of an
+                    event recording ringbuffer.  When you check the
+                    recording checkbutton on the GUI, ReadoutGUI
+                    automatically starts an eventlog programto log
+                    data to that ringbuffer and, at the end of the run
+                    does what's needed to build the experiment and run views
+                    of the resulting event file.
+                </para>
+                <para>
+                 In more complex experiments, involving multiple event building
+                 stages, it can be useful to log data to disk from more than one
+                 ring.  This provides the ability to reconstruct the final
+                 event file later, in case something went wrong with event building.
+                 It can also provide for the ability to replay and analyze
+                 subsets of the data (from a detector subsystem rather than the
+                 entire experiment).
+                </para>
+                <para>
+                 The mulilogger package meets that need.  Multilogger is
+                 a ReadoutGui add on that allows you to log data from an arbitrary
+                 number of ringbuffers.  Each of these logging specifications
+                 can be independently enabled or disabled.  You can also
+                 specify, if desired, that the system log data even when
+                 recording is not enabled on the GUI.
+                </para>
+                <para>
+                 Event files are prefixed with the creation time making it possible
+                 to log several runs with the same run number without losing
+                 data (essential if log always is turned on).
+                </para>
+            </refsect1>
+            <refsect1>
+             <title>Using the multilogger package.</title>
+             <para>
+              Using the multi logger package requires that you:
+             </para>
+             <itemizedlist>
+              <listitem>
+                <para>
+                    Incorporate the multilogger into the ReadoutShell. See
+                    the <literal>Synopsis</literal> section above for the
+                    line you need to add to your <filename>ReadoutCallouts.tcl</filename>
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                    Set up the additional logging you want.
+                </para>
+              </listitem>
+             </itemizedlist>
+             <para>
+              The multilogger package adds a <guibutton>Multilogger</guibutton>
+              This menu provides commands to:
+             </para>
+             <variablelist>
+              <varlistentry>
+                <term>Add Logger...</term>
+                <listitem>
+                    <para>
+                     Prompts for the URI of the ring buffer to log, the output
+                     directory, the maximum number of seconds to wait for
+                     all end runs to be received and the number of data sources
+                     that contribute control itesm to the ring.
+                    </para>
+                    <para>
+                     It also prompts for the initial enable state of the logger.
+                     A disabled logger will never log data, even if log always
+                     is enabled.  The output directory must exist before the
+                     multiloggers's first attempt to log data. The multilogger
+                     will <emphasis>not</emphasis>
+                     create that directory for you.
+                    </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>List Loggers...</term>
+                <listitem>
+                    <para>
+                     Provides a list of loggers showing their ring buffers,
+                     output directories, enable state, end run timeout an
+                     number of event sources.
+                    </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>Enable Loggers...</term>
+                <listitem>
+                    <para>
+                     Allows you to selectively enable or disable loggers.
+                    </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>Delete Loggers...</term>
+                <listitem>
+                    <para>
+                     Lets you get rid of loggers you no longer want.
+                    </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>Record Always</term>
+                <listitem>
+                    <para>
+                     Is a menu checkbutton that, when checked makes
+                     the enabled loggers log data even if the Record button
+                     on the ReadoutGui is not checked.
+                    </para>
+                </listitem>
+              </varlistentry>             
+             </variablelist>
+             <para>
+              After each menu item's dialogs are approved, the state of
+              the multilogger subsystem is written to file.
+              (See <literal>FILES</literal>) below.
+             </para>
+            </refsect1>
+            <refsect1>
+             <title>FILES</title>
+             <variablelist>
+              <varlistentry>
+                <term><filename>~/.multiloggers</filename></term>
+                <listitem>
+                    <para>
+                     This is a CSV file that has the up-to-date list of
+                     the loggers multilogger is managing.  The fields
+                     in this file are in order, the ring URI, the
+                     output direcctory, The enable state (non-zero is enabled),
+                     The timeout and the number of sources.
+                    </para>
+                </listitem>
+              </varlistentry>
+             </variablelist>
+            </refsect1>
+         
+         </refentry>
 <!-- /manpage -->
 <!-- manpage 3provider -->
       <refentry id="provider3_intro">
@@ -6537,137 +6824,6 @@ $DAQROOT/bin/ReadoutShell
             </variablelist>
         </refsect1>
       </refentry>
-        <refentry id="rdogui3_readoutguioutputclient">
-            <refentryinfo>
-                <author>
-                        <personname>
-                                <firstname>Ron</firstname>
-                                <surname>Fox</surname>
-                        </personname>
-                        <personblurb><para></para></personblurb>
-                </author>
-                <productname>NSCLDAQ</productname>
-                <productnumber></productnumber>
-            </refentryinfo>
-          <refmeta>
-             <refentrytitle id="rdogui3_readoutguioutputclient_title">ReadoutGUIOutputClient</refentrytitle>
-             <manvolnum>3rdogui</manvolnum>
-             <refmiscinfo class='empty'></refmiscinfo>
-          </refmeta>
-          <refnamediv>
-             <refname>ReadoutGUIOutputClient</refname>
-             <refpurpose>Readout gui output monitor client.</refpurpose>
-          </refnamediv>
-          
-          <refsynopsisdiv>
-            <cmdsynopsis>
-                <command>
-ReadoutGUIOutputClient <replaceable>name ?options?</replaceable>
-                </command>
-            </cmdsynopsis>
-            <cmdsynopsis>
-                <command>
-<replaceable>name method params</replaceable>                    
-                </command>
-            </cmdsynopsis>
-
-          </refsynopsisdiv>
-          <refsect1>
-             <title>DESCRIPTION</title>
-             <para>
-                <classname>ReadoutGUIOutputClient</classname> provides a packaged
-                client for the output  monitor for applications that use the event
-                loop.  Note that Tcl/Tk applications by default use the event loop.
-                When a client object is constructed, it creates a new command ensemble
-                whose sub commands are the method names of the object.  The command
-                name can either be specified or a unique one can be assigned by
-                specifying the special object name <literal>%AUTO%</literal>.
-                Regardless the constructor returns the name of the command as its
-                result.  Thus e.g.:
-             </para>
-             <informalexample>
-                <programlisting>
-set outputMonitor [ReadoutGUIOutputClient %AUTO%]
-$outputMonitor configure -host spdaq123.nscl.msu.edu
-                </programlisting>
-             </informalexample>
-             <para>
-                is a pretty common pattern.
-             </para>
-          </refsect1>
-          <refsect1>
-             <title>
-                OPTIONS
-             </title>
-             <para>
-                <classname>ReadoutGUIOutputClient</classname> objects include
-                the <command>configure</command> and <command>cget</command>
-                commands that manipulate and query configuration options of the
-                object.  Normally one configures the object and then invokes
-                the <command>connect</command> method to start processing
-                data.  See METHODS for more about <command>connect</command>.
-             </para>
-             <variablelist>
-                <varlistentry>
-                    <term><option>-host</option></term>
-                    <listitem>
-                        <para>
-                            Specifies the name or IP address of the host that
-                            is running the server.  The default value, if not
-                            explicitly configured is <literal>localhost</literal>
-                            which corresponds to the system running the application.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term><option>-user</option></term>
-                    <listitem>
-                        <para>
-                            Specifies the user that is running the server application.
-                            If not configured, the default value is the current
-                            logged in user; <literal>$::tcl_platform(user)</literal>.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term><command>-outputcmd</command></term>
-                    <listitem>
-                        <para>
-                            The value of this option is a script that is executed
-                            whenever something was output to the server's output
-                            window.  The text that was output is passed as an
-                            additional argument to the script.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term><option>-closecmd</option></term>
-                    <listitem>
-                        <para>
-                            The value of this option is a script that is executed
-                            when the object loses connection with the command server.
-                        </para>
-                    </listitem>
-                </varlistentry>
-                
-                
-             </variablelist>
-          </refsect1>
-            <refsect1>
-                <title>METHODS</title>
-                <para>
-                    There is only one method <methodname>connect</methodname>
-                    it has no additional parameters and should be invoked once
-                    the object is configured.  <methodname>connect</methodname>
-                    attempts to make the connection with the server and
-                    sets up the fileevents to invoke the <option>-outputcmd</option>
-                    and <option>-closecmd</option> scripts at appropriate times.
-                </para>
-                <para>
-                    Failures result in an error signal.
-                </para>
-            </refsect1>
-        </refentry>
          <refentry>
             <refmeta>
                 <refentrytitle>evbwizard</refentrytitle>

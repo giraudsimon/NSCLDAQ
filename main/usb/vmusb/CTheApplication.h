@@ -60,6 +60,7 @@ private:
   CSystemControl      m_systemControl;
   std::string         m_logFile;
   unsigned            m_logLevel;
+  bool                m_canQuickstart;
 
 public:
   // Canonicals
@@ -82,6 +83,10 @@ public:
   void logStateChangeRequest(const char* msg);           // info
   void logStateChangeStatus(const char* msg);            // debug
   void logProgress(const char* msg);                     // trace.
+  
+  // Getters:
+  
+  bool canQuickstart() const {return m_canQuickstart;}
   
   // Segments of operation.
 private:

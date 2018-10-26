@@ -92,7 +92,7 @@ public:
     * tries to connect.
     *
     */
-    virtual void reconnect();
+    virtual bool reconnect();
     
     /*! Not a permitted action.
     *

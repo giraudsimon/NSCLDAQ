@@ -48,7 +48,8 @@ private:
   static CCCUSB*                m_pCamac;		//!< VME interface.
 
   bool                          m_haveScalerStack;
-
+  bool                          m_reconnected;
+  std:: string                  m_lastChecksum;
   //Singleton pattern stuff:
 
 
@@ -68,6 +69,9 @@ public:
 
   virtual void init();
 
+  void setReconnected(bool value) {
+    m_reconnected = value;
+  }
 protected:
   virtual void operator()();
 private:
@@ -87,6 +91,9 @@ private:
   void pauseRun();     // Bug #5882
   void resumeRun();    // Bug #5882
   void reportErrorToMainThread(std::string msg);
+  bool mustReload();
+  bool isChecksumChanged();
+  std::string computeMd5(const char* filename);
   
 };
 

@@ -44,6 +44,14 @@
 #include <string.h>
 #include <errno.h>
 #include <sstream>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <openssl/evp.h>
+#include <stdio.h>
+
+
 using namespace std;
 
 
@@ -441,27 +449,29 @@ CAcquisitionThread::startDaq()
   // though the loop below makes you believe it might have an arbitrary number...
   // it still should work.
 
-  cerr << "Loading " << Stacks.size() << " Stacks to cc-usb\n";
-  m_haveScalerStack = false;
-  for(int i =0; i < Stacks.size(); i++) {
-    std::stringstream stackmsg;
-    stackmsg << "Processing stack " << i;
-    pApp->logProgress(stackmsg.str().c_str());
-    
-    CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
-    assert(pStack);
-    if (pStack->getTriggerType() == CStack::Scaler) {
-      m_haveScalerStack = true;
+  if (mustReload()) {
+    cerr << "Loading " << Stacks.size() << " Stacks to cc-usb\n";
+    m_haveScalerStack = false;
+    for(int i =0; i < Stacks.size(); i++) {
+      std::stringstream stackmsg;
+      stackmsg << "Processing stack " << i;
+      pApp->logProgress(stackmsg.str().c_str());
+      
+      CStack* pStack = dynamic_cast<CStack*>(Stacks[i]->getHardwarePointer());
+      assert(pStack);
+      if (pStack->getTriggerType() == CStack::Scaler) {
+        m_haveScalerStack = true;
+      }
+      pStack->Initialize(*m_pCamac);    // INitialize daq hardware associated with the stack.
+      pApp->logProgress("Stack initialized");
+      pStack->loadStack(*m_pCamac);     // Load into CC-USB .. The stack knows if it is event or scaler
+      pApp->logProgress("Stack loaded");
+      pStack->enableStack(*m_pCamac);   // Enable the trigger logic for the stack.
+      pApp->logProgress("Stack enabled");
     }
-    pStack->Initialize(*m_pCamac);    // INitialize daq hardware associated with the stack.
-    pApp->logProgress("Stack initialized");
-    pStack->loadStack(*m_pCamac);     // Load into CC-USB .. The stack knows if it is event or scaler
-    pApp->logProgress("Stack loaded");
-    pStack->enableStack(*m_pCamac);   // Enable the trigger logic for the stack.
-    pApp->logProgress("Stack enabled");
-  }
- 
-
+  } else {
+    std::cerr << " Doing a quickstart because in theory we can\n";
+  }  
   CCusbToAutonomous();
   pApp->logStateChangeStatus("CCUSB is now in data taking mode");
 }
@@ -728,3 +738,91 @@ CAcquisitionThread::reportErrorToMainThread(std::string message)
     Tcl_ThreadQueueEvent(tid, reinterpret_cast<Tcl_Event*>(pEvent), TCL_QUEUE_TAIL);
 }
 
+/**
+ * mustReload
+ *    Determine if the stacks etc. actually need to be reloaded:
+ *
+ *   -   If quickstart is off we need to reload.
+ *   -   If the VME controller had to be reconnected we must reload
+ *   -   If the MD5 checksum of the daqconfig.tcl file matches the
+ *       one we have stored, we need to reload.
+ *       NOTE that we get constructed with an empty md5 checksum which
+ *       ensures that we must load/init the first time.
+ *
+ *  @return bool - true if the system needs a reload, false otherwise.
+ */
+bool
+CAcquisitionThread::mustReload()
+{
+  if(! CTheApplication::getInstance()->quickstartEnabled()) return true;
+
+  if (m_reconnected) return true;
+
+  if (isChecksumChanged()) return true;
+
+  return false;
+}
+/**
+ * isChecksumChanged
+ *   @return bool - true if the checksum for daqconfig changed since the last
+ *                  load.
+ */
+bool
+CAcquisitionThread::isChecksumChanged()
+{
+  std::string configFile = Globals::configurationFilename;
+  std::string md5sum = computeMd5(configFile.c_str());
+  bool result = !(md5sum == m_lastChecksum);
+  m_lastChecksum = md5sum;
+  return result;
+}
+/**
+ * computeMd5
+ *    Computes an md5 digest checksum for a file.
+ *
+ *  @param fileName
+ *  @return std::string - the md5sum.
+ */
+std::string
+CAcquisitionThread::computeMd5(const char* filename)
+{
+  EVP_MD_CTX* ckContext = EVP_MD_CTX_create();
+  const EVP_MD*  method    = EVP_md5();
+  EVP_DigestInit_ex(ckContext, method, nullptr);
+
+  // Now we can get chunks from the file and compute the
+  // chunk digest:
+
+  int fd = open(filename, O_RDONLY);
+  if (fd < 0) {
+    throw CErrnoException("Could not open daqconfig file");
+  }
+
+  char buffer[8192];                // Abitrary size:
+  ssize_t nread;
+  while((nread = read(fd, buffer, sizeof(buffer))) > 0) {
+    EVP_DigestUpdate(ckContext, buffer, nread);
+  }
+  // let's assume normal completion with EOF:
+
+  close(fd);
+  unsigned char result[EVP_MAX_MD_SIZE];
+  unsigned int actualLen;
+  memset(result, 0, EVP_MAX_MD_SIZE);         // So it's null terminated.
+  EVP_DigestFinal_ex(ckContext, result, &actualLen);
+  EVP_MD_CTX_destroy(ckContext);
+
+  // No need nor should we call cleanup because that would empty out
+  // the digest table.  The result, is actually binary digits that we
+  // now want to turn int a string.
+
+  std::string strResult;
+  for (int i =0; i  < actualLen; i++) {
+    char digits[3];
+    sprintf(digits, "%02x", result[i]);
+    strResult += digits;
+  }
+
+
+  return strResult;
+}

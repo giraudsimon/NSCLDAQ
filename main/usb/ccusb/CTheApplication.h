@@ -56,6 +56,7 @@ private:
   
   std::string          m_logFile;
   unsigned             m_logLevel;
+  bool                 m_quickstartEnabled;
 public:
   // Canonicals
 
@@ -80,6 +81,7 @@ public:
   void logStateChangeStatus(const char* msg);    // debug
   void logProgress(const char* msg);             // trace.
 
+  bool quickstartEnabled() const { return m_quickstartEnabled;}
   // Segments of operation.
 private:
   void startOutputThread(std::string pRing);

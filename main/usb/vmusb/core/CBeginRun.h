@@ -50,7 +50,7 @@ private:
 public:
 
   // Process the command:
-  void reconnect();
+  bool reconnect();
 protected:
   virtual int operator()(CTCLInterpreter& interp,
 			 std::vector<CTCLObject>& objv);

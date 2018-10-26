@@ -118,7 +118,7 @@ proc OnStart {} {
       The EVBC::registerRingSource proc has the form:
     </para>
     <programlisting>
-::EVBC::registerRingSource sourceURI tstamplib ids info ?expectHeaders? ?oneshot? ?timeout? ?timeoffset?
+::EVBC::registerRingSource sourceURI tstamplib ids info ?expectHeaders? ?oneshot? ?timeout? ?timeoffset? ?defaultid?
     </programlisting>
 
     <para>
@@ -138,7 +138,18 @@ proc OnStart {} {
       important timesaver is to set the <literal>expectHeaders</literal> option
       to true and then pass an empty string to <literal>tstamplib</literal> if
       you know that the Readout program you are using has already provided a
-      timestamp to your data.  To illustrate how this works, consider an
+      timestamp to your data.
+    </para>
+    <para>
+      Some items in NSCLDAQ don't have body headers.  The
+      <parameter>defaultid</parameter> parameter allows you to define the
+      source id that will be attached to those parameters.   The default
+      for this is the first id in the <parameter>ids</parameter> list of valid
+      source ids.  The <parameter>defaultid</parameter> <emphasis>must</emphasis>
+      be one of the ids in <parameter>ids</parameter>.
+    </para>
+    <para>
+      To illustrate how this works, consider an
       experiment in which the data produced by some silicon detectors are read
       out by a single Readout program in the system. The outputted data from
       this Readout are put into the "sidet0" ring buffer on localhost, and all
@@ -146,7 +157,7 @@ proc OnStart {} {
       registered, we choose to label this stream of data with source id 0. We
       also want to associate a human readable description of ?Si Dets? with it.
       In this scenario, the line that would be added to the ReadoutCallouts.tcl
-      would be 
+      would be /
 
       <programlisting> 
         ::EVBC::registerRingSource tcp://localhost/sidet0 {} 0 "Si Dets" 1 1 20 0 

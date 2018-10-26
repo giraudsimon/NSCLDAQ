@@ -1590,6 +1590,26 @@ CC-USB scriptable readout version V2.0
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term><option>--quickstart</option> <replaceable>on | off</replaceable></term>
+                <listitem>
+                    <para>
+                        If the value of this is <literal>on</literal>, each time
+                        a run begins, an md5 checksum is done on the daqconfig
+                        to determine if full initialization is actually needed.
+                        If the checksum matches the prior value, and the CCUSB
+                        has not been reconnected due to power failure
+                        the run is started without re-initializing the hardware.
+                    </para>
+                    <para>
+                        This can only work for self-contained daqconfig files.
+                        That is for daqconfig files that don't depend on any other
+                        files.  If you are not sure you have a self-contained
+                        daqconfig file, don't enable this option.  If you are
+                        sure, then by all means, go for it.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </section>
     <section>

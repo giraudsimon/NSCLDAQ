@@ -23,7 +23,7 @@ class CMockCCUSB : public CCCUSB {
     CLoggingReadoutList* createReadoutList() const 
     {return new CLoggingReadoutList;}
 
-    void reconnect();
+    bool reconnect();
     void writeActionRegister(uint16_t val);
 
     int executeList(CCCUSBReadoutList& list,

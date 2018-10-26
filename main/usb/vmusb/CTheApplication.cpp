@@ -140,6 +140,21 @@ int CTheApplication::operator()(int argc, char** argv)
   struct gengetopt_args_info parsedArgs;
   cmdline_parser(argc, argv, &parsedArgs);	// Actually fails if the commandline is incorrect.
   
+  if (parsedArgs.quickstart_arg == quickstart_arg_on) {
+    std::cerr << "Warning: You've enabled the --quickstart option\n";
+    std::cerr << "This option will compute a digest on your --daqconfig file and\n";
+    std::cerr << "if the VME crate has not power cycled and the file has not changed\n";
+    std::cerr << "since the prior begin run, initialization and stack load won't be done\n";
+    std::cerr << "at the start of a run.  While this can result in quicker begin runs.\n";
+    std::cerr << "This really only has a hope of working if the daqconfig file is self contained\n";
+    std::cerr << "by which I mean that it depends on no other files.\n";
+    std::cerr << "Even then, there are cases where this may not work correctly.\n";
+    std::cerr << "YOU HAVE BEEN WARNED.  If you are not sure this is for you turn --quickstart off.\n";
+    m_canQuickstart = true;
+  } else {
+    m_canQuickstart = false;
+  }
+  
   if (parsedArgs.log_given) {
     m_logFile = parsedArgs.log_arg;
   }

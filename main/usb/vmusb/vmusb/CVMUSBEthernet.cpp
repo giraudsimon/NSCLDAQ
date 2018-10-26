@@ -142,17 +142,26 @@ CVMUSBEthernet::~CVMUSBEthernet()
  * reconnect
  *
  * Teardown and rebuild the connection to the server.
+ * If I can read the firmware register, I don't need to do this:
+ *   @return bool -true if a reconnection was needed, false if not.
  */
-void
+bool
 CVMUSBEthernet::reconnect()
 {
-  m_pSocket->Shutdown();
-  delete m_pSocket;
-  delete m_pInterp;
-  m_pSocket = 0;
-  m_pInterp = 0;
-
-  openServer();
+  try {
+    int fwid = readFirmwareID();
+    return false;                      // No need.
+  }
+  catch (...) {                        // Can't read fwreg - need to reconnect.
+    m_pSocket->Shutdown();
+    delete m_pSocket;
+    delete m_pInterp;
+    m_pSocket = 0;
+    m_pInterp = 0;
+  
+    openServer();
+    return true;
+  }
 }
 
 /**

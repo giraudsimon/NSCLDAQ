@@ -10,6 +10,8 @@
 
 using namespace std;
 
+#define TRIGGER_TIMEOUT_SECS 5        // If no triggers in 5 seconds, auto-trigger.
+
 CMyTrigger::CMyTrigger(): m_retrigger(false) , m_fifoThreshold(EXTFIFO_READ_THRESH*10)
 {
   //  If FIFO_THRESHOLD is defined and is a positive integer, it replaces
@@ -32,7 +34,9 @@ CMyTrigger::~CMyTrigger()
 
 void CMyTrigger::setup()
 {
-  // nothing to be done at start of data taking regarding trigger
+    // Start the trigger timeout now:
+    
+    m_lastTriggerTime = time(nullptr);
 }
 
 void CMyTrigger::teardown()
@@ -68,6 +72,7 @@ bool CMyTrigger::operator()()
        segment, continue processing the data buffer.  Return a true trigger 
        to pass control back the event segment. */
     if(m_retrigger){
+      m_lastTriggerTime = time(nullptr);   // Reset the trigger timeout.
       return true;
     } else {
       /* If there are no buffers currently being processed in the event segment 
@@ -89,11 +94,15 @@ bool CMyTrigger::operator()()
           std::cout << "CMyTrigger:: trig satisfied...mod=" << i << " nwords=" << nFIFOWords << std::endl;
 #endif
           m_retrigger = true;
+          m_lastTriggerTime = time(nullptr);
           return true;
         }
 
       } // end module loop
-      if(m_retrigger) { return true; }
+      if(m_retrigger) {
+         m_lastTriggerTime = time(nullptr);
+        return true;
+      }
     }
 
   }
@@ -101,6 +110,11 @@ bool CMyTrigger::operator()()
     cout << "exception in trigger " << endl;
   }
 
+  time_t now = time(nullptr);
+  if ((now - m_lastTriggerTime)  > TRIGGER_TIMEOUT_SECS) {
+    m_lastTriggerTime = now;
+    return true;
+  }  
   return false;
 }
 
