@@ -1,5 +1,5 @@
-#ifndef _FLASH_H
-#define _FLASH_H
+#ifndef FLASH_H
+#define FLASH_H
 
 #ifdef _WIN32
 #include <windows.h>

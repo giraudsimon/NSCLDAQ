@@ -34,18 +34,15 @@
 **  MODIFICATION HISTORY:
 **--
 **/
-#ifndef __CESCAMAC_H
-#define __CESCAMAC_H
-#ifndef _DAQTYPES_H
-#include <daqdatatypes.h>
-#endif
+#ifndef CESCAMAC_H
+#define CESCAMAC_H
 
-#ifndef __CRT_STDINT_H
+#include <daqdatatypes.h>
+
+
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
+
 
 
 

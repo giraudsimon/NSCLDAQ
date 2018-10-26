@@ -10,7 +10,7 @@
 
      http://www.gnu.org/licenses/gpl.txt
 
-     Author:
+    Author:
              Ron Fox
 	     NSCL
 	     Michigan State University

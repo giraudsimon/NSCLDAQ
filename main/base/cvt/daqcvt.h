@@ -32,19 +32,16 @@
 ** @(#)daqcvt.h	1.2 7/8/92 IncludeFile
 */
 
-#ifndef _DAQCVT_H_INSTALLED_
-#define _DAQCVT_H_INSTALLED_
+#ifndef DAQCVT_H_INSTALLED_
+#define DAQCVT_H_INSTALLED_
 
 /*
 ** Public data types:
 */
 
-#ifndef __CRT_STDINT_H
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
+
 
 #define CVT_WORDSIGNATURE 0x0102       /* Word signature for byte ordering */
 #define CVT_LONGSIGNATURE 0x01020304l  /* Longword sig. for byte ordering */
