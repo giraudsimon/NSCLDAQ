@@ -737,6 +737,32 @@ VM-USB scriptable readout version V5.0
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term><option>--quickstart</option> <replaceable>on | off</replaceable></term>
+                <listitem>
+                    <para>
+                      If the value of this switch is <literal>on</literal>,
+                      VMUSBReadout will compute an MD5 digest of the
+                      daqconfig file.  If this digest matches the most recent
+                      value, and the controller has not been power cycled,
+                      much of the initialization will be bypasssed.
+                    </para>
+                    <para>
+                      The assumption is that if daqconfig does not change,
+                      there's no need to reload stacks and initialize hardware.
+                      We just need to start data taking.  This assumption is only
+                      true if the daqconfig file does not depend on other files
+                      that might change.  For example, if daqconfig sources in
+                      a script that might change or reads some file containing
+                      say thresholds used to program modules.
+                    </para>
+                    <para>
+                      If you are not certain you can use this quickstart
+                      feature then  don't use it. If you are certain, and startup
+                      time is an issue then by all means take a chance.
+                    </para>
+                </listitem>
+            </varlistentry>
     </variablelist>
     <para>
       With the VM-USB connected, start the application at the command line. I

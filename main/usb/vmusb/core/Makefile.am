@@ -1,45 +1,45 @@
 lib_LTLIBRARIES		= libVMUSBCore.la
 libVMUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
-													CControlQueues.cpp \
-													COutputThread.cpp \
-													CRunState.cpp \
-													DataBuffer.cpp  \
-													CSystemControl.cpp \
-													CBeginRun.cpp \
-													CEndRun.cpp \
-													CPauseRun.cpp \
-													CResumeRun.cpp \
-													CInit.cpp \
-													CExit.cpp  \
-													TclServer.cpp \
-													Server.cpp \
-													serverinstance.cpp \
-													CRunStateCommand.cpp  \
-													CGetCommand.cpp  \
-													CSetCommand.cpp  \
-													CUpdateCommand.cpp  \
-													tclUtil.cpp
+			CControlQueues.cpp \
+			COutputThread.cpp \
+			CRunState.cpp \
+			DataBuffer.cpp  \
+			CSystemControl.cpp \
+			CBeginRun.cpp \
+			CEndRun.cpp \
+			CPauseRun.cpp \
+			CResumeRun.cpp \
+			CInit.cpp \
+			CExit.cpp  \
+			TclServer.cpp \
+			Server.cpp \
+			serverinstance.cpp \
+			CRunStateCommand.cpp  \
+			CGetCommand.cpp  \
+			CSetCommand.cpp  \
+			CUpdateCommand.cpp  \
+			tclUtil.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
-										CControlQueues.h \
-										COutputThread.h \
-										CRunState.h \
-										DataBuffer.h \
-										CSystemControl.h \
-										CBeginRun.h \
-										CEndRun.h \
-										CPauseRun.h \
-										CResumeRun.h \
-										CInit.h \
-										CExit.h  \
-										TclServer.h \
-										server.h \
-										serverinstance.h \
-										CRunStateCommand.h \
-										CGetCommand.h  \
-										CSetCommand.h  \
-										CUpdateCommand.h  \
-										tclUtil.h
+			CControlQueues.h \
+			COutputThread.h \
+			CRunState.h \
+			DataBuffer.h \
+			CSystemControl.h \
+			CBeginRun.h \
+			CEndRun.h \
+			CPauseRun.h \
+			CResumeRun.h \
+			CInit.h \
+			CExit.h  \
+			TclServer.h \
+			server.h \
+			serverinstance.h \
+			CRunStateCommand.h \
+			CGetCommand.h  \
+			CSetCommand.h  \
+			CUpdateCommand.h  \
+			tclUtil.h
 
 libVMUSBCore_la_CPPFLAGS = \
 		  @THREADCXX_FLAGS@ \
@@ -56,7 +56,8 @@ libVMUSBCore_la_CPPFLAGS = \
 			-I@top_srcdir@/base/thread	\
 			-I@top_srcdir@/base/os \
 			-I@top_srcdir@/daq/format	\
-			-I@top_srcdir@/daq/eventbuilder
+			-I@top_srcdir@/daq/eventbuilder \
+			@OPENSSL_INCLUDES@
 
 # add -DREPORT_ERRORS to INCLUDES below for verbose
 # error reporting info.
@@ -73,6 +74,7 @@ libVMUSBCore_la_LIBADD	= \
 			@top_builddir@/base/os/libdaqshm.la	\
 			@top_builddir@/daq/format/libdataformat.la	\
 			@TCL_LDFLAGS@ \
-			@THREADLD_FLAGS@
+			@THREADLD_FLAGS@   \
+			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@
 
 

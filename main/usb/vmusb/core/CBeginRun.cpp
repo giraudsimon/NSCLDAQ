@@ -68,10 +68,10 @@ CBeginRun::~CBeginRun()
 /*!
  * \brief Reconnect to the VMUSB with thread synchronization
  */
-void CBeginRun::reconnect()
+bool CBeginRun::reconnect()
 {
     CriticalSection lock(CVMUSB::getGlobalMutex());
-    Globals::pUSBController->reconnect();
+    return Globals::pUSBController->reconnect();
 }
 
 
@@ -199,10 +199,12 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   
   // Reconnect the VM-USB:
 
-  reconnect();
+  bool reconnected = reconnect();
   pApp->logProgress("Reconnected VMUSB");
 
   CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
+  pReadout->setControllerResetState(reconnected);
+  
   pReadout->start(Globals::pUSBController);
   pApp->logProgress("Scheduled the Acquisition thread to run");
 
