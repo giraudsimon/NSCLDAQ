@@ -17,8 +17,8 @@
 * and V2718) and the CAENVMElink (USB and CONET).
 ******************************************************************************/
 
-#ifndef __CAENCOMMLIB_H
-#define __CAENCOMMLIB_H
+#ifndef CAENCOMMLIB_H
+#define CAENCOMMLIB_H
 
 #ifdef _WIN32
 #include <windows.h>

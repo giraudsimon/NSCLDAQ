@@ -40,8 +40,8 @@
 **--
 **/
 
-#ifndef __MTYPES_H	
-#define __MTYPES_H
+#ifndef MTYPES_H	
+#define MTYPES_H
 #include <stdint.h>
 #define BUFFER_REVISION 5
 #define JUMBO_BUFFER_REVISION 6

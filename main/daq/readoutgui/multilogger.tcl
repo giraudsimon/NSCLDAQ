@@ -154,7 +154,7 @@ snit::type EventLogger {
             
             # Construct the logger command and start it.
             
-            set timestamp [clock format [clock seconds] -format {%d%b%Y-%T}]
+            set timestamp [clock format [clock seconds] -format {%d%b%Y-%H%M%S}]
             
             set command [list $loggerProgram                        \
                 --source=$options(-ring) --path=$options(-out)      \

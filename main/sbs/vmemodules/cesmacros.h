@@ -20,17 +20,12 @@
 /*		  assumed include files: camac.h			*/
 
     /* CAMAC and buffer manipulation. */
-#ifndef _CESMACROS_H
-#define _CESMACROS_H
+#ifndef CESMACROS_H
+#define CESMACROS_H
+
 #ifdef __unix__
-#ifndef __CRT_STDIO_H
 #include <stdio.h>
-#define __CRT_STDIO_H
-#endif
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#define __CRT_UNISTD_H
-#endif
 #endif
 
 #include <camacmap.h>

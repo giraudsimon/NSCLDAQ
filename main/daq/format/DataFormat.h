@@ -1,5 +1,5 @@
-#ifndef __DATAFORMAT_H
-#define __DATAFORMAT_H
+#ifndef DATAFORMAT_H
+#define DATAFORMAT_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
