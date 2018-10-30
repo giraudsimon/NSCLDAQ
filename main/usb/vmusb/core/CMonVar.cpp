@@ -165,20 +165,15 @@ CMonitorVariables::CMonitorVariables(CTCLInterpreter& interp, UInt_t msec) :
 /**
  * operator()
  *    Called when the timer expires.  Note there's an interesting timing
- *    hole we're careful about.  If we are called but IsSet returns
- *    kfFALSE, we got queued but the timer was disabled before our queue
- *    element was delivered.  In that case, we do nothing
- *    othewrise:
+ *    hole we're careful about.  
  *    -   We create the items
  *    -   Repropagate the timer.
  */
 void
 CMonitorVariables::operator()()
 {
-    if (IsSet()) {
-        createItems();
-        Set();
-    }
+    createItems();
+    Set();
 }
 /**
  * createItems
