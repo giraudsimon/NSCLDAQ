@@ -88,6 +88,7 @@ noinst_PROGRAMS = unittests
 unittests_SOURCES  = TestRunner.cpp \
 	monvartests.cpp \
 	monvartimertests.cpp \
+	monvarcmdtests.cpp	\
 	CMonVar.cpp DataBuffer.cpp
 unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
 	$(LIBTCLPLUS_LDFLAGS) $(TCL_LDFLAGS)  $(CPPUNIT_LDFLAGS)
