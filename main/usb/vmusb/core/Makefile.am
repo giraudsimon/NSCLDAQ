@@ -80,3 +80,15 @@ libVMUSBCore_la_LIBADD	= \
 			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@
 
 
+#-----------------------------------------------------------------------------------
+# Tests:
+
+noinst_PROGRAMS = unittests
+
+unittests_SOURCES  = TestRunner.cpp monvartests.cpp CMonVar.cpp DataBuffer.cpp
+unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
+	$(LIBTCLPLUS_LDFLAGS) $(TCL_LDFLAGS)  $(CPPUNIT_LDFLAGS)
+unittests_CPPFLAGS = $(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)
+
+
+TESTS=unittests
