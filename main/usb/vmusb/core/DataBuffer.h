@@ -13,6 +13,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
+#ifndef DATABUFFER_H
+#define DATABUFFER_H
+
+
 #ifndef __CRT_STDINT_H
 #include <stdint.h>
 #ifndef __CRT_STDINT_H
@@ -96,3 +100,4 @@ static const int TYPE_EVENTS(3);
 static const int TYPE_STRINGS(4);
 static const int TYPE_PAUSE(5);             // Bug #5882
 static const int TYPE_RESUME(6);            // Bug #5882
+#endif
