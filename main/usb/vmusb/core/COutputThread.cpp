@@ -604,8 +604,8 @@ COutputThread::processStrings(DataBuffer& buffer, StringsBuffer& strings)
 
   // Create and commit the item to the ring.
 
-  CRingTextItem texts(NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
-                      strings.s_ringType,
+  CRingTextItem texts(
+    strings.s_ringType, NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
 		      stringVector,
 		      m_elapsedSeconds, // best we can do for now.
 		      static_cast<uint32_t>(now));
