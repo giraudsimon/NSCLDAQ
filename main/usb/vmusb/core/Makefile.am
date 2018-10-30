@@ -85,7 +85,10 @@ libVMUSBCore_la_LIBADD	= \
 
 noinst_PROGRAMS = unittests
 
-unittests_SOURCES  = TestRunner.cpp monvartests.cpp CMonVar.cpp DataBuffer.cpp
+unittests_SOURCES  = TestRunner.cpp \
+	monvartests.cpp \
+	monvartimertests.cpp \
+	CMonVar.cpp DataBuffer.cpp
 unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
 	$(LIBTCLPLUS_LDFLAGS) $(TCL_LDFLAGS)  $(CPPUNIT_LDFLAGS)
 unittests_CPPFLAGS = $(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)
