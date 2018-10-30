@@ -22,6 +22,7 @@
 #include <CControlQueues.h>
 #include <CTheApplication.h>
 #include <tclUtil.h>
+#include <CMonVar.h>
 
 using std::string;
 using std::vector;
@@ -87,6 +88,7 @@ CPauseRun::operator()(CTCLInterpreter& interp,
 
   pApp->logProgress("Requesing acquisition thread pause run");
   pRequest->PauseRun();
+  pState->getVarMonitor()->Clear();
   pApp->logStateChangeStatus("Run is paused");
 
   return TCL_OK;

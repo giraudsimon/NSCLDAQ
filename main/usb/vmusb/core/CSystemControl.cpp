@@ -14,6 +14,8 @@
 #include <TCLLiveEventLoop.h>
 #include <TCLInterpreter.h>
 #include <CErrnoException.h>
+#include <CMonVar.h>
+#include <CRunState.h>
 
 #include <tcl.h>
 #include <unistd.h>
@@ -31,6 +33,7 @@ unique_ptr<CPauseRun>  CSystemControl::m_pPauseRun;
 unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
+unique_ptr<CMonvarCommand>    CSystemControl::m_pMonVar;
 
 
 // The entry point
@@ -66,6 +69,10 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   m_pResumeRun.reset(new CResumeRun(*Globals::pMainInterpreter));
   m_pInit.reset(new CInit(*Globals::pMainInterpreter));
   m_pExit.reset(new CExit(*Globals::pMainInterpreter));
+  m_pMonVar.reset(new CMonvarCommand(*Globals::pMainInterpreter));
+  
+  CMonitorVariables* pMon = new CMonitorVariables(*Globals::pMainInterpreter, 2000);
+  CRunState::getInstance()->setVarMonitor(pMon);
   
   // If there's an initialization script then run it now:
   

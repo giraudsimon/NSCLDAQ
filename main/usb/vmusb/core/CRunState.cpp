@@ -17,6 +17,8 @@
 #include <config.h>
 #include "CRunState.h"
 #include <iostream>
+#include "CMonVar.h"
+#include <Globals.h>
 
 using namespace std;
 
@@ -35,7 +37,8 @@ CRunState* CRunState::m_pTheInstance(0);
 CRunState::CRunState() : 
   m_title("Change this title"),
   m_runNumber(0),
-  m_state(CRunState::Idle)
+  m_state(CRunState::Idle),
+  m_pVarMonitor(0)
 {
   m_pTheInstance = this;
 }
@@ -44,6 +47,7 @@ CRunState::CRunState() :
 */
 CRunState::~CRunState()
 {
+  delete m_pVarMonitor;
 }
 
 /*!

@@ -31,6 +31,7 @@
 #include <CReadoutModule.h>
 #include <TclServer.h>
 #include <CTheApplication.h>
+#include <CMonVar.h>
 
 using std::vector;
 using std::string;
@@ -206,6 +207,9 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   pReadout->setControllerResetState(reconnected);
   
   pReadout->start(Globals::pUSBController);
+  
+  pState->getVarMonitor()->Set();
+  
   pApp->logProgress("Scheduled the Acquisition thread to run");
 
   tclUtil::setResult(interp, string("Begin - Run started"));

@@ -35,6 +35,8 @@
 #endif
 #endif
 
+class CMonitorVariables;
+
 /*!
    This class contains run state information.  Methods allow the
    run state data to be modified and accessed in a thread safe way.
@@ -68,6 +70,7 @@ private:
   uint16_t       m_runNumber;
   RunState       m_state;
   uint32_t       m_scalerPeriod;
+  CMonitorVariables* m_pVarMonitor;
 
 private:
   CRunState();
@@ -100,6 +103,12 @@ public:
 
   uint32_t    getScalerPeriod();
   void        setScalerPeriod(uint32_t period);
+  CMonitorVariables* getVarMonitor() {
+    return m_pVarMonitor;
+  }
+  void setVarMonitor(CMonitorVariables* pMon) {
+    m_pVarMonitor = pMon;
+  }
 };
 
 #endif

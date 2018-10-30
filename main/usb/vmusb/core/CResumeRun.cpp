@@ -23,6 +23,7 @@
 #include <CRunState.h>
 #include <CControlQueues.h>
 #include <tclUtil.h>
+#include <CMonVar.h>
 
 using std::string;
 using std::vector;
@@ -82,6 +83,7 @@ CResumeRun::operator()(CTCLInterpreter& interp,
   CControlQueues* pRequest = CControlQueues::getInstance();
   pApp->logProgress("Asking the acquisition thread to resume data taking.");
   pRequest->ResumeRun();
+  pState->getVarMonitor()->Set();
   pApp->logStateChangeStatus("Data taking is resumed");
   
 

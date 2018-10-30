@@ -97,7 +97,7 @@ public:
     
     virtual int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
-    void add(CTCLInterpreter& inrterp, std::vector<CTCLObject>& objv);
+    void add(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void remove(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void list(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 };

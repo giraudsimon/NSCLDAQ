@@ -26,6 +26,8 @@
 
 #include <CControlQueues.h>
 #include <CRunState.h>
+#include <CMonVar.h>
+
 
 using std::vector;
 using std::string;
@@ -84,6 +86,7 @@ CEndRun::operator()(CTCLInterpreter& interp,
   }
   // Now stop the run...that is if the acquisition thread is still running
 
+  pState->getVarMonitor()->Clear();
   if(CAcquisitionThread::getInstance()->isRunning()) {
     CControlQueues* pRequest = CControlQueues::getInstance();
     pApp->logProgress("Asking the acquisition thread to end");

@@ -96,8 +96,6 @@ void mvarcmdtests::add1() {
   EQ(std::string("atest"), l.front());
 }
 
-
-
 // Need a variable name:
 
 void mvarcmdtests::addinsuf()
