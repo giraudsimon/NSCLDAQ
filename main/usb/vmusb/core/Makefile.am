@@ -9,6 +9,7 @@ libVMUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
 			CEndRun.cpp \
 			CPauseRun.cpp \
 			CResumeRun.cpp \
+			CMonVar.cpp \
 			CInit.cpp \
 			CExit.cpp  \
 			TclServer.cpp \
@@ -30,6 +31,7 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 			CEndRun.h \
 			CPauseRun.h \
 			CResumeRun.h \
+			CMonVar.h	\
 			CInit.h \
 			CExit.h  \
 			TclServer.h \
