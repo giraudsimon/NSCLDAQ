@@ -30,9 +30,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <CMutex.h>
 
 
 static std::set<int>                 okErrors;	// Acceptable errors in I/O operations.
+
+static CMutex csGaurd;
 /**
  * Return true if an I/O errno is not an allowed one.
  * 
@@ -174,6 +177,8 @@ void writeData (int fd, const void* pData , size_t size)
 void
 closeUnusedFiles(std::set<int> keepOpen)
 {
+  CriticalSection c(csGaurd);
+  errno =0;
   // construct the directory name /proc/mypid/fd.
 
   std::stringstream dirnameStr;
@@ -184,7 +189,7 @@ closeUnusedFiles(std::set<int> keepOpen)
   // readdir_r in the unlikely case that we're running in a threaded program
   // that also reads directories:
   
-  struct dirent nextEntry, *status;
+  struct dirent *nextEntry, *status;
   DIR* pDir = opendir(dirname.c_str());
   if (!pDir) throw errno;                 // Open failed.
   
@@ -194,15 +199,15 @@ closeUnusedFiles(std::set<int> keepOpen)
   
   keepOpen.insert(dirfd(pDir));
   do {
-    int stat = readdir_r(pDir, &nextEntry, &status);
-    if (stat) throw errno;               // Failure
-    if (status) {                        // have a dir.
-      int fd = atoi(nextEntry.d_name);       // FD the process has open.
+    nextEntry =  readdir(pDir);           // daqdev/NSCLDAQ#972
+    if (!nextEntry && (errno != 0)) throw errno;               // Failure
+    if (nextEntry) {                        // have a dir.
+      int fd = atoi(nextEntry->d_name);       // FD the process has open.
       if (!keepOpen.count(fd)) {         // not in the list to keep open.
         close(fd);
       }
     }
-  } while (status);
+  } while (nextEntry);
   
   closedir(pDir);                       // Also closes our dir fd.
 }
