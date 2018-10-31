@@ -7829,7 +7829,7 @@ XLMTimestamp cget <replaceable>name</replaceable>
         <refsynopsisdiv>
           <cmdsynopsis>
               <command>
-marker create <replaceable>name</replaceable>
+marker create <replaceable>name</replaceable> <replaceable>value</replaceable>
           </command>
           </cmdsynopsis>
             <cmdsynopsis>
