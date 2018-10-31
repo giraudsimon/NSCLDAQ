@@ -3514,7 +3514,7 @@ $::MyBundle::sm    addCalloutBundle MyBundle          <co id='callout_bundle_reg
                 </callout>
                 <callout arearefs='callout_bundle_attach'>
                     <para>
-                        Defines the <command>enter</command> proc of the
+                        Defines the <command>attach</command> proc of the
                         bundle. This will be called when the bundle is registered
                         with the state machine. When called, <parameter>currentState</parameter>
                         will be the state at the time the attach was done.
