@@ -223,6 +223,7 @@ snit::type TclServer {
     method _executeCommand channel {
         set command $connections($channel)
         set connections($channel) ""
+        puts "Executing '$command'"
         if {[catch {uplevel #0 $command} msg] == 0 } {
             fconfigure $channel -blocking 1
             puts $channel $msg

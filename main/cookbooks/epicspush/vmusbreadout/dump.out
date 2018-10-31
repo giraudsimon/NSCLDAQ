@@ -1,0 +1,9 @@
+-----------------------------------------------------------
+Wed Oct 31 15:17:55 2018 : Documentation item Monitored VariablesBody Header:
+Timestamp:    18446744073709551615
+SourceID:     0
+Barrier Type: 0
+0 seconds in to the run
+set EPICS_DATA(Z001F-C) 1.93342e-07
+set EPICS_UNITS(Z001F-C) Amps
+set EPICS_UPDATED(Z001F-C) {2018-10-31 15:17:51}
