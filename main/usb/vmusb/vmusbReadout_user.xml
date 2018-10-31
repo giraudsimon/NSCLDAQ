@@ -857,6 +857,54 @@ VM-USB scriptable readout version V5.0
       prompt. After a while, you can end the run by entering
       <command>end</command>.
     </para>
+    <para>
+      In addition, there is a command <command>monvar</command> that supports inserting the values of
+      Tcl variables in the output stream periodically.  This can be
+      used with the TclServer package, the <option>--init-script</option> option
+      and <command>controlpush</command> program to insert the values of
+      EPICS variables in the event stream.
+      The <command>monvar</command> has the following forms:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><command>monvar add</command> <replaceable>var-name</replaceable></term>
+        <listitem>
+            <para>
+              Adds <parameter>var-name</parameter> to the set of variables
+              that will be periodically documented in the event stream.  These
+              variables are documented with a MONITORED_VARIABLES ring item
+              which is one of the CRingTextItem ring items.
+            </para>
+            <para>
+              <parameter>var-name</parameter> can also be an array element
+              (e.g. <command>monvar add tcl_platform(user)</command>).
+            </para>
+            <para>
+              It is an error to add a variable that is already being monitored.
+            </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><command>monvar remove</command> <replaceable>var-name</replaceable></term>
+        <listitem>
+            <para>
+              Removes the variable or array element <parameter>var-name</parameter>
+              from the set of variables that are being monitored.
+            </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><command>monvar list</command> ?<replaceable>pattern</replaceable></term>
+        <listitem>
+            <para>
+              Lists the set of monitored variables that match the glob
+              <parameter>pattern</parameter>. If <parameter>pattern</parameter>
+              is omitted it defaults to <literal>*</literal> which lists all
+              monitored variables.
+            </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
   </section>
 
   <section id="vmusb-understanding-output">
