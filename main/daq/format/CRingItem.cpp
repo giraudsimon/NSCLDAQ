@@ -211,12 +211,31 @@ void*
 CRingItem::getBodyPointer() const
 {
     // The result depends on whether or not the item has a body header:
+    // daqdev/NSCLDAQ#966  - use the body header size to figure out
+    // where the body  pointer is... this allows custom body headers to work
+    // just fine.
+    // We just treat a 0 as sizeof(uint32_t).  All of this works because
+    // ring items are packed structs.
     
+    
+    
+    
+    // Get the body header size:
+    
+    size_t bhdrSize = m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+    if (bhdrSize == 0) bhdrSize = sizeof(uint32_t);
+    
+    uint8_t* pBody =
+      reinterpret_cast<uint8_t*>(&m_pItem->s_body.u_noBodyHeader) + bhdrSize;
+    return pBody;
+  
+#if 0
     if(hasBodyHeader()) {
         return (m_pItem->s_body.u_hasBodyHeader.s_body);
     } else {
         return (m_pItem->s_body.u_noBodyHeader.s_body);
     }
+#endif
 }
 /*!
    \return void*
