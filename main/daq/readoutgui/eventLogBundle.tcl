@@ -452,11 +452,18 @@ proc ::EventLog::_finalizeRun {} {
     
         #  If 
         #  Make links in the complete directory for all mvdNames:
+        #  Ensure the directories are writable and restore fter the links
+        # are made.
         
+        set perms [file attributes $completeDir -permissions]
+        file attributes $completeDir -permissions u+w
         foreach file $mvdNames {
             set targetLink [file join $completeDir [file tail $file]]
             catch {exec ln -s $file $targetLink}
         }
+        file attributes $completeDir -permissions $perms
+        
+        
         #  Now what's left gets recursively/link-followed copied to the destDir
         #  using tar.
         
