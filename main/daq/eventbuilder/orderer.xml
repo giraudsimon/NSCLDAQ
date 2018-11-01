@@ -921,7 +921,7 @@ EVBC::initialize <replaceable>options</replaceable>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term><option>-glomtimestamppolicy</option> <replaceable>earliest | latest | average</replaceable></term>
+                    <term><option>-glomtspolicy</option> <replaceable>earliest | latest | average</replaceable></term>
                     <listitem>
                         <para>
                           The timestamp assigned to the built physics event
