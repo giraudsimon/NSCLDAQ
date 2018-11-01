@@ -28,6 +28,10 @@ exec tclsh "$0" ${1+"$@"}
 
 package provide scalermain 1.0
 
+# daqdev/NSCLDAQ#961  requires we have a directory  available:
+
+
+set outputFileDirectory [pwd];                # Default to working dir. 
 
 if {[info command __package_orig] eq "__package_orig"} {
 
@@ -543,24 +547,24 @@ proc endRun   {item} {
     if {$::startTime > 0} {
         
         
-        # Human readable:
+        # Human readable: daqdev/NSCLDAQ#961 - added settable output filedir.
         
         set run [dict get $item run]
-        set filename [format run%04d.report $run]
+        set filename [file join $::outputFileDirectory [format run%04d.report $run]]
         set fd [open $filename w]
         humanReport $fd $::startTime $item ::scalerconfig::channelMap
         close $fd
         
         #  Computer readable:
         
-        set filename [format run%04d.csv $run]
+        set filename [file join $::outputFileDirectory [format run%04d.csv $run]]
         set fd [open $filename w]
         computerReport $fd $::startTime $item ::scalerconfig::channelMap
         close $fd
         
         #  Stripchart postscript.
         
-        set filename [format run%04d-stripchart.ps $run]
+        set filename [file join $::outputFileDirectory [format run%04d-stripchart.ps $run]]
         saveStripcharts $filename
     }
     #

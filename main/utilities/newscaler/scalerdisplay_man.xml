@@ -573,6 +573,17 @@ stripconfig <replaceable>option ?...?</replaceable>
 			</para>
 		    </listitem>
 		</varlistentry>
+		<varlistentry>
+            <term>::outputFileDirectory</term>
+            <listitem>
+                <para>
+					This defaults to the current working directory and is
+					the directory in which end run files will be created.
+					Specifically the human and machine readable files and the
+					postscript dump of any strip chart.
+                </para>
+            </listitem>
+        </varlistentry>
 	    </variablelist>
 	</refsect2>
     </refsect1>
