@@ -6866,3 +6866,101 @@ and an event builder start script.  The tools is intended to be self documented.
             </refsect1>
         </refentry>
 <!-- /manpage -->
+
+
+<!-- manpage 3tcl -->
+<refentry>
+    <refmeta>
+        <refentrytitle>ssh</refentrytitle>
+        <manvolnum>3tcl</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>ssh</refname>
+        <refpurpose>Run programs on an ssh pipe.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+     <cmdsynopsis><command>
+package require ssh
+     </command></cmdsynopsis>
+     <cmdsynopsis><command>
+set output [::ssh::ssh <replaceable>host command</replaceable>]
+     </command></cmdsynopsis>
+     <cmdsynopsis><command>
+set fd [::ssh::shipe <replaceable>host command access</replaceable>]
+     </command></cmdsynopsis>
+     <cmdsynopsis><command>
+set info [::ssh::sshpid <replaceable>host command</replaceable> ]
+     </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The ssh package provides a set of commands that allow you to
+            run an ssh command in a pipeline.  For this to work, the remote system
+            must hold a public key that corresponds to your identity's private key.
+            The intent of the package is to make it easy to run programs on
+            remote systems that are participating in an experiment.
+        </para>
+        <para>
+         All commands are in the <literal>::namespace::</literal> namespace.
+         The publicly visible ones are also on the namespace export list and
+         can be imported into whichever namespace is appropriate.
+        </para>
+    </refsect1>
+    <refsect1>
+     <title>PUBLIC procedures/commands</title>
+     <variablelist>
+      <varlistentry>
+        <term><command>set output [::ssh::ssh <replaceable>host command</replaceable>]</command></term>
+        <listitem>
+            <para>
+             Synchronously runs the <parameter>command</parameter> in
+             <parameter>host</parameter> The output and error of the
+             command are returned separated by a newline character.  Note
+             that as with all of these commands it's not possible to tell
+             if the command exited in error or succes..
+            </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+         <command>set fd [::ssh::shipe <replaceable>host command access</replaceable>]</command>
+        </term>
+        <listitem>
+            <para>
+             Runs <parameter>command</parameter> via ssh on <parameter>host</parameter>.
+             The command is run over an ssh pipe.  The <parameter>access</parameter>.
+             The <parameter>access</parameter> parameter is the same as an
+             access parameter for an open.
+            </para>
+            <para>
+             The pipe is set up so that if it is open for read, both standard
+             error and standard output are captured by the pip.
+             The Read/write access modes allow you to write data or commands
+             to <parameter>command</parameter> as well as to read data from it.
+            </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><command>set info [::ssh::sshpid <replaceable>host command</replaceable> ]</command></term>
+        <listitem>
+            <para>
+             Same as <command>ssh::sshpipe</command>, however the command
+             returns a three element list.  The first element of the list
+             is the PID of the ssh command.  The second is the fd of the
+             pipe you can read from to get stdout and stderr from the command.
+             The third element is the fd you can write to to send data/commands
+             to the pipe.
+            </para>
+            <para>
+             Note that as Tcl is currently implemented, the two pipefds are
+             currently the same.  Don't assume that to be the case in the
+             event we change this in the future.
+            </para>
+        </listitem>
+      </varlistentry>
+     </variablelist>
+    </refsect1>
+
+</refentry>
+<!-- /manpage -->
