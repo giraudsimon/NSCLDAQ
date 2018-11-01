@@ -17,6 +17,8 @@ close $f
 
 #   Start a Tcl server:
 
+package require TclServer
+
 proc printError {ch cmd msg} {
     puts "Error : $msg executing '$cmd'"
 }
@@ -26,7 +28,7 @@ proc printConnection {sock ip port} {
     return 1
 }
 lappend auto_path /usr/opt/daq/11.3-006/TclLibs
-package require TclServer
+
 
 set server [TclServer %AUTO% -port 12000 -onconnect printConnection -onerror printError]
 $server start
