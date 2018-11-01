@@ -2205,6 +2205,31 @@ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
                 This command appends your public key to the authorized keys list
                 creating it if necessary.
             </para>
+            <para>
+                Next you need to be sure the directory tree from your home
+                directory down into <filename>.ssh</filename> has permissions
+                set properly.
+            </para>
+            <informalexample>
+                <programlisting>
+chmod g-w,o-w ~
+chmod 0700 ~/.ssh
+                </programlisting>
+                <para>
+                    These permissions ensure that only you can modify
+                    the permissions of the
+                    <filename>.ssh</filename> directory and that only
+                    you can see the contents of that directory.  These
+                    permissions revent other people from stealing the private
+                    half of your key pair, which would allow them to impersonate
+                    you.
+                </para>
+                <para>
+                    If you do not set up the permissions to protect your
+                    private key, ssh will refuse to let you use the key pair
+                    to do password-less logins.
+                </para>
+            </informalexample>
         </section>
         <section>
             <title>Creating a directory in which to record events</title>
