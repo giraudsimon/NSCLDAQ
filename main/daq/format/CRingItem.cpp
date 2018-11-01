@@ -229,13 +229,7 @@ CRingItem::getBodyPointer() const
       reinterpret_cast<uint8_t*>(&m_pItem->s_body.u_noBodyHeader) + bhdrSize;
     return pBody;
   
-#if 0
-    if(hasBodyHeader()) {
-        return (m_pItem->s_body.u_hasBodyHeader.s_body);
-    } else {
-        return (m_pItem->s_body.u_noBodyHeader.s_body);
-    }
-#endif
+
 }
 /*!
    \return void*
