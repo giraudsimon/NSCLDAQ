@@ -94,6 +94,7 @@ unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
 	$(LIBTCLPLUS_LDFLAGS) $(TCL_LDFLAGS)  $(CPPUNIT_LDFLAGS)
 
 unittests_CPPFLAGS = -I@top_srcdir@/base/thread	\
+	-I@top_srcdir@/daq/format		\
 	$(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)
 
 
