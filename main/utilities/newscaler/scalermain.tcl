@@ -82,7 +82,6 @@ set alarmcontrol 1;               # start with alarms on.
 set autoY 1;                      # If true autoscaling y axis.
 set initialYrange  "";            # Range of y values when autoscale turned off.
 
-
 #-------------------------------------------------------------------------
 # Provide access to the globals for extensions:
 
@@ -401,7 +400,6 @@ proc saveStripcharts   {filename} {
 #
 proc updateStripcharts {} {
     if {$::stripcharts ne ""} {
-	
 	set ymax -1
 	foreach item [_getStripItems] {
 	    if {[$item hasUpdated]} {
@@ -771,9 +769,12 @@ proc RegionLocator {graph x y} {
     lassign $Coords x y
 
     set x [expr {roundto($x,0)}]
-    set y [expr {roundto($y,2)}]
 
-    set posXY [format "Time: %s, Rate: %s (Hz)" $x $y]
+    set ymax [$::stripcharts cget -ymax]
+    set y [expr {$y*$ymax}]
+    set y [expr {roundto($y,2)}]
+    
+    set posXY [format "Time: %s, Rate: %s (Counts/s)" $x $y]
 
 }
 
