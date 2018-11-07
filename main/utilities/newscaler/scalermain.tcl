@@ -714,10 +714,18 @@ proc setupStripchart charts {
     grid .alarmcontrol.y  -sticky nsew -row 0 -column 1
     grid .alarmcontrol.x  -sticky nswe -row 0 -column 2
   
+    # Add status bar for cursor position
+    frame .spfr
+    label .lab -textvariable posXY
+    pack .lab -in .spfr -side left
+    pack .spfr -fill both -expand 1 -side bottom
+    
     # The strip charts themselves:
     
     canvas .stripcharts
-    pack .stripcharts -fill x -expand 1
+    pack .stripcharts .spfr -fill x -expand 1
+
+    bind .stripcharts <Motion> {RegionLocator %W %x %y}
     
     # Ensure the canvas size has been computed by the packer:
     
@@ -753,6 +761,26 @@ proc setupStripchart charts {
     
     
 }
+
+# Binding the cursor motion to the position in the canvas and convert it to
+# graphs coordinates. The precision is also set
+
+proc RegionLocator {graph x y} {
+    global posXY
+    set Coords [Plotchart::pixelToCoords $graph $x $y]
+    lassign $Coords x y
+
+    set x [expr {roundto($x,0)}]
+    set y [expr {roundto($y,2)}]
+
+    set posXY [format "Time: %s, Rate: %s (Hz)" $x $y]
+
+}
+
+proc tcl::mathfunc::roundto {value decimalplaces} {
+    expr {round(10**$decimalplaces*$value)/10.0**$decimalplaces}
+}
+
 
 #-----------------------------------------------------------------------------
 # Main script entry point.
