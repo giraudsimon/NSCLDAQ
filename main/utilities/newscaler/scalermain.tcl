@@ -181,6 +181,14 @@ proc yScaleChanged {newValue} {
     }
 }
 ##
+# ymaxChanged
+#    Called when the user wants a well defined value for the strip chart maximum y.
+#
+# @param newValue - the new value of the strip chart ymax.k
+proc yMaxChanged {newValue} {
+
+}
+##
 # yminChanged
 #    Called when the user wants a non zero value for the strip chart minimum y.
 #
@@ -399,6 +407,7 @@ proc saveStripcharts   {filename} {
 #   changed to be 10% larger than the requested y value.
 #
 proc updateStripcharts {} {
+    variable ymax_new
     if {$::stripcharts ne ""} {
 	set ymax -1
 	foreach item [_getStripItems] {
@@ -413,14 +422,12 @@ proc updateStripcharts {} {
 	}
 	
 	# If needed update the -ymax to autoscale that axis.
-	
-	
 	if {$::autoY} {
-            if {$ymax > [$::stripcharts cget -ymax]} {
-                set ymax [expr {$ymax * 1.1}]
-                $::stripcharts configure -ymax $ymax
-            }
-        }
+	    if {$ymax > [$::stripcharts cget -ymax]} {
+		set ymax [expr {$ymax * 1.1}]
+		$::stripcharts configure -ymax $ymax
+	    }
+	}
     }
 }
 
@@ -724,6 +731,8 @@ proc setupStripchart charts {
     pack .stripcharts .spfr -fill x -expand 1
 
     bind .stripcharts <Motion> {RegionLocator %W %x %y}
+    bind .stripcharts <ButtonPress-1> {RegionPosition %W %x %y}
+    bind .stripcharts <ButtonPress-3> {ResetRegion %W %x %y}
     
     # Ensure the canvas size has been computed by the packer:
     
@@ -736,7 +745,7 @@ proc setupStripchart charts {
     set ::stripcharts [Plotchart::xyplotContainer %AUTO% \
         -xmin 0 -xmax  $::scalerconfig::stripChartOptions(-timeaxis) \
         -ymin 0 -ymax 1 -plottype ::Plotchart::createStripchart \
-        -canvas .stripcharts  -xtitle {Run time (seconds)} -ytitle Rate            \
+        -canvas .stripcharts -xtitle {Run time (seconds)} -ytitle Rate            \
     ]
     # Create empty series.
     #
@@ -762,19 +771,97 @@ proc setupStripchart charts {
 
 # Binding the cursor motion to the position in the canvas and convert it to
 # graphs coordinates. The precision is also set
+proc Region {graph x y} {
+    variable xx
+    variable yy
+    variable xmin_new
+    variable xmax_new
+    variable ymin_new
+    variable ymax_new
+    set Coords [Plotchart::pixelToCoords $graph $x $y]
+    lassign $Coords xx yy
+
+    set xmin [$::stripcharts cget -xmin]
+    set xmax [$::stripcharts cget -xmax]
+    set xx [expr {roundto((($xmax-$xmin)*($xx/$::scalerconfig::stripChartOptions(-timeaxis))+$xmin),0)}]
+
+    set ymin [$::stripcharts cget -ymin]
+    set ymax [$::stripcharts cget -ymax]
+    set yy [expr {roundto((($ymax-$ymin)*$yy+$ymin),2)}]
+
+    if {($xx < $xmin) || ($xx > $xmax)} {set xx 0}
+    if {($yy < $ymin) || ($yy > $ymax)} {set yy 0}
+}
+
+proc RegionPosition {graph x y} {
+    variable newregion 
+    variable xx
+    variable yy
+    variable xmin_new
+    variable xmax_new
+    variable ymin_new
+    variable ymax_new
+
+    Region $graph $x $y
+    
+    lappend tmp $xx $yy
+    lappend newregion $tmp
+    set len [llength $newregion]
+    if {$len == 2} {
+	_lsort $newregion
+	$::stripcharts configure -xmin $xmin_new -xmax $xmax_new -ymin $ymin_new -ymax $ymax_new
+	_lremove newregion "*" true
+	set ::autoY 0
+    }
+}
+
+proc _lremove {listName val {byval false}} {
+    upvar $listName lst
+
+    if {$byval} {
+	set lst [lsearch -all -inline -not $lst $val]
+    } else {
+	set lst [lreplace $lst $val $val]
+    }
+
+    return $lst
+}
+
+proc _lsort {listname} {
+    variable xmin_new
+    variable xmax_new
+    variable ymin_new
+    variable ymax_new
+
+    set xmin_lst [lsort -real -index 0 -increasing $listname]
+    set xmax_lst [lsort -real -index 0 -decreasing $listname]
+    set ymin_lst [lsort -real -index 1 -increasing $listname]
+    set ymax_lst [lsort -real -index 1 -decreasing $listname]
+
+    set xmin_new [lindex $xmin_lst 0 0]
+    set xmax_new [lindex $xmax_lst 0 0]
+    set ymin_new [lindex $ymin_lst 0 1]
+    set ymin_new [expr {roundto($ymin_new,0)}]
+    set ymax_new [lindex $ymax_lst 0 1]
+    set ymax_new [expr {roundto($ymax_new,0)}]
+
+}
+
+proc ResetRegion {graph x y} {
+    variable newregion 
+    $::stripcharts configure -xmin 0 -xmax $::scalerconfig::stripChartOptions(-timeaxis) -ymin 0 -ymax 1000
+    _lremove newregion "*" true
+    set ::autoY 1;
+}
+
 
 proc RegionLocator {graph x y} {
     global posXY
-    set Coords [Plotchart::pixelToCoords $graph $x $y]
-    lassign $Coords x y
+    variable xx
+    variable yy
 
-    set x [expr {roundto($x,0)}]
-
-    set ymax [$::stripcharts cget -ymax]
-    set y [expr {$y*$ymax}]
-    set y [expr {roundto($y,2)}]
-    
-    set posXY [format "Time: %s, Rate: %s (Counts/s)" $x $y]
+    Region $graph $x $y
+    set posXY [format "Time: %s, Rate: %s (Counts/s)" $xx $yy]
 
 }
 
