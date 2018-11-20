@@ -458,8 +458,7 @@ proc ::EventLog::_finalizeRun {} {
         set perms [file attributes $completeDir -permissions]
         file attributes $completeDir -permissions u+w
         foreach file $mvdNames {
-            set targetLink [file join $completeDir [file tail $file]]
-            catch {exec ln -s $file $targetLink}
+            catch {exec ln -sr $file $completeDir}	    
         }
         file attributes $completeDir -permissions $perms
         
