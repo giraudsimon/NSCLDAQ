@@ -8,6 +8,7 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CMarkerCommand.cpp	\
 				CMADCScalerCommand.cpp	\
 				CMADCChainCommand.cpp   \
+				CHINPCommand.cpp \
 				CPSDCommand.cpp \
 				CV1729Command.cpp	\
 				CV1495scCommand.cpp	\
@@ -67,6 +68,7 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				CMarkerCommand.h	\
 				CMADCScalerCommand.h	\
 				CMADCChainCommand.h	\
+				CHINPCommand.h \
 				CPSDCommand.h		\
 				CV1729Command.h		\
 				CV1495scCommand.h	\
@@ -145,7 +147,7 @@ install-data-local:
 noinst_PROGRAMS=cmdtests
 
 cmdtests_SOURCES=TestRunner.cpp Asserts.h ad811test.cpp \
-	v830tests.cpp hinptest.cpp hiratests.cpp madcscaler.cpp \
+	v830tests.cpp madcscaler.cpp \
 	markertests.cpp sis3820test.cpp v1495tests.cpp v1729tests.cpp \
 	sis3804tests.cpp hytectests.cpp madctests.cpp tdc1x90tests.cpp \
 	v977tests.cpp masetests.cpp mtdctests.cpp delaytests.cpp \

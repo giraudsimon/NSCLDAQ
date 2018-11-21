@@ -27,6 +27,7 @@
 #include "CMADCScalerCommand.h"
 #include "CMADCChainCommand.h"
 #include "CPSDCommand.h"
+#include "CHINPCommand.h"
 #include "CV1729Command.h"
 #include "CV1495scCommand.h"
 #include "CAddTclDriver.h"
@@ -103,6 +104,7 @@ CConfiguration::CConfiguration() :
   m_Commands.push_back(new CUserCommand(*m_pInterp, *this, "mase", new CMASE));
   m_Commands.push_back(new CMADCChainCommand(*m_pInterp, *this));
   m_Commands.push_back(new CPSDCommand(*m_pInterp, *this));
+  m_Commands.push_back(new CHINPCommand(*m_pInterp, *this));
   m_Commands.push_back(new CV1729Command(*m_pInterp, *this));
   m_Commands.push_back(new CV1495scCommand(*m_pInterp, *this));
   m_Commands.push_back(new CAddTclDriver(*m_pInterp, *this));
