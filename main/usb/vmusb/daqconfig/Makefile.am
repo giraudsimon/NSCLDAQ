@@ -8,13 +8,11 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CMarkerCommand.cpp	\
 				CMADCScalerCommand.cpp	\
 				CMADCChainCommand.cpp   \
-				CHINPCommand.cpp \
 				CPSDCommand.cpp \
 				CV1729Command.cpp	\
 				CV1495scCommand.cpp	\
 				CUserCommand.cpp	\
 				CAddTclDriver.cpp	\
-				CHiRACommand.cpp	\
 				CVMUSBCommand.cpp	\
 	      			CReadoutModule.cpp	\
 				C3820.cpp		\
@@ -34,12 +32,10 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CXLM.cpp		\
 				CMASE.cpp		\
 				CMADCChain.cpp	\
-				CHINP.cpp \
 				CPSD.cpp	\
 				CV1729.cpp	\
 				CV1495sc.cpp	\
 				CTclModule.cpp \
-				CHiRA.cpp	\
 				CVMUSBControl.cpp \
 				CDelay.cpp \
 				CCBD8210CamacBranchDriver.cpp \
@@ -71,13 +67,11 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				CMarkerCommand.h	\
 				CMADCScalerCommand.h	\
 				CMADCChainCommand.h	\
-				CHINPCommand.h \
 				CPSDCommand.h		\
 				CV1729Command.h		\
 				CV1495scCommand.h	\
 				CUserCommand.h		\
 				CAddTclDriver.h		\
-				CHiRACommand.h		\
 				CVMUSBCommand.h		\
 				CReadoutModule.h	\
 				CReadoutHardware.h	\
@@ -99,14 +93,12 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				CMASE.h			\
 				CMADCChain.h		\
 				MADC32Registers.h	\
-				CHINP.h \
 				CPSD.h			\
 				CV1729.h		\
 				CV1495sc.h		\
 				CCAENV1x90Opcodes.h	\
 				CCAENV1x90Registers.h	\
 				CTclModule.h		\
-				CHiRA.h			\
 				CVMUSBControl.h \
 				CDelay.h \
 				CDeviceCommand.h \
