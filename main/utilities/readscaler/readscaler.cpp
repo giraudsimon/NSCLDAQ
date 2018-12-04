@@ -9,11 +9,11 @@
 /////////////////////////////////////////////////
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <ctime>
-#include "TString.h"
 #include <unistd.h>
 
 bool debug=false;
@@ -69,11 +69,13 @@ int main(int argc, char*argv[])
       int scalernumbers[numchannels] = {0};
       scalerBuffer = 0;
       // Output file
-      std::ofstream outscalers(Form("scaler_run%i.csv",run));
+      std::string ofile = "scaler_run";
+      ofile += std::to_string(run);
+      ofile += ".csv";
+      std::ofstream outscalers(ofile);
 
       // Accessing the files
       std::ostringstream strdir;
-      //      strdir << stagearea << "/run" << run << "/run-" << std::setfill('0') << std::setw(4) << run << "-00.evt";
 
       int exchar = 0;
       for (exchar = 0; exchar < 5; exchar++)
