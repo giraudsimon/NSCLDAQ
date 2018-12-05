@@ -2,6 +2,8 @@ bin_PROGRAMS		=	scalerReader
 
 scalerReader_SOURCES	=	scalerReader.cpp scalerReaderMain.cpp
 
+noinst_HEADERS          =       scalerReaderMain.h
+
 COMPILATION_FLAGS	=	-I@top_srcdir@/base/headers	\
 				-I@top_srcdir@/base/dataflow	\
 				-I@top_srcdir@/daq/format	\
