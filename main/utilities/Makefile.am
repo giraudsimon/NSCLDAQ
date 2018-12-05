@@ -19,7 +19,7 @@ SUBDIRS = 				common	\
 					compatibility \
 					newscaler	\
 					fileanalyzer	\
-                                        readscaler \
+                                        scalerReader \
 					scalersum reglom 
 
 # scalerdisplay - removed in favor of newscaler
