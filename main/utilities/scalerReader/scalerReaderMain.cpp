@@ -83,8 +83,9 @@ scalerReaderMain::operator()(int argc, char** argv)
     {
       std::cout << "Formatted dump of acquired scaler items" << std::endl;
       std::cout << "The instantaneous scalers are dumped into a csv file while the summary is printed on screen" << std::endl << std::endl;
-      std::cout << "Usage: scalerReader source" << std::endl << std::endl;
-      std::cout << "source=STRING\t URL of source, ring buffer or file" << std::endl; 
+      std::cout << "Usage: scalerReader source number_of_buffers" << std::endl << std::endl;
+      std::cout << "source=STRING\t URL of source, ring buffer or file" << std::endl;
+      std::cout << "number_of_buffers=INT\t if added, prints to screen the partial scaler summary every N scaler buffers" << std::endl;       
       exit(0);
     }
   else
