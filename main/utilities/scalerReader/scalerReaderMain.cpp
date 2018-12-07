@@ -77,6 +77,7 @@ scalerReaderMain::operator()(int argc, char** argv)
 {
   std::string sourceName;
   std::string run;
+  int nbuff=0;
   
   if (argc < 2)
     {
@@ -89,6 +90,8 @@ scalerReaderMain::operator()(int argc, char** argv)
   else
     {
       sourceName = argv[1];
+      if (argv[2] != NULL)
+	nbuff = std::atoi(argv[2]);
       unsigned first = sourceName.find("-")+1;
       unsigned last = sourceName.find("-00.evt");
       run = sourceName.substr (first,last-first);
@@ -152,6 +155,20 @@ scalerReaderMain::operator()(int argc, char** argv)
   while ((pItem = pDataSource->getItem() )) {
     std::unique_ptr<CRingItem> item(pItem);
     processRingItem(*item);
+    
+    if (scalerBuffer > 0 && nbuff != 0 && (scalerBuffer%nbuff) == 0)
+      {
+	// Partial summary
+	std::cout << "#########################################" << std::endl;
+	std::cout << "# Partial summary for Run = " << run << std::endl;
+	std::cout << "Number of scaler buffers read = " << scalerBuffer << std::endl;
+	std::cout << "#########################################" << std::endl;
+
+	for (int i = 0; i < 32; i++){
+	  std::cout << "Channel " << i << " " << scalernumbers[i] << "  Ave Rate = " << (float)scalernumbers[i]/(float)scalerBuffer << std::endl;
+	}
+      }
+
   }
 
   // Summary
@@ -163,7 +180,6 @@ scalerReaderMain::operator()(int argc, char** argv)
   for (int i = 0; i < 32; i++){
     std::cout << "Channel " << i << " " << scalernumbers[i] << "  Ave Rate = " << (float)scalernumbers[i]/(float)scalerBuffer << std::endl;
   }
-  
   
   return EXIT_SUCCESS;	
     
