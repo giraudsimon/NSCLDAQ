@@ -1070,7 +1070,9 @@ CFragmentHandler::popOldest()
 void
 CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
 {
-    m_outputThread.queueFragments(&event);
+  CSortThread::Fragments frags;
+  frags.push_back(&event);
+    m_sorter.queueFragments(frags);
 }
 /**
  * dataLate
@@ -1441,7 +1443,7 @@ CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFra
 void
 CFragmentHandler::goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
 {
-  
+
   BarrierSummary bs = generateBarrier(outputList);
 
   // If there's a non empty missing sources this is a partial barrier actually.

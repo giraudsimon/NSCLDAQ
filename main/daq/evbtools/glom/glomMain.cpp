@@ -249,11 +249,16 @@ outputBarrier(EVB::pFragment p)
     // This is correct if there is or isn't a body header in the payload
     // ring item.
     
-
-    outputter->put( pH, pH->s_size);
     
-    if (pH->s_type == BEGIN_RUN) stateChangeNesting++;
-    if (pH->s_type == END_RUN)   stateChangeNesting--;
+    outputter->put( pH, pH->s_size);
+    outputter->flush();		// Ensure this is output along with other stuff.
+    
+    if (pH->s_type == BEGIN_RUN) {
+      stateChangeNesting++;
+    }
+    if (pH->s_type == END_RUN) {
+      stateChangeNesting--;
+    }
     if (pH->s_type == ABNORMAL_ENDRUN) stateChangeNesting = 0;
 
   } else {

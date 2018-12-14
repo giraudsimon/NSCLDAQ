@@ -319,6 +319,8 @@ proc ::RingSourceMgr::leave {from to} {
 namespace eval ::RingSourceMgr {
   namespace export attach enter leave
 }
+::RingSourceMgr::register
+
 
 ############# PRIVATE HELPER PROCS ############################################
 
