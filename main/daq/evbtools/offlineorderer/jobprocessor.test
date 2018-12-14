@@ -43,7 +43,7 @@ tcltest::test setupStateMachine-0 { Test that state machine has the callout bund
   $jp setupStateMachine
 
   [$jp getRunStateMachine] listCalloutBundles
-} -result "EventLog EVBStateCallouts RingSourceMgr ::EVBConfigure DataSourceMgr"
+} -result [list RingSourceMgr EventLog EVBStateCallouts ::EVBConfigure DataSourceMgr]
 
 tcltest::test tearDownStateMachine-0 { Test that state machine has no bundles after it is torn down
 } -setup {

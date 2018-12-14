@@ -6,7 +6,7 @@ package require tcltest
 
 
 
-puts "Testing the wait package: "
+#puts "Testing the wait package: "
 tcltest::test Wait-1 {Wait - Test loading the package} {
     catch "package require Wait"
 } 0
@@ -49,9 +49,9 @@ tcltest::test Wait-8 {Wait - polll with eventual completion} {
     expr [lindex $result 0] == $pid
 }  1
   
-puts "Wait package tests complete."
+#puts "Wait package tests complete."
 
-puts "Testing Pipe command"
+#puts "Testing Pipe command"
 
 tcltest::test Pipe-1 {Pipe - Test existence of command} {
     Pipe
@@ -77,9 +77,9 @@ tcltest::test Pipe-2 {Pipe - Check data transmission} {
     set output
 } "This is a test"
 
-puts "Done with pipe tests"
+#puts "Done with pipe tests"
 
-puts "Combined tests"
+#puts "Combined tests"
 
 tcltest::test Combined-1 {Combined - Wait and pipe together} {
     set files [Pipe]
@@ -96,7 +96,7 @@ tcltest::test Combined-1 {Combined - Wait and pipe together} {
 } 1
 
 
-puts "Done with combined tests"
+#puts "Done with combined tests"
 
 
 tcltest::cleanupTests

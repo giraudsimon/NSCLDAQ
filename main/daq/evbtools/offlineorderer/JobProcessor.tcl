@@ -124,7 +124,7 @@ snit::type JobProcessor {
     # rdoCalloutsBundle has already been registered
     ::EventLog::register
     ::EVBStateCallouts::register
-    ::RingSourceMgr::register
+    #    ::RingSourceMgr::register  already self registered
     ::EVBConfigure::register
     ::DataSourceMgr::register
   }

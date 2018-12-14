@@ -18,11 +18,12 @@
 
 
 package provide ringsourcemgr 1.0
+package require evbcallouts
+package require EndrunMon
 
 package require InstallRoot
 package require portAllocator
-package require evbcallouts
-package require EndrunMon
+
 
 #-------------------------------------------------------------------------------
 #
@@ -48,7 +49,8 @@ package require EndrunMon
 #
 namespace eval ::RingSourceMgr {
   variable sourceDict [dict create];            # Sources we defined
-  variable diedSources [dict create];           # Sources that exited.
+   variable diedSources [dict create];           # Sources that exited.
+   variable registered 0
 }
 
 #------------------------------------------------------------------------------
@@ -277,6 +279,10 @@ proc ::RingSourceMgr::register {{beforeBundle {}}} {
     $sm addCalloutBundle RingSourceMgr $beforeBundle
   }
   $sm destroy
+  set   ::RingSourceMgr::registered 1 
+}
+proc ::RingSourceMgr::isRegistered {} {
+    return $::RingSourceMgr::registered
 }
 
 #
@@ -319,7 +325,6 @@ proc ::RingSourceMgr::leave {from to} {
 namespace eval ::RingSourceMgr {
   namespace export attach enter leave
 }
-::RingSourceMgr::register
 
 
 ############# PRIVATE HELPER PROCS ############################################
@@ -467,4 +472,7 @@ proc ::RingSourceMgr::_waitForEventBuilder {} {
     after 100
   }
   close $fd
+}
+if {![::RingSourceMgr::isRegistered]} {
+    ::RingSourceMgr::register
 }

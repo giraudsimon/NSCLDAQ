@@ -135,7 +135,7 @@ install-exec-hook:
 	$(INSTALL_SCRIPT) @builddir@/startOrderer @prefix@/bin
 	$(mkinstalldirs) @prefix@/TclLibs/EVBCallouts
 	for f in $(TCL_EVB_PACKAGE_FILES); do $(INSTALL_SCRIPT) @srcdir@/$$f @prefix@/TclLibs/EVBCallouts; done
-	echo "pkg_mkIndex -verbose $(prefix)/TclLibs/EVBCallouts *.tcl *.so" |@TCLSH_CMD@ 
+	echo "pkg_mkIndex -verbose $(prefix)/TclLibs/EVBCallouts *.tcl evbRdoCallouts.tcl *.so" |@TCLSH_CMD@ 
 
 
 
@@ -173,7 +173,7 @@ ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
 check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
-	./ordertests
+#        ./ordertests
 #	./unittests 
 
 
