@@ -129,6 +129,9 @@ CInputStatsCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>&
   }
   result += QueueStatList;
 
+  wideInt = (Tcl_WideInt)stats.s_inflight;
+  result += wideInt;                       // Total in flight frags.
+  
   interp.setResult(result);
   return TCL_OK;
 

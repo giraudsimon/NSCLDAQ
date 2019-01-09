@@ -677,7 +677,8 @@ CFragmentHandler::getStatistics()
     
     statGetter = for_each(m_FragmentQueues.begin(), m_FragmentQueues.end(), statGetter);
     
-    result.s_totalQueuedFragments = statGetter.totalFragments();
+    result.s_totalQueuedFragments = statGetter.totalFragments(); // Total ever queued.
+    result.s_inflight             = inFlightFragmentCount();  // Total now queues.
     result.s_queueStats           = statGetter.queueStats();
     
     
@@ -1711,7 +1712,8 @@ size_t
 CFragmentHandler::inFlightFragmentCount()
 {
   
-  return m_nTotalFragmentSize + m_outputThread.getInflightCount();
+  return m_nTotalFragmentSize +
+    m_outputThread.getInflightCount() + m_sorter.getInflightCount();
 }
 /**
  *  checkXoff

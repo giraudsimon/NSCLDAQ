@@ -38,7 +38,7 @@ TsCompare(std::pair<time_t, EVB::pFragment>& q1, std::pair<time_t, EVB::pFragmen
  *   Just need to salt away the fragment handler:
  */
 CSortThread::CSortThread() : Thread(*(new std::string("SortThread"))),
-m_pHandler(0)
+m_pHandler(0), m_nQueuedFrags(0)
 {}
 
 /**
@@ -73,11 +73,14 @@ CSortThread::run()
         FragmentList* mergedFrags = new FragmentList;  // Deleted by output thread.
         merge(*mergedFrags, *newData);
         
+        
         //m_pHandler->observe(*mergedFrags);
         
         COutputThread* pOutput = m_pHandler->getOutputThread();
         pOutput->queueFragments(mergedFrags);
         releaseFragments(*newData);
+        m_nQueuedFrags -= mergedFrags->size();
+
     }
 }
 /**
@@ -91,7 +94,11 @@ CSortThread::run()
 void
 CSortThread::queueFragments(Fragments& frags)
 {
+    for (int i = 0; i < frags.size(); i++) {
+      m_nQueuedFrags += frags[i]->size();
+    }
     m_fragmentQueue.queue(&frags);
+  
 }
 /**
  * dequeueFragments
