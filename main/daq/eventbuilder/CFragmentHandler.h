@@ -327,7 +327,12 @@ public:
   
   // Observer management:
   
-
+  COutputThread* getOutputThread() {
+    return &m_outputThread;
+  }
+  CSortThread* getSortThread() {
+    return &m_sorter;
+  }
 public:
 
   void addObserver(Observer* pObserver);
