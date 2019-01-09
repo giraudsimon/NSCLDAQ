@@ -25,9 +25,12 @@
 #include <io.h>
 #include <DataFormat.h>
 #include <CRingItemFactory.h>
+#include <CRingScalerItem.h>
+#include <CRingPhysicsEventCountItem.h>
 #include <exception>
 #include <CAbnormalEndItem.h>
 #include <CBufferedOutput.h>
+#include <time.h>
 
 // File scoped  variables:
 
@@ -36,6 +39,9 @@ static uint64_t lastTimestamp;
 static uint64_t timestampSum;
 static uint64_t fragmentCount;
 static uint32_t sourceId;
+
+static uint64_t outputEvents(0);
+
 
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
@@ -221,8 +227,42 @@ flushEvent()
 
     resetAccumulatedEvent();
     firstEvent        = true;
+    
+    outputEvents++;                  // Count the event.
   }
 }
+
+/**
+ * outputEventCount
+ *    Outputs an event count item with our counters and our output
+ *    event source.  This is done to provide SpecTcl with event count items
+ *    that reflect the built events.  The intent is to provide the tools to
+ *    resolve https://git.nscl.msu.edu/daqdev/SpecTcl/issues/173.
+ *
+ * @param pItem - pointer to a periodic scaler raw ring item that will trigger the
+ *                emission.  Note that the run offset and divisor will be
+ *                taken from this item.
+ */
+static void
+outputEventCount(pRingItemHeader pItem)
+{
+    CRingScalerItem* pScaler = dynamic_cast<CRingScalerItem*>(
+        CRingItemFactory::createRingItem(pItem)  
+    );
+    if (!pScaler) return;                // Failed convert.
+    
+    uint32_t tOffset = pScaler->getEndTime();
+    uint32_t divisor = pScaler->getTimeDivisor();
+    
+    CRingPhysicsEventCountItem counters(
+        NULL_TIMESTAMP, sourceId, 0, outputEvents, tOffset, 
+        time(nullptr), divisor
+    );
+    outputter->put(
+        counters.getItemPointer(), counters.getItemPointer()->s_header.s_size
+    );
+}
+
 /**
  * outputBarrier
  *
@@ -254,10 +294,14 @@ outputBarrier(EVB::pFragment p)
     outputter->flush();		// Ensure this is output along with other stuff.
     
     if (pH->s_type == BEGIN_RUN) {
+      outputEvents = 0;
       stateChangeNesting++;
     }
     if (pH->s_type == END_RUN) {
       stateChangeNesting--;
+    }
+    if (pH->s_type == PERIODIC_SCALERS) {
+        outputEventCount(pH);
     }
     if (pH->s_type == ABNORMAL_ENDRUN) stateChangeNesting = 0;
 
