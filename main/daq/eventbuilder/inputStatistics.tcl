@@ -71,6 +71,7 @@ namespace eval EVB {
 #   | Total number of queued fragments: <fragmentcount>   |
 #   | Oldest timestamp: <stamp>  Newest timestamp <stamp> |
 #   | Deepest queue              id : depth               |
+#   | Total inflight frags       depth.
 #   +-----------------------------------------------------+
 #
 # \endverbatim
@@ -82,6 +83,7 @@ namespace eval EVB {
 #    - -newest     Provides the newest timestamp.
 #    - -deepestid  ID of deepest queue.
 #    - -deepestdepth Fragments in deepest queue.
+#    - -inflight
 #
 # @note that all other options are delegated to the frame.
 # @note all methods are also delegated to the frame.
@@ -95,6 +97,7 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
     option -newest     -default 0 -configuremethod _unsignedOption
     option -deepestid  -default "" 
     option -deepestdepth -default "" -configuremethod _unsignedOption
+    option -inflight   -default 0    -configuremethod _unsignedOption
     
     
     delegate option * to innerHull
@@ -114,6 +117,8 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
         ttk::label $innerHull.newlabel  -text "Newest Timestamp: "
         ttk::label $innerHull.deepIdLabel -text "Deepest Queue (id : depth)"
         ttk::label $innerHull.deepIdSepLabel -text " : "
+        ttk::label $innerHull.inflightLabel -text "Total inflight frags"
+        ttk::label $innerHull.inflightSepLabel -text " : "
 	
 
         
@@ -123,6 +128,7 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
         ttk::label $innerHull.newest    -textvariable ${selfns}::options(-newest)
         ttk::label $innerHull.deepid    -textvariable ${selfns}::options(-deepestid)
         ttk::label $innerHull.deepdepth -textvariable ${selfns}::options(-deepestdepth)
+        ttk::label $innerHull.inflight  -textvariable ${selfns}::options(-inflight)
 	
         
         # Layout the widgets
@@ -140,6 +146,9 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
         grid $innerHull.deepid         -row 3 -column 1 -sticky e -padx 5
         grid $innerHull.deepIdSepLabel -row 3 -column 2 -sticky e -padx 5
         grid $innerHull.deepdepth      -row 3 -column 3 -sticky e -padx 5
+        grid $innerHull.inflightLabel  -row 4 -column 0 -sticky e -padx 5
+        grid $innerHull.inflightSepLabel -row 4 -column 2 -sticky e -padx 5
+        grid $innerHull.inflight       -row 4 -column  3 -sticky e -padx 5
 
         grid $innerHull -sticky nsew
           

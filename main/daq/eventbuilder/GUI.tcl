@@ -136,6 +136,7 @@ snit::widgetadaptor ::EVB::summary {
     # Delegate the input summary options:
     
     delegate option -infragments  to inputSummary  as -fragments
+    delegate option -inflight     to inputSummary
     delegate option -oldest       to inputSummary
     delegate option -newest       to inputSummary
     delegate option -deepestid    to inputSummary
@@ -766,6 +767,9 @@ proc EVB::maintainGUI {widget {ms 2000} } {
     #  forcing the computation to be floating.
     set inputRate  [expr {(1000.0*($totalin - $::EVB::lastInBytes))/$ms}]
     set outputRate [expr {(1000.0*($totalout - $::EVB::lastOutBytes))/$ms}]
+    set inflightCount [lindex $inputStats 4]
+    
+   # puts stderr "$inflightCount fragments in flight"
     
     set ::EVB::lastInBytes $totalin
     set ::EVB::lastOutBytes $totalout
@@ -855,6 +859,7 @@ proc EVB::maintainGUI {widget {ms 2000} } {
     # Fill in the summary page statistics: 
 
     $summary configure -infragments [lindex $inputStats 2]            \
+    -inflight $inflightCount                                        \
 	-oldest [lindex $inputStats 0] -newest [lindex $inputStats 1] \
 	-deepestid $deepest -deepestdepth $deepestCount               \
         -hottestoutid $hottestSrc -hottestoutcount $hottestCount      \
@@ -864,7 +869,7 @@ proc EVB::maintainGUI {widget {ms 2000} } {
 	-mixedbarriers      [lindex $completeBarriers 2]              \
 	-outfragments $totalFrags                                     \
         -queuedbytes $totalin -outbytes $totalout -outrate $outputRate  \
-        -window [EVB::config get window]
+        -window [EVB::config get window] 
 
     $barriers configure -incompletecount [lindex $incompleteBarriers 0] \
 	-completecount [lindex $completeBarriers 0] \
