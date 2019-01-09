@@ -21,6 +21,7 @@
 */
 
 #include "CSortThread.h"
+#include "COutputThread.h"
 
 
 // Timestamp comparison for sorted merge:
@@ -72,8 +73,10 @@ CSortThread::run()
         FragmentList* mergedFrags = new FragmentList;  // Deleted by output thread.
         merge(*mergedFrags, *newData);
         
-        m_pHandler->observe(*mergedFrags);
+        //m_pHandler->observe(*mergedFrags);
         
+        COutputThread* pOutput = m_pHandler->getOutputThread();
+        pOutput->queueFragments(mergedFrags);
         releaseFragments(*newData);
     }
 }
@@ -137,9 +140,11 @@ CSortThread::clearBufferQueue()
 void
 CSortThread::releaseFragments(Fragments& frags)
 {
+#ifdef UNDEFINED              // I think the output thread has to delete these?!?
     for (int i =0; i < frags.size(); i++) {
         releaseFragmentList(*frags[i]);   
     }
+#endif
     delete &frags;
 }
 /**
