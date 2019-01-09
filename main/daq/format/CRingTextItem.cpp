@@ -310,7 +310,7 @@ CRingTextItem::toString() const
 {
   std::ostringstream out;
 
-  uint32_t elapsed  = getTimeOffset();
+  // uint32_t elapsed  = getTimeOffset();
   string   time     = timeString(getTimestamp());
   vector<string> strings = getStrings();
 
@@ -318,7 +318,7 @@ CRingTextItem::toString() const
   out << typeName();
   out << bodyHeaderToString();
 
-  out << elapsed << " seconds in to the run\n";
+  out << computeElapsedTime() << " seconds in to the run\n";
   for (int i = 0; i < strings.size(); i++) {
     out << strings[i] << endl;
   }

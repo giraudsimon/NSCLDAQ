@@ -362,12 +362,12 @@ CRingStateChangeItem::toString() const
   std::ostringstream out;		//  Build up via outputting to this psuedo stream.
 
   uint32_t run       = getRunNumber();
-  uint32_t elapsed   = getElapsedTime();
+  
   string   title     = getTitle();
   string   timestamp = timeString(getTimestamp());
 
   out <<  timestamp << " : Run State change : " << typeName();
-  out << " at " << elapsed << " seconds into the run\n";
+  out << " at " << computeElapsedTime() << " seconds into the run\n";
   out << bodyHeaderToString();
   out << "Title     : " << title << std::endl;
   out << "Run Number: " << run   << endl;

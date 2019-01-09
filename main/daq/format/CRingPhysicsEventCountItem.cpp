@@ -326,11 +326,14 @@ CRingPhysicsEventCountItem::toString() const
 
   string   time   = timeString(getTimestamp());
   uint32_t offset = getTimeOffset();
+  uint32_t divisor= getTimeDivisor();
   uint64_t events = getEventCount();
-
+  
+  float fOffset = static_cast<float>(offset)/static_cast<float>(divisor);
+  
   out << bodyHeaderToString();
   out << time << " : " << events << " Triggers accepted as of " 
-      << offset << " seconds into the run\n";
+      << fOffset << " seconds into the run\n";
   out << " Average accepted trigger rate: " 
       <<  (static_cast<double>(events)/static_cast<double>(offset))
       << " events/second \n";
