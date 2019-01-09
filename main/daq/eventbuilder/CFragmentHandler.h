@@ -164,8 +164,10 @@ public:
         std::uint64_t s_oldestFragment;
         std::uint64_t s_newestFragment;
         std::uint32_t s_totalQueuedFragments;
+        std::uint64_t s_inflight;
         
         std::vector<QueueStatistics> s_queueStats;
+        
     } InputStatistics, *pInputStatistics;
   
 public:

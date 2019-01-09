@@ -29,6 +29,8 @@
 #include <CBufferQueue.h>
 #include "fragment.h"
 
+#include <atomic>
+
 /**
  * @param CSortThread
  *    This thread takes vectors of pointer to list of event times/fragment
@@ -48,6 +50,7 @@ public:
 private:
     CBufferQueue<Fragments*> m_fragmentQueue;
     CFragmentHandler*       m_pHandler;
+    std::atomic<size_t>     m_nQueuedFrags;
 public:
     CSortThread();
     virtual ~CSortThread();
@@ -55,6 +58,7 @@ public:
     virtual void run();
     
     void queueFragments(Fragments& frags);
+    size_t getInflightCount() const { return m_nQueuedFrags; }
 private:
     Fragments* dequeueFragments();
     void merge(FragmentList& result, Fragments& lists);
