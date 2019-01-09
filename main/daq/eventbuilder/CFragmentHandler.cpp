@@ -1070,7 +1070,7 @@ CFragmentHandler::popOldest()
 void
 CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
 {
-  CSortThread::Fragments frags;
+  CSortThread::Fragments& frags(*new CSortThread::Fragments);
   frags.push_back(&event);
     m_sorter.queueFragments(frags);
 }
