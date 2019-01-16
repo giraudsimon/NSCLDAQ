@@ -4,7 +4,7 @@
 AC_PREREQ(2.61)
 
 
-AC_INIT(nscldaq,11.3-010, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,11.4-000, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 
@@ -203,6 +203,8 @@ TCLSH_CMD=${TCLSH}
 #  we need to configure/build/install libtcl into prefix and then set
 #  the flags:
 
+if 0
+then
 AC_MSG_CHECKING([libtcl++ installed as package (e.g. .deb)])
 
 AC_CHECK_FILE([/usr/include/TCLInterpreterObject.h], [systemtcl="yes"], [systemtcl="no"])
@@ -236,6 +238,28 @@ else
 	LIBTCLPLUS_LDFLAGS="-L${prefix}/lib -ltclPlus ${LIBEXCEPTION_LDFLAGS}"
 
 fi
+fi
+
+#
+#  Hard code use of local libtcl:
+#
+AC_CHECK_FILE([${srcdir}/libtcl], [havelibtcldir="yes"], [havelibtcldir="no"])
+if test $havelibtcldir = "yes"
+then
+  AC_MSG_RESULT([Need to build local tagged copy])
+  (cd ${srcdir}/libtcl; ./configure --prefix=${prefix}; make clean install)
+
+  LIBTCLPLUS_CFLAGS="-I${prefix}/include"
+  LIBEXCEPTION_LDFLAGS="-L${prefix}/lib -lException -Wl,\"-rpath=${prefix}/lib\""
+  LIBTCLPLUS_LDFLAGS="-L${prefix}/lib -ltclPlus ${LIBEXCEPTION_LDFLAGS}"
+
+
+
+else
+   AC_MSG_ERROR([I seem to be missing libtcl, please use tcl++incorp.sh to fill it with a tagged release of libtclplus])
+fi
+								  
+
 AC_SUBST(LIBTCLPLUS_CFLAGS)
 AC_SUBST(LIBTCLPLUS_LDFLAGS)
 AC_SUBST(LIBEXCEPTION_LDFLAGS)
@@ -311,7 +335,7 @@ then
    
    if test -z "$PLX_SDK_DIR"
    then
-      for d in /usr/opt/plx $(prefix)/../../plx
+      for d in /usr/opt/plx ${prefix}/../../plx
       do
          if test -z "$PLX_SDK_DIR"
          then

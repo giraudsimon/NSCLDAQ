@@ -22,6 +22,6 @@ CCFLAGS= $(COMMONFLAGS) $(USERCCFLAGS)
 #
 
 LDFLAGS=-L@prefix@/lib -lSBSProductionReadout -lSBSDeviceSupport -lSBSVmeAPI \
-		       -lException -ldaqthreads -ltclPlus  \
+		       -lException -ldaqthreads -ldaqshm -ltclPlus  \
 		       $(USERLDFLAGS) \
 		       @TCL_LIBS@  -Wl,"-rpath=@prefix@/lib"

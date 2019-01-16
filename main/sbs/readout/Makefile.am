@@ -100,6 +100,7 @@ Readout_DEPENDENCIES = libSBSProductionReadout.la
 Readout_LDADD	= libSBSProductionReadout.la	\
 		@top_builddir@/sbs/vmemodules/libSBSDeviceSupport.la \
 		  @top_builddir@/base/thread/libdaqthreads.la \
+		  @top_builddir@/base/os/libdaqshm.la	\
 		  $(THREADLD_FLAGS)
 
 Readout_LDFLAGS = @LIBTCLPLUS_LDFLAGS@

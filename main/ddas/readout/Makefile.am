@@ -30,6 +30,7 @@ DDASReadout_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
 	@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la		\
 	@top_builddir@/base/thread/libdaqthreads.la		\
+	@top_builddir@/base/os/libdaqshm.la			\
 	-L@DDAS_INSTDIR@/lib -lPixie16App -lPixie16Sys          \
 	-lConfiguration -lSystemBooter @PLX_LDFLAGS@ 		\
 	@LIBTCLPLUS_LDFLAGS@	@TCL_LDFLAGS@			\

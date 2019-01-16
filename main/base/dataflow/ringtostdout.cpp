@@ -220,3 +220,5 @@ int main(int argc, char** argv)
   mainLoop(ringname, timeout, mindata);
   
 }
+
+//void* gpTCLApplication(0);

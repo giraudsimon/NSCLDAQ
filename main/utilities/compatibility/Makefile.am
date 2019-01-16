@@ -100,7 +100,8 @@ nodist_testDataSource_SOURCES = test.c test.h
 testDataSource_CPPFLAGS = -I@top_srcdir@/base/os
 
 
-testDataSource_LDADD    = @top_builddir@/base/os/libdaqshm.la
+testDataSource_LDADD    = @top_builddir@/base/os/libdaqshm.la \
+	@LIBTCLPLUS_LDFLAGS@  @TCL_LIBS@
 
 test.c: test.h
 

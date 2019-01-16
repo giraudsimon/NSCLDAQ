@@ -436,3 +436,4 @@ int main(int argc, char** argv)
   }
   exit(exitStatus);
 }
+void* gpTCLApplication(0);
