@@ -6,7 +6,8 @@ noinst_HEADERS=CFragmentMaker.h CEvents2Fragments.h
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp headerbuildertests.cpp Asserts.h \
+unittests_SOURCES=TestRunner.cpp headerbuildertests.cpp apptests.cpp \
+	Asserts.h \
 	CFragmentMaker.cpp CEvents2Fragments.cpp
 
 
