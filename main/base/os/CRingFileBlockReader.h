@@ -25,7 +25,7 @@ public:
   CRingFileBlockReader(int fd);
   virtual ~CRingFileBlockReader();
 
-  DataDescriptor read(size_t nBytes);
+  virtual DataDescriptor read(size_t nBytes); /* Virtual supports mocking */
 private:
   void savePartialItem(void* pItem, size_t nBytes);
 };
