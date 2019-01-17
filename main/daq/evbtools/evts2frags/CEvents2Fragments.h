@@ -22,11 +22,16 @@
 #ifndef CEVENTS2FRAGMENTS_H
 #define CEVENTS2FRAGMENTS_H
 
+#include <CRingFileBlockReader.h>
+#include <CBufferedOutput.h>
+
 // Forward class definitions.
 
 class CFragmentMaker;
-class CRingFileBlockReader;
-class CBufferedOutput;
+
+
+
+
 
 /**
  * @class CEvents2Fragments
@@ -43,18 +48,22 @@ class CEvents2Fragments
 {
 private:
     int m_nReadSize;                // passsed to CRingFileBlockReader::read
-    CRingFileBlockReader& m_Reader;
-    CFragmentMaker&       m_HeaderMaker;
-    CBufferedOutput&      m_Writer;
+    CRingFileBlockReader&     m_Reader;
+    CFragmentMaker&           m_HeaderMaker;
+    io::CBufferedOutput&      m_Writer;
 public:
     CEvents2Fragments(
         int readSize, CRingFileBlockReader& reader, CFragmentMaker& headerMaker,
-        CBufferedOutput& writer
+        io::CBufferedOutput& writer
     );
     virtual ~CEvents2Fragments();
     
     void operator()();
     
+private:
+    void processBlock(CRingFileBlockReader::DataDescriptor& desc);
+    int  processItem(void* pItem);
+    bool runEnded();
 };
 
 #endif
