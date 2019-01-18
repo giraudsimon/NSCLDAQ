@@ -335,7 +335,7 @@ CRingPhysicsEventCountItem::toString() const
   out << time << " : " << events << " Triggers accepted as of " 
       << fOffset << " seconds into the run\n";
   out << " Average accepted trigger rate: " 
-      <<  (static_cast<double>(events)/static_cast<double>(offset))
+      <<  static_cast<double>(events)/fOffset
       << " events/second \n";
 
   return out.str();
