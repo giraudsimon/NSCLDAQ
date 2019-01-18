@@ -53,8 +53,8 @@ public:
     CBufferedOutput(int fd, size_t nBytes);
     virtual ~CBufferedOutput();
     
-    void put(const void* pData, size_t nBytes);
-    void flush();
+    virtual void put(const void* pData, size_t nBytes);
+    virtual void flush();
     unsigned setTimeout(unsigned timeout);
 
 
