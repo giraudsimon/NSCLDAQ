@@ -6,6 +6,7 @@
 #include "CEvents2Fragments.h"
 #include <CRingFileBlockReader.h>
 #include <CBufferedOutput.h>
+#include "CFragmentMaker.h"
 
 #include <list>
 #include <stdlib.h>
@@ -21,6 +22,7 @@ class CMockRingFileBlockReader : public CRingFileBlockReader
 {
 private:
   std::list<CRingFileBlockReader::DataDescriptor> m_data;
+public:
   CMockRingFileBlockReader() :
     CRingFileBlockReader(dup(STDIN_FILENO)) {} // dup because destruction closes.
   virtual ~CMockRingFileBlockReader();
@@ -106,16 +108,35 @@ MockBufferedOutput::~MockBufferedOutput() {
 
 class Testname : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(Testname);
+  // The mocks are complex enough they need tests of their own:
+  
+  // block reader mock tests
+  
+  // buffered writer mock tests.
+  
+  // Application class tests.
+  
   CPPUNIT_TEST(aTest);
   CPPUNIT_TEST_SUITE_END();
 
 
 private:
-
+  CMockRingFileBlockReader* m_pReader;
+  MockBufferedOutput*      m_pWriter;
+  CFragmentMaker*           m_pFragMaker;
+  CEvents2Fragments*        m_pTestObj;
 public:
   void setUp() {
+    m_pReader = new CMockRingFileBlockReader;
+    m_pWriter = new MockBufferedOutput;
+    m_pFragMaker = new CFragmentMaker(123);
+    m_pTestObj = new CEvents2Fragments(8192, *m_pReader, *m_pFragMaker, *m_pWriter);
   }
   void tearDown() {
+    delete m_pTestObj;
+    delete m_pReader;
+    delete m_pWriter;
+    delete m_pFragMaker;
   }
 protected:
   void aTest();
