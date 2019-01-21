@@ -2,6 +2,8 @@
 #define CRINGFILEBLOCKREADER_H
 #include <cstdint>
 #include <stddef.h>
+#include <unistd.h>
+
 
 
 class CRingFileBlockReader {
@@ -28,6 +30,7 @@ public:
   virtual DataDescriptor read(size_t nBytes); /* Virtual supports mocking */
 private:
   void savePartialItem(void* pItem, size_t nBytes);
+  ssize_t readBlock(void* pBuffer, size_t nBytes);
 };
 
 

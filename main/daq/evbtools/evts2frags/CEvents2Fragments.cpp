@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <iostream>
 
 #include <stdexcept>
 /**
@@ -62,14 +63,15 @@ CEvents2Fragments::operator()()
 {
     CRingFileBlockReader::DataDescriptor desc;
     
+    
     desc = m_Reader.read(m_nReadSize);
     while (desc.s_nBytes) {         // s_nBytes == 0 at EOF.
         processBlock(desc);
         free(desc.s_pData);
         
-        desc = m_Reader.read(m_nReadSize);
-        
         if (runEnded()) break;
+        
+        desc = m_Reader.read(m_nReadSize);
     }
     m_Writer.flush();         // output partial buffer.
 }
@@ -107,6 +109,9 @@ CEvents2Fragments::processBlock(CRingFileBlockReader::DataDescriptor& desc)
                    
     }
     if (nBytes != 0) {
+        std::cerr << nBytes << " left over bytes\n";
+        std::cerr << "Originally " << desc.s_nItems << " in "
+            << desc.s_nBytes << " bytes\n";
         throw std::logic_error("processBlock - didn't process the whole buffer");
     }
 }
