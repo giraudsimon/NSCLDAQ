@@ -4,4 +4,5 @@ purpose "Output data from an NSCL Ring buffer to stdout."
 
 option "mindata" m "Ring get chunking factor" string optional default="10m"
 option "timeout" t "Ring get timeout in seconds"   int    optional default="1"
+option "no-ignore-sigpipe" i "Ignore SIGPIPE" flag on
 
