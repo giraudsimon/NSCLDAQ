@@ -26,7 +26,7 @@
 #include <set>
 #include <string>
 #include <list>
-
+#include <stdint.h>
 
 class Worker;
 
@@ -44,8 +44,7 @@ class Worker;
  */
 class ZMQDataSource : public Thread
 {
-protected:
-    static const
+
 private:
     std::string            m_serviceURI;
     zmq::socket_t*         m_pService;              // Router/dealer.
@@ -56,11 +55,17 @@ private:
     // the data below to keep track of barrier handling.
     
     bool                   m_barrierInProgress;
-    bool                   m_endInProgress;      // Ending is a type of barrier.
     std::set<std::string>  m_barriersSent;       // Who's gotten the barrier.
     std::list<std::string> m_pendingRequests;    // Got the barrier wants data while still processing the barrier.
     std::list<zmq::message_t*> m_barrierMessage;  // payload barrier message segs.
-    
+
+    // Request types.   These are the request type uint32_t's sent by clients:
+    // Since the client messages are formed by our client api, 
+protected:  
+    static const int REGISTER = 1;
+    static const int DATA = 2;
+    static const int UNREGISTER = 3;
+
 public:
     ZMQDataSource(const char* name, const char* service);
     ~ZMQDataSource();
@@ -68,20 +73,40 @@ public:
     virtual void run();
     
     // API that must be implemented by the concrete class.
-    
-    virtual int getNextItem(std::list<zmq::message_t*>& workItem) = 0;
+protected:    
+    virtual void getNextItem(std::list<zmq::message_t*>& workItem) = 0;
     virtual bool isBarrier(std::list<zmq::message_t*>&  workItem) = 0;
-    virtual bool isEnd(std::list<zmq::message_t*>& workItem) = 0;    
+    virtual std::pair<std::string, int>  getClientRequest();    
+    virtual void freeWorkItem(std::list<zmq::message_t*>& msg) = 0;    
     
-    virtual void registerClient(zmq::socket_t* pSock, std::string identity);
-    virtual void unregisterClient(zmq::socket_t* pSock, std::string identity);
+    // Implementations that can be overridden but should be fine:
+    
+    virtual void sendWorkItem(
+        std::string identity, std::list<zmq::message_t*>& msg);
+    virtual void sendBarrierItem(std::string identity);
+    
+    // Client api
+    
+public:
+    zmq::socket_t* connect();
+    virtual void registerClient(zmq::socket_t* pSock);
+    virtual void unregisterClient(zmq::socket_t* pSock);
     virtual std::pair<uint32_t, std::list<zmq::message_t*> >
         getWorkItem(zmq::socket_t* pSock);
-    virtual void sendWorkItem(
-        std::string identity, std::list<zmq::message_t*> msg);
-    virtual void sendBarrierItem(std::string identity);
-    virtual std::pair<std::string, int>  getClientRequest();
-}
+    
+    
+    
+    
+    // Utility private methods.
+private:
+    bool barrierDone();
+    void addClient(std::string& client);
+    void removeClient(std::string& client);
+    void sendMessageList(std::list<zmq::message_t*> msg);
+    void sendRequest(zmq::socket_t* pSock,  int reqCode);
+    void respondToDataRequest(std::string& client);
+    void flushPendingRequests();
+};
 
 
 #endif
