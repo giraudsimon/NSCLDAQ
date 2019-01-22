@@ -50,10 +50,7 @@ class Worker : public Thread
 // Message type definitions:
 
 protected:
-    static const uint32_t PASSTHROUGH_ITEM = 1;
-    static const uint32_t PROCESS_ITEM     = 2;
-    static const uint32_t DROP_ITEM        = 3;
-    static const uint32_t END_ITEM         = 0xffffffff;
+
     
     // messages look like this:
     
