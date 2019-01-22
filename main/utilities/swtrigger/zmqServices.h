@@ -21,7 +21,6 @@
 #ifndef ZMQ_SERVICES_H
 #define ZMQ_SERVICES_H
 
-#include <zmq.hpp>
 #include <string>
 
 // This is the URI of a push/pull that connects the data source with the
