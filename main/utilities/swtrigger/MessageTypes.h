@@ -21,14 +21,25 @@
 
 #ifndef MESSAGETYPES_H
 #define MESSAGETYPES_H
+#include <stdint.h>
+#include <list>
 
 // Message types:
 
 namespace MessageType {
-    static const uint32_t PASSTHROUGH_ITEM = 1;
-    static const uint32_t PROCESS_ITEM     = 2;
-    static const uint32_t DROP_ITEM        = 3;
-    static const uint32_t END_ITEM         = 0x7fffffff;
-    static const uint32_t BARRIER          = 0x80000000;
+    static const uint32_t PROCESS_ITEM     = 1;
+    static const uint32_t REGISTRATION     = 2;
+    static const uint32_t UNREGISTRATION   = 3;
+    static const uint32_t EXIT_REQUEST     = 4;
+    static const uint32_t END_ITEM         = 5;
+    static const uint32_t DATA_REQ         = 6;
+
+   // messages look like this:
+    
+    typedef struct _Message {
+        uint32_t         s_messageType;
+        std::list<std::pair<uint32_t, void*> > s_dataParts;
+    } Message, *pMessage;
+
 }
 #endif
