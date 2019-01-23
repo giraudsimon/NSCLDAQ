@@ -103,11 +103,15 @@ ProcessingElement::run()
  * terminateAndJoin
  *   Must only be called from other threads.  If the
  *   thread is running it's asked to stop and joined.
+ *   @todo - locking on m_running to close timing holes but this is an
+ *           edge case typically at program exit so not urgent.
  */
 void ProcessingElement::terminateAndJoin()
 {
     if (m_running) {
-        requestExit();
+        void* c = connectAsSource();
+        requestExit(c);
+        closeSource(c);
         join();              // Run will disconnect and cleanup.
     }
 }
@@ -286,21 +290,67 @@ void ProcessingElement::onDataRequest(MessageType::Message& item)
 // communication with the thread by other threads.
 
 /**
+ * connectAsSource
+ *     Returns some opaque handle that represents an active connection
+ *     to this processing element as a source of data (messages).
+ *  @return void* - a full opaque connection handle.  This can be used in
+ *     calls to the communication primitives below, though some of these
+ *     may  only be able to accept source or sink connection objects.
+ *     (application dependent).
+ */
+void* ProcessingElement::connectAsSource() {}
+
+/**
+ * closeSource
+ *    Close a connection as a data source to the thread.
+ * @param c opaque connection object.
+ */
+void ProcessingElement::closeSource(void* c) {}
+
+/**
+ * connectAsSink
+ *   opens a connection to this object as a data sink.
+ * @return void* opaque handle that represents the connection.
+ */
+void* ProcessingElement::connectAsSink() {}
+
+/**
+ * closeSink
+ *    Closes a sink connection
+ *  void* c - sink connection handle.
+ */
+void ProcessingElement::closeSink(void* c) {}
+
+
+/**
  * sendMessageToThread
  *    Sends a message to the processing thread.  How this is done
  *    depends on the underlying communication scheme.
+ *  @param c        - either a source or sink connection (see above).
+ *                    Any restrictions on which this must be have to be enforced
+ *                    by the caller.
  *  @param message  - The message to send.
  */
-void ProcessingElement::sendMessageToThread(MessageType::Message& item)
+void ProcessingElement::sendMessageToThread(void* c, MessageType::Message& item)
 {}
 
+/**
+ * receiveMessage
+ *    This method receives the next message from a client.
+ * @return MessageType::Message - the message received.
+ */
+MessageType::Message
+ProcessingElement::receiveMessage() {}
 
 /**
  * registerClient
  * Sends a registration message to the thread.  On receipt of that
  * message, eventually, onRegister will be called in the thread.
- *
- * std::string identity - Client identity - you could use the thread name
+ * 
+ * @param  c        - Connection to the processing element.  This code
+ *                    does not restrict the connection type.  If you want to
+ *                    override, check and if ok call us else throw e.g.
+ * @param  identity - Client identity - you could use the thread name
  *            if you assign unique names.
  *
  *  The default implementation creates a message that consist of the following
@@ -312,9 +362,9 @@ void ProcessingElement::sendMessageToThread(MessageType::Message& item)
  *
  *   Then uses sendMessageToThread to send the message.
  */
-void ProcessingElement::registerClient(std::string identity)
+void ProcessingElement::registerClient(void* c, std::string identity)
 {
-    sendMessageWithIdentityToThread(MessageType::REGISTRATION, identity);
+    sendMessageWithIdentityToThread(c, MessageType::REGISTRATION, identity);
 }
 /**
  * unregisterClient
@@ -322,28 +372,35 @@ void ProcessingElement::registerClient(std::string identity)
  *    message, the thread will call onUnregister passing the message we
  *    construct.  The message will have the type UNREGISTRATION and a single
  *    message part consisting of the identity string itself.
+ * @param c          - Source or sink connection.  We don't restrict the type
+ *                     as we don't know enough to do so.
  * @param identity   - Identity of the processing element being unregistered.
  */
-void ProcessingElement::unregisterClient(std::string identity)
+void ProcessingElement::unregisterClient(void* c, std::string identity)
 {
-    sendMessageWithIdentityToThread(MessageType::UNREGISTRATION, identity);
+    sendMessageWithIdentityToThread(c, MessageType::UNREGISTRATION, identity);
 }
 /**
  * queueWorkItem
  *   This sends a process item to the thread.  When received this is passed
  *   to the processWorkItem method.
  *
+ * @param c    - Connection - this should normally be  a data source
+ *               connection, however we don't know how to distinguish so the
+ *               caller should implement the check and then delegate.
  * @param item - pairs of sizes and item pointers.  These will be
  *               copied to the s_dataParts chunk of the message.
  */
 void
-ProcessingElement::queueWorkItem(std::list<std::pair<uint32_t, void*> >& item)
+ProcessingElement::queueWorkItem(
+    void* c, std::list<std::pair<uint32_t, void*> >& item
+)
 {
     MessageType::Message msg;
     msg.s_messageType = MessageType::PROCESS_ITEM;
     msg.s_dataParts = item;
     
-    sendMessageToThread(msg); 
+    sendMessageToThread(c, msg); 
 }
 /**
  * requestItem
@@ -351,34 +408,42 @@ ProcessingElement::queueWorkItem(std::list<std::pair<uint32_t, void*> >& item)
  *    work item.  When the message is received it is passed to
  *    onDataRequest which is expected (at some point) to satisfy the
  *    request.
+ * @param c  - represens a connection.  Only sink connections should be able
+ *             to call this but we don't know how to enforce that.
  * @param identity - identity of the requestor.
  */
 void
-ProcessingElement::requestItem(std::string identity)
+ProcessingElement::requestItem(void* c, std::string identity)
 {
-    sendMessageWithIdentityToThread(MessageType::DATA_REQ, identity);
+    sendMessageWithIdentityToThread(c, MessageType::DATA_REQ, identity);
 }
 /**
  * noMoreData
  *   sends an empty messsage with the type: END_ITEM indicating the
  *   data source sending this message has no more data to send the
  *   thread.
+ *
+ *   @param c - connection object.  Note that only data source connections should
+ *              be able to call this.
  */
-void ProcessingElement::noMoreData()
+void ProcessingElement::noMoreData(void* c)
 {
     MessageType::Message m;
     m.s_messageType = MessageType::END_ITEM;
-    sendMessageToThread(m);
+    sendMessageToThread(c, m);
 }
 /**
  * requestExit
  *    sends a EXIT_REQUEST message to the thread.
+ *
+ *  @param c - connection object either sources or sinks should be able to request
+ *            an exit.
  */
-void ProcessingElement::requestExit()
+void ProcessingElement::requestExit(void* c)
 {
     MessageType::Message m;
     m.s_messageType = MessageType::EXIT_REQUEST;
-    sendMessageToThread(m);
+    sendMessageToThread(c, m);
 }
 ////////////////////////////////////////////////////////////////////
 // Private utilities
@@ -389,12 +454,13 @@ void ProcessingElement::requestExit()
  *    with a string identity.  This method constructs and sends
  *    such messages
  *
+ * @param c    - connection.
  * @param type - type of message.
  * @param identity - string to send.
  */
 void
 ProcessingElement::sendMessageWithIdentityToThread(
-    uint32_t type, std::string identity
+    void* c, uint32_t type, std::string identity
 )
 {
     MessageType::Message msg;
@@ -404,5 +470,5 @@ ProcessingElement::sendMessageWithIdentityToThread(
     strcpy(identityString, identity.c_str());
     msg.s_dataParts.push_back({identity.size() + 1, identityString});
     
-    sendMessageToThread(msg);    
+    sendMessageToThread(c, msg);    
 }

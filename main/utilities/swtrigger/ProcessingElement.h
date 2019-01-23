@@ -86,19 +86,25 @@ protected:
     
          // Base communication primitive:
 public:
-    virtual void sendMessageToThread(MessageType::Message& item)      = 0;
+    virtual void*  connectAsSource()  = 0;
+    virtual void   closeSource(void* c) = 0;
+    virtual void*  connectAsSink()    = 0;
+    virtual void   closeSink(void* c) = 0;
+    
+    virtual void sendMessageToThread(void * c, MessageType::Message& item)      = 0;
+    virtual MessageType::Message receiveMessage()                    = 0;
     
          // I can see how to implement these in terms of
          // send message by default - but concrete classe may need to override.
          
-    virtual void registerClient(std::string identity);
-    virtual void unregisterClient(std::string identity);
-    virtual void queueWorkItem(std::list<std::pair<uint32_t, void*> >& item);
-    virtual void requestItem(std::string identity);   // for explicit pull requests.
-    virtual void noMoreData();
-    virtual void requestExit();
+    virtual void registerClient(void* c, std::string identity);
+    virtual void unregisterClient(void* c, std::string identity);
+    virtual void queueWorkItem(void* c, std::list<std::pair<uint32_t, void*> >& item);
+    virtual void requestItem(void* c, std::string identity);   // for explicit pull requests.
+    virtual void noMoreData(void* c);
+    virtual void requestExit(void* c);
 private:
-    void sendMessageWithIdentityToThread(uint32_t type, std::string identity);
+    void sendMessageWithIdentityToThread(void* c, uint32_t type, std::string identity);
 };
 
 
