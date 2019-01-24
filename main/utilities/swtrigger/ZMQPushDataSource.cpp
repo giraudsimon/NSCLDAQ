@@ -86,7 +86,7 @@ ZMQPushDataSource::disconnectSource()
 }
 /**
  * connectSink
- *     - Create the socket  as ZMQ_PUSH
+ *     - Create the socket  as ZMQ_PUSG
  *     - bind it to the URI. as a server.
  *
  *   @note it's our convention that Pushers are the servers and pullers the
@@ -110,6 +110,7 @@ ZMQPushDataSource::connectSink()
         
         m_pSocket->bind(m_sinkURI.c_str());
     }
+   
 }
 /**
  * disconnectSink
@@ -236,6 +237,7 @@ void
 ZMQPushDataSource::onEndItem(MessageType::Message& endItem)
 {
     sendWorkItemToSink(endItem);
+    m_running = false;               // end the thread.
 }
 /**
  * onExitRequested
