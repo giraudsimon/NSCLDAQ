@@ -17,3 +17,15 @@ swfilter_HEADERS=MessageTypes.h ZMQPushDataSource.h  \
 	ProcessingElement.h zmqServices.h swFilterRingDataSource.h
 
 noinst_HEADERS=zmqServices.h 
+
+
+
+noinst_PROGRAMS = unittests
+
+unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp Asserts.h
+
+unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS)
+unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libswTrigger_la_LDFLAGS)
+
+TESTS=unittests
+
