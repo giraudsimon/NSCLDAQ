@@ -23,7 +23,7 @@
 #ifndef SWFILTERRINGDATASOURCE_H
 #define SWFILTERRINGDATASOURCE_H
 #include "DataSource.h"
-class CRingDataSource;
+class CDataSource;
 
 /**
  * @class swFilterRingDataSource
@@ -39,9 +39,9 @@ class CRingDataSource;
 class swFilterRingDataSource :  public DataSource
 {
 private:
-    CRingDataSource&   m_ActualSource;
+    CDataSource&   m_ActualSource;
 public:
-    swFilterRingDataSource(CRingDataSource& src);
+    swFilterRingDataSource(CDataSource& src);
     virtual ~swFilterRingDataSource();
     
     virtual void connect();

@@ -20,7 +20,7 @@
  */
 
 #include "swFilterRingDataSource.h"
-#include <CRingDataSource.h>
+#include <CDataSource.h>
 #include <CRingItem.h>
 #include <DataFormat.h> 
 #include <stdlib.h>
@@ -34,7 +34,7 @@
  *                 well as dynamically allocated sources.
  */
 
-swFilterRingDataSource::swFilterRingDataSource(CRingDataSource& src) :
+swFilterRingDataSource::swFilterRingDataSource(CDataSource& src) :
     m_ActualSource(src)
 {}
 
