@@ -40,7 +40,7 @@ public:
     
     virtual void connect()  = 0;
     virtual void disconnect() = 0;
-    std::pair<std::size_t, void*> read() = 0;
+    virtual std::pair<std::size_t, void*> read() = 0;
 };
 
 #endif

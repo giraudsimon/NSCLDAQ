@@ -26,7 +26,7 @@
 #include <zmq.hpp>
 
 
-class DataItemSource;           // Something that gives us data to distribute.
+class DataSource;           // Something that gives us data to distribute.
 class DataItemConverter;        // Converts data items into message segments.
 
 /**
@@ -57,12 +57,12 @@ class ZMQPushDataSource : public ProcessingElement
 private:
     std::string        m_sinkURI;
     zmq::socket_t*     m_pSocket;
-    DataItemSource*    m_pSource;
-    DataItemConverter* m_pConvertrer;
+    DataSource*    m_pSource;
+    DataItemConverter* m_pConverter;
 public:
     ZMQPushDataSource(
         const char* threadName,
-        std::string uri, DataItemSource* pSource, DataItemConverter* pConverter
+        std::string uri, DataSource* pSource, DataItemConverter* pConverter
     );
     virtual ~ZMQPushDataSource();
     

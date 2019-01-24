@@ -76,7 +76,7 @@ protected:
     virtual void onExitRequested(MessageType::Message& item)   = 0;
     
     virtual void onDataRequest(MessageType::Message& item);      // Override for explicit pull protocols.
-    
+    virtual MessageType::Message receiveMessage()                    = 0;
     
     
     
@@ -92,7 +92,7 @@ public:
     virtual void   closeSink(void* c) = 0;
     
     virtual void sendMessageToThread(void * c, MessageType::Message& item)      = 0;
-    virtual MessageType::Message receiveMessage()                    = 0;
+    
     
          // I can see how to implement these in terms of
          // send message by default - but concrete classe may need to override.

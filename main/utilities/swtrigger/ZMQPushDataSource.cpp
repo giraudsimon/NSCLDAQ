@@ -39,12 +39,12 @@
  *   @param pConverter - Knows how to convert data from the source into messages.
  */
 ZMQPushDataSource::ZMQPushDataSource(
-    const char* threadName, std::string uri, DataItemSource* pSource,
+    const char* threadName, std::string uri, DataSource* pSource,
     DataItemConverter* pConverter
 ) :
     ProcessingElement(threadName),
-    m_sinnkURI(uri), m_pSocket(nullptr), m_pSource(pSource),
-    m_pConverer(pConveter)
+    m_sinkURI(uri), m_pSocket(nullptr), m_pSource(pSource),
+    m_pConverter(pConverter)
 {}
 /**
  * destructor
@@ -55,12 +55,12 @@ ZMQPushDataSource::ZMQPushDataSource(
  */
 ZMQPushDataSource::~ZMQPushDataSource()
 {
-    if (getId == runningThread()) {
+    if (getId() == runningThread()) {
         disconnectSource();
         disconnectSink();
     } else {
         if (m_running) {
-            join();            // Hope it actually does exit.
+            join();            // Hope it actually does exit; no way to request it.
         }
     }
     // Note that disconnectSink deleted the socket
@@ -132,11 +132,12 @@ ZMQPushDataSource::disconnectSink()
 MessageType::Message
 ZMQPushDataSource::getNextWorkItem()
 {
-    return (*m_pConverer)(m_pSource->read());
+    std::pair<size_t, void*> item = m_pSource->read();
+    return (*m_pConverter)(item);
 }
 /**
  *  sendWorkItemToSink
- *    PUSHes the work item to the socket.  The message contains
+ *    PUSHes the wor111k item to the socket.  The message contains
  *    a message part which is the message type (uint32_t),
  *    and a message part for each item in the list of size/pointer
  *    values:
@@ -151,7 +152,7 @@ ZMQPushDataSource::getNextWorkItem()
  * @param workItem - the message to send.
  */
 void
-ZMQPushDataSource::sendWorkItemToSink(MessagType::Message& workItem)
+ZMQPushDataSource::sendWorkItemToSink(MessageType::Message& workItem)
 {
     
     
@@ -159,19 +160,19 @@ ZMQPushDataSource::sendWorkItemToSink(MessagType::Message& workItem)
     //complexity.
     
     zmq::message_t typeSegment(sizeof(uint32_t));
-    memcpy(typeSegment.data(), &workitem.s_messageType, sizeof(uint32_t));
+    memcpy(typeSegment.data(), &workItem.s_messageType, sizeof(uint32_t));
     m_pSocket->send(
         typeSegment, workItem.s_dataParts.size() ? ZMQ_SNDMORE : 0 );
     
     // Now send any message segments:
     
-    while(!workitem.s_dataParts.empty()) {
-        std::pair<uint32_t, void*>& item = workitem.s_dataParts.front();
+    while(!workItem.s_dataParts.empty()) {
+        std::pair<uint32_t, void*>& item = workItem.s_dataParts.front();
         
         zmq::message_t msg(item.first);
         memcpy(msg.data(), item.second, item.first);
-        workitem.s_dataParts.pop_front();
-        m_pSocket->send(msg, workItem.s_dataParts.empty() ? 0 : ZMQ_SNDMORE));
+        workItem.s_dataParts.pop_front();
+        m_pSocket->send(msg, workItem.s_dataParts.empty() ? 0 : ZMQ_SNDMORE);
         
         free(item.second);
     }
@@ -297,7 +298,7 @@ ZMQPushDataSource::connectAsSink()
  * closeSink
  *    Also not supported.
  */
-void*
+void
 ZMQPushDataSource::closeSink(void* c)
 {
     throw std::logic_error(
