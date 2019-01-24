@@ -24,7 +24,7 @@ noinst_PROGRAMS = unittests
 
 unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp Asserts.h \
 		swFilterRingDataSource.cpp
-unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS)
+unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@
 unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libSwTrigger_la_LDFLAGS)
 
 TESTS=unittests

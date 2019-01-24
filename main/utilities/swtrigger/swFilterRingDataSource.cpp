@@ -76,7 +76,7 @@ swFilterRingDataSource::read()
 {
     std::pair<std::size_t, void*> result = {0, nullptr};  // assume at end.
     
-    CRingItem* pWrappedItem; m_ActualSource.getItem();
+    CRingItem* pWrappedItem = m_ActualSource.getItem();
     
     // NULL is returned for an end of data stream.
     
