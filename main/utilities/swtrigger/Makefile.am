@@ -22,10 +22,10 @@ noinst_HEADERS=zmqServices.h
 
 noinst_PROGRAMS = unittests
 
-unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp Asserts.h
-
+unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp Asserts.h \
+		swFilterRingDataSource.cpp
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS)
-unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libswTrigger_la_LDFLAGS)
+unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libSwTrigger_la_LDFLAGS)
 
 TESTS=unittests
 
