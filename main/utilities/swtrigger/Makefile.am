@@ -24,8 +24,10 @@ noinst_HEADERS=zmqServices.h zhelpers.hpp
 noinst_PROGRAMS = unittests
 
 unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp singlritemconvtests.cpp \
+		zmqpushsrctest.cpp \
 		Asserts.h \
-		swFilterRingDataSource.cpp SingleRingItemConverter.cpp 
+		$(libSwTrigger_la_SOURCES)
+
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@
 unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libSwTrigger_la_LDFLAGS)
 
