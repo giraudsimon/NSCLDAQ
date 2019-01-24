@@ -10,33 +10,13 @@
 #include <CRingItemFactory.h>
 #include <DataFormat.h>
 
-#include <list>
+
 #include <stdlib.h>
+#include "fakedatasource.h"
+
 
 // mock for CDataSource
 
-class CFakeDataSource : public CDataSource
-{
-private:
-  std::list<CRingItem*> m_items;
-public:
-  virtual ~CFakeDataSource() {}
-  void addItem(CRingItem* pItem)     // Must have been new'd.
-  {
-    m_items.push_back(pItem);
-  }
-  CRingItem* getItem() {
-    CRingItem* result(nullptr);    // result if there's nothing left.
-    
-    if(!m_items.empty()) {         // but if there is...
-      result = m_items.front();
-      m_items.pop_front();
-    }
-    
-    return result;
-  }
-  void read(char* pBuffer, size_t nBytes) {}
-};
 
 
 class ringsourceTests : public CppUnit::TestFixture {

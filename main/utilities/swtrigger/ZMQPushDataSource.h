@@ -85,8 +85,8 @@ protected:
 public:
     virtual void*  connectAsSource() ;          // Throw exception
     virtual void   closeSource(void* c);        // throw exception
-    virtual void*  connectAsSink();             // Return a zmq::socket.
-    virtual void   closeSink(void* c) = 0;
+    virtual void*  connectAsSink();             // Return a zmq::socket_t*.
+    virtual void   closeSink(void* c);          // destroy the zmq::socket_t
     
     virtual void sendMessageToThread(void * c, MessageType::Message& item); // Throw exception.
 protected:

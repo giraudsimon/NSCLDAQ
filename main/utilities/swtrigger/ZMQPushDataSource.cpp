@@ -284,26 +284,30 @@ ZMQPushDataSource::closeSource(void* c)
 }
 /**
  * connectAsSink
- *    We don't support connection as a sink as we don't have a channel
- *    on which ti do this.
+ *    Connect to the thread (server) as a client (sink).  The
+ *    return value is actually a pointer to a zmq::socket_t*
  */
 void*
 ZMQPushDataSource::connectAsSink()
 {
-    throw std::logic_error(
-        "Attempted sink connection to ZMQPushDataSource not possible"
-    );
+    zmq::context_t& ctx(ZMQContext::getContext());
+    zmq::socket_t* pSocket = new zmq::socket_t(ctx, ZMQ_PULL);
+    int linger(0);
+    pSocket->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+    
+    pSocket->connect(m_sinkURI.c_str());
+    
+    return pSocket;
 }
 /**
  * closeSink
- *    Also not supported.
+ *    destroy the socket (which also closes it).
  */
 void
 ZMQPushDataSource::closeSink(void* c)
 {
-    throw std::logic_error(
-        "Attempted sink disconnect from ZMQPushDataSource not possible"
-    );
+    zmq::socket_t* pSock = static_cast<zmq::socket_t*>(c);
+    delete pSock;
 }
 /**
  * sendMessageToThread
