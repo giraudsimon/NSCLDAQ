@@ -74,18 +74,24 @@ swFilterRingDataSource::disconnect()
 std::pair<std::size_t, void*>
 swFilterRingDataSource::read()
 {
-    std::pair<std::size_t, void*> result;
+    std::pair<std::size_t, void*> result = {0, nullptr};  // assume at end.
+    
     CRingItem* pWrappedItem; m_ActualSource.getItem();
     
-    pRingItem pRawItem = pWrappedItem->getItemPointer();
-    result.first = pRawItem->s_header.s_size;
-    result.second = malloc(result.first);
-    if (!result.second) {
-       throw std::bad_alloc(); 
-    }
-    memcpy(result.second, pRawItem, result.first);
+    // NULL is returned for an end of data stream.
     
-    delete pWrappedItem;
+    if (pWrappedItem) {
+        pRingItem pRawItem = pWrappedItem->getItemPointer();
+        result.first = pRawItem->s_header.s_size;
+        result.second = malloc(result.first);
+        if (!result.second) {
+           throw std::bad_alloc(); 
+        }
+        memcpy(result.second, pRawItem, result.first);
+        
+        delete pWrappedItem;
+    }
+    
     return result;
 }
 
