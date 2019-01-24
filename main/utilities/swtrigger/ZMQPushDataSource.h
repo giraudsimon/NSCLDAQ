@@ -36,9 +36,6 @@ class DataItemConverter;        // Converts data items into message segments.
  *    from some communication medium but from an object that's
  *    connected to something like a file or a ring buffer.
  *
- *    This class is still pure virtual as it requires application specific
- *    methods to map the data items received into message parts.
- *
  *    As push sockets are one-way we do not implement support for explicit
  *    pulls of data.  Really for the most part we just
  *    get data from the data source, convert it and ship it off.
@@ -46,6 +43,13 @@ class DataItemConverter;        // Converts data items into message segments.
  *    Anything that tells us what to do is overridden to throw exceptions
  *    again because all we have is a PUSH socket and nothing can be written
  *    into that.
+ *
+ *    The nasty issues:
+ *    *   How to get data from the actual data source.
+ *    *   How to express that data as message objects
+ *
+ *    Are deferred to two objects, a DataItemSource which gets the data and
+ *    a DataItemConverter which does said conversion.
  *    
  */
 class ZMQPushDataSource : public ProcessingElement
@@ -57,6 +61,7 @@ private:
     DataItemConverter* m_pConvertrer;
 public:
     ZMQPushDataSource(
+        const char* threadName,
         std::string uri, DataItemSource* pSource, DataItemConverter* pConverter
     );
     virtual ~ZMQPushDataSource();
@@ -75,7 +80,7 @@ protected:
     virtual void processWorkItem(MessageType::Message& item); // Sends the work item.
     virtual void onOtherMessageType(MessageType::Message& item); // no-op.
     virtual void onEndItem(MessageType::Message& endItem);  // Sends an end item marks exit.
-    virtual void onExitRequested(MessageType::Message& item); // No-op.
+    virtual void onExitRequested(MessageType::Message& item); // faise ->m_running
     
 public:
     virtual void*  connectAsSource() ;          // Throw exception
@@ -84,6 +89,7 @@ public:
     virtual void   closeSink(void* c) = 0;
     
     virtual void sendMessageToThread(void * c, MessageType::Message& item); // Throw exception.
+protected:
     virtual MessageType::Message receiveMessage();               // No-op.
     
 };
