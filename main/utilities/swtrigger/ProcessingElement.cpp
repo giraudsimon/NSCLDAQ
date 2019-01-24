@@ -29,7 +29,7 @@
  *    @param name - name to assign to the thread.
  */
 ProcessingElement::ProcessingElement(const char* name) :
-    Thread(std::string(name))
+    Thread(std::string(name)), m_running(false)
 {}
 
 /**
@@ -38,25 +38,12 @@ ProcessingElement::ProcessingElement(const char* name) :
  * shutdown the source and sink and we're done.  If we're  in a different
  * thread, if we're not running, no big deal,  If we are, we need to send
  * an exit request to the thread, join and then exit.
+ * Derived classes have to do the hard work because we can't get virtual calls
+ *  in a destructor.
  */
 ProcessingElement::~ProcessingElement()
 {
-    long elementId = getId();
-    long us        = runningThread();
-    
-    if (us == elementId) {
-        if (m_running) {
-            // Can't actually do this because destructors can't call
-            // vitual methods polymorphically and we'd need to do that to
-            // disconnect.
-            throw std::logic_error(
-                "Attempted to destroy a running processing element!!"
-            );
-        }
-    } else {
-        
-        terminateAndJoin();        // No-op if not running.
-    }
+
 }
 
 /**
@@ -66,9 +53,10 @@ ProcessingElement::~ProcessingElement()
 void
 ProcessingElement::run()
 {
+    m_running = true;
     connectSource();
     connectSink();
-    
+
     
     //  The main program loop:  Note that while EXIT_REQUEST
     //  explicitly sets m_running false so that the loop will exit,
