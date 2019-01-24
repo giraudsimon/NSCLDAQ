@@ -2,7 +2,8 @@
 lib_LTLIBRARIES = libSwTrigger.la
 
 libSwTrigger_la_SOURCES = ProcessingElement.cpp ZMQPushDataSource.cpp \
-	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp
+	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp \
+	CRingFileBlockReader.cpp
 
 libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/base/thread -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/utilities/IO
@@ -15,7 +16,7 @@ swfilterdir=@includedir@/swfilter
 swfilter_HEADERS=MessageTypes.h ZMQPushDataSource.h  \
 	ZMQContext.h \
 	ProcessingElement.h zmqServices.h swFilterRingDataSource.h \
-	SingleRingItemConverter.h
+	SingleRingItemConverter.h CRingFileBlockReader.h
 
 noinst_HEADERS=zmqServices.h zhelpers.hpp
 
