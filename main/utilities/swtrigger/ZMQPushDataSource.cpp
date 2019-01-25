@@ -110,6 +110,7 @@ ZMQPushDataSource::connectSink()
         
         m_pSocket->bind(m_sinkURI.c_str());
     }
+    usleep(1000*100);    // Allow any connections to happen.
    
 }
 /**
