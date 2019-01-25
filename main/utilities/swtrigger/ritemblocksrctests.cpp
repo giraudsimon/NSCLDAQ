@@ -179,4 +179,5 @@ void blockdsTest::oneitem()
     (pItem->s_body.u_hasBodyHeader.s_body)
   );
   EQ(*pD, *pR );
+  free(result.second);
 }
