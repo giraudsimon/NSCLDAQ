@@ -99,7 +99,7 @@ zmqpushsrcTest::deleteMessage(std::list<zmq::message_t*>& msg)
 bool
 zmqpushsrcTest::more()
 {
-  int64_t flag;
+  int64_t flag(0);
   size_t  flagSize(sizeof(flag));
   
   m_pSocket->getsockopt(ZMQ_RCVMORE, &flag, &flagSize);

@@ -2,6 +2,8 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
+#include <Asserts.h>
+
 #include <CRingBlockReader.h>
 
 #include "swFilterRingBlockDataSource.h"
@@ -83,14 +85,14 @@ CFakeRingBlockReader::readBlock(void* pBuffer, size_t nBytes)
     uint8_t*   p  = static_cast<uint8_t*>(m_pRead);
     m_pRead       = p + nBytes;
   }
-  
+
   return result;
 }
 
 
-class Testname : public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(Testname);
-  CPPUNIT_TEST(aTest);
+class blockdsTest : public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(blockdsTest);
+  CPPUNIT_TEST(empty);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -110,10 +112,16 @@ public:
     m_pReader  = nullptr;
   }
 protected:
-  void aTest();
+  void empty();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Testname);
+CPPUNIT_TEST_SUITE_REGISTRATION(blockdsTest);
 
-void Testname::aTest() {
+// If there's no data to read we get {0, nullptr]}
+void blockdsTest::empty() {
+  
+  std::pair<std::size_t, void*> result = m_pTestObj->read();
+  
+  EQ(std::size_t(0), result.first);
+  EQ((void*)(nullptr), result.second);
 }
