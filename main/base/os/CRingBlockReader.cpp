@@ -157,7 +157,11 @@ CRingBlockReader::read(size_t nBytes)
     
     
   }
-    
+  if (result.s_nBytes == 0) {
+    free(result.s_pData);
+    result.s_pData = nullptr;
+  }
+  return result;  
 }
 //////////////////////////////////////////////////////////////////////////
 // Documentation of pure virtual methods:
