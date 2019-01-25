@@ -61,7 +61,7 @@ CEvents2Fragments::~CEvents2Fragments() {}
 void
 CEvents2Fragments::operator()()
 {
-    CRingFileBlockReader::DataDescriptor desc;
+    CRingBlockReader::DataDescriptor desc;
     
     
     desc = m_Reader.read(m_nReadSize);
