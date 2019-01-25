@@ -2,10 +2,10 @@ lib_LTLIBRARIES = libdaqshm.la
 
 libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp \
 	CPosixBlockingRecordLock.cpp CBufferedOutput.cpp NSCLDAQLog.cpp \
-	CRingFileBlockReader.cpp
+	CRingBlockReader.cpp CRingFileBlockReader.cpp
 include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h \
 	CPosixBlockingRecordLock.h CBufferedOutput.h NSCLDAQLog.h \
-	CRingFileBlockReader.h
+	CRingBlockReader.h CRingFileBlockReader.h
 
 noinst_HEADERS	     = Asserts.h
 
