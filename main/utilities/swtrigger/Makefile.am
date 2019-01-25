@@ -27,6 +27,7 @@ noinst_HEADERS=zmqServices.h zhelpers.hpp
 noinst_PROGRAMS = unittests
 
 unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp singlritemconvtests.cpp \
+		ritemblocksrctests.cpp   \
 		zmqpushsrctest.cpp \
 		Asserts.h fakedatasource.h \
 		$(libSwTrigger_la_SOURCES)
