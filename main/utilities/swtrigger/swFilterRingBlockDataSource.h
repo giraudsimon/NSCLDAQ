@@ -46,6 +46,8 @@ public:
     swFilterRingBlockDataSource(CRingBlockReader& reader, size_t readSize);
     virtual ~swFilterRingBlockDataSource();
     
+    void setReadSize(size_t n) {m_nReadSize = n;}  // mostly for testing.
+    
     virtual void connect();
     virtual void disconnect();
     virtual std::pair<std::size_t, void*> read();
