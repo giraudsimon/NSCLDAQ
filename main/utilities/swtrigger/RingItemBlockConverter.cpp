@@ -51,11 +51,11 @@ MessageType::Message
 RingItemBlockConverter::operator()(std::pair<size_t, void*>& item)
 {
     MessageType::Message result;
-    CRingBlockReader::pDataDescriptor pD =
-        static_cast<CRingBlockReader::pDataDescriptor>(item.second);
         
-    if (pD->s_pData) {
+    if ((item.first) != 0 && (item.second != nullptr)) {
         // There's data to return:
+        CRingBlockReader::pDataDescriptor pD =
+            static_cast<CRingBlockReader::pDataDescriptor>(item.second);
         
         std::pair<size_t, void*> ptrs = makeItemPointers(*pD);
         result.s_messageType = MessageType::PROCESS_ITEM;
@@ -63,7 +63,7 @@ RingItemBlockConverter::operator()(std::pair<size_t, void*>& item)
         *nItems = ptrs.first;
         
         result.s_dataParts.push_back({sizeof(uint32_t), nItems});
-        result.s_dataParts.push_back({sizeof(void*), ptrs.second});
+        result.s_dataParts.push_back({sizeof(void*)*(*nItems), ptrs.second});
         
     } else {
         // end of data:
@@ -106,7 +106,7 @@ RingItemBlockConverter::makeItemPointers(CRingBlockReader::DataDescriptor& desc)
     for (int i = 0; i < result.first; i++) {
         *pr++ = pd;                      // Store ring item pointer.
         
-        *pdp+= *pd;                      // Ritems start with a size.
+        pdp+= *pd;                      // Ritems start with a size.
         pd   = reinterpret_cast<uint32_t*>(pdp);
     }
     
