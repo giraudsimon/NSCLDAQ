@@ -26,14 +26,14 @@
 class CMockRingFileBlockReader : public CRingFileBlockReader
 {
 private:
-  std::list<CRingFileBlockReader::DataDescriptor> m_data;
+  std::list<CRingBlockReader::DataDescriptor> m_data;
 public:
   CMockRingFileBlockReader() :
     CRingFileBlockReader(dup(STDIN_FILENO)) {} // dup because destruction closes.
   virtual ~CMockRingFileBlockReader();
   
-  virtual CRingFileBlockReader::DataDescriptor read(size_t nBytes);
-  void addData(CRingFileBlockReader::DataDescriptor desc) {
+  virtual CRingBlockReader::DataDescriptor read(size_t nBytes);
+  void addData(CRingBlockReader::DataDescriptor desc) {
     m_data.push_back(desc);
   }
   
@@ -47,10 +47,10 @@ CMockRingFileBlockReader::~CMockRingFileBlockReader() {
   }
   // the list will clear itself.
 }
-CRingFileBlockReader::DataDescriptor
+CRingBlockReader::DataDescriptor
 CMockRingFileBlockReader::read(size_t nBytes) // we ignore the buffer size
 {
-  CRingFileBlockReader::DataDescriptor result;
+  CRingBlockReader::DataDescriptor result;
   if (m_data.empty()) {
     // Return an eof indicator:
     
@@ -173,12 +173,12 @@ protected:
   void fragmaker_complete_1();   // Begin and end -- both have body headers.
   void fragmaker_complete_2();   // Begin with body header, end without.
 private:
-  CRingFileBlockReader::DataDescriptor makeCountingPattern(
+  CRingBlockReader::DataDescriptor makeCountingPattern(
     int nBytes, int nItems
   );
   pRingItem makeStateChange(uint64_t ts, uint32_t sid, uint32_t type);
   pRingItem makeStateChange(uint32_t type);
-  CRingFileBlockReader::DataDescriptor packItems(std::vector<pRingItem> items);
+  CRingBlockReader::DataDescriptor packItems(std::vector<pRingItem> items);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(apptests);
@@ -190,10 +190,10 @@ CPPUNIT_TEST_SUITE_REGISTRATION(apptests);
 // pack ring items into a single block.
 // prior items are freed, the return block was malloced.
 //
-CRingFileBlockReader::DataDescriptor
+CRingBlockReader::DataDescriptor
 apptests::packItems(std::vector<pRingItem> items)
 {
-  CRingFileBlockReader::DataDescriptor result = {0, 0, nullptr};
+  CRingBlockReader::DataDescriptor result = {0, 0, nullptr};
   
   result.s_nItems =  items.size();
   result.s_nBytes =  0;
@@ -271,10 +271,10 @@ apptests::makeStateChange(uint32_t type)
   return reinterpret_cast<pRingItem>(p);
 }
 
-CRingFileBlockReader::DataDescriptor
+CRingBlockReader::DataDescriptor
 apptests::makeCountingPattern(int nBytes, int nItems)
 {
-  CRingFileBlockReader::DataDescriptor result;
+  CRingBlockReader::DataDescriptor result;
   result.s_nItems = nItems;
   result.s_nBytes = nBytes;
   result.s_pData  = malloc(nBytes);
@@ -292,7 +292,7 @@ apptests::makeCountingPattern(int nBytes, int nItems)
 
 // If there's nothing in the block reader it immediately reads an empty.
 void apptests::breaderEmpty() {
-  CRingFileBlockReader::DataDescriptor d = m_pReader->read(100);
+  CRingBlockReader::DataDescriptor d = m_pReader->read(100);
   EQ(uint32_t(0), d.s_nBytes);
   EQ(uint32_t(0), d.s_nItems);
   EQ((void*)(nullptr), d.s_pData);
@@ -303,10 +303,10 @@ void apptests::breaderEmpty() {
 
 void apptests::breader_1Item()
 {
-  CRingFileBlockReader::DataDescriptor data = {100, 2, malloc(100)};
+  CRingBlockReader::DataDescriptor data = {100, 2, malloc(100)};
   m_pReader->addData(data);
   
-  CRingFileBlockReader::DataDescriptor rdata = m_pReader->read(100);
+  CRingBlockReader::DataDescriptor rdata = m_pReader->read(100);
   EQ(data.s_nBytes, rdata.s_nBytes);
   EQ(data.s_nItems, rdata.s_nItems);
   EQ(data.s_pData, rdata.s_pData);
@@ -326,7 +326,7 @@ void apptests::breader_Order()
   
   // should get the three in order:
   
-  CRingFileBlockReader::DataDescriptor d;
+  CRingBlockReader::DataDescriptor d;
   
   d  = m_pReader->read(2000);
   EQ(uint32_t(100), d.s_nBytes);
@@ -444,7 +444,7 @@ void apptests::fragmaker_eof()
 void apptests::fragmaker_begonly_1()
 {
   pRingItem pBegin = makeStateChange(0x12345, 2, BEGIN_RUN);
-  CRingFileBlockReader::DataDescriptor d =
+  CRingBlockReader::DataDescriptor d =
     {pBegin->s_header.s_size, 1, pBegin};
   
   m_pReader->addData(d);
@@ -486,7 +486,7 @@ void apptests::fragmaker_begonly_1()
 void apptests::fragmaker_begonly_2()
 {
   pRingItem pBegin = makeStateChange(BEGIN_RUN);
-  CRingFileBlockReader::DataDescriptor d =
+  CRingBlockReader::DataDescriptor d =
     {pBegin->s_header.s_size, 1, pBegin};
   
   m_pReader->addData(d);
@@ -529,7 +529,7 @@ void apptests::fragmaker_complete_1()
   pRingItem pEnd   =
     reinterpret_cast<pRingItem>(makeStateChange(0x50000, 1, END_RUN));
     
-  CRingFileBlockReader::DataDescriptor d = packItems({pBegin, pEnd});
+  CRingBlockReader::DataDescriptor d = packItems({pBegin, pEnd});
   m_pReader->addData(d);
   
   (*m_pTestObj)();
@@ -568,7 +568,7 @@ void apptests::fragmaker_complete_2()
   pRingItem pEnd   =
     reinterpret_cast<pRingItem>(makeStateChange(END_RUN));
     
-  CRingFileBlockReader::DataDescriptor d = packItems({pBegin, pEnd});
+  CRingBlockReader::DataDescriptor d = packItems({pBegin, pEnd});
   m_pReader->addData(d);
   
   (*m_pTestObj)();

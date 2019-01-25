@@ -61,7 +61,7 @@ public:
     void operator()();
     
 private:
-    void processBlock(CRingFileBlockReader::DataDescriptor& desc);
+    void processBlock(CRingBlockReader::DataDescriptor& desc);
     int  processItem(void* pItem);
     bool runEnded();
 };

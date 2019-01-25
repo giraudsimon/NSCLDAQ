@@ -56,7 +56,7 @@ public:
     CRingBlockReader();
     virtual ~CRingBlockReader();
     
-    DataDescriptor read(size_t nBytes);
+    virtual DataDescriptor read(size_t nBytes); // for testing.
 protected:
     
     virtual ssize_t readBlock(void* pBuffer, size_t maxBytes) = 0;
