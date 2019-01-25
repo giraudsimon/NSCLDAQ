@@ -43,6 +43,7 @@ public:
     m_pSrc        = new swFilterRingDataSource(*m_pDataSource);
     m_pTestObj    = new ZMQPushDataSource("source", uri, m_pSrc, m_pConverter);
     m_pSocket     = static_cast<zmq::socket_t*>(m_pTestObj->connectAsSink());
+    usleep(1000*100);                // 100ms wait.
   }
   void tearDown() {
     
