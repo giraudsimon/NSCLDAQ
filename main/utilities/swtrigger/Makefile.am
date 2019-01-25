@@ -3,7 +3,7 @@ lib_LTLIBRARIES = libSwTrigger.la
 
 libSwTrigger_la_SOURCES = ProcessingElement.cpp ZMQPushDataSource.cpp \
 	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp \
-	swFilterRingBlockDataSource.cpp
+	swFilterRingBlockDataSource.cpp RingItemBlockConverter.cpp
 
 libSwTrigger_la_CXXFLAGS= -I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread -I@top_srcdir@/daq/format \
@@ -18,7 +18,7 @@ swfilterdir=@includedir@/swfilter
 swfilter_HEADERS=MessageTypes.h ZMQPushDataSource.h  \
 	ZMQContext.h \
 	ProcessingElement.h zmqServices.h swFilterRingDataSource.h \
-	SingleRingItemConverter.h swFilterRingBlockDataSource.h
+	SingleRingItemConverter.h swFilterRingBlockDataSource.h RingItemBlockConverter.h
 
 noinst_HEADERS=zmqServices.h zhelpers.hpp
 
