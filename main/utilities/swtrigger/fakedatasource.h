@@ -25,7 +25,8 @@
 #include <CRingBlockReader.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <list>
+#include <zmq.hpp>
 
 #include <list>
 
@@ -122,6 +123,10 @@ protected:
   
 };
 
+//
 
+std::list<zmq::message_t*> getMessage(zmq::socket_t* pSock);
+bool more(zmq::socket_t* pSock);
+void deleteMessage(std::list<zmq::message_t*> msg);
 
 #endif

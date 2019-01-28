@@ -29,7 +29,7 @@ noinst_PROGRAMS = unittests
 unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp singlritemconvtests.cpp \
 		ritemblocksrctests.cpp rblockcvttest.cpp  \
 		zmqpushsrctest.cpp zmqpushblocktest.cpp \
-		Asserts.h fakedatasource.h \
+		Asserts.h fakedatasource.h fakedatasource.cpp \
 		$(libSwTrigger_la_SOURCES)
 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@

@@ -22,7 +22,7 @@ static const std::string uri("inproc://test");
 
 class zmqpushblocktest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(zmqpushblocktest);
-  CPPUNIT_TEST(aTest);
+  CPPUNIT_TEST(empty);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -58,10 +58,13 @@ public:
     m_pDataSource = nullptr;
   }
 protected:
-  void aTest();
+  void empty();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(zmqpushblocktest);
 
-void zmqpushblocktest::aTest() {
+// Running with no data will immediately send us an END_ITEM message.
+// 
+void zmqpushblocktest::empty() {
+  
 }

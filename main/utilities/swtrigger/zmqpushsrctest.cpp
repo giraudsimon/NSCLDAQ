@@ -67,8 +67,6 @@ protected:
   void manyitems();
 private:
   std::list<zmq::message_t*> getMessage();
-  void deleteMessage(std::list<zmq::message_t*>& msg);
-  bool more();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(zmqpushsrcTest);
@@ -78,34 +76,9 @@ CPPUNIT_TEST_SUITE_REGISTRATION(zmqpushsrcTest);
 std::list<zmq::message_t*> 
 zmqpushsrcTest::getMessage()
 {
-  std::list<zmq::message_t*> result;
-  do {
-    zmq::message_t* item = new zmq::message_t;
-    m_pSocket->recv(item);
-    result.push_back(item);
-  } while (more());
-  
-  return result;
+  return ::getMessage(m_pSocket);
 }
 
-void
-zmqpushsrcTest::deleteMessage(std::list<zmq::message_t*>& msg)
-{
-  while (!msg.empty()) {
-    delete msg.front();
-    msg.pop_front();
-  }
-}
-
-bool
-zmqpushsrcTest::more()
-{
-  int64_t flag(0);
-  size_t  flagSize(sizeof(flag));
-  
-  m_pSocket->getsockopt(ZMQ_RCVMORE, &flag, &flagSize);
-  return (flag == 1);
-}
 
 // If there's
 void zmqpushsrcTest::empty() {
