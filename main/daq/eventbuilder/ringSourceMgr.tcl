@@ -49,8 +49,8 @@ package require portAllocator
 #
 namespace eval ::RingSourceMgr {
   variable sourceDict [dict create];            # Sources we defined
-   variable diedSources [dict create];           # Sources that exited.
-   variable registered 0
+  variable diedSources [dict create];           # Sources that exited.
+  variable registered 0
 }
 
 #------------------------------------------------------------------------------
@@ -313,12 +313,14 @@ proc ::RingSourceMgr::enter {from to} {
 # @param to   - State we are about to enter.
 #
 proc ::RingSourceMgr::leave {from to} {
-  if {($from eq "Halted") && ($to eq "Active")} {
-    ::RingSourceMgr::_waitForEventBuilder
-    ::RingSourceMgr::onBegin
-
-    # give time to start up.
-    after 100
+  if {$::RingSourceMgr::sourceDict ne ""} {
+    if {($from eq "Halted") && ($to eq "Active")} {
+      ::RingSourceMgr::_waitForEventBuilder
+      ::RingSourceMgr::onBegin
+  
+      # give time to start up.
+      after 100
+    }
   }
 }
 

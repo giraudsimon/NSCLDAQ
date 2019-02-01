@@ -874,7 +874,7 @@ CFragmentHandler::flushQueues(bool completely)
 {
  
   CSortThread::Fragments* pFrags = new CSortThread::Fragments;
-
+  std::list<std::pair<SourceQueue*, CSortThread::FragmentList*>> statcopy;
   
   // If there are fragments in all queues, we can dequeue up until the
   // stamp mark
@@ -892,7 +892,8 @@ CFragmentHandler::flushQueues(bool completely)
                 m_nMostRecentlyPopped) {
             dataLate(*partialSort.front().second);
           }
-          updateQueueStatistics(p->second, partialSort);
+          //updateQueueStatistics(p->second, partialSort);
+          statcopy.push_back({&(p->second), &partialSort});
           pFrags->push_back(&partialSort);    
       } else {
         delete &partialSort;
@@ -925,7 +926,8 @@ CFragmentHandler::flushQueues(bool completely)
           m_nMostRecentlyPopped) {
         dataLate(*partialSort.front().second);
       }
-      updateQueueStatistics(p->second, partialSort);
+      statcopy.push_back({&(p->second), &partialSort});
+      //updateQueueStatistics(p->second, partialSort);
       pFrags->push_back(&partialSort);
     } else {
       delete &partialSort;
@@ -948,6 +950,13 @@ CFragmentHandler::flushQueues(bool completely)
         delete &partialSort;
       }
     }
+  }
+  // Update the queue statistics:
+  
+  while (!statcopy.empty()) {
+    std::pair<SourceQueue*, CSortThread::FragmentList*> f = statcopy.front();
+    updateQueueStatistics(*f.first, *f.second);
+    statcopy.pop_front();
   }
 
   // Send the frags to the sorting thread:
