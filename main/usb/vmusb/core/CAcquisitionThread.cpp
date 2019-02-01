@@ -506,12 +506,13 @@ CAcquisitionThread::startDaq()
       if (pStack->getTriggerType()  == CStack::Scaler) {
         m_haveScalerStack = true;
       }
+      pStack->Initialize(*m_pVme);    // INitialize daq hardware associated with the stack.
+      pApp->logProgress("stack initialized");
+
       pStack->loadStack(*m_pVme);     // Load into VM-USB
       pApp->logProgress("stack loaded");
       pStack->enableStack(*m_pVme);   // Enable the trigger logic for the stack.
       pApp->logProgress("stack enabled");
-      pStack->Initialize(*m_pVme);    // INitialize daq hardware associated with the stack.
-      pApp->logProgress("stack initialized");
       
       pApp->logProgress("Stack processed");
   

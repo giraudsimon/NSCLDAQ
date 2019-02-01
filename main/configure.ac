@@ -6,8 +6,6 @@ AC_PREREQ(2.61)
 
 AC_INIT(nscldaq,11.4-000, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
-
-
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
