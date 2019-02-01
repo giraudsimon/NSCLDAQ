@@ -601,12 +601,16 @@ proc EVBC::initialize args {
 #   -  If -restart is true kills the event builder and vwaits for the pipefd
 #      to change.
 #   -  If the fd is empty indicating the event builder is not running, starts it.
-#   - If the user defined a startEVBSources proc and we started the event builder
+#   - If the user defined a startEVBSources proc and we started ther event builder
 #     invoke it.
 #   - If the UI exists, then disable it completely.
 #
 proc EVBC::onBegin {} {
-    if {$EVBC::applicationOptions eq ""} {
+
+    if {!$EVBC::initialized} {
+        tk_messageBox -icon error -title {Not initialized} -type ok \
+         -message {evbrdocallouts was incorporated but the event builder was not initialized}
+        exit 1
         error "OnStart has not initialized the event builder package."
     }
     if {([$EVBC::applicationOptions cget -restart] || [_paramsChanged]) && ($EVBC::pipefd ne "")} {
