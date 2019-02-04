@@ -33,6 +33,7 @@ namespace MessageType {
     static const uint32_t EXIT_REQUEST     = 4;
     static const uint32_t END_ITEM         = 5;
     static const uint32_t DATA_REQ         = 6;
+    static const uint32_t IGNORE           = 7;   // Drop this on the floor.
 
    // messages look like this:
     

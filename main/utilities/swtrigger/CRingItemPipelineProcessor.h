@@ -21,24 +21,74 @@
  */
 #ifndef CRINGITEMPIPELINEPROCESSOR_H
 #define CRINGITEMPIPELINEPROCESSOR_H
+#include <ProcessingElement.h>
 #include <list>
 
-class CRingItem;
-
+class CRingItemDataSource;
+class CRingItemDataSink;
+class CRingItemProcessor;
 /**
- * @interface CRingTemplatePipelineProcessor
- *    This class is an abstract base class for processor elements that
- *    process a ring item input into one or more ring item outputs.
- *    See CRingItemProcessor for more information about how this is used.
+ * @class CRingItemPipelineProcessor
+ *   This is an base class for processing element that take ring items
+ *   as input and deliver modified ring items as output.  No
+ *   assumptions are made about conservation of ring items. Processing
+ *   can remove or add new ring items as well as transform ring items or
+ *   event pass them through with no modification.
+ *   Three helpers are used:
+ *   -   CRingItemDataSource is associated with fetching ring items from the
+ *                       previous stage of the pipeline as well as
+ *                       providing, as needed mechanisms for that
+ *                       previous stage to form a connection with us.
+ *   -   CRingItemDataSink - disposes of ring items to the next stage of the
+ *                       pipeline.  It also provides mechanisms for
+ *                       sink processes to connect to us, or may be written
+ *                       to actively connect to the next stage of the pipeline.
+ *   - CRingItemProcessor - accepts a single ring item and, in response emits a
+ *                    (possibly empty) list of output ring items.
+ *  @note that the assumption is that ring items produced by CRingSource
+ *        are dynamically allocated, as are ring items produced by
+ *        CRingProcessor.  Thus, any ring items not directly passed through
+ *        must  be deleted by the CRingProcessor and, CRingDataSink will
+ *        delete any ring items it is given to pass to consumer(s).
+ *  @note A null CRingDataSource, uses a null pointer to a ring item to flag
+ *        the end of data on its underlying source of ring items.
+ *        
  */
 
-class CRingTemplatePipelineProcessor
+class CRingItemPipelineProcessor : public ProcessingElement
 {
+private:
+    CRingItemDataSouce* m_pSource;
+    CRingItemDataSink*  m_pSink;
+    CRingItemProcessor* m_pProcessor;
 public:
-    CRingTemplatePipelineProcessor() {}
-    virtual ~CRingTemplatePipelineProcessor() {}
+    CRingItemPipelineProcessor(
+        CRingItemDataSource* src, CRingItemDataSink* sink,
+        CRingItemProcessor* prc
+    );
+    virtual ~CRingItemPipelineProcessor();
+protected:    
+    virtual void connectSource();
+    virtual void connectSink();
+    virtual void disconnectSource();
+    virtual void disconnectSink();
+    virtual MessageType::Message getNextWorkItem();
+    virtual void sendWorkItemToSink(MessageType::Message& workItem);
+        // Processing:
     
-    virtual std::list<CRingItem*> operator()(CRingItem*) = 0;
-}
+    virtual void onRegister(MessageType::Message& reg);
+    virtual void onUnregister(MessageType::Message& reg);
+    virtual void processWorkItem(MessageType::Message& item);
+    virtual void onOtherMessageType(MessageType::Message& item);
+    virtual void onEndItem(MessageType::Message& endItem);
+    virtual void onExitRequested(MessageType::Message& item);
+    
+    virtual void onDataRequest(MessageType::Message& item);      // Override for explicit pull protocols.
+
+    virtual void*  connectAsSource();
+    virtual void   closeSource(void* c);
+    virtual void*  connectAsSink();
+    virtual void   closeSink(void* c);    
+};
 
 #endif
