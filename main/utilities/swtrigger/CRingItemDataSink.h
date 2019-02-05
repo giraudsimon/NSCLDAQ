@@ -44,7 +44,7 @@ public:
         MessageType::Message& regmsg) = 0;   //< Register as data sink
     virtual void unRegister(
         MessageType::Message& unreg
-    );
+    ) = 0;
     virtual void* connectSink() = 0;         //< If we are server.
     virtual void  closeSink(void* c)   = 0;         //< If we are server.
 };

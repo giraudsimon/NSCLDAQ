@@ -4,7 +4,8 @@ lib_LTLIBRARIES = libSwTrigger.la
 libSwTrigger_la_SOURCES = ProcessingElement.cpp ZMQPushDataSource.cpp \
 	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp \
 	swFilterRingBlockDataSource.cpp RingItemBlockConverter.cpp \
-	CRingItemPipelineProcessor.cpp CRingItemDataSource.cpp
+	CRingItemPipelineProcessor.cpp CRingItemDataSource.cpp \
+	CRingItemDataSink.cpp
 
 libSwTrigger_la_CXXFLAGS= -I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread -I@top_srcdir@/daq/format \
