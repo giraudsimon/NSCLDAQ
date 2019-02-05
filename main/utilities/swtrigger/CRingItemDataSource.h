@@ -38,7 +38,7 @@ public:
     CRingItemDataSource();
     virtual ~CRingItemDataSource();
     
-protected:
+public:
     virtual void connect()    = 0;           //< connect to source.
     virtual void disconnect() = 0;           //< disconnect from source.
     virtual MessageType::Message

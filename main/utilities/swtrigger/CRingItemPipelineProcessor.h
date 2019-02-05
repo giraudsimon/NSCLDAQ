@@ -58,11 +58,12 @@ class CRingItemProcessor;
 class CRingItemPipelineProcessor : public ProcessingElement
 {
 private:
-    CRingItemDataSouce* m_pSource;
+    CRingItemDataSource* m_pSource;
     CRingItemDataSink*  m_pSink;
     CRingItemProcessor* m_pProcessor;
 public:
     CRingItemPipelineProcessor(
+        const char* name,
         CRingItemDataSource* src, CRingItemDataSink* sink,
         CRingItemProcessor* prc
     );

@@ -34,7 +34,7 @@ class CRingItemDataSink
 {
 public:
     CRingItemDataSink();
-    virtual void ~CRingItemDataSink();
+    virtual  ~CRingItemDataSink();
     
     virtual void connect() = 0;             //< Connect to sink for 1:1 comms.
     virtual void disconnect() = 0;          //< Disconnect sink for 1:1 comms.
@@ -44,6 +44,7 @@ public:
         MessageType::Message& regmsg) = 0;   //< Register as data sink
     virtual void unRegister(
         MessageType::Message& unreg
+    );
     virtual void* connectSink() = 0;         //< If we are server.
     virtual void  closeSink(void* c)   = 0;         //< If we are server.
 };

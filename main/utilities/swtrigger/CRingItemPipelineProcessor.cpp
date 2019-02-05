@@ -35,10 +35,17 @@
  *    Saves the source, sink and processor.  Ownership is not transferred
  *    to this object.  Disposal of the objects is the responsibility
  *    of the caller or happens at end of program.
+ *    @param name - name of the thread.
+ *    @param src  - pointer to the source object that will be used.
+ *    @param sink - Pointer to the sink object that will be used.
+ *    @param prc  - Pointer to the processor that will be used.
+ *    
  */
 CRingItemPipelineProcessor::CRingItemPipelineProcessor(
-    CRingItemDataSource* src, CRingItem DataSink* sink, CRingItemProcessor* prc
-) : m_pSource(src), m_pSink(sink), m_pProcessor(prc)
+    const char* name,
+    CRingItemDataSource* src, CRingItemDataSink* sink, CRingItemProcessor* prc
+) : ProcessingElement(name),
+    m_pSource(src), m_pSink(sink), m_pProcessor(prc)
 {}
 /**
  * destructor
@@ -164,7 +171,7 @@ CRingItemPipelineProcessor::sendWorkItemToSink(MessageType::Message& msg)
  *  @param msg - the registration messgge.
  */
 void
-CRingItemPipelineProcessor::OnRegister(MessageType::Message& reg)
+CRingItemPipelineProcessor::onRegister(MessageType::Message& reg)
 {
     m_pSource->Register(reg);
     m_pSink->Register(reg);
@@ -178,7 +185,7 @@ CRingItemPipelineProcessor::OnRegister(MessageType::Message& reg)
 void
 CRingItemPipelineProcessor::onUnregister(MessageType::Message& msg)
 {
-    m_pSource->unRegister(msg)
+    m_pSource->unRegister(msg);
     m_pSink->unRegister(msg);
 }
 /**
@@ -193,12 +200,12 @@ CRingItemPipelineProcessor::onUnregister(MessageType::Message& msg)
  *           and the processor returned an IGNORE type the sink
  *           won't ever be called.
  */
-MessageType::Message
+void
 CRingItemPipelineProcessor::processWorkItem(MessageType::Message& msg)
 {
-    MessageType::Message msg = (*m_pProcessor)(msg);
-    if (msg.s_messageType != IGNORE) {   // This assumes ignores have no payload.
-        m_pSink->send(msg);
+    MessageType::Message result = (*m_pProcessor)(msg);
+    if (result.s_messageType != MessageType::IGNORE) {   // This assumes ignores have no payload.
+        m_pSink->send(result);
     }
 }
 /**
@@ -212,7 +219,7 @@ CRingItemPipelineProcessor::processWorkItem(MessageType::Message& msg)
 void
 CRingItemPipelineProcessor::onOtherMessageType(MessageType::Message& msg)
 {
-    if (msg.s_messageType != IGNORE) {
+    if (msg.s_messageType != MessageType::IGNORE) {
         m_pSink->send(msg);
     }
 }

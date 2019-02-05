@@ -34,7 +34,7 @@ class CRingItemProcessor
 public:
     CRingItemProcessor();
     virtual ~CRingItemProcessor();
-    MessageType::Message operator()(MessageType::Message& msg) = 0;    
+    virtual MessageType::Message operator()(MessageType::Message& msg) = 0;    
     
 };
 
