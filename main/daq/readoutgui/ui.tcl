@@ -1277,7 +1277,7 @@ snit::type Stopwatch {
           $self _stopTimer
           set stopTimeMs [clock milliseconds]
         } else {
-            error "Timer is already stopped"
+#            error "Timer is already stopped"
         }
     }
     ##
