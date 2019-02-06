@@ -45,8 +45,13 @@ public:
     virtual void unRegister(
         MessageType::Message& unreg
     ) = 0;
+    virtual bool haveMessage() {return false;}
+    MessageType::Message getMessage();
+    
     virtual void* connectSink() = 0;         //< If we are server.
-    virtual void  closeSink(void* c)   = 0;         //< If we are server.
+    virtual void  closeSink(void* c)   = 0;  //< If we are server.
+    virtual MessageType::Message  requestData(void* c); //< Pull data
+    
 };
 
 #endif

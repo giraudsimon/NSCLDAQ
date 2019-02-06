@@ -22,3 +22,21 @@
 
 CRingItemDataSink::CRingItemDataSink() {}
 CRingItemDataSink::~CRingItemDataSink() {}
+
+// Default is no message (not a pull so can't receive from sink peer).
+
+MessageType::Message
+CRingItemDataSink::getMessage()
+{
+    return CRingItemDataSink::requestData(nullptr); // Already does what we want.
+}
+
+// Default is for non pull sinks - -return an ignore message:
+
+MessageType::Message
+CRingItemDataSink::requestData(void* c)
+{
+    MessageType::Message result;
+    result.s_messageType = MessageType::IGNORE;
+    return result;    
+}

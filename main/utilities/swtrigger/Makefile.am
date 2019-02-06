@@ -5,7 +5,8 @@ libSwTrigger_la_SOURCES = ProcessingElement.cpp ZMQPushDataSource.cpp \
 	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp \
 	swFilterRingBlockDataSource.cpp RingItemBlockConverter.cpp \
 	CRingItemPipelineProcessor.cpp CRingItemDataSource.cpp \
-	CRingItemDataSink.cpp ZMQFanInRingSource.cpp ZMQFanInRingSink.cpp
+	CRingItemDataSink.cpp ZMQFanInRingSource.cpp ZMQFanInRingSink.cpp \
+	ZMQFanoutBalancedRingSink.cpp
 
 libSwTrigger_la_CXXFLAGS= -I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread -I@top_srcdir@/daq/format \
@@ -22,7 +23,8 @@ swfilter_HEADERS=MessageTypes.h ZMQPushDataSource.h  \
 	ProcessingElement.h zmqServices.h swFilterRingDataSource.h \
 	SingleRingItemConverter.h swFilterRingBlockDataSource.h RingItemBlockConverter.h \
 	CRingItemDataSource.h CRingItemDataSink.h CRingItemProcessor.h \
-	CRingItemPipelineProcessor.h ZMQFanInRingSource.h ZMQFanInRingSink.h
+	CRingItemPipelineProcessor.h ZMQFanInRingSource.h ZMQFanInRingSink.h \
+	ZMQFanoutBalancedRingSink.h
 
 noinst_HEADERS=zmqServices.h zhelpers.hpp
 

@@ -126,6 +126,12 @@ CRingItemPipelineProcessor::disconnectSink()
 MessageType::Message
 CRingItemPipelineProcessor::getNextWorkItem()
 {
+    // Poll the sink for data and return that first -- could be a data
+    // pull request.
+    
+    if (m_pSink->haveMessage()) {
+        return m_pSink->getMessage();
+    }
     return m_pSource->getNextItem();
 }
 /**
