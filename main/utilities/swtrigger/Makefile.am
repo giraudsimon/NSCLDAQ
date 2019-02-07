@@ -36,6 +36,7 @@ noinst_PROGRAMS = unittests
 unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp singlritemconvtests.cpp \
 		ritemblocksrctests.cpp rblockcvttest.cpp  \
 		zmqpushsrctest.cpp zmqpushblocktest.cpp \
+		zmqbsourcetest.cpp \
 		Asserts.h fakedatasource.h fakedatasource.cpp \
 		$(libSwTrigger_la_SOURCES)
 
