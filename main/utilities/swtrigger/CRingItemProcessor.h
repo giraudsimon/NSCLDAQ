@@ -21,7 +21,9 @@
 #ifndef CRINGITEMPROCESSOR_H
 #define CRINGITEMPROCESSOR_H
 #include "MessageTypes.h"
+#include <list>
 
+class CRingItem;
 
 /**
  * @interface CRingItemProcessor
@@ -34,7 +36,8 @@ class CRingItemProcessor
 public:
     CRingItemProcessor();
     virtual ~CRingItemProcessor();
-    virtual MessageType::Message operator()(MessageType::Message& msg) = 0;    
+    virtual MessageType::Message operator()(MessageType::Message& msg);
+    virtual std::list<CRingItem*> process(CRingItem& item) = 0;
     
 };
 
