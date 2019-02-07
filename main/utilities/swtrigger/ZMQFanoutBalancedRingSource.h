@@ -25,7 +25,7 @@
 
 #include <list>
 
-class ZMQFanoutBalancedRingSink;
+class CRingItemDataSink;
 class CRingItem;
 
 /**
@@ -41,11 +41,11 @@ class CRingItem;
 class ZMQFanoutBalancedRingSource : public CRingItemDataSource
 {
 private:
-    ZMQFanoutBalancedRingSink*  m_pSink;   // Our data comes from here.
+    CRingItemDataSink*  m_pSink;   // Our data comes from here.
     zmq::socket_t*              m_pSocket; 
     std::list<CRingItem*>       m_itemQueue; // Items we've got from last read.
 public:
-    ZMQFanoutBalancedRingSource(ZMQFanoutBalancedRingSink* sink);
+    ZMQFanoutBalancedRingSource(CRingItemDataSink* sink);
     virtual ~ZMQFanoutBalancedRingSource();
 
     virtual void connect() ;              //< connect to source.

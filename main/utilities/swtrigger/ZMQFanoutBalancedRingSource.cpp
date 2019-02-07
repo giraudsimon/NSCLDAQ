@@ -20,7 +20,7 @@
  */
 
 #include "ZMQFanoutBalancedRingSource.h"
-#include "ZMQFanoutBalancedRingSink.h"
+#include "CRingItemDataSink.h"
 #include <CRingItem.h>
 #include <CRingItemFactory.h>
 #include <CRingBlockReader.h>
@@ -35,7 +35,7 @@
  * @param sink - our peer that's fanning out items to people just like us.
  */
 ZMQFanoutBalancedRingSource::ZMQFanoutBalancedRingSource(
-    ZMQFanoutBalancedRingSink* sink
+    CRingItemDataSink* sink
 ) : m_pSink(sink), m_pSocket(nullptr)
 {}
 /**
