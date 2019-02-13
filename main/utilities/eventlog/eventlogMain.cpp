@@ -289,122 +289,122 @@ class noData :  public CRingBuffer::CRingBufferPredicate
 
    // Figure out what file to open and how to set the pItem:
 
-   if (m_fRunNumberOverride) {
-     runNumber  = m_nOverrideRunNumber;
-     fd         = openEventSegment(runNumber, segment);
-     pItem      = CRingItem::getFromRing(*m_pRing, p);
-   } else {
-     runNumber  = item.getRunNumber();
-     fd         = openEventSegment(runNumber, segment);
-     pItem      = new CRingStateChangeItem(item);
-   }
-   m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
-   m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
+    if (m_fRunNumberOverride) {
+      runNumber  = m_nOverrideRunNumber;
+      fd         = openEventSegment(runNumber, segment);
+      pItem      = CRingItem::getFromRing(*m_pRing, p);
+    } else {
+      runNumber  = item.getRunNumber();
+      fd         = openEventSegment(runNumber, segment);
+      pItem      = new CRingStateChangeItem(item);
+    }
+    m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
+    m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
 
-   // If there is a format item, write it out to file:
-   // Note there won't be if the run number has been overridden.
-   
-   if (pFormatItem) {
-     bytesInSegment += itemSize(*pFormatItem);
-     writeItem(fd, *pFormatItem);
-
-   }
+    // If there is a format item, write it out to file:
+    // Note there won't be if the run number has been overridden.
+    
+    if (pFormatItem) {
+      bytesInSegment += itemSize(*pFormatItem);
+      writeItem(fd, *pFormatItem);
+ 
+    }
 
  
 
-   while(1) {
+    while(1) {
 
-     size_t size    = itemSize(*pItem);
-     itemType       = pItem->type();
+      size_t size    = itemSize(*pItem);
+      itemType       = pItem->type();
+ 
+      // If necessary, close this segment and open a new one:
+ 
+      if ( (bytesInSegment + size) > m_segmentSize) {
+       m_pOutputter->flush();
+       delete m_pOutputter;
+       m_pOutputter = nullptr;
+       close(fd);
+       segment++;
+       bytesInSegment = 0;
+ 
+       fd = openEventSegment(runNumber, segment);
+       m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
+       m_pOutputter->setTimeout(2);
+      }
 
-     // If necessary, close this segment and open a new one:
+      writeItem(fd, *pItem);
+ 
+      bytesInSegment  += size;
+ 
+      delete pItem;
+ 
+      if(itemType == END_RUN) {
+        endsRemaining--;
+        if (endsRemaining == 0) {
+          break;
+        }
+      }
+      if (itemType == ABNORMAL_ENDRUN) {
+         endsRemaining = 0;             // In case we're not --one-shot
+         break;                         // unconditionally ends the run.
+      }
 
-     if ( (bytesInSegment + size) > m_segmentSize) {
-      m_pOutputter->flush();
-      delete m_pOutputter;
-      m_pOutputter = nullptr;
-      close(fd);
-      segment++;
-      bytesInSegment = 0;
-
-      fd = openEventSegment(runNumber, segment);
-      m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
-      m_pOutputter->setTimeout(2);
-     }
-
-     writeItem(fd, *pItem);
-
-     bytesInSegment  += size;
-
-     delete pItem;
-
-     if(itemType == END_RUN) {
-       endsRemaining--;
-       if (endsRemaining == 0) {
-	 break;
-       }
-     }
-     if (itemType == ABNORMAL_ENDRUN) {
-        endsRemaining = 0;             // In case we're not --one-shot
-        break;                         // unconditionally ends the run.
-     }
-
-     // If we've seen an end of run, need to support timing out
-     // if we dont see them all.
-
-     if ((endsRemaining != m_nSourceCount) && dataTimeout()) {
-       cerr << "Timed out waiting for end of runs. Need " << endsRemaining 
-	    << " out of " << m_nSourceCount << " sources still\n";
-       cerr << "Closing the run\n";
-
-       break;
-     }
-     pItem =  CRingItem::getFromRing(*m_pRing, p);
-     if(isBadItem(*pItem, runNumber)) {
-       std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
-       exit(EXIT_FAILURE);
-     }
-   } 
-   //
-   //  If checksumming, finalize the checksum and write out the checksum file as well.
-   //  by  now m_pChecksumContext is only set if m_fChecksum was true when the run
-   //  files were opened.
-   //
-   if (m_pChecksumContext) {
-     EVP_MD_CTX* pCtx = reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext);
-     unsigned char* pDigest = reinterpret_cast<unsigned char*>(OPENSSL_malloc(EVP_MD_size(EVP_sha512())));
-     unsigned int   len;
+      // If we've seen an end of run, need to support timing out
+      // if we dont see them all.
+ 
+      if ((endsRemaining != m_nSourceCount) && dataTimeout()) {
+          cerr << "Timed out waiting for end of runs. Need " << endsRemaining 
+            << " out of " << m_nSourceCount << " sources still\n";
+          cerr << "Closing the run\n";
+ 
+        break;
+      }
+      pItem =  CRingItem::getFromRing(*m_pRing, p);
+      if(isBadItem(*pItem, runNumber)) {
+        std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
+        exit(EXIT_FAILURE);
+      }
+    } 
+    //
+    //  If checksumming, finalize the checksum and write out the checksum file as well.
+    //  by  now m_pChecksumContext is only set if m_fChecksum was true when the run
+    //  files were opened.
+    //
+    if (m_pChecksumContext) {
+      EVP_MD_CTX* pCtx = reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext);
+       unsigned char* pDigest = reinterpret_cast<unsigned char*>(OPENSSL_malloc(EVP_MD_size(EVP_sha512())));
+       unsigned int   len;
+         
+       // Not quite sure what to do if pDigest failed to malloc...for now
+       // silently ignore...
+  
+      if (pDigest) {
+         EVP_DigestFinal_ex(pCtx, pDigest, &len);
+         std::string digestFilename = shaFile(runNumber);
+         FILE* shafp = fopen(digestFilename.c_str(), "w");
+  
        
-     // Not quite sure what to do if pDigest failed to malloc...for now
-     // silently ignore...
-
-     if (pDigest) {
-       EVP_DigestFinal_ex(pCtx, pDigest, &len);
-       std::string digestFilename = shaFile(runNumber);
-       FILE* shafp = fopen(digestFilename.c_str(), "w");
-
-     
-       // Again not quite sure what to do if the open failed.
-       if (shafp) {
-	 unsigned char* p = pDigest;
-	 for (int i =0; i < len;i++) {
-	   fprintf(shafp, "%02x", *p++);
-	 }
-	 fprintf(shafp, "\n");
-	 fclose(shafp);
-       }
-       // Release the digest storage and the context.
-       OPENSSL_free(pDigest);
-
-     }
-     EVP_MD_CTX_destroy(pCtx);
-     m_pChecksumContext = 0;
+         // Again not quite sure what to do if the open failed.
+         if (shafp) {
+          unsigned char* p = pDigest;
+          for (int i =0; i < len;i++) {
+            fprintf(shafp, "%02x", *p++);
+          }
+          fprintf(shafp, "\n");
+          fclose(shafp);
+        }
+         // Release the digest storage and the context.
+        OPENSSL_free(pDigest);
+  
+      }
+      EVP_MD_CTX_destroy(pCtx);
+      m_pChecksumContext = 0;
        
-   }
-   m_pOutputter->flush();
-   delete m_pOutputter;
-   m_pOutputter =nullptr;
-   close(fd);
+    }  
+    m_pOutputter->flush();
+    delete m_pOutputter;
+    m_pOutputter =nullptr;
+    close(fd);
 
 
  }
