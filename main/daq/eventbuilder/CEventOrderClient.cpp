@@ -372,6 +372,9 @@ CEventOrderClient::message(void** msg,
 {
   // figure out the size of the message:
 
+  //  std::cerr << "Message req: " << requestSize << " body " << bodySize
+  //	    << std::endl;
+
   uint32_t rsize = requestSize;
   uint32_t bsize = bodySize;
   size_t totalSize = rsize + bsize + 2*sizeof(uint32_t);
