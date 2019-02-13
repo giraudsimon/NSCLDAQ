@@ -38,8 +38,8 @@ using namespace std;
 #include <CSyncCommand.h>
 #include "CBootCommand.h"
 
-CMyTrigger *mytrigger = new CMyTrigger();
-CMyEventSegment *myeventsegment = new CMyEventSegment(mytrigger);
+CMyTrigger *mytrigger(0);
+CMyEventSegment *myeventsegment(0);
 
 /*
 /*
@@ -115,6 +115,10 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
 {
   CReadoutMain::SetupReadout(pExperiment);
 
+  // See https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005 for why this is here.
+  
+  mytrigger      = new CMyTrigger();
+  myeventsegment = new CMyEventSegment(mytrigger);
   // Establish your trigger here by creating a trigger object
   // and establishing it.
 

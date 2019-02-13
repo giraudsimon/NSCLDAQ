@@ -38,8 +38,8 @@ using namespace std;
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
 
-CMyTrigger *mytrigger = new CMyTrigger();
-CMyEventSegment *myeventsegment = new CMyEventSegment(mytrigger);
+CMyTrigger *mytrigger(0);             // Newing them here makes order of construction
+CMyEventSegment *myeventsegment(0);   // un-controlled - now newed in SetupReadout.
 
 /*
 /*
@@ -113,8 +113,12 @@ CTCLApplication* gpTCLApplication = new Skeleton;
 void
 Skeleton::SetupReadout(CExperiment* pExperiment)
 {
+  // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
+  
+  mytrigger = new CMyTrigger();
+  myeventsegment = new CMyEventSegment(mytrigger);
   CReadoutMain::SetupReadout(pExperiment);
-
+  
   // Establish your trigger here by creating a trigger object
   // and establishing it.
 
