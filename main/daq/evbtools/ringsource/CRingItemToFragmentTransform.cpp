@@ -29,7 +29,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
-
+#include <sstream>
 
 static uint64_t lastTimestamp(NULL_TIMESTAMP);
 
@@ -193,8 +193,9 @@ CRingItemToFragmentTransform::validateSourceId(std::uint32_t sourceId)
 {
 
   if ( ! isValidSourceId(sourceId) ) {
-    string errmsg("Source id found that was not provided via the --ids option");
-    throw runtime_error(errmsg);
+    std::stringstream errmsg;
+    errmsg << "Source id found that was not provided via the --ids option: " << sourceId;
+    throw runtime_error(errmsg.str());
   }
 }
 
