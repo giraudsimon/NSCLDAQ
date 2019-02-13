@@ -89,7 +89,7 @@ CBufferedOutput::put(const void* pData, size_t nBytes)
     // We do that here because then flushes forced by the buffer full
     // will have times close to now.
     
-    if (m_nTimeout && ((time(nullptr) - m_lastFlushTime) > m_nTimeout)) {
+     if (m_nTimeout && ((time(nullptr) - m_lastFlushTime) > m_nTimeout)) {
         flush();
     }
 }
@@ -114,9 +114,11 @@ CBufferedOutput::setTimeout(unsigned timeout)
 void
 CBufferedOutput::flush()
 {
+  if(m_nBytesInBuffer > 0) {
     io::writeData(m_nFd, m_pBuffer, m_nBytesInBuffer);
     reset();
-    m_lastFlushTime = time(nullptr);
+  }
+  m_lastFlushTime = time(nullptr); // reset timeout even if nothing's written.
 }
 
 /**
