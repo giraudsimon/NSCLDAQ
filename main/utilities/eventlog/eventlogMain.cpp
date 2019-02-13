@@ -22,6 +22,7 @@
 
 #include <CRingBuffer.h>
 
+
 #include <CRingItem.h>
 #include <CRingStateChangeItem.h>
 #include <CRemoteAccess.h>
@@ -55,6 +56,8 @@ static const uint64_t G(K*M);
 
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
+static const size_t BUFFERSIZE(10*M);
+
 ///////////////////////////////////////////////////////////////////////////////////
 // Local classes:
 //
@@ -81,7 +84,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    m_pChecksumContext(0),
    m_nBeginsSeen(0),
    m_fChangeRunOk(false),
-   m_prefix("run")
+   m_prefix("run"),
+   m_pOutputter(nullptr)
  {
  }
 
@@ -294,6 +298,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      fd         = openEventSegment(runNumber, segment);
      pItem      = new CRingStateChangeItem(item);
    }
+   m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
+   m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
 
    // If there is a format item, write it out to file:
    // Note there won't be if the run number has been overridden.
@@ -314,11 +320,16 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      // If necessary, close this segment and open a new one:
 
      if ( (bytesInSegment + size) > m_segmentSize) {
-       close(fd);
-       segment++;
-       bytesInSegment = 0;
+      m_pOutputter->flush();
+      delete m_pOutputter;
+      m_pOutputter = nullptr;
+      close(fd);
+      segment++;
+      bytesInSegment = 0;
 
-       fd = openEventSegment(runNumber, segment);
+      fd = openEventSegment(runNumber, segment);
+      m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
+      m_pOutputter->setTimeout(2);
      }
 
      writeItem(fd, *pItem);
@@ -390,7 +401,9 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      m_pChecksumContext = 0;
        
    }
-
+   m_pOutputter->flush();
+   delete m_pOutputter;
+   m_pOutputter =nullptr;
    close(fd);
 
 
@@ -581,7 +594,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  *   @param fd - File descriptor open on the output file.
  *   @param item - Reference to the ring item.
  *
- * @throw  uses io::writeData which throws errs.
+ * @throw  uses CBufferedOutput::put which throws errs.
  *         The errors are caught described and we exit :-(
  */
 void
@@ -595,22 +608,22 @@ EventLogMain::writeItem(int fd, CRingItem& item)
       // If checksumming add the ring item to the sum.
 
       if (m_fChecksum) {
-	if (!m_pChecksumContext) {
-	  m_pChecksumContext = EVP_MD_CTX_create();
-	  if (!m_pChecksumContext) throw errno;
-	  if(EVP_DigestInit_ex(
-	      reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), EVP_sha512(), NULL) != 1) {
-	    EVP_MD_CTX_destroy(reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext));
-	    m_pChecksumContext = 0;
-	    throw std::string("Unable to initialize the checksum digest");
-	  }
-
-	}
-	EVP_DigestUpdate(
-           reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), pItem, nBytes);
+        if (!m_pChecksumContext) {
+          m_pChecksumContext = EVP_MD_CTX_create();
+          if (!m_pChecksumContext) throw errno;
+          if(EVP_DigestInit_ex(
+              reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), EVP_sha512(), NULL) != 1) {
+            EVP_MD_CTX_destroy(reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext));
+            m_pChecksumContext = 0;
+            throw std::string("Unable to initialize the checksum digest");
+          }
+      
+        }
+        EVP_DigestUpdate(
+               reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), pItem, nBytes);
       }
-
-      io::writeData(fd, pItem, nBytes);
+      m_pOutputter->put(pItem, nBytes);
+      // io::writeData(fd, pItem, nBytes);
     }
     catch(int err) {
       if(err) {

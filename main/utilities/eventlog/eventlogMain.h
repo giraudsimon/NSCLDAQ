@@ -1,5 +1,5 @@
-#ifndef __EVENTLOGMAIN_H
-#define __EVENTLOGMAIN_H
+#ifndef EVENTLOGMAIN_H
+#define EVENTLOGMAIN_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -19,21 +19,11 @@
 
 // Headers:
 
-#ifndef __CRT_STDINT_H
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
-
+#include <CBufferedOutput.h>
 
 // Forward class definitions.
 
@@ -64,6 +54,7 @@ class EventLogMain
   uint32_t          m_nBeginsSeen;
   bool              m_fChangeRunOk;
   std::string       m_prefix;
+  io::CBufferedOutput*  m_pOutputter;
 
   // Constructors and canonicals:
 
