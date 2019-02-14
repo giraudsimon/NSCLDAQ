@@ -24,6 +24,7 @@
 #include <string>
 
 #include <CBufferedOutput.h>
+#include <DataFormat.h>
 
 // Forward class definitions.
 
@@ -55,7 +56,9 @@ class EventLogMain
   bool              m_fChangeRunOk;
   std::string       m_prefix;
   io::CBufferedOutput*  m_pOutputter;
-
+  pRingItemHeader  m_pItem;
+  size_t            m_nItemSize;
+  
   // Constructors and canonicals:
 
 public:
@@ -79,13 +82,24 @@ private:
   void recordData();
   void recordRun(const CRingStateChangeItem& item, CRingItem* pFormatItem);
   void writeItem(int fd, CRingItem&    item);
+  
   std::string defaultRingUrl() const;
   uint64_t    segmentSize(const char* pValue) const;
   bool  dirOk(std::string dirname) const;
   bool  dataTimeout();
   size_t itemSize(CRingItem& item) const;
   std::string shaFile(int runNumber) const;
-  bool isBadItem(CRingItem& item, int runNumber);
+  
+  
+  // New methods to support raw ring item read with minimal dynamic memory
+  // maniplation.
+  
+  void writeItem();   // Write a raw ring item.
+  void getFromRing();                      // Get next item from ring into m_pItem
+  void copyRingItem(CRingItem& rItem);     // Copy from a CRingItem int m_pItem
+  void checkSize(size_t nBytes);           // expand m_pItem to accomodate nBytes.
+  void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.
+  bool isBadItem(int runNumber);
 };
 
 

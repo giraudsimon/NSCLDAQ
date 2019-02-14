@@ -28,6 +28,7 @@
 #include <CRemoteAccess.h>
 #include <DataFormat.h>
 #include <CAllButPredicate.h>
+#include <CRingItemFactory.h>
 #include <io.h>
 
 #include <iostream>
@@ -57,6 +58,7 @@ static const uint64_t G(K*M);
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
 static const size_t BUFFERSIZE(10*M);
+static const int MAXDATASLEEP(1000*50);   // max microseconds in waitForData.
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Local classes:
@@ -85,7 +87,9 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    m_nBeginsSeen(0),
    m_fChangeRunOk(false),
    m_prefix("run"),
-   m_pOutputter(nullptr)
+   m_pOutputter(nullptr),
+   m_pItem(nullptr),
+   m_nItemSize(0)
  {
  }
 
@@ -283,7 +287,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    unsigned     endsRemaining  = m_nSourceCount;
    CAllButPredicate p;
 
-   CRingItem*   pItem;
+   CRingItem*   pItem;   // Going to use our expanding storage at m_pItem.
    uint16_t     itemType;
 
 
@@ -310,12 +314,13 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  
     }
 
- 
+    copyRingItem(*pItem);
+    delete pItem;
 
     while(1) {
 
-      size_t size    = itemSize(*pItem);
-      itemType       = pItem->type();
+      size_t size    = m_pItem->s_size;
+      itemType       = m_pItem->s_type;;
  
       // If necessary, close this segment and open a new one:
  
@@ -332,11 +337,10 @@ class noData :  public CRingBuffer::CRingBufferPredicate
        m_pOutputter->setTimeout(2);
       }
 
-      writeItem(fd, *pItem);
+      writeItem();
  
       bytesInSegment  += size;
  
-      delete pItem;
  
       if(itemType == END_RUN) {
         endsRemaining--;
@@ -359,8 +363,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  
         break;
       }
-      pItem =  CRingItem::getFromRing(*m_pRing, p);
-      if(isBadItem(*pItem, runNumber)) {
+      getFromRing();                      // Fills next m_pItem.
+      if(isBadItem(runNumber)) {
         std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
         exit(EXIT_FAILURE);
       }
@@ -680,8 +684,7 @@ EventLogMain::shaFile(int run) const
  *         true.
  *      -  If we had more begin runs than m_nSourceCount, true
  *      -  None of these, return false.
- *
- * @param item      - Reference to the ring item to check.
+ * @note  The item is pointed to by m_pItem.
  * @param runNumber - the current run number.
  *
  * @return bool
@@ -689,8 +692,9 @@ EventLogMain::shaFile(int run) const
  * @retval false - as near as we can tell everything is ok.
  */
 bool
-EventLogMain::isBadItem(CRingItem& item, int runNumber)
+EventLogMain::isBadItem(int runNumber)
 {
+
   // For some states of program options we just don't care about the
   // data
 
@@ -699,16 +703,95 @@ EventLogMain::isBadItem(CRingItem& item, int runNumber)
   }
   // For the rest we only care about state changes -- begins in fact
 
-  if (item.type() == BEGIN_RUN) {
+  if (m_pItem->s_type == BEGIN_RUN) {
     m_nBeginsSeen++;
     if (m_nBeginsSeen > m_nSourceCount) {
       return true;
     }
-    CRingStateChangeItem begin(item);
-    if (begin.getRunNumber() != runNumber) {
+    CRingStateChangeItem* begin =
+      reinterpret_cast<CRingStateChangeItem*>(CRingItemFactory::createRingItem(m_pItem));
+    if (begin->getRunNumber() != runNumber) {
+      delete begin;
       return true;
     }
+    delete begin;
   }
   return false;
 
+}
+/**
+ * getFromRing
+ *    Get the next raw ring item from the ringbuffer.
+ *    - Wait until there's at least a unit32_t.
+ *    - Peek the size of the item.
+ *    - ensure the buffer is big enough
+ *    - Wait unilt there's at least the full ring item.
+ *    - get the data from the ring.
+ */
+void
+EventLogMain::getFromRing()
+{
+  waitForData(sizeof(uint32_t));
+  uint32_t size;
+  m_pRing->peek(&size, sizeof(uint32_t));
+  checkSize(size);
+  waitForData(size);
+  
+  m_pRing->get(m_pItem, size, size);   // Fetch the ring item.
+}
+/**
+ * copyRingItem
+ *   Copy a ring item from a CRingItem into our buffer.
+ *
+ * @param rItem - the item to copy.
+ */
+void
+EventLogMain::copyRingItem(CRingItem& rItem)
+{
+  size_t nBytes = itemSize(rItem);
+  checkSize(nBytes);
+  
+  memcpy(m_pItem, rItem.getItemPointer(), nBytes);
+}
+/**
+ * checkSize
+ *    If necessary expand the m_pItem block.
+ * @param nBytes -size of the new block.
+ */
+void
+EventLogMain::checkSize(size_t nBytes)
+{
+  if (m_nItemSize < nBytes) {
+    m_pItem = static_cast<pRingItemHeader>(realloc(m_pItem, nBytes));
+    m_nItemSize = nBytes;
+  }
+}
+
+/**
+ * waitForData
+ *    Wait until the ring item has at least a required number of bytes
+ *    for us.  The blocking part of the wait increases with each failure
+ *    in order to adapt to actual data rates.
+ *
+ *  @param nBytes - desired minimum number of bytes in the ring.
+ */
+void
+EventLogMain::waitForData(size_t nBytes)
+{
+  int sleepUs = 1;
+  while (m_pRing->availableData() < nBytes) {
+    usleep(sleepUs);
+    if (sleepUs < MAXDATASLEEP) sleepUs = sleepUs * 2; // wait longer each time.
+  }
+}
+/**
+ * writeItem
+ *    write a raw ring item.
+ *    - The item is in m_pItem
+ *    - The destination is m_pOutputter.
+ */
+void
+EventLogMain::writeItem()
+{
+    m_pOutputter->put(m_pItem, m_pItem->s_size);
 }
