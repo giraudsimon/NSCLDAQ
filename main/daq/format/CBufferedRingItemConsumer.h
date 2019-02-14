@@ -21,6 +21,7 @@
 #ifndef CBUFFEREDRINGITEMCONSUMER_H
 #define CBUFFEREDRINGITEMCONSUMER_H
 #include <stdint.h>
+#include <stddef.h>
 
 class CRingBuffer;
 
@@ -51,11 +52,14 @@ private:
     
     void*           m_pCursor;            // where the next item comes from.
     uint32_t        m_nBytesLeft;         // Bytes left in the buffer.
+    
+    size_t          m_nFillCount;         // # of fills done.
 public:
     CBufferedRingItemConsumer(CRingBuffer& ring);
     virtual ~CBufferedRingItemConsumer();
     
     void* get();                        // pointer to next ring item.
+    size_t getFills() const {return m_nFillCount;}
 private:
     bool mustFill();                    // Need to fill to satisfy get?
     void fill();                        // Fill the buffer.

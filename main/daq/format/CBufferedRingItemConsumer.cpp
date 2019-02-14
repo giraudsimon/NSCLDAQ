@@ -34,7 +34,7 @@
  */
 CBufferedRingItemConsumer::CBufferedRingItemConsumer(CRingBuffer& ring) :
     m_Ring(ring), m_pBuffer(nullptr), m_nBufferSize(0), m_pCursor(nullptr),
-    m_nBytesLeft(0)
+    m_nBytesLeft(0), m_nFillCount(0)
 {
     // Figure out the buffer size:
     
@@ -126,6 +126,7 @@ CBufferedRingItemConsumer::mustFill()
 void
 CBufferedRingItemConsumer::fill()
 {
+    m_nFillCount++;
     void* pGetPointer = m_pBuffer;
     if (m_nBytesLeft > 0) {
         pGetPointer = slideRemainder();        // Partial ring item.
@@ -146,7 +147,7 @@ CBufferedRingItemConsumer::fill()
     
     uint32_t* pSize = static_cast<uint32_t*>(m_pCursor);
     uint32_t rItemSize = *pSize;
-    if (rItemSize < m_nBytesLeft) {    // Should be.
+    if (rItemSize > m_nBytesLeft) {    // Should be.
         uint32_t remainderSize = rItemSize - m_nBytesLeft;
         m_Ring.get(pGetPointer, remainderSize, remainderSize);
         m_nBytesLeft += remainderSize;
@@ -162,7 +163,7 @@ CBufferedRingItemConsumer::fill()
     
     size_t avail = m_Ring.availableData();
     if(avail) {
-        uint32_t freeData = m_nBufferSize - m_nBufferSize;
+        uint32_t freeData = m_nBufferSize - m_nBytesLeft;
         
         if (freeData < avail) avail = freeData;
         size_t nRead = m_Ring.get(pGetPointer, freeData, avail, 0);
