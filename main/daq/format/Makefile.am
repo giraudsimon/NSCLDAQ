@@ -71,7 +71,7 @@ unittests_SOURCES	= TestRunner.cpp selecttest.cpp desiredtests.cpp	\
 			scalerformattests.cpp  statechangetests.cpp dataformattests.cpp       \
 			textformattests.cpp					\
                         fragmenttest.cpp glomparamtests.cpp factorytests.cpp \
-                      physeventtests.cpp 
+                      physeventtests.cpp bufferedconstest.cpp
 
 unittests_LDADD		= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 			@top_builddir@/base/dataflow/libDataFlow.la 	\

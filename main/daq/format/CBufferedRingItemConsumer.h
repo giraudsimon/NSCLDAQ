@@ -56,7 +56,7 @@ public:
     virtual ~CBufferedRingItemConsumer();
     
     void* get();                        // pointer to next ring item.
-public:
+private:
     bool mustFill();                    // Need to fill to satisfy get?
     void fill();                        // Fill the buffer.
     void* slideRemainder();             // Slide the remaining bytes to the buffer front.
