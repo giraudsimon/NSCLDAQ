@@ -23,7 +23,7 @@ libdataformat_la_SOURCES = CRingSelectionPredicate.cpp	\
 			CRingItemFactory.cpp		\
 			ringitem.c			\
       RingItemComparisons.cpp \
-      CAbnormalEndItem.cpp  
+      CAbnormalEndItem.cpp CBufferedRingItemConsumer.cpp
 
 libdataformat_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
@@ -43,7 +43,7 @@ include_HEADERS	= CRingSelectionPredicate.h	\
                         CUnknownFragment.h      \
 			DataFormat.h	\
       RingItemComparisons.h \
-      CAbnormalEndItem.h 
+      CAbnormalEndItem.h CBufferedRingItemConsumer.h
 
 
 

@@ -32,18 +32,20 @@
  *  @param ring - reference to the ring buffer we'll use to get data.
  *  @note ring must remain in scope until you've destroyed this object.
  */
-CBufferedRingItemConsumer::CBufferedRingItemConsumer(CRingItem& ring) :
+CBufferedRingItemConsumer::CBufferedRingItemConsumer(CRingBuffer& ring) :
     m_Ring(ring), m_pBuffer(nullptr), m_nBufferSize(0), m_pCursor(nullptr),
     m_nBytesLeft(0)
 {
     // Figure out the buffer size:
     
-    CRingBugffer::Usage u = m_Ring.getUsage();
+    CRingBuffer::Usage u = m_Ring.getUsage();
     m_nBufferSize = u.s_bufferSpace;
     
     m_pBuffer = malloc(m_nBufferSize);
     if (!m_pBuffer) {
-        throw std::system_error(errno, std::generic_category, "Buffer allocation failed");)
+        throw std::system_error(
+            errno, std::generic_category(), "Buffer allocation failed"
+        );
     }
     
     m_pCursor = m_pBuffer;
@@ -54,7 +56,7 @@ CBufferedRingItemConsumer::CBufferedRingItemConsumer(CRingItem& ring) :
  */
 CBufferedRingItemConsumer::~CBufferedRingItemConsumer()
 {
-    free(mPpBuffer);
+    free(m_pBuffer);
 }
 /**
  * get
@@ -131,7 +133,7 @@ CBufferedRingItemConsumer::fill()
     // If needed get that ring item size:
     
     if (m_nBytesLeft < sizeof(uint32_t)) {
-        uint32_t n = size_t(uint32_t) - m_nBytesLeft
+        uint32_t n = sizeof(uint32_t) - m_nBytesLeft;
         m_Ring.get(pGetPointer, n, n);
         m_nBytesLeft += n;
         uint8_t* p = static_cast<uint8_t*>(pGetPointer);
@@ -142,11 +144,11 @@ CBufferedRingItemConsumer::fill()
     // also be m_pBuffer after slideRemainder was called.
     // Read the rest of the partial ring item waiting forever if need be.
     
-    uint32_t* pSize = static_cast<uint32_t>(m_pCursor);
+    uint32_t* pSize = static_cast<uint32_t*>(m_pCursor);
     uint32_t rItemSize = *pSize;
     if (rItemSize < m_nBytesLeft) {    // Should be.
         uint32_t remainderSize = rItemSize - m_nBytesLeft;
-        m_ring.get(pGetPointer, remainderSize, remainderSize);
+        m_Ring.get(pGetPointer, remainderSize, remainderSize);
         m_nBytesLeft += remainderSize;
         
         uint8_t* p = static_cast<uint8_t*>(pGetPointer);
@@ -158,13 +160,15 @@ CBufferedRingItemConsumer::fill()
     // whichever is smaller - but leave open the possibility of getting
     // the whole damned buffer if we can have it _now_
     
-    size_t avail = m_ring.availableData();
+    size_t avail = m_Ring.availableData();
     if(avail) {
-    uint32_t freeData = m_nBufferSize - m_nBufferSize;
-    if (freeData < avail) avail = freeData;
-    size_t nRead = m_ring.get(pGetPointer, freeData, avail, 0);
+        uint32_t freeData = m_nBufferSize - m_nBufferSize;
+        
+        if (freeData < avail) avail = freeData;
+        size_t nRead = m_Ring.get(pGetPointer, freeData, avail, 0);
     
-    m_nBytesLeft += nRead;
+        m_nBytesLeft += nRead;
+    }
 }
 /**
  * slideRemainder
