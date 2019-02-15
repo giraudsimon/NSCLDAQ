@@ -145,8 +145,8 @@ int main(int argc, char** argv)
     
     // write the data:
     
-    int nWritten = 0;
-    int nToWrite = mBytes * 1024*1024;
+    uint64_t nWritten = 0;
+    uint64_t nToWrite = (uint64_t)(mBytes) * 1024*1024;
     
     while(nWritten < nToWrite) {
         io::writeData(STDOUT_FILENO, buffer, desc.s_nBytes);

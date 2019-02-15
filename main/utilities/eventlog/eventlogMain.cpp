@@ -58,7 +58,7 @@ static const uint64_t G(K*M);
 
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
-static const size_t BUFFERSIZE(10*M);
+static const size_t BUFFERSIZE(100*M);
 static const int MAXDATASLEEP(1000*50);   // max microseconds in waitForData.
 
 ///////////////////////////////////////////////////////////////////////////////////
