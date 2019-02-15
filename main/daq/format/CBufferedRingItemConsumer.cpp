@@ -130,6 +130,8 @@ CBufferedRingItemConsumer::fill()
     void* pGetPointer = m_pBuffer;
     if (m_nBytesLeft > 0) {
         pGetPointer = slideRemainder();        // Partial ring item.
+    } else {
+        m_pCursor = m_pBuffer;                 // reset the cursor.
     }
     // If needed get that ring item size:
     

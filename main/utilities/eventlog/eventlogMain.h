@@ -56,7 +56,7 @@ class EventLogMain
   bool              m_fChangeRunOk;
   std::string       m_prefix;
   io::CBufferedOutput*  m_pOutputter;
-  pRingItemHeader  m_pItem;
+  pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
   
   // Constructors and canonicals:

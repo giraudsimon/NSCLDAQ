@@ -30,6 +30,7 @@
 #include <CAllButPredicate.h>
 #include <CRingItemFactory.h>
 #include <io.h>
+#include "CBufferedRingItemConsumer.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -289,6 +290,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
 
    CRingItem*   pItem;   // Going to use our expanding storage at m_pItem.
    uint16_t     itemType;
+   
+   
 
 
    // Figure out what file to open and how to set the pItem:
@@ -316,7 +319,16 @@ class noData :  public CRingBuffer::CRingBufferPredicate
 
     copyRingItem(*pItem);
     delete pItem;
-
+    // There's a small memory leak here;   copyRingItem will
+    // allocated m_pItem to hold it.  But from then on we use the
+    // dataSource to just get pointers into its buffer without
+    // ever freeing that dynamic storage.
+    // At the end of the run we just set m_pItem to nullptr
+    // Problem is that there's not really a good way to know how to
+    // delete that storage.
+    
+    CBufferedRingItemConsumer dataSource(*m_pRing);
+    
     while(1) {
 
       size_t size    = m_pItem->s_size;
@@ -363,7 +375,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  
         break;
       }
-      getFromRing();                      // Fills next m_pItem.
+      m_pItem = static_cast<pRingItemHeader>(dataSource.get());   // the first 
       if(isBadItem(runNumber)) {
         std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
         exit(EXIT_FAILURE);
@@ -409,7 +421,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
     delete m_pOutputter;
     m_pOutputter =nullptr;
     close(fd);
-
+    m_pItem = nullptr;    
 
  }
 
