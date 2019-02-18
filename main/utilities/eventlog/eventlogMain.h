@@ -31,7 +31,7 @@
 class CRingBuffer;
 class CRingItem;
 class CRingStateChangeItem;
-
+class CZCopyRingBuffer;
 
 /*!
    Class that represents the event log application.
@@ -94,8 +94,9 @@ private:
   // New methods to support raw ring item read with minimal dynamic memory
   // maniplation.
   
-  void writeItem();   // Write a raw ring item.
+  void writeItem(int fd);   // Write a raw ring item.
   void getFromRing();                      // Get next item from ring into m_pItem
+  pRingItemHeader getFromRing(CZCopyRingBuffer& src);
   void copyRingItem(CRingItem& rItem);     // Copy from a CRingItem int m_pItem
   void checkSize(size_t nBytes);           // expand m_pItem to accomodate nBytes.
   void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.

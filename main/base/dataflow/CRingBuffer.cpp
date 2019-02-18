@@ -967,7 +967,9 @@ CRingBuffer::getPointer()
   off_t ringBase = m_pRing->s_header.s_dataOffset;
   char* pDataBase= reinterpret_cast<char*>(m_pRing) + ringBase;
   char* pGet     = reinterpret_cast<char*>(m_pRing) + 
-                   m_pClientInfo->s_offset;	// get data starting here.  
+                   m_pClientInfo->s_offset;	// get data starting here.
+                   
+  return pGet;
 }
 /**
  * wouldWrap

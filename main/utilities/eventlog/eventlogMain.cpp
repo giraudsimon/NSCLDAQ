@@ -30,7 +30,7 @@
 #include <CAllButPredicate.h>
 #include <CRingItemFactory.h>
 #include <io.h>
-#include "CBufferedRingItemConsumer.h"
+#include "CZCopyRingBuffer.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -252,9 +252,9 @@ class noData :  public CRingBuffer::CRingBufferPredicate
        int fd = open(exitedFile.c_str(), O_WRONLY | O_CREAT,
 		     S_IRWXU);
        if (fd == -1) {
-	 perror("Could not open .exited file");
-	 exit(EXIT_FAILURE);
-	 return;
+        perror("Could not open .exited file");
+        exit(EXIT_FAILURE);
+        return;
        }
        close(fd);
        return;
@@ -306,8 +306,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       fd         = openEventSegment(runNumber, segment);
       pItem      = new CRingStateChangeItem(item);
     }
-    m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
-    m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
+   m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
+   m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
 
     // If there is a format item, write it out to file:
     // Note there won't be if the run number has been overridden.
@@ -328,7 +328,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
     // Problem is that there's not really a good way to know how to
     // delete that storage.
     
-    CBufferedRingItemConsumer dataSource(*m_pRing);
+    CZCopyRingBuffer dataSource(m_pRing);
     
     while(1) {
 
@@ -338,9 +338,9 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       // If necessary, close this segment and open a new one:
  
       if ( (bytesInSegment + size) > m_segmentSize) {
-       m_pOutputter->flush();
-       delete m_pOutputter;
-       m_pOutputter = nullptr;
+      m_pOutputter->flush();
+      delete m_pOutputter;
+      m_pOutputter = nullptr;
        close(fd);
        segment++;
        bytesInSegment = 0;
@@ -350,7 +350,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
        m_pOutputter->setTimeout(2);
       }
 
-      writeItem();
+      writeItem(fd);
  
       bytesInSegment  += size;
  
@@ -376,7 +376,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  
         break;
       }
-      m_pItem = static_cast<pRingItemHeader>(dataSource.get());   // the first 
+      dataSource.done();                   // Harmless first time. Release item.
+      m_pItem = getFromRing(dataSource);
       if(isBadItem(runNumber)) {
         std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
         exit(EXIT_FAILURE);
@@ -640,7 +641,7 @@ EventLogMain::writeItem(int fd, CRingItem& item)
                reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), pItem, nBytes);
       }
       m_pOutputter->put(pItem, nBytes);
-      // io::writeData(fd, pItem, nBytes);
+      //io::writeData(fd, pItem, nBytes);
     }
     catch(int err) {
       if(err) {
@@ -804,7 +805,23 @@ EventLogMain::waitForData(size_t nBytes)
  *    - The destination is m_pOutputter.
  */
 void
-EventLogMain::writeItem()
+EventLogMain::writeItem(int fd)
 {
     m_pOutputter->put(m_pItem, m_pItem->s_size);
+    //io::writeData(fd, m_pItem, m_pItem->s_size);
+}
+/**
+ *  getFromRing
+ *     Get a ring item pointer from the zero copy ring item data source.
+ *
+ * @param src - reference to zero copy ring item.
+ * @return pRingItemHeader
+ */
+pRingItemHeader
+EventLogMain::getFromRing(CZCopyRingBuffer& src)
+{
+  uint32_t* pSize = static_cast<uint32_t*>(src.get(sizeof(uint32_t)));
+  pRingItemHeader result = static_cast<pRingItemHeader>(src.get(*pSize));
+  
+  return result;
 }
