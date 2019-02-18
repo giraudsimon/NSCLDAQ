@@ -154,6 +154,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      perror("Open failed for event file segment"); 
      exit(EXIT_FAILURE);
    }
+   
    return fd;
 
  } 
