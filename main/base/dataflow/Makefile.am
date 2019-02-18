@@ -3,8 +3,10 @@
 lib_LTLIBRARIES = libDataFlow.la \
 		libRingBuffer.la
 
-libDataFlow_la_SOURCES = CRingBuffer.cpp CTestRingBuffer.cpp CRemoteAccess.cpp CRingMaster.cpp
-include_HEADERS        = CRingBuffer.h CTestRingBuffer.h CRingMaster.h CRemoteAccess.h
+libDataFlow_la_SOURCES = CRingBuffer.cpp CTestRingBuffer.cpp CRemoteAccess.cpp \
+	CRingMaster.cpp CZCopyRingBuffer.cpp
+include_HEADERS        = CRingBuffer.h CTestRingBuffer.h CRingMaster.h \
+	CRemoteAccess.h CZCopyRingBuffer.h
 
 noinst_HEADERS         = ringbufint.h Asserts.h testcommon.h CRingCommand.h
 
