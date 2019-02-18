@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <io.h>
+#include <pthread.h>
 
 #define private public
 #include "CBufferedOutput.h"
@@ -48,7 +49,10 @@ public:
     m_pBuffer = new io::CBufferedOutput(m_nFd, bsize);    
   }
   void tearDown() {
+    
     delete m_pBuffer;
+    m_pBuffer = nullptr;
+    
     unlink(m_filename.c_str());
   }
 protected:
@@ -91,7 +95,7 @@ void testBufferedOutput::put_1()
 // After a larger put, pointers are correct and there is a file
 // that has the first bsize data bytes.
 
-void testBufferedOutput:: put_2()
+void testBufferedOutput::put_2()
 {
   uint8_t data[bsize+100];            // Putting this forces a flush.
   for (int i =0; i < sizeof(data); i++) {
@@ -106,7 +110,7 @@ void testBufferedOutput:: put_2()
   EQ((void*)(m_pBuffer->m_pBuffer+100), (void*)(m_pBuffer->m_pInsert));
   
   // Should be a file with bsize bytes of data and that matches the pattern:
-  
+
   int fd = open(m_filename.c_str(), O_RDONLY);
   ASSERT(fd > 0);
   
@@ -134,7 +138,6 @@ void testBufferedOutput::flush_1()
   m_pBuffer->put(data, 100);
   
   m_pBuffer->flush();
-  
   int fd = open(m_filename.c_str(), O_RDONLY);
   ASSERT(fd > 0);
   
