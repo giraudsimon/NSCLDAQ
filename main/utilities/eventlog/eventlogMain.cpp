@@ -50,7 +50,7 @@ using std::cerr;
 using std::endl;
 using std::cout;
 
-// constant defintitions.
+// constant definitions.
 
 static const uint64_t K(1024);
 static const uint64_t M(K*K);
@@ -58,8 +58,8 @@ static const uint64_t G(K*M);
 
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
-static const size_t BUFFERSIZE(100*M);
-static const int MAXDATASLEEP(1000*50);   // max microseconds in waitForData.
+static const size_t BUFFERSIZE(1024*1024*32);
+static const int MAXDATASLEEP(50);   // max microseconds in waitForData.
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Local classes:
@@ -794,7 +794,7 @@ EventLogMain::waitForData(size_t nBytes)
   int sleepUs = 1;
   while (m_pRing->availableData() < nBytes) {
     usleep(sleepUs);
-    if (sleepUs < MAXDATASLEEP) sleepUs = sleepUs * 2; // wait longer each time.
+    //if (sleepUs < MAXDATASLEEP) sleepUs = sleepUs * 2; // wait longer each time.
   }
 }
 /**

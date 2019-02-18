@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <iostream>
 
 /**
  * constructor.
@@ -164,9 +165,10 @@ CBufferedRingItemConsumer::fill()
     // the whole damned buffer if we can have it _now_
     
     size_t avail = m_Ring.availableData();
+    
     if(avail) {
-        uint32_t freeData = m_nBufferSize - m_nBytesLeft;
         
+        uint32_t freeData = m_nBufferSize - m_nBytesLeft;
         if (freeData < avail) avail = freeData;
         size_t nRead = m_Ring.get(pGetPointer, freeData, avail, 0);
     

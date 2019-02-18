@@ -97,7 +97,7 @@ int main(int argc, char** argv)
         n+= writeBytes;
     }
     o.flush();
-    clock_gettime(CLOCK_REALTIME, &start);
+    clock_gettime(CLOCK_REALTIME, &stop);
     
     uint64_t ns = hrDiff(stop, start);
     

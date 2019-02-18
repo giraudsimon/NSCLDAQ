@@ -300,7 +300,6 @@ CBufferedOutput::COutputThread::operator()()
         io::writeData(
             m_producer.getFd(), p->s_pBuffer, p->s_nBytesInBuffer
         );
-        std::cerr << "Wrote " << p->s_nBytesInBuffer << std::endl;
         m_producer.freeBuffer(p);
     }
     }

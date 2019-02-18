@@ -256,6 +256,7 @@ mainLoop(string ring, int timeout, int mindata)
   CRingBuffer* pSource;
   try {
     pSource = new CRingBuffer(ring, CRingBuffer::producer);
+    pSource->setPollInterval(0);
   }
   catch (CException& error) {
     cerr << "stdintoring Failed to attach to " << ring << ":\n";

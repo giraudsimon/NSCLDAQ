@@ -141,6 +141,11 @@ public:
 
   unsigned long setPollInterval(unsigned long newValue);
   unsigned long getPollInterval();
+  
+  // Support for (nearly) zero copy access:
+  
+  void*  getPointer();                  // Return ring item get pointer.k
+  bool   wouldWrap(size_t nBytes);      // True if nbytes from get pointer wraps.
 
   // Inquiry functions.
 

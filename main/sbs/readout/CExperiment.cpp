@@ -99,6 +99,7 @@ CExperiment::CExperiment(string ringName,
 {
   try {
     m_pRing = CRingBuffer::createAndProduce(ringName);
+    m_pRing->setPollInterval(0);
   } catch (CException& e) {
     std::cerr << "Could not attach ringbuffer : " << ringName << " "
       << e.ReasonText() << std::endl;
