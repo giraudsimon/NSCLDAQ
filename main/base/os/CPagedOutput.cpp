@@ -50,7 +50,10 @@ CPagedOutput::CPagedOutput(const char* filename, size_t bufferSize) :
     
     // Try to open the file:
     
-    m_nFd = creat(filename, O_TRUNC | O_RDWR | S_IRUSR | S_IWUSR );
+    m_nFd = open(
+        filename, O_CREAT | O_RDWR | O_TRUNC,
+        S_IRUSR | S_IWUSR 
+    );
     if (m_nFd < 0) {
         throw std::system_error(
             errno, std::generic_category(),

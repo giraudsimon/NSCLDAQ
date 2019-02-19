@@ -138,6 +138,7 @@ void testBufferedOutput::flush_1()
   m_pBuffer->put(data, 100);
   
   m_pBuffer->flush();
+  usleep(100*1000);
   int fd = open(m_filename.c_str(), O_RDONLY);
   ASSERT(fd > 0);
   
