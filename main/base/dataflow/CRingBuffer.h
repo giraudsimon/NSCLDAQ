@@ -146,7 +146,8 @@ public:
   
   void*  getPointer();                  // Return ring item get pointer.k
   bool   wouldWrap(size_t nBytes);      // True if nbytes from get pointer wraps.
-
+  size_t bytesToTop();                  // Bytes from get pointer to ring buffer top.
+  
   // Inquiry functions.
 
   virtual size_t availablePutSpace();

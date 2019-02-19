@@ -1,13 +1,15 @@
 bin_PROGRAMS=evts2frags
 
 evts2frag_COMMON_CFLAGS = -I@top_srcdir@/daq/format -I@top_srcdir@/daq/eventbuilder \
-	-I@top_srcdir@/base/os
+	-I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
 
 evts2frags_SOURCES=Main.cpp CFragmentMaker.cpp CEvents2Fragments.cpp \
 	evts2frags.c
 evts2frags_CXXFLAGS=$(evts2frag_COMMON_CFLAGS)
 evts2frags_LDADD=@top_builddir@/daq/format/libdataformat.la \
-	@top_srcdir@/base/os/libdaqshm.la
+	@top_srcdir@/base/os/libdaqshm.la \
+	@top_srcdir@/base/thread/libdaqthreads.la \
+	@LIBEXCEPTION_LDFLAGS@
 
 
 # The command line def:
@@ -32,6 +34,8 @@ unittests_SOURCES=TestRunner.cpp headerbuildertests.cpp apptests.cpp \
 
 
 unittests_CPPFLAGS=@CPPUNIT_CFLAGS@ $(evts2frag_COMMON_CFLAGS)
-unittests_LDADD=@CPPUNIT_LDFLAGS@ @top_builddir@/base/os/libdaqshm.la
+unittests_LDADD=@CPPUNIT_LDFLAGS@ @top_builddir@/base/os/libdaqshm.la \
+	@top_builddir@/base/thread/libdaqthreads.la @LIBEXCEPTION_LDFLAGS@
+
 
 TESTS=unittests

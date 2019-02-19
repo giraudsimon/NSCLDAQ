@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <string>
 
-#include <CBufferedOutput.h>
+#include <CPagedOutput.h>
 #include <DataFormat.h>
 
 // Forward class definitions.
@@ -55,9 +55,17 @@ class EventLogMain
   uint32_t          m_nBeginsSeen;
   bool              m_fChangeRunOk;
   std::string       m_prefix;
-  io::CBufferedOutput*  m_pOutputter;
+  io::CPagedOutput*  m_pOutputter;
   pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
+  
+  
+  typedef struct _Chunk {
+    void*    s_pStart;
+    size_t   s_nBytes;
+    unsigned s_nBegins;
+    unsigned s_nEnds;
+  } Chunk, pChunk;
   
   // Constructors and canonicals:
 
@@ -90,10 +98,6 @@ private:
   size_t itemSize(CRingItem& item) const;
   std::string shaFile(int runNumber) const;
   
-  
-  // New methods to support raw ring item read with minimal dynamic memory
-  // maniplation.
-  
   void writeItem(int fd);   // Write a raw ring item.
   void getFromRing();                      // Get next item from ring into m_pItem
   pRingItemHeader getFromRing(CZCopyRingBuffer& src);
@@ -101,6 +105,14 @@ private:
   void checkSize(size_t nBytes);           // expand m_pItem to accomodate nBytes.
   void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.
   bool isBadItem(int runNumber);
+
+  void writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar);  
+  void waitForLotsOfData(); 
+  void getChunk(Chunk& nextChunk);
+  bool nextItemWraps();
+  size_t writeWrappedItem(int fd, int& ends);
+  void writeData(int fd, void* pData, size_t nBytes);
+  void checksumData(void* pData, size_t nBytes);
 };
 
 

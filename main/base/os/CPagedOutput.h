@@ -57,6 +57,8 @@ private:
     int      m_nFd;                 // file descriptor.
 public:
     CPagedOutput(const char* filename, size_t bufferSize);
+    CPagedOutput(int fd, size_t bufferSize);
+    
     virtual ~CPagedOutput();
     
     void put(void* pData, size_t nBytes);
@@ -64,6 +66,7 @@ public:
 private:
     void nextSegment();
     void computeBufferSize(size_t bufferSize);
+    void init(int bufferSize);
 };
 
 }                          // Namespace io.

@@ -43,7 +43,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <system_error>
 
 using std::string;
 using std::cerr;
@@ -58,7 +58,7 @@ static const uint64_t G(K*M);
 
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
-static const size_t BUFFERSIZE(1024*1024*32);
+static const size_t BUFFERSIZE(4096*32);
 static const int MAXDATASLEEP(50);   // max microseconds in waitForData.
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +110,12 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  EventLogMain::operator()(int argc, char**argv)
  {
    parseArguments(argc, argv);
-   recordData();
+   try {
+    recordData();
+   }
+   catch (std::exception& e) {
+    std::cerr << e.what() << std::endl;
+   }
 
  }
 
@@ -148,7 +153,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    sprintf(nameString, "/%s-%04d-%02d.evt", m_prefix.c_str(), runNumber, segment);
    fullPath += nameString;
 
-   int fd = open(fullPath.c_str(), O_WRONLY | O_CREAT | O_EXCL, 
+   int fd = open(fullPath.c_str(), O_RDWR | O_CREAT | O_EXCL, 
 		 S_IWUSR | S_IRUSR | S_IRGRP);
    if (fd == -1) {
      perror("Open failed for event file segment"); 
@@ -201,30 +206,30 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      // If necessary, hunt for the begin run.
 
      if (!m_fRunNumberOverride) {
-       while (1) {
-	 pItem = CRingItem::getFromRing(*m_pRing, all);
-	 
-	 /*
-	   As of NSCLDAQ-11 it is possible for the item just before a begin run
-	   to be one or more ring format items.
-	 */
-	 
-	 if (pItem->type() == RING_FORMAT) {
-	   pFormatItem = pItem;
-	 } else if (pItem->type() == BEGIN_RUN) {
-	   m_nBeginsSeen = 1;
-	   break;
-	 } else {
-	   // If not a begin or a ring_item we're tossing it out.
-	   delete pItem;
-	   pItem = 0;
-	 }
-	 
-	 if (!warned && !pFormatItem) {
-	   warned = true;
-	   cerr << "**Warning - first item received was not a begin run. Skipping until we get one\n";
-	 }
-       }
+        while (1) {
+          pItem = CRingItem::getFromRing(*m_pRing, all);
+          
+          /*
+            As of NSCLDAQ-11 it is possible for the item just before a begin run
+            to be one or more ring format items.
+          */
+          
+          if (pItem->type() == RING_FORMAT) {
+            pFormatItem = pItem;
+          } else if (pItem->type() == BEGIN_RUN) {
+            m_nBeginsSeen = 1;
+            break;
+          } else {
+            // If not a begin or a ring_item we're tossing it out.
+            delete pItem;
+            pItem = 0;
+          }
+          
+          if (!warned && !pFormatItem) {
+            warned = true;
+            cerr << "**Warning - first item received was not a begin run. Skipping until we get one\n";
+          }
+        }
        
        // Now we have the begin run item; and potentially the ring format item
        // too. Alternatively we have been told the run number on the command line.
@@ -306,8 +311,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       fd         = openEventSegment(runNumber, segment);
       pItem      = new CRingStateChangeItem(item);
     }
-   m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
-   m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
+   m_pOutputter = new io::CPagedOutput(fd, BUFFERSIZE);
+   //m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
 
     // If there is a format item, write it out to file:
     // Note there won't be if the run number has been overridden.
@@ -317,7 +322,53 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       writeItem(fd, *pFormatItem);
  
     }
-
+    writeItem(fd, *pItem);
+    bytesInSegment += itemSize(*pItem);
+    
+    writeInterior(fd, runNumber, bytesInSegment);    // Write the rest of the run.
+    
+    // Note that when writeInterior returns the last event segment is
+    // closed.
+    
+    // If requested, write the checksum file:
+    
+    if (m_pChecksumContext) {
+      EVP_MD_CTX* pCtx = reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext);
+       unsigned char* pDigest = reinterpret_cast<unsigned char*>(OPENSSL_malloc(EVP_MD_size(EVP_sha512())));
+       unsigned int   len;
+         
+       // Not quite sure what to do if pDigest failed to malloc...for now
+       // silently ignore...
+  
+      if (pDigest) {
+         EVP_DigestFinal_ex(pCtx, pDigest, &len);
+         std::string digestFilename = shaFile(runNumber);
+         FILE* shafp = fopen(digestFilename.c_str(), "w");
+  
+       
+         // Again not quite sure what to do if the open failed.
+         if (shafp) {
+          unsigned char* p = pDigest;
+          for (int i =0; i < len;i++) {
+            fprintf(shafp, "%02x", *p++);
+          }
+          fprintf(shafp, "\n");
+          fclose(shafp);
+        }
+         // Release the digest storage and the context.
+        OPENSSL_free(pDigest);
+  
+      }
+      EVP_MD_CTX_destroy(pCtx);
+      m_pChecksumContext = 0;
+       
+    }  
+    return;
+  ////////////////////////////// done done done //////////////////////////
+    
+    
+ 
+    
     copyRingItem(*pItem);
     delete pItem;
     // There's a small memory leak here;   copyRingItem will
@@ -346,8 +397,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
        bytesInSegment = 0;
  
        fd = openEventSegment(runNumber, segment);
-       m_pOutputter = new io::CBufferedOutput(fd, BUFFERSIZE);
-       m_pOutputter->setTimeout(2);
+       m_pOutputter = new io::CPagedOutput(fd, BUFFERSIZE);
+       // m_pOutputter->setTimeout(2);
       }
 
       writeItem(fd);
@@ -358,10 +409,12 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       if(itemType == END_RUN) {
         endsRemaining--;
         if (endsRemaining == 0) {
+          dataSource.done();
           break;
         }
       }
       if (itemType == ABNORMAL_ENDRUN) {
+        dataSource.done();
          endsRemaining = 0;             // In case we're not --one-shot
          break;                         // unconditionally ends the run.
       }
@@ -424,7 +477,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
     m_pOutputter =nullptr;
     close(fd);
     m_pItem = nullptr;    
-
+    m_nItemSize = 0;
  }
 
  /*
@@ -793,10 +846,9 @@ void
 EventLogMain::waitForData(size_t nBytes)
 {
   int sleepUs = 1;
-  while (m_pRing->availableData() < nBytes) {
-    usleep(sleepUs);
-    //if (sleepUs < MAXDATASLEEP) sleepUs = sleepUs * 2; // wait longer each time.
-  }
+  while (m_pRing->availableData() < nBytes)
+    ;
+
 }
 /**
  * writeItem
@@ -824,4 +876,260 @@ EventLogMain::getFromRing(CZCopyRingBuffer& src)
   pRingItemHeader result = static_cast<pRingItemHeader>(src.get(*pSize));
   
   return result;
+}
+
+/**
+ * writeInterior
+ *   Writes the interior of a run file.   The run file prefix
+ *   (potentially format item(s) and the first begin run item) have already
+ *   been written to an open event segment.  We're going to do a copy free
+ *   write of the remainder of the run.  We'll do this by getting the get
+ *   pointer from the ring buffer and accumulating a contiguous chunk of
+ *   data to write that's terminated by one of the following:
+ *   - A BEGIN or END run element.
+ *   - An abnormal End element
+ *   - an item that's wrapped across the ring item top/bottom.
+ *   - An item that terminates exactly on the top of the ring buffer.
+ *   We'll do the write of that chunk of data in one full swat.  This write
+ *   is therefore copy free.  The ending cases are then handled as follows:
+ *   -  BEGIN/END - write what we have, through the item.  Tally the number of
+ *      begins and ends we've seen so far.  When we hit zero we're done with the
+ *      run.
+ *   -  Abnormal end - write through the item and we're done.
+ *   -  Wrap - write up to the wrapped item, get the wrapped item and write it.
+ *   -  End of ring buffer - write through the item.
+ *
+ *   In this way, we should be able to essentially do a zero copy write of
+ *   the event data.  The only exception begin the wrapped items which,
+ *   for sipmlicity are copied int a contiguous item and then written from the
+ *   copy.
+ *
+ *   Furthermore, at high rates our writes should be pretty big which is good
+ *   for reducing overhead.
+ *
+ * @param fd - file descriptor open on the first run file segment.
+ * @param runNumber - number of the run being recorded.
+ * @param bytesSoFar - number of bytes written to the segment so far.
+ * 
+ */
+void
+EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
+{
+  int endsSeen(0);
+  Chunk nextChunk;
+  int segno = 0;
+  while(1) {
+    waitForLotsOfData();                  // Wait for a lot of data or timeout.
+    
+    // Get a contigous chunk.
+    
+    getChunk(nextChunk);
+    if(nextChunk.s_nBytes)  {
+      writeData(fd, nextChunk.s_pStart, nextChunk.s_nBytes);
+      m_pRing->skip(nextChunk.s_nBytes);
+      bytesSoFar += nextChunk.s_nBytes;
+      if (bytesSoFar >= m_segmentSize) {
+        close(fd);
+        fd = openEventSegment(runNumber, ++segno);
+        bytesSoFar  = 0;
+      }
+    }
+    m_nBeginsSeen += nextChunk.s_nBegins;
+    endsSeen      += nextChunk.s_nEnds;
+    
+    // See if we've got a balanced set of begins/ends:
+    
+    if(endsSeen == m_nBeginsSeen) {
+      close(fd);
+      return;                      // The run is recorded.
+    } else if (endsSeen && dataTimeout()) {
+      
+      // If we time out on data, then end abnormally:
+      
+      close(fd);
+      std::cerr << " Timed out with " << m_nBeginsSeen - endsSeen
+        << " ends still not seen\n";
+      return;
+    }
+    if (nextItemWraps()) {                               // Note we just let the next chunk
+      bytesSoFar += writeWrappedItem(fd, endsSeen);     // see if we need to open a new segment
+    }
+  }
+}
+/**
+ *  WaitForLotsOfData
+ *      Wait for lots of data to be available on a ring buffer.
+ *      - Lots of data is defined as a 1*M bytes.
+ *      - We wait at most one second.
+ *      - We set the poll interval down to 1ms from its default.
+ */
+void
+EventLogMain::waitForLotsOfData()
+{
+  class DataAvailPredicate : public CRingBuffer::CRingBufferPredicate {
+    size_t nBytesRequired;
+  public:
+    DataAvailPredicate(size_t n) : nBytesRequired(n) {}
+    bool operator()(CRingBuffer& ring) {
+      return nBytesRequired > ring.availableData();
+    }
+  };
+  
+  DataAvailPredicate p(1*M);
+  unsigned long priorPollInterval = m_pRing->setPollInterval(0);
+  m_pRing->blockWhile(p, 1);
+  m_pRing->setPollInterval(priorPollInterval);
+}
+/**
+ * getChunk
+ *    Get the next contiguous chunk of ring items.
+ *    The search stops when either we have no more data available or
+ *    the next ring item wraps.  Ring items are considered to wrap if
+ *    either there's less than a uint32_t before the top of the ring
+ *    or if there's a uint32_t ring item size that shows there's not enough
+ *    space before the ring top to hold the item.
+ *
+ *  @param[out] nextChunk - will describe the chunk of data we've gotten.
+ */
+void
+EventLogMain::getChunk(Chunk& nextChunk)
+{
+  nextChunk.s_pStart  = m_pRing->getPointer();
+  nextChunk.s_nBytes  = 0;
+  nextChunk.s_nBegins = 0;
+  nextChunk.s_nEnds   = 0;
+  
+  size_t bytesAvail = m_pRing->availableData();
+  
+  
+  // Adjust the bytes available by the amount left before a wrap, if that's
+  // < a ring item header we have a wrap:
+  
+  size_t bytesToWrap = m_pRing->bytesToTop();
+  if (bytesToWrap < bytesAvail) bytesAvail = bytesToWrap;
+  if (bytesAvail < sizeof(RingItemHeader)) return;
+  
+  /*
+   *  Now we look at the data availalble;
+   *  - Count bytes that contain full ring items:
+   *  - Count any state transition items we see.
+   */
+  
+  uint8_t* p = static_cast<uint8_t*>(nextChunk.s_pStart);
+  while(1) {
+    pRingItemHeader h = reinterpret_cast<pRingItemHeader>(p);
+    if ((h->s_size + nextChunk.s_nBytes) > bytesAvail) return; // no full items left.
+    nextChunk.s_nBytes += h->s_size;
+    p += h->s_size;
+    if (h->s_type == BEGIN_RUN) nextChunk.s_nBegins++;
+    if (h->s_type == END_RUN)   nextChunk.s_nEnds++;
+  }
+  
+}
+/**
+ * nextItemWraps
+ *    @return bool:  true if the next wring item wraps;
+ *
+ *    The next item wraps if:
+ *    -  There's less than the size of a ring item header to the top.
+ *    -  When we get the next uint32_t there's less than that amount of space
+ *       left to the top:
+ */
+bool
+EventLogMain::nextItemWraps()
+{
+  // Wait for at least a uint32_t:
+  
+  waitForData(sizeof(uint32_t));
+  size_t nToTop = m_pRing->bytesToTop();
+  uint32_t* p   = static_cast<uint32_t*>(m_pRing->getPointer());
+  
+  // Counting on short circuit here which is ok by C++ standard.
+  
+  return (nToTop < sizeof(RingItemHeader)) || (*p > nToTop);
+  
+}
+/**
+ * writeWrappedItem
+ *    Assuming the next item in the ring buffer wraps, we write it.
+ *    This is done by first waiting to be sure we have a uin32_t we then
+ *    peek that to get the ring item size.  Then we create a block of data
+ *    for the full ring item, get it from the ring and
+ *    write it to the output.  We update m_nBeginsSeen and the ends seen counter.
+ *
+ *  @param fd - file descriptor to which the write is done.
+ *  @param[inout] nEnds - references the end counter - incremented if the item is an end.
+ *  @note m_nBeginsSeen is incremented if the item is a begin.
+ *  @return  number of bytes of data written.
+ */
+
+size_t
+EventLogMain::writeWrappedItem(int fd, int& ends)
+{
+  waitForData(sizeof(uint32_t));
+  uint32_t nSize;
+  m_pRing->peek(&nSize, sizeof(uint32_t));
+  
+  uint8_t buffer[nSize];
+  pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(buffer);
+  
+  m_pRing->get(buffer, nSize, nSize);
+  if (pH->s_type == BEGIN_RUN) m_nBeginsSeen++;
+  if (pH->s_type == END_RUN)   ends++;
+  
+  writeData(fd, buffer, nSize);
+}
+/**
+ * writeData
+ *    Writes data to the file.  If checksumming is enabled the checksum
+ *    is updated.
+ *
+ *  @param pData - pointer to the data to write.
+ *  @param nBytes - Number of bytes of data to write.
+ */
+void
+EventLogMain::writeData(int fd, void* pData, size_t nBytes)
+{
+  io::writeData(fd, pData, nBytes);
+  
+  if (m_fChecksum) {
+    checksumData(pData,nBytes);
+  }
+}
+/**
+ * checksumData
+ *    update the sha512 hash of the data:
+ *
+ * @param pData -pointer to the new data.
+ * @param nBytes - number of bytes of new data.
+ */
+void
+EventLogMain::checksumData(void* pData, size_t nBytes)
+{
+  // If we need to make the checksum context:
+  
+  if(!m_pChecksumContext) {
+    m_pChecksumContext = EVP_MD_CTX_create();
+    if (!m_pChecksumContext) {
+      throw std::system_error(
+        errno, std::generic_category(), "Allocating sha512 context"
+      );
+    }
+    // Make the sha512 digest in the context:
+    
+    if(EVP_DigestInit_ex(
+	      reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), EVP_sha512(), NULL) != 1) {
+	    EVP_MD_CTX_destroy(reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext));
+	    m_pChecksumContext = 0;
+      throw std::string("Failed to initialize the sha512 digest");
+    }
+    
+  }
+  // Now we can compute the checksum to update the chunk we have:
+  
+  EVP_DigestUpdate(
+    reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext),
+    pData, nBytes
+  );
+    
 }

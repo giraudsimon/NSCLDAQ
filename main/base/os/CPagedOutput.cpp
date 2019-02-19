@@ -46,9 +46,7 @@ CPagedOutput::CPagedOutput(const char* filename, size_t bufferSize) :
     m_pData(nullptr), m_pCursor(nullptr), m_nDataSize(0), m_nBytesLeft(0),
     m_nFilesize(0), m_nFileOffset(0), m_nFd(-1)
 {
-    computeBufferSize(bufferSize);    // SEts m_nDataSize.
-    
-    // Try to open the file:
+   // Try to open the file:
     
     m_nFd = open(
         filename, O_CREAT | O_RDWR | O_TRUNC,
@@ -60,30 +58,23 @@ CPagedOutput::CPagedOutput(const char* filename, size_t bufferSize) :
             "CPagedOutput constructor Opening file"
         );
     }
-    // Now set the initial file size and do the initial file mapping setting
-    // all the book keeping stuff.
-    
-    if(ftruncate(m_nFd, m_nDataSize) < 0) {
-        throw std::system_error(
-            errno, std::generic_category(),
-            "CPagedOutput constructor Setting file size"
-        );
-    }
-    
-    
-    m_pData = static_cast<uint8_t*>(mmap(
-        nullptr, m_nDataSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_nFd,
-        m_nFileOffset
-    ));
-    if (m_pData == MAP_FAILED) {
-        throw std::system_error(
-            errno, std::generic_category(),
-            "CPagedOutput constructor Mapping to file."
-        );
-    }
-    m_pCursor = m_pData;
-    m_nBytesLeft = m_nDataSize;
+    init(bufferSize);
 
+}
+/**
+ * constructor
+ *   - See above but the parameter is a file descriptor open on the output file.
+ *
+ *  @param fd - file descriptor to use as output file.  Note this file will
+ *              be truncated if necessary.
+ *  @param buffersSize - size of the buffer.
+ *
+ */
+CPagedOutput::CPagedOutput(int fd, size_t bufferSize) :
+    m_pData(nullptr), m_pCursor(nullptr), m_nDataSize(0), m_nBytesLeft(0),
+    m_nFilesize(0), m_nFileOffset(0), m_nFd(fd)
+{
+    init(bufferSize);
 }
 /**
  * destructor
@@ -236,6 +227,40 @@ CPagedOutput::computeBufferSize(size_t bufferSize)
     
     size_t actualBufferSize = (bufferSize + (pageSize - 1)) & (~(pageSize-1));
     m_nDataSize = actualBufferSize;
+}
+
+/**
+ * Common initialization code used by all constructors.
+ */
+void
+CPagedOutput::init(int bufferSize)
+{
+    computeBufferSize(bufferSize);    // SEts m_nDataSize.
+    
+ 
+    // Now set the initial file size and do the initial file mapping setting
+    // all the book keeping stuff.
+    
+    if(ftruncate(m_nFd, m_nDataSize) < 0) {
+        throw std::system_error(
+            errno, std::generic_category(),
+            "CPagedOutput constructor Setting file size"
+        );
+    }
+    
+    
+    m_pData = static_cast<uint8_t*>(mmap(
+        nullptr, m_nDataSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_nFd,
+        m_nFileOffset
+    ));
+    if (m_pData == MAP_FAILED) {
+        throw std::system_error(
+            errno, std::generic_category(),
+            "CPagedOutput constructor Mapping to file."
+        );
+    }
+    m_pCursor = m_pData;
+    m_nBytesLeft = m_nDataSize;
 }
 
 }                // namespace io.

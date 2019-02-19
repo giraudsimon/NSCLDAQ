@@ -981,7 +981,16 @@ CRingBuffer::wouldWrap(size_t nBytes)
 {
  off_t ringTop  = m_pRing->s_header.s_topOffset;
  off_t desiredTop = m_pClientInfo->s_offset + nBytes;
- return desiredTop >= ringTop;
+ return desiredTop > ringTop;
+}
+
+/**
+ * @return size_t - number of bytes from get pointer to top.
+ */
+size_t
+CRingBuffer::bytesToTop()
+{
+  return m_pRing->s_header.s_topOffset - m_pClientInfo->s_offset + 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1180,7 +1189,9 @@ CRingBuffer::While(CRingBuffer::CRingBufferPredicate& pred)
 void
 CRingBuffer::pollblock()
 {
-  Os::usleep(m_pollInterval * 1000); // wait a bit before checking condition.  
+  if (m_pollInterval> 0) {
+    Os::usleep(m_pollInterval * 1000); // wait a bit before checking condition.
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
