@@ -1,6 +1,7 @@
 #include <config.h>
 #include "CMyEventSegment.h"
 #include "Configuration.h"
+#include <CExperiment.h> 
 #include "SystemBooter.h"
 #include "HardwareRegistry.h"
 #include <string>
@@ -152,10 +153,11 @@ int channel::Validate(int evtlen){
 }
 
 
-CMyEventSegment::CMyEventSegment(CMyTrigger *trig)
+CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
  : m_config(),
    m_systemInitialized(false),
-   m_firmwareLoadedRecently(false)
+   m_firmwareLoadedRecently(false),
+   m_pExperiment(&exp)
 {
 
     ios_base::sync_with_stdio(true);

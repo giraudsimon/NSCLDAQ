@@ -113,11 +113,14 @@ CTCLApplication* gpTCLApplication = new Skeleton;
 void
 Skeleton::SetupReadout(CExperiment* pExperiment)
 {
+   CReadoutMain::SetupReadout(pExperiment);
+  
   // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
   
   mytrigger = new CMyTrigger();
-  myeventsegment = new CMyEventSegment(mytrigger);
-  CReadoutMain::SetupReadout(pExperiment);
+  myeventsegment = new CMyEventSegment(mytrigger, *pExperiment);
+ 
+  
   
   // Establish your trigger here by creating a trigger object
   // and establishing it.

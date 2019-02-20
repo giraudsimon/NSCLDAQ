@@ -21,7 +21,7 @@ using namespace std;
 #define  MAX_NUM_PIXIE16_MODULES 24
 
 class CMyTrigger;
-
+class CExperiment;
 
 class channel
 {
@@ -79,12 +79,13 @@ private:
     bool processdata;
 
     CMyTrigger *mytrigger;
+    
     DAQ::DDAS::Configuration m_config;
     bool m_systemInitialized;
     bool m_firmwareLoadedRecently;
-
+    CExperiment*  m_pExperiment;
 public:
-    CMyEventSegment(CMyTrigger *trig);
+    CMyEventSegment(CMyTrigger *trig, CExperiment& exp);
     ~CMyEventSegment();
 
     virtual void initialize();
