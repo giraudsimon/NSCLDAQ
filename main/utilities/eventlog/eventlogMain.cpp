@@ -159,6 +159,16 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      perror("Open failed for event file segment"); 
      exit(EXIT_FAILURE);
    }
+   // Try to pre-allocate the file - it's not fatal if we can't might not
+   // be enough disk space yet but the file may not fill it:
+   
+   int status = posix_fallocate(fd, 0, m_segmentSize);
+   if (status) {
+    std::cerr << "Failed to preallocate event segment " << nameString
+      << " " << strerror(status) << std::endl;
+    std::cerr << " Continuing to record data\n";
+    
+   }
    
    return fd;
 
@@ -364,120 +374,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
        
     }  
     return;
-  ////////////////////////////// done done done //////////////////////////
-    
-    
- 
-    
-    copyRingItem(*pItem);
-    delete pItem;
-    // There's a small memory leak here;   copyRingItem will
-    // allocated m_pItem to hold it.  But from then on we use the
-    // dataSource to just get pointers into its buffer without
-    // ever freeing that dynamic storage.
-    // At the end of the run we just set m_pItem to nullptr
-    // Problem is that there's not really a good way to know how to
-    // delete that storage.
-    
-    CZCopyRingBuffer dataSource(m_pRing);
-    
-    while(1) {
 
-      size_t size    = m_pItem->s_size;
-      itemType       = m_pItem->s_type;;
- 
-      // If necessary, close this segment and open a new one:
- 
-      if ( (bytesInSegment + size) > m_segmentSize) {
-      m_pOutputter->flush();
-      delete m_pOutputter;
-      m_pOutputter = nullptr;
-       close(fd);
-       segment++;
-       bytesInSegment = 0;
- 
-       fd = openEventSegment(runNumber, segment);
-       m_pOutputter = new io::CPagedOutput(fd, BUFFERSIZE);
-       // m_pOutputter->setTimeout(2);
-      }
-
-      writeItem(fd);
- 
-      bytesInSegment  += size;
- 
- 
-      if(itemType == END_RUN) {
-        endsRemaining--;
-        if (endsRemaining == 0) {
-          dataSource.done();
-          break;
-        }
-      }
-      if (itemType == ABNORMAL_ENDRUN) {
-        dataSource.done();
-         endsRemaining = 0;             // In case we're not --one-shot
-         break;                         // unconditionally ends the run.
-      }
-
-      // If we've seen an end of run, need to support timing out
-      // if we dont see them all.
- 
-      if ((endsRemaining != m_nSourceCount) && dataTimeout()) {
-          cerr << "Timed out waiting for end of runs. Need " << endsRemaining 
-            << " out of " << m_nSourceCount << " sources still\n";
-          cerr << "Closing the run\n";
- 
-        break;
-      }
-      dataSource.done();                   // Harmless first time. Release item.
-      m_pItem = getFromRing(dataSource);
-      if(isBadItem(runNumber)) {
-        std::cerr << "Eventlog: Data indicates probably the run ended in error exiting\n";
-        exit(EXIT_FAILURE);
-      }
-    } 
-    //
-    //  If checksumming, finalize the checksum and write out the checksum file as well.
-    //  by  now m_pChecksumContext is only set if m_fChecksum was true when the run
-    //  files were opened.
-    //
-    if (m_pChecksumContext) {
-      EVP_MD_CTX* pCtx = reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext);
-       unsigned char* pDigest = reinterpret_cast<unsigned char*>(OPENSSL_malloc(EVP_MD_size(EVP_sha512())));
-       unsigned int   len;
-         
-       // Not quite sure what to do if pDigest failed to malloc...for now
-       // silently ignore...
-  
-      if (pDigest) {
-         EVP_DigestFinal_ex(pCtx, pDigest, &len);
-         std::string digestFilename = shaFile(runNumber);
-         FILE* shafp = fopen(digestFilename.c_str(), "w");
-  
-       
-         // Again not quite sure what to do if the open failed.
-         if (shafp) {
-          unsigned char* p = pDigest;
-          for (int i =0; i < len;i++) {
-            fprintf(shafp, "%02x", *p++);
-          }
-          fprintf(shafp, "\n");
-          fclose(shafp);
-        }
-         // Release the digest storage and the context.
-        OPENSSL_free(pDigest);
-  
-      }
-      EVP_MD_CTX_destroy(pCtx);
-      m_pChecksumContext = 0;
-       
-    }  
-    m_pOutputter->flush();
-    delete m_pOutputter;
-    m_pOutputter =nullptr;
-    close(fd);
-    m_pItem = nullptr;    
-    m_nItemSize = 0;
  }
 
  /*
@@ -545,6 +442,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
 
    try {
      m_pRing = CRingAccess::daqConsumeFrom(ringUrl);
+     m_pRing->setPollInterval(0);
    }
    catch (...) {
      cerr << "Could not open the data source: " << ringUrl << endl;
@@ -929,7 +827,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
       m_pRing->skip(nextChunk.s_nBytes);
       bytesSoFar += nextChunk.s_nBytes;
       if (bytesSoFar >= m_segmentSize) {
-        close(fd);
+        closeEventSegment(fd);
         fd = openEventSegment(runNumber, ++segno);
         bytesSoFar  = 0;
       }
@@ -940,13 +838,13 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     // See if we've got a balanced set of begins/ends:
     
     if(endsSeen == m_nBeginsSeen) {
-      close(fd);
+      closeEventSegment(fd);
       return;                      // The run is recorded.
     } else if (endsSeen && dataTimeout()) {
       
       // If we time out on data, then end abnormally:
       
-      close(fd);
+      closeEventSegment(fd);
       std::cerr << " Timed out with " << m_nBeginsSeen - endsSeen
         << " ends still not seen\n";
       return;
@@ -975,7 +873,7 @@ EventLogMain::waitForLotsOfData()
     }
   };
   
-  DataAvailPredicate p(1*M);
+  DataAvailPredicate p(2*M);
   unsigned long priorPollInterval = m_pRing->setPollInterval(0);
   m_pRing->blockWhile(p, 1);
   m_pRing->setPollInterval(priorPollInterval);
@@ -1132,4 +1030,18 @@ EventLogMain::checksumData(void* pData, size_t nBytes)
     pData, nBytes
   );
     
+}
+/**
+ *  closeEventSegment
+ *     Truncate the event segment to its current size and close it.
+ *
+ *   @param fd - file descriptor open on the event segment.
+ */
+void
+EventLogMain::closeEventSegment(int fd)
+{
+  off_t fileSize = lseek(fd, 0, SEEK_CUR);  // Tricky way to get the offset.
+  ftruncate(fd, fileSize);
+  close(fd);
+  
 }

@@ -113,6 +113,7 @@ private:
   size_t writeWrappedItem(int fd, int& ends);
   void writeData(int fd, void* pData, size_t nBytes);
   void checksumData(void* pData, size_t nBytes);
+  void closeEventSegment(int fd);
 };
 
 
