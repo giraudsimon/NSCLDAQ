@@ -1,11 +1,11 @@
 
 
 CXXFLAGS=-I$(DAQINC) -std=c++11 -g
-LDFLAGS=-L$(DAQLIB) -lTcp -lDataFlow -ldaqshm -lException -lrt\
+LDFLAGS=-L$(DAQLIB) -lTcp -ldataformat -ldaqio -lDataFlow -ldaqshm -lException -lrt\
 	-Wl,-rpath="$(DAQLIB)" -g
 
 EXECS=metertest rdoperf fragsrcperf socksend sockperf pipesend pipeperf \
-	fragmaker ritemMaker runmaker bufferedoutperf
+	fragmaker ritemMaker runmaker bufferedoutperf checkevfiles
 
 all: $(EXECS)
 
@@ -45,6 +45,10 @@ runmaker: runmaker.o
 
 bufferedoutperf: bufferedoutperf.o
 	$(CXX) -o bufferedoutperf $^ $(LDFLAGS)
+
+
+checkevfiles: checkevfiles.o
+	$(CXX) -o checkevfiles $^ $(LDFLAGS)
 
 clean:
 	rm -f *.o
