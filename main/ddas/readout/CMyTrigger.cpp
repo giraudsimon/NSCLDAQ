@@ -111,7 +111,7 @@ bool CMyTrigger::operator()()
 
             } // end module loop
             if (thresholdMade) {
-              m_lastTriggerTime = time(nullptr);
+              m_lastTriggerTime = time(nullptr);   // Record the trigger time.
               return true;   // Some module was above threshold
             }
 
