@@ -55,7 +55,6 @@ class EventLogMain
   uint32_t          m_nBeginsSeen;
   bool              m_fChangeRunOk;
   std::string       m_prefix;
-  io::CPagedOutput*  m_pOutputter;
   pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
   uint32_t          m_nRunNumber;

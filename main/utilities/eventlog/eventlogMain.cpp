@@ -88,7 +88,6 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    m_nBeginsSeen(0),
    m_fChangeRunOk(false),
    m_prefix("run"),
-   m_pOutputter(nullptr),
    m_pItem(nullptr),
    m_nItemSize(0)
  {
@@ -160,12 +159,13 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      exit(EXIT_FAILURE);
    }
    // Try to pre-allocate the file - it's not fatal if we can't might not
-   // be enough disk space yet but the file may not fill it:
+   // be enough disk space yet but the file may not fill it; or the
+   // underlying file system might just not support it.
    
-   int status = posix_fallocate(fd, 0, m_segmentSize);
+   int status = fallocate(fd, FALLOC_FL_KEEP_SIZE, 0, m_segmentSize);
    if (status) {
     std::cerr << "Failed to preallocate event segment " << nameString
-      << " " << strerror(status) << std::endl;
+      << " " << strerror(errno) << std::endl;
     std::cerr << " Continuing to record data\n";
     
    }
@@ -321,8 +321,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       fd         = openEventSegment(runNumber, segment);
       pItem      = new CRingStateChangeItem(item);
     }
-   m_pOutputter = new io::CPagedOutput(fd, BUFFERSIZE);
-   //m_pOutputter->setTimeout(2);       // Flush after 2 seconds and write.
+   
 
     // If there is a format item, write it out to file:
     // Note there won't be if the run number has been overridden.
@@ -591,7 +590,7 @@ EventLogMain::writeItem(int fd, CRingItem& item)
         EVP_DigestUpdate(
                reinterpret_cast<EVP_MD_CTX*>(m_pChecksumContext), pItem, nBytes);
       }
-      m_pOutputter->put(pItem, nBytes);
+      io::writeData(fd, pItem, nBytes);
       //io::writeData(fd, pItem, nBytes);
     }
     catch(int err) {
