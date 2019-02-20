@@ -59,7 +59,7 @@ static const uint64_t G(K*M);
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
 static const size_t BUFFERSIZE(4096*32);
-static const int MAXDATASLEEP(50);   // max microseconds in waitForData.
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Local classes:
@@ -640,97 +640,7 @@ EventLogMain::shaFile(int run) const
 
   return fileName;
 }
-/**
- * isBadItem
- *     This method is called to determine if we've gotten a ring item that
- *      might indicate we need to exit in --one-shot mode:
- *      -  If --combine-runs is set, or --one-shot not set, return false.
- *      -  If the run number changed from the one we are recording,
- *         true.
- *      -  If we had more begin runs than m_nSourceCount, true
- *      -  None of these, return false.
- * @note  The item is pointed to by m_pItem.
- * @param runNumber - the current run number.
- *
- * @return bool
- * @retval true  - there's something fishy about this -- probably we should exit.
- * @retval false - as near as we can tell everything is ok.
- */
-bool
-EventLogMain::isBadItem(int runNumber)
-{
 
-  // For some states of program options we just don't care about the
-  // data
-
-  if (m_fChangeRunOk || (!m_exitOnEndRun)) {
-    return false;
-  }
-  // For the rest we only care about state changes -- begins in fact
-
-  if (m_pItem->s_type == BEGIN_RUN) {
-    m_nBeginsSeen++;
-    if (m_nBeginsSeen > m_nSourceCount) {
-      return true;
-    }
-    CRingStateChangeItem* begin =
-      reinterpret_cast<CRingStateChangeItem*>(CRingItemFactory::createRingItem(m_pItem));
-    if (begin->getRunNumber() != runNumber) {
-      delete begin;
-      return true;
-    }
-    delete begin;
-  }
-  return false;
-
-}
-/**
- * getFromRing
- *    Get the next raw ring item from the ringbuffer.
- *    - Wait until there's at least a unit32_t.
- *    - Peek the size of the item.
- *    - ensure the buffer is big enough
- *    - Wait unilt there's at least the full ring item.
- *    - get the data from the ring.
- */
-void
-EventLogMain::getFromRing()
-{
-  waitForData(sizeof(uint32_t));
-  uint32_t size;
-  m_pRing->peek(&size, sizeof(uint32_t));
-  checkSize(size);
-  waitForData(size);
-  
-  m_pRing->get(m_pItem, size, size);   // Fetch the ring item.
-}
-/**
- * copyRingItem
- *   Copy a ring item from a CRingItem into our buffer.
- *
- * @param rItem - the item to copy.
- */
-void
-EventLogMain::copyRingItem(CRingItem& rItem)
-{
-  size_t nBytes = itemSize(rItem);
-  checkSize(nBytes);
-  
-  memcpy(m_pItem, rItem.getItemPointer(), nBytes);
-}
-/**
- * checkSize
- *    If necessary expand the m_pItem block.
- * @param nBytes -size of the new block.
- */
-void
-EventLogMain::checkSize(size_t nBytes)
-{
-  if (m_nItemSize < nBytes) {
-    m_pItem = static_cast<pRingItemHeader>(realloc(m_pItem, nBytes));
-    m_nItemSize = nBytes;
-  }
-}
 
 /**
  * waitForData
@@ -743,38 +653,11 @@ EventLogMain::checkSize(size_t nBytes)
 void
 EventLogMain::waitForData(size_t nBytes)
 {
-  int sleepUs = 1;
   while (m_pRing->availableData() < nBytes)
     ;
 
 }
-/**
- * writeItem
- *    write a raw ring item.
- *    - The item is in m_pItem
- *    - The destination is m_pOutputter.
- */
-void
-EventLogMain::writeItem(int fd)
-{
-    m_pOutputter->put(m_pItem, m_pItem->s_size);
-    //io::writeData(fd, m_pItem, m_pItem->s_size);
-}
-/**
- *  getFromRing
- *     Get a ring item pointer from the zero copy ring item data source.
- *
- * @param src - reference to zero copy ring item.
- * @return pRingItemHeader
- */
-pRingItemHeader
-EventLogMain::getFromRing(CZCopyRingBuffer& src)
-{
-  uint32_t* pSize = static_cast<uint32_t*>(src.get(sizeof(uint32_t)));
-  pRingItemHeader result = static_cast<pRingItemHeader>(src.get(*pSize));
-  
-  return result;
-}
+
 
 /**
  * writeInterior
@@ -813,6 +696,8 @@ EventLogMain::getFromRing(CZCopyRingBuffer& src)
 void
 EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
 {
+  m_nRunNumber = runNumber;
+  
   int endsSeen(0);
   Chunk nextChunk;
   int segno = 0;
@@ -821,7 +706,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     
     // Get a contigous chunk.
     
-    getChunk(nextChunk);
+    getChunk(fd, nextChunk);
     if(nextChunk.s_nBytes)  {
       writeData(fd, nextChunk.s_pStart, nextChunk.s_nBytes);
       m_pRing->skip(nextChunk.s_nBytes);
@@ -832,7 +717,6 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
         bytesSoFar  = 0;
       }
     }
-    m_nBeginsSeen += nextChunk.s_nBegins;
     endsSeen      += nextChunk.s_nEnds;
     
     // See if we've got a balanced set of begins/ends:
@@ -887,14 +771,14 @@ EventLogMain::waitForLotsOfData()
  *    or if there's a uint32_t ring item size that shows there's not enough
  *    space before the ring top to hold the item.
  *
+ *  @param fd    - File descriptor in case we need to exit.
  *  @param[out] nextChunk - will describe the chunk of data we've gotten.
  */
 void
-EventLogMain::getChunk(Chunk& nextChunk)
+EventLogMain::getChunk(int fd, Chunk& nextChunk)
 {
   nextChunk.s_pStart  = m_pRing->getPointer();
   nextChunk.s_nBytes  = 0;
-  nextChunk.s_nBegins = 0;
   nextChunk.s_nEnds   = 0;
   
   size_t bytesAvail = m_pRing->availableData();
@@ -919,7 +803,15 @@ EventLogMain::getChunk(Chunk& nextChunk)
     if ((h->s_size + nextChunk.s_nBytes) > bytesAvail) return; // no full items left.
     nextChunk.s_nBytes += h->s_size;
     p += h->s_size;
-    if (h->s_type == BEGIN_RUN) nextChunk.s_nBegins++;
+    if (h->s_type == BEGIN_RUN) {
+      m_nBeginsSeen++;
+      if(badBegin(h)) {
+        closeEventSegment(fd);
+        std::cerr << " Begin run changed run number without --combine-runs "
+          << " or too many begin runs for the data source count\n";
+        exit(EXIT_FAILURE);
+      }
+    }
     if (h->s_type == END_RUN)   nextChunk.s_nEnds++;
   }
   
@@ -972,7 +864,15 @@ EventLogMain::writeWrappedItem(int fd, int& ends)
   pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(buffer);
   
   m_pRing->get(buffer, nSize, nSize);
-  if (pH->s_type == BEGIN_RUN) m_nBeginsSeen++;
+  if (pH->s_type == BEGIN_RUN) {
+    m_nBeginsSeen++;
+    if(badBegin(pH)) {
+        closeEventSegment(fd);
+        std::cerr << " Begin run changed run number without --combine-runs "
+          << " or too many begin runs for the data source count\n";
+        exit(EXIT_FAILURE);
+    }
+  }
   if (pH->s_type == END_RUN)   ends++;
   
   writeData(fd, buffer, nSize);
@@ -1043,5 +943,37 @@ EventLogMain::closeEventSegment(int fd)
   off_t fileSize = lseek(fd, 0, SEEK_CUR);  // Tricky way to get the offset.
   ftruncate(fd, fileSize);
   close(fd);
+  
+}
+/**
+ * badBegin
+ *    @param p - pointer to a state transition item with type BEGIN_RUN
+ *    @return bool - true if the begin_run item indicates a  problem.
+ */
+bool
+EventLogMain::badBegin(void* p)
+{
+  pStateChangeItem pItem = static_cast<pStateChangeItem>(p);
+  
+  // If run changes are allowed or we're not exiting on end of run
+  // this is always ok:
+  
+  if (m_fChangeRunOk || (!m_exitOnEndRun)) {
+    return false;
+  }
+
+  // If we've got too many begins that's a problem.  The caller has
+  // already incremented the begin run counter.
+  
+  if (m_nBeginsSeen > m_nSourceCount) return true;
+  
+  // If the run number changed that's also bod:
+  
+  pStateChangeItemBody pBody = (pItem->s_body.u_noBodyHeader.s_mbz) ?
+    &(pItem->s_body.u_hasBodyHeader.s_body) :
+    &(pItem->s_body.u_noBodyHeader.s_body);
+  
+  return (pBody->s_runNumber != m_nRunNumber);
+  
   
 }

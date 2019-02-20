@@ -58,12 +58,12 @@ class EventLogMain
   io::CPagedOutput*  m_pOutputter;
   pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
+  uint32_t          m_nRunNumber;
   
   
   typedef struct _Chunk {
     void*    s_pStart;
     size_t   s_nBytes;
-    unsigned s_nBegins;
     unsigned s_nEnds;
   } Chunk, pChunk;
   
@@ -98,22 +98,18 @@ private:
   size_t itemSize(CRingItem& item) const;
   std::string shaFile(int runNumber) const;
   
-  void writeItem(int fd);   // Write a raw ring item.
-  void getFromRing();                      // Get next item from ring into m_pItem
-  pRingItemHeader getFromRing(CZCopyRingBuffer& src);
-  void copyRingItem(CRingItem& rItem);     // Copy from a CRingItem int m_pItem
-  void checkSize(size_t nBytes);           // expand m_pItem to accomodate nBytes.
   void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.
-  bool isBadItem(int runNumber);
+
 
   void writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar);  
   void waitForLotsOfData(); 
-  void getChunk(Chunk& nextChunk);
+  void getChunk(int fd, Chunk& nextChunk);
   bool nextItemWraps();
   size_t writeWrappedItem(int fd, int& ends);
   void writeData(int fd, void* pData, size_t nBytes);
   void checksumData(void* pData, size_t nBytes);
   void closeEventSegment(int fd);
+  bool badBegin(void* p);
 };
 
 
