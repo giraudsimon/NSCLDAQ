@@ -102,6 +102,7 @@ private:
   uint32_t                m_nSourceId;
   bool                    m_needHeader;
   uint16_t                m_nDefaultSourceId;
+  bool                    m_fHavemore;      // If true readout has more events.
 
 
   // Canonicals:
@@ -151,7 +152,7 @@ public:
   uint32_t getSourceId();
   void triggerFail(std::string msg);
   void syncEndRun(bool pause);
-
+  void haveMore() { m_fHavemore = true; }
 private:
   void readScalers();
   
