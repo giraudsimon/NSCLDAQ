@@ -315,15 +315,6 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 
             // need new data from ddas modules for processing
 
-            // **
-            //nFIFOWordsinModulePrevious.clear();
-            //nFIFOWordsinModulePrevious.resize(NumModules);
-
-            // **
-            //for(int i=0;i<NumModules;i++){
-            //  nFIFOWordsinModulePrevious[i] = nFIFOWordsinModuleCurrentRead[i];
-            //}
-
             nFIFOWordsinModuleCurrentRead.clear();
 
             /* This is a new read, set a processing buffer flag. */
@@ -341,8 +332,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             while(retrigger){
                 if(attempts>0) usleep(100);
                 retrigger = false;
-                //totwords = 0;
-                //nFIFOWordsinModuleCurrentRead.clear();
+
                 /* Loop over modules to determine how many words to read from each module. */
 
                 for(int i=0; i<NumModules;i++) {
@@ -353,24 +343,21 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 
                     /* Check the number of words in the FIFO, it may have changed 
                        since the trigger was issued */
+
                     retval = Pixie16CheckExternalFIFOStatus(&nFIFOWords,ModNum);
                     if(retval < 0) {
                         cout << "Failed to check FIFO status in module " 
                             << ModNum << endl << flush;
                     }
 
-                    //cout << "words in mod " << i << " " << nFIFOWords << " " << nFIFOWords/4. << " attempt " << attempts << endl;
-
                     //in the real world, enforce the requirement that all channels within one module
                     //readout the same event structure or the following code segmenets will fail
+
                     temp = nFIFOWords;
 
                     // logic below no longer required.  Firmware fixed
-                    //nFIFOWords = (unsigned long)(floor(nFIFOWords/4.) * 4);
-
-
-                    //      nFIFOWords = (unsigned long)(floor(nFIFOWords/ModEventLen[ModNum]) * ModEventLen[ModNum]); 
                     //need to retrigger until we have greater than the ceiling number of words in the module
+                    
                     nFIFOWords = (unsigned long)(ceil(nFIFOWords/ModEventLen[ModNum]) * ModEventLen[ModNum]);
                     
 
@@ -462,7 +449,9 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                     //ExtFIFO_Data = (unsigned int *)malloc(sizeof(unsigned int)*nFIFOWords);
 
                     // read data from module
-                    retval = Pixie16ReadDataFromExternalFIFO(/*&CrateData[DataWordsCopied],&temp[DataWordsCopied],*/&ModuleData[i][0] , nFIFOWords, ModNum);
+                    retval = Pixie16ReadDataFromExternalFIFO(
+                        &ModuleData[i][0] , nFIFOWords, ModNum
+                    );
                     if(retval !=0 ) {
                         cout << "Failed to read data from module " << ModNum << endl << flush;
                     }
@@ -477,22 +466,22 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                     double tmp_mintime=DBL_MAX;
                     double tmp_maxtime=0;
                     double tmp_prevtime=0;
-		    int loc_tmp_mintime = 0;
-		    int loc_tmp_maxtime = 0;
-		    int current_lowtime = 0;
-		    int last_lowtime = 0;
+                    int loc_tmp_mintime = 0;
+                    int loc_tmp_maxtime = 0;
+                    int current_lowtime = 0;
+                    int last_lowtime = 0;
                     double tmp_time=0;
                     bool data_needs_sort=false;
                     std::deque<channel*> tmp_deque;
                     // take module data, parse it into individual channel objects, and place channel objects into module deque
                     for(int z=0; z<ModuleData[i].size(); z=z+ModEventLen[i]){
-		      current_lowtime = ModuleData[i][z+2] & LOWER16BITMASK;
-		      if( current_lowtime >= last_lowtime){
-			last_lowtime = current_lowtime;
-		      }
-		      else{
-			std::cout << "Low times out of order " << current_lowtime << " " << last_lowtime << std::endl;
-		      }
+                        current_lowtime = ModuleData[i][z+2] & LOWER16BITMASK;
+                        if( current_lowtime >= last_lowtime){
+                            last_lowtime = current_lowtime;
+                        }
+                        else    {
+                            std::cout << "Low times out of order " << current_lowtime << " " << last_lowtime << std::endl;
+                        }
 			
                         channel *tempdchan = new channel();
                         tempdchan->data.insert(tempdchan->data.end(),ModuleData[i].begin()+z,ModuleData[i].begin()+z+(uint32_t(ModEventLen[i])));
@@ -506,13 +495,13 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                         // while we are loading the data, keep track of some simple
                         // information about its time to use later.
                         if (tmp_time > tmp_maxtime) {
-			  tmp_maxtime = tmp_time;
-			  loc_tmp_maxtime = z;
-			}
+                            tmp_maxtime = tmp_time;
+                            loc_tmp_maxtime = z;
+                        }
                         if (tmp_time < tmp_mintime){
-			  tmp_mintime = tmp_time;
-			  loc_tmp_mintime = z;
-			}
+                            tmp_mintime = tmp_time;
+                            loc_tmp_mintime = z;
+                        }
                         if (z==0) {
                              tmp_prevtime = tmp_time;
                         } else {
@@ -532,11 +521,11 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                         rv = tempdchan->Validate(ModEventLen[i]);
                         if(rv != 0) cout << "Data or setting appear to be corrupt - Module " << i << " code " << rv << endl;
 #ifdef PRINTQUEINFO
-			int templow = tempdchan->data[2] & LOWER16BITMASK;
-                        ofile << "mod=" << std::setw(2) << i 
-			      << " chan=" << std::setw(3) << tempdchan->GetChannel() 
-			      << " tstamp=" << tempdchan->GetTime() << " low " << templow
-			      << " high " << tempdchan->data[1] << std::endl;
+                        int templow = tempdchan->data[2] & LOWER16BITMASK;
+                                    ofile << "mod=" << std::setw(2) << i 
+                              << " chan=" << std::setw(3) << tempdchan->GetChannel() 
+                              << " tstamp=" << tempdchan->GetTime() << " low " << templow
+                              << " high " << tempdchan->data[1] << std::endl;
 #endif
 			
 			//                        ModuleDeque[i].push_back(tempdchan);
@@ -632,29 +621,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                 // Clear out the temporary storage
                 ModuleData[i].clear();
 
-		// removed snl
-                // //temporary check data from one deque to ensure it is in time order
-                // double curtime = 0;
-                // double oldtime = 0;
-                // for(int z=0;z<ModuleDeque[i].size();z++){
-		//   if(ModuleDeque[i][z]->time < 25) std::cout << "small time in que" << std::endl;
-                //     curtime = ModuleDeque[i][z]->time;  
-                //     //cout << "times " << curtime << " " << oldtime << endl;
-                //     if(curtime >= oldtime){
-                //         oldtime = curtime;
-                //     }
-                //     else{
-                //         cout << "Time out of order: mod=" << i << " oldtime=" << oldtime << " curtime=" << curtime <<endl;
-                //         exit(1);
-                //     }
-                // }
-		// end remove snl
-
-
-                //       if(ModuleDeque[i].size()>0) cout << "done with read " << i << " " << ModuleDeque[i].size() 
-                // 				       << " first time " << FirstTimeinModuleRead[i] 
-                // 				       << " current time " << CurrentTimeinModuleRead[i] << endl;
-
+		
 
             } // Finished reading data out of modules
 
@@ -667,20 +634,6 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             }
             ofile << std::endl;
 #endif
-
-
-            //     for(int z=0;z<ModuleDequeTemp.size();z++){
-            //       for(int k=0;k<ModuleDequeTemp[z]->data.size();k++){
-            // 	//cout << ModuleDequeTemp[z]->data[z] << " ";
-            //       }
-            //       //cout << endl;
-            //       delete (ModuleDequeTemp[z]);
-            //     }
-            //     ModuleDequeTemp.clear();
-
-            //temp.clear();
-
-
             int j = 0;
 
             // determine to what time the data should be extracted from the deques.
@@ -726,18 +679,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                     cout << " first times " << FirstTimeinModuleRead[z] << " current times " << CurrentTimeinModuleRead[z] << endl;
                 }
             }
-            //            if(StopTime < globaltime){
-            //                cout << "Determine a really low StopTime ..."
-            //                    <<"\nstop" << StopTime
-            //                    << " glbl=" << globaltime
-            //                    << " min=" << mintime 
-            //                    << " max=" << maxtime << endl;	 
-            ////                cout << "Determine a really low StopTime " << StopTime << " " << globaltime << " " << mintime << " " <<maxtime << endl;	 
-            //                for(int z=0;z<NumModules;z++){
-            //                    cout << nFIFOWordsinModuleCurrentRead[z] << " first times " << FirstTimeinModuleRead[z] << " current times " << CurrentTimeinModuleRead[z] << " deque[" << z << "].size=" << ModuleDeque[z].size() << endl;
-            //                }
-            //            }
-
+            
 #ifdef PRINTQUEINFO
             //            cout << "StopTime " << StopTime << endl;
             ofile << "StopTime = " << StopTime << endl;
@@ -746,12 +688,6 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             } // End pixie16 module readout (i.e. m_processing block is finished)
 
 
-            ///////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////
-            ///////////////////////////////////////////////////////////////////
             //////////////////////////////////////////////////////////////////////
 
             channellength = SelectivelyOutputData(rBuffer,maxwords);
@@ -1006,11 +942,11 @@ size_t CMyEventSegment::SelectivelyOutputData(void* rBuffer, size_t maxwords)
             //   // Copy the current channel information into the spectrodaq buffer
             fragcount++;
 
-	    // Insert the time stamp into the body header.  Time stamp is in nanoseconds
-	    setTimestamp(ModuleDeque[ModuleDequeLowTime][0]->GetTime());
-
-	    // insert the identifying word for this module into data stream first
-	    *r++ = ModuleRevBitMSPSWord[ModuleDequeLowTime];
+            // Insert the time stamp into the body header.  Time stamp is in nanoseconds
+            setTimestamp(ModuleDeque[ModuleDequeLowTime][0]->GetTime());
+    
+            // insert the identifying word for this module into data stream first
+            *r++ = ModuleRevBitMSPSWord[ModuleDequeLowTime];
             for(int i=0; i<ModuleDeque[ModuleDequeLowTime][0]->data.size();i++){
                 *r++ = ModuleDeque[ModuleDequeLowTime][0]->data[i];
                 nFIFOWordsinModuleCurrentRead[ModuleDequeLowTime]--;
