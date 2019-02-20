@@ -336,31 +336,21 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
                 retrigger = false;
 
                 /* Loop over modules to determine how many words to read from each module. */
+                // Note that the trigger already knows how many words each module has.
 
+                const unsigned int* pWords = mytrigger->getWordsInModules();
                 for(int i=0; i<NumModules;i++) {
-
+                    
                     int ModNum = i;
-
-                    int temp = 0;
-
-                    /* Check the number of words in the FIFO, it may have changed 
-                       since the trigger was issued */
-
-                    retval = Pixie16CheckExternalFIFOStatus(&nFIFOWords,ModNum);
-                    if(retval < 0) {
-                        cout << "Failed to check FIFO status in module " 
-                            << ModNum << endl << flush;
-                    }
-
                     //in the real world, enforce the requirement that all channels within one module
                     //readout the same event structure or the following code segmenets will fail
 
-                    temp = nFIFOWords;
+                    unsigned int temp = pWords[i];
 
                     // logic below no longer required.  Firmware fixed
                     //need to retrigger until we have greater than the ceiling number of words in the module
                     
-                    nFIFOWords = (unsigned long)(ceil(nFIFOWords/ModEventLen[ModNum]) * ModEventLen[ModNum]);
+                    nFIFOWords = (unsigned long)(ceil(temp/ModEventLen[ModNum]) * ModEventLen[ModNum]);
                     
 
                     if(attempts == 0){
@@ -408,7 +398,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             // to read nothing from the modules... Simply exit.
             if (totwords == 0) {
                 // wait a little time
-                usleep(100);
+                usleep(100);                   // Is this needed? it adds dead-time.
                 m_processing=false;
                 mytrigger->Reset();    
                 reject();
