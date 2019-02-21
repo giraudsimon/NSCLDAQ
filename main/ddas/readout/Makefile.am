@@ -19,7 +19,8 @@ SHAREDIR=@prefix@/share/ddasreadout
 DDASReadout_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBusy.cpp CMyScaler.cpp CMyEndCommand.cpp \
 	Skeleton.h CMyEventSegment.h CMyTrigger.h CMyBusy.h CMyScaler.h \
 	CMyEndCommand.h CSyncCommand.cpp CSyncCommand.h CBootCommand.cpp \
-	CBootCommand.h RawChannel.cpp RawChannel.h
+	CBootCommand.h RawChannel.cpp RawChannel.h 			\
+	ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h
 
 DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
