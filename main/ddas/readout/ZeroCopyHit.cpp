@@ -24,7 +24,14 @@
 #include "BufferArena.h"
 
 namespace DDASReadout {
-   
+/**
+ *  constructor (default)
+ *    Creates a hit.
+ *    The hit must be initialized with setHit before being accessed.
+ */
+ZeroCopyHit::ZeroCopyHit() :
+    m_pBuffer(nullptr), m_pArena(nullptr)
+{}
 /**
  * constructor
  *   Stores stuff away and increments the refrence count on the underlying buffer:
@@ -50,6 +57,45 @@ ZeroCopyHit::ZeroCopyHit(
 ZeroCopyHit::~ZeroCopyHit()
 {
     dereference();
+}
+/**
+ * setHit
+ *     Sets a new hit.  If the hit is associated with a zero copy buffer,
+ *     the reference is released.
+ * @param nWords - number of words in the new hit.
+ * @param pHitData  - Pointer to the hit data.
+ * @param pBuffer  - Buffer from whence the hit data came.
+ * @param pArena   - Arena to which the buffer is returned.
+ */
+void
+ZeroCopyHit::setHit(
+    size_t nWords, void* pHitData, ReferenceCountedBuffer* pBuffer,
+    BufferArena* pArena
+)
+{
+    if (m_pBuffer) dereference();
+    
+    setData(nWords, pHitData);
+    m_pBuffer = pBuffer;
+    m_pArena = pArena;
+    reference();
+}
+/**
+ * freeHit
+ *    If this hit is associated with data, disassociates.
+ */
+void
+ZeroCopyHit::freeHit()
+{
+    if (m_pArena && m_pBuffer) {
+        dereference();             // Returns buffer to arena if appropriate
+        
+        m_pArena = nullptr;
+        m_pBuffer = nullptr;
+        s_data    = nullptr;
+        s_channelLength = 0;
+        
+    }
 }
 
 /**
@@ -103,6 +149,8 @@ ZeroCopyHit::dereference()
     if(!m_pBuffer->isReferenced()) {
         m_pArena->free(m_pBuffer);
     }
+    m_pBuffer = nullptr;
+    m_pArena  = nullptr;
 }
 
 }                                              // namespace

@@ -48,6 +48,7 @@ namespace DDASReadout {
         RawChannel(size_t nWords, void* pZcopyData);
         virtual ~RawChannel();
         int SetTime();
+        int SetLength();
         int SetTime(double clockcal);
         int SetChannel();
         int Validate(int expecting);

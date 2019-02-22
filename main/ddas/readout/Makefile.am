@@ -21,7 +21,8 @@ DDASReadout_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBusy.cpp 
 	CMyEndCommand.h CSyncCommand.cpp CSyncCommand.h CBootCommand.cpp \
 	CBootCommand.h RawChannel.cpp RawChannel.h 			\
 	ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h 		\
-	BufferArena.cpp BufferArena.h ZeroCopyHit.cpp ZeroCopyHit.h
+	BufferArena.cpp BufferArena.h ZeroCopyHit.cpp ZeroCopyHit.h	\
+	ModuleReader.cpp ModuleReader.h
 
 
 DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \

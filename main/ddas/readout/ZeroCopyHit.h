@@ -53,6 +53,7 @@ private:
     ReferenceCountedBuffer*    m_pBuffer;   // The hit lives in here.
     BufferArena*               m_pArena;    // The buffer came from this arena.
 public:
+    ZeroCopyHit();
     ZeroCopyHit(
         size_t nWords, void* pHitData, ReferenceCountedBuffer* pBuffer,
         BufferArena* pArena
@@ -60,6 +61,14 @@ public:
     ZeroCopyHit(const ZeroCopyHit& rhs);
     ZeroCopyHit& operator=(const ZeroCopyHit& rhs);
     virtual ~ZeroCopyHit();
+    
+    //  Support for recycling ZeroCopyHhits.
+    
+    void setHit(
+        size_t nWords, void* pHitData, ReferenceCountedBuffer* pBuffer,
+        BufferArena* pArena
+    );                        
+    void freeHit();           
 private:
     void reference();
     void dereference();

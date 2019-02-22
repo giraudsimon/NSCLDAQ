@@ -129,6 +129,8 @@ RawChannel::SetTime(double ticksPerNs)
         return 1;
     }
 }
+
+
 /**
  * SetChannel
  *    Sets the correct channel value from the data.
