@@ -60,8 +60,9 @@ install-exec-hook:
 
 EXTRA_DIST=crate_1 envset README
 
-noinst_PROGRAMS=unittests
-unittests_SOURCES=TestRunner.cpp rawchtests.cpp
+noinst_PROGRAMS=unittests 
+unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
+	RawChannel.cpp RawChannel.h
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 

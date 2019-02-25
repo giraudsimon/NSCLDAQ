@@ -80,7 +80,7 @@ s_time(0.0), s_chanid(0), s_ownData(true), s_ownDataSize(nWords),
  *        buserrors will happen in the best case.
  */
 RawChannel::RawChannel(size_t nWords, void* pZCopyData) :
-s_time(0.0), s_chanid(0), s_ownData(true), s_ownDataSize(nWords),
+s_time(0.0), s_chanid(0), s_ownData(false), s_ownDataSize(nWords),
     s_channelLength(nWords), s_data(static_cast<uint32_t*>(pZCopyData))
 {}
 /**
@@ -105,8 +105,8 @@ RawChannel::SetTime()
 {
     if (s_channelLength >=4) {
         uint64_t t = s_data[2] & LOWER16BITMASK;
-        t         << 32;
-        t         |= s_data[1];
+        t          = t << 32;
+        t         |= (s_data[1]);
         s_time = t;
         return 0;
     } else {
@@ -129,7 +129,15 @@ RawChannel::SetTime(double ticksPerNs)
         return 1;
     }
 }
-
+/**
+ * SetLength
+ *    Set the correct length for the data.
+ */
+int
+RawChannel::SetLength()
+{
+    s_channelLength = channelLength(s_data);
+}
 
 /**
  * SetChannel
