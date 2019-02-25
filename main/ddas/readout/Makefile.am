@@ -64,7 +64,8 @@ noinst_PROGRAMS=unittests
 unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
 	RawChannel.cpp RawChannel.h		\
 	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h \
-	arenatests.cpp BufferArena.cpp BufferArena.h
+	arenatests.cpp BufferArena.cpp BufferArena.h			\
+	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 
