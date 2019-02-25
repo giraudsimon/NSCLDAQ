@@ -40,6 +40,7 @@ class CHitManager {
 private:
     double                               m_emitWindow;
     std::deque<ModuleReader::HitInfo>    m_sortedHits;
+    bool                                 m_flushing;
 public:
     CHitManager(double window);
     ~CHitManager();
@@ -49,6 +50,7 @@ public:
     ModuleReader::HitInfo getHit();
     
     void clear();                 // Clear/release all stored hits.
+    void flushing(bool amI) { m_flushing = amI; }
 private:
     
     // Sorting and merging support.

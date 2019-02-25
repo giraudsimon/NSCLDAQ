@@ -98,8 +98,8 @@ CHitManager::haveHit() const
     // there's nothing to output:
     
     if (m_sortedHits.size() > 1) {
-        return (timeStamp(m_sortedHits.back()) -
-                timeStamp(m_sortedHits.front())) > m_emitWindow;
+        return (m_flushing || (timeStamp(m_sortedHits.back()) -
+                timeStamp(m_sortedHits.front())) > m_emitWindow);
     } else {
         return false;
     }
