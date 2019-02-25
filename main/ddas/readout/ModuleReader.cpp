@@ -131,10 +131,10 @@ ModuleReader::freeHit(HitInfo& hit)
  *       the raw hit information.
  */
 void
-ModuleReader::parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t nUsedBytes)
+ModuleReader::parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t nUsedWords)
 {
     uint32_t* pData = (uint32_t*)(pBuffer);
-    while(nUsedBytes < 0) {
+    while(nUsedWords > 0) {
         uint32_t size = RawChannel::channelLength(pData);
         ZeroCopyHit* pHit = allocateHit();
         pHit->setHit(size, pData, &pBuffer, &m_freeBuffers);
@@ -151,7 +151,7 @@ ModuleReader::parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t n
         hits.push_back({this, pHit});
         
         pData += size;
-        nUsedBytes -= size;
+        nUsedWords -= size;
         
     }
 }
