@@ -56,7 +56,9 @@ ZeroCopyHit::ZeroCopyHit(
  */
 ZeroCopyHit::~ZeroCopyHit()
 {
-    dereference();
+    if(m_pBuffer && m_pArena) {
+        dereference();
+    }
 }
 /**
  * setHit
