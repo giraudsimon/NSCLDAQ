@@ -62,7 +62,8 @@ EXTRA_DIST=crate_1 envset README
 
 noinst_PROGRAMS=unittests 
 unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
-	RawChannel.cpp RawChannel.h
+	RawChannel.cpp RawChannel.h		\
+	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 
