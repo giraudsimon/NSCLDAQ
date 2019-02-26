@@ -94,6 +94,11 @@ bool CMyTrigger::operator()()
                 ModNum = i;
                 nFIFOWords = 0;
                 retval = Pixie_Read_ExtFIFOStatus(&nFIFOWords,ModNum);
+                if (retval < 0) {
+                  std::cerr << "Failed to read ExtFiFo status for module: "
+                    << ModNum;
+                    nFIFOWords = 0;                         // For safety.
+                }
                 m_wordsInEachModule[i] = nFIFOWords;       // Save words each module has.
                 
                 /* Trigger a read if the number of words in the external FIFO of 

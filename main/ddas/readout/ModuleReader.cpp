@@ -23,9 +23,10 @@
 #include "ZeroCopyHit.h"
 #include <sstream>
 #include <stdexcept>
-
+#include <iostream>
 #include <pixie16app_export.h>
 #include <pixie16sys_export.h>
+#include <string.h>
 
 namespace DDASReadout {
     
@@ -39,7 +40,10 @@ namespace DDASReadout {
  */
 ModuleReader::ModuleReader(unsigned module, unsigned evtlen, double timeMultiplier) :
     m_nModuleNumber(module), m_nExpectedEventLength(evtlen), m_tsMultiplier(timeMultiplier)
-{}
+{
+    reset();
+    
+}
 
 /**
  * destructor
@@ -88,7 +92,9 @@ ModuleReader::read(HitList& hits, size_t nWords)
             ) != 0) {
             std::stringstream msg;
             msg << "Error reading module " << m_nModuleNumber << " FIFO";
-            throw std::runtime_error(msg.str());
+            std::cerr << msg << std::endl;
+            std::cerr << "Acting as if there are no words to read\n";
+            return 0;
         }
         parseHits(hits, *pBuffer, nWords);           // Zero copy process hits.
     }
@@ -106,6 +112,15 @@ ModuleReader::freeHit(HitInfo& hit)
 {
     hit.second->freeHit();                       // Prepare for re-use.
     hit.first->m_freeHits.push_back(hit.second);
+}
+/**
+ * reset
+ *    reset module last timestamps.
+ */
+void
+ModuleReader::reset()
+{
+    memset(m_lastStamps, 0, 16*sizeof(double));  // start with stamps of zero.    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -138,6 +153,7 @@ ModuleReader::parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t n
         uint32_t size = RawChannel::channelLength(pData);
         ZeroCopyHit* pHit = allocateHit();
         pHit->setHit(size, pData, &pBuffer, &m_freeBuffers);
+        HitInfo hit = std::make_pair(this, pHit);
         if(pHit->Validate(m_nExpectedEventLength)) {
             std::stringstream s;
             s << "Event length inconsistent with event length in event length. \n";
@@ -145,10 +161,22 @@ ModuleReader::parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t n
               << " module number: " << m_nModuleNumber;
             throw std::length_error(s.str());
         }
-        pHit->SetTime(m_tsMultiplier);
-        pHit->SetChannel();
-        
-        hits.push_back({this, pHit});
+        if(pHit->SetTime(m_tsMultiplier)) {
+            std::cerr << "Warning Hit from module" << m_nModuleNumber
+                << " does not contain a full header : tossing the  hit\n";
+            
+            freeHit(hit);
+            continue;
+        }
+        if(pHit->SetChannel()) {
+            std::cerr << "Warning Hit from module" << m_nModuleNumber
+                << " does not contain a full header : tossing the  hit\n";
+                
+            freeHit(hit);
+            continue;
+        }
+        checkOrder(pHit);
+        hits.push_back(hit);
         
         pData += size;
         nUsedWords -= size;
@@ -175,5 +203,33 @@ ModuleReader::allocateHit()
     
     return pResult;
 }
-
+/**
+ * checkOrder
+ *    Given a parsed hit, determine if it has a good timestamp and output
+ *    an error message if not:
+ *    -  The timestamp is bad if it's less than the last one from the channel
+ *       since within a channel times monotonically increase.
+ *    - The timestamp is bad (different message) if it's the same as the
+ *      last timestamp from that channel.
+ *
+ * @param pHit - Pointer to the hit.
+ */
+void ModuleReader::checkOrder(ZeroCopyHit* pHit)
+{
+    double newTime = pHit->s_time;
+    int    ch      = pHit->s_chanid;
+    double oldTime = m_lastStamps[ch];
+    m_lastStamps[ch] = newTime;
+    
+    if (newTime == oldTime) {
+        std::cerr << "**Warning module " << m_nModuleNumber <<
+            " channel " << ch << " Time is not incresing at timestamp " << newTime
+            << std::endl;
+    }
+    if (newTime < oldTime) {
+        std::cerr << "**Error: module " << m_nModuleNumber <<
+            " channel " << ch << " time went backwards!!! Previous timestamp: " <<
+            oldTime << " current timestamp: " << newTime << std::endl;
+    }
+}
 }                             // namespace.

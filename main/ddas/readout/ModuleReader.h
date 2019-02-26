@@ -24,7 +24,7 @@
 
 #include "BufferArena.h"
 #include <deque>
-
+#include <stdint.h>
 
 
 namespace DDASReadout {
@@ -54,6 +54,7 @@ private:
     double          m_tsMultiplier;             // raw timestamps -> ns multiplier
     BufferArena     m_freeBuffers;              // Storage comes from here.
     HitPool         m_freeHits;
+    double          m_lastStamps[16];           // last timestamps for each channel.
     
     // canonicals.
     
@@ -67,9 +68,11 @@ public:
     size_t read(HitList& hits, size_t nWords);
     static void freeHit(HitInfo& hit);
     unsigned module() const { return m_nModuleNumber; }
+    void reset();
 private:
     void parseHits(HitList& hits, ReferenceCountedBuffer& pBuffer, size_t nUsedWords);
     ZeroCopyHit* allocateHit();
+    void checkOrder(ZeroCopyHit* pHit);
 };
  
 }                            // Namespace.

@@ -262,6 +262,9 @@ void CMyEventSegment::onEnd(CExperiment* pExperiment)
         m_pExperiment->ReadEvent();      // read will request retrigger till done.
     }
     m_sorter->flushing(false);
+    for (int i =0; i < m_readers.size(); i++) {
+        m_readers[i]->reset();                 // Clear last known channel timestamps.
+    }
 
 }
 
