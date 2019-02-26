@@ -35,7 +35,7 @@ namespace DDASReadout {
  *                   ns.
  */
 CHitManager::CHitManager(double window) :
-    m_emitWindow(window * 1.0e9)
+    m_emitWindow(window * 1.0e9), m_flushing(false)
 {}
 /**
  *  destructor
@@ -95,12 +95,15 @@ bool
 CHitManager::haveHit() const
 {
     // If there are not at least two hits we can't check the timewindow so
-    // there's nothing to output:
+    // there's nothing to output... unless we're flushing.
+    
     
     if (m_sortedHits.size() > 1) {
         return (m_flushing || (timeStamp(m_sortedHits.back()) -
-                timeStamp(m_sortedHits.front())) > m_emitWindow);
-    } else {
+                timeStamp(m_sortedHits.front()) > m_emitWindow));
+    } else if (m_flushing && m_sortedHits.size()) {
+        return true;                       // One hit only....
+    } else  {
         return false;
     }
 }
@@ -162,9 +165,10 @@ CHitManager::clear()
  *                          by this method.
  * @note - this method assumes that on input at least one of the
  *         newHits deques has at least one element.
- * @note -currently we use an std::map for the minheap... that may require
+ * @note -currently we use an std::multimap for the minheap... that may require
  *        costly new/free's.  If that turns out to be the case, we can
  *        just do std::sort's on an std::vector of std::pair<double, dequeue*>
+ *        Note that multimap must be used because there may be duplicate timestamps.
  */
 void
 CHitManager::merge(
@@ -175,16 +179,20 @@ CHitManager::merge(
     // The minheap will be a tree that's keyed by the timestamps of the hits
     // at the front of the queues to which element bodies point.
     
-    std::map<double, std::deque<ModuleReader::HitInfo>*> minheap;
+    std::multimap<double, std::deque<ModuleReader::HitInfo>*> minheap;
     
     // Stock the minheap initially:
     
     for (int i = 0; i < newHits.size(); i++) {
         if (newHits[i].size() > 0) {
-            minheap[timeStamp(newHits[i].front())] = &newHits[i];
+            minheap.emplace(std::make_pair(timeStamp(newHits[i].front()), &(newHits[i])));
         }
     }
     // Here's the main part of the minheap merge:
+    
+    // If the minheap is empty we got handed a vector of empty deques:
+    
+    if (minheap.empty()) return;
     
     while (minheap.size() > 1) {
         auto earliest = minheap.begin();          // Smallest timestamp.
@@ -196,11 +204,11 @@ CHitManager::merge(
         // If pQ has more hits enter it back in the map.
         
         if (!pQ->empty()) {
-            minheap[timeStamp(pQ->front())] = pQ;
+            minheap.emplace(std::make_pair(timeStamp(pQ->front()), pQ));
         }
         
     }
-    // At this point, the map has only one element.  Put all of the remaining
+    // At this point, the map has only one or element.  Put all of the remaining
     // items in that queue into the result:
     
     std::deque<ModuleReader::HitInfo>& lastQ(*minheap.begin()->second);
@@ -235,6 +243,10 @@ CHitManager::merge(
     std::deque<ModuleReader::HitInfo>& newHits
 )
 {
+    // case 0... if there are no new hits do nothing:
+    
+    if (newHits.empty()) return;
+    
     // case 1... the result is empty:
     
     if (result.empty()) {
@@ -244,7 +256,7 @@ CHitManager::merge(
     // Case 2... the back of the result has a timestamp < front of newhits:
     //           append newHits to result.
     if (lessThan(result.back(), newHits.front())) {
-        std::copy(newHits.begin(), newHits.end(), result.end());
+        result.insert(result.end(), newHits.begin(), newHits.end());
         return;
     }
     // Case 3 .. we need to work by making a new deque of the
@@ -264,7 +276,7 @@ CHitManager::merge(
     std::merge(
         tempQueue.begin(), tempQueue.end(),
         newHits.begin(), newHits.end(),
-        result.end(),
+        std::back_inserter(result),
         lessThan
     );
 }

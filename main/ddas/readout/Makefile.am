@@ -66,7 +66,8 @@ unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
 	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h \
 	arenatests.cpp BufferArena.cpp BufferArena.h			\
 	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h			\
-	mreadertests.cpp ModuleReader.cpp ModuleReader.h 
+	mreadertests.cpp ModuleReader.cpp ModuleReader.h 		\
+	hmtests.cpp CHitManager.cpp CHitManager.h
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS)
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 
