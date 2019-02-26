@@ -11,6 +11,8 @@ class MReaderTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(MReaderTest);
   CPPUNIT_TEST(construct);
   CPPUNIT_TEST(read_1);
+  CPPUNIT_TEST(read_2);
+  CPPUNIT_TEST(module);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -27,6 +29,8 @@ public:
 protected:
   void construct();
   void read_1();
+  void read_2();
+  void module();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(MReaderTest);
@@ -35,6 +39,7 @@ void MReaderTest::construct() {
   EQ(unsigned(1), m_pTestObj->module());
 }
 
+// Single hit
 void MReaderTest::read_1()
 {
   DDASReadout::ModuleReader::HitList hits;
@@ -51,6 +56,26 @@ void MReaderTest::read_1()
   DDASReadout::ModuleReader::freeHit(hit);
 }
 
+// several hits:
+
+void MReaderTest::read_2()
+{
+  DDASReadout::ModuleReader::HitList hits;
+  m_pTestObj->read(hits, 4*100);           // 100 hits.
+  EQ(size_t(100), hits.size());
+  double tstamp(0.0);                       // Note the calibration is 10.0ns/tick
+  for(auto p = hits.begin(); p != hits.end(); p++, tstamp += 10.0) {
+    EQ(m_pTestObj, p->first);
+    EQ(2, p->second->s_chanid);
+    EQ(tstamp, p->second->s_time);
+    EQ(4, p->second->s_channelLength);
+    DDASReadout::ModuleReader::freeHit(*p);
+  }
+}
+void MReaderTest::module()
+{
+  EQ(1U, m_pTestObj->module());
+}
 // Make a hit:
 
 unsigned long* makeHit(
