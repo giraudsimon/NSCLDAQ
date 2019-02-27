@@ -85,18 +85,18 @@ size_t
 ModuleReader::read(HitList& hits, size_t nWords)
 {
     // Make nWords a multiple of m_nExpectedEventLength.
-    
+
+    int readstat;
     unsigned remainder = nWords % m_nExpectedEventLength;;
     nWords   = nWords - remainder;
     if (nWords > 0) {
         ReferenceCountedBuffer* pBuffer =
             m_freeBuffers.allocate(nWords*sizeof(uint32_t));
-        if (Pixie16ReadDataFromExternalFIFO(
+        if (readstat = Pixie16ReadDataFromExternalFIFO(
                 static_cast<uint*>(pBuffer->s_pData), nWords, m_nModuleNumber
             ) != 0) {
-            std::stringstream msg;
-            msg << "Error reading module " << m_nModuleNumber << " FIFO";
-            std::cerr << msg << std::endl;
+	    std::cerr << "Error reading module " << m_nModuleNumber << " FIFO\n";
+	    std::cerr << " Status: " << readstat << std::endl;
             std::cerr << "Acting as if there are no words to read\n";
             return 0;
         }
