@@ -20,7 +20,7 @@ private:
   DDASReadout::ModuleReader* m_pTestObj;
 public:
   void setUp() {
-    m_pTestObj = new DDASReadout::ModuleReader(1, 4, 10.0);
+    m_pTestObj = new DDASReadout::ModuleReader(1, 4,0x1234, 10.0);
   }
   void tearDown() {
     delete m_pTestObj;

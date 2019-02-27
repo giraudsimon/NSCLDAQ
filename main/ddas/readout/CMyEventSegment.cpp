@@ -109,7 +109,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         
         m_readers.push_back(
             new DDASReadout::ModuleReader(
-                k, modEvtLengths[k],  ModClockCal[k]
+                k, modEvtLengths[k],  ModClockCal[k], ModuleRevBitMSPSWord[k]
             )
         );
         cout << " Reader created\n";
@@ -351,12 +351,15 @@ CMyEventSegment::emitHit(void* pBuffer)
         auto hitInfo = m_sorter->getHit();
         auto& hit(hitInfo.second);
         
+        uint32_t* pWords = static_cast<uint32_t*>(pBuffer);
+        *pWords++ = hitInfo.first->m_moduleTypeWord;
+        
         // Put the channel data in the buffer and set the timestamp:
         size_t nBytes = hit->s_channelLength * sizeof(uint32_t);
-        memcpy(pBuffer, hit->s_data, nBytes);
+        memcpy(pWords, hit->s_data, nBytes);
         setTimestamp(uint64_t(hit->s_time));
         
         DDASReadout::ModuleReader::freeHit(hitInfo);   // Return hit storage.
         
-        return nBytes/sizeof(uint16_t); 
+        return nBytes/sizeof(uint16_t) + sizeof(uint32_t); 
 }

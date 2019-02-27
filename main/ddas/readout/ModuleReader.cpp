@@ -36,10 +36,14 @@ namespace DDASReadout {
  *
  *  @param module   - module number (needed for the read).
  *  @param evtlen   - Expected event length.
- *  @param timeMultiplier - Time calibration multiplier
+ *  @param moduleType -the module type word.
+ *  @param timeMultiplier - Time calibration multiplier defaults to 1.0
  */
-ModuleReader::ModuleReader(unsigned module, unsigned evtlen, double timeMultiplier) :
-    m_nModuleNumber(module), m_nExpectedEventLength(evtlen), m_tsMultiplier(timeMultiplier)
+ModuleReader::ModuleReader(
+    unsigned module, unsigned evtlen, uint32_t moduleType, double timeMultiplier
+) :
+    m_nModuleNumber(module), m_nExpectedEventLength(evtlen),
+    m_tsMultiplier(timeMultiplier), m_moduleTypeWord(moduleType)
 {
     reset();
     

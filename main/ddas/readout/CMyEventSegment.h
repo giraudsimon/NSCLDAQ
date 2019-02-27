@@ -75,6 +75,7 @@ public:
     void boot(DAQ::DDAS::SystemBooter::BootType = DAQ::DDAS::SystemBooter::FullBoot);                   //!< load fimrware and start boards.
 
 private:
-    size_t emitHit(void* pBuffer);    
+    size_t emitHit(void* pBuffer);
+    
 };
 #endif

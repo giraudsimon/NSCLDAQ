@@ -55,11 +55,15 @@ private:
     BufferArena     m_freeBuffers;              // Storage comes from here.
     HitPool         m_freeHits;
     double          m_lastStamps[16];           // last timestamps for each channel.
-    
+public:
+    uint32_t        m_moduleTypeWord;
     // canonicals.
     
 public:
-    ModuleReader(unsigned module, unsigned evtlen, double timeMultiplier = 1.0);
+    ModuleReader(
+        unsigned module, unsigned evtlen, uint32_t moduleType,
+        double timeMultiplier = 1.0
+    );
     virtual ~ModuleReader();
 private:
     ModuleReader(const ModuleReader& rhs);
