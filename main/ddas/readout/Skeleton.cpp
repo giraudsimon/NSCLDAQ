@@ -154,6 +154,20 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
     std::cout << "The new event buffer size will be: " << newSize << std::endl;
     pExperiment->setBufferSize(newSize);
   }
+
+
+  // We have to register our commands here because they depend on our event segment and
+  // SetupReadout is called _after_ addCommands.
+
+  CTCLInterpreter* pInterp = gpTCLApplication->getInterpreter();
+  CRunControlPackage* pRctl = CRunControlPackage::getInstance(*pInterp);
+  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment);
+  pRctl->addCommand(pMyEnd);
+  
+  // Add the ddas_sync command
+  
+  CSyncCommand* pSyncCommand = new CSyncCommand(*pInterp, myeventsegment);
+  CBootCommand* pBootCommand = new CBootCommand(*pInterp, "ddas_boot", myeventsegment);  
   
 }
 
@@ -219,17 +233,6 @@ Skeleton::addCommands(CTCLInterpreter* pInterp)
 {
   CReadoutMain::addCommands(pInterp); // Add standard commands.
 
-  //CTCLInterpreter& rInterp(rStartup.Interp());
-  //CTCLInterpreter* pInterp = rStartup.getInterpreter();
-
-  CRunControlPackage* pRctl = CRunControlPackage::getInstance(*pInterp);
-  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment);
-  pRctl->addCommand(pMyEnd);
-  
-  // Add the ddas_sync command
-
-  CSyncCommand* pSyncCommand = new CSyncCommand(*pInterp, myeventsegment);
-  CBootCommand* pBootCommand = new CBootCommand(*pInterp, "ddas_boot", myeventsegment);
 }
 
 /*!
