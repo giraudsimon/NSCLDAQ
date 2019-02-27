@@ -109,7 +109,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         
         m_readers.push_back(
             new DDASReadout::ModuleReader(
-                k, modEvtLengths[k],  ModClockCal[k], ModuleRevBitMSPSWord[k]
+	      k, modEvtLengths[k],  ModuleRevBitMSPSWord[k], ModClockCal[k]
             )
         );
         cout << " Reader created\n";
@@ -134,7 +134,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     
     uint64_t time_buffer = 10000000000;
     
-    m_sorter = new DDASReadout::CHitManager(time_buffer);
+    m_sorter = new DDASReadout::CHitManager(10.0);         // bit kludgy for now.
 }
 
 CMyEventSegment::~CMyEventSegment()
