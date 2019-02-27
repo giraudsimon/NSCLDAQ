@@ -161,7 +161,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
 
   CTCLInterpreter* pInterp = gpTCLApplication->getInterpreter();
   CRunControlPackage* pRctl = CRunControlPackage::getInstance(*pInterp);
-  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment);
+  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment, pExperiment);
   pRctl->addCommand(pMyEnd);
   
   // Add the ddas_sync command

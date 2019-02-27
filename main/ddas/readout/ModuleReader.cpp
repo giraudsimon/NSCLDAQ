@@ -84,18 +84,22 @@ ModuleReader::~ModuleReader()
 size_t
 ModuleReader::read(HitList& hits, size_t nWords)
 {
+  int readstat;
+
+  
     // Make nWords a multiple of m_nExpectedEventLength.
 
-    int readstat;
     unsigned remainder = nWords % m_nExpectedEventLength;;
     nWords   = nWords - remainder;
     if (nWords > 0) {
         ReferenceCountedBuffer* pBuffer =
             m_freeBuffers.allocate(nWords*sizeof(uint32_t));
-        if (readstat = Pixie16ReadDataFromExternalFIFO(
-                static_cast<uint*>(pBuffer->s_pData), nWords, m_nModuleNumber
-            ) != 0) {
+        if ((readstat = Pixie16ReadDataFromExternalFIFO(
+	   static_cast<unsigned int*>(pBuffer->s_pData), (unsigned long)(nWords),
+	   (unsigned short)(m_nModuleNumber)
+	   )) != 0) {
 	    std::cerr << "Error reading module " << m_nModuleNumber << " FIFO\n";
+	    std::cerr << "Tried to read " << nWords << " uin32_t's of data\n";
 	    std::cerr << " Status: " << readstat << std::endl;
             std::cerr << "Acting as if there are no words to read\n";
             return 0;
@@ -124,7 +128,9 @@ ModuleReader::freeHit(HitInfo& hit)
 void
 ModuleReader::reset()
 {
-    memset(m_lastStamps, 0, 16*sizeof(double));  // start with stamps of zero.    
+  std::cerr << "Resetting last channel timestamps on module: " << m_nModuleNumber << std::endl;
+    memset(m_lastStamps, 0, 16*sizeof(double));  // start with stamps of zero.
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////

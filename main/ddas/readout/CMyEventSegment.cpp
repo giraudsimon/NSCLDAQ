@@ -201,7 +201,8 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
     // Read the modules and hand the data to the hit manager.
     // if it says we have a hit that can be output output it and,
     // if three are outputtable hits, indicate that to the experiment:
-    
+
+    mytrigger->Reset();
     std::vector<std::deque<DDASReadout::ModuleReader::HitInfo>> moduleHits;
     const unsigned int* words = mytrigger->getWordsInModules();
     for(int  i = 0; i < m_readers.size(); i++) {
@@ -215,6 +216,19 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             std::deque<DDASReadout::ModuleReader::HitInfo> tmp;
             moduleHits.push_back(tmp);
             auto& hits(moduleHits.back());
+
+	    unsigned int nActual;
+	    int status = Pixie16CheckExternalFIFOStatus(&nActual, i);
+	    if (status < 0) {
+	      std::cerr << "Sanity check fifo status read failed for module " << i << std::endl;
+	      std::cerr << "Status: " << status << std::endl;
+	    }
+	    if (nActual < words[i]) {
+	      std::cerr << "Fewer actual words than trigger words actual: "
+			<< nActual << " trigger: " << words[i]
+			<< " module: " << i << std::endl;
+	    }
+	    
             m_readers[i]->read(hits, words[i]);
         }
     }
@@ -253,6 +267,8 @@ void CMyEventSegment::disable()
 void CMyEventSegment::onEnd(CExperiment* pExperiment) 
 {
 
+  std::cerr << "Ending run - flushing data in the hit manager\n";
+  
     //Flush hits from the hit manager:
     
     m_sorter->flushing(true);
@@ -261,10 +277,12 @@ void CMyEventSegment::onEnd(CExperiment* pExperiment)
         
         m_pExperiment->ReadEvent();      // read will request retrigger till done.
     }
+    std:: cerr << "Done\n";
     m_sorter->flushing(false);
     for (int i =0; i < m_readers.size(); i++) {
         m_readers[i]->reset();                 // Clear last known channel timestamps.
     }
+    std::cerr << "Finished with end run action\n";
 
 }
 
@@ -361,5 +379,5 @@ CMyEventSegment::emitHit(void* pBuffer)
         
         DDASReadout::ModuleReader::freeHit(hitInfo);   // Return hit storage.
         
-        return nBytes/sizeof(uint16_t) + sizeof(uint32_t); 
+        return nBytes/sizeof(uint16_t) + sizeof(uint32_t)/sizeof(uint16_t); 
 }

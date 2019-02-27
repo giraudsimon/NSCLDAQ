@@ -7,6 +7,7 @@
 class CTCLInterpreter;
 class CTCLObject;
 class CMyEventSegment;
+class CExperiment;
 
 
 class CMyEndCommand : public CEndCommand
@@ -22,7 +23,7 @@ private:
 public:
 	// Constructors, destructors and other cannonical operations: 
   
-  CMyEndCommand(CTCLInterpreter& interp, CMyEventSegment *myevseg);              //!< Default constructor.
+    CMyEndCommand(CTCLInterpreter& interp, CMyEventSegment *myevseg, CExperiment* exp);              //!< Default constructor.
   ~CMyEndCommand (); //!< Destructor.
   
 private:
@@ -32,6 +33,7 @@ private:
   int operator!=(const CMyEndCommand& rhs) const;
     
   CMyEventSegment *myeventsegment;
+  CExperiment*     m_pExp;
   int NumModules;
   
   // Class operations:
