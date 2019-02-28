@@ -740,7 +740,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
 /**
  *  WaitForLotsOfData
  *      Wait for lots of data to be available on a ring buffer.
- *      - Lots of data is defined as a 1*M bytes.
+ *      - Lots of data is defined as a 2*M bytes.
  *      - We wait at most one second.
  *      - We set the poll interval down to 1ms from its default.
  */

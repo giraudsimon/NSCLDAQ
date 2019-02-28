@@ -54,6 +54,7 @@
 #include <stdint.h>
 #include <string.h>
 
+static const int NUM_MEASUREMENTS(100);   // Number of measurement blocks.
 
 static void usage()
 {
@@ -193,8 +194,8 @@ int main (int argc, char** argv)
         // don't start timing until after we get the first data block>
         
         readBlock(pSock);
-        
-        while(1) {
+        std::cerr << "Got the first data block\n";
+        for (unsigned i =0; i < NUM_MEASUREMENTS; i++) {
             timeBlocks(pSock, blocks , meter);
         }
         

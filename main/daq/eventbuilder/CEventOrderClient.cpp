@@ -251,7 +251,7 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
     try {
 
 
-      // The -1 below is because we don't realy the null terminator on the strings.
+      // The -1 below is because we don't relay the null terminator on the strings.
 
       size_t msgLen = message(&msg, "FRAGMENTS", sizeof("FRAGMENTS") -1 , pBodyBuffer, nBytes);
       m_pConnection->Write(msg, msgLen);
