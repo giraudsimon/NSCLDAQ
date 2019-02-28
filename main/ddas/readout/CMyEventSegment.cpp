@@ -216,7 +216,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             std::deque<DDASReadout::ModuleReader::HitInfo> tmp;
             moduleHits.push_back(tmp);
             auto& hits(moduleHits.back());
-
+#ifdef SANITY_CHECKING
 	    unsigned int nActual;
 	    int status = Pixie16CheckExternalFIFOStatus(&nActual, i);
 	    if (status < 0) {
@@ -228,7 +228,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 			<< nActual << " trigger: " << words[i]
 			<< " module: " << i << std::endl;
 	    }
-	    
+#endif	    
             m_readers[i]->read(hits, words[i]);
         }
     }
