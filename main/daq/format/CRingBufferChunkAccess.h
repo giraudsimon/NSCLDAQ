@@ -60,7 +60,7 @@ public:
     private:
         size_t m_nBytesInChunk;
         void* m_pStorage;
-        bool m_ownStorage;
+        bool  m_wrapCopy;
     public:
         class iterator {
         private:
@@ -78,19 +78,32 @@ public:
             iterator& operator++();         // Prefix incr.
             iterator  operator++(int);      // Postfix incr.
         };
+        
+        void setChunk(size_t bytesInChunk, void* pStorage);
+    
         void* getStorage();
         size_t size() const;
-        
         iterator begin();
         iterator end();
     };
 private:
     CRingBuffer* m_pRingBuffer;
+    size_t       m_nRingBufferBytes;
+    Chunk        m_chunk;
+    void*        m_pWrappedItem;
+    size_t       m_nWrapSize;
 public:
     CRingBufferChunkAccess(CRingBuffer* pRingBuffer);
-    size_t waitChunk(size_t maxChunk, int polls = 0, int usecPool = 0);
+    virtual ~CRingBufferChunkAccess();
+    size_t waitChunk(size_t maxChunk, int polls = 0, int usecPoll = 0);
     Chunk nextChunk();
-    
+private:
+    void sizeWrapBuffer(size_t nRequired);
+    size_t haveFullRingItem();
+    size_t sizeChunk(void* pChunk, size_t nBytes);
+    bool   firstItemWraps();
+    void   makeWrappedItemChunk();
+    void   makeInPlaceChunk(void* pData, size_t nBytes);
 };
 
 
