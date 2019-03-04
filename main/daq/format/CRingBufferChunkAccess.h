@@ -60,7 +60,6 @@ public:
     private:
         size_t m_nBytesInChunk;
         void* m_pStorage;
-        bool  m_wrapCopy;
     public:
         class iterator {
         private:
@@ -70,7 +69,7 @@ public:
         public:
             iterator(void* pStorage, size_t bytes);
             iterator(const iterator& rhs);
-            iterator& operator+(const iterator& rhs);
+            iterator& operator=(const iterator& rhs);
             bool operator==(const iterator& rhs) const;
             
             pRingItemHeader operator->();
@@ -78,7 +77,7 @@ public:
             iterator& operator++();         // Prefix incr.
             iterator  operator++(int);      // Postfix incr.
         };
-        
+        Chunk();
         void setChunk(size_t bytesInChunk, void* pStorage);
     
         void* getStorage();

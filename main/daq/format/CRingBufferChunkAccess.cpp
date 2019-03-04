@@ -22,13 +22,17 @@
  */
 #include "CRingBufferChunkAccess.h"
 #include <CRingBuffer.h>
+#include <DataFormat.h>
 #include <stdexcept>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <new>// These internal typedefs are for syntactical brevity in the implementations.
+#include <new>
+
+
+// These internal typedefs are for syntactical brevity in the implementations.
 
 typedef CRingBufferChunkAccess::Chunk ChunkClass;
 typedef CRingBufferChunkAccess::Chunk::iterator ChunkIterator;
@@ -88,7 +92,7 @@ CRingBufferChunkAccess::~CRingBufferChunkAccess()
  *                    storage.
  */
 size_t
-CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls = 0, int usecPoll = 0)
+CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls, int usecPoll)
 {
     if (maxChunk > m_nRingBufferBytes) {
      throw std::invalid_argument(
@@ -105,7 +109,7 @@ CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls = 0, int usecPoll =
     }
     
     return haveFullRingItem();
- 
+} 
 /**
  * getChunk
  *    Construct a chunk from the data in the ring.
@@ -121,7 +125,7 @@ CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls = 0, int usecPoll =
  *         item, this throws std::logic_error.
  * @return Chunk
  */
-Chunk
+ChunkClass
 CRingBufferChunkAccess::nextChunk()
 {
     // If the current chunk has a size we need to skip that number of bytes.
@@ -138,11 +142,11 @@ CRingBufferChunkAccess::nextChunk()
         // The max data we want to give the chunk is the min of
         // the distance to wrap and the available data:
         
-        size_t availData = m_pRingItem->availableData();
-        size_t distToWrap= m_pRingItem->bytesToTop();
+        size_t availData = m_pRingBuffer->availableData();
+        size_t distToWrap= m_pRingBuffer->bytesToTop();
         size_t chunkMax  = availData < distToWrap ? availData : distToWrap;
         
-        void *pItems = m_pRingItem->getPointer();
+        void *pItems = m_pRingBuffer->getPointer();
         size_t fullItemSize = sizeChunk(pItems, chunkMax);
         makeInPlaceChunk(pItems, fullItemSize);
         
@@ -165,7 +169,7 @@ CRingBufferChunkAccess::sizeWrapBuffer(size_t nRequired)
         free(m_pWrappedItem);
         m_pWrappedItem = malloc(nRequired);
         if (!m_pWrappedItem) {
-            throw std::bad_alloc;
+            throw std::bad_alloc();
         }
         m_nWrapSize = nRequired;
     }
@@ -178,7 +182,7 @@ CRingBufferChunkAccess::sizeWrapBuffer(size_t nRequired)
 size_t
 CRingBufferChunkAccess::haveFullRingItem()
 {
-    size_t availData =  m_pRingBuffer->availableData()
+    size_t availData =  m_pRingBuffer->availableData();
     if (availData < sizeof(uint32_t)) return 0;
     uint32_t size;
     m_pRingBuffer->peek(&size, sizeof(uint32_t));  // peek takes care of wrapping.
@@ -198,7 +202,7 @@ CRingBufferChunkAccess::haveFullRingItem()
 size_t
 CRingBufferChunkAccess::sizeChunk(void* pChunk, size_t nBytes)
 {
-    uint8_t *p = static_cast<uint8_t*>(pChunk)
+    uint8_t *p = static_cast<uint8_t*>(pChunk);
     size_t result(0);
     while(nBytes != 0) {
         uint32_t* pSize = reinterpret_cast<uint32_t*>(p);
@@ -223,8 +227,8 @@ bool
 CRingBufferChunkAccess::firstItemWraps()
 {
     uint32_t size;
-    m_pRingItem->peek(&size, sizeof(uint32_t));   //  Handles wrapping.
-    return m_pRingItem->wouldWrap(size);
+    m_pRingBuffer->peek(&size, sizeof(uint32_t));   //  Handles wrapping.
+    return m_pRingBuffer->wouldWrap(size);
 }
 /**
  * makeWrappedItemChunk.
@@ -255,5 +259,165 @@ CRingBufferChunkAccess::makeWrappedItemChunk()
 void
 CRingBufferChunkAccess::makeInPlaceChunk(void* pData, size_t nBytes)
 {
-    m_chunk.setChunk(pData, nBytes);
+    m_chunk.setChunk(nBytes, pData);
+}
+/////////////////////////////////////////////////////////////////////////
+// Implements CRingBufferChunkAccess::Chunk
+
+/**
+ * constructor
+ *    Constrcutor (default).
+ *       Initialize an unset chunk.  Attempts to use this will segfault.
+ *       @note the typedef ChunkClass for CRingBufferChunkAccess:Chunk.
+ */
+ChunkClass::Chunk() :
+    m_nBytesInChunk(0), m_pStorage(nullptr)
+{    
+}
+/**
+ * setChunk
+ *    Give the chunk access t osome data:
+ *  @param bytesInChunk - number of bytes in the chunk.
+ *  @param pStorage     - Pointer to the storage.
+ */
+void
+ChunkClass::setChunk(size_t bytesInChunk, void* pStorage)
+{
+    m_nBytesInChunk = bytesInChunk;
+    m_pStorage      = pStorage;
+}
+/**
+ *  size
+ *    @return size_t - number of bytes in the current chunk.
+ *    @retval 0 - the chunk has not yet been set.
+ */
+size_t
+ChunkClass::size() const
+{
+    return m_nBytesInChunk;
+}
+/**
+ * begin
+ *    Returns an iterator into the chunk that 'points' to the beginning of the
+ *    chunk.  The iterator assumes that the chunk contains items that lead off with
+ *    a uint32_t size in bytes (inclusive).
+ *
+ * @return CRingBufferChunkAccess::Chunk::iterator (note ChunkIterator typedef is used)
+ */
+ChunkIterator
+ChunkClass::begin()
+{
+    return ChunkIterator(m_pStorage, m_nBytesInChunk);
+}
+/**
+ * end
+ *   Returns an iterator into the chunk that 'points' past the end of the chunk.
+ *   This iterator is designated by a null storage pointer and chunksize of zero:
+ *
+ *  @return CRingBufferChunkAccess::Chunk::iterator (ChunkIterator).
+ */
+ChunkIterator
+ChunkClass::end()
+{
+    return ChunkIterator(nullptr, 0);
+}
+////////////////////////////////////////////////////////////////////////////////////////
+// implementation of CRingBufferChunkAccess::Chunk::iterator (ChunkIterator typedef).
+
+/*
+ * Constructor
+ *    Constructs an iterator from chunk storage.
+ *
+ *   @param pStorage - pointer to the iterated storage.
+ *   @param bytes    - Numberof bytes in the storage.
+ */
+ChunkIterator::iterator(void* pStorage, size_t bytes) :
+    m_pData(pStorage), m_nOffset(0), m_nTotalBytes(bytes)
+{}
+/**
+ * Copy constructor
+ *
+ * @param rhs - the object we're constructing from
+ */
+ChunkIterator::iterator(const ChunkIterator& rhs) :
+    m_pData(rhs.m_pData),
+    m_nOffset(rhs.m_nOffset),
+    m_nTotalBytes(rhs.m_nTotalBytes)
+{
+    
+}
+/**
+ * assignment
+ *   @param rhs - the iterator we're being assigned from.
+ *   @return *this.
+ */
+ChunkIterator&
+ChunkIterator::operator=(const ChunkIterator& rhs)
+{
+    m_pData       = (rhs.m_pData),
+    m_nOffset     = (rhs.m_nOffset),
+    m_nTotalBytes = (rhs.m_nTotalBytes);
+    
+    return *this;
+}
+/**
+ *  Equality comparison.
+ *    @param rhs - the iterator we're comparing with.
+ *    @return bool.  True if the two are equal.
+ */
+bool
+ChunkIterator::operator==(const ChunkIterator& rhs) const
+{
+    return (m_pData == rhs.m_pData)                &&
+           (m_nOffset == rhs.m_nOffset)            &&
+           (m_nTotalBytes == rhs.m_nTotalBytes);
+}
+
+/**
+ * operator->
+ *   Base of ring item header struct reference operator.
+*  @return pRingItemHeader
+*  @note m_pData moves with ++, so this is just a cast of that:
+*/
+pRingItemHeader
+ChunkIterator::operator->()
+{
+    return static_cast<pRingItemHeader>(m_pData);
+}
+/**
+ * operator*
+ *   Dereferences the iterator as a ring item header.
+ *
+ * @return RingItemHeader&
+ */
+RingItemHeader&
+ChunkIterator::operator*()
+{
+    return *(operator->());
+}
+/**
+ * operator++ (prefix)
+ * @return - the iterator after incremented.
+ */
+ChunkIterator&
+ChunkIterator::operator++()
+{
+    pRingItemHeader pH = (operator->());
+    uint8_t*        p  = static_cast<uint8_t*>(m_pData);
+    p                 += pH->s_size;
+    m_pData = p;
+    
+    return *this;
+}
+/**
+ * operator++ (postfix)
+ *   @return the iterator prior to the increment.
+ */
+ChunkIterator
+ChunkIterator::operator++(int ignored)
+{
+    ChunkIterator result(*this);
+    ++(*this);
+    return result;
+    
 }
