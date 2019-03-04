@@ -26,6 +26,16 @@ class rbchunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(preinc_1);
   CPPUNIT_TEST(preinc_2);
   CPPUNIT_TEST(preinc_3);
+  CPPUNIT_TEST(postinc_1);
+  
+  // Chunk tests:
+  
+  CPPUNIT_TEST(chunkconst);
+  CPPUNIT_TEST(setchunk);
+  CPPUNIT_TEST(chunksize);
+  CPPUNIT_TEST(begin_1);
+  CPPUNIT_TEST(begin_2);
+  CPPUNIT_TEST(end);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -48,6 +58,14 @@ protected:
   void preinc_1();
   void preinc_2();
   void preinc_3();
+  void postinc_1();
+  
+  void chunkconst();
+  void setchunk();
+  void chunksize();
+  void begin_1();
+  void begin_2();
+  void end();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rbchunkTest);
@@ -168,4 +186,79 @@ void rbchunkTest::preinc_3()            // increment into end.
   EQ((void*)(nullptr), p.m_pData);
   EQ(size_t(0), p.m_nOffset);
   EQ(size_t(0), p.m_nTotalBytes);   
+}
+// we use the fact that the actual increment code is shared and implemented
+// in preinc.  Therefore we just need to be sure this is really a pre-inc.
+void rbchunkTest::postinc_1()
+{
+  uint32_t buffer[10];
+  buffer[0] = 10*sizeof(uint32_t);
+  buffer[1] = PHYSICS_EVENT;
+  CRingBufferChunkAccess::Chunk::iterator p(buffer, 10*sizeof(uint32_t));
+  EQ(buffer[0], (p++)->s_size);
+}
+
+//  Construction gives an empty chunk:
+
+void rbchunkTest::chunkconst()
+{
+  CRingBufferChunkAccess::Chunk c;
+  EQ(size_t(0), c.m_nBytesInChunk);
+  EQ((void*)(nullptr), c.m_pStorage);
+}
+void rbchunkTest::setchunk() {
+  uint8_t buffer[100];
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(sizeof(buffer), buffer);
+  
+  EQ(sizeof(buffer), c.m_nBytesInChunk);
+  EQ((void*)(buffer), c.m_pStorage);
+}
+void rbchunkTest::chunksize()
+{
+  uint8_t buffer[100];
+  CRingBufferChunkAccess::Chunk c;
+  
+  EQ(size_t(0), c.size());
+  
+  c.setChunk(sizeof(buffer), buffer);
+  EQ(sizeof(buffer), c.size());
+  
+}
+void rbchunkTest::begin_1()
+{
+  CRingBufferChunkAccess::Chunk c;
+  CRingBufferChunkAccess::Chunk::iterator p = c.begin();
+  
+  // Shoull be end:
+
+  EQ((void*)(nullptr), p.m_pData);
+  EQ(size_t(0), p.m_nOffset);
+  EQ(size_t(0), p.m_nTotalBytes);   
+  
+}
+void rbchunkTest::begin_2()
+{
+  RingItemHeader h = {sizeof(RingItemHeader), PHYSICS_EVENT};
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(sizeof(h), &h);
+  
+  CRingBufferChunkAccess::Chunk::iterator p = c.begin();
+  EQ(uint32_t(sizeof(RingItemHeader)), p->s_size);
+  EQ(PHYSICS_EVENT, p->s_type);
+  
+}
+void rbchunkTest::end()
+{
+  RingItemHeader h = {sizeof(RingItemHeader), PHYSICS_EVENT};
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(sizeof(h), &h);
+
+  CRingBufferChunkAccess::Chunk::iterator p = c.end();
+  // Shoull be end:
+
+  EQ((void*)(nullptr), p.m_pData);
+  EQ(size_t(0), p.m_nOffset);
+  EQ(size_t(0), p.m_nTotalBytes);   
+  
 }
