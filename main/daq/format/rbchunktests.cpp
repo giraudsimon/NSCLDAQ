@@ -3,6 +3,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#include <CRingBuffer.h>
 
 #define private public
 #include "CRingBufferChunkAccess.h"
@@ -40,11 +41,21 @@ class rbchunkTest : public CppUnit::TestFixture {
 
 
 private:
-
+  CRingBuffer* m_producer;
+  CRingBuffer* m_consumer;
 public:
   void setUp() {
+    CRingBuffer::create("chunktest");
+    m_producer = new CRingBuffer("chunktest", CRingBuffer::producer);
+    m_consumer = new CRingBuffer("chunktest", CRingBuffer::consumer);
   }
   void tearDown() {
+    
+    delete m_producer;
+    delete m_consumer;
+    m_producer = nullptr;
+    m_consumer = nullptr;
+    CRingBuffer::remove("chunktest");
   }
 protected:
   void iconst_1();
