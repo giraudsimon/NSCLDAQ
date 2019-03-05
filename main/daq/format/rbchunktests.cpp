@@ -3,10 +3,12 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
-#include <CRingBuffer.h>
+
 
 #define private public
 #include "CRingBufferChunkAccess.h"
+#include <CRingBuffer.h>
+#include <CRingItem.h>
 #undef private
 
 #include <stdint.h>
@@ -37,6 +39,12 @@ class rbchunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(begin_1);
   CPPUNIT_TEST(begin_2);
   CPPUNIT_TEST(end);
+  
+  // Chunk access class tests.
+  
+  CPPUNIT_TEST(caconstruct);
+  CPPUNIT_TEST(capoll_1);
+  CPPUNIT_TEST(capoll_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -77,6 +85,10 @@ protected:
   void begin_1();
   void begin_2();
   void end();
+  
+  void caconstruct();
+  void capoll_1();
+  void capoll_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rbchunkTest);
@@ -272,4 +284,40 @@ void rbchunkTest::end()
   EQ(size_t(0), p.m_nOffset);
   EQ(size_t(0), p.m_nTotalBytes);   
   
+}
+///
+void rbchunkTest::caconstruct()
+{
+  CRingBufferChunkAccess a(m_consumer);
+  EQ(m_consumer, a.m_pRingBuffer);
+  EQ((void*)(nullptr), a.m_chunk.m_pStorage);
+  EQ(size_t(0), a.m_chunk.m_nBytesInChunk);
+  EQ((void*)(nullptr), a.m_pWrappedItem);
+  EQ(size_t(0), a.m_nWrapSize);
+  
+}
+//
+void rbchunkTest::capoll_1()           // no data.
+{
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(100, 1, 0);
+  
+  EQ(size_t(0), n);
+}
+void rbchunkTest::capoll_2() // one ring item.
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);
+  EQ(itemSize, n);
 }
