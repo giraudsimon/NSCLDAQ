@@ -45,6 +45,9 @@ class rbchunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(caconstruct);
   CPPUNIT_TEST(capoll_1);
   CPPUNIT_TEST(capoll_2);
+  CPPUNIT_TEST(capoll_3);
+  CPPUNIT_TEST(capoll_4);
+  CPPUNIT_TEST(nextchunk_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -89,6 +92,9 @@ protected:
   void caconstruct();
   void capoll_1();
   void capoll_2();
+  void capoll_3();
+  void capoll_4();
+  void nextchunk_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rbchunkTest);
@@ -320,4 +326,57 @@ void rbchunkTest::capoll_2() // one ring item.
   CRingBufferChunkAccess a(m_consumer);
   size_t n = a.waitChunk(1024, 1, 0);
   EQ(itemSize, n);
+}
+void rbchunkTest::capoll_3()    // one and a fraction ring items -- gives full size.
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  uint32_t partialsize=sizeof(uint32_t) * 2;
+  m_producer->put(&partialsize, sizeof(partialsize));
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  EQ(itemSize+sizeof(uint32_t), n);
+}
+void rbchunkTest::capoll_4()    // not a full ring item -- gives 0.
+{
+  uint32_t partialsize=sizeof(uint32_t) * 2;
+  m_producer->put(&partialsize, sizeof(partialsize));
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  EQ(size_t(0), n);
+  
+}
+void rbchunkTest::nextchunk_1()
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  // Now make the chunk:
+  
+  CRingBufferChunkAccess::Chunk c = a.nextChunk();
+  EQ(itemSize, c.size());
 }
