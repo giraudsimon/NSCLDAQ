@@ -85,7 +85,7 @@ struct iovec*
 updateIov(struct iovec* iov, int& nItems, ssize_t nBytes)
 {
   while ((nItems > 0) && (nBytes > 0)) {
-    if (nBytes > iov->iov_len) {         // Fully written:
+    if (nBytes >= iov->iov_len) {         // Fully written:
       nBytes -= iov->iov_len;
       iov++;
       nItems--;
