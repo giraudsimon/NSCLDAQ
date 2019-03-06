@@ -48,6 +48,11 @@ class rbchunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(capoll_3);
   CPPUNIT_TEST(capoll_4);
   CPPUNIT_TEST(nextchunk_1);
+  CPPUNIT_TEST(nextchunk_2);
+  CPPUNIT_TEST(nextchunk_3);
+  CPPUNIT_TEST(nextchunk_4);
+  CPPUNIT_TEST(nextchunk_5);
+    
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -95,6 +100,10 @@ protected:
   void capoll_3();
   void capoll_4();
   void nextchunk_1();
+  void nextchunk_2();
+  void nextchunk_3();
+  void nextchunk_4();
+  void nextchunk_5();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rbchunkTest);
@@ -379,4 +388,146 @@ void rbchunkTest::nextchunk_1()
   
   CRingBufferChunkAccess::Chunk c = a.nextChunk();
   EQ(itemSize, c.size());
+}
+// full and partial - chunk only shows the full.
+
+void rbchunkTest::nextchunk_2()
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  uint32_t partialsize=sizeof(uint32_t) * 2;
+  m_producer->put(&partialsize, sizeof(partialsize));
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  auto c = a.nextChunk();
+  EQ(itemSize, c.size());
+}
+void rbchunkTest::nextchunk_3()
+{
+  // first item.
+  
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  auto c = a.nextChunk();
+  EQ(itemSize, c.size());
+  
+  // Second item (different body contents)
+  
+  pBody = static_cast<uint32_t*>(item.getBodyPointer());
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x12345678;
+  *pBody++ = 0x5a5a5a5a;
+  
+  
+  item.commitToRing(*m_producer);
+  
+  c = a.nextChunk();
+  EQ(itemSize, c.size());
+  uint32_t* pChunk = static_cast<uint32_t*>(c.getStorage());
+  pChunk += 3;  // header.size, header.type, mbz for body header
+  EQ(uint32_t(0xa5a5a5a5), *pChunk);
+  pChunk++;                      //  Just in case macro double uses.
+  EQ(uint32_t(0x12345678), *pChunk);
+  pChunk++;
+  EQ(uint32_t(0x5a5a5a5a), *pChunk);
+}
+
+  // After getting one chunk with partial, can get next.
+  
+void rbchunkTest::nextchunk_4()
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  uint32_t partialsize=sizeof(uint32_t)*3;
+  m_producer->put(&partialsize, sizeof(partialsize));
+  
+  CRingBufferChunkAccess a(m_consumer);
+  size_t n = a.waitChunk(1024, 1, 0);   // Should only get full ring items.
+  
+  auto c = a.nextChunk();
+  EQ(itemSize, c.size());
+  
+  // Now the rest of the partial item:
+  
+  uint32_t fragment[2] = {PHYSICS_EVENT, 0};   // type and mbz.
+  m_producer->put(fragment, sizeof(fragment));
+  
+  c = a.nextChunk();
+  EQ(3*sizeof(uint32_t), c.size());
+  uint32_t* pChunk = static_cast<uint32_t*>(c.getStorage());
+  EQ(PHYSICS_EVENT, pChunk[1]);
+  EQ(uint32_t(3*sizeof(uint32_t)), pChunk[0]);
+  EQ(uint32_t(0),  pChunk[2]);
+ 
+}
+// Wrapped chunk.
+
+void rbchunkTest::nextchunk_5()
+{
+  CRingBufferChunkAccess a(m_consumer);
+  size_t firstItemSize = a.m_nRingBufferBytes - 3;  // even the size wraps.
+  uint8_t junk[firstItemSize];
+  m_producer->put(junk, firstItemSize);
+  m_consumer->skip(firstItemSize);
+  
+  // Now make the ring item and put it... it'll be a wrapped item.
+  
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  *pBody++ = 0x12345678;
+  *pBody++ = 0xa5a5a5a5;
+  *pBody++ = 0x5a5a5a5a;
+  
+  item.setBodyCursor(pBody);
+  item.updateSize();
+  size_t itemSize = item.getItemPointer()->s_header.s_size;
+  item.commitToRing(*m_producer);
+  
+  size_t bufferedSize =  a.waitChunk(1000, 1, 0);
+  EQ(bufferedSize, itemSize);
+  
+  auto c = a. nextChunk();
+  EQ(bufferedSize, c.size());
+  
+  uint32_t* pChunk = static_cast<uint32_t*>(c.getStorage());
+  EQ(uint32_t(itemSize), pChunk[0]);
+  EQ(PHYSICS_EVENT, pChunk[1]);
+  EQ(uint32_t(0),   pChunk[2]);       // mbz for no body header.
+  EQ(uint32_t(0x12345678), pChunk[3]);
+  EQ(uint32_t(0xa5a5a5a5), pChunk[4]);
+  EQ(uint32_t(0x5a5a5a5a), pChunk[5]);
+  
 }

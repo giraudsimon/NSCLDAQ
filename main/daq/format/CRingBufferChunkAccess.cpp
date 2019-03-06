@@ -287,6 +287,16 @@ ChunkClass::setChunk(size_t bytesInChunk, void* pStorage)
     m_pStorage      = pStorage;
 }
 /**
+ * getStorage
+ *    Return a pointer to the chunk storage.
+ * @return void*
+ */
+void*
+ChunkClass::getStorage()
+{
+    return m_pStorage;
+}
+/**
  *  size
  *    @return size_t - number of bytes in the current chunk.
  *    @retval 0 - the chunk has not yet been set.
