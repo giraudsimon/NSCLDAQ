@@ -22,6 +22,8 @@
 #include "rfcmdline.h"
 #include <CEventOrderClient.h>
 #include <Exception.h>
+#include <CRemoteAccess.h>
+#include <CRingBuffer.h>
 
 #include <stdlib.h>
 #include <iostream>
@@ -84,7 +86,18 @@ main(int argc, char** argv)
         std::cerr << std::endl << e.ReasonText() << std::endl;
         exit(EXIT_FAILURE);
     }
+    // To get a ring buffer connection we need the ring URI.
     
+
+    std::string ringUri = args.ring_arg;
+    CRingBuffer* pRing;
+    try {
+        pRing = CRingAccess::daqConsumeFrom(ringUri);
+    }
+    catch (CException& e) {
+        std::cerr << "Unable to connect to the ring buffer " << ringUri << "\n";
+        std::cerr << e.ReasonText() << std::endl;
+    }
     
     client.disconnect();
     exit(EXIT_SUCCESS);    
