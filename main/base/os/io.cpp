@@ -80,6 +80,7 @@ namespace io {
  * @return struct iovec* - pointer to the first item in the vector that needs to be
  *               handed to the next call to writev.  This is undefined if
  *               all itmems were written.
+ *  Tested
  */
 struct iovec*
 updateIov(struct iovec* iov, int& nItems, ssize_t nBytes)
