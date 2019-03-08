@@ -20,6 +20,8 @@
 */
 
 #include "rfcmdline.h"
+#include "CRingFragmentSource.h"
+
 #include <CEventOrderClient.h>
 #include <Exception.h>
 #include <CRemoteAccess.h>
@@ -98,7 +100,16 @@ main(int argc, char** argv)
         std::cerr << "Unable to connect to the ring buffer " << ringUri << "\n";
         std::cerr << e.ReasonText() << std::endl;
     }
+    // Create our data source object and start it:
+    
+    CRingFragmentSource source(
+        client, *pRing,
+        ids, args.timestampextractor_arg, args.expectbodyheaders_flag,
+        args.oneshot_arg, args.timeout_arg, args.offset_arg
+    );
+    source();
     
     client.disconnect();
+    delete pRing;
     exit(EXIT_SUCCESS);    
 }

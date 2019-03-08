@@ -1,6 +1,7 @@
 bin_PROGRAMS = ringFragmentSource
 
-ringFragmentSource_SOURCES=rfcmdline.c Main.cpp
+ringFragmentSource_SOURCES=rfcmdline.c Main.cpp \
+	CRingFragmentSource.h
 ringFragmentSource_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/dataflow
 ringFragmentSource_LDFLAGS=@top_builddir@/daq/eventbuilder/libEventBuilderClient.la \
 	@top_builddir@/base/dataflow/libDataFlow.la 	\
