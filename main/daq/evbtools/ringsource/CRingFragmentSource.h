@@ -43,7 +43,8 @@ private:
     std::set<uint32_t> m_validSids;
     timestampExtractor m_tsExtractor;
     bool               m_expectBodyHeaders;
-    int                m_oneshot;
+    bool               m_isOneShot;
+    int                m_endsExpected;
     int                m_endRunTimeout;
     uint64_t           m_timestampOffset;
 public:
@@ -54,6 +55,11 @@ public:
     );
     
     void operator()();
+
+    // private utilties
+private:
+    void setValidIds(std::list<int>& ids);
+    void setTsExtractor(const char* tsExtractorLib);
 };
 
 
