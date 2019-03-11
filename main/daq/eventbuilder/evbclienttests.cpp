@@ -1,6 +1,9 @@
 // Template for a test suite.
 
 #include <cppunit/extensions/HelperMacros.h>
+
+#include <Asserts.h>
+
 #include <cppunit/Asserter.h>
 #include <CSocket.h>
 #include "CEventOrderClient.h"
@@ -11,6 +14,7 @@
 #include <poll.h>
 #include <stdint.h>
 #include <string.h>
+#include <string>
 
 
 // To satisfy the application level protocol, the server
@@ -96,7 +100,7 @@ void ServerThread::stop()
 
 class clienttests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(clienttests);
-  CPPUNIT_TEST(aTest);
+  CPPUNIT_TEST(initial);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -126,10 +130,33 @@ public:
     
   }
 protected:
-  void aTest();
+  void initial();
+private:
+  std::string countedString(void* pMsg);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(clienttests);
 
-void clienttests::aTest() {
+std::string clienttests::countedString(void* pMsg)
+{
+  uint32_t* pSize= static_cast<uint32_t*>(pMsg);
+  uint8_t*  pBytes = static_cast<uint8_t*>(pMsg);
+  
+  uint32_t nChars = *pSize;
+  pBytes += sizeof(uint32_t);
+  
+  std::string result;
+  for (int i =0;  i < nChars; i++) {
+    result.push_back(*pBytes++);
+  }
+  return result;
+}
+
+// When connected the server has a connection message.
+
+void clienttests::initial() {
+  EQ(size_t(2), m_Server->m_messages.size());
+  void* connectMsg = m_Server->m_messages.front();
+  
+  EQ(std::string("CONNECT"), countedString(connectMsg));
 }
