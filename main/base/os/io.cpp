@@ -250,7 +250,7 @@ closeUnusedFiles(std::set<int> keepOpen)
   closedir(pDir);                       // Also closes our dir fd.
 }
 /**
- * writeData
+ * writeDataV
  *    This version of writeData implements a gather write using the writev(2)
  *    method. As with the other writeData, retries for signal interruption
  *    and incomplete data  transfer are handled transparently for the caller.
@@ -271,7 +271,7 @@ closeUnusedFiles(std::set<int> keepOpen)
  *        - EINTR results in a retry.
 */
 void
-writeData(int fd, struct iovec* iov, int iovcnt)
+writeDataV(int fd, struct iovec* iov, int iovcnt)
 {
   while (iovcnt) {
     ssize_t nBytes = writev(fd, iov, iovcnt);
