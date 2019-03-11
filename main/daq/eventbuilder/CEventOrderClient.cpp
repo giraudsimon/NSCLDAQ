@@ -341,6 +341,16 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   //
   int sock = m_pConnection->getSocketFd();
   io::writeDataV(sock, m_pIovec, 2*nFragments + 1);
+  
+  // Get the response and complain  if it's not "OK"
+  
+  std:: string reply = getReplyString();
+  if (reply != "OK") {
+    errno = ENOTSUP;
+    throw CErrnoException("Reply from 'FRAGMENTS' message");
+
+  }
+
 }
 /**
  * Given an STL list of pointers to events:
