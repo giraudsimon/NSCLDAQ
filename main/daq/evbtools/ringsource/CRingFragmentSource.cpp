@@ -22,6 +22,7 @@
 #include <CEventOrderClient.h>
 #include <CRingBuffer.h>
 #include <CRingBufferChunkAccess.h>
+#include <DataFormat.h>
 
 
 #include <iostream>
@@ -182,7 +183,7 @@ CRingFragmentSource::processSegment(CRingBufferChunkAccess& a, size_t chunkSize)
     auto chunk = a.nextChunk();
     chunkBytesGotten = chunk.size();
     if (chunkBytesGotten == 0) {
-        while(waitChunk(chunkSize, 1000, 10) == 0)
+        while(a.waitChunk(chunkSize, 1000, 10) == 0)
             ;
         chunk = a.nextChunk();
         chunkBytesGotten = chunk.size();
@@ -211,7 +212,7 @@ CRingFragmentSource::sendChunk(CRingBufferChunkAccess::Chunk& c)
     // @todo - timeout on end runs seen.
     
     if (!!m_isOneShot) return true;           // always keep on going if not 1shot
-    if (m_endsExpected <= m_endsSeen) return false
+    if (m_endsExpected <= m_endsSeen) return false;
 
     return true;
 
@@ -224,7 +225,9 @@ void
 CRingFragmentSource::resizeFragments()
 {
     m_nFragments += FRAG_RESIZE_AMOUNT;
-    m_pFragments = realloc(m_pFragments, m_nFragments * sizeof(EVB::Fragment));
+    m_pFragments = static_cast<EVB::pFragment>(
+        realloc(m_pFragments, m_nFragments * sizeof(EVB::Fragment))
+    );
     if (!m_pFragments) throw std::bad_alloc();
 }
 /**
@@ -245,10 +248,10 @@ CRingFragmentSource::setFragment(
 {
     if (n >= m_nFragments) resizeFragments();  // ensure we can accomodate that.
     
-    m_pFragments[n].s_timestamp = stamp;
-    m_pFragments[n].s_sourceId  = sid;
-    m_pFragments[n].s_size      = size;
-    m_pFragments[n].s_barrier   = barrier;
+    m_pFragments[n].s_header.s_timestamp = stamp;
+    m_pFragments[n].s_header.s_sourceId  = sid;
+    m_pFragments[n].s_header.s_size      = size;
+    m_pFragments[n].s_header.s_barrier   = barrier;
     m_pFragments[n].s_pBody     = pItem;
 }
 /**
@@ -266,7 +269,7 @@ uint64_t
 CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
 {
     if ((item.s_header.s_type == PHYSICS_EVENT) && m_tsExtractor) {
-        pPhysicsEvent pEvent = reinterpret_cast<pPhysicsEvent>(&item);
+        pPhysicsEventItem pEvent = reinterpret_cast<pPhysicsEventItem>(&item);
         return (*m_tsExtractor)(pEvent);
     } else {
         return NULL_TIMESTAMP;
@@ -299,6 +302,7 @@ CRingFragmentSource::barrierType(RingItem& item)
 }
 
 /**
+ *
  *  makeFragments
  *     Given a chunk, creates the array of EVB::Fragment-s that describe
  *     that chunk.
@@ -307,13 +311,13 @@ CRingFragmentSource::barrierType(RingItem& item)
  * @return std::pair<size_t, EVB::pFragment> - first is number of fragments,
  *                                             second is pointer to the fragment array.
  */
-void
+std::pair<size_t, EVB::pFragment>
 CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
 {
     int n = 0;
-    while (auto p = c.begin()); p != c.end(); p++) {
+    for (auto p = c.begin(); !(p == c.end()); p++) {
         RingItemHeader& header(*p);
-        RingItem&       item(reinterpret_cast<RingItem>(header));
+        RingItem&       item(reinterpret_cast<RingItem&>(header));
         
         if (item.s_body.u_noBodyHeader.s_mbz == 0) {
             setFragment(
@@ -323,7 +327,7 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
             );
         } else {
             setFragment(
-                n, item.s_body.u.hasBodyHeader.s_bodyHeader.s_timestamp,
+                n, item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp,
                 item.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId,
                 item.s_header.s_size,
                 item.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier,
