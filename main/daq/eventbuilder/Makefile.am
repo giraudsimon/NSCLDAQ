@@ -162,11 +162,16 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
 ordertests_SOURCES = TestRunner.cpp orderTests.cpp duptscmdtest.cpp \
 	configcmdtests.cpp tclflowtest.cpp fragalloctest.cpp \
+	evbclienttests.cpp	\
 	CFragmentHandler.cpp fragment.cpp CDuplicateTimeStatCommand.cpp \
-	CConfigure.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp CSortThread.cpp
+	CConfigure.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp CSortThread.cpp \
+	CEventOrderClient.cpp
 
 
 ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
+	@top_builddir@/servers/portmanager/libPortManager.la	\
+	@top_builddir@/base/os/libdaqshm.la			\
+	@top_builddir@/base/tcpip/libTcp.la			\
 	@CPPUNIT_LDFLAGS@ @THREADLD_FLAGS@ @LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@
 
 ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
