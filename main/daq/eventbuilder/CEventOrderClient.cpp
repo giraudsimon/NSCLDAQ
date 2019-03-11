@@ -303,9 +303,11 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   
   if (m_nIovecSize < 2*nFragments + 1) {
     free(m_pIovec);
-    m_pIovec = malloc(2*nFragments * sizeof(iovec) + 1);  // +1 for the header stuff
+    m_pIovec = static_cast<iovec*>(
+      malloc(2*nFragments * sizeof(iovec) + 1)  // +1 for the header stuff
+    );
     if (!m_pIovec) {
-      throw std::bad_alloc;
+      throw std::bad_alloc();
     }
     m_nIovecSize = 2*nFragments + 1;
   }
@@ -314,8 +316,8 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   // Fill in the header and it's iovec:
   
   uint8_t header[strlen("FRAGMENTS") - 1 + 2 * sizeof(uint32_t)];
-  strcpy(header, "FRAGMENTS");
-  uint32_t hdrSize = strlen("FRAGMENTS") -1
+  memcpy(header, "FRAGMENTS", strlen("FRAGMENTS") - 1);
+  uint32_t hdrSize = strlen("FRAGMENTS") - 1;
   memcpy(header + hdrSize, &hdrSize, sizeof(uint32_t));
   p->iov_base = header;
   p->iov_len  = sizeof(header);
@@ -337,8 +339,8 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   // Now we can pull the fd from the soccket and use the gather version of
   // io::writeData No data copies -- hoorah.
   //
-  int sock  m_pConnection->getSocketFd();
-  io::writeData(sock, m_pIoVec, 2*nFragments + 1);
+  int sock = m_pConnection->getSocketFd();
+  io::writeDataV(sock, m_pIovec, 2*nFragments + 1);
 }
 /**
  * Given an STL list of pointers to events:
@@ -481,19 +483,19 @@ CEventOrderClient::freeChain(EVB::pFragmentChain pChain)
  *   Givena fragment pointer, create the two I/O vectors elements for it,
  *   First for the fragment header, second for the fragment payload.
  *
- * @param pFrag - pointer to the fragment.
+ * @param Frag - refernce to the fragment.
  * @param pVecs - Pointer to at least two I/O vector structs.
  * @return iovec* - pointer just past the set of I/O vectors filled in by this
  *                  method.
  */
 iovec*
-CEventOrderClient::makeIoVec(EVB::pFragment pFrag, iovec* pVecs)
+CEventOrderClient::makeIoVec(EVB::Fragment& Frag, iovec* pVecs)
 {
-  pVecs->iov_base = pFrag;
+  pVecs->iov_base = &Frag;
   pVecs->iov_len = sizeof(EVB::FragmentHeader);
   pVecs++;
-  pVecs->iov_base = pFrag->s_pBody;
-  pVecs->iov_len  = pFrag->s_header.s_size;
+  pVecs->iov_base = Frag.s_pBody;
+  pVecs->iov_len  = Frag.s_header.s_size;
   
   return ++pVecs;
 }

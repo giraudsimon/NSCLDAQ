@@ -75,6 +75,7 @@ private:
   static size_t message(void** msg, const void* request, size_t requestSize, const  void* body, size_t bodySize);
   std::string getReplyString();	
   static void freeChain(EVB::pFragmentChain pChain);
+  iovec* makeIoVec(EVB::Fragment& Frag, iovec* pVecs);
 };
 
 
