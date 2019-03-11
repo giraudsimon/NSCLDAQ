@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <list>
 #include <set>
+#include <CRingBufferChunkAccess.h>
+#include <fragment.h>
 
 class CEventOrderClient;
 class CRingBuffer;
@@ -45,14 +47,19 @@ private:
     bool               m_expectBodyHeaders;
     bool               m_isOneShot;
     int                m_endsExpected;
+    int                m_endsSeen;
     int                m_endRunTimeout;
     uint64_t           m_timestampOffset;
+    int                m_nDefaultSid;
+    size_t             m_nFragments;  // size of the array below.
+    EVB::pFragment     m_pFragments;
 public:
     CRingFragmentSource(
         CEventOrderClient& client, CRingBuffer& dataSource, std::list<int> validIds,
         const char* tsExtractorLib, int haveHeaders, int endRunsExpected,
-        int endTimeoutSeconds, int timestampOffset
+        int endTimeoutSeconds, int timestampOffset, int defaultId
     );
+    virtual ~CRingFragmentSource();
     
     void operator()();
 
@@ -60,6 +67,17 @@ public:
 private:
     void setValidIds(std::list<int>& ids);
     void setTsExtractor(const char* tsExtractorLib);
+    bool processSegment(CRingBufferChunkAccess& a, size_t chuckSize);
+    bool sendChunk(CRingBufferChunkAccess::Chunk& c);
+    void resizeFragments();
+    void setFragment(
+        int n, uint64_t stamp, uint32_t sid, uint32_t size, uint32_t barrier,
+        void* pItem
+    );
+    uint64_t getTimestampFromUserCode(RingItem& item);
+    uint32_t barrierType(RingItem& item);
+    
+    std::pair<size_t, EVB::pFragment> makeFragments(CRingBufferChunkAccess::Chunk& c);
 };
 
 

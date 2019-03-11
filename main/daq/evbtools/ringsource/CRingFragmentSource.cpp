@@ -21,12 +21,20 @@
 #include "CRingFragmentSource.h"
 #include <CEventOrderClient.h>
 #include <CRingBuffer.h>
+#include <CRingBufferChunkAccess.h>
+
 
 #include <iostream>
 #include <stdexcept>
 #include <dlfcn.h>
 #include <system_error>
+#include <new>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+static const size_t FRAG_RESIZE_AMOUNT(1024);   // Number of frags to add on resize
+
 /**
  * constructor:
  *    Just sets up the data - the only interesting logic
@@ -47,21 +55,31 @@
  * @param timestampOffset - Offset to add to timestamps when creating the event builder
  *                      headers.  This allows for startup skew compensation while
  *                      keeping the glom --dt small.
+ * @param defaultId - default source id.
  */
 CRingFragmentSource::CRingFragmentSource(
     CEventOrderClient& client, CRingBuffer& dataSource, std::list<int> validIds,
     const char* tsExtractorLib, int haveHeaders, int endRunsExpected,
-    int endTimeoutSeconds, int timestampOffset
+    int endTimeoutSeconds, int timestampOffset, int defaultId
 ) :
     m_client(client), m_dataSource(dataSource), m_tsExtractor(nullptr),
     m_expectBodyHeaders(haveHeaders != 0), m_isOneShot(endRunsExpected != 0),
-    m_endsExpected(endRunsExpected), m_endRunTimeout(endTimeoutSeconds),
-    m_timestampOffset(timestampOffset)
+    m_endsExpected(endRunsExpected), m_endsSeen(0),
+    m_endRunTimeout(endTimeoutSeconds),
+    m_timestampOffset(timestampOffset), m_nDefaultSid(defaultId),
+    m_nFragments(0), m_pFragments(nullptr)
 {
     setValidIds(validIds);
     setTsExtractor(tsExtractorLib);
 }
-
+/**
+ * destructor
+ *    Free the fragments.
+ */
+CRingFragmentSource::~CRingFragmentSource()
+{
+    free(m_pFragments);
+}
 /**
  * operator()
  * The application logic.
@@ -69,7 +87,10 @@ CRingFragmentSource::CRingFragmentSource(
 void
 CRingFragmentSource::operator()()
 {
-    
+    CRingBufferChunkAccess accessor(&m_dataSource);
+    size_t chunkSize = accessor.m_nRingBufferBytes/4;  // go for 1/4'th the buffer.
+    while (processSegment(accessor, chunkSize))
+        ;
 }
 //////////////////////////////////////////////////////////////////////
 // Private methods.
@@ -144,4 +165,172 @@ CRingFragmentSource::setTsExtractor(const char* tsExtractorLib)
     // Set m_tsExtractor:
     
     m_tsExtractor = reinterpret_cast<timestampExtractor>(timestamp);
+}
+/**
+ * processSegment
+ *    Processes a segment of the ring buffer in as copyfree a manner as
+ *    possible.
+ *
+ *  @param a - the chunk accessor that gives us copy free access to ring items.
+ *  @param chunkSize - the biggest chunksize we're going to try for.
+ *  @return bool - true if we're not done yhet.
+ */
+bool
+CRingFragmentSource::processSegment(CRingBufferChunkAccess& a, size_t chunkSize)
+{
+    size_t chunkBytesGotten;
+    auto chunk = a.nextChunk();
+    chunkBytesGotten = chunk.size();
+    if (chunkBytesGotten == 0) {
+        while(waitChunk(chunkSize, 1000, 10) == 0)
+            ;
+        chunk = a.nextChunk();
+        chunkBytesGotten = chunk.size();
+    }
+    return sendChunk(chunk);
+}
+/**
+ * sendChunk
+ *   send a chunk of data to the event builder.
+ *
+ *  @param c - chunk
+ *  @return bool -true if we should continue to process.
+ */
+bool
+CRingFragmentSource::sendChunk(CRingBufferChunkAccess::Chunk& c)
+{
+    // Create the fragment headers and count the end runs.
+    
+    std::pair<size_t, EVB::pFragment> frags = makeFragments(c);
+    
+    // Send the fragments to the event builder.
+    
+    m_client.submitFragments(frags.first, frags.second);
+    
+    // Figure out if we should continue processing or not.
+    // @todo - timeout on end runs seen.
+    
+    if (!!m_isOneShot) return true;           // always keep on going if not 1shot
+    if (m_endsExpected <= m_endsSeen) return false
+
+    return true;
+
+}
+/**
+ * resizeFragments
+ *   Adds storage to the fragment array.
+ */
+void
+CRingFragmentSource::resizeFragments()
+{
+    m_nFragments += FRAG_RESIZE_AMOUNT;
+    m_pFragments = realloc(m_pFragments, m_nFragments * sizeof(EVB::Fragment));
+    if (!m_pFragments) throw std::bad_alloc();
+}
+/**
+ * setFragment
+ *    Sets a fragment in m_pFragments.
+ * @param n - index.
+ * @param stamp  - fragment timestamp
+ * @param sid    - Source id.
+ * @param size   - Number of bytes in the fragment.
+ * @param barrier- item barrier code.
+ * @param pItem  - pointer to the payload.
+ */
+void
+CRingFragmentSource::setFragment(
+    int n, uint64_t stamp, uint32_t sid, uint32_t size, uint32_t barrier,
+    void* pItem  
+)
+{
+    if (n >= m_nFragments) resizeFragments();  // ensure we can accomodate that.
+    
+    m_pFragments[n].s_timestamp = stamp;
+    m_pFragments[n].s_sourceId  = sid;
+    m_pFragments[n].s_size      = size;
+    m_pFragments[n].s_barrier   = barrier;
+    m_pFragments[n].s_pBody     = pItem;
+}
+/**
+ * getTimestampFromUserCode
+ *   Called to return a timestamp if there is no body header.
+ *   -  If this is a physics event _and_ the user has supplied a
+ *      timestamp extractor, the event is passed to that extractor
+ *      to get the timestamp.
+ *   -  Otherwise NULL_TIMESTAMP is returned.
+ *
+ * @param item      - References the ring item.
+ * @return uint64_t - the timestamp
+ */
+uint64_t
+CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
+{
+    if ((item.s_header.s_type == PHYSICS_EVENT) && m_tsExtractor) {
+        pPhysicsEvent pEvent = reinterpret_cast<pPhysicsEvent>(&item);
+        return (*m_tsExtractor)(pEvent);
+    } else {
+        return NULL_TIMESTAMP;
+    }
+}
+/**
+ * barrierType
+ *   Returns the event's barrier type if there is no body header.
+ *   The barrier type depends only on the ring item type.
+ *
+ *   @param item - references the ring item.
+ *   @return uint32_t barrier type which is 0 for most ring item types.
+ *   @retval 1 - Type is BEGIN_RUN.
+ *   @retval 2 - Type is END_RUN.
+ */
+uint32_t
+CRingFragmentSource::barrierType(RingItem& item)
+{
+    uint32_t result(0);                // Default result.
+    switch (item.s_header.s_type) {
+    case BEGIN_RUN:
+        result = 1;
+        break;
+    case END_RUN:
+        result = 2;
+        break;
+    }
+    
+    return result;
+}
+
+/**
+ *  makeFragments
+ *     Given a chunk, creates the array of EVB::Fragment-s that describe
+ *     that chunk.
+ *
+ * @param c - the chunk to process.
+ * @return std::pair<size_t, EVB::pFragment> - first is number of fragments,
+ *                                             second is pointer to the fragment array.
+ */
+void
+CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
+{
+    int n = 0;
+    while (auto p = c.begin()); p != c.end(); p++) {
+        RingItemHeader& header(*p);
+        RingItem&       item(reinterpret_cast<RingItem>(header));
+        
+        if (item.s_body.u_noBodyHeader.s_mbz == 0) {
+            setFragment(
+                n, getTimestampFromUserCode(item), m_nDefaultSid,
+                item.s_header.s_size, barrierType(item), &item
+                
+            );
+        } else {
+            setFragment(
+                n, item.s_body.u.hasBodyHeader.s_bodyHeader.s_timestamp,
+                item.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId,
+                item.s_header.s_size,
+                item.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier,
+                &item
+            );
+        }
+        n++;
+    }
+    return {n, m_pFragments};
 }

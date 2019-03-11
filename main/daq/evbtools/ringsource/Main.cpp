@@ -105,7 +105,7 @@ main(int argc, char** argv)
     CRingFragmentSource source(
         client, *pRing,
         ids, args.timestampextractor_arg, args.expectbodyheaders_flag,
-        args.oneshot_arg, args.timeout_arg, args.offset_arg
+        args.oneshot_arg, args.timeout_arg, args.offset_arg, args.default_id_arg
     );
     source();
     

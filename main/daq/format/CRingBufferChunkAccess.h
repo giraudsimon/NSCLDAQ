@@ -85,9 +85,11 @@ public:
         iterator begin();
         iterator end();
     };
+public:
+    size_t       m_nRingBufferBytes;
+
 private:
     CRingBuffer* m_pRingBuffer;
-    size_t       m_nRingBufferBytes;
     Chunk        m_chunk;
     void*        m_pWrappedItem;
     size_t       m_nWrapSize;
@@ -103,6 +105,7 @@ private:
     bool   firstItemWraps();
     void   makeWrappedItemChunk();
     void   makeInPlaceChunk(void* pData, size_t nBytes);
+    
 };
 
 
