@@ -169,6 +169,7 @@ ordertests_SOURCES = TestRunner.cpp orderTests.cpp duptscmdtest.cpp \
 
 
 ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
+	@top_builddir@/daq/format/libdataformat.la	\
 	@top_builddir@/servers/portmanager/libPortManager.la	\
 	@top_builddir@/base/os/libdaqshm.la			\
 	@top_builddir@/base/tcpip/libTcp.la			\

@@ -304,7 +304,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   if (m_nIovecSize < 2*nFragments + 1) {
     free(m_pIovec);
     m_pIovec = static_cast<iovec*>(
-      malloc(2*nFragments * sizeof(iovec) + 1)  // +1 for the header stuff
+      malloc((2*nFragments+1) * sizeof(iovec) )  // +1 for the header stuff
     );
     if (!m_pIovec) {
       throw std::bad_alloc();
@@ -315,12 +315,15 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   
   // Fill in the header and it's iovec:
   
-  uint8_t header[strlen("FRAGMENTS") - 1 + 2 * sizeof(uint32_t)];
-  memcpy(header, "FRAGMENTS", strlen("FRAGMENTS") - 1);
-  uint32_t hdrSize = strlen("FRAGMENTS") - 1;
-  memcpy(header + hdrSize, &hdrSize, sizeof(uint32_t));
+  
+  uint32_t hdrsize = strlen("FRAGMENTS");
+  uint8_t header[hdrsize + 2*sizeof(uint32_t)];  // fragments size piggy backs.
+  
+  memcpy(header, &hdrsize, sizeof(uint32_t));
+  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS") - 1);
+  
   p->iov_base = header;
-  p->iov_len  = sizeof(header);
+  p->iov_len  = hdrsize + 2*sizeof(uint32_t);
    
   p++;
   uint32_t payloadSize = 0;
@@ -334,7 +337,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   }
   // Fill in the payload size field of the header:
   //           "FRAGMENTS"  string length
-  memcpy(header + hdrSize + sizeof(uint32_t), &payloadSize , sizeof(uint32_t));
+  memcpy(header + hdrsize + sizeof(uint32_t), &payloadSize , sizeof(uint32_t));
   
   // Now we can pull the fd from the soccket and use the gather version of
   // io::writeData No data copies -- hoorah.

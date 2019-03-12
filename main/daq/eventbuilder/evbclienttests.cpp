@@ -15,7 +15,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <string>
+#include <CRingItem.h>
+#include <fragment.h>
+#include <DataFormat.h>
+#include <sys/socket.h>
+#include <sstream>
 
+static   int   m_nCurrentPort(2345);
 
 // To satisfy the application level protocol, the server
 // is going to need a thread of its own:
@@ -57,11 +63,15 @@ void ServerThread::run()
     int s = poll(&pstruct, 1, 100);
     if (s > 0) {
       readMessage(peer);      // Request
-      if (!disconnect()) {
+      bool d = disconnect();
+      if (!d) {
         readMessage(peer);       // body.
       }
       std::string reply("OK\n");
       peer->Write(reply.c_str(), reply.size());
+      if (d) {
+        return;
+      }
     }
   }
 }
@@ -73,8 +83,10 @@ ServerThread::disconnect()
   
   void* lastMsg = m_messages.back();
   uint8_t* p    = static_cast<uint8_t*>(lastMsg);
+  p += sizeof(uint32_t);     // Point to any text that might be there.
   const char* disconnect="DISCONNECT";
-  return memcmp(p, disconnect, strlen(disconnect) - 1);
+  bool result = memcmp(p, disconnect, strlen(disconnect) - 1) == 0;
+  return result;
   
 }
 
@@ -101,6 +113,7 @@ void ServerThread::stop()
 class clienttests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(clienttests);
   CPPUNIT_TEST(initial);
+  CPPUNIT_TEST(submit_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -108,16 +121,24 @@ private:
   CSocket*           m_pServer;
   ServerThread*      m_Server;
   CEventOrderClient* m_pTestObj;
+
 public:
+
   void setUp() {
     m_pServer = new CSocket;
-    m_pServer->Bind("2345");
+    while(1) {
+      try {
+        std::string sPort(Itos(m_nCurrentPort));
+        m_pServer->Bind(sPort);
+        break;
+      } catch(...) {m_nCurrentPort++; }      // Probably was in use.
+    }
     m_pServer->Listen();
     
     m_Server = new ServerThread(m_pServer);
     m_Server->start();
     
-    m_pTestObj = new CEventOrderClient("localhost", 2345);
+    m_pTestObj = new CEventOrderClient("localhost", m_nCurrentPort++);
     m_pTestObj->Connect("me", {1, 2, 3});
   }
   void tearDown() {
@@ -125,17 +146,26 @@ public:
     delete m_pTestObj;
     m_Server->stop();
     delete m_Server;
+    shutdown(m_pServer->getSocketFd(), SHUT_RD | SHUT_WR);
     delete m_pServer;
 
     
   }
 protected:
   void initial();
+  void submit_1();
 private:
-  std::string countedString(void* pMsg);
+  static std::string countedString(void* pMsg);
+  std::string Itos(int value);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(clienttests);
+
+std::string clienttests::Itos(int value) {
+  std::stringstream s;
+  s << value;
+  return s.str();
+}
 
 std::string clienttests::countedString(void* pMsg)
 {
@@ -159,4 +189,28 @@ void clienttests::initial() {
   void* connectMsg = m_Server->m_messages.front();
   
   EQ(std::string("CONNECT"), countedString(connectMsg));
+}
+
+// A single fragment is created/submitted.
+
+void clienttests::submit_1()
+{
+  CRingItem item(PHYSICS_EVENT, 0x123456789, 1, 0);
+  uint32_t* p = static_cast<uint32_t*>(item.getBodyPointer());
+  for (int i =0; i < 10; i++) {
+    *p++ = i;
+  }
+  item.setBodyCursor(p);
+  item.updateSize();
+  pRingItem pItem = static_cast<pRingItem>(item.getItemPointer());
+  
+  EVB::Fragment f;
+  f.s_header.s_timestamp = item.getEventTimestamp();
+  f.s_header.s_sourceId  = item.getSourceId();
+  f.s_header.s_size      = pItem->s_header.s_size;
+  f.s_header.s_barrier   = item.getBarrierType();
+  f.s_pBody              = pItem;
+  
+  m_pTestObj->submitFragments(size_t(1), &f);
+  EQ(size_t(4), m_Server->m_messages.size());   // Connection msg and frags.
 }
