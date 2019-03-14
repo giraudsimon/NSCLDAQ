@@ -114,6 +114,7 @@ class clienttests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(clienttests);
   CPPUNIT_TEST(initial);
   CPPUNIT_TEST(submit_1);
+  CPPUNIT_TEST(submit_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -154,6 +155,7 @@ public:
 protected:
   void initial();
   void submit_1();
+  void submit_2();
 private:
   static std::string countedString(void* pMsg);
   std::string Itos(int value);
@@ -196,7 +198,7 @@ void clienttests::initial() {
 void clienttests::submit_1()
 {
   CRingItem item(PHYSICS_EVENT, 0x123456789, 1, 0);
-  uint32_t* p = static_cast<uint32_t*>(item.getBodyPointer());
+  uint32_t* p = static_cast<uint32_t*>(item.getBodyCursor());
   for (int i =0; i < 10; i++) {
     *p++ = i;
   }
@@ -213,4 +215,71 @@ void clienttests::submit_1()
   
   m_pTestObj->submitFragments(size_t(1), &f);
   EQ(size_t(4), m_Server->m_messages.size());   // Connection msg and frags.
+  
+  // The last message should be a uint32_t our fragment header and our
+  // ring item.
+  
+  uint32_t* pLast = static_cast<uint32_t*>(m_Server->m_messages.back());
+  pLast++;                   // the ring item.
+  EVB::pFragmentHeader pH = reinterpret_cast<EVB::pFragmentHeader>(pLast);
+  EQ(f.s_header.s_timestamp, pH->s_timestamp);
+  EQ(f.s_header.s_sourceId, pH->s_sourceId);
+  EQ(f.s_header.s_size, pH->s_size);
+  EQ(f.s_header.s_barrier, pH->s_barrier);
+  
+  pH++;                   // Points to the ring item:
+  pRingItem pI = reinterpret_cast<pRingItem>(pH);
+  ASSERT(memcmp(pItem, pI, f.s_header.s_size) == 0);
+}
+// Submits 10 items.
+void clienttests::submit_2()
+{
+  EVB::Fragment f[10];
+  CRingItem* pItems[10];
+  pRingItem  pRawItems[10];
+  for (int i = 0; i < 10; i++) {
+    pItems[i] = new CRingItem(PHYSICS_EVENT, i, 1, 0);
+    uint32_t* p = static_cast<uint32_t*>(pItems[i]->getBodyCursor());
+    for (int j = i; (j - i) < 10; j++) {
+      *p++ = j;
+    }
+  
+    pItems[i]->setBodyCursor(p);
+    pItems[i]->updateSize();
+    pRawItems[i] = static_cast<pRingItem>(pItems[i]->getItemPointer());
+    f[i].s_header.s_timestamp = pItems[i]->getEventTimestamp();
+    f[i].s_header.s_sourceId  = pItems[i]->getSourceId();
+    f[i].s_header.s_size      = pRawItems[i]->s_header.s_size;
+    f[i].s_header.s_barrier   = pItems[i]->getBarrierType();
+    f[i].s_pBody              = pRawItems[i];
+  }
+  m_pTestObj->submitFragments(size_t(10), f);
+  
+  // The last message received by the server will have all of the headers and
+  // ring items:
+  
+  uint32_t* p32 = static_cast<uint32_t*>(m_Server->m_messages.back());
+  p32++;                 // Points to the first fragment header.
+  for (int i = 0; i < 10; i ++) {
+    EVB::pFragmentHeader pH = reinterpret_cast<EVB::pFragmentHeader>(p32);
+    
+    // Check the fragment header:
+    
+    EQ(f[i].s_header.s_timestamp, pH->s_timestamp);
+    EQ(f[i].s_header.s_sourceId,  pH->s_sourceId);
+    EQ(f[i].s_header.s_size,      pH->s_size);
+    EQ(f[i].s_header.s_barrier,   pH->s_barrier);
+    
+    pH++;                    // Points to the ring item.
+    pRingItem pI   = reinterpret_cast<pRingItem>(pH);
+ 
+     
+    // check the ring item.
+    
+    // Set up for the next loop pass:
+    
+    uint8_t* p = reinterpret_cast<uint8_t*>(pI);
+    p += pI->s_header.s_size;
+    p32 = reinterpret_cast<uint32_t*>(p);
+  }
 }
