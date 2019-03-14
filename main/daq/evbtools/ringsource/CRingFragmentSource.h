@@ -26,6 +26,7 @@
 #include <set>
 #include <CRingBufferChunkAccess.h>
 #include <fragment.h>
+#include <time.h>
 
 class CEventOrderClient;
 class CRingBuffer;
@@ -53,6 +54,9 @@ private:
     int                m_nDefaultSid;
     size_t             m_nFragments;  // size of the array below.
     EVB::pFragment     m_pFragments;
+    
+    time_t             m_endRunTime;  // Most recent end run time.
+    
 public:
     CRingFragmentSource(
         CEventOrderClient& client, CRingBuffer& dataSource, std::list<int> validIds,
@@ -78,6 +82,7 @@ private:
     uint32_t barrierType(RingItem& item);
     
     std::pair<size_t, EVB::pFragment> makeFragments(CRingBufferChunkAccess::Chunk& c);
+    bool timedOut();
 };
 
 

@@ -90,7 +90,7 @@ CRingFragmentSource::operator()()
 {
     CRingBufferChunkAccess accessor(&m_dataSource);
     size_t chunkSize = accessor.m_nRingBufferBytes/4;  // go for 1/4'th the buffer.
-    while (processSegment(accessor, chunkSize))
+    while (processSegment(accessor, chunkSize) && !(timedOut()))
         ;
 }
 //////////////////////////////////////////////////////////////////////
@@ -334,7 +334,37 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
                 &item
             );
         }
+        
+        // Count end runs and when they happened for one-shot and timeout
+        
+        if (header.s_type == END_RUN) {
+            m_endRunTime = time_t(nullptr);
+            m_endsSeen++;
+        }
+        
         n++;
     }
     return {n, m_pFragments};
+}
+/**
+ * timedOut
+ *    @return bool - True if we timed out waiting for all the end runs.
+ */
+bool
+CRingFragmentSource::timedOut()
+{
+    // We timed out if:
+    // -  We're one shot
+    // -  THe endRunTimeout is not zero.
+    // -  The time difference between now and the last time we saw an end run
+    //    is bigger than the timeout:
+    
+    if (!m_isOneShot || (m_endRunTimeout == 0)) return false;  // can't timeout.
+    
+    if (!m_endsSeen) return false;                 // Need at least 1 end to timeout
+    
+    time_t now = time(nullptr);
+    if ((now - m_endRunTime) > m_endRunTimeout) return true;
+        
+    return false;
 }
