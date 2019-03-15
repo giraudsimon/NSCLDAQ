@@ -47,6 +47,7 @@ class fragsrctest : public CppUnit::TestFixture {
   CPPUNIT_TEST(makefrags_1);
   CPPUNIT_TEST(makefrags_2);
   CPPUNIT_TEST(makefrags_3);
+  CPPUNIT_TEST(makefrags_4);
   
   CPPUNIT_TEST(btype_1);
   CPPUNIT_TEST(btype_2);
@@ -86,6 +87,7 @@ protected:
   void makefrags_1();
   void makefrags_2();
   void makefrags_3();
+  void makefrags_4();
   
   void btype_1();
   void btype_2();
@@ -247,6 +249,34 @@ void fragsrctest::makefrags_3()
     delete pItems[i];
     f++;
   }
+  
+  
+}
+// Make fragments for bodyheader-less items:
+
+void fragsrctest::makefrags_4()
+{
+  CRingItem item(PHYSICS_EVENT);
+  uint32_t* p = static_cast<uint32_t*>(item.getBodyCursor());
+  for (int i =0; i < 10; i++) {
+    *p++ = i;
+  }
+  item.setBodyCursor(p);
+  item.updateSize();
+  
+  pRingItem pRawItem = item.getItemPointer();
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(pRawItem->s_header.s_size, pRawItem);
+  
+  auto result = m_pTestObj->makeFragments(c);
+  EQ(size_t(1), result.first);
+  auto f = result.second;
+  EQ(NULL_TIMESTAMP, f->s_header.s_timestamp);   // From extractor which is null
+  EQ(pRawItem->s_header.s_size, f->s_header.s_size);
+  EQ(uint32_t(0), f->s_header.s_barrier);
+  EQ(uint32_t(1), f->s_header.s_sourceId);   // Default id.
+  EQ((void*)(pRawItem), f->s_pBody);
+  
   
   
 }
