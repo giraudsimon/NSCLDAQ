@@ -68,7 +68,7 @@ CRingFragmentSource::CRingFragmentSource(
     m_endsExpected(endRunsExpected), m_endsSeen(0),
     m_endRunTimeout(endTimeoutSeconds),
     m_timestampOffset(timestampOffset), m_nDefaultSid(defaultId),
-    m_nFragments(0), m_pFragments(nullptr)
+    m_nFragments(0), m_pFragments(nullptr), m_endRunTime(0)
 {
     setValidIds(validIds);
     setTsExtractor(tsExtractorLib);
@@ -247,12 +247,12 @@ CRingFragmentSource::setFragment(
 )
 {
     if (n >= m_nFragments) resizeFragments();  // ensure we can accomodate that.
-    
-    m_pFragments[n].s_header.s_timestamp = stamp;
-    m_pFragments[n].s_header.s_sourceId  = sid;
-    m_pFragments[n].s_header.s_size      = size;
-    m_pFragments[n].s_header.s_barrier   = barrier;
-    m_pFragments[n].s_pBody     = pItem;
+    auto f = m_pFragments + n;
+    f->s_header.s_timestamp = stamp;
+    f->s_header.s_sourceId  = sid;
+    f->s_header.s_size      = size;
+    f->s_header.s_barrier   = barrier;
+    f->s_pBody     = pItem;
 }
 /**
  * getTimestampFromUserCode

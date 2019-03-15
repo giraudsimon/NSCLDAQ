@@ -19,3 +19,13 @@ rfcmdline.c: rfcmdline.h
 rfcmdline.h: options.ggo
 	$(GENGETOPT) --output-dir=@builddir@ \
 		--input=@builddir@/options.ggo -F rfcmdline
+
+
+noinst_PROGRAMS= unittests
+
+unittests_SOURCES=TestRunner.cpp fragsrctests.cpp Asserts.h \
+	CRingFragmentSource.cpp 
+unittests_CXXFLAGS= $(ringFragmentSource_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ @top_builddir@/daq/format/libdataformat.la
+
+TESTS=./unittests
