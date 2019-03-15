@@ -43,6 +43,8 @@ class fragsrctest : public CppUnit::TestFixture {
   CPPUNIT_TEST(makefrags_3);
   
   CPPUNIT_TEST(btype_1);
+  CPPUNIT_TEST(btype_2);
+  CPPUNIT_TEST(btype_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -76,6 +78,8 @@ protected:
   void makefrags_3();
   
   void btype_1();
+  void btype_2();
+  void btype_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(fragsrctest);
@@ -233,11 +237,23 @@ void fragsrctest::makefrags_3()
   
 }
 
-// Barrier type for BEGINP_RUN -> 1
+// Barrier type for BEGIN_RUN -> 1
 
 void fragsrctest::btype_1()
 {
   CRingItem item(BEGIN_RUN);
   
   EQ(uint32_t(1), m_pTestObj->barrierType(*(item.getItemPointer())));
+}
+// Barrier type for END_RUN -> 2
+
+void fragsrctest::btype_2()
+{
+  CRingItem item(END_RUN);
+  EQ(uint32_t(2), m_pTestObj->barrierType(*(item.getItemPointer())));
+}
+void fragsrctest::btype_3()         // Rest are 0.
+{
+  CRingItem item(PHYSICS_EVENT);
+  EQ(uint32_t(0), m_pTestObj->barrierType(*item.getItemPointer()));
 }
