@@ -17,6 +17,12 @@
 #include <stdint.h>
 #include <string.h>
 
+// Fake timestamp extractor:
+
+uint64_t fakeExtractor(pPhysicsEventItem pItem)
+{
+  return 0x123456789abcdef;     // Just a fake stamp.
+}
 
 // Stub classes:
 
@@ -45,6 +51,10 @@ class fragsrctest : public CppUnit::TestFixture {
   CPPUNIT_TEST(btype_1);
   CPPUNIT_TEST(btype_2);
   CPPUNIT_TEST(btype_3);
+  
+  CPPUNIT_TEST(tstamp_1);
+  CPPUNIT_TEST(tstamp_2);
+  CPPUNIT_TEST(tstamp_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -80,6 +90,10 @@ protected:
   void btype_1();
   void btype_2();
   void btype_3();
+  
+  void tstamp_1();
+  void tstamp_2();
+  void tstamp_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(fragsrctest);
@@ -256,4 +270,27 @@ void fragsrctest::btype_3()         // Rest are 0.
 {
   CRingItem item(PHYSICS_EVENT);
   EQ(uint32_t(0), m_pTestObj->barrierType(*item.getItemPointer()));
+}
+
+// No timestamp extractor gives NULL_TIMESTAMP:
+
+void fragsrctest::tstamp_1()
+{
+  RingItem item;
+  EQ(NULL_TIMESTAMP, m_pTestObj->getTimestampFromUserCode(item));
+}
+// Call the extractor if there is one:
+void fragsrctest::tstamp_2()
+{
+  RingItem item;
+  item.s_header.s_type = PHYSICS_EVENT;                // extractor for phys items.
+  m_pTestObj->m_tsExtractor = fakeExtractor;
+  EQ(uint64_t(0x123456789abcdef), m_pTestObj->getTimestampFromUserCode(item));
+}
+void fragsrctest::tstamp_3()
+{
+  RingItem item;
+  item.s_header.s_type = BEGIN_RUN;
+  m_pTestObj->m_tsExtractor = fakeExtractor; // only called on physics items.
+  EQ(NULL_TIMESTAMP, m_pTestObj->getTimestampFromUserCode(item));
 }
