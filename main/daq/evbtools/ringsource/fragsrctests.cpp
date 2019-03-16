@@ -16,6 +16,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <string.h>
+#include <vector>
 
 // Fake timestamp extractor:
 
@@ -28,13 +29,16 @@ uint64_t fakeExtractor(pPhysicsEventItem pItem)
 
 class CEventOrderClient  {
 public:
+  std::vector<std::pair<size_t, EVB::pFragment>> m_submissions;
   void submitFragments(size_t nFrags, EVB::pFragment frags);
 };
 class CRingBuffer {};
 
 void
 CEventOrderClient::submitFragments(size_t nFrags, EVB::pFragment frags)
-{}
+{
+  m_submissions.push_back({nFrags, frags});
+}
 
 
 class fragsrctest : public CppUnit::TestFixture {
@@ -56,6 +60,9 @@ class fragsrctest : public CppUnit::TestFixture {
   CPPUNIT_TEST(tstamp_1);
   CPPUNIT_TEST(tstamp_2);
   CPPUNIT_TEST(tstamp_3);
+  
+  CPPUNIT_TEST(sendchunk_1);
+  CPPUNIT_TEST(sendchunk_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -96,6 +103,9 @@ protected:
   void tstamp_1();
   void tstamp_2();
   void tstamp_3();
+  
+  void sendchunk_1();
+  void sendchunk_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(fragsrctest);
@@ -323,4 +333,72 @@ void fragsrctest::tstamp_3()
   item.s_header.s_type = BEGIN_RUN;
   m_pTestObj->m_tsExtractor = fakeExtractor; // only called on physics items.
   EQ(NULL_TIMESTAMP, m_pTestObj->getTimestampFromUserCode(item));
+}
+//
+
+void fragsrctest::sendchunk_1()
+{
+  // Empty chunk sends nothing. false return:
+  
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(0, nullptr);
+  bool result = m_pTestObj->sendChunk(c);
+  ASSERT(result);
+  
+  ASSERT(m_pClient->m_submissions.empty());
+}
+void fragsrctest::sendchunk_2()
+{
+  // Make a chunk with a bunch of ring items:
+  
+  CRingItem* pItems[10];
+  uint32_t   d = 0;
+  uint8_t*   pChunkStorage;
+  size_t totalSize(0);
+  
+  for (int i =0; i < 10; i++) {
+    pItems[i] = new CRingItem(PHYSICS_EVENT, i, 1, 0);
+    uint32_t* p = static_cast<uint32_t*>(pItems[i]->getBodyCursor());
+    for (int i =0; i < 10; i++) {
+      *p++ = i;
+    }
+    pItems[i]->setBodyCursor(p);
+    pItems[i]->updateSize();
+    totalSize += pItems[i]->getItemPointer()->s_header.s_size;  
+  }
+  
+  pChunkStorage = new uint8_t[totalSize];
+  
+  // Fill the chunk with raw ring items.
+  
+  uint8_t* p = pChunkStorage;
+  
+  for (int i =0; i < 10; i++) {
+    pRingItem pi = pItems[i]->getItemPointer();
+    memcpy(p, pi, pi->s_header.s_size);
+    p += pi->s_header.s_size;
+  }
+  CRingBufferChunkAccess::Chunk c;
+  c.setChunk(totalSize, pChunkStorage);
+  
+  m_pTestObj->sendChunk(c);
+  
+  EQ(size_t(1), m_pClient->m_submissions.size());
+  auto sub = m_pClient->m_submissions[0];
+  EQ(size_t(10), sub.first);           // # of fragments.
+  EVB::pFragment pFrags = sub.second;
+  for (int i =0; i < 10; i++) {
+    pRingItem pItem = pItems[i]->getItemPointer();
+    EQ(pItems[i]->getEventTimestamp(), pFrags->s_header.s_timestamp);
+    EQ(pItems[i]->getSourceId(), pFrags->s_header.s_sourceId);
+    EQ(pItems[i]->getBarrierType(), pFrags->s_header.s_barrier);
+    EQ(pItem->s_header.s_size, pFrags->s_header.s_size);
+    
+    ASSERT(memcmp(pItem, pFrags->s_pBody, pItem->s_header.s_size) == 0);
+    
+    delete pItems[i];
+    pFrags++;
+  }
+  free(pChunkStorage);
+  
 }

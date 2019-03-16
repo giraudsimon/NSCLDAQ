@@ -206,12 +206,14 @@ CRingFragmentSource::sendChunk(CRingBufferChunkAccess::Chunk& c)
     
     // Send the fragments to the event builder.
     
-    m_client.submitFragments(frags.first, frags.second);
+    if (frags.first > 0) {
+        m_client.submitFragments(frags.first, frags.second);
+    }
     
     // Figure out if we should continue processing or not.
     // @todo - timeout on end runs seen.
     
-    if (!!m_isOneShot) return true;           // always keep on going if not 1shot
+    if (!m_isOneShot) return true;           // always keep on going if not 1shot
     if (m_endsExpected <= m_endsSeen) return false;
 
     return true;
@@ -270,7 +272,7 @@ CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
 {
     if ((item.s_header.s_type == PHYSICS_EVENT) && m_tsExtractor) {
         pPhysicsEventItem pEvent = reinterpret_cast<pPhysicsEventItem>(&item);
-        return (*m_tsExtractor)(pEvent);
+        return (*m_tsExtractor)(pEvent) + m_timestampOffset;
     } else {
         return NULL_TIMESTAMP;
     }
@@ -321,13 +323,14 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
         
         if (item.s_body.u_noBodyHeader.s_mbz == 0) {
             setFragment(
-                n, getTimestampFromUserCode(item), m_nDefaultSid,
+                n, getTimestampFromUserCode(item) , m_nDefaultSid,
                 item.s_header.s_size, barrierType(item), &item
                 
             );
         } else {
             setFragment(
-                n, item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp,
+                n,
+                item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp +m_timestampOffset,
                 item.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId,
                 item.s_header.s_size,
                 item.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier,
