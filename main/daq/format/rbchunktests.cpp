@@ -12,6 +12,8 @@
 #undef private
 
 #include <stdint.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 
 class rbchunkTest : public CppUnit::TestFixture {
@@ -61,6 +63,14 @@ private:
   CRingBuffer* m_consumer;
 public:
   void setUp() {
+    rlimit stackLim;
+    getrlimit(RLIMIT_STACK, &stackLim);
+    stackLim.rlim_cur = stackLim.rlim_max;
+    int stat = setrlimit(RLIMIT_STACK, &stackLim);
+    if (stat == -1) perror("setrlim call failed");
+    try {
+      CRingBuffer::remove("chunktest"); // in case it exists.
+    } catch(...) {}
     CRingBuffer::create("chunktest");
     m_producer = new CRingBuffer("chunktest", CRingBuffer::producer);
     m_consumer = new CRingBuffer("chunktest", CRingBuffer::consumer);
