@@ -363,7 +363,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
     
     io::writeDataV(sock, pVec, nToWrite);
     iovLen -= nToWrite;
-    
+    pVec   += nToWrite;
   }
   
   // Get the response and complain  if it's not "OK"
