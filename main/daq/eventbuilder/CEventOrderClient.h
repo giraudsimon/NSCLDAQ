@@ -42,6 +42,7 @@ private:
   uint16_t    m_port;		// port on which the event builder is running.
   CSocket*    m_pConnection;	// Connectionto the server.
   bool        m_fConnected;	// True if connection is alive.
+  int         m_nIovecMaxSize; // System limit on iov size.
   size_t      m_nIovecSize; // Number of elements allocated below.
   iovec*      m_pIovec;     // Pre-allocated iovector for writev.
   

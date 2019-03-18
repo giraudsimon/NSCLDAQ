@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <new>
+#include <system_error>
+
 
 static const std::string EventBuilderService("ORDERER"); // Advertised service name.
 
@@ -48,7 +50,12 @@ CEventOrderClient::CEventOrderClient(std::string host, uint16_t port) :
   m_fConnected(false),
   m_nIovecSize(0),
   m_pIovec(nullptr)
-{}
+{
+   m_nIovecMaxSize = sysconf(_SC_IOV_MAX);   // Maximum number of iovs for write.
+   if ( m_nIovecMaxSize == -1) {
+    throw std::system_error(errno, std::generic_category(), "Trying to get _SC_IOV_MAX"); 
+  }
+}
 
 /**
  * Destroy the object. Any existing connection to the event builder is dropped.
@@ -343,7 +350,21 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   // io::writeData No data copies -- hoorah.
   //
   int sock = m_pConnection->getSocketFd();
-  io::writeDataV(sock, m_pIovec, 2*nFragments + 1);
+  
+  int iovLen = 2*nFragments + 1;
+  
+  // This loop is because there's a maximum number of I/O vector elements
+  // allowed.  We've squirreled that at construction time in:  m_nIovecMaxSize
+  
+  iovec* pVec = m_pIovec;
+  while (iovLen) {
+    int nToWrite = iovLen;
+    if (iovLen >  m_nIovecMaxSize) nToWrite =  m_nIovecMaxSize;
+    
+    io::writeDataV(sock, pVec, nToWrite);
+    iovLen -= nToWrite;
+    
+  }
   
   // Get the response and complain  if it's not "OK"
   
