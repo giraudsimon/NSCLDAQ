@@ -367,7 +367,7 @@ CFragmentHandler::addDataLateObserver(CFragmentHandler::DataLateObserver* pObser
 void
 CFragmentHandler::removeDataLateObserver(CFragmentHandler::DataLateObserver* pObserver)
 {
-  std::list<DataLateObserver*>::iterator p = find(
+  auto p = find(
 					  m_DataLateObservers.begin(), m_DataLateObservers.end(),
 					  pObserver);
   if (p != m_DataLateObservers.end()) {
@@ -407,7 +407,7 @@ CFragmentHandler::addBarrierObserver(CFragmentHandler::BarrierObserver* pObserve
 void
 CFragmentHandler::removeBarrierObserver(CFragmentHandler::BarrierObserver* pObserver)
 {
-  std::list<BarrierObserver*>::iterator p = std::find(m_goodBarrierObservers.begin(),
+  auto p = std::find(m_goodBarrierObservers.begin(),
 						      m_goodBarrierObservers.end(), pObserver);
   if (p != m_goodBarrierObservers.end()) {
     m_goodBarrierObservers.erase(p);
@@ -438,7 +438,7 @@ CFragmentHandler::addPartialBarrierObserver(CFragmentHandler::PartialBarrierObse
 void
 CFragmentHandler::removePartialBarrierObserver(CFragmentHandler::PartialBarrierObserver* pObserver)
 {
-  std::list<PartialBarrierObserver*>::iterator p = std::find(m_partialBarrierObservers.begin(),
+  auto p = std::find(m_partialBarrierObservers.begin(),
 							     m_partialBarrierObservers.end(), 
 							     pObserver);
   if (p != m_partialBarrierObservers.end()) {
@@ -470,7 +470,7 @@ CFragmentHandler::addDuplicateTimestampObserver(DuplicateTimestampObserver* pObs
 void
 CFragmentHandler::removeDuplicateTimestampObserver(DuplicateTimestampObserver* pObserver)
 {
-    std::list<DuplicateTimestampObserver*>::iterator p = std::find(
+    auto p = std::find(
         m_duplicateTimestampObservers.begin(), m_duplicateTimestampObservers.end(),
         pObserver
     );
@@ -491,7 +491,7 @@ CFragmentHandler::removeDuplicateTimestampObserver(DuplicateTimestampObserver* p
 void
 CFragmentHandler::observeDuplicateTimestamp(uint32_t sourceId, uint64_t timestamp)
 {
-    std::list<DuplicateTimestampObserver*>::iterator p =
+    auto p =
         m_duplicateTimestampObservers.begin();
     while(p != m_duplicateTimestampObservers.end()) {
         DuplicateTimestampObserver* pObserver = *p;
@@ -523,9 +523,8 @@ CFragmentHandler::addFlowControlObserver(FlowControlObserver* pObserver)
 void
 CFragmentHandler::removeFlowControlObserver(FlowControlObserver* pObserver)
 {
-    std::list<FlowControlObserver*>::iterator p =
-        std::find(m_flowControlObservers.begin(), m_flowControlObservers.end(),
-                  pObserver);
+    auto p = std::find(
+      m_flowControlObservers.begin(), m_flowControlObservers.end(), pObserver);
         
     if (p != m_flowControlObservers.end()) {
         m_flowControlObservers.erase(p);
@@ -561,9 +560,8 @@ CFragmentHandler::removeNonMonotonicTimestampobserver(
     CFragmentHandler::NonMonotonicTimestampObserver* pObserver
 )
 {
-    std::list<NonMonotonicTimestampObserver*>::iterator p =
-        std::find(m_nonMonotonicTsObservers.begin(),
-                  m_nonMonotonicTsObservers.end(), pObserver);
+    auto p = std::find(
+      m_nonMonotonicTsObservers.begin(), m_nonMonotonicTsObservers.end(), pObserver);
     if (p != m_nonMonotonicTsObservers.end()) {
         m_nonMonotonicTsObservers.erase(p);
     }
@@ -583,8 +581,7 @@ CFragmentHandler::observeOutOfOrderInput(
     unsigned sourceId, uint64_t prior, uint64_t bad
 )
 {
-    std::list<NonMonotonicTimestampObserver*>::iterator p =
-        m_nonMonotonicTsObservers.begin();
+    auto p = m_nonMonotonicTsObservers.begin();
     while (p != m_nonMonotonicTsObservers.end()) {
         NonMonotonicTimestampObserver* pObs = *p;
         (*pObs)(sourceId, prior, bad);
@@ -599,8 +596,7 @@ CFragmentHandler::observeOutOfOrderInput(
 void
 CFragmentHandler::Xon()
 {
-    std::list<FlowControlObserver*>::iterator p =
-        m_flowControlObservers.begin();
+    auto p = m_flowControlObservers.begin();
     while (p != m_flowControlObservers.end()) {
         FlowControlObserver* pObserver = *p;
         pObserver->Xon();
@@ -617,8 +613,7 @@ CFragmentHandler::Xon()
 void
 CFragmentHandler::Xoff()
 {
-    std::list<FlowControlObserver*>::iterator p =
-        m_flowControlObservers.begin();;
+    auto p = m_flowControlObservers.begin();;
         while (p != m_flowControlObservers.end()) {
             FlowControlObserver* pObserver = *p;
             pObserver->Xoff();           
@@ -726,9 +721,7 @@ CFragmentHandler::markSourceFailed(uint32_t id)
   if(m_fBarrierPending) {
     if (countPresentBarriers() == m_liveSources.size()) {	
       std::cerr << "markSourceFailed -- generating barrier on source dead\n";
-      std::list<std::pair<time_t, EVB::pFragment> >& sortedFragments(
-          *(new std::list<std::pair<time_t, EVB::pFragment> >)
-      );
+      auto& sortedFragments(*(new EvbFragments));
       generateMalformedBarrier(sortedFragments);
       observe(sortedFragments);
     }
@@ -750,9 +743,9 @@ CFragmentHandler::markSourceFailed(uint32_t id)
 void
 CFragmentHandler::markSocketFailed(std::string sockName)
 {
-  std::map<std::string, std::list<uint32_t> >::iterator p = m_socketSources.find(sockName);
+  auto p = m_socketSources.find(sockName);
   if (p != m_socketSources.end()) {
-    std::list<uint32_t>::iterator pSource = p->second.begin();
+    auto pSource = p->second.begin();
     while (pSource != p->second.end()) {
       markSourceFailed(*pSource);
       ++pSource;
@@ -781,9 +774,9 @@ void
 CFragmentHandler::reviveSocket(std::string sockname)
 {
 
-  std::map<std::string, std::list<uint32_t> >::iterator p = m_deadSockets.find(sockname);
+  auto p = m_deadSockets.find(sockname);
   if (p != m_deadSockets.end()) {
-    std::list<uint32_t>::iterator pSource = p->second.begin();
+    auto pSource = p->second.begin();
     while (pSource != p->second.end()) {
       SourceQueue& queue = getSourceQueue(*pSource);
       m_liveSources.insert(*pSource);		     // Sources start live.
@@ -1078,11 +1071,11 @@ CFragmentHandler::popOldest()
  *         to copy them.
  */
 void
-CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
+CFragmentHandler::observe(EvbFragments& event)
 {
   CSortThread::Fragments& frags(*new CSortThread::Fragments);
   frags.push_back(&event);
-    m_sorter.queueFragments(frags);
+  m_sorter.queueFragments(frags);
 }
 /**
  * dataLate
@@ -1099,7 +1092,7 @@ CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
 void 
 CFragmentHandler::dataLate(const ::EVB::Fragment& fragment)
 {
-  std::list<DataLateObserver*>::iterator p = m_DataLateObservers.begin();
+  auto p = m_DataLateObservers.begin();
   while (p != m_DataLateObservers.end()) {
     DataLateObserver* pObserver = *p;
     (*pObserver)(fragment, m_nNewest);
@@ -1383,7 +1376,7 @@ CFragmentHandler::QueueStatGetter::queueStats()
  *
  */
 CFragmentHandler::BarrierSummary
-CFragmentHandler::generateBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::generateBarrier(EvbFragments& outputList)
 {
   // Iterate through the output queues and add any
   // barrier events to the outputList.
@@ -1435,7 +1428,7 @@ CFragmentHandler::generateBarrier(std::list<std::pair<time_t, EVB::pFragment> >&
  * @param outputList - Output fragment list (see above).
  */
 void
-CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::generateMalformedBarrier(EvbFragments& outputList)
 {
 
   BarrierSummary bs = generateBarrier(outputList);
@@ -1451,7 +1444,7 @@ CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFra
  * @param outputList - Output fragment list (see above).
  */
 void
-CFragmentHandler::goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::goodBarrier(EvbFragments& outputList)
 {
 
   BarrierSummary bs = generateBarrier(outputList);
@@ -1524,8 +1517,9 @@ void
 CFragmentHandler::observeGoodBarrier(std::vector<std::pair<uint32_t, uint32_t> >& types)
 {
 
-  for (std::list<BarrierObserver*>::iterator p = m_goodBarrierObservers.begin();
-       p != m_goodBarrierObservers.end(); p++) {
+  for (auto p = m_goodBarrierObservers.begin(); p != m_goodBarrierObservers.end();
+  p++)
+  {
     (*p)->operator()(types);
   }
 
@@ -1543,7 +1537,7 @@ CFragmentHandler::partialBarrier(std::vector<std::pair<uint32_t, uint32_t> >& ty
 				 std::vector<uint32_t>& missingSources)
 {
 
-  for (std::list<PartialBarrierObserver*>::iterator p = m_partialBarrierObservers.begin();
+  for (auto p = m_partialBarrierObservers.begin();
        p != m_partialBarrierObservers.end(); p++) {
     (*p)->operator()(types, missingSources);
   }
@@ -1600,9 +1594,8 @@ CFragmentHandler::getSourceQueue(uint32_t id)
 void
 CFragmentHandler::checkBarrier(bool completeFlush)
 {
-  std::list<std::pair<time_t, EVB::pFragment> >& outputList(
-    *(new std::list<std::pair<time_t, EVB::pFragment> >)
-  );
+  EvbFragments& outputList(*(new EvbFragments));
+  
   m_nNow = time(NULL);		// Update the time.
   size_t nBarriers = countPresentBarriers();
 
@@ -1820,8 +1813,8 @@ public:
  */
 void
 CFragmentHandler::DequeueUntilStamp(
-  std::list<std::pair<time_t,  EVB::pFragment> >& result,
-  std::list<std::pair<time_t,  EVB::pFragment> >& q,
+  EvbFragments& result,
+  EvbFragments& q,
   uint64_t timestamp
 )
 {
@@ -1844,8 +1837,8 @@ CFragmentHandler::DequeueUntilStamp(
  */
 void
 CFragmentHandler::DequeueUntilAbsTime(
-  std::list<std::pair<time_t,  EVB::pFragment> >& result,
-  std::list<std::pair<time_t,  EVB::pFragment> >& q,
+  EvbFragments& result,
+  EvbFragments& q,
   time_t time
 )
 {
@@ -1876,7 +1869,7 @@ CFragmentHandler::DequeueUntilAbsTime(
 void
 CFragmentHandler::updateQueueStatistics(
     SourceQueue& queue,
-    std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
+    EvbFragments& justDequeued
 )
 {
   if (justDequeued.empty()) return;

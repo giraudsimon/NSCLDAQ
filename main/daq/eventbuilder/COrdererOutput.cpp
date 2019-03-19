@@ -71,7 +71,7 @@ COrdererOutput::~COrdererOutput()
  * @param event - vector of fragments to output.
  */
 void
-COrdererOutput::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event)
+COrdererOutput::operator()(const EvbFragments& event)
 {
   
   for (auto i =event.begin(); i != event.end(); i++) {
@@ -80,8 +80,6 @@ COrdererOutput::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& 
     try {
       m_Output.put(&(p->s_header), sizeof(EVB::FragmentHeader));
       m_Output.put(p->s_pBody, p->s_header.s_size);
-       //io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
-       //io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
     }
     catch(int er) {
       std::cerr << " Caught an output exception " << er << std::endl;

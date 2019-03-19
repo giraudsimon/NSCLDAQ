@@ -14,6 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 #include "COutputStatsObserver.h"
+#include "CFragmentHandler.h"
 #include "fragment.h"
 
 /*-------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ COutputStatsObserver::~COutputStatsObserver()
  * @param event - the fragments passed in.
  */
 void
-COutputStatsObserver::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event)
+COutputStatsObserver::operator()(const EvbFragments& event)
 {
   m_nTotalFragments += event.size();
   CriticalSection c(m_perSourceStatGuard);

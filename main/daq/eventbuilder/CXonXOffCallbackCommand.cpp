@@ -116,8 +116,7 @@ TclFlowObserver::dispatch(std::string cmdBase)
  */
 CXonXoffCallbackCommand::~CXonXoffCallbackCommand()
 {
-    std::list<TclFlowObserver*>::iterator p =
-        m_observers.begin();
+    auto p = m_observers.begin();
     while (p != m_observers.end()) {
         delete *p;
         p++;
@@ -198,7 +197,7 @@ CXonXoffCallbackCommand::remove(
     std::string xon   = objv[2];
     std::string xoff  = objv[3];
     
-    std::list<TclFlowObserver*>::iterator p = m_observers.begin();
+    auto p = m_observers.begin();
     while (p != m_observers.end()) {
         TclFlowObserver* pObserver = *p;
         CFragmentHandler::getInstance()->removeFlowControlObserver(pObserver);

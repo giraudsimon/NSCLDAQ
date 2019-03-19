@@ -15,17 +15,8 @@
 */
 #ifndef __CORDEREROUTPUT_H
 #define __CORDEREROUTPUT_H
-
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
 
 // Forward definitions:
 
@@ -66,7 +57,7 @@ private:
   // Entries required of observers:
 
 public:
-  virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event);
+  virtual void operator()(const EvbFragments& event);
 
   // Utilities:
 private:

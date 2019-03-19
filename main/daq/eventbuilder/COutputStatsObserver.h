@@ -16,32 +16,10 @@
 
 #ifndef __COUTPUTSTATSOBSERVER_H
 #define __COUTPUTSTATSOBSERVER_H
-
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#endif
-#endif
-
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
 #include <CMutex.h>
 
 /**
@@ -96,7 +74,7 @@ private:
 
   // Object methods:
 public:
-  virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event);
+  virtual void operator()(const EvbFragments& event);
   void clear();
   Statistics getStatistics() const;
 };

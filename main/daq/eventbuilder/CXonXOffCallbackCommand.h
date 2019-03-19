@@ -21,16 +21,9 @@
 */
 #ifndef __CXONXOFFCALLBACKCOMMAND_h
 #define __CXONXOFFCALLBACKCOMMAND_h
-#ifndef __TCLOBJECTPROCESSORH_H
 #include <TCLObjectProcessor.h>
-#endif
 
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
 
 class CTCLInterpreter;
 class CTCLObject;
