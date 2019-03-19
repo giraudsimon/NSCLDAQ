@@ -529,7 +529,8 @@ void rbchunkTest::nextchunk_5()
   size_t bufferedSize =  a.waitChunk(1000, 1, 0);
   EQ(bufferedSize, itemSize);
   
-  auto c = a. nextChunk();
+  auto c = a.nextChunk();
+  EQ(a.m_pWrappedItem, c.m_pStorage);  // Verify the test wrapped the item.
   EQ(bufferedSize, c.size());
   
   uint32_t* pChunk = static_cast<uint32_t*>(c.getStorage());
