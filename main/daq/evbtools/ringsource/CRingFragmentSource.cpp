@@ -183,8 +183,9 @@ CRingFragmentSource::processSegment(CRingBufferChunkAccess& a, size_t chunkSize)
     auto chunk = a.nextChunk();
     chunkBytesGotten = chunk.size();
     if (chunkBytesGotten == 0) {
-        while(a.waitChunk(chunkSize, 1000, 10) == 0)
-            ;
+        while(a.waitChunk(chunkSize, 1000, 10) == 0) {
+            if(timedOut()) return false;              // Done processing.
+        }
         chunk = a.nextChunk();
         chunkBytesGotten = chunk.size();
     }
