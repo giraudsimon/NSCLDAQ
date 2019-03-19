@@ -327,7 +327,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   uint8_t header[hdrsize + 2*sizeof(uint32_t)];  // fragments size piggy backs.
   
   memcpy(header, &hdrsize, sizeof(uint32_t));
-  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS") - 1);
+  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS"));
   
   p->iov_base = header;
   p->iov_len  = hdrsize + 2*sizeof(uint32_t);
