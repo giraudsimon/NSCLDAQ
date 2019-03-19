@@ -204,7 +204,7 @@ CRingBufferChunkAccess::sizeChunk(void* pChunk, size_t nBytes)
 {
     uint8_t *p = static_cast<uint8_t*>(pChunk);
     size_t result(0);
-    while(nBytes != 0) {
+    while(nBytes >= sizeof(uint32_t)) {    // Finish when we don't have a full size.
         uint32_t* pSize = reinterpret_cast<uint32_t*>(p);
         if (*pSize <= nBytes) {      // Item fits.
             result += *pSize;        // Count the ring item size.
