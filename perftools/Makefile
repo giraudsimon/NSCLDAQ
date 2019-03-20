@@ -5,7 +5,8 @@ LDFLAGS=-L$(DAQLIB) -lTcp -ldataformat -ldaqio -lDataFlow -ldaqshm -lException -
 	-Wl,-rpath="$(DAQLIB)" -g
 
 EXECS=metertest rdoperf fragsrcperf socksend sockperf pipesend pipeperf \
-	fragmaker ritemMaker runmaker bufferedoutperf checkevfiles
+	fragmaker ritemMaker runmaker bufferedoutperf checkevfiles evbfilecheck \
+	evbfilecheck
 
 all: $(EXECS)
 
@@ -49,6 +50,10 @@ bufferedoutperf: bufferedoutperf.o
 
 checkevfiles: checkevfiles.o
 	$(CXX) -o checkevfiles $^ $(LDFLAGS)
+
+evbfilecheck: evbfilecheck.o
+	$(CXX) -o evbfilecheck $^ $(LDFLAGS)
+
 
 clean:
 	rm -f *.o
