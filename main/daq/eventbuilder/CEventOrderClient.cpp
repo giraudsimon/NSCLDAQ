@@ -361,7 +361,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
     int nToWrite = iovLen;
     if (iovLen >  m_nIovecMaxSize) nToWrite =  m_nIovecMaxSize;
     
-    io::writeDataV(sock, pVec, nToWrite);
+    io::writeDataVUnlimited(sock, pVec, nToWrite);
     iovLen -= nToWrite;
     pVec   += nToWrite;
   }
