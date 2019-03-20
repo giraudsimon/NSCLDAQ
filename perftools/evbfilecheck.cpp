@@ -351,6 +351,7 @@ processRingItem(CRingItem& item)
             if (badItems.size()) {
                 dumpBadItems();
                 badItems.clear();
+                wrongness.clear();
             }
         }
         delete pItem;
@@ -361,6 +362,9 @@ processRingItem(CRingItem& item)
     
     if (item.type() == END_RUN) {
         checkBadItemsAtEndRun();
+        badItems.clear();
+        wrongness.clear();
+        
     }
     
 }

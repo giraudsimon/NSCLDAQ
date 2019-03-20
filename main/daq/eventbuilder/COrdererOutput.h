@@ -17,6 +17,7 @@
 #define __CORDEREROUTPUT_H
 #include "CFragmentHandler.h"
 #include <tcl.h>
+#include <io.h>
 
 // Forward definitions:
 
@@ -38,7 +39,9 @@ class COrdererOutput : public CFragmentHandler::Observer
 {
 private:
   int              m_OutputChannel;	// where we write the data.
-  io::CBufferedOutput& m_Output;  
+  io::CBufferedOutput& m_Output;
+  iovec*           m_pVectors;
+  size_t           m_nVectors;
 
   // canonicals:
 
