@@ -1,6 +1,10 @@
 
+             # May need to adjust later.
+SPECROOT=/usr/opt/spectcl/5.1-004
+SPECINC=$(SPECROOT)/include
+SPECLIB= $(SPECROOT)/lib
 
-CXXFLAGS=-I$(DAQINC) -std=c++11 -g
+CXXFLAGS=-I$(DAQINC) -std=c++11 -g -I$(SPECINC)
 LDFLAGS=-L$(DAQLIB) -lTcp -ldataformat -ldaqio -lDataFlow -ldaqshm -lException -lrt\
 	-Wl,-rpath="$(DAQLIB)" -g
 
@@ -52,8 +56,8 @@ checkevfiles: checkevfiles.o
 	$(CXX) -o checkevfiles $^ $(LDFLAGS)
 
 evbfilecheck: evbfilecheck.o
-	$(CXX) -o evbfilecheck $^ $(LDFLAGS)
-
+	$(CXX) -o evbfilecheck $^ $(LDFLAGS) \
+		-L$(SPECLIB) -lTclGrammerApp -Wl,-rpath="$(SPECLIB)"
 
 clean:
 	rm -f *.o
