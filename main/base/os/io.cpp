@@ -62,7 +62,10 @@ badError(int error)
   return (okErrors.count(error) == 0);
 }
 
+static long maxIovecSize(-1);
+
 namespace io {
+  
 /**
  * updateIov
  *    Given an input I/O vector, the number of items it has
@@ -269,6 +272,9 @@ closeUnusedFiles(std::set<int> keepOpen)
  *        - EAGAIN results in a retry.
  *        - EWOULDBLOCK results in a retry
  *        - EINTR results in a retry.
+ * @note the number of elements in the iovcnt may be limited by the underlying
+ *      OS  - see writeDataVUnlimited which, if needed calls writeDataV
+ *            repetitively.
 */
 void
 writeDataV(int fd, struct iovec* iov, int iovcnt)
@@ -290,5 +296,38 @@ writeDataV(int fd, struct iovec* iov, int iovcnt)
     iov = updateIov(iov, iovcnt, nBytes);
   }
 }
-
+/**
+ * writeDataVUnlimited
+ *    Repeatedly calls WriteDataV with at most the system limit of
+ *    I/O vectors until a potentially unlimited iov is written.
+ *
+ *
+ *  @param fd - file descriptor to which the data will be written (could be
+ *             a socket, or pipe).
+ *  @param iov - The vector of I/O descriptors.  See writev(2) for information
+ *            about the form of these. Note that in the event the write must
+ *            be continued from an incomplete write (e.g. write bigger than
+ *            OS buffers), the contents of this vector can be modified in the
+ *            course of resuming the write operation.
+ *  @param iovcnt - number of iovec structs pointed to by iov.
+ *  @throw std::system_error encapsulating the errno that caused the
+ *         failure
+ *
+ *  @note - the first time sysconf is called to get the maximum iovec count.
+ */
+void
+writeDataVUnlimited(int fd, struct iovec* iov, int iovcnt)
+{
+  if (maxIovecSize < 0) {
+    maxIovecSize = sysconf(_SC_IOV_MAX);
+  }
+  while (iovcnt) {
+    int n = iovcnt;
+    if (n > maxIovecSize) n = maxIovecSize;
+    writeDataV(fd, iov, n);
+    
+    iov += n;
+    iovcnt -= n;
+  }
+}
 }                             // namespace.

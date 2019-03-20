@@ -33,6 +33,7 @@ namespace io {
   size_t readData (int fd, void* pBuffer,  size_t nBytes);
   void closeUnusedFiles(std::set<int> keepOpen);
   void writeDataV(int fd, struct iovec* iov, int iovcnt);
+  void writeDataVUnlimited(int fd, struct iovec* iov, int iovcnt);
 }
 
 
