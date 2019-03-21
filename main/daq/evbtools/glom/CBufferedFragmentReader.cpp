@@ -133,14 +133,14 @@ CBufferedFragmentReader::getFragment()
 bool
 CBufferedFragmentReader::mustRead()
 {
-    size_t unread = m_nBytesInBuffer - m_nReadSize;
+    size_t unread = m_nBytesInBuffer - m_nOffset;
     if (unread < sizeof(EVB::FragmentHeader)) return true;
     
     // So we have a header,  let's see how much more space we need:
     
     EVB::pFlatFragment here = cursor();
     size_t s = fragSize(here);
-    if (unread <= s) return true;
+    if (unread < s) return true;
     
     return false;
 }
@@ -160,7 +160,6 @@ CBufferedFragmentReader::mustRead()
 void
 CBufferedFragmentReader::fillBuffer()
 {
-    void* pWhere = readPointer();
     pollfd p = {m_nFd, POLLIN ,0};
     int status;
     while ((status = poll(&p, 1, 3600*24*1000)) == 0) 
@@ -213,6 +212,8 @@ CBufferedFragmentReader::readPointer()
     uint8_t* result = static_cast<uint8_t*>(m_pBuffer);
     result         += unread;                  // Append data here.
     m_nReadSize     = m_nBufferSize - unread;  // Can read this much.
+    
+    return result;
 }
 /**
  * readData

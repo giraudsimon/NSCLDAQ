@@ -34,6 +34,7 @@ typedef struct _FlatFragment FlatFragment, *pFlatFragment;
  */
 class CBufferedFragmentReader
 {
+private:
     int     m_nFd;              // File descriptor
     void*   m_pBuffer;          // Read/partial fragment buffer.
     size_t  m_nBufferSize;      // Current size of fragment buffer.
@@ -45,7 +46,7 @@ public:
     virtual ~CBufferedFragmentReader();
     
     const EVB::pFlatFragment getFragment();
-protected:
+private:
     bool mustRead();
     void fillBuffer();
     void* readPointer();
