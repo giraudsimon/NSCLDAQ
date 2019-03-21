@@ -1,6 +1,6 @@
 bin_PROGRAMS=glom
 
-glom_SOURCES= glomMain.cpp
+glom_SOURCES= glomMain.cpp CBufferedFragmentReader.cpp CBufferedFragmentReader.h
 nodist_glom_SOURCES=glom.c glom.h
 
 BUILT_SOURCES = glom.c glom.h
