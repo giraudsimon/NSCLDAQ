@@ -20,6 +20,7 @@
  */
 #ifndef CBUFFEREDFRAGMENTREADER_H
 #define CBUFFEREDFRAGMENTREADER_H
+#include <stddef.h>
 
 namespace EVB {
 typedef struct _FlatFragment FlatFragment, *pFlatFragment; 
@@ -33,11 +34,22 @@ typedef struct _FlatFragment FlatFragment, *pFlatFragment;
  */
 class CBufferedFragmentReader
 {
+    int     m_nFd;
+    void*   m_pBuffer;
+    size_t  m_nBufferSize;
+    size_t  m_nBytesInBuffer;
+    size_t  m_nReadSize;
+    size_t  m_nOffset;    
 public:
     CBufferedFragmentReader(int fd);
     virtual ~CBufferedFragmentReader();
     
     const EVB::pFlatFragment getFragment();
+protected:
+    bool mustRead();
+    void fillBuffer();
+    void* readPointer();
+    void  readData();
 };
 
 #endif
