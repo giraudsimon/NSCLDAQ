@@ -21,3 +21,12 @@ glom.h: @srcdir@/glom.ggo
 		--output-dir=@builddir@ --file-name=glom
 
 EXTRA_DIST=glom.ggo glom.xml
+
+
+noinst_PROGRAMS=unittests
+
+unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp
+unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@
+unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
+
+TESTS=./unittests
