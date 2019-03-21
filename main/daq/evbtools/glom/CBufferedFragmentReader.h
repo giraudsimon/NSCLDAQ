@@ -34,12 +34,12 @@ typedef struct _FlatFragment FlatFragment, *pFlatFragment;
  */
 class CBufferedFragmentReader
 {
-    int     m_nFd;
-    void*   m_pBuffer;
-    size_t  m_nBufferSize;
-    size_t  m_nBytesInBuffer;
-    size_t  m_nReadSize;
-    size_t  m_nOffset;    
+    int     m_nFd;              // File descriptor
+    void*   m_pBuffer;          // Read/partial fragment buffer.
+    size_t  m_nBufferSize;      // Current size of fragment buffer.
+    size_t  m_nBytesInBuffer;   // Number of bytes from last read.
+    size_t  m_nReadSize;        // How many bytes max to read.
+    size_t  m_nOffset;          // Offset to next fragment to return.
 public:
     CBufferedFragmentReader(int fd);
     virtual ~CBufferedFragmentReader();
@@ -50,6 +50,9 @@ protected:
     void fillBuffer();
     void* readPointer();
     void  readData();
+    const EVB::pFlatFragment cursor();
+    void updateOffset(const EVB::pFlatFragment pFrag);
+    size_t fragSize(const EVB::pFlatFragment pFrag);
 };
 
 #endif
