@@ -325,16 +325,16 @@ proc updatePages {} {
 	
 	# Set the tab background accordingly.
 
-	set tabidx [.notebook index $widget]
+	set tabidx [$::notebook index $widget]
 
 	if {$bkg eq "ok"} {
-	    .notebook tab $tabidx -compound text
+	    $::notebook tab $tabidx -compound text
 	} elseif {$bkg eq "low"} {
-	    .notebook tab $tabidx -image GreenBrick -compound center
+	    $::notebook tab $tabidx -image GreenBrick -compound center
 	} elseif {$bkg eq "high"} {
-	    .notebook tab $tabidx -image RedBrick -compound center
+	    $::notebook tab $tabidx -image RedBrick -compound center
 	} else {
-	    .notebook tab $tabidx -image AmberBrick -compound center
+	    $::notebooko tab $tabidx -image AmberBrick -compound center
 	}
     }
 
@@ -670,19 +670,19 @@ proc ResizeStripchart charts {
 # setupGui
 #   Set up the top level gui stuff.
 #
-proc setupGui {} {
-    set ::header [header .header -title ????? -run ???? -elapsed 0]
-    pack .header -fill x -expand 1
-    set ::notebook [ttk::notebook .notebook]
-    pack .notebook -fill both -expand 1
-    ttk::frame .alarmcontrol
-    ttk::checkbutton .alarmcontrol.enable -text {Enable Alarms} -variable alarmcontrol \
+proc setupGui {top} {
+    set ::header [header $top.header -title ????? -run ???? -elapsed 0]
+    pack $::header -fill x -expand 1
+    set ::notebook [ttk::notebook $top.notebook]
+    pack $::notebook -fill both -expand 1
+    ttk::frame $top.alarmcontrol
+    ttk::checkbutton $top.alarmcontrol.enable -text {Enable Alarms} -variable alarmcontrol \
         -command [list enableDisableAlarms .alarmcontrol.enable]
-    grid .alarmcontrol.enable -sticky w -row 0 -column 0
+    grid $top.alarmcontrol.enable -sticky w -row 0 -column 0
     
    
     
-    pack .alarmcontrol -fill x -expand 1
+    pack $top.alarmcontrol -fill x -expand 1
 }
 
 
@@ -695,44 +695,44 @@ proc setupGui {} {
 #
 # @param charts - List of strip charts to create
 #
-proc setupStripchart charts {
+proc setupStripchart {charts top} {
     
     # Axis controls go in the alarm strip for brevity:
     
-    ttk::labelframe .alarmcontrol.y -text {Y axis}
-    ScaleControl    .alarmcontrol.y.s -menulist [list 1x 2x 4x 8x 16x 32x Custom... Auto]
-    .alarmcontrol.y.s configure -zoomrange [list 0 5]
-    .alarmcontrol.y.s configure -current Auto
-    .alarmcontrol.y.s configure -command [list yScaleChanged %S] \
+    ttk::labelframe $top.alarmcontrol.y -text {Y axis}
+    ScaleControl    $top.alarmcontrol.y.s -menulist [list 1x 2x 4x 8x 16x 32x Custom... Auto]
+    $top.alarmcontrol.y.s configure -zoomrange [list 0 5]
+    $top.alarmcontrol.y.s configure -current Auto
+    $top.alarmcontrol.y.s configure -command [list yScaleChanged %S] \
         -mincommand [list yMinChanged %M]
     
-    ttk::labelframe .alarmcontrol.x -text {X axis} 
-    ScaleControl    .alarmcontrol.x.s -menulist [list 1x 2x 4x 8x 16x 32x Custom... Auto]
-    .alarmcontrol.x.s configure -zoomrange [list 0 5]
-    .alarmcontrol.x.s configure -current Auto -enablemin false
-    .alarmcontrol.x.s configure -command [list xScaleChanged %M %S] \
+    ttk::labelframe $top.alarmcontrol.x -text {X axis} 
+    ScaleControl    $top.alarmcontrol.x.s -menulist [list 1x 2x 4x 8x 16x 32x Custom... Auto]
+    $top.alarmcontrol.x.s configure -zoomrange [list 0 5]
+    $top.alarmcontrol.x.s configure -current Auto -enablemin false
+    $top.alarmcontrol.x.s configure -command [list xScaleChanged %M %S] \
         -mincommand [list xMinChanged %M]
     
     
-    pack .alarmcontrol.y.s -fill both -expand 1
-    pack .alarmcontrol.x.s -fill both -expand 1
-    grid .alarmcontrol.y  -sticky nsew -row 0 -column 1
-    grid .alarmcontrol.x  -sticky nswe -row 0 -column 2
+    pack $top.alarmcontrol.y.s -fill both -expand 1
+    pack $top.alarmcontrol.x.s -fill both -expand 1
+    grid $top.alarmcontrol.y  -sticky nsew -row 0 -column 1
+    grid $top.alarmcontrol.x  -sticky nswe -row 0 -column 2
   
     # Add status bar for cursor position
-    frame .spfr
-    label .lab -textvariable posXY
-    pack .lab -in .spfr -side left
-    pack .spfr -fill both -expand 1 -side bottom
+    frame $top.spfr
+    label $top.lab -textvariable posXY
+    pack $top.lab -in $top.spfr -side left
+    pack $top.spfr -fill both -expand 1 -side bottom
     
     # The strip charts themselves:
     
-    canvas .stripcharts
-    pack .stripcharts .spfr -fill x -expand 1
+    canvas $top.stripcharts
+    pack $top.stripcharts $top.spfr -fill x -expand 1
 
-    bind .stripcharts <Motion> {RegionLocator %W %x %y}
-    bind .stripcharts <ButtonPress-1> {RegionPosition %W %x %y}
-    bind .stripcharts <ButtonPress-3> {ResetRegion %W %x %y}
+    bind $top.stripcharts <Motion> {RegionLocator %W %x %y}
+    bind $top.stripcharts <ButtonPress-1> {RegionPosition %W %x %y}
+    bind $top.stripcharts <ButtonPress-3> {ResetRegion %W %x %y}
     
     # Ensure the canvas size has been computed by the packer:
     
@@ -745,7 +745,7 @@ proc setupStripchart charts {
     set ::stripcharts [Plotchart::xyplotContainer %AUTO% \
         -xmin 0 -xmax  $::scalerconfig::stripChartOptions(-timeaxis) \
         -ymin 0 -ymax 1 -plottype ::Plotchart::createStripchart \
-        -canvas .stripcharts -xtitle {Run time (seconds)} -ytitle Rate            \
+        -canvas $top.stripcharts -xtitle {Run time (seconds)} -ytitle Rate            \
     ]
     # Create empty series.
     #
@@ -760,11 +760,11 @@ proc setupStripchart charts {
     
     #  Resize to the size of the canvas:
     
-    $::stripcharts resize [.stripcharts cget -width] [.stripcharts cget -height]
+    $::stripcharts resize [$top.stripcharts cget -width] [$top.stripcharts cget -height]
     
     ## TODO: Add resize handler here.
     
-    bind .stripcharts <Configure> [list ResizeStripchart $::stripcharts]
+    bind $top.stripcharts <Configure> [list ResizeStripchart $::stripcharts]
     
     
 }
@@ -891,8 +891,11 @@ foreach ring $uri {
 
 # Set up the base graphical user interface:
 
+if {[info globals scalerWin] eq "" } {
+    set ::scalerWin ""
+}
 
-setupGui
+setupGui $::scalerWin
 
 
 #
@@ -906,7 +909,7 @@ source $configFile
 
 set stripItems [_getStripItems]
 if {[llength $stripItems] > 0} {
-    setupStripchart $stripItems
+    setupStripchart $stripItems $::scalerWin
 }
 
 # Set page alarm enables:
