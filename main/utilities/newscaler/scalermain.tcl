@@ -334,7 +334,7 @@ proc updatePages {} {
 	} elseif {$bkg eq "high"} {
 	    $::notebook tab $tabidx -image RedBrick -compound center
 	} else {
-	    $::notebooko tab $tabidx -image AmberBrick -compound center
+	    $::notebook tab $tabidx -image AmberBrick -compound center
 	}
     }
 
