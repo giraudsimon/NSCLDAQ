@@ -20,7 +20,7 @@ DDASReadout_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBusy.cpp 
 	Skeleton.h CMyEventSegment.h CMyTrigger.h CMyBusy.h CMyScaler.h \
 	CMyEndCommand.h CSyncCommand.cpp CSyncCommand.h CBootCommand.cpp \
 	CBootCommand.h RawChannel.cpp RawChannel.h 			\
-	ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h 		\
+	ReferenceCountedBuffer.cpp ReferenceCountedBuffer.h 		\
 	BufferArena.cpp BufferArena.h ZeroCopyHit.cpp ZeroCopyHit.h	\
 	ModuleReader.cpp ModuleReader.h CHitManager.cpp CHitManager.h
 
@@ -63,7 +63,7 @@ EXTRA_DIST=crate_1 envset README
 noinst_PROGRAMS=unittests 
 unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
 	RawChannel.cpp RawChannel.h		\
-	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCounteBuffer.h \
+	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCountedBuffer.h \
 	arenatests.cpp BufferArena.cpp BufferArena.h			\
 	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h			\
 	mreadertests.cpp ModuleReader.cpp ModuleReader.h 		\

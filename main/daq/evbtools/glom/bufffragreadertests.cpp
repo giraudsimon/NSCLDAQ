@@ -39,6 +39,7 @@ class bfragreadertest : public CppUnit::TestFixture {
   CPPUNIT_TEST(fillbuffer_2);
   
   CPPUNIT_TEST(getfrag_1);
+  CPPUNIT_TEST(getfrag_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -89,6 +90,7 @@ protected:
   void fillbuffer_2();
   
   void getfrag_1();
+  void getfrag_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(bfragreadertest);
@@ -291,4 +293,34 @@ void bfragreadertest::getfrag_1()
   EQ(uint32_t(bodySize), f2->s_header.s_size);
 
   
+}
+void bfragreadertest::getfrag_2()  // partial + read to fulfil.
+{
+  uint8_t* p = static_cast<uint8_t*>(m_pTestObj->m_pBuffer);
+  p += 2;
+  m_pTestObj->m_nOffset = 2;
+  m_pTestObj->m_nBytesInBuffer = 2 + sizeof(EVB::FragmentHeader);
+  
+  // Put the fragment header for the body that follows at p:
+  
+  EVB::pFragmentHeader pHdr1 = reinterpret_cast<EVB::pFragmentHeader>(p);
+  pHdr1->s_timestamp = 0x5555aaaaffff7777;
+  pHdr1->s_size      = 100;
+  
+  uint8_t buffer[100];
+  write(m_writeFd, buffer, 100);
+  
+  EVB::pFragmentHeader pHdr2 = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr2->s_timestamp = 0xaaaa55557777ffff;
+  pHdr2->s_size      = 10;
+  write(m_writeFd, pHdr2, sizeof(EVB::FragmentHeader) + 10);
+  
+  const EVB::pFlatFragment f1 = m_pTestObj->getFragment();
+  const EVB::pFlatFragment f2 = m_pTestObj->getFragment();
+  
+  EQ(uint64_t(0x5555aaaaffff7777), f1->s_header.s_timestamp);
+  EQ(uint32_t(100), f1->s_header.s_size);
+  
+  EQ(uint64_t(0xaaaa55557777ffff), f2->s_header.s_timestamp);
+  EQ(uint32_t(10), f2->s_header.s_size);
 }
