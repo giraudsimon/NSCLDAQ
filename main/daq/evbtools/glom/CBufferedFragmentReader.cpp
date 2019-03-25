@@ -226,8 +226,10 @@ CBufferedFragmentReader::readPointer()
 void
 CBufferedFragmentReader::readData()
 {
+    
     while (1) {
-        ssize_t nRead = read(m_nFd, readPointer(), m_nReadSize);
+        void* p = readPointer();                   // sets m_nReadSize
+        ssize_t nRead = read(m_nFd, p, m_nReadSize);
         if (nRead == 0) {
             throw std::ios_base::failure(
                 "CBufferedFragmentReader - end file on read"

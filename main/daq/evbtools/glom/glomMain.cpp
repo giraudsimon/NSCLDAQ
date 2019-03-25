@@ -31,6 +31,7 @@
 #include <CAbnormalEndItem.h>
 #include <CBufferedOutput.h>
 #include <time.h>
+#include "CBufferedFragmentReader.h"
 
 // File scoped  variables:
 
@@ -258,6 +259,7 @@ outputEventCount(pRingItemHeader pItem)
         NULL_TIMESTAMP, sourceId, 0, outputEvents, tOffset, 
         time(nullptr), divisor
     );
+    // TODO
     outputter->put(
         counters.getItemPointer(), counters.getItemPointer()->s_header.s_size
     );
@@ -280,11 +282,11 @@ outputEventCount(pRingItemHeader pItem)
  *
  */
 static void
-outputBarrier(EVB::pFragment p)
+outputBarrier(EVB::pFlatFragment p)
 {
   pRingItemHeader pH = 
-      reinterpret_cast<pRingItemHeader>(p->s_pBody); 
-  if(CRingItemFactory::isKnownItemType(p->s_pBody)) {
+      reinterpret_cast<pRingItemHeader>(p->s_body); 
+  if(CRingItemFactory::isKnownItemType(p->s_body)) {
     
     // This is correct if there is or isn't a body header in the payload
     // ring item.
@@ -319,7 +321,7 @@ outputBarrier(EVB::pFragment p)
 
     outputter->put( &unknownHdr, sizeof(RingItemHeader));
     outputter->put( p, sizeof(EVB::FragmentHeader));
-    outputter->put(p->s_pBody, p->s_header.s_size);
+    outputter->put(p->s_body, p->s_header.s_size);
     outputter->flush();  // So end runs are always seen quickly.
   }
 }
@@ -331,8 +333,14 @@ void emitAbnormalEnd()
 {
     CAbnormalEndItem end;
     pRingItem pItem= end.getItemPointer();
-    EVB::Fragment frag = {{NULL_TIMESTAMP, 0xffffffff, pItem->s_header.s_size, 0}, pItem};
-    outputBarrier(&frag);
+    uint8_t fragmentStorage[pItem->s_header.s_size + sizeof(EVB::FragmentHeader)];
+    EVB::pFlatFragment pF = reinterpret_cast<EVB::pFlatFragment>(fragmentStorage);
+    pF->s_header.s_timestamp = NULL_TIMESTAMP;
+    pF->s_header.s_sourceId = 0xffffffff;
+    pF->s_header.s_size     = pItem->s_header.s_size;
+    pF->s_header.s_barrier  = 0;
+    memcpy(pF->s_body, pItem, pItem->s_header.s_size);
+    outputBarrier(pF);
 }
 
 /**
@@ -357,7 +365,7 @@ void emitAbnormalEnd()
  * @param pFrag - Pointer to the next event fragment.
  */
 void
-accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
+accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
 {
   // See if we need to flush:
 
@@ -406,8 +414,10 @@ accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
   
     // Add the data to the accumulated event:
   
-  addDataToAccumulatedEvent(&pFrag->s_header, sizeof(EVB::FragmentHeader));
-  addDataToAccumulatedEvent(pFrag->s_pBody, pFrag->s_header.s_size);
+addDataToAccumulatedEvent(
+    pFrag, sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size
+  );
+  
 
 }
 
@@ -478,68 +488,69 @@ main(int argc, char**  argv)
      outputBarrier   - for barriers.
   */
 
+  CBufferedFragmentReader reader(STDIN_FILENO);
   bool firstBarrier(true);
   bool consecutiveBarrier(false);
   try {
-    while (1) {
-      EVB::pFragment p = CFragIO::readFragment(STDIN_FILENO);
-      
-      // If error or EOF flush the event and break from
-      // the loop:
-      
-      if (!p) {
-        flushEvent();
-        std::cerr << "glom: EOF on input\n";
-            if(stateChangeNesting) {
-                emitAbnormalEnd();
-            }
-        break;
-      }
-      // We have a fragment:
-      
-      if (p->s_header.s_barrier) {
-        flushEvent();
-        outputBarrier(p);
-        
-        
-        // Barrier type of 1 is a begin run.
-        // First begin run barrier will result in
-        // emitting a glom parameter record.
-
-        
-        if(firstBarrier && (p->s_header.s_barrier == 1)) {
-            outputGlomParameters(dtInt, !nobuild);
-            firstBarrier = false;
-        }
-      } else {
-
-        // Once we have a non barrier, reset firstBarrier so that we'll
-        // emit a glom parameters next time we have a barrier.
-        // This is needed if the event builder is run in persistent mode.
-        // see gitlab issue #11 for nscldaq.
-        
-        firstBarrier = true;
-        
-        // If we can determine this is a valid ring item other than
-        // an event fragment it goes out out of band but without flushing
-        // the event.
-    
-        pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p->s_pBody);
-        if (CRingItemFactory::isKnownItemType(p->s_pBody)) {
-            
-            if (pH->s_type == PHYSICS_EVENT) {
-              accumulateEvent(dt, p); // Ring item physics event.
-            } else {
-              outputBarrier(p);	// Ring item non-physics event.
-            }
-        } else {		// non ring item..treat like event.
-          std::cerr << "GLOM: Unknown ring item type encountered: \n";
-          dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100); 
+        while (1) {
+          const EVB::pFlatFragment p = reader.getFragment();
           
-          outputBarrier(p);
+          // If error or EOF flush the event and break from
+          // the loop:
+          
+          if (!p) {
+            flushEvent();
+            std::cerr << "glom: EOF on input\n";
+                if(stateChangeNesting) {
+                    emitAbnormalEnd();
+                }
+            break;
+          }
+          // We have a fragment:
+          
+          if (p->s_header.s_barrier) {
+            flushEvent();
+            outputBarrier(p);
+            
+            
+            // Barrier type of 1 is a begin run.
+            // First begin run barrier will result in
+            // emitting a glom parameter record.
+    
+            
+            if(firstBarrier && (p->s_header.s_barrier == 1)) {
+                outputGlomParameters(dtInt, !nobuild);
+                firstBarrier = false;
+            }
+          } else {
+    
+            // Once we have a non barrier, reset firstBarrier so that we'll
+            // emit a glom parameters next time we have a barrier.
+            // This is needed if the event builder is run in persistent mode.
+            // see gitlab issue #11 for nscldaq.
+            
+            firstBarrier = true;
+            
+            // If we can determine this is a valid ring item other than
+            // an event fragment it goes out out of band but without flushing
+            // the event.
+        
+            pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p->s_body);
+            if (CRingItemFactory::isKnownItemType(pH)) {
+                
+                if (pH->s_type == PHYSICS_EVENT) {
+                  accumulateEvent(dt, p); // Ring item physics event.
+                } else {
+                  outputBarrier(p);	// Ring item non-physics event.
+                }
+            } else {		// non ring item..treat like event.
+              std::cerr << "GLOM: Unknown ring item type encountered: \n";
+              dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100); 
+              
+              outputBarrier(p);
+            }
         }
-    }
-      freeFragment(p);
+          
     }
   }
   catch (std::string msg) {
