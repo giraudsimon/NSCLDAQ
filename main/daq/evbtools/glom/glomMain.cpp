@@ -284,9 +284,9 @@ outputEventCount(pRingItemHeader pItem)
 static void
 outputBarrier(EVB::pFlatFragment p)
 {
-  pRingItemHeader pH = 
+    pRingItemHeader pH = 
       reinterpret_cast<pRingItemHeader>(p->s_body); 
-  if(CRingItemFactory::isKnownItemType(p->s_body)) {
+  
     
     // This is correct if there is or isn't a body header in the payload
     // ring item.
@@ -306,24 +306,8 @@ outputBarrier(EVB::pFlatFragment p)
         outputEventCount(pH);
     }
     if (pH->s_type == ABNORMAL_ENDRUN) stateChangeNesting = 0;
+    
 
-  } else {
-    std::cerr << "Unknown barrier payload: \n";
-    dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100);
-    RingItemHeader unknownHdr;
-    unknownHdr.s_type = EVB_UNKNOWN_PAYLOAD;
-    //
-    // Size is the fragment header + ring header + payload.
-    // 
-    uint32_t size = sizeof(RingItemHeader) +
-      sizeof(EVB::FragmentHeader) + p->s_header.s_size;
-    unknownHdr.s_size = size;
-
-    outputter->put( &unknownHdr, sizeof(RingItemHeader));
-    outputter->put( p, sizeof(EVB::FragmentHeader));
-    outputter->put(p->s_body, p->s_header.s_size);
-    outputter->flush();  // So end runs are always seen quickly.
-  }
 }
 /**
  * emitAbnormalEnd
@@ -536,19 +520,14 @@ main(int argc, char**  argv)
             // the event.
         
             pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p->s_body);
-            if (CRingItemFactory::isKnownItemType(pH)) {
-                
-                if (pH->s_type == PHYSICS_EVENT) {
-                  accumulateEvent(dt, p); // Ring item physics event.
-                } else {
-                  outputBarrier(p);	// Ring item non-physics event.
-                }
-            } else {		// non ring item..treat like event.
-              std::cerr << "GLOM: Unknown ring item type encountered: \n";
-              dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100); 
-              
-              outputBarrier(p);
+        
+            
+            if (pH->s_type == PHYSICS_EVENT) {
+              accumulateEvent(dt, p); // Ring item physics event.
+            } else {
+              outputBarrier(p);	// Ring item non-physics event.
             }
+            
         }
           
     }

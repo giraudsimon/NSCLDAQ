@@ -1,6 +1,7 @@
 bin_PROGRAMS=glom
 
-glom_SOURCES= glomMain.cpp CBufferedFragmentReader.cpp CBufferedFragmentReader.h
+glom_SOURCES= glomMain.cpp CBufferedFragmentReader.cpp CBufferedFragmentReader.h \
+	CEventAccumulator.cpp CEventAccumulator.h
 nodist_glom_SOURCES=glom.c glom.h
 
 BUILT_SOURCES = glom.c glom.h
@@ -25,8 +26,10 @@ EXTRA_DIST=glom.ggo glom.xml
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp CBufferedFragmentReader.cpp
-unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@
-unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
+unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp CBufferedFragmentReader.cpp \
+	CEventAccumulator.cpp
+unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format
+unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
+	@CPPUNIT_LDFLAGS@
 
 TESTS=./unittests

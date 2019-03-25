@@ -799,6 +799,10 @@ EventLogMain::getChunk(int fd, Chunk& nextChunk)
   uint8_t* p = static_cast<uint8_t*>(nextChunk.s_pStart);
   while(1) {
     pRingItemHeader h = reinterpret_cast<pRingItemHeader>(p);
+    // Not even enough space for a header:
+
+    if ((sizeof(RingItemHeader) + nextChunk.s_nBytes) > bytesAvail) return;
+    
     if ((h->s_size + nextChunk.s_nBytes) > bytesAvail) return; // no full items left.
     nextChunk.s_nBytes += h->s_size;
     p += h->s_size;
