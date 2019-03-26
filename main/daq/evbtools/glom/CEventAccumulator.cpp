@@ -193,7 +193,7 @@ CEventAccumulator::flushEvents()
  *    -  s_eventHeader.s_itemHeader.s_type <--- Payload type from fragment.
  *    -  s_eventHeader.s_bodyHeader.s_timestamp <-- frag timestamp if first.
  *    -  s_eventHeader.s_bodyHeader.s_sourceId <-- from the parameter.
- *    -  s_eventHeader.s_bodyHeader.s_size     <-- 0
+ *    -  s_eventHeader.s_bodyHeader.s_size     <-- sizeof(BodyHeaer)
  *    -  s_eventInfo.s_nBytes   <-- 0
  *    -  s_eventInfo.s_nFragments <- 0
  *    -  s_eventInfo.s_timestampTotal <--0.
@@ -235,7 +235,7 @@ CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
         result->s_eventHeader.s_bodyHeader.s_timestamp = NULL_TIMESTAMP;
     }
     result->s_eventHeader.s_bodyHeader.s_sourceId = sid;
-    result->s_eventHeader.s_bodyHeader.s_size     = 0;
+    result->s_eventHeader.s_bodyHeader.s_size     = sizeof(BodyHeader);
     
     // The event information struct:
     
@@ -273,12 +273,13 @@ CEventAccumulator::freeEventInfo(pEventInformation pInfo)
 void
 CEventAccumulator::sizeIoVecs(size_t nVecs)
 {
-    if (nVecs < m_nMaxIoVecs) {
+    if (nVecs > m_nMaxIoVecs) {
         free(m_pIoVectors);           // No data to save.
         m_pIoVectors = static_cast<iovec*>(malloc(nVecs * sizeof(iovec)));
         if (!m_pIoVectors) {
             throw std::bad_alloc();
         }
+        m_nMaxIoVecs = nVecs;
     }
 }
 /**

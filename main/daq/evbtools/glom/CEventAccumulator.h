@@ -60,7 +60,7 @@ private:
     struct EventAccumulation {
         size_t   s_nBytes;                // Includes body size field.
         size_t   s_nFragments;
-        unsigned s_TimestampTotal;
+        uint64_t s_TimestampTotal;
     };
     
     typedef struct EventInformation {
@@ -104,8 +104,8 @@ public:
     void finishEvent();
     void flushEvents();
 private:
-    pEventInformation allocEventInfo(EVB::pFlatFragment pFrag, int sid);
-    void              freeEventInfo(pEventInformation pInfo);
+    pEventInformation allocEventInfo(EVB::pFlatFragment pFrag, int sid); //tested
+    void              freeEventInfo(pEventInformation pInfo); // tested
     void              sizeIoVecs(size_t nVecs);
     size_t            makeIoVectors();
     void              slideCurrentEventToFront();
