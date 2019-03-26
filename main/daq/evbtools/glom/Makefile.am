@@ -26,8 +26,9 @@ EXTRA_DIST=glom.ggo glom.xml
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp CBufferedFragmentReader.cpp \
-	CEventAccumulator.cpp
+unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp evacctests.cpp \
+	CBufferedFragmentReader.cpp \
+	CEventAccumulator.cpp 
 unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/os
 unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
