@@ -102,6 +102,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
 {
     if (!m_pCurrentEvent) {
         m_pCurrentEvent = allocEventInfo(pFrag, outputSid);
+        reserveSize();
     }
     // If the current item type is different from the type of the current
     // event, finish the event.
@@ -109,6 +110,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
     if (itemType(pFrag) != m_pCurrentEvent->s_eventHeader.s_itemHeader.s_type) {
         finishEvent();
         m_pCurrentEvent = allocEventInfo(pFrag, outputSid);
+        reserveSize();
     }
     
     // If this fragment won't fit flush the complete events.
@@ -120,6 +122,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
         finishEvent();
         flushEvents();
         m_pCurrentEvent = allocEventInfo(pFrag, outputSid);
+        reserveSize();
     }
     if ((sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size) > freeSpace()) {
         throw std::range_error("Encountered a fragment bigger than the buffer");    
@@ -180,4 +183,263 @@ CEventAccumulator::flushEvents()
         m_freeFrags.end(), m_fragsInBuffer.begin(), m_fragsInBuffer.end()
     );
     m_fragsInBuffer.clear();
+}
+/**
+ * allocEventInfo
+ *    Get an event info struct - either from the free list or by
+ *    newing it into existence.  We can fill in a few things;
+ *    under the assumption this will become the current event:
+ *    -  s_eventHeader.s_itemHeader.s_size <--- 0
+ *    -  s_eventHeader.s_itemHeader.s_type <--- Payload type from fragment.
+ *    -  s_eventHeader.s_bodyHeader.s_timestamp <-- frag timestamp if first.
+ *    -  s_eventHeader.s_bodyHeader.s_sourceId <-- from the parameter.
+ *    -  s_eventHeader.s_bodyHeader.s_size     <-- 0
+ *    -  s_eventInfo.s_nBytes   <-- 0
+ *    -  s_eventInfo.s_nFragments <- 0
+ *    -  s_eventInfo.s_timestampTotal <--0.
+ *    -  s_bodyStart <-- m_pBufer + m_nBytesInBuffer.
+ *    -  s_pInsertionPoint <-- s_bodyStart.
+ *
+ *  @param pFrag - fragment for which this item is allocated (used to init).
+ *  @param sid   - Source Id to give to the fragments.
+ *  @return - Pointer to the allocated info struct.
+ *  @throw std::bad_alloc if allocation fails.
+ */
+CEventAccumulator::pEventInformation
+CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
+{
+    pEventInformation result(nullptr);
+    
+    if (m_freeFrags.empty()) {
+        result = new EventInformation;
+    } else {
+        result = m_freeFrags.front();
+        m_freeFrags.pop_front();
+    }
+    // New should throw but:
+    
+    if (!result) {
+        throw std::bad_alloc();
+    }
+    // Initialize the output ring item header:
+    
+    result->s_eventHeader.s_itemHeader.s_size = 0;
+    result->s_eventHeader.s_itemHeader.s_type = itemType(pFrag);
+    
+    // Now the body header:
+    
+    if (m_tsPolicy == first) {
+        result->s_eventHeader.s_bodyHeader.s_timestamp =
+            pFrag->s_header.s_timestamp;
+    } else {
+        result->s_eventHeader.s_bodyHeader.s_timestamp = NULL_TIMESTAMP;
+    }
+    result->s_eventHeader.s_bodyHeader.s_sourceId = sid;
+    result->s_eventHeader.s_bodyHeader.s_size     = 0;
+    
+    // The event information struct:
+    
+    result->s_eventInfo.s_nBytes = 0;
+    result->s_eventInfo.s_nFragments = 0;
+    result->s_eventInfo.s_TimestampTotal  = 0;
+    
+    // The start and insertion pointers:
+    
+    uint8_t* p = static_cast<uint8_t*>(m_pBuffer) + m_nBytesInBuffer;
+    result->s_pBodyStart = p;
+    result->s_pInsertionPoint = p;
+    
+    // All ready to roll.
+    
+    return result;
+}
+/**
+ * freeEventInfo
+ *    Just put the event information block into the free frags deque.
+ * @param pInfo - the item to free.
+ */
+void
+CEventAccumulator::freeEventInfo(pEventInformation pInfo)
+{
+    m_freeFrags.push_back(pInfo);
+}
+/**
+ * sizeIoVecs
+ *    Make sure there are sufficient I/O vectors in the m_pIoVectors.
+ *
+ *  @param nVecs -number needed:
+ *  @throw std::bad_alloc - needed more but malloc failed.
+ */
+void
+CEventAccumulator::sizeIoVecs(size_t nVecs)
+{
+    if (nVecs < m_nMaxIoVecs) {
+        free(m_pIoVectors);           // No data to save.
+        m_pIoVectors = static_cast<iovec*>(malloc(nVecs * sizeof(iovec)));
+        if (!m_pIoVectors) {
+            throw std::bad_alloc();
+        }
+    }
+}
+/**
+ * makeIoVectors
+ *    Given the events descsribed by m_fragsInBuffer,
+ *    creates the I/O vectors neeed to write them with e.g. writev
+ *    or rather io::writeDataVUnlimited.
+ *
+ *   @return size_t number of iovec items created.  This also gets stored in
+ *           m_nIovecs.
+ */
+size_t
+CEventAccumulator::makeIoVectors()
+{
+    m_nIoVecs = 0;                 // Also used as index:
+   
+    
+    for (auto& info : m_fragsInBuffer) {
+        // We need three vectors:
+        
+        // Ring item header:
+        
+        m_pIoVectors[m_nIoVecs].iov_base = &info->s_eventHeader.s_itemHeader;
+        m_pIoVectors[m_nIoVecs].iov_len   = sizeof(RingItemHeader);
+        
+        // Body header:
+        
+        m_pIoVectors[m_nIoVecs+1].iov_base = &info->s_eventHeader.s_bodyHeader;
+        m_pIoVectors[m_nIoVecs+1].iov_len  = sizeof(BodyHeader);
+        
+        // The Event itself:
+        
+        m_pIoVectors[m_nIoVecs+2].iov_base = &info->s_pBodyStart;
+        m_pIoVectors[m_nIoVecs+2].iov_len  = info->s_eventInfo.s_nBytes;
+        
+        m_nIoVecs += 3;
+    }
+    return m_nIoVecs;
+}
+/**
+ * slideCurrentEventToFront
+ *    Called after writing data.  If there's a current event,
+ *    its contents must be repositioned to the front of the buffer
+ *    so that new data can be filled in after it.
+ *    -  The current event's m_pBodyStart -> front of buffer.
+ *    -  The current event's m_pInsertionPoint -> size of event after the buffer.
+ *    -  The m_nBytesInBuffer -> size accumulated in the event so far.
+ */
+void
+CEventAccumulator::slideCurrentEventToFront()
+{
+    if (m_pCurrentEvent) {
+        memcpy(
+            m_pBuffer, m_pCurrentEvent->s_pBodyStart,
+            m_pCurrentEvent->s_eventInfo.s_nBytes
+        );
+        m_pCurrentEvent->s_pBodyStart = m_pBuffer;
+        m_pCurrentEvent->s_pInsertionPoint =
+            static_cast<uint8_t*>(m_pBuffer) +
+            m_pCurrentEvent->s_eventInfo.s_nBytes;
+        m_nBytesInBuffer = m_pCurrentEvent->s_eventInfo.s_nBytes;
+            
+    } else {
+        m_nBytesInBuffer = 0;                // No data in buffer.
+    }
+    
+}
+/**
+ * freeSpace
+ *   Computes the free space in the buffer.
+ *   - m_nBufferSize - is the total size of the buffer.
+ *   - m_nBytesInBuffer - is the number of bytes in the buffer
+ *                        This is maintained on a per-fragment/event basis.
+ * @return size_t - number of unused bytes in the buffer:
+ */
+size_t
+CEventAccumulator::freeSpace()
+{
+    return  m_nBufferSize - m_nBytesInBuffer;
+}
+/**
+ * itemType
+ *    @param pFrag - pointer to a flattened fragment that has a ring item
+ *                   as a payload.
+ *    @return uint32_t - the ring item type.
+ */
+uint32_t
+CEventAccumulator::itemType(EVB::pFlatFragment pFrag)
+{
+    pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(pFrag->s_body);
+    return pH->s_type;
+}
+/**
+ * appendFragment
+ *    Appends a fragment to the m_pCurrentEvent.
+ *    - If timestamp policy is last - updates the timestamp, sums the stamp into
+ *      the events time-stamp sum otherwise (in case  policy is average).
+ *    - Updates:
+ *      *  The number of fragments in the event.
+ *      *  The number of bytes in the event in info block.
+ *      *  The Event size in the event itself.
+ *      *  Copies the ring item into the event.
+ *      *  Updates the insertion pointer.
+ */
+void
+CEventAccumulator::appendFragment(EVB::pFlatFragment pFrag)
+{
+    // Be defensive:
+    
+    if (!m_pCurrentEvent) {
+        throw std::logic_error("Append fragment called with no current event!!");
+    }
+    // Timestamp stufff:
+    
+    uint64_t fragts = pFrag->s_header.s_timestamp;
+    if (m_tsPolicy == last) {
+        m_pCurrentEvent->s_eventHeader.s_bodyHeader.s_timestamp = fragts;
+            
+    } else {
+        m_pCurrentEvent->s_eventInfo.s_TimestampTotal += fragts;
+    }
+    // Book-Keeping prior to copy:
+    
+    uint32_t fragSize = pFrag->s_header.s_size;
+    m_pCurrentEvent->s_eventInfo.s_nFragments++;
+    m_pCurrentEvent->s_eventInfo.s_nBytes += fragSize;
+    uint32_t* pSize = static_cast<uint32_t*>(m_pCurrentEvent->s_pBodyStart);
+    *pSize += fragSize;
+    
+    // Copy the data in and update the insertion pointer and bytes in buffer:
+    
+    uint8_t* pInsert = static_cast<uint8_t*>(m_pCurrentEvent->s_pInsertionPoint);
+    memcpy(pInsert, pFrag->s_body, fragSize);
+    m_pCurrentEvent->s_pInsertionPoint = pInsert + fragSize;
+    m_nBytesInBuffer += fragSize;
+}
+/**
+ * reserveSize
+ *    Given newly created m_pCurrentEvent, reserves and initializes
+ *    space for the evnet size.
+ */
+void
+CEventAccumulator::reserveSize()
+{
+    // Be defensive:
+    
+    if (!m_pCurrentEvent) {
+        throw std::logic_error("reserveSize called with no current event!!");
+    }
+    if (
+        (m_pCurrentEvent->s_eventInfo.s_nBytes > 0) ||
+        (m_pCurrentEvent->s_eventInfo.s_nFragments > 0)
+    ) {
+        throw std::logic_error("reserveSize called with a non-empty current event!!");
+    }
+    uint32_t* p = static_cast<uint32_t*>(m_pCurrentEvent->s_pInsertionPoint);
+    *p++ = sizeof(uint32_t);            // Size is self inclusive!.
+    
+    // Update all the book keeping stuff:
+    
+    m_pCurrentEvent->s_pInsertionPoint = p; 
+    m_pCurrentEvent->s_eventInfo.s_nBytes          = sizeof(uint32_t);
+    m_nBytesInBuffer                  += sizeof(uint32_t);
 }

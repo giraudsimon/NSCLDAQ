@@ -28,8 +28,10 @@ noinst_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp CBufferedFragmentReader.cpp \
 	CEventAccumulator.cpp
-unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format
+unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/os
 unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
+	@top_builddir@/base/os/libdaqshm.la	\
 	@CPPUNIT_LDFLAGS@
 
 TESTS=./unittests

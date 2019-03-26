@@ -112,6 +112,7 @@ private:
     size_t            freeSpace();
     uint32_t          itemType(EVB::pFlatFragment pFrag);
     void              appendFragment(EVB::pFlatFragment pFrag);
+    void              reserveSize();
     
 };
 
