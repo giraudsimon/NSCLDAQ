@@ -184,6 +184,7 @@ CEventAccumulator::flushEvents()
     m_fragsInBuffer.clear();
     
     slideCurrentEventToFront();
+    m_lastFlushTime = time(nullptr);
 }
 /**
  * allocEventInfo
