@@ -113,8 +113,25 @@ CTCLApplication* gpTCLApplication = new Skeleton;
 void
 Skeleton::SetupReadout(CExperiment* pExperiment)
 {
-   CReadoutMain::SetupReadout(pExperiment);
-  
+  CReadoutMain::SetupReadout(pExperiment);
+
+   pExperiment->setZeroCopy(true);
+   
+   /// The new BUFFER_SIZE environment variable can set the ringbuffer
+   // size which can improve performance a bit in zero copy's case:
+   
+   char* pczBufferSize = getenv("BUFFER_SIZE");
+   if (pczBufferSize) {
+      int newBufferSize = atoi(pczBufferSize);
+      if (newBufferSize > 0) {
+         pExperiment->setBufferSize(newBufferSize);
+      } else {
+         std::cerr << "Buffersize environment variable must be a positive integer\n";
+         std::cerr << "Was : " << pczBufferSize << std::endl;
+         exit(EXIT_FAILURE);
+      }
+   }
+   
   // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
   
   mytrigger = new CMyTrigger();
