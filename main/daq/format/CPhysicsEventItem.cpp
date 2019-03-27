@@ -41,6 +41,13 @@ CPhysicsEventItem::CPhysicsEventItem(
     
 }
 
+CPhysicsEventItem::CPhysicsEventItem(
+    uint64_t timestamp, uint32_t sourceId,  
+    uint32_t barrierType, size_t maxBody, CRingBuffer* pRing
+) :
+  CRingItem(PHYSICS_EVENT, timestamp, sourceId, barrierType, maxBody, pRing)
+{}
+
 CPhysicsEventItem::CPhysicsEventItem(const CRingItem& rhs) 
   : CRingItem(rhs)
 {

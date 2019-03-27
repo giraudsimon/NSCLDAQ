@@ -59,22 +59,27 @@ struct _RingItem;
 class CPhysicsEventItem : public CRingItem
 {
 public:
-  CPhysicsEventItem(size_t maxBody=8192);
-  CPhysicsEventItem(uint64_t timestamp, uint32_t source, uint32_t barrier,
-                    size_t maxBody=8192);
-
-  CPhysicsEventItem(const CRingItem& rhs) ;
-  CPhysicsEventItem(const CPhysicsEventItem& rhs);
-  virtual ~CPhysicsEventItem();
-
-  CPhysicsEventItem& operator=(const CPhysicsEventItem& rhs);
-  int operator==(const CPhysicsEventItem& rhs) const;
-  int operator!=(const CPhysicsEventItem& rhs) const;
-
-  // Virtual methods that all ring items must provide:
-
-  virtual std::string typeName() const;	// Textual type of item.
-  virtual std::string toString() const; // Provide string dump of the item.
+    CPhysicsEventItem(size_t maxBody=8192);
+    CPhysicsEventItem(uint64_t timestamp, uint32_t source, uint32_t barrier,
+                      size_t maxBody=8192);
+    // Zero copy  attempt:
+    
+    CPhysicsEventItem(
+        uint64_t timestamp, uint32_t sourceId,  
+        uint32_t barrierType, size_t maxBody, CRingBuffer* pRing
+    );
+    CPhysicsEventItem(const CRingItem& rhs) ;
+    CPhysicsEventItem(const CPhysicsEventItem& rhs);
+    virtual ~CPhysicsEventItem();
+  
+    CPhysicsEventItem& operator=(const CPhysicsEventItem& rhs);
+    int operator==(const CPhysicsEventItem& rhs) const;
+    int operator!=(const CPhysicsEventItem& rhs) const;
+  
+    // Virtual methods that all ring items must provide:
+  
+    virtual std::string typeName() const;	// Textual type of item.
+    virtual std::string toString() const; // Provide string dump of the item.
 
  
   
