@@ -678,4 +678,17 @@ void evaccTest::addfrag_4()
   auto pInfo = m_pTestObj->m_pCurrentEvent;
   
   EQ(m_pTestObj->m_pBuffer, pInfo->s_pBodyStart);
+  
+  // Check body end:
+  
+  size_t size =
+    static_cast<uint8_t*>(pInfo->s_pInsertionPoint)  -
+    static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  EQ(sizeof(EVB::FragmentHeader) + pItem->s_size, size - sizeof(uint32_t));
+  
+  // The data that needed sliding was the size uint32_t:
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  EQ(sizeof(EVB::FragmentHeader) + pItem->s_size, *pSize - sizeof(uint32_t));
+  
+  
 }
