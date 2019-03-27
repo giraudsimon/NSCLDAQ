@@ -103,6 +103,7 @@ private:
   bool                    m_needHeader;
   uint16_t                m_nDefaultSourceId;
   bool                    m_fHavemore;      // If true readout has more events.
+  bool                    m_fWantZeroCopy;  // Want zero copy ring items.
 
 
   // Canonicals:
@@ -153,6 +154,7 @@ public:
   void triggerFail(std::string msg);
   void syncEndRun(bool pause);
   void haveMore() { m_fHavemore = true; }
+  void setZeroCopy(bool state) {m_fWantZeroCopy = state;}
 private:
   void readScalers();
   
