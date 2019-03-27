@@ -25,6 +25,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -49,7 +50,9 @@
 CRingItem::CRingItem(uint16_t type, size_t maxBody) :
   m_pItem(reinterpret_cast<RingItem*>(&m_staticBuffer)),
   m_storageSize(maxBody),
-  m_swapNeeded(false)
+  m_swapNeeded(false),
+  m_fZeroCopy(false),
+  m_pRingBuffer(nullptr)
 {
 
   // If necessary, dynamically allocate (big max item).
@@ -78,23 +81,50 @@ CRingItem::CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,
                      uint32_t barrierType, size_t maxBody) :
   m_pItem(reinterpret_cast<RingItem*>(&m_staticBuffer)),
   m_storageSize(maxBody),
-  m_swapNeeded(false)
+  m_swapNeeded(false),
+  m_fZeroCopy(false),
+  m_pRingBuffer(nullptr)
 {
   // If necessary, dynamically allocate (big max item).
 
   newIfNecessary(maxBody);
-  m_pItem->s_header.s_type = type;
-  m_pItem->s_header.s_size = 0;
+  initItem(type, timestamp, sourceId, barrierType);
+
   
-  pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-  pHeader->s_size      = sizeof(BodyHeader);
-  pHeader->s_timestamp = timestamp;
-  pHeader->s_sourceId  = sourceId;
-  pHeader->s_barrier   = barrierType;
-  
-  setBodyCursor(m_pItem->s_body.u_hasBodyHeader.s_body);
-  updateSize();
-  
+}
+/**
+ * constructor for zero copy attempt.
+ *    If the ring item buffer fits without wrappingh into the
+ *    underlying ring buffer, the data for the ring item get located
+ *    directly in the ring buffer so that no additiona copying of data
+ *    other than into the item is required.
+ *    If the buffer wraps, this is the same as the ring item constructor
+ *    with a body header.
+ *
+ * @param type item type.
+ * @param timestamp - body header timestamp.
+ * @param sourceId  - data source ident.
+ * @param barrierType - Barrier type code.
+ * @param maxBody     - Maximum size of ring item body.
+ * @param pRing       - Pointer to the ring buffer in which the data will go.
+ */
+CRingItem::CRingItem(
+  uint16_t type, uint64_t timestamp, uint32_t sourceId,  
+  uint32_t barrierType, size_t maxBody, CRingBuffer* pRing
+) :
+  m_pItem(nullptr), m_pCursor(nullptr), m_storageSize(maxBody),
+  m_swapNeeded(false), m_fZeroCopy(false), m_pRingBuffer(nullptr)
+{
+  if   (pRing->bytesToTop() > maxBody) {
+    m_pItem = static_cast<pRingItem>(pRing->getPointer());
+    m_storageSize = maxBody;
+    m_fZeroCopy   = true;
+    m_pRingBuffer = pRing;
+    initItem(type, timestamp, sourceId, barrierType);
+  } else {
+    newIfNecessary(maxBody);
+    initItem(type, timestamp, sourceId, barrierType);
+  }
 }
 /*!
   Copy construct.  This is actually the same as the construction above, 
@@ -105,6 +135,10 @@ CRingItem::CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,
 */
 CRingItem::CRingItem(const CRingItem& rhs)
 {
+  
+  if (rhs.m_fZeroCopy) {
+    throw std::invalid_argument("Zero copy ring items cannot be copy constructed");
+  }
   // If the storage size is big enough, we need to dynamically allocate
   // our storage
 
@@ -130,10 +164,15 @@ CRingItem::~CRingItem()
 CRingItem&
 CRingItem::operator=(const CRingItem& rhs)
 {
+  if (rhs.m_fZeroCopy) {
+    throw std::invalid_argument("Zero Copy ring items cannot be assigned from");
+  }
   if (this != &rhs) {
     deleteIfNecessary();
     newIfNecessary(rhs.m_storageSize);
     copyIn(rhs);
+    m_fZeroCopy = false;
+    m_pRingBuffer = nullptr;
   }
 
   return *this;
@@ -438,8 +477,17 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
 void
 CRingItem::commitToRing(CRingBuffer& ring)
 {
-  updateSize();
-  ring.put(m_pItem, m_pItem->s_header.s_size);
+  if (m_fZeroCopy) {
+    if (&ring != m_pRingBuffer) {
+      throw std::logic_error("Zero copy ring commit done on a different ring");
+    }
+    updateSize();
+    ring.skip(m_pItem->s_header.s_size);
+  
+  } else {
+    updateSize();
+    ring.put(m_pItem, m_pItem->s_header.s_size);
+  }
 }
 
 /*!
@@ -611,7 +659,8 @@ CRingItem::copyIn(const CRingItem& rhs)
 
   m_pCursor    = reinterpret_cast<uint8_t*>(m_pItem);
   m_pCursor   += m_pItem->s_header.s_size;
-                 
+  m_fZeroCopy = false;
+  m_pRingBuffer = nullptr;
   
   updateSize();
 }
@@ -623,7 +672,7 @@ CRingItem::copyIn(const CRingItem& rhs)
 void 
 CRingItem::deleteIfNecessary()
 {
-  if (m_pItem != (pRingItem)m_staticBuffer) {
+  if (m_pItem != (pRingItem)m_staticBuffer && !m_fZeroCopy) {
     delete [](reinterpret_cast<uint8_t*>(m_pItem));
   }
 }
@@ -745,4 +794,32 @@ CRingItem::throwIfNoBodyHeader(std::string msg) const
     if (m_pItem->s_body.u_noBodyHeader.s_mbz == 0) {
         throw msg;
     }
+}
+/**
+ * initItem
+ *    Initialize an item that has a body header:
+ *
+ *  @param type - ring item type.
+ *  @param timestamp - body header timestamp.
+ *  @param sourceId  - body header data source id.
+ *  @param barrierType - body header barrier type.
+ *  @note m_pItem must have been set.
+ */
+void
+CRingItem::initItem(
+  uint16_t type, uint64_t timestamp, uint32_t sourceId,  
+  uint32_t barrierType
+)
+{
+  m_pItem->s_header.s_type = type;
+  m_pItem->s_header.s_size = 0;
+  
+  pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+  pHeader->s_size      = sizeof(BodyHeader);
+  pHeader->s_timestamp = timestamp;
+  pHeader->s_sourceId  = sourceId;
+  pHeader->s_barrier   = barrierType;
+  
+  setBodyCursor(m_pItem->s_body.u_hasBodyHeader.s_body);
+  updateSize();  
 }
