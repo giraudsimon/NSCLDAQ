@@ -14,7 +14,7 @@
 
 #include <string.h>
 #include <stdexcept>
-
+ 
 class zcopytest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(zcopytest);
   CPPUNIT_TEST(construct_1);
