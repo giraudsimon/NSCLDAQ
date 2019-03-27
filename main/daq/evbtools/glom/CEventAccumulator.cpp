@@ -113,7 +113,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
         reserveSize();
     }
     
-    // If this fragment won't fit flush the complete events.
+    // If this fragment won't: fit flush the complete events.
     
     if ((sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size) > freeSpace()) {
         flushEvents();
@@ -161,6 +161,7 @@ CEventAccumulator::finishEvent()
     }
     m_fragsInBuffer.push_back(m_pCurrentEvent);
     m_pCurrentEvent = nullptr;
+    
 }
 /**
  * flushEvents
@@ -183,6 +184,8 @@ CEventAccumulator::flushEvents()
         m_freeFrags.end(), m_fragsInBuffer.begin(), m_fragsInBuffer.end()
     );
     m_fragsInBuffer.clear();
+    
+    slideCurrentEventToFront();
 }
 /**
  * allocEventInfo
@@ -403,7 +406,7 @@ CEventAccumulator::appendFragment(EVB::pFlatFragment pFrag)
     }
     // Book-Keeping prior to copy:
     
-    uint32_t fragSize = pFrag->s_header.s_size;
+    uint32_t fragSize = pFrag->s_header.s_size + sizeof(EVB::FragmentHeader);
     m_pCurrentEvent->s_eventInfo.s_nFragments++;
     m_pCurrentEvent->s_eventInfo.s_nBytes += fragSize;
     m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size =
@@ -414,9 +417,12 @@ CEventAccumulator::appendFragment(EVB::pFlatFragment pFrag)
     // Copy the data in and update the insertion pointer and bytes in buffer:
     
     uint8_t* pInsert = static_cast<uint8_t*>(m_pCurrentEvent->s_pInsertionPoint);
-    memcpy(pInsert, pFrag->s_body, fragSize);
+    memcpy(pInsert, pFrag, fragSize);
     m_pCurrentEvent->s_pInsertionPoint = pInsert + fragSize;
     m_nBytesInBuffer += fragSize;
+    
+    if (m_pCurrentEvent->s_eventInfo.s_nFragments >= m_nMaxFrags)
+        finishEvent();
 }
 /**
  * reserveSize
@@ -431,12 +437,17 @@ CEventAccumulator::reserveSize()
     if (!m_pCurrentEvent) {
         throw std::logic_error("reserveSize called with no current event!!");
     }
+    
+    
     if (
         (m_pCurrentEvent->s_eventInfo.s_nBytes > 0) ||
         (m_pCurrentEvent->s_eventInfo.s_nFragments > 0)
     ) {
         throw std::logic_error("reserveSize called with a non-empty current event!!");
     }
+    
+    if (freeSpace() < sizeof(uint32_t)) flushEvents();
+    
     uint32_t* p = static_cast<uint32_t*>(m_pCurrentEvent->s_pInsertionPoint);
     *p++ = sizeof(uint32_t);            // Size is self inclusive!.
     
