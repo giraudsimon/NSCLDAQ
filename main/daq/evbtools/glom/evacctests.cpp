@@ -27,6 +27,21 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(freeinfo_1);
   
   CPPUNIT_TEST(sizeiov_1);
+  
+  CPPUNIT_TEST(freespace_1);
+  CPPUNIT_TEST(freespace_2);
+  
+  CPPUNIT_TEST(itemtype_1);
+  
+  CPPUNIT_TEST(reservesize_1);
+  
+  CPPUNIT_TEST(appendf_1);
+  CPPUNIT_TEST(appendf_2);
+  
+  CPPUNIT_TEST(addfrag_1);
+  CPPUNIT_TEST(finish_1);    // Need this to test other branches of addFragment
+  CPPUNIT_TEST(addfrag_2);   // fragment with same type appends.
+//  CPPUNIT_TEST(addfrag_3);   // Fragment with different type finishes prior.
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -46,8 +61,8 @@ public:
     
   }
   void tearDown() {
+    delete m_pTestObj;    // This first as we may flush.
     close(m_fd);
-    delete m_pTestObj;
     unlink(m_filename.c_str());
   }
 protected:
@@ -58,7 +73,22 @@ protected:
   void freeinfo_1();
   
   void sizeiov_1();
-};
+  
+  void freespace_1();
+  void freespace_2();
+  
+  void itemtype_1();
+  
+  void reservesize_1();
+  
+  void appendf_1();
+  void appendf_2();
+  
+  void addfrag_1();
+  void finish_1();
+  void addfrag_2();
+  void addfrag_3();
+};  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
 
@@ -185,4 +215,376 @@ void evaccTest::sizeiov_1()
   ASSERT(m_pTestObj->m_pIoVectors);
   
   EQ(size_t(100), m_pTestObj->m_nMaxIoVecs);
+}
+void evaccTest::freespace_1()  // initially the whole buffer is free:
+{
+  EQ(m_pTestObj->m_nBufferSize, m_pTestObj->freeSpace());
+}
+void evaccTest::freespace_2()
+{
+  // Indicate some is used:
+  
+  m_pTestObj->m_nBytesInBuffer = 100;
+  EQ(m_pTestObj->m_nBufferSize - 100, m_pTestObj->freeSpace());
+}
+void evaccTest::itemtype_1()
+{
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+    
+  EQ(PHYSICS_EVENT, m_pTestObj->itemType(reinterpret_cast<EVB::pFlatFragment>(pHdr)));
+}
+
+void evaccTest::reservesize_1()
+{
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  CEventAccumulator::pEventInformation pInfo =
+    m_pTestObj->allocEventInfo(pFrag, 1);
+  m_pTestObj->m_pCurrentEvent = pInfo;
+  m_pTestObj->reserveSize();
+  
+  EQ(sizeof(uint32_t), m_pTestObj->m_nBytesInBuffer);
+  
+  // Now the info block:
+  
+  uint8_t* pBeg = static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  uint8_t* pNext = static_cast<uint8_t*>(pInfo->s_pInsertionPoint);
+  EQ(sizeof(uint32_t), size_t(pNext - pBeg));
+  EQ(sizeof(uint32_t), pInfo->s_eventInfo.s_nBytes);
+  EQ(size_t(0), pInfo->s_eventInfo.s_nFragments);
+  
+  // The actual size field has sizeof(uint32_t) as well:
+  
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  EQ(uint32_t(sizeof(uint32_t)), *pSize);
+}
+void evaccTest::appendf_1()
+{
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  CEventAccumulator::pEventInformation pInfo =
+    m_pTestObj->allocEventInfo(pFrag, 1);
+  m_pTestObj->m_pCurrentEvent = pInfo;
+  m_pTestObj->reserveSize();
+  m_pTestObj->appendFragment(pFrag);
+  
+  // let's see how pInfo was updated.  The data in the buffer is the
+  // ring item body and body header.... preceded by an updated event size
+  
+  // Event size in buffer; and ring item copied to buffer.
+  
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  EQ(uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)), *pSize);
+  EQ(0, memcmp(pItem, pSize+1, pItem->s_size));
+  
+  // event info updated:
+  
+  CEventAccumulator::EventAccumulation& a(pInfo->s_eventInfo);
+  EQ(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t), a.s_nBytes);
+  EQ(size_t(1), a.s_nFragments);
+  
+  // Insert pointer updated:
+  
+  uint8_t* pBase = static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  uint8_t* pNext = static_cast<uint8_t*>(pInfo->s_pInsertionPoint);
+  EQ(
+    sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t),
+    size_t(pNext - pBase)
+  );
+  // Ring item size is updated:
+  
+  uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
+  EQ(
+    uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    sz
+  );
+  
+  // Body header timestamp should match the fragment's since policy defaults
+  // was set to be last:
+  
+  EQ(pBh->s_timestamp, pInfo->s_eventHeader.s_bodyHeader.s_timestamp);
+}
+void evaccTest::appendf_2()
+{
+  m_pTestObj->m_tsPolicy=CEventAccumulator::average;
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  CEventAccumulator::pEventInformation pInfo =
+    m_pTestObj->allocEventInfo(pFrag, 1);
+  m_pTestObj->m_pCurrentEvent = pInfo;
+  m_pTestObj->reserveSize();
+  m_pTestObj->appendFragment(pFrag);
+
+  // The info's timestamp sum should be reflected:
+  
+  EQ(uint64_t(0x12345678), pInfo->s_eventInfo.s_TimestampTotal);
+  
+  // If we throw the item at it again:
+  
+  m_pTestObj->appendFragment(pFrag);
+  EQ(2*uint64_t(0x12345678), pInfo->s_eventInfo.s_TimestampTotal);
+}
+void evaccTest::addfrag_1()
+{
+  // New fragment -- check
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  // There'd better be a current event:
+  
+  ASSERT(m_pTestObj->m_pCurrentEvent);
+  auto pInfo = m_pTestObj->m_pCurrentEvent;
+  
+  // The current event content should just be like in appendf_1():
+  
+   // let's see how pInfo was updated.  The data in the buffer is the
+  // ring item body and body header.... preceded by an updated event size
+  
+  // Event size in buffer; and ring item copied to buffer.
+  
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  EQ(uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)), *pSize);
+  EQ(0, memcmp(pItem, pSize+1, pItem->s_size));
+  
+  // event info updated:
+  
+  CEventAccumulator::EventAccumulation& a(pInfo->s_eventInfo);
+  EQ(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t), a.s_nBytes);
+  EQ(size_t(1), a.s_nFragments);
+  
+  // Insert pointer updated:
+  
+  uint8_t* pBase = static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  uint8_t* pNext = static_cast<uint8_t*>(pInfo->s_pInsertionPoint);
+  EQ(
+    sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t),
+    size_t(pNext - pBase)
+  );
+  // Ring item size is updated:
+  
+  uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
+  EQ(
+    uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    sz
+  );
+}
+// we need to see an event finished properly before we can
+// check the other branches of addFragment so:
+
+void evaccTest::finish_1()
+{
+  // New fragment -- check
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  m_pTestObj->finishEvent();
+  
+  // There should be 1 frags in buffer - and it should match addfrag_1
+  
+  EQ(size_t(1), m_pTestObj->m_fragsInBuffer.size());
+  auto pInfo = m_pTestObj->m_fragsInBuffer.front();
+  
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  EQ(uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)), *pSize);
+  EQ(0, memcmp(pItem, pSize+1, pItem->s_size));
+  
+  // event info updated:
+  
+  CEventAccumulator::EventAccumulation& a(pInfo->s_eventInfo);
+  EQ(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t), a.s_nBytes);
+  EQ(size_t(1), a.s_nFragments);
+  
+  // Insert pointer updated:
+  
+  uint8_t* pBase = static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  uint8_t* pNext = static_cast<uint8_t*>(pInfo->s_pInsertionPoint);
+  EQ(
+    sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t),
+    size_t(pNext - pBase)
+  );
+  // Ring item size is updated:
+  
+  uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
+  EQ(
+    uint32_t(sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    sz
+  );
+}
+void evaccTest::addfrag_2()    // append fragment current:
+{
+  // New fragment -- check
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  pHdr->s_timestamp+= 0x100;     // 0x12345778
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  EQ(size_t(0), m_pTestObj->m_fragsInBuffer.size());
+  auto pInfo = m_pTestObj->m_pCurrentEvent;
+  
+  // The event has two frags equally sized, identical other than for the
+  // timestamps.
+  
+  
+  uint32_t* pSize = static_cast<uint32_t*>(pInfo->s_pBodyStart);
+  uint32_t size =
+    2*(sizeof(BodyHeader) + sizeof(RingItemHeader)) + sizeof(uint32_t);
+  EQ(size , *pSize);
+  
+  // event info updated:
+  
+  CEventAccumulator::EventAccumulation& a(pInfo->s_eventInfo);
+  EQ(size_t(size), a.s_nBytes);
+  EQ(size_t(2), a.s_nFragments);
+  
+  // Insert pointer updated:
+  
+  uint8_t* pBase = static_cast<uint8_t*>(pInfo->s_pBodyStart);
+  uint8_t* pNext = static_cast<uint8_t*>(pInfo->s_pInsertionPoint);
+  EQ(size_t(size), size_t(pNext - pBase));
+  // Ring item size is updated:
+  
+  uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
+  EQ(size, sz);
+
+  // There will be two fragments in the buffer:
+  
+  // Fragment 1:
+  
+  pHdr->s_timestamp = 0x12345678;           // original value
+  uint8_t* pFrag1 = static_cast<uint8_t*>(m_pTestObj->m_pBuffer) + sizeof(uint32_t);
+  ASSERT(memcmp(pItem, pFrag1, pItem->s_size) == 0);
+  
+  // Fragment 2:
+  
+  pHdr->s_timestamp += 0x100;
+  auto pFrag2      = pFrag1 +  pItem->s_size;
+  ASSERT(memcmp(pItem, pFrag2, pItem->s_size)== 0);
 }

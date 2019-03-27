@@ -406,6 +406,8 @@ CEventAccumulator::appendFragment(EVB::pFlatFragment pFrag)
     uint32_t fragSize = pFrag->s_header.s_size;
     m_pCurrentEvent->s_eventInfo.s_nFragments++;
     m_pCurrentEvent->s_eventInfo.s_nBytes += fragSize;
+    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size =
+        m_pCurrentEvent->s_eventInfo.s_nBytes;
     uint32_t* pSize = static_cast<uint32_t*>(m_pCurrentEvent->s_pBodyStart);
     *pSize += fragSize;
     
@@ -442,5 +444,6 @@ CEventAccumulator::reserveSize()
     
     m_pCurrentEvent->s_pInsertionPoint = p; 
     m_pCurrentEvent->s_eventInfo.s_nBytes          = sizeof(uint32_t);
+    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size = sizeof(uint32_t);
     m_nBytesInBuffer                  += sizeof(uint32_t);
 }

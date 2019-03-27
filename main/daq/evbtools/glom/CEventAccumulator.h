@@ -106,13 +106,13 @@ public:
 private:
     pEventInformation allocEventInfo(EVB::pFlatFragment pFrag, int sid); //tested
     void              freeEventInfo(pEventInformation pInfo); // tested
-    void              sizeIoVecs(size_t nVecs);
+    void              sizeIoVecs(size_t nVecs);               // tested
     size_t            makeIoVectors();
     void              slideCurrentEventToFront();
-    size_t            freeSpace();
-    uint32_t          itemType(EVB::pFlatFragment pFrag);
-    void              appendFragment(EVB::pFlatFragment pFrag);
-    void              reserveSize();
+    size_t            freeSpace();                           // Tested.
+    uint32_t          itemType(EVB::pFlatFragment pFrag);    // tested
+    void              appendFragment(EVB::pFlatFragment pFrag); // tested.
+    void              reserveSize();                         // tested
     
 };
 
