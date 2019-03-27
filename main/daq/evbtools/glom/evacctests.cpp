@@ -41,7 +41,7 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(addfrag_1);
   CPPUNIT_TEST(finish_1);    // Need this to test other branches of addFragment
   CPPUNIT_TEST(addfrag_2);   // fragment with same type appends.
-//  CPPUNIT_TEST(addfrag_3);   // Fragment with different type finishes prior.
+  CPPUNIT_TEST(addfrag_3);   // Fragment with different type finishes prior.
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -587,4 +587,38 @@ void evaccTest::addfrag_2()    // append fragment current:
   pHdr->s_timestamp += 0x100;
   auto pFrag2      = pFrag1 +  pItem->s_size;
   ASSERT(memcmp(pItem, pFrag2, pItem->s_size)== 0);
+}
+void evaccTest::addfrag_3()   // Adding a fragment of a different type ends event
+{
+  // New fragment -- check
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  pItem->s_type = END_RUN;
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  // There should be a fragment in the buffer and a current fragment
+  // that is our stub of an end run item:
+  
+  EQ(size_t(1), m_pTestObj->m_fragsInBuffer.size());
+  ASSERT(m_pTestObj->m_pCurrentEvent);
 }
