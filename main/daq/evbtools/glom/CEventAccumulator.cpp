@@ -131,9 +131,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
     //  maximum fragment count:
     
     appendFragment(pFrag);
-    if (m_pCurrentEvent->s_eventInfo.s_nFragments == m_nMaxFrags) {
-        finishEvent();
-    }
+   
     // Finally, if now differs from m_nLastFlushTim by more than
     // m_maxFlushTime, force a flush as well:
     

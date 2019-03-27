@@ -43,7 +43,11 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(addfrag_2);   // fragment with same type appends.
   CPPUNIT_TEST(addfrag_3);   // Fragment with different type finishes prior.
   CPPUNIT_TEST(addfrag_4);   // events need flushing to make space.
+  CPPUNIT_TEST(addfrag_5);   // Adding a fragment to an event would overflow.
+  CPPUNIT_TEST(addfrag_6);   // Fragment bigger than buffer by itself.
+  CPPUNIT_TEST(addfrag_7);   // Fragment overflows maxfrags/event.
   CPPUNIT_TEST_SUITE_END();
+  
 
 
 private:
@@ -90,6 +94,9 @@ protected:
   void addfrag_2();
   void addfrag_3();
   void addfrag_4();
+  void addfrag_5();
+  void addfrag_6();            // Fragment bigger than buffer.
+  void addfrag_7();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
@@ -691,4 +698,102 @@ void evaccTest::addfrag_4()
   EQ(sizeof(EVB::FragmentHeader) + pItem->s_size, *pSize - sizeof(uint32_t));
   
   
+}
+// If we attempt to add a fragment to the current event that would cause it to
+// overflow, we terminate the event, and start a new one with the new fragment.
+
+
+void evaccTest::addfrag_5()
+{
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  // Make it so the next addfrag will overflow:
+  
+  m_pTestObj->m_nBufferSize = m_pTestObj->m_nBytesInBuffer + 10;
+  
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  // this should be the only fragment in the event, as this caused a finish
+  // followed by a flush:
+  
+  auto pInfo = m_pTestObj->m_pCurrentEvent;
+  EQ(size_t(1), pInfo->s_eventInfo.s_nFragments);  // no over flow ths is 2.
+  
+  
+}
+void evaccTest::addfrag_6()
+{
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->m_nBufferSize =10;
+  CPPUNIT_ASSERT_THROW(
+    m_pTestObj->addFragment(pFrag, 2),
+    std::range_error
+  );
+}
+void evaccTest::addfrag_7()
+{
+  m_pTestObj->m_nMaxFrags = 2;
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);
+  m_pTestObj->addFragment(pFrag, 2);   // forced an end of event
+  
+  ASSERT(!m_pTestObj->m_pCurrentEvent);  //finished implicitly.
 }
