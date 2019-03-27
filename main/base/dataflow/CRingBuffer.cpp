@@ -914,11 +914,13 @@ CRingBuffer::peek(void*   pBuffer,
 void
 CRingBuffer:: skip(size_t nBytes)
 {
+#ifdef NOZEROCOPY
   if (m_mode != consumer) {
     throw CStateException(modeString().c_str(), "consumer",
 			  "CRingBuffer::skip");
 
   }
+#endif
   Skip(nBytes);
 }
 /////////////////////////////////////////////////////////////////////////////////
