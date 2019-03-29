@@ -26,6 +26,7 @@
 #include <sstream>
 #include <iomanip>
 #include <stdexcept>
+#include <unistd.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -116,6 +117,14 @@ CRingItem::CRingItem(
   m_swapNeeded(false), m_fZeroCopy(false), m_pRingBuffer(nullptr)
 {
   if   (pRing->bytesToTop() > maxBody) {
+    // Wait until there's sufficient free space as well as the
+    // get pointers could be well behind us:
+    
+    while (pRing->availablePutSpace() < maxBody) {
+      usleep(10);
+    }
+    
+    
     m_pItem = static_cast<pRingItem>(pRing->getPointer());
     m_storageSize = maxBody;
     m_fZeroCopy   = true;
