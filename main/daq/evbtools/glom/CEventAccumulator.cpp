@@ -191,7 +191,7 @@ CEventAccumulator::flushEvents()
  *    Get an event info struct - either from the free list or by
  *    newing it into existence.  We can fill in a few things;
  *    under the assumption this will become the current event:
- *    -  s_eventHeader.s_itemHeader.s_size <--- 0
+ *    -  s_eventHeader.s_itemHeader.s_size <--- ring item size + body header size.
  *    -  s_eventHeader.s_itemHeader.s_type <--- Payload type from fragment.
  *    -  s_eventHeader.s_bodyHeader.s_timestamp <-- frag timestamp if first.
  *    -  s_eventHeader.s_bodyHeader.s_sourceId <-- from the parameter.
@@ -225,7 +225,7 @@ CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
     }
     // Initialize the output ring item header:
     
-    result->s_eventHeader.s_itemHeader.s_size = 0;
+    result->s_eventHeader.s_itemHeader.s_size = sizeof(RingItemHeader) + sizeof(BodyHeader);
     result->s_eventHeader.s_itemHeader.s_type = itemType(pFrag);
     
     // Now the body header:
@@ -238,6 +238,7 @@ CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
     }
     result->s_eventHeader.s_bodyHeader.s_sourceId = sid;
     result->s_eventHeader.s_bodyHeader.s_size     = sizeof(BodyHeader);
+    result->s_eventHeader.s_bodyHeader.s_barrier  = 0;
     
     // The event information struct:
     
@@ -304,17 +305,17 @@ CEventAccumulator::makeIoVectors()
         
         // Ring item header:
         
-        m_pIoVectors[m_nIoVecs].iov_base = &info->s_eventHeader.s_itemHeader;
+        m_pIoVectors[m_nIoVecs].iov_base = &(info->s_eventHeader.s_itemHeader);
         m_pIoVectors[m_nIoVecs].iov_len   = sizeof(RingItemHeader);
         
         // Body header:
         
-        m_pIoVectors[m_nIoVecs+1].iov_base = &info->s_eventHeader.s_bodyHeader;
+        m_pIoVectors[m_nIoVecs+1].iov_base = &(info->s_eventHeader.s_bodyHeader);
         m_pIoVectors[m_nIoVecs+1].iov_len  = sizeof(BodyHeader);
         
         // The Event itself:
         
-        m_pIoVectors[m_nIoVecs+2].iov_base = &info->s_pBodyStart;
+        m_pIoVectors[m_nIoVecs+2].iov_base = info->s_pBodyStart;
         m_pIoVectors[m_nIoVecs+2].iov_len  = info->s_eventInfo.s_nBytes;
         
         m_nIoVecs += 3;
@@ -408,8 +409,8 @@ CEventAccumulator::appendFragment(EVB::pFlatFragment pFrag)
     uint32_t fragSize = pFrag->s_header.s_size + sizeof(EVB::FragmentHeader);
     m_pCurrentEvent->s_eventInfo.s_nFragments++;
     m_pCurrentEvent->s_eventInfo.s_nBytes += fragSize;
-    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size =
-        m_pCurrentEvent->s_eventInfo.s_nBytes;
+    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size += fragSize;
+
     uint32_t* pSize = static_cast<uint32_t*>(m_pCurrentEvent->s_pBodyStart);
     *pSize += fragSize;
     
@@ -453,7 +454,7 @@ CEventAccumulator::reserveSize()
     // Update all the book keeping stuff:
     
     m_pCurrentEvent->s_pInsertionPoint = p; 
-    m_pCurrentEvent->s_eventInfo.s_nBytes          = sizeof(uint32_t);
-    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size = sizeof(uint32_t);
+    m_pCurrentEvent->s_eventInfo.s_nBytes          += sizeof(uint32_t);
+    m_pCurrentEvent->s_eventHeader.s_itemHeader.s_size += sizeof(uint32_t);
     m_nBytesInBuffer                  += sizeof(uint32_t);
 }

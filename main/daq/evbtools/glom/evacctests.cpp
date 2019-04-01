@@ -15,8 +15,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-std::string FilenameTemplate="evactestXXXXXX";
+static std::string FilenameTemplate="evactestXXXXXX";
+static uint32_t headerSize(sizeof(RingItemHeader) + sizeof(BodyHeader));
 
 class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(evaccTest);
@@ -46,6 +50,10 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(addfrag_5);   // Adding a fragment to an event would overflow.
   CPPUNIT_TEST(addfrag_6);   // Fragment bigger than buffer by itself.
   CPPUNIT_TEST(addfrag_7);   // Fragment overflows maxfrags/event.
+  
+  CPPUNIT_TEST(flush_1);    // Event flushing. tests.
+  CPPUNIT_TEST(flush_2);
+  CPPUNIT_TEST(flush_3);
   CPPUNIT_TEST_SUITE_END();
   
 
@@ -97,6 +105,10 @@ protected:
   void addfrag_5();
   void addfrag_6();            // Fragment bigger than buffer.
   void addfrag_7();
+  
+  void flush_1();
+  void flush_2();
+  void flush_3();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
@@ -163,7 +175,7 @@ void evaccTest::allocinfo_1()
   RingItemHeader& Ih(pInfo->s_eventHeader.s_itemHeader);
   BodyHeader&     Bh(pInfo->s_eventHeader.s_bodyHeader);
   
-  EQ(uint32_t(0), Ih.s_size);
+  EQ(uint32_t(headerSize), Ih.s_size);
   EQ(PHYSICS_EVENT, Ih.s_type);
   
   EQ(NULL_TIMESTAMP, Bh.s_timestamp);
@@ -359,7 +371,7 @@ void evaccTest::appendf_1()
   
   uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
   EQ(
-    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t) + headerSize),
     sz
   );
   
@@ -465,7 +477,7 @@ void evaccTest::addfrag_1()
   
   uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
   EQ(
-    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)+headerSize),
     sz
   );
 }
@@ -526,7 +538,7 @@ void evaccTest::finish_1()
   
   uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
   EQ(
-    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)),
+    uint32_t(sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) + sizeof(RingItemHeader) + sizeof(uint32_t)+headerSize),
     sz
   );
 }
@@ -584,7 +596,7 @@ void evaccTest::addfrag_2()    // append fragment current:
   // Ring item size is updated:
   
   uint32_t sz = pInfo->s_eventHeader.s_itemHeader.s_size;
-  EQ(size, sz);
+  EQ(size + headerSize, sz);
 
   // There will be two fragments in the buffer:
   
@@ -796,4 +808,121 @@ void evaccTest::addfrag_7()
   m_pTestObj->addFragment(pFrag, 2);   // forced an end of event
   
   ASSERT(!m_pTestObj->m_pCurrentEvent);  //finished implicitly.
+  
+  // there's one event in the buffer and it has our fragments:
+  
+}
+void evaccTest::flush_1()
+{
+  // immediate flush results in no data in file:
+  
+  m_pTestObj->flushEvents();
+  
+  struct stat info;
+  stat(m_filename.c_str(), &info);
+  EQ(off_t(0), info.st_size);
+}
+void evaccTest::flush_2()
+{
+  // flush does not finish a partial event:
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  m_pTestObj->flushEvents();
+
+  struct stat info;
+  stat(m_filename.c_str(), &info);
+  EQ(off_t(0), info.st_size);  
+}
+void evaccTest::flush_3()
+{
+  // Flush an event with one fragment:
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_sourceId    = 1;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);
+  m_pTestObj->finishEvent();
+  m_pTestObj->flushEvents();
+  
+  struct stat info;
+  stat(m_filename.c_str(), &info);
+  ASSERT(info.st_size > 0);
+  
+  // Contents should be the size uint32_t, and the flattened fragment.
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  uint8_t readBuffer[1024];
+  
+
+  ssize_t nRead = read(fd, readBuffer, sizeof(readBuffer));
+  EQ(ssize_t(
+    sizeof(RingItemHeader) + sizeof(BodyHeader)  +  // Full ring item header
+    sizeof(uint32_t) +                             // size field.
+    sizeof(EVB::FragmentHeader) + pHdr->s_size    // size of the 1 fragment.
+  ), nRead);
+  
+  // First shoulid be  ring item header for the entire event:
+  
+  pRingItemHeader pRHdr = reinterpret_cast<pRingItemHeader>(readBuffer);
+  EQ(PHYSICS_EVENT, pRHdr->s_type);
+  EQ(
+    uint32_t(sizeof(RingItemHeader) + sizeof(BodyHeader)  +  // Full ring item header
+    sizeof(uint32_t) +                             // size field.
+    sizeof(EVB::FragmentHeader) + pHdr->s_size ), pRHdr->s_size);
+  // Next the uint32_t that is the size of the remaining event:
+  
+  pRHdr++;                 // Points to BodyHeader....
+  pBodyHeader pReadBhdr = reinterpret_cast<pBodyHeader>(pRHdr);
+  pReadBhdr++;
+  
+  uint32_t* payloadSize = reinterpret_cast<uint32_t*>(pReadBhdr);
+  EQ(
+    uint32_t(sizeof(uint32_t) +                             // size field.
+    sizeof(EVB::FragmentHeader) + pHdr->s_size ),
+    *payloadSize
+  );
+  // After that is the first fragment:
+  
+  payloadSize++;
+  EVB::pFlatFragment pReadFrag =
+    reinterpret_cast<EVB::pFlatFragment>(payloadSize);
+  ASSERT(memcmp(pFrag, pReadFrag, sizeof(EVB::FragmentHeader) + pHdr->s_size) == 0);
 }
