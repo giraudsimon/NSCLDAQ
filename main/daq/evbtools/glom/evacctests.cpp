@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sstream>
 
 static std::string FilenameTemplate="evactestXXXXXX";
 static uint32_t headerSize(sizeof(RingItemHeader) + sizeof(BodyHeader));
@@ -55,6 +56,7 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(flush_2);
   CPPUNIT_TEST(flush_3);
   CPPUNIT_TEST(flush_4);
+  CPPUNIT_TEST(flush_5);
   CPPUNIT_TEST_SUITE_END();
   
 
@@ -111,6 +113,7 @@ protected:
   void flush_2();
   void flush_3();
   void flush_4();
+  void flush_5();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
@@ -1016,4 +1019,127 @@ void evaccTest::flush_4()
   EQ(uint64_t(0x12345679), pRFH->s_timestamp);
   EQ(uint32_t(1), pRFH->s_sourceId);
   
+}
+
+void evaccTest::flush_5()
+{
+  // Put several events (identical) into the buffer.
+  // Each event has a timestamp 1 tick larger than the prior.
+  // all are from sid 5
+
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);   // Event 1.
+  m_pTestObj->finishEvent();
+  
+  pHdr->s_timestamp++;
+  pBh->s_timestamp++;
+  m_pTestObj->addFragment(pFrag, 2);   // Event 3.
+  m_pTestObj->finishEvent();
+  
+  pHdr->s_timestamp++;
+  pBh->s_timestamp++;
+  m_pTestObj->addFragment(pFrag, 2);   // Event 3.
+  m_pTestObj->finishEvent();          
+  
+  m_pTestObj->flushEvents();
+  
+  // Now read it all in in one gulp:
+  
+  uint8_t rdBuffer[8192];
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  ssize_t nRead = read(fd, rdBuffer, sizeof(buffer));
+  ASSERT(nRead < sizeof(rdBuffer));   // Make sure we got it all.
+  
+  // Each event consists of a ring header a body header, a uint32_t,
+  // a fragment header, a ring  item header, and a body header:
+  
+  ssize_t expectedSize = 3*(
+    sizeof(RingItemHeader)  + sizeof(BodyHeader)
+    + sizeof(uint32_t) + sizeof(EVB::FragmentHeader) +
+    + sizeof(RingItemHeader) + sizeof(BodyHeader));
+  EQ(expectedSize, nRead);
+  
+  
+  uint64_t expectedTs = 0x12345678;
+  uint8_t* p = reinterpret_cast<uint8_t*>(rdBuffer);
+  
+  for (int i =0; i < 3; i++) {   // Loop over events.
+    std::stringstream strMsg;
+    strMsg << "Event: " << i;
+    std::string msg = strMsg.str();
+    
+    // Ring item header for the event:
+    
+    pRingItemHeader pRHdr = reinterpret_cast<pRingItemHeader>(p);
+    p += pRHdr->s_size;                 // Setup for next event.
+    
+    EQMSG(msg, PHYSICS_EVENT, pRHdr->s_type);
+    EQMSG(msg, uint32_t(
+      sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+      sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) + sizeof(BodyHeader)
+    ), pRHdr->s_size);
+    
+    // Body header for the event as a whole:
+    
+    pBodyHeader pRBhdr = reinterpret_cast<pBodyHeader>(pRHdr +1);
+    EQMSG(msg, expectedTs, pRBhdr->s_timestamp);
+    EQMSG(msg, uint32_t(2), pRBhdr->s_sourceId);
+    EQMSG(msg, uint32_t(0), pRBhdr->s_barrier);
+    
+    // Size field:
+    
+    uint32_t* pFragSize = reinterpret_cast<uint32_t*>(pRBhdr+1);
+    EQMSG(msg, uint32_t(
+      sizeof(uint32_t) +
+      sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) + sizeof(BodyHeader)      
+    ) , *pFragSize);
+    
+    // Fragment header for the event:
+    
+    EVB::pFragmentHeader pFHdr =
+      reinterpret_cast<EVB::pFragmentHeader>(pFragSize+1);
+    EQMSG(msg, expectedTs, pFHdr->s_timestamp);
+    EQMSG(msg, uint32_t(5), pFHdr->s_sourceId);
+    EQMSG(msg, uint32_t(0), pFHdr->s_barrier);
+    EQMSG(msg, uint32_t(
+      sizeof(RingItemHeader) + sizeof(BodyHeader)  
+    ), pFHdr->s_size);
+    
+    // Ring item header for the event.
+ 
+    pRHdr = reinterpret_cast<pRingItemHeader>(pFHdr+1);
+    EQMSG(msg,uint32_t(
+      sizeof(RingItemHeader) + sizeof(BodyHeader)
+    ), pRHdr->s_size);
+    EQMSG(msg, PHYSICS_EVENT, pRHdr->s_type);
+    
+    // body header for the event.
+    
+    pRBhdr = reinterpret_cast<pBodyHeader>(pRHdr+1);
+    EQMSG(msg, expectedTs, pRBhdr->s_timestamp);
+    EQMSG(msg, uint32_t(5), pRBhdr->s_sourceId);
+    EQMSG(msg, uint32_t(0), pRBhdr->s_barrier);
+    
+    // next event has the next timestamp..
+    
+    expectedTs++;
+  }
 }
