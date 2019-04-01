@@ -139,6 +139,43 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
         flushEvents();
     }
 }
+/**
+ * addOOBFragment
+ *    Adds an out of band fragment.  Out of band fragments:
+ *    - Cause the assembled events to be flushed to file.
+ *    - Don't affect any event being assembled.
+ *    - Bodies are output.  If the fragment has a body header,
+ *      it's sid is changed to the outputSid
+ *
+ * @param pFrag - pointer to the out of band fragment.
+ * @param outputSid - source id to use for the output fragment.
+ */
+void
+CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
+{
+    flushEvents();           // Write any buffered, completed events.
+    
+    // THe remainder of thsi assumes the fragment body is a ring item:
+    
+
+    pRingItem pItem = reinterpret_cast<pRingItem>(pFrag->s_body);
+    
+    // If there's no body header just output as is:
+    
+    if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
+        io::writeData(m_nFd, pItem, pItem->s_header.s_size);
+    } else {
+        // Otherwise we need to modify the sid. We assume this is an
+        // infrequent case.
+        
+        uint8_t itemCopy[pItem->s_header.s_size];
+        memcpy(itemCopy, pItem, pItem->s_header.s_size);
+        pItem = reinterpret_cast<pRingItem>(itemCopy);  // Maka  copy...
+        pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId = outputSid;
+        io::writeData(m_nFd, pItem, pItem->s_header.s_size);
+    }
+    
+}
 /** finishEvent
  *    Finish accumulating an event.  This should be called after the
  *    last fragment in an event has been added.
