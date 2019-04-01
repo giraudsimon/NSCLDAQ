@@ -54,6 +54,7 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(flush_1);    // Event flushing. tests.
   CPPUNIT_TEST(flush_2);
   CPPUNIT_TEST(flush_3);
+  CPPUNIT_TEST(flush_4);
   CPPUNIT_TEST_SUITE_END();
   
 
@@ -109,6 +110,7 @@ protected:
   void flush_1();
   void flush_2();
   void flush_3();
+  void flush_4();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
@@ -925,4 +927,93 @@ void evaccTest::flush_3()
   EVB::pFlatFragment pReadFrag =
     reinterpret_cast<EVB::pFlatFragment>(payloadSize);
   ASSERT(memcmp(pFrag, pReadFrag, sizeof(EVB::FragmentHeader) + pHdr->s_size) == 0);
+}
+void evaccTest::flush_4()
+{
+    // One event, a couple of fragments.
+
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);
+  pHdr->s_sourceId = 1;           // Different source id.
+  pHdr->s_timestamp = 0x12345679; // Slightly different timestamp.
+  m_pTestObj->addFragment(pFrag, 2);
+  
+  m_pTestObj->finishEvent();
+  m_pTestObj->flushEvents();
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  
+  // Suck in the entire file into a single buffer:
+  
+  uint8_t readBuffer[2048];
+  ssize_t nRead = read(fd, readBuffer, sizeof(readBuffer));
+  
+  // Should be one item with two identically sized fragments:
+  
+  ASSERT(nRead < sizeof(readBuffer));
+  
+  uint8_t* p = readBuffer;
+  pRingItemHeader pRH = reinterpret_cast<pRingItemHeader>(p);
+  EQ(PHYSICS_EVENT, pRH->s_type);
+  EQ(uint32_t(
+    headerSize + sizeof(uint32_t) +
+    2*(sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) + sizeof(BodyHeader))
+  ), pRH->s_size);
+  // Following the ring item header is a body header with the latest
+  // timestamp:
+  
+  pBodyHeader pRBH = reinterpret_cast<pBodyHeader>(pRH+1);
+  EQ(uint64_t(0x12345679), pRBH->s_timestamp);
+  EQ(uint32_t(2), pRBH->s_sourceId);
+  
+  // Next is the uint32_t size of the fragment body:
+  
+  uint32_t* pPayloadSize = reinterpret_cast<uint32_t*>(pRBH+1);
+  EQ(uint32_t(
+    sizeof(uint32_t) + 2*(sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) + sizeof(BodyHeader))
+  ), *pPayloadSize);
+  // Now the first ring item:
+  
+  EVB::pFragmentHeader pRFH =
+    reinterpret_cast<EVB::pFragmentHeader>(pPayloadSize+1);
+  EQ(uint64_t(0x12345678), pRFH->s_timestamp);
+  EQ(uint32_t(5), pRFH->s_sourceId);
+  EQ(uint32_t(sizeof(RingItemHeader) + sizeof(BodyHeader)), pRFH->s_size);
+  
+  // Now compare the ring item
+  
+  pHdr->s_timestamp = 0x12345678; // (put things back the way they were.)
+  pHdr->s_sourceId  = 5;
+  ASSERT(memcmp(pRFH+1, pItem, pItem->s_size) == 0);
+  
+  // On to the next fragment:
+  
+  pRH = reinterpret_cast<pRingItemHeader>(pRFH+1);
+  p   = reinterpret_cast<uint8_t*>(pRH);
+  p  += pRH->s_size;
+  
+  // p points to the next fragment header:
+  
+  pRFH= reinterpret_cast<EVB::pFragmentHeader>(p);
+  EQ(uint64_t(0x12345679), pRFH->s_timestamp);
+  EQ(uint32_t(1), pRFH->s_sourceId);
+  
 }
