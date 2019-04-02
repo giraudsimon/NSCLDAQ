@@ -45,6 +45,8 @@ namespace EVB
  **
  **       @note, This is intended to accumulate PHYSICS_EVENT fragments
  **              actually will accumulate any homogenous fragment types.
+ **
+ **       @todo - mechanism for out of band data like scalers.
 */
 
 class CEventAccumulator {
@@ -101,6 +103,7 @@ public:
     
 public:
     void addFragment(EVB::pFlatFragment pFrag, int outputSid);
+    void addOOBFragment(EVB::pFlatFragment pFrag, int outputSid);
     void finishEvent();
     void flushEvents();
 private:
