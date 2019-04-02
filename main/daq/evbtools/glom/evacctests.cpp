@@ -10,6 +10,7 @@
 
 #include <fragment.h>
 #include <DataFormat.h>
+#include <CRingScalerItem.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sstream>
+#include <time.h>
 
 static std::string FilenameTemplate="evactestXXXXXX";
 static uint32_t headerSize(sizeof(RingItemHeader) + sizeof(BodyHeader));
@@ -57,6 +59,10 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(flush_3);
   CPPUNIT_TEST(flush_4);
   CPPUNIT_TEST(flush_5);
+  
+  CPPUNIT_TEST(oob_1);       // out of band fragment tests.
+  CPPUNIT_TEST(oob_2);
+  CPPUNIT_TEST(oob_3);
   CPPUNIT_TEST_SUITE_END();
   
 
@@ -114,6 +120,10 @@ protected:
   void flush_3();
   void flush_4();
   void flush_5();
+  
+  void oob_1();
+  void oob_2();
+  void oob_3();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
@@ -1142,4 +1152,181 @@ void evaccTest::flush_5()
     
     expectedTs++;
   }
+}
+void evaccTest::oob_1()  
+{
+  // oob fragment when nothing's buffered gives the oob fragment.
+  
+  std::vector<uint32_t> scalers = {1,2,3,4,5,6,7,8,9};
+  CRingScalerItem scaler(0x12345678, 1, 0, time(nullptr), 0, 10, scalers);
+  pRingItem pOriginalItem = scaler.getItemPointer();
+  
+  // Make a flat fragment from this:
+  
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pFHdr =
+    reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pFHdr->s_timestamp = 0x1245678;
+  pFHdr->s_sourceId  = 1;
+  pFHdr->s_barrier   = 0;
+  pFHdr->s_size      = pOriginalItem->s_header.s_size;
+  memcpy(pFHdr+1, pOriginalItem, pOriginalItem->s_header.s_size);
+  
+  // Submit as out of band -- same sid.
+  
+  EVB::pFlatFragment pFrag= reinterpret_cast<EVB::pFlatFragment>(pFHdr);
+  m_pTestObj->addOOBFragment(pFrag, 1);
+  
+  // The file should have the fragment's ring item;.
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  uint8_t rdBuffer[2048];
+  ssize_t rdSize = read(fd, rdBuffer, sizeof(rdBuffer));
+  ASSERT(rdSize < sizeof(rdBuffer));
+  EQ(ssize_t(pOriginalItem->s_header.s_size), rdSize);
+  ASSERT(memcmp(pOriginalItem, rdBuffer, rdSize) == 0);
+}
+void evaccTest::oob_2()
+{
+  // oob item when there's a partial event -- gives only the oob
+  // item and the partial event remains untouched.
+  
+  // Put several events (identical) into the buffer.
+  // Each event has a timestamp 1 tick larger than the prior.
+  // all are from sid 5
+
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);   // The in progress fragment.
+  
+  
+  std::vector<uint32_t> scalers = {1,2,3,4,5,6,7,8,9};
+  CRingScalerItem scaler(0x12345678, 1, 0, time(nullptr), 0, 10, scalers);
+  pRingItem pOriginalItem = scaler.getItemPointer();
+  
+  // Make a flat fragment from this:
+  
+  EVB::pFragmentHeader pFHdr =
+    reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pFHdr->s_timestamp = 0x1245678;
+  pFHdr->s_sourceId  = 1;
+  pFHdr->s_barrier   = 0;
+  pFHdr->s_size      = pOriginalItem->s_header.s_size;
+  memcpy(pFHdr+1, pOriginalItem, pOriginalItem->s_header.s_size);
+  
+  // Submit as out of band -- same sid.
+  
+  pFrag= reinterpret_cast<EVB::pFlatFragment>(pFHdr);
+  m_pTestObj->addOOBFragment(pFrag, 1);
+  
+  // we should find the scaler item in the file:  
+
+  // The file should have the fragment's ring item;.
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  uint8_t rdBuffer[2048];
+  ssize_t rdSize = read(fd, rdBuffer, sizeof(rdBuffer));
+  ASSERT(rdSize < sizeof(rdBuffer));
+  EQ(ssize_t(pOriginalItem->s_header.s_size), rdSize);
+  ASSERT(memcmp(pOriginalItem, rdBuffer, rdSize) == 0);
+  
+  // There should be a currente event with one fragment:
+  
+  ASSERT(m_pTestObj->m_pCurrentEvent);
+  EQ(size_t(1), m_pTestObj->m_pCurrentEvent->s_eventInfo.s_nFragments);
+}
+void evaccTest::oob_3()
+{
+  // any buffered event gets flushed befgore 
+  // the OOB event.
+  
+  // oob item when there's a partial event -- gives only the oob
+  // item and the partial event remains untouched.
+  
+  // Put several events (identical) into the buffer.
+  // Each event has a timestamp 1 tick larger than the prior.
+  // all are from sid 5
+
+  uint8_t buffer[1024];
+  EVB::pFragmentHeader pHdr = reinterpret_cast<EVB::pFragmentHeader>(buffer);
+  pHdr->s_timestamp = 0x12345678;
+  pHdr->s_sourceId  = 5;
+  pHdr->s_barrier   = 0;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pRingItemHeader pItem =
+    reinterpret_cast<pRingItemHeader>(pHdr+1);
+  pItem->s_type = PHYSICS_EVENT;
+  pItem->s_size = pHdr->s_size;
+  
+  pBodyHeader pBh    = reinterpret_cast<pBodyHeader>(pItem+1);
+  pBh->s_timestamp   = pHdr->s_timestamp;
+  pBh->s_sourceId    = pHdr->s_sourceId;
+  pBh->s_size        = sizeof(BodyHeader);
+  pBh->s_barrier     = 0;
+  
+  EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(pHdr);
+  
+  m_pTestObj->addFragment(pFrag, 2);   // The in progress fragment.
+  m_pTestObj->finishEvent();           // Fully buffered event now.
+  
+  // Now put in the oob item -- that should flush both events:
+  
+  uint8_t oobBuffer[1024];
+  std::vector<uint32_t> scalers = {1,2,3,4,5,6,7,8,9};
+  CRingScalerItem scaler(0x12345678, 1, 0, time(nullptr), 0, 10, scalers);
+  pRingItem pOriginalItem = scaler.getItemPointer();
+  
+  // Make a flat fragment from this:
+  
+  EVB::pFragmentHeader pFHdr =
+    reinterpret_cast<EVB::pFragmentHeader>(oobBuffer);
+  pFHdr->s_timestamp = 0x1245678;
+  pFHdr->s_sourceId  = 1;
+  pFHdr->s_barrier   = 0;
+  pFHdr->s_size      = pOriginalItem->s_header.s_size;
+  memcpy(pFHdr+1, pOriginalItem, pOriginalItem->s_header.s_size);
+  
+  // Submit as out of band -- same sid.
+  
+  EVB::pFlatFragment pOOBFrag= reinterpret_cast<EVB::pFlatFragment>(pFHdr);
+  m_pTestObj->addOOBFragment(pOOBFrag, 1);
+  
+  // the file should have both events.
+  
+  int fd = open(m_filename.c_str(), O_RDONLY);
+  
+  uint8_t rdbuffer[2048];
+  ssize_t n = read(fd, rdbuffer, sizeof(rdbuffer));
+  
+  // First we'll see a PHYSICS ring item -- we'll assume it's
+  // right if so.
+  
+  pRingItemHeader pReadItem = reinterpret_cast<pRingItemHeader>(rdbuffer);
+  EQ(PHYSICS_EVENT, pReadItem->s_type);
+  
+  // Next should be a block of data that's identical to the ring scaler item:
+  
+  uint8_t* p = reinterpret_cast<uint8_t*>(pReadItem);
+  p += pReadItem->s_size;
+  pReadItem = reinterpret_cast<pRingItemHeader>(p);
+  
+  EQ(pOriginalItem->s_header.s_size, pReadItem->s_size);
+  ASSERT(memcmp(pReadItem, pOriginalItem, pReadItem->s_size) == 0);
 }
