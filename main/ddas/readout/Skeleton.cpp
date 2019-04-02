@@ -116,24 +116,6 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
   CReadoutMain::SetupReadout(pExperiment);
 
    pExperiment->setZeroCopy(true);
-
-   
-  // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
-  
-  mytrigger = new CMyTrigger();
-  myeventsegment = new CMyEventSegment(mytrigger, *pExperiment);
- 
-  
-  
-  // Establish your trigger here by creating a trigger object
-  // and establishing it.
-
-  pExperiment->EstablishTrigger(mytrigger);
-  pExperiment->EstablishBusy(new CMyBusy);
-  // Create and add your event segments here, by creating them and invoking CExperiment's 
-  // AddEventSegment
-  pExperiment->AddEventSegment(myeventsegment);
-  
   // The user can define an environment variable EVENT_BUFFER_SIZE that
   // can override the default event buffer size.  If that env is defined
   // - convert to unsigned.
@@ -154,6 +136,24 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
     std::cout << "The new event buffer size will be: " << newSize << std::endl;
     pExperiment->setBufferSize(newSize);
   }
+   
+  // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
+  
+  mytrigger = new CMyTrigger();
+  myeventsegment = new CMyEventSegment(mytrigger, *pExperiment);
+ 
+  
+  
+  // Establish your trigger here by creating a trigger object
+  // and establishing it.
+
+  pExperiment->EstablishTrigger(mytrigger);
+  pExperiment->EstablishBusy(new CMyBusy);
+  // Create and add your event segments here, by creating them and invoking CExperiment's 
+  // AddEventSegment
+  pExperiment->AddEventSegment(myeventsegment);
+  
+
 
 
   // We have to register our commands here because they depend on our event segment and
