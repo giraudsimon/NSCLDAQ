@@ -31,6 +31,7 @@ CMyTrigger::CMyTrigger(): m_retrigger(false), m_fifoThreshold(EXTFIFO_READ_THRES
       m_fifoThreshold = newThreshold;
     }
   }
+  std::cerr << "Using a FIFO threshold of " << m_fifoThreshold << " words\n";
 }
 
 CMyTrigger::~CMyTrigger()
