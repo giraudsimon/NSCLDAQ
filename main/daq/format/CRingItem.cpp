@@ -116,11 +116,11 @@ CRingItem::CRingItem(
   m_pItem(nullptr), m_pCursor(nullptr), m_storageSize(maxBody),
   m_swapNeeded(false), m_fZeroCopy(false), m_pRingBuffer(nullptr)
 {
-  if   (pRing->bytesToTop() > maxBody) {
+  if   (pRing->bytesToTop() > (maxBody +100)) {
     // Wait until there's sufficient free space as well as the
     // get pointers could be well behind us:
     
-    while (pRing->availablePutSpace() < maxBody) {
+    while (pRing->availablePutSpace() < (maxBody+100)) {
       usleep(10);
     }
     
@@ -131,6 +131,7 @@ CRingItem::CRingItem(
     m_pRingBuffer = pRing;
     initItem(type, timestamp, sourceId, barrierType);
   } else {
+    m_fZeroCopy  = false;
     newIfNecessary(maxBody);
     initItem(type, timestamp, sourceId, barrierType);
   }
@@ -681,8 +682,9 @@ CRingItem::copyIn(const CRingItem& rhs)
 void 
 CRingItem::deleteIfNecessary()
 {
-  if (m_pItem != (pRingItem)m_staticBuffer && !m_fZeroCopy) {
+  if ((m_pItem != (pRingItem)m_staticBuffer) && (!m_fZeroCopy)) {
     delete [](reinterpret_cast<uint8_t*>(m_pItem));
+    m_pItem = (pRingItem)(m_staticBuffer);   // No ned to delete now.
   }
 }
 /*
