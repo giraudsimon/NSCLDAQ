@@ -76,8 +76,15 @@ CHitManager::addHits(std::vector<std::deque<ModuleReader::HitInfo>>& newHits)
     
     for (int i =0; i < newHits.size(); i++ ) {
         std::deque<ModuleReader::HitInfo>& m(newHits[i]);
+#ifdef SORTING
         std::sort(m.begin(), m.end(), lessThan);
+#else
+        m_sortedHits.insert(
+            m_sortedHits.end(), newHits[i].begin(), newHits[i].end()
+        );
+#endif
     }
+#ifdef SORTING    
     // Now do the minheap merge into one grand new dequeue:
     
     std::deque<ModuleReader::HitInfo> newSortedHits;
@@ -86,6 +93,7 @@ CHitManager::addHits(std::vector<std::deque<ModuleReader::HitInfo>>& newHits)
     // merge those into the sorted hits:
     
     merge(m_sortedHits, newSortedHits);
+#endif
 }
 /**
  * haveHits

@@ -33,7 +33,7 @@ public:
   virtual   bool operator() ();
   virtual   void Initialize( int nummod ); 
   void Reset();
-	const unsigned int* getWordsInModules() const;
+	unsigned int* getWordsInModules() const;
   //int GetNumberOfModules() {return NumberOfModules;}
 
 };

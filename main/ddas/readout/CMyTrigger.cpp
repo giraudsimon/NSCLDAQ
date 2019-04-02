@@ -149,7 +149,7 @@ bool CMyTrigger::operator()()
  *    @return unsigned int* - pointer to the array containing the
  *                            number of words each module has.
  */
-const unsigned int*
+unsigned int*
 CMyTrigger::getWordsInModules() const
 {
   return m_wordsInEachModule;

@@ -185,6 +185,56 @@ void CMyEventSegment::initialize(){
 //  virtual size_t read(unsigned short* rBuffer, size_t maxwords);
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
+    // This loop finds the first module that has at least one event in it
+    // since the trigger fired.  We read the minimum of all complete events
+    // and the number of complete events that fit in that buffer
+    // (note that ) each buffer will also contain the module type word.
+    // note as well that modules count words in uint32_t's but maxwords
+    // is in uint16_t's.
+    
+    size_t maxLongs = maxwords/sizeof(uint32_t); // longs in buffer.
+    maxLongs = maxLongs - 128;
+    //std::cerr << "max reads: " << maxwords << " -> " << maxLongs << std::endl;
+    unsigned int* words = mytrigger->getWordsInModules();
+    for (int i =0; i < NumModules; i++) {
+        if (words[i] >= ModEventLen[i]) {
+            // Figure out if we fill the buffer or just take the complete
+            // events from the module:
+            
+            uint32_t* p = static_cast<uint32_t*>(rBuffer);
+            *p++        = ModuleRevBitMSPSWord[i];
+            int readSize = words[i];
+            if (readSize > maxLongs) readSize = maxLongs;
+            // Truncated to the the nearest event size:
+            
+            readSize -= (readSize % ModEventLen[i]);
+
+            // Read the data right into the ring item:
+            
+      //      std::cerr << "Going to read " << readSize
+      //          << "(" << words[i] <<") " << " from " << i << std::endl;
+            int stat = Pixie16ReadDataFromExternalFIFO(
+                reinterpret_cast<unsigned int*>(p), (unsigned long)readSize, (unsigned short)i
+            );
+            if (stat != 0) {
+                std::cerr << "Read failed from module " << i << std::endl;
+                m_pExperiment->haveMore();
+                reject();
+                return 0;
+            }
+            m_pExperiment->haveMore();      // until we fall through the loop
+            words[i] -= readSize;           // count down words still to read.
+            
+            return (readSize + 1) *sizeof(uint32_t)/sizeof(uint16_t);
+        }
+    }
+    // If we got here nobody had enough data left since the last trigger:
+    
+    mytrigger->Reset();
+    reject();
+    return 0;
+
+    
     /*  If the sorter has data to output - we get a hit from it
      *  output it and, if there are more hits, tell the Experiment we
      *  want to output more:
@@ -198,13 +248,16 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
         return result; 
     }
     // If we get here, we have a data in the modules.
+    
+    
+    
     // Read the modules and hand the data to the hit manager.
     // if it says we have a hit that can be output output it and,
     // if three are outputtable hits, indicate that to the experiment:
 
     mytrigger->Reset();
     std::vector<std::deque<DDASReadout::ModuleReader::HitInfo>> moduleHits;
-    const unsigned int* words = mytrigger->getWordsInModules();
+    
     for(int  i = 0; i < m_readers.size(); i++) {
         if (words[i]) {             // Don't bother with modules with no data:
             

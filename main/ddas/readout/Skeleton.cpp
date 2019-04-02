@@ -37,6 +37,9 @@ using namespace std;
 #include <CRunControlPackage.h>
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
+#include "pixie16app_export.h"
+#include "pixie16sys_export.h"
+
 
 CMyTrigger *mytrigger(0);             // Newing them here makes order of construction
 CMyEventSegment *myeventsegment(0);   // un-controlled - now newed in SetupReadout.
@@ -116,6 +119,8 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
   CReadoutMain::SetupReadout(pExperiment);
 
    pExperiment->setZeroCopy(true);
+   
+   
   // The user can define an environment variable EVENT_BUFFER_SIZE that
   // can override the default event buffer size.  If that env is defined
   // - convert to unsigned.
@@ -123,6 +128,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
   // - warn if decreasing from the default
   // - set the new size with pExperiment->setBufferSize.
   
+  pExperiment->setBufferSize(EXTFIFO_READ_THRESH*40*sizeof(uint32_t));
   const char* pNewBufferSizeStr = getenv("EVENT_BUFFER_SIZE");
   if (pNewBufferSizeStr) {            // new string defined.
     std::cout << "Overriding the default event buffer size\n";
