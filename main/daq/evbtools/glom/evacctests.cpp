@@ -1315,7 +1315,7 @@ void evaccTest::oob_3()
   uint8_t rdbuffer[2048];
   ssize_t n = read(fd, rdbuffer, sizeof(rdbuffer));
   
-  // First we'll see a PHYSICS ring item -- we'll assume it's
+  // First we'll see a PHYSI`CS ring item -- we'll assume it's
   // right if so.
   
   pRingItemHeader pReadItem = reinterpret_cast<pRingItemHeader>(rdbuffer);
