@@ -566,7 +566,7 @@ CExperiment::ReadEvent()
       if (m_fWantZeroCopy) {
         CRingItem item(
           PHYSICS_EVENT, 0, m_nSourceId, 0,
-          m_nDataBufferSize, m_pRing
+          m_nDataBufferSize + 100, m_pRing
         );
         uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
         size_t nWords = m_pReadout->read(pBuffer +2 , m_nDataBufferSize);
@@ -581,7 +581,7 @@ CExperiment::ReadEvent()
           m_nEventsEmitted++;
         }
       } else {
-        CRingItem item(PHYSICS_EVENT, m_nDataBufferSize);
+        CRingItem item(PHYSICS_EVENT, m_nDataBufferSize + 100);
         uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
         size_t nWords = m_pReadout->read(pBuffer +2 , m_nDataBufferSize);
         if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
@@ -595,8 +595,9 @@ CExperiment::ReadEvent()
           m_nEventsEmitted++;
         }
       }
+      m_pReadout->clear();	// do any post event clears.
     } while(m_fHavemore);
-    m_pReadout->clear();	// do any post event clears.
+    
 
   }
   if (m_pBusy) {
