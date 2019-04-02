@@ -22,6 +22,10 @@ evts2frags.h: @srcdir@/evts2frags.ggo
 	@GENGETOPT@ --input=@srcdir@/evts2frags.ggo \
 		--output-dir=@builddir@ --file-name=evts2frags
 
+
+EXTRA_DIST=evts2frags.ggo
+
+
 # Tests
 
 noinst_HEADERS=CFragmentMaker.h CEvents2Fragments.h
