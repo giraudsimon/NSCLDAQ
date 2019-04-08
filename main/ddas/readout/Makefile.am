@@ -29,7 +29,8 @@ DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
-	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\"
+	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\" \
+	-DSORTING
 
 DDASReadout_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
@@ -68,7 +69,7 @@ unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
 	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h			\
 	mreadertests.cpp ModuleReader.cpp ModuleReader.h 		\
 	hmtests.cpp CHitManager.cpp CHitManager.h
-unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS)
+unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS) -DSORTING
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 
 TESTS=unittests
