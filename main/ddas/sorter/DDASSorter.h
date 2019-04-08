@@ -21,19 +21,42 @@
 #ifndef DDASSORTER_H
 #define DDASSORTER_H
 
+#include <CRingBufferChunkAccess.h>
+
 class CRingBuffer;
+class CHitManager;
 
 
+typedef struct _RingItemHeader *pRingItemHeader;
+/**
+ * @class DDASSorter
+ *    This class manages data flow.   What we do:
+ *    -  Take ring items:
+ *    -  Non event ring items are just passsed on through.
+ *    -  Event items are parsed for hits which are added to the hit manager.
+ *    -  If hits are available from the hit manager they are passsed as
+ *       output ring items.
+ *    -  When the end of run item is seen, the hit manager is flushed prior
+ *       to  sending the end run item to the output file.
+ */
 class DDASSorter
 {
 private:
     CRingBuffer&  m_source;
     CRingBuffer&  m_sink;
+    CHitManager*  m_pHits;
     
 public:
     DDASSorter(CRingBuffer& source, CRingBuffer& sink);
     
     void operator()();
+    
+private:
+    void processChunk(CRingBufferChunkAccess::Chunk& chunk);
+    void outputRingItem(pRingItemHeader pItem);
+    void processHits(pRingItemHeader    pItem);
+    void endRun(pRingItemHeader         pEndRun);
+    void flushHitManager();
 };
 
 
