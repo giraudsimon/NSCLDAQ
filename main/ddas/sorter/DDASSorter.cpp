@@ -216,6 +216,7 @@ DDASSorter::allocateHit()
 void
 DDASSorter::freeHit(DDASReadout::ZeroCopyHit* pHit)
 {
+    pHit->freeHit();            // De-reference and possibly free buffer.
     m_hits.push_back(pHit);
 }
 /**

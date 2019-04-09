@@ -129,7 +129,7 @@ HitManager::mergeHits(std::deque<DDASReadout::ZeroCopyHit*>& newHits)
         m_sortedHits = newHits;                         // assign
     } else {
         auto oldFront = m_sortedHits.front();
-        auto newBack  = m_sortedHits.back();
+        auto newBack  = newHits.back();
         if (hitCompare(newBack, oldFront)) {            // prepend
             m_sortedHits.insert(m_sortedHits.begin(), newHits.begin(), newHits.end());
         } else {
@@ -139,11 +139,11 @@ HitManager::mergeHits(std::deque<DDASReadout::ZeroCopyHit*>& newHits)
                 m_sortedHits.insert(m_sortedHits.end(), newHits.begin(), newHits.end());
             auto oldEnd = newPosition;
             --oldEnd;
-            if (!hitCompare(*oldEnd, *newPosition)) {
-                // Must merge too.
-                
-                std::inplace_merge(m_sortedHits.begin(), newPosition, m_sortedHits.end());
-            }
+            while (!hitCompare(*oldEnd, *newPosition) && (oldEnd != m_sortedHits.begin())) {
+                --oldEnd;
+            }    
+            std::inplace_merge(oldEnd, newPosition, m_sortedHits.end(), hitCompare);
+
         }
     }
 }
