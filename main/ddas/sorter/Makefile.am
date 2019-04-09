@@ -23,8 +23,9 @@ ddasSortOptions.h:  ddasSortOptions.ggo
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp HitManager.cpp \
-	HitManager.h ZeroCopyHit.h ZeroCopyHit.cpp RawChannel.h RawChannel.cpp \
+unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp sortertests.cpp \
+	HitManager.cpp 	HitManager.h ZeroCopyHit.h ZeroCopyHit.cpp	\
+	RawChannel.h RawChannel.cpp \
 	ReferenceCountedBuffer.h ReferenceCountedBuffer.cpp \
 	BufferArena.h BufferArena.cpp
 
