@@ -36,6 +36,11 @@ class hitmgrtest : public CppUnit::TestFixture {
   CPPUNIT_TEST(merge_2);
   CPPUNIT_TEST(merge_3);
   CPPUNIT_TEST(merge_4);
+  
+  CPPUNIT_TEST(add_1);
+  CPPUNIT_TEST(add_2);
+  CPPUNIT_TEST(add_3);
+  CPPUNIT_TEST(add_4);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -62,6 +67,11 @@ protected:
   void merge_2();
   void merge_3();
   void merge_4();
+  
+  void add_1();
+  void add_2();
+  void add_3();
+  void add_4();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(hitmgrtest);
@@ -217,4 +227,99 @@ void hitmgrtest::merge_4()           // Merge with tail.
   EQ(double(1234), m_pTestObject->m_sortedHits[1]->s_time);
   EQ(double(2222), m_pTestObject->m_sortedHits[2]->s_time);
   EQ(double(9999), m_pTestObject->m_sortedHits[3]->s_time);
+}
+void hitmgrtest::add_1()               // Soret->assign.
+{
+  // A couple of hits get sorted in time order:
+  
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 1234;
+  
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = 1111;         // newer.
+  
+  std::deque<DDASReadout::ZeroCopyHit*> hits;
+  hits.push_back(&hit1);
+  hits.push_back(&hit2);
+  
+  m_pTestObject->addHits(hits);
+  EQ(double(1111), m_pTestObject->m_sortedHits[0]->s_time);
+  EQ(double(1234), m_pTestObject->m_sortedHits[1]->s_time);
+    
+}
+void hitmgrtest::add_2()                  // sort/append to existing.
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 1234;
+  
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = 1111;         // newer.
+  
+  std::deque<DDASReadout::ZeroCopyHit*> hits;
+  hits.push_back(&hit1);
+  hits.push_back(&hit2);
+  
+  DDASReadout::ZeroCopyHit hit0(100, buf->s_pData, buf, m_pArena);
+  hit0.s_time = 0;
+  m_pTestObject->m_sortedHits.push_back(&hit0);
+  
+  m_pTestObject->addHits(hits);
+  
+  EQ(double(0), m_pTestObject->m_sortedHits[0]->s_time);
+  EQ(double(1111), m_pTestObject->m_sortedHits[1]->s_time);
+  EQ(double(1234), m_pTestObject->m_sortedHits[2]->s_time);
+}
+void hitmgrtest::add_3()             // prepend
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 1234;
+  
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = 1111;         // newer.
+  
+  std::deque<DDASReadout::ZeroCopyHit*> hits;
+  hits.push_back(&hit1);
+  hits.push_back(&hit2);
+  
+  DDASReadout::ZeroCopyHit hit0(100, buf->s_pData, buf, m_pArena);
+  hit0.s_time = 9999;
+  m_pTestObject->m_sortedHits.push_back(&hit0);
+  
+  m_pTestObject->addHits(hits);
+  
+  EQ(double(1111), m_pTestObject->m_sortedHits[0]->s_time);
+  EQ(double(1234), m_pTestObject->m_sortedHits[1]->s_time);
+  EQ(double(9999), m_pTestObject->m_sortedHits[2]->s_time);
+}
+void hitmgrtest::add_4()            // interleaved.
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 1234;
+  
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = 1111;         // newer.
+  
+  std::deque<DDASReadout::ZeroCopyHit*> hits;
+  hits.push_back(&hit1);
+  hits.push_back(&hit2);
+  
+  DDASReadout::ZeroCopyHit hit0(100, buf->s_pData, buf, m_pArena);
+  hit0.s_time = 0;
+  m_pTestObject->m_sortedHits.push_back(&hit0);
+
+  DDASReadout::ZeroCopyHit hit00(100, buf->s_pData, buf, m_pArena);
+  hit00.s_time = 9999;
+  m_pTestObject->m_sortedHits.push_back(&hit00);
+  
+  m_pTestObject->addHits(hits);
+  
+  EQ(double(0), m_pTestObject->m_sortedHits[0]->s_time);
+  EQ(double(1111), m_pTestObject->m_sortedHits[1]->s_time);
+  EQ(double(1234), m_pTestObject->m_sortedHits[2]->s_time);
+  EQ(double(9999), m_pTestObject->m_sortedHits[3]->s_time);
+  
 }
