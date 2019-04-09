@@ -246,5 +246,4 @@ DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
     item.setBodyCursor(pBody);
     item.updateSize();
     item.commitToRing(m_sink);
-    
 }

@@ -21,6 +21,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <string.h>
 
 static std::string srcRing="datasource";
 static std::string sinkRing("datasink");
@@ -28,6 +29,8 @@ static std::string sinkRing("datasink");
 class sortertest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(sortertest);
   CPPUNIT_TEST(hitout);
+  
+  CPPUNIT_TEST(ringitemOut);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -75,6 +78,7 @@ public:
   }
 protected:
   void hitout();
+  void ringitemOut();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(sortertest);
@@ -118,4 +122,26 @@ void sortertest::hitout() {            // Output a hit (zerocopy).
   }
   
   delete pItem;  
+}
+
+void sortertest::ringitemOut()
+{
+  CRingItem item(PHYSICS_EVENT, 0x12345678, 12);
+  uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
+  for (int i =0; i < 128; i++) {
+    *pBody++ = i;
+  }
+  item.setBodyCursor(pBody);
+  
+  pRingItem pRawItem = item.getItemPointer();
+  m_pTestObject->outputRingItem(reinterpret_cast<pRingItemHeader>(pRawItem));
+  
+  // Should be able to fetch it back out:
+  
+  CRingItem* pGotten = CRingItem::getFromRing(*m_pSinkConsumer,all);
+  pRingItem pRawGotten = pGotten->getItemPointer();
+  
+  ASSERT(memcmp(pRawItem, pRawGotten, pRawItem->s_header.s_size) == 0);
+  
+  delete pGotten;
 }

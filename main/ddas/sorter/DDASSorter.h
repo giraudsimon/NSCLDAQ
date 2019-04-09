@@ -64,12 +64,12 @@ public:
     
 private:
     void processChunk(CRingBufferChunkAccess::Chunk& chunk);
-    void outputRingItem(pRingItemHeader pItem);
+    void outputRingItem(pRingItemHeader pItem);                // tested.
     void processHits(pRingItemHeader    pItem);
     void flushHitManager();
-    DDASReadout::ZeroCopyHit* allocateHit();
-    void freeHit(DDASReadout::ZeroCopyHit* pHit);
-    void outputHit(DDASReadout::ZeroCopyHit* pHit);
+    DDASReadout::ZeroCopyHit* allocateHit();                  // tested
+    void freeHit(DDASReadout::ZeroCopyHit* pHit);             // tested
+    void outputHit(DDASReadout::ZeroCopyHit* pHit);           // tested
 };
 
 
