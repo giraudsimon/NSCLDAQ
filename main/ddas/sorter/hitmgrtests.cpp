@@ -3,6 +3,8 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 
+#include "HitManager.h"
+
 
 
 class Testname : public CppUnit::TestFixture {
@@ -12,11 +14,13 @@ class Testname : public CppUnit::TestFixture {
 
 
 private:
-
+  HitManager* m_pTestObject;
 public:
   void setUp() {
+    m_pTestObject = new HitManager(10*1.0e9);
   }
   void tearDown() {
+    delete m_pTestObject;
   }
 protected:
   void aTest();
