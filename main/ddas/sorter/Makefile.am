@@ -18,3 +18,13 @@ ddasSortOptions.c: ddasSortOptions.h
 ddasSortOptions.h:  ddasSortOptions.ggo
 	$(GENGETOPT) <@srcdir@/ddasSortOptions.ggo \
 		--file=ddasSortOptions --output-dir=@srcdir@
+
+#----------------------- unit tests
+
+noinst_PROGRAMS=unittests
+
+unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp
+unittests_CXXFLAGS=$(ddasSort_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_LDFLAGS=$(ddasSort_LDFLAGS) @CPPUNIT_LDFLAGS@
+
+TESTS=@builddir@/unittests
