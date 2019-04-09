@@ -22,9 +22,16 @@
 #define DDASSORTER_H
 
 #include <CRingBufferChunkAccess.h>
+#include <deque>
 
 class CRingBuffer;
-class CHitManager;
+class HitManager;
+
+namespace DDASReadout {
+class BufferArena;
+class ReferenceCountedBuffer;
+class ZeroCopyHit;
+}
 
 
 typedef struct _RingItemHeader *pRingItemHeader;
@@ -44,10 +51,14 @@ class DDASSorter
 private:
     CRingBuffer&  m_source;
     CRingBuffer&  m_sink;
-    CHitManager*  m_pHits;
+    HitManager*  m_pHits;
+    DDASReadout::BufferArena*  m_pArena;
+    std::deque<DDASReadout::ZeroCopyHit*>   m_hits;
+    uint32_t     m_sid;
     
 public:
     DDASSorter(CRingBuffer& source, CRingBuffer& sink);
+    ~DDASSorter();
     
     void operator()();
     
@@ -55,8 +66,10 @@ private:
     void processChunk(CRingBufferChunkAccess::Chunk& chunk);
     void outputRingItem(pRingItemHeader pItem);
     void processHits(pRingItemHeader    pItem);
-    void endRun(pRingItemHeader         pEndRun);
     void flushHitManager();
+    DDASReadout::ZeroCopyHit* allocateHit();
+    void         freeHit(DDASReadout::ZeroCopyHit* pHit);
+    void outputHit(DDASReadout::ZeroCopyHit* pHit);
 };
 
 
