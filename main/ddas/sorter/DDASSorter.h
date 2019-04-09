@@ -58,7 +58,7 @@ private:
     
 public:
     DDASSorter(CRingBuffer& source, CRingBuffer& sink);
-    ~DDASSorter();
+    ~DDASSorter();                                      // @todo clean up arena and hit pool.
     
     void operator()();
     
