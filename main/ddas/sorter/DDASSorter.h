@@ -68,7 +68,7 @@ private:
     void processHits(pRingItemHeader    pItem);
     void flushHitManager();
     DDASReadout::ZeroCopyHit* allocateHit();
-    void         freeHit(DDASReadout::ZeroCopyHit* pHit);
+    void freeHit(DDASReadout::ZeroCopyHit* pHit);
     void outputHit(DDASReadout::ZeroCopyHit* pHit);
 };
 

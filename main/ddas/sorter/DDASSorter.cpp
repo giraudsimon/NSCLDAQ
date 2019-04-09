@@ -239,7 +239,7 @@ DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
     // Make this look like an old DDASReadout hit body:
     
     uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
-    *pBody++  = pHit->s_channelLength + 2*sizeof(uint32_t);
+    *pBody++  = (pHit->s_channelLength + 2)*sizeof(uint32_t);
     *pBody++  = pHit->s_moduleType;
     memcpy(pBody, pHit->s_data, pHit->s_channelLength*sizeof(uint32_t));
     pBody    += pHit->s_channelLength;
