@@ -41,6 +41,12 @@ class hitmgrtest : public CppUnit::TestFixture {
   CPPUNIT_TEST(add_2);
   CPPUNIT_TEST(add_3);
   CPPUNIT_TEST(add_4);
+  
+  CPPUNIT_TEST(havehit_1);
+  CPPUNIT_TEST(havehit_2);
+  CPPUNIT_TEST(havehit_3);
+  
+  CPPUNIT_TEST(nexthit_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -72,6 +78,12 @@ protected:
   void add_2();
   void add_3();
   void add_4();
+  
+  void havehit_1();
+  void havehit_2();
+  void havehit_3();
+  
+  void nexthit_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(hitmgrtest);
@@ -322,4 +334,55 @@ void hitmgrtest::add_4()            // interleaved.
   EQ(double(1234), m_pTestObject->m_sortedHits[2]->s_time);
   EQ(double(9999), m_pTestObject->m_sortedHits[3]->s_time);
   
+}
+void hitmgrtest::havehit_1()       // 1 hit - means false (initial tested no hits).
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 0;
+  
+  m_pTestObject->m_sortedHits.push_back(&hit1);
+  
+  ASSERT(!m_pTestObject->haveHit());
+}
+void hitmgrtest::havehit_2()           // 2 hits but not outside of window.
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 0;
+  m_pTestObject->m_sortedHits.push_back(&hit1);
+
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = 1234;
+  m_pTestObject->m_sortedHits.push_back(&hit2);
+  
+  ASSERT(!m_pTestObject->haveHit());
+}
+void hitmgrtest::havehit_3()            // 2 hits outside of window.
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 0;
+  m_pTestObject->m_sortedHits.push_back(&hit1);
+
+  DDASReadout::ZeroCopyHit hit2(100, buf->s_pData, buf, m_pArena);
+  hit2.s_time = double(10)*1.0e9 + double(1);
+  m_pTestObject->m_sortedHits.push_back(&hit2);
+  
+  ASSERT(m_pTestObject->haveHit());  
+}
+
+
+void hitmgrtest::nexthit_1()         // Can get one hit if there's one there.
+{
+  auto buf = m_pArena->allocate(1024);
+  DDASReadout::ZeroCopyHit hit1(100, buf->s_pData, buf, m_pArena);
+  hit1.s_time = 0;
+  m_pTestObject->m_sortedHits.push_back(&hit1);
+
+  DDASReadout::ZeroCopyHit* pHit = m_pTestObject->nextHit();
+  EQ(&hit1, pHit);
+  
+  pHit =  m_pTestObject->nextHit();
+  ASSERT(!pHit);
 }
