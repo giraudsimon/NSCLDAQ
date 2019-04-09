@@ -53,6 +53,7 @@ HitManager::addHits(std::deque<DDASReadout::ZeroCopyHit*>& newHits)
 bool
 HitManager::haveHit()
 {
+    if (m_sortedHits.size() < 2) return false;  // Need at least two for a window.
     auto pfront = m_sortedHits.front();
     auto pback  = m_sortedHits.back();
     
