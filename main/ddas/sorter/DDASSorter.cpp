@@ -69,7 +69,9 @@ DDASSorter::operator()()
         size_t size = chunkGetter.waitChunk(maxChunk, 10000, 100);
         if(size) {
             CRingBufferChunkAccess::Chunk c = chunkGetter.nextChunk();
-            processChunk(c);
+            if (c.size() > 0) {
+                processChunk(c);
+            }
         }
     }
     
