@@ -38,11 +38,12 @@
  * constructor:
  *    @param source - ringbuffer from which data comes.
  *    @param sink   - ringbuffer to which data goes.
+ *    @param window = accumulation window
  */
-DDASSorter::DDASSorter(CRingBuffer& source, CRingBuffer& sink) :
+DDASSorter::DDASSorter(CRingBuffer& source, CRingBuffer& sink, float window) :
     m_source(source), m_sink(sink), m_sid(0)
 {
-    m_pHits = new HitManager(10*((uint64_t)(1000000000)));   // 10 second build window.
+    m_pHits = new HitManager(window*((uint64_t)(1000000000)));   // 10 second build window.
     m_pArena = new DDASReadout::BufferArena;
 }
 /**

@@ -10,3 +10,4 @@ version "v1.0"
 
 option "source" s "URI of source ring buffer - must be a ring buffer" string
 option "sink"   S "Name of sink ring buffer _name_ not URI" string
+option "window" W "Accumulation time window" float default="10.0"

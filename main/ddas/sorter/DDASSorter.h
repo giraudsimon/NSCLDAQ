@@ -57,8 +57,8 @@ private:
     uint32_t     m_sid;
     
 public:
-    DDASSorter(CRingBuffer& source, CRingBuffer& sink);
-    ~DDASSorter();                                      // @todo clean up arena and hit pool.
+    DDASSorter(CRingBuffer& source, CRingBuffer& sink, float window=10.0);
+    ~DDASSorter();
     
     void operator()();
     

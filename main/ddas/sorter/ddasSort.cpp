@@ -62,6 +62,7 @@ int main(int argc, char**argv)
     
     std::string sourceURI = parsedArgs.source_arg;
     std::string sinkRing  = parsedArgs.sink_arg;
+    float       accumWindow = parsedArgs.window_arg;
     
     int status = EXIT_SUCCESS;
     std::string errorMessage;
@@ -76,7 +77,7 @@ int main(int argc, char**argv)
         std::unique_ptr<CRingBuffer> pSource(CRingAccess::daqConsumeFrom(sourceURI));
         std::unique_ptr<CRingBuffer> pSink(CRingBuffer::createAndProduce(sinkRing));
         
-        DDASSorter sorter(*pSource, *pSink);
+        DDASSorter sorter(*pSource, *pSink, accumWindow);
         sorter();
         
     }
