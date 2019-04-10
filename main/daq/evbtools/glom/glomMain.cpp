@@ -27,11 +27,12 @@
 #include <CRingItemFactory.h>
 #include <CRingScalerItem.h>
 #include <CRingPhysicsEventCountItem.h>
-#include <exception>
+#include <stdexcept>
 #include <CAbnormalEndItem.h>
 #include <CBufferedOutput.h>
 #include <time.h>
 #include "CBufferedFragmentReader.h"
+#include "CEventAccumulator.h"
 
 // File scoped  variables:
 
@@ -47,6 +48,8 @@ static uint64_t outputEvents(0);
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
 
+static CEventAccumulator* pAccumulator;
+
 // We don't need threadsafe event fragment pools so:
 
 namespace EVB {
@@ -56,7 +59,26 @@ namespace EVB {
 static const unsigned BUFFER_SIZE=1024*1024;
 
 /**
- *  The next items are used to minimize the dynamic storage manipulations
+ * policyFromEnum
+ *    @param timestamp policy enum value from gengetopt.
+ *    @return CEventAccumulator::TimestampPolicy - corresponding policy value.
+ */
+CEventAccumulator::TimestampPolicy
+policyFromEnum(enum_timestamp_policy policy)
+{
+    switch (policy) {
+    case timestamp_policy_arg_earliest:
+        return CEventAccumulator::first;
+    case timestamp_policy_arg_latest:
+        return CEventAccumulator::last;
+    case timestamp_policy_arg_average:
+        return CEventAccumulator::average;
+    }
+    throw std::invalid_argument("Invalid timestamp enumerator value.");
+}
+
+/**
+ *  The next items are used to minimize  dynamic storage manipulations
  *  requred by Glom as profiling shows the realloc of pAccumulatedEvent
  *  to have been a significant part of the glom time:
  *
@@ -173,6 +195,7 @@ outputGlomParameters(uint64_t dt, bool building)
     pGlomParameters p = formatGlomParameters(dt, building ? 1 : 0,
                                              timestampPolicy);
     outputter->put( p, p->s_header.s_size);
+    outputter->flush();                       // We buffer via the event accumulator.
 }
 
 /**
@@ -187,50 +210,9 @@ outputGlomParameters(uint64_t dt, bool building)
 static void
 flushEvent()
 {
-  if (totalEventSize) {
-    
-    // Figure out which timestamp to use in the generated event:
-    
-    uint64_t eventTimestamp;
-    switch (timestampPolicy) {
-        case timestamp_policy_arg_earliest:
-            eventTimestamp = firstTimestamp;
-            break;
-        case timestamp_policy_arg_latest:
-            eventTimestamp = lastTimestamp;
-            break;
-        case timestamp_policy_arg_average:
-            eventTimestamp = (timestampSum/fragmentCount);
-            break;
-        default:
-            // Default to earliest...but should not occur:
-            eventTimestamp = firstTimestamp;
-            break;
-    }
-    
-    RingItemHeader header;
-    BodyHeader     bHeader;
-    bHeader.s_size      = sizeof(BodyHeader);
-    bHeader.s_timestamp = eventTimestamp;
-    bHeader.s_sourceId  = sourceId;
-    bHeader.s_barrier   = 0;
-    
-    
-    header.s_size = totalEventSize + sizeof(header) + sizeof(uint32_t) + sizeof(BodyHeader);
-    header.s_type = PHYSICS_EVENT;
-    uint32_t eventSize = totalEventSize + sizeof(uint32_t);
-
-    outputter->put(&header, sizeof(header));
-    outputter->put(&bHeader, sizeof(BodyHeader));
-    outputter->put(&eventSize,  sizeof(uint32_t));
-    
-    outputter->put(pAccumulatedEvent,  totalEventSize);
-
-    resetAccumulatedEvent();
-    firstEvent        = true;
-    
-    outputEvents++;                  // Count the event.
-  }
+  pAccumulator->finishEvent();    
+  outputEvents++;                  // Count the event.
+  
 }
 
 /**
@@ -247,6 +229,10 @@ flushEvent()
 static void
 outputEventCount(pRingItemHeader pItem)
 {
+    pAccumulator->flushEvents();      // Write any complete events to output.
+    
+    // Forma the physics event count item.
+    
     CRingScalerItem* pScaler = dynamic_cast<CRingScalerItem*>(
         CRingItemFactory::createRingItem(pItem)  
     );
@@ -263,6 +249,7 @@ outputEventCount(pRingItemHeader pItem)
     outputter->put(
         counters.getItemPointer(), counters.getItemPointer()->s_header.s_size
     );
+    outputter->flush();
 }
 
 /**
@@ -287,13 +274,11 @@ outputBarrier(EVB::pFlatFragment p)
     pRingItemHeader pH = 
       reinterpret_cast<pRingItemHeader>(p->s_body); 
   
-    
+    pAccumulator->addOOBFragment(p, sourceId);
+
     // This is correct if there is or isn't a body header in the payload
     // ring item.
     
-    
-    outputter->put( pH, pH->s_size);
-    outputter->flush();		// Ensure this is output along with other stuff.
     
     if (pH->s_type == BEGIN_RUN) {
       outputEvents = 0;
@@ -380,7 +365,8 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
    */
   
   if (nobuild || (!firstEvent && ((tsdiff) > dt)) || (fragmentCount > maxFragments)) {
-    flushEvent();
+    pAccumulator->finishEvent();
+    firstEvent = true;                // next event is first.
   }
   // If firstEvent...our timestamp starts the interval:
 
@@ -395,13 +381,11 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
   
   timestampSum    += timestamp;
 
+  pAccumulator->addFragment(pFrag, sourceId);
   
     // Add the data to the accumulated event:
   
-addDataToAccumulatedEvent(
-    pFrag, sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size
-  );
-  
+
 
 }
 
@@ -416,6 +400,7 @@ static void outputEventFormat()
     format.s_minorVersion = FORMAT_MINOR;
     
     outputter->put( & format, sizeof(format));
+    outputter->flush();
 }
 
 /**
@@ -446,6 +431,11 @@ main(int argc, char**  argv)
 
   outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
   outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
+  
+    pAccumulator = new CEventAccumulator(
+        STDOUT_FILENO, 2, BUFFER_SIZE, maxFragments,
+        policyFromEnum(timestampPolicy)
+    );
   
   outputEventFormat();
   

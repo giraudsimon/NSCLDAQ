@@ -40,8 +40,7 @@
  */
 CEventAccumulator::CEventAccumulator(
     int fd, time_t maxFlushTime, size_t bufferSize, size_t maxfrags,
-    TimestampPolicy policy
-) :
+    TimestampPolicy policy) :
     m_nFd(fd), m_maxFlushTime(maxFlushTime), m_tsPolicy(policy),
     m_pBuffer(nullptr), m_nBufferSize(bufferSize), m_nMaxFrags(maxfrags),
     m_nBytesInBuffer(0), m_pIoVectors(nullptr), m_nMaxIoVecs(0), 
@@ -187,6 +186,8 @@ CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
 void
 CEventAccumulator::finishEvent()
 {
+    if (!m_pCurrentEvent) return;
+    
     // If first or last, appendFragment has been taking care of us so:
     
     if (m_tsPolicy == average) {
