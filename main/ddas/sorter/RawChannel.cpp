@@ -313,6 +313,7 @@ RawChannel::moduleCalibration(uint32_t moduleType)
         err << " update freqToCalibration in RawChannel.cpp";
         throw std::invalid_argument(err.str());
     }
+    return result;
     
 }
  

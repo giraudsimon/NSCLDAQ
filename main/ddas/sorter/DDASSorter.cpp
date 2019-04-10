@@ -141,12 +141,13 @@ void
 DDASSorter::processHits(pRingItemHeader pItem)
 {
     auto pBuffer = m_pArena->allocate(pItem->s_size);
-    uint32_t* pBodySize = reinterpret_cast<uint32_t*>(pItem + 1);
+    pBodyHeader pBHdr   = reinterpret_cast<pBodyHeader>(pItem+1);
+    uint32_t* pBodySize = reinterpret_cast<uint32_t*>(pBHdr+1);
     uint32_t bodySize   = *pBodySize++;
     uint32_t moduleType = *pBodySize++;
-    bodySize           -= 2*sizeof(uint32_t);
+    bodySize           -= 2*sizeof(uint32_t)/sizeof(uint16_t);
     
-    memcpy(pBuffer->s_pData, pBodySize, bodySize);   //Copy the raw data.
+    memcpy(pBuffer->s_pData, pBodySize, bodySize*sizeof(uint16_t));   //Copy the raw data.
     uint8_t* p(*pBuffer);
     std::deque<DDASReadout::ZeroCopyHit*> hitList;
     while(bodySize) {
@@ -162,8 +163,8 @@ DDASSorter::processHits(pRingItemHeader pItem)
         
         hitList.push_back(pHit);
         
-        p += hitSize;
-        bodySize -= hitSize;
+        p += hitSize*sizeof(uint32_t);
+        bodySize -= hitSize * sizeof(uint32_t)/sizeof(uint16_t);
     }
     m_pHits->addHits(hitList);
     // Now see if there are any hits we can output:
@@ -239,7 +240,7 @@ DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
     // Make this look like an old DDASReadout hit body:
     
     uint32_t* pBody = static_cast<uint32_t*>(item.getBodyCursor());
-    *pBody++  = (pHit->s_channelLength + 2)*sizeof(uint32_t);
+    *pBody++  = (pHit->s_channelLength + 2)*sizeof(uint32_t)/sizeof(uint16_t);
     *pBody++  = pHit->s_moduleType;
     memcpy(pBody, pHit->s_data, pHit->s_channelLength*sizeof(uint32_t));
     pBody    += pHit->s_channelLength;

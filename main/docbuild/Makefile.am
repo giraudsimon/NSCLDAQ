@@ -55,6 +55,7 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/daq/format \
 						@top_srcdir@/usb \
 						@top_srcdir@/usb/vmusb \
+						@top_srcdir@/usb/vmusb/vmusbPackage \
 						@top_srcdir@/usb/ccusb \
 						@top_srcdir@/daq/readoutgui \
 						@top_srcdir@/daq/eventbuilder \

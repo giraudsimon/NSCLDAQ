@@ -33,6 +33,9 @@ class sortertest : public CppUnit::TestFixture {
   CPPUNIT_TEST(ringitemOut);
   
   CPPUNIT_TEST(flush);
+  
+  CPPUNIT_TEST(processhits_1);
+  CPPUNIT_TEST(processhits_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -82,6 +85,8 @@ protected:
   void hitout();
   void ringitemOut();
   void flush();
+  void processhits_1();
+  void processhits_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(sortertest);
@@ -112,9 +117,9 @@ void sortertest::hitout() {            // Output a hit (zerocopy).
   EQ(uint64_t(12345678), pItem->getEventTimestamp());
   EQ(m_pTestObject->m_sid, pItem->getSourceId());
   EQ(uint32_t(0), pItem->getBarrierType());
-  EQ(size_t(128) + 2*sizeof(uint32_t), pItem->getBodySize());
+  EQ((size_t(128) + 2*sizeof(uint32_t)), pItem->getBodySize());
   uint32_t* pBody = static_cast<uint32_t*>(pItem->getBodyPointer());
-  EQ(uint32_t(size_t(128) + 2*sizeof(uint32_t)), *pBody);
+  EQ(uint32_t((size_t(128) + 2*sizeof(uint32_t))/sizeof(uint16_t)), *pBody);
   pBody++;
   EQ(uint32_t(0xaaaa5555), *pBody);
   pBody++;
@@ -184,7 +189,7 @@ void sortertest::flush()           // Test  hit manager flush -> ringbuffer.
     EQ(PHYSICS_EVENT, pItem->type());
     
     uint32_t* pBody = static_cast<uint32_t*>(pItem->getBodyPointer());
-    EQ(uint32_t((16 +2)*sizeof(uint32_t)), *pBody);
+    EQ(uint32_t((16 +2)*sizeof(uint32_t)/sizeof(uint16_t)), *pBody);
     pBody++;
     EQ(uint32_t(0xaaaa5555), *pBody);
     pBody++;
@@ -195,4 +200,113 @@ void sortertest::flush()           // Test  hit manager flush -> ringbuffer.
     delete pItem;
   }
   
+}
+
+// Create a ring item with 100 hits... all in the 10 second window.
+
+
+static uint32_t* putHit(uint32_t* p, uint64_t timestamp)
+{
+  *p++ = 4 << 17 | 4 << 12;                  // Lengths.
+  *p++ = timestamp & 0xffffffff;
+  *p++ = (timestamp >> 32);
+  *p++ = 0;                                  // no trace.
+  
+  return p;
+}
+
+void sortertest::processhits_1()
+{
+  uint32_t moduleType = 0x10100000 | 250;
+  CRingItem item(PHYSICS_EVENT, 0, 12, 0, 8192+100);
+  uint32_t* pWords = static_cast<uint32_t*>(item.getBodyPointer());
+  uint32_t* payload = pWords+1;
+  *payload++        = moduleType;   // phone module type + speed (250MHz).
+  for(int i = 0; i < 100; i++) {
+    payload = putHit(payload, i);         
+  }
+  *pWords = (payload - pWords) *sizeof(uint32_t) / sizeof(uint16_t);
+  item.setBodyCursor(payload);
+  item.updateSize();
+  
+  pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(item.getItemPointer());
+  m_pTestObject->processHits(pItem);
+  m_pTestObject->flushHitManager();
+  
+  // Should be 100 hit ring items in the output ring buffer. We'll check:
+  // timestamp.
+  // item type.
+  // size
+  // module type.
+  
+  double c = DDASReadout::RawChannel::moduleCalibration(moduleType);
+  for (int i =0; i < 100; i++) {
+    std::unique_ptr<CRingItem> pItem(CRingItem::getFromRing(*m_pSinkConsumer, all));
+    
+    ASSERT(pItem->hasBodyHeader());
+    EQ(uint64_t(i*c) , pItem->getEventTimestamp());
+    EQ(PHYSICS_EVENT, pItem->type());
+    uint32_t* pSize = static_cast<uint32_t*>(pItem->getBodyPointer());
+    EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
+    pSize++;
+    EQ(moduleType, *pSize);
+  }
+  EQ(size_t(0), m_pSinkConsumer->availableData());
+}
+
+void sortertest::processhits_2()    // Ensure appropriate items are emitted.
+{
+  uint32_t moduleType = 0x10100000 | 250;
+  double c = DDASReadout::RawChannel::moduleCalibration(moduleType);
+  
+  CRingItem item(PHYSICS_EVENT, 0, 12, 0, 8192+100);
+  uint32_t* pWords = static_cast<uint32_t*>(item.getBodyPointer());
+  uint32_t* payload = pWords+1;
+  *payload++        = moduleType;   // phone module type + speed (250MHz).
+  for(int i = 0; i < 100; i++) {
+    payload = putHit(payload, i*10.0e9/(50*c));         // I think this means half in/half out.
+  }
+  *pWords = (payload - pWords) *sizeof(uint32_t) / sizeof(uint16_t);
+  item.setBodyCursor(payload);
+  item.updateSize();
+  
+  pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(item.getItemPointer());
+  m_pTestObject->processHits(pItem);
+  // m_pTestObject->flushHitManager();
+  
+  // I think there will be 49 items in the ringbuffer:
+  
+  
+  for (int i =0; i < 49; i++) {
+    std::unique_ptr<CRingItem> pItem(CRingItem::getFromRing(*m_pSinkConsumer, all));
+    
+    ASSERT(pItem->hasBodyHeader());
+    EQ(uint64_t(i*10.0e9/50) , pItem->getEventTimestamp());
+    EQ(PHYSICS_EVENT, pItem->type());
+    uint32_t* pSize = static_cast<uint32_t*>(pItem->getBodyPointer());
+    EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
+    pSize++;
+    EQ(moduleType, *pSize);    
+  }
+  
+  // Ring buffer should be empty:
+  
+  EQ(size_t(0), m_pSinkConsumer->availableData());
+  
+  // Flushing will get the rest of them:
+  
+  m_pTestObject->flushHitManager();
+  
+  for (int i =49; i < 100; i++) {
+    std::unique_ptr<CRingItem> pItem(CRingItem::getFromRing(*m_pSinkConsumer, all));
+    
+    ASSERT(pItem->hasBodyHeader());
+    EQ(uint64_t(i*10.0e9/50) , pItem->getEventTimestamp());
+    EQ(PHYSICS_EVENT, pItem->type());
+    uint32_t* pSize = static_cast<uint32_t*>(pItem->getBodyPointer());
+    EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
+    pSize++;
+    EQ(moduleType, *pSize);    
+  }
+  EQ(size_t(0), m_pSinkConsumer->availableData());
 }
