@@ -161,6 +161,7 @@ void CMyEventSegment::initialize(){
         synchronize();
         m_firmwareLoadedRecently = false;
     }
+    // @todo - flush the fifos?
 
     /***** Start list mode run *****/
     int retval = Pixie16StartListModeRun (NumModules, LIST_MODE_RUN, NEW_RUN);
@@ -319,7 +320,7 @@ void CMyEventSegment::disable()
 
 void CMyEventSegment::onEnd(CExperiment* pExperiment) 
 {
-
+  return;                       // sorting is offloaded.
   std::cerr << "Ending run - flushing data in the hit manager\n";
   
     //Flush hits from the hit manager:

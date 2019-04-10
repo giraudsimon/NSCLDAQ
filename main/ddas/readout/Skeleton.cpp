@@ -118,7 +118,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
 {
   CReadoutMain::SetupReadout(pExperiment);
 
-   pExperiment->setZeroCopy(true);
+  //   pExperiment->setZeroCopy(true);
    
    
   // The user can define an environment variable EVENT_BUFFER_SIZE that

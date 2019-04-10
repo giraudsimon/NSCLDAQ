@@ -141,8 +141,16 @@ void
 DDASSorter::processHits(pRingItemHeader pItem)
 {
     auto pBuffer = m_pArena->allocate(pItem->s_size);
-    pBodyHeader pBHdr   = reinterpret_cast<pBodyHeader>(pItem+1);
-    uint32_t* pBodySize = reinterpret_cast<uint32_t*>(pBHdr+1);
+    
+    pRingItem pFullItem = reinterpret_cast<pRingItem>(pItem);
+    
+    uint32_t* pBodySize;
+    if (pFullItem->s_body.u_noBodyHeader.s_mbz) {   /// has a body header.
+        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_hasBodyHeader.s_body);
+    } else {                                     // does not have a body header
+        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_noBodyHeader.s_body);
+    }
+    
     uint32_t bodySize   = *pBodySize++;
     uint32_t moduleType = *pBodySize++;
     bodySize           -= 2*sizeof(uint32_t)/sizeof(uint16_t);
