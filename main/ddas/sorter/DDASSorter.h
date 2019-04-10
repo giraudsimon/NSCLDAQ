@@ -63,9 +63,9 @@ public:
     void operator()();
     
 private:
-    void processChunk(CRingBufferChunkAccess::Chunk& chunk);
+    void processChunk(CRingBufferChunkAccess::Chunk& chunk);   // tested
     void outputRingItem(pRingItemHeader pItem);                // tested.
-    void processHits(pRingItemHeader    pItem);
+    void processHits(pRingItemHeader    pItem);               // tested.
     void flushHitManager();                                   // tested
     DDASReadout::ZeroCopyHit* allocateHit();                  // tested
     void freeHit(DDASReadout::ZeroCopyHit* pHit);             // tested

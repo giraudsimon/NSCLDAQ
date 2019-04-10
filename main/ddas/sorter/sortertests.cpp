@@ -8,6 +8,7 @@
 #include <CRingBufferChunkAccess.h>
 #include <DataFormat.h>
 #include <CRingItem.h>
+#include <CRingStateChangeItem.h>
 #include <CAllButPredicate.h>
 
 #define private public
@@ -22,6 +23,7 @@
 #include <string>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 static std::string srcRing="datasource";
 static std::string sinkRing("datasink");
@@ -36,6 +38,8 @@ class sortertest : public CppUnit::TestFixture {
   
   CPPUNIT_TEST(processhits_1);
   CPPUNIT_TEST(processhits_2);
+  
+  CPPUNIT_TEST(processchunk_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -87,6 +91,8 @@ protected:
   void flush();
   void processhits_1();
   void processhits_2();
+  
+  void processchunk_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(sortertest);
@@ -250,6 +256,7 @@ void sortertest::processhits_1()
     EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
     pSize++;
     EQ(moduleType, *pSize);
+    
   }
   EQ(size_t(0), m_pSinkConsumer->availableData());
 }
@@ -272,7 +279,7 @@ void sortertest::processhits_2()    // Ensure appropriate items are emitted.
   
   pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(item.getItemPointer());
   m_pTestObject->processHits(pItem);
-  // m_pTestObject->flushHitManager();
+
   
   // I think there will be 49 items in the ringbuffer:
   
@@ -286,7 +293,7 @@ void sortertest::processhits_2()    // Ensure appropriate items are emitted.
     uint32_t* pSize = static_cast<uint32_t*>(pItem->getBodyPointer());
     EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
     pSize++;
-    EQ(moduleType, *pSize);    
+    EQ(moduleType, *pSize);
   }
   
   // Ring buffer should be empty:
@@ -306,7 +313,79 @@ void sortertest::processhits_2()    // Ensure appropriate items are emitted.
     uint32_t* pSize = static_cast<uint32_t*>(pItem->getBodyPointer());
     EQ(uint32_t(6*sizeof(uint32_t)/sizeof(uint16_t)), *pSize);
     pSize++;
-    EQ(moduleType, *pSize);    
+    EQ(moduleType, *pSize);
   }
   EQ(size_t(0), m_pSinkConsumer->availableData());
+}
+
+void sortertest::processchunk_1()           // Chunk has a complete run.
+{
+  // A run will consist of three ring items:
+  //  BEGIN_RUN - should just get passed.
+  //  PHYSICS_EVENT - with tight timestamps
+  //  END_RUN  - should flush the managed hits and the end run item too.
+ 
+ // Begin run:
+  
+ CRingStateChangeItem begin(0, 2, 1, BEGIN_RUN, 1, 0, time(nullptr),  "A title");
+ begin.commitToRing(*m_pSourceProducer);
+ 
+ // PHYSICS item with raw hits:
+ 
+  uint32_t moduleType = 0x10100000 | 250;
+  CRingItem item(PHYSICS_EVENT, 0, 12, 0, 8192+100);
+  uint32_t* pWords = static_cast<uint32_t*>(item.getBodyPointer());
+  uint32_t* payload = pWords+1;
+  *payload++        = moduleType;   // phone module type + speed (250MHz).
+  for(int i = 0; i < 100; i++) {
+    payload = putHit(payload, i);         
+  }
+  *pWords = (payload - pWords) *sizeof(uint32_t) / sizeof(uint16_t);
+  item.setBodyCursor(payload);
+  item.updateSize();
+  item.commitToRing(*m_pSourceProducer);
+ 
+ 
+ // End run.
+ 
+ CRingStateChangeItem end(1234, 2, 2, END_RUN, 1, 0, time(nullptr), "A title");
+ end.commitToRing(*m_pSourceProducer);
+ 
+ // Get the chunk from m_pSourceConsumer and process it:
+ 
+  CRingBufferChunkAccess chunkGetter(m_pSourceConsumer);
+  auto c = chunkGetter.nextChunk();
+  m_pTestObject->processChunk(c);
+  
+  // The output ring should have the entire run.
+  
+  CRingItem* pItem = CRingItem::getFromRing(*m_pSinkConsumer, all);
+  EQ(BEGIN_RUN, pItem->type());
+  ASSERT(pItem->hasBodyHeader());
+  EQ(uint64_t(0), pItem->getEventTimestamp());
+  EQ(uint32_t(2), pItem->getSourceId());
+  EQ(uint32_t(1), pItem->getBarrierType());
+  delete pItem;
+  
+  // The 100 physics items:
+
+ double tsc = DDASReadout::RawChannel::moduleCalibration(moduleType);
+ for (int  i = 0; i < 100; i++) {
+  pItem = CRingItem::getFromRing(*m_pSinkConsumer, all);
+  EQ(PHYSICS_EVENT, pItem->type());
+  ASSERT(pItem->hasBodyHeader());
+  EQ(uint64_t(i*tsc), pItem->getEventTimestamp());
+  EQ(uint32_t(2), pItem->getSourceId());
+  delete pItem;
+ }
+ 
+ // The end run item
+  
+  pItem = CRingItem::getFromRing(*m_pSinkConsumer, all);
+  EQ(END_RUN, pItem->type());
+  ASSERT(pItem->hasBodyHeader());
+  EQ(uint64_t(1234), pItem->getEventTimestamp());
+  EQ(uint32_t(2),    pItem->getSourceId());
+  EQ(uint32_t(2),    pItem->getBarrierType());
+  
 }
