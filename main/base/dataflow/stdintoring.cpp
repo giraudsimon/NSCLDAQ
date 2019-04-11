@@ -163,6 +163,7 @@ void dumpWords(void* src, size_t nwords)
 static size_t 
 putData(CRingBuffer& ring, void* pBuffer, size_t nBytes)
 {
+  size_t nOriginal = nBytes;
 
   struct header *pHeader;
 
@@ -195,7 +196,7 @@ putData(CRingBuffer& ring, void* pBuffer, size_t nBytes)
     }
 
   }								
-  if (nBytes > 0) {
+  if ((nBytes > 0) && (nBytes != nOriginal)) {
     memmove(pBuffer, p, nBytes);
   }
   return nBytes;		// Residual data.
