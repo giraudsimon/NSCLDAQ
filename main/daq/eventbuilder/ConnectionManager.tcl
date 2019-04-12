@@ -403,7 +403,7 @@ snit::type EVB::Connection {
 
 	    if {[catch {EVB::handleFragment $socket} msg]} {
 		puts stderr "Event orderer failed call to handleFragment: : $msg"
-		tk_messageBox -type ok -icon error -title {Fragment Handling error} \
+		tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
 		    -message "C++ Fragment handler reported an error: $msg"
 		exit;		# can't really continue.
 	    }
