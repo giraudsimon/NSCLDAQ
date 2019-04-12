@@ -212,8 +212,24 @@ CEventAccumulator::flushEvents()
     
     sizeIoVecs(m_fragsInBuffer.size()*3);
     makeIoVectors();
-    io::writeDataVUnlimited(m_nFd, m_pIoVectors, m_nIoVecs);
     
+    
+    // Write an event at a time:
+#ifdef INCREMENTAL_WRITE    
+    int n = m_nIoVecs;
+    auto v = m_pIoVectors;
+    int step = 1024+512;             // This is the largest single pass value.
+    for (int i =0; i < m_nIoVecs; i += step) {
+      int nWrites = step;
+      if (nWrites > n) nWrites = n;
+      io::writeDataVUnlimited(m_nFd, v, nWrites);
+      v += nWrites;
+      n -= nWrites;
+    }
+#else
+    io::writeDataVUnlimited(m_nFd, m_pIoVectors, m_nIoVecs);
+#endif
+  
     // transfer the event infos to the free list.
     
     m_freeFrags.insert(
