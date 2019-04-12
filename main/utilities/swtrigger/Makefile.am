@@ -1,13 +1,18 @@
 
 lib_LTLIBRARIES = libSwTrigger.la
 
-libSwTrigger_la_SOURCES = ProcessingElement.cpp ZMQPushDataSource.cpp \
+# This trick of SRCS and SOURCES is needed to keep autotools from
+# complaining that fiteropts.o is getting generated with and without libtool.
+
+libSwTrigger_la_SRCS=ProcessingElement.cpp ZMQPushDataSource.cpp \
 	ZMQContext.cpp swFilterRingDataSource.cpp SingleRingItemConverter.cpp \
 	swFilterRingBlockDataSource.cpp RingItemBlockConverter.cpp \
 	CRingItemPipelineProcessor.cpp CRingItemDataSource.cpp \
 	CRingItemDataSink.cpp ZMQFanInRingSource.cpp ZMQFanInRingSink.cpp \
 	ZMQFanoutBalancedRingSink.cpp ZMQFanoutBalancedRingSource.cpp \
 	CRingItemProcessor.cpp 
+
+libSwTrigger_la_SOURCES = $(libSwTrigger_la_SRCS) filteropts.c filteropts.h
 
 libSwTrigger_la_CXXFLAGS= -I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread -I@top_srcdir@/daq/format \
@@ -30,7 +35,12 @@ swfilter_HEADERS=MessageTypes.h ZMQPushDataSource.h  \
 
 noinst_HEADERS=zmqServices.h zhelpers.hpp
 
+BUILT_SOURCES=filteropts.c filteropts.h
 
+filteropts.c: filteropts.h
+
+filteropts.h: filteropts.ggo
+	@GENGETOPT@ <@srcdir@/filteropts.ggo -F filteropts
 
 noinst_PROGRAMS = unittests
 
@@ -39,7 +49,7 @@ unittests_SOURCES=TestRunner.cpp swfiltersrctests.cpp singlritemconvtests.cpp \
 		zmqpushsrctest.cpp zmqpushblocktest.cpp \
 		zmqbsourcetest.cpp \
 		Asserts.h fakedatasource.h fakedatasource.cpp \
-		$(libSwTrigger_la_SOURCES)
+		$(libSwTrigger_la_SRCS)
 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libSwTrigger_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@
 unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ $(libSwTrigger_la_LDFLAGS)
