@@ -540,21 +540,28 @@ snit::type EVB::ConnectionManager {
     ##
     # _FlowOn
     #   Enable the acceptance of data from source.
+    # @param sock - if not an empty string the specific socket
+    #                to flow on.  If an empty string all are flowed on.
     #
-    method _FlowOn {} {
+    method _FlowOn {{sock ""}} {
         set accepting 1
         foreach connection [array names connections] {
-            $connection flowOn
+            if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                $connection flowOn
+            }
         }
     }
     ##
     # _FlowOff
     #   Disable the acceptance of data from sources.
-    #
-    method _FlowOff {} {
+    # @param sock - the specific socket to flow off.  ""
+    #               means flow off all of them.
+    method _FlowOff { {sock ""}} {
         set accepting 0
         foreach connection [array names connections] {
-            $connection flowOff
+            if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                $connection flowOff
+            }
         }
     }
 

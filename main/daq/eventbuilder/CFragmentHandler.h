@@ -83,6 +83,8 @@ private:
     std::uint64_t                                        s_totalBytesQd;
     std::uint64_t                                        s_lastTimestamp;
     EvbFragments                                         s_queue;
+    std::string                                          s_qid;
+    bool                                                 s_xoffed;
     void reset() {
         s_newestTimestamp = 0;
 //        s_lastPoppedTimestamp = std::numeric_limits<std::uint64_t>::max();
@@ -91,8 +93,12 @@ private:
         s_bytesDeQd  = 0;
         s_totalBytesQd = 0;
         s_lastTimestamp = 0;
+        s_xoffed        = false;
     }
-    _SourceQueue()  {reset();}
+    _SourceQueue() : s_qid("")  {  
+      reset();
+    }
+    void setId(const char* qid) {s_qid = qid;}
     
 
   } SourceQueue, *pSourceQueue;
@@ -182,7 +188,9 @@ public:
   class FlowControlObserver {
     public:
         virtual void Xon() = 0;
+        virtual void Xon(std::string qid) = 0;
         virtual void Xoff() = 0;
+        virtual void Xoff(std::string qid) = 0;
   };
   
   class NonMonotonicTimestampObserver {
@@ -373,8 +381,9 @@ private:
   size_t countPresentBarriers() const;
 
 
-  SourceQueue& getSourceQueue(std::uint32_t id);
-
+  SourceQueue& getSourceQueue(std::string sockName, std::uint32_t id);
+  void XoffQueue(SourceQueue& q);
+  void XonQueue(SourceQueue&  q);
 
   void checkBarrier(bool complete);
   time_t oldestBarrier();

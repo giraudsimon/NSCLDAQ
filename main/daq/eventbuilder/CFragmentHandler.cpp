@@ -50,8 +50,11 @@ static const time_t DefaultBuildWindow(20); // default seconds to accumulate dat
 static const uint32_t IdlePollInterval(1);  // Seconds between idle polls.
 static const time_t DefaultStartupTimeout(4); // default seconds to accumulate data before ordering.
 static time_t timeOfFirstSubmission(UINT64_MAX); //
-static const  size_t defaultXonLimit(4*Mega);     // Default total fragment storage at which we can xon
-static const  size_t defaultXoffLimit(5*Mega);    // Default total fragment storage at which we xoff.
+static const  size_t defaultXonLimit( 100000);     // Default total fragment count at which we can xon
+static const  size_t defaultXoffLimit(400000);    /// Default total fragment count
+
+static const size_t perQXoffLimit(defaultXoffLimit/5);
+static const size_t perQXonLimit(defaultXonLimit/5);
 
 /*---------------------------------------------------------------------
  * Debugging
@@ -227,7 +230,8 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
       flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
       
     }
-    checkXoff();
+
+    checkXoff();         
 }
 /**
  * setBuildWindow
@@ -693,7 +697,7 @@ void
 CFragmentHandler::createSourceQueue(std::string sockName, uint32_t id)
 {
 
-  getSourceQueue(id);		// Creates too.
+  getSourceQueue(sockName, id);		// Creates too.
   m_liveSources.insert(id);		          // Sources start live.
   m_socketSources[sockName].push_back(id);
 }
@@ -778,7 +782,7 @@ CFragmentHandler::reviveSocket(std::string sockname)
   if (p != m_deadSockets.end()) {
     auto pSource = p->second.begin();
     while (pSource != p->second.end()) {
-      SourceQueue& queue = getSourceQueue(*pSource);
+      SourceQueue& queue = getSourceQueue(sockname, *pSource);
       m_liveSources.insert(*pSource);		     // Sources start live.
       pSource++;
     }
@@ -880,6 +884,7 @@ CFragmentHandler::flushQueues(bool completely)
     
       CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
+      XonQueue(p->second);
       if (!partialSort.empty()) {
            if (partialSort.front().second->s_header.s_timestamp <
                 m_nMostRecentlyPopped) {
@@ -914,6 +919,7 @@ CFragmentHandler::flushQueues(bool completely)
   for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
     DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+    XonQueue(p->second);
     if (!partialSort.empty()) {
       if (partialSort.front().second->s_header.s_timestamp <
           m_nMostRecentlyPopped) {
@@ -937,6 +943,7 @@ CFragmentHandler::flushQueues(bool completely)
         q->second.s_queue.begin(), q->second.s_queue.end()
       ));
       q->second.s_queue.clear();              // Clear the queue.
+      XonQueue(q->second);
       if (!partialSort.empty()) {
         pFrags->push_back(&partialSort);  
       } else {
@@ -1133,8 +1140,11 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     memcpy(pFrag->s_pBody, pFragment->s_body, pFrag->s_header.s_size);
 
     // Get a reference to the fragment queue, creating it if needed:
+    // Note that queues should get created by connection from the
+    // fragment maker.  We'll give this queue a "" for an id.
+    // if creation was needed..
     
-    SourceQueue& destQueue(getSourceQueue(pHeader->s_sourceId));
+    SourceQueue& destQueue(getSourceQueue("", pHeader->s_sourceId));
 
 
     // If the timestamp is null, assign the newest timestamp from that source to it:
@@ -1235,8 +1245,12 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 #endif
     // Tally the fragment size and Xoff if the high water mark was hit:
     
-    m_nTotalFragmentSize++;
-
+    m_nTotalFragmentSize++;           //count.
+    
+    // If appropriate, xoff  destqueue:
+    
+    
+  XoffQueue(destQueue);
 
 }
 /**
@@ -1566,16 +1580,20 @@ CFragmentHandler::countPresentBarriers() const
 /**
  * get the source queue associated with an id, creating it if needed
  *
+ * @param sockName - name to be given as the queue id if creation
+ *                   is needed.
  * @param id - the id of the source.
  * 
  * @return SourceQueue& reference to the (possibly new) source queue.
  */
 CFragmentHandler::SourceQueue&
-CFragmentHandler::getSourceQueue(uint32_t id)
+CFragmentHandler::getSourceQueue(std::string sockName, uint32_t id)
 {
   Sources::iterator p = m_FragmentQueues.find(id);
   if (p  == m_FragmentQueues.end()) {	       // Need to create.
+    
     SourceQueue& queue = m_FragmentQueues[id]; // Does most of the creation.
+    queue.setId(sockName.c_str());
     return queue;
   }  else {			              // already exists.
     return p->second;
@@ -1892,4 +1910,43 @@ CFragmentHandler::updateQueueStatistics(
   queue.s_bytesInQ  -= payloadBytes;
   
   m_nTotalFragmentSize -= justDequeued.size();
+}
+
+/**
+ * XoffQueue
+ *    If appropriate xoff the queue.  Appropriate means:
+ *    -   The queue depth is at least perQXoffLimit
+ *    -   The queue is not already xoffed.
+ * @param q - references the source queue to check.k
+ */
+void
+CFragmentHandler::XoffQueue(SourceQueue& q)
+{
+  if ((q.s_queue.size() >= perQXoffLimit) && (!q.s_xoffed)) {
+    std::string sock = q.s_qid;
+    for (auto p : m_flowControlObservers) {
+      p->Xoff(sock);    
+    }
+    q.s_xoffed = true;
+  }
+}
+/**
+ * XonQueue
+ *    If appropriate xons a queue.
+ *    Appropriate means:
+ *    -  There are frewer than perQXonLimit fragments in the queue.
+ *    -  The queue is currently xoffed.
+ *
+ * @param q -the queue to operate on.
+ */
+void
+CFragmentHandler::XonQueue(SourceQueue& q)
+{
+  if ((q.s_queue.size() < perQXonLimit) && (q.s_xoffed)) {
+    std::string sock = q.s_qid;
+    for (auto p : m_flowControlObservers) {
+      p->Xon(sock);    
+    }
+    q.s_xoffed = false;
+  }
 }

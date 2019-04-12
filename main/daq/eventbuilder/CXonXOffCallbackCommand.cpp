@@ -44,6 +44,8 @@ public:
     
     void Xon();
     void Xoff();
+    void Xon(std::string qid);
+    void Xoff(std::string qid);
     
     // Additional public methods:
     
@@ -54,6 +56,7 @@ public:
     // Private utilities.
 private:
     void dispatch(std::string cmdBase);
+    void dispatch(std::string cmdBase, std::string qid);
     
     
 };
@@ -71,6 +74,11 @@ TclFlowObserver::Xon()
 {
     dispatch(m_XonCommand);
 }
+void
+TclFlowObserver::Xon(std::string qid)
+{
+    dispatch(m_XonCommand, qid);
+}
 /**
  * Xoff
  *  Stop the flow of data
@@ -79,6 +87,11 @@ void
 TclFlowObserver::Xoff()
 {
     dispatch(m_XoffCommand);
+}
+void
+TclFlowObserver::Xoff(std::string qid)
+{
+    dispatch(m_XoffCommand, qid);
 }
 /**
  * dispatch
@@ -91,7 +104,15 @@ TclFlowObserver::dispatch(std::string cmdBase)
 {
     m_interp.GlobalEval(cmdBase);
 }
-
+void
+TclFlowObserver::dispatch(std::string cmdBase, std::string qid)
+{
+    std::string command(cmdBase);
+    command += " ";
+    command += qid;
+    
+    dispatch(command);
+}
 
 /*----------------------------------------------------------------------------
  *  Implementation of the main class.

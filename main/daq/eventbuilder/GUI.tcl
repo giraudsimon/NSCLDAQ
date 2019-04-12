@@ -666,7 +666,9 @@ proc EVB::createGui widget {
     set EVB::lateDialog [EVB::LatePopup %AUTO%]
     
     set summary [$widget getSummaryStats]
-    EVB::onflow add [list $summary configure -flowcontrol 0] [list $summary configure -flowcontrol 1]
+    EVB::onflow add \
+        [list flowOnOff $summary  0]  \
+        [list flowOnOff $summary 1]
     
     set EVB::ooWidget [$widget getOutOfOrderStats]
 
@@ -674,7 +676,9 @@ proc EVB::createGui widget {
 
     return $widget
 }
-
+proc flowOnOff {widget state args} {
+    $widget configure -flowcontrol $state
+}
 ##
 # EVB::maintainGUI widget ms
 #
