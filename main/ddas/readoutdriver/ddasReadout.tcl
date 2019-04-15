@@ -46,6 +46,7 @@ set options {
     {readouthost.arg ""   "Host in which to run the DDASReadout program"}
     {sortring.arg    ""   "Ringbuffer into which the sorter puts its data" }
     {sorthost.arg   ""   "Host in which the sorter runs"}
+    {window.arg     10   "Sorting window in seconds."}
 }
 
 set mandatory [list readouthost sortring sorthost]
@@ -78,7 +79,7 @@ set ddasOptionMap {
     {init-script --init-script} {log --log} {debug --debug}
 }
 
-set readoutCmd [file join $bindir/DDASReadout]
+set readoutCmd [file join $bindir DDASReadout]
 set readoutHost [dict get $parsed readouthost]
 foreach optMapEntry $ddasOptionMap {
     set opt [lindex $optMapEntry 0]
@@ -90,3 +91,37 @@ foreach optMapEntry $ddasOptionMap {
 }
 puts $readoutCmd
 puts "to run in: $readoutHost"
+
+#-------------------------------------------------------------------------
+# Construct the command to run ddasSort:
+
+set sortCmd [file join $bindir ddasSort]
+
+# Figure out where we get data from:
+
+set rdoRing $tcl_platform(user)
+set suppliedRing [dict get $parsed readoutring]
+if {$suppliedRing ne "" } {
+    set rdoRing $suppliedRing
+}
+set rdoURI tcp://$readoutHost/$rdoRing
+append sortCmd " --source=$rdoURI"
+append sortCmd " --sink=[dict get $parsed sortring]"
+append sortCmd " --window=[dict get $parsed window]"
+set    sortHost [dict get $parsed sorthost]
+
+puts $sortCmd
+puts "To run in $sortHost"
+
+# Start the two programs on SSH Pipes:
+#   - we need the command input for readout.
+#   - we need the output/error for readout.
+#   - we need the output/error for the sorter.
+
+
+
+# Set up file events for the various fds we care about:
+#   stdin -- we'll relay command from that to readout's command input.
+#   stdout/stderr for both programs gets relayed to our stderr.
+#
+#  Then we vwait forever to run allow the software to process events.
