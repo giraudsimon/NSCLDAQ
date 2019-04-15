@@ -191,9 +191,9 @@ CTriggerLoop::mainLoop()
       CVMEInterface::Lock();
       for (int i =0; i < DWELL_COUNT; i++) {
         if ((*pEvent)()) {
-          CVMEInterface::Unlock();
+
           m_pExperiment->ReadEvent();
-          CVMEInterface::Lock();
+
         }
         if ((*pScaler)()) {
           m_pExperiment->TriggerScalerReadout();
