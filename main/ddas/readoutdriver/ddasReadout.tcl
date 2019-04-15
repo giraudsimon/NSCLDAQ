@@ -27,11 +27,17 @@ package require cmdline
 #
 
 
+if {[array names env DAQBIN] ne ""} {
+    set bindir $env(DAQBIN)
+} else {
+    set bindir [file dirname [info script]]
+}
+
 # Program usage string:
 
 set usage "ddasReadout option...\nDriver for the split DDASReadout/ddasSort programs\nOptions:"
 set options {
-    {port.arg -1 "Enable DDASReadout TclServer functionality on specified port"}
+    {port.arg "" "Enable DDASReadout TclServer functionality on specified port"}
     {readoutring.arg "" "Ring into which DDASReadout puts data"}
     {sourceid.arg 0     "Source ID with which to tag the data"}
     {init-script.arg "" "DDASReadout initialization script run in main interpreter"}
@@ -42,7 +48,45 @@ set options {
     {sorthost.arg   ""   "Host in which the sorter runs"}
 }
 
+set mandatory [list readouthost sortring sorthost]
+
 proc usage {} {
     ::cmdline::usage $::options $::usage
 }
 
+
+#  Parse the command line arguments:
+
+
+set parsed [cmdline::getoptions argv $options $usage]
+set parsed [dict create {*}$parsed]
+
+puts $parsed
+foreach option $mandatory {
+    if {[dict get $parsed $option] eq ""} {
+        puts stderr "-$option is required"
+        usage
+        exit -1
+    }
+}
+
+#------------------------------------------------------------------------
+# Construct the command line to run DDASReadout:
+
+set ddasOptionMap {
+    {port --port} {readoutring --ring} {sourceid --sourceid}
+    {init-script --init-script} {log --log} {debug --debug}
+}
+
+set readoutCmd [file join $bindir/DDASReadout]
+set readoutHost [dict get $parsed readouthost]
+foreach optMapEntry $ddasOptionMap {
+    set opt [lindex $optMapEntry 0]
+    set mapping [lindex $optMapEntry 1]
+    set optval [dict get $parsed $opt] 
+    if {$optval ne ""} {
+        append readoutCmd " $mapping=$optval"
+    }
+}
+puts $readoutCmd
+puts "to run in: $readoutHost"
