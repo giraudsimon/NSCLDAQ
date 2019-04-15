@@ -547,6 +547,7 @@ snit::type EVB::ConnectionManager {
         set accepting 1
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                puts stderr "Connection manager Flow on $sock"
                 $connection flowOn
             }
         }
@@ -560,6 +561,7 @@ snit::type EVB::ConnectionManager {
         set accepting 0
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                puts stderr "Connection manager Flow off $sock"
                 $connection flowOff
             }
         }

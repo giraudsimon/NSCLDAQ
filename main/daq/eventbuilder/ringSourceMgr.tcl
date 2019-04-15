@@ -252,6 +252,7 @@ proc ::RingSourceMgr::onBegin {} {
       dict set sourceDict $source fd $fd
     }
   }
+  after 1500;                     # Wait for startup/registration.
 }
 ###########-------------------------------------------------------------#######
 #                      BEGIN CALLOUT BUNDLE INTERFACE                         #

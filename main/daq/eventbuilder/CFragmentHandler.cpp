@@ -48,13 +48,13 @@ static const size_t Mega(1024*1024);
 
 static const time_t DefaultBuildWindow(20); // default seconds to accumulate data before ordering.
 static const uint32_t IdlePollInterval(1);  // Seconds between idle polls.
-static const time_t DefaultStartupTimeout(4); // default seconds to accumulate data before ordering.
+static const time_t DefaultStartupTimeout(0); // default seconds to accumulate data before ordering.
 static time_t timeOfFirstSubmission(UINT64_MAX); //
-static const  size_t defaultXonLimit( 100000);     // Default total fragment count at which we can xon
-static const  size_t defaultXoffLimit(400000);    /// Default total fragment count
+static const  size_t defaultXonLimit( 1000000);     // Default total fragment count at which we can xon
+static const  size_t defaultXoffLimit(4000000);    /// Default total fragment count
 
-static const size_t perQXoffLimit(defaultXoffLimit/5);
-static const size_t perQXonLimit(defaultXonLimit/5);
+static const size_t perQXoffLimit(100000);
+static const size_t perQXonLimit(50000);
 
 /*---------------------------------------------------------------------
  * Debugging
@@ -221,16 +221,14 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
       pFragments  = reinterpret_cast<EVB::pFlatFragment>(pNext);
       nSize -= fragmentSize;
     }
+  
+    // Don't flush until we have allowed time for all data sources to 
+    // establish themselves
     
-    findOldest();		// Probably not needed but pretty quick.
-    if (m_nNow-timeOfFirstSubmission > m_nStartupTimeout) {
-      // Don't flush until we have allowed time for all data sources to 
-      // establish themselves
-     
-      flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
+    flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
       
-    }
-
+  
+    
     checkXoff();         
 }
 /**
@@ -879,13 +877,21 @@ CFragmentHandler::flushQueues(bool completely)
   if (noEmptyQueue()) {
     
     uint64_t mark  = findStampMark();
-    
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     
       CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
+      
+      {
+        auto& item(p->second.s_queue.front().second);
+        std::string& qname(p->second.s_qid);
+  
+      }
+      
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
+      XoffQueue(p->second);
       XonQueue(p->second);
       if (!partialSort.empty()) {
+        
            if (partialSort.front().second->s_header.s_timestamp <
                 m_nMostRecentlyPopped) {
             dataLate(*partialSort.front().second);
@@ -894,45 +900,51 @@ CFragmentHandler::flushQueues(bool completely)
           statcopy.push_back({&(p->second), &partialSort});
           pFrags->push_back(&partialSort);    
       } else {
+      
         delete &partialSort;
       }
       
       
     }
+  } else {
+
+  
+    // Now we need to flush all fragments that are older than the build window.
+    // This deals with the case of a source that just doesn't emit fragments
+    // very often (e.g. scaler only case).
+    // This should only be done if the most recently emptied queue was emptied outside
+    // the build interval time.
+  
+    // We can only flush partial queues for enqueue times that are older
+    // than the time window:
+    
+    
+  
+    m_nNow = time(NULL);
+    time_t windowEnd = m_nNow - m_nBuildWindow;
+  
+    for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
+      CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
+      DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+      XoffQueue(p->second);
+      XonQueue(p->second);
+      if (!partialSort.empty()) {
+        if (partialSort.front().second->s_header.s_timestamp <
+            m_nMostRecentlyPopped) {
+          dataLate(*partialSort.front().second);
+        }
+        statcopy.push_back({&(p->second), &partialSort});
+        //updateQueueStatistics(p->second, partialSort);
+        pFrags->push_back(&partialSort);
+      } else {
+        delete &partialSort;
+      }
+      
+    }   
+
   }
   
 
-
-  // Now we need to flush all fragments that are older than the build window.
-  // This deals with the case of a source that just doesn't emit fragments
-  // very often (e.g. scaler only case).
-  // This should only be done if the most recently emptied queue was emptied outside
-  // the build interval time.
-
-  // We can only flush partial queues for enqueue times that are older
-  // than the time window:
-  
-  
-  m_nNow = time(NULL);
-  time_t windowEnd = m_nNow - m_nBuildWindow;
-  
-  for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
-    CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
-    DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-    XonQueue(p->second);
-    if (!partialSort.empty()) {
-      if (partialSort.front().second->s_header.s_timestamp <
-          m_nMostRecentlyPopped) {
-        dataLate(*partialSort.front().second);
-      }
-      statcopy.push_back({&(p->second), &partialSort});
-      //updateQueueStatistics(p->second, partialSort);
-      pFrags->push_back(&partialSort);
-    } else {
-      delete &partialSort;
-    }
-    
-  }   
 
   // If completely, flush all remaining fragments - this is for a planned
   // exit.
@@ -943,7 +955,7 @@ CFragmentHandler::flushQueues(bool completely)
         q->second.s_queue.begin(), q->second.s_queue.end()
       ));
       q->second.s_queue.clear();              // Clear the queue.
-      XonQueue(q->second);
+      XonQueue(q->second);                   // Can't possibily need xoff
       if (!partialSort.empty()) {
         pFrags->push_back(&partialSort);  
       } else {
@@ -1250,7 +1262,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     // If appropriate, xoff  destqueue:
     
     
-  XoffQueue(destQueue);
+
 
 }
 /**
@@ -1698,28 +1710,29 @@ void
 CFragmentHandler::IdlePoll(ClientData data)
 {
   CFragmentHandler* pHandler = reinterpret_cast<CFragmentHandler*>(data);
-
-  if (!pHandler->m_nFragmentsLastPeriod) {
-    pHandler->m_nNow = time(NULL);	// Update tod.
-    pHandler->findOldest();		// Update oldest fragment time.
-    if (pHandler->m_nNow - timeOfFirstSubmission > pHandler->m_nStartupTimeout) { 
-      // Only flush after we have given time for all sources
-      // establish their queues
-      // Also... timeOfFirstSubmission is guaranteed to exist 
-      // because nFragmentLastPeriod is not 0
-      pHandler->flushQueues();
+  pHandler->m_nNow = time(NULL);	// Update tod.
+  
+  // Only flush queues if none are xoffed.  If there's a global xoff
+  // we can still flush:
+  
+  bool onexoffed = true;
+  bool allxoffed = true;
+  for (auto& qInfo : pHandler->m_FragmentQueues) {
+    auto q = qInfo.second;
+    if (q.s_xoffed) {
+      onexoffed = false;
+    } else {
+      allxoffed = false;
     }
-  } else {
-    pHandler->m_nFragmentsLastPeriod = 0;
   }
+  if (allxoffed || (!onexoffed))  pHandler->flushQueues();
+  
   // Since it's possible that fragments have been output from
   // the buffer queue to the output thread while we've been
   // Xoffed -- and hence can't exactly receive data, this
   // allows that to accept data again:
 
   pHandler->checkXon();
-
-
   // reschedule
 
   pHandler->m_timer = Tcl_CreateTimerHandler(1000*IdlePollInterval,  &CFragmentHandler::IdlePoll, pHandler);
@@ -1732,8 +1745,7 @@ size_t
 CFragmentHandler::inFlightFragmentCount()
 {
   
-  return m_nTotalFragmentSize +
-    m_outputThread.getInflightCount() + m_sorter.getInflightCount();
+  return  m_outputThread.getInflightCount() + m_sorter.getInflightCount();
 }
 /**
  *  checkXoff
@@ -1773,8 +1785,11 @@ CFragmentHandler::findStampMark()
   uint64_t result = UINT64_MAX;
   
   for(auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
-
-    if (p->second.s_lastTimestamp < result) result = p->second.s_lastTimestamp;
+    auto& last(p->second.s_queue.back());
+    if (last.second->s_header.s_barrier == BARRIER_NOTBARRIER) { 
+      uint64_t stamp = last.second->s_header.s_timestamp;
+      if (stamp < result) result = stamp;
+    }
   }
   
   return result;
