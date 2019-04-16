@@ -649,6 +649,7 @@ AC_CONFIG_FILES([Makefile
     ddas/Makefile ddas/readout/Makefile
     ddas/readout-extclock/Makefile
     ddas/sorter/Makefile
+    ddas/readoutdriver/Makefile
     cookbooks/Makefile
     ])
 
