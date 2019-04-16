@@ -19,6 +19,18 @@ exec tclsh "$0" ${1+"$@"}
 #	     East Lansing, MI 48824-1321
 
 package require cmdline
+
+#  Figure out how to add the NSCLDAQ TclLibs to the path:
+
+if {[array names env DAQROOT] ne ""} {
+    lappend auto_path [file join $env(DAQROOT) TclLibs]
+} else {
+    #  Our next best guess is that its at ../TclLibs:
+    
+    set libdir [file normalize [file join [file dirname [info script]] .. TclLibs]]
+    lappend auto_path $libdir
+}
+
 package require ssh
 
 ##
