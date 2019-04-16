@@ -19,6 +19,7 @@ exec tclsh "$0" ${1+"$@"}
 #	     East Lansing, MI 48824-1321
 
 package require cmdline
+package require ssh
 
 ##
 # @file ddasReadout.tcl
@@ -26,6 +27,46 @@ package require cmdline
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 
+#-------------------------------------------------------------------------------
+#  Input handling procs.
+
+##
+# onInput
+#   Reacts to input on a subprogram's output.
+#   -  If there's an end file condition, that means the program exited so
+#       we set ::forever which will exit our program.
+#   -  IF not we read the line from the pipe and relay it to stdout.
+#
+# @param fd  - file descriptor open on readout's output pipe.
+#
+proc onInput {fd who} {
+    if {[eof $fd]} {
+        set ::forever 1
+    } else {
+        set line [gets $fd]
+        puts "$who: $line"
+    }
+}
+##
+# relayToReadout
+#   Handles input on the stdin fd.
+#   -   EOF means we're supposed to shutdown.
+#   -   Data are relayed to the pipe passedin.
+#
+#  @param infd  - The fd on which input is awaiting.
+#  @param relayfd - The fd to which input are relayed.
+#
+proc relayToReadout {infd relayfd} {
+    if {[eof $infd]} {
+        set ::forever 1
+    } else {
+        set line [gets $infd]
+        puts $relayfd $line
+        flush $relayfd
+    }
+}
+#------------------------------------------------------------------------------
+#  Program entry point.
 
 if {[array names env DAQBIN] ne ""} {
     set bindir $env(DAQBIN)
@@ -118,10 +159,47 @@ puts "To run in $sortHost"
 #   - we need the output/error for readout.
 #   - we need the output/error for the sorter.
 
+set readoutInfo [ssh::sshpid $readoutHost $readoutCmd]
+set readoutfd  [lindex $readoutInfo 1]
+set readoutPid  [lindex $readoutInfo 0]
+set sorterInfo [ssh::sshpid $sortHost    $sortCmd]
+set sorterPid  [lindex $sorterInfo 0]
+set sorterfd  [lindex $sorterInfo  1]
 
+fconfigure $sorterfd -buffering line
+fconfigure $readoutfd -buffering line
+fconfigure stdin      -buffering line ;   # just in case.
 
 # Set up file events for the various fds we care about:
 #   stdin -- we'll relay command from that to readout's command input.
 #   stdout/stderr for both programs gets relayed to our stderr.
 #
+
+fileevent $readoutfd readable  [list onInput $readoutfd DDASReadout]
+fileevent $sorterfd  readable  [list onInput $sorterfd ddasSorter]
+fileevent stdin      readable  [list relayToReadout   stdin $readoutfd]
+
+
 #  Then we vwait forever to run allow the software to process events.
+
+vwait forever;                  # Will get set when readoutfd is closed.
+
+# Don't really have to do this since the event loop won't run again but...
+
+fileevent $readoutfd readable ""
+fileevent $sorterfd  readable ""
+fileevent stdin      readable ""
+
+#  Kill off the sorter -- we know the readout is dead because we got here
+#  when it's pipe closed:
+
+catch {exec kill -9 $sorterPid}
+catch {exec kill -9 $readoutPid};          # Just in case it was the sorter.
+## These can have errors...
+
+catch {close $eadoutfd}
+catch {close $sorterfd}
+
+exit 0
+
+
