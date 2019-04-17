@@ -224,11 +224,11 @@ mainLoop(string ring, int timeout, int mindata)
     perror("Unable to fstat stdin");
     exit(EXIT_FAILURE);
   }
-  if ((fdInfo.st_mode & S_IFSOCK)  != 0) {
+  if ((fdInfo.st_mode & S_IFMT)  == S_IFSOCK) {
     int keepflag=1;
     if(setsockopt(STDIN_FILENO, SOL_SOCKET, SO_KEEPALIVE, &keepflag, sizeof(keepflag))) {
       perror("Unable to enable keepalive flag on socket stdin");
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
     // The standard kernel keepalive times are too long - 2 hrs idle to 
     // heartbeat at 75 second intervals with 9 consecutive missed HB's indicating
@@ -241,12 +241,12 @@ mainLoop(string ring, int timeout, int mindata)
     
     if (setsockopt(STDIN_FILENO, SOL_TCP, TCP_KEEPIDLE, &idleTime, sizeof(idleTime))) {
       perror("Unable to set STDIN (socket) TCP_KEEPIDLE parameter");
-      exit(EXIT_FAILURE);
+     // exit(EXIT_FAILURE);
     }
     
     if (setsockopt(STDIN_FILENO, SOL_TCP, TCP_KEEPINTVL, &hbInterval, sizeof(hbInterval))) {
       perror("Unable to set STDIN (socket) TCP_KEEPINTVL parameter");
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
   }
   
@@ -324,55 +324,54 @@ mainLoop(string ring, int timeout, int mindata)
 
     if (stat != 0) {
       if (stat < 0) {
-	if (errno != EINTR) {
-	  perror("Select failed");
-	  return (EXIT_FAILURE);
-	}
+        if (errno != EINTR) {
+          perror("Select failed");
+          return (EXIT_FAILURE);
+        }
       }
       else if (stat == 1) {
-	ssize_t nread = read(STDIN_FILENO, pBuffer + readOffset, readSize);
-	if (nread > 0) {
-	  totalRead += nread;
-	  /* If the header says the first ring item won't fit:
-	     - If the first ring item is bigger than the ring we can't go on.
-	     - If the first ring item will fit in the ring, enlarge the buffer.
-	  */
-	  struct header* pHeader = reinterpret_cast<struct header*>(pBuffer);
-	  uint32_t firstItemSize = computeSize(pHeader);
-	  if(firstItemSize > mindata) {
-	    if (firstItemSize > use.s_bufferSpace) {
-	      cerr << "Exiting because I just got an event that won't fit in the ring..enlarge the ring\n";
-              dumpWords(pHeader, 200);                     // Dump part of the ring.
-	      exit(EXIT_FAILURE);
-	    } else {
-	      cerr << "item larger than --minsize, reallocating bufer to " << firstItemSize + readOffset << endl;
-	      mindata = firstItemSize + readOffset;
-	      pBuffer = reinterpret_cast<uint8_t*>(realloc(pBuffer, firstItemSize + readOffset));
-	      readOffset += nread;
-	      readSize    = mindata - readOffset;
-	    }
-	  } else {
-	    leftoverData = putData(source, pBuffer, totalRead);
-	    readOffset = leftoverData;
-	    readSize   = mindata - leftoverData;
-	    totalRead = leftoverData;
-	    if (readSize == 0) {
-	      exit(EXIT_FAILURE);
-	    }
-	  }
-	}
-	if (nread < 0) {
-	  perror("read failed");
-	  return (EXIT_FAILURE);
-	}
-	if (nread == 0) {
-	  cerr << "Exiting due to eof\n";
-	  return (EXIT_SUCCESS);	// eof on stdin.
-	}
-      }
-      else {
-	cerr << "Exiting due to select fail " << errno << endl;
-	return (EXIT_FAILURE);
+      ssize_t nread = read(STDIN_FILENO, pBuffer + readOffset, readSize);
+      if (nread > 0) {
+          totalRead += nread;
+          /* If the header says the first ring item won't fit:
+             - If the first ring item is bigger than the ring we can't go on.
+             - If the first ring item will fit in the ring, enlarge the buffer.
+          */
+          struct header* pHeader = reinterpret_cast<struct header*>(pBuffer);
+          uint32_t firstItemSize = computeSize(pHeader);
+          if(firstItemSize > mindata) {
+            if (firstItemSize > use.s_bufferSpace) {
+              cerr << "Exiting because I just got an event that won't fit in the ring..enlarge the ring\n";
+                    dumpWords(pHeader, 200);                     // Dump part of the ring.
+              exit(EXIT_FAILURE);
+            } else {
+              cerr << "item larger than --minsize, reallocating bufer to " << firstItemSize + readOffset << endl;
+              mindata = firstItemSize + readOffset;
+              pBuffer = reinterpret_cast<uint8_t*>(realloc(pBuffer, firstItemSize + readOffset));
+              readOffset += nread;
+              readSize    = mindata - readOffset;
+            }
+          } else {
+            leftoverData = putData(source, pBuffer, totalRead);
+            readOffset = leftoverData;
+            readSize   = mindata - leftoverData;
+            totalRead = leftoverData;
+            if (readSize == 0) {
+              exit(EXIT_FAILURE);
+            }
+          }
+        }
+        if (nread < 0) {
+          perror("read failed");
+          return (EXIT_FAILURE);
+        }
+        if (nread == 0) {
+          cerr << "Exiting due to eof\n";
+          return (EXIT_SUCCESS);	// eof on stdin.
+        }
+      } else {
+        cerr << "Exiting due to select fail " << errno << endl;
+        return (EXIT_FAILURE);
       }
     } 
 
