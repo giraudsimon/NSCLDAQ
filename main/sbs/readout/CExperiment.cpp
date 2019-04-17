@@ -570,7 +570,8 @@ CExperiment::ReadEvent()
         );
     
         uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-        size_t nWords = m_pReadout->read(pBuffer +2 , m_nDataBufferSize);
+        size_t nWords =
+          m_pReadout->read(pBuffer +2 , m_nDataBufferSize - sizeof(uint32_t));
   
         if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
           *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
@@ -586,7 +587,8 @@ CExperiment::ReadEvent()
         CRingItem item(PHYSICS_EVENT, m_nDataBufferSize + 100);
         uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
   
-        size_t nWords = m_pReadout->read(pBuffer +2 , m_nDataBufferSize);
+        size_t nWords =
+          m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
   
         if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
           *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
