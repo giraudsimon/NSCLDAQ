@@ -31,13 +31,23 @@ if {[array names env DAQROOT] ne ""} {
     lappend auto_path $libdir
 }
 
-package require ssh
 
 ##
 # @file ddasReadout.tcl
 # @brief Driver for DDASReadout/Sorter.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
+
+##
+# controlC
+#   Send a controlC to a file descriptor.
+#
+# @param fd - file descriptor to send the character to.
+#
+proc controlC fd {
+    puts -nonewline $fd "\003"
+    flush $fd
+}
 
 #-------------------------------------------------------------------------------
 #  Input handling procs.
@@ -53,11 +63,11 @@ package require ssh
 #
 proc onInput {fd who} {
     if {[eof $fd]} {
-        puts "EOF on $who"
         set ::forever 1
     } else {
         set line [gets $fd]
-        puts "$who: $line"
+        puts $line
+        
     }
 }
 ##
@@ -68,17 +78,22 @@ proc onInput {fd who} {
 #
 #  @param infd  - The fd on which input is awaiting.
 #  @param relayfd - The fd to which input are relayed.
+#  @note the string 'exit' is treated specially.
+#         in that it sets the forever variable as we've been asked to exit.
+#
 #
 proc relayToReadout {infd relayfd} {
     if {[eof $infd]} {
-        puts "End file"
         set ::forever 1
     } else {
         set line [gets $infd]
-        puts "Got '$line'"
         puts $relayfd $line
         flush $relayfd
-        puts "relayed"
+        if {$line eq "exit" } {
+            puts "Asked to exit!!!"
+            set ::forever 1;              # We've been asked to exit!!!
+            
+        }
     }
 }
 #------------------------------------------------------------------------------
@@ -176,12 +191,11 @@ puts "To run in $sortHost"
 #   - we need the output/error for readout.
 #   - we need the output/error for the sorter.
 
-set readoutInfo [ssh::sshpid  $readoutHost "\"(cd $readoutDir\; $readoutCmd)\"" ]
-set readoutfd  [lindex $readoutInfo 1]
-set readoutPid  [lindex $readoutInfo 0]
-set sorterInfo [ssh::sshpid $sortHost    $sortCmd]
-set sorterPid  [lindex $sorterInfo 0]
-set sorterfd  [lindex $sorterInfo  1]
+set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
+set readoutPid [pid $readoutfd]
+
+set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
+set sorterPid [pid $sorterfd]
 
 fconfigure $sorterfd -buffering line -blocking 0
 fconfigure $readoutfd -buffering line -blocking 0
@@ -215,8 +229,15 @@ fileevent stdin      readable ""
 #  Kill off the sorter -- we know the readout is dead because we got here
 #  when it's pipe closed:
 
+puts "Killing $sorterPid"
+
+catch {controlC $sorterfd}
 catch {exec kill -9 $sorterPid}
+
+
 catch {puts $readoutfd exit; flush $readoutfd}
+after 1000;                                # Give time to exit then....
+catch {controlC $readoutfd}                #control-C it.
 catch {exec kill -9 $readoutPid};          # Just in case it was the sorter.
 ## These can have errors...
 
