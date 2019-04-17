@@ -128,7 +128,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
   // - warn if decreasing from the default
   // - set the new size with pExperiment->setBufferSize.
   
-  pExperiment->setBufferSize(EXTFIFO_READ_THRESH*40*sizeof(uint32_t));
+  size_t bufferSize = 16934;
   const char* pNewBufferSizeStr = getenv("EVENT_BUFFER_SIZE");
   if (pNewBufferSizeStr) {            // new string defined.
     std::cout << "Overriding the default event buffer size\n";
@@ -138,10 +138,11 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
       std::cerr << "*** the ERROR EVENT_BUFFER_SIZE environment variable must be an integer > 0\n";
       exit(EXIT_FAILURE);
     }
-   
-    std::cout << "The new event buffer size will be: " << newSize << std::endl;
-    pExperiment->setBufferSize(newSize);
+    bufferSize = newSize;
   }
+  std::cout << "The new event buffer size will be: " << bufferSize << std::endl;
+  pExperiment->setBufferSize(bufferSize);
+  
    
   // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
   

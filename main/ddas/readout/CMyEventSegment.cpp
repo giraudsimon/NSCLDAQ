@@ -23,7 +23,7 @@
 #include <iterator>
 #include <cstdlib>
 #include "CMyTrigger.h"
-
+#include <string.h>
 
 
 #include <stdexcept>
@@ -184,8 +184,12 @@ void CMyEventSegment::initialize(){
    all pixie16 modules. */
 
 //  virtual size_t read(unsigned short* rBuffer, size_t maxwords);
+// Note - maxwords is actually maxbytes.
+
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
+   // memset(rBuffer, 0, maxwords);            // See what's been read.
+    
     // This loop finds the first module that has at least one event in it
     // since the trigger fired.  We read the minimum of all complete events
     // and the number of complete events that fit in that buffer
@@ -194,7 +198,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
     // is in uint16_t's.
     
     size_t maxLongs = maxwords/sizeof(uint32_t); // longs in buffer.
-    maxLongs = maxLongs - 128;
+    maxLongs = maxLongs - 128;                   // To be really sure.
     //std::cerr << "max reads: " << maxwords << " -> " << maxLongs << std::endl;
     unsigned int* words = mytrigger->getWordsInModules();
     for (int i =0; i < NumModules; i++) {
@@ -204,11 +208,12 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             
             uint32_t* p = static_cast<uint32_t*>(rBuffer);
             *p++        = ModuleRevBitMSPSWord[i];
+            maxLongs--;   // count that word.
             int readSize = words[i];
             if (readSize > maxLongs) readSize = maxLongs;
             // Truncated to the the nearest event size:
             
-            readSize -= (readSize % ModEventLen[i]);
+            readSize -= (readSize % ModEventLen[i]);  // only read full events.
 
             // Read the data right into the ring item:
             
