@@ -53,6 +53,7 @@ package require ssh
 #
 proc onInput {fd who} {
     if {[eof $fd]} {
+        puts "EOF on $who"
         set ::forever 1
     } else {
         set line [gets $fd]
@@ -70,11 +71,14 @@ proc onInput {fd who} {
 #
 proc relayToReadout {infd relayfd} {
     if {[eof $infd]} {
+        puts "End file"
         set ::forever 1
     } else {
         set line [gets $infd]
+        puts "Got '$line'"
         puts $relayfd $line
         flush $relayfd
+        puts "relayed"
     }
 }
 #------------------------------------------------------------------------------
@@ -92,6 +96,7 @@ set usage "ddasReadout option...\nDriver for the split DDASReadout/ddasSort prog
 set options {
     {port.arg "" "Enable DDASReadout TclServer functionality on specified port"}
     {readoutring.arg "" "Ring into which DDASReadout puts data"}
+    {cratedir.arg ""   "Directory in which to run DDASReadout"}
     {sourceid.arg 0     "Source ID with which to tag the data"}
     {init-script.arg "" "DDASReadout initialization script run in main interpreter"}
     {log.arg ""         "DDASReadout log file"}
@@ -102,10 +107,10 @@ set options {
     {window.arg     10   "Sorting window in seconds."}
 }
 
-set mandatory [list readouthost sortring sorthost]
+set mandatory [list readouthost sortring sorthost cratedir]
 
 proc usage {} {
-    ::cmdline::usage $::options $::usage
+    puts stderr [::cmdline::usage $::options $::usage]
 }
 
 
@@ -115,7 +120,6 @@ proc usage {} {
 set parsed [cmdline::getoptions argv $options $usage]
 set parsed [dict create {*}$parsed]
 
-puts $parsed
 foreach option $mandatory {
     if {[dict get $parsed $option] eq ""} {
         puts stderr "-$option is required"
@@ -132,6 +136,7 @@ set ddasOptionMap {
     {init-script --init-script} {log --log} {debug --debug}
 }
 
+set readoutDir [dict get $parsed cratedir]
 set readoutCmd [file join $bindir DDASReadout]
 set readoutHost [dict get $parsed readouthost]
 foreach optMapEntry $ddasOptionMap {
@@ -171,16 +176,17 @@ puts "To run in $sortHost"
 #   - we need the output/error for readout.
 #   - we need the output/error for the sorter.
 
-set readoutInfo [ssh::sshpid $readoutHost $readoutCmd]
+set readoutInfo [ssh::sshpid  $readoutHost "\"(cd $readoutDir\; $readoutCmd)\"" ]
 set readoutfd  [lindex $readoutInfo 1]
 set readoutPid  [lindex $readoutInfo 0]
 set sorterInfo [ssh::sshpid $sortHost    $sortCmd]
 set sorterPid  [lindex $sorterInfo 0]
 set sorterfd  [lindex $sorterInfo  1]
 
-fconfigure $sorterfd -buffering line
-fconfigure $readoutfd -buffering line
+fconfigure $sorterfd -buffering line -blocking 0
+fconfigure $readoutfd -buffering line -blocking 0
 fconfigure stdin      -buffering line ;   # just in case.
+
 
 # Set up file events for the various fds we care about:
 #   stdin -- we'll relay command from that to readout's command input.
@@ -191,10 +197,14 @@ fileevent $readoutfd readable  [list onInput $readoutfd DDASReadout]
 fileevent $sorterfd  readable  [list onInput $sorterfd ddasSorter]
 fileevent stdin      readable  [list relayToReadout   stdin $readoutfd]
 
+puts "std fileevent: [fileevent stdin readable]"
+
 
 #  Then we vwait forever to run allow the software to process events.
 
 vwait forever;                  # Will get set when readoutfd is closed.
+
+puts "Waited."
 
 # Don't really have to do this since the event loop won't run again but...
 
@@ -206,6 +216,7 @@ fileevent stdin      readable ""
 #  when it's pipe closed:
 
 catch {exec kill -9 $sorterPid}
+catch {puts $readoutfd exit; flush $readoutfd}
 catch {exec kill -9 $readoutPid};          # Just in case it was the sorter.
 ## These can have errors...
 
