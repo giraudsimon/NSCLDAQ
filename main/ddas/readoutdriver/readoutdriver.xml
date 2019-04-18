@@ -1,0 +1,225 @@
+<!-- manpage 1daq -->
+<refentry>
+    <refmeta>
+        <refentrytitle>ddasReadout</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>ddasReadout</refname>
+        <refpurpose>Run DDASReadout and an associated sorter.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+    <cmdsynopsis>
+<command>$DAQBIN/ddasReadout <replaceable>option...</replaceable></command>
+    </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            As of NSCLDAQ 11.4-000,
+            <filename>DDASReadout</filename> has been broken into a pair of
+            programs, <filename>DDASReadout</filename> which just reads blocks
+            of data from the XIA digitizer modules and <filename>ddasSort</filename>
+            which accepts those data and sorts them by timestamp.
+            This was done to maximize performance:
+        </para>
+        <orderedlist>
+            <listitem>
+                <para>
+                    DDASReadout and ddasSort take advantage of pipeline
+                    parallelism to do the sorting in parallel with digitizer
+                    readout.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    If necessary the <filename>ddasSort</filename> can be run
+                    on a different node than <filename>DDASReadout</filename> making
+                    more processing power available.
+                </para>
+            </listitem>
+        </orderedlist>
+        <para>
+            A driver, that looks to the ReadoutGUI like an SSHPipe data source
+            Allows you to treat this pair of programs as if it were a single
+            unified program.
+        </para>
+        <para>
+            The program is called <filename>ddasReadout</filename> (note the
+            lower case ddas).  This manpage describes this program.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>Options</title>
+        <para>
+            Note that some program options are mandatory.  Those will be pointed
+            out as they are documented.  Note as well that options are prefixed
+            with a single <literal>-</literal> rather than a double <literal>-</literal>
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><option>-port</option> <replaceable>integer</replaceable></term>
+                <listitem>
+                    <para>
+                        This becomes the <option>--port</option> option on the
+                        <filename>DDASReadout</filename> command.  If Tcl server
+                         functionality is needed, this is the port on which that
+                         server will be listening for connections.  If
+                         not specified, this option is not provided to the
+                         <filename>DDASReadout</filename> program and that program
+                         has its Tcl server functionality disabled.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-readoutring</option> <replaceable>ringname</replaceable> (required)</term>
+                <listitem>
+                    <para>
+                        This option is required.  It specifies the name of the
+                        ring buffer into which <filename>DDASReadout</filename>
+                        reads data in the host in which that program runs
+                        (see <option>-readouthost</option>).
+                        This is passed to the <filename>DDASReadout</filename>
+                        program as its <option>--ring</option> option
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-cratedir</option> <replaceable>path</replaceable> (required)</term>
+                <listitem>
+                    <para>
+                        Each <filename>DDASReadout</filename> program must run
+                        with the current working directory set to a directory that
+                        contains its configuration files.  This required option
+                        provides that directory.  When <filename>DDASReadout</filename>
+                        is run, this will be its working directory.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-sourceid</option> <replaceable>value</replaceable></term>
+                <listitem>
+                    <para>
+                        If present this value is relayed to
+                        <filename>DDASReadout</filename> as the value of its
+                        <option>--sourceid</option> option.  This determines the
+                        sourceid used to tag ring items from the readout program.
+                        The <filename>ddasSort</filename> program will tag
+                        ring items with the same source id as that observed by
+                        the ring items it processes.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-init-script</option> <replaceable>path</replaceable></term>
+                <listitem>
+                    <para>
+                        If provided this is passed to the <filename>DDASReadout</filename>
+                        program as its <option>--init-script</option> the value should
+                        be a path to a Tcl script that will be run as the readout program
+                        starts.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-log</option> <replaceable>path</replaceable></term>
+                <listitem>
+                    <para>
+                        If provided, the value of this option will be passed
+                        to <filename>DDASREADOUT</filename> as its
+                        <option>--log</option> option.  This specifies the path
+                        into which the readout program logs intersting information.
+                        If the file does not exist it is created.  The path
+                        prefix must be a directory that's writable by the
+                        user.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-debug</option> <replaceable>log-level</replaceable></term>
+                <listitem>
+                    <para>
+                        If provided, passes the debug level to the
+                        <filename>DDASReadout</filename> program. This is an integer
+                        in the range 0-2 inclusive and determines the sort of
+                        information written to the log file.   The higher the number,
+                        the more verbose the logging.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-readouthost</option> <replaceable>dns-name</replaceable> (required)</term>
+                <listitem>
+                    <para>
+                        Determines which system the <filename>DDASReadout</filename>
+                        program will be run in.  This must be a system that is
+                        connected to a DDAS crate and has its PLX drivers
+                        loaded.
+                    </para>
+                </listitem>
+            </varlistentry>
+        
+            <varlistentry>
+                <term><option>-sortring</option> <replaceable>ringname</replaceable> (required)</term>
+                <listitem>
+                    <para>
+                        Provides the name of the ring into which
+                        <filename>ddasSort</filename> puts the sorted hit ring items.
+                        If the ringbuffer does no yet exist, it will be created.
+                        This is a ring name not a URI.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-sorthost</option> <replaceable>name</replaceable> (required)</term>
+                <listitem>
+                    <para>
+                        Provides the DNS name of the host in which the
+                        <filename>ddasSort</filename> will be run.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-window</option> <replaceable>seconds</replaceable></term>
+                <listitem>
+                    <para>
+                        Describes ow old events must be before they are emitted
+                        (in seconds).  The <filename>ddasSort</filename> program
+                        emits data from a sliding window.  This parameter
+                        defaults to 10 seconds.  If you change this value be sure to
+                        ensure the event builder sees no data late or out of order
+                        fragments from this data source.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>Using the <filename>ddasReadout</filename> driver</title>
+        <para>
+            <filename>ddasReadout</filename> is intended to be used as a
+            data source in the <filename>ReadoutShell</filename> GUI.
+            It does not actually matter much where the <filename>ddasReadout</filename>
+            program is run as it will be running the actual readout and sort
+            programs where you tell it to using its command line options.
+        </para>
+        <para>
+            Use the <guimenu>Data Source</guimenu><guimenuitem>Add..</guimenuitem>
+            menu to specify the data source.   <filename>ddasReadout</filename>
+            is intended to be used as an <literal>SSHPipe</literal> data source.
+            It will relay commands sent to it to the actual readout program.
+            it will relay output and error messages to the its own stdout
+            which is captured by the SSHPipe driver and relayed to a tab
+            for the data source on the ReadoutShell's GUI.
+        </para>
+        <para>
+            When setting up the event builder be sure to point the data source
+            at the <filename>ddasSort</filename> output ring.  That's where
+            the individual time-stamped hits will be placed.  The
+            <filename>DDDASReadout</filename> ring will get ring items
+            that consist of blocks of unsorted hits.
+        </para>
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->

@@ -1,4 +1,4 @@
-EXTRA_DIST=ddasReadout.tcl
+EXTRA_DIST=ddasReadout.tcl readoutdriver.xml
 
 install-exec-local:
 	$(mkinstalldirs) $(bindir)
