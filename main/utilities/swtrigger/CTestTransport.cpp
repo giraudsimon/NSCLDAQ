@@ -43,7 +43,7 @@ CTestTransport::recv(void** ppData, size_t& size)
     if (m_messages.empty()) {
         throw std::runtime_error("No messages available in test transport");
     } else {
-        auto msg = m_messages.front();
+        auto& msg = m_messages.front();
         size     = msg.size();
         void* pMsg= malloc(msg.size());
         if  (!pMsg) {
@@ -54,7 +54,31 @@ CTestTransport::recv(void** ppData, size_t& size)
         m_messages.pop_front();
     }
 }
-
+/**
+ * send
+ *    "Sends" a message. The parts of the message are stored in
+ *    a multiPartMessage which is then appended to the m_sendMessages
+ *    public member where tests can fish them back out.
+ *
+ *  @param parts  - iovector describing the message parts.
+ *  @param numParts - number of message parts.
+ */
+void
+CTestTransport::send(iovec* parts, size_t numParts)
+{
+    if (numParts) {
+        m_sentMessages.emplace(m_sentMessages.end());
+        auto& msg = m_sentMessages.back();
+        
+        for (int i =0; i < numParts; i++) {
+            uint8_t* start = static_cast<uint8_t*>(parts[i].iov_base);
+            uint8_t* end   = start + parts[i].iov_len;
+            msg.emplace(msg.end(), start, end);
+        }
+    } else {
+        throw std::invalid_argument("CTestTransport::send - there must be at least one message part");
+    }
+}
 /**
  * addMessage
  *    Adds a ne message to the m_message MessageList.
