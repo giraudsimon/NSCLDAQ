@@ -33,8 +33,9 @@
  *     make subscriptions).
  */
 class CZMQTransport : public CTransport {
-public:
+private:
     zmq::socket_t* m_pSocket;
+    static zmq::context_t* m_pContextSingleton;
 public:
     CZMQTransport() : m_pSocket(nullptr) {}
     virtual ~CZMQTransport();
@@ -43,6 +44,7 @@ public:
     
     // ZMQ specific operations.
     
+    static zmq::context_t*  getContext();
     operator zmq::socket_t*();
 protected:
     void setSocket(zmq::socket_t* pSocket);   // derived constructors need this.

@@ -25,6 +25,9 @@
 #include <string.h>
 #include <stdexcept>
 
+// The context singleton:
+
+zmq::context_t* CZMQTransport::m_pContextSingleton(nullptr);
 
 /**
  * destructor
@@ -82,6 +85,20 @@ CZMQTransport::recv(void** ppData, size_t& size)
     } else {
         throw std::invalid_argument("CZMQTransport::recv - socket is not set.");
     }
+}
+/**
+ * getContext
+ *    Return the context singleton:
+ *  @retun zmq::context_t*
+ */
+zmq::context_t*
+CZMQTransport::getContext()
+{
+    if (!m_pContextSingleton) {
+        m_pContextSingleton =
+            new zmq::context_t(1);          // how to decide thread count?
+    }
+    return m_pContextSingleton;
 }
 /**
  * operator zmq::socket_t*
