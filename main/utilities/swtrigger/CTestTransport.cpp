@@ -50,6 +50,7 @@ CTestTransport::recv(void** ppData, size_t& size)
             throw std::runtime_error("Memory allocation failed in test transport");
         }
         memcpy(pMsg, msg.data(), size);
+        *ppData = pMsg;                     // Set the user pointer.
         m_messages.pop_front();
     }
 }
