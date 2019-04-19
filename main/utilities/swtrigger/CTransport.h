@@ -20,7 +20,8 @@
  */
 #ifndef CTRANSPORT_H
 #define CTRANSPORT_H
-#include <stddef.h>                     // size_t?
+#include <stddef.h>
+#include <sys/uio.h>                    // iovec.
 /**
  * @class CTransport
  *    Defines the interface for classes that transport data around the
@@ -30,7 +31,8 @@ class CTransport
 {
 public:
     virtual ~CTransport() {}             // Support for destructor chaining.
-    void    recv(void** ppData, size_t& size);
+    virtual  void    recv(void** ppData, size_t& size) = 0;
+    virtual  void    send(iovec* parts, size_t numParts) = 0;
 };
 
 #endif
