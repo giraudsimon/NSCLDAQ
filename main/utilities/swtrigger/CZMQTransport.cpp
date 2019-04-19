@@ -87,6 +87,29 @@ CZMQTransport::recv(void** ppData, size_t& size)
     }
 }
 /**
+ * send
+ *    Send a multipart message.
+ *
+ * @param parts - I/O vector describing the parts.
+ * @param numPart - number of message parts.
+ * @note Zero copy sends are not used.
+ * @throw std::runtime_error -if the socket is not set.
+ */
+void
+CZMQTransport::send(iovec* parts, size_t numParts)
+{
+    if (m_pSocket) {
+        for (int i = 0; i < numParts; i++) {
+            zmq::message_t part(parts[i].iov_len);
+            memcpy(part.data(), parts[i].iov_base, parts[i].iov_len);
+            m_pSocket->send(part, i < (numParts-1) ? ZMQ_SNDMORE : 0);
+        }
+    } else {
+        throw std::runtime_error("CZMQTransport::send - socket not set.");
+    }
+}
+
+/**
  * getContext
  *    Return the context singleton:
  *  @retun zmq::context_t*

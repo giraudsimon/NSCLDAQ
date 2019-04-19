@@ -25,6 +25,7 @@
 #include <zmq.hpp>
 #include "stddef.h"
 
+
 /**
  * @class CZMQTransport
  *     Base class for the family of ZMQ transports.  These break rougly into
@@ -41,6 +42,7 @@ public:
     virtual ~CZMQTransport();
     
     void recv(void** ppData, size_t& size);
+    void send(iovec* parts, size_t numParts);
     
     // ZMQ specific operations.
     
