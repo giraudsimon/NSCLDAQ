@@ -122,7 +122,7 @@ CRingItemFileTransport::send(iovec* parts, size_t numParts)
             "Attempted write to a read-only ring file transport"
         );
     }
-    // Note, in the future, we may want to, for large numParts
+    //  @todo Note, in the future, we may want to, for large numParts
     // flush, get the fd and do a writev to avoid the copies.
     
     for (int i =0; i <numParts; i++) {
