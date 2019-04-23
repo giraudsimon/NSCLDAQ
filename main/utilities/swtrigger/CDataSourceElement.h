@@ -35,7 +35,7 @@ class CSender;
  *   from some Receiver and, without any actual processing, sends it to
  *   a Sender with a Fanout underlying transport.
  */
-class CDataSourceElement
+class CDataSourceElement : public CProcessingElement
 {
 private:
     CFanoutTransport* m_pSenderTransport;
