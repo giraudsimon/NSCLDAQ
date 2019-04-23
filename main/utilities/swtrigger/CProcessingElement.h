@@ -21,6 +21,7 @@
 
 #ifndef CPROCESSINGELEMENT_H
 #define CPROCESSINGELEMENT_H
+#include <stddef.h>
 
 /**
  * @class CProcessingElement

@@ -34,7 +34,7 @@
  *     handle requests for data when no more exists with a special end of data
  *     message.
  */
-class  CFanoutTransport
+class  CFanoutTransport : public CTransport
 {
 public:
     virtual void end() = 0;                     // Indicate no more data available.
