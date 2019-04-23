@@ -58,3 +58,12 @@ CClientRegistry::hasClient(uint64_t id)
 {
     return (m_clients.count(id) != 0);
 }
+/**
+ * empty
+ *    @bool - true if there are no more clients.
+ */
+bool
+CClientRegistry::empty()
+{
+    return m_clients.empty();
+}

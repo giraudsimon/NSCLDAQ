@@ -37,7 +37,7 @@
 class  CFanoutTransport
 {
 public:
-    void end() = 0;                     // Indicate no more data available.
+    virtual void end() = 0;                     // Indicate no more data available.
 };
 
 #endif

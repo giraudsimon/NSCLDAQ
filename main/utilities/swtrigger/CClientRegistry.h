@@ -42,6 +42,7 @@ public:
     void add(uint64_t newId);
     void remove(uint64_t existingId);
     bool hasClient(uint64_t id);
+    bool empty();
 };
 
 #endif
