@@ -101,6 +101,29 @@ CRingBufferTransport::recv(void** ppData, size_t& size)
         finishChunk();
     }
 }
+/**
+ * send
+ *   Send the I/O vector to the ring buffer.
+ *   No assumption is made about the structure of the items in the
+ *   iovec
+ *
+ *  @param parts - Pointers to the parts to send.
+ *  @param numParts - number of part to send.
+ *  @throw std::logic_error if this is a reader not a writer.
+ */
+void
+CRingBufferTransport::send(iovec* parts, size_t numParts)
+{
+    if (!m_pWriter) {
+        throw std::logic_error(
+            "CRingBufferTransport attempted send from read-only transport"
+        );
+    }
+    for (int i = 0; i < numParts; i++) {
+        m_pWriter->put(parts[i].iov_base, parts[i].iov_len);
+    }
+        
+}
 /////////////////////////////////////////////////////////////////////
 // Utilities for m_pReader
 //

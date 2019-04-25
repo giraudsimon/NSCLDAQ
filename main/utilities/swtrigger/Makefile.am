@@ -15,6 +15,7 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/base/uri/liburl.la			\
+	@top_builddir@/base/dataflow/libDataFlow.la		\
 	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@
 
 libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
@@ -29,3 +30,15 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemZMQSourceElement.h \
 	CZMQRingItemSourceThread.h CZMQRingItemWorker.h CProcessor.h \
 	CZMQRingItemThreadedWorker.h
+
+
+####################################################################################
+# unit testing:
+
+noinst_PROGRAMS=unittests
+unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp $(libSwTrigger_la_SOURCES)
+unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_LDFLAGS= $(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
+
+
+TESTS=./unittests

@@ -35,7 +35,7 @@
 class CProcessingElement
 {
 public:
-    virtual ~CProcessingElement();
+    virtual ~CProcessingElement() {}
     
     virtual void operator()()  = 0;
     virtual void process(void* pData, size_t nBytes) = 0;
