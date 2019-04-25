@@ -7,7 +7,7 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zmqhel
 	CZMQDealerTransport.cpp CDataSourceElement.cpp CParallelWorker.cpp \
 	CDataSinkElement.cpp CThreadedProcessingElement.cpp		\
 	CRingItemTransportFactory.cpp CRingItemDispatcher.cpp		\
-	CZMQRingItemDispatcher.cpp
+	CZMQRingItemDispatcher.cpp CRingItemZMQSourceElement.cpp
 
 libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\
@@ -24,4 +24,4 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \
 	CDataSourceElement.h CParallelWorker.h CDataSinkElement.h  \
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
-	CRingItemDispatcher.h CZMQRingItemDispatcher.h
+	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemZMQSourceElement.h
