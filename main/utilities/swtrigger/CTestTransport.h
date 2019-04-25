@@ -33,15 +33,13 @@
  */
 class CTestTransport : public CTransport
 {
-private:
+public:
     typedef std::vector<uint8_t> message;
     typedef std::deque<message> messageList;
     
 public:
     typedef std::vector<message> multipartMessage;
     std::vector<multipartMessage>  m_sentMessages;
-    
-private:
     messageList m_messages;
 public:
     
