@@ -25,6 +25,9 @@
 #include "CParallelWorker.h"
 #include <stdint.h>
 
+
+class CProcessor;
+
 /**
  * @class CZMQRingItemWorker
  *    Work son ring items that are sent to us by way of a ZMQ
@@ -41,9 +44,15 @@
  */
 class CZMQRingItemWorker : public CParallelWorker
 {
+private:
+    CProcessor*  m_pProcessor;
 public:
-    CZMQRingItemWorker(const char* routerUri, uint64_t clientId, CSender& sender);
+    CZMQRingItemWorker(
+        const char* routerUri, uint64_t clientId, CSender& sender,
+        CProcessor* processor
+     );
     virtual ~CZMQRingItemWorker() {}
+    virtual void process(void* pData, size_t nBytes);
 };
 
 

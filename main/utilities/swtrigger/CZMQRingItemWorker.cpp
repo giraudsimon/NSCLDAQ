@@ -21,20 +21,35 @@
 #include "CZMQRingItemWorker.h"
 #include "CZMQDealerTransport.h"
 #include "CSender.h"
-
+#include "CProcessor.h"
 /**
  * constructor
  *  @param routerUri - URI on which the router is listening.
  *  @param clientId  - Our client id for the Router/Dealer.
  *  @param sender    - References the actual sender.
+ *  @param processor - pointer to the actual processing element.
  */
 CZMQRingItemWorker::CZMQRingItemWorker(
-    const char* routerUri, uint64_t clientId, CSender& sender
+    const char* routerUri, uint64_t clientId, CSender& sender,
+    CProcessor* processor
 ) :
     CParallelWorker(
-        *(new CZMQDealerTransport(routerUri, clientId)),
-        sender
-    )
+        *(new CZMQDealerTransport(routerUri, clientId)), sender
+    ), m_pProcessor(processor)
 {}
+
+/**
+ * process
+ *    Process a message.  This is delegated to the
+ *    processor.
+ * @param pData - pointer to the message data.
+ * @param nBytes - Size of the message data.
+ */
+void
+CZMQRingItemWorker::process(void* pData, size_t nBytes)
+{
+    m_pProcessor->process(pData, nBytes, *getSink());
+}
+    
     
 
