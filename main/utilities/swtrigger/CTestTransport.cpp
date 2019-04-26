@@ -32,16 +32,19 @@
  *
  *  @param ppData - pointer that will be  filled in with a pointer to malloc(3)'d
  *                  data containing the message.
- *  @param nBytes   Reference to a size_t that will be filled in with the message
+ *  @param size   Reference to a size_t that will be filled in with the message
  *                  size.
- *  @throw std::runtime_error - if there are no messages.
+ *  @note If there are no messages, this is treated like most sources treat
+ *        an end of data conditions:  size <- 0 and in our case (but not
+ *        for all transports, *ppData <- nullptr.)
  *  @note the caller must eventually free(3) the data.
  */
 void
 CTestTransport::recv(void** ppData, size_t& size)
 {
     if (m_messages.empty()) {
-        throw std::runtime_error("No messages available in test transport");
+        size=0;
+        *ppData = nullptr;
     } else {
         auto& msg = m_messages.front();
         size     = msg.size();
