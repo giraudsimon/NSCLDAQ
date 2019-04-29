@@ -26,9 +26,11 @@ package provide Delay_Provider 1.0
 #
 
 namespace eval ::Delay {
-  variable delayTime 0    ;#< The amount to delay on begin
-  variable endDelayTime 0    ;#< The amount to delay on end
   variable destroyCmd 0 ;#< After id for destroying progress dialog
+  
+  variable instances;    # holds parameterizations of each instance
+  array set instances [list] ; # indexed by source id.
+  
 }
 
 #------------------------------------------------------------------------------
@@ -53,10 +55,18 @@ proc ::Delay::parameters {} {
 #
 #
 proc ::Delay::start params {
-  variable delayTime 0
-  variable endDelayTime 0
+  
+  set id [dict get $params sourceid]
+
+  #  Error for duplicated id:
+  #
+  if {[array names instances $id] ne "" } {
+    error "Delay already has an instance $id"
+  }
+  
   set delayTime [dict get $params delay]
   set endDelayTime [dict get $params enddelay]
+  set ::Delay::instances($id) [list $delayTime $endDelayTime]
 }
 ##
 # check
@@ -71,11 +81,15 @@ proc ::Delay::check id {
 }
 ##
 # stop
-#   Stop the data source.  We don't do anything.
+#   Stop the data source.  Remove the id from the array
 #
 # @param id - Id of the source to close.
 #
 proc ::Delay::stop id {
+  if {[array  names ::Delay::instances $id] eq ""} {
+    error "Delay::stop - $id is not a known source"
+  }
+  array unset ::Delay::instances $id
 }
 ##
 # begin
@@ -86,18 +100,29 @@ proc ::Delay::stop id {
 # @param title - Title desired.
 #
 proc ::Delay::begin {id run title} {
-  variable delayTime
+  if {[array  names ::Delay::instances $id] eq ""} {
+    error "Delay::begin- $id is not a known source"
+  }
+  
+  set config $::Delay::instances($id)
+  set delayTime [lindex $config 0]
+  
   ::Delay::_delayWithFeedback $delayTime
 }
 
 ##
 # end
-#   Do nothing.
+#   Wait the end delay.
 #
 # @param id - Id of the source to end.
 #
 proc ::Delay::end id {
-  variable endDelayTime
+  if {[array  names ::Delay::instances $id] eq ""} {
+    error "Delay::end - $id is not a known source"
+  }
+  set config $::Delay::instances($id)
+  set endDelayTime [lindex $config 1]
+  
   ::Delay::_delayWithFeedback $endDelayTime
 }
 
