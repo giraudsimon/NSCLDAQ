@@ -38,9 +38,11 @@ tcltest::test parameters-0 {Test that parameter method returns proper dict
 tcltest::test start-0 {Test that start sets the delayTime variable to the 
                        expected value
 } -body {
-  set params [dict create delay 1000 enddelay 2300]
+  set params [dict create delay 1000 enddelay 2300 sourceid 1]
   ::Delay::start $params 
-  set ::Delay::delayTime
+  set storedParams $Delay::instances(1)
+
+  lindex $storedParams 0
 } -result 1000 -returnCodes 0
 
 
@@ -52,10 +54,11 @@ tcltest::test check-0 {Test that this always returns 1
 
 tcltest::test begin-0 {Test that the delay lasts at least as long as we expect
 } -body {
-  set ::Delay::delayTime 3000
+  
+  ::Delay::start [dict create delay 3000 enddelay 0 sourceid 1]
   
   set start [clock milliseconds]
-  ::Delay::begin asdf asdf asdf
+  ::Delay::begin 1 1 {A title}
   set stop [clock milliseconds]
 
   set elapsed [expr $stop-$start]
@@ -69,7 +72,8 @@ tcltest::test begin-0 {Test that the delay lasts at least as long as we expect
 
 tcltest::test end-0 {Test that end of run delay is as long we expect
 } -body {
-  set ::Delay::endDelayTime 3000
+
+  ::Delay::start [dict create delay 1 enddelay 3000 sourceid 0]
   set start [clock milliseconds]
   ::Delay::end 0
   set stop [clock milliseconds]
@@ -81,7 +85,8 @@ tcltest::test end-0 {Test that end of run delay is as long we expect
 
 tcltest::test end-1 {Short delay works} \
 -body {
-  set ::Delay::endDelayTime 1
+
+  Delay::start [dict create delay 0 enddelay 1 sourceid 0]
   set start [clock milliseconds]
   ::Delay::end 0
   set stop [clock milliseconds]
