@@ -42,6 +42,7 @@ public:
     std::vector<multipartMessage>  m_sentMessages;
     messageList m_messages;
 public:
+    virtual ~CTestTransport() {}
     
     virtual void recv(void** ppData, size_t& size);
     virtual  void    send(iovec* parts, size_t numParts);

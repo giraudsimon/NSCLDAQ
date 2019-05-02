@@ -56,7 +56,7 @@ CZMQTransport::recv(void** ppData, size_t& size)
 {
     if (m_pSocket) {
         std::vector<zmq::message_t> messageParts;
-        int64_t more;
+        int64_t more(0);
         size_t  moreSize(sizeof(int64_t));
         size_t  totalBytes(0);
         do {
