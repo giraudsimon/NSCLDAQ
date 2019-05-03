@@ -22,7 +22,9 @@
 #define CZMQDEALERTRANSPORT_H
 
 #include "CFanoutClientTransport.h"
-class CZMQClientTransport;
+#include <string>
+
+class CZMQRawTransport;
 
 /**
  * @class CZMQDealerTransport
@@ -35,12 +37,16 @@ class CZMQClientTransport;
  *       an exception is thrown if recv is called prior to setId.
  * @note that since this transport is unidirectional, send will always throw
  *       an exception.
+ * @note I would have liked to use a ZMQClientTransport but that would form
+ *       the connection before I could set the socket's identity which is
+ *       not desirable.+
  */
 class CZMQDealerTransport : public CFanoutClientTransport
 {
 private:
-    CZMQClientTransport*  m_pTransport;
+    CZMQRawTransport*     m_pTransport;
     bool                  m_idSet;
+    std::string           m_service;     // URI to connect to.
 public:
     CZMQDealerTransport(const char* pUri);
     CZMQDealerTransport(const char* pUri, uint64_t id);

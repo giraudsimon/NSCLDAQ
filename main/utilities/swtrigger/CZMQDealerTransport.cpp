@@ -20,9 +20,11 @@
  *
  */
 #include "CZMQDealerTransport.h"
-#include "CZMQClientTransport.h"
+#include "CZMQTransport.h"
 #include <zmq.hpp>
 #include <stdexcept>
+#include <sys/uio.h>
+
 
 /**
  * constructor
@@ -34,7 +36,12 @@
 CZMQDealerTransport::CZMQDealerTransport(const char* pUri) :
     m_pTransport(nullptr), m_idSet(false)
 {
-    m_pTransport = new CZMQClientTransport(pUri, ZMQ_DEALER);
+    
+    zmq::socket_t* pSock
+        = new zmq::socket_t(*CZMQTransport::getContext(), ZMQ_DEALER);
+    m_service = pUri;
+    m_pTransport = new CZMQRawTransport(pSock);
+    
 }
 /**
  * constructor
@@ -103,15 +110,16 @@ CZMQDealerTransport::send(iovec* parts, size_t numParts)
  *    Set the client's id.  This must be done prior to the first
  *    recv.
  * @param id - the client id to use.
+ * @note it is this function that actually connects the socket to the router.
  */
 void
 CZMQDealerTransport::setId(uint64_t id)
 {
     zmq::socket_t* pSock = *m_pTransport;
-    
     pSock->setsockopt(ZMQ_IDENTITY, &id, sizeof(uint64_t));
-    
     m_idSet = true;
+    
+    pSock->connect(m_service.c_str());
 }
 /////////////////////////////////////////////////////////////////////
 //   Private utilities.
@@ -125,7 +133,10 @@ CZMQDealerTransport::setId(uint64_t id)
 void
 CZMQDealerTransport::requestData()
 {
-    m_pTransport->send(nullptr, 0);           // should send null frame.
+    iovec delim;
+    delim.iov_base = nullptr;
+    delim.iov_len  = 0;
+    m_pTransport->send(&delim, 1);           // should send null frame.
 }
 /**
  * stripDelimeter.
