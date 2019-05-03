@@ -15,14 +15,6 @@
 
 static const char* zmquri="inproc://czmqtransporttest";
 
-class CZMQRawTransport  : public CZMQTransport
-{
-public:
-  CZMQRawTransport(zmq::socket_t* sock) {
-    setSocket(sock);
-  }
-  virtual ~CZMQRawTransport() {}           // Chain destructor.
-};
 /*
  We'll set up raw push/pull sockets and use them to test
  CZMQTransports that are wrapped around them using CZMQRawTransport.

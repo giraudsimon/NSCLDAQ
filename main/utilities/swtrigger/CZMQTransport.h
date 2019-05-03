@@ -53,4 +53,18 @@ protected:
 
 };
 
+/**
+ * @class CZMQRawTransport
+ *    Just wraps an existing socket, disposition of the socket is the client's
+ *    responsibility.
+ */
+class CZMQRawTransport  : public CZMQTransport
+{
+public:
+  CZMQRawTransport(zmq::socket_t* sock) {
+    setSocket(sock);
+  }
+  virtual ~CZMQRawTransport() {}           // Chain destructor.
+};
+
 #endif
