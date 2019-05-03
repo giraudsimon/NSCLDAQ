@@ -55,8 +55,8 @@ protected:
 
 /**
  * @class CZMQRawTransport
- *    Just wraps an existing socket, disposition of the socket is the client's
- *    responsibility.
+ *    Just wraps an existing socket, The socket must be new'd and wil be
+ *    destroyed when the object is destroyed.
  */
 class CZMQRawTransport  : public CZMQTransport
 {

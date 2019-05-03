@@ -36,7 +36,6 @@ public:
   }
   void tearDown() {
     delete m_pReceiver;
-    delete m_pRcvSocket;
     delete m_pTestObj;
     
     usleep(100);                     // Let the sockets run down.
