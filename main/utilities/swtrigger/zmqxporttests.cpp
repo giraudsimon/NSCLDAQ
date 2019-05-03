@@ -195,6 +195,8 @@ void zmqxporttest::sndrcv_1()   // Single message segment send/rcv.
   m_pPullTransport->recv((&pData), nBytes);
   EQ(sizeof(msg), nBytes);
   ASSERT(memcmp(msg, pData, sizeof(msg)) == 0);
+  
+  free(pData);
 }
 void zmqxporttest::sndrcv_2()        // 2 part message.
 {
@@ -221,4 +223,6 @@ void zmqxporttest::sndrcv_2()        // 2 part message.
   
   ASSERT(memcmp(msg1, pData, sizeof(msg1)) == 0);
   ASSERT(memcmp(msg2, pData + sizeof(msg1), sizeof(msg2)) == 0);
+  
+  free(pData);
 }

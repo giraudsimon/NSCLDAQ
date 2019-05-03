@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
-
+#include <stdlib.h>
 
 static const std::string service="inproc://zmqclienttests";
 
@@ -73,5 +73,7 @@ void zmqcliTest::sendrcv_1() {
   uint8_t* p2 = static_cast<uint8_t*>(part1);
   p2 += sizeof(part1);
   EQ(0, memcmp(part2, p2, sizeof(part2)));
+  
+  free(rcvData);
 }
 
