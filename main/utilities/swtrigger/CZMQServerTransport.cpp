@@ -33,4 +33,5 @@ CZMQServerTransport::CZMQServerTransport(const char* pUri, int socketType)
     zmq::socket_t* pSocket =
         new zmq::socket_t(*CZMQTransport::getContext(), socketType);
     pSocket->bind(pUri);
+    setSocket(pSocket);
 }
