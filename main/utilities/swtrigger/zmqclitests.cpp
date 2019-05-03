@@ -17,9 +17,9 @@ static const std::string service="inproc://zmqclienttests";
 
 
 
-class Testname : public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(Testname);
-  CPPUNIT_TEST(aTest);
+class zmqcliTest : public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(zmqcliTest);
+  CPPUNIT_TEST(sendrcv_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -40,15 +40,15 @@ public:
     usleep(100);                     // Let the transport run down.
   }
 protected:
-  void aTest();
+  void sendrcv_1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Testname);
+CPPUNIT_TEST_SUITE_REGISTRATION(zmqcliTest);
 
 //
 //  We just really need to be sure the connection gets made
 // and we do that by sending/receiving a two part msg.
-void Testname::aTest() {
+void zmqcliTest::sendrcv_1() {
   uint8_t part1[64];
   uint8_t part2[128];
   for (int i =0; i < sizeof(part1); i++) {
