@@ -39,7 +39,7 @@ public:
     delete m_pTestObj;
     delete m_pSenderTransport;
     delete m_pReceiver;
-    
+    usleep(1000);                 // LEt server threads run down.
   }
 protected:
   void sndmsg_1();
