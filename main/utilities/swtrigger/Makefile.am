@@ -42,7 +42,8 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 	ritemfxporttests.cpp	\
 	$(libSwTrigger_la_SOURCES)
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
-unittests_LDFLAGS= $(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
+unittests_LDFLAGS= @top_builddir@/utilities/IO/libdaqio.la \
+	$(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 
 
 TESTS=./unittests

@@ -46,6 +46,7 @@ public:
     delete m_pTestObj;
     delete m_pSenderTransport;
     delete m_pReceiverTransport;
+    usleep(1000);
   }
 protected:
   void recv_1();
