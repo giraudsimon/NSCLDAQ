@@ -70,7 +70,7 @@ CRingItemFileTransport::~CRingItemFileTransport()
  */
 void CRingItemFileTransport::recv(void** ppData, size_t& size)
 {
-    if (!m_pWriter) {
+    if (!m_pReader) {
         throw std::runtime_error(
             "Attempted read from a write-only ring file transport"
         );
@@ -118,7 +118,7 @@ void
 CRingItemFileTransport::send(iovec* parts, size_t numParts)
 {
     if (!m_pWriter) {
-        throw std::logic_error(
+        throw std::runtime_error(
             "Attempted write to a read-only ring file transport"
         );
     }

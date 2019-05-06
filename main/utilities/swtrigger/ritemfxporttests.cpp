@@ -19,6 +19,7 @@
 #include <sys/uio.h>
 #include <stdint.h>
 #include <vector>
+#include <stdexcept>
 
 std::string nameTemplate="ringXXXXXX";
 
@@ -26,6 +27,11 @@ class rtransportTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(rtransportTest);
   CPPUNIT_TEST(write_1);
   CPPUNIT_TEST(write_2);      // Write a few ring items.
+  CPPUNIT_TEST(write_3);      // Read from m_pWTestObje should throw.
+  
+  CPPUNIT_TEST(read_1);      // Now that we know we can write...
+  CPPUNIT_TEST(read_2);
+  CPPUNIT_TEST(read_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -68,6 +74,11 @@ public:
 protected:
   void write_1();
   void write_2();
+  void write_3();
+  
+  void read_1();
+  void read_2();
+  void read_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rtransportTest);
@@ -147,4 +158,96 @@ void rtransportTest::write_2()
   CRingItem* pI = src.getItem();
   EQ((CRingItem*)(nullptr), pI);
   
+}
+void rtransportTest::write_3()
+{
+  void* pData;
+  size_t n;
+  CPPUNIT_ASSERT_THROW(
+    m_pWTestObj->recv(&pData, n),
+    std::runtime_error
+  );
+}
+
+void rtransportTest::read_1()
+{
+  
+  // Write an empty ring item:
+  
+  RingItemHeader hdr;
+  hdr.s_size = sizeof(hdr);
+  hdr.s_type = PHYSICS_EVENT;
+  iovec v;
+  v.iov_base = &hdr;
+  v.iov_len  = hdr.s_size;
+  m_pWTestObj->send(&v, 1);
+  m_pWriter->flush();               // ensure it's in the file.
+  usleep(1000);                     // Evidently takes time to get to disk!
+  
+  void* pData(0);
+  size_t n;
+  m_pRTestObj->recv(&pData, n);
+  ASSERT(pData);
+  EQ(sizeof(hdr), n);
+  pRingItemHeader p = reinterpret_cast<pRingItemHeader>(pData);
+  EQ(hdr.s_size, p->s_size);
+  EQ(hdr.s_type, p->s_type);
+  
+  free(pData);
+}
+void rtransportTest::read_2()
+{
+  uint8_t ringItems[1024];
+  ASSERT(sizeof(ringItems) > 10*(sizeof(RingItemHeader) + 2* sizeof(uint32_t)));
+  
+  iovec v[10];                // For writing ring items.
+  pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(ringItems);
+  
+  for (int i = 0; i < 10; i++) {
+    pItem->s_type = PHYSICS_EVENT;
+    pItem->s_size = sizeof(RingItemHeader) + 2*sizeof(uint32_t);
+    uint32_t* pBody = reinterpret_cast<uint32_t*>(pItem + 1);
+    *pBody++ = 0;                            // no body header.
+    *pBody++ = i;                            // body
+    
+    v[i].iov_base = pItem;
+    v[i].iov_len  = pItem->s_size;
+    
+    pItem = reinterpret_cast<pRingItemHeader>(pBody);
+  }
+  // Write-em.
+  m_pWTestObj->send(v, 10);
+  m_pWriter->flush();                   // Force out.
+  
+  usleep(1000);
+  
+  for (int i =0; i < 10; i++) {
+    void* pData;
+    size_t n;
+    m_pRTestObj->recv(&pData, n);
+    pRingItemHeader hdr = reinterpret_cast<pRingItemHeader>(pData);
+    EQ(uint32_t(sizeof(RingItemHeader) + 2*sizeof(uint32_t)), hdr->s_size);
+    EQ(PHYSICS_EVENT, hdr->s_type);
+    hdr++;                       // Point to body.
+    uint32_t* p = reinterpret_cast<uint32_t*>(hdr);
+    EQ(uint32_t(0), *p);            // mbz.
+    p++;
+    EQ(uint32_t(i), *p);            // body.
+    
+    free(pData);
+  }
+  void* pData;
+  size_t n;
+  m_pRTestObj->recv(&pData, n);
+  EQ(size_t(0), n);
+}
+void rtransportTest::read_3()
+{
+  iovec v;
+  v.iov_base=nullptr;
+  v.iov_len = 0;
+  CPPUNIT_ASSERT_THROW(
+    m_pRTestObj->send(&v, 1),
+    std::runtime_error
+  );
 }
