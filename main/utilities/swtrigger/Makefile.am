@@ -38,7 +38,7 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 noinst_PROGRAMS=unittests
 unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp \
 	zmqsvrxporttests.cpp zmqclitests.cpp zmqdealertests.cpp zmqrtrtests.cpp \
-	zmqsendertests.cpp	\
+	zmqsendertests.cpp zmqreceivertests.cpp 	\
 	$(libSwTrigger_la_SOURCES)
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= $(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
