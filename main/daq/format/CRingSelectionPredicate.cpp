@@ -45,7 +45,8 @@ CRingSelectionPredicate::CRingSelectionPredicate() :
  \param uint32_t*  - C array of types.
 */
 CRingSelectionPredicate::CRingSelectionPredicate(unsigned int nTypes,
-						 uint32_t* types)
+						 uint32_t* types) :
+  m_highWaterMark(DEFAULT_HIGH_WATER)
 {
   vector<ItemType> selection;
   for (int i =0; i < nTypes; i++) {
@@ -64,7 +65,8 @@ CRingSelectionPredicate::CRingSelectionPredicate(unsigned int nTypes,
 */
 CRingSelectionPredicate::CRingSelectionPredicate(unsigned int nTypes,
 						 uint32_t* type,
-						 bool*     sample)
+						 bool*     sample) :
+    m_highWaterMark(DEFAULT_HIGH_WATER)
 {
   vector<ItemType> selection;
   for (int i =0; i < nTypes; i++) {
@@ -76,7 +78,8 @@ CRingSelectionPredicate::CRingSelectionPredicate(unsigned int nTypes,
 /*!
   Copy construction.
 */
-CRingSelectionPredicate::CRingSelectionPredicate(const CRingSelectionPredicate& rhs) : 
+CRingSelectionPredicate::CRingSelectionPredicate(const CRingSelectionPredicate& rhs) :
+  m_highWaterMark(rhs.m_highWaterMark),
   m_selections(rhs.m_selections)
 {
   
@@ -97,6 +100,7 @@ CRingSelectionPredicate&
 CRingSelectionPredicate::operator=(const CRingSelectionPredicate& rhs)
 {
   if (this != &rhs) {
+    m_highWaterMark = rhs.m_highWaterMark;
     m_selections = rhs.m_selections;
   }
   return *this;
@@ -112,7 +116,7 @@ CRingSelectionPredicate::operator=(const CRingSelectionPredicate& rhs)
 int 
 CRingSelectionPredicate::operator==(const CRingSelectionPredicate& rhs) const
 {
-  return (m_selections == rhs.m_selections);
+  return ((m_highWaterMark == rhs.m_highWaterMark) && (m_selections == rhs.m_selections));
 }
 
 /*!
@@ -257,7 +261,7 @@ CRingSelectionPredicate::operator()(CRingBuffer& ring)
       return false;
     }
   }
-  
+  return false;   
 }
 
 /*!
