@@ -39,6 +39,7 @@ noinst_PROGRAMS=unittests
 unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp \
 	zmqsvrxporttests.cpp zmqclitests.cpp zmqdealertests.cpp zmqrtrtests.cpp \
 	zmqsendertests.cpp zmqreceivertests.cpp zmqdispattests.cpp	\
+	ritemfxporttests.cpp	\
 	$(libSwTrigger_la_SOURCES)
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= $(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
