@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#inclue <stdint.h>
+#include <stdint.h>
 #include <zmq.hpp>
 
 static const std::string service("inproc://receivertest");
@@ -59,7 +59,7 @@ void receiverTest::recv_1() {              // Single part message:
   
   m_pSender->sendMessage(msg, sizeof(msg));
   
-  void* pData
+  void* pData;
   size_t nBytes;
   m_pTestObj->getMessage(&pData, nBytes);
   EQ(sizeof(msg), nBytes);
