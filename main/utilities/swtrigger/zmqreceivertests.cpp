@@ -12,15 +12,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#inclue <stdint.h>
 #include <zmq.hpp>
 
 static const std::string service("inproc://receivertest");
 
 
 
-class Testname : public CppUnit::TestFixture {  // ZMQ Push/Pull.
-  CPPUNIT_TEST_SUITE(Testname);
-  CPPUNIT_TEST(aTest);
+class receiverTest : public CppUnit::TestFixture {  // ZMQ Push/Pull.
+  CPPUNIT_TEST_SUITE(receiverTest);
+  CPPUNIT_TEST(recv_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -45,10 +46,24 @@ public:
     delete m_pReceiverTransport;
   }
 protected:
-  void aTest();
+  void recv_1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Testname);
+CPPUNIT_TEST_SUITE_REGISTRATION(receiverTest);
 
-void Testname::aTest() {
+void receiverTest::recv_1() {              // Single part message:
+  uint8_t  msg[100];
+  for (int i =0; i < sizeof(msg); i++) {
+    msg[i] = i;
+  }
+  
+  m_pSender->sendMessage(msg, sizeof(msg));
+  
+  void* pData
+  size_t nBytes;
+  m_pTestObj->getMessage(&pData, nBytes);
+  EQ(sizeof(msg), nBytes);
+  EQ(0, memcmp(msg, pData, sizeof(msg)));
+  
+  free(pData);
 }
