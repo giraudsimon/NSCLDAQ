@@ -47,6 +47,8 @@ class routerTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(sndrcv_1);
   CPPUNIT_TEST(sndrcv_2);
   CPPUNIT_TEST(sndrcv_2);
+  
+  CPPUNIT_TEST(end_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -65,11 +67,14 @@ public:
     delete m_pReceiver1;
     delete m_pReceiver2;
     delete m_pTestObj;
+    usleep(1000);
   }
 protected:
   void sndrcv_1();
   void sndrcv_2();
   void sndrcv_3();
+  
+  void end_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(routerTest);
@@ -214,4 +219,28 @@ void routerTest::sndrcv_3()
   p2 += sizeof(msg2);
   EQ(0, memcmp(msg1, p2, sizeof(msg1)));
   
+}
+
+void routerTest::end_1()     // End sends no payload mesg.
+{
+  RcvrThread r(m_pReceiver1);
+  std::thread t(std::ref(r));
+  usleep(1000);              // Let it get a request in first.
+  
+  // need to send it something to let end work.
+  
+  uint8_t msg = 1;
+  iovec v;
+  v.iov_base  = &msg;
+  v.iov_len   = sizeof(msg);
+  m_pTestObj->send(&v, 1);     /// Now the thread is a registered client.
+  
+  m_pTestObj->end();
+  t.join();                    // should exit.
+  
+  // Thred got a single byte message and a null mesg.
+  
+  EQ(size_t(2), r.m_msgs.size());
+  EQ(size_t(1), r.m_msgs[0].first);
+  EQ(size_t(0), r.m_msgs[1].first);
 }

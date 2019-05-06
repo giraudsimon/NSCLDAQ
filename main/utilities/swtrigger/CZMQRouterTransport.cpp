@@ -101,7 +101,11 @@ CZMQRouterTransport::end()
 {
     while (!m_clients.empty()) {
         uint64_t id =  getPullRequest();
-        sendTo(id, nullptr, 0);                // No parts message is end.
+        iovec v;
+        v.iov_base = nullptr;
+        v.iov_len  = 0;
+        sendTo(id, &v, 1);                // No parts message is end.
+        m_clients.remove(id);              // Remove the client.
     }
 }
 ///////////////////////////////////////////////////////////////////////
