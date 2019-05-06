@@ -35,7 +35,7 @@ namespace io {
 class CRingItemFileTransport : public CRingItemTransport
 {
 private:
-    CRingFileBlockReader*  m_pReader;       // Only one of these two
+    CRingFileBlockReader*      m_pReader;       // Only one of these two
     io::CBufferedOutput*       m_pWriter;       // is non-null.
     
     // Used in reading:
