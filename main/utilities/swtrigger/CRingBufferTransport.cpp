@@ -92,7 +92,7 @@ CRingBufferTransport::recv(void** ppData, size_t& size)
         throw std::bad_alloc();
     }
     memcpy(pResult, &rHeader, rHeader.s_size);
-    *ppData = &rHeader;
+    *ppData = pResult;
     
     // If that was the last item in the ring buffer ensure we get a new chunk
     
