@@ -39,7 +39,7 @@ noinst_PROGRAMS=unittests
 unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp \
 	zmqsvrxporttests.cpp zmqclitests.cpp zmqdealertests.cpp zmqrtrtests.cpp \
 	zmqsendertests.cpp zmqreceivertests.cpp zmqdispattests.cpp	\
-	ritemfxporttests.cpp rbufferxporttests.cpp	\
+	ritemfxporttests.cpp rbufferxporttests.cpp ritemtransportfactoryTests.cpp	\
 	$(libSwTrigger_la_SOURCES)
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @top_builddir@/utilities/IO/libdaqio.la \
