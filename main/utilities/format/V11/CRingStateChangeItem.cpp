@@ -73,7 +73,7 @@ CRingStateChangeItem::CRingStateChangeItem(uint16_t reason,
 					   uint32_t runNumber,
 					   uint32_t timeOffset,
 					   time_t   timestamp,
-					   std::string title) 
+					   std::string title) :
   CRingItem(reason, sizeof(StateChangeItem))
 
 {
@@ -136,7 +136,7 @@ CRingStateChangeItem::CRingStateChangeItem(
    \param item - The source item.
    \throw bad_cast - the item is not a state change item.
 */
-CRingStateChangeItem::CRingStateChangeItem(const CRingItem& item) 
+    CRingStateChangeItem::CRingStateChangeItem(const CRingItem& item)  :
   CRingItem(item)
 {
   if (!isStateChange()) {
