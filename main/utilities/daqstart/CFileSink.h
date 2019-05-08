@@ -56,7 +56,7 @@ public:
 public:
 
   virtual   CSink* clone();	//!< create duplicate of this.
-  virtual   bool Log (const std::string& Message)   ; 
+  virtual   int Log (const std::string& Message)   ; 
 
 
 };
