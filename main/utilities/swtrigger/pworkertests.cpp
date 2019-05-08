@@ -54,7 +54,7 @@ ParallelSorter::process(void* pData, size_t nBytes)
   }
   CSender* pSink = getSink();
   pSink->sendMessage(p, nBytes);           // Sort was in place.
-  
+  usleep(1000);                            // avoid early termination of puller
 }
 
 // This class receives messages on an arbitrary transport and stores them.
@@ -91,6 +91,7 @@ public:
 class pworkerTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(pworkerTest);
   CPPUNIT_TEST(work_1);
+  CPPUNIT_TEST(work_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -104,13 +105,13 @@ private:
   // For the worker:
   
   CZMQDealerTransport* m_pWorkerReceiver;
-  CZMQServerTransport*    m_pWorkerOutputTransport;
+  CZMQClientTransport*    m_pWorkerOutputTransport;
   CSender*             m_pWorkerSender;
   ParallelSorter*      m_pWorker;
   
   // For the receipient of all of this:
   
-  CZMQClientTransport*    m_pPuller;
+  CZMQServerTransport*    m_pPuller;
   
   
 public:
@@ -126,13 +127,13 @@ public:
     // One sort worker:
     
     m_pWorkerReceiver = new CZMQDealerTransport(fanoutservice.c_str(), 1);
-    m_pWorkerOutputTransport = new CZMQServerTransport(faninservice.c_str(), ZMQ_PUSH);
+    m_pWorkerOutputTransport = new CZMQClientTransport(faninservice.c_str(), ZMQ_PUSH);
     m_pWorkerSender  = new CSender(*m_pWorkerOutputTransport);
     m_pWorker        = new ParallelSorter(*m_pWorkerReceiver, *m_pWorkerSender);
     
     // So we can get results:
     
-    m_pPuller = new CZMQClientTransport(faninservice.c_str(), ZMQ_PULL);
+    m_pPuller = new CZMQServerTransport(faninservice.c_str(), ZMQ_PULL);
     
   }
   void tearDown() {
@@ -152,6 +153,7 @@ public:
   }
 protected:
   void work_1();
+  void work_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(pworkerTest);
@@ -195,4 +197,73 @@ void pworkerTest::work_1() {   // Handle 1 work item.
   }
   
   
+}
+
+void pworkerTest::work_2()   // 2 workers in parallel.
+{
+  // Make the second worker:
+  
+  CZMQDealerTransport w2receiver(fanoutservice.c_str(), 2);
+  CZMQClientTransport w2sendert(faninservice.c_str(), ZMQ_PUSH);
+  CSender*            w2sender = new CSender(w2sendert); // gets deleted.
+  ParallelSorter     w2(w2receiver, *w2sender);
+  
+  // start the two worker threads and the puller:
+  
+  TestReceiver r(m_pPuller);
+  std::thread receiver(std::ref(std::ref(r)));
+  std::thread worker1(std::ref(*m_pWorker));
+  std::thread worker2(std::ref(w2));
+  
+  // Put two work items in the test data source.. they'll be
+  // disjoint so we can tell the sorted versions apart:
+  
+  int workItem1[100];             // 0-99
+  int workItem2[100];             // 100-199.
+  for (int i =0; i < 100; i++) {
+    workItem1[i] = random() % 100;
+    workItem2[i] = 100 + (random() % 100);
+  }
+  // Put the work items in to the test data source:
+  
+  m_pTestData->addMessage(workItem1, sizeof(workItem1));
+  m_pTestData->addMessage(workItem2, sizeof(workItem2));
+  
+  // Run the sender -- both workers should end (I think), Due to
+  // balanced distribution of work items...as should the receiver.
+  
+  (*m_pSrc)();             // run the application.
+  
+  worker1.join();
+  worker2.join();
+  receiver.join();               // Actually exits on first end item.
+  
+  // The workers operate in parallel and sort times may vary so we don't
+  // actually know the order in which they've output their data.
+  
+  EQ(size_t(3), r.m_received.size());
+  EQ(sizeof(workItem1), r.m_received[0].first);  // works b/c equally sized
+  EQ(sizeof(workItem1), r.m_received[1].first);  // work items.
+  EQ(size_t(0), r.m_received[2].first);
+ 
+  // Sort the input items for comparison.
+ 
+  std::sort(workItem1, workItem1+100);
+  std::sort(workItem2, workItem2+100);
+ 
+  for (int w = 0; w < 2; w++) {                    // iterate over work items.
+    int* p = static_cast<int*>(r.m_received[w].second);
+    
+    // Ah but which one -- we'll assume the sort worked and
+    // look for a match in the first element.
+    
+    int* p1 = workItem1;
+    if (*p != *p1) {
+      p1 = workItem2;
+    }
+    
+    for (int i =0; i < 100;i ++) {
+      EQ(p1[i], p[i]);
+    }
+  }
 }
