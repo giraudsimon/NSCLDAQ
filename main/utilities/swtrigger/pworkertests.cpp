@@ -48,7 +48,7 @@ ParallelSorter::process(void* pData, size_t nBytes)
   int* p = static_cast<int*>(pData);
   if (nBytes) {                           // Else it's an end. .just pass it on.
         // Make integer pointer.
-    size_t nInts =- nBytes/sizeof(int);
+    size_t nInts = nBytes/sizeof(int);
     
     std::sort(p, p+nInts);
   }
@@ -88,9 +88,9 @@ public:
 };
 
 
-class Testname : public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(Testname);
-  CPPUNIT_TEST(aTest);
+class pworkerTest : public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(pworkerTest);
+  CPPUNIT_TEST(work_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -132,7 +132,7 @@ public:
     
     // So we can get results:
     
-    m_pPuller = new CZMQClientTransport(faninservice.c_str(), ZMQ_PUSH);
+    m_pPuller = new CZMQClientTransport(faninservice.c_str(), ZMQ_PULL);
     
   }
   void tearDown() {
@@ -151,10 +151,48 @@ public:
     
   }
 protected:
-  void aTest();
+  void work_1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Testname);
+CPPUNIT_TEST_SUITE_REGISTRATION(pworkerTest);
 
-void Testname::aTest() {
+void pworkerTest::work_1() {   // Handle 1 work item.
+  // Start the worker and receiver threads:
+  
+  std::thread worker(std::ref(*m_pWorker));
+  TestReceiver r(m_pPuller);
+  std::thread receiver(std::ref(std::ref(r)));
+  
+  // Create a bit of test data unsorted and add it.
+  
+  int numbers[100];
+  for (int i = 0; i < sizeof(numbers)/sizeof(int); i++) {
+    numbers[i] = random() % 100;            // Rang of numbers is 0-99.
+  }
+  
+  m_pTestData->addMessage(&numbers, sizeof(numbers));
+  
+  // Run the data source after processing the data, both thread should exit.
+  
+  (*m_pSrc)();
+  
+  
+  worker.join();
+  receiver.join();
+  
+  // receiver should have the sorted data:
+
+  EQ(size_t(2), r.m_received.size());
+  EQ(sizeof(numbers), r.m_received[0].first);
+  EQ(size_t(0), r.m_received[1].first);
+  
+  // Compare the data in the first msg with the sorted data array:
+  
+  int* p = static_cast<int*>(r.m_received[0].second);
+  std::sort(numbers, numbers+100);
+  for (int i =0; i < 100; i++) {
+    EQ(numbers[i], p[i]);
+  }
+  
+  
 }
