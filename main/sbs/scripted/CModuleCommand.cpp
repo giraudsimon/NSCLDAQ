@@ -135,8 +135,9 @@ CModuleCommand::operator()(CTCLInterpreter& rInterp,
      else {                        // New module.
        status = Create(rInterp, rResult, nArgs, pArgs);
      }
-     return status;
-   }  
+     
+   }
+   return status;
 }
 /*!  Function: 	
 

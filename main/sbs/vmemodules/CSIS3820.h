@@ -93,7 +93,7 @@ private:
 public:
   // Constructors:
 
-  CSIS3820(unsigned long base, int crate = 0) throw (std::string);
+  CSIS3820(unsigned long base, int crate = 0) ;
   virtual ~CSIS3820() {}
 
   // Copy, etc. not supported.
@@ -118,13 +118,13 @@ public:
 
   void   Reset()      const;   //!< Reset the module.
 
-  void   setOperatingMode(OperatingMode mode) const throw (std::string);
+  void   setOperatingMode(OperatingMode mode) const ;
   OperatingMode  getOperatingMode()           const;
 
-  void      setInputMode(InputMode mode) const throw(std::string);
+  void      setInputMode(InputMode mode) const ;
   InputMode getInputMode() const;
 
-  void setLatchSource(LNESource mode) const throw(std::string); 
+  void setLatchSource(LNESource mode) const ;
   LNESource getLatchSource() const;
 
   void Arm()     const;		//!< Arm the module.
@@ -166,8 +166,7 @@ protected:
   void setAcqMode(unsigned long data) const; //!< Set acq mode reg.
 
   void setCSR(unsigned int long data) const;
-  static void ValidChannel(unsigned int chan, const char *pWhere)
-           throw (std::string);
+  static void ValidChannel(unsigned int chan, const char *pWhere);
   static uint32_t  ChannelOffset(uint32_t base, 
 				 uint32_t chan);
 };

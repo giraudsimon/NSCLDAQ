@@ -52,7 +52,7 @@ public:
 				    uint32_t intervalDivisor,
 				    time_t   unixTimestamp,
 				    std::vector <uint32_t> scalers);
-  CRingTimestampedRunningScalerItem(const CRingItem& rhs) throw(std::bad_cast);
+  CRingTimestampedRunningScalerItem(const CRingItem& rhs) ;
   CRingTimestampedRunningScalerItem(const CRingTimestampedRunningScalerItem& rhs);
   virtual ~CRingTimestampedRunningScalerItem();
   CRingTimestampedRunningScalerItem& operator=(const CRingTimestampedRunningScalerItem& rhs);

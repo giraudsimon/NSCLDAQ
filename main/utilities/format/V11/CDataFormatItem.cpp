@@ -56,7 +56,7 @@ CDataFormatItem::CDataFormatItem(const CDataFormatItem& rhs) :
  *
  * @param rhs Reference to the ring item that will be used to construct us.
  */
-CDataFormatItem::CDataFormatItem(const CRingItem& rhs) throw(std::bad_cast) :
+    CDataFormatItem::CDataFormatItem(const CRingItem& rhs) :
     CRingItem(rhs)
 {
     if (type() != RING_FORMAT) {
@@ -86,7 +86,7 @@ CDataFormatItem::operator=(const CDataFormatItem& rhs)
  * @return CDataFormatItem& (*this)
  */
 CDataFormatItem&
-CDataFormatItem::operator=(const CRingItem& rhs) throw(std::bad_cast)
+CDataFormatItem::operator=(const CRingItem& rhs) 
 {
     if (rhs.type() != RING_FORMAT) {
         throw std::bad_cast();

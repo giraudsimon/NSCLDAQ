@@ -70,7 +70,7 @@ CRingStateChangeItem::CRingStateChangeItem(uint16_t reason,
 					   uint32_t runNumber,
 					   uint32_t timeOffset,
 					   time_t   timestamp,
-					   std::string title) throw(CRangeError) :
+					   std::string title) :
   CRingItem(reason, sizeof(StateChangeItem)),
   m_pItem(0)
 
@@ -95,7 +95,7 @@ CRingStateChangeItem::CRingStateChangeItem(uint16_t reason,
    \param item - The source item.
    \throw bad_cast - the item is not a state change item.
 */
-CRingStateChangeItem::CRingStateChangeItem(const CRingItem& item) throw(std::bad_cast) : 
+    CRingStateChangeItem::CRingStateChangeItem(const CRingItem& item) :
   CRingItem(item)
 {
   if (!isStateChange()) {
@@ -210,7 +210,7 @@ CRingStateChangeItem::getElapsedTime() const
   \throw CRangeError - if the title string is too long to fit.
 */
 void
-CRingStateChangeItem::setTitle(string title)  throw(CRangeError)
+CRingStateChangeItem::setTitle(string title)  
 {
   // Ensure the title is small enough.
 
@@ -273,6 +273,7 @@ CRingStateChangeItem::typeName() const
   case RESUME_RUN:
     return " Resume Run ";
   }
+  return "*Invalid state change item type*";
 }
 /**
  * toString

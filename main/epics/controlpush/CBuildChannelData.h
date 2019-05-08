@@ -91,6 +91,7 @@ public:
       m_sValue = rhs.m_sValue;
       m_sUnits = rhs.m_sUnits;
       m_Updated= rhs.m_Updated;
+      return *this;
     }                           //!< Ensure strings are copied properly, not just bitwise.
   } ChannelData;		//!< Information about a channel.
 

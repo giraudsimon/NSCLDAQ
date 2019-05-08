@@ -39,7 +39,7 @@ public:
                      uint32_t size, void* pPayload);
     virtual ~CUnknownFragment();
     CUnknownFragment(const CUnknownFragment& rhs);
-    CUnknownFragment(const CRingItem& rhs) throw(std::bad_cast);
+  CUnknownFragment(const CRingItem& rhs) ;
     
     CUnknownFragment& operator=(const CUnknownFragment& rhs);
     int operator==(const CUnknownFragment& rhs) const;

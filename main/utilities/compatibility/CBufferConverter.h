@@ -68,22 +68,22 @@ public:
 
   // Utility functions:
 private:
-  RingItem* getItem() throw(std::string, int);
-  void        outputItem(RingItem* pItem) throw(std::string);
+  RingItem* getItem() ;
+  void        outputItem(RingItem* pItem) ;
 
   // I/O stuff.
 
-  void        readOrThrow(void* pData, size_t nBytes) throw(std::string, int);
-  void        writeOrThrow(void* pData, size_t nBytes) throw(std::string);
-  void        flush() throw(std::string);
+  void        readOrThrow(void* pData, size_t nBytes) ;
+  void        writeOrThrow(void* pData, size_t nBytes) ;
+  void        flush() ;
 
   // Buffer oriented stuff.
 
-  void        bufferEvent(RingItem* pItem) throw(std::string);
-  void        outputScaler(RingItem* pItem) throw(std::string);
-  void        outputStringArray(uint16_t itemType, RingItem* pItem) throw(std::string);
-  void        outputStateChange(uint16_t itemType, RingItem* pItem) throw(std::string);
-  void        outtputPayload(int16_t itemType, RingItem* pItem) throw(std::string);
+  void        bufferEvent(RingItem* pItem) ;
+  void        outputScaler(RingItem* pItem) ;
+  void        outputStringArray(uint16_t itemType, RingItem* pItem) ;
+  void        outputStateChange(uint16_t itemType, RingItem* pItem) ;
+  void        outtputPayload(int16_t itemType, RingItem* pItem) ;
 
   void        fillHeader(void* pDest, uint16_t type);
   void        createBuffer();

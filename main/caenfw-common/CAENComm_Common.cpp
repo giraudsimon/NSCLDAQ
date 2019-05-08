@@ -65,6 +65,7 @@ CAENComm_ErrorCode STDCALL CAENComm_DecodeError(int ErrCode,  char *ErrMsg)
   else {
     return CAENComm_GenericError; // kind of ironic don't you think?
   }
+  return CAENComm_Success;
 }
 
 }

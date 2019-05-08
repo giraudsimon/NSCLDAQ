@@ -293,14 +293,16 @@ CCAENModule::Prepare()
 int
 CCAENModule::Read(void* pBuffer)
 {
+  int result(0);
   if(m_pCAENcard) {
     if(m_pCAENcard->dataPresent())
-      return (m_pCAENcard->readEvent(pBuffer)/sizeof(short));
+      result =  (m_pCAENcard->readEvent(pBuffer)/sizeof(short));
        
   }
   else {
-    return 0;			// Nonexistent cards give no data.
+    result = 0;			// Nonexistent cards give no data.
   }
+  return result;
 }
 /*!
    Called to clear any pending data from the module.

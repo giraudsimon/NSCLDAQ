@@ -115,7 +115,7 @@ static const unsigned int ChannelCount(32); // # channels.
    \throw string
      If the module cannot be mapped a string describing the problem is thrown
 */
-CSIS3820::CSIS3820(unsigned long base, int crate) throw (string) :
+CSIS3820::CSIS3820(unsigned long base, int crate) :
   CModule32(base, ModuleSize, crate)
 {
 
@@ -229,7 +229,7 @@ CSIS3820::Reset() const
 */
 void
 CSIS3820::setOperatingMode(CSIS3820::OperatingMode mode)  const
-  throw (string)
+  
 {
   const char* pLeader("CSIS3820::setOperatingMode");
   switch (mode) {
@@ -319,7 +319,7 @@ CSIS3820::getOperatingMode() const
       If an invalid input mode is specified.
 */
 void
-CSIS3820::setInputMode(CSIS3820::InputMode mode) const throw (string)
+CSIS3820::setInputMode(CSIS3820::InputMode mode) const 
 {
   const char* pLeader("CSIS3820::setInputMode");
   switch (mode) {
@@ -400,7 +400,7 @@ CSIS3820::getInputMode() const
 */
 void
 CSIS3820::setLatchSource(LNESource mode) const
-  throw (string)
+  
 {
 
   const char* pLeader("CSIS3820::SetLatchSource");
@@ -748,7 +748,7 @@ CSIS3820::setCSR(unsigned int long data) const
 */
 void
 CSIS3820::ValidChannel(unsigned int chan, 
-		       const char *pWhere) throw (string)
+		       const char *pWhere)
 {
   if(chan >= ChannelCount) {
     char msg[100];

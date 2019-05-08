@@ -43,10 +43,10 @@ public:
     virtual ~CDataFormatItem();
     
     CDataFormatItem(const CDataFormatItem& rhs);
-    CDataFormatItem(const CRingItem& rhs) throw(std::bad_cast);
+  CDataFormatItem(const CRingItem& rhs) ;
     
     CDataFormatItem& operator=(const CDataFormatItem& rhs);
-    CDataFormatItem& operator=(const CRingItem& rhs) throw(std::bad_cast);
+  CDataFormatItem& operator=(const CRingItem& rhs) ;
 
     int operator==(const CDataFormatItem& rhs) const;
     int operator!=(const CDataFormatItem& rhs) const;

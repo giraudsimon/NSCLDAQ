@@ -113,7 +113,7 @@ private:
 public:
   CCAENChain(int nFirstSlot, int nLastSlot,
 	     std::vector<uint32_t>& vBases,
-	     int nCrate = 0, bool geo=true) throw (std::string);
+	     int nCrate = 0, bool geo=true);
   ~CCAENChain();
   
   // Canonicals that are not allowed:
@@ -167,7 +167,7 @@ protected:
   // Class Functions:
 public:
 
-  CAENcard* operator[](int index) throw (CRangeError); //!< Retrieve a card pointer.
+  CAENcard* operator[](int index) ;
   int ReadEvent(void* pBuffer);                //!< Read an event from cards.
   void ClearData();		               //!< Clear constituent cards.
   void lastModuleEmptyEnable();     ;

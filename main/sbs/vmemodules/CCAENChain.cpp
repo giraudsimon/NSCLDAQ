@@ -82,7 +82,7 @@ static int fwMinor(int firmware)
 */
 CCAENChain::CCAENChain(int nFirstSlot, int nLastSlot,
 		       vector<uint32_t>& vBases,
-		       int nCrate, bool geo) throw (string)
+		       int nCrate, bool geo) 
       : m_nCBLTAddress(0),
 	m_nCrate(nCrate),
 	m_pHandle(0),
@@ -204,7 +204,7 @@ CCAENChain::~CCAENChain()
       If the index is out of range.
 */
 CAENcard*
-CCAENChain::operator[](int index) throw (CRangeError)
+CCAENChain::operator[](int index) 
 {
   if( (index >= 0) && (index < m_vCards.size())) {
     return m_vCards[index];

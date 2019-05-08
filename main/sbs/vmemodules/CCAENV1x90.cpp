@@ -529,6 +529,7 @@ CCAENV1x90::ReadResolution()
   else {
     CHECK(0, "Unrecognized resolution code");
   }
+  return 25;          // fake the else popped us out of here.
 }
 
 /*!
@@ -860,7 +861,7 @@ CCAENV1x90::GetECLOutputDefinition()
   else {
     ENSURE(0, "Illegal value from output control register");
   }
-
+  return ERROR;       // Fake the ENSURE popped us out
 }
 /*!
   Returns the number of events in the output buffer.  

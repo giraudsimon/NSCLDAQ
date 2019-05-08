@@ -102,7 +102,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  {
    parseArguments(argc, argv);
    recordData();
-
+   return 0;
  }
 
  ///////////////////////////////////////////////////////////////////////////////////

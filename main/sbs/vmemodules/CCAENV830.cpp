@@ -44,14 +44,14 @@ using namespace std;
 #define GetProm(m,field) (m.peekw(SOffset(CAENV830ROM,field)))
  
 static inline void ThrowIntString(const char* formatstring, int value) 
-  throw (string)
+  
 {
   char msg[strlen(formatstring) + 100];
   sprintf(msg, formatstring, value);
   throw string(msg);
 }
 static inline void ThrowIfBadChannel(const char* pFunction,
-				   int nChannel)  throw (string)
+				   int nChannel) 
 {
   const char* pFmtString=
     "CCAENV830::%s Invalid channel must be in [0,31] %d";
@@ -85,7 +85,7 @@ static inline void ThrowIfBadChannel(const char* pFunction,
 CCAENV830::CCAENV830(int slot,
 		     int crate,
 		     bool geo,
-		     uint32_t base) throw (string) :
+		     uint32_t base) :
   m_nCrate(crate),
   m_nSlot(slot),
   m_nBase(base),
@@ -121,7 +121,7 @@ CCAENV830::~CCAENV830()
       Number of channel to turn on [0-31].
 */
 void
-CCAENV830::Enable(int nChannel) throw (string)
+CCAENV830::Enable(int nChannel) 
 {
   ThrowIfBadChannel("Enable", nChannel);
   uint32_t nMask  = GetLong(Enables);
@@ -135,7 +135,7 @@ CCAENV830::Enable(int nChannel) throw (string)
     Number of channel to turn on [0-31]
  */
 void
-CCAENV830::Disable(int nChannel) throw (string)
+CCAENV830::Disable(int nChannel) 
 {
   ThrowIfBadChannel("Disable", nChannel);
   uint32_t nMask = GetLong(Enables);
@@ -187,7 +187,7 @@ CCAENV830::SetDwellTime(int n400ns)
                    determined by the dwell time (see SetDwellTime).
 */
 void
-CCAENV830::SetTriggerMode(CCAENV830::TriggerMode mode) throw (string)
+CCAENV830::SetTriggerMode(CCAENV830::TriggerMode mode) 
 {
   uint16_t csr = GetShort(Csr);
   csr      &= ~CSRAcqMode;
@@ -475,7 +475,7 @@ CCAENV830::GetMEBEventCount()
      that these modules are then remapped to slot << 24.
 */
 void
-CCAENV830::MapModule() throw (string)
+CCAENV830::MapModule() 
 {
   // Validate the member data:
 

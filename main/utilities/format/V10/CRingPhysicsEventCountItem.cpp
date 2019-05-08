@@ -78,7 +78,7 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(uint64_t count,
 
   \throw std::bad_cast if rhs is not a PHYSICS_EVENT_COUNT item.
 */
-CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(const CRingItem& rhs) throw(std::bad_cast)  :
+    CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(const CRingItem& rhs) :
   CRingItem(rhs)
 {
   if (type() != PHYSICS_EVENT_COUNT) {

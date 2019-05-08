@@ -68,9 +68,9 @@ CRingTimestampedRunningScalerItem::CRingTimestampedRunningScalerItem(uint64_t ev
  *
  * @throw bad_cast - if the ring item is not the right type.
  */
-
-CRingTimestampedRunningScalerItem::CRingTimestampedRunningScalerItem(const CRingItem& rhs) 
-  throw(std::bad_cast) : CRingItem(rhs)
+CRingTimestampedRunningScalerItem::CRingTimestampedRunningScalerItem(const CRingItem& rhs) :
+  CRingItem(rhs)
+  
 {
   if (type() != TIMESTAMPED_NONINCR_SCALERS) {
     throw std::bad_cast();

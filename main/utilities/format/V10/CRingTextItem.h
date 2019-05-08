@@ -51,7 +51,7 @@ public:
 		std::vector<std::string> theStrings,
 		uint32_t                 offsetTime,
 		time_t                   timestamp) ;
-  CRingTextItem(const CRingItem& rhs) throw(std::bad_cast);
+  CRingTextItem(const CRingItem& rhs) ;
   CRingTextItem(const CRingTextItem& rhs);
 
   virtual ~CRingTextItem();

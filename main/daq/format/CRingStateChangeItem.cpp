@@ -348,6 +348,7 @@ CRingStateChangeItem::typeName() const
   case RESUME_RUN:
     return "Resume Run";
   }
+  return "*Invalid State Change type*";
 }
 /**
  * toString
