@@ -81,7 +81,7 @@ protected:
     return off/sizeof(uint32_t);
   }
   static void ThrowString(const char*  pLeader,
-		     const char*  pMessage) 
+			  const char*  pMessage) ;
 
 };
 #endif
