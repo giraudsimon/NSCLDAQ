@@ -37,10 +37,11 @@ class CProcessor;
  *    object.  The actual sender type depends on how the computation is
  *    constructed.
  *
- *    This is an abstract base class that needs to be derived with a
- *    concrete class that implements the process() method.
- *
- *    The concrete class might also define the sender.
+ *    The actual processing of items is handled by encapsulating a
+ *    CProcessor object.   Note that in fact, this worker is actually fairly
+ *    generic rather than, as the name of the class suggests, being confined
+ *    to work items consisting of ring items.
+ *    
  */
 class CZMQRingItemWorker : public CParallelWorker
 {
