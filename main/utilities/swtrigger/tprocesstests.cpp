@@ -2,12 +2,25 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
+#include <Asserts.h>
+#include "CThreadedProcessingElement.h"
+#include "CProcessingElement.h"
 
 
+class TestProcessingElement : public CProcessingElement
+{
+public:
+  bool hasRun;
+  
+  TestProcessingElement() : hasRun(false) {}
+  void operator()() {hasRun = true;}
+  void process(void* pData, size_t nBytes) {}
+};
 
-class Testname : public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(Testname);
-  CPPUNIT_TEST(aTest);
+
+class tproctest : public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(tproctest);
+  CPPUNIT_TEST(thread_1);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -19,10 +32,15 @@ public:
   void tearDown() {
   }
 protected:
-  void aTest();
+  void thread_1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Testname);
+CPPUNIT_TEST_SUITE_REGISTRATION(tproctest);
 
-void Testname::aTest() {
+void tproctest::thread_1() {
+  TestProcessingElement test;
+  CThreadedProcessingElement testThread(&test);
+  testThread.run();
+  testThread.join();
+  ASSERT(test.hasRun);
 }

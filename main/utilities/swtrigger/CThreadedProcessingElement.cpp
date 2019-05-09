@@ -39,11 +39,10 @@ CThreadedProcessingElement::CThreadedProcessingElement(
  * destructor
  *    -  Very important the caller knows the thread has exited before calling
  *       this.
- *    -  The processor is deleted.
  */
 CThreadedProcessingElement::~CThreadedProcessingElement()
 {
-    delete m_pProcessor;
+    
 }
 /**
  * run
