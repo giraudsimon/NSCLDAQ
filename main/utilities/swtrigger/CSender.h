@@ -37,6 +37,7 @@ public:
     
     void sendMessage(iovec* parts, size_t numParts);  // Multipart
     void sendMessage(void* pBase, size_t nBytes);     // Single part.
+    void end();
 };
 
 #endif

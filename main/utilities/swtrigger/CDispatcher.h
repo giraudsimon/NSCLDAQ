@@ -49,6 +49,8 @@ public:
     void receiveWorkItem(void** pData, size_t& size);
     void sendWorkItem(iovec* items, int nItems);
     void sendWorkItem(void* pItem, size_t nBytes);
+    virtual void end();
+
 };
 
 #endif

@@ -60,3 +60,12 @@ CSender::sendMessage(void* pBase, size_t nBytes)
     
     sendMessage(&part, 1);
 }
+/**
+ * end
+ *   Tell the sending transport there's no more data.
+ */
+void
+CSender::end()
+{
+   m_pTransport->end();
+}

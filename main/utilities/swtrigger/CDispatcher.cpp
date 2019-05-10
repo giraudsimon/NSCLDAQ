@@ -78,3 +78,12 @@ CDispatcher::sendWorkItem(void* pItem, size_t nBytes)
 {
     m_pSink->sendMessage(pItem, nBytes);
 }
+/**
+ *  end
+ *  Tell the sink there's no more data.
+ */
+void
+CDispatcher::end()
+{
+  m_pSink->end();
+}

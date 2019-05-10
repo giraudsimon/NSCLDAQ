@@ -33,6 +33,7 @@ public:
     virtual ~CTransport() {}             // Support for destructor chaining.
     virtual  void    recv(void** ppData, size_t& size) = 0;
     virtual  void    send(iovec* parts, size_t numParts) = 0;
+    virtual void end() {};
 };
 
 #endif
