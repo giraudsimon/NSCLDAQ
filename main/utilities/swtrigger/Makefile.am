@@ -29,7 +29,7 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
 	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemZMQSourceElement.h \
 	CZMQRingItemSourceThread.h CZMQRingItemWorker.h CProcessor.h \
-	CZMQRingItemThreadedWorker.h
+	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h
 
 
 ####################################################################################

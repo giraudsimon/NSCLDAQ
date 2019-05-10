@@ -253,8 +253,6 @@ void zmqworkerTest::app_1() {
   worker2.join();
   counter.join();
   
-  
   EQ(EVENTS, m_pSink->m_totalItems);
-  
   
 }
