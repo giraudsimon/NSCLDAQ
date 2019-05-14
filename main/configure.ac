@@ -495,6 +495,7 @@ AC_CONFIG_FILES([Makefile
 		nscldaq
 		daqsetup.bash
     base/Makefile
+    base/factories/Makefile
     base/os/Makefile
     base/CopyrightTools/Makefile
     base/bltsubst/Makefile
