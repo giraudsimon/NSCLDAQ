@@ -9,7 +9,7 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zmqhel
 	CRingItemTransportFactory.cpp CRingItemDispatcher.cpp		\
 	CZMQRingItemDispatcher.cpp CRingItemZMQSourceElement.cpp        \
 	CZMQRingItemSourceThread.cpp CZMQRingItemWorker.cpp	\
-	CZMQRingItemThreadedWorker.cpp
+	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp
 
 libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\

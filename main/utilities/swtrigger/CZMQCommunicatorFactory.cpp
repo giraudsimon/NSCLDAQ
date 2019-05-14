@@ -25,9 +25,14 @@
 #include "CZMQDealerTransport.h"
 
 #include <iostream>
+#include <ios>
 #include <fstream>
+#include <sstream>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdexcept>
+#include <system_error>
+#include <errno.h>
 #include <zmq.hpp>
 
 
@@ -38,7 +43,7 @@
  *    endpoints a warning is written to stderr  There are cases this
  *    is allowed but they're rare, so it's not fatal but it does warn.
  */
-CZMQCommunicatorFactory()
+CZMQCommunicatorFactory::CZMQCommunicatorFactory()
 {
     readEndpointFiles();
     if (m_endpoints.empty()) {
@@ -54,7 +59,7 @@ CZMQCommunicatorFactory()
  *  @throw std::invalid_argument - the endpoint has no match in the table.
  */
 CTransport*
-CZMQCommunicatorFactory::createFanoutTranpsport(int endpointId)
+CZMQCommunicatorFactory::createFanoutTransport(int endpointId)
 {
     std::string URI = getUri(endpointId);
     return new CZMQRouterTransport(URI.c_str());
@@ -129,7 +134,7 @@ CZMQCommunicatorFactory::createOneToOneSource(int endpointId)
  *  @return CTransport
  */
 CTransport*
-CZMQCommunicatorFactory::createOnToOneSink(int endpointId)
+CZMQCommunicatorFactory::createOneToOneSink(int endpointId)
 {
     std::string URI = getUri(endpointId);
     return new CZMQClientTransport(URI.c_str(), ZMQ_PULL);
@@ -137,3 +142,124 @@ CZMQCommunicatorFactory::createOnToOneSink(int endpointId)
 
 ///////////////////////////////////////////////////////////////////////
 //  Private utilities.
+
+/**
+ * readEndpointFiles
+ *    Determines the presence of the endpoint table files and,
+ *    for each one that exists, callse readEndpointFile to add its
+ *    definitions to the endpoint table.
+ *
+ * - ~/.zmqservices
+ * - ./zmqservices
+ * - ZMQ_SERVICES env variable.
+ */
+void
+CZMQCommunicatorFactory::readEndpointFiles()
+{
+    // ~/.zmqservices we'll use the HOME env variable to find that:
+    
+    const char* pHome = getenv("HOME");
+    if (pHome) {
+        std::string fname(pHome);
+        fname += "/.zmqservices";
+        readEndpointFile(fname.c_str());
+    }
+    
+    // We'll use get_current_dir_name (GNU specific) since it let's us
+    // not worry about figuring out how big the buffer to pass to get(c)wd
+    // needs to be:
+    
+    char* pWd = get_current_dir_name();
+    if (pWd) {
+        std::string fname(pWd);
+        free(pWd);
+        fname += "/zmqservices";
+        readEndpointFile(fname.c_str());
+    }
+    
+    // Finally see if ZMQ_SERVICES translates:
+    
+    const char* pEnv = getenv("ZMQ_SERVICES");
+    if (pEnv) {
+        readEndpointFile(pEnv);
+    }
+}
+
+/**
+ * readEndpointFile
+ *   Reads a single endpoint file.   Each line is read into a string
+ *   with whitespace trimmed from the front and back.
+ *   - Empty resulting lines are ignored.
+ *   - Resulting lines that begin # are ignored.
+ *   - All remaining lines are decoded into an integer and a string.
+ *     The integer is an endpoint id and the string the ZMQ URI that
+ *     correpsponds to it.
+ * @param filename  - Name of the file to process.
+ * @throw std::ios_base::failure if the file can't be opened.
+ * @throw std::runtime_error if there are errors processing the file.
+ */
+void
+CZMQCommunicatorFactory::readEndpointFile(const char* filename)
+{
+    std::ifstream configFile;
+    auto e = configFile.exceptions();        // before opening make failures
+    e |= std::ios::failbit;             // throw:
+    configFile.exceptions(e);
+    
+    configFile.open(filename);
+    std::string line;
+    while (!configFile.eof()) {
+        getline(configFile, line);
+        std::string originalLine = line;
+        line.erase(                        // Trim w.s. from front.
+            line.begin(),
+            std::find_if(
+                line.begin(),
+                line.end(), std::not1(std::ptr_fun<int, int>(std::isspace))
+            )
+        );                  // Trim spaces off front.
+        if (line.front() == '#') continue;            // Comment line.
+        line.erase(
+            std::find_if(
+                line.rbegin(), line.rend(),
+                std::not1(std::ptr_fun<int, int>(std::isspace))
+            ).base(),
+            line.end()
+        );
+        if (line.empty()) continue;                 // line of only whitespace.
+        
+        int index;
+        std::string uri;
+        std::stringstream l(line);
+        l >> index >> uri;
+        if (!l.good()) {
+            std::string msg("Failed to parse line zmq service file: ");
+            msg += filename;
+            msg += " offending line: '";
+            msg += originalLine;
+            msg += "'";
+            throw std::runtime_error(msg);
+        }
+        // Add the service:
+        
+        m_endpoints[index] = uri;
+    }
+}
+/**
+ * getUri
+ *    @param endpointId - the id of an endpoint in the m_endpoints table.
+ *    @param return std::string -the endpoint uri.
+ *    @throws std::invalid_argument - no such endpoint.
+ */
+std::string
+CZMQCommunicatorFactory::getUri(int endpointId)
+{
+    auto p = m_endpoints.find(endpointId);
+    if (p == m_endpoints.end()) {
+        std::stringstream msg;
+        msg << "Failed to find endpoint: " << endpointId
+            << " in ZMQ endpoint lookup table";
+        throw std::invalid_argument(msg.str());
+    }
+    return p->second;
+}

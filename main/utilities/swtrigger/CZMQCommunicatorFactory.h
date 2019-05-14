@@ -74,8 +74,8 @@ public:
     virtual CTransport* createOneToOneSink(int endpointid);
 private:
     void readEndpointFiles();
-    void readEndointFile(const char* filename);
+    void readEndpointFile(const char* filename);
     std::string getUri(int endpointId);
-}
+};
 
 #endif
