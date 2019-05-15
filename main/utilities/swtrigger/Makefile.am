@@ -9,7 +9,8 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zmqhel
 	CRingItemTransportFactory.cpp CRingItemDispatcher.cpp		\
 	CZMQRingItemDispatcher.cpp CRingItemZMQSourceElement.cpp        \
 	CZMQRingItemSourceThread.cpp CZMQRingItemWorker.cpp	\
-	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp
+	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp \
+	CCommunicatorFactoryMaker.cpp
 
 libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\
@@ -20,6 +21,7 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 
 libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/utilities/IO -I@top_srcdir@/base/dataflow \
 	-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/factories	\
 	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri @LIBTCLPLUS_CFLAGS@
 
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
@@ -30,7 +32,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
 	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemZMQSourceElement.h \
 	CZMQRingItemSourceThread.h CZMQRingItemWorker.h CProcessor.h \
-	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h
+	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
+	CCommunicatorFactoryMaker.h
 
 
 ####################################################################################

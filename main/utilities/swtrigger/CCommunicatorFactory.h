@@ -27,6 +27,7 @@ exec tclsh "$0" ${1+"$@"}
 */
 
 #ifndef CCOMMUNICATORFACTORY_H
+#define CCOMMUNICATORFACTORY_H
 
 class CTransport;
 
