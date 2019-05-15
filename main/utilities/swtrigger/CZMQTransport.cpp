@@ -55,15 +55,15 @@ void
 CZMQTransport::recv(void** ppData, size_t& size)
 {
     if (m_pSocket) {
-        std::vector<zmq::message_t> messageParts;
+        std::vector<zmq::message_t*> messageParts;
         int64_t more(0);
         size_t  moreSize(sizeof(int64_t));
         size_t  totalBytes(0);
         do {
-            messageParts.emplace(messageParts.end());
-            zmq::message_t& msg(messageParts.back());
-            m_pSocket->recv(&msg);
-            totalBytes += msg.size();
+            messageParts.push_back(new zmq::message_t);
+            zmq::message_t* msg(messageParts.back());
+            m_pSocket->recv(msg);
+            totalBytes += msg->size();
             m_pSocket->getsockopt(ZMQ_RCVMORE, &more, &moreSize);
         } while (more);
         // Now marshall the message parts into a buffer:
@@ -76,9 +76,10 @@ CZMQTransport::recv(void** ppData, size_t& size)
         size    = totalBytes;
         
         for (int i = 0; i < messageParts.size(); i++) {
-            size_t partSize = messageParts[i].size();
-            memcpy(pBuffer, messageParts[i].data(), partSize);
+            size_t partSize = messageParts[i]->size();
+            memcpy(pBuffer, messageParts[i]->data(), partSize);
             pBuffer += partSize;
+            delete messageParts[i];
         }
         
         
