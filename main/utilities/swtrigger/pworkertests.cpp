@@ -123,7 +123,10 @@ public:
     m_pTestReceiver = new CReceiver(*m_pTestData);
     m_pRouter       = new CZMQRouterTransport(fanoutservice.c_str());
     m_pSrc          = new CDataSourceElement(*m_pTestReceiver, *m_pRouter);
+    // So we can get results:
     
+    m_pPuller = new CZMQServerTransport(faninservice.c_str(), ZMQ_PULL);
+    usleep(100);    
     // One sort worker:
     
     m_pWorkerReceiver = new CZMQDealerTransport(fanoutservice.c_str(), 1);
@@ -131,9 +134,6 @@ public:
     m_pWorkerSender  = new CSender(*m_pWorkerOutputTransport);
     m_pWorker        = new ParallelSorter(*m_pWorkerReceiver, *m_pWorkerSender);
     
-    // So we can get results:
-    
-    m_pPuller = new CZMQServerTransport(faninservice.c_str(), ZMQ_PULL);
     
   }
   void tearDown() {

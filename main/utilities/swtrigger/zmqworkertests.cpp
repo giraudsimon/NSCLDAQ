@@ -139,6 +139,21 @@ public:
     m_pSinkReceiver        = new CReceiver(*m_pSinkSourceTransport);
     m_pSink                = new CCountingSink(*m_pSinkReceiver, 2);  // 2 workers.
     
+    // The ultimate data source:
+    
+    char nameTemplate[tmpFileTemplate.size() +1];
+    strcpy(nameTemplate, tmpFileTemplate.c_str());   // mkstemp needs modifiable str.
+    m_nRingFileId  = mkstemp(nameTemplate);          /// an makes it the actual name.
+    m_RingFilename = nameTemplate;
+    std::string ringFileURI = "file://./";
+    ringFileURI += m_RingFilename;
+    
+    m_pSourceTransport = new CZMQRouterTransport(routeruri.c_str());
+    m_pSourceSender    = new CSender(*m_pSourceTransport);
+    m_pDataSource      =
+      new CRingItemDispatcher(ringFileURI.c_str(), m_pSourceSender);
+      
+    usleep(100);
     // Set up the two workers:
     
     m_pCounter1           = new RingItemCounter;
@@ -154,19 +169,7 @@ public:
       new CZMQRingItemWorker(routeruri.c_str(), 2, *m_pOut2, m_pCounter2);
     
 
-    // The ultimate data source:
-    
-    char nameTemplate[tmpFileTemplate.size() +1];
-    strcpy(nameTemplate, tmpFileTemplate.c_str());   // mkstemp needs modifiable str.
-    m_nRingFileId  = mkstemp(nameTemplate);          /// an makes it the actual name.
-    m_RingFilename = nameTemplate;
-    std::string ringFileURI = "file://./";
-    ringFileURI += m_RingFilename;
-    
-    m_pSourceTransport = new CZMQRouterTransport(routeruri.c_str());
-    m_pSourceSender    = new CSender(*m_pSourceTransport);
-    m_pDataSource      =
-      new CRingItemDispatcher(ringFileURI.c_str(), m_pSourceSender);
+
     
   }
   void tearDown() {

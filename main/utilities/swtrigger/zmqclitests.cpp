@@ -29,10 +29,10 @@ private:
 public:
   void setUp() {
     
-    // ZMQ Claims the order is not important:
-    
-    m_pTestObj = new CZMQClientTransport(service.c_str(), ZMQ_PULL);
     m_pSender  = new CZMQServerTransport(service.c_str(), ZMQ_PUSH);
+    usleep(100);
+    m_pTestObj = new CZMQClientTransport(service.c_str(), ZMQ_PULL);
+  
   }
   void tearDown() {
     delete m_pTestObj;

@@ -59,10 +59,12 @@ private:
   CZMQServerTransport* m_pRouter;
 public:
   void setUp() {
+    m_pRouter = new CZMQServerTransport(service.c_str(), ZMQ_ROUTER);
+    usleep(100);
     m_pTestObj1 = new CZMQDealerTransport(service.c_str(), 1);
     m_pTestObj2 = new CZMQDealerTransport(service.c_str(), 2);
     
-    m_pRouter = new CZMQServerTransport(service.c_str(), ZMQ_ROUTER);
+    
   }
   void tearDown() {
     delete m_pTestObj1;
