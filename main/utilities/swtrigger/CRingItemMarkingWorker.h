@@ -53,8 +53,11 @@ public:
         CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,
         Classifier* pClassifier
     );
-    virtual ~CRingMarkingWorker();
-    virtual void* process(void* pData, size_t nBytes);
+    virtual ~CRingMarkingWorker() {}
+    virtual void process(void* pData, size_t nBytes);
+private:
+    void outputItem(CRingItem& item);
+    void outputItem(CRingItem& item, uint32_t classification);
 };
 
 #endif
