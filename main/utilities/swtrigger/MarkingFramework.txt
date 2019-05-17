@@ -1,0 +1,123 @@
+Marking Framework;
+
+Background:
+  The marking framework performs potentially computationally intensive
+  marking of PHYSICS_EVENT ring items.  The term Marking is used in the
+  same sense as the CRingItemMarkingWorker class;  Inspecting ring items and
+  adding a uint32_t classification to the body header.
+  
+  This marking can, conceivably be computationally intensive, therefore the
+  framework will support parallel classification.
+  
+User expectations:
+  The user must supply a classifier functional object derived from
+  CRingMarkingWorker::Classifier to analyze a physics ring item and
+  return the desired classification.
+  
+  Initially only threaded parallelism will be supported with ZMQ
+  communication between the threads:
+  *  The user must provide an appropriate service map taking service ids to
+     ZMQ URIs.
+  *  The user must descsribe the number of worker threads to the program.
+  *  The user must specify input and output URIs either may be files or rings.
+  
+  In the future, distributed parallelism will be supported using MPI transport.
+  In that case; each thing that was originally a thread must be treated as a
+  process.
+  
+  Design points and open questions:
+     The application consist of the following components:
+     -  Driver program.  This processes program parameters and uses it to setup
+        threads and communications in the appropriate manner.
+     -  Data source.  This is is started by the driver program.  It takes data from
+        either a ring buffer or a file of ring items and distributes them using
+        the fanout communication pattern to clients.
+     -  Workers - These accept the fanned out stream of data and tag each physics ring
+        item with its classification.
+     -  Sorter - this is a fanin that accepts the tagged data from the workers and
+        sorts it back into timestamp ordered data.
+     -  Outputter - pipeline from the Sorter which puts the re-sorted data into
+        either a ringbuffer or a ring item file.
+        
+Open questions that need solutions:
+     -  At least in some environments, servers must be running and happy before
+        clients can run.  I think some delays may be needed to ensure that workers
+        don't get service unavailable failures. One startup order might be:
+        -  Sorter (It's a server on both transports)
+        -  Outputter (Client of the sorter).
+        - Data Source (It's a server on its fanout and the REQ/REP discipline of
+          the Router/Dealer pattern ensure it won't start sending data until at
+          least one worker is running).
+        - Workers - clients for both the Data source and the Sorter.
+        
+        If delays are needed the driver can supply them between thread creations.
+    
+    -  The output must be a valid event file.  This poses problems for the handling
+       of non physics items.    Furthermore, there's an expectation that scaler items
+       for synchronization points such that all data prior to the read is emitted
+       prior to the scaler item.
+       -  There are three types of ring items we may see that don't have body headers:
+          *  Format items - we'll filter those out and have the outputter emit one
+             first when it starts and then prior to each begin run item.
+          *  GLOM Parameters.  These just get passed through as they occur. When
+             the sorter gets one, it immediately outputs it. Note that it is therefore
+             _possible_ that these will not be at the ultimate beginning of the run.
+          *  AbnormalEndItems -- these are passed through to the outputter who
+             holds them until either:
+             - A Begin run is received.
+             - End of data
+             At which it outputs the item (prior to the begin run if that's what happend).
+      - There are items that may have timesetamps that are NULL_TIMESTAMP.
+        These include:
+        State changes, scalers and Physics Event Count items.
+        -  BEGIN_RUN items are given a timestamp of 0.
+        -  END_RUN   items are given a timestamp that's some amount larger than
+           the most recent timestamp.
+        -  All other state change items are given a timestamp that is equal to the
+           most recently emitted timestamp.
+        - Scaler and Physics Event count items are given a timestamp equal to the
+          most recently seen timestamps.
+
+Finally the options the program may use:
+
+--source  -URI from which data comes - mandatory.
+--sink    -URI to which data goes.
+--workers -Number of threads that will do classification.
+--sort-window - Number of timestamp ticks for the sorting window.
+--clump-size  - Number of ring items that will be clumped together to be added
+            to the sort set (defaults to 100).
+--parallel-strategy - Currently only 'threaded' is allowed in the future
+            this wil be used to distinguish how the parallelism works (e.g
+            could be MPI).
+--classifier - .so that has the classification functional.
+            This is expected to have a "C" external entry point called
+            createClassifier which returns a pointer to a new'd classifier.
+            object that can be put into a worker.  This will be called once
+            per worker.
+            
+User notes:
+   The user must supply a service id to URI translation file for threaded.
+   This consists of a text file.  # in the first non w.s. column means this is
+   a comment.  Empty lines are ignored.  Non-empty non-comment lines are
+   have an integer, whitespace then a ZMQ URI string. The following ids are used;
+   1  - Fanout to the workers.
+   2  - Fanin from workers to sorter.
+   3  - Sorter to outputter.
+   
+   For example:
+   
+#  This file is a service file used by the classifier.
+
+1 inproc://fanout
+2 inproc://sorter
+3 inproc://outputter
+
+inproc protocol is an intra process communications protocol.   If (later versions)
+you're distributing this you may use e.g. tcp protocols:
+
+1 tcp://spdaq20.nscl.msu.edu:2000
+2 tcp://genesis.nscl.msu.edu:2000
+3 tcp://genesis.nscl.msu.edu:2001
+
+Note the form of a URI for tcp is tcp://host.name:tcpip-port
+
