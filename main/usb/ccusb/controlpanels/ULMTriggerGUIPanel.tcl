@@ -815,8 +815,9 @@ itcl::body ATrigger2367::ReadStatus {} {
 			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
 		}
 	    if {[string match *Sync $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(SyncBox) & $mask)>>$b	    }
+		set mask [expr 1<<$bit($v)]
+		set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
+	    }
 	}
 	UpdateWires $wtrigger
 }
