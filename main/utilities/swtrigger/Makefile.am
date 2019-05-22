@@ -38,7 +38,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 
 
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
-	CClassifierApp.h
+	CClassifierApp.h \
+	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
 

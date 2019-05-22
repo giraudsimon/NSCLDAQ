@@ -38,11 +38,11 @@ class CClassifierApp
 protected:
     gengetopt_args_info  m_params;
 public:
-    CClassifierApp(getgetopt_args_info& args) :
+    CClassifierApp(gengetopt_args_info& args) :
         m_params(args) {}
     virtual ~CClassifierApp() {}                     // for destructor chaining.
     
     virtual int operator()() = 0;                    // Run the application
-}
+};
 
 #endif

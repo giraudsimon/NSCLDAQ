@@ -20,6 +20,7 @@
 */
 
 #include "swtriggerflags.h"
+#include "CZMQThreadedClassifierApp.h"
 #include <stdlib.h>
 
 /**
@@ -33,6 +34,6 @@ int main(int argc, char** argv)
 {
     gengetopt_args_info params;
     cmdline_parser(argc, argv, &params);
-    
-    exit(EXIT_SUCCESS);
+    CZMQThreadedClassifierApp app(params);
+    exit(app());
 }
