@@ -35,6 +35,14 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h
 
+BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
+
+swtriggerflags.c: swtriggerflags.h
+
+swtriggerflags.h: swtriggerflags.ggo
+	$(GENGETOPT) <@srcdir@/swtriggerflags.ggo -Fswtriggerflags
+
+EXTRA_DIST=swtriggerflags.ggo
 
 ####################################################################################
 # unit testing:
