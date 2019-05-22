@@ -1,0 +1,14 @@
+package "swtrigger"
+version "v1.0"
+
+option "source" s "Data Source" string typestr="URI"
+option "sink"   S "Data Sink"   string typestr="URI"
+text   "           Any tcp URI must be to localhost"
+option "workers" n "Number of classification workers" integer optional default="1"
+option "sort-window" w "Number of time stamp ticks in the sort window"
+                integer optional default="10000"
+option "clump-size" c "Number of ring items per work unit" integer optional default="1"
+option "parallel-strategy" p "Parallelization strategy"
+                values="threaded", optional default="threaded"
+option "classifier" l "Path to shared library for the classifier" string typestr="filename"
+
