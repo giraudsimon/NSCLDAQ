@@ -19,6 +19,11 @@
 * @brief Implements the CZMQThreadedClassifierAPp class.
 */
 #include "CZMQThreadedClassifierApp.h"
+#include "CRingItemZMQSourceElement.h"
+#include "CThreadedProcessingElement.h"
+#include "CZMQCommunicatorFactory.h"
+
+
 #include <stdlib.h>
 
 /**
@@ -26,7 +31,9 @@
  *   @param args -the parsed arguments.
  */
 CZMQThreadedClassifierApp::CZMQThreadedClassifierApp(gengetopt_args_info& args) :
-    CClassifierApp(args) {}
+    CClassifierApp(args),
+    m_pSourceElement(nullptr), m_pSourceThread(nullptr);
+{}
     
 /**
  * destructor
@@ -41,6 +48,6 @@ CZMQThreadedClassifierApp::~CZMQThreadedClassifierApp()
  */
 int
 CZMQThreadedClassifierApp::operator()()
-{
+{   CZMQCommunicatorFactory commFactory;
     return EXIT_SUCCESS;
 }

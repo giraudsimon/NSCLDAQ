@@ -22,6 +22,9 @@
 #define CZMQTHREADEDCLASSIFIERAPP_H
 #include "CClassifierApp.h"
 
+class CRingItemZMQSourceElement;
+class CThreadedProcessingElement;
+
 /**
  * @class CZMQThreadedClassifierApp
  *     This is a concrete class that uses ZMQ for communications and
@@ -42,6 +45,11 @@
  */
 class CZMQThreadedClassifierApp : public CClassifierApp
 {
+private:
+    // Data source objects.
+    
+    CRingItemZMQSourceElement* m_pSourceElement;
+    CThreadedProcessingElement* m_pSourceThread;
 public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);
     virtual ~CZMQThreadedClassifierApp();

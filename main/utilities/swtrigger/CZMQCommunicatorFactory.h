@@ -72,10 +72,12 @@ public:
     virtual CTransport* createFanInSink(int endpointId);
     virtual CTransport* createOneToOneSource(int endpointId);
     virtual CTransport* createOneToOneSink(int endpointid);
+    
+    std::string getUri(int endpointId);
 private:
     void readEndpointFiles();
     void readEndpointFile(const char* filename);
-    std::string getUri(int endpointId);
+    
 };
 
 #endif
