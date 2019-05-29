@@ -32,7 +32,7 @@
  */
 CZMQThreadedClassifierApp::CZMQThreadedClassifierApp(gengetopt_args_info& args) :
     CClassifierApp(args),
-    m_pSourceElement(nullptr), m_pSourceThread(nullptr);
+    m_pSourceElement(nullptr), m_pSourceThread(nullptr)
 {}
     
 /**

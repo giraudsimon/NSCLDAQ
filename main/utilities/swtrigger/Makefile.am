@@ -1,7 +1,7 @@
 lib_LTLIBRARIES=libSwTrigger.la
 bin_PROGRAMS=SoftwareTrigger
 
-libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zmqhelpers.hpp \
+libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
 	CZMQTransport.cpp CZMQClientTransport.cpp CZMQServerTransport.cpp \
 	CSender.cpp CRingItemFileTransport.cpp CRingBufferTransport.cpp \
 	CDispatcher.cpp CClientRegistry.cpp CZMQRouterTransport.cpp \
@@ -40,6 +40,9 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h
+
+SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
 
