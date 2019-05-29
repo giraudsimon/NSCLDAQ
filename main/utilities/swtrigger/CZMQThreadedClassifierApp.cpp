@@ -26,6 +26,10 @@
 
 #include <stdlib.h>
 
+static const int DISTRIBUTION_SERVICE (1);
+static const int SORT_SERVICE(2);
+static const int SORTEDDATA_SERVICE(3);
+
 /**
  * constructor
  *   @param args -the parsed arguments.
@@ -48,6 +52,23 @@ CZMQThreadedClassifierApp::~CZMQThreadedClassifierApp()
  */
 int
 CZMQThreadedClassifierApp::operator()()
-{   CZMQCommunicatorFactory commFactory;
+{
+    // Create the data source object and encapsulate it in a thread:
+    // Note that since the router is a req/rep style deal it's not
+    // going to start sending data until there's at least one worker.
+    
+    CZMQCommunicatorFactory commFactory;          // URL translation.
+    std::string routerUri = commFactory.getUri(1);
+    m_pSourceElement =
+        new CRingItemZMQSourceElement(m_params.source_arg, routerUri.c_str());
+    m_pSourceThread = new CThreadedProcessingElement(m_pSourceElement);
+    m_pSourceThread->start();                    // Can start the thread.
+    
+    
+    sleep(1);                    // Let the threads get established.
+    
+    // Wait for them all to end:
+    
+    m_pSourceThread->join();
     return EXIT_SUCCESS;
 }

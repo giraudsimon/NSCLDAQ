@@ -46,10 +46,12 @@ class CThreadedProcessingElement;
 class CZMQThreadedClassifierApp : public CClassifierApp
 {
 private:
+    
     // Data source objects.
     
     CRingItemZMQSourceElement* m_pSourceElement;
     CThreadedProcessingElement* m_pSourceThread;
+    
 public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);
     virtual ~CZMQThreadedClassifierApp();
