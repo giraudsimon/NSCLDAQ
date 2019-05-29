@@ -1785,14 +1785,29 @@ CFragmentHandler::findStampMark()
   uint64_t result = UINT64_MAX;
   
   for(auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
-    auto& last(p->second.s_queue.back());
-    if (last.second->s_header.s_barrier == BARRIER_NOTBARRIER) { 
-      uint64_t stamp = last.second->s_header.s_timestamp;
-      if (stamp < result) result = stamp;
-    }
+    uint64_t stamp  = oldestStamp(p->second.s_queue);    
+    if (stamp < result) result = stamp;
+
   }
   
   return result;
+}
+
+/**
+ * oldestStamp
+ *   @param q  - EvbFragment queue.
+ *   @return uint64_t - oldest non-barrier timestamp in the queue.
+ *   @retval UINT64_MAX = if there are no non-barrier fragments in the queue.
+ */
+uint64_t
+CFragmentHandler::oldestStamp(EvbFragments& q)
+{
+  for (auto p = q.rbegin(); p != q.rend(); p++) {
+    if (p->second->s_header.s_barrier == BARRIER_NOTBARRIER) {
+      return p->second->s_header.s_timestamp;
+    }
+  }
+  return UINT64_MAX;
 }
 
 /**

@@ -393,7 +393,7 @@ private:
   void checkXon();
   
   uint64_t findStampMark();
-
+  uint64_t oldestStamp(EvbFragments& q);
 
   void DequeueUntilStamp( 
       EvbFragments& result,
