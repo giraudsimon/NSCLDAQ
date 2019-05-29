@@ -237,7 +237,7 @@ CZMQCommunicatorFactory::readEndpointFile(const char* filename)
             std::string uri;
             std::stringstream l(line);
             l >> index >> uri;
-            if (!l.good()) {
+            if (l.fail()) {
                 std::string msg("Failed to parse line zmq service file: ");
                 msg += filename;
                 msg += " offending line: '";
@@ -252,6 +252,9 @@ CZMQCommunicatorFactory::readEndpointFile(const char* filename)
     } catch (std::runtime_error& r) {
         std::cerr << r.what() << std::endl;
         exit(EXIT_FAILURE);
+    } catch (std::ios_base::failure& f) {
+        if(configFile.eof()) return;
+        throw;
     }
 }
 /**
