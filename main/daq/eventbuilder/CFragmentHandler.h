@@ -92,7 +92,7 @@ namespace EVB {
   typedef struct _Fragment Fragment, *pFragment;
 };
 
-
+typedef std::list<std::pair<time_t, EVB::pFragment>> EvbFragments;
 
 /**
  * @class CFragmentHandler
@@ -427,7 +427,7 @@ private:
   void checkXon();
   
   uint64_t findStampMark();
-
+  uint64_t oldestStamp(EvbFragments& q);
 
   void DequeueUntilStamp(
       std::list<std::pair<time_t,  EVB::pFragment> >& result,
