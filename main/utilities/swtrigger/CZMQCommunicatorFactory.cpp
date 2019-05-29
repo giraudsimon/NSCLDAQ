@@ -206,43 +206,52 @@ CZMQCommunicatorFactory::readEndpointFile(const char* filename)
     e |= std::ios::failbit;             // throw:
     configFile.exceptions(e);
     
-    configFile.open(filename);
-    std::string line;
-    while (!configFile.eof()) {
-        getline(configFile, line);
-        std::string originalLine = line;
-        line.erase(                        // Trim w.s. from front.
-            line.begin(),
-            std::find_if(
+    try {
+        configFile.open(filename);
+    } catch(std::ios_base::failure& f) {
+        return;                 // Open failure.
+    }
+    try {
+        std::string line;
+        while (!configFile.eof()) {
+            getline(configFile, line);
+            std::string originalLine = line;
+            line.erase(                        // Trim w.s. from front.
                 line.begin(),
-                line.end(), std::not1(std::ptr_fun<int, int>(std::isspace))
-            )
-        );                  // Trim spaces off front.
-        if (line.front() == '#') continue;            // Comment line.
-        line.erase(
-            std::find_if(
-                line.rbegin(), line.rend(),
-                std::not1(std::ptr_fun<int, int>(std::isspace))
-            ).base(),
-            line.end()
-        );
-        if (line.empty()) continue;                 // line of only whitespace.
-        
-        int index;
-        std::string uri;
-        std::stringstream l(line);
-        l >> index >> uri;
-        if (!l.good()) {
-            std::string msg("Failed to parse line zmq service file: ");
-            msg += filename;
-            msg += " offending line: '";
-            msg += originalLine;
-            msg += "'";
-            throw std::runtime_error(msg);
+                std::find_if(
+                    line.begin(),
+                    line.end(), std::not1(std::ptr_fun<int, int>(std::isspace))
+                )
+            );                  // Trim spaces off front.
+            if (line.front() == '#') continue;            // Comment line.
+            line.erase(
+                std::find_if(
+                    line.rbegin(), line.rend(),
+                    std::not1(std::ptr_fun<int, int>(std::isspace))
+                ).base(),
+                line.end()
+            );
+            if (line.empty()) continue;                 // line of only whitespace.
+            
+            int index;
+            std::string uri;
+            std::stringstream l(line);
+            l >> index >> uri;
+            if (!l.good()) {
+                std::string msg("Failed to parse line zmq service file: ");
+                msg += filename;
+                msg += " offending line: '";
+                msg += originalLine;
+                msg += "'";
+                throw std::runtime_error(msg);
+            }
+            // Add the service:
+            
+            m_endpoints[index] = uri;
         }
-        // Add the service:
-        
-        m_endpoints[index] = uri;
+    } catch (std::runtime_error& r) {
+        std::cerr << r.what() << std::endl;
+        exit(EXIT_FAILURE);
     }
 }
 /**
