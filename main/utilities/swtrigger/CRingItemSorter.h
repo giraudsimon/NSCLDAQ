@@ -31,6 +31,13 @@ class CReceiver;
 class CSender;
 
 
+#ifndef UINT64_MAX
+#ifdef UINT64_C
+#define UINT64_MAX UINT64_C(0xffffffffffffffff)
+#else
+#define UINT64_MAX __UINT64_C(0xffffffffffffffff)
+#endif
+#endif
 
 /**
  * @class CRingItemSorter
@@ -71,6 +78,8 @@ public:
     virtual ~CRingItemSorter();
     virtual void operator()();
     virtual void process(void* pData, size_t nBytes);
+private:
+    void flush(uint64_t until = UINT64_MAX);
 };
 
 

@@ -49,11 +49,24 @@ CRingItemSorter::~CRingItemSorter()
 /**
  * operator()
  *   Main flow of control of the processing element.
+ *   - For the most part just get messages from the
+ *     data source and pass them on to process.
+ *   - If an empty message is received, that's an end of data from a worker.
+ *     decrement the ends remaining member and exit if it hits zero.
+ *
+ *  @note it's the process method's responsibility to destroy data.
  */
 void
 CRingItemSorter::operator()()
 {
-    
+    void* pData;
+    size_t nBytes;
+    while (m_nEndsRemaining) {
+        m_pDataSource->getMessage(&pData, nBytes);
+        process(pData, nBytes);
+    }
+    flush();                    // Flush everything.
+
 }
 
 /**
@@ -68,4 +81,13 @@ void
 CRingItemSorter::process(void* pData, size_t nBytes)
 {
 
+}
+/////////////////////////////////////////////////////////////////////////
+// Private methods:
+
+
+void
+CRingItemSorter::flush(uint64_t until)
+{
+    
 }
