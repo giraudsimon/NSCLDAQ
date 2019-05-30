@@ -46,6 +46,8 @@ public:
     
     virtual void operator()();
     virtual void process(void* pData, size_t nBytes);
+protected:    
+    CSender* getSink() { return m_pSink;}   // For derived classses.
 };
 
 

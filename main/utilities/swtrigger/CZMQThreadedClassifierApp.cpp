@@ -25,6 +25,7 @@
 #include "CTransport.h"
 #include "CSender.h"
 #include "CReceiver.h"
+#include "CRingItemSorter.h"
 
 
 #include <stdlib.h>
@@ -52,11 +53,10 @@ CZMQThreadedClassifierApp::~CZMQThreadedClassifierApp()
     delete m_pSourceThread;
     delete m_pSourceElement;
     
+    
     delete m_pSortThread;
-    //delete m_pSortELement;
-    delete m_pSortSender;
+    delete m_pSortElement;          // Deletes the CSender & CReceiver.
     delete m_pSortSource;
-    delete m_pSortReceiver;
     delete m_pSortServer;
 }
 
@@ -87,14 +87,19 @@ CZMQThreadedClassifierApp::operator()()
     m_pSortReceiver = new CReceiver(*m_pSortServer);
     m_pSortSource   = commFactory.createOneToOneSource(SORTEDDATA_SERVICE);
     m_pSortSender   = new CSender(*m_pSortSource);
-    // Create the sorting object.
-    // wrap it in a thread.
-    // start the thread.
+    m_pSortElement  = new CRingItemSorter(
+        *m_pSortReceiver, *m_pSortSender, m_params.sort_window_arg,
+        m_params.workers_arg
+    );
+    m_pSortThread = new CThreadedProcessingElement(m_pSortElement);
+    m_pSortThread->start();
+    
     
     sleep(1);                    // Let the threads get established.
     
     // Wait for them all to end:
     
     m_pSourceThread->join();
+    m_pSortThread->join();
     return EXIT_SUCCESS;
 }
