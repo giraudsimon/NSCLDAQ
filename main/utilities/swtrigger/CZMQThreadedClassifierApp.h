@@ -21,6 +21,7 @@
 #ifndef CZMQTHREADEDCLASSIFIERAPP_H
 #define CZMQTHREADEDCLASSIFIERAPP_H
 #include "CClassifierApp.h"
+#include <vector>
 
 class CRingItemZMQSourceElement;
 class CThreadedProcessingElement;
@@ -29,6 +30,8 @@ class CTransport;
 class CSender;
 class CReceiver;
 class CRingItemSorter;
+
+class CDataSinkElement;
 
 /**
  * @class CZMQThreadedClassifierApp
@@ -65,6 +68,17 @@ private:
     CSender*                    m_pSortSender;
     CRingItemSorter*            m_pSortElement;
     CThreadedProcessingElement* m_pSortThread;
+    
+    // Stuff for the ultimate data sink:
+    
+    CTransport*                 m_pSortClient;
+    CReceiver*                  m_pSortData;
+    CTransport*                 m_pRingSink;
+    CSender*                    m_pRingSender;
+    CDataSinkElement*           m_pSinkElement;
+    CThreadedProcessingElement* m_pSinkThread;
+    
+    std::vector<CThreadedProcessingElement*> m_workers;
     
 public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);

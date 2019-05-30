@@ -23,9 +23,12 @@
 #include "CThreadedProcessingElement.h"
 #include "CZMQCommunicatorFactory.h"
 #include "CTransport.h"
+#include "CRingItemTransport.h"
 #include "CSender.h"
 #include "CReceiver.h"
 #include "CRingItemSorter.h"
+#include "CDataSinkElement.h"
+#include "CRingItemTransportFactory.h"
 
 
 #include <stdlib.h>
@@ -41,8 +44,14 @@ static const int SORTEDDATA_SERVICE(3);
 CZMQThreadedClassifierApp::CZMQThreadedClassifierApp(gengetopt_args_info& args) :
     CClassifierApp(args),
     m_pSourceElement(nullptr), m_pSourceThread(nullptr),
+    
     m_pSortServer(nullptr), m_pSortReceiver(nullptr), m_pSortSource(nullptr),
-    m_pSortSender(nullptr), m_pSortElement(nullptr), m_pSortThread(nullptr)
+    m_pSortSender(nullptr), m_pSortElement(nullptr), m_pSortThread(nullptr),
+    
+    m_pSortClient(nullptr), m_pSortData(nullptr),
+    m_pRingSink(nullptr), m_pRingSender(nullptr),
+    m_pSinkElement(nullptr), m_pSinkThread(nullptr)
+    
 {}
     
 /**
@@ -58,6 +67,17 @@ CZMQThreadedClassifierApp::~CZMQThreadedClassifierApp()
     delete m_pSortElement;          // Deletes the CSender & CReceiver.
     delete m_pSortSource;
     delete m_pSortServer;
+    
+    delete m_pSinkThread;
+    delete m_pSinkElement;
+    delete m_pSortClient;
+    delete m_pRingSink;
+    
+    for(int i =0; i < m_workers.size(); i++) {
+        delete m_workers[i];
+    }
+    
+    
 }
 
 /**
@@ -94,6 +114,21 @@ CZMQThreadedClassifierApp::operator()()
     m_pSortThread = new CThreadedProcessingElement(m_pSortElement);
     m_pSortThread->start();
     
+    //  Create the ultimate data sink.  Gets data from the
+    // SORTEDDATA_SERVICE and disposes it as determined by the --sink
+    // command parameter:
+    
+    
+    m_pSortClient   = commFactory.createOneToOneSink(SORTEDDATA_SERVICE);
+    m_pSortData     = new CReceiver(*m_pSortClient);
+    m_pRingSink     =
+        CRingItemTransportFactory::createTransport(
+            m_params.sink_arg, CRingBuffer::producer
+        );
+    m_pRingSender = new CSender(*m_pRingSink);
+    m_pSinkElement = new CDataSinkElement(*m_pSortData, *m_pRingSender);
+    m_pSinkThread  = new CThreadedProcessingElement(m_pSinkElement);
+    m_pSinkThread->start();
     
     sleep(1);                    // Let the threads get established.
     
@@ -101,5 +136,9 @@ CZMQThreadedClassifierApp::operator()()
     
     m_pSourceThread->join();
     m_pSortThread->join();
+    m_pSinkThread->join();
+    for(int i =0; i < m_workers.size(); i++) {
+        m_workers[i]->join();
+    }
     return EXIT_SUCCESS;
 }
