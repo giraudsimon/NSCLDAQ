@@ -21,7 +21,7 @@
 #ifndef CRINGITEMSORTER_H
 #define CRINGITEMSORTER_H
 
-#include "CDataSinkElement.h"
+#include "CProcessingElement.h"
 #include <DataFormat.h>
 #include <deque>
 #include <stdint.h>
@@ -51,7 +51,7 @@ class CSender;
  *         will be clumped together.
  *         
  */
-class CRingItemSorter  : public CDataSinkElement
+class CRingItemSorter  : public CProcessingElement
 {
     // Data types for the dequeue.  Each dequeue element is a size
     // and a block of ring items:
@@ -69,7 +69,7 @@ public:
         CReceiver& fanin, CSender& sink, uint64_t window, size_t nWorkers
     );
     virtual ~CRingItemSorter();
-    
+    virtual void operator()();
     virtual void process(void* pData, size_t nBytes);
 };
 
