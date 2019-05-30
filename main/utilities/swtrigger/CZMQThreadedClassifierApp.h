@@ -25,6 +25,11 @@
 class CRingItemZMQSourceElement;
 class CThreadedProcessingElement;
 
+class CTransport;
+class CSender;
+class CReceiver;
+class CRingItemSorter;
+
 /**
  * @class CZMQThreadedClassifierApp
  *     This is a concrete class that uses ZMQ for communications and
@@ -51,6 +56,15 @@ private:
     
     CRingItemZMQSourceElement* m_pSourceElement;
     CThreadedProcessingElement* m_pSourceThread;
+    
+    // Stuff needed to support the sorter.
+    
+    CTransport*                 m_pSortServer;
+    CReceiver*                  m_pSortReceiver;
+    CTransport*                 m_pSortSource;
+    CSender*                    m_pSortSender;
+    CRingItemSorter*            m_pSortElement;
+    CThreadedProcessingElement* m_pSortThread;
     
 public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);
