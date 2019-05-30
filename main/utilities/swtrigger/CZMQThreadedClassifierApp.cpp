@@ -133,6 +133,7 @@ CZMQThreadedClassifierApp::operator()()
     m_pSinkElement = new CDataSinkElement(*m_pSortData, *m_pRingSender);
     m_pSinkThread  = new CThreadedProcessingElement(m_pSinkElement);
     m_pSinkThread->start();
+    startWorkers();
     
     sleep(1);                    // Let the threads get established.
     
