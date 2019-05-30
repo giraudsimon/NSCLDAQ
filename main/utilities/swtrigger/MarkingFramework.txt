@@ -121,3 +121,11 @@ you're distributing this you may use e.g. tcp protocols:
 
 Note the form of a URI for tcp is tcp://host.name:tcpip-port
 
+Still todo 5/30/2019
+
+*   Data source must send blocks of data not just individual ring items.
+*   Data source must tag ring items with actual or generated timestamps.
+*   Ring marking worker must handle blocks of ring items.
+*   Ring marking worker must handle the fact that ring items are pre-pended
+    with a timestamp value.
+ 
