@@ -21,6 +21,8 @@
 #ifndef CZMQTHREADEDCLASSIFIERAPP_H
 #define CZMQTHREADEDCLASSIFIERAPP_H
 #include "CClassifierApp.h"
+#include "CRingItemMarkingWorker.h"
+
 #include <vector>
 
 class CRingItemZMQSourceElement;
@@ -54,6 +56,8 @@ class CDataSinkElement;
 class CZMQThreadedClassifierApp : public CClassifierApp
 {
 private:
+    typedef CRingMarkingWorker::Classifier* (*ClassifierFactory)();
+private:
     
     // Data source objects.
     
@@ -84,6 +88,9 @@ public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);
     virtual ~CZMQThreadedClassifierApp();
     virtual int operator()();
+private:
+    void startWorkers();
+    ClassifierFactory getClassifierFactory(); 
 };
 
 #endif

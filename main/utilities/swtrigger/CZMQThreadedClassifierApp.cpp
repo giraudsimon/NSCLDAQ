@@ -29,9 +29,13 @@
 #include "CRingItemSorter.h"
 #include "CDataSinkElement.h"
 #include "CRingItemTransportFactory.h"
+#include "CZMQDealerTransport.h"
 
 
+#include <dlfcn.h>
 #include <stdlib.h>
+#include <stdexcept>
+#include <errno.h>
 
 static const int DISTRIBUTION_SERVICE (1);
 static const int SORT_SERVICE(2);
@@ -141,4 +145,78 @@ CZMQThreadedClassifierApp::operator()()
         m_workers[i]->join();
     }
     return EXIT_SUCCESS;
+}
+/////////////////////////////////////////////////////////////////////////////
+// PRivate methods.
+
+/**
+ * startWorkers
+ *    - Get the classifier factory from the sll.
+ *    - Create a worker threads that encapsulate a CRingMarkingWorker
+ *      that uses the user classifier class.
+ *    - Thread objects pointers are stored in m_workers and started.
+ */
+void
+CZMQThreadedClassifierApp::startWorkers()
+{
+    CZMQCommunicatorFactory commFactory;
+    ClassifierFactory fact = getClassifierFactory();
+    for (int i =0; i < m_params.workers_arg; i++) {
+        CRingMarkingWorker::Classifier* pClassifier = (*fact)();
+        std::string dealerUri = commFactory.getUri(DISTRIBUTION_SERVICE);
+        CFanoutClientTransport *pFanoutClient =
+            new CZMQDealerTransport(dealerUri.c_str(), i);
+        CTransport* pFaninXport =
+            commFactory.createFanInSource(SORT_SERVICE);
+        CSender*    pFaninSender = new CSender(*pFaninXport);
+        CRingMarkingWorker* pWorker =
+            new CRingMarkingWorker(*pFanoutClient, *pFaninSender, i, pClassifier);
+        CThreadedProcessingElement* pThread =
+            new CThreadedProcessingElement(pWorker);
+        pThread->start();
+        m_workers.push_back(pThread);
+    }
+}
+/**
+ * getClassifierFactory
+ *    Returns a pointer to the classfier factory in the users's --classifier
+ *    library.
+ *
+ *    This is an extern "C" function called createClassifier
+ *    it must have the signatrure:
+ *
+ * \verbatim
+ *       CRingMarkingWorker::Classifier* createClassifier();
+ * \endverbatim
+ *
+ *   @return pointer to the factory function.
+ *   @throw std::runtime_error - if we can't get that function for whatever
+ *                               reason.
+ */
+CZMQThreadedClassifierApp::ClassifierFactory
+CZMQThreadedClassifierApp::getClassifierFactory()
+{
+    void* soHandle = dlopen(m_params.classifier_arg, RTLD_NOW |RTLD_GLOBAL);
+    if (!soHandle) {
+        std::string error = dlerror();
+        std::string msg   = "Failed to open shared library: ";
+        msg += m_params.classifier_arg;
+        msg += " ";
+        msg += error;
+        throw std::runtime_error(msg);
+    }
+    dlerror();                         // Clear errors (from manpage example).
+    void* rawFactory = dlsym(soHandle, "createClassifier");
+    char* error = dlerror();
+    if (error != nullptr) { 
+        std::string msg = "Unable to locate 'createClassifier' in  ";
+        msg += m_params.classifier_arg;
+        msg += " ";
+        msg += error;
+        msg += " be sure it's delcared extern \"C\"";
+        throw std::runtime_error(msg);
+    }
+    
+    ClassifierFactory result = reinterpret_cast<ClassifierFactory>(rawFactory);
+    return result;
 }

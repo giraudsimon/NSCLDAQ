@@ -43,7 +43,7 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp
 
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
-SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
 
