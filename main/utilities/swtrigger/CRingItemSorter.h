@@ -63,15 +63,20 @@ class CRingItemSorter  : public CProcessingElement
     // Data types for the dequeue.  Each dequeue element is a size
     // and a block of ring items:
     
-    typedef std::pair<size_t, pRingItem*>  QueueElement;
+    typedef struct _Item {
+        uint64_t s_timestamp;
+        RingItem s_item;
+    } Item, *pItem;
+    typedef std::pair<size_t, pItem>  QueueElement;
 private:
     CReceiver*   m_pDataSource;
     CSender*     m_pDataSink;
     uint64_t     m_nTimeWindow;
-    std::deque<QueueElement>  m_pQueuedData;
+    std::deque<QueueElement>  m_QueuedData;
     size_t       m_nEndsRemaining;
 
 public:
+    friend  bool operator<(QueueElement& e, QueueElement& value);
     CRingItemSorter(
         CReceiver& fanin, CSender& sink, uint64_t window, size_t nWorkers
     );
@@ -80,6 +85,8 @@ public:
     virtual void process(void* pData, size_t nBytes);
 private:
     void flush(uint64_t until = UINT64_MAX);
+    bool flushRun();
+   
 };
 
 
