@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <sys/uio.h>
 #include <array>
+#include <fragment.h>
+
 /**
  * constructor
  *    Create the receiver (data source) using a transport produced by  the
@@ -87,7 +89,12 @@ CRingItemZMQSourceElement::process(void* pData, size_t nBytes)
             
             m_nLastTimestamp = 0;
         } else if (pItem->s_body.u_noBodyHeader.s_mbz) {   // have a body header else:
-            m_nLastTimestamp = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp;
+            uint64_t bheadertstamp =
+                pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp;
+            if (bheadertstamp == NULL_TIMESTAMP) {
+                bheadertstamp = m_nLastTimestamp;            // Null timestamp means last
+            }
+            m_nLastTimestamp = bheadertstamp;
            
         }
         // By now m_nLasTimetamp is what we want.
