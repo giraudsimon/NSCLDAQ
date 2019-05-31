@@ -739,6 +739,22 @@ CRingItem::bodyHeaderToString() const
         result << "SourceID:     " << pHeader->s_sourceId  << std::endl;
         result << "Barrier Type: " << pHeader->s_barrier << std::endl;
         
+        // 11.4 can have additional body header words.  If those are present
+        // they will just be dumped as hex.  The assumption in this
+        // implementation is that there won't be many of them:
+        
+        if (pHeader->s_size > sizeof(BodyHeader)) {
+          result << "Additional body header words\n";
+          uint16_t* pAdditional = reinterpret_cast<uint16_t*>(pHeader+1);
+          size_t nWords = (pHeader->s_size - sizeof(BodyHeader)) / sizeof(uint16_t);
+          
+          result << std::hex;
+          for (int i =0; i < nWords; i++) {
+            result << *pAdditional++ << ' ';
+          }
+          result << std::dec << std::endl;
+        }
+        
     } else {
         result << "No body header\n";
     }
