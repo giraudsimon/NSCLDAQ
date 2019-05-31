@@ -60,6 +60,7 @@ class CSender;
  */
 class CRingItemSorter  : public CProcessingElement
 {
+public:
     // Data types for the dequeue.  Each dequeue element is a size
     // and a block of ring items:
     
@@ -67,8 +68,9 @@ class CRingItemSorter  : public CProcessingElement
         uint64_t s_timestamp;
         RingItem s_item;
     } Item, *pItem;
-    typedef std::pair<size_t, pItem>  QueueElement;
+
 private:
+    typedef std::pair<size_t, pItem>  QueueElement;
     CReceiver*   m_pDataSource;
     CSender*     m_pDataSink;
     uint64_t     m_nTimeWindow;

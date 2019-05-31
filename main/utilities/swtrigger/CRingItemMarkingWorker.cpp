@@ -21,12 +21,20 @@
 
 #include "CRingItemMarkingWorker.h"
 #include "CSender.h"
+#include "CRingItemSorter.h" // message format.
 
 #include <CRingItem.h>
 #include <CRingItemFactory.h>
 #include <DataFormat.h>
 #include <stdexcept>
 #include <sys/uio.h>
+
+
+// Shorthand for the messages:
+
+typedef CRingItemSorter::Item Message, *pMessage;
+
+
 
 /**
  * constructor

@@ -31,18 +31,18 @@
  */
 class CRingItemZMQSourceElement : public CDataSourceElement
 {
-private:
-    size_t m_nChunkSize;
-    uint64_t m_nLastTimestamp;
-    
-    // The data we send is prepended by a timestamp:
-    
+public:
     typedef struct _Message {
         uint64_t  s_timestamp;
         size_t    s_nBytes;
         void*     s_pData;
     } Message, *pMessage;
+
+private:
+    size_t m_nChunkSize;
+    uint64_t m_nLastTimestamp;
     
+ 
     std::vector<Message>   m_chunk;
     
 public:
