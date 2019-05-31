@@ -22,7 +22,7 @@
 #define CRINGITEMMARKINGWORKER_H
 #include "CParallelWorker.h"
 #include <stdint.h>
-
+#include <sys/uio.h>
 class CRingItem;
 /**
  * @class CRingMarkingWorker
@@ -56,8 +56,13 @@ public:
     virtual ~CRingMarkingWorker() {}
     virtual void process(void* pData, size_t nBytes);
 private:
-    void outputItem(CRingItem& item);
-    void outputItem(CRingItem& item, uint32_t classification);
+    size_t countItems(const void* pData, size_t nBytes);
+    void*  nextItem(const void* pData);
+    size_t messageSize(const void* pData);
+    size_t   createClassifiedParts(
+        iovec* vec, void* pData, uint32_t& classification
+    );
+
 };
 
 #endif
