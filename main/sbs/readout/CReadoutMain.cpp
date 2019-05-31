@@ -46,6 +46,7 @@
 using namespace std;
 
 extern CTCLApplication* gpTCLApplication;
+static const size_t DEFAULT_BUFFERSIZE(4096);
 
 /*!
   Constructor just initializes member variables:
@@ -221,7 +222,10 @@ CReadoutMain::CreateExperiment(void* parsed)
   
   std::string ringname = getRingName(parsedArgs);
 
-  CExperiment* pExperiment = new CExperiment(ringname);
+  CExperiment* pExperiment =
+    new CExperiment(
+      ringname, DEFAULT_BUFFERSIZE, parsedArgs.no_barriers_given ? false : true
+    );
   pExperiment->setDefaultSourceId(parsedArgs.sourceid_arg);
   return pExperiment;
 

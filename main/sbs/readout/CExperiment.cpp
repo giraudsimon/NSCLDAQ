@@ -83,9 +83,15 @@ extern CTCLApplication* gpTCLApplication; // We need this to get the tcl interp.
    - If necessary create/format the ring.
    - Create the ring buffer object in which data will be placed.
    - Save the initial event buffer size.
+   
+   @param ringName- name (not URI) of the ring buffer to attach.
+   @param eventBufferSize - size of the event buffer that will be
+                            used to hold events prior to constructing ringitems
+   @param barriers - true if state change items should be barriers
+                     see the --no-barriers command line option.
 */
 CExperiment::CExperiment(string ringName,
-			 size_t eventBufferSize) :
+			 size_t eventBufferSize, bool barriers) :
   m_pRing(0),
   m_pRunState(0),
   m_pScalers(0),
@@ -95,7 +101,8 @@ CExperiment::CExperiment(string ringName,
   m_pScalerTrigger(0),
   m_pTriggerLoop(0),
   m_nDataBufferSize(eventBufferSize),
-  m_nDefaultSourceId(0)
+  m_nDefaultSourceId(0),
+  m_useBarriers(barriers)
 {
   try {
     m_pRing = CRingBuffer::createAndProduce(ringName);
@@ -254,7 +261,8 @@ CExperiment::Start(bool resume)
 
     uint32_t elapsedTime = (msTime - m_nRunStartStamp - m_nPausedmSeconds)/1000;
 
-    CRingStateChangeItem item(NULL_TIMESTAMP, m_nSourceId, BARRIER_START,
+    CRingStateChangeItem item(NULL_TIMESTAMP, m_nSourceId,
+        m_useBarriers ? BARRIER_START : 0,
         resume ? RESUME_RUN : BEGIN_RUN,  m_pRunState->m_runNumber,
         elapsedTime, stamp,
         std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE));
@@ -413,12 +421,11 @@ CExperiment::syncEndRun(bool pause)
     finalState = RunState::inactive;
   }
 
-  CRingStateChangeItem item(NULL_TIMESTAMP, m_nSourceId, BARRIER_END,
-                            itemType, 
-			    m_pRunState->m_runNumber,
-			    endOffset,
-			    now,
-			    std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE));
+  CRingStateChangeItem item(
+    NULL_TIMESTAMP, m_nSourceId,
+    m_useBarriers ? BARRIER_END : 0, itemType, m_pRunState->m_runNumber,
+    endOffset, now, std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE)
+  );
   item.commitToRing(*m_pRing);
   pMain->logProgress("State change item emitted");
 

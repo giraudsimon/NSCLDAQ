@@ -102,13 +102,13 @@ private:
   uint32_t                m_nSourceId;
   bool                    m_needHeader;
   uint16_t                m_nDefaultSourceId;
-
+  bool                    m_useBarriers;
 
   // Canonicals:
 
 public:
   CExperiment(std::string ringName,
-	      size_t      eventBufferSize = 4096);
+	      size_t      eventBufferSize = 4096, bool barriers = true);
   ~CExperiment();		// This is a final class.
 private:
   CExperiment(const CExperiment&);
