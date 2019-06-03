@@ -185,10 +185,12 @@ CRingMarkingWorker::createClassifiedParts(
 {
     pMessage p   = static_cast<pMessage>(pData);
  
-    // Adjust the body header size upwards for the uint32_t:
+    // Adjust the body header size and size upwards for the uint32_t:
     
+    size_t ringItemSize = p->s_item.s_header.s_size;   // Original size.
+    p->s_item.s_header.s_size += sizeof(uint32_t);
     p->s_item.s_body.u_hasBodyHeader.s_bodyHeader.s_size += sizeof(uint32_t);
-    size_t ringItemSize = p->s_item.s_header.s_size;
+    
     
     // Describe the message up through the old body header:
     
