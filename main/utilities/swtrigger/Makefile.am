@@ -41,7 +41,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
-	CRingItemSorter.h CRingItemSorter.cpp
+	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
+	CRingBlockDataSink.cpp
 
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl

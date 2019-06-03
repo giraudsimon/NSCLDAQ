@@ -30,7 +30,7 @@
 #include "CDataSinkElement.h"
 #include "CRingItemTransportFactory.h"
 #include "CZMQDealerTransport.h"
-
+#include "CRingBlockDataSink.h"
 
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -130,7 +130,7 @@ CZMQThreadedClassifierApp::operator()()
             m_params.sink_arg, CRingBuffer::producer
         );
     m_pRingSender = new CSender(*m_pRingSink);
-    m_pSinkElement = new CDataSinkElement(*m_pSortData, *m_pRingSender);
+    m_pSinkElement = new CRingBlockDataSink(*m_pSortData, *m_pRingSender);
     m_pSinkThread  = new CThreadedProcessingElement(m_pSinkElement);
     m_pSinkThread->start();
     startWorkers();
