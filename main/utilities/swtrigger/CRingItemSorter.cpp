@@ -185,12 +185,13 @@ bool CRingItemSorter::flushRun()
     pItem p       = m_QueuedData.back().second;
     size_t nBytes = m_QueuedData.back().first;
     while (nBytes) {
-        if(p->s_item.s_header.s_type = END_RUN) return true;
+        if(p->s_item.s_header.s_type == END_RUN) return true;
         
         // Point at the next item in the block:
         
         uint8_t* pBytes = reinterpret_cast<uint8_t*>(p);
-        size_t  itemSize = sizeof(uint64_t) + p->s_item.s_header.s_size;
+        size_t  itemSize
+            = sizeof(uint64_t) + p->s_item.s_header.s_size;
         pBytes += itemSize;
         nBytes -= itemSize;
         
