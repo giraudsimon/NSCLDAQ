@@ -166,12 +166,12 @@ CZMQThreadedClassifierApp::startWorkers()
         CRingMarkingWorker::Classifier* pClassifier = (*fact)();
         std::string dealerUri = commFactory.getUri(DISTRIBUTION_SERVICE);
         CFanoutClientTransport *pFanoutClient =
-            new CZMQDealerTransport(dealerUri.c_str(), i);
+            new CZMQDealerTransport(dealerUri.c_str());
         CTransport* pFaninXport =
             commFactory.createFanInSource(SORT_SERVICE);
         CSender*    pFaninSender = new CSender(*pFaninXport);
         CRingMarkingWorker* pWorker =
-            new CRingMarkingWorker(*pFanoutClient, *pFaninSender, i, pClassifier);
+            new CRingMarkingWorker(*pFanoutClient, *pFaninSender, i+1, pClassifier);
         CThreadedProcessingElement* pThread =
             new CThreadedProcessingElement(pWorker);
         pThread->start();
