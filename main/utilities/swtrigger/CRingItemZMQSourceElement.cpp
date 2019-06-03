@@ -120,7 +120,7 @@ CRingItemZMQSourceElement::sendChunk()
     
     std::vector<iovec> parts(m_chunk.size()*2);
     size_t n(0);
-    for (int  i =0; i < m_chunk.size(); i) {
+    for (int  i =0; i < m_chunk.size(); i++) {
         parts[n].iov_base = &m_chunk[i].s_timestamp;
         parts[n].iov_len  = sizeof(uint64_t);
         
