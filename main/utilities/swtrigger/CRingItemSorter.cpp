@@ -148,7 +148,7 @@ CRingItemSorter::flush(uint64_t until)
 {
     // Figure out how many blocks we can send:L
     
-    size_t numBlocks;
+    size_t numBlocks(0);
     for (auto p = m_QueuedData.begin(); p != m_QueuedData.end(); ++p) {
         if (p->second->s_timestamp >= until) {
             break;
