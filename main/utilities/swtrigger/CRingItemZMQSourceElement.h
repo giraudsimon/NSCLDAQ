@@ -50,7 +50,7 @@ public:
         const char* ringUri, const char* routerUri, size_t chunkSize=1
     );
     virtual ~CRingItemZMQSourceElement() {}
-    
+    virtual void operator()();             // Override b/c process frees memory.
     virtual void process(void* pData, size_t nBytes);
 private:
     void sendChunk();

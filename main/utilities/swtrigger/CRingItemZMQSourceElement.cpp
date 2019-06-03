@@ -57,7 +57,24 @@ CRingItemZMQSourceElement::CRingItemZMQSourceElement(
         *(new CZMQRouterTransport(routerUri))
     ), m_nChunkSize(chunkSize), m_nLastTimestamp(0)
 {}
+/**
+ * operator()
+ *     Flow control.  This must be overridden because we want process
+ *     to control the memory allocation of messages to allow for chunking
+ *     without undue data movement.
+ */
 
+void
+CRingItemZMQSourceElement::operator()()
+{
+    void* pData;
+    size_t nBytes(0);
+    do {
+        getSource()->getMessage(&pData, nBytes);
+        process(pData, nBytes);
+ 
+    } while(nBytes > 0);
+}
 /**
  * process
  *    - If the message is an end (nBytes == 0), the chunk is sent.
