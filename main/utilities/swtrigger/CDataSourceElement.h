@@ -49,6 +49,7 @@ public:
     virtual void process(void* pData, size_t nBytes);
 protected:
     CSender* getSender() {return m_pFanout;}
+    CReceiver* getSource() { return m_pDataSource; }
 };
 
 #endif
