@@ -1,4 +1,5 @@
-lib_LTLIBRARIES=libSwTrigger.la
+lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la
+
 bin_PROGRAMS=SoftwareTrigger
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
@@ -44,6 +45,10 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
+libTestClassifier_la_SOURCES=TestClassifier.cpp
+libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
 
