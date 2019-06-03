@@ -93,6 +93,7 @@ CRingBufferTransport::recv(void** ppData, size_t& size)
     }
     memcpy(pResult, &rHeader, rHeader.s_size);
     *ppData = pResult;
+    size    = rHeader.s_size;
     
     // If that was the last item in the ring buffer ensure we get a new chunk
     
