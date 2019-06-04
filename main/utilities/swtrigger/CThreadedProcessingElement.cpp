@@ -51,6 +51,7 @@ CThreadedProcessingElement::~CThreadedProcessingElement()
 void
 CThreadedProcessingElement::run()
 {
+  __sync_synchronize();              // Full memory barrier.
     (*m_pProcessor)();
     
 }
