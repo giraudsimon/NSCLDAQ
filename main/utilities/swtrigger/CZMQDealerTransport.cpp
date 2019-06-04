@@ -88,6 +88,7 @@ CZMQDealerTransport::recv(void** ppData, size_t& size)
     requestData();
     
     size = 0;             // In case this is an end:
+    *ppData = nullptr;    
     if(stripDelimeter()) {
         m_pTransport->recv(ppData, size);
     }

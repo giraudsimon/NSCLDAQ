@@ -68,20 +68,24 @@ CZMQTransport::recv(void** ppData, size_t& size)
         } while (more);
         // Now marshall the message parts into a buffer:
         
-        uint8_t* pBuffer = static_cast<uint8_t*>(malloc(totalBytes));
-        if (!pBuffer) {
-            throw std::runtime_error("CZMQTransport::recv - allocation failed");
-        }
-        *ppData = pBuffer;
         size    = totalBytes;
-        
-        for (int i = 0; i < messageParts.size(); i++) {
-            size_t partSize = messageParts[i]->size();
-            memcpy(pBuffer, messageParts[i]->data(), partSize);
-            pBuffer += partSize;
-            delete messageParts[i];
+        if (totalBytes) {
+            uint8_t* pBuffer = static_cast<uint8_t*>(malloc(totalBytes));
+            if (!pBuffer) {
+                throw std::runtime_error("CZMQTransport::recv - allocation failed");
+            }
+            *ppData = pBuffer;
+            
+            
+            for (int i = 0; i < messageParts.size(); i++) {
+                size_t partSize = messageParts[i]->size();
+                memcpy(pBuffer, messageParts[i]->data(), partSize);
+                pBuffer += partSize;
+                delete messageParts[i];
+            }
+        } else {
+            *ppData = nullptr;
         }
-        
         
     } else {
         throw std::invalid_argument("CZMQTransport::recv - socket is not set.");
