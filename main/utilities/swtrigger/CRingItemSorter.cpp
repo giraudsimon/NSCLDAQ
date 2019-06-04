@@ -22,6 +22,7 @@
 #include "CSender.h"
 #include "CReceiver.h"
 #include <stdlib.h>
+#include <iostream>
 
 /**
  * constructor
@@ -67,6 +68,7 @@ CRingItemSorter::operator()()
         process(pData, nBytes);
     }
     flush();                    // Flush everything.
+    m_pDataSink->sendMessage(static_cast<void*>(nullptr), 0);    // Send end record.
 
 }
 
@@ -90,6 +92,7 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     pItem p = static_cast<pItem>(pData);
     uint64_t timestamp = p->s_timestamp;
     QueueElement q = {nBytes, p};
+    
 
     // insert the queue elements.
     
@@ -98,7 +101,7 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     
     if (
         m_QueuedData.empty() ||
-        (m_QueuedData.back().second->s_timestamp < timestamp)
+        (m_QueuedData.back().second->s_timestamp <= timestamp)
     ) {    
         m_QueuedData.push_back(q);
     } else if(m_QueuedData.front().second->s_timestamp > timestamp) {
@@ -120,13 +123,17 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     
     uint64_t tsFront = m_QueuedData.front().second->s_timestamp;
     uint64_t diff =
-        m_QueuedData.back().second->s_timestamp - tsFront;
+        m_QueuedData.back().second->s_timestamp - tsFront;    
     if (diff > m_nTimeWindow) {
         flush(tsFront + m_nTimeWindow);
     }
+
     // If the last element of the last item is an end of run flush all.
-    
-    if (flushRun()) flush();
+    if (flushRun()) {
+        
+        flush();
+    }
+ 
     
 }
 /////////////////////////////////////////////////////////////////////////
@@ -152,6 +159,9 @@ CRingItemSorter::flush(uint64_t until)
     for (auto p = m_QueuedData.begin(); p != m_QueuedData.end(); ++p) {
         if (p->second->s_timestamp >= until) {
             break;
+        }
+        if (p->second->s_item.s_header.s_type == END_RUN) {
+            m_nEndsRemaining--;                     // one less end remaining.
         }
         numBlocks++;
     }
