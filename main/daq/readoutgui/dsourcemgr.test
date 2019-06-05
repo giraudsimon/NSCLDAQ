@@ -367,8 +367,8 @@ tcltest::test addSource-3 {Add source failed in provider} \
     
     set status [catch {$manager startAll} msg]
     list $status $msg
-    
-} -result [list 1 "At least one source could not start: {Failed to start} {Failed to start}"]
+    lrange $status 0 1
+} -result [list 1 "At least one source could not start:]
 
 if {$debug} {
     tcltest::cleanupTests
