@@ -343,6 +343,7 @@ snit::type DataSourceManager {
                 set providerType [dict get $paramDict provider]
                 dict set paramDict sourceid $id
                 if {[catch {::${providerType}::start $paramDict} msg]} {
+		    set msg "$msg : $::errorInfo"
                     incr failures
                     set msg [string map [list \" \\\"] $msg]
                     puts "Failure: $msg"
@@ -397,10 +398,10 @@ snit::type DataSourceManager {
             set provider [dict get $dataSources($id) provider]
             if {[catch {::${provider}::begin $id $runNumber $title} msg]} {
                 foreach sid $startedSourceIds {
-                    set provider [dict get $dataSources($id) provider]
+                    set provider [dict get $dataSources($sid) provider]
                     ::${provider}::end $sid
                 }
-                error "Failed when starting $provider data source $id: $msg"
+                error "Failed when starting $provider data source $id: $msg $::errorInfo"
             }
             lappend startedSourceIds $id
         }
@@ -436,7 +437,7 @@ snit::type DataSourceManager {
             set provider [dict get $dataSources($id) provider]
             if {[::${provider}::check $id]} {  ; # Don't end known dead srcs.
                 if {[catch {::${provider}::end $id} msg]} {
-                    lappend messages [list [list $provider $id] $msg]
+                    lappend messages [list [list $provider $id] $msg $::errorInfo]
                 }
             }
         }
@@ -485,7 +486,7 @@ snit::type DataSourceManager {
         foreach id $sources {
             set provider [dict get $dataSources($id) provider]
             if {[catch {::${provider}::pause $id} msg]} {
-                lappend messages [list [list $provider $id] $msg]
+                lappend messages [list [list $provider $id] $msg $::errorInfo]
             }
         }
         set state paused
@@ -516,7 +517,7 @@ snit::type DataSourceManager {
         foreach id $sources {
             set provider [dict get $dataSources($id) provider]
             if {[catch {::${provider}::resume $id} msg]} {
-                lappend messages [list [list $provider $id] $msg]
+                lappend messages [list [list $provider $id] $msg $::errorInfo]
             }
         }
         set state active
