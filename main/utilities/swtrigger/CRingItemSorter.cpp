@@ -91,7 +91,9 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     
     pItem p = static_cast<pItem>(pData);
     uint64_t timestamp = p->s_timestamp;
-    QueueElement q = {nBytes, p};
+    QueueElement q;
+    q.first = nBytes;
+    q.second= p;
     
 
     // insert the queue elements.
@@ -164,6 +166,10 @@ CRingItemSorter::flush(uint64_t until)
             m_nEndsRemaining--;                     // one less end remaining.
         }
         numBlocks++;
+    }
+    if (numBlocks > m_QueuedData.size()) {
+        std::cerr << " numBlocks too big: " << numBlocks << " " << m_QueuedData.size()
+            << std::endl;
     }
     // Pass 2 to create the iovector.
     

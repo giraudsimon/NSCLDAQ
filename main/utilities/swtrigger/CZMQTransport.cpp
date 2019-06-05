@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
+#include <iostream>
+
 
 // The context singleton:
 
@@ -83,9 +85,15 @@ CZMQTransport::recv(void** ppData, size_t& size)
                 pBuffer += partSize;
                 delete messageParts[i];
             }
+            uint8_t* pBegin = static_cast<uint8_t*>(*ppData);
+            if ((pBuffer - pBegin) > totalBytes) {
+                std::cerr << " Bad error: put " << (pBuffer - pBegin)
+                    << " bytes into " << totalBytes << std::endl;
+            }
         } else {
             *ppData = nullptr;
         }
+        
         
     } else {
         throw std::invalid_argument("CZMQTransport::recv - socket is not set.");

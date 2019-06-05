@@ -28,7 +28,7 @@
 #include <DataFormat.h>
 #include <stdexcept>
 #include <vector>
-
+#include <iostream>
 
 
 // Shorthand for the messages:
@@ -61,6 +61,7 @@ CRingMarkingWorker::CRingMarkingWorker(
 void
 CRingMarkingWorker::process(void* pData, size_t nBytes)
 {
+   
     if (nBytes) {
         // Figure out how many Items we have.  The maximum iovec size is
         // 3*nItems.  For each item:
@@ -72,16 +73,19 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
         // so that's what we'll allocate.
         
         size_t nItems = countItems(pData, nBytes);
+       
         iovec messageParts[nItems*3];            // None yet.
         size_t nParts(0);                        // None yet.
         std::vector<uint32_t> classifications;   // Holds the classifications until sent.
         
         pMessage p = static_cast<pMessage>(pData);
         
+
         for (int i =0; i < nItems; i++) {
             // Items that are not PHYSICS_EVENTS are not classified:
             
             if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
+                std::cerr << "Non physics item: " << p->s_item.s_header.s_type << std::endl;
                 messageParts[nParts].iov_base = p;
                 messageParts[nParts].iov_len  = messageSize(p);
                 nParts++;                                  // Only need one part.
@@ -105,6 +109,9 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
         }
         // Send the data.  Caller frees the message.
         
+        if (nParts > (sizeof(messageParts)/sizeof(iovec))) {
+            std::cerr << " Too many message parts: " << messageParts << std::endl;
+        }
         getSink()->sendMessage(messageParts, nParts);
     }
 }
