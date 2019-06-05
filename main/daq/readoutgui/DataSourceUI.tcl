@@ -477,6 +477,14 @@ proc DataSourceUI::getParameters {provider parameters} {
         # puts "Dialog gave me: $params"
         return $params
     } else {
+	#
+	#  Special case. if there are no parameters just return
+	#  an empty dict.
+
+	if {[llength $parameters] == 0} {
+	    return [dict create]
+	}
+	
         #  Use the generic ugly prompter.
         #
         toplevel .parameterprompter
