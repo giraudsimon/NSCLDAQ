@@ -482,7 +482,7 @@ proc DataSourceUI::getParameters {provider parameters} {
 	#  an empty dict.
 
 	if {[llength $parameters] == 0} {
-	    return [dict create]
+	    return [dict create no-parameters [list] ]
 	}
 	
         #  Use the generic ugly prompter.
