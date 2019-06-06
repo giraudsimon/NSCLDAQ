@@ -113,6 +113,8 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
             std::cerr << " Too many message parts: " << messageParts << std::endl;
         }
         getSink()->sendMessage(messageParts, nParts);
+    } else {
+        getSink()->end();                 // no more data.
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
