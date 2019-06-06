@@ -48,6 +48,7 @@ public:
     
 private:
     Classifier*   m_pClassifier;
+    size_t        m_nItemsProcessed;
 public:
     CRingMarkingWorker(
         CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,

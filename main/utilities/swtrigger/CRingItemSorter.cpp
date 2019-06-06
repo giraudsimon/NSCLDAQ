@@ -66,17 +66,12 @@ CRingItemSorter::operator()()
 {
     void* pData;
     size_t nBytes;
-    void* last(0);
     while (m_nEndsRemaining) {
         m_pDataSource->getMessage(&pData, nBytes);
         if (nBytes == 0) {
             m_nEndsRemaining--;
             
         } else {
-            if (last == pData) {
-                std::cerr << "consecutive duplicates\n";
-            }
-            last = pData;
             process(pData, nBytes);
         }
     }
@@ -107,12 +102,6 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     QueueElement q;
     q.first = nBytes;
     q.second= p;
-
-    if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
-        std::cerr << "Non physics event: "
-            << p->s_item.s_header.s_type << " " << p->s_timestamp << std::endl;
-    }
-    
     
  
     // insert the queue elements.
@@ -165,11 +154,7 @@ CRingItemSorter::process(void* pData, size_t nBytes)
         flush(tsFront + m_nTimeWindow);
     }
 
-    // If the last element of the last item is an end of run flush all.
-    if (flushRun()) {
-        
-        flush();
-    }
+   
  
 }
 /////////////////////////////////////////////////////////////////////////
@@ -189,15 +174,19 @@ CRingItemSorter::process(void* pData, size_t nBytes)
 void
 CRingItemSorter::flush(uint64_t until)
 {
-    // Figure out how many blocks we can send:L
+   
+    // Figure out how many blocks we can send:
     
     size_t numBlocks(0);
     for (auto p = m_QueuedData.begin(); p != m_QueuedData.end(); ++p) {
-        if (p->second->s_timestamp >= until) {
+        if (p->second->s_timestamp > until) {
             break;
         }
         numBlocks++;
     }
+
+    numBlocks--;
+    if (!numBlocks) return;
     if (numBlocks > m_QueuedData.size()) {
         std::cerr << " numBlocks too big: " << numBlocks << " " << m_QueuedData.size()
             << std::endl;

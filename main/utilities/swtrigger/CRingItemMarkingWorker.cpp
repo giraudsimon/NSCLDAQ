@@ -49,7 +49,9 @@ typedef CRingItemSorter::Item Message, *pMessage;
 CRingMarkingWorker::CRingMarkingWorker(
     CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,
     Classifier* pClassifier
-) : CParallelWorker(fanin, sink, clientId), m_pClassifier(pClassifier) {}
+) : CParallelWorker(fanin, sink, clientId), m_pClassifier(pClassifier),
+m_nItemsProcessed(0)
+{}
 
 /**
  * process
@@ -61,7 +63,7 @@ CRingMarkingWorker::CRingMarkingWorker(
 void
 CRingMarkingWorker::process(void* pData, size_t nBytes)
 {
-   
+    m_nItemsProcessed++;
     if (nBytes) {
         // Figure out how many Items we have.  The maximum iovec size is
         // 3*nItems.  For each item:
