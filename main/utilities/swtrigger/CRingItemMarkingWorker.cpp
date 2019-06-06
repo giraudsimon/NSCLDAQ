@@ -85,7 +85,7 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
             // Items that are not PHYSICS_EVENTS are not classified:
             
             if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
-                std::cerr << "Non physics item: " << p->s_item.s_header.s_type << std::endl;
+    
                 messageParts[nParts].iov_base = p;
                 messageParts[nParts].iov_len  = messageSize(p);
                 nParts++;                                  // Only need one part.
