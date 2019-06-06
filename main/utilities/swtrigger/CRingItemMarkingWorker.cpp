@@ -82,6 +82,7 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
         
 
         for (int i =0; i < nItems; i++) {
+            void* pNext = nextItem(p);
             // Items that are not PHYSICS_EVENTS are not classified:
             
             if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
@@ -105,7 +106,7 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
                 }
             }
             
-            p = static_cast<pMessage>(nextItem(p));
+            p = static_cast<pMessage>(pNext);
         }
         // Send the data.  Caller frees the message.
         
