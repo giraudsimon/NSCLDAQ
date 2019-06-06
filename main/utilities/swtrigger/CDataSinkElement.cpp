@@ -58,6 +58,7 @@ CDataSinkElement::operator()()
         process(pData, nBytes);
         free(pData);
     } while(nBytes > 0);
+    m_pSink->end();
 }
 /**
  * process
