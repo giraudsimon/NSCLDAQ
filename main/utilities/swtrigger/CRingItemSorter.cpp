@@ -21,6 +21,8 @@
 #include "CRingItemSorter.h"
 #include "CSender.h"
 #include "CReceiver.h"
+#include <DataFormat.h>
+
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -105,6 +107,12 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     QueueElement q;
     q.first = nBytes;
     q.second= p;
+
+    if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
+        std::cerr << "Non physics event: "
+            << p->s_item.s_header.s_type << " " << p->s_timestamp << std::endl;
+    }
+    
     
  
     // insert the queue elements.
@@ -125,14 +133,23 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     } else {
         // Since data are generally ordered modulo worker times,
         // search from the back to the front.
-            
-        for(auto p = m_QueuedData.rbegin(); p != m_QueuedData.rend(); p++) {
-            if (p->second->s_timestamp <= timestamp) {
+         
+        auto p = m_QueuedData.end();
+        --p;
+        while (p != m_QueuedData.begin()) {
+            if (p->second->s_timestamp < timestamp) {
+                p++;
+                m_QueuedData.insert(p, q);
                 inserts++;
-                --p;
-                m_QueuedData.insert(p.base(), q);
                 break;
             }
+            --p;
+        }
+        // If there was no insert we have to insert just after begin:
+        
+        if (!inserts) {
+            inserts++;
+            m_QueuedData.insert(m_QueuedData.begin()+1, q);
         }
     }
     if (inserts != 1) {
@@ -201,18 +218,11 @@ CRingItemSorter::flush(uint64_t until)
     // Remove the sent blocks freeing the data.
     
     
-    std::ofstream log("free.log", std::ios::app | std::ios::out);
-    log << std::hex;
-    log << "--------------------------\n";
+
     for (int i =0; i < numBlocks; i++) {
         pItem p = m_QueuedData.front().second;
-        log << p << std::endl;
-        log.flush();
         free(p);
         m_QueuedData.pop_front();
-        if (m_QueuedData.size() == 0) {
-            std::cerr << "Flush emptied deque\n";
-        }
         if (m_QueuedData.size() && (p == m_QueuedData.front().second)) {
             std::cerr << "Two twinned elements " << std::hex << p <<std::endl;
         }
