@@ -23,6 +23,7 @@
 #include "CReceiver.h"
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 
 /**
  * constructor
@@ -63,12 +64,22 @@ CRingItemSorter::operator()()
 {
     void* pData;
     size_t nBytes;
+    void* last(0);
     while (m_nEndsRemaining) {
         m_pDataSource->getMessage(&pData, nBytes);
-        process(pData, nBytes);
+        if (nBytes == 0) {
+            m_nEndsRemaining--;
+            
+        } else {
+            if (last == pData) {
+                std::cerr << "consecutive duplicates\n";
+            }
+            last = pData;
+            process(pData, nBytes);
+        }
     }
     flush();                    // Flush everything.
-    m_pDataSink->sendMessage(static_cast<void*>(nullptr), 0);    // Send end record.
+    m_pDataSink->end();
 
 }
 
@@ -95,37 +106,44 @@ CRingItemSorter::process(void* pData, size_t nBytes)
     q.first = nBytes;
     q.second= p;
     
-
+ 
     // insert the queue elements.
-    
+    int inserts(0);
     // Special case: If the dequeue is empty just shove it in the front,
     // or the last element has a timestamp < ours just push back:
     
     if (
         m_QueuedData.empty() ||
         (m_QueuedData.back().second->s_timestamp <= timestamp)
-    ) {    
+    ) {
+        inserts++;
         m_QueuedData.push_back(q);
-    } else if(m_QueuedData.front().second->s_timestamp > timestamp) {
+    } else if(m_QueuedData.front().second->s_timestamp >= timestamp) {
         // Special case it's at the front:
-        
+        inserts++;
         m_QueuedData.push_front(q);
     } else {
-        // Need to find where to insert -- std::lower_bound gives us the
-        // iterator to insert before.
-        
-        auto i = std::lower_bound(
-            m_QueuedData.begin(), m_QueuedData.end(), q
-        );
-        --i;                    // Insert after here:
-        m_QueuedData.insert(i, q);
+        // Since data are generally ordered modulo worker times,
+        // search from the back to the front.
+            
+        for(auto p = m_QueuedData.rbegin(); p != m_QueuedData.rend(); p++) {
+            if (p->second->s_timestamp <= timestamp) {
+                inserts++;
+                --p;
+                m_QueuedData.insert(p.base(), q);
+                break;
+            }
+        }
+    }
+    if (inserts != 1) {
+        std::cerr << "Non singular insert: " << inserts << std::endl;
     }
 
     // See if we can emit any:
-    
     uint64_t tsFront = m_QueuedData.front().second->s_timestamp;
     uint64_t diff =
         m_QueuedData.back().second->s_timestamp - tsFront;    
+
     if (diff > m_nTimeWindow) {
         flush(tsFront + m_nTimeWindow);
     }
@@ -136,7 +154,6 @@ CRingItemSorter::process(void* pData, size_t nBytes)
         flush();
     }
  
-    
 }
 /////////////////////////////////////////////////////////////////////////
 // Private methods:
@@ -162,9 +179,6 @@ CRingItemSorter::flush(uint64_t until)
         if (p->second->s_timestamp >= until) {
             break;
         }
-        if (p->second->s_item.s_header.s_type == END_RUN) {
-            m_nEndsRemaining--;                     // one less end remaining.
-        }
         numBlocks++;
     }
     if (numBlocks > m_QueuedData.size()) {
@@ -182,12 +196,26 @@ CRingItemSorter::flush(uint64_t until)
     // Send the data.
     
     m_pDataSink->sendMessage(parts, numBlocks);
-    
+
+
     // Remove the sent blocks freeing the data.
     
+    
+    std::ofstream log("free.log", std::ios::app | std::ios::out);
+    log << std::hex;
+    log << "--------------------------\n";
     for (int i =0; i < numBlocks; i++) {
-        free(m_QueuedData.front().second);
+        pItem p = m_QueuedData.front().second;
+        log << p << std::endl;
+        log.flush();
+        free(p);
         m_QueuedData.pop_front();
+        if (m_QueuedData.size() == 0) {
+            std::cerr << "Flush emptied deque\n";
+        }
+        if (m_QueuedData.size() && (p == m_QueuedData.front().second)) {
+            std::cerr << "Two twinned elements " << std::hex << p <<std::endl;
+        }
     }
     
 }
