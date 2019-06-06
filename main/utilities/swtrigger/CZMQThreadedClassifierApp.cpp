@@ -101,9 +101,12 @@ CZMQThreadedClassifierApp::operator()()
     CZMQCommunicatorFactory commFactory;          // URL translation.
     std::string routerUri = commFactory.getUri(DISTRIBUTION_SERVICE);
     m_pSourceElement =
-        new CRingItemZMQSourceElement(m_params.source_arg, routerUri.c_str());
+        new CRingItemZMQSourceElement(
+            m_params.source_arg, routerUri.c_str(), m_params.clump_size_arg
+        );
     m_pSourceThread = new CThreadedProcessingElement(m_pSourceElement);
                       // Can start the thread.
+    m_pSourceThread->start();
     
     // The next server we need to establish is the sorter.
     // The sorter is a pull server for fanin and a push server for
@@ -127,30 +130,30 @@ CZMQThreadedClassifierApp::operator()()
   
     m_pSortClient   = commFactory.createOneToOneSink(SORTEDDATA_SERVICE);
     m_pSortData     = new CReceiver(*m_pSortClient);
-    m_pRingSink     = new CNullTransport;
-#if 0
+
     m_pRingSink     =
         CRingItemTransportFactory::createTransport(
             m_params.sink_arg, CRingBuffer::producer
         );
-#endif
     m_pRingSender = new CSender(*m_pRingSink);
     m_pSinkElement = new CRingBlockDataSink(*m_pSortData, *m_pRingSender);
     m_pSinkThread  = new CThreadedProcessingElement(m_pSinkElement);
     m_pSinkThread->start();
 
+ 
+    
+    sleep(1);
+    
     startWorkers();
-    
-    m_pSourceThread->start();   // Then start the data source.
-    
-    // Wait for them all to end:
     
     m_pSourceThread->join();
     m_pSortThread->join();
-    //m_pSinkThread->join();
-    for(int i =0; i < m_workers.size(); i++) {
+    m_pSinkThread->join();
+    for (int i =0; i < m_workers.size(); i++) {
         m_workers[i]->join();
     }
+    
+   
     return EXIT_SUCCESS;
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -175,6 +178,7 @@ CZMQThreadedClassifierApp::startWorkers()
             new CZMQDealerTransport(dealerUri.c_str());
         CTransport* pFaninXport =
             commFactory.createFanInSource(SORT_SERVICE);
+
         CSender*    pFaninSender = new CSender(*pFaninXport);
         CRingMarkingWorker* pWorker =
             new CRingMarkingWorker(*pFanoutClient, *pFaninSender, i+1, pClassifier);
