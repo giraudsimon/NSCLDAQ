@@ -43,6 +43,7 @@ public:
     
     void recv(void** ppData, size_t& size);
     void send(iovec* parts, size_t numParts);
+    void end();
     
     // ZMQ specific operations.
     

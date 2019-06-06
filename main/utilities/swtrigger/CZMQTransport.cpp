@@ -121,7 +121,15 @@ CZMQTransport::send(iovec* parts, size_t numParts)
         throw std::runtime_error("CZMQTransport::send - socket not set.");
     }
 }
-
+/**
+ * send end indicator - empty message.
+ */
+void
+CZMQTransport::end()
+{
+    zmq::message_t m(0);
+    m_pSocket->send(m, 0);
+}
 /**
  * getContext
  *    Return the context singleton:
