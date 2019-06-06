@@ -164,6 +164,9 @@ CRingItemFileTransport::nextDescriptor()
 void
 CRingItemFileTransport::freeDescriptor()
 {
+    if (m_pDescriptor) {
+        free(m_pDescriptor->s_pData);
+    }
     delete              m_pDescriptor;
     m_pDescriptor     = nullptr;
     m_pCursor         = nullptr;
