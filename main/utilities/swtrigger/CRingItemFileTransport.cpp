@@ -105,8 +105,18 @@ void CRingItemFileTransport::recv(void** ppData, size_t& size)
         freeDescriptor();
     }
 }
-
-
+/**
+ * end - must be a writer   flush the output buffer.
+ */
+void CRingItemFileTransport::end()
+{
+    if (m_pWriter) {
+        m_pWriter->flush();
+    } else {
+        throw std::runtime_error("Attempted end() call on read only transport");
+    }
+    
+}
 /**
  * send
  *    Sends data to the writer.
