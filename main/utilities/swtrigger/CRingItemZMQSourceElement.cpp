@@ -90,7 +90,8 @@ void
 CRingItemZMQSourceElement::process(void* pData, size_t nBytes)
 {
     if (nBytes == 0) {                       // End of data.
-        sendChunk();
+        if (m_chunk.size()) sendChunk();     // Send any partial chunk.
+        getSender()->end();
         
     } else {                               // Real data.
         Message m;
@@ -168,4 +169,5 @@ CRingItemZMQSourceElement::clearChunk()
     }
     
     m_chunk.clear();
+    
 }
