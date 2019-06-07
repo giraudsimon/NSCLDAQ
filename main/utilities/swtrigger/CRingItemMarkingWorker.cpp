@@ -50,6 +50,7 @@ CRingMarkingWorker::CRingMarkingWorker(
     CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,
     Classifier* pClassifier
 ) : CParallelWorker(fanin, sink, clientId), m_pClassifier(pClassifier),
+m_nId(clientId),
 m_nItemsProcessed(0)
 {}
 
@@ -76,13 +77,19 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
         
         size_t nItems = countItems(pData, nBytes);
        
-        iovec messageParts[nItems*3];            // None yet.
+        iovec messageParts[nItems*3+1];            // None yet.
         size_t nParts(0);                        // None yet.
         std::vector<uint32_t> classifications;   // Holds the classifications until sent.
         
         pMessage p = static_cast<pMessage>(pData);
         
 
+        // We send our client id first...
+        
+        messageParts[nParts].iov_base = &m_nId;
+        messageParts[nParts].iov_len  = sizeof(m_nId);
+        nParts++;
+        
         for (int i =0; i < nItems; i++) {
             void* pNext = nextItem(p);
             // Items that are not PHYSICS_EVENTS are not classified:
@@ -115,9 +122,11 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
         if (nParts > (sizeof(messageParts)/sizeof(iovec))) {
             std::cerr << " Too many message parts: " << messageParts << std::endl;
         }
-        getSink()->sendMessage(messageParts, nParts);
+        if (nParts > 1) {
+            getSink()->sendMessage(messageParts, nParts);
+        }
     } else {
-        getSink()->end();                 // no more data.
+        getSink()->sendMessage(&m_nId, sizeof(m_nId));
     }
 }
 ///////////////////////////////////////////////////////////////////////////////

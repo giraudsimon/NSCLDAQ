@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
+
 
 /**
  * constructor
@@ -39,7 +41,14 @@ CRingItemSorter::CRingItemSorter(
 ) : m_pDataSource(&fanin), m_pDataSink(&sink), m_nTimeWindow(window),
     m_nEndsRemaining(nWorkers)
 {
+    // Create the vector of queues.
     
+    DataQueue q;
+    q.s_NoMore = false;                  // Worker still have more to contributes.
+    for (int i =0; i < nWorkers;i++) {
+        m_queues.push_back(q);           // index is worker id -1.
+        m_activeWorkers.insert(i+1);       // So we know when we're done.
+    }
 }
 
 /**
@@ -66,16 +75,29 @@ CRingItemSorter::operator()()
 {
     void* pData;
     size_t nBytes;
-    while (m_nEndsRemaining) {
+    while (!m_activeWorkers.empty()) {
         m_pDataSource->getMessage(&pData, nBytes);
         if (nBytes == 0) {
-            m_nEndsRemaining--;
+            break;                               // Should not happen but:
             
         } else {
-            process(pData, nBytes);
+            // The first uint32_t is the id of the worker:
+            // If that's all there is, that's an end for that worker.
+            
+            uint32_t* p = static_cast<uint32_t*>(pData);
+            m_nCurrentWorker = *p;
+            p++;
+            nBytes -= sizeof(uint32_t);
+            
+            if (nBytes == 0) {
+                workerExited();
+            } else {
+                process(p, nBytes);        // Remainder of message is what we care about.
+            }
+
         }
     }
-    flush();                    // Flush everything.
+    if (canFlush()) flush();
     m_pDataSink->end();
 
 }
@@ -91,70 +113,23 @@ CRingItemSorter::operator()()
  *    
  * @param pData - pointer to the ring items.
  * @param nBytes - Number of bytes of data.
+ * @note  m_nCurrentWorker  contains the workerId of the worker the data came
+ *        from.
  */
 void
 CRingItemSorter::process(void* pData, size_t nBytes)
 {
-    // Pull out the timestamp of the first item:
-    
-    pItem p = static_cast<pItem>(pData);
-    uint64_t timestamp = p->s_timestamp;
+    int index = m_nCurrentWorker - 1;       // Queue index.
     QueueElement q;
     q.first = nBytes;
-    q.second= p;
+    q.second = static_cast<pItem>(pData);
     
- 
-    // insert the queue elements.
-    int inserts(0);
-    // Special case: If the dequeue is empty just shove it in the front,
-    // or the last element has a timestamp < ours just push back:
+    // Data from each worker is time ordered so we just need to shove it in the
+    // back of the queue and try to flush what we can flush:
     
-    if (
-        m_QueuedData.empty() ||
-        (m_QueuedData.back().second->s_timestamp <= timestamp)
-    ) {
-        inserts++;
-        m_QueuedData.push_back(q);
-    } else if(m_QueuedData.front().second->s_timestamp >= timestamp) {
-        // Special case it's at the front:
-        inserts++;
-        m_QueuedData.push_front(q);
-    } else {
-        // Since data are generally ordered modulo worker times,
-        // search from the back to the front.
-         
-        auto p = m_QueuedData.end();
-        --p;
-        while (p != m_QueuedData.begin()) {
-            if (p->second->s_timestamp < timestamp) {
-                p++;
-                m_QueuedData.insert(p, q);
-                inserts++;
-                break;
-            }
-            --p;
-        }
-        // If there was no insert we have to insert just after begin:
-        
-        if (!inserts) {
-            inserts++;
-            m_QueuedData.insert(m_QueuedData.begin()+1, q);
-        }
-    }
-    if (inserts != 1) {
-        std::cerr << "Non singular insert: " << inserts << std::endl;
-    }
-
-    // See if we can emit any:
-    uint64_t tsFront = m_QueuedData.front().second->s_timestamp;
-    uint64_t diff =
-        m_QueuedData.back().second->s_timestamp - tsFront;    
-
-    if (diff > m_nTimeWindow) {
-        flush(tsFront + m_nTimeWindow);
-    }
-
-   
+    m_queues[index].s_DataQ.push_back(q);
+    
+    flush();
  
 }
 /////////////////////////////////////////////////////////////////////////
@@ -162,92 +137,96 @@ CRingItemSorter::process(void* pData, size_t nBytes)
 
 /**
  * flush
- *    FLushes the data until the next item in the dequeue has
- *    a timestamp larger than the specified stamp.
- *    -  First the number of items is enumerated.
- *    -  Then an iovec is created to output the items as blocks.
- *    -  Then the sender's sendMessage is used to send the data.
- *
- * @param until - blocks with first timestamp larger than this won't be sent.
+ *    While all active queues have data, flush until there's an empty queue
+ *    or all workers are done.
  */
 
 void
-CRingItemSorter::flush(uint64_t until)
+CRingItemSorter::flush()
 {
-   
-    // Figure out how many blocks we can send:
+    // This simple algorithm assumes that we've got a big enough chunksize
+    // that this O(2n) process is not too bad.
     
-    size_t numBlocks(0);
-    for (auto p = m_QueuedData.begin(); p != m_QueuedData.end(); ++p) {
-        if (p->second->s_timestamp > until) {
-            break;
+    std::vector<QueueElement> flushables;
+    while(canFlush()) {
+        flushables.push_back(earliestElement());
+    }
+    // Now construct the I/O vector and send the data:
+    
+    if (flushables.size()) {
+        iovec parts[flushables.size()];
+        
+        for (int i =0; i < flushables.size(); i++) {
+            parts[i].iov_base = flushables[i].second;
+            parts[i].iov_len  = flushables[i].first;
         }
-        numBlocks++;
-    }
-
-    numBlocks--;
-    if (!numBlocks) return;
-    if (numBlocks > m_QueuedData.size()) {
-        std::cerr << " numBlocks too big: " << numBlocks << " " << m_QueuedData.size()
-            << std::endl;
-    }
-    // Pass 2 to create the iovector.
-    
-    iovec parts[numBlocks];
-    for (int i =0; i < numBlocks; i++) {
-        parts[i].iov_base = m_QueuedData[i].second;   // Data...
-        parts[i].iov_len = m_QueuedData[i].first;        // size of data.
-    }
-    
-    // Send the data.
-    
-    m_pDataSink->sendMessage(parts, numBlocks);
-
-
-    // Remove the sent blocks freeing the data.
-    
-    
-
-    for (int i =0; i < numBlocks; i++) {
-        pItem p = m_QueuedData.front().second;
-        free(p);
-        m_QueuedData.pop_front();
-        if (m_QueuedData.size() && (p == m_QueuedData.front().second)) {
-            std::cerr << "Two twinned elements " << std::hex << p <<std::endl;
+        m_pDataSink->sendMessage(parts, flushables.size());
+        
+        for (int i = 0;  i < flushables.size(); i++) {
+            uint32_t* pItem = static_cast<uint32_t*>(parts[i].iov_base);
+            pItem--;                     // Allow for the id
+            free(pItem); 
         }
     }
     
 }
-/**
- * flushRun
- *    
- *  @return bool - true if the last queue item has an end run in it.
+/** workerExited
+ *   The m_nCurrentWorker exited.
+ *   -  Mark its queue as not expecting more data.
+ *   -  remove it's id from the active worker set.
  */
-bool CRingItemSorter::flushRun()
+void
+CRingItemSorter::workerExited()
 {
-    pItem p       = m_QueuedData.back().second;
-    size_t nBytes = m_QueuedData.back().first;
-    while (nBytes) {
-        if(p->s_item.s_header.s_type == END_RUN) return true;
-        
-        // Point at the next item in the block:
-        
-        uint8_t* pBytes = reinterpret_cast<uint8_t*>(p);
-        size_t  itemSize
-            = sizeof(uint64_t) + p->s_item.s_header.s_size;
-        pBytes += itemSize;
-        nBytes -= itemSize;
-        
-        p = reinterpret_cast<pItem>(pBytes);
+    m_queues[m_nCurrentWorker-1].s_NoMore = true;
+    m_activeWorkers.erase(m_nCurrentWorker);
+    if (canFlush()) flush();                          // Might be flushable now.
+}
+
+/**
+ * canFlush
+ *    @return true if it's ok to flush another data chunk:  It's ok to flush if the only
+ *            empty queues are marked as s_NoMore.  Note that those queues
+ *            _could_ contain data.
+ */
+bool
+CRingItemSorter::canFlush()
+{
+    int counter(0);
+    for (int i =0; i < m_queues.size(); i++) {
+        if(!m_queues[i].s_NoMore && m_queues[i].s_DataQ.empty()) return false;
+        if (!m_queues[i].s_DataQ.empty()) counter++;
     }
-    return false;
+    return counter > 0;                 // No unflushable condition.
 }
 /**
- * operator< for queue elements.  This compares the timestamp in the item
- *           headers.
- * @return bool true if e1's timestamp is < e2's.
+ * earliestElement
+ *    @return the queue element with the earliest timestamp.  This will be at the
+ *            front of a queue.  The element will be popped off the queue.
+ *    @throw std::logic_error - if all the queues are empty.
  */
-bool operator<(CRingItemSorter::QueueElement& e1, CRingItemSorter::QueueElement&  e2)
+CRingItemSorter::QueueElement
+CRingItemSorter::earliestElement()
 {
-    return e1.second->s_timestamp < e2.second->s_timestamp;
+    uint64_t earliest = UINT64_MAX;
+    QueueElement result;
+    int      q        = -1;
+    for (int i =0; i < m_queues.size(); i++) {
+        if (!m_queues[i].s_DataQ.empty()) {
+            QueueElement& candidate = m_queues[i].s_DataQ.front();
+            if (candidate.second->s_timestamp < earliest) {
+                result = candidate;
+                q = i;
+                earliest = candidate.second->s_timestamp;                
+            }
+        }
+    }
+    // If all queues were empty, q = -1
+    
+    if (q == -1) {
+        throw std::logic_error("CRingItemSorter::canFlush called with all queues empty!");
+    }
+    m_queues[q].s_DataQ.pop_front();
+    
+    return result;
 }

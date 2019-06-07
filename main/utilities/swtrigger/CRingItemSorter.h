@@ -24,8 +24,10 @@
 #include "CProcessingElement.h"
 #include <DataFormat.h>
 #include <deque>
+#include <vector>
 #include <stdint.h>
 #include <stddef.h>
+#include <set>
 
 class CReceiver;
 class CSender;
@@ -71,12 +73,20 @@ public:
 
 private:
     typedef std::pair<size_t, pItem>  QueueElement;
+    typedef struct {
+        bool                      s_NoMore;
+        std::deque<QueueElement>  s_DataQ;
+    } DataQueue;
+    
     CReceiver*   m_pDataSource;
     CSender*     m_pDataSink;
     uint64_t     m_nTimeWindow;
-    std::deque<QueueElement>  m_QueuedData;
+    
     size_t       m_nEndsRemaining;
-
+    std::vector<DataQueue>  m_queues;             //  queue for each client.
+    std::set<int>     m_activeWorkers;
+    uint32_t     m_nCurrentWorker;              // needed to match the process
+                                                // signature.
 public:
     friend  bool operator<(QueueElement& e, QueueElement& value);
     CRingItemSorter(
@@ -86,9 +96,10 @@ public:
     virtual void operator()();
     virtual void process(void* pData, size_t nBytes);
 private:
-    void flush(uint64_t until = UINT64_MAX);
-    bool flushRun();
-   
+    void flush();
+    void workerExited();
+    bool canFlush();
+    QueueElement earliestElement();
 };
 
 
