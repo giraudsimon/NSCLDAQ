@@ -15,17 +15,9 @@
 */
 #ifndef __CORDEREROUTPUT_H
 #define __CORDEREROUTPUT_H
-
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
+#include <io.h>
 
 // Forward definitions:
 
@@ -47,7 +39,9 @@ class COrdererOutput : public CFragmentHandler::Observer
 {
 private:
   int              m_OutputChannel;	// where we write the data.
-  io::CBufferedOutput& m_Output;  
+  io::CBufferedOutput& m_Output;
+  iovec*           m_pVectors;
+  size_t           m_nVectors;
 
   // canonicals:
 
@@ -66,7 +60,7 @@ private:
   // Entries required of observers:
 
 public:
-  virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event);
+  virtual void operator()(const EvbFragments& event);
 
   // Utilities:
 private:

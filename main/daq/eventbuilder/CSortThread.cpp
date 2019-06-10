@@ -22,7 +22,7 @@
 
 #include "CSortThread.h"
 #include "COutputThread.h"
-
+#include <map>
 
 // Timestamp comparison for sorted merge:
 
@@ -78,7 +78,7 @@ CSortThread::run()
         
         COutputThread* pOutput = m_pHandler->getOutputThread();
         pOutput->queueFragments(mergedFrags);
-        releaseFragments(*newData);
+        releaseFragments(*newData); 
         m_nQueuedFrags -= mergedFrags->size();
 
     }
@@ -113,6 +113,8 @@ CSortThread::dequeueFragments()
 /**
  * merge
  *    Given a vector of sorted lists, merges them into a single sorted vector.
+ *    Uses the minheap merge algorithm.  Note that lists will be empty when we're
+ *    done.
  *
  *  @param[out] result - list into which the fragments will be merged
  *                      (could be empty).
@@ -121,9 +123,34 @@ CSortThread::dequeueFragments()
 void
 CSortThread::merge(FragmentList& result, Fragments& lists)
 {
-    for (int i = 0; i < lists.size(); i++) {
-        result.merge(*lists[i], TsCompare);
+  
+  // Build the minheap for the merge.  Note that the timestamp is a minimum
+  // at the front of each queeu.  We make the minheap a map keyed on the
+  // timestamp that contains a pointer to the dequeue from which the
+  // timestamp came.
+  
+  std::multimap<uint64_t, FragmentList*> minheap;  // dup timestamps are possible.
+  for (int i =0; i < lists.size(); i++) {
+    uint64_t ts = lists[i]->front().second->s_header.s_timestamp;
+    minheap.emplace(std::make_pair(ts, lists[i]));
+  }
+  // Once the map size is 1 we just append the remaining data:
+  
+  while(minheap.size() > 1) {
+    auto q = minheap.begin();
+    result.push_back(q->second->front());
+    q->second->pop_front();
+    minheap.erase(q);
+    
+    // If there are more elements in q.second - put its timestamp into the minheap:
+    
+    if (!q->second->empty()) {
+      uint64_t ts = q->second->front().second->s_header.s_timestamp;
+      minheap.emplace(std::make_pair(ts, q->second));
     }
+  }
+  auto remaining(minheap.begin()->second);
+  result.insert(result.end(), remaining->begin(), remaining->end() );
 }
 /**
  * clearBufferQueue
@@ -141,17 +168,14 @@ CSortThread::clearBufferQueue()
 /**
  * releaseFragments
  *    Gets rid of all fragment lists and then the fragments object itself.
+ *    Note that by now these are empty.
  *
  * @parm frags - fragments to get rid of.
  */
 void
 CSortThread::releaseFragments(Fragments& frags)
 {
-#ifdef UNDEFINED              // I think the output thread has to delete these?!?
-    for (int i =0; i < frags.size(); i++) {
-        releaseFragmentList(*frags[i]);   
-    }
-#endif
+
     delete &frags;
 }
 /**

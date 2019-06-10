@@ -107,6 +107,7 @@ ScriptedReadout_LDADD = @top_builddir@/sbs/scripted/libScriptedRdo.la   \
 	@top_builddir@/sbs/vmemodules/libSBSDeviceSupport.la	\
 	@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la		\
 	@top_builddir@/base/thread/libdaqthreads.la	\
+	@top_builddir@/base/os/libdaqshm.la	\
 	@LIBTCLPLUS_LDFLAGS@ \
 	$(TCL_LDFLAGS) \
 	-lpthread

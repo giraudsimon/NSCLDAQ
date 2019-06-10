@@ -82,22 +82,8 @@ CRingItemFactory::createRingItem(const CRingItem& item)
 
   case PHYSICS_EVENT:
     {
-      CPhysicsEventItem* pItem;
-      if(item.hasBodyHeader()) {
-        pItem = new CPhysicsEventItem(
-            item.getEventTimestamp(), item.getSourceId(), item.getBarrierType(),
-            item.getStorageSize()
-        );
-      } else {
-        pItem = new CPhysicsEventItem(item.getStorageSize());
-      }
-      uint8_t* pDest = reinterpret_cast<uint8_t*>(pItem->getBodyCursor());
-      memcpy(pDest, 
-	     const_cast<CRingItem&>(item).getBodyPointer(), item.getBodySize());
-      pDest += item.getBodySize();
-      pItem->setBodyCursor(pDest);
-      pItem->updateSize();
-      return pItem;
+      return new CPhysicsEventItem(item);
+
     }
     // trigger count.
 

@@ -1,0 +1,13 @@
+package "ddasSort"
+version "v1.0"
+
+#
+#   Options for the downstream DDASSorting subsystem.
+#   this subsystem takes DDAS hit data as input and produces sorted
+#   DDAS hit data as output.
+#
+#
+
+option "source" s "URI of source ring buffer - must be a ring buffer" string
+option "sink"   S "Name of sink ring buffer _name_ not URI" string
+option "window" W "Accumulation time window" float default="10.0"

@@ -48,10 +48,13 @@ static const size_t Mega(1024*1024);
 
 static const time_t DefaultBuildWindow(20); // default seconds to accumulate data before ordering.
 static const uint32_t IdlePollInterval(1);  // Seconds between idle polls.
-static const time_t DefaultStartupTimeout(4); // default seconds to accumulate data before ordering.
+static const time_t DefaultStartupTimeout(0); // default seconds to accumulate data before ordering.
 static time_t timeOfFirstSubmission(UINT64_MAX); //
-static const  size_t defaultXonLimit(9*Mega);     // Default total fragment storage at which we can xon
-static const  size_t defaultXoffLimit(10*Mega);    // Default total fragment storage at which we xoff.
+static const  size_t defaultXonLimit( 1000000);     // Default total fragment count at which we can xon
+static const  size_t defaultXoffLimit(4000000);    /// Default total fragment count
+
+static const size_t perQXoffLimit(100000);
+static const size_t perQXonLimit(50000);
 
 /*---------------------------------------------------------------------
  * Debugging
@@ -218,16 +221,15 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
       pFragments  = reinterpret_cast<EVB::pFlatFragment>(pNext);
       nSize -= fragmentSize;
     }
+  
+    // Don't flush until we have allowed time for all data sources to 
+    // establish themselves
     
-    findOldest();		// Probably not needed but pretty quick.
-    if (m_nNow-timeOfFirstSubmission > m_nStartupTimeout) {
-      // Don't flush until we have allowed time for all data sources to 
-      // establish themselves
-     
-      flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
+    flushQueues();		// flush events with received time stamps older than m_nNow - m_nBuildWindow
       
-    }
-    checkXoff();
+  
+    
+    checkXoff();         
 }
 /**
  * setBuildWindow
@@ -367,7 +369,7 @@ CFragmentHandler::addDataLateObserver(CFragmentHandler::DataLateObserver* pObser
 void
 CFragmentHandler::removeDataLateObserver(CFragmentHandler::DataLateObserver* pObserver)
 {
-  std::list<DataLateObserver*>::iterator p = find(
+  auto p = find(
 					  m_DataLateObservers.begin(), m_DataLateObservers.end(),
 					  pObserver);
   if (p != m_DataLateObservers.end()) {
@@ -407,7 +409,7 @@ CFragmentHandler::addBarrierObserver(CFragmentHandler::BarrierObserver* pObserve
 void
 CFragmentHandler::removeBarrierObserver(CFragmentHandler::BarrierObserver* pObserver)
 {
-  std::list<BarrierObserver*>::iterator p = std::find(m_goodBarrierObservers.begin(),
+  auto p = std::find(m_goodBarrierObservers.begin(),
 						      m_goodBarrierObservers.end(), pObserver);
   if (p != m_goodBarrierObservers.end()) {
     m_goodBarrierObservers.erase(p);
@@ -438,7 +440,7 @@ CFragmentHandler::addPartialBarrierObserver(CFragmentHandler::PartialBarrierObse
 void
 CFragmentHandler::removePartialBarrierObserver(CFragmentHandler::PartialBarrierObserver* pObserver)
 {
-  std::list<PartialBarrierObserver*>::iterator p = std::find(m_partialBarrierObservers.begin(),
+  auto p = std::find(m_partialBarrierObservers.begin(),
 							     m_partialBarrierObservers.end(), 
 							     pObserver);
   if (p != m_partialBarrierObservers.end()) {
@@ -470,7 +472,7 @@ CFragmentHandler::addDuplicateTimestampObserver(DuplicateTimestampObserver* pObs
 void
 CFragmentHandler::removeDuplicateTimestampObserver(DuplicateTimestampObserver* pObserver)
 {
-    std::list<DuplicateTimestampObserver*>::iterator p = std::find(
+    auto p = std::find(
         m_duplicateTimestampObservers.begin(), m_duplicateTimestampObservers.end(),
         pObserver
     );
@@ -491,7 +493,7 @@ CFragmentHandler::removeDuplicateTimestampObserver(DuplicateTimestampObserver* p
 void
 CFragmentHandler::observeDuplicateTimestamp(uint32_t sourceId, uint64_t timestamp)
 {
-    std::list<DuplicateTimestampObserver*>::iterator p =
+    auto p =
         m_duplicateTimestampObservers.begin();
     while(p != m_duplicateTimestampObservers.end()) {
         DuplicateTimestampObserver* pObserver = *p;
@@ -523,9 +525,8 @@ CFragmentHandler::addFlowControlObserver(FlowControlObserver* pObserver)
 void
 CFragmentHandler::removeFlowControlObserver(FlowControlObserver* pObserver)
 {
-    std::list<FlowControlObserver*>::iterator p =
-        std::find(m_flowControlObservers.begin(), m_flowControlObservers.end(),
-                  pObserver);
+    auto p = std::find(
+      m_flowControlObservers.begin(), m_flowControlObservers.end(), pObserver);
         
     if (p != m_flowControlObservers.end()) {
         m_flowControlObservers.erase(p);
@@ -561,9 +562,8 @@ CFragmentHandler::removeNonMonotonicTimestampobserver(
     CFragmentHandler::NonMonotonicTimestampObserver* pObserver
 )
 {
-    std::list<NonMonotonicTimestampObserver*>::iterator p =
-        std::find(m_nonMonotonicTsObservers.begin(),
-                  m_nonMonotonicTsObservers.end(), pObserver);
+    auto p = std::find(
+      m_nonMonotonicTsObservers.begin(), m_nonMonotonicTsObservers.end(), pObserver);
     if (p != m_nonMonotonicTsObservers.end()) {
         m_nonMonotonicTsObservers.erase(p);
     }
@@ -583,8 +583,7 @@ CFragmentHandler::observeOutOfOrderInput(
     unsigned sourceId, uint64_t prior, uint64_t bad
 )
 {
-    std::list<NonMonotonicTimestampObserver*>::iterator p =
-        m_nonMonotonicTsObservers.begin();
+    auto p = m_nonMonotonicTsObservers.begin();
     while (p != m_nonMonotonicTsObservers.end()) {
         NonMonotonicTimestampObserver* pObs = *p;
         (*pObs)(sourceId, prior, bad);
@@ -599,8 +598,7 @@ CFragmentHandler::observeOutOfOrderInput(
 void
 CFragmentHandler::Xon()
 {
-    std::list<FlowControlObserver*>::iterator p =
-        m_flowControlObservers.begin();
+    auto p = m_flowControlObservers.begin();
     while (p != m_flowControlObservers.end()) {
         FlowControlObserver* pObserver = *p;
         pObserver->Xon();
@@ -617,8 +615,7 @@ CFragmentHandler::Xon()
 void
 CFragmentHandler::Xoff()
 {
-    std::list<FlowControlObserver*>::iterator p =
-        m_flowControlObservers.begin();;
+    auto p = m_flowControlObservers.begin();;
         while (p != m_flowControlObservers.end()) {
             FlowControlObserver* pObserver = *p;
             pObserver->Xoff();           
@@ -698,7 +695,7 @@ void
 CFragmentHandler::createSourceQueue(std::string sockName, uint32_t id)
 {
 
-  getSourceQueue(id);		// Creates too.
+  getSourceQueue(sockName, id);		// Creates too.
   m_liveSources.insert(id);		          // Sources start live.
   m_socketSources[sockName].push_back(id);
 }
@@ -726,9 +723,7 @@ CFragmentHandler::markSourceFailed(uint32_t id)
   if(m_fBarrierPending) {
     if (countPresentBarriers() == m_liveSources.size()) {	
       std::cerr << "markSourceFailed -- generating barrier on source dead\n";
-      std::list<std::pair<time_t, EVB::pFragment> >& sortedFragments(
-          *(new std::list<std::pair<time_t, EVB::pFragment> >)
-      );
+      auto& sortedFragments(*(new EvbFragments));
       generateMalformedBarrier(sortedFragments);
       observe(sortedFragments);
     }
@@ -750,9 +745,9 @@ CFragmentHandler::markSourceFailed(uint32_t id)
 void
 CFragmentHandler::markSocketFailed(std::string sockName)
 {
-  std::map<std::string, std::list<uint32_t> >::iterator p = m_socketSources.find(sockName);
+  auto p = m_socketSources.find(sockName);
   if (p != m_socketSources.end()) {
-    std::list<uint32_t>::iterator pSource = p->second.begin();
+    auto pSource = p->second.begin();
     while (pSource != p->second.end()) {
       markSourceFailed(*pSource);
       ++pSource;
@@ -781,11 +776,11 @@ void
 CFragmentHandler::reviveSocket(std::string sockname)
 {
 
-  std::map<std::string, std::list<uint32_t> >::iterator p = m_deadSockets.find(sockname);
+  auto p = m_deadSockets.find(sockname);
   if (p != m_deadSockets.end()) {
-    std::list<uint32_t>::iterator pSource = p->second.begin();
+    auto pSource = p->second.begin();
     while (pSource != p->second.end()) {
-      SourceQueue& queue = getSourceQueue(*pSource);
+      SourceQueue& queue = getSourceQueue(sockname, *pSource);
       m_liveSources.insert(*pSource);		     // Sources start live.
       pSource++;
     }
@@ -882,12 +877,21 @@ CFragmentHandler::flushQueues(bool completely)
   if (noEmptyQueue()) {
     
     uint64_t mark  = findStampMark();
-    
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
     
       CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
+      
+      {
+        auto& item(p->second.s_queue.front().second);
+        std::string& qname(p->second.s_qid);
+  
+      }
+      
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
+      XoffQueue(p->second);
+      XonQueue(p->second);
       if (!partialSort.empty()) {
+        
            if (partialSort.front().second->s_header.s_timestamp <
                 m_nMostRecentlyPopped) {
             dataLate(*partialSort.front().second);
@@ -896,44 +900,51 @@ CFragmentHandler::flushQueues(bool completely)
           statcopy.push_back({&(p->second), &partialSort});
           pFrags->push_back(&partialSort);    
       } else {
+      
         delete &partialSort;
       }
       
       
     }
+  } else {
+
+  
+    // Now we need to flush all fragments that are older than the build window.
+    // This deals with the case of a source that just doesn't emit fragments
+    // very often (e.g. scaler only case).
+    // This should only be done if the most recently emptied queue was emptied outside
+    // the build interval time.
+  
+    // We can only flush partial queues for enqueue times that are older
+    // than the time window:
+    
+    
+  
+    m_nNow = time(NULL);
+    time_t windowEnd = m_nNow - m_nBuildWindow;
+  
+    for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
+      CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
+      DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
+      XoffQueue(p->second);
+      XonQueue(p->second);
+      if (!partialSort.empty()) {
+        if (partialSort.front().second->s_header.s_timestamp <
+            m_nMostRecentlyPopped) {
+          dataLate(*partialSort.front().second);
+        }
+        statcopy.push_back({&(p->second), &partialSort});
+        //updateQueueStatistics(p->second, partialSort);
+        pFrags->push_back(&partialSort);
+      } else {
+        delete &partialSort;
+      }
+      
+    }   
+
   }
   
 
-
-  // Now we need to flush all fragments that are older than the build window.
-  // This deals with the case of a source that just doesn't emit fragments
-  // very often (e.g. scaler only case).
-  // This should only be done if the most recently emptied queue was emptied outside
-  // the build interval time.
-
-  // We can only flush partial queues for enqueue times that are older
-  // than the time window:
-  
-  
-  m_nNow = time(NULL);
-  time_t windowEnd = m_nNow - m_nBuildWindow;
-  
-  for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
-    CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
-    DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-    if (!partialSort.empty()) {
-      if (partialSort.front().second->s_header.s_timestamp <
-          m_nMostRecentlyPopped) {
-        dataLate(*partialSort.front().second);
-      }
-      statcopy.push_back({&(p->second), &partialSort});
-      //updateQueueStatistics(p->second, partialSort);
-      pFrags->push_back(&partialSort);
-    } else {
-      delete &partialSort;
-    }
-    
-  }   
 
   // If completely, flush all remaining fragments - this is for a planned
   // exit.
@@ -944,6 +955,7 @@ CFragmentHandler::flushQueues(bool completely)
         q->second.s_queue.begin(), q->second.s_queue.end()
       ));
       q->second.s_queue.clear();              // Clear the queue.
+      XonQueue(q->second);                   // Can't possibily need xoff
       if (!partialSort.empty()) {
         pFrags->push_back(&partialSort);  
       } else {
@@ -1078,11 +1090,11 @@ CFragmentHandler::popOldest()
  *         to copy them.
  */
 void
-CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
+CFragmentHandler::observe(EvbFragments& event)
 {
   CSortThread::Fragments& frags(*new CSortThread::Fragments);
   frags.push_back(&event);
-    m_sorter.queueFragments(frags);
+  m_sorter.queueFragments(frags);
 }
 /**
  * dataLate
@@ -1099,7 +1111,7 @@ CFragmentHandler::observe(std::list<std::pair<time_t, EVB::pFragment> >& event)
 void 
 CFragmentHandler::dataLate(const ::EVB::Fragment& fragment)
 {
-  std::list<DataLateObserver*>::iterator p = m_DataLateObservers.begin();
+  auto p = m_DataLateObservers.begin();
   while (p != m_DataLateObservers.end()) {
     DataLateObserver* pObserver = *p;
     (*pObserver)(fragment, m_nNewest);
@@ -1140,8 +1152,11 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     memcpy(pFrag->s_pBody, pFragment->s_body, pFrag->s_header.s_size);
 
     // Get a reference to the fragment queue, creating it if needed:
+    // Note that queues should get created by connection from the
+    // fragment maker.  We'll give this queue a "" for an id.
+    // if creation was needed..
     
-    SourceQueue& destQueue(getSourceQueue(pHeader->s_sourceId));
+    SourceQueue& destQueue(getSourceQueue("", pHeader->s_sourceId));
 
 
     // If the timestamp is null, assign the newest timestamp from that source to it:
@@ -1242,7 +1257,11 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 #endif
     // Tally the fragment size and Xoff if the high water mark was hit:
     
-    m_nTotalFragmentSize++;
+    m_nTotalFragmentSize++;           //count.
+    
+    // If appropriate, xoff  destqueue:
+    
+    
 
 
 }
@@ -1383,7 +1402,7 @@ CFragmentHandler::QueueStatGetter::queueStats()
  *
  */
 CFragmentHandler::BarrierSummary
-CFragmentHandler::generateBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::generateBarrier(EvbFragments& outputList)
 {
   // Iterate through the output queues and add any
   // barrier events to the outputList.
@@ -1435,7 +1454,7 @@ CFragmentHandler::generateBarrier(std::list<std::pair<time_t, EVB::pFragment> >&
  * @param outputList - Output fragment list (see above).
  */
 void
-CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::generateMalformedBarrier(EvbFragments& outputList)
 {
 
   BarrierSummary bs = generateBarrier(outputList);
@@ -1451,7 +1470,7 @@ CFragmentHandler::generateMalformedBarrier(std::list<std::pair<time_t, EVB::pFra
  * @param outputList - Output fragment list (see above).
  */
 void
-CFragmentHandler::goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList)
+CFragmentHandler::goodBarrier(EvbFragments& outputList)
 {
 
   BarrierSummary bs = generateBarrier(outputList);
@@ -1524,8 +1543,9 @@ void
 CFragmentHandler::observeGoodBarrier(std::vector<std::pair<uint32_t, uint32_t> >& types)
 {
 
-  for (std::list<BarrierObserver*>::iterator p = m_goodBarrierObservers.begin();
-       p != m_goodBarrierObservers.end(); p++) {
+  for (auto p = m_goodBarrierObservers.begin(); p != m_goodBarrierObservers.end();
+  p++)
+  {
     (*p)->operator()(types);
   }
 
@@ -1543,7 +1563,7 @@ CFragmentHandler::partialBarrier(std::vector<std::pair<uint32_t, uint32_t> >& ty
 				 std::vector<uint32_t>& missingSources)
 {
 
-  for (std::list<PartialBarrierObserver*>::iterator p = m_partialBarrierObservers.begin();
+  for (auto p = m_partialBarrierObservers.begin();
        p != m_partialBarrierObservers.end(); p++) {
     (*p)->operator()(types, missingSources);
   }
@@ -1572,16 +1592,20 @@ CFragmentHandler::countPresentBarriers() const
 /**
  * get the source queue associated with an id, creating it if needed
  *
+ * @param sockName - name to be given as the queue id if creation
+ *                   is needed.
  * @param id - the id of the source.
  * 
  * @return SourceQueue& reference to the (possibly new) source queue.
  */
 CFragmentHandler::SourceQueue&
-CFragmentHandler::getSourceQueue(uint32_t id)
+CFragmentHandler::getSourceQueue(std::string sockName, uint32_t id)
 {
   Sources::iterator p = m_FragmentQueues.find(id);
   if (p  == m_FragmentQueues.end()) {	       // Need to create.
+    
     SourceQueue& queue = m_FragmentQueues[id]; // Does most of the creation.
+    queue.setId(sockName.c_str());
     return queue;
   }  else {			              // already exists.
     return p->second;
@@ -1600,9 +1624,8 @@ CFragmentHandler::getSourceQueue(uint32_t id)
 void
 CFragmentHandler::checkBarrier(bool completeFlush)
 {
-  std::list<std::pair<time_t, EVB::pFragment> >& outputList(
-    *(new std::list<std::pair<time_t, EVB::pFragment> >)
-  );
+  EvbFragments& outputList(*(new EvbFragments));
+  
   m_nNow = time(NULL);		// Update the time.
   size_t nBarriers = countPresentBarriers();
 
@@ -1687,28 +1710,29 @@ void
 CFragmentHandler::IdlePoll(ClientData data)
 {
   CFragmentHandler* pHandler = reinterpret_cast<CFragmentHandler*>(data);
-
-  if (!pHandler->m_nFragmentsLastPeriod) {
-    pHandler->m_nNow = time(NULL);	// Update tod.
-    pHandler->findOldest();		// Update oldest fragment time.
-    if (pHandler->m_nNow - timeOfFirstSubmission > pHandler->m_nStartupTimeout) { 
-      // Only flush after we have given time for all sources
-      // establish their queues
-      // Also... timeOfFirstSubmission is guaranteed to exist 
-      // because nFragmentLastPeriod is not 0
-      pHandler->flushQueues();
+  pHandler->m_nNow = time(NULL);	// Update tod.
+  
+  // Only flush queues if none are xoffed.  If there's a global xoff
+  // we can still flush:
+  
+  bool onexoffed = true;
+  bool allxoffed = true;
+  for (auto& qInfo : pHandler->m_FragmentQueues) {
+    auto q = qInfo.second;
+    if (q.s_xoffed) {
+      onexoffed = false;
+    } else {
+      allxoffed = false;
     }
-  } else {
-    pHandler->m_nFragmentsLastPeriod = 0;
   }
+  if (allxoffed || (!onexoffed))  pHandler->flushQueues();
+  
   // Since it's possible that fragments have been output from
   // the buffer queue to the output thread while we've been
   // Xoffed -- and hence can't exactly receive data, this
   // allows that to accept data again:
 
   pHandler->checkXon();
-
-
   // reschedule
 
   pHandler->m_timer = Tcl_CreateTimerHandler(1000*IdlePollInterval,  &CFragmentHandler::IdlePoll, pHandler);
@@ -1721,8 +1745,7 @@ size_t
 CFragmentHandler::inFlightFragmentCount()
 {
   
-  return m_nTotalFragmentSize +
-    m_outputThread.getInflightCount() + m_sorter.getInflightCount();
+  return  m_outputThread.getInflightCount() + m_sorter.getInflightCount();
 }
 /**
  *  checkXoff
@@ -1788,7 +1811,6 @@ CFragmentHandler::oldestStamp(EvbFragments& q)
 }
 
 
-
 /**
  *  These are the dequeue operations and the predicates they need.
  *   They rely on the CopyPopUntil templated function.
@@ -1840,8 +1862,8 @@ public:
  */
 void
 CFragmentHandler::DequeueUntilStamp(
-  std::list<std::pair<time_t,  EVB::pFragment> >& result,
-  std::list<std::pair<time_t,  EVB::pFragment> >& q,
+  EvbFragments& result,
+  EvbFragments& q,
   uint64_t timestamp
 )
 {
@@ -1864,8 +1886,8 @@ CFragmentHandler::DequeueUntilStamp(
  */
 void
 CFragmentHandler::DequeueUntilAbsTime(
-  std::list<std::pair<time_t,  EVB::pFragment> >& result,
-  std::list<std::pair<time_t,  EVB::pFragment> >& q,
+  EvbFragments& result,
+  EvbFragments& q,
   time_t time
 )
 {
@@ -1896,7 +1918,7 @@ CFragmentHandler::DequeueUntilAbsTime(
 void
 CFragmentHandler::updateQueueStatistics(
     SourceQueue& queue,
-    std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
+    EvbFragments& justDequeued
 )
 {
   if (justDequeued.empty()) return;
@@ -1919,4 +1941,43 @@ CFragmentHandler::updateQueueStatistics(
   queue.s_bytesInQ  -= payloadBytes;
   
   m_nTotalFragmentSize -= justDequeued.size();
+}
+
+/**
+ * XoffQueue
+ *    If appropriate xoff the queue.  Appropriate means:
+ *    -   The queue depth is at least perQXoffLimit
+ *    -   The queue is not already xoffed.
+ * @param q - references the source queue to check.k
+ */
+void
+CFragmentHandler::XoffQueue(SourceQueue& q)
+{
+  if ((q.s_queue.size() >= perQXoffLimit) && (!q.s_xoffed)) {
+    std::string sock = q.s_qid;
+    for (auto p : m_flowControlObservers) {
+      p->Xoff(sock);    
+    }
+    q.s_xoffed = true;
+  }
+}
+/**
+ * XonQueue
+ *    If appropriate xons a queue.
+ *    Appropriate means:
+ *    -  There are frewer than perQXonLimit fragments in the queue.
+ *    -  The queue is currently xoffed.
+ *
+ * @param q -the queue to operate on.
+ */
+void
+CFragmentHandler::XonQueue(SourceQueue& q)
+{
+  if ((q.s_queue.size() < perQXonLimit) && (q.s_xoffed)) {
+    std::string sock = q.s_qid;
+    for (auto p : m_flowControlObservers) {
+      p->Xon(sock);    
+    }
+    q.s_xoffed = false;
+  }
 }

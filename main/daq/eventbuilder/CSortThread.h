@@ -45,8 +45,8 @@ class CSortThread : public Thread
     // Local data types and member data
     
 public:
-    typedef std::list<std::pair<time_t, EVB::pFragment> > FragmentList;
-    typedef std::vector<FragmentList*> Fragments;
+    typedef EvbFragments FragmentList;
+    typedef std::deque<FragmentList*> Fragments;
 private:
     CBufferQueue<Fragments*> m_fragmentQueue;
     CFragmentHandler*       m_pHandler;

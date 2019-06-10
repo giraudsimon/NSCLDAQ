@@ -17,11 +17,11 @@
 #include <CBufferedOutput.h>
 #include <TCLInterpreter.h>
 #include <iostream>
-#include <io.h>
 #include <iostream>
 
 #include <string>
 #include "fragment.h"
+#include <stdlib.h>
 
 static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
 /*------------------------------------------------------------------------
@@ -40,7 +40,9 @@ static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
  */
 COrdererOutput::COrdererOutput(int fd) :
   m_OutputChannel(fd),
-  m_Output(*(new io::CBufferedOutput(fd, BUFFERSIZE))) 
+  m_Output(*(new io::CBufferedOutput(fd, BUFFERSIZE))),
+  m_pVectors(nullptr),
+  m_nVectors(0)
 {
 
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
@@ -56,6 +58,7 @@ COrdererOutput::~COrdererOutput()
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
   delete &m_Output;
   pHandler->removeObserver(this);
+  free(m_pVectors);
 }
 /*------------------------------------------------------------------------
 ** Public methods.
@@ -71,24 +74,45 @@ COrdererOutput::~COrdererOutput()
  * @param event - vector of fragments to output.
  */
 void
-COrdererOutput::operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event)
+COrdererOutput::operator()(const EvbFragments& event)
 {
+  // Build the iov array for the write:
   
-  for (auto i =event.begin(); i != event.end(); i++) {
-    EVB::pFragment p = i->second;;
-
-    try {
-      m_Output.put(&(p->s_header), sizeof(EVB::FragmentHeader));
-      m_Output.put(p->s_pBody, p->s_header.s_size);
-       //io::writeData(m_OutputChannel, &(p->s_header), sizeof(EVB::FragmentHeader));
-       //io::writeData(m_OutputChannel, p->s_pBody, p->s_header.s_size);
-    }
-    catch(int er) {
-      std::cerr << " Caught an output exception " << er << std::endl;
-      throw;
-    }
+  
+  
+  // Minimize dynamic memory management:
+  
+  int nIovs = event.size()*2;
+  if (nIovs > m_nVectors) {
+    free(m_pVectors);
+    m_pVectors = static_cast<iovec*>(malloc(nIovs * sizeof(iovec)));
+    m_nVectors = nIovs;
   }
-  m_Output.flush();
+  
+  iovec*  iovs = m_pVectors;
+  int n(0);
+  
+  for (auto i = event.begin(); i != event.end(); i++) {
+    auto p = i->second;
+    iovs[n].iov_base = &(p->s_header);
+    iovs[n].iov_len  = sizeof(EVB::FragmentHeader);
+    
+    iovs[n+1].iov_base = p->s_pBody;
+    iovs[n+1].iov_len  = p->s_header.s_size;
+    
+    n += 2;
+  }
+  
+  try {
+    io::writeDataVUnlimited(m_OutputChannel, iovs, nIovs);
+  }
+  catch (...) {
+    delete []iovs;
+    std::cerr << "Output Thread caught an exception writing data\n";
+    std::cerr.flush();
+    throw;
+  }
+  return;
 
 
 }

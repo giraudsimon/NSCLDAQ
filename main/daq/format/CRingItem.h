@@ -69,6 +69,8 @@ private:
   uint32_t      m_storageSize;
   bool          m_swapNeeded;
   uint8_t       m_staticBuffer[CRingItemStaticBufferSize + 100];
+  bool          m_fZeroCopy;
+  CRingBuffer*  m_pRingBuffer;
 
   // Constructors and canonicals.
 
@@ -77,6 +79,16 @@ public:
   CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,
             uint32_t barrierType = 0, size_t maxBody = CRingItemStaticBufferSize - 10);
   CRingItem(const CRingItem& rhs);
+  
+  // attempted zero copy construction; note these always have a body header.
+  // Note that copy construction and assignment from a zero copy ring buffer
+  // are not suported.
+  
+  CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,  
+      uint32_t barrierType, size_t maxBody, CRingBuffer* pRing);
+  
+  
+  
   virtual ~CRingItem();
   
   CRingItem& operator=(const CRingItem& rhs);
@@ -140,6 +152,10 @@ private:
   void throwIfNoBodyHeader(std::string msg) const;
   void getTimestampExtractor();
 
-  
+  void initItem(
+    uint16_t type, uint64_t timestamp, uint32_t sourceId,  
+    uint32_t barrierType
+  );
+ 
 };
 #endif

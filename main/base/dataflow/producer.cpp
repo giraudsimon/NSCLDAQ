@@ -19,3 +19,4 @@ int main(int argc, char** argv)
     ring.put(buffer, sizeof(buffer));
   }
 }
+void* gpTCLApplication(0);

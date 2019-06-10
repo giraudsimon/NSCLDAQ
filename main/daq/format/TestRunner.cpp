@@ -36,3 +36,4 @@ std::string uniqueName(std::string baseName)
     sprintf(fullName, "%s_%d", baseName.c_str(), pid);
     return std::string(fullName);
 }
+void* gpTCLApplication(0);

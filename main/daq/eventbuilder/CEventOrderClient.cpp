@@ -21,6 +21,7 @@
 
 #include <CPortManager.h>
 #include <os.h>
+#include <io.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -30,6 +31,9 @@
 #include <fragment.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <new>
+#include <system_error>
+
 
 static const std::string EventBuilderService("ORDERER"); // Advertised service name.
 
@@ -43,8 +47,15 @@ CEventOrderClient::CEventOrderClient(std::string host, uint16_t port) :
   m_host(host),
   m_port(port),
   m_pConnection(0),
-  m_fConnected(false)
-{}
+  m_fConnected(false),
+  m_nIovecSize(0),
+  m_pIovec(nullptr)
+{
+   m_nIovecMaxSize = sysconf(_SC_IOV_MAX);   // Maximum number of iovs for write.
+   if ( m_nIovecMaxSize == -1) {
+    throw std::system_error(errno, std::generic_category(), "Trying to get _SC_IOV_MAX"); 
+  }
+}
 
 /**
  * Destroy the object. Any existing connection to the event builder is dropped.
@@ -54,6 +65,7 @@ CEventOrderClient::CEventOrderClient(std::string host, uint16_t port) :
 CEventOrderClient::~CEventOrderClient()
 {
   delete m_pConnection;
+  free(m_pIovec);
 }
 
 /**
@@ -251,7 +263,7 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
     try {
 
 
-      // The -1 below is because we don't realy the null terminator on the strings.
+      // The -1 below is because we don't relay the null terminator on the strings.
 
       size_t msgLen = message(&msg, "FRAGMENTS", sizeof("FRAGMENTS") -1 , pBodyBuffer, nBytes);
       m_pConnection->Write(msg, msgLen);
@@ -281,9 +293,9 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
 
 /**
  * Given a pointer to an array of fragments, and the number of fragments,
- * submits them to the event builder.  This is done by
- * - marshalling the pointers into a EVB::FragmentPointerList
- * - Invoking  void submitFragments(EVB::FragmentPointerList fragments);
+ * submits them to the event builder.  This is done copy free and amortized
+ * dynamic memory free by building a set of I/O vectors
+ * for the writev method.  
  *
  * @param nFragments - Number of fragments in the array.
  * @param ppFragments - Pointer to the first fragment in the array.
@@ -291,14 +303,78 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
 void
 CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments)
 {
-  EVB::FragmentPointerList fragments;
-
-  for (int i = 0; i < nFragments; i++) {
-    fragments.push_back(ppFragments);
-    ppFragments++;		// Next fragment (scaled arith).
-  }
-  submitFragments(fragments);
+  // Each fragment requires 2 iovector elements:
+  // One for the header and one for the body, First ensure we have enough:
   
+  
+  
+  if (m_nIovecSize < 2*nFragments + 1) {
+    free(m_pIovec);
+    m_pIovec = static_cast<iovec*>(
+      malloc((2*nFragments+1) * sizeof(iovec) )  // +1 for the header stuff
+    );
+    if (!m_pIovec) {
+      throw std::bad_alloc();
+    }
+    m_nIovecSize = 2*nFragments + 1;
+  }
+  iovec* p = m_pIovec;
+  
+  // Fill in the header and it's iovec:
+  
+  
+  uint32_t hdrsize = strlen("FRAGMENTS");
+  uint8_t header[hdrsize + 2*sizeof(uint32_t)];  // fragments size piggy backs.
+  
+  memcpy(header, &hdrsize, sizeof(uint32_t));
+  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS"));
+  
+  p->iov_base = header;
+  p->iov_len  = hdrsize + 2*sizeof(uint32_t);
+   
+  p++;
+  uint32_t payloadSize = 0;
+  
+  for (int i =0; i < nFragments; i++) {
+    iovec* pNext = makeIoVec(ppFragments[i], p);
+    payloadSize += p[0].iov_len;
+    payloadSize += p[1].iov_len;
+    
+    p = pNext;
+  }
+  // Fill in the payload size field of the header:
+  //           "FRAGMENTS"  string length
+  memcpy(header + hdrsize + sizeof(uint32_t), &payloadSize , sizeof(uint32_t));
+  
+  // Now we can pull the fd from the soccket and use the gather version of
+  // io::writeData No data copies -- hoorah.
+  //
+  int sock = m_pConnection->getSocketFd();
+  
+  int iovLen = 2*nFragments + 1;
+  
+  // This loop is because there's a maximum number of I/O vector elements
+  // allowed.  We've squirreled that at construction time in:  m_nIovecMaxSize
+  
+  iovec* pVec = m_pIovec;
+  while (iovLen) {
+    int nToWrite = iovLen;
+    if (iovLen >  m_nIovecMaxSize) nToWrite =  m_nIovecMaxSize;
+    
+    io::writeDataVUnlimited(sock, pVec, nToWrite);
+    iovLen -= nToWrite;
+    pVec   += nToWrite;
+  }
+  
+  // Get the response and complain  if it's not "OK"
+  
+  std:: string reply = getReplyString();
+  if (reply != "OK") {
+    errno = ENOTSUP;
+    throw CErrnoException("Reply from 'FRAGMENTS' message");
+
+  }
+
 }
 /**
  * Given an STL list of pointers to events:
@@ -372,6 +448,9 @@ CEventOrderClient::message(void** msg,
 {
   // figure out the size of the message:
 
+  //  std::cerr << "Message req: " << requestSize << " body " << bodySize
+  //	    << std::endl;
+
   uint32_t rsize = requestSize;
   uint32_t bsize = bodySize;
   size_t totalSize = rsize + bsize + 2*sizeof(uint32_t);
@@ -432,4 +511,25 @@ CEventOrderClient::freeChain(EVB::pFragmentChain pChain)
     delete pChain;
     pChain = pNext;
   }
+}
+/**
+ * makeIoVec
+ *   Givena fragment pointer, create the two I/O vectors elements for it,
+ *   First for the fragment header, second for the fragment payload.
+ *
+ * @param Frag - refernce to the fragment.
+ * @param pVecs - Pointer to at least two I/O vector structs.
+ * @return iovec* - pointer just past the set of I/O vectors filled in by this
+ *                  method.
+ */
+iovec*
+CEventOrderClient::makeIoVec(EVB::Fragment& Frag, iovec* pVecs)
+{
+  pVecs->iov_base = &Frag;
+  pVecs->iov_len = sizeof(EVB::FragmentHeader);
+  pVecs++;
+  pVecs->iov_base = Frag.s_pBody;
+  pVecs->iov_len  = Frag.s_header.s_size;
+  
+  return ++pVecs;
 }

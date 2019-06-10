@@ -255,6 +255,7 @@ BufdumpMain::processItem(const CRingItem& item)
   cout << "-----------------------------------------------------------\n";
   CRingItem* pActualItem = CRingItemFactory::createRingItem(item);
   cout << pActualItem->toString();
+  cout.flush();                           // in case it's a file.
   delete pActualItem;
 
 }

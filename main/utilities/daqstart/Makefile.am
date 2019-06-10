@@ -20,7 +20,7 @@ daqstart_CPPFLAGS	= $(COMPILATION_FLAGS)
 
 daqstart_LDADD = @LIBEXCEPTION_LDFLAGS@ \
 	@top_builddir@/base/os/libdaqshm.la  \
-	$(THREADLD_FLAGS)
+	$(THREADLD_FLAGS) @TCL_LDFLAGS@
 
 daqstart_CXXFLAGS=$(THREADCXX_FLAGS) -D_GNU_SOURCE $(AM_CXXFLAGS)
 
@@ -44,7 +44,7 @@ unittests_SOURCES = $(TESTABLEUNITS) CFileSinkTests.cpp SinkCreatorTests.cpp \
 	FactoryTests.cpp LocalMonitoredProgram.cpp  grep.cpp TestRunner.cpp
 
 unittests_LDADD = $(CPPUNIT_LDFLAGS) @LIBEXCEPTION_LDFLAGS@ \
-	@top_builddir@/base/os/libdaqshm.la
+	@top_builddir@/base/os/libdaqshm.la @TCL_LDFLAGS@
 unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
 

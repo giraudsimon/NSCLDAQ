@@ -65,6 +65,8 @@ public:
     XonOffObserver() :m_fXoffed(false), m_fXoned(false) {}
     void Xoff() {m_fXoffed = true;}
     void Xon()  {m_fXoned = true;}
+    void Xoff(std::string qid) {m_fXoffed = true;}
+    void Xon(std::string qid) {m_fXoned = true;}
 };
 
 void ConfigCmdTest::xoffObserved()

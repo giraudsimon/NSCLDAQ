@@ -31,7 +31,7 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <CMutex.h>
-
+#include <system_error>
 
 static std::set<int>                 okErrors;	// Acceptable errors in I/O operations.
 
@@ -62,8 +62,49 @@ badError(int error)
   return (okErrors.count(error) == 0);
 }
 
+static long maxIovecSize(-1);
 
 namespace io {
+  
+/**
+ * updateIov
+ *    Given an input I/O vector, the number of items it has
+ *    and the number of bytes that were most recently written,
+ *    returns a pointer to the remaining I/O items to write and
+ *    updates the number of items.
+ *    Note that this may  mean that the input I/O vector may be modified
+ *    if one of its items was only partially written.
+ *
+ * @param iov - the input I/O vector that writev just used.
+ * @param[inout] nItems - the number of items in the vector (input). This will
+ *               be modified to reflect the number of remaining items.
+ *               note that this will be zero if there are no more items.
+ * @param nBytes - Number of bytes successfully written by the last write.
+ * @return struct iovec* - pointer to the first item in the vector that needs to be
+ *               handed to the next call to writev.  This is undefined if
+ *               all itmems were written.
+ *  Tested
+ */
+struct iovec*
+updateIov(struct iovec* iov, int& nItems, ssize_t nBytes)
+{
+  while ((nItems > 0) && (nBytes > 0)) {
+    if (nBytes >= iov->iov_len) {         // Fully written:
+      nBytes -= iov->iov_len;
+      iov++;
+      nItems--;
+    } else {                            // Partially written, must adjust and break:
+      iov->iov_len -= nBytes;
+      uint8_t* p = static_cast<uint8_t*>(iov->iov_base);
+      p += nBytes;
+      iov->iov_base = p;
+      nBytes = 0;                      // Done.
+    }
+  }
+  return iov;
+}
+
+
 /**
  * Write a block of data to a file descriptor.
  * As with getBuffer, multiple writes are done..until either the entire data
@@ -211,5 +252,82 @@ closeUnusedFiles(std::set<int> keepOpen)
   
   closedir(pDir);                       // Also closes our dir fd.
 }
-
+/**
+ * writeDataV
+ *    This version of writeData implements a gather write using the writev(2)
+ *    method. As with the other writeData, retries for signal interruption
+ *    and incomplete data  transfer are handled transparently for the caller.
+ *
+ *  @param fd - file descriptor to which the data will be written (could be
+ *             a socket, or pipe).
+ *  @param iov - The vector of I/O descriptors.  See writev(2) for information
+ *            about the form of these. Note that in the event the write must
+ *            be continued from an incomplete write (e.g. write bigger than
+ *            OS buffers), the contents of this vector can be modified in the
+ *            course of resuming the write operation.
+ *  @param iovcnt - number of iovec structs pointed to by iov.
+ *  @throw std::system_error encapsulating the errno that caused the
+ *         failure
+ *  @note Not all write 'failures' cause this method to fail.
+ *        - EAGAIN results in a retry.
+ *        - EWOULDBLOCK results in a retry
+ *        - EINTR results in a retry.
+ * @note the number of elements in the iovcnt may be limited by the underlying
+ *      OS  - see writeDataVUnlimited which, if needed calls writeDataV
+ *            repetitively.
+*/
+void
+writeDataV(int fd, struct iovec* iov, int iovcnt)
+{
+  while (iovcnt) {
+    ssize_t nBytes = writev(fd, iov, iovcnt);
+    if (nBytes < 0) {
+      int error = errno;
+      if (badError(error)) {
+        throw std::system_error(
+          error, std::generic_category(), "vectored io::writeData failed."
+        );
+      } else {
+        // retriable error - zero bytes written:
+        
+        nBytes = 0;
+      }
+    }
+    iov = updateIov(iov, iovcnt, nBytes);
+  }
 }
+/**
+ * writeDataVUnlimited
+ *    Repeatedly calls WriteDataV with at most the system limit of
+ *    I/O vectors until a potentially unlimited iov is written.
+ *
+ *
+ *  @param fd - file descriptor to which the data will be written (could be
+ *             a socket, or pipe).
+ *  @param iov - The vector of I/O descriptors.  See writev(2) for information
+ *            about the form of these. Note that in the event the write must
+ *            be continued from an incomplete write (e.g. write bigger than
+ *            OS buffers), the contents of this vector can be modified in the
+ *            course of resuming the write operation.
+ *  @param iovcnt - number of iovec structs pointed to by iov.
+ *  @throw std::system_error encapsulating the errno that caused the
+ *         failure
+ *
+ *  @note - the first time sysconf is called to get the maximum iovec count.
+ */
+void
+writeDataVUnlimited(int fd, struct iovec* iov, int iovcnt)
+{
+  if (maxIovecSize < 0) {
+    maxIovecSize = sysconf(_SC_IOV_MAX);
+  }
+  while (iovcnt) {
+    int n = iovcnt;
+    if (n > maxIovecSize) n = maxIovecSize;
+    writeDataV(fd, iov, n);
+    
+    iov += n;
+    iovcnt -= n;
+  }
+}
+}                             // namespace.

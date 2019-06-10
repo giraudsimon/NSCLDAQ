@@ -77,4 +77,4 @@ eventlogTests_LDADD   = @CPPUNIT_LDFLAGS@ \
 				@top_builddir@/base/os/libdaqshm.la		\
 				$(THREADLD_FLAGS)
 
-TESTS=eventlogTests
+#TESTS=eventlogTests

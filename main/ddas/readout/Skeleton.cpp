@@ -37,9 +37,12 @@ using namespace std;
 #include <CRunControlPackage.h>
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
+#include "pixie16app_export.h"
+#include "pixie16sys_export.h"
 
-CMyTrigger *mytrigger = new CMyTrigger();
-CMyEventSegment *myeventsegment = new CMyEventSegment(mytrigger);
+
+CMyTrigger *mytrigger(0);             // Newing them here makes order of construction
+CMyEventSegment *myeventsegment(0);   // un-controlled - now newed in SetupReadout.
 
 /*
 /*
@@ -115,15 +118,9 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
 {
   CReadoutMain::SetupReadout(pExperiment);
 
-  // Establish your trigger here by creating a trigger object
-  // and establishing it.
-
-  pExperiment->EstablishTrigger(mytrigger);
-  pExperiment->EstablishBusy(new CMyBusy);
-  // Create and add your event segments here, by creating them and invoking CExperiment's 
-  // AddEventSegment
-  pExperiment->AddEventSegment(myeventsegment);
-  
+  //   pExperiment->setZeroCopy(true);
+   
+   
   // The user can define an environment variable EVENT_BUFFER_SIZE that
   // can override the default event buffer size.  If that env is defined
   // - convert to unsigned.
@@ -131,6 +128,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
   // - warn if decreasing from the default
   // - set the new size with pExperiment->setBufferSize.
   
+  size_t bufferSize = 16934;
   const char* pNewBufferSizeStr = getenv("EVENT_BUFFER_SIZE");
   if (pNewBufferSizeStr) {            // new string defined.
     std::cout << "Overriding the default event buffer size\n";
@@ -140,13 +138,43 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
       std::cerr << "*** the ERROR EVENT_BUFFER_SIZE environment variable must be an integer > 0\n";
       exit(EXIT_FAILURE);
     }
-    if (newSize < pExperiment->getBufferSize()) {
-      std::cerr << "*** Warning you're asking me to decrease the event buffer size fromt he default. \n";
-      std::cerr << "***         I'll do this but there's no real benefit to it.  Hope you know what you're doing\n";
-    }
-    std::cout << "The new event buffer size will be: " << newSize << std::endl;
-    pExperiment->setBufferSize(newSize);
+    bufferSize = newSize;
   }
+  std::cout << "The new event buffer size will be: " << bufferSize << std::endl;
+  pExperiment->setBufferSize(bufferSize);
+  
+   
+  // See: https://git.nscl.msu.edu/daqdev/NSCLDAQ/issues/1005
+  
+  mytrigger = new CMyTrigger();
+  myeventsegment = new CMyEventSegment(mytrigger, *pExperiment);
+ 
+  
+  
+  // Establish your trigger here by creating a trigger object
+  // and establishing it.
+
+  pExperiment->EstablishTrigger(mytrigger);
+  pExperiment->EstablishBusy(new CMyBusy);
+  // Create and add your event segments here, by creating them and invoking CExperiment's 
+  // AddEventSegment
+  pExperiment->AddEventSegment(myeventsegment);
+  
+
+
+
+  // We have to register our commands here because they depend on our event segment and
+  // SetupReadout is called _after_ addCommands.
+
+  CTCLInterpreter* pInterp = gpTCLApplication->getInterpreter();
+  CRunControlPackage* pRctl = CRunControlPackage::getInstance(*pInterp);
+  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment, pExperiment);
+  pRctl->addCommand(pMyEnd);
+  
+  // Add the ddas_sync command
+  
+  CSyncCommand* pSyncCommand = new CSyncCommand(*pInterp, myeventsegment);
+  CBootCommand* pBootCommand = new CBootCommand(*pInterp, "ddas_boot", myeventsegment);  
   
 }
 
@@ -212,17 +240,6 @@ Skeleton::addCommands(CTCLInterpreter* pInterp)
 {
   CReadoutMain::addCommands(pInterp); // Add standard commands.
 
-  //CTCLInterpreter& rInterp(rStartup.Interp());
-  //CTCLInterpreter* pInterp = rStartup.getInterpreter();
-
-  CRunControlPackage* pRctl = CRunControlPackage::getInstance(*pInterp);
-  CMyEndCommand*      pMyEnd= new CMyEndCommand(*pInterp, myeventsegment);
-  pRctl->addCommand(pMyEnd);
-  
-  // Add the ddas_sync command
-
-  CSyncCommand* pSyncCommand = new CSyncCommand(*pInterp, myeventsegment);
-  CBootCommand* pBootCommand = new CBootCommand(*pInterp, "ddas_boot", myeventsegment);
 }
 
 /*!

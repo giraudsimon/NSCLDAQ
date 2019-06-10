@@ -188,15 +188,18 @@ int main(int argc, char** argv)
 {
   // Disable pipe signals:
 
-  if (Os::blockSignal(SIGPIPE)) {
-    perror("Failed to block sigpipe");
-  }
+
 
   struct gengetopt_args_info parsed;
 
   int status = cmdline_parser(argc, argv, &parsed);
   if (status == EXIT_FAILURE) {
     exit(status);
+  }
+  if (parsed.no_ignore_sigpipe_flag) {
+    if (Os::blockSignal(SIGPIPE)) {
+      perror("Failed to block sigpipe");
+    }
   }
 
   // There should be exactly one parameter, that is not a switch,
@@ -220,3 +223,5 @@ int main(int argc, char** argv)
   mainLoop(ringname, timeout, mindata);
   
 }
+
+//void* gpTCLApplication(0);

@@ -40,7 +40,7 @@ controlpush_LDADD   =   @top_builddir@/base/tcpip/libTcp.la	\
 			@LIBEXCEPTION_LDFLAGS@	\
 			@top_builddir@/base/os/libdaqshm.la	\
 			@top_builddir@/base/CopyrightTools/libLicense.la \
-			$(EPICS_LDFLAGS)  $(THREADLD_FLAGS)
+			$(EPICS_LDFLAGS)  $(THREADLD_FLAGS) @TCL_LDFLAGS@
 controlpush_LDFLAGS= -Wl,"-rpath=$(libdir)"
 
 COMPILATION_FLAGS            =	@LIBTCLPLUS_CFLAGS@		\

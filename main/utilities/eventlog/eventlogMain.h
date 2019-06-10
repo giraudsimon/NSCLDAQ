@@ -1,5 +1,5 @@
-#ifndef __EVENTLOGMAIN_H
-#define __EVENTLOGMAIN_H
+#ifndef EVENTLOGMAIN_H
+#define EVENTLOGMAIN_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -19,28 +19,19 @@
 
 // Headers:
 
-#ifndef __CRT_STDINT_H
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
-
+#include <CPagedOutput.h>
+#include <DataFormat.h>
 
 // Forward class definitions.
 
 class CRingBuffer;
 class CRingItem;
 class CRingStateChangeItem;
-
+class CZCopyRingBuffer;
 
 /*!
    Class that represents the event log application.
@@ -64,7 +55,17 @@ class EventLogMain
   uint32_t          m_nBeginsSeen;
   bool              m_fChangeRunOk;
   std::string       m_prefix;
-
+  pRingItemHeader   m_pItem;
+  size_t            m_nItemSize;
+  uint32_t          m_nRunNumber;
+  
+  
+  typedef struct _Chunk {
+    void*    s_pStart;
+    size_t   s_nBytes;
+    unsigned s_nEnds;
+  } Chunk, pChunk;
+  
   // Constructors and canonicals:
 
 public:
@@ -88,13 +89,26 @@ private:
   void recordData();
   void recordRun(const CRingStateChangeItem& item, CRingItem* pFormatItem);
   void writeItem(int fd, CRingItem&    item);
+  
   std::string defaultRingUrl() const;
   uint64_t    segmentSize(const char* pValue) const;
   bool  dirOk(std::string dirname) const;
   bool  dataTimeout();
   size_t itemSize(CRingItem& item) const;
   std::string shaFile(int runNumber) const;
-  bool isBadItem(CRingItem& item, int runNumber);
+  
+  void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.
+
+
+  void writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar);  
+  void waitForLotsOfData(); 
+  void getChunk(int fd, Chunk& nextChunk);
+  bool nextItemWraps();
+  size_t writeWrappedItem(int fd, int& ends);
+  void writeData(int fd, void* pData, size_t nBytes);
+  void checksumData(void* pData, size_t nBytes);
+  void closeEventSegment(int fd);
+  bool badBegin(void* p);
 };
 
 

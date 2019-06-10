@@ -23,8 +23,11 @@
 
 #include "CBufferedOutput.h"
 #include <io.h>
+#include <stdlib.h>
 #include <string.h>
-
+#include <pthread.h>
+#include <stdexcept>
+#include <stdio.h>
 
 namespace io {
 /**
@@ -39,10 +42,11 @@ namespace io {
  */
 CBufferedOutput::CBufferedOutput(int fd, size_t nBytes) :
     m_nFd(fd), m_pBuffer(nullptr), m_pInsert(nullptr), m_nBytesInBuffer(0),
-    m_nBufferSize(nBytes), m_nTimeout(0)
+    m_nBufferSize(nBytes), m_nTimeout(0), m_pOutputThread(nullptr), m_halting(false)
 {
-    m_pBuffer = new uint8_t[nBytes];
-    reset();
+    createFreeBuffers();         // Creates the free buffer pool.
+    reset();                     // gets a buffer and resets all the book keeping.
+    startOutputThread();         // get the output thread going.
 }
 /**
  * destructor
@@ -54,8 +58,10 @@ CBufferedOutput::CBufferedOutput(int fd, size_t nBytes) :
 CBufferedOutput::~CBufferedOutput()
 {
     if (m_nBytesInBuffer) flush();
-    delete []m_pBuffer;
-    m_lastFlushTime = time(nullptr);
+    stopOutputThread();           // This call will join with the output thread.
+    freeBuffers();
+    usleep(1000);                 // Let the thread cleanup too.
+    delete m_pOutputThread;
 }
 
 /**
@@ -89,7 +95,7 @@ CBufferedOutput::put(const void* pData, size_t nBytes)
     // We do that here because then flushes forced by the buffer full
     // will have times close to now.
     
-    if (m_nTimeout && ((time(nullptr) - m_lastFlushTime) > m_nTimeout)) {
+     if (m_nTimeout && ((time(nullptr) - m_lastFlushTime) > m_nTimeout)) {
         flush();
     }
 }
@@ -114,9 +120,13 @@ CBufferedOutput::setTimeout(unsigned timeout)
 void
 CBufferedOutput::flush()
 {
-    io::writeData(m_nFd, m_pBuffer, m_nBytesInBuffer);
-    reset();
-    m_lastFlushTime = time(nullptr);
+  if(m_nBytesInBuffer > 0) {
+    m_pCurrent->s_nBytesInBuffer = m_nBytesInBuffer;
+    queueBuffer(m_pCurrent);
+    reset();                           // Gets a new buffer.
+  }
+  m_lastFlushTime = time(nullptr); // reset timeout even if nothing's written.
+  pthread_yield();                 // try to allow the writer to run.
 }
 
 /**
@@ -126,10 +136,180 @@ CBufferedOutput::flush()
 void
 CBufferedOutput::reset()
 {
+    // Get a free output buffer (blocking if needed) and setup thre
+    // internal pointers from its queue element..
+    
+    m_pCurrent = getFreeBuffer();
+    
+    m_pBuffer  = static_cast<uint8_t*>(m_pCurrent->s_pBuffer);
+    m_nBufferSize = m_pCurrent->s_nBufferSize;    
     m_pInsert = m_pBuffer;
     m_nBytesInBuffer = 0;
     
 }
-
-
+/*------------------------------------------------------------------------------
+ *    Methods that communicate buffers of data between the
+ *    threads.
+ */
+/**
+ * queueBuffer
+ *    Puts a buffer in the output queue so that the output thread
+ *    can get it and write it.
+ *
+ * @param buffer - pointer to the queue element to commit.
+ */
+void
+CBufferedOutput::queueBuffer(QueueElement* buffer)
+{
+    m_queuedBuffers.queue(buffer);
 }
+/**
+ * freeBuffer
+ *    Puts a buffer descriptor into the free queue where the main class
+ *    can get it and use it for buffering while the output thread may
+ *    be actually doing output on another buffer.
+ *
+ * @param buffer - pointer to the queue element.
+ */
+void
+CBufferedOutput::freeBuffer(QueueElement* buffer)
+{
+    m_freeBuffers.queue(buffer);
+}
+/**
+ * getFreeBuffer
+ *    Get a buffer from the free queue (called by CBufferQueue).  This
+ *    will block if needed until a buffer is available for output.
+ *
+ *
+ *  @return CBufferedOutput::QueueElement*  - pointer to the received element.
+ */
+CBufferedOutput::QueueElement*
+CBufferedOutput::getFreeBuffer()
+{
+    return m_freeBuffers.get();
+}
+/**
+ * getQueuedBuffer
+ *    Gets the next buffer to write (called by CBufferedOutput::COutputThread).
+ *    We want to be sensitive to requests for exit so we
+ *    will alternate between waiting to be woken up with a timeout (wait on the
+ *    output queue) and doing a  check for the halting flag.
+ *    The assumption is that when the halting flag has been set,
+ *    all bufferes have been queued that ever will be queued.
+ *
+ * @return QeueuElement* - pointer ot the dequeued queue element.
+ * @retval nullptr       - if there will never by any more queue elements.
+ */
+
+CBufferedOutput::QueueElement*
+CBufferedOutput::getQueuedBuffer()
+{
+    CBufferedOutput::QueueElement* pResult(nullptr);
+    while (1) {
+        if (m_queuedBuffers.getnow(pResult) || m_halting) {
+            return pResult;
+        }
+        // Not halting and there was no immediately available buffer.
+        
+        m_queuedBuffers.wait(10);       // Wait at most 10ms for buffer.
+    }
+}
+/**
+ * createFreeBuffers
+ *     Create a bunch of free buffers.  The buffersizes are set by
+ *     m_nBufferSize.  The number of buffers is a hardwired constant.
+ *     The queue elements associated with the buffers are put into the
+ *     free queue.
+ */
+void
+CBufferedOutput::createFreeBuffers()
+{
+    
+    for (int i =0; i < 10; i++) {        // Probably really only need 2...
+        QueueElement* pEl = new QueueElement;
+        pEl->s_nBufferSize = m_nBufferSize;
+        pEl->s_nBytesInBuffer = 0;
+        pEl->s_pBuffer = malloc(m_nBufferSize);
+        
+        freeBuffer(pEl);               // Add to the free queue.
+    }
+}
+/**
+ *  freeBuffers
+ *     Free all of the buffers.  If the logic worked properly ,by the time
+ *     this is called, all buffers are in the free queue; because we
+ *     called this after requesting the output thread exit and joining with it.
+ */
+void
+CBufferedOutput::freeBuffers()
+{
+    QueueElement* pEl;
+    while (m_freeBuffers.getnow(pEl)) {
+        free(pEl->s_pBuffer);
+        delete pEl;
+    }
+}
+/**
+ * startOutputThread
+ *    Starts the output thread.
+ */
+void
+CBufferedOutput::startOutputThread()
+{
+    m_pOutputThread = new COutputThread(*this);
+    m_pOutputThread->start();
+}
+/**
+ * stopOutputThread
+ *    Sets the halt flag and joins the output thread.
+ */
+void
+CBufferedOutput::stopOutputThread()
+{
+    m_halting = true;
+    m_pOutputThread->join();           // Blocks until output thread exits.
+}
+
+/*--------------------------------------------------------------------------
+ *  CBufferedOutput::COutputThread implementationn.
+ */
+
+ /**
+  * constructor
+  *    Save a reference to the CBufferedOutput object that started us so that
+  *    we can use it's queue management methods.
+  * @param producer - the object that's producing stuff to be output.
+  */
+ CBufferedOutput::COutputThread::COutputThread(CBufferedOutput& producer) :
+    m_producer(producer) {}
+    
+/**
+ * operator()
+ *    The thread's entry point.
+ *    - Get buffers queued for output and output them.
+ *    - Return said buffers to the free queue.
+ *    - Rinse and repeat until we don't get buffers.
+ */
+void
+CBufferedOutput::COutputThread::operator()()
+{
+    QueueElement* p;
+    try {
+    while(p = m_producer.getQueuedBuffer()) {
+        io::writeData(
+            m_producer.getFd(), p->s_pBuffer, p->s_nBytesInBuffer
+        );
+        m_producer.freeBuffer(p);
+    }
+    }
+    catch (std::exception& e) {
+        std::cerr << "Output thread exception: " << e.what() << std::endl;
+    }
+    catch (int e) {
+        perror("Output thread write failed");
+    }
+}
+
+
+}                      // io namespace.

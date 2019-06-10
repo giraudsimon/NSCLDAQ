@@ -103,9 +103,12 @@ CExperiment::CExperiment(string ringName,
   m_nDataBufferSize(eventBufferSize),
   m_nDefaultSourceId(0),
   m_useBarriers(barriers)
+  m_fWantZeroCopy(false)                // by default.
+
 {
   try {
     m_pRing = CRingBuffer::createAndProduce(ringName);
+    m_pRing->setPollInterval(0);
   } catch (CException& e) {
     std::cerr << "Could not attach ringbuffer : " << ringName << " "
       << e.ReasonText() << std::endl;
@@ -561,25 +564,54 @@ CExperiment::ReadEvent()
   // and put the resulting event in the ring buffer:
   //
   if (m_pReadout) {
-    m_pReadout->keep();
-    m_needHeader = false;
-    m_nEventTimestamp = 0;
-    m_nSourceId  = m_nDefaultSourceId;
+    do {
+      m_fHavemore = false;       // Read can set this true to do an other ringitem.
+      m_pReadout->keep();
+      m_needHeader = false;
+      m_nEventTimestamp = 0;
+      m_nSourceId  = m_nDefaultSourceId;
+      
+      if (m_fWantZeroCopy) {
+        CRingItem item(
+          PHYSICS_EVENT, 0, m_nSourceId, 0,
+          m_nDataBufferSize + 100, m_pRing
+        );
     
-    CRingItem item(PHYSICS_EVENT, m_nDataBufferSize);
-    uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-    size_t nWords = m_pReadout->read(pBuffer +2 , m_nDataBufferSize);
-    if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
-      *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
-      item.setBodyCursor(pBuffer + nWords+2);
-      item.updateSize();
-      if (m_needHeader) {
-        item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
+        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
+        size_t nWords =
+          m_pReadout->read(pBuffer +2 , m_nDataBufferSize - sizeof(uint32_t));
+  
+        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
+          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
+          item.setBodyCursor(pBuffer + nWords+2);
+          item.updateSize();
+          if (m_needHeader) {
+            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
+          }
+          item.commitToRing(*m_pRing);
+          m_nEventsEmitted++;
+        }
+      } else {
+        CRingItem item(PHYSICS_EVENT, m_nDataBufferSize + 100);
+        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
+  
+        size_t nWords =
+          m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
+  
+        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
+          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
+          item.setBodyCursor(pBuffer + nWords+2);
+          item.updateSize();
+          if (m_needHeader) {
+            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
+          }
+          item.commitToRing(*m_pRing);
+          m_nEventsEmitted++;
+        }
       }
-      item.commitToRing(*m_pRing);
-      m_nEventsEmitted++;
-    }
-    m_pReadout->clear();	// do any post event clears.
+      m_pReadout->clear();	// do any post event clears.
+    } while(m_fHavemore);
+    
 
   }
   if (m_pBusy) {

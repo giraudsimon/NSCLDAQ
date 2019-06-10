@@ -81,7 +81,7 @@ public:
 
 
   static CRingBuffer* daqConsumeFrom(std::string uri);
-  
+  static bool local(std::string host);  
 
   // Utilities
 private:
@@ -89,7 +89,7 @@ private:
   static void startPipeline(std::string hostName, 
 			    std::string remoteRingname, 
 			    std::string localRingname);
-  static bool local(std::string host);
+
 };
 
 

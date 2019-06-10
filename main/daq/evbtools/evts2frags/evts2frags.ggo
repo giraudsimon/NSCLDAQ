@@ -1,0 +1,10 @@
+package "evgs2frags"
+version "1.0"
+purpose "Prepend ring items with fragment headers"
+
+option "read-blocksize" r "Read block size" int optional default="65536"
+option "default-sid"    s "Source id for items with no body header" int
+option "write-blocksize" w "Bytes to buffer for output prior to write" int optional default="65536"
+option "write-timeout"   t "Maximum seconds to buffer (approximately)" int optional default="1"
+
+

@@ -57,3 +57,4 @@ main(int argc, char** argv)
   catch(...) {			// Last chance exceptions...
   }
 }
+void* gpTCLApplication(0);

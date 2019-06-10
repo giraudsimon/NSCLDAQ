@@ -51,7 +51,7 @@ void
 COutputThread::run()
 {
     while (1) {
-        std::list<std::pair<time_t, EVB::pFragment> >* pFrags = getFragments();
+        auto pFrags = getFragments();
         m_nInflightCount -= (pFrags->size());
         {
             CriticalSection c(m_observerGuard);
@@ -91,8 +91,7 @@ void
 COutputThread::removeObserver(CFragmentHandler::Observer* o)
 {
     CriticalSection c(m_observerGuard);
-    std::list<CFragmentHandler::Observer*>::iterator p =
-        std::find(m_observers.begin(), m_observers.end(), o);
+    auto p = std::find(m_observers.begin(), m_observers.end(), o);
     if (p == m_observers.end()) {
         throw std::invalid_argument("COutputThread::removeObserber - observer does not exist");
     }
@@ -108,7 +107,7 @@ COutputThread::removeObserver(CFragmentHandler::Observer* o)
  *                  processing.
  */
 void
-COutputThread::queueFragments(std::list<std::pair<time_t, EVB::pFragment> >* pFrags)
+COutputThread::queueFragments(EvbFragments* pFrags)
 {
     m_nInflightCount += pFrags->size();
     m_inputQueue.queue(pFrags);
@@ -135,11 +134,10 @@ COutputThread::getInflightCount() const
  *    observers.
  * @return std::vector<EVB::pFragment>*
  */
-std::list<std::pair<time_t, EVB::pFragment> >*
+EvbFragments*
 COutputThread::getFragments()
 {
-    std::list<std::pair<time_t, EVB::pFragment> >* pFragmentList =
-        m_inputQueue.get();
+    auto pFragmentList = m_inputQueue.get();
     
    
     return pFragmentList;        // result is a ref dynamically created so this is ok.
@@ -156,9 +154,9 @@ COutputThread::getFragments()
  *        *  The vector itself was dynamically allocated:
  */
 void
-COutputThread::freeFragments(std::list<std::pair<time_t, EVB::pFragment> >*frags)
+COutputThread::freeFragments(EvbFragments* frags)
 {
-    std::list<std::pair<time_t, EVB::pFragment> >& fs(*frags);
+    auto& fs(*frags);
     // free storage associated with each fragment.
     
     for (auto p = fs.begin(); p != fs.end(); p++) {

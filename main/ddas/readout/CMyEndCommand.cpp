@@ -26,7 +26,8 @@
 using namespace std;
 #endif
 
-CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg) : CEndCommand(rInterp) 
+CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg,
+			     CExperiment* pexp) : CEndCommand(rInterp), m_pExp(pexp)
 {
     myeventsegment = myevseg;
     NumModules = myeventsegment->GetNumberOfModules();
@@ -81,7 +82,10 @@ int CMyEndCommand::transitionToInactive()
           std::cout << "Failed to end run in module " << k << std::endl;
       }
   }
+  // Now flush the sorted data in the event segment's hit manager:
 
+  myeventsegment->onEnd(m_pExp);
+  
   return 0;
 }
 
@@ -254,6 +258,7 @@ CMyEndCommand::operator()(CTCLInterpreter& interp,
   if (status == TCL_OK) {
     readOutRemainingData();
   }
+
   return TCL_OK;
 }
 

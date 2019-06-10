@@ -16,62 +16,15 @@
 #ifndef __CFRAGMENTHANDLER_H
 #define __CFRAGMENTHANDLER_H
 
-#ifndef __CONFIG_H
 #include <config.h>
-#ifndef __CONFIG_H
-#define __CONFIG_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_QUEUE
 #include <queue>
-#ifndef __STL_QUEUE
-#define __STL_QUEUE
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __STL_SET
 #include <set>
-#ifndef __STL_SET
-#define __STL_SET
-#endif
-#endif
-
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __CRT_TIME_H
 #include <time.h>
-#ifndef __CRT_TIME_H
-#define __CRT_TIME_H
-#endif
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
+#include <deque>
 
 #include <cstdint>
 
@@ -92,7 +45,8 @@ namespace EVB {
   typedef struct _Fragment Fragment, *pFragment;
 };
 
-typedef std::list<std::pair<time_t, EVB::pFragment>> EvbFragments;
+
+typedef std::deque<std::pair<time_t, EVB::pFragment>> EvbFragments;
 
 /**
  * @class CFragmentHandler
@@ -115,7 +69,11 @@ typedef std::list<std::pair<time_t, EVB::pFragment>> EvbFragments;
  */
 class CFragmentHandler
 {
+public:
+  
 private:
+  
+  
   // Private data types:
 
   typedef struct _SourceQueue {
@@ -125,7 +83,9 @@ private:
     std::uint64_t                                        s_bytesDeQd;
     std::uint64_t                                        s_totalBytesQd;
     std::uint64_t                                        s_lastTimestamp;
-    std::list<std::pair<time_t,  EVB::pFragment> > s_queue;
+    EvbFragments                                         s_queue;
+    std::string                                          s_qid;
+    bool                                                 s_xoffed;
     void reset() {
         s_newestTimestamp = 0;
 //        s_lastPoppedTimestamp = std::numeric_limits<std::uint64_t>::max();
@@ -134,8 +94,12 @@ private:
         s_bytesDeQd  = 0;
         s_totalBytesQd = 0;
         s_lastTimestamp = 0;
+        s_xoffed        = false;
     }
-    _SourceQueue()  {reset();}
+    _SourceQueue() : s_qid("")  {  
+      reset();
+    }
+    void setId(const char* qid) {s_qid = qid;}
     
 
   } SourceQueue, *pSourceQueue;
@@ -181,7 +145,7 @@ public:
     
     
   public:
-    virtual void operator()(const std::list<std::pair<time_t, EVB::pFragment> >& event) = 0; // Passed built event gather maps.
+    virtual void operator()(const EvbFragments& event) = 0; // Passed built event gather maps.
   };
 
   // Observer for data late conditions:
@@ -225,7 +189,9 @@ public:
   class FlowControlObserver {
     public:
         virtual void Xon() = 0;
+        virtual void Xon(std::string qid) = 0;
         virtual void Xoff() = 0;
+        virtual void Xoff(std::string qid) = 0;
   };
   
   class NonMonotonicTimestampObserver {
@@ -378,7 +344,7 @@ public:
   void reviveSocket(std::string sockName);
   void resetTimestamps();
   void clearQueues();
-  void observe(std::list<std::pair<time_t, EVB::pFragment> >& event); // pass built events on down the line.
+  void observe(EvbFragments& event); // pass built events on down the line.
 
   // utility methods:
 
@@ -392,14 +358,14 @@ private:
   bool   noEmptyQueue();
 
   BarrierSummary generateBarrier(
-      std::list<std::pair<time_t, EVB::pFragment> >& outputList
+      EvbFragments& outputList
   );
   void generateMalformedBarrier(
-    std::list<std::pair<time_t, EVB::pFragment> >& outputList
+    EvbFragments& outputList
   );
   //   void generateCompleteBarrier(std::vector<EVB::pFragment>& ouptputList); 156
   
-  void goodBarrier(std::list<std::pair<time_t, EVB::pFragment> >& outputList);
+  void goodBarrier(EvbFragments& outputList);
   void partialBarrier(
       std::vector<std::pair<std::uint32_t, std::uint32_t> >& types, 
       std::vector<std::uint32_t>& missingSources
@@ -416,8 +382,9 @@ private:
   size_t countPresentBarriers() const;
 
 
-  SourceQueue& getSourceQueue(std::uint32_t id);
-
+  SourceQueue& getSourceQueue(std::string sockName, std::uint32_t id);
+  void XoffQueue(SourceQueue& q);
+  void XonQueue(SourceQueue&  q);
 
   void checkBarrier(bool complete);
   time_t oldestBarrier();
@@ -429,20 +396,21 @@ private:
   uint64_t findStampMark();
   uint64_t oldestStamp(EvbFragments& q);
 
-  void DequeueUntilStamp(
-      std::list<std::pair<time_t,  EVB::pFragment> >& result,
-      std::list<std::pair<time_t,  EVB::pFragment> >& q,
+
+  void DequeueUntilStamp( 
+      EvbFragments& result,
+      EvbFragments& q,
       uint64_t timestamp
   );
   void DequeueUntilAbsTime(
-    std::list<std::pair<time_t,  EVB::pFragment> >& result,
-    std::list<std::pair<time_t,  EVB::pFragment> >& q,
+    EvbFragments& result,
+    EvbFragments& q,
     time_t time
   );
 
   void updateQueueStatistics(
     SourceQueue& queue,
-    std::list<std::pair<time_t, EVB::pFragment> >& justDequeued
+    EvbFragments& justDequeued
   );
   
   // Static private methods:

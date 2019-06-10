@@ -14,38 +14,102 @@
 	     East Lansing, MI 48824-1321
 */
 
-#include <EVBFramework.h>
-#include "CRingSource.h"
+/**
+* @file Main.cpp
+* @brief  main program entry point.
+*/
+
+#include "rfcmdline.h"
+#include "CRingFragmentSource.h"
+
+#include <CEventOrderClient.h>
+#include <Exception.h>
+#include <CRemoteAccess.h>
+#include <CRingBuffer.h>
+
+#include <stdlib.h>
+#include <iostream>
+#include <list>
+
 
 /**
- * Below this comment you should add #include directives to at least define
- * all of the sub-classes of CEVBClientApp that you are using
- */
-
-/**
- * Program entry point.
- *
- * @param argc - count of command line paramter words.
- * @param argv - Pointers to the actual words.
- *
- * @return int
- * @retval EXIT_SUCCESS - successful exit.
- * @retval EXIT_FAILURE - unsuccessful exit.
+ * Entry point:
+ *  - Parse the command line.
+ *  - Setup the connection to the event builder.
+ *  - Connect as a consumer ot the ringbuffer.
+ *  - Start the fragment source main application.
  */
 int
 main(int argc, char** argv)
 {
-  CRingSource src(argc, argv);
+    gengetopt_args_info args;
+    cmdline_parser(argc, argv, &args);  // exits on error.
+    
+    // The connection to the event builder needs
+    // the host, port (could be managed)
+    // port name and info string, and the source list.
+    
+    std::string evbHost = args.evbhost_arg;
+    std::string evbport = args.evbport_arg;
+    std::string info    = args.info_arg;
+    std::list<int> ids;
+    for (int i =0; i < args.ids_given; i++) {
+        ids.push_back(args.ids_arg[i]);
+    }
+    // If the port is "managed" we need to
+    // translate it into a value:
+    
+    uint16_t port;
+    try  {
+        if (evbport == "managed") {
+            if (!args.evbname_given) {
+                std::cerr <<
+                    "To lookup a managed port --evbname is required\n";
+                exit(EXIT_FAILURE);
+            }
+            std::string evbname = args.evbname_arg;
+            port = CEventOrderClient::Lookup(
+                evbHost, evbname.c_str()
+            );
+        } else {
+            port = atoi(evbport.c_str());
+        }
+    } catch(CException& e) {
+        std::cerr << "Failed to get event builder port number";
+        std::cerr << std::endl << e.ReasonText() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    CEventOrderClient client(evbHost, port);
+    try {
+        client.Connect(info, ids);
+    }
+    catch (CException& e) {
+        std::cerr << "Failed to connect to the event builder:";
+        std::cerr << std::endl << e.ReasonText() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    // To get a ring buffer connection we need the ring URI.
+    
 
-
-  /** Below you should create instances of your event builder client app clases
-   * e.g:
-   * CEVBMyClient myApp;
-   */
-
-
-  /** Don't touch anything below this line.
-   */
-
-  return CEVBClientFramework::main(argc, argv); // Start the framework.
+    std::string ringUri = args.ring_arg;
+    CRingBuffer* pRing;
+    try {
+        pRing = CRingAccess::daqConsumeFrom(ringUri);
+    }
+    catch (CException& e) {
+        std::cerr << "Unable to connect to the ring buffer " << ringUri << "\n";
+        std::cerr << e.ReasonText() << std::endl;
+    }
+    // Create our data source object and start it:
+    
+    CRingFragmentSource source(
+        client, *pRing,
+        ids, args.timestampextractor_arg, args.expectbodyheaders_flag,
+        args.oneshot_arg, args.timeout_arg, args.offset_arg, args.default_id_arg
+    );
+    source();
+    
+    client.disconnect();
+    delete pRing;
+    exit(EXIT_SUCCESS);    
 }

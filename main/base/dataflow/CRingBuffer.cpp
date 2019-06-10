@@ -914,11 +914,13 @@ CRingBuffer::peek(void*   pBuffer,
 void
 CRingBuffer:: skip(size_t nBytes)
 {
+#ifdef NOZEROCOPY
   if (m_mode != consumer) {
     throw CStateException(modeString().c_str(), "consumer",
 			  "CRingBuffer::skip");
 
   }
+#endif
   Skip(nBytes);
 }
 /////////////////////////////////////////////////////////////////////////////////
@@ -948,6 +950,51 @@ CRingBuffer::getPollInterval()
 {
   return m_pollInterval;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Methods belwo provide support for (nearly) zero copy access.
+
+/**
+ * getPointer
+ *   Returns the pointer into the ring (put or get) for the
+ *   client.
+ * @return void* - pointer to the current position in the ring.
+ * @note - you'd better know what you're doing if you're accessing this
+ *         as a producer... 'cause I don't..
+ */
+void*
+CRingBuffer::getPointer()
+{
+  off_t ringBase = m_pRing->s_header.s_dataOffset;
+  char* pDataBase= reinterpret_cast<char*>(m_pRing) + ringBase;
+  char* pGet     = reinterpret_cast<char*>(m_pRing) + 
+                   m_pClientInfo->s_offset;	// get data starting here.
+                   
+  return pGet;
+}
+/**
+ * wouldWrap
+ *   @param nBytes -number of bytes to check.
+ *   @return bool - true if pGet + nBytes would wrap the buffer.
+ */
+bool
+CRingBuffer::wouldWrap(size_t nBytes)
+{
+ off_t ringTop  = m_pRing->s_header.s_topOffset;
+ off_t desiredTop = m_pClientInfo->s_offset + nBytes;
+ return desiredTop > ringTop;
+}
+
+/**
+ * @return size_t - number of bytes from get pointer to top.
+ */
+size_t
+CRingBuffer::bytesToTop()
+{
+  return m_pRing->s_header.s_topOffset - m_pClientInfo->s_offset + 1;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Inquiry member functions.
 
@@ -1112,7 +1159,7 @@ CRingBuffer::blockWhile(CRingBuffer::CRingBufferPredicate& pred, unsigned long t
     while (pred(*this)) {
       time_t now = time(NULL);
       if ((now - start) >= timeout) 
-	return -1; // timeout
+        return -1; // timeout
       pollblock(); // wait a bit before checking condition.
     }
     
@@ -1144,7 +1191,9 @@ CRingBuffer::While(CRingBuffer::CRingBufferPredicate& pred)
 void
 CRingBuffer::pollblock()
 {
-  Os::usleep(m_pollInterval * 1000); // wait a bit before checking condition.  
+  if (m_pollInterval> 0) {
+    Os::usleep(m_pollInterval * 1000); // wait a bit before checking condition.
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

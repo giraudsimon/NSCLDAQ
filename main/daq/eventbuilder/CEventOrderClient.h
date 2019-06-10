@@ -17,26 +17,11 @@
 #ifndef __CEVENTORDERCLIENT_H
 #define __CEVENTORDERCLIENT_H
 
-#ifndef  __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
+#include <sys/uio.h>
+
 
 namespace EVB {
   typedef struct _Fragment Fragment, *pFragment;
@@ -57,6 +42,9 @@ private:
   uint16_t    m_port;		// port on which the event builder is running.
   CSocket*    m_pConnection;	// Connectionto the server.
   bool        m_fConnected;	// True if connection is alive.
+  int         m_nIovecMaxSize; // System limit on iov size.
+  size_t      m_nIovecSize; // Number of elements allocated below.
+  iovec*      m_pIovec;     // Pre-allocated iovector for writev.
   
   // construction/destruction/canonicals
 public:
@@ -88,6 +76,7 @@ private:
   static size_t message(void** msg, const void* request, size_t requestSize, const  void* body, size_t bodySize);
   std::string getReplyString();	
   static void freeChain(EVB::pFragmentChain pChain);
+  iovec* makeIoVec(EVB::Fragment& Frag, iovec* pVecs);
 };
 
 

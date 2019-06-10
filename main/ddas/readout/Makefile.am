@@ -17,19 +17,26 @@ SHAREDIR=@prefix@/share/ddasreadout
 
 
 DDASReadout_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBusy.cpp CMyScaler.cpp CMyEndCommand.cpp \
-	Skeleton.h CMyEventSegment.h CMyTrigger.h CMyBusy.h CMyScaler.h CMyEndCommand.h \
-	CSyncCommand.cpp CSyncCommand.h CBootCommand.cpp CBootCommand.h
+	Skeleton.h CMyEventSegment.h CMyTrigger.h CMyBusy.h CMyScaler.h \
+	CMyEndCommand.h CSyncCommand.cpp CSyncCommand.h CBootCommand.cpp \
+	CBootCommand.h RawChannel.cpp RawChannel.h 			\
+	ReferenceCountedBuffer.cpp ReferenceCountedBuffer.h 		\
+	BufferArena.cpp BufferArena.h ZeroCopyHit.cpp ZeroCopyHit.h	\
+	ModuleReader.cpp ModuleReader.h CHitManager.cpp CHitManager.h
+
 
 DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
-	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\"
+	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\" \
+	-DSORTING
 
 DDASReadout_LDFLAGS= \
 	@top_builddir@/sbs/readout/libSBSProductionReadout.la   \
 	@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la		\
 	@top_builddir@/base/thread/libdaqthreads.la		\
+	@top_builddir@/base/os/libdaqshm.la			\
 	-L@DDAS_INSTDIR@/lib -lPixie16App -lPixie16Sys          \
 	-lConfiguration -lSystemBooter @PLX_LDFLAGS@ 		\
 	@LIBTCLPLUS_LDFLAGS@	@TCL_LDFLAGS@			\
@@ -53,3 +60,17 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/envset          $(SHAREDIR)
 
 EXTRA_DIST=crate_1 envset README
+
+noinst_PROGRAMS=unittests 
+unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
+	RawChannel.cpp RawChannel.h		\
+	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCountedBuffer.h \
+	arenatests.cpp BufferArena.cpp BufferArena.h			\
+	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h			\
+	mreadertests.cpp ModuleReader.cpp ModuleReader.h 		\
+	hmtests.cpp CHitManager.cpp CHitManager.h
+unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS) -DSORTING
+unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
+
+TESTS=unittests
+

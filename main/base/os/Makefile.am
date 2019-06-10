@@ -1,9 +1,11 @@
 lib_LTLIBRARIES = libdaqshm.la
 
 libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp \
-	CPosixBlockingRecordLock.cpp CBufferedOutput.cpp NSCLDAQLog.cpp
+	CPosixBlockingRecordLock.cpp CBufferedOutput.cpp NSCLDAQLog.cpp \
+	CRingBlockReader.cpp CRingFileBlockReader.cpp CPagedOutput.cpp
 include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h \
-	CPosixBlockingRecordLock.h CBufferedOutput.h NSCLDAQLog.h
+	CPosixBlockingRecordLock.h CBufferedOutput.h NSCLDAQLog.h \
+	CRingBlockReader.h CRingFileBlockReader.h CPagedOutput.h
 
 noinst_HEADERS	     = Asserts.h
 
@@ -28,7 +30,7 @@ unittests_SOURCES = TestRunner.cpp createTests.cpp removeTests.cpp \
 	attachTests.cpp \
         detachTests.cpp timeoutTests.cpp semaphoretests.cpp \
 	closeunusedtests.cpp \
-	testBufferedOutput.cpp logtest.cpp
+	testBufferedOutput.cpp logtest.cpp poutputtests.cpp testiov.cpp
 
 unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 

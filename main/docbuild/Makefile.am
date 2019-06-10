@@ -55,6 +55,7 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/daq/format \
 						@top_srcdir@/usb \
 						@top_srcdir@/usb/vmusb \
+						@top_srcdir@/usb/vmusb/vmusbPackage \
 						@top_srcdir@/usb/ccusb \
 						@top_srcdir@/daq/readoutgui \
 						@top_srcdir@/daq/eventbuilder \
@@ -109,7 +110,8 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/base/tcpip		\
 						@top_srcdir@/libtcl/tclplus  \
 						@top_srcdir@/libtcl/exception \
-						@top_srcdir@/examples
+						@top_srcdir@/examples		\
+						@top_srcdir@/ddas/readoutdriver
 
 #						@top_srcdir@/utilities/boot 
 #						@top_srcdir@/utilities/statemanager 

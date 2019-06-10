@@ -70,7 +70,7 @@ snit::type EVB::Connection {
     option -disconnectcommand -default [list] -configuremethod _SetCallback 
     option -fragmentcommand   -default [list] -configuremethod _SetCallback
 
-
+    variable alive 0
     variable callbacks
     variable expecting
     variable stateMethods -array [list FORMING _Connect ACTIVE _Fragments]
@@ -79,34 +79,40 @@ snit::type EVB::Connection {
 
 
     constructor args {
-	$self configurelist $args
-	fconfigure $options(-socket) -blocking 1 -buffering none -translation {binary lf} \
-	    -encoding binary
-	set callbacks [EVB::CallbackManager %AUTO%]
-	flush stdout
-	$callbacks define -disconnectcommand
-	$callbacks define -fragmentcommand
-
-	$self _Expecting _Connect FORMING; # We are now expecting a CONNECT command.
+        $self configurelist $args
+        fconfigure $options(-socket) -blocking 1 -buffering none -translation {binary lf} \
+            -encoding binary
+        set callbacks [EVB::CallbackManager %AUTO%]
+        flush stdout
+        $callbacks define -disconnectcommand
+        $callbacks define -fragmentcommand
+    
+        $self _Expecting _Connect FORMING; # We are now expecting a CONNECT command.
 
     }
     destructor {
-	if {$options(-socket) != -1} {
-	    catch {$self _Close 'CLOSED'}
-	}
-	$callbacks destroy
+        if {$options(-socket) != -1} {
+            catch {$self _Close CLOSED}
+        }
+        $callbacks destroy
     }
+    method isAlive {} {return $alive}
     ##
     # tryRead
     #    Check to see if there are data currently buffered in our channel
     #    and if so dispatch.  During this , the -fragmentcommand is disabled.
     #
     method tryRead {} {
-	if {[chan pending input $options(-socket)] > 0} {
-	    $callbacks register -fragmentcommand [list]; # turn off callback
-	    $self $expecting $options(-socket)
-	    $callbacks register -fragmentcommand $options(-fragmentcommand); #  Restore.
-	}
+        if {$options(-socket) eq "-1"} {
+            return
+        }
+        catch {
+            if {[chan pending input $options(-socket)] > 0} {
+                $callbacks register -fragmentcommand [list]; # turn off callback
+                $self $expecting $options(-socket)
+                $callbacks register -fragmentcommand $options(-fragmentcommand); #  Restore.
+            }
+        }
     }
     ##
     # flowOff
@@ -135,8 +141,8 @@ snit::type EVB::Connection {
     # @param script - New script to register.
     #
     method _SetCallback {option script} {
-	$callbacks register $option $script
-	set options($option) $script
+        $callbacks register $option $script
+        set options($option) $script
     }
 
 
@@ -158,41 +164,41 @@ snit::type EVB::Connection {
     # @retval First list element is the description string.  The second, a list of source ids.
     #
     method _DecodeConnectBody body {
-       
-	# The loop below pulls the characters out of the description
-	# one at a time.  cursor is the current position in the binary 
-	# array.  Characters are appended to description until a null is seen:
-
-	set cursor 0
-	set description ""
-
-	while {1} {
-	    binary scan $body "@${cursor}c1" char
-	    incr cursor
-
-	    if {$char} {
-		append description [format %c $char]
-	    } else {
-		break
-	    }
-	}
-	# cursor now point just past the null in the string.. at the
-	# number of source ids:
-
-	binary scan $body "@${cursor}i1" sourceCount
-	incr cursor 4
-
-	set sourceList [list]
-	for {} {$sourceCount > 0} {
-	    incr sourceCount -1
-	    incr cursor 4
-	} {
-	    binary scan $body "@${cursor}i1" source
-	    lappend sourceList $source
-	}
-
-
-	return [list $description $sourceList]
+        
+     # The loop below pulls the characters out of the description
+     # one at a time.  cursor is the current position in the binary 
+     # array.  Characters are appended to description until a null is seen:
+ 
+     set cursor 0
+     set description ""
+ 
+     while {1} {
+         binary scan $body "@${cursor}c1" char
+         incr cursor
+ 
+         if {$char} {
+         append description [format %c $char]
+         } else {
+         break
+         }
+     }
+     # cursor now point just past the null in the string.. at the
+     # number of source ids:
+ 
+     binary scan $body "@${cursor}i1" sourceCount
+     incr cursor 4
+ 
+     set sourceList [list]
+     for {} {$sourceCount > 0} {
+         incr sourceCount -1
+         incr cursor 4
+     } {
+         binary scan $body "@${cursor}i1" source
+         lappend sourceList $source
+     }
+ 
+ 
+     return [list $description $sourceList]
     }
 
     ##
@@ -204,17 +210,17 @@ snit::type EVB::Connection {
     # @return byte array containing the data read from the socket.
     #
     method _ReadBinaryData socket {
-	set count [read $socket 4]; # Read the count.
-
-	if {[string length $count] != 4} {
-	    error "Read of byte array length failed"
-	}
-	binary scan $count i1 size
-
-	if {$size > 0} {
-	    return [read $socket $size]
-	} else {
-	    return ""
+        set count [read $socket 4]; # Read the count.
+    
+        if {[string length $count] != 4} {
+            error "Read of byte array length failed"
+        }
+        binary scan $count i1 size
+    
+        if {$size > 0} {
+            return [read $socket $size]
+        } else {
+            return ""
 	}
     }
 
@@ -227,25 +233,25 @@ snit::type EVB::Connection {
     # @note If a read on the socket fails an error is thrown.
     #
     method _ReadCountedString socket {
-	#
-	# Note that [string length] is documented to
-	# return the length of a byte array object if that's what it's
-	# applied to so it should work below:
-	#
-	set count [read $socket 4]; # uint32_t.
-	if {[string length $count] != 4} {
-	    error "read of string length failed"
-	}
-	binary scan $count i1 size
-	set stringBytes [read $socket $size]
-	if {[string length $stringBytes] != $size} {
-	    error "read of string itself failed"
-	}
-	#
-	# Decode the string as a tcl string via binary scan
-	#
-	binary scan $stringBytes a$size result
-	return $result
+        #
+        # Note that [string length] is documented to
+        # return the length of a byte array object if that's what it's
+        # applied to so it should work below:
+        #
+        set count [read $socket 4]; # uint32_t.
+        if {[string length $count] != 4} {
+            error "read of string length failed"
+        }
+        binary scan $count i1 size
+        set stringBytes [read $socket $size]
+        if {[string length $stringBytes] != $size} {
+            error "read of string itself failed"
+        }
+        #
+        # Decode the string as a tcl string via binary scan
+        #
+        binary scan $stringBytes a$size result
+        return $result
 
     }
 
@@ -258,11 +264,11 @@ snit::type EVB::Connection {
     #         [lindex .... 1] is the body text.
     #
     method _ReadTextMessage socket {
-
-	set header [$self _ReadCountedString $socket]
-	set body   [$self _ReadCountedString $socket]
-
-	return [list $header $body]
+    
+        set header [$self _ReadCountedString $socket]
+        set body   [$self _ReadCountedString $socket]
+    
+        return [list $header $body]
 
     }
 
@@ -274,9 +280,9 @@ snit::type EVB::Connection {
     # @param newState - The new state value.
     #
     method _Expecting {method newState} {
-	fileevent $options(-socket) readable [mymethod $method $options(-socket)] 
-	set options(-state) $newState
-	set expecting $method
+        fileevent $options(-socket) readable [mymethod $method $options(-socket)] 
+        set options(-state) $newState
+        set expecting $method
     }
     ##
     # Called to close the connection
@@ -286,13 +292,13 @@ snit::type EVB::Connection {
     #
     # @param newState - New state to set.
     method _Close {newState} {
-	set options(-state) $newState
-	fileevent $options(-socket) readable [list]
-	close $options(-socket)
-
-	set options(-socket) -1
-
-	$callbacks invoke -disconnectcommand [list] [list]
+        set alive 0
+        set options(-state) $newState
+        fileevent $options(-socket) readable [list]
+        close $options(-socket) 
+        set options(-socket) -1
+    
+        $callbacks invoke -disconnectcommand [list] [list]
 
     }
 
@@ -307,55 +313,56 @@ snit::type EVB::Connection {
     #         We just transition to ERROR, and close out
     #
     method _Connect socket {
-
-	# Get the header and get the body.
-	# The header is a string, but the body is a counted binary block:
-
-	if {[catch {$self _ReadCountedString $socket} header]} {
-	    catch {puts $socket "ERROR {Could not read header expecting CONNECT}"}; # Might fail.
-	    $self _Close ERROR
-	    return
-	}
-
-	if {[catch {$self _ReadBinaryData $socket} body]} {
-	    puts $socket "ERROR {Corrupt body in CONNECT message}"
-	    $self _Close ERROR
-	}
-
-	# Must be a CONNECT message with a non-zero body.
-	#
-
-	if {$header ne "CONNECT"} {
-	    catch {puts $socket "ERROR {Expected CONNECT}"}
-	    $self _Close ERROR
-	    return
-	}
-
-
-	if {[string length $body] == 0} {
-	    catch {puts $socket "ERROR {Empty Body}"}
-	    $self _Close ERROR
-	    return
-	}
-	puts $socket "OK"
-
-	# Pull out the description and the source id list
-
-	set decodedBody [$self _DecodeConnectBody $body]
-	set description [lindex $decodedBody 0]
-	set sourceIds   [lindex $decodedBody 1]
-
-
-
-	# Save the description and transition to the active state:
-        # Register ourself with the event builder core
-
-	set options(-description) $description
-	$self _Expecting _Fragments ACTIVE
-
-
-	EVB::source $socket {*}$sourceIds
- 
+    
+        # Get the header and get the body.
+        # The header is a string, but the body is a counted binary block:
+    
+        if {[catch {$self _ReadCountedString $socket} header]} {
+            catch {puts $socket "ERROR {Could not read header expecting CONNECT}"}; # Might fail.
+            $self _Close ERROR
+            return
+        }
+    
+        if {[catch {$self _ReadBinaryData $socket} body]} {
+            puts $socket "ERROR {Corrupt body in CONNECT message}"
+            $self _Close ERROR
+        }
+    
+        # Must be a CONNECT message with a non-zero body.
+        #
+    
+        if {$header ne "CONNECT"} {
+            catch {puts $socket "ERROR {Expected CONNECT}"}
+            $self _Close ERROR
+            return
+        }
+    
+    
+        if {[string length $body] == 0} {
+            catch {puts $socket "ERROR {Empty Body}"}
+            $self _Close ERROR
+            return
+        }
+        puts $socket "OK"
+        set alive 1
+    
+        # Pull out the description and the source id list
+    
+        set decodedBody [$self _DecodeConnectBody $body]
+        set description [lindex $decodedBody 0]
+        set sourceIds   [lindex $decodedBody 1]
+    
+    
+    
+        # Save the description and transition to the active state:
+            # Register ourself with the event builder core
+    
+        set options(-description) $description
+        $self _Expecting _Fragments ACTIVE
+    
+    
+        EVB::source $socket {*}$sourceIds
+     
     }
     #
     # Expecting fragments if the next message is
@@ -380,7 +387,7 @@ snit::type EVB::Connection {
 
 	if {$header eq "DISCONNECT"} {
 	    puts $socket "OK"
-	    $self _Close
+	    $self _Close CLOSED
 
 	} elseif {$header eq "FRAGMENTS"} {
 
@@ -396,7 +403,7 @@ snit::type EVB::Connection {
 
 	    if {[catch {EVB::handleFragment $socket} msg]} {
 		puts stderr "Event orderer failed call to handleFragment: : $msg"
-		tk_messageBox -type ok -icon error -title {Fragment Handling error} \
+		tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
 		    -message "C++ Fragment handler reported an error: $msg"
 		exit;		# can't really continue.
 	    }
@@ -464,39 +471,39 @@ snit::type EVB::ConnectionManager {
 
     constructor args {
         set result [catch {
-	$self configurelist $args; # To get the port.
-
-	set lastFragment [clock seconds]
-
-	#
-	# Set up the callback manager.
-	#
-	set callbacks [EVB::CallbackManager %AUTO%]
-	$callbacks define -connectcommand
-	$callbacks define -disconnectcommand
-
-	set serverSocket [socket -server [mymethod _NewConnection] $options(-port)]
-
-	# watch timeouts at 1/2 the timeout interval:
-
-	after [$self _TimeoutCheckInterval] [mymethod _CheckSourceTimeouts]
-
-	install TimeoutObservers using  Observer %AUTO%
-        } msg]
-        if {$result} {
-            puts stderr "$msg\n $::errorInfo"
-            exit
-        }
-        EVB::onflow add [mymethod _FlowOn] [mymethod _FlowOff]
+        $self configurelist $args; # To get the port.
+    
+        set lastFragment [clock seconds]
+    
+        #
+        # Set up the callback manager.
+        #
+        set callbacks [EVB::CallbackManager %AUTO%]
+        $callbacks define -connectcommand
+        $callbacks define -disconnectcommand
+    
+        set serverSocket [socket -server [mymethod _NewConnection] $options(-port)]
+    
+        # watch timeouts at 1/2 the timeout interval:
+    
+        after [$self _TimeoutCheckInterval] [mymethod _CheckSourceTimeouts]
+    
+        install TimeoutObservers using  Observer %AUTO%
+            } msg]
+            if {$result} {
+                puts stderr "$msg\n $::errorInfo"
+                exit
+            }
+            EVB::onflow add [mymethod _FlowOn] [mymethod _FlowOff]
     }
     destructor {
-	foreach object [array names connections] {
-	    $object destroy
-	    unset connections($object)
-	}
-	close $serverSocket
-	$callbacks destroy
-	# $TimeoutObservers destroy
+        foreach object [array names connections] {
+            $object destroy
+            unset connections($object)
+        }
+        close $serverSocket
+        $callbacks destroy
+        # $TimeoutObservers destroy
     }
     #-----------------------------------------------------------------
     # Public methods:
@@ -533,21 +540,30 @@ snit::type EVB::ConnectionManager {
     ##
     # _FlowOn
     #   Enable the acceptance of data from source.
+    # @param sock - if not an empty string the specific socket
+    #                to flow on.  If an empty string all are flowed on.
     #
-    method _FlowOn {} {
+    method _FlowOn {{sock ""}} {
         set accepting 1
         foreach connection [array names connections] {
-            $connection flowOn
+            if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                puts stderr "Connection manager Flow on $sock"
+                $connection flowOn
+            }
         }
     }
     ##
     # _FlowOff
     #   Disable the acceptance of data from sources.
-    #
-    method _FlowOff {} {
+    # @param sock - the specific socket to flow off.  ""
+    #               means flow off all of them.
+    method _FlowOff { {sock ""}} {
         set accepting 0
         foreach connection [array names connections] {
-            $connection flowOff
+            if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
+                puts stderr "Connection manager Flow off $sock"
+                $connection flowOff
+            }
         }
     }
 
@@ -597,54 +613,54 @@ snit::type EVB::ConnectionManager {
     #  @param cport - client port (we could care less).
     #
     method _NewConnection {sock client cport} {
-	set connection [EVB::Connection %AUTO% -socket $sock  -clientaddr $client]
-	set connections($connection) [clock seconds]; # connection's last frag time to be not-timedout.
-	$connection configure -disconnectcommand [mymethod _DisconnectClient $connection]
-	$connection configure -fragmentcommand   [mymethod _RecordFragment $connection]
-	$callbacks invoke -connectcommand [list %H %O] [list $client $connection]
-        if {!$accepting} {
-            $connection flowOff;            # Event builder can't take more data.
+        set connection [EVB::Connection %AUTO% -socket $sock  -clientaddr $client]
+        set connections($connection) [clock seconds]; # connection's last frag time to be not-timedout.
+        $connection configure -disconnectcommand [mymethod _DisconnectClient $connection]
+        $connection configure -fragmentcommand   [mymethod _RecordFragment $connection]
+        $callbacks invoke -connectcommand [list %H %O] [list $client $connection]
+            if {!$accepting} {
+                $connection flowOff;            # Event builder can't take more data.
+            }
         }
-    }
-    ## 
-    # We very carefully ensured the callbacks registered with the callback manager
-    # are the same as the options that set/get them.
-    # this ensures that we can have a single configuremethod take care of both of them.
-    # 
-    # @param option - Option being set (callback name).
-    # @param value  - New value for the option (the callback).
-    #
-    method _SetCallback {option value} {
-	$callbacks register $option $value
-	set options($option) $value
-    }
-    ##
-    # _RecordFragment
-    #
-    #  Record the time at which the most recent fragment arrived and which 
-    #  connection received it.
-    #
-    # @param connection - the connection that just got the fragment.
-    #
-    method _RecordFragment connection {
-	set connections($connection) [clock seconds]
-	set lastFragment [clock seconds]
-
-	if {$connection in $timedoutSources} {
-	    EVB::reviveSocket [$connection cget -socket]
-	    set cindex [lsearch -exact $timedoutSources $connection]
-	    set timedoutSources [lreplace $timedoutSources $cindex $cindex]
-	}
-	# Now ensure none of the connections gets starved by calling their
-	# tryRead -- this is because I think under heavy unbalanced load, the
-	# event dispatcher may not be fair, only dispatching the first readable socket
-	# even if other sockets are readable...and if that socket becomes readable...
-	#
-	foreach c [array names connections] {
-	    if {$c != $connection} {
-		$c tryRead
-	    }
-	}
+        ## 
+        # We very carefully ensured the callbacks registered with the callback manager
+        # are the same as the options that set/get them.
+        # this ensures that we can have a single configuremethod take care of both of them.
+        # 
+        # @param option - Option being set (callback name).
+        # @param value  - New value for the option (the callback).
+        #
+        method _SetCallback {option value} {
+            $callbacks register $option $value
+            set options($option) $value
+        }
+        ##
+        # _RecordFragment
+        #
+        #  Record the time at which the most recent fragment arrived and which 
+        #  connection received it.
+        #
+        # @param connection - the connection that just got the fragment.
+        #
+        method _RecordFragment connection {
+            set connections($connection) [clock seconds]
+            set lastFragment [clock seconds]
+        
+            if {$connection in $timedoutSources} {
+                EVB::reviveSocket [$connection cget -socket]
+                set cindex [lsearch -exact $timedoutSources $connection]
+                set timedoutSources [lreplace $timedoutSources $cindex $cindex]
+            }
+            # Now ensure none of the connections gets starved by calling their
+            # tryRead -- this is because I think under heavy unbalanced load, the
+            # event dispatcher may not be fair, only dispatching the first readable socket
+            # even if other sockets are readable...and if that socket becomes readable...
+            #
+            foreach c [array names connections] {
+                if {$c != $connection && ([$c isAlive])} {
+                    $c tryRead
+                }
+        }
     }
     ##
     #  Check for lack of data on data sources;

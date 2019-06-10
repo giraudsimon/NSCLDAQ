@@ -16,7 +16,8 @@
 using namespace std;
 //#endif
 
-CMyTrigger::CMyTrigger(): m_retrigger(false), m_fifoThreshold(EXTFIFO_READ_THRESH*10)
+CMyTrigger::CMyTrigger(): m_retrigger(false), m_fifoThreshold(EXTFIFO_READ_THRESH*10),
+  m_wordsInEachModule(nullptr)
 {
   //  If FIFO_THRESHOLD is defined and is a positive integer, it replaces
   //  the default value of m_fifoThreshold - the number of words that must be
@@ -30,10 +31,12 @@ CMyTrigger::CMyTrigger(): m_retrigger(false), m_fifoThreshold(EXTFIFO_READ_THRES
       m_fifoThreshold = newThreshold;
     }
   }
+  std::cerr << "Using a FIFO threshold of " << m_fifoThreshold << " words\n";
 }
 
 CMyTrigger::~CMyTrigger()
 {
+  delete []m_wordsInEachModule;
 }
 
 void CMyTrigger::setup()
@@ -65,6 +68,8 @@ void CMyTrigger::Initialize(int nummod)
 {
     NumberOfModules = nummod;
     m_retrigger = false;
+    delete []m_wordsInEachModule;
+    m_wordsInEachModule = new unsigned int[NumberOfModules]; 
 }
 
 bool CMyTrigger::operator()() 
@@ -84,29 +89,40 @@ bool CMyTrigger::operator()()
 
             // Read number of 32-bit words inside the FIFO on Pixie16
             int retval = -1;
-
+            bool thresholdMade(false);
             for (int i=0; i<NumberOfModules; i++) {
                 // Check how many words are stored in Pixie16's readout FIFO
                 ModNum = i;
                 nFIFOWords = 0;
                 retval = Pixie_Read_ExtFIFOStatus(&nFIFOWords,ModNum);
-
+                if (retval < 0) {
+                  std::cerr << "Failed to read ExtFiFo status for module: "
+                    << ModNum;
+                    nFIFOWords = 0;                         // For safety.
+                }
+                m_wordsInEachModule[i] = nFIFOWords;       // Save words each module has.
+                
                 /* Trigger a read if the number of words in the external FIFO of 
                    any pixie16 module in a crate exceeds a threshold defined in 
                    pixie16app_defs.h */
 
                 if(nFIFOWords > m_fifoThreshold){
 #ifdef PRINTQUEINFO
-                    std::cout << "CMyTrigger:: trig satisfied...mod=" << i << " nwords=" << nFIFOWords << std::endl;
+                    std::cout << "CMyTrigger:: trig satisfied...mod=" << i
+                      << " nwords=" << nFIFOWords << std::endl;
 #endif
                     m_retrigger = true;
-                    m_lastTriggerTime = time(nullptr);
-                    return true;
+                    thresholdMade =  true;   // Once polling is done, trigger.
                 }
 
             } // end module loop
+            if (thresholdMade) {
+              m_lastTriggerTime = time(nullptr);   // Record the trigger time.
+              return true;   // Some module was above threshold
+            }
 
         }
+        
 
         // If the trigger has timed out, then trigger anyway:
         
@@ -127,6 +143,16 @@ bool CMyTrigger::operator()()
     return true;
   }
   return false;
+}
+/**
+ * getWordsInModules
+ *    @return unsigned int* - pointer to the array containing the
+ *                            number of words each module has.
+ */
+unsigned int*
+CMyTrigger::getWordsInModules() const
+{
+  return m_wordsInEachModule;
 }
 
 
