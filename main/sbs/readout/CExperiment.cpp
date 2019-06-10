@@ -102,7 +102,7 @@ CExperiment::CExperiment(string ringName,
   m_pTriggerLoop(0),
   m_nDataBufferSize(eventBufferSize),
   m_nDefaultSourceId(0),
-  m_useBarriers(barriers)
+  m_useBarriers(barriers),
   m_fWantZeroCopy(false)                // by default.
 
 {
