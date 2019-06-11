@@ -109,7 +109,7 @@ void testBufferedOutput::put_2()
   
   EQ(size_t(100), m_pBuffer->m_nBytesInBuffer);
   EQ((void*)(m_pBuffer->m_pBuffer+100), (void*)(m_pBuffer->m_pInsert));
-  usleep(1000);                         // Ensure the data is  in the flie.
+  fsync(m_pBuffer->m_nFd);                        // Ensure the data is  in the flie.
   
   // Should be a file with bsize bytes of data and that matches the pattern:
 
