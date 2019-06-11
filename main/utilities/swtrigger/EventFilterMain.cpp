@@ -20,7 +20,9 @@
  */
 
 #include "eventfilterflags.h"
-#include <stdlib.h>
+#include "CEventFilterApp.h"
+
+
 
 /**
  *  Entry point
@@ -33,4 +35,6 @@ int main (int argc, char** argv)
 {
     gengetopt_args_info parsedArgs;
     cmdline_parser(argc, argv, &parsedArgs);
+    CEventFilterApp app(parsedArgs);
+    app();
 }

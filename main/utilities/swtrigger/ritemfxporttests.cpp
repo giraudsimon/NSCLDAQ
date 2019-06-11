@@ -94,7 +94,8 @@ void rtransportTest::write_1() {   // Write a ring itme to file, can it be read?
   v.iov_base = &hdr;
   v.iov_len  = hdr.s_size;
   m_pWTestObj->send(&v, 1);
-  m_pWriter->flush();                       //Force to output file.
+
+  m_pWriter->sync();
   
   //Assume the file is created here:
   
@@ -134,7 +135,7 @@ void rtransportTest::write_2()
   }
   // Write-em.
   m_pWTestObj->send(v, 10);
-  m_pWriter->flush();                   // Force out.
+  m_pWriter->sync();                   // Make sure it's to file.
   
   //Assume the file is created here:
   
@@ -181,7 +182,7 @@ void rtransportTest::read_1()
   v.iov_base = &hdr;
   v.iov_len  = hdr.s_size;
   m_pWTestObj->send(&v, 1);
-  m_pWriter->flush();               // ensure it's in the file.
+  m_pWriter->sync();
   usleep(1000);                     // Evidently takes time to get to disk!
   
   void* pData(0);
@@ -217,7 +218,7 @@ void rtransportTest::read_2()
   }
   // Write-em.
   m_pWTestObj->send(v, 10);
-  m_pWriter->flush();                   // Force out.
+  m_pWriter->sync();                   // Force out.
   
   usleep(1000);
   

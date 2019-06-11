@@ -52,9 +52,11 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
-EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp
+EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp \
+	CEventFilterApp.cpp CEventFilterApp.h
+
 EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
-EventFilter_LDFLAGS= 
+EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
