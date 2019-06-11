@@ -101,7 +101,7 @@ CBufferConverter::operator()()
  *                      other read failures.
  */
 RingItem* 
-CBufferConverter::getItem() throw(std::string, int)
+CBufferConverter::getItem() 
 {
 
   // Read the header and figure out the size:
@@ -142,7 +142,7 @@ CBufferConverter::getItem() throw(std::string, int)
  *
  */
 void
-CBufferConverter::outputItem(RingItem* pItem) throw(std::string)
+CBufferConverter::outputItem(RingItem* pItem) 
 {
   uint16_t type = mapType(getType(*pItem));
   switch(type) {
@@ -205,7 +205,7 @@ CBufferConverter::outputItem(RingItem* pItem) throw(std::string)
  */
  
 void
-CBufferConverter::readOrThrow(void* pData, size_t nBytes) throw(std::string, int)
+CBufferConverter::readOrThrow(void* pData, size_t nBytes) 
 {
   if (!std::cin.eof()) {
     std::cin.read(reinterpret_cast<char*>(pData), nBytes);
@@ -232,7 +232,7 @@ CBufferConverter::readOrThrow(void* pData, size_t nBytes) throw(std::string, int
  * @throw string - in the event bad() is true after the write.
  */
 void
-CBufferConverter::writeOrThrow(void* pData, size_t nBytes) throw(std::string)
+CBufferConverter::writeOrThrow(void* pData, size_t nBytes) 
 {
   std::cout.write(reinterpret_cast<const char*>(pData), nBytes);
   if (std::cout.bad()) {
@@ -245,7 +245,7 @@ CBufferConverter::writeOrThrow(void* pData, size_t nBytes) throw(std::string)
  * formatted at all times flush() might be called.
  */
 void 
-CBufferConverter::flush() throw(std::string)
+CBufferConverter::flush() 
 {
   if(m_pPhysicsBuffer) {
     writeOrThrow(m_pPhysicsBuffer, m_nBufferSize);
@@ -260,7 +260,7 @@ CBufferConverter::flush() throw(std::string)
  *                is actually a pScalerItem.
  */
 void
-CBufferConverter::outputScaler(RingItem* pItem) throw(std::string)
+CBufferConverter::outputScaler(RingItem* pItem) 
 {
   pScalerItemBody pScaler = reinterpret_cast<pScalerItemBody>(bodyPointer(pItem));
   uint16_t    buffer[m_nBufferSize/sizeof(uint16_t)];
@@ -302,7 +302,7 @@ CBufferConverter::outputScaler(RingItem* pItem) throw(std::string)
  *
  */
 void
-CBufferConverter::outputStringArray(uint16_t itemType, RingItem* pItem) throw(std::string)
+CBufferConverter::outputStringArray(uint16_t itemType, RingItem* pItem) 
 {
   pTextItemBody pStrings = reinterpret_cast<pTextItemBody>(bodyPointer(pItem));
   uint16_t    buffer[m_nBufferSize/sizeof(uint16_t)];
@@ -363,7 +363,7 @@ CBufferConverter::outputStringArray(uint16_t itemType, RingItem* pItem) throw(st
  * @todo this code assumes time_t is a long.
  */
 void
-CBufferConverter::outputStateChange(uint16_t itemType, RingItem* pItem) throw(std::string)
+CBufferConverter::outputStateChange(uint16_t itemType, RingItem* pItem) 
 {
   pStateChangeItemBody pSc = reinterpret_cast<pStateChangeItemBody>(bodyPointer(pItem));
   uint16_t         buffer[m_nBufferSize/sizeof(uint16_t)];
@@ -428,7 +428,7 @@ CBufferConverter::outputStateChange(uint16_t itemType, RingItem* pItem) throw(st
  *   - nevt - Number of events that have been inserted into the bufer to date.
  */
 void 
-CBufferConverter::bufferEvent(RingItem* pItem) throw(std::string)
+CBufferConverter::bufferEvent(RingItem* pItem) 
 {
   // 
 

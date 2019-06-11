@@ -71,7 +71,7 @@ protected:
   uint32_t peek(uint32_t byteoff) const {
     return m_Module.peekl(Offset(byteoff));
   }
-  uint32_t poke(uint32_t data, 
+  void poke(uint32_t data, 
 		uint32_t byteoff) const {
     m_Module.pokel(data, Offset(byteoff));
   }
@@ -81,7 +81,7 @@ protected:
     return off/sizeof(uint32_t);
   }
   static void ThrowString(const char*  pLeader,
-		     const char*  pMessage) throw (std::string);
+			  const char*  pMessage) ;
 
 };
 #endif

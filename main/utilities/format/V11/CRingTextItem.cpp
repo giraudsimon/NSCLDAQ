@@ -111,7 +111,7 @@ CRingTextItem::CRingTextItem(
    
    \throw bad_cast - if rhs is not a text ring item.
 */
-CRingTextItem::CRingTextItem(const CRingItem& rhs) throw(bad_cast): 
+    CRingTextItem::CRingTextItem(const CRingItem& rhs) :
   CRingItem(rhs)
 {
   if (!validType()) throw bad_cast();

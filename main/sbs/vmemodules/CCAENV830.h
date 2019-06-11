@@ -77,7 +77,7 @@ public:
   CCAENV830(int slot,
 	    int crate = 0,
 	    bool geo = true,
-	    uint32_t base = 0) throw (std::string);
+	    uint32_t base = 0) ;
 
   ~CCAENV830();
 
@@ -130,11 +130,11 @@ public:
   // Class operations.
 
 public:
-  void Enable(int nChannel) throw (std::string);
-  void Disable(int nChannel) throw (std::string);
+  void Enable(int nChannel) ;
+  void Disable(int nChannel) ;
   void SetEnableMask(uint32_t nMask);
   void SetDwellTime(int n400ns);
-  void SetTriggerMode(TriggerMode mode) throw (std::string);
+  void SetTriggerMode(TriggerMode mode) ;
   void SetWide();
   void SetNarrow();
   void EnableHeader();
@@ -161,7 +161,7 @@ public:
   // Utility functions:
 protected:
   void ComputeEventSize();
-  void MapModule() throw (std::string);
+  void MapModule() ;
   void InitModule();
   void UnmapModule();
 };

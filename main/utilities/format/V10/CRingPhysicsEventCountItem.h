@@ -52,7 +52,7 @@ public:
   CRingPhysicsEventCountItem(uint64_t count,
                              uint32_t timeoffset,
                              time_t stamp);
-  CRingPhysicsEventCountItem(const CRingItem& rhs)  throw(std::bad_cast);
+  CRingPhysicsEventCountItem(const CRingItem& rhs)  ;
   CRingPhysicsEventCountItem(const CRingPhysicsEventCountItem& rhs);
 
   virtual ~CRingPhysicsEventCountItem();

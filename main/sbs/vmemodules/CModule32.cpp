@@ -67,7 +67,7 @@ CModule32::Key(uint32_t offset) const
 */
 void 
 CModule32::ThrowString(const char*  pLeader,
-		       const char*  pMessage) throw (string)
+		       const char*  pMessage)
 {
   string message("CModule32::");
   message += pLeader;

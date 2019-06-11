@@ -717,7 +717,7 @@ CRingItem::swal(uint32_t datum)
 
   uint32_t result = swapper.bytes[3] | (swapper.bytes[2] << 8) | 
     (swapper.bytes[1] << 16) | (swapper.bytes[0] << 24);
-
+  return result;
 }
 /**
  * bodyHeaderToString

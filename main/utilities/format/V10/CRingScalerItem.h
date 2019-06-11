@@ -50,7 +50,7 @@ public:
 		  uint32_t stopTime,
 		  time_t   timestamp,
 		  std::vector<uint32_t> scalers);
-  CRingScalerItem(const CRingItem& rhs) throw(std::bad_cast);
+  CRingScalerItem(const CRingItem& rhs) ;
   CRingScalerItem(const CRingScalerItem& rhs);
   
   virtual ~CRingScalerItem();
@@ -70,8 +70,8 @@ public:
   void     setTimestamp(time_t stamp);
   time_t   getTimestamp() const;
 
-  void     setScaler(uint32_t channel, uint32_t value) throw(CRangeError);
-  uint32_t getScaler(uint32_t channel) const throw(CRangeError);
+  void     setScaler(uint32_t channel, uint32_t value) ;
+  uint32_t getScaler(uint32_t channel) const ;
 
   void setScalers(const std::vector<uint32_t>& scalers);
   std::vector<uint32_t> getScalers() const;
@@ -89,7 +89,7 @@ private:
   size_t bodySize(size_t n);
   void init(size_t n);
   void throwIfInvalidChannel(uint32_t channel, 
-			     const char* message) const throw(CRangeError);
+			     const char* message) const;
 };
    
 

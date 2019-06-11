@@ -71,6 +71,7 @@ protected:
     _ItemType& operator=(const _ItemType& rhs) {
       s_sampled = rhs.s_sampled;
       s_itemType= rhs.s_itemType;
+      return *this;
     }
     int operator==(const _ItemType& rhs) const {
       return (s_sampled == rhs.s_sampled)   &&

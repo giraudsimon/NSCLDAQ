@@ -193,7 +193,7 @@ static const uint32_t ModuleLength(0x200); //!< size of the module.
    \param crate (int [in default = 0])
       Selects the VME crate holding the module.
 */
-CSIS3600::CSIS3600(uint32_t base, int crate) throw (string) :
+CSIS3600::CSIS3600(uint32_t base, int crate) :
   CModule32(base, ModuleLength, crate)
 {
   IdRegister id;
@@ -537,7 +537,8 @@ CSIS3600::ClearData()  const
       without data ready.
 */
 uint32_t
-CSIS3600::Read() const throw (string)
+CSIS3600::Read() const 
+
 {
   if(DataReady()) {
     return peek(FIFO);
@@ -546,6 +547,7 @@ CSIS3600::Read() const throw (string)
     ThrowString("CSIS3600::Read",
 		"No data present");
   }
+  return 0;             // Really we threw already.
 }
 /*!
    Read a block of events from the FIFO.  Events are read into

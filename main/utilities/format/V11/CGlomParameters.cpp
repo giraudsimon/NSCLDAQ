@@ -89,7 +89,7 @@ CGlomParameters::CGlomParameters(const CGlomParameters& rhs) :
  *
  * @param rhs - CRingItem reference from which we will construct.
  */
-CGlomParameters::CGlomParameters(const CRingItem& rhs) throw(std::bad_cast) :
+    CGlomParameters::CGlomParameters(const CRingItem& rhs) :
     CRingItem(rhs)
 {
     if (type() != EVB_GLOM_INFO) throw std::bad_cast();        

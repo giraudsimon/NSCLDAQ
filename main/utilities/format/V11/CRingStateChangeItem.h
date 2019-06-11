@@ -54,7 +54,7 @@ public:
 		       uint32_t runNumber,
 		       uint32_t timeOffset,
 		       time_t   timestamp,
-		       std::string title) throw(CRangeError);
+		       std::string title) ;
   CRingStateChangeItem(uint64_t eventTimestamp, uint32_t sourceId, uint32_t barrierType,
                        uint16_t reason,
 		       uint32_t runNumber,
@@ -63,7 +63,7 @@ public:
 		       std::string title,
                        uint32_t offsetDivisor = 1);
   
-  CRingStateChangeItem(const CRingItem& item) throw(std::bad_cast);
+  CRingStateChangeItem(const CRingItem& item) ;
   CRingStateChangeItem(const CRingStateChangeItem& rhs);
   virtual ~CRingStateChangeItem();
 
@@ -80,7 +80,7 @@ public:
   uint32_t getElapsedTime() const;
   float    computeElapsedTime() const;
 
-  void setTitle(std::string title) throw(CRangeError);
+  void setTitle(std::string title) ;
   std::string getTitle() const;
 
   void setTimestamp(time_t stamp);

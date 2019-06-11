@@ -184,6 +184,7 @@ CConditionVariable::timedwait(pthread_mutex_t* mutex,
   if (status == ETIMEDOUT) return false;
 
   CConditionAttributes::throwifbad(status, "CConditionVariable::timedwait");
+  return true;
 }
 /*!
   Same as above, however the timeout is expressed as milliseconds

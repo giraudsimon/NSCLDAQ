@@ -83,7 +83,7 @@ private:
   // Constructors and other canonical operations:
 
 public:
-  CCAENV560(uint32_t base, int crate = 0) throw (std::string);
+  CCAENV560(uint32_t base, int crate = 0) ;
 
   ~CCAENV560();
 
@@ -122,18 +122,18 @@ public:
   // Class operations.
 
 public:
-  bool GetSectStat(int nSection) throw (std::string);
+  bool GetSectStat(int nSection) ;
   void ScalInc();
   void SetVeto();
   void ResetVeto();
   void Clear();
   bool GetVetoStat();
 
-  int ReadCounter(int nChannel) throw (std::string);
+  int ReadCounter(int nChannel) ;
   // Utility functions:
 protected:
   void ComputeEventSize();
-  void MapModule() throw (std::string);
+  void MapModule() ;
   void InitModule();
   void UnmapModule();
 };

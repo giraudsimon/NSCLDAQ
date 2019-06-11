@@ -175,6 +175,7 @@ CMutex::trylock()
   if (status == EBUSY) return false;
 
   CMutexAttr::throwifbad(status, "CMutex::trylock");
+  return true;
 }
 /*!
    Unlock the mutex:

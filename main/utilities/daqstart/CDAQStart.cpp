@@ -111,8 +111,11 @@ CDAQStart::ParseArgs(int argc, char** argv)
     return pArgs;
   }
   else {
+    return pArgs;
     CHECK(0, "Unexpected value from cmdline_parser!!");
+   
   }
+  return pArgs;
 }  
 
 /*! 

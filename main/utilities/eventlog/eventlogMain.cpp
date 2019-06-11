@@ -109,13 +109,17 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  EventLogMain::operator()(int argc, char**argv)
  {
    parseArguments(argc, argv);
+
    try {
     recordData();
    }
    catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
+    return -1;
    }
 
+
+   return 0;
  }
 
  ///////////////////////////////////////////////////////////////////////////////////

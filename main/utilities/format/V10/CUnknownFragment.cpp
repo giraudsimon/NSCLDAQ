@@ -70,7 +70,7 @@ CUnknownFragment::CUnknownFragment(const CUnknownFragment& rhs) :
  * @param rhs - The object item we are copying in construction.
  * @throw std::bad_cast if the rhs object is ot a EVB_UNKNOWN_PAYLOAD type.
  */
-CUnknownFragment::CUnknownFragment(const CRingItem& rhs) throw(std::bad_cast) :
+    CUnknownFragment::CUnknownFragment(const CRingItem& rhs) :
     CRingFragmentItem(rhs)
 {
     if (type() != EVB_UNKNOWN_PAYLOAD) throw std::bad_cast();

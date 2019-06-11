@@ -36,7 +36,7 @@ class CStrings
 public:
   static std::string EscapeString(const char* in, 
 			     const char* charset, 
-			     const char* how) throw(std::string); //!< Escape charset from in.
+				  const char* how) ;
 };
 
 #endif

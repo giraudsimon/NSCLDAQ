@@ -44,7 +44,7 @@ using namespace std;
 string 
 CStrings::EscapeString(const char* in, 
 		       const char* charset, 
-		       const char* how) throw(string)
+		       const char* how)
 {
   string output;
 

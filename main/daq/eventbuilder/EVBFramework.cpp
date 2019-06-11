@@ -63,4 +63,5 @@ CEVBClientFramework::main(int argc, char** argv)
 {
   CEVBFrameworkApp* pApp = CEVBFrameworkApp::getInstance();
   pApp->main(argc, argv);
+  return 0;
 }

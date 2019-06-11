@@ -392,4 +392,5 @@ CTCPBadSocketState::ReasonText() const
   }
   m_Message += "\n CSocket was attempting to: ";
   m_Message += WasDoing();
+  return m_Message.c_str();
 }

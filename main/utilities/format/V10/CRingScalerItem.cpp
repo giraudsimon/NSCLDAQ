@@ -77,7 +77,7 @@ CRingScalerItem::CRingScalerItem(uint32_t startTime,
   \param rhs - const reference to a RingItem.  We are doing an upcast to 
   a scaler buffer.
 */ 
-CRingScalerItem::CRingScalerItem(const CRingItem& rhs) throw(bad_cast) :
+    CRingScalerItem::CRingScalerItem(const CRingItem& rhs) :
   CRingItem(rhs)
 {
   if (type() != INCREMENTAL_SCALERS) {
@@ -219,7 +219,7 @@ CRingScalerItem::getTimestamp() const
   \throw CRangError if channel is too big.
 */
 void
-CRingScalerItem::setScaler(uint32_t channel, uint32_t value) throw(CRangeError)
+CRingScalerItem::setScaler(uint32_t channel, uint32_t value) 
 {
   throwIfInvalidChannel(channel, "Attempting to set a scaler value");
   m_pScalers->s_scalers[channel] = value;
@@ -247,7 +247,7 @@ CRingScalerItem::setScalers(const std::vector<uint32_t>& values)
   \throw CRangeError - if the channel number is out of range.
 */
 uint32_t
-CRingScalerItem::getScaler(uint32_t channel) const throw(CRangeError) 
+CRingScalerItem::getScaler(uint32_t channel) const 
 {
   throwIfInvalidChannel(channel, "Attempting to get a scaler value");
   
@@ -370,7 +370,7 @@ CRingScalerItem::bodySize(size_t n)
 */
 void
 CRingScalerItem::throwIfInvalidChannel(uint32_t channel,
-				       const char* message) const throw(CRangeError)
+				       const char* message) const
 {
   if (channel >= m_pScalers->s_scalerCount) {
     throw CRangeError(0, m_pScalers->s_scalerCount, channel,

@@ -135,7 +135,7 @@ namespace CCAENV1x90Data {
 
   */
   static inline int
-  TriggerNumber(uint32_t Header) throw (std::string)
+  TriggerNumber(uint32_t Header) 
   {
     if(!isGlobalHeader(Header)) {
       throw std::string("CCAENV1x90Data::TriggerNumber - given non global header");
@@ -159,7 +159,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline uint32_t
-  BoardNumber(uint32_t Header) throw (std::string)
+  BoardNumber(uint32_t Header) 
   {
     if((!isGlobalHeader(Header)) && (!isGlobalTrailer(Header))) {
       throw std::string("CCAENV1x90Data::BoardNumber - given non global header");
@@ -239,7 +239,7 @@ namespace CCAENV1x90Data {
 	  not a TDC chip header or trailer longword.
   */
   static inline uint32_t
-  TDCChip(uint32_t Header) throw (std::string)
+  TDCChip(uint32_t Header) 
   {
     if(! isTDCHeader(Header) && 
        !isTDCTrailer(Header) &&
@@ -262,7 +262,7 @@ namespace CCAENV1x90Data {
 	this header does not represent a TDC Header or trailer.
   */
   static inline uint32_t
-  EventId(uint32_t Header) throw (std::string)
+  EventId(uint32_t Header) 
   {
     if (!isTDCHeader(Header)  && !isTDCTrailer(Header)) {
       throw std::string("CAENV1x90Data::EventId - not a tdc header");
@@ -288,7 +288,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline uint32_t
-  BunchId(uint32_t Header) throw (std::string)
+  BunchId(uint32_t Header) 
   {
     if(!isTDCHeader(Header)) {
       throw std::string("CCAENV1x90Data::Bundhid - not a tdc header");
@@ -310,7 +310,7 @@ namespace CCAENV1x90Data {
 
   */
   static inline uint16_t
-  TDCWordCount(uint32_t Header) throw (std::string)
+  TDCWordCount(uint32_t Header) 
   {
     if(!isTDCTrailer(Header)) {
       throw std::string("CCAENV1x90Data::TDCWordCount not a tdc trailer");
@@ -352,7 +352,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline bool
-  isTrailing(uint32_t datum)  throw (std::string)
+  isTrailing(uint32_t datum)  
   {
     if(!isMeasurement(datum)) {
       throw std::string("CCAENV1x90Data::isTrailing not a measurement word");
@@ -376,7 +376,7 @@ namespace CCAENV1x90Data {
    \throw std::string if datum is not a TDC measurement.
   */
   static inline int
-  ChannelNumber(uint32_t Datum, bool is1190 = true) throw (std::string)
+  ChannelNumber(uint32_t Datum, bool is1190 = true) 
   {
     if(!isMeasurement(Datum)) {
       throw std::string("CCAENV1x90Data::ChannelNumber  is not a measurement");
@@ -414,7 +414,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline long
-  ChannelValue(uint32_t datum, bool is1190=true) throw (std::string)
+  ChannelValue(uint32_t datum, bool is1190=true) 
   {
     if (!isMeasurement(datum)) {
       throw std::string("CCAENV1sx90Data::ChannelValue - is not a measurement");
@@ -437,7 +437,7 @@ namespace CCAENV1x90Data {
     
    */
   static inline uint32_t
-  TDCErrorBits(uint32_t datum) throw (std::string)
+  TDCErrorBits(uint32_t datum) 
   {
     if(!isTDCError(datum)) {
       throw std::string("CCAENV1x90DATA:: not an error flag word");
@@ -481,7 +481,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline uint32_t 
-  ExtendedTriggerTime(uint32_t datum) throw (std::string)
+  ExtendedTriggerTime(uint32_t datum) 
   {
     if(!isTriggerTimeTag(datum)) {
       throw std::string("CCAENV1x90DATA::ExtendedTriggerTime not a trigger time word");
@@ -506,7 +506,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline bool
-  Overflow(uint32_t datum) throw (std::string)
+  Overflow(uint32_t datum) 
   {
     if(!isGlobalTrailer(datum)) {
       throw std::string("CCAENV1x90DATA::Overflow - not a global trailer");
@@ -533,7 +533,7 @@ namespace CCAENV1x90Data {
   longword.
   */
   static inline bool 
-  Error(uint32_t datum) throw (std::string)
+  Error(uint32_t datum) 
   {
     if(!isGlobalTrailer(datum)) {
       throw std::string("CCAENV1x90DATA::Error - not a global trailer");
@@ -556,7 +556,7 @@ namespace CCAENV1x90Data {
 
    */
   static inline bool 
-  Lost(uint32_t datum) throw (std::string)
+  Lost(uint32_t datum) 
   {
     if(!isGlobalTrailer(datum)) {
       throw std::string("CAENV1x90DATA::Lost - not a trailer long");

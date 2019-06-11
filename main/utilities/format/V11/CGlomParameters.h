@@ -48,7 +48,7 @@ public:
     CGlomParameters(uint64_t interval, bool isBuilding, TimestampPolicy policy);
     virtual ~CGlomParameters();
     CGlomParameters(const CGlomParameters& rhs);
-    CGlomParameters(const CRingItem& rhs) throw(std::bad_cast);
+  CGlomParameters(const CRingItem& rhs) ;
     
     CGlomParameters& operator=(const CGlomParameters& rhs);
     int operator==(const CGlomParameters& rhs) const;

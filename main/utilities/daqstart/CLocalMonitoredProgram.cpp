@@ -386,5 +386,6 @@ CLocalMonitoredProgram::ProcessInputFd(int nFd, string& sOutline,
   // Control should not land here.
 
   ENSURE(0, "Bug in control logic for ProcessInputFd");
+  return false;
 }
 

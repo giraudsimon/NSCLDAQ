@@ -45,14 +45,14 @@ static const uint16_t ModelNumber(0x18);
 static const uint16_t FixedCode(0xfaf5);
 
 static inline void ThrowIntString(const char* formatstring, int value) 
-  throw (string)
+  
 {
   char msg[strlen(formatstring) + 100];
   sprintf(msg, formatstring, value);
   throw string(msg);
 }
 static inline void ThrowIfBadChannel(const char* pFunction,
-				   int nChannel)  throw (string)
+				   int nChannel) 
 {
   const char* pFmtString=
     "CCAENV560::%s Invalid channel must be in [0,15] %d";
@@ -63,7 +63,7 @@ static inline void ThrowIfBadChannel(const char* pFunction,
   }
 }
 static inline void ThrowIfBadSection(const char* pFunction,
-	       			   int nSection) throw (string)
+	       			   int nSection) 
 {
    const char* pFmtString=
      "CCAENV560::%s Invalid section must be in [0,7] %d";
@@ -90,7 +90,7 @@ static inline void ThrowIfBadSection(const char* pFunction,
 
 */
 CCAENV560::CCAENV560(uint32_t base, int crate) 
-  throw (string) :
+  :
   m_nCrate(crate),
   m_nBase(base),
   m_pModule(0)
@@ -125,7 +125,7 @@ CCAENV560::~CCAENV560()
       Number of section to check status of [0-7].
 */
 bool
-CCAENV560::GetSectStat(int nSection) throw (string)
+CCAENV560::GetSectStat(int nSection) 
 {
   ThrowIfBadSection("GetSectStat", nSection);
   short nStat  = GetShort(SSsr);
@@ -190,7 +190,7 @@ CCAENV560::GetVetoStat()
 
 */
 void
-CCAENV560::MapModule() throw (string)
+CCAENV560::MapModule() 
 {
   // Validate the member data:
 
@@ -261,7 +261,7 @@ CCAENV560::UnmapModule()
       is thrown.
 */
 int
-CCAENV560::ReadCounter(int nChannel) throw(string)
+CCAENV560::ReadCounter(int nChannel) 
 {
   if((nChannel < 0) || (nChannel > 15)) {
     char text[1000];

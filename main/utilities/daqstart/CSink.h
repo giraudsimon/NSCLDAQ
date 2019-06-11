@@ -50,7 +50,7 @@ public:
 
 public:
   virtual CSink*  clone() = 0;	  //!< Return dup of this .
-  virtual   bool Log (const std::string& Message)   = 0 ; 
+  virtual   int Log (const std::string& Message)   = 0 ; 
   virtual   std::string FormatLine (std::string sMessage)   ; 
 
 
