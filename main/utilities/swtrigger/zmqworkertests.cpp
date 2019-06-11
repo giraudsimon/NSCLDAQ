@@ -153,7 +153,7 @@ public:
     m_pDataSource      =
       new CRingItemDispatcher(ringFileURI.c_str(), m_pSourceSender);
       
-    usleep(100);
+    usleep(1000);
     // Set up the two workers:
     
     m_pCounter1           = new RingItemCounter;

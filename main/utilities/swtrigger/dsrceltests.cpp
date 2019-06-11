@@ -64,7 +64,7 @@ public:
     m_pTestReceiver = new CReceiver(*m_pTestData);
     m_pSender     = new CZMQRouterTransport(service.c_str());    
     m_pTestObj    = new CDataSourceElement(*m_pTestReceiver, *m_pSender);
-    usleep(100);
+    usleep(1000);
     m_pRecipient  = new CZMQDealerTransport(service.c_str(), 1);
   }
   void tearDown() {

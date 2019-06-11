@@ -57,7 +57,7 @@ public:
     
     delete m_pPushTransport;             // deletes the socket.
     delete m_pPullTransport;
-    usleep(500);                       // Let the transport run down?
+    usleep(1000);                       // Let the transport run down?
   }
 protected:
   void recv_1();

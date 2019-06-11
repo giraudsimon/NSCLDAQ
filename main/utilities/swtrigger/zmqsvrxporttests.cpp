@@ -39,7 +39,7 @@ public:
     delete m_pReceiver;
     delete m_pTestObj;
     
-    usleep(100);                     // Let the sockets run down.
+    usleep(1000);                     // Let the sockets run down.
   }
 protected:
   void sendRcv_1();

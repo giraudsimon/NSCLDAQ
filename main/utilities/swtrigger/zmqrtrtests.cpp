@@ -60,10 +60,10 @@ private:
 public:
   void setUp() {
     m_pTestObj = new CZMQRouterTransport(service.c_str());
-    usleep(100);
+    usleep(1000);
     m_pReceiver1 = new CZMQDealerTransport(service.c_str(), 1);
     m_pReceiver2 = new CZMQDealerTransport(service.c_str(), 2);
-    usleep(100);
+    usleep(1000);
   }
   void tearDown() {
     delete m_pReceiver1;
@@ -119,9 +119,9 @@ void routerTest::sndrcv_2()             // multipart messages
   RcvrThread r2(m_pReceiver2);
   
   std::thread t1(std::ref(r1));
-  usleep(100);                      // wait for the request to happen.
+  usleep(1000);                      // wait for the request to happen.
   std::thread t2(std::ref(r2));
-  usleep(100);
+  usleep(1000);
   
   
   uint8_t msg1[128];
@@ -170,7 +170,7 @@ void routerTest::sndrcv_3()
   RcvrThread r2(m_pReceiver2);
   
   std::thread t1(r1);
-  usleep(100);                     // SO r1 can request data.
+  usleep(1000);                     // SO r1 can request data.
   std::thread t2(r2);              // r1, then r2 requesting.
   
   uint8_t msg1[128];

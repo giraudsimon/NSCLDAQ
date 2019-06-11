@@ -60,7 +60,7 @@ private:
 public:
   void setUp() {
     m_pRouter = new CZMQServerTransport(service.c_str(), ZMQ_ROUTER);
-    usleep(100);
+    usleep(1000);
     m_pTestObj1 = new CZMQDealerTransport(service.c_str(), 1);
     m_pTestObj2 = new CZMQDealerTransport(service.c_str(), 2);
     
@@ -71,7 +71,7 @@ public:
     delete m_pTestObj2;
     delete m_pRouter;
     
-    usleep(100);
+    usleep(1000);
   }
 protected:
   void rcv_1();

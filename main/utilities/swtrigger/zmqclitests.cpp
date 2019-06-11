@@ -30,14 +30,14 @@ public:
   void setUp() {
     
     m_pSender  = new CZMQServerTransport(service.c_str(), ZMQ_PUSH);
-    usleep(100);
+    usleep(1000);
     m_pTestObj = new CZMQClientTransport(service.c_str(), ZMQ_PULL);
   
   }
   void tearDown() {
     delete m_pTestObj;
     delete m_pSender;
-    usleep(100);                     // Let the transport run down.
+    usleep(1000);                     // Let the transport run down.
   }
 protected:
   void sendrcv_1();
