@@ -3,4 +3,6 @@ version "V1.0"
 
 option "source" s "Data Source" string typestr="URI"
 option "accepted-sink" a "Where accepted events go" string typestr="URI"
-option "rejected-sink"  r "Where rejected events go (optional)" string optional typestr="URI" 
+option "rejected-sink"  r "Where rejected events go (optional)" string optional typestr="URI"
+option "mask" m "Mask anded with classification" int
+option "value" V "Value masked classification must have to be 'accepted'" int
