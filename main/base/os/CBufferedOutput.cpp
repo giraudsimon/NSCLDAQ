@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <stdexcept>
 #include <stdio.h>
+#include <unistd.h>
 
 namespace io {
 /**
@@ -128,6 +129,17 @@ CBufferedOutput::flush()
   }
   m_lastFlushTime = time(nullptr); // reset timeout even if nothing's written.
   pthread_yield();                 // try to allow the writer to run.
+}
+/**
+ * sync
+ *    Intended for testing flushes our buffers and the file systsem buffers to
+ *    disk...
+ */
+void
+CBufferedOutput::sync()
+{
+    flush();
+    fsync(m_nFd);            // flush fs buffers to disk.
 }
 
 /**

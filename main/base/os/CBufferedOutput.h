@@ -72,6 +72,7 @@ public:
     
     virtual void put(const void* pData, size_t nBytes);
     virtual void flush();
+    void    sync();             // flush os buffers.
     unsigned setTimeout(unsigned timeout);
     int getFd() const {return m_nFd;}
 
