@@ -1,6 +1,6 @@
 lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la
 
-bin_PROGRAMS=SoftwareTrigger
+bin_PROGRAMS=SoftwareTrigger EventFilter
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
 	CZMQTransport.cpp CZMQClientTransport.cpp CZMQServerTransport.cpp \
@@ -46,21 +46,34 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
 	CRingBlockDataSink.cpp
 
+
+
+
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
+EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp
+EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+EventFilter_LDFLAGS= 
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
-BUILT_SOURCES=swtriggerflags.c swtriggerflags.h
+BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h
 
 swtriggerflags.c: swtriggerflags.h
 
 swtriggerflags.h: swtriggerflags.ggo
 	$(GENGETOPT) <@srcdir@/swtriggerflags.ggo -Fswtriggerflags
 
-EXTRA_DIST=swtriggerflags.ggo
+eventfilterflags.c: eventfilterflags.h
+
+eventfilterflags.h: eventfilterflags.ggo
+	$(GENGETOPT) <@srcdir@/eventfilterflags.ggo -Feventfilterflags
+
+
+EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo
 
 ####################################################################################
 # unit testing:
