@@ -62,7 +62,7 @@ private:
     void*  nextItem(const void* pData);
     size_t messageSize(const void* pData);
     size_t   createClassifiedParts(
-        iovec* vec, void* pData, uint32_t& classification
+        iovec* vec, void* pData, uint32_t* classification
     );
 
 };

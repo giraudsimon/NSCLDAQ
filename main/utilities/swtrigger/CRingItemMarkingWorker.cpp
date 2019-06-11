@@ -65,6 +65,7 @@ void
 CRingMarkingWorker::process(void* pData, size_t nBytes)
 {
     m_nItemsProcessed++;
+    
     if (nBytes) {
         // Figure out how many Items we have.  The maximum iovec size is
         // 3*nItems.  For each item:
@@ -79,7 +80,8 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
        
         iovec messageParts[nItems*3+1];            // None yet.
         size_t nParts(0);                        // None yet.
-        std::vector<uint32_t> classifications;   // Holds the classifications until sent.
+        uint32_t classifications[nItems];
+        size_t nC(0);
         
         pMessage p = static_cast<pMessage>(pData);
         
@@ -107,11 +109,11 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
                     throw std::invalid_argument("Got a physics event with no body header!!");
                 } else {
                     CRingItem* pRingItemObj = CRingItemFactory::createRingItem(pRItem);
-                    classifications.push_back((*m_pClassifier)(*pRingItemObj));
+                    classifications[nC] = (*m_pClassifier)(*pRingItemObj);
                     delete pRingItemObj;
                     nParts += createClassifiedParts(
-                        &messageParts[nParts], p, (classifications.back())
-                    );
+                        &messageParts[nParts], p, &(classifications[nC]));
+                    nC++;
                 }
             }
             
@@ -201,7 +203,7 @@ CRingMarkingWorker::messageSize(const void* pData)
  */
 size_t
 CRingMarkingWorker::createClassifiedParts(
-    iovec* vec, void* pData, uint32_t& classification
+    iovec* vec, void* pData, uint32_t* classification
 )
 {
     pMessage p   = static_cast<pMessage>(pData);
@@ -220,7 +222,7 @@ CRingMarkingWorker::createClassifiedParts(
     
     // The classification is just the uint32:
     
-    vec[1].iov_base = &classification;
+    vec[1].iov_base = classification;
     vec[1].iov_len  = sizeof(uint32_t);
     
     // Now the remainder:
