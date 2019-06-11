@@ -46,7 +46,8 @@ public:
     strcpy(ftemplate, filenameTemplate);
     m_nFd = mkstemp(ftemplate);
     m_filename = ftemplate;
-    m_pBuffer = new io::CBufferedOutput(m_nFd, bsize);    
+    m_pBuffer = new io::CBufferedOutput(m_nFd, bsize);
+    m_pBuffer->setTimeout(100000);   // So we don't have unintended flushes.
   }
   void tearDown() {
     
@@ -108,6 +109,7 @@ void testBufferedOutput::put_2()
   
   EQ(size_t(100), m_pBuffer->m_nBytesInBuffer);
   EQ((void*)(m_pBuffer->m_pBuffer+100), (void*)(m_pBuffer->m_pInsert));
+  usleep(1000);                         // Ensure the data is  in the flie.
   
   // Should be a file with bsize bytes of data and that matches the pattern:
 

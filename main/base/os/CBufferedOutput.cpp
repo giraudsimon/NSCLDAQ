@@ -47,6 +47,7 @@ CBufferedOutput::CBufferedOutput(int fd, size_t nBytes) :
     createFreeBuffers();         // Creates the free buffer pool.
     reset();                     // gets a buffer and resets all the book keeping.
     startOutputThread();         // get the output thread going.
+    m_lastFlushTime = time(nullptr);
 }
 /**
  * destructor
