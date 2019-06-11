@@ -1,0 +1,6 @@
+package "eventfilter"
+version "V1.0"
+
+option "source" s "Data Source" string typestr="URI"
+option "accepted-sink" a "Where accepted events go" typestr="URI"
+option "rejected-sink"  r "Where rejected events go" optional typestr="URI" 
