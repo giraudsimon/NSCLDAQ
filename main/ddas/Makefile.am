@@ -1,3 +1,4 @@
-SUBDIRS=readout readout-extclock sorter
+SUBDIRS=readout readout-extclock sorter readoutdriver
+
 
 

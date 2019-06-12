@@ -202,7 +202,7 @@ TCLSH_CMD=${TCLSH}
 #  we need to configure/build/install libtcl into prefix and then set
 #  the flags:
 
-if 0
+if false
 then
 AC_MSG_CHECKING([libtcl++ installed as package (e.g. .deb)])
 
