@@ -1,3 +1,3 @@
-SUBDIRS=readout readout-extclock
+SUBDIRS=readout readout-extclock sorter
 
 
