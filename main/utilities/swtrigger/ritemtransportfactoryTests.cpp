@@ -64,8 +64,9 @@ public:
   void tearDown() {
     close(m_fd);
     unlink(m_filename.c_str());
-    
-    //CRingBuffer::remove(ringName);
+    try {
+      CRingBuffer::remove(ringName);
+    } catch(...) {}
 
   }
 protected:

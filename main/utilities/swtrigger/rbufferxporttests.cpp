@@ -36,6 +36,10 @@ private:
   CRingBufferTransport*  m_consumer;
 public:
   void setUp() {
+    try {
+      CRingBuffer::remove(ringName);   // Clean up the ring buffer itself.
+    } catch (...) {}
+
     m_produceTo   = CRingBuffer::createAndProduce(ringName);
     m_consumeFrom = new CRingBuffer(ringName);    // Default is consumer.
     m_reader      = new CRingBufferChunkAccess(m_consumeFrom);
@@ -48,8 +52,9 @@ public:
     delete m_producer;               // Deletes the production ring buffer obj.
     delete m_consumer;               // deletes the chunk accessor but we need
     delete m_consumeFrom;            // to delete the CRingBuffer.
-    
-    CRingBuffer::remove(ringName);   // Clean up the ring buffer itself.
+    try {
+      CRingBuffer::remove(ringName);   // Clean up the ring buffer itself.
+    } catch (...) {}
   }
 protected:
   void write_1();
