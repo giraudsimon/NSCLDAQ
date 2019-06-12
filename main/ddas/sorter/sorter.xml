@@ -1,0 +1,77 @@
+<!-- manpage 1daq  -->
+<refentry>
+    <refmeta>
+        <refentrytitle>ddasSort</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>ddasSort</refname>
+        <refpurpose>Sort data from DDAS internal clock readout.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+$DAQBIN/ddasSort <optional>options....</optional>       
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Normally you will not need to directly run this program.  Instead,
+            specifying $DAQBIN/ddasReadout (rather than $DAQBIN/DDASReadout)
+            as the data source will run both the DDASReadout and an associated
+            ddasSort program.
+        </para>
+        <para>
+            Since NSCLDAQ-11.4, DDASReadout does not internally sort data
+            from the DDAS modules.  Deferring this sort to another process
+            substantially improves performance by allowing that sort to run
+            in parallel with the readout itself.
+        </para>
+        <para>
+            ddasSort is that down stream sorter.  It takes data from
+            a Ring buffer into which ddasReadout puts unsorted raw DDAS
+            hits and outputs time ordered data to another ringbuffer.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>Program options</title>
+        <variablelist>
+            <varlistentry>
+                <term><option>--source</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the URI of the ringbuffer into which
+                        a DDASReadout reads module data.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><options>--sink</options>=<replaceable>ringname</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the name of the ringbuffer into which the
+                        sorter will emit sorted hits.  The format of these
+                        hits will be identical to that of DDASReadout prior
+                        to splitting off this sort function to ddasSort.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--window</option>=<replaceable>sort-window-in-seconds</replaceable></term>
+                <listitem>
+                    <para>
+                        This is the floating point number of seconds in the
+                        sort window.  Data older than the size of the sort window
+                        are emitted in sorted order.   The sort window ensures
+                        that data arrives from all modules prior to being emitted
+                        avoiding out of order data.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<!-- /manpage -->

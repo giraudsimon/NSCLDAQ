@@ -111,7 +111,8 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/libtcl/tclplus  \
 						@top_srcdir@/libtcl/exception \
 						@top_srcdir@/examples		\
-						@top_srcdir@/ddas/readoutdriver
+						@top_srcdir@/ddas/sorter        \
+						@top_srcdir@/ddas/readoutdriver 
 
 #						@top_srcdir@/utilities/boot 
 #						@top_srcdir@/utilities/statemanager 

@@ -3812,6 +3812,29 @@ Readout <replaceable>options...</replaceable>
         </listitem>
     </varlistentry>
     <varlistentry>
+        <term><option>--no-barriers</option></term>
+        <listitem>
+            <para>
+                If present, state change ring items will not have be
+                event building  barriers.  This must be set for all
+                Readouts that participate in the same level of event building.
+                The use case for this is when data may come from a single
+                Readout program that requires event building for multiple
+                internal data source ids.
+                DDASReadout could
+                do this (it does not), as well as readouts for CAEN DPP
+                firmwares (and they do).
+            </para>
+            <para>
+                This works around the problem that if a readout program emits
+                more than one source id, it still only emits a single
+                state change item for each state change.  If that state change
+                were a barrier (as it is by default), the event builder would
+                suffer a barrier timeout for each state change.
+            </para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
         <term><option>--help</option></term>
         <listitem>
             <para>
