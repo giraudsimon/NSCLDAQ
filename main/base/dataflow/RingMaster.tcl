@@ -692,7 +692,25 @@ proc emitLogMsg {level msg} {
 
     ::log::log $level $logMsg
 }
-
+##
+# openWithBackup
+#  try to open a file with the given mode (usually a writable mode).
+#  If that fails the file is opened in ~
+#
+# @param path - Path name to file.
+# @apram mode - Open mode (defaults to 'w').
+# @return file descriptor.
+#
+proc openWithBackup {path {mode w}} {
+  if {[catch {open $path $mode} fd]} {
+    ## Failed.
+    
+    set name [file tail $path]
+    set name [file join ~ $name]
+    set fd [open $name $mode]
+  }
+  return $fd
+}
 #---------------------------------------------------------------------------------
 #
 # Set up the logging environment
@@ -702,8 +720,7 @@ set logFilePath [dict get $params f]
 if {$logFilePath eq {}} {
   set logFile stderr
 } else {
-  file delete $logFilePath
-  set logFile [open $logFilePath w+]
+  set logFile [openWithBackup $logFilePath w+]
 }
 
 ::log::lvChannelForall $logFile

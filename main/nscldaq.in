@@ -20,9 +20,20 @@
 DAQHOME=@prefix@
 #export TCLLIBPATH="${DAQHOME}/Scripts" #not sure why this is here, nothing uses it
 BIT3DEVICES=5       # Number of bit 3 devices.
-PORTMGRSWITCHES="-log `pwd`/portman.log -portfile `pwd`/test.port -pidfile `pwd`/pid"  
+LOGFILEDIR=~
+if test -w /var/log/nscldaq/
+then
+    LOGFILEDIR=/var/log/nscldaq
+fi
+PIDFILEDIR=~
+if test -w /var/run/nscldaq
+then
+    PIDFILEDIR=/var/run/nscldaq
+fi
+
+PORTMGRSWITCHES="-log $LOGFILEDIR/portman.log -portfile $LOGFILEDIR/test.port -pidfile $PIDFILEDIR/pmgr-pid"  
 if [ -z $RINGMASTER_LOGFILE ] ; then
-  RINGMASTER_LOGFILE=/var/log/nscldaq/ringmaster.log
+  RINGMASTER_LOGFILE=$LOGFILEDIR/ringmaster.log
 fi
 
 if [ -z $RINGMASTER_VERBOSITYLEVEL ] ; then
@@ -35,7 +46,6 @@ RINGMASTERSWITCHES="-f $RINGMASTER_LOGFILE -v $RINGMASTER_VERBOSITYLEVEL"
 
 # the following do not come from /etc/default/daq and are instead
 # constructed from those paths
-PIDFILEDIR=.
 
 PORTMANAGER="${DAQHOME}/bin/DaqPortManager"
 PORTMANAGERNAME="nscldaq-portmaster"

@@ -27,7 +27,9 @@ snit::type Log {
         #
 
         if {[catch {open $options(-filename) a+} logfd]} {
-            set logfd stderr
+            set name [file tail $options(-filename)]
+            set name [file join ~ $name]
+            set logfd [open $name a+]
         }
         ::log::lvChannelForall $logfd
         #

@@ -87,7 +87,23 @@ proc usage {} {
     
     return $Usage
 }
-
+##
+# openFileWithBackup
+#   Given a full filename path attempts to open that for write.
+#   IF the open fails, a file with the same name is opened for write in ~
+#
+#  @param path -- full filename path to attempt.
+#
+proc openFileWithBackup {path} {
+    if {[catch {open $path w} fd]} {
+        #failed open
+        
+        set fname [file tail $path]
+        set fname [file join ~ $fname]
+        set fd [open $fname w]
+    }
+    return $fd
+}
 # ParseParameters:
 #   Parse the command line parameters.  Since we don't support  anything
 #   other than switches with parameters this is relatively easy.
@@ -193,19 +209,21 @@ proc run {argList} {
     file mkdir [file dirname $selectedPortFile]
     file mkdir [file dirname $selectedPidFile]
     
-    # Set our port and pid files:
+    # Set our port and pid files.
+    # Note - first we try to use the selected file ... if that does not
+    #        work we use a file with the same name but in ~.
     
-    set   fd [open $selectedPortFile w]
+    set fd [openFileWithBackup $selectedPortFile]
     puts $fd $selectedListenPort
     close $fd
     
-    set   fd [open $selectedPidFile w]
+    set   fd [openFileWithBackup $selectedPidFile]
     puts $fd [pid]
     close $fd
     
     #  Build the Log and port manager objects:
     
-    puts "log: $selectedLogFile"
+    
     
     set logger [Log create log -filename $selectedLogFile]
     set ports  [PortManager create ports -range $selectedPortRange]
