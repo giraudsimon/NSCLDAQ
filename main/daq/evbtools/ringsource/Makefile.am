@@ -27,6 +27,7 @@ noinst_PROGRAMS= unittests
 unittests_SOURCES=TestRunner.cpp fragsrctests.cpp Asserts.h \
 	CRingFragmentSource.cpp 
 unittests_CXXFLAGS= $(ringFragmentSource_CXXFLAGS) @CPPUNIT_CFLAGS@
-unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ @top_builddir@/daq/format/libdataformat.la
+unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ @top_builddir@/daq/format/libdataformat.la \
+	-ldl
 
 TESTS=./unittests
