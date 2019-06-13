@@ -688,7 +688,7 @@ g++ -o myprogram obj1.o obj2.o obj3.o -L$DAQHOME/lib -ldaqshm \
             
        <refmeta>
           <refentrytitle>CDAQShm</refentrytitle>
-          <manvolnum>3</manvolnum>
+          <manvolnum>3daq</manvolnum>
           <refmiscinfo class='empty'></refmiscinfo>
        </refmeta>
        <refnamediv>
@@ -1095,5 +1095,205 @@ class <classname>CDAQShm</classname>
            
             
         </refsect1>
-     </refentry>     
+     </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>io::CBufferedOutput</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>io::CBufferedOutput</refname>
+        <refpurpose>Simple binary buffered output class with flush.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CBufferedOutput.h&gt;
+
+class io::CBufferedOutput
+{
+
+
+public:
+    CBufferedOutput(int fd, size_t nBytes);
+    
+    virtual void put(const void* pData, size_t nBytes);
+    virtual void flush();
+    void    sync();
+    unsigned setTimeout(unsigned timeout);
+    int getFd() const;
+
+
+};
+
+template &lt;class T&gt;
+CBufferedOutput&amp; operator&lt;&lt;(CBufferedOutput&amp; b, T&amp; data);
+
+        </synopsis>
+        
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The <classname>io::CBufferedOutput</classname>
+            class provides buffered output along with a streaming primitive
+            for simple objects (that don't require deep copies to the
+            output stream).  The class also features the capability of
+            providing a timeout that ensures that slow writes will
+            not necessarily require a full buffer to flush.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>io::CBufferedOutput</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>fd</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>nBytes</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Wraps a buffered output object around a file descriptor
+                        <parameter>fd</parameter>.
+                        The file descriptor must have been opened by
+                        e.g. <function>open</function>(2).
+                        <parameter>nBytes</parameter> is the size of the output
+                        buffer.  The output buffer is actualy written to the
+                        file descriptor when a
+                        <methodname>put</methodname> operation would overflow
+                        the buffer.  
+                    </para>
+                    <para>
+                        Additionally the buffer can be flushed if a  timeout
+                        has been set and the time between consecutive puts
+                        is longer than the timeout.  Finally the buffer can
+                        be manually flushed as well.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>put</methodname>
+                        <methodparam>
+                            <modifier>const </modifier>
+                            <type>void* </type><parameter>pData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>nBytes</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        "Writes" <parameter>nBytes</parameter> of data from
+                        the data pointed to by <parameter>pData</parameter>.
+                        In actual fact, the data are copied into the internal
+                        buffer.  See the description of the constructor
+                        for information about when the buffered data
+                        are flushed to disk.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>flush</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Any buffered data are flushed to disk.  This is called
+                        automatically at destruction time and as described
+                        in the documentation for the constructor.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void    </type>
+                        <methodname>sync</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Writing data to file via flush does not actually
+                        ensure the data get written to disk.  The operating
+                        system itself may also buffer the data.  This
+                        method ensures that buffered data are not only
+                        written to the file descriptor but that any
+                        operating system buffers maintained for the file
+                        are also written to disk.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>unsigned </type>
+                        <methodname>setTimeout</methodname>
+                        <methodparam>
+                            <type>unsigned </type><parameter>timeout</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sets the flush timeout in seconds.  If the time between
+                        a put call and the last flush is greater than the
+                        number of seconds in <parameter>timeout</parameter>,
+                        the data will be flushed to disk regardless of the
+                        fullness of the buffer.
+                    </para>
+                    <para>
+                        The method returns the previous timeout value.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>int </type>
+                        <methodname>getFd()</methodname>
+                        <void />
+                        <modifier>const</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns the file descriptor used by the
+                        object. Note that prior to writing to that
+                        file descriptor, it's a really good idea to
+                        <methodname>flush</methodname> it.
+                        For the most part this is used for
+                        testing and ordinary clients should not need to
+                        call it.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+    
 <!-- /manpage -->
