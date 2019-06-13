@@ -202,7 +202,11 @@ proc incorporateManpage {fd section} {
 #   the ::parts and ::sections array elements are modified.
 #
 proc incorporateFragment xmlFile {
-    if {![file readable $xmlFile]} return
+    puts stderr "Incorporating $xmlFile"
+    if {![file readable $xmlFile]} {
+	puts stderr "Oops can't read $xmlFile"
+	return
+    }
 
     set fd [open $xmlFile r]
     
