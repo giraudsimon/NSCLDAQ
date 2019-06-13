@@ -1,4 +1,4 @@
-<!-- manpage 1daq  -->
+<!-- manpage 1daq -->
 <refentry>
     <refmeta>
         <refentrytitle>ddasSort</refentrytitle>
@@ -48,7 +48,7 @@ $DAQBIN/ddasSort <optional>options....</optional>
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term><options>--sink</options>=<replaceable>ringname</replaceable></term>
+                <term><option>--sink</option>=<replaceable>ringname</replaceable></term>
                 <listitem>
                     <para>
                         Specifies the name of the ringbuffer into which the
