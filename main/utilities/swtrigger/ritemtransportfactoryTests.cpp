@@ -42,7 +42,7 @@ class ringxpFactoryTests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(ringxpFactoryTests);
   CPPUNIT_TEST(fileWriter);
   CPPUNIT_TEST(fileReader);
-  
+
   CPPUNIT_TEST(ringWriter);
   CPPUNIT_TEST(ringReader);
   CPPUNIT_TEST_SUITE_END();

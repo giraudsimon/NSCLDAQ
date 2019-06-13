@@ -35,6 +35,20 @@
 #include <stdexcept>
 #include <system_error>
 
+// Stupid class to ensure that the chunk accessors delete the ring buffers
+// we make -- otherwise killing the transprot kills us.  We don't
+// want the base class to assume the ring buffer is dynamic.
+
+class _CRingBufferChunkAccess : public CRingBufferChunkAccess
+{
+private:
+    CRingBuffer* m_pRing;
+public:
+    _CRingBufferChunkAccess(CRingBuffer* p) :
+        CRingBufferChunkAccess(p), m_pRing(p) {}
+    virtual ~_CRingBufferChunkAccess() {delete m_pRing;}
+};
+
 /**
  * createTransport
  *
@@ -71,7 +85,7 @@ CRingItemTransportFactory::createTransport(
             
             CRingBuffer* pRing = CRingAccess::daqConsumeFrom(uri);
             CRingBufferChunkAccess* accessor =
-                new CRingBufferChunkAccess(pRing);
+                new _CRingBufferChunkAccess(pRing);
             return new CRingBufferTransport(*accessor);
             
         }

@@ -1143,54 +1143,6 @@ make
             </para>
         </section>
         <!--
-    <section>
-        <title>Using SBSReadout with the state manager</title>
-        <para>
-            The SBS Readout program can be used with the state manager, and boot
-            manager.  This allows you to use the experiment configuration tool to
-            define the elements of an experiment and to have the boot manager
-            automatically create and destroy those elements as needed.  When hooked
-            to the state manager, the SBSReadout program will also start a run
-            when the state manager indicates the state is <literal>Active</literal>,
-            stop any active run when the state becomes <literal>Ready</literal> and
-            exit if the state becomes <literal>NotReady</literal>.
-        </para>
-        <para>
-            The SBSReadout state manager interface is accomplished
-            via the <literal>ReadoutStateHook</literal> Tcl package.
-            This package starts up the Tcl state monitor API and registers
-            interest in the <literal>Active</literal> <literal>Ready</literal>
-            and <literal>NotReady</literal> states taking appropriate
-            action when those states are entered.  The interface also creates a
-            <command>onTriggerFail</command> proc that gets control if the readout
-            fails when the run is active.
-        </para>
-        <para>
-            The key to using this package is the <option>init-script</option>
-            command line option.  When you describe the Readout program to the
-            experiment configuration editor be sure to include an
-            <option>init-script</option> command line parameter that runs
-            an initialization script that includes the <literal>ReadoutStateHook</literal>
-            package.
-        </para>
-        <para>
-            If the <literal>DAQROOT</literal> environment variable is defined (by
-            sourcing the daqsetup.bash), and if Readout is run under the boot
-            manager, the example below will connect your readout
-            program to the state manager:
-        </para>
-        <example>
-            <title>Script to attach SBSReadout to the state manager</title>
-            <programlisting>
-set pkgDirs [file join $env(DAQROOT) TclLibs]
-lappend auto_path $pkgDirs
-
-package require ReadoutStateHook
-
-            </programlisting>
-        </example>
-    </section>
-    -->
 </chapter>
     
     
