@@ -18,16 +18,7 @@
                     have to modify to produce a real application.
                     </para>
                 </listitem>
-            <!--
-            <listitem>
-                <para>
-                    How to hook the readout program into the NSCLDAQ-11.0 state
-                    manager.  See
-                    <link linkend='chap.statemgr' endterm='chap.statemgr.title' />
-                    for more information about the state manager.
-                </para>
-            </listitem>
-            -->
+
         </itemizedlist>
     </para>
     <para>
@@ -1142,8 +1133,7 @@ make
             the <option>--help</option> option.
             </para>
         </section>
-        <!--
-</chapter>
+      </chapter>
     
     
 <!-- /chapter -->
