@@ -290,8 +290,8 @@ proc processDirectory {directory} {
 #
 proc dumpHeader {} {
     puts $::outputChannel {<?xml version="1.0" encoding="UTF-8"?>}
-    puts $::outputChannel {<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"}
-    puts $::outputChannel {"file:///usr/share/xml/docbook/schema/dtd/4.3/docbookx.dtd"}
+    puts $::outputChannel {<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"}
+    puts $::outputChannel {"file:///usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd"}
     puts $::outputChannel { [] }
     puts $::outputChannel {>}
     puts $::outputChannel {<book>}
