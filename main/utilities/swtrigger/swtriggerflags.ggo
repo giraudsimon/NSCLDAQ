@@ -1,4 +1,4 @@
-package "swtrigger"
+package "SoftwareTrigger"
 version "v1.0"
 
 option "source" s "Data Source" string typestr="URI"
