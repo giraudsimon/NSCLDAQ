@@ -112,14 +112,8 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/libtcl/exception \
 						@top_srcdir@/examples		\
 						@top_srcdir@/ddas/sorter        \
-						@top_srcdir@/ddas/readoutdriver 
-
-#						@top_srcdir@/utilities/boot 
-#						@top_srcdir@/utilities/statemanager 
-#						@top_srcdir@/utilities/experimentConfiguration
-#						@top_srcdir@/utilities/cpanel 
-
-
+						@top_srcdir@/ddas/readoutdriver  \
+						@top_srcdir@/utilities/swtrigger 
 
 
 daq.html: daq.xml
