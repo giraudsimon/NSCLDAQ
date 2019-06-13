@@ -7,8 +7,8 @@ evts2frags_SOURCES=Main.cpp CFragmentMaker.cpp CEvents2Fragments.cpp \
 	evts2frags.c
 evts2frags_CXXFLAGS=$(evts2frag_COMMON_CFLAGS)
 evts2frags_LDADD=@top_builddir@/daq/format/libdataformat.la \
-	@top_srcdir@/base/os/libdaqshm.la \
-	@top_srcdir@/base/thread/libdaqthreads.la \
+	@top_builddir@/base/os/libdaqshm.la \
+	@top_builddir@/base/thread/libdaqthreads.la \
 	@LIBEXCEPTION_LDFLAGS@
 
 
