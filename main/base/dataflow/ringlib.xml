@@ -583,8 +583,8 @@ g++ -o myapp myapp.cpp -L$DAQROOT/lib -lDataFlow -Wl,"-rpath=$DAQROOT/lib"
          <programlisting>
 #include &lt;CRemoteAccess.h&gt;
          </programlisting>
-         <classsynopsis>
-            <ooclass><classname>CRingAccess</classname></ooclass>
+         <synopsis>
+            <ooclass><classname>CRingAccess</classname></ooclass> {
             <methodsynopsis>
                 <modifier>static</modifier> <type>size_t</type>
                 <methodname>setProxyRingSize</methodname>
@@ -640,7 +640,8 @@ g++ -o myapp myapp.cpp -L$DAQROOT/lib -lDataFlow -Wl,"-rpath=$DAQROOT/lib"
                     <type>std::string</type> <parameter>uri</parameter>
                 </methodparam>
             </methodsynopsis>
-         </classsynopsis>
+        };
+         </synopsis>
       </refsynopsisdiv>
       <refsect1>
          <title>Description</title>
@@ -861,6 +862,125 @@ CRingBuffer* pRing =
          </example>
       </refsect1>
    </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZCopyRingBuffer</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZCopyRingBuffer</refname>
+        <refpurpose>Provide zero copy access to low level ring buffers.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZCopyRingBuffer.h&gt;
 
+class CZCopyRingBuffer
+{
+public:
+    CZCopyRingBuffer(CRingBuffer* pRing);
+    
+    void* get(size_t nBytes);          // Note blocks until nBytes are there.
+    void  done();
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The <classname>CRingBuffer</classname> class provides simple,
+            byte-stream oriented access to NSCLDAQ ring buffers.  Retrieving data
+            from ring buffers using this class, however, results in a copy
+            being performed.  If high performance is required, these
+            data copies can be a performance impediment.
+        </para>
+        <para>
+            <classname>CZCopyRingBuffer</classname> provides mostly copy free
+            access to data placed in a ring buffer.  Copies will only take place
+            if the requested data spans the ring buffer wrap in which case
+            that request will be satisfied by creating a local copy
+            for the data that is contiguous in virtual memory.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CZCopyRingBuffer</methodname>
+                        <methodparam>
+                            <type>CRingBuffer* </type><parameter>pRing</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a zero copy ring buffer access object given
+                        a pointer to an underlying <classname>CRingBuffer</classname>
+                        object.  The ring buffer must have been attached as
+                        a consumer (<literal>CRingBuffer::consumer</literal>).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void* </type>
+                        <methodname>get</methodname>
+                        <methodparam>
+                            <type>size_t </type><parameter>nBytes</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        If necessar blocks until at least
+                        <parameter>nBytes</parameter> of data are avalable
+                        for consumption in the underlying ring.  The return pointer
+                        is then a pointer <parameter>nBytes</parameter> of
+                        data.  In most cases this pointer will point directly
+                        the ring buffer and the data pointed to should be
+                        treated as readonly.  If the data wrapped, the pointer
+                        will point at a copy of the data that is contiguous.
+                    </para>
+                    <para>
+                        Once the callers is done using the data it should
+                        invoke the <methodname>done</methodname> method.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void</type>
+                        <methodname>done</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Once the client is done using data returned by
+                        <methodname>get</methodname> it should call
+                        this method.  The consumer pointer for the client
+                        is then advanced past the data gotten by
+                        <methodname>get</methodname>.
+                    </para>
+                    <para>
+                        Failure to invoke <methodname>done</methodname> will
+                        eventually result in the ring buffer being unable to
+                        accept new data from the producer resulting in
+                        a backpressure flow control condition.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
 
 <!-- /manpage -->
