@@ -1,0 +1,812 @@
+<!-- chapter frameworks -->
+<chapter>
+    <title>Software Triggering NEW IN 11.4</title>
+    <para>
+        Software triggering is appropriate when you want to impose a complex
+        trigger to filter data that is unimportant to the experiment.  The
+        trigger may be difficult to perform in hardware.  Software triggers
+        should, in general:
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Be run in high rate experiments to reduce the
+                    rate of data recorded to disk.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Be run on a high performance system with
+                    many cores available for processing. In the future
+                    NSCLDAQ's frameworks will support cluster based
+                    software triggering.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        In NSCLDAQ, software triggering is a two step process;
+        In the first step, events are classified according to some
+        criteria you establish in a classification class.
+        This could be compute intensive and therefore runs in a
+        parallelized framework.
+        In the second stage, events that match specific classifications
+        are <firstterm>accepted</firstterm> and
+        <firstterm>rejected</firstterm>. 
+    </para>
+    <para>
+        NSCLDAQ supports the following troubleshooting of software
+        triggers:
+    </para>
+    <itemizedlist>
+        <listitem>
+            <para>
+                You can monitor the classification of events to
+                ensure your classification software operates
+                correctcly.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                You can monitor which events are rejected as well
+                as which events are accepted by the second stage
+                of the filter.
+            </para>
+        </listitem>
+    </itemizedlist>
+    <para>
+        The remainder of this chapter:
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Describes how to write and build classification
+                    classes.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    How the classification and filtering
+                    components work together.
+                </para>
+            </listitem>
+        </itemizedlist>
+        
+    </para>
+    <para>
+        See the 1daq reference section for complete reference
+        information on the SoftwareTrigger and EventFilter
+        programs that make up this subsystem.
+    </para>
+    <section>
+        <title>Creating classification libraries.</title>
+        <para>
+            To perform software triggering/filtering you need to
+            provide a class that takes
+            <classname>CRingItem</classname> objects that
+            are <literal>PHYSICS_EVENTS</literal>, and
+            provides a <type>uint32_t</type> classification
+            value for each event.
+        </para>
+        <para>
+            You must also provide a <firstterm>factory function</firstterm>
+            that produces objects from your classification class.
+            Finally, you need to compile and link all of this into
+            a shared library that can bey dynamically loaded into
+            the <application>SoftwareTrigger</application>
+            application.
+        </para>
+        <section>
+            <title>Writing the classification class and factory function</title>
+            <para>
+                For the purpose of this example, we'll build a
+                classifier that classifies the events as
+                <emphasis>large</emphasis> or
+                <emphasis>small</emphasis> where a large event
+                is considered to be one who's body is larger than
+                500bytes.  The classifier will return a
+                <literal>1</literal> for large events and
+                <literal>0</literal> for small events.
+            </para>
+            <para>
+                All our code will be in the file
+                <filename>sillyclassifier.cpp</filename>.
+                Keep that in mind when we describe how to build
+                the classifier shared library in the next section.
+            </para>
+            <para>
+                Classifiers are derived from the class
+                <classname>CRingMarkingWorker::Classifier</classname>.
+                Classifiers are <firstterm>functors</firstterm>
+                which means they must implement an
+                <methodname>operator()</methodname>, function
+                call method.  Here's te overall structure of
+                <filename>sillyclassifier.cpp</filename>:
+            </para>
+            <informalexample>
+                <programlisting>
+#include &lt;CRingItemMarkingWorker.h&lt;    <co id="sillyc.includes" />
+#include &lt;CRingItem.h&lt;
+#include &lt;DataFormat.h&lt;
+
+class LargeSmallClassifier : public CRingMarkingWorker::Classifier <co id="sillyc.class" />
+{
+public:
+  virtual uint32_t operator()(CRingItem&amp; item);  <co id="sillyc.functor" />
+};
+// Implementation  of LargSmallClassifier::operator() goes here.
+
+extern "C" {                                         <co id="sillyc.externc" />
+  CRingMarkingWorker::Classifier* createClassifier(){ <co id="sillyc.factory" />
+    return new LargeSmallClassifier;                  <co id="sillyc.factory-op" />
+  }
+}
+
+                </programlisting>
+            </informalexample>
+            <para>
+                Let's look at the contents of this file in detail:
+            </para>
+            <calloutlist>
+                <callout arearefs='sillyc.includes'>
+                    <para>
+                        As usual at the top of the file we include the
+                        header files we'll need.  These are:
+                    </para>
+                    <variablelist>
+                        <varlistentry>
+                            <term><filename>CRingItemMarkingWorker.h</filename></term>
+                            <listitem>
+                                <para>
+                                    This defines the worker class in which
+                                    our classifier will be embedded. Most notably,
+                                    it contains the definition of
+                                    <classname>CRingMarkingWorker::Classifier</classname>
+                                    which is the base class of our classifier.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term><filename>CRingItem.h</filename></term>
+                            <listitem>
+                                <para>
+                                    Defines the methods available for the
+                                    <classname>CRingItem</classname> object
+                                    our classification method gets.
+                                    <filename>CRingItemMarkingWorker.h</filename>
+                                    just defines that as an opaque class but we
+                                    need to actually call methods
+                                    <classname>CRingItem</classname> objects
+                                    so we need the full definition.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term><filename>DataFormat.h</filename></term>
+                            <listitem>
+                                <para>
+                                    Defines the format of raw ring items.
+                                    In order to do our work, our classifier will
+                                    need to get into the details of ring item
+                                    formats.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </callout>
+                <callout arearefs='sillyc.class'>
+                    <para>
+                        Defines our class.   Notice that our class has
+                        <classname>CRingMarkingWorker::Classifier</classname>
+                        as its base class. 
+                    </para>
+                </callout>
+                <callout arearefs='sillyc.functor'>
+                    <para>
+                        Defines out <methodname>operator()</methodname>
+                        method.  We'll look at implementing this method
+                        in a bit.  Note that
+                        <classname>CRingMarkingWorker::Classifier</classname>
+                        is an abstract base class that does not
+                        implement <methodname>operator()</methodname>,
+                        therefore all usable classification classes must
+                        implement this method.
+                    </para>
+                    <para>
+                        An instance of our classifier will be created for each
+                        of the worker threads that are classifying events in
+                        parallel.  Note very well that the fact that these
+                        classifier objects are embedded in parallel workers means
+                        that, unless you really know what you're doning,
+                        your classifiers should not have or access global data.
+                    </para>
+                </callout>
+                <callout arearefs='sillyc.externc'>
+                    <para>
+                        We have to provide a findable factor for our classifier.
+                        In C++, the actual name of a function is
+                        <firstterm>decorated</firstterm> or
+                        <firstterm>mangled</firstterm>
+                        to include information about its return value and
+                        parameter types.  This is how C++  implements function
+                        overloading, by making each function overload a unique
+                        actual function as seen by the linker.
+                    </para>
+                    <para>
+                        While this is useful the actual manner in which this
+                        mangling is done is up to the compiler and, possibly,
+                        even the compiler version. In order to find the
+                        factory function in the shared library we turn off this
+                        mangling by declaring that it has C rather than C++
+                        linkage.  Function defined in an
+                        <programlisting>extern "C" {}</programlisting> block
+                        have that mangling disabled.
+                    </para>
+                </callout>
+                    <callout arearefs='sillyc.factory'>
+                        <para>
+                            The factory function must have the name
+                            <function>createClassifier</function>.
+                            The <application>SoftwareFilter</application>
+                            application will expect this symbol to be defined
+                            in the shared object you create in the next section.
+                        </para>
+                    </callout>
+                    <callout arearefs='sillyc.factory-op'>
+                        <para>
+                            What the factory actuall does is simple.  It
+                            uses <literal>new</literal> to create a new instance
+                            of the classifier object and returns the pointer
+                            generated to the caller.
+                        </para>
+                    </callout>
+            </calloutlist>
+            <para>
+                Now let's look at how to implement our classifier's
+                function call method.  Our implementation must:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Figure out the size of the event's body.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Return 1 if that body is larger than 500 bytes, otherwise
+                        zero.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                Before we start, note that our caller is responsible for
+                ensuring that the ring items we get are all
+                <literal>PHYSICS_EVENT</literal> items and that
+                they also have a body header. 
+            </para>
+            <para>
+                Here's the implementation:
+            </para>
+            <informalexample>
+                <programlisting>
+static const uint32_t LARGE(500);                <co id='sillyc.definelarge' />
+
+uint32_t
+LargeSmallClassifier::operator()(CRingItem&amp; item)
+{
+  size_t bodySize = item.getBodySize();           <co id='sillyc.getbodysize' />
+  return (bodySize &gt; LARGE) ?  1 : 0;          <co id='sillyc.classify' />
+}
+                </programlisting>
+            </informalexample>
+            <para>
+                Pretty simple actually:
+            </para>
+            <calloutlist>
+                <callout arearefs='sillyc.definelarge'>
+                    <para>
+                        The constant <varname>LARGE</varname> defines what
+                        we mean by a large event body.  It's a good idea not
+                        to use magic number in your code.  Defining
+                        <varname>LARGE</varname> makes it clear the purpose
+                        of this number.
+                    </para>
+                </callout>
+                <callout arearefs='sillyc.getbodysize'>
+                    <para>
+                        The <classname>CRingItem</classname> provides a method
+                        that computes the body size. 
+                    </para>
+                </callout>
+                <callout arearefs='sillyc.classify'>
+                    <para>
+                        This code returns 1 if the body size is greater than
+                        <literal>LARGE</literal> (500) and 0 otherwise.
+                    </para>
+                </callout>
+            </calloutlist>
+        </section>
+        <section>
+            <title>Building the classification shared library.</title>
+            <para>
+                This section continues the example in the previous section.
+                We have a file: <filename>sillyclassifier.cpp</filename>.
+                We need to turn that into a shared library which the
+                <application>SoftwareTrigger</application> program will
+                dynamically load and use to create instances of our
+                classifier to bind into its worker threads.
+            </para>
+            <informalexample>
+                <programlisting>
+g++ -olibSilly.so -I$DAQINC -shared -fPIC sillyclassifier.cpp                    
+                </programlisting>
+            </informalexample>
+            <para>
+                In addition to the compiler options you already probably know:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        <option>-shared</option> tells the compiler to build
+                        a shared object library as output.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <option>-fPIC</option> tells the compiler to build
+                        position independednt code.   This is needed for
+                        shared libraries as the code in such a library
+                        does not know where in process address space it will
+                        be loaded.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </section>
+    </section>
+    <section>
+        <title>The SoftwareTrigger and EventFilter programs</title>
+        <para>
+            The software trigger subsystem consists of two stages.
+            The first stage classifies physics events in accordance with
+            user supplied criteria.  The second stage accepts or rejects
+            events based on the criteria supplied.
+        </para>
+        <para>
+            The previous section described how to create code to perform the
+            required classification and how to prepare it for use by the classification
+            stage.  This section will describe what the
+            <application>SoftwareTrigger</application> programs actually
+            do and how to use them.
+        </para>
+        <para>
+            The <literal>1daq</literal> reference section provides a detailed
+            description of the command line options these programs acceapt.
+        </para>
+        <section>
+            <title>SoftwareTrigger - classifying events</title>
+            <para>
+                <application>SoftwareTrigger</application> is the classification
+                stage of the software filter process.  It accepts data from
+                some source (Ring buffer or file), and outputs classified
+                events to some sink (again ring buffer or file).
+            </para>
+            <para>
+                <application>SoftwareTrigger</application> can be thought of
+                as a processing pipeline with a fanout-fanin stage.  A data
+                source thread reads ring items from the data source. Clumps of
+                ring items are fanned out to worker threads that classify
+                events in a clump in parallel.  
+            </para>
+            <para>
+                The worker threads pass each physics ring item to the user
+                written classification object which returns a
+                <type>uint32_t</type> classification.  This classification
+                is put in the event as an extension to the body header.
+                NSCLDAQ code and SpecTcl-5.1-010 and later understand that
+                the body header can be extended and transparently handle
+                events with this extension.
+            </para>
+            <para>
+                Classified clumps of data then fan in to the next stage of the
+                processing pipeline.  Since the workers will finish working
+                on clumps in a non-deterministic order, the next stage of the
+                pipeline re-sorts the events by timestamp.
+                The output of this sort phase goes to a final data sink stage
+                which writes the data to the data sink.
+            </para>
+            <para>
+                To run the <application>SoftwareTrigger</application> application,
+                you minimally must specify the data source, the data sink and
+                classifier shared object library.  In addition you should also
+                specify the <firstterm>clump size</firstterm> and the
+                <firstterm>number of classification workers</firstterm>.
+            </para>
+            <para>
+                A large clump size results in communication efficiencies between
+                the thread at the expense of a larger virtual memory footprint.
+                Increasing the number of worker threads provides better performance
+                up until you saturate all of the cores on the system or
+                hit an I/O limit.
+            </para>
+            <para>
+                Refer to the manpage for <application>SoftwareTrigger</application>
+                in the <literal>1daq</literal> section for the full set
+                of program options.  The one you need to get started are:
+            </para>
+            <variablelist>
+                <varlistentry>
+                    <term><option>--source</option>=<replaceable>URI</replaceable></term>
+                    <listitem>
+                        <para>
+                            Provides the URI of the data source.  This can be
+                            a <literal>file</literal> or <literal>tcp</literal>
+                            URI.  In the case of a
+                            <literal>tcp</literal> data source the host can be
+                            remote.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>--sink</option>=<replaceable>URI</replaceable></term>
+                    <listitem>
+                        <para>
+                            Provides the URI of the data sink.  This can
+                            be a <literal>file</literal> or
+                            <literal>tcp</literal>.  <literal>tcp</literal>
+                            URIs must, however have the local host as the
+                            host as NSCLDAQ only allows local producers for
+                            ringbuffers.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>--workers</option>=<replaceable>n</replaceable></term>
+                    <listitem>
+                        <para>
+                            Integer that specifes the number of workers to run.
+                            This determines the maximum parallelism for the
+                            classification stage of the pipeline.  There's no
+                            point is specifying more cores than you have.
+                            I recommend exploring performance a a function of
+                            this parameter prior to the experiment so you can select
+                            an optimal value for this flag.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>--clump-size</option>=<replaceable>n</replaceable></term>
+                    <listitem>
+                        <para>
+                            Specifies the number of events that will be passed
+                            to a worker for each work item.  Up to a point,
+                            big numbers tend to be better but again, do some
+                            performance measurements prior to the experiment to
+                            optimize this value.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>--classifier</option>=<replaceable>shared-lib-path</replaceable></term>
+                    <listitem>
+                        <para>
+                            Provides the path to the shared library you created
+                            containing an implementation of your classifier and
+                            the factory function that creates classifier instances.
+                        </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Note that you can attach software to the output sink if it's a
+                ring buffer to ensure the classifier is working as expected.
+            </para>
+            <para>
+                Here's a fragment of code that shows how to obtain
+                the classification of an event from inside a SpecTcl
+                event processor.
+            </para>
+            <informalexample>
+                <programlisting>
+#include &lt;DataFormat.h&gt;
+#include &lt;CRingBufferDecoder.h&gt;
+#include &lt;CRingFormatHelper.h$gt;
+
+struct ExtendedBodyHeader {
+    BodyHeader s_bodyHeader;
+    uint32_t   s_classification;
+};
+
+Bool_t
+MyEventProcessor::operator()(
+    const Address_t pEvent, CEvent&amp; rEvent, CAnalyzer&amp; rAnalyzer,
+	CBufferDecoder&amp; rDecoder
+)
+{
+    ...
+    CRingBufferDecoder&amp; decoder(dynamic_cast&lt;CRingBufferDecoderamp;&gt;(rDecoder));
+    CRingFormatHelper*  pHelper = decoder.getCurrentFormatHelper();
+    if (pHelper-&gt;hasBodyHeader()) {
+        pBodyHeader pB = static_cast&lt;pBodyHeader&gt;(pHelper-&gt;getCodyHeaderPointer());
+        if ((pB-&gt;s_size - sizeof(BodyHeader)) &lt; sizeof(uint32_t)) {
+            ExtendedBodyHeader* pE = reinterpret_cast&lt;ExtendedBodyHeader*>(pB);
+            uint32_t classification = pE-&gt;s_classification;
+            
+            // Do whatever you want with classification.
+            ...
+            
+        } else {
+            // There's a body header but there's no extension.
+        }
+    } else {
+        // No body header so no classification!!!
+    }
+    ...
+}
+
+                </programlisting>
+            </informalexample>
+            
+        </section>
+        <section>
+            <title>EventFilter - accepting events based on classification</title>
+            <para>
+                <application>EventFilter</application> is the second part of
+                software triggering.  <application>EventFilter</application>
+                examines the classifications added by
+                <application>SoftwareTrigger</application> and and accepts
+                or rejects physics events based on criteria you can set.
+            </para>
+            <para>
+                Acceptance criteria are set by defining a mask and a value.
+                A physics item is accepted if
+                <literal>(classification &amp; mask) == value</literal>.
+            </para>
+            <para>
+                A debugging feature of the <application>EventFilter</application>
+                allows you to not only keep the accepted events but to directc
+                the rejected events to a second ringbuffer.
+            </para>
+            <para>
+                See the <literal>1daq</literal> reference section for
+                information about how to run 
+            </para>
+        </section>
+    </section>
+</chapter>
+
+<!-- /chapter -->
+
+<!-- manpage 1daq -->
+<refentry>
+    <refmeta>
+        <refentrytitle>SoftwareTrigger</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>SoftwareTrigger</refname>
+        <refpurpose>Classify event for EventFilter.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+SoftwareTrigger <optional>options...</optional>
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            <application>SoftwareTrigger</application> classifies events
+            using a library containing classification code that you write.
+            See the chapter <literal>Software Triggering</literal> for
+            information about how to write classification code.            
+        </para>
+        <para>
+            <application>SoftwareTrigger</application>  adds a
+            <type>uint32_t</type> classification to each physics event
+            body header.  <application>EventFilter</application> can
+            use this information to accept or reject events for future
+            processing.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <variablelist>
+            <varlistentry>
+                <term><option>--source</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the URI that identifies the data source.
+                        This URI can be either a <literal>file</literal> or
+                        a <literal>tcp</literal> protocol URI.
+                        <literal>tcp</literal> data sources can get data
+                        from remotely defined rings.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sink</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the URI that identifies the data sink.
+                        <literal>tcp</literal> or <literal>file</literal>
+                        URIs can be used howevber <literal>tcp</literal>
+                        URIs must resolve to the local system as NSCLDAQ
+                        requires providers for ring buffers to be local.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--workers</option>=<replaceable>n</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the number of classification threads that
+                        will be run in parallel.  Each classification thread
+                        will have its own instance of a classifier. 
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sort-window</option>=<replaceable>ticks</replaceable></term>
+                <listitem>
+                    <para>
+                        This option is obsolete and will not affect processing.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--clump-size</option>=<replaceable>n</replaceable></term>
+                <listitem>
+                    <para>
+                        Sets the work item clump size.  Each work item sent to
+                        classification threads consists of a
+                        <firstterm>clump</firstterm> of ring items.
+                        The value of this option determines how many ring items
+                        will be stuffed into a work item clump.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--parallel-strategy</option>=<replaceable>strategy</replaceable></term>
+                <listitem>
+                    <para>
+                        In the future this will determine how the application is
+                        parallelized.  At present only <literal>threaded</literal>
+                        parallelism is supported, which means that
+                        all threads run on the same processor using ZMQ
+                        internal proccess message passing.
+                    </para>
+                    <para>
+                        We hope that in the future e.g. <literal>MPI</literal>
+                        will be supported to allow the application to parallelize
+                        across a network distributed cluster.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--classifier</option>=<replaceable>path</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the path to the shared library that contains
+                        the classification code as well as the factory function
+                        that produces instances of the classification object.
+                    </para>
+                    <para>
+                        See the <literal>Software Triggering</literal> chapter
+                        or the <literal>3parallel</literal> man page for
+                        <classname>CRingMarkingWorker</classname> for more
+                        about how to write the classification code.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>EventFilter</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>EventFilter</refname>
+        <refpurpose>Filter classified events.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis><command>
+EventFilter <optional>options...</optional>
+        </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            <application>EventFilter</application> takes a data source
+            that contains events classified by
+            <application>SoftwareTrigger</application> and applies a
+            criterion to the classification to determine whether or not
+            each event is forwarded to a sink.
+        </para>
+        <para>
+            Optionally, a rejected events sink can be defined.  If defined,
+            that sink will receive all physics events that were not forwarded
+            to the accepted sink.  Both sinks will get all non Physics events.
+        </para>
+        <para>
+            Acceptance is defined using a mask and a value.  The following
+            boolean expression must be true if an even is to be forwarded to
+            the accepted events sink:
+            <literal>(classification &amp; mask) == value</literal>.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <variablelist>
+            <varlistentry>
+                <term><option>--source</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the URI of the data source.  This can be
+                        a <literal>file</literal> or <literal>tcp</literal> URI.
+                        If a <literal>tcp</literal> URI it may refer to a remote
+                        ringbuffer.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--accepted-sink</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the URI of the data sink into which
+                        accepted events are placed.  See
+                        <literal>DESCRIPTION</literal> above to see
+                        which events are accepted.  See also the
+                        <option>--mask</option> and
+                        <option>--value</option> options below.
+                    </para>
+                    <para>
+                        The URI can be either a <literal>file</literal>
+                        or a <literal>tcp</literal> URI.  If a
+                        <literal>tcp</literal> URI, the  host must resolve
+                        to <literal>localhost</literal> as NSCLDAQ only
+                        supports local producers to ring buffers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--rejected=-sink</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides an optional sink for rejected events.
+                        If this option is not used, rejected events silently
+                        disappear.  The URI parameter can be defined as it is
+                        for the <option>--accepted-sink</option> as either
+                        a file or a local ring buffer.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--mask</option>=<replaceable>int</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the integer mask used in determining if
+                        events are accepted.  See
+                        <literal>DESCRIPTION</literal> for how this
+                        mask is used.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--value</option>=<replaceable>int</replaceable></term>
+                <listitem>
+                    <para>
+                        Provides the integer comparison value used in
+                        determining if events are accepted.  See
+                        <literal>DESCRIPTION</literal> for how this
+                        mask is used.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+
+
+<!-- /manpage 1daq -->
+
