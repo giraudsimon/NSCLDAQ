@@ -183,7 +183,7 @@ public:
     delete m_pCounter1;
     
     delete m_pWorker2;
-    delete m_pOut2;
+    //delete m_pOut2;
     delete m_pCounterOut2;
     delete m_pCounter2;
 
