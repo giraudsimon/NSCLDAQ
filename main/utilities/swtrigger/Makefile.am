@@ -94,4 +94,5 @@ unittests_LDFLAGS= @top_builddir@/utilities/IO/libdaqio.la \
 	$(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 
 
-TESTS=./unittests
+UNITTESTS: unittests
+	./unittests
