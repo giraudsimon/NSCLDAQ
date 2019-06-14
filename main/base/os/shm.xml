@@ -1295,5 +1295,265 @@ CBufferedOutput&amp; operator&lt;&lt;(CBufferedOutput&amp; b, T&amp; data);
     </refsect1>
 
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingBlockReader</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingBlockReader</refname>
+        <refpurpose>ABC for reading blocks of ring items from a source.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingBlockReader&gt;
+            
+class CRingBlockReader
+{
+  
+  
+public:
+    typedef struct _DataDescriptor {
+        std::uint32_t s_nBytes;
+        std::uint32_t s_nItems;
+        void*         s_pData;           
+    } DataDescriptor, *pDataDescriptor;
+public:
+    CRingBlockReader();
     
+    virtual DataDescriptor read(size_t nBytes);
+protected:
+    
+    virtual ssize_t readBlock(void* pBuffer, size_t maxBytes) = 0;
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is an abstract base class that uses a strategy pattern to
+            read large blocks of data from some source and pass back to the user
+            a description of the items in the block.  The items are only
+            assumed to begin with a <type>uint32_t</type> size in bytes.
+        </para>
+        <para>
+            Actual data transfer is done via the protected, pure virtual,
+            method <methodname>readBlock</methodname>.  The base class
+            properly handles items which span block boundaries transparently
+            with respect concrete derive classes.
+        </para>
+        <para>
+            Full customizability of the internals is also provided
+            by making the public <methodname>read</methodname> method
+            virtual as well.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingBlockReader</methodname>
+                        <void />
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs the object.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>DataDescriptor </type>
+                        <methodname>read</methodname>
+                        <methodparam>
+                            <type>size_t</type><parameter>nBytes</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Obtains at most <parameter>nBytes</parameter> of
+                        data from the source.  The return value is a
+                        <classname>CRingBlockReader</classname>::<structname>DataDescriptor</structname>.
+                        See <literal>DataTypes</literal>.
+                    </para>
+                    <para>
+                        It is important to know that the
+                        <structfield>s_pData</structfield> field of the
+                        returned structure points to data allocated dynamically
+                        via <function>malloc</function>(3).  When the
+                        caller is done using it that data must be released
+                        via <function>free</function>(3).
+                    </para>
+                    <para>
+                        It is an error if <parameter>nBytes</parameter>
+                        cannot accommodate at least one complete item.  In that
+                        case an <classname>std::logic_error</classname> is thrown.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>protected virtual </modifier>
+                        <type>ssize_t </type>
+                        <methodname>readBlock</methodname>
+                        <methodparam>
+                            <type>void* </type><parameter>pBuffer</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>maxBytes</parameter>
+                        </methodparam>
+                        <modifier>=0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Concrete sub-classes must implement this method.
+                        The method must obtain at most
+                        <parameter>maxBytes</parameter> from the data source
+                        storing them in <parameter>pBuffer</parameter>.
+                        The actual number of bytes returned is
+                        the return value.  
+                    </para>
+                    <para>
+                        A return value of 0 represents an end to the data source.
+                        A return value less than zero indicates an error
+                        whose reason is in the <varname>errno</varname>
+                        variable.  The caller will transform errors like this
+                        into throw <classname>std::system_error</classname>
+                        exceptions.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>DATA TYPES</title>
+        <para>
+            The class defines a nested struct:
+            <classname>CRingBlockReader</classname>::<structname>DataDescriptor</structname>
+            and an associated pointer type
+            <classname>CRingBlockReader</classname>::<type>pDataDescriptor</type>
+            which is a pointer to that struct.  The struct has the following
+            fields:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>std::uint32_t </type><structfield>s_nBytes</structfield><</term>
+                <listitem>
+                    <para>
+                        Number of bytes in this chunk of data.  This may be
+                        less than the number of bytes requested of the read
+                        but it will never be more than that.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>std::uint32_t </type><structfield>s_nItems</structfield></term>
+                <listitem>
+                    <para>
+                        The number of items in the block read.  Each item is
+                        assumed to have a leading <type>std::uint32_t</type>
+                        that contains the size of the item in bytes.  Note that
+                        this is also how NSCLDAQ ring items are formatted.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>void*</type> <structfield>s_pData</structfield></term>
+                <listitem>
+                    <para>
+                        Pointer to the data.  The data pointed to is
+                        allocated dynamically by <function>malloc</function>(3)
+                        and must be deallocated by the client code when
+                        appropriate via <function>free</function>(3).
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingFileBlockReader</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingFileBlockReader</refname>
+        <refpurpose>CRingBlockreader that reads from file.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingFileBlockReader.h&gt;
+class CRingFileBlockReader : public CRingBlockReader
+{
+public:
+  CRingFileBlockReader(const char* filename);
+  CRingFileBlockReader(int fd);
+ 
+};
+
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is a concrete subclass of <classname>CRingBlockReader</classname>
+            that reads data from a file.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingFileBlockReader</methodname>
+                        <methodparam>
+                            <modifier>const </modifier>
+                            <type>char* </type>
+                            <parameter>filename</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs the object using <parameter>filename</parameter>
+                        a path to the file to be opened.  The file  must
+                        be readable by the effective user id of the
+                        runnning process.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname> CRingFileBlockReader</methodname>
+                        <methodparam>
+                            <type>int</type><parameter>int fd</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs the reader on a file alread opened on the
+                        file descriptor <paramteer>fd</paramteer>
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
 <!-- /manpage -->
