@@ -1415,7 +1415,13 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
                 <methodname>mustSwap</methodname>
                 <void /><modifier>const</modifier>
             </methodsynopsis>
-            
+            <methodsynopsis>
+                <modifier></modifier>
+                <type>void </type>
+                <methodname>updateSize</methodname>
+                <void />
+                <modifier></modifier>
+            </methodsynopsis>
             <!-- New in 11.0 -->
             
             <methodsynopsis>
@@ -1724,7 +1730,18 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
             Second, that the top 16 bits of the data type are always zero
             and that this can be used to determine the byte ordering of an item.
          </para>
-
+          <methodsynopsis>
+            <modifier></modifier>
+            <type>void</type>
+            <methodname>updateSize</methodname>
+            <void />
+            <modifier></modifier>
+          </methodsynopsis>
+          <para>
+            Should be called prior to committing an item to the ring.
+            This recomputes the header size based on the position of the
+            insertion cursor and presence or absence of a body header.
+          </para>
             <!-- New in 11.0 -->
             
         <methodsynopsis>
@@ -10353,5 +10370,467 @@ typedef strucst _AbnormalEndItem {
         in filter pipelines.
      </para>
   </refsect1>
-</refentry>     
+</refentry>
+
+<!-- 11.4 additions -->
+
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingBufferChunkAccess</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingBufferChunkAccess</refname>
+        <refpurpose>Provides zero copy, low level consumer access to ring buffers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+class CRingBufferChunkAccess {
+public:
+    class Chunk {
+    public:
+        class iterator {
+        public:
+            iterator(void* pStorage, size_t bytes);
+            iterator(const iterator&amp; rhs);
+            iterator&amp; operator=(const iterator&amp; rhs);
+            bool operator==(const iterator&amp; rhs) const;
+            
+            pRingItemHeader operator-&gt;();
+            RingItemHeader&amp; operator*();
+            iterator&amp; operator++();         
+            iterator  operator++(int);      
+        };
+        Chunk();
+        void setChunk(size_t bytesInChunk, void* pStorage);
+    
+        void* getStorage();
+        size_t size() const;
+        iterator begin();
+        iterator end();
+    };
+
+public:
+    CRingBufferChunkAccess(CRingBuffer* pRingBuffer);
+    size_t waitChunk(size_t maxChunk, int polls = 0, int usecPoll = 0);
+    Chunk nextChunk();
+    
+};
+
+      </synopsis>
+        
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+          The <classname>CRingItem</classname> class provides a convenient
+          method to create and commit ring items to a ring buffer as well
+          as to consumer ring items from a ring buffer.  The downside of this
+          convenience is that data must be copied, sometimes several times.
+          This class provides consumers with zero copy access to ring items
+          in a ring buffer.
+        </para>
+        <para>
+          The model is that the user asks for, and eventually gets,
+          a <firstterm>chunk</firstterm> of items.  For the most part
+          chunks represent a contiguous block of items in the ring buffer
+          shared memory that have been produced but not yet consumed
+          by this consumer.  The user can then create an iterator which
+          allows them to obtain individual items from the chunk.
+        </para>
+        <para>
+          The class handles the (rare for ring item sizes &gt;&gt; than the
+          typical ring item) case where a ring item wraps by creating
+          a single item chunk that's been copied from the ring buffer into
+          a contiguous block of local memory.
+        </para>
+        <para>
+          Each invocation of <methodname>nextChunk</methodname>
+          releases the ring items the previous chunk contains allowing that
+          storage in the ring buffer to be re-used by the producer.
+        </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS of CRingBufferChunkAccess</title>
+      <variablelist>
+        <varlistentry>
+            <term>
+              <constructorsynopsis>
+                  <methodname>CRingBufferChunkAccess</methodname>
+                <methodparam>
+                    <type>CRingBuffer* </type><parameter>pRingBuffer</parameter>
+                </methodparam>
+              </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Constructs a zero copy ring item accessor.
+                  <parameter>pRingBuffer</parameter> is a pointer to a
+                  <classname>CRingBuffer</classname> object that must have been
+                  created as a consumer.  If this pointer does not represent
+                  a current consumer to the ring buffer, a
+                  <classname>std::logic_error</classname> exception is thrown.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>size_t </type>
+                <methodname>waitChunk</methodname>
+                <methodparam>
+                    <type>size_t </type><parameter>maxChunk</parameter>
+                </methodparam>
+                
+                <methodparam>
+                    <type> int </type><parameter>polls </parameter>
+                    <initializer>= 0</initializer>
+                </methodparam>
+                <methodparam>
+                    <type>int</type><parameter>usecPoll</parameter>
+                    <initializer> = 0</initializer>
+                </methodparam>
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Blocks the caller until the appropriate condition is met.
+                  The block ends when there's at least
+                  <parameter>maxChunk</parameter> bytes of data waiting to
+                  be consumed by the client.
+                  While blocking the client blocks for <parameter>usecPoll</parameter>
+                  microseconds between each check of the number of bytes available.
+                  If <parameter>polls</parameter> checks have been done,
+                  blocking ends.
+                </para>
+                <para>
+                  Regardless of why or how this method returns, the return value
+                  is the number of bytes of data available for consumption.
+                  Note that this may, in fact be zero.  NSCLDAQ ring items
+                  are inserted by our software atomically, which implies that if
+                  the return value is nonzero there will be at least one ring item
+                  available for consumption.
+                </para>
+                <para>
+                  The defaults for <parameter>polls</parameter> means the
+                  method  will return immediately.  The default for
+                  <parameter>usecPoll</parameter> mean that the program will
+                  spin wait.  For true blocking, both should be non-zero, where
+                  <parameter>usecPoll</parameter>*<parameter>polls</parameter>
+                  determines the maximum wait time and
+                  <parameter>usecPoll</parameter> the desired maximum latency for
+                  ending the block.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>CRingBufferChunkAccess::Chunk </type>
+                <methodname>nextChunk</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the next chunk as a
+                  <classname>CRingBufferChunkAccess::Chunk</classname> object.
+                  This chunk is only valid until the next call to
+                  <methodname>nextChunk</methodname>.  The size of the chunk
+                  depends on ow much data is available at the time of the call
+                  and where the top of the ring buffer is relative to the
+                  get pointer for this client.
+                </para>
+                <para>
+                  See
+                  <literal>CRingBufferChunkAccess::Chunk METHODS</literal> below
+                  for the methods defined on a chunk.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>CRingBufferChunkAccess::Chunk METHODS</title>
+      <variablelist>
+        <varlistentry>
+            <term>
+              <constructorsynopsis>
+                  <methodname>Chunk</methodname>
+                <void />
+              </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Constructs an empty chunk.  Note that user code does not need
+                  to call this, only the
+                  <classname>CRingBufferChunkAccess</classname>::<methodname>nextChunk</methodname>
+                  method.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>void </type>
+                <methodname>setChunk</methodname>
+                <methodparam>
+                    <type>size_t</type><parameter> bytesInChunk</parameter>
+                </methodparam>
+                <methodparam>
+                    <type>void* </type><parameter>pStorage</parameter>
+                </methodparam>
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Sets the pointer and size of the storage associated with a chunk
+                  Again, this normally does not have to be called by user level
+                  code,
+                  <classname>CRingBufferChunkAccess</classname>::<methodname>nextChunk</methodname>
+                  will invoke this to initialize the chunk it hands back to the
+                  user.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>void*</type>
+                <methodname>getStorage</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the pointer to the chunk's data.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>size_t </type>
+                <methodname>size</methodname>
+                <void />
+                <modifier> const</modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the number of bytes in the chunk.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>CRingBufferChunkAccess::Chunk::iterator </type>
+                <methodname>begin</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns an iterator to the first item in the chunk.
+                  See
+                  <literal>CRingBufferChunkAccess::Chunk::iterator METHODS</literal>
+                  below for the things you can do with an iterator.
+                </para>
+                <para>
+                  Suffice to say that iterators behave like STL forward iterators.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>CRingBufferChunkAccess::Chunk::iterator</type>
+                <methodname> end</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns an end of iteration iterator.  This iterator can be
+                  though of as pointing just off the end of the chunk.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>CRingBufferChunkAccess::Chunk::iterator METHODS</title>
+      <variablelist>
+        <varlistentry>
+            <term>
+              <constructorsynopsis>
+                  <methodname>
+                    iterator
+                  </methodname>
+                <methodparam>
+                    <type>void*</type><parameter> pStorage</parameter>
+                </methodparam>
+                <methodparam>
+                    <type>size_t </type><parameter>bytes</parameter>
+                </methodparam>
+              </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Constructs an iterator of ring items on an arbitrary
+                  chunk of storage.  Normally the
+                  <classname>CRingBufferChunkAccess::Chunk</classname>::<methodname>begin</methodname>
+                  method uses this.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <constructorsynopsis>
+                  <methodname>iterator</methodname>
+                <methodparam>
+                    <modifier>const </modifier>
+                    <type>iterator&amp; </type><parameter>rhs</parameter>
+                </methodparam>
+              </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Copy constructor for iterators.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>iterator&amp;</type>
+                <methodname>operator=;</methodname>
+                <methodparam>
+                    <modifier>const </modifier>
+                    <type>iterator&amp; </type><parameter>rhs</parameter>
+                </methodparam>
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Supports assignment of iterators.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type> bool </type>
+                <methodname>operator</methodname>
+                <methodparam>
+                    <modifier>const </modifier>
+                    <type>iterator&amp;</type><parameter> rhs</parameter>
+                </methodparam>
+                <modifier>const</modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Supports assignment of iterators.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>pRingItemHeader </type>
+                <methodname>operator-&gt;</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Supports field dereferincing an iterator as if it were a pointer
+                  to a Ring item header e.g. given an iterator p,
+                  <literal>p->s_type</literal> is the ring item type.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>RingItemHeader&amp; </type>
+                <methodname>operator*</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Supports dereferencing an iterator as if it were a pointer
+                  to a ring item header.  For example, given an iterator p,
+                  <literal>reinterpret_cast&lt;pRingItem&gt;(&(*p))</literal>
+                  produces a pointer to the ring item as a whole.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>iterator&amp;</type>
+                <methodname>operator++</methodname>
+                <void />
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Pre increments an iterator.  That is the iterator is incremnted
+                  and a reference to the resulting incremented iterator
+                  is returned.  This is the most efficient increment.
+                </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+            <term>
+              <methodsynopsis>
+                <modifier></modifier>
+                <type>iterator  </type>
+                <methodname>operator++</methodname>
+                <methodparam>
+                    <type>int</type><parameter></parameter>
+                </methodparam>
+                <modifier></modifier>
+              </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Supports post incrementing an iterator. A copy of the iterator
+                  is produced, the iterator is incremented and a copy of the
+                  iterator prior to the increment is returned.  In general,
+                  this requires two copies of the iterator.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
+
+</refentry>
+
 <!-- /manpage  -->

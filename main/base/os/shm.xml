@@ -1548,7 +1548,7 @@ public:
                 <listitem>
                     <para>
                         Constructs the reader on a file alread opened on the
-                        file descriptor <paramteer>fd</paramteer>
+                        file descriptor <parameter>fd</parameter>
                     </para>
                 </listitem>
             </varlistentry>
