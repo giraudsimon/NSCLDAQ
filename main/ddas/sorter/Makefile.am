@@ -19,6 +19,8 @@ ddasSortOptions.h:  ddasSortOptions.ggo
 	$(GENGETOPT) <@srcdir@/ddasSortOptions.ggo \
 		--file=ddasSortOptions --output-dir=@srcdir@
 
+EXTRA_DIST=ddasSortOptions.ggo
+
 #----------------------- unit tests
 
 noinst_PROGRAMS=unittests
