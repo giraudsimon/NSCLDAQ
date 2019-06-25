@@ -12,7 +12,7 @@ if BUILD_USB
 endif
 
 if BUILD_DOCS
-   DOCDIR=docbuild docconfig simplesetups
+   DOCDIR=docbuild docconfig simplesetups cookbooks
 endif
 
 if BUILD_DDAS
@@ -21,7 +21,7 @@ endif
 
 SUBDIRS =	 base caenfw-common servers  base/dataflow  \
 		daq utilities $(DOCDIR) \
-		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) examples cookbooks
+		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) examples
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
 		 docbuild docconfig simplesetups sbs epics usb ddas examples
