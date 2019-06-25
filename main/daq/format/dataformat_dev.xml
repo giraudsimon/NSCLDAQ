@@ -10674,6 +10674,13 @@ public:
     </refsect1>
     <refsect1>
       <title>CRingBufferChunkAccess::Chunk::iterator METHODS</title>
+      <para>
+        Normally your code does not explicitly construct an iterator.
+        Instead, the <classname>CRingBufferChunkAccess::Chunk</classname>
+        you got from the ring buffer will be used to construct
+        iterators that allow you to iterate over the ring items in
+        that chunk.
+      </para>
       <variablelist>
         <varlistentry>
             <term>
@@ -10719,7 +10726,7 @@ public:
               <methodsynopsis>
                 <modifier></modifier>
                 <type>iterator&amp;</type>
-                <methodname>operator=;</methodname>
+                <methodname>operator=</methodname>
                 <methodparam>
                     <modifier>const </modifier>
                     <type>iterator&amp; </type><parameter>rhs</parameter>
@@ -10738,7 +10745,7 @@ public:
               <methodsynopsis>
                 <modifier></modifier>
                 <type> bool </type>
-                <methodname>operator</methodname>
+                <methodname>operator==</methodname>
                 <methodparam>
                     <modifier>const </modifier>
                     <type>iterator&amp;</type><parameter> rhs</parameter>
@@ -10748,7 +10755,7 @@ public:
             </term>
             <listitem>
                 <para>
-                  Supports assignment of iterators.
+                  Supports comparison of two iterators for equality.
                 </para>
             </listitem>
         </varlistentry>
@@ -10830,7 +10837,23 @@ public:
         </varlistentry>
       </variablelist>
     </refsect1>
-
+    <refsect1>
+      <title>Public Data and Types</title>
+      <variablelist>
+        <varlistentry>
+            <term>
+              <type>size_t</type> <classname>CRingBufferChunkAccess</classname>::<varname>m_RingBufferBytes</varname>
+            </term>
+            <listitem>
+                <para>
+                  Contains the number of bytes in the underlying ring buffer.
+                  This should be treated as readonly but for implementation
+                  reasons cannot  be declared const.
+                </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect1>
 </refentry>
 
 <!-- /manpage  -->
