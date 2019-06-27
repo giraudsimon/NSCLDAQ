@@ -76,7 +76,8 @@ eventfilterflags.h: eventfilterflags.ggo
 	$(GENGETOPT) <@srcdir@/eventfilterflags.ggo -Feventfilterflags
 
 
-EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml
+EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
+	CommFramework.xml
 
 ####################################################################################
 # unit testing:

@@ -1,0 +1,374 @@
+<!-- chapter libraries -->
+
+<chapter>
+    <title>Parallel programming framework</title>
+    <para>
+        There are many types of parallel programming.  One classic model
+        for parallel programming is that of
+        <firstterm>Communicating Sequential Processes</firstterm> (CSP).
+        CSP models a parallel program as a set of sequential, or serial programs
+        that talk to each other.  
+    </para>
+    <para>
+        Within CSP two main models exist;
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Threaded - when parallelism is confined to a single
+                    shared memory multi-core system, where all communication
+                    is internal to that system.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Distributed - when the application is spread out over some
+                    networked set of nodes.  Normally these nodes are
+                    interconnected via a high performance low latency
+                    <firstterm>network fabric</firstterm>.
+                </para>
+                <para>
+                    Linux, Beowulf clusters are a pretty popular platform
+                    on which to build distributed parallel programs.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        NSCLDAQ provides a high level library that insulates your program
+        from the detailed mechanisms of specific message passing libraries.
+        Programs written that only communicate via message passing can be
+        easily rehosted from a threaded implementation to a distributed
+        implementation, changing only initialization code.
+    </para>
+    <para>
+        In this chapter we'll describe:
+    </para>
+    <itemizedlist>
+        <listitem>
+            <para>
+                The concepts and classes behind the library.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                The implementation state of the library including the set of
+                communication systems that are implemented by the library at this
+                time and a roadmap describing planned future developments.
+                Pointers will be given to man page starting points for each
+                implemented communication scheme.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                How to compile and link programs using this library.
+            </para>
+        </listitem>
+    </itemizedlist>
+    <section>
+        <title>Concepts and classes</title>
+        <para>
+            Parallel programs build on top of this library consists of
+            objects that communicate via messagse passing.  To limit the
+            amount of data copying required, messages can, not only be
+            a single block of data but can be a block list that's gathered
+            by the library into a single message.
+        </para>
+        <para>
+            The assumption is that a program consists of some source of data
+            and that processing these data involve parcelling out work units
+            to parallel processing objects. which then fan their
+            results back in to processing objects that gather the  data.
+        </para>
+        <para>
+            Thus the programming model has you stringing together a
+            pipeline (each element of the pipeline runs in parallel) where
+            stages of those pipelines may include stages that run multiple
+            processors that operate in parallel on data streaming through the
+            pipeline.
+        </para>
+        <para>
+            The following classes, therefore, model several types of
+            processing elements that can appear in these data/processing flows:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><classname>CDataSourceElement</classname></term>
+                <listitem>
+                    <para>
+                        These elements are intended to connect the
+                        program to concrete sources of data.  In NSCLDAQ
+                        these sources can be ring items, files or some
+                        other communicating processor (internal or external).
+                    </para>
+                    <para>
+                        These elements are normally at the start of the
+                        processing pipeline.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><classname>CDataSinkElement</classname></term>
+                <listitem>
+                    <para>
+                        These elements are intended to connect the program
+                        to some concrete sink of data.  In NSCLDAQ, sinks can
+                        be ring buffers, files or other communicating processors.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><classname>CParallelWorker</classname></term>
+                <listitem>
+                    <para>
+                        A generic parallel worker.  This is normally used
+                        to encapsulate code that runs in the data parallel
+                        segments of the computation.  Normally this
+                        encapsulation 
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            From these classes you can see that the computation normally takes
+            the form of a pipeline where data comes from a
+            <classname>CDataSourceElement</classname> runs through
+            several <classname>CParallelWorker</classname> elements
+            and then in the end data is emitted from the program via
+            a <classname>CDataSinkElement</classname>
+        </para>
+        <para>
+            Having these classes is all well and good, but how do they communicate
+            with each other?  Following the pipeline model, each element
+            of the computation gets its data from
+            a <classname>CReceiver</classname> and sends the results of its
+            computation to the next stage of the pipeline
+            via a <classname>CSender</classname>.
+        </para>
+        <para>
+            <classname>CReceiver</classname> and
+            <classname>CSender</classname> objects encapsulate another
+            class derived from
+            <classname>CTransport</classname>.  Transport classes are
+            actual do the messaging required by the receiver and sender objects.
+            In doing so, the contain code specific to the type communication
+            library being used (e.g. MPI or ZeroMQ), and they also encapsulate
+            a specific communication pattern.
+        </para>
+        <para>
+            Some base classes for transports are:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><classname>CTransport</classname></term>
+                <listitem>
+                    <para>
+                        The abstract base class for all transports.  This class
+                        provides the interfaces used by sender and receiver
+                        objects to request actual communication.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><classname>CFanoutTransport</classname></term>
+                <listitem>
+                    <para>
+                        Abstract base class for transports that fan-out work items
+                        to data parallel sections of the program.  In addition
+                        to the data transfer interfaces, this class
+                        provides interfaces to inform the members of the
+                        fanout that there is no more data available.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><classname>CFanoutClientTransport</classname></term>
+                <listitem>
+                    <para>
+                        Abstract base class for transports that
+                        get data from a fanout transport.  The model provided
+                        requires that each client provide a unique integer
+                        client identifier.  This class encapsulates interfaces
+                        for both setting the id and communicating the id to the
+                        other end of the transport.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            Thuse the computation can be made up of processing elements that
+            get and send data without actually knowing how that's done.  Program
+            initialization can select actual transports and bind them into
+            processing elements.  If necessary, program initialization can also
+            allocate processors to computing resources.
+            This allows a computation to be rehosted without the actual
+            computing elements being aware of the process.
+        </para>
+    </section>
+    <section>
+        <title>Transport implementations</title>
+        <para>
+            At present only ZeroMQ (ZMQ) transports are supported.  We
+            plan to implement MPI transport in the future.  Other transport
+            types will be implemented as demand indicates.
+        </para>
+        <section>
+            <title>Details of ZMQ transport implementation</title>
+            <para>
+                The goal here is not to get into the nitty gritty of ZMQ
+                socket types used in the various transports, but to describe
+                facilities available to assist you in setting up ZMQ based
+                parallel programs. 
+            </para>
+            <para>
+                One facility the library provides is a factory that provides
+                you with transport factories for the specific communication
+                system you are using.   The factory knows how to create
+                transports for communication patterns implemented on top of
+                a specific transport library.
+            </para>
+            <para>
+                The <classname>CCommunicatorFactoryMaker</classname>
+                singleton class represents this factory of factories.  The
+                code fragment below shows how to get a communication
+                factory for ZMQ communications:
+            </para>
+            <informalexample>
+                <programlisting>
+#include &lt;CCommunicatorFactoryMaker.h&gt;
+#include &lt;CCommunicatorFactory.h&gt;
+..
+..
+CCommunicatorFactory* pZmqFactory = CCommunicatorFactoryMaker::getInstance()-&gt;
+    create("ZeroMQ CommunicationSystem");
+if (!pZmqFactory) {
+    std::cerr &lt;&lt; "ZEROMQ factory not in the factory of factories\n";
+    exit(-1);
+}
+....
+
+                </programlisting>
+            </informalexample>
+            <para>
+                One problem that needed solving to provide a generic
+                communicator factory was how to identify communication endpoints.
+                For example a raw TCP/IP socket uses a host/port pair to
+                identify an end point, ZMQ uses an URI to identify end endpoint
+                and so on.
+            </para>
+            <para>
+                Communicator factories use unsigned integers to identify
+                endpoints.  While this maps directly to e.g. MPI ranks,
+                there must be a mechanism for the ZMQ factory to map these
+                identifiers onto URIs.
+            </para>
+            <para>
+                This is done by you, providing one or more zmq service map files.
+                A zmq service map file is a text file.  Lines beginning with
+                <literal>#</literal> are ignored as are lines that consist
+                only of whitespace.  Leading and trailing whitespace are also
+                ignored.
+            </para>
+            <para>
+                Mapping lines, consist of two fields. The first is an integer
+                transport id and the second is the ZMQ URI that will be used
+                when that transport endpoint is selected. For example;
+            </para>
+            <informalexample>
+                <literallayout>
+    1 tcp://somenode.in.my.network:1234
+                </literallayout>
+            </informalexample>
+            <para>
+                Maps the transport identifier <literal>1</literal> to  a TCP
+                transport with an endpoing of port number <literal>1234</literal>
+                whose server is in a
+                system named <literal>somenode.in.my.network</literal>.
+            </para>
+            <para>
+                We therefore need to know, additionally, which transports are
+                servers and which are clients.
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Fanout transports are servers and their clients are not.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Fan in sinks are servers fanin sources are not.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        One-to-One sources are servers, clients are not.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                The transport id/URI map is built up by reading all files found in
+                
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        <literal>$HOME/.zmqservices</literal>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        <literal>./zmqservices</literal>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        The file pointed to by the environment variable
+                        <literal>ZMQ_SERVICES</literal>.
+                    </para>
+                </listitem>
+            </itemizedlist>
+            <para>
+                See the reference information for more about the transport
+                types these factories can create.
+            </para>
+        </section>
+    </section>
+    <section>
+        <title>Compiling and linking parallel programs</title>
+        <para>
+            This section assumes you've set up the NSCLDAQ environment variables
+            before building your code.
+        </para>
+        <para>
+            All headers are in <literal>$DAQINC</literal>, therefore,
+            compilations must have <literal>-I$DAQINC</literal> (
+            <literal>-I$(DAQINC)</literal> in Makefiles).
+        </para>
+        <para>
+            The library is locaed in <literal>$DAQLIB</literal> It is called
+            <filename>libSwTrigger.so</filename>.  It also depends on
+            several other libraries in and out of NSCLDAQ:
+        </para>
+        <informalexample>
+            <literallayout>
+... -L$DAQLIB -lSwTrigger -ldataformat -ldaqthreads \
+    -lDataFlow -lPortManager -ldaqshm -lException -lzmq -Wl,-rpath=$DAQLIB
+            </literallayout>
+        </informalexample>
+        <para>
+            In a Makefile you can use environment variable substitution:
+        </para>
+        <informalexample>
+            <literallayout>
+... -L$(DAQLIB) lSwTrigger -ldataformat -ldaqthreads \
+    -lDataFlow -lPortManager -ldaqshm -lException -lzmq -Wl,-rpath=$(DAQLIB)
+            </literallayout>
+        </informalexample>
+    </section>
+</chapter>
+
+<!-- /chapter -->
+
+<!-- manpage 3daq -->
+
+<!-- /manpage -->
