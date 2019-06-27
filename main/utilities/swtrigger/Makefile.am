@@ -47,6 +47,7 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
 	CRingBlockDataSink.cpp
 
+SoftwareTrigger_DEPENDENCIES=libSwTrigger.la
 
 
 
@@ -55,6 +56,8 @@ SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp \
 	CEventFilterApp.cpp CEventFilterApp.h
+
+EventFilter_Dependencies=libSwTrigger.la
 
 EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
@@ -90,6 +93,9 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 	dsrceltests.cpp	pworkertests.cpp sinktests.cpp tprocesstests.cpp \
 	zmqworkertests.cpp	\
 	$(libSwTrigger_la_SOURCES)
+
+unittests_DEPENDENCIES=libSwTrigger.la
+
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @top_builddir@/utilities/IO/libdaqio.la \
 	$(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
