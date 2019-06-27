@@ -458,132 +458,132 @@ public:
             </varlistentry>
         </variablelist>
     </refsect1>
-    
-    <refentry>
-        <refmeta>
-            <refentrytitle>CProcessingElement</refentrytitle>
-            <manvolnum>3daq</manvolnum>
-        </refmeta>
-        <refnamediv>
-            <refname>CProcessingElement</refname>
-            <refpurpose>Abstract base class for a CSP processing element</refpurpose>
-        </refnamediv>
-        <refsynopsisdiv>
-            <synopsis>
+</refentry>    
+<refentry>
+    <refmeta>
+        <refentrytitle>CProcessingElement</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CProcessingElement</refname>
+        <refpurpose>Abstract base class for a CSP processing element</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
 #include &lt;CProcessingElement&gt;
 
 class CProcessingElement
 {
 public:
-    virtual ~CProcessingElement() {}
-    
-    virtual void operator()()  = 0;
-    virtual void process(void* pData, size_t nBytes) = 0;
+virtual ~CProcessingElement() {}
+
+virtual void operator()()  = 0;
+virtual void process(void* pData, size_t nBytes) = 0;
 };
 
-            </synopsis>
-        </refsynopsisdiv>
-        <refsect1>
-            <title>DESCRIPTION</title>
-            <para>
-                Processing elements contain flow of control that typically
-                accepts data, processes it and then sends resulting data to
-                a subsequent stage of the data processing pipeline.
-                Concrete <classname>CProcessingElements</classname> often
-                construct with parameters that include a
-                <classname>CReceiver</classname> to receive the data,
-                a <classname>CSender</classname> to send processed data and a
-                <classname>CProcessor</classname> to do the actual processing.
-            </para>
-            <para>
-                In the prototoypical processing element, the
-                <methodname>operator()</methodname> method will use the objects'
-                <classname>CReceiver</classname> to obtain work elements.
-                <methodname>process</methodname> would then be called which
-                would, in turn, call the <methodname>process</methodname>
-                method of an encapsulated <classname>CProcessor</classname>
-                object.
-            </para>
-            <para>
-                <methodname>operator()</methodname> would also be responsible
-                for knowing when the last work item has been received and
-                shutting down the object after that has been processed.
-                In a typical, application, an empty data item might be a flag
-                that there are no more data items and the processor's
-                <methodname>process</methodname> would, in turn, be
-                responsible for notifying subsequent stages of the computation,
-                if appropriate.
-            </para>
-            <para>
-                Concrete classes must implement both
-                <methodname>operator()</methodname> and
-                <methodname>process</methodname>.
-            </para>
-        </refsect1>
-        <refsect1>
-            <title>METHODS</title>
-            <variablelist>
-                <varlistentry>
-                    <term>
-                        <methodsynopsis>
-                            <modifier>virtual</modifier>
-                            <type>void</type>
-                            <methodname>operator()</methodname>
-                            <void />
-                            <modifier> = 0</modifier>
-                        </methodsynopsis>
-                    </term>
-                    <listitem>
-                        <para>
-                            This method is supposed to implement the
-                            flow of control of the processing element.
-                            Normally this is a loop with the logic like the
-                            pseudocode below
-                        </para>
-                        <informalexample>
-                            <programlisting>
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Processing elements contain flow of control that typically
+            accepts data, processes it and then sends resulting data to
+            a subsequent stage of the data processing pipeline.
+            Concrete <classname>CProcessingElements</classname> often
+            construct with parameters that include a
+            <classname>CReceiver</classname> to receive the data,
+            a <classname>CSender</classname> to send processed data and a
+            <classname>CProcessor</classname> to do the actual processing.
+        </para>
+        <para>
+            In the prototoypical processing element, the
+            <methodname>operator()</methodname> method will use the objects'
+            <classname>CReceiver</classname> to obtain work elements.
+            <methodname>process</methodname> would then be called which
+            would, in turn, call the <methodname>process</methodname>
+            method of an encapsulated <classname>CProcessor</classname>
+            object.
+        </para>
+        <para>
+            <methodname>operator()</methodname> would also be responsible
+            for knowing when the last work item has been received and
+            shutting down the object after that has been processed.
+            In a typical, application, an empty data item might be a flag
+            that there are no more data items and the processor's
+            <methodname>process</methodname> would, in turn, be
+            responsible for notifying subsequent stages of the computation,
+            if appropriate.
+        </para>
+        <para>
+            Concrete classes must implement both
+            <methodname>operator()</methodname> and
+            <methodname>process</methodname>.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>void</type>
+                        <methodname>operator()</methodname>
+                        <void />
+                        <modifier> = 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This method is supposed to implement the
+                        flow of control of the processing element.
+                        Normally this is a loop with the logic like the
+                        pseudocode below
+                    </para>
+                    <informalexample>
+                        <programlisting>
 do {
-    workItem = getWorkItem()
-    process(workItemData, workItemSize)
-    
+workItem = getWorkItem()
+process(workItemData, workItemSize)
+
 } while(workItem is not end of data)
 Shutdown the object
-                            </programlisting>
-                        </informalexample>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term>
-                        <methodsynopsis>
-                            <modifier>virtual</modifier>
-                            <type>void</type>
-                            <methodname>process</methodname>
-                            <methodparam>
-                                <type>void*</type><parameter>pData</parameter>
-                            </methodparam>
-                            <methodparam>
-                                <type>size_t</type><parameter>nBytes</parameter>
-                            </methodparam>
-                            <modifier>=0</modifier>
-                        </methodsynopsis>
-                    </term>
-                    <listitem>
-                        <para>
-                            Processes a work item of data received by
-                            <methodname>operator()</methodname>.  Normally,
-                            implementations of this method have the form:
-                        </para>
-                        <informalexample>
-                            <programlisting>
+                        </programlisting>
+                    </informalexample>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>void</type>
+                        <methodname>process</methodname>
+                        <methodparam>
+                            <type>void*</type><parameter>pData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t</type><parameter>nBytes</parameter>
+                        </methodparam>
+                        <modifier>=0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Processes a work item of data received by
+                        <methodname>operator()</methodname>.  Normally,
+                        implementations of this method have the form:
+                    </para>
+                    <informalexample>
+                        <programlisting>
 outputData = processTheData(pData, nBytes)
 sendToNextStage(outputData)
-                            </programlisting>
-                        </informalexample>
-                    </listitem>
-                </varlistentry>
-            </variablelist>
-        </refsect1>
-    </refentry>
-    
+                        </programlisting>
+                    </informalexample>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
 </refentry>
+    
+
 <!-- /manpage -->
