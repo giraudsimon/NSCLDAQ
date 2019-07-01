@@ -545,7 +545,7 @@ virtual void process(void* pData, size_t nBytes) = 0;
 do {
 workItem = getWorkItem()
 process(workItemData, workItemSize)
-
+free the Work item
 } while(workItem is not end of data)
 Shutdown the object
                         </programlisting>
@@ -584,6 +584,592 @@ sendToNextStage(outputData)
         </variablelist>
     </refsect1>
 </refentry>
-    
+<refentry>
+    <refmeta>
+        <refentrytitle>CParallelWorker</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CParallelWorker</refname>
+        <refpurpose>Base class for a worker that receives fanned out data.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CParallelWorker.h&gt;
 
+class CParallelWorker : public CProcessingElement
+{
+public:
+    CParallelWorker(CFanoutClientTransport&amp; fanin, CSender&amp; sink);
+    CParallelWorker(
+        CFanoutClientTransport&amp; fanin, CSender&amp; sink,
+        uint64_t clientId
+    );
+    
+    virtual void operator()();
+
+protected:
+    CSender* getSink();
+   
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            In most parallel computations there are segments of the computation
+            in which work items fan out to worker processes that operate
+            on work items independently and in full parallel with all other
+            workers.
+        </para>
+        <para>
+            The NSCLDAQ parallel computing framework provides for transports
+            that do that fanout and transports that are clients of those
+            fanouts.   This class is a base class that encapsulates a
+            receiver that is a fanout client, an arbitrary sender and a
+            main control flow that accepts data and asks the unimplemented
+            <methodname>process</methodname> method to process it.  Processing
+            continues until an empty (zero sized) work item is received.
+        </para>
+        <para>
+            The sender is exposed to subclasses so that it is available
+            in <methodname>process</methodname> as implemented by
+            concrete classes.  The sender receives the zero length
+            work item and is expected to do any shutdown required of the sender.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CParallelWorker</methodname>
+                        <methodparam>
+                            <type>CFanoutClientTransport&amp; </type><parameter>fanin</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>CSender&amp; </type><parameter>sink</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor provides only a fanout
+                        client transport and
+                        an arbitrary sender.  The user must configure the
+                        <parameter>fanin</parameter> transport's clien id
+                        prior to running the worker.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CParallelWorker</methodname>
+                        <methodparam>
+                            <type>CFanoutClientTransport&amp; </type><parameter>fanin</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>CSender&amp; </type><parameter>sink</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>clientId</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor provides the client id of the fanout
+                        client transport.  The constructor will configure the
+                        <parameter>sink</parameter> transport with that client
+                        id.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>operator()</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Provides the flow of control for the processor.
+                        Messages are retrieved from the <parameter>fanin</parameter>
+                        transport and  passed to the abstract
+                        <methodname>process</methodname> method.
+                    </para>
+                    <para>
+                        Dynamic storage associated with messages is freed by
+                        the <methodname>operator()</methodname> and should,
+                        not be freed by the concrete subclass
+                        <methodname>process</methodname> method.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>protected</modifier>
+                        <type>CSender* </type>
+                        <methodname>getSink</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Intended for use by subclasses. This method fetches a
+                        pointer to the sender.
+                    </para>
+                </listitem>
+            </varlistentry>               
+        </variablelist>
+        <para>
+            Note that this is still an abstract class as it does not implement
+            the <methodname>process</methodname> method.  It does, however,
+            provide a typical client flow of control in its
+            <methodname>operator()</methodname> method.
+            To use this class, you must derive from this and provide a
+            <methodname>process</methodname> method.
+        </para>
+
+    </refsect1>
+
+</refentry>    
+
+<refentry>
+    <refmeta>
+        <refentrytitle>CTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CTransport</refname>
+        <refpurpose>Abstract base class for data transport objects.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;sys/uio.h&gt;
+#include &lt;CTransport.h&gt;
+
+class CTransport
+{
+public:
+    virtual  void    recv(void** ppData, size_t&amp; size) = 0;
+    virtual  void    send(iovec* parts, size_t numParts) = 0;
+    virtual void end();
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Transports are objects that carry data across some high level
+            protocol for data transport.  Examples of high level protocols
+            are ZeroMQ (ZMQ), MPI, or event raw TCP/IP sockets.
+            Transports are normally bound into a
+            <classname>CSender</classname> or <classname>CReceiver</classname>
+            object.
+        </para>
+        <para>
+            Transport insulate the actual mechanisms of data transport from
+            those objects.  Each concrete transport must, at a minimum
+            implement the <methodname>recv</methodname> and
+            <methodname>send</methodname> methods.  In addition,
+            transports may implement the <methodname>end</methodname> method
+            which is used to signal for a transport used inside a
+            <classname>CSender</classname> that no more data will be transferred
+            on that transport.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual  </modifier>
+                        <type>void    </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type> size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier>= 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Abstract interface to receive data from a concrete
+                        transport.  <parameter>ppData</parameter> will be
+                        written with a pointer to the data received.
+                        The storage pointed to must have been dynamically
+                        allocated via the <function>malloc()</function>(3)
+                        library function.
+                    </para>
+                    <para>
+                        <parameter>size</parameter> will be written with the
+                        number of bytes of data received.  Note that all errors
+                        should be signalled via exceptions.  While not mandatory,
+                        in many transports, a size of 0 is used to indicate end
+                        of data.  In that case, the pointer is not meaningful
+                        and should not be freed.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual  </modifier>
+                        <type>void    </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec*</type><parameter> parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier>= 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Writes a message to the peer of the transport.
+                        See the manual pages for
+                        <function>writev</function>(2) for a description of
+                        the <type>iovec</type> struct.
+                        <parameter>numParts</parameter> are the number of
+                        <parameter>parts</parameter> in the message
+                    </para>
+                    <para>
+                        This call mechanism allows messages to be built via
+                        a gather mechanism that, in some transports, can
+                        minimize the data copies needed to marshall the
+                        complete message.
+                    </para>
+                    <para>
+                        Concrete transports must gaurantee that they are
+                        done using <parameter>parts</parameter> buffers on
+                        return. Thus, if zero copy, asynchronous sends are
+                        use by the transport, the <methodname>send</methodname>
+                        must block until the send has actually completed.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Transports that have a mechanism to signal an end of
+                        data should implement this.  The default implementation
+                        is to do nothing.  One standard used to indicate
+                        an end of data condition is to send a zero length
+                        message.  The underlying transport protocol must,
+                        however support this if it is to be used.
+                    </para>
+                </listitem>
+            </varlistentry>            
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CSender</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CSender</refname>
+        <refpurpose>Encapsulate a transport to send data.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;Sender&gt;
+
+class CSender {
+
+public:
+    CSender(CTransport&amp; transport);
+    
+    void sendMessage(iovec* parts, size_t numParts); 
+    void sendMessage(void* pBase, size_t nBytes);   
+    void end();
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Working in conjunction with a
+            <classname>CTransport</classname>, this class provides
+            a mechanism to send data to the transports peer using
+            some communication pattern. Note that as far
+            as the application code is concerned, this is a
+            unidirectional data path.  The underlying
+            transport or communication pattern may bi-directional
+            message exchanges to accomplish a data transfer,
+            but that's hidden from the user code.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CSender</methodname>
+                        <methodparam>
+                            <type>CTransport&amp; </type>
+                            <parameter>transport</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Provides the <classname>CSender</classname>
+                        with a transport that will be used to
+                        send messages to the tranport's peer.
+                    </para>
+                    <para>
+                        When designing mechanisms to implement
+                        communication patterns (e.g. fanout),
+                        it's recommended that all high level
+                        protocol code be implemented in the
+                        transport so that the simple code of this
+                        class can be used everywhere..
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>sendMessage</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends a multipart message to the peer.
+                        <parameter>parts</parameter> describes
+                        <parameter>numParts</parameter> message
+                        parts.  See
+                        <function>writev</function>(2) for a
+                        description of the
+                        <type>iovec</type> struct.
+                    </para>
+                    <para>
+                        This normally just calls the
+                        transport's <methodname>send</methodname>
+                        method which does whatever  is needed
+                        to marshall the message parts into a
+                        message.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>sendMessage</methodname>
+                        <methodparam>
+                            <type>void* </type><parameter>pBase</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type> size_t </type><parameter>nBytes</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Convenience method to send a single part
+                        message.  You can think of this as being
+                        implemented:
+                    </para>
+                    <informalexample>
+                        <programlisting>
+...                            
+iovec part;
+part.iov_len = nBytes;
+part.iov_base = pBase;
+sendMessage(&part, 1);
+...
+                        </programlisting>
+                    </informalexample>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Signals the transport there is no more
+                        data to transmit.  This is normally
+                        done by invoking the transport's
+                        <methodname>end</methodname> method.
+                    </para>
+                </listitem>
+            </varlistentry>
+
+        </variablelist>
+    </refsect1>
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CReceiver</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CReceiver</refname>
+        <refpurpose>Encapsulates a transport to receive data</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CReceiver&gt;
+
+class CReceiver
+{
+public:
+    CReceiver(CTransport&amp; rTransport);
+    
+    void getMessage(void** ppData, size_t&amp; size);
+    CTransport* setTransport(CTransport&amp; rTransport);
+    
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class uses a transport to receive data from
+            a <classname>CSender</classname>.  Any complex
+            communication pattern normally is a collaboration
+            implemented by the transports of the
+            <classname>CSender</classname> and
+            <classname>CReceiver</classname> objects.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CReceiver</methodname>
+                        <methodparam>
+                            <type>CTransport&amp; </type><parameter>rTransport</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs the receiver by binding
+                        a transport that will be used for message
+                        passing. Note that the receiver object
+                        will appear to the user code like
+                        a unidirectional pipe of messages that
+                        transfer data into the application code
+                        that uses it.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>getMessage</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData, </parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Gets the next message from the peer.
+                        <parameter>ppData</parameter> points to
+                        storage for a pointer.  The pointer will
+                        be filled in with a pointer to the data
+                        received.  The data is dynamically
+                        allocated via
+                        <function>malloc</function>(3) and must
+                        be released via a call to the
+                        <function>free</function>(3) function.
+                    </para>
+                    <para>
+                        <parameter>size</parameter> is a reference
+                        that will be filled in with the actual number
+                        of bytes in the message received.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>CTransport* </type>
+                        <methodname>setTransport</methodname>
+                        <methodparam>
+                            <type>CTransport&amp;</type><parameter>rTransport</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Allows a receiver to dyamically set the
+                        transport it uses (to
+                        <parameter>rTransport</parameter>.
+                        A pointer to the previous transport is
+                        returned to the caller.
+                    </para>
+                    <para>
+                        If you find yourself using this you should
+                        probably reconsider the design of your
+                        application's communication scheme.
+                    </para>
+                </listitem>
+            </varlistentry>
+
+    
+        </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
