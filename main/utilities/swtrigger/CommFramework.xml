@@ -1172,4 +1172,331 @@ public:
         </variablelist>
     </refsect1>
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CNullTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CNullTransport</refname>
+        <refpurpose>Null transport for testing</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CNullTransport.h&gt;
+
+class CNullTransport :  public CTransport
+{
+    void recv(void** ppData, size_t& size);
+    void send(iovec* parts, size_t numParts);
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is a Transport class built for testing.
+            See <classname>CTransport</classname>(3daq) for
+            information about transports.
+            The null transport provides zero length messages
+            for each call to <methodname>recv</methodname>.
+            Calls to <methodname>send</methodname> don't do
+            anything.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CTestTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CTestTransport</refname>
+        <refpurpose>Transport class for test purposes.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CTestTransport.h&gt;
+
+class CTestTransport : public CTransport
+{
+public:
+    typedef std::vector&lt;uint8_t&gt; message;
+    typedef std::deque&lt;message&gt; messageList;
+    
+public:
+    typedef std::vector&lt;message&gt; multipartMessage;
+    std::vector&lt;multipartMessage&gt;  m_sentMessages;
+    messageList m_messages;
+
+public:
+    
+    virtual void recv(void** ppData, size_t& size);
+    virtual  void    send(iovec* parts, size_t numParts);
+    
+    void addMessage(void* pData, size_t nBytes);
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class provides a transport that can be used
+            for unit testing.  Data that have been sent are retained
+            for examination.  Data can be put into the object
+            for later receipt via <methodname>recv</methodname>
+            calls.   In this way a known load of inbound message
+            can be injected into users of the transport and
+            messages resulting from processing can be
+            pulled out to ensure they are as expected.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <para>
+            See <classname>CTransport</classname>(3daq) for
+            a description of the <methodname>send</methodname>
+            and <methodname>recv</methodname> methods.
+        </para>
+        <para>
+            The added method for this class is:
+            <methodsynopsis>
+                <modifier></modifier>
+                <type>void</type>
+                <methodname>addMessage</methodname>
+                <methodparam>
+                    <type>void*</type><parameter>pData</parameter>
+                </methodparam>
+                <methodparam>
+                    <type>size_t</type><parameter>nBytes</parameter>
+                </methodparam>
+                <modifier></modifier>
+            </methodsynopsis>
+        </para>
+        <para>
+            This method adds the described message to a queue
+            of messages that will be retrieved by
+            <methodname>recv</methodname> calls.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>TYPES and PUBLIC DATA</title>
+        <para>
+            The following data types are public:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>message</type></term>
+                <listitem>
+                    <para>
+                        This represents a message or a message
+                        part in the case of a multipart message.
+                        It's defined to be an
+                        <classname>std::vector&lt;uint8_t&gt;</classname>.
+                        The elements of the vector are the ordered bytes
+                        of the message itself.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>multipartMessage</type></term>
+                <listitem>
+                    <para>
+                        This type represents a sent message
+                        which can have more than one part.
+                        It's defined as a
+                        <classname>std::vector&lt;message&gt;</classname>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>messageList</type></term>
+                <listitem>
+                    <para>
+                        This is a list of simple messages.
+                        It's used to represent the messages
+                        that will be received by
+                        <methodname>recv</methodname> and gets
+                        loaded by <methodname>addMessagse</methodname>.
+                        It is of type
+                        <classname>std::deque&lt;message&gt;</classname>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><classname>std::vector&lt;multiPartMessage&gt;</classname></term>
+                <listitem>
+                    <para>
+                        This type is used to represent messages
+                        that have been sent.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            For testing purposes you may need to see the set of
+            messages remaining for consumption via
+            <methodname>recv</methodname> and the messages
+            that have been sent via <methodname>send</methodname>.
+            
+        </para>
+        <para>
+            <varname>m_sendMessages</varname> is of type
+            <classname>std::vector&lt;multipartMessage&gt;</classname>
+            are the messages sent by <methodname>send</methodname>
+            calls.  Each element of the outer vector is a message.
+            Each element of the inner vector is a message part
+            (the contents of an element described by an
+            <type>iovec</type> element).
+        </para>
+        <para>
+            <varname>m_messages</varname> is of type
+            <type>messageList</type> and represents the list
+            of messages that have not yet been consumed by
+            <methodname>recv</methodname>.
+            <methodname>addMessage</methodname> adds new messages
+            to the back of the <classname>deque</classname> while
+            <methodname>recv</methodname> gets the message at the
+            front of the <classname>deque</classname>.  If there
+            are no remaining messages when
+            <methodname>recv</methodname> is called, an empty message
+            is returned.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CClientRegistry</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CClientRegistry</refname>
+        <refpurpose>Registry of clients.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;stdexcept&gt;
+#include &lt;CClientRegistry&gt;
+
+class CClientRegistry {
+public:
+    void add(uint64_t newId);
+    void remove(uint64_t existingId);
+    bool hasClient(uint64_t id);
+    bool empty();
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Some transports need to be able to identify clients.
+            For example, a fanout transport  must, when there's no
+            data remaining, send an end to all remaining
+            clients.  The <classname>CClientRegistry</classname>
+            allows each client to have a unique <type>uint64_t</type>
+            identifier.  
+        </para>
+        <para>
+            It provides the facility to add and remove clients,
+            to test for the presence of clients and to
+            test for an empty client registry.
+        </para>
+        <para>
+            The class prevents client duplication and
+            removal of nonexistent clients by throwing
+            <classname>std::logic_error</classname>
+            exceptions.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>add</methodname>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>newId</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Adds <parameter>newId</parameter> to the set of
+                        identifiers that are registered.  If
+                        <parameter>newId</parameter> has already
+                        been registered,
+                        <classname>std::logic_error</classname> is
+                        thrown.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>remove</methodname>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>existingId</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Removes the id
+                        <parameter>existingId</parameter> from the
+                        registry. If that id was not yet registered,
+                        a <classname>std::logic_error</classname>
+                        is thrown.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>bool </type>
+                        <methodname>hasClient</methodname>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>id</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns <literal>true</literal> if
+                        <parameter>id</parameter> is in the registry
+                        otherwise <literal>false</literal> is returned.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>bool </type>
+                        <methodname>empty</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Return <literal>true</literal> if the
+                        registry has no entryies.  
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
