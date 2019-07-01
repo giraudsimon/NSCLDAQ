@@ -1499,4 +1499,897 @@ public:
         </variablelist>
     </refsect1>
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CFanoutTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CFanoutTransport</refname>
+        <refpurpose>Transport to fanout data to several workers.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CFanoutTransport.h&gt;
+
+class  CFanoutTransport : public CTransport
+{
+public:
+    virtual void end() = 0;
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Abstract base class for transports that fanout
+            data to several parallel workers.  The only
+            wrinkle this abstract base class adds is a pure virtual
+            <methodname>end</methodname> method.
+            This is because when there's no more data to send,
+            all clients must be notified of that fact.  That
+            notification is done in a transport dependent manner.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CFanoutClientTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CFanoutClientTransport</refname>
+        <refpurpose>Client for a fanout transport</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CFanoutClientTransport&gt;
+
+class CFanoutClientTransport : public CTransport
+{
+public:
+    virtual void setId(uint64_t id) = 0;
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This abstract base class is intended to be one of
+            many targets for messages sent by
+            a <classname>CFanoutTransport</classname> objects.
+            It is a transport that provides the
+            <methodname>setId</methodname> method which is
+            supposed to establish the client id of the
+            transport.  Client ids are assumed to be unique
+            across all of the clients of a single fanout
+            transport.  Note that data should not be received
+            prior to setting the id.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemTransport</refname>
+        <refpurpose>Base class for ring item transports.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingItemTransport.h&gt;
+class CRingItemTransport : public CTransport
+{
+    
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Placeholder base class for transports that
+            carry ring items
+            around.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingBufferTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemTransport</refname>
+        <refpurpose>Transport for ring items to or from ring buffers.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingBufferTransport.h&gt;
+
+class CRingBufferTransport : public CRingItemTransport
+{
+    
+public:
+    CRingBufferTransport(CRingBuffer&amp; writer);        
+    CRingBufferTransport(CRingBufferChunkAccess&amp; reader); 
+    
+    virtual void recv(void** ppData, size_t&amp; size);
+    virtual void send(iovec* parts, size_t numParts);
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Provides a transport for data to and from a ring buffer.
+            Often these are at endpoints of a computation, but
+            need not be.
+        </para>
+        <para>
+            Note that there is a constructor for writing and a different
+            one for reading. This represents the fundamental
+            difference between producers and consumers of ring
+            data.  Attempting to receive data from
+            a ring transport that's been set up to as a producer
+            or attempting to send data to a ring buffer
+            that's been setup as a consumer results in a
+            <classname>std::logic_error</classname> exception.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingBufferTransport</methodname>
+                        <methodparam>
+                            <type>CRingBuffer&amp; </type><parameter>writer</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Use this constructor for producers into
+                        ring buffers.  Objects constructed with this
+                        version of the constructor only support
+                        <methodname>send</methodname>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingBufferTransport</methodname>
+                        <methodparam>
+                            <type>CRingBufferChunkAccess&amp; </type><parameter>reader</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This version of the constructor is used
+                        for consumers.  Objects constructed
+                        in this manner are only capable of
+                        <methodname>recv</methodname> calls.
+                    </para>
+                    <para>
+                        The <parameter>reader</parameter> parameter
+                        is a reference to a
+                        <classname>CRingBufferChunkAccess</classname>
+                        class.  See the
+                        <classname>CRingBufferChunkAccess</classname>(3daq)
+                        class for more information about it, and
+                        specifically, how to construct it.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type> void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type> size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Receives the next ring item from the
+                        ring buffer.  Receives from this transport
+                        are always receiving a full ring item.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Puts data into the ring buffer. Note that
+                        each <type>iovec</type> element does a put into the
+                        ring buffer.  Thus, if a ring item is
+                        spread across several
+                        <type>iovec</type> elements,
+                        the put is not atomic.  In many cases,
+                        because of the way data are gotten from
+                        the ring buffer, this fact is not important.
+                    </para>
+                </listitem>
+            </varlistentry>
+    
+            
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemFileTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItem FileTransport</refname>
+        <refpurpose>Transport ring items to and from files.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingItemFileTransport.h&gt;
+
+class CRingItemFileTransport : public CRingItemTransport
+{
+    
+public:
+    CRingItemFileTransport(CRingFileBlockReader&amp; reader); 
+    CRingItemFileTransport(io::CBufferedOutput&amp; writer);  
+    
+    virtual void recv(void** ppData, size_t&amp; size);
+    virtual void send(iovec* parts, size_t numParts);
+    virtual void end();
+};
+
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class is a transport that carries ring items
+            to or from files.  Once created, the transpor is
+            only unidirectional and using the wrong data trasnfer
+            operation results in a
+            <classname>std::runtime_error</classname> exception.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingItemFileTransport</methodname>
+                        <methodparam>
+                            <type>CRingFileBlockReader&amp; </type><parameter>reader</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor creates an object that
+                        can use <methodname>recv</methodname>
+                        to get ring items from a file.
+                        See
+                        <classname>CRingFileBlockReader</classname>(3daq)
+                        for information on how to create that
+                        object.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CRingItemFileTransport</methodname>
+                        <methodparam>
+                            <type>io::CBufferedOutput&amp; </type><parameter>writer</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor creates an object to
+                        put ring items into a file.  <parameter>writer</parameter>
+                        is the object that does the I/O.  See
+                        <classname>io::CBufferedOutput</classname>(3daq)
+                        for information about how to construct
+                        tis item.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Fetches the next ring item from the file.
+                        At end of file the ring item returned is
+                        of zero length.  
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Outputs each part of the message to the
+                        ringbuffer.  It's up to the caller to ensure
+                        that data put in the ring consists of
+                        properly formatted ring items...
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void</type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        If the file is open for write,
+                        the buffered writer is flushed ensuring
+                        all items have been sent to file.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemTransportFactory</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemTransportFactory</refname>
+        <refpurpose>Create and appropriate ring item transport</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingItemTransport.h&gt;
+#include &lt;CRingItemTransportFactory.h&gt;
+
+class CRingItemTransportFactory
+{
+public:
+    static CRingItemTransport* createTransport(
+        const char* uri, CRingBuffer::ClientMode accessMode
+    );
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Creates the ring item transport appropriate to the
+            URI protocol type (<literal>tcp:</literal>
+            or <literal>file:</literal>), and access mode
+            (<classname>CRingBuffer</classname><literal>::producer</literal>
+            or <classname>CRingBuffer</classname><literal>::consumer</literal>)
+            
+        </para>
+        <para>
+            The transport is created with
+            <literal>new</literal> and therefore must be
+            freed with <literal>delete</literal> when the
+            application no longer needs it.
+        </para>
+    </refsect1>
+
+</refentry>
+
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQTransport</refname>
+        <refname>CZMQRawTransport</refname>
+        <refpurpose>Base class for ZeroMQ transports</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQTransport.h&gt;
+
+class CZMQTransport : public CTransport {
+public:
+    CZMQTransport();
+    
+    void recv(void** ppData, size_t&amp; size);
+    void send(iovec* parts, size_t numParts);
+    void end();
+    
+    static zmq::context_t*  getContext();
+    operator zmq::socket_t*();
+protected:
+    void setSocket(zmq::socket_t* pSocket);  
+
+};
+
+ */
+class CZMQRawTransport  : public CZMQTransport
+{
+public:
+  CZMQRawTransport(zmq::socket_t* sock);
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            These two classes encapsulate ZeroMQ sockets.
+            <classname>CZMQTransport</classname>  is intended
+            to be used as a base class for more interesting
+            transports using ZeroMQ.
+            <classname>CZMQRawTransport</classname>, on the other
+            hand, wraps a raw ZeroMQ
+            <classname>zmq::socket_t</classname> in a transport.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>CZMQTransport METHODS</title>
+        <para>
+            This class is not useful in and of itself.
+            The intent is that it be a base class and the
+            resulting concrete class sets up the
+            appropriate <classname>zmq::socket_t</classname>
+            and wraps it using the
+            <methodname>setSocket</methodname> method
+            described below.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><constructorsynopsis>
+                    <methodname>CZMQTransport</methodname>
+                    <void />
+                </constructorsynopsis></term>
+                <listitem>
+                    <para>
+                        This constructor does not supply
+                        a socket on which to transport
+                        data.  To create a useful class,
+                        the programmer must derive a class from
+                        this whose constructor sets up a socket and
+                        wraps the base class around it by calling
+                        <methodname>setSocket</methodname>
+                        below.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type> size_t&amp;</type><parameter> size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Receives data on the underlying socket.
+                        If the message is a multipart message,
+                        all the parts are concatenated into  a
+                        single block and that block is returned.
+                        If you wish to retain message part boundaries
+                        you need to define a higher level data format
+                        that an do that.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends a message on the underlying socket.
+                        Note that each element of the
+                        <parameter>parts</parameter> array is
+                        sent as a separate message part
+                        (<classname>zmq::message_t</classname> object).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends a message consisting of a
+                        single message part with a length of zero.
+                        That's a flag that the receiver should
+                        not expect any more data.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>static </modifier>
+                        <type>zmq::context_t*  </type>
+                        <methodname>getContext</methodname>
+                        <void  />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Provides a factory message to get a singleton
+                        ZMQ context object.  A pointer to the
+                        application unique context is returned.
+                        This context is created on the first call
+                        to this method and must not be deleted
+                        by the application.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>zmq::socket_t*</type>
+                        <methodname>operator zmq::socket_t*();</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                
+                <listitem>
+                    <para>
+                        Conversion operator that allows the
+                        object to be treated as it's underlying
+                        socket_t for special applications.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>protected</modifier>
+                        <type>void </type>
+                        <methodname>setSocket</methodname>
+                        <methodparam>
+                            <type>zmq::socket_t* </type><parameter>pSocket</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Intended to be called by  derived classes.
+                        This method sets the socket on which
+                        communication will take place.
+                    </para>
+                </listitem>
+            </varlistentry>
+            
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>CZMQRawTransport METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CZMQRawTransport</methodname>
+                        <methodparam>
+                            <type>zmq::socket_t* </type><parameter>sock</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Given a raw ZMQ socket creates a
+                        ZMQ transport around that socket.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQClientTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQClientTransport</refname>
+        <refpurpose>ZeroMQ transport that does a connect.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQClientTransport&gt;
+
+class CZMQClientTransport : public CZMQTransport
+{
+public:
+    CZMQClientTransport(const char* pUri, int socketType);
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            represents a ZeroMQ transport that performs a
+            <methodname>connect</methodname> operation to
+            obtain a peer socket.
+            <parameter>pUri</parameter> is a ZeroMQ compatible
+            URI that specifies the endpoint and
+            <parameter>socketType</parameter> is the
+            ZeroMQ socket type (e.g. <literal>ZMQ_PULL</literal>).
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQServerTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQServerTransport</refname>
+        <refpurpose>ZeroMQ transport that does a listen.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQServerTransport.h&gt;
+
+class CZMQServerTransport : public CZMQTransport
+{
+public:
+    CZMQServerTransport(const char* pUri, int socketType);
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This clss is a ZeroMQ transport for a socket
+            that listens for connections rather than invoking
+            <methodname>connect</methodname>.
+            <parameter>pUri</parameter> is a URi that specifies the
+            socket endpoint and <classname>socketType</classname>
+            is the ZeroMQ socket type e.g. <literal>ZMQ_PUB</literal>.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQRouterTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQRouterTransport</refname>
+        <refpurpose>ZeroMQ transport that's a ROUTER fanout.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQRouterTransport.h&gt;
+
+class CZMQRouterTransport : public CFanoutTransport
+{
+public:
+    CZMQRouterTransport(const char* pUri);
+    
+    virtual void recv(void** ppData, size_t&amp; size); 
+    virtual void send(iovec* parts, size_t numParts);
+    virtual void end();
+
+};
+ 
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class implements a fanout transport using
+            the ZeroMQ ROUTER/DEALER communication pattern
+            (see <classname>CZMQDealerTransport</classname>)(3daq).
+            ZMQ routera use a pull protocol in which each
+            worker sends a request for data which is honored
+            by the DEALER.
+        </para>
+        <para>
+            The protocol of getting pull requests and then
+            providing them is totally transparent to the users
+            of this class.  Each call to send sends the data
+            as a work item to some worker process
+            running the DEALER protocol.
+        </para>
+        <para>
+            Since pull requests require the DEALER to have set up
+            an id, the pull requests build up a picture of the
+            client ids.  This picture is used by
+            <methodname>end</methodname> to ensure that all
+            clients see an end condition.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CZMQRouterTransport</methodname>
+                        <methodparam>
+                            <modifier>const </modifier>
+                            <type>char* </type><parameter>pUri</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor creates the
+                        <literal>ROUTER</literal> socket and
+                        does a bind to ensure that DEALERS
+                        can connect.
+                        <parameter>pUri</parameter> is the ZeroMQ
+                        URI that specifies the socket end point.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void**</type><parameter> ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp;</type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        The ROUTER socket only supports sending data.
+                        A call to this method results in a
+                        <classname>std::logic_error</classname>
+                        exception
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends the message indicated to the next
+                        worker that requests data.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Indicates to all connected clients no
+                        more data will be available.  End of data
+                        is indicated by a message that contains a
+                        single message point with  a zero length.
+                    </para>
+                </listitem>
+            </varlistentry>
+
+        </variablelist>
+    </refsect1>
+
+</refentry>
 <!-- /manpage -->
