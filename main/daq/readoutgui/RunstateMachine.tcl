@@ -572,6 +572,8 @@ proc start {} {
 
 
   set machine [RunstateMachineSingleton %AUTO%]
+  set state [$machine getState]
+  if {$state eq "Starting"} return;                      # don't allow double start.
   # Transition NotReady -> Starting
   if { [catch { $machine transition Starting } msg] } {
     set trace $::errorInfo
@@ -598,6 +600,8 @@ proc start {} {
 
 proc begin {} {
   set machine [RunstateMachineSingleton %AUTO%]
+    set state [$machine getState]
+    if {$state eq "Active"} return;              # don't allow double begin.
   if { [catch { $machine transition Active } msg] } {
     set trace $::errorInfo
     forceFailure
@@ -608,7 +612,10 @@ proc begin {} {
 
 proc end {} {
   set machine [RunstateMachineSingleton %AUTO%]
-  if { [catch { $machine transition Halted } msg] } {
+    set state [$machine getState]
+    if {$state eq "Halted"} return;              # don't allow double end
+
+    if { [catch { $machine transition Halted } msg] } {
     set trace $::errorInfo
     forceFailure
     error "end failed with message : $msg : $trace"
