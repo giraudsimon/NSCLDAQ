@@ -44,7 +44,8 @@ TCLPACKAGES=Configuration.tcl \
 	multilogger.tcl \
 	stageareaValidation.tcl \
 	ReadoutGUIAppLauncher.tcl icon.tcl \
-	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl 
+	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl \
+	NSCLBgerror.tcl
 
 
 
