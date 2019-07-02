@@ -11,6 +11,7 @@ package require Tk
 set here [file dirname [info script]]
 set libdir [file normalize [file join $here .. TclLibs]]
 lappend auto_path $libdir
+package require NSCLBgerror
 
 
 # Figure out where the images are: 

@@ -29,6 +29,7 @@ package provide evbui 1.0
 package require Tk
 package require snit
 package require nsclspinbox
+package require NSCLBgerror
 
 namespace eval ::EVBC {
     
