@@ -2571,8 +2571,7 @@ public:
 class CDataSinkElement : public CProcessingElement
 {
 public:
-    CDataSinkElement(CReceiver& src, CSender& sink);
-    virtual ~CDataSinkElement();
+    CDataSinkElement(CReceiver&amp; src, CSender&amp; sink);
     
     virtual void operator()();
     virtual void process(void* pData, size_t nBytes);
@@ -2598,6 +2597,394 @@ public:
             data allows for that code to live on its own
             where additional processing stages could be inserted
             prior to it.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CDataSourceElement</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CDataSourceElement</refname>
+        <refpurpose>Fan out a data source without transformations</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CDataSourceElement.h&gt;
+
+class CDataSourceElement : public CProcessingElement
+{
+public:
+    CDataSourceElement(CReceiver&amp; source, CFanoutTransport&amp; fanout);
+    
+    virtual void operator()();
+    virtual void process(void* pData, size_t nBytes);
+
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is a processor that can be used when a source
+            of data needs to be fanned out as work items to
+            a parallel array of worker processes.  The
+            <parameter>fanout</parameter> parameter is
+            a fanout transport.  As each elemet is
+            received from whatever the source is, it is
+            sent to the <parameter>fanout</parameter> transport
+            which will distribute it to the workers.
+        </para>
+        <para>
+            When an end is detected on the input stream,
+            defined as a zero length message, an end indication
+            is sent to the <parameter>fanout</parameter> transport
+            which ensures that all workers get an end condition.
+            At that point, the <methodname>operator()</methodname>
+            returns.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemZMQSourceElement</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemZMQSourceElement</refname>
+        <refpurpose>Fanout ring items from some data source.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingItemZMQDataSource.h&gt;
+
+class CRingItemZMQSourceElement : public CDataSourceElement
+{
+public:
+    typedef struct _Message {
+        uint64_t  s_timestamp;
+        size_t    s_nBytes;
+        void*     s_pData;
+    } Message, *pMessage;
+
+    
+public:
+    CRingItemZMQSourceElement(
+        const char* ringUri, const char* routerUri, size_t chunkSize=1
+    );
+    virtual ~CRingItemZMQSourceElement() {}
+    virtual void operator()();             // Override b/c process frees memory.
+    virtual void process(void* pData, size_t nBytes);
+
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            A fanout data source which extracts a timestamp
+            from ring items and prepends it to work items.
+            This is meant to work with parallel workers that
+            must then re-sort the data in timestamp order
+            using e.g. <classname>CRingItemSorter</classname>(3daq).
+        </para>
+        <para>
+            See <classname>CRingItemMarkingWorker</classname>
+            for one example of a worker that can make use of the
+            data from this source.
+        </para>
+        <para>
+            Each work item consist of several ring items determined
+            by the <parameter>chunkSize</parameter> at construction
+            time.  Ring items come from
+            <parameter>ringUri</parameter> which is either a
+            <literal>tcp:</literal> or <literal>file:</literal>
+            URI specifying a source of ring items.  The
+            <parameter>routerUri</parameter> provides the endpoint
+            of a ZMQ Router fanout transport that will be used
+            to send work units to worker processes.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>DATA TYPES</title>
+        <para>
+            Each work item consists of a block of items
+            Each of those
+            items in the block contains the following fields
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>uint64_t</type>  <structfield>s_timestamp</structfield></term>
+                <listitem>
+                    <para>
+                        The timestamp either extracted from the
+                        ring item or a sensibly assigned time-stamp
+                        that will allow a sorting stage to
+                        reconstruct  (for the most part) the
+                        original order of the ring items.  For
+                        the most part means that there can be cases
+                        when non Physics items will come slightly
+                        out of order due to the manner in which
+                        they were assigned timestamps.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>size_t </type><structfield>s_nBytes</structfield></term>
+                <listitem>
+                    <para>
+                        The number of bytes of data in the
+                        ring item that follows.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>uint8_t</type><structfield>data[]</structfield></term>
+                <listitem>
+                    <para>
+                        The ring item.
+                    </para>
+                </listitem>
+            </varlistentry>      
+        </variablelist>
+        <para>
+            Here's a  code fragment that shows
+            how to process a work item from this data source.
+            On entry to the fragment, <varname>pData</varname> points
+            to the work item and <varname>dataSize</varname>
+            is the full size of the fragment.
+        </para>
+        <informalexample>
+            <programlisting>
+#include &lt;DataFormat.h&gt;
+#include &lt;stdint.h&gt;
+
+struct Item {
+    uint64_t s_timestamp;
+    uint32_t s_ringItemSize;
+    uint8_t  s_data[];
+};
+...
+
+uint8_t* p = static_cast&lt;pData&gt;(pData);
+while (dataSize) {
+    Item* pItem = reinterpret_cast&lt;Item*&gt;(p);
+    uint64_t stamp = pItem-&gt;s_timestamp;
+    pRingItem pR   = reinterpret_cast&lt;pRingItem&gt;(pItem->s_data);
+    
+    processTheRingItem(pR, stamp);
+    
+    size_t nItemSize = sizeof(uint64_t) + sizeof(uint32_t) + pItem->s_ringItemSize;
+    p += nItemSize;
+    dataSize -= nItemSize;
+}
+free(pData);
+            </programlisting>
+        </informalexample>
+    </refsect1>
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemMarkingWorker</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemMarkingWorker</refname>
+        <refpurpose>Strategy pattern for classifying ring items</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingMarkingWorker&gt;
+
+class CRingMarkingWorker : public CParallelWorker
+{
+public:
+    class Classifier {
+    public:
+        virtual uint32_t operator()(CRingItem& item) = 0;
+    };
+    
+public:
+    CRingMarkingWorker(
+        CFanoutClientTransport&amp; fanin, CSender&amp; sink, uint64_t clientId,
+        Classifier* pClassifier
+    );
+    virtual ~CRingMarkingWorker() {}
+    virtual void process(void* pData, size_t nBytes);
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            One of the main purposes of the parallel processing
+            framework is to set up software triggers. In NSCLDAQ
+            these operate in two stages.  The first stage
+            classifies ring items with a uint32_t value.
+            The second stage retains or discards items by
+            applying an acceptance criterion to this classification.
+        </para>
+        <para>
+            Note that only <literal>PHYSICS_EVENT</literal> items
+            get classified.  The classification is carried with
+            the ring item as an extension to that item's body
+            header.  This class provides a framework that
+            allows the user to simply report back the classification.
+            All the work of getting work items, formatting the
+            output ring items and sending them on to the next
+            stage of processing are taken care of by this class.
+        </para>
+        <para>
+            The data processed by this class are assumed to have come
+            from a <classname>CRingItemZMQDataSource</classname>
+            or any other data source that produces the
+            same output format.  The data source is
+            assumed to be a fanout data source as classification
+            may be computationally intensive enough to
+            be worth parallelization.
+        </para>
+        <para>
+            Construction of one of these therefore requires:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><parameter>fanin</parameter></term>
+                <listitem>
+                    <para>
+                        The fanout client transport that
+                        is getting data from the fanout
+                        transport.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><parameter> sink</parameter></term>
+                <listitem>
+                    <para>
+                        The sender that will be used to ship
+                        the resulting work items to the
+                        next stage of processing.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><parameter>clientId</parameter></term>
+                <listitem>
+                    <para>
+                        The client id that will be configured
+                        into <parameter>fanin</parameter>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><parameter>pClassifier</parameter></term>
+                <listitem>
+                    <para>
+                        A pointer to a concrete subclass of
+                        <classname>CRingMarkingWorker::Classfier</classname>.
+                        This is an application specific class who's
+                        <methodname>operator()</methodname> knows
+                        how to compute and return the
+                        uint32_t classification of a ring item
+                        passed by reference.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            Data sent on the <parameter>sink</parameter> will
+            have the same format as the data received, however
+            each block containing a physics item
+            will be a uint32_t longer than before
+            to accomodate the classification value.  The
+            ring item size and body header size field will be
+            modified to appropriately reflect this.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OUTPUT DATA FORMAT</title>
+        <para>
+            The messages sent by this class are suitable
+            for input to the
+            <classname>CRingItemSorter</classname>(3daq).
+            The consist of first a uint32_t client id followed
+            by an array of timestamp, ring items pairs
+            The message size and
+            iterating through the ring items can be used to
+            determine the number of ring items present.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemSorter</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemSorter</refname>
+        <refpurpose>Re-sort a stream of ring items by timestamp</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+class CRingItemSorter  : public CProcessingElement
+{
+public:
+    
+    typedef struct _Item {
+        uint64_t s_timestamp;
+        RingItem s_item;
+    } Item, *pItem;
+
+                                                // signature.
+public:
+    CRingItemSorter(
+        CReceiver&amp; fanin, CSender&amp; sink, uint64_t window, size_t nWorkers
+    );
+    
+    virtual void operator()();
+    virtual void process(void* pData, size_t nBytes);
+};
+
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Processor that emits ring items in timestamp sorted order.
+            The input stream of data is that produced by e.g.
+            <classname>CRingItemMarkingWorker</classname>.
+            That consist of a uint32_t client id, followed by
+            an array of uint64_timstamp/ring items pairs.
+            The output of this worker is a stream of
+            ring item arrays.  This is suitable for use with
+            a <classname>CRingBlockDataSink</classname>.
+        </para>
+        <para>
+            When constructing this a <parameter>fanin</parameter>
+            receiver must be provided to get data from the workers.
+            this receiver must be capable of fanning in the
+            data from all workers.
+        </para>
+        <para>
+            <parameter>sink</parameter> provides the sender to
+            pass data to the next stage.
+            <parameter>window</parameter> is an obsolete parameter
+             and no longer used.
+             <parameter>nWorkers</parameter> is the number
+             of workers fanning into this stage of processing.
+        </para>
+        <para>
+            As each receiver sends an end of data, it is marked
+            as exited.  When the last remaining receiver has
+            sent its end and all data sorted and emitted,
+            an end is sent to the sender.
         </para>
     </refsect1>
 
