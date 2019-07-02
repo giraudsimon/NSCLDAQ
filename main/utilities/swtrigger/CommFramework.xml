@@ -2392,4 +2392,215 @@ public:
     </refsect1>
 
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQDealerTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQDealerTransport</refname>
+        <refpurpose>Peer, receiver for CZMQRouterTransport(3daq)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis> 
+#inclucde &lt;CZMQDealerTransport.h&gt;
+class CZMQDealerTransport : public CFanoutClientTransport
+{
+
+public:
+    CZMQDealerTransport(const char* pUri);
+    CZMQDealerTransport(const char* pUri, uint64_t id);
+    
+    void recv(void** ppData, size_t&amp; size);
+    void send(iovec* parts, size_t numParts);
+    void setId(uint64_t id);
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The ZMQ Router/Dealer communication pattern provides
+            mechanism to fan work units out to parallel workers.
+            The Router, whose transport is
+            <classname>CZMQRouterTransport</classname>(3daq)
+            is the fanout.  The workers receive data via this
+            class.
+        </para>
+        <para>
+            The transports hide the details of requesting data
+            and stripping delimeters.  From the users's point of
+            view the worker just does a call to
+            <methodname>recv</methodname> and a work unit is
+            returned.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <para>
+            <classname>CZMQDealerTransport</classname> is a
+            unidirectional transport that can only receive data.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CZMQDealerTransport</methodname>
+                        <methodparam>
+                            <modifier>const </modifier>
+                            <type>char*</type>
+                            <parameter>pUri</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor just supplies
+                        <parameter>pUri</parameter> the
+                        ZMQ URI specifying the communication
+                        endpoint agreed upon by the Router and
+                        Dealer.
+                    </para>
+                    <para>
+                        This method of construction requires that
+                        you call
+                        <methodname>setId</methodname> 
+                        to establish the client id prior to
+                        transferring data with
+                        <methodname>recv</methodname>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CZMQDealerTransport</methodname>
+                        <methodparam>
+                            <modifier>const </modifier>
+                            <type>char* </type><parameter>pUri</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>uint64_t</type><parameter> id</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor supplies both the
+                        endpoint URI (<parameter>pUri</parameter>),
+                        and the client id;
+                        <parameter>id</parameter>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Receives data from the peer.  The process
+                        of requesting data, receiving the multipart
+                        message, stripping the delimeter and
+                        reassembling the message payload into
+                        a single blob is done
+                        by this method, transparent to the caller.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodname>send</methodname>
+                </term>
+                <listitem>
+                    <para>
+                        This is not a legal method.
+                        If you call this,
+                        a <classname>std::logic_error</classname>
+                        is thrown.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>void </type>
+                        <methodname>setId</methodname>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>id</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CDataSinkElement</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CDataSinkElement</refname>
+        <refpurpose>Forward data to some sink.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CDataSinkElement.h&gt;
+
+class CDataSinkElement : public CProcessingElement
+{
+public:
+    CDataSinkElement(CReceiver& src, CSender& sink);
+    virtual ~CDataSinkElement();
+    
+    virtual void operator()();
+    virtual void process(void* pData, size_t nBytes);
+
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class is intended to be used at the end
+            of the processing pipeline.  It simply accepts
+            work items and sends them to a sink.  A usual
+            application transforms a set of input work items
+            into an output set via a parallel application.
+        </para>
+        <para>
+            While the last stage of that computation could output
+            those data, it would then be more work to
+            insert additional processing layers in the application
+            as it's incrementally built and tested.
+            Having a dedicated processing element to output
+            data allows for that code to live on its own
+            where additional processing stages could be inserted
+            prior to it.
+        </para>
+    </refsect1>
+
+</refentry>
+
 <!-- /manpage -->
