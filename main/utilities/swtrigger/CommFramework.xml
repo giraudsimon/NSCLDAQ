@@ -2989,5 +2989,585 @@ public:
     </refsect1>
 
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CThreadedProcessingElement</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CThreadedProcessingElement</refname>
+        <refpurpose>Run a processing element ina thread.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CThreadedProcessingElement.h&gt;
 
+class CThreadedProcessingElement : public Thread
+{
+public:
+    CThreadedProcessingElement(CProcessingElement* processor);
+    
+    virtual void run();
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            In shared memory multiprocessing parallelism,
+            it's often simplest to run each parallel processing
+            element in a thread of its own.  Each thread then
+            gets scheduled to available cores in the system
+            by the underlying scheduler.  This class
+            leverages the <classname>Thread</classname>(3daq)
+            class in NSCLDAQ to embed a
+            <classname>CProcessingElement</classname> in a thread
+            of execution.
+        </para>
+        <para>
+            When the application initialization code runs a threaded
+            parallel program, it sets up all the transports,
+            senders and reveivers, creates the processors and
+            then constructs a <classname>CThreadedProcessingElement</classname>
+            for each processor.  Processors are then started
+            using the <classname>Thread</classname> class's
+            <methodname>start</methodname> method. 
+            When the thread begins execution it will call
+            the <methodname>operator()</methodname> method of the
+            <parameter>processor</parameter> it was constructed
+            with.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQRingItemThreadedWorker</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQRingItemThreadedWorker</refname>
+        <refpurpose>ZeroMQ Threaded worker for ZeroMQ</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQRingItemThreadedProcessingElement.h&gt;
+
+class CZMQRingItemThreadedWorker : public CThreadedProcessingElement
+{
+public:
+    CZMQRingItemThreadedWorker(
+        const char* routerUri, uint64_t clientId, CSender& sender,
+        CProcessor* processor
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The constructor of this class constructs its base
+            class with a <classname>CZMQRingItemWorker</classname>
+            as its processor.
+            <parameter>routerUri</parameter> is the ZMQ router
+            URI, clientId is the id of the ROUTER client
+            (Dealer) this thread represents.
+            <parameter>sender</parameter> is the
+            sender to which data are sent and
+            <parameter>processor</parameter> provides the per
+            work item processing.
+        </para>
+        <para>
+            For the expectations of the <parameter>processor</parameter>
+            see <classname>CZMQRingItemWorker</classname>(3daq).
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQRingItemSourceThread</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQRingItemSourceThread</refname>
+        <refpurpose>Provide a thread that routes ring items from a source</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQRingItemSourceThread.h&gt;
+class CZMQRingItemSourceThread : public CThreadedProcessingElement
+{
+public:
+    CZMQRingItemSourceThread(const char* ringUri, const char* routerUri);
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Provides a thread that takes ring items from
+            some data source specified by
+            <parameter>ringUri</parameter> and, using the
+            ZeroMQ Router/Dealer pattern ROUTER running on
+            <parameter>routerUri</parameter> fans them
+            out as work items for parallel processing.
+        </para>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CCommunicatorFactory</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CCommuniatorFactory</refname>
+        <refpurpose>Create transports for an underlying communication scheme.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CCommunicatorFactory.h&gt;
+
+class CCommunicatorFactory
+{
+public:
+    virtual CTransport* createFanoutTransport(int endPointId) =0;
+    virtual CTransport* createFanoutClient(int endpointId, int clientId) =0;
+    virtual CTransport* createFanInSource(int endpointId) = 0;
+    virtual CTransport* createFanInSink(int endpointId) = 0;
+    virtual CTransport* createOneToOneSource(int endpointId) = 0;
+    virtual CTransport* createOneToOneSink(int endpointid) = 0;
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Pure abstract transport factory.   Parallel programs
+            can feature a variety of communication patterns.
+            This factory is an abstract base class for factories
+            that know how to create transport objects for
+            several common communication factories.
+        </para>
+        <para>
+            The idea is that application initialization
+            code would use an appropriate factory to
+            create the transports it needs.  Use of factories
+            would make changing the communications methods as
+            easy as changing the factory used to create
+            the transports.
+        </para>
+        <para>
+            As different communication schemes will have differing
+            ways to specify communication endpoints.  specifications
+            are reduced to integers in this scheme.
+            A concrete factory will, in general, need a
+            mechanism to convert these integers into native
+            endp;oint specifications.
+            How this is done is factory specific.
+            See e.g. <classname>CZMQCommunicatorFactory</classname>(3daq).
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <para>
+            Note that all of these methods return a
+            <classname>CTransport</classname>*. The pointer pointer
+            points to a transport object the concrete factory
+            created with <literal>new</literal>.  Furthermore,
+            in this class, all methods are pure virtual and
+            must be implemented in a concrete factory.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createFanoutTransport</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>endPointId</parameter>
+                        </methodparam>
+                        <modifier>=0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a transport that fans out
+                        data to multiple clients that operate
+                        with data parallelism.  <parameter>endpointId</parameter>
+                        identifies any endpoint needed.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createFanoutClient</methodname>
+                        <methodparam>
+                            <type>(int </type><parameter>endpointId</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>int </type><parameter>clientId</parameter>
+                        </methodparam>
+                        <modifier>=0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a transport that receives data from
+                        a fanout. The endpoint of the fanout
+                        is identified by <parameter>endpoingId</parameter>.
+                        The client's id is
+                        <parameter>clientId</parameter>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createFanInSource</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>endpointId</parameter>
+                        </methodparam>
+                        <modifier>=0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a transport that is a source
+                        for fanned in data.  The endpoint of the transport
+                        is identified by <parameter>endpointId</parameter>
+                        In general there will be one of these that
+                        will send data to a single client with a
+                        transport created by
+                        <methodname>createFanInSink</methodname>
+                        below with the same
+                        <parameter>endpointId</parameter>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createFanInSink</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>endpointId</parameter>
+                        </methodparam>
+                        <modifier>= 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a sink of data from a
+                        fan in source with the same
+                        <parameter>endpointId</parameter>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createOneToOneSource</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>endpointId</parameter>
+                        </methodparam>
+                        <modifier>= 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates a transport for the source of
+                        data for a pipeline of data.
+                        The data are consumed by the transport
+                        created by <methodname>createOneToOneSink</methodname>
+                        below with the same
+                        <parameter>endpointId</parameter>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>CTransport* </type>
+                        <methodname>createOneToOneSink</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>endpointid</parameter>
+                        </methodparam>
+                        <modifier>= 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Creates the sink of a pipeline of data.
+                        The resulting transport receives data sent
+                        by a transport created with
+                        <methodname>createOnToOneSource</methodname>
+                        with the same <parameter>endpointId</parameter>
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CZMQCommunicatorFactory</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CZMQCommunicatorFactory</refname>
+        <refpurpose>Communicator factory for ZeroMQ</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CZMQCommunicatorFactory.h&gt;
+
+class CZMQCommunicatorFactory : public CCommunicatorFactory
+{
+public:
+    CZMQCommunicatorFactory();
+
+    virtual CTransport* createFanoutTransport(int endpointId);
+    virtual CTransport* createFanoutClient(int endpointId, int clientId);
+    virtual CTransport* createFanInSource(int endpointId) ;
+    virtual CTransport* createFanInSink(int endpointId);
+    virtual CTransport* createOneToOneSource(int endpointId);
+    virtual CTransport* createOneToOneSink(int endpointid);
+
+    std::string getUri(int endpointId);
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is a factory specialized for the ZeroMQ
+            communications system.  See
+            <classname>CCommunicatorFactory</classname>
+            for more information.  This manpage will only
+            describe the ZeroMQ (ZMQ) specific information
+            about this factory.
+        </para>
+        <para>
+            Native ZMQ specifies endpoints as URI's  The URI's
+            describe the communcations mechanism using the
+            URI protocol to specify its own transport mechanism
+            (e.g. tcp or inproc etc.) and the remainder of the
+            URI to specify transport specific information.
+            For example, <literal>tcp://somehost.net:1234</literal>
+            specifies a TCP/IP port on smoehost.net port number
+            1234.  <literal>inproc://myendpoint</literal> specifies
+            a process internal communication transport named
+            <literal>myendpoint</literal>.
+        </para>
+        <para>
+            This rich space of URIs must, in some way be mapped
+            to factory endpoint ids, which are integer (and back
+            for that matter).  The ZMQ factory does this by
+            allowing the user to specify end point mapping files.
+            Three endpoint mapping files can be specified and
+            <emphasis>all</emphasis> are read allowing endpoints
+            to be user specific, project specific and run specific.
+            The end point files are:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <filename>~/.zmqservices</filename>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <filename>./zmqservices</filename>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    The file pointed to by the envronment
+                    variable <literal>ZMQ_SERVICES</literal>.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            Only the files you need must actually exist (the
+            <literal>ZMQ_SERVICES</literal> environment variable
+            need not be defined), however at least one endpoint
+            file must exist for the factory to function. See
+            <literal>ENDPOINT FILE FORMAT</literal> for the format
+            of these endpoint files.
+        </para>
+        <para>
+            ZMQ factory creational method map as follows
+            to ZMQ sockets:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><methodname>createFanoutTransport</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_ROUTER socket as a server.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodname>createFanoutClient</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_DEALER socket as a client.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodname>createFanInSource</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_PUSH socket as a client.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodname>createFanInSink</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_PULL socket as a server.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodname>createOneToOneSource</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_PUSH socket as a client.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><methodname>createOnToOneSink</methodname></term>
+                <listitem>
+                    <para>
+                        Creates a ZMQ_PULL socket as a server.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+
+        <para>
+            To support special needs, the factory adds the
+            method <methodname>getUri</methodname>.  This method
+            takes an integer endpoint id as a parameter and
+            returns an <type>std::string</type> containing the
+            Uri that corresponds to that end point.
+        </para>
+        <para>
+            Any use of an endpoint id that does not have a mapping
+            (including calls to <methodname>getUri</methodname>)
+            results in a <classname>std::invalid_argument</classname>
+            exception.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>ENDPOINT FILE FORMAT</title>
+        <para>
+            Endpoint files are used to create a correspondence between
+            integer endpointId values and ZMQ endpoint Uris.
+            These files are textual.  Leading and trailing
+            whitespace characters
+            on each line are ignored.
+            Empty lines are ignored.  Lines whose first
+            non-whitespace character is <literal>#</literal> are
+            ignored as well.
+        </para>
+        <para>
+            All of these make it possible for you to create
+            readable and well commented endpoint files.
+        </para>
+        <para>
+            Each line that is not ignored must have two fields.
+            The first field is an integer endpoint id.
+            The second field is a string that specifies
+            the URI that endpoint Id corresponds to.
+        </para>
+    </refsect1>
+    
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CCommunicatorFactoryMaker</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CCommunicatorFactoryMaker</refname>
+        <refpurpose>Create communication factories.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CCommunicatorFactoryMaker.h&gt;
+
+
+typedef CCreator&lt;CCommunicatorFactory&gt; CommunicatorFactoryCreator;
+typedef CExtensibleFactory&lt;CCommunicatorFactory&gt; CommunicatorFactoryFactory;
+
+class CCommunicatorFactoryMaker : public CommunicatorFactoryFactory
+{
+
+public:
+    static CCommunicatorFactoryMaker* getInstance();
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Provides a factory that produces a communicator
+            factory given a textual description of the
+            communication mechanism.  This factory is a singleton
+            object.  Construction is not possible. You must
+            invoke <methodname>getInstance</methodname> to
+            obtain a pointer to the singleton factory object.
+        </para>
+        <para>
+            See the <classname>CExtensibleFactory</classname>(3daq)
+            manual page for information about how to
+            construct a factory and how to register
+            additional factories you might have.
+        </para>
+        <para>
+            The following factories are registered by the singleton
+            automatically:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><literal>ZeroMQ Communcation system</literal></term>
+                <listitem>
+                    <para>
+                        Creates a
+                        <classname>CZMQCommunicatorFactory</classname>
+                        object.   See
+                        <classname>CZMQCommunicatorFactory</classname>(3daq)
+                        for more information.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
 <!-- /manpage -->
