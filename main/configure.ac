@@ -20,6 +20,16 @@ AC_PROG_LIBTOOL
 
 AX_CXX_COMPILE_STDCXX_11([noext])
 
+# MPI defined/usable to build MPI chunks:
+
+AC_LANG_PUSH(C++)
+AX_MPI([
+	AM_CONDITIONAL([MPI], true)
+	AC_DEFINE([HAVE_MPI], 1, [MPI exists])], [AM_CONDITIONAL([MPI], false)])
+AC_LANG_POP
+
+# Documetation
+
 AC_ARG_ENABLE([docs],
               AS_HELP_STRING([--enable-docs],[Build the documentation]),
               [], [enable_docs=no])
