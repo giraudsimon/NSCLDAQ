@@ -113,7 +113,8 @@ BOOKDIRS = 	@top_srcdir@ \
 						@top_srcdir@/examples		\
 						@top_srcdir@/ddas/sorter        \
 						@top_srcdir@/ddas/readoutdriver  \
-						@top_srcdir@/utilities/swtrigger 
+						@top_srcdir@/utilities/swtrigger \
+						@top_srcdir@/base/factories
 
 
 daq.html: daq.xml

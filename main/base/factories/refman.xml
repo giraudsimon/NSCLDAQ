@@ -1,0 +1,207 @@
+<!-- manpage 3daq -->
+<refentry>
+    <refmeta>
+        <refentrytitle>CExtensibleFactory</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CExtensibleFactory</refname>
+        <refpurpose>Template factory class.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CExtensibleFactory.h&gt;
+
+template &lt;class T&gt;
+class CExtensibleFactory
+{
+
+public:
+  void addCreator(std::string type,
+		  CCreator&lt;T&gt;* pCreator);
+  T* create(std::string type);
+  std::vector&lt;std::string&gt; getDescriptions();
+};
+
+#include &lt;CCreator.h&gt;
+
+template &lt;class T&gt;
+class CCreator
+{
+public:
+  virtual T* operator()() = 0;
+  virtual std::string describe() const = 0;
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            A common pattern in object oriented programming
+            is the creation of a class hierarchy whose
+            ultimate base class is abstract and defines
+            a set of interface methods that concrete classes
+            must implement.  For exmaple, in a graphics library,
+            the base class <classname>Shape</classname> might
+            define an abstract method <methodname>draw</methodname>
+            which would then be implemented in
+            concrete classes like
+            <classname>Rectangle</classname> or
+            <classname>Circle</classname>.
+        </para>
+        <para>
+            Sometimes it's useful to be able to create
+            an appropriate instance of a subclass of the
+            ultimate base class of one of those hierarchies
+            given a description or name of the class.
+            Classes that can do that are called
+            <firstterm>factory classes</firstterm>.
+            If the class hierarchy is extensible by user code,
+            it's important that the factory also be extensible.
+        </para>
+        <para>
+            The <classname>CExtensibleFactory</classname>
+            template class provides the machinery to do all of this.
+            To use it, you must specialize the factory to the
+            type of object it will return, and provide
+            and register <firstterm>Creator</firstterm>
+            objects that recognize type strings and
+            return the appropriate object.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>CREATORS</title>
+        <para>
+            Each extensible factory has a set of creators.
+            Each creator is associated with a string. When
+            the factory is asked to create an object
+            it's given a string and that string is used
+            to locate a creator which actually creates
+            the desired object.
+        </para>
+        <para>
+            <classname>CCreator</classname> is an abstract
+            base class for these object creators.  Concrete
+            creators must implement the following methods
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>T*</type>
+                        <methodname>operator()</methodname>
+                        <void />
+                        <modifier> = 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns a pointer new object of the
+                        concrete type associated with the
+                        creator.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>std::string</type>
+                        <methodname>describe</methodname>
+                        <void />
+                        <modifier>const = 0</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns a string that describes the
+                        object being made.  If the
+                        factory is associated with some
+                        creational command in a larger program,
+                        this can be used to construct a help
+                        string that reflects the set of
+                        actual object types that can be created.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        
+    </refsect1>
+    <refsect1>
+        <title>EXTENSIBLE FACTORY METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier> </modifier>
+                        <type>void </type>
+                        <methodname>addCreator</methodname>
+                        <methodparam>
+                            <type>std::string </type><parameter>type</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>CCreator&lt;T&gt;* </type><parameter>pCreator</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Provides the factory a new creator;
+                        <parameter>pCreator</parameter> that's
+                        associated with the string
+                        <parameter>type</parameter>.  If a creator
+                        for that type already exists it is silently
+                        replaced.  If the old creator was
+                        dynamically created, this replacement
+                        causes a memory leak.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>T* </type>
+                        <methodname>create</methodname>
+                        <methodparam>
+                            <type>std::string </type><parameter>type</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Asks the factory to create a type using
+                        the creator that was associated with
+                        the <parameter>type</parameter> string.
+                        If no creator has been registered for this
+                        type, <literal>nullptr</literal> is
+                        returned.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>std::vector&lt;string&gt;</type>
+                        <methodname>getDescription</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns a vector of all the creator
+                        descriptions.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+
+<!-- /manpage -->
