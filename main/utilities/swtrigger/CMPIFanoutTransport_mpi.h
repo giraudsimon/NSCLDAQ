@@ -21,8 +21,10 @@
 #ifndef CMPIFANOUTTRANSPORT_MPI_H
 #define CMPIFANOUTTRANSPORT_MPI_H
 
+#include "CFanoutTransport.h"
 #include "CMPITransport_mpi.h"
 #include "CClientRegistry.h"
+
 #include <sys/uio.h>
 
 /**
@@ -50,7 +52,7 @@
  *        client id set by the client transport.
  *        
  */
-class CMPIFanoutTransport : public CMPITransport
+class CMPIFanoutTransport : public CMPITransport, public CFanoutTransport
 {
 private:
     CClientRegistry m_clients;
