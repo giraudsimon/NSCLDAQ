@@ -9,6 +9,6 @@ option "sort-window" w "Number of time stamp ticks in the sort window"
                 int optional default="10000"
 option "clump-size" c "Number of ring items per work unit" int optional default="1"
 option "parallel-strategy" p "Parallelization strategy"
-                values="threaded" optional default="threaded"
+                values="threaded","mpi" optional default="threaded"
 option "classifier" l "Path to shared library for the classifier" string typestr="filename"
 

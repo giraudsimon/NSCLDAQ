@@ -1,50 +1,6 @@
 
 if MPI
 
-## Rules for compiling MPI sources -- sources must have name of the form e.g.
-#  file_mpi.cpp
-
-AM_V_MPICC = $(am__v_MPICC_$(V))
-am__v_MPICC_ = $(am__v_MPICC_$(AM_DEFAULT_VERBOSITY))
-am__v_MPICC_0 = @echo "  MPICC " $@;
-AM_V_MPICXX = $(am__v_MPICXX_$(V))
-am__v_MPICXX_ = $(am__v_MPICXX_$(AM_DEFAULT_VERBOSITY))
-am__v_MPICXX_0 = @echo "  MPICXX" $@;
-MPICOMPILE=$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-        $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-MPICXXLD=$(MPICXX)
-MPICXXCOMPILE=$(MPICXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-        $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTMPICOMPILE=$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(MPICOMPILE)
-LTMPICXXCOMPILE=$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(MPICXXCOMPILE)
-
-SUFFIXES = _mpi.cpp  _mpi.o _mpi.lo _mpi.obj
-
-
-_mpi.cpp_mpi.o:
-@am__fastdepCXX_TRUE@	$(AM_V_MPICXX)$(MPICXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*_mpi.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*_mpi.Tpo $(DEPDIR)/$*_mpi.Po
-@am__fastdepCXX_FALSE@	$(AM_V_MPICXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(MPICXXCOMPILE) -c -o $@ $<
-
-_mpi.cpp_mpi.lo:
-@am__fastdepCXX_TRUE@	$(AM_V_MPICXX)$(LTMPICXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*_mpi.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*_mpi.Tpo $(DEPDIR)/$*_mpi.Plo
-@am__fastdepCXX_FALSE@	$(AM_V_MPICXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTMPICXXCOMPILE) -c -o $@ $<
-
-_mpi.cpp_mpi.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_MPICXX)$(MPICXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*_mpi.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*_mpi.Tpo $(DEPDIR)/$*_mpi.Po
-@am__fastdepCXX_FALSE@	$(AM_V_MPICXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(MPICXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
 #  Define the transport sources and headers.
 
 MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
@@ -52,53 +8,12 @@ MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
 MPI_TRANSPORT_HDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 	CMPIFanoutClientTransport_mpi.h
 
-# For each of the SRCS above <sigh> we need the following to make libtool happy
-# e.g. for test_mpi.cpp:
-
-libSwTrigger_la-CMPITransport_mpi.o : CMPITransport_mpi.o
-	cp CMPITransport_mpi.o libSwTrigger_la-CMPITransport_mpi.o
-libSwTrigger_la-CMPITransport_mpi.lo :  CMPITransport_mpi.lo
-	cp CMPITransport_mpi.lo libSwTrigger_la-CMPITransport_mpi.lo
-unittests-CMPITransport_mpi.o : CMPITransport_mpi.o
-	cp CMPITransport_mpi.o unittests-CMPITransport_mpi.o
-unittests-CMPITransport_mpi.lo : CMPITransport_mpi.lo
-	cp CMPITransport_mpi.lo unittests-CMPITransport_mpi.lo
-
-libSwTrigger_la-CMPIFanoutTransport_mpi.o : CMPIFanoutTransport_mpi.o
-	cp CMPIFanoutTransport_mpi.o libSwTrigger_la-CMPIFanoutTransport_mpi.o
-libSwTrigger_la-CMPIFanoutTransport_mpi.lo :  CMPIFanoutTransport_mpi.lo
-	cp CMPIFanoutTransport_mpi.lo  libSwTrigger_la-CMPIFanoutTransport_mpi.lo
-unittests-CMPIFanoutTransport_mpi.o : CMPIFanoutTransport_mpi.o
-	cp CMPIFanoutTransport_mpi.o unittests-CMPIFanoutTransport_mpi.o
-unittests-CMPIFanoutTransport_mpi.lo : CMPIFanoutTransport_mpi.lo
-	cp CMPIFanoutTransport_mpi.lo unittests-CMPIFanoutTransport_mpi.lo
 
 
-libSwTrigger_la-CMPIFanoutClientTransport_mpi.o : CMPIFanoutClientTransport_mpi.o
-	cp CMPIFanoutClientTransport_mpi.o libSwTrigger_la-CMPIFanoutClientTransport_mpi.o
-libSwTrigger_la-CMPIFanoutClientTransport_mpi.lo :  CMPIFanoutClientTransport_mpi.lo
-	cp CMPIFanoutClientTransport_mpi.lo  libSwTrigger_la-CMPIFanoutClientTransport_mpi.lo
-unittests-CMPIFanoutClientTransport_mpi.o : CMPIFanoutClientTransport_mpi.o
-	cp CMPIFanoutClientTransport_mpi.o unittests-CMPIFanoutClientTransport_mpi.o
-unittests-CMPIFanoutClientTransport_mpi.lo : CMPIFanoutClientTransport_mpi.lo
-	cp CMPIFanoutClientTransport_mpi.lo unittests-CMPIFanoutClientTransport_mpi.lo
+# Similarly for SoftwareTrigger sources:
+#  Define the sources for SoftwareTrigger
 
-
-#   For the library:
-
-#libSwTrigger_la-test_mpi.o : test_mpi.o
-#	cp test_mpi.o libSwTrigger_la-test_mpi.o
-#libSwTrigger_la-test_mpi.lo : test_mpi.lo
-#	cp test_mpi.lo libSwTrigger_la-test_mpi.lo
-
-#  For unittests
-
-#unittests-test_mpi.o: test_mpi.o
-#	cp test_mpi.o unittests-test_mpi.o
-#unittests-test_mpi.lo: test_mpi.lo
-#	cp test_mpi.lo unittests-test_mpi.lo
-
-# Yes this is a maintenance pain in the ass.
+MPI_SoftwareTrigger_SRCS= CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
 
 
 
@@ -157,7 +72,7 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
-	CRingBlockDataSink.cpp
+	CRingBlockDataSink.cpp $(MPI_SoftwareTrigger_SRCS)
 
 SoftwareTrigger_DEPENDENCIES=libSwTrigger.la
 
@@ -189,6 +104,7 @@ eventfilterflags.c: eventfilterflags.h
 
 eventfilterflags.h: eventfilterflags.ggo
 	$(GENGETOPT) <@srcdir@/eventfilterflags.ggo -Feventfilterflags
+
 
 
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \

@@ -22,6 +22,12 @@
 #include "swtriggerflags.h"
 #include "CZMQThreadedClassifierApp.h"
 #include <stdlib.h>
+#include <string>
+
+#ifdef HAVE_MPI
+
+#include "CMPIClassifierApp_mpi.h"
+#endif
 
 /**
  *  The main just processes the program files, instantiates the
@@ -34,6 +40,18 @@ int main(int argc, char** argv)
 {
     gengetopt_args_info params;
     cmdline_parser(argc, argv, &params);
-    CZMQThreadedClassifierApp app(params);
-    exit(app());
+    std::string parallelizationStrategy= params.parallel_strategy_arg;
+    
+    if (parallelizationStrategy == "threaded") {
+        CZMQThreadedClassifierApp app(params);
+        exit(app());
+    }  else if (parallelizationStrategy == "mpi") {
+#ifdef HAVE_MPI
+        CMPIClassifierApp app(argc, argv, params);
+        exit(app());
+#else
+        std::cerr << "This version of SoftwareTrigger does is not MPI enabled\n";
+        exit(EXIT_FAILURE);
+#endif
+    }
 }
