@@ -47,8 +47,8 @@ _mpi.cpp_mpi.obj:
 
 #  Define the transport sources and headers.
 
-MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp
-MPI_TRANSPORT_HDRS=CMPITransport_mpi.h
+MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp
+MPI_TRANSPORT_HDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h
 
 # For each of the SRCS above <sigh> we need the following to make libtool happy
 # e.g. for test_mpi.cpp:
@@ -61,6 +61,16 @@ unittests-CMPITransport_mpi.o : CMPITransport_mpi.o
 	cp CMPITransport_mpi.o unittests-CMPITransport_mpi.o
 unittests-CMPITransport_mpi.lo : CMPITransport_mpi.lo
 	cp CMPITransport_mpi.lo unittests-CMPITransport_mpi.lo
+
+libSwTrigger_la-CMPIFanoutTransport_mpi.o : CMPIFanoutTransport_mpi.o
+	cp CMPIFanoutTransport_mpi.o libSwTrigger_la-CMPIFanoutTransport_mpi.o
+libSwTrigger_la-CMPIFanoutTransport_mpi.lo :  CMPIFanoutTransport_mpi.lo
+	cp CMPIFanoutTransport_mpi.lo  libSwTrigger_la-CMPIFanoutTransport_mpi.lo
+unittests-CMPIFanoutTransport_mpi.o : CMPIFanoutTransport_mpi.o
+	cp CMPIFanoutTransport_mpi.o unittests-CMPIFanoutTransport_mpi.o
+unittests-CMPIFanoutTransport_mpi.lo : CMPIFanoutTransport_mpi.lo
+	cp CMPIFanoutTransport_mpi.lo unittests-CMPIFanoutTransport_mpi.lo
+
 
 
 
