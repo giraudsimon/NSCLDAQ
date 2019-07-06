@@ -643,7 +643,7 @@ CExperiment::readScalers()
     vector<uint32_t> scalers = m_pScalers->read();
     uint64_t timestamp = m_pScalers->timestamp();
     int      srcid     = m_pScalers->sourceId();
-    if (srcid == -1) srcid = m_nSourceId;
+    if (srcid == -1) srcid = m_nDefaultSourceId;
     
     m_pScalers->clear();	// Clear scalers after read.
 
@@ -659,7 +659,7 @@ CExperiment::readScalers()
   // Regardless, let's emit a physics event count stamp:
 
   CRingPhysicsEventCountItem item(NULL_TIMESTAMP, 
-                                  getSourceId(), 
+                                  m_nDefaultSourceId, 
                                   BARRIER_NOTBARRIER,
                                   m_nEventsEmitted,
                         				  endTime,
