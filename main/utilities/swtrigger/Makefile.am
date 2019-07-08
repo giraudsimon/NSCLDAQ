@@ -4,9 +4,9 @@ if MPI
 #  Define the transport sources and headers.
 
 MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
-	CMPIFanoutClientTransport_mpi.cpp
+	CMPIFanoutClientTransport_mpi.cpp CRingItemMPIDataSource_mpi.cpp
 MPI_TRANSPORT_HDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
-	CMPIFanoutClientTransport_mpi.h
+	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource.h
 
 
 

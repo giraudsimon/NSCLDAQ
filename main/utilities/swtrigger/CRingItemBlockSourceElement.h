@@ -47,7 +47,7 @@ private:
     
 public:
     CRingItemBlockSourceElement(
-        const char* ringUri, CFanoutTransport& fanout, size_t chunkSize
+        const char* ringUri, CFanoutTransport& fanout, size_t chunkSize = 1
     );
     virtual ~CRingItemBlockSourceElement() {}
     virtual void operator()();             // Override b/c process frees memory.
