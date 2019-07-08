@@ -28,7 +28,7 @@ class CRingItemMPIDataSource : public CRingItemBlockSourceElement
 {
 public:
     CRingItemMPIDataSource(const char* ringUri,  size_t chunkSize=1);
-    virtual ~CRingItemMPIDataSource();
+    virtual ~CRingItemMPIDataSource() {}
 };
 
 #endif
