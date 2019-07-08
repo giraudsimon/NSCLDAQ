@@ -36,6 +36,7 @@
 
 #include <mpi.h>
 #include <stdexcept>
+#include <stdlib.h>
 
 /**
  * constructor
@@ -50,10 +51,10 @@ CMPIClassifierApp::CMPIClassifierApp(
     int argc, char** argv, gengetopt_args_info& args
 ) :  CClassifierApp(args)
 {
-    MPI_Init(&argc, &argv);
-    
     // We need at least 5 processes to operate (see
     // the header for the rank assigments).
+    
+    MPI_Init(&argc, &argv);
     
     int nProcs;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
@@ -61,7 +62,22 @@ CMPIClassifierApp::CMPIClassifierApp(
         std::cerr << "This program needs at least 5 processes to run\n";
         throw std::invalid_argument("Too few processes");
     }
+    // If the # workers consistent with n procs then warn he user
+    // that the n procs overrides... only warn in rank 1:
     
+    int workerCount = args.workers_arg;
+    nProcs -= 4;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
+    if ((nProcs != workerCount) && (rank == 0)) {
+        std::cerr << "**WARNING** number of MPI processes is not consistent with ";
+        std::cerr << " the number of workers \n" << " requested in --workers\n";
+        std::cerr << " --workers = " << workerCount;
+        std::cerr << " MPI processes supports " << nProcs << " workers\n";
+        std::cerr << nProcs << " workers will be used\n";
+        
+     } 
 }
 /**
  * destructor
@@ -78,5 +94,39 @@ CMPIClassifierApp::~CMPIClassifierApp() {}
 int
 CMPIClassifierApp::operator()()
 {
+    CProcessingElement* e = createProcessingElement();  // Figure out what we're running
+    (*e)();
+    delete e;
+    MPI_Finalize();
+    return EXIT_SUCCESS;
+}
+//////////////////////////////////////////////////////////////////////////////
+// createProcessingElement
+
+CProcessingElement*
+CMPIClassifierApp::createProcessingElement()
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    CProcessingElement* pResult(0);
     
+    switch (rank) {
+    case 0:
+        pResult = createDataSource();
+        break;
+    case 1:
+        pResult = createFanout();
+        break;
+    case 2:
+        pResult = createSorter();
+        break;
+    case 3:
+        pResult = createSink();
+        break;
+    default:
+        pResult = createWorker();
+        break;
+    }
+    
+    return pResult;
 }

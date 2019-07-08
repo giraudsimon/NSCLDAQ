@@ -23,9 +23,9 @@
 #include "CZMQThreadedClassifierApp.h"
 #include <stdlib.h>
 #include <string>
+#include <iostream>
 
 #ifdef HAVE_MPI
-
 #include "CMPIClassifierApp_mpi.h"
 #endif
 
@@ -48,10 +48,11 @@ int main(int argc, char** argv)
     }  else if (parallelizationStrategy == "mpi") {
 #ifdef HAVE_MPI
         CMPIClassifierApp app(argc, argv, params);
-        exit(app());
+        int s = app();
+        return(s);
 #else
         std::cerr << "This version of SoftwareTrigger does is not MPI enabled\n";
-        exit(EXIT_FAILURE);
+        return(EXIT_FAILURE);
 #endif
     }
 }

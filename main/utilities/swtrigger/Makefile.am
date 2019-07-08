@@ -36,7 +36,8 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpe
 	CZMQDealerTransport.cpp CDataSourceElement.cpp CParallelWorker.cpp \
 	CDataSinkElement.cpp CThreadedProcessingElement.cpp		\
 	CRingItemTransportFactory.cpp CRingItemDispatcher.cpp		\
-	CZMQRingItemDispatcher.cpp CRingItemZMQSourceElement.cpp        \
+	CZMQRingItemDispatcher.cpp CRingItemBlockSourceElement.cpp \
+	CRingItemZMQSourceElement.cpp        \
 	CZMQRingItemSourceThread.cpp CZMQRingItemWorker.cpp	\
 	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp \
 	CCommunicatorFactoryMaker.cpp CRingItemMarkingWorker.cpp \
@@ -61,7 +62,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \
 	CDataSourceElement.h CParallelWorker.h CDataSinkElement.h  \
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
-	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemZMQSourceElement.h \
+	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemBlockSourceElement.h \
+	CRingItemZMQSourceElement.h \
 	CZMQRingItemSourceThread.h CZMQRingItemWorker.h CProcessor.h \
 	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h CNullTransport.h \

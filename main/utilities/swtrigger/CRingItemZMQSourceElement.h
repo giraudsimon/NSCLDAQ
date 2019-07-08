@@ -20,7 +20,7 @@
  */
 #ifndef CRINGITEMZMQSOURCEELEMENT_H
 #define CRINGITEMZMQSOURCEELEMENT_H
-#include "CDataSourceElement.h"
+#include "CRingItemBlockSourceElement.h"
 #include <vector>
 #include <stdint.h>
 
@@ -29,32 +29,15 @@
  *    Provides a data source of ring items that fans those items out
  *    to workers via a ZMQ Router.
  */
-class CRingItemZMQSourceElement : public CDataSourceElement
+class CRingItemZMQSourceElement : public CRingItemBlockSourceElement
 {
-public:
-    typedef struct _Message {
-        uint64_t  s_timestamp;
-        size_t    s_nBytes;
-        void*     s_pData;
-    } Message, *pMessage;
-
-private:
-    size_t m_nChunkSize;
-    uint64_t m_nLastTimestamp;
-    
- 
-    std::vector<Message>   m_chunk;
     
 public:
     CRingItemZMQSourceElement(
         const char* ringUri, const char* routerUri, size_t chunkSize=1
     );
     virtual ~CRingItemZMQSourceElement() {}
-    virtual void operator()();             // Override b/c process frees memory.
-    virtual void process(void* pData, size_t nBytes);
-private:
-    void sendChunk();
-    void clearChunk();
+
 };
 
 #endif

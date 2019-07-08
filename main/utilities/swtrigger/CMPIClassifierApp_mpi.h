@@ -35,8 +35,7 @@ class CProcessingElement;
 
 class CMPIClassifierApp : public CClassifierApp
 {
-private:
-    gengetopt_args_info   m_params;
+
     
 public:
     CMPIClassifierApp(int argc, char** argv, gengetopt_args_info& args);
@@ -45,11 +44,11 @@ public:
     virtual int operator()();
 private:
     CProcessingElement* createProcessingElement();
-    CProcessingElement* createDataSource();        // Rank 1
-    CProcessingElement* createFanout();            // Rank 2
-    CProcessingElement* createWorker();            // Rank >=5
-    CProcessingElement* createSorter();            // Rank 3
-    CProcessingElement* createSink();              // Rank 4
+    CProcessingElement* createDataSource();        // Rank 0
+    CProcessingElement* createFanout();            // Rank 1
+    CProcessingElement* createWorker();            // Rank >=4
+    CProcessingElement* createSorter();            // Rank 2
+    CProcessingElement* createSink();              // Rank 3
 };
 
 
