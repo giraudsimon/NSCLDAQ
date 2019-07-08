@@ -19,6 +19,7 @@
  *  @brief: Implement the MPI classifier application setup code.
  */
 #include "CMPIClassifierApp_mpi.h"
+#include "CRingItemMPIDataSource_mpi.h"
 #include "CMPITransport_mpi.h"
 #include "CMPIFanoutTransport_mpi.h"
 #include "CMPIFanoutClientTransport_mpi.h"
@@ -95,6 +96,9 @@ int
 CMPIClassifierApp::operator()()
 {
     CProcessingElement* e = createProcessingElement();  // Figure out what we're running
+    
+    // Do we neeed a delay here?
+    
     (*e)();
     delete e;
     MPI_Finalize();
@@ -129,4 +133,14 @@ CMPIClassifierApp::createProcessingElement()
     }
     
     return pResult;
+}
+/**
+ * createDataSource
+ *    Called for rank 0 - this sets up the initial data source
+ *    that sends blocks of ring items to workers.
+ */
+CProcessingElement*
+CMPIClassifierApp::createDataSource()
+{
+    return new CRingItemMPIDataSource(m_params.source_arg, m_params.clump_size_arg);
 }
