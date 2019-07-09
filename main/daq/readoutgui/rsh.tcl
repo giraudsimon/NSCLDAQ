@@ -19,21 +19,94 @@
 # ssh is a package which supports the issuance of a remote shell
 # command on a system with shared filesystem.
 #
-package provide ssh 1.0
+
+#NOTE:  This version has a basic understanding of singularity containers.
+#       specifically, if the envirionment variable
+#       SINGULARITY_CONTAINER is defined, it is assumed to be the path
+#       of a singularity container running the application.  It's also assumed
+#       that
+#         1.   The same container exists in the remote system.
+#         2.   The user wants to run the command inside that container environment.
+#       This gets done by ssh-ing a singularity exec container-name command.
+#       To make things more exciting, if the ~/stagarea is defined,
+#       it is read and the container runs with a bindpoint matching the link
+#       target.  Additional bindpoints can be defined in the file
+#       ~/.singularity_bindpoints which must consist sources which get mapped
+#        to the same mount point.
+#
+#
+
+package provide ssh 2.0
 package require Wait
 namespace eval  ssh {
+	#
+	# getSingularityBindings
+	#
+	#   @return string
+	#      This is either --bind bind1,bind2,...
+	#   if there are bindings or an empty string if there are none.
+	#
+	proc getSingularityBindings {} {
+		set bindings [list]
+		set status [catch {file readlink ~/stagearea} value]
+		if {!$status} {
+			lappend bindings $value;                  # stagearea link auto-binds.
+		}
+		if {[file readable ~/.singularity_bindpoints]} {
+			# User has additional bind points:
+			
+			set fd [open ~/.singularity_bindpoints r]
+			while {![eof $fd]} {
+				set line [string trim [gets $fd]]
+				if {$line ne ""} {
+					lappend bindings $line
+				}
+			}
+			
+			close $fd
+		}
+		# If at the end of this we have any bindings we need to return a --bind
+		# option else an empty string
+		
+		if {[llength $bindings] > 0} {
+			return "--bind  [join $bindings ,]"
+		} else {
+			return ""
+		}
+	}
+	# actualCommand
+	#    If we are in a singularity container the command returned runs
+	#    the input command in the container See the NOTE comments above for what
+	#    that means.
+	#
+	# @parma command - the plain old command we're trying to run.
+	#
+	proc actualCommand {command} {
+		if {[array names ::env SINGULARITY_CONTAINER] eq ""} {
+			# not in a container env.
+			
+			return $command
+		}
+		#
+		#  We're in a container:
+		
+		set container $::env(SINGULARITY_CONTAINER)
+		set bindings  [ssh::getSingularityBindings]
+		return "singularity exec $bindings $container $command"
+	}
 
     proc ssh {host command} {
-	set stat [catch {set output [eval exec ssh $host $command]} error]
-	if {$stat != 0} {
-	    append output "\n"  $error
+		set command [ssh::actualCommand $command]
+		set stat [catch {set output [eval exec ssh $host $command]} error]
+		if {$stat != 0} {
+			append output "\n"  $error
+		}
+		return $output
 	}
-	return $output
-    }
     proc sshpipe {host command access} {
-	lappend command {"2>&1"}
-#	return [open "|ssh $host $command  " $access]
-	return [open "|ssh $host $command '2>&1'  " $access]
+		set command [ssh::actualCommand $command]
+		lappend command {"2>&1"}
+		return [open "|ssh $host $command '2>&1'  " $access]
     }
 
     #
@@ -50,12 +123,12 @@ namespace eval  ssh {
     #
     #
     proc sshpid {host command} {
-
+		set command [ssh::actualCommand $command]
 
         set pipe [open "|  ssh -o \"StrictHostKeyChecking no\"  $host $command |& cat" a+]
-	set pid [lindex [pid $pipe] 0]
+		set pid [lindex [pid $pipe] 0]
 
-	return [list $pid $pipe $pipe]
+		return [list $pid $pipe $pipe]
     }
 
     namespace export ssh sshpipe sshpid

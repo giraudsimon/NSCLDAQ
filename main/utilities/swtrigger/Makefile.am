@@ -1,19 +1,25 @@
 
+MPI_TSRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
+	CMPIFanoutClientTransport_mpi.cpp CRingItemMPIDataSource_mpi.cpp
+
+MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
+	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource_mpi.h
+
+MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
+
 if MPI
 
 #  Define the transport sources and headers.
 
-MPI_TRANSPORT_SRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
-	CMPIFanoutClientTransport_mpi.cpp CRingItemMPIDataSource_mpi.cpp
-MPI_TRANSPORT_HDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
-	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource.h
+MPI_TRANSPORT_SRCS=$(MPI_TSRCS)
+MPI_TRANSPORT_HDRS=$(MPI_THDRS)
 
 
 
 # Similarly for SoftwareTrigger sources:
 #  Define the sources for SoftwareTrigger
 
-MPI_SoftwareTrigger_SRCS= CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
+MPI_SoftwareTrigger_SRCS= $(MPI_SWTSRCS)
 
 
 
