@@ -144,3 +144,28 @@ CMPIClassifierApp::createDataSource()
 {
     return new CRingItemMPIDataSource(m_params.source_arg, m_params.clump_size_arg);
 }
+
+CProcessingElement*
+CMPIClassifierApp::createFanout()
+{
+    // stub.
+}
+
+CProcessingElement*
+CMPIClassifierApp::createWorker()
+{
+    // stub.
+}
+
+CProcessingElement*
+CMPIClassifierApp::createSorter()
+{
+    // stub
+}
+
+CPRocssingElement*
+CMPIClassifierApp::creatSink()
+{
+    
+    // Stub.
+}
