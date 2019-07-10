@@ -154,7 +154,26 @@ CMPIClassifierApp::createDataSource()
 CProcessingElement*
 CMPIClassifierApp::createWorker()
 {
-    // stub.
+    // We need the classifier object the user provided:
+    
+    ClassifierFactory fact = getClassifierFactory();
+    CRingMarkingWorker::Classifier* pClassifier = (*fact)();
+    
+    // We need an MPI fanout client
+    // a sink (to the sorter) a client id (our rank).
+    // and we have the classifier.
+    
+    CFanoutClientTransport* pFanoutClient = new CMPIFanoutClientTransport(0);
+    CTransport*             pSendingTransport = new CMPITransport(1);
+    CSender*                pSender       = new CSender(*pSendingTransport);
+    
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);       // For my ID.
+    
+    CProcessingElement* pResult =
+        new CRingMarkingWorker(*pFanoutClient, *pSender, rank, pClassifier);
+    
+    return pResult;
 }
 /**
  * createSorter
