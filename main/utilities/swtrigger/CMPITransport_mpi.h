@@ -59,6 +59,7 @@ public:
     // MPI specific stuff:
     
     int setReceiver(int rank);
+    int getReceiver() const { return m_nCurrentReceiver; }
     int getLastReceivedTag() const;
     int getLastReceivedRank() const;
     MPI_Comm setCommunicator(MPI_Comm newComm);

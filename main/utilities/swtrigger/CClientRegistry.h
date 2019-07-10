@@ -21,6 +21,7 @@
 #ifndef CCLIENTREGISTRY_H
 #define CCLIENTREGISTRY_H
 #include <stdint.h>
+#include <stddef.h>
 #include <set>
 /**
  * @class CClientRegistry
@@ -43,6 +44,7 @@ public:
     void remove(uint64_t existingId);
     bool hasClient(uint64_t id);
     bool empty();
+    size_t size() { return m_clients.size(); }
 };
 
 #endif

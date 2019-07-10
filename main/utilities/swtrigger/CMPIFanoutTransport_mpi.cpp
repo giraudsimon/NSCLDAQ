@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 #include <stdlib.h>
+#include <iostream>
 
 /**
  * constructor (default)
@@ -86,12 +87,23 @@ CMPIFanoutTransport::send(iovec* parts, size_t numParts)
 void
 CMPIFanoutTransport::end()
 {
-    while (m_clients.empty()) {
+#ifdef DEBUG
+    std::cerr << "MPI fanout transport end " << m_clients.size() << "clients to end\n";;
+#endif
+    while (!m_clients.empty()) {
         getDataRequest();
-        end();
+#ifdef DEBUG
+    std::cerr << "End got request from " << getReceiver() << std::endl;
+    std::cerr << m_clients.size() << " remaining\n";
+#endif
+        CMPITransport::end();
         int client = setReceiver(-1);  // Gets set next getDataReq
+#ifdef DEBUG
+    std::cerr << "Removing " << client << std::endl;
+#endif
         m_clients.remove(client);
     }
+    std::cerr << " all ended\n";
 }
 /////////////////////////////////////////////////////////////////
 // Private methods.
