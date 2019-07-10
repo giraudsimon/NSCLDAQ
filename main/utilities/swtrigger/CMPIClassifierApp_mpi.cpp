@@ -185,10 +185,27 @@ CMPIClassifierApp::createSorter()
     CProcessingElement* pResult = new CRingItemSorter(*pReceiver, *pSender, 0, nWorkers);
     return pResult;
 }
-
+/**
+ * createSink
+ *    Creates the data sink process.
+ *    -  Create a transport to receive data from the sorter.
+ *    -  Manufactures a sink from the ring tranport factory and the sink_arg
+ *       specification in the parameters.
+ *    -  Binds the transports into senders and receivers.
+ *    -  Constructs a CRingBlockDataSink to use at the transport and returns that.
+ */
 CProcessingElement*
 CMPIClassifierApp::createSink()
 {
     
-    // Stub.
+    CMPITransport*  pReceiverTransport = new CMPITransport();
+    CTransport*     pSenderTransport = CRingItemTransportFactory::createTransport(
+        m_params.sink_arg, CRingBuffer::producer
+    );
+    
+    CReceiver* pReceiver = new CReceiver(*pReceiverTransport);
+    CSender*   pSender   = new CSender(*pSenderTransport);
+    
+    CProcessingElement* pResult = new CRingBlockDataSink(*pReceiver, *pSender);
+    return pResult;
 }
