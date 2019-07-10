@@ -22,6 +22,7 @@
 #define CCLASSIFIERAPP_H
 
 #include "swtriggerflags.h"
+#include "CRingItemMarkingWorker.h"
 
 /**
  * @class CClassifierApp
@@ -43,6 +44,9 @@ public:
     virtual ~CClassifierApp() {}                     // for destructor chaining.
     
     virtual int operator()() = 0;                    // Run the application
+protected:
+    typedef CRingMarkingWorker::Classifier* (*ClassifierFactory)();
+    ClassifierFactory getClassifierFactory(); 
 };
 
 #endif

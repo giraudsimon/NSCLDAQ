@@ -54,9 +54,7 @@ class CDataSinkElement;
  *  parallelism again to the output thread.
  */
 class CZMQThreadedClassifierApp : public CClassifierApp
-{
-private:
-    typedef CRingMarkingWorker::Classifier* (*ClassifierFactory)();
+{    
 private:
     
     // Data source objects.
@@ -90,7 +88,7 @@ public:
     virtual int operator()();
 private:
     void startWorkers();
-    ClassifierFactory getClassifierFactory(); 
+
 };
 
 #endif

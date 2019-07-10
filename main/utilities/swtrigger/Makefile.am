@@ -77,7 +77,7 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 
 
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
-	CClassifierApp.h \
+	CClassifierApp.h CClassifierApp.cpp \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
 	CRingBlockDataSink.cpp $(MPI_SoftwareTrigger_SRCS)
