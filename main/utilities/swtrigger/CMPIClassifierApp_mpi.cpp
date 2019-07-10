@@ -171,7 +171,7 @@ CMPIClassifierApp::createWorker()
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);       // For my ID.
     
     CProcessingElement* pResult =
-        new CRingMarkingWorker(*pFanoutClient, *pSender, rank, pClassifier);
+        new CRingMarkingWorker(*pFanoutClient, *pSender, rank-2, pClassifier);
     
     return pResult;
 }
