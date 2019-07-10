@@ -45,10 +45,9 @@ public:
 private:
     CProcessingElement* createProcessingElement();
     CProcessingElement* createDataSource();        // Rank 0
-    CProcessingElement* createFanout();            // Rank 1
-    CProcessingElement* createWorker();            // Rank >=4
-    CProcessingElement* createSorter();            // Rank 2
-    CProcessingElement* createSink();              // Rank 3
+    CProcessingElement* createWorker();            // Rank >=3
+    CProcessingElement* createSorter();            // Rank 1
+    CProcessingElement* createSink();              // Rank 2
 };
 
 

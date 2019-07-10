@@ -59,15 +59,15 @@ CMPIClassifierApp::CMPIClassifierApp(
     
     int nProcs;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    if (nProcs < 5) {
-        std::cerr << "This program needs at least 5 processes to run\n";
+    if (nProcs < 4) {
+        std::cerr << "This program needs at least 4 processes to run\n";
         throw std::invalid_argument("Too few processes");
     }
     // If the # workers consistent with n procs then warn he user
     // that the n procs overrides... only warn in rank 1:
     
     int workerCount = args.workers_arg;
-    nProcs -= 4;
+    nProcs -= 3;
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
@@ -119,12 +119,9 @@ CMPIClassifierApp::createProcessingElement()
         pResult = createDataSource();
         break;
     case 1:
-        pResult = createFanout();
-        break;
-    case 2:
         pResult = createSorter();
         break;
-    case 3:
+    case 2:
         pResult = createSink();
         break;
     default:
@@ -145,26 +142,52 @@ CMPIClassifierApp::createDataSource()
     return new CRingItemMPIDataSource(m_params.source_arg, m_params.clump_size_arg);
 }
 
-CProcessingElement*
-CMPIClassifierApp::createFanout()
-{
-    // stub.
-}
 
+/**
+ * createWorker
+ *    Called to create a worker process.  This is called for ranks >
+ *    3.  We create the a fanout client transport for rank 0  and
+ *    associate it with a worker object.
+ *    Note that the classifier object needs to be gotten from the supplied
+ *    library.
+ */
 CProcessingElement*
 CMPIClassifierApp::createWorker()
 {
     // stub.
 }
-
+/**
+ * createSorter
+ *    Called for rank 1 - creates a recipient that sorts data and pushes
+ *    the sorted data to the sink.
+ */
 CProcessingElement*
 CMPIClassifierApp::createSorter()
 {
-    // stub
+    // Compute the number of workers:
+    
+    int nProcs;
+    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
+    int nWorkers = nProcs - 3;        // Three non worker procs.
+    
+    // Make a receiver transport and a sender transport that sends
+    // data to rank 2 (the sink).  Bind these into CReceiver and CSender objects:
+    
+    CMPITransport* pReceiverTransport = new CMPITransport();   // only receives.
+    CMPITransport* pSenderTransport   = new CMPITransport(2);  // Sends to 2.
+    
+    CReceiver* pReceiver = new CReceiver(*pReceiverTransport);
+    CSender*   pSender   = new CSender(*pSenderTransport);
+    
+    
+    // Note the window parameter is obsolete.
+    
+    CProcessingElement* pResult = new CRingItemSorter(*pReceiver, *pSender, 0, nWorkers);
+    return pResult;
 }
 
-CPRocssingElement*
-CMPIClassifierApp::creatSink()
+CProcessingElement*
+CMPIClassifierApp::createSink()
 {
     
     // Stub.
