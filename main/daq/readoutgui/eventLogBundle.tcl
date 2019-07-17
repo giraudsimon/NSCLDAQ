@@ -318,7 +318,7 @@ proc ::EventLog::_computeLoggerSwitches {{loggerVersion 1.0}} {
     
     #  Set the segment size:
     
-    append switches " --segmentsize [DAQParameters::getEventLoggerFileSegmentSize]"
+    append switches " --segmentsize=[DAQParameters::getEventLoggerFileSegmentSize]g"
     
     # Set the --prefix flag  
 #    append switches " --prefix=[::DAQParameters::getRunFilePrefix]"

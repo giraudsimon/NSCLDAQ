@@ -83,6 +83,7 @@ package require ReadoutGUIPanel
 package require snit
 package require csv
 package require stageareaValidation
+package require DAQParameters
 
 # Namespace to hold our variables:
 
@@ -161,6 +162,7 @@ snit::type EventLogger {
                 --oneshot --checksum                                \
                 --number-of-sources=$options(-sources)              \
                 --prefix=$timestamp-run                             \
+                --segmentsize=[DAQParameters::getEventLoggerFileSegmentSize]g \
             ]
 
             set loggerFd [open "| $command |& cat" r]
