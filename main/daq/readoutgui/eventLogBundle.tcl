@@ -316,6 +316,10 @@ proc ::EventLog::_computeLoggerSwitches {{loggerVersion 1.0}} {
         append switches " --run=$run"
     }
     
+    #  Set the segment size:
+    
+    append switches " --segmentsize [DAQParameters::getEventLoggerFileSegmentSize]"
+    
     # Set the --prefix flag  
 #    append switches " --prefix=[::DAQParameters::getRunFilePrefix]"
 
@@ -1025,6 +1029,7 @@ snit::widgetadaptor EventLog::RingBrowser {
 #      -forcerun  - Boolean... force the run number from GUI rather than using the
 #                   one in the begin event (used if no sources provide begin events.)
 #      -usechecksum - Boolean... start eventlogger with --checksum switch
+#      -segmentsize - size of segments in in gbytes -defaults to 2.
 #
 
 snit::widgetadaptor EventLog::ParameterPrompter {
@@ -1039,6 +1044,7 @@ snit::widgetadaptor EventLog::ParameterPrompter {
     option -usechecksum       
     option -stagearea
     option -prefix
+    option -segmentsize  -default 2;          # units are gigabytes.
     
     ##
     # constructor
@@ -1064,7 +1070,8 @@ snit::widgetadaptor EventLog::ParameterPrompter {
         set options(-forcerun)          [DAQParameters::getRunNumberOverrideFlag]
         set options(-usechecksum)       [DAQParameters::getUseChecksumFlag]
         set options(-stagearea)         [ExpFileSystem::getStageArea]
-        set options(-prefix)            [::DAQParameters::getRunFilePrefix] 
+        set options(-prefix)            [::DAQParameters::getRunFilePrefix]
+        set options(-segmentsize)       [::DAQParameters::getEventLoggerFileSegmentSize]
         
         
 
@@ -1080,6 +1087,9 @@ snit::widgetadaptor EventLog::ParameterPrompter {
             -textvariable [myvar options(-ring)] -width 40
         ttk::button $win.knownrings    \
             -text {Known Rings...} -command [mymethod _browseRings]
+        
+        ttk::spinbox $win.segsize -width 5 -from 2 -to 200 -textvariable [myvar options(-segmentsize)]
+        ttk::label $win.seglabel -text {seg. size GB}
         
         message $win.help -text "
 The next three settings are a bit advanced as they have to do with multiple \
@@ -1126,6 +1136,8 @@ NSCLDAQ-11.0 eventlog program or later. "
         grid $win.datasourcelabel $win.datasource $win.knownrings -sticky w
         grid $win.stageareaLbl $win.stageareaEntry $win.stageareaBrowse -sticky w
         grid $win.prefixLbl $win.prefixEntry -sticky e
+        grid $win.seglabel    -sticky e
+        grid $win.segsize -row 4 -column 1 -sticky w
         grid $win.help -columnspan 3 -sticky ew
         
         grid $f.usensrcs          -row 0 -column 0 -sticky w
@@ -1350,6 +1362,7 @@ proc EventLog::promptParameters {} {
         Configuration::Set EventLogAdditionalSources [$ctl.f cget -additionalsources]
         Configuration::Set EventLogUseGUIRunNumber   [$ctl.f cget -forcerun]
         Configuration::Set EventLogUseChecksumFlag   [$ctl.f cget -usechecksum]
+        Configuration::Set EventLogSegmentSize       [$ctl.f cget -segmentsize]
         set priorStageArea [Configuration::get StageArea]
         Configuration::Set StageArea                 [$ctl.f cget -stagearea]
         

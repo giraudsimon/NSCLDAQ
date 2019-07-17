@@ -407,6 +407,8 @@ snit::type ReadoutGuiApp {
         $state addStateVariable timedRun  [mymethod _getTimedRun]  [mymethod _setTimedRun]
         $state addStateVariable duration  [mymethod _getDuration]  [mymethod _setDuration]
         $state addStateVariable dataSources [mymethod _getSources] [mymethod _setSources]
+        $state addStateVariable segmentsize [mymethod _getSegmentSize] [mymethod _setSegmentSize]
+        
         
         # If the file exists restore it now (other parts of the app  have had
         # their chance by now to register state variable handlers)
@@ -449,6 +451,23 @@ snit::type ReadoutGuiApp {
     #
     #  Private methods:
     #
+    
+    ##
+    # _setSegmentSie
+    #   Set the run segment size during a restor
+    # @param name -state variable name
+    # @param value - parameter value.
+    #
+    method _setSegmentSize {name value} {
+        DAQParameters::setEventLoggerFileSegmentSize $value
+    }
+    ##
+    # _getSegmentSize
+    #  @return the file segment size for the statemanager to store.
+    #
+    method _getSegmentSize {name} {
+        return [DAQParameters::getEventLoggerFileSegmentSize]
+    }
     
     ##
     # _getRun

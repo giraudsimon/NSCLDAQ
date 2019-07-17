@@ -50,6 +50,7 @@ proc DAQParameters::setDefaults {} {
     Configuration::Set EventLogUseGUIRunNumber   0
     Configuration::Set EventLogUseChecksumFlag   1
     Configuration::Set EventLogRunFilePrefix     "run"
+    Configuration::Set EventLogSegmentSize       2;    #Gigabytes.
 }
 # DAQParameters::environmentOverrides
 #   Overrides the defaults with information from the environment
@@ -67,7 +68,24 @@ proc DAQParameters::environmentOverrides {} {
     Configuration::readEnvironment EventLogUseGUIRunNumber   EVENTLOGGER_USE_GUI_RUNNUM
     Configuration::readEnvironment EventLogUseChecksumFlag   EVENTLOGGER_USE_CHECKSUM_FLAG
     Configuration::readEnvironment EventLogRunFilePrefix     EVENTLOGGER_RUN_FILE_PREFIX
+    Configuration::readEnvironment EventLogSegmentSize       EVENTLOGGER_SEGMENT_GBYTES
     
+}
+
+##
+# DAQParameters::getEventLoggerFileSegmentSize
+#
+#  @return int - gbtes in eventlogger segment size.
+#
+proc DAQParameters::getEventLoggerFileSegmentSize {} {
+    return [Configuration::get EventLogSegmentSize]
+}
+##
+# DAQParameters::setEventLoggerFileSegmentSize
+#   @param gb - new gigabytes per event logger segment size.
+#
+proc DAQParameters::setEventLoggerFileSegmentSize {gb} {
+    Configuration::Set EventLogSegmentSize $gb
 }
 
 ##
