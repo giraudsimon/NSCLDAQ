@@ -103,7 +103,8 @@ libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
-BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h
+BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
+	transformer.c transformer.h
 
 swtriggerflags.c: swtriggerflags.h
 
@@ -115,10 +116,13 @@ eventfilterflags.c: eventfilterflags.h
 eventfilterflags.h: eventfilterflags.ggo
 	$(GENGETOPT) <@srcdir@/eventfilterflags.ggo -Feventfilterflags
 
+transformer.c: transformer.h
 
+transformer.h: transformer.ggo
+	$(GENGETOPT) <@srcdir@/transformer.ggo -Ftransformer
 
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
-	CommFramework.xml
+	CommFramework.xml transformer.ggo
 
 ####################################################################################
 # unit testing:
