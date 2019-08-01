@@ -7,6 +7,8 @@ MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 
 MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
 
+MPI_TRSRCS=
+
 if MPI
 
 #  Define the transport sources and headers.
@@ -32,7 +34,7 @@ endif
 
 lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la
 
-bin_PROGRAMS=SoftwareTrigger EventFilter
+bin_PROGRAMS=SoftwareTrigger EventFilter Transformer
 
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
@@ -98,6 +100,16 @@ EventFilter_Dependencies=libSwTrigger.la
 
 EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+
+
+
+Transformer_SOURCES=Transformer.cpp transformer.c transformer.h $(MPI_TRSRCS)
+
+Transformer_Dependencies=libSwTrigger.la
+
+Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)

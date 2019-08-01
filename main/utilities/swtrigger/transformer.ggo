@@ -12,5 +12,5 @@ option "workers" n "Number of classification workers" int default="1" optional
 option "clump-size" c "Number of ring items per work unit" int optional default="1"
 option "parallel-strategy" p "Parallelization strategy"
                 values="threaded","mpi" optional default="threaded"
-option "classifier" l "Path to shared library for the classifier" string typestr="filename"
+option "classifier" l "Path to shared library for the extension class" string typestr="filename"
 
