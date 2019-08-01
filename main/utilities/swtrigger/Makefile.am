@@ -103,12 +103,13 @@ EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
 
-Transformer_SOURCES=Transformer.cpp transformer.c transformer.h $(MPI_TRSRCS)
+Transformer_SOURCES=Transformer.cpp transformer.c transformer.h $(MPI_TRSRCS) \
+	CTransformerApp.cpp CTransformerApp.h
 
 Transformer_Dependencies=libSwTrigger.la
 
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
-Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
