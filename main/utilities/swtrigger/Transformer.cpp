@@ -26,7 +26,9 @@
 
 #include "CTransformerApp.h"
 #include "CZMQTransformerApp.h"
-
+#ifdef HAVE_MPI
+#include "CMPITransformerApp_mpi.h"
+#endif
 /**
  * The main program, like all of our main programs just parses
  * arguments, selects which application class to instantiate,
@@ -49,7 +51,7 @@ int main(int argc, char** argv)
         pApp = new CZMQTransformerApp(params);
     } else if (parallelizationStrategy == "mpi") {
 #ifdef HAVE_MPI
-        std::cerr << "MPI parallelization app still has to be written\n";
+        pApp = new CMPITransformerApp(argc, argv, params);
 #else
         std::cerr << "This version of NSCLDAQ is not MPI enabled\n";
         return EXIT_FAILURE;

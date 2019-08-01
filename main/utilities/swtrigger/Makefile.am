@@ -7,7 +7,7 @@ MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 
 MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
 
-MPI_TRSRCS=
+MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
 
 if MPI
 
