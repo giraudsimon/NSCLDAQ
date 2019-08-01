@@ -161,8 +161,8 @@ CZMQThreadedClassifierApp::operator()()
 
 /**
  * startWorkers
- *    - Get the classifier factory from the sll.
- *    - Create a worker threads that encapsulate a CRingMarkingWorker
+ *    - Get the classifier factory from the dll.
+ *    - Create a worker threads that encapsulate a CRingMarkingWorker objects.
  *      that uses the user classifier class.
  *    - Thread objects pointers are stored in m_workers and started.
  */
