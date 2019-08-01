@@ -24,6 +24,8 @@
 #include <string>
 #include <iostream>
 
+#include "CTransformerApp.h"
+
 /**
  * The main program, like all of our main programs just parses
  * arguments, selects which application class to instantiate,
@@ -40,6 +42,8 @@ int main(int argc, char** argv)
     cmdline_parser(argc, argv, &params);
     std::string parallelizationStrategy = params.parallel_strategy_arg;
     
+    CTransformerApp* pApp(nullptr);
+    
     if (parallelizationStrategy == "threaded") {
         std::cerr << "Threaded parallelization app still has to be written\n";
     } else if (parallelizationStrategy == "mpi") {
@@ -50,6 +54,10 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
 #endif
     }
+    
+    // IF we get here with a valid app we run it:
+    
+    if (pApp) (*pApp)();
     
     return EXIT_SUCCESS;
 }
