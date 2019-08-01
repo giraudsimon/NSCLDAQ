@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include "CTransformerApp.h"
+#include "CZMQTransformerApp.h"
 
 /**
  * The main program, like all of our main programs just parses
@@ -45,7 +46,7 @@ int main(int argc, char** argv)
     CTransformerApp* pApp(nullptr);
     
     if (parallelizationStrategy == "threaded") {
-        std::cerr << "Threaded parallelization app still has to be written\n";
+        pApp = new CZMQTransformerApp(params);
     } else if (parallelizationStrategy == "mpi") {
 #ifdef HAVE_MPI
         std::cerr << "MPI parallelization app still has to be written\n";
@@ -57,7 +58,7 @@ int main(int argc, char** argv)
     
     // IF we get here with a valid app we run it:
     
-    if (pApp) (*pApp)();
+    if (pApp) return (*pApp)();
     
     return EXIT_SUCCESS;
 }

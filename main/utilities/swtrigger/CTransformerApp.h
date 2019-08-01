@@ -53,7 +53,7 @@ public:
     CTransformerApp(gengetopt_args_info p) : m_params(p) {}
     virtual ~CTransformerApp() {}
     
-    virtual void operator()() = 0;                // Concrete class implement this.
+    virtual int operator()() = 0;                // Concrete class implement this.
 protected:
     ExtenderFactory getExtenderFactory();
 };

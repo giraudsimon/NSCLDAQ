@@ -104,7 +104,10 @@ EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
 Transformer_SOURCES=Transformer.cpp transformer.c transformer.h $(MPI_TRSRCS) \
-	CTransformerApp.cpp CTransformerApp.h
+	CTransformerApp.cpp CTransformerApp.h \
+	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
+        CRingBlockDataSink.cpp 				\
+	CZMQTransformerApp.cpp CZMQTransformerApp.h
 
 Transformer_Dependencies=libSwTrigger.la
 
