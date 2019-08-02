@@ -52,6 +52,7 @@ public:
 private:
     CRingItemExtender* m_pExtender;    // Concrete extender object.
     uint32_t           m_nId;          // My identifier.
+    size_t             m_nBlocks;
     
     iovec*             m_pIoVectors;
     size_t             m_nIoVectorCount;

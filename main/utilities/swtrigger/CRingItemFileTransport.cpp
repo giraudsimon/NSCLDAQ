@@ -30,7 +30,7 @@
 #include <new>
 #include <stdexcept>
 
-static const size_t READ_SIZE(8192);
+static const size_t READ_SIZE(32*1024*1024);          // Big reads.
 
 /**
  * constructor (read)

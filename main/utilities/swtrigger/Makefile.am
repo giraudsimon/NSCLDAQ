@@ -32,7 +32,7 @@ CXXLD=$(MPICXX)
 
 endif
 
-lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la
+lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la libTestExtender.la
 
 bin_PROGRAMS=SoftwareTrigger EventFilter Transformer
 
@@ -118,6 +118,11 @@ Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+
+libTestExtender_la_SOURCES=CTestExtender.cpp
+libTestExtender_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
 	transformer.c transformer.h

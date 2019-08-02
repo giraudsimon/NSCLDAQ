@@ -36,9 +36,11 @@
  * some useful types:
  */
 
-// The first iovect in each ring item points to this.
+// The first iovect in each ring item points to this-- note the timestamp
+// is put there by the reader.
 
 typedef struct __attribute__(__packed__)) _EventHeader {
+    uint64_t             s_timestamp;  
     RingItemHeader       s_ringHeader;
     BodyHeader           s_bodyHeader;
     uint32_t             s_evbBodySize;
@@ -52,6 +54,8 @@ typedef struct __attribute__(__packed__)) _FragmentItem {
     EVB::FragmentHeader   s_fragHeader;
     RingItemHeader        s_ringItemHeader;
 } FragmentItem, *pFragmentItem;
+
+
 
 /**
  * constructor
@@ -68,6 +72,7 @@ CBuiltRingItemExtender::CBuiltRingItemExtender(
     CRingItemExtender* pExtender
 ) :
     CParallelWorker(fanin, sink, clientId), m_pExtender(pExtender), m_nId(clientId),
+    m_nBlocks(0),
     m_pIoVectors(nullptr), m_nIoVectorCount(0), m_nUsedIoVectors(0)
 {}
 
@@ -122,59 +127,80 @@ CBuiltRingItemExtender::process(void* pData, size_t nBytes)
         void* pItem = pData;
         for (int i =0; i < nRingItems; i++) {
             
-            // For each ring item we have an I/Vec for the
-            // data in the ring item header, its body header and the
-            // event builder body size.  We'll also hold a pointer to that
-            // data so that we can adjust sizes as extensions are added:
-            
-            m_pIoVectors[m_nUsedIoVectors].iov_base = pData;
-            m_pIoVectors[m_nUsedIoVectors].iov_len  = sizeof(EventHeader);
-            m_nUsedIoVectors++;
-            
             pEventHeader pItemHeader = static_cast<pEventHeader>(pData);
             
-            // Now we need to  loop over the fragments in each event giving
-            // the extender a chance to add an extension to the fragment:
             
-            void* pEvent = reinterpret_cast<void*>(&(pItemHeader->s_evbBodySize));
-            size_t nFragments = countFragments(pEvent);
-            void*  pFrag      = firstFragment(pEvent);
             
-            for (int i =0; i < nFragments; i++) {
-                // The fragment points to something like:
+            
+            if (pItemHeader->s_ringHeader.s_type == PHYSICS_EVENT) {
+                // For each ring item we have an I/Vec for the
+                // data in the ring item header, its body header and the
+                // event builder body size.  We'll also hold a pointer to that
+                // data so that we can adjust sizes as extensions are added:
                 
-                pFragmentItem pFragFront = static_cast<pFragmentItem>(pFrag);
                 
-                // The iovec for the fragment as a whole:
-                
-                m_pIoVectors[m_nUsedIoVectors].iov_base =  pFrag;
-                m_pIoVectors[m_nUsedIoVectors].iov_len  =
-                    sizeof(EVB::FragmentHeader) +
-                    pFragFront->s_ringItemHeader.s_size;
+                m_pIoVectors[m_nUsedIoVectors].iov_base = pData;
+                m_pIoVectors[m_nUsedIoVectors].iov_len  = sizeof(EventHeader);
                 m_nUsedIoVectors++;
+
                 
-                pRingItem pFragmentRingItem =
-                    reinterpret_cast<pRingItem>(&(pFragFront->s_ringItemHeader));
-                iovec extension = (*m_pExtender)(pFragmentRingItem);
+                // Now we need to  loop over the fragments in each event giving
+                // the extender a chance to add an extension to the fragment:
                 
-                // There's an extension if the size is nonzero:
+                void* pEvent = reinterpret_cast<void*>(&(pItemHeader->s_evbBodySize));
+                size_t nFragments = countFragments(pEvent);
+                void*  pFrag      = firstFragment(pEvent);
                 
-                if(extension.iov_len) {
-                    m_pIoVectors[m_nUsedIoVectors] = extension;
+                // Since we're going to corrupt the ring item sizes etc. we need
+                // to do this before iterating over the fragments:
+                
+                pData = nextItem(pData);
+                
+                for (int j =0; j < nFragments; j++) {
+                    // The fragment points to something like:
+                    
+                    pFragmentItem pFragFront = static_cast<pFragmentItem>(pFrag);
+                    
+                    // The iovec for the fragment as a whole:
+                    
+                    m_pIoVectors[m_nUsedIoVectors].iov_base =  pFrag;
+                    m_pIoVectors[m_nUsedIoVectors].iov_len  =
+                        sizeof(EVB::FragmentHeader) +
+                        pFragFront->s_ringItemHeader.s_size;
                     m_nUsedIoVectors++;
-                    extensions.push_back(extension);
                     
-                    // Adjust the sizes:
+                    pRingItem pFragmentRingItem =
+                        reinterpret_cast<pRingItem>(&(pFragFront->s_ringItemHeader));
+                    iovec extension = (*m_pExtender)(pFragmentRingItem);
                     
-                    pItemHeader->s_evbBodySize += extension.iov_len;     // EVB size,
-                    pFragFront->s_ringItemHeader.s_size += extension.iov_len; // Current fragment ringitem.
-                    pItemHeader->s_ringHeader.s_size += extension.iov_len;  // full ring .
+                    // There's an extension if the size is nonzero:
+                    
+                    pFrag = nextFragment(pFrag);    // Need to do this before adjustments tosize.
+                    if(extension.iov_len) {
+                        m_pIoVectors[m_nUsedIoVectors] = extension;
+                        m_nUsedIoVectors++;
+                        extensions.push_back(extension);
+                        
+                        // Adjust the sizes:
+                        
+                        pItemHeader->s_evbBodySize += extension.iov_len;     // EVB size,
+                        pFragFront->s_ringItemHeader.s_size += extension.iov_len; // Current fragment ringitem.
+                        pFragFront->s_fragHeader.s_size     += extension.iov_len; // Fragment payload size.
+                        pItemHeader->s_ringHeader.s_size += extension.iov_len;  // full ring .
+                    }
+                    
+                    
                 }
+            } else {
+                // Non physics items are just tossed out as a single beast:
                 
-                pFrag = nextFragment(pFrag);
+                m_pIoVectors[m_nUsedIoVectors].iov_base = pData;
+                m_pIoVectors[m_nUsedIoVectors].iov_len
+                    = sizeof(uint64_t)  + pItemHeader->s_ringHeader.s_size;
+                m_nUsedIoVectors++;
+                pData = nextItem(pData);
             }
             
-            pItem = nextItem(pItem);
         }
         // At this point, the IOVec has been built and m_nUsedIoVectors is the
         // number of vectors.  Send the message then free the extension data:
@@ -186,6 +212,7 @@ CBuiltRingItemExtender::process(void* pData, size_t nBytes)
     } else {
         getSink()->sendMessage(&m_nId, sizeof(m_nId));  // end of data for our id.
     }
+    m_nBlocks++;    
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
@@ -203,7 +230,7 @@ CBuiltRingItemExtender::countItems(const void* pData, size_t nBytes)
     while (nBytes) {
         result++;
         const EventHeader* p = static_cast<const EventHeader*>(pData);
-        nBytes -= p->s_ringHeader.s_size;
+        nBytes -= p->s_ringHeader.s_size + sizeof(uint64_t);
         
         pData = nextItem(pData);
     }
@@ -222,7 +249,7 @@ CBuiltRingItemExtender::nextItem(const void* pData)
 {
     const EventHeader* pItem = static_cast<const EventHeader*>(pData);
     uint8_t*  p = reinterpret_cast<uint8_t*>(const_cast<pEventHeader>(pItem));
-    p += pItem->s_ringHeader.s_size;
+    p += pItem->s_ringHeader.s_size + sizeof(uint64_t);
     
     return p;
 }
@@ -255,7 +282,7 @@ CBuiltRingItemExtender::countFragments(const void* pEvent)
 {
     const uint32_t* p = static_cast<const uint32_t*>(pEvent);
     size_t nBytes = *p;
-    nBytes--;                        // Self Counting.
+    nBytes -= sizeof(uint32_t);                        // Self Counting.
     
     void* pFrag = firstFragment(pEvent);
     size_t result(0);
@@ -263,9 +290,9 @@ CBuiltRingItemExtender::countFragments(const void* pEvent)
     while(nBytes) {
         result++;
         pFragmentItem pItem = static_cast<pFragmentItem>(pFrag);
-        result += pItem->s_ringItemHeader.s_size + sizeof(EVB::FragmentHeader);
         
         pFrag = nextFragment(pFrag);
+        nBytes -= sizeof(EVB::FragmentHeader) + pItem->s_ringItemHeader.s_size;
     }
     
     return result;
@@ -304,15 +331,19 @@ CBuiltRingItemExtender::iovecsNeeded(const void* pData, size_t nBytes)
     result += nRingItems;              // Each Event needs one item.
     
     for (int i =0; i < nRingItems; i++) {
+                           // Need one for the event or header.
         const EventHeader* pEventHdr = static_cast<const EventHeader*>(pData);
-        const void* pBody             = &(pEventHdr->s_evbBodySize);
-        size_t frags = countFragments(pBody);
-        
-        // Each fragment needs at most two iovecs:
-        
-        result += frags*2;
+        if (pEventHdr->s_ringHeader.s_type == PHYSICS_EVENT) {
+            const void* pBody             = &(pEventHdr->s_evbBodySize);
+            size_t frags = countFragments(pBody);
+            
+            // Each fragment needs at most two iovecs:
+            
+            result += frags*2;
+        }                             // Only physics event have fragments.
+        pData = nextItem(pData);
     }
-    
+
     return result;
 }
 /**
