@@ -51,7 +51,7 @@ CRingItemZMQSourceElement::CRingItemZMQSourceElement(
     size_t chunkSize
 ) :
     CRingItemBlockSourceElement(
-        rintUri, *(new CZMQRouterTransport(routerUri)),
+        ringUri, *(new CZMQRouterTransport(routerUri)),
         chunkSize
     )
 {}
