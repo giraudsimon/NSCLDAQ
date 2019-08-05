@@ -23,7 +23,7 @@ MPI_TRANSPORT_HDRS=$(MPI_THDRS)
 
 MPI_SoftwareTrigger_SRCS= $(MPI_SWTSRCS)
 
-
+MPI_Transformer_SRCS=$(MPI_TRSRCS)
 
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.
@@ -77,7 +77,7 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h CNullTransport.h \
 	CFanoutTransport.h CGather.h CBuiltRingItemExtender.h \
-	$(MPI_TRANSPORT_HDRS)
+	$(MPI_TRANSPORT_HDS)
 
 
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
@@ -103,7 +103,8 @@ EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
 
-Transformer_SOURCES=Transformer.cpp transformer.c transformer.h $(MPI_TRSRCS) \
+Transformer_SOURCES=Transformer.cpp transformer.c transformer.h \
+	$(MPI_Transformer_SRCS)  \
 	CTransformerApp.cpp CTransformerApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp 				\
