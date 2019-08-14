@@ -126,7 +126,12 @@ libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
-	transformer.c transformer.h
+	transformer.c transformer.h eventeditor.h eventeditor.c
+
+eventeditor.c: eventeditor.h
+
+eventeditor.h: eventeditor.ggo
+	$(GENGETOPT) <@srcdir@/eventeditor.ggo -Feventeditor
 
 swtriggerflags.c: swtriggerflags.h
 
