@@ -63,6 +63,14 @@
                 How to compile and link programs using this library.
             </para>
         </listitem>
+        <listitem>
+            <para>
+                Describe a program that uses the library,
+                <application>Transformer</application> that allows you
+                to append arbitrary data to fragments of data from an event
+                builder.
+            </para>
+        </listitem>
     </itemizedlist>
     <section>
         <title>Concepts and classes</title>
@@ -366,8 +374,1153 @@ if (!pZmqFactory) {
         </informalexample> 
     </section>
 </chapter>
+<chapter>
+    <title>Transformer</title>
+    <para>
+        Sometimes it's useful to perform some cmoputations on an NSCLDAQ event
+        file and append data to parts of the event.  <application>Transformer</application>
+        provides the ability to add an arbitrary extension to fragments of event
+        built data. It is a parallel program that runs on top of the
+        communication framework we've been describing.
+    </para>
+    <para>
+        The program consists of an input stage, a set of parallel workers that
+        can add extension to event fragments, a sorter that resorts the ouptut
+        of the workers back into time stamp ordered events.  The pipeline of input
+        workers sorting and output are parallel processes as is each worker.
+    </para>
+    <para>
+        Transformer allows you to write the code needed to compute the extension
+        for any single event fragment.  This code does not have to be
+        MPI or thread-aware though it must be thread-safe.  This code is built
+        into a shared library which is loaded by <application>Transformer</application>
+        at run time.
+    </para>
+    <para>
+        The remainder of this chapter
+    </para>
+    <orderedlist>
+        <listitem>
+            <para>
+                Describes what your shared library must provide.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                Describes how to build your shared library.
+            </para>
+        </listitem>
+
+    </orderedlist>
+    <note>
+        <title>NOTE:</title>
+        <para>
+            The Transformer man page in 1daq desribes how to run the
+            program.
+            <classname>CBuiltRingItemExtender</classname>'s manpage
+            describes the interfes needed by Transfomer.
+        </para>
+    </note>
+    <section>
+        <title>User shared libraries for Transformer</title>
+        <para>
+            The Transformer uses a set of parallel workers to compute the
+            actual extension.  The workers receive blocks of events an
+            parcel them off to instances of a <classname>CBuiltRingItemExtender</classname>.
+            Each of those instances walks the event fragments in the event
+            providing the fragment's ring item to user code embedded in
+            a concrete subclass of
+            <classname>CBuiltRingItemExtender::CRingItemExtender</classname>.
+            The user code must implement the following methods:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>iovec</type>
+                        <methodname>operator()</methodname>
+                        <methodparam>
+                            <type>pRingItem</type><parameter>item</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Takes the ring item of an event fragment as input and
+                        computes the extension for that event fragment. The
+                        return value is an <structname>iovec</structname>
+                        See the <literal>writev(2)</literal> man page
+                        for a description of that struct.
+                    </para>
+                    <para>
+                        If the length of the extension returned is zero,
+                        no extension will be added.
+                    </para>
+                    <para>
+                        Refer to <literal>DataFormat.h(3daq)</literal>
+                        for information about the <type>pRingItem</type>
+                        data type.  
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>void</type>
+                        <methodname>free</methodname>
+                        <methodparam>
+                            <type>iovec&</type><parameter>extension</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Since all extension data must remain valid until the
+                        entire event has been formatted, you may find that you
+                        need to use dynamic memory to hold your extensions.
+                        After an event has been formatted and sent to the
+                        sorter, this method is called once for each fragment
+                        passing in the iovec as <parameter>extension</parameter>
+                        that was returned by <methodname>operator()</methodname>.
+                        This method is expected to free any dynamic data  that
+                        was created to hold that extension data.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            In addition to a concrete extension class, your shared library
+            must provide a factory method the Transforme uses to create
+            instances of your class.  Each worker gets its own class instance.
+        </para>
+    </section>
+    <section>
+        <title>Building the use shared library</title>
+        <para>
+            This section walks through coding and building the
+            <filename>libTestExtender.so</filename> that's included with
+            NSCLDAQ as a demonstration.  This code works with Transformer
+            to provide a 16 bit checksum bracketed by flag words for each
+            fragment in the event.  You can see the sample user code in its
+	    entirety at sf.net/projects/nscldaq in the project's source tree
+	    in the file
+	    <filename>main/utilities/swtrigger/CTestExtender.cpp</filename>.
+	    
+        </para>
+	<para>
+	  Let's start with the class definition:
+	</para>
+	<example>
+	  <title>CTestExtender class definition</title>
+	  <programlisting>
+class CTestExtender : public CBuiltRingItemExtender::CRingItemExtender
+{
+private:
+   struct Extension {
+      uint16_t  s_header;
+      uint16_t  s_checksum;     <co id='textend.extensiondef' />
+      uint16_t s_trailer;
+      
+      Extension() {
+         s_header = 0xa5a5;
+        s_checksum = 0;       <co id='textend.init' />
+        s_trailer = 0x5a5a;
+      }   
+   };
+
+public:
+   iovec operator()(pRingItem item);  <co id='textend.functor' />
+   void free(iovec&amp; e);           <co id='textend.free' />
+};
+	  </programlisting>
+	</example>
+    <calloutlist>
+        <callout arearefs='textend.extensiondef'>
+            <para>
+                This struct represents the data we'll be tacking on the end of
+                each fragment of the event.  It's once more important to note
+                that:
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            The program only works on event built data.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            Our caller will iterate over the fragments in each
+                            event and call us once for <emphasis>each</emphasis>
+                            fragment in the event.  Of course there's nothing
+                            to prevent us from not extending all the fragments.
+                            We'll get into how to do that later in the section.
+                        </para>
+                    </listitem>
+                </itemizedlist>
+            </para>
+        </callout>
+        <callout arearefs='textend.init'>
+            <para>
+                In C++ structs like classes can have constructors.  This
+                constructor just initializes the header and trailer items
+                to alternating bit set/clear patterns and the checkusm to zero.
+                
+            </para>
+            <para>
+                Doing that here avoids cluttering the actual code that uses
+                this extension with initialization code.  It also means
+                that in the event we use this struct in more than one location
+                we won't be repeating initialization code.
+            </para>
+        </callout>
+        <callout arearefs='textend.functor'>
+            <para>
+                The function call operator must be implemented by all concrete
+                subclasses of <classname>CBuiltRingItemExtender::CRingItemExtender</classname>.
+                this method is what will be called to provide an extension.
+            </para>
+            <para>
+                The function call operator must return an <structname>iovec</structname>
+                struct.  This structure is defined in the
+                <literal>writev(2)</literal> manpage.  Fill in the
+                <structfield>iov_len</structfield> field to be the size of
+                the extension and the <structfield>iov_base</structfield> pointer
+                to point to your extension.  If you are not providing an extension
+                for a fragment, set  <structfield>iov_len</structfield> to
+                <literal>0</literal>.
+            </para>
+        </callout>
+        <callout arearefs='textend.free'>
+            <para>
+                The program will collect all extensions and weave them into the
+                output event once the event has been fully processed.  Therefore,
+                the data passed back must have a lifetime that runs over the
+                processing of the entire event, rather than just a single
+                fragment.  This means specifically, you
+                <emphasis>cannot</emphasis> have a single instance of the
+                extension struct which you fill in over and over again for
+                each fragment.
+            </para>
+            <para>
+                More usually, you'll dynamically allocate the extensions
+                (e.g. with <literal>new</literal>).   Once the event is
+                processed, the framework iterates over all extensions it was
+                given for that event, calling <methodname>free</methodname>
+                passing a reference to an iov that is a copy of the one
+                returned from a call to <methodname>operator()</methodname>
+                for that fragment.  You should not make any assumptions about
+                the order in which the <structname>iovec</structname>
+                structs are passed to <methodname>free</methodname>.
+            </para>
+            <para>
+                The expectation is that you will release any dynamic storage
+                allocated for the extension provided to you.
+            </para>
+        </callout>
+	</calloutlist>
+    <para>
+        The implementation section of the code consists of two segments.
+        The first segment implements the class methods of
+        <classname>CTestExtender</classname>.  Having the class defined
+        and implemented is not sufficient, however.  You must also provide
+        a mechanism for the framework to create instances of that class.
+        To do this you must provide a
+        <firstterm>factory function</firstterm> the framework can locate
+        after it has loaded your shared library into the program.
+    </para>
+    <para>
+        Let's look at the implementation of the <classname>CTestExtender</classname>
+        first:
+    </para>
+    <example>
+        <title><classname>CTestExtender</classname> implementation</title>
+        <programlisting>
+iovec
+CTestExtender::operator()(pRingItem item)   <co id='text.functor.impl' />
+{
+    iovec result;
+    result.iov_len = sizeof(Extension);
+    Extension* p   = new Extension;        <co id='text.functor.init' />
+    result.iov_base= p;
+
+
+    uint16_t* pItem = reinterpret_cast&lt;uint16_t*&gt;(item);
+    for (int i =0; i < item->s_header.s_size/sizeof(uint16_t); i++) { <co id='text.functor.cksum' />
+        p-&gt;s_checksum+= *pItem++;
+    }
+
+    return result;                                            <co id='text.functor.return' />
+}
+
+
+void
+CTestExtender::free(iovec&amp; extension)                 <co id='text.free.impl' />
+{
+    Extension* pExt = static_cast&lt;Extension*&gt;(extension.iov_base); <co id='text.free.cast'/>
+    delete pExt;                                         <co id='text.free.delete' />
+}
+
+
+            
+        </programlisting>
+    </example>
+    <calloutlist>
+        <title>The <methodname>operator()</methodname> method implementation.</title>
+        <callout arearefs='text.functor.impl'>
+            <para>
+                This begins the implementation of the <methodname>operator()</methodname>
+                method.  Recall that this method recevies a pointer to a
+                 ring item that is an event fragment and is expected to
+                 return a description of the extension it creates for that fragment.
+            </para>
+            <para>
+                The extension is described by an <structname>iovec</structname>
+                structure.  This struct has two fields:
+                <variablelist>
+                    <varlistentry>
+                        <term><structfield>iov_base</structfield></term>
+                        <listitem>
+                            <para>
+                                Should be filled in with a pointer to the
+                                extension.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><structfield>iov_len</structfield></term>
+                        <listitem>
+                            <para>
+                                Should be filled in with the size of the
+                                extension.  If you don't want to add
+                                an extension to this fragment, set
+                                <structfield>iov_len</structfield> to zero.
+                                In that case, <structfield>iov_base</structfield>
+                                is ignored.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </para>
+        </callout>
+        <callout arearefs='text.functor.impl'>
+            <para>
+                This chunk of code defines and initializes the
+                function return value <varname>result</varname> to point
+                to a newly created extension (recall the constructor we wrote
+                will initialize that storage), and sets the lengt to be the
+                size of that extension.
+            </para>
+        </callout>
+        <callout arearefs='text.functor.cksum'>
+            <para>
+                This code computes the checksum into the extension. Recall that
+                our constructor initialized that checksum to zero so we can
+                directly sum the checksum into that cell.  Note the checksum
+                does not include the extension.
+            </para>
+        </callout>
+        <callout arearefs='text.functor.return'>
+            <para>
+                The <structname>iovec</structname> <varname>result</varname>
+                is returned.  Note that since the extension itself was dynamically
+                created we've satisfied the lifetime requirement of the extension.
+                It will remain in scope until explicitly deleted (see
+                <methodname>free</methodname> below).
+            </para>
+        </callout>
+    </calloutlist>
+    <calloutlist>
+        <title>The <methodname>free</methodname> method implementation.</title>
+        <callout arearefs='text.free.impl'>
+            <para>
+                This is the implementation of the <methodname>free</methodname>
+                method.  Recall that this method is obligated to destroy any
+                dynamic storage allocated for a single extension.  The
+                extension to destroy is described by the parameter
+                <parameter>extension</parameter> wich is a reference to an
+                <structname>iovec</structname>.
+            </para>
+            <para>
+                The <structfield>iov_base</structfield> pointer points to an
+                extension returned by <methodname>operator()</methodname>.
+                The <structfield>iov_len</structfield> holds the length of the
+                extension.
+            </para>
+        </callout>
+        <callout arearefs='text.free.cast'>
+            <para>
+                This casts the pointer in <structfield>iov_base</structfield>
+                to point to one of our <structname>Extension</structname>
+                structs.  If different fragments can get different
+                extensions there are several strategies you can use to
+                allocate free:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        You can always use
+                        <function>malloc/free</function> to allocate
+                        storage.  In that case, however, you'll have to manually
+                        initialize the storage as calling a constructor is
+                        value that's added by <literal>new/delete</literal>.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        You can use <structfield>iov_len</structfield> to
+                        differentiate between the types of extension and do a
+                        cast as we've done, depending on the length of the
+                        object you need to delete.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        You can make put all the extension definitions in a
+                        class/struct hierarchy with an abstract base and
+                        virtual destructors.   If you then cast the
+                        <structfield>iov_base</structfield> to point at a
+                        base class/struct item, <literal>delete</literal>
+                        will use the virtual destructor and class hierarchy
+                        information to do the right thing.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </callout>
+    </calloutlist>
+    <para>
+        Let's look at the factory function.  It's actually dirt simple but there
+        is one subtlety we need to demonstrate.
+    </para>
+    <example>
+        <title>The factory function</title>
+        <programlisting>
+extern "C" {                       <co id='text.factory.externc' />
+    CTestExtender* createExtender() { <co id='text.factory.name'/>
+        return new CTestExtender;     <co id='text.factory.creation'/>
+    }
+
+}
+        </programlisting>
+    </example>
+    <calloutlist>
+        <callout arearefs='text.factory.externc'>
+            <para>
+                An important point is that this function is one that the
+                framework must be able to locate in the shared object. We
+                ensure that in two ways:
+            </para>
+            <itemizedlist>
+                <listitem>
+                    <para>
+                        Using a specific name (<function>createExtender</function>).
+                        In other extension architectures (e.g. Tcl), the external
+                        entry point is derived from the name of the shared object.
+                        In our case, we only have one shared object to load,
+                        so a fixed, required name is good enough.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Using C external bindings.  In C++, function/method
+                        overloading is handled by <firstterm>mangling</firstterm>
+                        the actual function name.  Name mangling decorates
+                        the base function name with other information.                        
+                    </para>
+                    <para>
+                        For
+                        example with g++, <methodname>CTestExtender::free</methodname>,
+                        becomes
+                        <literal> _ZN13CTestExtender4freeER5iovec</literal>.
+                        If you squint at this long enough you can see that
+                        the decorations include the class in which this
+                        function is defined and the type of parameter passed to it.
+                    </para>
+                    <para>
+                        This name mangling is compiler dependent and can even by
+                        compiler version dependent.  There's no standard for it.
+                        Therefore the safest thing to do is to turn it off.
+                        The <literal>extern "C" </literal> declaration indicates
+                        to the compiler it should use C external bindings for
+                        names in the block it covers.  Thus our factory
+                        function is not mangled.
+                    </para>
+                </listitem>
+            </itemizedlist>
+        </callout>
+        <callout arearefs='text.factory.name'>
+            <para>
+                As describe previously,  the name of our factory
+                function <emphasis>must</emphasis> be
+                <function>createExtender</function>.  The framework
+                will call it when it needs an instance of our extender class.
+                In practice this is once per worker. 
+            </para>
+            <para>
+                In fact when the parallelization strategy is
+                <literal>mpi</literal> only worker processes will
+                need extension objects and only one per process is needed.
+                However if the parallelization strategy is
+                <literal>threaded</literal> each worker thread will need
+                its own extension object.
+            </para>
+        </callout>
+        <callout arearefs='text.factory.creation'>
+            <para>
+                The actual implementation is simple. <literal>new</literal>
+                is used to create a new instance of the object and a pointer to
+                that object is returned to the caller.  Note that in general,
+                the lifetime of the object will be the lifetime of the application.
+                It will not be destroyed.
+            </para>
+            <para>
+                In the rare cases your extenders do need to be cleanly destroyed,
+                there is a mechanism to do that.  You can have a class
+                that contains a vector or list of objects created and whose
+                destructor deletes the created objects.  An instance of that
+                class can be created statically.  The factory function
+                then registers each object it creates prior to returning it.
+                At program termination time, the static object's destructor is
+                called by the C++ run time and it can run through the registry
+                of objects deleteing each of them.
+                In most (all?) cases this is <emphasis>not necessary</emphasis>.
+            </para>
+        </callout>
+    </calloutlist>
+    <para>
+        Ok, we have code for our extender.  How do we build it into a shared
+        library.    There's no single recipe as the actual compilation and
+        link commands will depend on the needs of the library.  There are only
+        two requirements:
+    </para>
+    <orderedlist>
+        <listitem>
+            <para>
+                At compile time, the compiler must generate position independent
+                code.  This is because the actual address at which the library
+                will be loaded is determined at run time.  To do this use the
+                <option>-fPIC</option> option on on the compilation command line.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                At link time, the linker must be told to create a shared object.
+                This requires that you supply the <option>-shared</option> on the
+                linker command line. You must also use the
+                <option>-o</option> flag to specify the name of the shared object.
+                If you do not do so, the linker will produce a file named
+                <literal>a.out</literal> by default.
+            </para>
+        </listitem>
+    </orderedlist>
+    <para>
+        Note that the compiler and linker are both generally <command>g++</command>.
+    </para>
+    </section>
+</chapter>
 
 <!-- /chapter -->
+
+<!-- manpage 1daq -->
+
+<refentry>
+    <refmeta>
+        <refentrytitle>SoftwareTrigger</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>SoftwareTrigger</refname>
+        <refpurpose>Classify events for later filtering in the software trigger.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+$DAQBIN/SoftwareTrigger <optional>OPTIONS</optional>...
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This program is classifies events for later filtering.
+            It operates by sending blocks of data to a set of parallel
+            workers.  The workers add an extra
+            <type>uint32_t</type> to the event body headers.
+            The events are then resorted by timestamp and output to some
+            event sink.  
+        </para>
+        <para>
+            The classification is done by loading a shared library provided
+            by the user.  the shared library provides a classification class
+            and a factory function that creates the instances of that
+            class needed by the application.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Most options are mandatory.  Optional options are indicated.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><option>--help</option> (optional)</term>
+                <listitem>
+                    <para>
+                        Prints brief program help text to stdout.  After printing
+                        the help text, the program exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--help</option> (optional)</term>
+                <listitem>
+                    <para>
+                        Prints out the program's version to stdout. Once the
+                        version is output, the program exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--source</option>=URI</term>
+                <listitem>
+                    <para>
+                        A file or tcp URI that specifies where data will come from.
+                        Data are analyzed and sent to the sink as long as there
+                         is no end indication from the source.  Note that this
+                         means that for ring buffers, the program will run
+                         indefinitely.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sink</option>=URI</term>
+                <listitem>
+                    <para>
+                        A file or tcp URI that specifies where the output
+                        data will be written. Note that if this is a
+                        tcp URI, the host must be local else an error
+                        will abort the program.  
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--workers</option>=integer (optional)</term>
+                <listitem>
+                    <para>
+                        Specifies the number of parallel workers to be used in threaded
+                        parallelism.  Note that for MPI parallelism, the
+                        <option>-np</option> option on <command>mpirun</command>
+                        can override this value.
+                    </para>
+                    <para>
+                        If not provided, the value of this option defaults to
+                        <literal>1</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--clump-size</option>=integer</term>
+                <listitem>
+                    <para>
+                        Specifies the number of ring items that make up a work unit
+                        passed to the workers.  If not supplied, this defaults to
+                        1 which is almost certainly not optimal both for communication
+                        and for post worker timestamp ordering.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--classifier</option>=filename</term>
+                <listitem>
+                    <para>
+                        Provides the path to the shared object that will be loaded.
+                        See <literal>CLASSIFIER LIBRARY</literal> below for more
+                        information on what that library must contain.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--parallel-strategy</option> = threaded | mpi</term>
+                <listitem>
+                    <para>
+                        Specifies the parallelization strategy/communications
+                        infrastructure used.  If <literal>threaded</literal>,
+                        all operations are performed on the same system using threading
+                        to gain parallelism.  Each worker is a thread.   In addition
+                        there are, one each, threads for input,time stamp reordering
+                        and output.
+                    </para>
+                    <para>
+                        Note that if <literal>mpi</literal> is selected, you must
+                        run the program with <command>mpirun</command>.  The
+                        <command>mpirun</command> <option>-np</option> option
+                        will be in conflict with th <option>--workers</option>
+                        if it is not <literal>numworkers + 3</literal>.  If this is
+                        not the case but there are still sufficient processes to
+                        run at least one worker, <option>-np</option> overrides
+                        <option>--workers</option>.   A message is output
+                        indicating this was done, and the application continues.
+                        If <option>-np</option> is less than <literal>4</literal>,
+                        the mininmum number of processes needed for at least one
+                        worker, an error message is output and the application exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+
+    </refsect1>
+    <refsect1>
+        <title>CLASSIFIER LIBRARY</title>
+        <para>
+            In order to incorporate user written classifiers, the user must
+            provide a shared library specified by the <option>--classifier</option>
+            option.  This shared library must include both an implementation
+            of a concrete subclass of <classname>CRingMarkingWorker::Classifier</classname>
+            defined in <filename>CRingItemMarkingWorker.h</filename>, and a factory
+            function with C external bindings named <function>createClassifier</function>
+            that can create instances of the classifier.
+        </para>
+        <para>
+            The classifier must implement a method
+        </para>
+        <blockquote>
+<methodsynopsis>
+    <modifier>virtual</modifier>
+    <type>uint32_t</type>
+    <methodname>operator()</methodname>
+    <methodparam>
+        <type>CRingItem&amp;</type><parameter>item</parameter>
+    </methodparam>
+    <modifier></modifier>
+</methodsynopsis>
+        </blockquote>
+        <para>
+            This method is expected to produce a <type>uint32_t</type> classification
+            value for the <classname>CRingItem</classname> object referenced
+            by <parameter>item</parameter>.  The resulting classification
+            is appended to the body header and sizes are all adjusted to
+            make everything look good.
+        </para>
+        <para>
+            Here's an example of a factory function that produces
+            a <classname>TestClassifier</classname> object:
+        </para>
+        <informalexample>
+            <programlisting>
+extern "C" {
+
+CRingMarkingWorker::Classifier* createClassifier() {
+    return new TestClassifier;
+}
+}
+
+            </programlisting>
+            <para>
+                Note the use of <literal>extern "C"</literal> to remove
+                C++ name mangling.  The function just creates a new classifier
+                and returns a pointer to it.
+            </para>
+        </informalexample>
+    </refsect1>
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>EventFilter</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>EventFilter</refname>
+        <refpurpose></refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+$DAQBIN/EventFilter <optional>OPTIONS</optional>...
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This program takes events that have been classified using
+            the <application>SoftwareFilter</application> application and
+            applies an acceptance criterion.  Events that pass that criterion
+            are sent to the accepted output sink.  Optionally events that
+            don't pass acceptance are sent to a rejection sink.  
+        </para>
+        <para>
+            The criterion is specified as a mask of bits that must have a specific value.
+            It is an error to pass this program unclassified data.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Most options are mandatory. The optional ones and the action
+            if not supplied are flagged in the listing below.
+        </para>
+        <variablelist>
+           <varlistentry>
+            <term><option>--help</option> (optional)</term>
+            <listitem>
+                <para>
+                    Outputs short help information to stdout and then exits.
+                    All subsequent options are ignored.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--version</option> (optional)</term>
+            <listitem>
+                <para>
+                    Outputs the program version and exits. Subsequent options are
+                    ignored.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--source</option>=URI</term>
+            <listitem>
+                <para>
+                    Specifies the data source as either a file or tcp URI.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--accepted-sink</option>=URI</term>
+            <listitem>
+                <para>
+                    Specifies where accepted events will go.  The URI can
+                    be either a file or tcp URI.  If a tcp URI, the host must
+                    be local.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--rejected-sink</option>=URI (optional)</term>
+            <listitem>
+                <para>
+                    Specifies where rejected events will go.  The URI can be either a
+                    file or tcp URI.  If the URI is a tcpURI, the host must be
+                    local.
+                </para>
+                <para>
+                    If this optional option is omitted, rejected data are
+                    not retained.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--mask</option>=int</term>
+            <listitem>
+                <para>
+                    Specifies a mask that is bitwise anded with the classification
+                    as part of the acceptancd criterion.  See <option>--value</option>
+                    below.
+                </para>
+            </listitem>
+           </varlistentry>
+           <varlistentry>
+            <term><option>--value</option>=int</term>
+            <listitem>
+                <para>
+                    Specifies the value the classifier must have to accept
+                    a  event after the mask is applied. In other words. An event
+                    is accepted if
+                    <literal>classifier &amp mask == value</literal>.
+                </para>
+            </listitem>
+           </varlistentry>
+        </variablelist>
+        
+    </refsect1>
+    
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>Transformer</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>Transformer</refname>
+        <refpurpose>Add extensions to fragments of event built data</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>
+$DAQBIN/Transformer <optional>OPTIONS</optional>...
+            </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            The <application>Transfomer</application> program accepts event built
+            data as input.  For each fragment in each physics event ring item,
+            user written code is invoked to supply an extension data block
+            that's put on the back end of each fragment.  The
+            sizes are adjusted accordingly so that the resulting ring items
+            are fully consistent.
+        </para>
+        <para>
+            The application spins up several parallel workers that process
+            blocks of events in parallel.  Resulting ring items are
+            re-sorted by timestamp before they are emitted to the output
+            sink.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Most program options are mandatory.  The optional ones will be
+            pointed out in the discussion below.
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><option>--help</option> (optional)</term>
+                <listitem>
+                    <para>
+                        Help text is output to stdout and the program
+                        exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--version</option> (optional)</term>
+                <listitem>
+                    <para>
+                        The program name and version are output to
+                        stdout and the program exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--source</option>=URI</term>
+                <listitem>
+                    <para>
+                        Specifies the source of the data to be processed.
+                        This can be either a file or a tcp URI.  If this
+                        is a tcp URI in general the program will likely not
+                        exit but continue processing until forced to exit.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sink</option>=URI</term>
+                <listitem>
+                    <para>
+                        Specifies where the processed data will go.  This
+                        can be
+                        a file or tcp URI. If a tcp URI is specified, the host
+                        must resolve to the local host.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--workers</option>=int (optional)</term>
+                <listitem>
+                    <para>
+                        Specifies the number of workers to spin up for the
+                        computation.  Note that this can be overidden by the
+                        <option>-np</option> option specified in
+                        <command>mpirun</command> if
+                        <option>--paralele-strategy</option> is
+                        <literal>mpi</literal>.
+                    </para>
+                    <para>
+                        IF not specified, this defaults to <literal>1</literal>
+                        which for anything but trivial computations is probably
+                        not sufficient.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--clump-size</option>=int (optional)</term>
+                <listitem>
+                    <para>
+                        The clump size, specified by this option, is the number
+                        of ring items that make up a work unit passed to each
+                        worker.  Clumping ring items together makes communication
+                        and sorting more efficient (sorting can be done by blocks
+                        rather than individual ring items).
+                    </para>
+                    <para>
+                        If not specified, this defaults to <literal>1</literal>
+                        which likely does not optimize performance.  Unfortunately
+                        ther are no good hard and fast rules for recommending
+                        the value of this option.  In general large is good, but
+                        too large and you either won't have enough workers
+                        to parallelize the processing or physical memroy can
+                        be oversubscribed.  Furthermore if the source and
+                        destinations are tcp URI's, overly large clump-sizes
+                        can mean that the output will lag significantly behind
+                        the input.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--extendlib</option>=filepath</term>
+                <listitem>
+                    <para>
+                        Provides the path to the shared library that
+                        will be used to provide user code.
+                        See <literal>SHARED LIBRARY</literal> below for
+                        more information about the expectations for the
+                        code that lives in that library.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--parallel-strategy</option>= mpi | threaded</term>
+                <listitem>
+                    <para>
+                        Specifies how parallelism will be performedn and how
+                        communications between the parallel processes will be handled.
+                        <literal>threaded</literal> limits the application to the
+                        cores available on a single system.   Each processing element
+                        is a thread and ZMQ <literal>inproc</literal> is
+                        used to communicate between the threads.
+                    </para>
+                    <para>
+                        <literal>mpi</literal> uses MPI as the parallel model
+                        and the communications mechanism MPI provides mechanisms
+                        to recruit several systems into the computation and
+                        allows this software to run scalably across
+                        Linux MPI clusters.
+                    </para>
+                    <para>
+                        If <literal>mpi</literal> parallelism is chosen,
+                        the <command>mpirun</command> command must be run and
+                        specifies the total number of processes in the application
+                        using its <option>-np</option> option.
+                        The total number of processes is <literal>nworkers+3</literal>.
+                    </para>
+                    <para>
+                        If <option>-np</option> is inconsistent with
+                        <option>--workers</option>, the number of workers is
+                        determined by <option>-np</option>
+                        <literal>(nworkers = npvalue-3)</literal>.  If this
+                        is not the same value as <option>--workers</option> a
+                        warning message is output and, if there are sufficient
+                        processes for at least one worker, processing continues.
+                        If this the value of <option>-np</option> in
+                        <command>mpirun</command> is not at least <literal>4</literal>,
+                        an error message is output indicating there are
+                        not sufficient processes and the program exits.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>SHARED LIBRARY</title>
+        <para>
+            The <application>Transformer</application> application requires
+            that you supply a shared library and specify it with the
+            <option>--extendlib</option> option.  This shared library
+            must:
+        </para>
+        <orderedlist>
+            <listitem>
+                <para>
+                    Define and implement a concrete subclass of the
+                    class <classname>CBuiltRingItemExtender::CRingItemExtender</classname>
+                    defined in <filename>CBuiltRingItemExtender.h</filename>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Provide a factory function that can create instances
+                    of your class.
+                </para>
+            </listitem>
+        </orderedlist>
+        <para>
+            The <classname>CBuiltRingitemExtender::CRingItemExtender</classname>
+            abstract base class provide an interface definition for the user
+            code that computes the extensions that will be added to
+            event fragments in a physics event.   Concrete subclasses must
+            implmenet two interface methods:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>iovec</type>
+                        <methodname>operator()</methodname>
+                        <methodparam>
+                            <type>pRingItem</type><parameter>item</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        <parameter>item</parameter> is a pointer to a ring
+                        item as defined in <filename>DataFormat.h</filename>.
+                        This item is an event fragment in the event currently
+                        being operated on by the worker.  
+                    </para>
+                    <para>
+                        The method is expected to create an extension that will
+                        be appended to the event fragment.  The return value
+                        is an <structname>iovec</structname> as described in
+                        the manpage for <function>writev</function>(2).  It has
+                        the fields <structfield>iov_len</structfield> which is the
+                        size of the extension you create and
+                        <structfield>iov_base</structfield> which points to the
+                        extension.
+                    </para>
+                    <para>
+                        The storage containing the extension must be valid for
+                        the entirety of event processing as events are output using
+                        the gather capabilities of the communications framework.
+                        Typically, this requirement means that extensions
+                        should be dynamically allocated.
+                    </para>
+                    <para>
+                        Note that if your code does not want to provide
+                        an extension for the fragment it can set the
+                        <structfield>iov_len</structfield> field to
+                        <literal>0</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>void</type>
+                        <methodname>free</methodname>
+                        <methodparam>
+                            <type>iovec&</type><parameter>extension</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        When the extension storage is no longer needed, the
+                        framework calls this method once for each extension that
+                        was created for this event.  This method is not
+                        called for fragments for which no extension was provided.
+                    </para>
+                    <para>
+                        This method is suppoed to free all storage
+                        associated with the extension provided by this
+                        <parameter>extension</parameter> parameter.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+
+<!-- /manpage -->
 
 <!-- manpage 3daq -->
 <refentry>
@@ -3570,4 +4723,5 @@ public:
     </refsect1>
 
 </refentry>
+
 <!-- /manpage -->
