@@ -31,8 +31,9 @@
 #include <CPhysicsEventItem.h>
 #include <DataFormat.h>
 #include <string.h>
-
-
+#include <iostream>
+#include <sstream>
+#include <stdlib.h>
 
 /**
  * constructor:
@@ -97,28 +98,33 @@ DDASSorter::operator()()
 void
 DDASSorter::processChunk(CRingBufferChunkAccess::Chunk& chunk)
 {
+  try {
     for (auto p = chunk.begin(); !(p == chunk.end()); p++) {
-        RingItemHeader& item(*p);
-        RingItem& fullItem(reinterpret_cast<RingItem&>(item));
-        
-        // If there's a source id, pull it out and save it in m_sid.
-        
-        if (fullItem.s_body.u_noBodyHeader.s_mbz) {
-            m_sid = fullItem.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
-        }
-        
-        switch (item.s_type) {
-        case PHYSICS_EVENT:
-            processHits(&item);
-            break;
-        case END_RUN:
-            flushHitManager();           // Flush any hits in the hit manager.
-            outputRingItem(&item);       // then output the ring item.
-            break;
+      RingItemHeader& item(*p);
+      RingItem& fullItem(reinterpret_cast<RingItem&>(item));
+      
+      // If there's a source id, pull it out and save it in m_sid.
+      
+      if (fullItem.s_body.u_noBodyHeader.s_mbz) {
+	m_sid = fullItem.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
+      }
+      
+      switch (item.s_type) {
+      case PHYSICS_EVENT:
+	processHits(&item);
+	break;
+      case END_RUN:
+	flushHitManager();           // Flush any hits in the hit manager.
+	outputRingItem(&item);       // then output the ring item.
+	break;
         default:
-            outputRingItem(&item);      // all other ring items pass through.
-        }
+	  outputRingItem(&item);      // all other ring items pass through.
+      }
     }
+  } catch (std::string msg) {
+    std::cerr << msg << std::endl;
+    exit(EXIT_FAILURE);
+  }
 }
 /**
  * outputRingItem
@@ -173,9 +179,20 @@ DDASSorter::processHits(pRingItemHeader pItem)
         pHit->Validate(hitSize);
         
         hitList.push_back(pHit);
-        
+
+	
+	
         p += hitSize*sizeof(uint32_t);
-        bodySize -= hitSize * sizeof(uint32_t)/sizeof(uint16_t);
+	size_t  hitWords = hitSize * sizeof(uint32_t)/sizeof(uint16_t);
+	if (hitWords > bodySize) {
+	  std::stringstream msgstr;
+	  msgstr << "ddasSorter is about to run off the end of a ring item. "
+		 << " the last hit was " << hitWords << " 32 bit words long "
+		 << " and came from slotID " << ((*(pHit->s_data) >> 4) & 0xf)
+		 << " most likely the modevtlen value for this slot is incorrect\n";
+	  throw msgstr.str();
+	}
+        bodySize -= hitWords;
     }
     m_pHits->addHits(hitList);
     // Now see if there are any hits we can output:
@@ -246,7 +263,7 @@ DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
     uint64_t ts = pHit->s_time;
     uint32_t bodySize  = pHit->s_channelLength + 2*sizeof(uint32_t)
                        + sizeof(BodyHeader) + sizeof(RingItemHeader) + 100;
-    CPhysicsEventItem item(ts, m_sid, 0, bodySize, &m_sink);
+    CPhysicsEventItem item(ts, m_sid, 0, bodySize);
     
     // Make this look like an old DDASReadout hit body:
     
