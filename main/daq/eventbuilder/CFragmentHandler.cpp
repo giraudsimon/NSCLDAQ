@@ -1715,12 +1715,12 @@ CFragmentHandler::IdlePoll(ClientData data)
   // Only flush queues if none are xoffed.  If there's a global xoff
   // we can still flush:
   
-  bool onexoffed = true;
+  bool onexoffed = false;
   bool allxoffed = true;
   for (auto& qInfo : pHandler->m_FragmentQueues) {
     auto q = qInfo.second;
     if (q.s_xoffed) {
-      onexoffed = false;
+      onexoffed = true;
     } else {
       allxoffed = false;
     }
