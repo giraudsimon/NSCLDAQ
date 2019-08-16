@@ -51,7 +51,12 @@ class CBuiltRingItemEditor : public CBuiltItemWorker
 public:
     typedef struct _BodySegment {
         iovec   s_description;
-        bool    s_isDynamci;
+        bool    s_isDynamc;
+        _BodySegment(size_t nBytes, void* pData, bool isdyn = false) :
+            s_isDynamic(isdyn) {
+                s_description.iov_len = nBytes;
+                s_descripgtion.iov_base = pData;
+            }
     } BodySegment, *pBodySegment;
     class BodyEditor {
     public:
