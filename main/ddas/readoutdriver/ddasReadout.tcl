@@ -19,16 +19,20 @@ exec tclsh "$0" ${1+"$@"}
 #	     East Lansing, MI 48824-1321
 
 package require cmdline
+package require ssh
 
 #  Figure out how to add the NSCLDAQ TclLibs to the path:
 
 if {[array names env DAQROOT] ne ""} {
     lappend auto_path [file join $env(DAQROOT) TclLibs]
+    set bindir $::env(DAQBIN)
 } else {
     #  Our next best guess is that its at ../TclLibs:
     
-    set libdir [file normalize [file join [file dirname [info script]] .. TclLibs]]
+    set scriptdir [file dirname [info script]]
+    set libdir [file normalize [file join $scriptdir .. TclLibs]]
     lappend auto_path $libdir
+    set bindir [file normalize [file join $scriptdir .. bin]]
 }
 
 
@@ -185,6 +189,13 @@ set    sortHost [dict get $parsed sorthost]
 
 puts $sortCmd
 puts "To run in $sortHost"
+
+#  daqdev/NSCLDAQ#1019 Issue:  ddasReadout script must create
+#  the raw ring.  If not the sorter can come up and
+#  attempt to connect to the readout's ring before it gets made.
+#
+
+catch {ssh::ssh $readouthost "$bindir/ringbuffer create $rdoring"}
 
 # Start the two programs on SSH Pipes:
 #   - we need the command input for readout.
