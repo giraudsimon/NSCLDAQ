@@ -77,8 +77,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h CNullTransport.h \
 	CFanoutTransport.h CGather.h CBuiltRingItemExtender.h \
-	CBuiltItemWorker.h
-	$(MPI_TRANSPORT_HDS)
+	CBuiltItemWorker.h CBuiltRingItemEditor.h		\
+	$(MPI_TRANSPORT_HDRS)
 
 
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
