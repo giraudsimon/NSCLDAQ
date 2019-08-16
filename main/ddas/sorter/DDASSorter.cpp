@@ -42,7 +42,7 @@
  *    @param window = accumulation window
  */
 DDASSorter::DDASSorter(CRingBuffer& source, CRingBuffer& sink, float window) :
-    m_source(source), m_sink(sink), m_sid(0)
+    m_source(source), m_sink(sink), m_sid(0), m_lastEmittedTimestamp(0)
 {
     m_pHits = new HitManager(window*((uint64_t)(1000000000)));   // 10 second build window.
     m_pArena = new DDASReadout::BufferArena;
@@ -111,14 +111,15 @@ DDASSorter::processChunk(CRingBufferChunkAccess::Chunk& chunk)
       
       switch (item.s_type) {
       case PHYSICS_EVENT:
-	processHits(&item);
-	break;
+            processHits(&item);
+            break;
       case END_RUN:
-	flushHitManager();           // Flush any hits in the hit manager.
-	outputRingItem(&item);       // then output the ring item.
-	break;
+            flushHitManager();           // Flush any hits in the hit manager.
+            outputRingItem(&item);       // then output the ring item.
+            m_lastEmittedTimestamp =0;   // For next run.
+            break;
         default:
-	  outputRingItem(&item);      // all other ring items pass through.
+            outputRingItem(&item);      // all other ring items pass through.
       }
     }
   } catch (std::string msg) {
@@ -167,6 +168,7 @@ DDASSorter::processHits(pRingItemHeader pItem)
     memcpy(pBuffer->s_pData, pBodySize, bodySize*sizeof(uint16_t));   //Copy the raw data.
     uint8_t* p(*pBuffer);
     std::deque<DDASReadout::ZeroCopyHit*> hitList;
+    bool warnedLate(false);
     while(bodySize) {
         uint32_t hitSize = DDASReadout::RawChannel::channelLength(p);
         DDASReadout::ZeroCopyHit* pHit= allocateHit();
@@ -177,20 +179,32 @@ DDASSorter::processHits(pRingItemHeader pItem)
         pHit->SetTime(DDASReadout::RawChannel::moduleCalibration(moduleType));
         pHit->SetChannel();
         pHit->Validate(hitSize);
+    
+        // Warn if this module's handing out of order hits:
+        
+        if (!warnedLate && (pHit->s_time < m_lastEmittedTimestamp)) {
+            int module = ((*(pHit->s_data) >> 4) & 0xf);
+            std::cerr << " Module " << module << " handed us a hit earlier "
+                << "than the last one emitted. Last emitted: " << m_lastEmittedTimestamp
+                << " hit: " << pHit->s_time << std::endl;
+            std::cerr << "This might happen with a FIFO_THRESHOLD too big\n";
+            
+            warnedLate = true;
+        }
         
         hitList.push_back(pHit);
 
 	
 	
         p += hitSize*sizeof(uint32_t);
-	size_t  hitWords = hitSize * sizeof(uint32_t)/sizeof(uint16_t);
-	if (hitWords > bodySize) {
-	  std::stringstream msgstr;
-	  msgstr << "ddasSorter is about to run off the end of a ring item. "
-		 << " the last hit was " << hitWords << " 32 bit words long "
-		 << " and came from slotID " << ((*(pHit->s_data) >> 4) & 0xf)
-		 << " most likely the modevtlen value for this slot is incorrect\n";
-	  throw msgstr.str();
+        size_t  hitWords = hitSize * sizeof(uint32_t)/sizeof(uint16_t);
+        if (hitWords > bodySize) {
+          std::stringstream msgstr;
+            msgstr << "ddasSorter is about to run off the end of a ring item. "
+                << " the last hit was " << hitWords << " 32 bit words long "
+                << " and came from slotID " << ((*(pHit->s_data) >> 4) & 0xf)
+                << " most likely the modevtlen value for this slot is incorrect\n";
+            throw msgstr.str();
 	}
         bodySize -= hitWords;
     }
@@ -261,6 +275,7 @@ void
 DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
 {
     uint64_t ts = pHit->s_time;
+    m_lastEmittedTimestamp = pHit->s_time;
     uint32_t bodySize  = pHit->s_channelLength + 2*sizeof(uint32_t)
                        + sizeof(BodyHeader) + sizeof(RingItemHeader) + 100;
     CPhysicsEventItem item(ts, m_sid, 0, bodySize);

@@ -55,6 +55,7 @@ private:
     DDASReadout::BufferArena*  m_pArena;
     std::deque<DDASReadout::ZeroCopyHit*>   m_hits;
     uint32_t     m_sid;
+    double      m_lastEmittedTimestamp;
     
 public:
     DDASSorter(CRingBuffer& source, CRingBuffer& sink, float window=10.0);
