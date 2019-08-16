@@ -1,0 +1,16 @@
+package "Event Transformer"
+version "v1.0"
+
+text "Processes event built data providing user code an opportunity to add \
+additional event data on the end of each event fragment"
+
+option "source" s "Data Source" string typestr="URI"
+option "sink"   S "Data Sink"   string typestr="URI"
+text   "           Any tcp URI must be to localhost"
+option "workers" n "Number of classification workers" int default="1" optional
+
+option "clump-size" c "Number of ring items per work unit" int optional default="1"
+option "parallel-strategy" p "Parallelization strategy"
+                values="threaded","mpi" optional default="threaded"
+option "extendlib" l "Path to shared library for the extension class" string typestr="filename"
+

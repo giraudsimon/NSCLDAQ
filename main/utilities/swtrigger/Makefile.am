@@ -50,7 +50,7 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpe
 	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp \
 	CCommunicatorFactoryMaker.cpp CRingItemMarkingWorker.cpp \
 	CNullTransport.cpp CGather.cpp $(MPI_TRANSPORT_SRCS)	\
-	CBuiltRingItemExtender.cpp
+	CBuiltRingItemExtender.cpp CBuiltItemWorker.cpp
 
 libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\
@@ -77,7 +77,8 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CZMQRingItemThreadedWorker.h CCommunicatorFactory.h CZMQCommunicatorFactory.h \
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h CNullTransport.h \
 	CFanoutTransport.h CGather.h CBuiltRingItemExtender.h \
-	$(MPI_TRANSPORT_HDS)
+	CBuiltItemWorker.h CBuiltRingItemEditor.h		\
+	$(MPI_TRANSPORT_HDRS)
 
 
 SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
