@@ -21,7 +21,7 @@
 #ifndef CBUILTRINGITEMEXTENDER_H
 #define CBUILTRINGITEMEXTENDER_H
 
-#include "CParallelWorker.h"
+#include "CBuiltItemWorker.h"
 
 #include <stdint.h>
 #include <sys/uio.h>
@@ -38,7 +38,7 @@
  *    extend that ring item.
  *
  */
-class CBuiltRingItemExtender : public CParallelWorker
+class CBuiltRingItemExtender : public CBuiltItemWorker
 {
 public:
     // An instance of a concrete subbclass of this must be provided to do
@@ -68,11 +68,8 @@ public:
 private:
     size_t countItems(const void* pData, size_t nBytes);
     void* nextItem(const void* pData);
-    void* firstFragment(const void* pEvent);
-    size_t countFragments(const void* pEvent);
-    void*  nextFragment(const void* pData);
     size_t iovecsNeeded(const void* pData, size_t nBytes);
-    void   allocateIoVectors(size_t needed);
+    void   allocateIoVectors(size_t needed);    
 };
 
 #endif

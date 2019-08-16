@@ -46,14 +46,6 @@ typedef struct __attribute__(__packed__)) _EventHeader {
     uint32_t             s_evbBodySize;
 } EventHeader, *pEventHeader;
 
-// This struct actually points to the entire fragment but we define this
-// because we'll need to adjust the payload size in the fragment header
-// and the ringitem header size if an extension is added on.
-
-typedef struct __attribute__(__packed__)) _FragmentItem {
-    EVB::FragmentHeader   s_fragHeader;
-    RingItemHeader        s_ringItemHeader;
-} FragmentItem, *pFragmentItem;
 
 
 
@@ -71,7 +63,7 @@ CBuiltRingItemExtender::CBuiltRingItemExtender(
     CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,
     CRingItemExtender* pExtender
 ) :
-    CParallelWorker(fanin, sink, clientId), m_pExtender(pExtender), m_nId(clientId),
+    CBuiltItemWorker(fanin, sink, clientId), m_pExtender(pExtender), m_nId(clientId),
     m_nBlocks(0),
     m_pIoVectors(nullptr), m_nIoVectorCount(0), m_nUsedIoVectors(0)
 {}
@@ -253,70 +245,9 @@ CBuiltRingItemExtender::nextItem(const void* pData)
     
     return p;
 }
-/**
- * firstFragment
- *    Returns a pointer to the first fragment of an event given a pointer
- *    to the event body.
- *
- *  @param pEvent - pointer to the entire event.
- *  @return void* - Pointer to the first event fragment.
- */
-void*
-CBuiltRingItemExtender::firstFragment(const void* pEvent)
-{
-    const uint32_t* p = static_cast<const uint32_t*>(pEvent);
-    p++;
-    
-    return reinterpret_cast<void*>(const_cast<uint32_t*>(p));
-}
-/**
- * countFragments
- *    Given a pointer to an event built body, returns the number
- *    of fragment in the event.  The pointer is pointing to the
- *    uint32_t at the front of the event body.
- *
- *  @param pEvent - pointer to the front of the event body.
- */
-size_t
-CBuiltRingItemExtender::countFragments(const void* pEvent)
-{
-    const uint32_t* p = static_cast<const uint32_t*>(pEvent);
-    size_t nBytes = *p;
-    nBytes -= sizeof(uint32_t);                        // Self Counting.
-    
-    void* pFrag = firstFragment(pEvent);
-    size_t result(0);
-    
-    while(nBytes) {
-        result++;
-        pFragmentItem pItem = static_cast<pFragmentItem>(pFrag);
-        
-        pFrag = nextFragment(pFrag);
-        nBytes -= sizeof(EVB::FragmentHeader) + pItem->s_ringItemHeader.s_size;
-    }
-    
-    return result;
-}
-/**
- * nextFragment
- *   Given a pointer to a fragment returns a pointer to the byte after
- *   the fragment ends.
- *
- * @param pData - pointer to the fragment.
- * @return void* - pointer to the byte after the fragment.
- */
-void*
-CBuiltRingItemExtender::nextFragment(const void* pData)
-{
-    const FragmentItem* pFrag = static_cast<const FragmentItem*>(pData);
-    size_t fragmentSize = sizeof(EVB::FragmentHeader) + pFrag->s_ringItemHeader.s_size;
-    
-    uint8_t* pResult = reinterpret_cast<uint8_t*>(const_cast<pFragmentItem>(pFrag));
-    pResult += fragmentSize;
-    
-    
-    return pResult;
-}
+
+
+
 /**
  * iovecsNeeded
  *    @param pData - pointer to the raw data block.
