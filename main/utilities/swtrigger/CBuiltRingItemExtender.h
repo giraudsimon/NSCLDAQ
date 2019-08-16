@@ -66,8 +66,7 @@ public:
     
     virtual void process(void* pData, size_t nBytes);
 private:
-    size_t countItems(const void* pData, size_t nBytes);
-    void* nextItem(const void* pData);
+    
     size_t iovecsNeeded(const void* pData, size_t nBytes);
     void   allocateIoVectors(size_t needed);    
 };

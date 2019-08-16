@@ -101,3 +101,41 @@ CBuiltItemWorker::nextFragment(const void* pData)
     
     return pResult;
 }
+
+/**
+ * countItems
+ *    Count the number of ring items in a block.
+ * @param pData - pointer to the data block that is stuffed with ring items.
+ * @param nBytes - Number of bytes of data.
+ * @return size_t - number of ring items in the block.
+ */
+size_t
+CBuiltItemWorker::countItems(const void* pData, size_t nBytes)
+{   size_t result = 0;
+    while (nBytes) {
+        result++;
+        const EventHeader* p = static_cast<const EventHeader*>(pData);
+        nBytes -= p->s_ringHeader.s_size + sizeof(uint64_t);
+        
+        pData = nextItem(pData);
+    }
+    
+    return result;
+}
+/**
+ * nextItem
+ *    Given a pointer to a ring item returns a pointer to data just after it.
+ *
+ * @param pData - pointer to the ring item.
+ * @return void* - pointer to the byt following the ring item.
+ */
+void*
+CBuiltItemWorker::nextItem(const void* pData)
+{
+    const EventHeader* pItem = static_cast<const EventHeader*>(pData);
+    uint8_t*  p = reinterpret_cast<uint8_t*>(const_cast<pEventHeader>(pItem));
+    p += pItem->s_ringHeader.s_size + sizeof(uint64_t);
+    
+    return p;
+}
+

@@ -39,6 +39,16 @@
 class CBuiltItemWorker : public CParallelWorker
 {
 public:
+    // Front of the  ring item in a work item has timestamp and the
+    // rest of this.
+    
+    typedef struct __attribute__(__packed__)) _EventHeader {
+        uint64_t             s_timestamp;  
+        RingItemHeader       s_ringHeader;
+        BodyHeader           s_bodyHeader;
+        uint32_t             s_evbBodySize;
+    } EventHeader, *pEventHeader;
+
     // This struct actually points to the entire fragment but we define this
     // because we'll need to adjust the payload size in the fragment header
     // and the ringitem header size if an extension is added on.
@@ -51,9 +61,17 @@ public:
 public:
     CBuiltItemWorker(CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId);
 protected:
+    
+    //  Iterate fragments in a ring item.
+    
     void* firstFragment(const void* pEvent);
     size_t countFragments(const void* pEvent);
     void*  nextFragment(const void* pData);
+    
+    // Iteratoe ring items in a block.
+    
+    size_t countItems(const void* pData, size_t nBytes);
+    void* nextItem(const void* pData);
 };
 
 #endif

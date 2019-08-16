@@ -65,7 +65,7 @@ public:
 private:
     BodyEditor*   m_pEditor;
     uint32_t      m_nId;
-    size_t        m_nBlocks;
+    size_t        m_nBlocks;           // In case we want statistics later.
     
     iovec*        m_pIoVectors;
     size_t        m_nIoVectorCount;
