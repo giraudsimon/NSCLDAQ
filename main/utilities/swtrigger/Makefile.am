@@ -150,7 +150,8 @@ transformer.h: transformer.ggo
 	$(GENGETOPT) <@srcdir@/transformer.ggo -Ftransformer
 
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
-	CommFramework.xml transformer.ggo
+	CommFramework.xml transformer.ggo eventeditor.ggo
+
 
 ####################################################################################
 # unit testing:
