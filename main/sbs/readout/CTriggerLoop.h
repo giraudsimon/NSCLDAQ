@@ -48,7 +48,7 @@ private:
   volatile bool      m_stopping;  // Shared between threads.
   volatile bool      m_pausing;   // Shared between threads.
   volatile bool      m_failed;    // Shared between thread... trigger loop failed.
-
+  bool               m_vmeLock;   // True if we need to serialize VME access.
 public:
   CTriggerLoop(CExperiment& experiment);
   virtual ~CTriggerLoop();
@@ -66,6 +66,8 @@ public:
   virtual void start();
   void         stop(bool pausing);          // stop/join.
   virtual void run();
+  void         doVMELock() {m_vmeLock = true;}
+  void         noVMELock() {m_vmeLock = false;}
 
 protected:
   void         mainLoop();

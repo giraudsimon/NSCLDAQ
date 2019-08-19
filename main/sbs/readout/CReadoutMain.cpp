@@ -227,6 +227,15 @@ CReadoutMain::CreateExperiment(void* parsed)
       ringname, DEFAULT_BUFFERSIZE, parsedArgs.no_barriers_given ? false : true
     );
   pExperiment->setDefaultSourceId(parsedArgs.sourceid_arg);
+  
+  // Set or turn off VME Locking:
+  
+  if (parsedArgs.vme_lock_given) {
+    pExperiment->enableVmeLock();
+  } else {
+    pExperiment->disableVmeLock();
+  }
+  
   return pExperiment;
 
 

@@ -19,7 +19,6 @@ exec tclsh "$0" ${1+"$@"}
 #	     East Lansing, MI 48824-1321
 
 package require cmdline
-package require ssh
 
 #  Figure out how to add the NSCLDAQ TclLibs to the path:
 
@@ -35,6 +34,7 @@ if {[array names env DAQROOT] ne ""} {
     set bindir [file normalize [file join $scriptdir .. bin]]
 }
 
+package require ssh
 
 ##
 # @file ddasReadout.tcl

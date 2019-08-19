@@ -10,3 +10,4 @@ option "init-script" s "Initialization script"             optional string
 option "log" l "Log file - if logging desired" optional string
 option "debug" d "Debug level 0-2" optional int default="0"
 option "no-barriers" b "Turn off barriers for run state transition items" optional 
+option "vme-lock"    v " Turn on VME locking in the trigger loop" optional

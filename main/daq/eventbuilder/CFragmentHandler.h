@@ -412,6 +412,8 @@ private:
     SourceQueue& queue,
     EvbFragments& justDequeued
   );
+
+  void insertFragment(time_t clockTime, EVB::pFragment pFrag, SourceQueue& dest);
   
   // Static private methods:
 

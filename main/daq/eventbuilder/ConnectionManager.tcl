@@ -119,6 +119,7 @@ snit::type EVB::Connection {
     #   Called to disable reception of data.
     #
     method flowOff {} {
+        puts stderr "cancelling fileevent on $options(-socket)"
         fileevent $options(-socket) readable [list]
     }
     ##
@@ -127,6 +128,7 @@ snit::type EVB::Connection {
     #
     method flowOn {} {
         set method $stateMethods($options(-state))
+        puts stderr "enabling fileevent for $options(-socket)"
         fileevent $options(-socket) readable [mymethod $method $options(-socket)] 
     }
 
@@ -374,53 +376,58 @@ snit::type EVB::Connection {
     # @param socket - socket that is readable.
     #
     method _Fragments socket {
-	set status [catch {
-	    set header [$self _ReadCountedString $socket]
-#	    set body   [$self _ReadBinaryData    $socket]
-	} msg]
-	if {[eof $options(-socket)]} {
-	    $self _Close LOST
-	    return;		# Nothing else to do.
-	}
-
-	# Protocol allows a DISCONNECT here:
-
-	if {$header eq "DISCONNECT"} {
-	    puts $socket "OK"
-	    $self _Close CLOSED
-
-	} elseif {$header eq "FRAGMENTS"} {
-
-	    # Acknowledging the fragments here allows next bunch to be prepared
-	    # in the caller.
-	    
-	    if {[catch {puts $socket "OK"} msg]} {
-		puts stderr "Event orderer failed to ack ok to a data source $msg"
-		$self  _Close LOST
-	    }
-	    # protocol allows FRAGMENTS here:
-	    # TODO: Handle errors as a close
-
-	    if {[catch {EVB::handleFragment $socket} msg]} {
-		puts stderr "Event orderer failed call to handleFragment: : $msg"
-		tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
-		    -message "C++ Fragment handler reported an error: $msg"
-		exit;		# can't really continue.
-	    }
-
-
-	    $callbacks invoke -fragmentcommand [list] [list]
-
-	    
-	    
-
-	} else {
-	    # Anything else is a crime against The Protocol:
-
-
-	    puts $socket "ERROR {Unexpected header: $header}"
-
-	}
+        puts stderr "Fragments from $socket"    
+        set status [catch {
+            set header [$self _ReadCountedString $socket]
+    #	    set body   [$self _ReadBinaryData    $socket]
+        } msg]
+        if {[eof $options(-socket)]} {
+            $self _Close LOST
+            return;		# Nothing else to do.
+        }
+    
+        # Protocol allows a DISCONNECT here:
+    
+        if {$header eq "DISCONNECT"} {
+            puts $socket "OK"
+            flush $socket
+            $self _Close CLOSED
+    
+        } elseif {$header eq "FRAGMENTS"} {
+    
+            # Acknowledging the fragments here allows next bunch to be prepared
+            # in the caller.
+            
+            puts stderr "OK -> $socket"
+            if {[catch {puts $socket "OK"} msg]} {
+                puts stderr "Event orderer failed to ack ok to a data source $msg"
+                $self  _Close LOST
+            } else {
+                flush $socket
+            }
+            # protocol allows FRAGMENTS here:
+            # TODO: Handle errors as a close
+    
+            if {[catch {EVB::handleFragment $socket} msg]} {
+                puts stderr "Event orderer failed call to handleFragment: : $msg"
+                tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
+                    -message "C++ Fragment handler reported an error: $msg"
+                exit;		# can't really continue.
+            }
+    
+    
+            $callbacks invoke -fragmentcommand [list] [list]
+    
+            
+            
+    
+        } else {
+            # Anything else is a crime against The Protocol:
+    
+    
+            puts $socket "ERROR {Unexpected header: $header}"
+    
+        }
     }
 
 }
@@ -544,6 +551,7 @@ snit::type EVB::ConnectionManager {
     #                to flow on.  If an empty string all are flowed on.
     #
     method _FlowOn {{sock ""}} {
+        puts stderr "FlowOn $sock "
         set accepting 1
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
@@ -559,6 +567,7 @@ snit::type EVB::ConnectionManager {
     #               means flow off all of them.
     method _FlowOff { {sock ""}} {
         set accepting 0
+        puts stderr "Flow off $sock"
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
                 puts stderr "Connection manager Flow off $sock"

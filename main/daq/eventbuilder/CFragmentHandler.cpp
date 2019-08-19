@@ -1188,7 +1188,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     
     // Update stastistics:
     
-    destQueue.s_newestTimestamp = timestamp;                  // for sure the newest 
+    
     destQueue.s_bytesInQ       += pFrag->s_header.s_size;     // Only count payloads.
     destQueue.s_totalBytesQd   += pFrag->s_header.s_size;     // Total bytes into the queue.
     
@@ -1207,10 +1207,12 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     if (newTimestamp < priorTimestamp) {
         observeOutOfOrderInput(pHeader->s_sourceId, priorTimestamp, newTimestamp);
     }
-
-    destQueue.s_queue.push_back(std::pair<time_t, EVB::pFragment>(m_nNow, pFrag));
-    destQueue.s_lastTimestamp = newTimestamp;
+//
+//    destQueue.s_queue.push_back(std::pair<time_t, EVB::pFragment>(m_nNow, pFrag));
+//    destQueue.s_lastTimestamp = newTimestamp;
+//    destQueue.s_newestTimestamp = timestamp;                  // for sure the newest 
     
+    insertFragment(m_nNow, pFrag, destQueue);
     
     m_liveSources.insert(pHeader->s_sourceId); // having a fragment makes a source live.
     
@@ -1250,7 +1252,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 
     if ((priorOldest != m_nOldest) && (m_nOldest == 0)) {
       std::cerr << "addFragment assigned m_nOldest -> 0 was: " 
-		<< std::hex << priorOldest << std::dec << std::endl;
+        << std::hex << priorOldest << std::dec << std::endl;
       dumpFragment(pFrag);
       
     }
@@ -1725,7 +1727,9 @@ CFragmentHandler::IdlePoll(ClientData data)
       allxoffed = false;
     }
   }
-  if (allxoffed || (!onexoffed))  pHandler->flushQueues();
+  if (allxoffed || (!onexoffed) || (onexoffed && pHandler->noEmptyQueue()))  {
+      pHandler->flushQueues();
+  }
   
   // Since it's possible that fragments have been output from
   // the buffer queue to the output thread while we've been
@@ -1980,4 +1984,66 @@ CFragmentHandler::XonQueue(SourceQueue& q)
     }
     q.s_xoffed = false;
   }
+}
+
+/**
+ * insertFragment
+ *    99% of the time, ordered data allows us to push_back fragments.
+ *    If, however fragments are out of order, this can cause problems
+ *    leading to stalling as the queues last fragment could be earlier than
+ *    the first fragment preventing any fragments from being emitted from
+ *    that queue (daqdev/NSCLDAQ#1022)  We therefore have the following cases
+ *    to consider about where to put the fragment:
+ *
+ *    - Queue is empty - push_back.
+ *    - Timestamp of this element is >= timestamp of the element at the queue tail,
+ *      push_back
+ *    - Otherwise, find the last queue element with a timestamp <= t ours.
+ *       *  If found, insert us after that.
+ *       *  If not found, push_front.
+ *
+ *  @param clockTime -the clock time to associate with the queue element.
+ *  @param pFrag     -Pointer to the fragment to insert.
+ *  @param dest      -references the destination queue.
+ */
+void
+CFragmentHandler::insertFragment(
+    time_t clockTime, EVB::pFragment pFrag, SourceQueue& dest
+)
+{
+  std::pair<time_t, EVB::pFragment> entry = {clockTime, pFrag};
+  uint64_t entryTimestamp = pFrag->s_header.s_timestamp;
+  
+  if (dest.s_queue.empty()) {                  // queue empty.
+    dest.s_queue.push_back(entry);
+  } else {
+    uint64_t tailStamp = dest.s_queue.back().second->s_header.s_timestamp;
+    if (entryTimestamp >= tailStamp) {    // In order....
+      dest.s_queue.push_back(entry);
+    } else {                                 // have to hunt.
+      auto p = dest.s_queue.rbegin();        // reverse iteration.
+      while (p != dest.s_queue.rend()) {
+        uint64_t stamp = p->second->s_header.s_timestamp;
+        if (stamp <= entryTimestamp)  break;
+        p++;
+      }
+      // If p == rend push_front otherwise figure out how to insert:
+      
+      if (p == dest.s_queue.rend()) {
+        dest.s_queue.push_front(entry);
+      } else {
+        auto insertionPoint = p.base();
+        dest.s_queue.insert(insertionPoint, entry);
+      }
+    }
+  }
+  // Now update the timestamp info:
+  //    m_newestTimestamp - timestamp from entry.
+  //    m_lastTimestamp - timestamp at the back of the queue.
+  //    these are identical unless we've had out of order data:
+  
+  dest.s_newestTimestamp = entryTimestamp;;
+  dest.s_lastTimestamp   = dest.s_queue.back().second->s_header.s_timestamp;
+  
+  
 }

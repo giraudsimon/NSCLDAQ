@@ -103,7 +103,8 @@ CExperiment::CExperiment(string ringName,
   m_nDataBufferSize(eventBufferSize),
   m_nDefaultSourceId(0),
   m_useBarriers(barriers),
-  m_fWantZeroCopy(false)                // by default.
+  m_fWantZeroCopy(false),                // by default.
+  m_fNeedVmeLock(false)
 
 {
   try {
@@ -215,6 +216,11 @@ CExperiment::Start(bool resume)
 
     if (!m_pTriggerLoop) {
       m_pTriggerLoop = new CTriggerLoop(*this);
+      if (m_fNeedVmeLock) {
+        m_pTriggerLoop->doVMELock();
+      } else {
+        m_pTriggerLoop->noVMELock();
+      }
       pMain->logProgress("Created trigger loop thread object");
     }
     

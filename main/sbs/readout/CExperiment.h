@@ -105,6 +105,7 @@ private:
   bool                    m_useBarriers;
   bool                    m_fHavemore;      // If true readout has more events.
   bool                    m_fWantZeroCopy;  // Want zero copy ring items.
+  bool                    m_fNeedVmeLock;
 
 
   // Canonicals:
@@ -128,6 +129,8 @@ public:
   // Member functions:
 
 public:
+  void   enableVmeLock() {m_fNeedVmeLock = true;}
+  void   disableVmeLock()  { m_fNeedVmeLock = false;}
   void   setDefaultSourceId(unsigned sourceId);
   void   setBufferSize(size_t newSize);
   size_t getBufferSize() const;

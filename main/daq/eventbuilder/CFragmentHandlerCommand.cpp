@@ -111,7 +111,6 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
       // Dispatch the body as the flattened fragments they are:
       
       CFragmentHandler* pHandler = CFragmentHandler::getInstance();
-      std::cerr << "Fragments from : " << channelName;
       pHandler->addFragments(msgLength, reinterpret_cast<EVB::pFlatFragment>(msgBody));
     }
     

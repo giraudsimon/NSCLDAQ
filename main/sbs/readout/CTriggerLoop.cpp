@@ -46,7 +46,8 @@ static const unsigned DWELL_COUNT(100);
 CTriggerLoop::CTriggerLoop(CExperiment& experiment) :
   m_pExperiment(&experiment),
   m_running(false),
-  m_stopping(false)
+  m_stopping(false),
+  m_vmeLock(false)
 {}
 
 /*!
@@ -188,7 +189,7 @@ CTriggerLoop::mainLoop()
 
   do {
     try {
-      CVMEInterface::Lock();
+      if(m_vmeLock) CVMEInterface::Lock();
       for (int i =0; i < DWELL_COUNT; i++) {
         if ((*pEvent)()) {
 
@@ -203,10 +204,10 @@ CTriggerLoop::mainLoop()
       }
     }
     catch(...) {
-      CVMEInterface::Unlock();
+      if (m_vmeLock) CVMEInterface::Unlock();
       throw;
     }
-    CVMEInterface::Unlock();
+    if (m_vmeLock) CVMEInterface::Unlock();
   }
   while(!m_stopping);
   // End of run scaler:
