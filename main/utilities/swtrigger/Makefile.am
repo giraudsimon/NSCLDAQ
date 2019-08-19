@@ -34,7 +34,7 @@ endif
 
 lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la libTestExtender.la
 
-bin_PROGRAMS=SoftwareTrigger EventFilter Transformer
+bin_PROGRAMS=SoftwareTrigger EventFilter Transformer EventEditor
 
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
@@ -115,6 +115,19 @@ Transformer_Dependencies=libSwTrigger.la
 
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
+EventEditor_SOURCES=eventeditor.h eventeditor.c \
+	$(MPI_EventEditor_SRCS) \
+	CTransformerApp.cpp CTransformerApp.h \
+        CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
+        CRingBlockDataSink.cpp                          \
+	EventEditor.cpp
+
+EventEditor_Dependencies=libSwTrigger.la
+
+EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
 
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
