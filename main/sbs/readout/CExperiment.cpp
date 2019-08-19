@@ -685,13 +685,13 @@ void CExperiment::TriggerScalerReadout()
 
   readScalers();
 
-
-  CVMEInterface::Unlock();
+  
+  if (m_fNeedVmeLock) CVMEInterface::Unlock();
 
   // For now documented variables are tied to this trigger too:
   ScheduleRunVariableDump();
 
-  CVMEInterface::Lock();
+  if (m_fNeedVmeLock) CVMEInterface::Lock();
 
 }
 
