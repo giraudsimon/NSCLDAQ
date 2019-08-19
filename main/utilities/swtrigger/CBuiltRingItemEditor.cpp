@@ -22,10 +22,12 @@
 #include "CBuiltRingItemEditor.h"
 #include <fragment.h>
 #include <DataFormat.h>
+#include <CSender.h>
+
 
 #include <stdlib.h>
 #include <new>
-#inclue <stdexcept>
+#include <stdexcept>
 
 /**
  * constructor
@@ -45,7 +47,7 @@ m_nBlocks(0)
  */
 CBuiltRingItemEditor::~CBuiltRingItemEditor()
 {
-    free(m_nUsedIoVectors);
+    free(m_pIoVectors);
 }
 
 /**
@@ -78,7 +80,7 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
         
         size_t nEvents = countItems(pData, nBytes);
         void* p = pData;
-        for (int e = 0; i < nEvents; i++ ) {
+        for (int i = 0; i < nEvents; i++ ) {
             // p is really a ring item pointer. what we do depends on the type:
             
             pRingItemHeader pH = static_cast<pRingItemHeader>(p);
@@ -90,11 +92,11 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
             } else {
                 // pass non physics type along:
                 
-                BodySegment s(nonPhys(pH->s_size, pH));
+                BodySegment s(pH->s_size, pH);
                 outputSegments.push_back(s);
             }
             
-            p = nextIem(p);
+            p = nextItem(p);
         }
         outputData(outputSegments);
         freeData(outputSegments);
@@ -115,20 +117,21 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
  * @param segs  - Body Segments to send.
  */
 void
-CBuiltRingItemEditor(std::vector<BodySegment>& segs)
+CBuiltRingItemEditor::outputData(
+    std::vector<BodySegment>& segs
+)
 {
-    resiszeIoVecs(segs.size());        // Make sure we have enough iovecs.
+    resizeIoVecs(segs.size());        // Make sure we have enough iovecs.
     
     // Fill the io vectors:
     
+    m_nUsedIoVectors = segs.size();
     for (
-        int m_nUsedIoVectors = 0; m_nUsedIoVectors < segs.size();
-        m_nUsedIoVectors++
+        int i = 0; i < segs.size();
+        i++
     )  {
-        m_pIoVectors[m_nUsedIoVectors].iov_base =
-            segs[i].s_description.s_base;
-        m_pIoVectors[m_nUsedIoVectors].iovlen   =
-            segs[i].s_description.s_len;
+        m_pIoVectors[i].iov_base = segs[i].s_description.iov_base;
+        m_pIoVectors[i].iov_len   = segs[i].s_description.iov_len;
     }
     
     // Send the data.
@@ -143,11 +146,11 @@ CBuiltRingItemEditor(std::vector<BodySegment>& segs)
  * @param segs - references the segments:
  */
 void
-CBuiltRingItemEditor(std::vector<BodySegment>& segs)
+CBuiltRingItemEditor::freeData(std::vector<BodySegment>& segs)
 {
     for (int i = 0; i < segs.size(); i++) {
         if (segs[i].s_isDynamic) {
-            m_pEditor->free(&(segs[i].s_description));
+            m_pEditor->free((segs[i].s_description));
         }
     }
 }
@@ -163,7 +166,7 @@ CBuiltRingItemEditor::resizeIoVecs(size_t n)
         free(m_pIoVectors);
         m_pIoVectors = static_cast<iovec*>(malloc(n * sizeof(iovec)));
         if (!m_pIoVectors) {
-            throw std::bad_alloc;
+            throw std::bad_alloc();
         }
         m_nIoVectorCount = n;
     }
@@ -183,19 +186,123 @@ CBuiltRingItemEditor::resizeIoVecs(size_t n)
  * @return std::vector<BodySegment> - Vector that describes the
  *     full output ring item.
  */
-std::vector<BodySegment> editItem(pRingItemHeader pItem)
+std::vector<CBuiltRingItemEditor::BodySegment>
+CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
 {
     std::vector<BodySegment> result;
     
-    // Make the first extend and a pointer to the size of the
+    // Make the first extentand a pointer to the size of the
     // event body as seen by the event builder.
+    
+    pRingItem pRItem = reinterpret_cast<pRingItem>(pItem);
+    if (pRItem->s_body.u_noBodyHeader.s_mbz == 0) {
+        throw std::invalid_argument("Physics ring item is missing a body header!");
+    }
+    
+    uint32_t* pBody =
+        reinterpret_cast<uint32_t*>(pRItem->s_body.u_hasBodyHeader.s_body);
+    size_t nBytes = *pBody;
+    BodySegment hdr(
+        sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t),
+        pItem
+    );
+    result.push_back(hdr);
     
     // iterate over the fragments editing them:
     
+    nBytes -= sizeof(uint32_t);
+    void*  p = firstFragment(pBody);
+    while(nBytes) {
+        EVB::pFlatFragment pFrag = static_cast<EVB::pFlatFragment>(p);
+        std::vector<BodySegment> fragSegs = editFragment(pFrag);
+        result.insert(result.end(), fragSegs.begin(), fragSegs.end());
+        
+        // This has to come before the size adjustment.
+        
+        p = nextFragment(p);
+        nBytes -= (sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size);
+                   
+        // Adjust the sizes int the fragment header and ring item header
+        
+        size_t finalSize = countBytes(fragSegs);
+        finalSize -= sizeof(EVB::FragmentHeader);   // Ring item size.
+        pFrag->s_header.s_size = finalSize;         // is the payload size.
+        pRingItemHeader pEditedItem =
+            reinterpret_cast<pRingItemHeader>(pFrag+1);
+        pEditedItem->s_size = finalSize;            
+        
+    }
+    
     // Fix up the full size and the event builder's size.
     
+    size_t finalBytes = countBytes(result);
+    pItem->s_size = finalBytes;
+    *pBody       =
+        finalBytes - (sizeof(RingItemHeader) + sizeof(BodyHeader));
     
-    //
+    //  Done, return the result.
     
+    return result;
+}
+
+/**
+ * editFragment
+ *    Given a pointer to a fragment, edit the fragment.
+ *    The caller is responsible for modifying the size fields in both
+ *    the fragment header and the ring item header that follows it.
+ *
+ *    We'll produce the BodySegment for the stuff in front of the
+ *    fragment body (fragment header, ring item header, body headers).
+ *
+ * @param pFrag - pointer to tghe fragment.
+ * @return std::vectory<BodySegment> Descriptors for the edited fragment.
+ */
+std::vector<CBuiltRingItemEditor::BodySegment>
+CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
+{
+    std::vector<BodySegment> result;
+    
+    // Make the first body segment which includes up through the
+    // fragment's body header.
+    
+    BodySegment hdr(
+        sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) +
+        sizeof(BodyHeader), pFrag->s_body
+    );
+    result.push_back(hdr);
+    
+    // Produce the pointers needed by the user code and invoke it.
+    
+    pRingItemHeader pRHeader =
+        reinterpret_cast<pRingItemHeader>(pFrag->s_body);
+    pBodyHeader pBHeader = reinterpret_cast<pBodyHeader>(pRHeader+1);
+    size_t bodySize =
+        pRHeader->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    void* pBody = pBHeader+1;
+    
+    std::vector<BodySegment> segs =
+        (*m_pEditor)(pRHeader, pBHeader, bodySize, pBody);
+    result.insert(result.end(), segs.begin(), segs.end());
+    
+    // Return the full set of body segment descriptors.
+    
+    
+    return result;
+}
+/**
+ * countBytes
+ *    Count the number of bytes described by a vector of body segment
+ *    descriptors
+ *
+ * @param segs - the segments.
+ * @return size_t
+ */
+size_t
+CBuiltRingItemEditor::countBytes(const std::vector<BodySegment>& segs)
+{
+    size_t result(0);
+    for (int i =0; i < segs.size(); i++) {
+        result += segs[i].s_description.iov_len;
+    }
     return result;
 }

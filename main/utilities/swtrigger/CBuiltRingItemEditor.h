@@ -24,6 +24,8 @@
 #include "CBuiltItemWorker.h"
 
 #include <DataFormat.h>
+#include <fragment.h>
+
 #include <sys/uio.h>
 #include <vector>
 #include <stdint.h>
@@ -51,11 +53,11 @@ class CBuiltRingItemEditor : public CBuiltItemWorker
 public:
     typedef struct _BodySegment {
         iovec   s_description;
-        bool    s_isDynamc;
+        bool    s_isDynamic;
         _BodySegment(size_t nBytes, void* pData, bool isdyn = false) :
             s_isDynamic(isdyn) {
                 s_description.iov_len = nBytes;
-                s_descripgtion.iov_base = pData;
+                s_description.iov_base = pData;
             }
     } BodySegment, *pBodySegment;
     class BodyEditor {
@@ -63,7 +65,7 @@ public:
         virtual std::vector<BodySegment> operator()(
             pRingItemHeader pHdr, pBodyHeader hdr, size_t bodySize, void* pBody
         )  = 0;
-        void free(iovec& item);
+        virtual void free(iovec& item) = 0;
     };
     
     // Instance data:
@@ -84,6 +86,15 @@ public:
     virtual ~CBuiltRingItemEditor();
     
     virtual void process(void* pData, size_t nBytes);
+private:
+    
+    void outputData(std::vector<BodySegment>& segs);
+    void freeData(std::vector<BodySegment>& segs);
+    void resizeIoVecs(size_t n);
+    
+    std::vector<BodySegment> editItem(pRingItemHeader pItem);
+    std::vector<BodySegment> editFragment(EVB::pFlatFragment pFrag);
+    size_t countBytes(const std::vector<BodySegment>& segs);
     
 };
 
