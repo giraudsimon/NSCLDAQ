@@ -24,6 +24,8 @@
 #include "CBuiltItemWorker.h"
 
 #include <DataFormat.h>
+#include <fragment.h>
+
 #include <sys/uio.h>
 #include <vector>
 #include <stdint.h>
@@ -84,6 +86,14 @@ public:
     virtual ~CBuiltRingItemEditor();
     
     virtual void process(void* pData, size_t nBytes);
+private:
+    
+    void outputData(std::vector<BodySegment>& segs);
+    void freeData(std::vector<BodySegment>& segs);
+    void resizeIoVecs(size_t n);
+    
+    std::vector<BodySegment> editItem(pRingItemHeader pItem);
+    std::vector<BodySegment> editFragment(EVB::pFragment pFrag);
     
 };
 
