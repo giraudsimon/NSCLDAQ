@@ -21,7 +21,7 @@
 
 
 #include "eventeditor.h"
-
+#include "CBuiltRingItemEditorApp.h"
 
 #include <stdlib.h>
 /**
@@ -36,6 +36,14 @@ main(int argc, char** argv)
 {
     gengetopt_args_info parsed;
     cmdline_parser(argc, argv, &parsed);
+    CBuiltRingItemEditorApp* pApp;
+    
+    // This code selects the app to use:
+    
+    
+    // Run the app:
+    
+    (*pApp)();
     
     exit(EXIT_SUCCESS);
 }

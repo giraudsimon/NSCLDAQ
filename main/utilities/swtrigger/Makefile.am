@@ -121,7 +121,7 @@ EventEditor_SOURCES=eventeditor.h eventeditor.c \
 	CTransformerApp.cpp CTransformerApp.h \
         CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp                          \
-	EventEditor.cpp
+	EventEditor.cpp CBuiltRingItemEditorApp.h
 
 EventEditor_Dependencies=libSwTrigger.la
 
