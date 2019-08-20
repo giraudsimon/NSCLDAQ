@@ -321,7 +321,7 @@ RawChannel::moduleCalibration(uint32_t moduleType)
 
 
 // Comparison operations allow sorts to work without anything special
-// The assuem that SetTime() has been called.
+// This assumes that SetTime() has been called.
 
 bool
 operator<(const DDASReadout::RawChannel& c1, const DDASReadout::RawChannel& c2)
