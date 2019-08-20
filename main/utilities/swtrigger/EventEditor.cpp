@@ -24,6 +24,10 @@
 #include "CBuiltRingItemEditorApp.h"
 #include "CZMQBuiltRingItemEditorApp.h"
 
+#ifdef HAVE_MPI
+#include "CMPIBuiltRingItemEditorApp_mpi.h"
+#endif
+
 #include <stdlib.h>
 #include <iostream>
 /**
@@ -46,8 +50,12 @@ main(int argc, char** argv)
     if (strategy == "threaded") {
         pApp = new CZMQBuiltRingItemEditorApp(parsed);
     } else if (strategy == "mpi") {
-        std::cerr << "MPI --parallel-strategy is not yet supported\n";
+#ifdef HAVE_MPI
+        pApp = new CMPIBuiltRingItemEditorApp(argc, argv, parsed);
+#else
+        std::cerr << "MPI --parallel-strategy is not supported in this build\n";
         exit(EXIT_FAILURE);
+#endif
     }
     
     // Run the app:

@@ -9,6 +9,9 @@ MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
 
 MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
 
+MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
+	CMPIBuiltRingItemEditorApp_mpi.cpp
+
 if MPI
 
 #  Define the transport sources and headers.
@@ -24,6 +27,8 @@ MPI_TRANSPORT_HDRS=$(MPI_THDRS)
 MPI_SoftwareTrigger_SRCS= $(MPI_SWTSRCS)
 
 MPI_Transformer_SRCS=$(MPI_TRSRCS)
+
+MPI_EventEditor_SRCS=$(MPI_EDITORSRCS)
 
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.
@@ -163,8 +168,11 @@ transformer.c: transformer.h
 transformer.h: transformer.ggo
 	$(GENGETOPT) <@srcdir@/transformer.ggo -Ftransformer
 
+# Note regardless we ensure the MPI sources are distributed in the tarball.
+
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
-	CommFramework.xml transformer.ggo eventeditor.ggo
+	CommFramework.xml transformer.ggo eventeditor.ggo $(MPI_TSRCS) \
+	$(MPI_THDRS)  $(MPI_SWTSRCS) $(MPI_EDITORSRCS)
 
 
 ####################################################################################
