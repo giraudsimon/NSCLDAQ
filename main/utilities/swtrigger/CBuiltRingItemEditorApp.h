@@ -45,7 +45,7 @@ public:
     CBuiltRingItemEditorApp(gengetopt_args_info args) :
         m_args(args)
     { }
-    
+    ~CBuiltRingItemEditorApp() {}
     virtual void operator()() = 0;  
 };
 #endif

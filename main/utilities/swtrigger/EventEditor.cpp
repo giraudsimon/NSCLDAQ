@@ -22,8 +22,10 @@
 
 #include "eventeditor.h"
 #include "CBuiltRingItemEditorApp.h"
+#include "CZMQBuiltRingItemEditorApp.h"
 
 #include <stdlib.h>
+#include <iostream>
 /**
  * main
  *    Entry point.
@@ -40,6 +42,13 @@ main(int argc, char** argv)
     
     // This code selects the app to use:
     
+    std::string strategy = parsed.parallel_strategy_arg;
+    if (strategy == "threaded") {
+        pApp = new CZMQBuiltRingItemEditorApp(parsed);
+    } else if (strategy == "mpi") {
+        std::cerr << "MPI --parallel-strategy is not yet supported\n";
+        exit(EXIT_FAILURE);
+    }
     
     // Run the app:
     
