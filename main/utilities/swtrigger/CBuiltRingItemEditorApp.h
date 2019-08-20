@@ -23,6 +23,10 @@
 #define CBUILTRINGITEMEDITORAPP_H
 
 #include "eventeditor.h"
+#include "CBuiltRingItemEditor.h"
+
+typedef CBuiltRingItemEditor::BodyEditor Editor, *pEditor;
+typedef Editor* (*EditorFactory)();
 
 /**
  * @class  CBuiltRingItemEditorApp
@@ -46,6 +50,8 @@ public:
         m_args(args)
     { }
     ~CBuiltRingItemEditorApp() {}
-    virtual void operator()() = 0;  
+    virtual void operator()() = 0;
+protected:
+    EditorFactory getEditorFactory();
 };
 #endif

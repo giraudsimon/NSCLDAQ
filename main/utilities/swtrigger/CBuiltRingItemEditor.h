@@ -32,6 +32,7 @@
 #include <stddef.h>
 
 
+
 /**
  * @class CBuiltRingItemEditor
  *    This class provides a mechanism for users to do complete editing of
@@ -86,6 +87,7 @@ public:
     virtual ~CBuiltRingItemEditor();
     
     virtual void process(void* pData, size_t nBytes);
+    
 private:
     
     void outputData(std::vector<BodySegment>& segs);
