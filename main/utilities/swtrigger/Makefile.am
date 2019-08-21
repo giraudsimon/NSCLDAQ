@@ -9,6 +9,9 @@ MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
 
 MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
 
+MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
+	CMPIBuiltRingItemEditorApp_mpi.cpp
+
 if MPI
 
 #  Define the transport sources and headers.
@@ -25,6 +28,8 @@ MPI_SoftwareTrigger_SRCS= $(MPI_SWTSRCS)
 
 MPI_Transformer_SRCS=$(MPI_TRSRCS)
 
+MPI_EventEditor_SRCS=$(MPI_EDITORSRCS)
+
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.
 
@@ -34,7 +39,7 @@ endif
 
 lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la libTestExtender.la
 
-bin_PROGRAMS=SoftwareTrigger EventFilter Transformer
+bin_PROGRAMS=SoftwareTrigger EventFilter Transformer EventEditor
 
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
@@ -50,7 +55,7 @@ libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpe
 	CZMQRingItemThreadedWorker.cpp CZMQCommunicatorFactory.cpp \
 	CCommunicatorFactoryMaker.cpp CRingItemMarkingWorker.cpp \
 	CNullTransport.cpp CGather.cpp $(MPI_TRANSPORT_SRCS)	\
-	CBuiltRingItemExtender.cpp CBuiltItemWorker.cpp
+	CBuiltRingItemExtender.cpp CBuiltItemWorker.cpp CBuiltRingItemEditor.cpp
 
 libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/daq/format/libdataformat.la 		\
@@ -116,6 +121,20 @@ Transformer_Dependencies=libSwTrigger.la
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
+EventEditor_SOURCES=eventeditor.h eventeditor.c \
+	$(MPI_EventEditor_SRCS) \
+	CTransformerApp.cpp CTransformerApp.h \
+        CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
+        CRingBlockDataSink.cpp                          \
+	EventEditor.cpp CBuiltRingItemEditorApp.h CBuiltRingItemEditorApp.cpp	\
+	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp
+
+EventEditor_Dependencies=libSwTrigger.la
+
+EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
+
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
@@ -149,8 +168,11 @@ transformer.c: transformer.h
 transformer.h: transformer.ggo
 	$(GENGETOPT) <@srcdir@/transformer.ggo -Ftransformer
 
+# Note regardless we ensure the MPI sources are distributed in the tarball.
+
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
-	CommFramework.xml transformer.ggo eventeditor.ggo
+	CommFramework.xml transformer.ggo eventeditor.ggo $(MPI_TSRCS) \
+	$(MPI_THDRS)  $(MPI_SWTSRCS) $(MPI_EDITORSRCS)
 
 
 ####################################################################################
