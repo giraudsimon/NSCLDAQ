@@ -137,7 +137,7 @@ snit::type Log {
     #
     proc timestamp {} {
         set now [clock seconds]
-        set message [clock format $now -format "%B %d, %Y "]
+        set message [clock format $now -format "%B %d, %Y %T "]
         append message [info hostname]
         
         return $message
