@@ -119,7 +119,6 @@ snit::type EVB::Connection {
     #   Called to disable reception of data.
     #
     method flowOff {} {
-        puts stderr "cancelling fileevent on $options(-socket)"
         fileevent $options(-socket) readable [list]
     }
     ##
@@ -128,7 +127,6 @@ snit::type EVB::Connection {
     #
     method flowOn {} {
         set method $stateMethods($options(-state))
-        puts stderr "enabling fileevent for $options(-socket)"
         fileevent $options(-socket) readable [mymethod $method $options(-socket)] 
     }
 
@@ -376,7 +374,6 @@ snit::type EVB::Connection {
     # @param socket - socket that is readable.
     #
     method _Fragments socket {
-        puts stderr "Fragments from $socket"    
         set status [catch {
             set header [$self _ReadCountedString $socket]
     #	    set body   [$self _ReadBinaryData    $socket]
@@ -398,7 +395,6 @@ snit::type EVB::Connection {
             # Acknowledging the fragments here allows next bunch to be prepared
             # in the caller.
             
-            puts stderr "OK -> $socket"
             if {[catch {puts $socket "OK"} msg]} {
                 puts stderr "Event orderer failed to ack ok to a data source $msg"
                 $self  _Close LOST
@@ -551,7 +547,6 @@ snit::type EVB::ConnectionManager {
     #                to flow on.  If an empty string all are flowed on.
     #
     method _FlowOn {{sock ""}} {
-        puts stderr "FlowOn $sock "
         set accepting 1
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
@@ -567,7 +562,6 @@ snit::type EVB::ConnectionManager {
     #               means flow off all of them.
     method _FlowOff { {sock ""}} {
         set accepting 0
-        puts stderr "Flow off $sock"
         foreach connection [array names connections] {
             if {($sock eq "") || ([$connection cget -socket] eq $sock)} {
 
