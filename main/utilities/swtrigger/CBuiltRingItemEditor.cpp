@@ -81,9 +81,14 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
         size_t nEvents = countItems(pData, nBytes);
         void* p = pData;
         for (int i = 0; i < nEvents; i++ ) {
-            // p is really a ring item pointer. what we do depends on the type:
+            // p is really a pEventHeader.
+            pEventHeader pEH = static_cast<pEventHeader>(p);
+            BodySegment ts(sizeof(uint64_t), pEH);
+            outputSegments.push_back(ts);
+            pRingItemHeader pH = &(pEH->s_ringHeader);
             
-            pRingItemHeader pH = static_cast<pRingItemHeader>(p);
+            p = nextItem(p);    // Before the ring item gets edite.
+            
             if (pH->s_type == PHYSICS_EVENT) {
                 std::vector<BodySegment> segs =  editItem(pH);
                 outputSegments.insert(
@@ -96,7 +101,7 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
                 outputSegments.push_back(s);
             }
             
-            p = nextItem(p);
+            
         }
         outputData(outputSegments);
         freeData(outputSegments);
@@ -267,7 +272,7 @@ CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
     
     BodySegment hdr(
         sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) +
-        sizeof(BodyHeader), pFrag->s_body
+        sizeof(BodyHeader), pFrag
     );
     result.push_back(hdr);
     
