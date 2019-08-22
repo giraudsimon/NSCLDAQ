@@ -274,7 +274,9 @@ proc EndrunMon::enter {from to} {
 ##
 # leave
 #   A state is being left;
-#   Leaving Halted for Active starts the monitor thread.
+#   Leaving Active or Paused for Halted starts the monitor to wait for the
+#   end of run.  We do this so that we're not monitoring unless the run is
+#   actually being ended. This is because otherwise we can rate limit acquisition.
 #
 # @param from - the state being left.
 # @param to   - the state being entered.
@@ -285,7 +287,9 @@ proc EndrunMon::enter {from to} {
 #
 
 proc EndrunMon::leave {from to} {
-    if {($from eq "Halted") && ($to eq "Active")  && ($::EndrunMon::tid eq "")} {
+#    if {($from eq "Halted") && ($to eq "Active")  && ($::EndrunMon::tid eq "")} {}
+    if {(($from eq "Active") || ($from eq "Paused")) &&  \  
+        ($to eq "Halted") && ($::EndrunMon::tid eq "")} {
         set ring tcp://localhost/[$::EVBC::applicationOptions cget -destring]
         ::EndrunMon::startMonitor $ring
     }
