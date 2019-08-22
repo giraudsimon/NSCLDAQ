@@ -143,7 +143,8 @@ CRingItem::CRingItem(
 
   \param rhs  - The source of the copy.
 */
-CRingItem::CRingItem(const CRingItem& rhs)
+CRingItem::CRingItem(const CRingItem& rhs) :
+  m_pItem(reinterpret_cast<RingItem*>(&m_staticBuffer)) // Needed to prevent uncond new.
 {
   
   if (rhs.m_fZeroCopy) {
