@@ -695,6 +695,7 @@ void
 CRingItem::newIfNecessary(size_t size)
 {
   if (size > CRingItemStaticBufferSize) {
+    deleteIfNecessary();                     // In some cases we get called more than once.
     m_pItem  = reinterpret_cast<RingItem*>(new uint8_t[size + sizeof(RingItemHeader) + 100]);
   }
   else {
