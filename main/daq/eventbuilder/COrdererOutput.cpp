@@ -40,7 +40,6 @@ static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
  */
 COrdererOutput::COrdererOutput(int fd) :
   m_OutputChannel(fd),
-  m_Output(*(new io::CBufferedOutput(fd, BUFFERSIZE))),
   m_pVectors(nullptr),
   m_nVectors(0)
 {
@@ -56,7 +55,6 @@ COrdererOutput::COrdererOutput(int fd) :
 COrdererOutput::~COrdererOutput()
 {
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
-  delete &m_Output;
   pHandler->removeObserver(this);
   free(m_pVectors);
 }
@@ -76,7 +74,7 @@ COrdererOutput::~COrdererOutput()
 void
 COrdererOutput::operator()(const EvbFragments& event)
 {
-  // Build the iov array for the write:
+  //
   
   
   
