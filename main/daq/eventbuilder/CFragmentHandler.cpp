@@ -1147,7 +1147,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     EVB::pFragmentHeader pHeader = &pFragment->s_header;
     EVB::pFragment pFrag         = allocateFragment(pHeader); // Copies the header.
     uint64_t timestamp           = pHeader->s_timestamp;
-    bool     isBarrier           = pHeader->s_barrier != 0;
+    m_fBarrierPending           |= (pHeader->s_barrier != 0);   //Mark there's a barrier pending
 
     memcpy(pFrag->s_pBody, pFragment->s_body, pFrag->s_header.s_size);
 
@@ -1837,6 +1837,21 @@ public:
   }
 };
 
+class TsSmallerThan {
+private:
+  uint64_t m_timestamp;
+public:
+  TsSmallerThan(uint64_t ts) : m_timestamp(ts) {
+  }
+  bool operator()(std::pair<time_t, EVB::pFragment>& qel) {
+    
+    // Don't need to consider barriers as this is only used when there
+    // are no inflight barriers.
+    
+    return (m_timestamp < qel.second->s_header.s_timestamp );
+  }  
+};
+
 /**
  * predicate to determine if the time at which a queue element was queued
  * is larger than the specified value:
@@ -1871,12 +1886,20 @@ CFragmentHandler::DequeueUntilStamp(
   uint64_t timestamp
 )
 {
-
-  TsLargerThan pred(timestamp);
-  CopyPopUntil(q, result, pred);
+  // If a barrier is pending we need to do the slow searches from the front
+  // of the queues.
+  // Otherwise we can do fast searches from the back:
+  
+  if (m_fBarrierPending) {
+    TsLargerThan pred(timestamp);
+    CopyPopUntil(q, result, pred);
+  } else {
+    TsSmallerThan pred(timestamp);
+    CopyPopUntilR(q, result,pred);
+  }
   // If the front of the queue is a barrier, then we have barrier in progress.
   
-  m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
+ // m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
 }
 /**
  * DequeueUntilAbsTime
@@ -1898,9 +1921,7 @@ CFragmentHandler::DequeueUntilAbsTime(
   TimeLargerThan pred(time);
   CopyPopUntil(q, result, pred);
     
-  // If the front of the queue is a barrier, then we have barrier in progress.
   
-  m_fBarrierPending = !q.empty() && (q.front().second->s_header.s_barrier != 0);
 }
 
 

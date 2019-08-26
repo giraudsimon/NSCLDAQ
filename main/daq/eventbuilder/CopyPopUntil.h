@@ -54,5 +54,30 @@ CopyPopUntil(c1type& c1, c2type& c2, UnaryPredicate& pred)
     c1.erase(s, e);
 }
 
-
+/**
+ * CopyPopUntilR
+ *    Same as CopyPopUntil but works from the back end of  the source
+ *    until the predicate is not satisfied.
+ *    parameters are all the same.
+ *
+ */
+template <class c1type, class c2type, class UnaryPredicate>
+void
+CopyPopUntilR(c1type& c1, c2type& c2, UnaryPredicate& pred)
+{
+    
+    auto s = c1.begin();
+    auto re = c1.rbegin();
+    while (re != c1.rend()) {
+        if (!pred(*re)) break;
+        re++;
+    }
+    
+    auto e = re.base();
+    
+    // The range [s, e) must be moved...unless e is end
+    
+    c2.insert(c2.end(), s, e);
+    c1.erase(s, e);
+}
 #endif
