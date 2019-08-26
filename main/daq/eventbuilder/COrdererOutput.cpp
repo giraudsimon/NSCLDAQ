@@ -22,6 +22,9 @@
 #include <string>
 #include "fragment.h"
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 
 static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
 /*------------------------------------------------------------------------
@@ -47,6 +50,17 @@ COrdererOutput::COrdererOutput(int fd) :
   CFragmentHandler* pHandler = CFragmentHandler::getInstance();
   pHandler->addObserver(this);
 
+  long maxWrite = fcntl(m_OutputChannel, F_GETPIPE_SZ, nullptr);
+  if (maxWrite == -1) {
+    std::cerr << "* Warning * fpathconf would not return a value for PIP_BUF\n";
+    std::cerr << "* Using 1Mbyte by default\n";
+    std::cerr.flush();
+    maxWrite = 1024*1024;
+  } else {
+    std::cerr << " Maximum output write size: " << maxWrite << std::endl;
+    std::cerr.flush();
+  }
+  m_nMaxWrite = maxWrite;
 }
 /**
  * Destructor:
@@ -74,9 +88,13 @@ COrdererOutput::~COrdererOutput()
 void
 COrdererOutput::operator()(const EvbFragments& event)
 {
-  //
+  // Optimal writes are the size of the PIPE buffer.
+  // This allows us to overlap the production of the next batch of iovs
+  // while the consumer end of the pipe is reading the block of data
+  // we'v put in.  This gets the maximum write size we'll allow:
   
   
+  int maxWrite = m_nMaxWrite;
   
   // Minimize dynamic memory management:
   
@@ -89,9 +107,30 @@ COrdererOutput::operator()(const EvbFragments& event)
   
   iovec*  iovs = m_pVectors;
   int n(0);
-  
+  size_t totalWrite(0);
   for (auto i = event.begin(); i != event.end(); i++) {
     auto p = i->second;
+    
+    // If this will overflow maxwrite - output what we have so far:
+    // and reset stuff.  This allows us to produce the next set
+    // of iovs overlapped with the consumer getting this set:
+    // note we require at least one write so that we will progress.
+    
+    size_t nBytes = sizeof(EVB::FragmentHeader) + p->s_header.s_size;
+    if (((totalWrite + nBytes) > maxWrite) && (n > 0)) {
+      try {
+        io::writeDataVUnlimited(m_OutputChannel, iovs, n);
+        n = 0;                       // Start at the beginning of the iovs
+        totalWrite = 0;              // Accumulate another buffer.
+      }
+      catch (...) {
+        std::cerr << "Output Thread caught an exception writing data\n";
+        std::cerr.flush();
+        throw;
+        
+      }
+    }
+    
     iovs[n].iov_base = &(p->s_header);
     iovs[n].iov_len  = sizeof(EVB::FragmentHeader);
     
@@ -99,13 +138,16 @@ COrdererOutput::operator()(const EvbFragments& event)
     iovs[n+1].iov_len  = p->s_header.s_size;
     
     n += 2;
+    totalWrite += nBytes;
   }
+  // If we have a partial buffer, output it:
   
   try {
-    io::writeDataVUnlimited(m_OutputChannel, iovs, nIovs);
+    if (n) {
+      io::writeDataVUnlimited(m_OutputChannel, iovs, n);
+    }
   }
   catch (...) {
-    delete []iovs;
     std::cerr << "Output Thread caught an exception writing data\n";
     std::cerr.flush();
     throw;

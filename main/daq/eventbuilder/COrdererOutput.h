@@ -41,6 +41,7 @@ private:
   int              m_OutputChannel;	// where we write the data.
   iovec*           m_pVectors;
   size_t           m_nVectors;
+  int              m_nMaxWrite;
 
   // canonicals:
 
