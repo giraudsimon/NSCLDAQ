@@ -288,7 +288,7 @@ proc EndrunMon::enter {from to} {
 
 proc EndrunMon::leave {from to} {
 #    if {($from eq "Halted") && ($to eq "Active")  && ($::EndrunMon::tid eq "")} {}
-    if {(($from eq "Active") || ($from eq "Paused")) &&  \  
+    if {(($from eq "Active") || ($from eq "Paused")) &&  \
         ($to eq "Halted") && ($::EndrunMon::tid eq "")} {
         set ring tcp://localhost/[$::EVBC::applicationOptions cget -destring]
         ::EndrunMon::startMonitor $ring
