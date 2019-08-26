@@ -62,6 +62,8 @@ public:
 private:
     Fragments* dequeueFragments();
     void merge(FragmentList& result, Fragments& lists);
+    void merge(FragmentList& result, FragmentList& list1, FragmentList& list2);
+    void merge(FragmentList& result, FragmentList& list);
     void clearBufferQueue();
     void releaseFragments(Fragments& frags);
     void releaseFragmentList(FragmentList& frags);

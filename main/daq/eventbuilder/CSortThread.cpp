@@ -123,20 +123,34 @@ CSortThread::dequeueFragments()
 void
 CSortThread::merge(FragmentList& result, Fragments& lists)
 {
+  // If there's one list, we only need to append::
+  
+  if (lists.size() == 1) {
+    merge(result, *(lists[0]));
+    return;
+  }
+  // If there's two lists we have the fast(?) two way merge:
+  
+  if (lists.size() == 2) {
+    merge(result, *(lists[0]), *(lists[1]));
+    return;
+  }
   
   // Build the minheap for the merge.  Note that the timestamp is a minimum
   // at the front of each queeu.  We make the minheap a map keyed on the
   // timestamp that contains a pointer to the dequeue from which the
   // timestamp came.
+
   
   std::multimap<uint64_t, FragmentList*> minheap;  // dup timestamps are possible.
   for (int i =0; i < lists.size(); i++) {
     uint64_t ts = lists[i]->front().second->s_header.s_timestamp;
     minheap.emplace(std::make_pair(ts, lists[i]));
   }
-  // Once the map size is 1 we just append the remaining data:
+  // Once the map size is 2 we can drop through to the special 2-way merge
+  // which in turn drops into the append when it's down to one list:
   
-  while(minheap.size() > 1) {
+  while(minheap.size() > 2) {
     auto q = minheap.begin();
     result.push_back(q->second->front());
     q->second->pop_front();
@@ -149,8 +163,63 @@ CSortThread::merge(FragmentList& result, Fragments& lists)
       minheap.emplace(std::make_pair(ts, q->second));
     }
   }
-  auto remaining(minheap.begin()->second);
-  result.insert(result.end(), remaining->begin(), remaining->end() );
+  if (minheap.size() == 2) {         // last two:
+    merge(result, *(minheap.begin()->second), *(minheap.rbegin()->second));
+    return;
+    
+  } else if (minheap.size() == 1) {   // Don't think this is possible.
+    merge(result, *(minheap.begin()->second));  
+  }
+
+}
+/**
+ * merge -two way
+ *    Merge data from two lists of fragments.  This can be done more efficiently
+ *    than the minheap by direct comparison of frons of queues.
+ *    When we're down to the last queue we just do the one-way 'merge'.
+ *
+ * @param result -reference to the output list.
+ * @param list1 - Reference to the first list oif fragments.
+ * @param list2 - References the second list of fragments.
+ */
+void
+CSortThread::merge(FragmentList& result, FragmentList& list1, FragmentList& list2)
+{
+  auto f1 = list1.front();
+  auto f2 = list2.front();
+  while(1) {
+    
+    if (f1.second->s_header.s_timestamp < f2.second->s_header.s_timestamp) {  // f1 goes.
+      result.push_back(f1);
+      list1.pop_front();
+      f1 = list1.front();
+      if (list1.empty()) {          // Only lis2 left.
+        merge(result, list2);
+        return;
+      }
+    } else {             // F2 goes:
+      
+      result.push_back(f2);
+      list2.pop_front();
+      f2 = list2.front();
+      if (list2.empty()) {             // only list1 left.
+        merge(result, list1);
+        return;
+      }
+    }
+  }
+}
+/**
+ * merge - 1-way.
+ *   Just append the remaining fragments to the result. queue.
+ *
+ *   @result - the resulting sorted list.
+ *   @list   - the remaining fragmnets.
+ */
+void
+CSortThread::merge(FragmentList& result, FragmentList& list)
+{
+  result.insert(result.end(), list.begin(), list.end());
 }
 /**
  * clearBufferQueue
