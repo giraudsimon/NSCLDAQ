@@ -58,7 +58,7 @@ static const uint64_t G(K*M);
 
 static const int RING_TIMEOUT(5);	// seconds in timeout for end of run segments...need no data in that time.
 
-static const size_t BUFFERSIZE(4096*32);
+static const size_t BUFFERSIZE(M);   // ZFS Blocksize - let's write blocks that size:
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -895,7 +895,19 @@ EventLogMain::writeWrappedItem(int fd, int& ends)
 void
 EventLogMain::writeData(int fd, void* pData, size_t nBytes)
 {
-  io::writeData(fd, pData, nBytes);
+  uint8_t* p = static_cast<uint8_t*>(pData);
+  size_t  nLeft = nBytes;
+  while (nLeft > BUFFERSIZE) {
+    io::writeData(fd, p, BUFFERSIZE);
+    nLeft -= BUFFERSIZE;
+    p     += BUFFERSIZE;
+  }
+  
+  // Last partial buffer write:
+  
+  if (nLeft) {
+    io::writeData(fd, p, nLeft);
+  }
   
   if (m_fChecksum) {
     checksumData(pData,nBytes);
