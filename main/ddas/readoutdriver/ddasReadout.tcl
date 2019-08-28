@@ -124,6 +124,8 @@ set options {
     {sortring.arg    ""   "Ringbuffer into which the sorter puts its data" }
     {sorthost.arg   ""   "Host in which the sorter runs"}
     {window.arg     10   "Sorting window in seconds."}
+    {fifothreshold.arg 20480 "FIFO Threshold value for DDAS Readout"}
+    {buffersize.arg    16384 "Buffer size value for DDAS Readout"}
 }
 
 set mandatory [list readouthost sortring sorthost cratedir]
@@ -158,6 +160,11 @@ set ddasOptionMap {
 set readoutDir [dict get $parsed cratedir]
 set readoutCmd [file join $bindir DDASReadout]
 set readoutHost [dict get $parsed readouthost]
+set fifoThreshold [dict get $parsed fifothreshold]
+set bufferSize    [dict get $parsed buffersize]
+
+set readoutCmd "FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
+
 foreach optMapEntry $ddasOptionMap {
     set opt [lindex $optMapEntry 0]
     set mapping [lindex $optMapEntry 1]
