@@ -20,8 +20,9 @@
 #include <TCLObjectProcessor.h>
 #endif
 
-
-
+#include <tcl.h>
+#include <map>
+#include <string>
 
 /**
  * The CFragmentHandlerCommand class provides the EVB::handleFragment
@@ -37,6 +38,8 @@
  */
 class CFragmentHandlerCommand : public CTCLObjectProcessor
 {
+private:
+    std::map<std::string, Tcl_Channel> m_channelMap;
 public:
   CFragmentHandlerCommand(CTCLInterpreter& interp,
 			 std::string name,
@@ -46,7 +49,8 @@ public:
 protected:
   virtual int operator()(CTCLInterpreter& interp,
 			 std::vector<CTCLObject>& objv);
-
+private:
+    Tcl_Channel getChannel(const std::string& name);
   
 
 };

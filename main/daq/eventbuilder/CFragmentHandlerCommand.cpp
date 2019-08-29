@@ -19,7 +19,7 @@
 
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
-#include <tcl.h>
+
 #include <stdint.h>
 #include <Exception.h>
 #include <stdexcept>
@@ -82,10 +82,10 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
     
     objv[1].Bind(interp);
     std::string channelName = objv[1];
-    Tcl_Channel pChannel = Tcl_GetChannel(interp.getInterpreter(), channelName.c_str(), NULL);
+    Tcl_Channel pChannel = getChannel(channelName);
     if (pChannel == NULL) {
-    interp.setResult(std::string("Tcl does not know about this channel name"));
-    return TCL_ERROR;
+      interp.setResult(std::string("Tcl does not know about this channel name"));
+      return TCL_ERROR;
     }
 
 
@@ -152,4 +152,32 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   delete []msgBody;
   return status;
   
+}
+/////////////////////////////////////////////////////////////////////////
+// Internal utility methods.
+//
+
+/**
+ * getChannel
+ *     Given a channel name return the underlying Tcl_Channel.  Note that
+ *     the channel is cached in the m_channelMap for presumably faster lookup
+ *     next time around.
+ *
+ * @param name - channel name e.g. file123
+ * @return Tcl_Channel nullptr if there's no matching channel.
+ */
+Tcl_Channel
+CFragmentHandlerCommand::getChannel(const std::string& name)
+{
+  auto p = m_channelMap.find(name);
+  if (p != m_channelMap.end()) {
+    return p->second;
+  } else {
+    Tcl_Channel result =
+      Tcl_GetChannel(getInterpreter()->getInterpreter(), name.c_str(), NULL);
+    if (result) {
+      m_channelMap[name] = result;
+    }
+    return result;
+  }
 }
