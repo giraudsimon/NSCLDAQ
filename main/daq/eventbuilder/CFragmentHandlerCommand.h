@@ -40,6 +40,9 @@ class CFragmentHandlerCommand : public CTCLObjectProcessor
 {
 private:
     std::map<std::string, Tcl_Channel> m_channelMap;
+    uint8_t*    m_messageBuffer;
+    size_t      m_bufSize;
+    
 public:
   CFragmentHandlerCommand(CTCLInterpreter& interp,
 			 std::string name,
@@ -51,6 +54,7 @@ protected:
 			 std::vector<CTCLObject>& objv);
 private:
     Tcl_Channel getChannel(const std::string& name);
+    uint8_t*    getBuffer(size_t nBytes);
   
 
 };

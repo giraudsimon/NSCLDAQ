@@ -40,7 +40,7 @@
 CFragmentHandlerCommand::CFragmentHandlerCommand(CTCLInterpreter& interp,
 						std::string name,
 						bool registerMe) :
-  CTCLObjectProcessor(interp, name, registerMe)
+  CTCLObjectProcessor(interp, name, registerMe), m_messageBuffer(nullptr), m_bufSize(0)
 {
   
 }
@@ -48,7 +48,9 @@ CFragmentHandlerCommand::CFragmentHandlerCommand(CTCLInterpreter& interp,
 /**
  * Destructor
  */
-CFragmentHandlerCommand::~CFragmentHandlerCommand() {}
+CFragmentHandlerCommand::~CFragmentHandlerCommand() {
+  delete []m_messageBuffer;
+}
 
 /**
  * Command processor
@@ -87,7 +89,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
       interp.setResult(std::string("Tcl does not know about this channel name"));
       return TCL_ERROR;
     }
-
+    
 
     // Read the message length:
 
@@ -102,7 +104,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
 
 
     if (msgLength > 0) {
-      msgBody = new uint8_t[msgLength];
+      msgBody = getBuffer(msgLength);
       n    = Tcl_Read(pChannel, reinterpret_cast<char*>(msgBody), msgLength);
       if(n != msgLength) {
         throw std::string("Message Body could not be completely read");
@@ -149,7 +151,6 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
     interp.setResult("Unanticipated exception in fragment handler");
     status = TCL_ERROR;
   }
-  delete []msgBody;
   return status;
   
 }
@@ -180,4 +181,20 @@ CFragmentHandlerCommand::getChannel(const std::string& name)
     }
     return result;
   }
+}
+/**
+ * If needed, expand the buffer.
+ *
+ * @param nBytes number of byte needed.
+ * @retrun uint8_t* - pointer to the buffer.
+ */
+uint8_t*
+CFragmentHandlerCommand::getBuffer(size_t nBytes)
+{
+  if (m_bufSize < nBytes) {
+    delete []m_messageBuffer;
+    m_messageBuffer = new uint8_t[nBytes];
+  }
+  return m_messageBuffer;
+
 }

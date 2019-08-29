@@ -383,14 +383,9 @@ snit::type EVB::Connection {
             return;		# Nothing else to do.
         }
     
-        # Protocol allows a DISCONNECT here:
+       #  Presumably the most common case is "FRAGMENTS"
     
-        if {$header eq "DISCONNECT"} {
-            puts $socket "OK"
-            flush $socket
-            $self _Close CLOSED
-    
-        } elseif {$header eq "FRAGMENTS"} {
+       if {$header eq "FRAGMENTS"} {
     
             # Acknowledging the fragments here allows next bunch to be prepared
             # in the caller.
@@ -415,9 +410,14 @@ snit::type EVB::Connection {
             $callbacks invoke -fragmentcommand [list] [list]
     
             
-            
+        # Protocol allows a DISCONNECT here:
     
-        } else {
+        elseif {$header eq "DISCONNECT"} {
+            puts $socket "OK"
+            flush $socket
+            $self _Close CLOSED
+    
+        }  else {
             # Anything else is a crime against The Protocol:
     
     
