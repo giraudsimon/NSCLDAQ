@@ -345,7 +345,7 @@ mainLoop(string ring, int timeout, int mindata)
                     dumpWords(pHeader, 200);                     // Dump part of the ring.
               exit(EXIT_FAILURE);
             } else {
-              cerr << "item larger than --minsize, reallocating bufer to " << firstItemSize + readOffset << endl;
+//              cerr << "item larger than --minsize, reallocating buffer to " << firstItemSize + readOffset << endl;
               mindata = firstItemSize + readOffset;
               pBuffer = reinterpret_cast<uint8_t*>(realloc(pBuffer, firstItemSize + readOffset));
               readOffset += nread;
