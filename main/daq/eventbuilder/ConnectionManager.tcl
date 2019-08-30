@@ -412,7 +412,7 @@ snit::type EVB::Connection {
             
         # Protocol allows a DISCONNECT here:
     
-        elseif {$header eq "DISCONNECT"} {
+        } elseif {$header eq "DISCONNECT"} {
             puts $socket "OK"
             flush $socket
             $self _Close CLOSED
