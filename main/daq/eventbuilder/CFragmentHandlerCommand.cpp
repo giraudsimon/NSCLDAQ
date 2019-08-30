@@ -66,6 +66,7 @@ CFragmentHandlerCommand::~CFragmentHandlerCommand() {
  *
  * @note: TODO:  Deal with running on a big endian system:
  */
+#ifdef OLDSTYLE
 int
 CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
@@ -118,8 +119,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
     
 
 
-    
-    
+
     
   }
   catch (const char* m) {
@@ -154,6 +154,62 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   return status;
   
 }
+#endif
+
+int
+CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+  bindAll(interp, objv);
+  
+  // Note that all errors are handled by the caller and indicate the connection
+  // should be marked closed/lost.  That too is done by the caller.
+  
+  try {
+    requireExactly(objv, 2, "Fragment handler needs exactly 2 parameters");
+    std::string chanName = objv[1];
+    Tcl_Channel channel = getChannel(chanName);
+    
+    std::string messageType;
+    readHeader(messageType, channel);
+    
+    if (messageType == "DISCONNECT") {
+      sendOk(channel);
+      throw "Peer Disconnected";
+    }
+    if (messageType != "FRAGMENTS") {
+      sendError(channel);
+      std::string message = "Expected FRAGMENTS message type got: ";
+      message += messageType;
+      throw message;
+    }
+    sendOk(channel);                // do it here to let sender start marshalling next block.
+    readBlock(channel);            // m_usedSize bytes Block in m_messageBuffer
+    CFragmentHandler* pHandler = CFragmentHandler::getInstance();
+    pHandler->addFragments(
+      m_usedSize, reinterpret_cast<EVB::pFlatFragment>(m_messageBuffer)
+    );
+        
+  }
+  catch (const std::string& msg) {
+    interp.setResult(msg);
+    return TCL_ERROR;
+  } catch (const char* msg) {
+    interp.setResult(msg);
+    return TCL_ERROR;
+    
+  } catch (CException& e) {
+    interp.setResult(e.ReasonText());
+    return TCL_ERROR;
+  } catch (std::exception& e) {
+    interp.setResult(e.what());
+    return TCL_ERROR;
+  } catch (...) {
+    
+  }
+  
+  return TCL_OK;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // Internal utility methods.
 //
@@ -191,10 +247,104 @@ CFragmentHandlerCommand::getChannel(const std::string& name)
 uint8_t*
 CFragmentHandlerCommand::getBuffer(size_t nBytes)
 {
+  nBytes++;                        // This allows the caller to null terminate a read.
   if (m_bufSize < nBytes) {
     delete []m_messageBuffer;
     m_messageBuffer = new uint8_t[nBytes];
+    m_bufSize = nBytes;
   }
   return m_messageBuffer;
 
+}
+/**
+ * readHeader
+ *    Read a part into an std::string - this string is, presumably
+ *    the header string:
+ * @param header - references the string (so we have no  copy construction).
+ * @param chan   - the Tcl Channel to read from.
+ * @throw const char* - If the read does not complete normally.
+ */
+void
+CFragmentHandlerCommand::readHeader(std::string& header, Tcl_Channel chan)
+{
+  readBlock(chan);
+  m_messageBuffer[m_usedSize] = 0;
+  header = reinterpret_cast<char*>(m_messageBuffer);
+  
+}
+/**
+ * readBlock
+ *    Read a block of data into m_messageBuffer
+ *    If necessary the block is increased in size (by getBuffer)
+ *    If the reads fail, then we throw a const char* exception
+ *
+ * @param chan - the channel to read from
+ */
+void
+CFragmentHandlerCommand::readBlock(Tcl_Channel chan)
+{
+  uint32_t s = readPartSize(chan);
+  uint8_t* p = getBuffer(s);
+  int      n = Tcl_Read(chan, reinterpret_cast<char*>(m_messageBuffer), s);
+  if (n != s) {
+    throw "Failed to read data from a data source";
+  }
+  m_usedSize = s;
+  
+}
+/**
+ * readPartSize
+ *    Reads and returns the size of a message part.  Each message part is
+ *    has a size and then the body of the message.
+ *
+ *  @param chan - the Tcl Channel.
+ *  @return uint32_t - the size read
+ *  @thrw const char* - if the read failed.
+ */
+uint32_t
+CFragmentHandlerCommand::readPartSize(Tcl_Channel chan)
+{
+  uint32_t result;
+  int s = Tcl_Read(chan, reinterpret_cast<char*>(&result), sizeof(result));
+  if (s != sizeof(result)) {
+    throw "Failed to read part size from a data source";
+  }
+  return result;
+}
+
+
+/**
+ * sendOk
+ *    Send the OK ack string to the peer.
+ *
+ * @param chan - the channel on which to send.
+ * @throw const char* the write failed.
+ */
+void
+CFragmentHandlerCommand::sendOk(Tcl_Channel chan)
+{
+    static const char* msg = "OK\n";
+    static const int s     = strlen(msg);
+    
+    if (Tcl_Write(chan, msg, s) != s) {
+      throw "Positive ACK (OK) send failed";
+    }
+    Tcl_Flush(chan);                 // Not sure this is needed given buffering none
+}
+/**
+ * sendError
+ *    Send error to  a peerk.
+ * @param chan - the chan to write on.
+ * @throw const char*  - if the write failed.
+ */
+void
+CFragmentHandlerCommand::sendError(Tcl_Channel chan)
+{
+    static const char* msg = "ERROR\n";
+    static const int s     = strlen(msg) +1;
+    
+    if (Tcl_Write(chan, msg, s) != s) {
+      throw "Positive ACK (OK) send failed";
+    }
+    Tcl_Flush(chan);                 // Not sure this is needed given buffering none  
 }

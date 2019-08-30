@@ -42,6 +42,7 @@ private:
     std::map<std::string, Tcl_Channel> m_channelMap;
     uint8_t*    m_messageBuffer;
     size_t      m_bufSize;
+    size_t      m_usedSize;
     
 public:
   CFragmentHandlerCommand(CTCLInterpreter& interp,
@@ -55,8 +56,13 @@ protected:
 private:
     Tcl_Channel getChannel(const std::string& name);
     uint8_t*    getBuffer(size_t nBytes);
-  
+    void        readHeader(std::string& header, Tcl_Channel chan);
+    void        readBlock(Tcl_Channel chan);
+    uint32_t    readPartSize(Tcl_Channel chan);
 
+    void        sendOk(Tcl_Channel chan);
+    void        sendError(Tcl_Channel chan);
+    
 };
 
 #endif
