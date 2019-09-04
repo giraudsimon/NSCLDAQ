@@ -66,7 +66,7 @@ CFragmentHandlerCommand::~CFragmentHandlerCommand() {
  *
  * @note: TODO:  Deal with running on a big endian system:
  */
-#ifdef OLDSTYLE
+
 int
 CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
@@ -154,8 +154,8 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   return status;
   
 }
-#endif
 
+#ifdef COMPILEDHANDLER
 int
 CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
@@ -171,23 +171,24 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
     
     std::string messageType;
     readHeader(messageType, channel);
-    
-    if (messageType == "DISCONNECT") {
+
+    if (messageType == "FRAGMENTS") {
+      sendOk(channel);                // do it here to let sender start marshalling next block.
+      readBlock(channel);            // m_usedSize bytes Block in m_messageBuffer
+      CFragmentHandler* pHandler = CFragmentHandler::getInstance();
+      pHandler->addFragments(
+	  m_usedSize, reinterpret_cast<EVB::pFlatFragment>(m_messageBuffer)
+      );
+      
+    } else  if (messageType == "DISCONNECT") {
       sendOk(channel);
       throw "Peer Disconnected";
-    }
-    if (messageType != "FRAGMENTS") {
+    } else {
       sendError(channel);
       std::string message = "Expected FRAGMENTS message type got: ";
       message += messageType;
       throw message;
     }
-    sendOk(channel);                // do it here to let sender start marshalling next block.
-    readBlock(channel);            // m_usedSize bytes Block in m_messageBuffer
-    CFragmentHandler* pHandler = CFragmentHandler::getInstance();
-    pHandler->addFragments(
-      m_usedSize, reinterpret_cast<EVB::pFlatFragment>(m_messageBuffer)
-    );
         
   }
   catch (const std::string& msg) {
@@ -209,7 +210,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   
   return TCL_OK;
 }
-
+#endif
 /////////////////////////////////////////////////////////////////////////
 // Internal utility methods.
 //

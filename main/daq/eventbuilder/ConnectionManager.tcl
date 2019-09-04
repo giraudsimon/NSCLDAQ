@@ -375,14 +375,54 @@ snit::type EVB::Connection {
     #
     method _Fragments socket {
         set status [catch {
-            EVB::handleFragment $socket
+            set header [$self _ReadCountedString $socket]
+    #	    set body   [$self _ReadBinaryData    $socket]
         } msg]
-        
-        if {$status} {
-            puts stderr "Fragment handler says: $msg"
+        if {[eof $options(-socket)]} {
             $self _Close LOST
-        } else {
+            return;		# Nothing else to do.
+        }
+    
+       #  Presumably the most common case is "FRAGMENTS"
+    
+       if {$header eq "FRAGMENTS"} {
+    
+            # Acknowledging the fragments here allows next bunch to be prepared
+            # in the caller.
+            
+            if {[catch {puts $socket "OK"} msg]} {
+                puts stderr "Event orderer failed to ack ok to a data source $msg"
+                $self  _Close LOST
+            } else {
+                flush $socket
+            }
+            # protocol allows FRAGMENTS here:
+            # TODO: Handle errors as a close
+    
+            if {[catch {EVB::handleFragment $socket} msg]} {
+                puts stderr "Event orderer failed call to handleFragment: : $msg"
+                tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
+                    -message "C++ Fragment handler reported an error: $msg"
+                exit;		# can't really continue.
+            }
+    
+    
             $callbacks invoke -fragmentcommand [list] [list]
+    
+            
+        # Protocol allows a DISCONNECT here:
+    
+        } elseif {$header eq "DISCONNECT"} {
+            puts $socket "OK"
+            flush $socket
+            $self _Close CLOSED
+    
+        }  else {
+            # Anything else is a crime against The Protocol:
+    
+    
+            puts $socket "ERROR {Unexpected header: $header}"
+    
         }
     }
 
