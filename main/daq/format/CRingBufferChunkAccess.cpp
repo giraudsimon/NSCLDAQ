@@ -144,6 +144,15 @@ CRingBufferChunkAccess::nextChunk()
         m_pRingBuffer->skip(m_chunk.size());
         m_chunk.setChunk(0, m_chunk.getStorage());  // Zero the chunk.
     }
+
+    // do we have any data:
+
+    size_t availData = m_pRingBuffer->availableData();
+    if (!availData) {                             // nope return null chunk.
+      m_chunk.setChunk(0, nullptr);
+      return m_chunk;                  
+    }
+    
     // Distinguish between the cases described in the comment header:
     
     if (firstItemWraps())  {
@@ -153,7 +162,6 @@ CRingBufferChunkAccess::nextChunk()
         // The max data we want to give the chunk is the min of
         // the distance to wrap and the available data:
         
-        size_t availData = m_pRingBuffer->availableData();
         size_t distToWrap= m_pRingBuffer->bytesToTop();
         size_t chunkMax  = availData < distToWrap ? availData : distToWrap;
         
