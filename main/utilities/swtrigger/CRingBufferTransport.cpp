@@ -138,7 +138,8 @@ CRingBufferTransport::send(iovec* parts, size_t numParts)
 void
 CRingBufferTransport::nextChunk()
 {
-    while(!(m_pReader->waitChunk(CHUNK_SIZE, POLL_COUNT, POLL_TIMING)))
+  size_t dataAvail;
+    while(!(dataAvail = m_pReader->waitChunk(CHUNK_SIZE, POLL_COUNT, POLL_TIMING)))
         ;
         
     // Now a chunk should be ready... doing this allows for m_pCurrentChunk

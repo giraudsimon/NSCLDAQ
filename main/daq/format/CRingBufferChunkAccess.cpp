@@ -90,6 +90,8 @@ CRingBufferChunkAccess::~CRingBufferChunkAccess()
  *                    at least a full ring item, this will return 0.
  *  @throws std::invalid_argument if maxChunk is bigger than the ring item
  *                    storage.
+ *  @note this invalidates any existing chunk.
+ *  
  */
 size_t
 CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls, int usecPoll)
@@ -99,6 +101,14 @@ CRingBufferChunkAccess::waitChunk(size_t maxChunk, int polls, int usecPoll)
          "CRingBufferChunkAccess::waitChunk - maxChunk is bigger than ring buffer"
      );
     }
+    
+    // If there's a current chunk we need to skip it's data to get an accurate
+    // read on the remaining data:
+    
+     if (m_chunk.size() > 0) {
+        m_pRingBuffer->skip(m_chunk.size());
+        m_chunk.setChunk(0, m_chunk.getStorage());  // Zero the chunk.
+    }   
     
     int pollCount = 0;
     while (m_pRingBuffer->availableData() < maxChunk) {
@@ -132,6 +142,7 @@ CRingBufferChunkAccess::nextChunk()
     
     if (m_chunk.size() > 0) {
         m_pRingBuffer->skip(m_chunk.size());
+        m_chunk.setChunk(0, m_chunk.getStorage());  // Zero the chunk.
     }
     // Distinguish between the cases described in the comment header:
     
