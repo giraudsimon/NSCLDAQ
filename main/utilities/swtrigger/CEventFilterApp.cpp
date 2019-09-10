@@ -69,7 +69,7 @@ CEventFilterApp::CEventFilterApp(gengetopt_args_info& args) :
 }
 /**
  * destructor
- *    The only dynamic things rae the senders and receivers.
+ *    The only dynamic things are the senders and receivers.
  */
 CEventFilterApp::~CEventFilterApp()
 {
@@ -96,8 +96,8 @@ CEventFilterApp::operator()()
     do {
         m_pDataSource->getMessage(&pMsg, nBytes);
         if (nBytes) {
-            bool accepted;
-            bool rejected;
+            bool accepted(true);       // Non physics items need to go
+            bool rejected(true);       // to both sinks.
             if (type(pMsg) == PHYSICS_EVENT) {
                 uint32_t c = getClassification(pMsg);
                 if (isAccepted(c)) {
@@ -117,6 +117,14 @@ CEventFilterApp::operator()()
             free(pMsg);
         }
     } while (nBytes > 0);
+    
+    // Send data end messages to the sinks.  That should make them
+    // flush their buffers:
+    
+    m_pAcceptedSink->end();
+    if (m_pRejectedSink) {
+        m_pRejectedSink->end();
+    }
 }
 /**
  * isAccepted
