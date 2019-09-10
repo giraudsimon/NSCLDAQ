@@ -37,6 +37,7 @@
 #include <mpi.h>
 #include <stdexcept>
 #include <stdlib.h>
+#include <iostream>
 
 
 /**
