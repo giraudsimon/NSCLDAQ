@@ -100,7 +100,7 @@ CTheApplication::CTheApplication()
 {
   if (m_Exists) {
     cerr << "Attempted to create more than one instance of the application\n";
-    Tcl_Exit(EX_SOFTWARE);
+    exit(EX_SOFTWARE);
   }
   m_Exists = true;
   m_pInterpreter = static_cast<CTCLInterpreter*>(NULL);
@@ -182,7 +182,7 @@ int CTheApplication::operator()(int argc, char** argv)
 
   if (parsedArgs.enumerate_given) {
     enumerateVMUSB();
-    Tcl_Exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
   }
   if (parsedArgs.init_script_given) {
     m_systemControl.setInitScript(string(parsedArgs.init_script_arg));
@@ -250,7 +250,7 @@ int CTheApplication::operator()(int argc, char** argv)
         if(end == portString.c_str()) {       // failed.
             std::cerr << "--port string must be either a number or 'managed'\n";
             cmdline_parser_print_help();
-            Tcl_Exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         } else {
             tclServerPort = port;
         }
