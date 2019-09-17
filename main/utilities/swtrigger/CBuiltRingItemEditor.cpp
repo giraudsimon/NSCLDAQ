@@ -40,7 +40,7 @@ CBuiltRingItemEditor::CBuiltRingItemEditor(
     CFanoutClientTransport& fanin, CSender& sink, uint64_t clientId,
     BodyEditor* pEditor
 ) : CBuiltItemWorker(fanin, sink, clientId), m_nId(clientId), m_pEditor(pEditor),
-m_nBlocks(0)
+m_nBlocks(0), m_pIoVectors(nullptr), m_nIoVectorCount(0), m_nUsedIoVectors(0)
 {}
 /**
  * destructor
