@@ -71,6 +71,12 @@
                 builder.
             </para>
         </listitem>
+        <listitem>
+            <para>
+                Describe two other programs that provide powerful
+                abilities to edit event data.
+            </para>
+        </listitem>
     </itemizedlist>
     <section>
         <title>Concepts and classes</title>
@@ -215,9 +221,10 @@
     <section>
         <title>Transport implementations</title>
         <para>
-            At present only ZeroMQ (ZMQ) transports are supported.  We
-            plan to implement MPI transport in the future.  Other transport
-            types will be implemented as demand indicates.
+            At present both ZeroMQ messaging with threaded parallelism
+            and OpenMPI distributed are fully supported.  If you have
+            other messaging frameworks and paradigms you'd like to have
+            supported let us know.
         </para>
         <section>
             <title>Details of ZMQ transport implementation</title>
@@ -338,6 +345,28 @@ if (!pZmqFactory) {
             <para>
                 See the reference information for more about the transport
                 types these factories can create.
+            </para>
+        </section>
+        <section>
+            <title>MPI implementation of the framework</title>
+            <para>
+                Using the common base classes, derived classes that do
+                MPI messaging have been built to provide the same
+                communications pattern.  In this case, the endpoint IDs
+                are simply MPI ranks.
+            </para>
+            <para>
+                While we compile against OpenMPI, any MPI implementation
+                should work.   Note that usually MPI programs must be run
+                using a helper program.  For exmaple in OpenMPI you must
+                use <command>mpirun</command> to start an mpi application.
+            </para>
+            <para>
+                It is possible to write programs that can, at run-time
+                select the appropriate communication framework.
+                Several NSCLDAQ utilities have been written in this way and
+                you can study their initialization source code to get an
+                idea of how to accomplish that.
             </para>
         </section>
     </section>
@@ -916,11 +945,30 @@ extern "C" {                       <co id='text.factory.externc' />
         </listitem>
     </orderedlist>
     <para>
-        Note that the compiler and linker are both generally <command>g++</command>.
+        Note that the compiler and linker are both generally <command>g++</command>
+        or, if MPI has been enabled mpicc for OpenMPI and you'll need
+        to have set environment variables needed for OpenMPI appropriately.
     </para>
     </section>
 </chapter>
 
+<chapter>
+    <title>SoftwareTrigger</title>
+    <para>
+        This program actually provides a generic ability to add an
+        extension <type>uint32_t</type> to the body header of each
+        event.  The program is described completely in the
+        <literal>1daq</literal> reference section.
+    </para>
+</chapter>
+<chapter>
+    <title>EventEditor</title>
+    <para>
+        The EventEditor provides a very general mechanism for modifying the bodies
+        of event fragments for event built data. See the reference entry in
+        <literal>1daq</literal>
+    </para>
+</chapter>
 <!-- /chapter -->
 
 <!-- manpage 1daq -->
@@ -1117,12 +1165,13 @@ CRingMarkingWorker::Classifier* createClassifier() {
 }
 
             </programlisting>
-            <para>
-                Note the use of <literal>extern "C"</literal> to remove
-                C++ name mangling.  The function just creates a new classifier
-                and returns a pointer to it.
-            </para>
         </informalexample>
+        <para>
+            Note the use of <literal>extern "C"</literal> to remove
+            C++ name mangling.  The function just creates a new classifier
+            and returns a pointer to it.
+        </para>
+        
     </refsect1>
 </refentry>
 <refentry>
@@ -1518,6 +1567,522 @@ $DAQBIN/Transformer <optional>OPTIONS</optional>...
         </variablelist>
     </refsect1>
 
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>EventEditor</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>EventEditor</refname>
+        <refpurpose>Edit event fragment bodies.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+<command>$DAQBIN/EventEditor <replaceable>options...</replaceable></command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This program provides the ability to edit the bodies of
+            fragments of event built data.  The body of a fragment is,
+            in this case, considered to be the body of the ring item
+            rather than the  full body which contains the ring item
+            header and optional body hedaer.
+        </para>
+        <para>
+            The program recomputes the size of the body and properly
+            updates both the ring item header and the fragment header
+            size fields prior to outputting the event.
+        </para>
+        <para>
+            The program relies on user code located in a shared library
+            whose path is passed to the program at run-time.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <variablelist>
+            <varlistentry>
+                <term><option>--help</option></term>
+                <listitem>
+                    <para>
+                        Outputs a brief summary of the program options
+                        and exits.  All other options are ignored.
+                        See <option>--version</option> below, however.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--version</option></term>
+                <listitem>
+                    <para>
+                        Prints out the program name and version.  All
+                        other options are ignored.  If
+                        <option>--help</option> and
+                        <option>--version</option> are both specified,
+                        only the first of those optiones is acted on and
+                        all other options are ignored.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--source</option> <replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the data source.  The data source
+                        can specify a ring buffer (local or remote) or a
+                         file.   This option is mandatory.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sink</option> <replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the data sink, that is where
+                        the edited data are written. The URI can specify
+                        either a file or a ring buffer.  If a ring
+                        buffer is specified, the host name must either be
+                        <literal>localhost</literal> or resolve to the
+                        local computer.
+                    </para>
+                    <para>
+                        This option is mandatory.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--workers</option> <replaceable>integer</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the number of worker threads/processes
+                        to start. Workers are handed chunks of events to
+                        operate on in parallel.   In addition to the
+                        workers there are three more threads/processes:
+                    </para>
+                    <para>
+                        An input thread/process reads data from the
+                        data source and distributes chunks of complete
+                        ring items to workers on demand.  This
+                        distribution of events is load balanced and
+                        uses a pull application level protocol.
+                    </para>
+                    <para>
+                        The workers send data to a sorting thread/process
+                        which re-orders the data by increasing time-stamp.
+                    </para>
+                    <para>
+                        The sort thread/process sends data to an
+                        ouptut thread/process which writes data chunks
+                        to the data sink. 
+                    </para>
+                    <para>
+                        Thus processing is a four stage pipeline.
+                        Each stage running in parallel while the second
+                        stage consists of a farm of workers which work
+                        in parallel on segments (clumps) of input data
+                        to produce the output data.
+                    </para>
+                    <para>
+                        This option is mandatory.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--clump-size</option> <replaceable>integer</replaceable></term>
+                <listitem>
+                    <para>
+                        The value of this option  is the number of ring items
+                        each worker gets in response to a data pull.
+                        Larger clump sizes result in better amortizatino
+                        of the communications overhead.  Smaller
+                        clumps result in better responsiveness at the
+                        program's output since the sorter needs to see
+                        contributions from all workers before it can
+                        sort.
+                    </para>
+                    <para>
+                        This option is optional and defaults to <literal>1</literal>
+                        which isn't good for most cases.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--parallel-strategy</option> <replaceable>threaded | mpi</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies which parallelization library to use.
+                        Threaded parallelism runs all processing elements
+                        in a single machine and is suitable for use in
+                        high core count systems.  MPI parallelism uses
+                        OpenMPI for messaging and, using
+                        <command>mpirun</command> to start the program,
+                        allows you to distribute the computation
+                        across several networked nodes.
+                    </para>
+                    <para>
+                        When using mpi parallelism,  the number of
+                        processes specified in the mpirun <option>-np</option>
+                        flag must be at least 4.  The actual number of
+                        workers is computed from <option>-np</option>
+                        rather than <option>--workers</option> and is
+                        <option>--np</option> - 3.  If this value is
+                        not consistent with the value specified by
+                        <option>--workers</option> a warning is emitted
+                        to the stderr of the rank 0 process.
+                    </para>
+                    <para>
+                        This option is optional and defaults to
+                        <literal>threaded</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--editorlib</option> <replaceable>file-path</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifes the path of the shared library that
+                        contains the user code that edits the event.
+                        See <literal>USER CODE</literal> below for more
+                        information as well
+                        as <literal>EXAMPLE</literal>.
+                    </para>
+                    <para>
+                        Note that if the library is not in the default
+                        library load path, you will need to ensure
+                        that your path specification includes enough
+                        information to describe the directory e.g.
+                        <filename>./libMylib.so</filename> as opposed
+                        to <filename>libMylib.so</filename>.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>USER CODE</title>
+        <para>
+            User code is built into a shared library that must
+            provide:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Implementation of a class derived from
+                    <classname>CBuiltRingItemEditor::BodyEditor</classname>.
+                    See <filename>CBuiltRingItemEditor.h</filename>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    A factory function with C bindings named
+                    <function>createEditor</function>
+                    which is called with no parameters and is expected
+                    to return a pointer to a new, dynamically created
+                    <classname>CBuiltRingItemEditor::BodyEditor</classname>
+                    object (or an object from a class derived from that).
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            A key data structure that we will be using is a
+            <type>CBuiltRingItemEditor::BodySegment</type>.  Objects
+            of this type are used to describe chunks of the output
+            event body.  This structure allows in-place editing with
+            minimum data movements.  That is body segments can be
+            chunks of the original event as well as new data.
+        </para>
+        <para>
+            The <type>CBuiltRingItemEditor::BodySegment</type> is a
+            struct with the following fields:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term><type>bool</type> <structfield>s_isDynamic</structfield></term>
+                <listitem>
+                    <para>
+                        Specifies if the data described requires
+                        deletion once the event has been emitted.
+                        The worker process will operate on all events
+                        in a chunk before emitting the edited events
+                        in that chunk.  If you are adding data to an event
+                        that is unique to that event that data must
+                        be dynamically allocated and this
+                        field in its descriptor must be <literal>true</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><type>iovec</type> <structfield>s_description</structfield></term>
+                <listitem>
+                    <para>
+                        Describes a chunk of data.  This is a struct
+                        as well described in the man pages for
+                        <function>writev</function>.   It has a
+                        <structfield>iov_base</structfield> which points
+                        to the data in the chunk and a
+                        <structfield>iov_len</structfield> which contains
+                        the number of bytes in that chunk.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The job of the editing class is to produce a vector of
+            <type>CBuiltRingItemEditor::BodySegment</type> objects
+            that describe the data in the edited body.
+        </para>
+        <para>
+            Let's look at the <classname>CBuiltRingItemEditor::BodyEditor</classname>
+            class definition and its methods.
+        </para>
+        <informalexample>
+            <programlisting>
+class BodyEditor {
+public:
+    virtual std::vector&lt;BodySegment&gt; operator()(
+        pRingItemHeader pHdr, pBodyHeader hdr, size_t bodySize,
+        void* pBody
+    )  = 0;
+    virtual void free(iovec&amp; item) = 0;
+};
+
+            </programlisting>
+        </informalexample>
+        <para>
+            Note that the <type>pRingItemHeader</type> and
+            <type>pBodyHeader</type> types are defined
+            in <filename>DataFormat.h</filename> and described in the
+            reference section <literal>3daq</literal>.
+        </para>
+        <para>
+            <methodname>operator()</methodname> is called for each
+            fragment of each event.  <parameter>pHdr</parameter>
+            points to the ring item header of that fragment
+            (fragments are assumed to be ring items).
+            <parameter>hdr</parameter> points to the body header
+            of the event.  This program requires that event fragments
+            have body headers (as pretty much all do now).
+            Finally <parameter>bodySize</parameter> are the
+            number of bytes in the body of the fragment ring item
+            and <parameter>pBody</parameter> points to that body
+        </para>
+        <para>
+            <methodname>operator()</methodname> returns a vector of
+            body segment descriptors that describe what the new
+            body will look like.  The method normally should not
+            modify the ring item and body headers.   The caller
+            will perform any modifications needed for the new
+            size of the body.  Here's an example of code that
+            returns the original body un-modified:
+        </para>
+        <informalexample>
+            <programlisting>
+...
+{
+    std::vector&lt;BodySegment&gt; result;
+    BodySegment body(bodySize, pBody);
+    result.push_back(body);
+    return result;
+    
+}
+            </programlisting>
+        </informalexample>
+        <para>
+            This is a valid though uninteresting example.
+        </para>
+        <para>
+            When producing data to go in the body, that data must
+            typically be dynamically allocated.  This is because the
+            entire clump of ring items, and fragments in each event ring
+            item are processed before passing the resulting data to
+            the sorting thread/process.  Here's sample code to
+            insert a uint32_t <literal>0xa5a5a5a5</literal> at the
+            beginning of the fragment and a <literal>0x5a5a5a5a</literal>
+            after the existing body:
+        </para>
+        <informalexample>
+            <programlisting>
+{
+    std::vector&lt;BodySegment&gt; result;
+    uint32_t* pHeader = new uint32_t(0xa5a5a5a5);
+    uint32_t* pTrailer= new uint32_t(0x5a5a5a5a);
+    BodySegment descHeader(sizeof(uint32_t), pHeader, true);
+    BodySegment body(bodySize, pBody);
+    BodySegment descTrailer(sizeof(uint32_t), pTrailer, true);
+    
+    result.push_back(descHeader);
+    result.push_back(body);
+    result.push_back(descTrailer);
+    return result;
+}
+            </programlisting>
+        </informalexample>
+        <para>
+            The key point to get here is that it's not necessary to
+            open up space for the header by sliding the original data
+            down or any other data movement.  Just create the data for
+            the header, and trailer and provide descriptors.
+            Note that the <structfield>is_isDynamic</structfield> field
+            for those items is true.
+        </para>
+        <para>
+            After events have been emitted, the event editor
+            goes through the set of descriptors for that event and
+            invokes <methodname>free</methodname> for each dynamically
+            allocated segment.  This method is passed the
+            <structfield>s_description</structfield> field of that description.
+            That method should dispose of the dynamic storage associated with
+            that descriptor.  For our previous example:
+        </para>
+        <informalexample>
+            <programlisting>
+{
+    uint32_t* pInt = static_cast&lt;uint32_t*&gt;(item.iov_base);
+    delete pInt;
+}
+            </programlisting>
+        </informalexample>
+    </refsect1>
+    <refsect1>
+        <title>EXAMPLE</title>
+        <para>
+            Let's put together the code in the previous section that
+            inserts headers and trailers in each fragment into a
+            complete example.
+        </para>
+        <informalexample>
+            <programlisting>
+#include &lt;CBuiltRingItemEditor.h&gt;   <co id='eveditor.include' />
+#include &lt;DataFormat.h&gt;
+
+class MyEditor : public CBuiltRingItemEditor::BodyEditor
+{
+    virtual std::vector&lt;BodySegment&gt; operator()(
+            pRingItemHeader pHdr, pBodyHeader hdr,    <co id='eveditor.class' />
+            size_t bodySize, void* pBody
+    );
+    virtual void free(iovec&amp; item);
+};
+virtual std::vector&lt;BodySegment&gt;
+MyEditor::operator()(                       <co id='eveditor.functor' />
+    pRingItemHeader pHdr, pBodyHeader hdr,
+    size_t bodySize, void* pBody
+)
+{
+    std::vector&lt;BodySegment&gt; result;   <co id='eveditor.result' />
+    uint32_t* pHeader = new uint32_t(0xa5a5a5a5); <co id='eveditor.newitems' />
+    uint32_t* pTrailer = new uint32_t(0x5a5a5a5a);
+    
+    BodySegment hdr(sizeof(uint32_t), pHeader, true);
+    BodySegment body(bodySize, pBody);        <co id='eveditor.descriptor' />
+    BodySegment trailer(sizeof(uint32_t), pTrailer, true);
+    
+    result.push_back(hdr);
+    result.push_back(body);                   <co id='eveditor.buildresult' />
+    result.push_back(trailer);
+    return result;
+}
+void
+MyEditor::free(iovec&amp; item)             <co id='eveditor.free' />
+{
+    uint32_t* p = static_cast&lt;uint32_t&gt;(item.iov_base);
+    delete p;
+}
+
+
+exern "C" {
+    CBuiltRingItemEditor::BodyEditor* createEditor()
+    {
+        return new MyEditor;                 <co id='eveditor.factory' />
+    }
+}
+            </programlisting>
+        </informalexample>
+        <calloutlist>
+            <callout arearefs='eveditor.include'>
+                <para>
+                    These are the minimal set of headers needed to write
+                    editors.  <filename>CBuiltRingItemEditor.h</filename>
+                    provides class definitions for the editor including
+                    the bsae class for <classname>MyEditor</classname> below.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.class'>
+                <para>
+                    This is the class definition for the editing class
+                    we're providing.  Note how it derives from
+                    <classname>CBuiltRingItemEitor::BodyEditor</classname>
+                    and promises to supply implementation of its base class's
+                    pure virtual methods.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.functor'>
+                <para>
+                    Here's where we implement the function call operator.
+                    See the detailed comments below.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.result'>
+                <para>
+                    This declares our method's result.  A vector of
+                    body segment descriptors.  In our case we'll need three of
+                    them.  One for our header word, one for the original body
+                    and one for the trailer word.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.newitems'>
+                <para>
+                    The new items we'll add to the body must remain in scope
+                    for an extended period of time (from now until
+                    <methodname>free</methodname> is called for them).  Therefore
+                    even though they are simple uin32_t objects they must be
+                    new'd into existence and initialized.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.descriptor'>
+                <para>
+                    This section of code builds the three descriptors we need.
+                    Note how the ones that describe the header and trailer are
+                    marked as dynamic while the original body isn't.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.buildresult'>
+                <para>
+                    The descriptors are pushed into the return vector in the
+                    order in which we want to see them in the final, edited,
+                    event.  The resulting vector is returned as the
+                    method's value.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.free'>
+                <para>
+                    Our implementation of <methodname>free</methodname>
+                    is invoked for each header and trailer.  We cast the pointer
+                    to the data to a uint32_t pointer and delete.
+                    Note that if you might have had several types of data
+                    you're adding to the event, you may need to use
+                    <structfield>iov_len</structfield> to untangle which to
+                    delete - or better yet, make them all derive from a common
+                    base class with virtual destructors.  You can then cast
+                    to that base class and delete.
+                </para>
+            </callout>
+            <callout arearefs='eveditor.factory'>
+                <para>
+                    The last thing the EventEditor program needs is a way to
+                    make the editor objects it will call in each worker thread.
+                    The factory function <function>createEditor</function>
+                    provides that.  When the shared library is loaded, this
+                    entry point is located and invoked to return Body Editor
+                    pointers to brand new body editors.
+                </para>
+            </callout>
+        </calloutlist>
+    </refsect1>
+    
 </refentry>
 
 <!-- /manpage -->
@@ -4723,5 +5288,714 @@ public:
     </refsect1>
 
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CMPITransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CMPITransport</refname>
+        <refpurpose>Base class for transports using MPI for communication.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CMPITransport_mpi.h&gt;
 
+class CMPITransport : public CTransport
+{
+public:
+    CMPITransport();
+    CMPITransport(int currentReceiver);
+    
+    virtual  void    recv(void** ppData, size_t&amp; size);
+    virtual  void    send(iovec* parts, size_t numParts);
+    virtual  void    end();
+    
+    // MPI specific stuff:
+    
+    int setReceiver(int rank);
+    int getReceiver() const;
+    int getLastReceivedTag() const;
+    int getLastReceivedRank() const;
+    MPI_Comm setCommunicator(MPI_Comm newComm);
+    
+protected:
+    static const int endTag  = 0;    // Tag signifying end of data
+    static const int dataTag =  1;   // Tag signifying data    
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This is the base class for transports that use the Message Passing
+            Interface (MPI) for communication.  Note that MPI applications
+            normally require a helper program (e.g. <command>mpirun</command>)
+            to be started.
+        </para>
+        <para>
+            MPI application endpoints are ranks.  By default these are ranks
+            within the communicator named <literal>MPI_COMM_WORLD</literal>.
+            It is possible, however, for applications to build groups of processes
+            that perform communication using sub-set communicators.  Doing that
+            is beyond the scope fo this library, however there is support for
+            using such communicators.
+        </para>
+        <para>
+            Note that in addition to being able to target specific
+            receivers with messages, each message has a tag
+            associated with it.  The framework uses those tags
+            as follows:
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <literal>1</literal> - indicates data are being transferred.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <literal>0</literal> - indicates no more data is available
+                    from the peer.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPITransport</methodname>
+                        <void />
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Base class.  Note that no receiver has been selected
+                        and the user must set a receiver prior to the first
+                        communication using <methodname>setReceiver</methodname>.
+                        The communicator use, unless later set using
+                        <methodname>setCommunicator</methodname> will be
+                        <literal>MPI_COMM_WORLD</literal>, the communicator
+                        for the entire application.
+                    </para>
+                    
+                    
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPITransport</methodname>
+                        <methodparam>
+                            <type>int</type><parameter>currentReceiver</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor sets the receiver peer as
+                        <parameter>currentReceiver</parameter>.   This
+                        is intended for use by derived classes implementing
+                        e.g. pipelining to communicate from one stage of the
+                        pipeline to another (not fan-in).  Unless later
+                        overridden by calls to <methodname>setReceiver</methodname>,
+                        all sends will be directed to the process indicated by
+                        <parameter>currentReceiver</parameter>'s rank.  Note
+                        that unless modified by a call to
+                        <methodname>setCommunicator</methodname> that rank
+                        is evaluated in the <literal>MPI_COMM_WORLD</literal>
+                        communicator.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual  </modifier>
+                        <type>void    </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Receives data.  By default, this allows receipt of messages
+                        from any sender with any tag.
+                        <methodname>getLastReceivedRank</methodname> and
+                        <methodname>getLastReceivedTag</methodname> can be used
+                        to determine the source and tag of the last message.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual  </modifier>
+                        <type>void    </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends a message to the current receiver.  The
+                        message is gathered from parts specified by
+                        <parameter>parts</parameter>.  See the man page for
+                        <function>writev</function> for the definition of
+                        <type>iovec</type>.  <parameter>numParts</parameter>
+                        specifies the number of parts.
+                    </para>
+                    <para>
+                        The message is sent with a tag of <literal>1</literal>
+                        indicating the message is data
+                    </para>
+                </listitem>
+            </varlistentry>
+    
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual  </modifier>
+                        <type>void    </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends an empty message with tag <literal>0</literal>.
+                        This indicates to the peer that no more data is
+                        available to be sent.
+                    </para>
+                </listitem>            
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>int </type>
+                        <methodname>setReceiver</methodname>
+                        <methodparam>
+                            <type>int</type><parameter> rank</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sets the target of the next send to be
+                        <parameter>rank</parameter> in the current communicator.
+                        The method returns the rank of the receiver
+                        prior to this call.  If there was no prior receiver,
+                        the method returns <literal>-1</literal> wich is not
+                        a legal process rank.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>int </type>
+                        <methodname>getLastReceivedTag</methodname>
+                        <void />
+                        <modifier>const</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns the tag of the most recently received message.
+                        If the object has not yet received a message,
+                        <literal>-1</literal> is returned. Note that
+                        <literal>-1</literal> is, I think, a legal MPI tag so
+                        I strongly suggest not using it in applications that
+                        rely on this framework.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>int </type>
+                        <methodname>getLastReceivedRank</methodname>
+                        <void />
+                        <modifier>const</modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Returns the rank of the process from which the
+                        most recently received message came.  If no messages
+                        have been received yet, <literal>-1</literal> is
+                        returned, which is an illegal rank.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier></modifier>
+                        <type>MPI_Comm </type>
+                        <methodname>setCommunicator</methodname>
+                        <methodparam>
+                            <type>MPI_Comm </type><parameter>newComm</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sets the communicator that will be used to send and receive
+                        messages to <parameter>newComm</parameter>.  This is our
+                        one concession to support multiple communicators and
+                        process groups.  The return value of this method is the
+                        previous communicator and will always be legal because
+                        the communicator the object is initialized with is
+                        <literal>MPI_COMM_WORLD</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CMPIFanoutTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CMPIFanoutTransport</refname>
+        <refpurpose>Fanout data over MPI to multiple workers.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CMPIFanoutTransport_mpi.h&gt;
+
+class CMPIFanoutTransport : public CMPITransport, public CFanoutTransport
+{
+
+public:
+    CMPIFanoutTransport();
+    CMPIFanoutTransport(MPI_Comm communicator);
+
+    virtual void recv(void** ppData, size_t&amp; size);
+    virtual void send(iovec* parts,  size_t numParts);
+    virtual void end();
+
+    static const int dataRequestTag  = 2; 
+};
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This transport provides the supplier side of mechanism to fanout
+            data chunks to multiple workers.  Fanouts allow for worker
+            processes to operate in parallel on distinct chunks of data.
+            Clients of this data accept it using a
+            <classname>CMPIFanoutClientTransport</classname> class.
+        </para>
+        <para>
+            At a low level, the protocol used is a pull protocol. When a worker
+            is ready for data, it requests it by sending this rank an empty
+            message with a <literal>dataRequestTag</literal> (value is
+            <literal>2</literal>).  <methodname>send</methodname> operations
+            read the next data request message and respond by sending the
+            requested data to the rank that sent the data request.
+        </para>
+        <para>
+            As each process sends a data request, it is rememebered and end
+            of data is handled by sending end of datas as requested until all
+            registered requestors have received the end..
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHOD</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPIFanoutTransport</methodname>
+                        <void />
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs a new fanout transport using the
+                        default communicator
+                        (<literal>MPI_COMM_WORLD</literal>).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPIFanoutTransport</methodname>
+                        <methodparam>
+                            <type>MPI_Comm </type><parameter>communicator</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs the transport using an alternate
+                        <parameter>communicator</parameter>.  Note that
+                        since the transport is not point to point, there's not
+                        a concept of the receiver rank. 
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp;</type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Throws an <classname>std::logic_error</classname>
+                        as this transport is uni-dicectional.
+                    </para>
+                    
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends the message to the next requestor using the underlying
+                        transport. You can think of this as having the
+                        following pseudocode implementation:
+                    </para>
+                    <informalexample>
+                        <programlisting>
+
+get request message using base class recv.
+get rank of request message sender after ensuring the tag is a data request tag.
+set receive rank of base class.
+send message using base class send.
+
+                        </programlisting>
+                    </informalexample>
+                    <para>
+                        Note that in the above pseudo code, if the
+                        message received when getting the data request is non-empty,
+                        or is not tagged by a <literal>dataRequestTag</literal>,
+                        the method throws a <classname>std::logic_error</classname>
+                        exception
+                    </para>
+                    <para>
+                        Note as well that request messages from first time requestors
+                        result in the rank of the requestor being entered in
+                        a registry of clients.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type> void </type>
+                        <methodname>end</methodname>
+                        <void />
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Sends an end to all clients.  The pseudo code for this
+                        is essentially:
+                    </para>
+                    <informalexample>
+                        <programlisting>
+while the client registry is not empty:
+    get a data request as in <methodname>send</methodname>
+    send an end message to the requestor.
+    Remove the requestor from the client registry.
+endwhile
+                        </programlisting>
+                    </informalexample>
+                    <para>
+                        Note that it's therefore important for there not to
+                        be so many workers
+                        for a small data set that some of them never get any data.
+                        If that happens, it's possible the client registry can be
+                        empty before some of those workers requested data and
+                        received end messages.
+                    </para>
+                    <para>
+                        For very small data sets, it might be wise to only
+                        constitute a single worker.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CMPIFanoutClientTransport</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CMPIFanoutClientTransport</refname>
+        <refpurpose>Worker side of a fanout transport (client).</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CMPIFanoutClientTransport_mpi.h&gt;
+
+class CMPIFanoutClientTransport
+    : public CMPITransport, public CFanoutClientTransport
+{
+public:
+    CMPIFanoutClientTransport(int distributor);
+    CMPIFanoutClientTransport(
+        MPI_Comm communicator, int distributor
+    );
+
+    virtual void recv(void** ppData, size_t&amp; size);
+    virtual void send(iovec* parts,  size_t numParts);
+    virtual void setId(uint64_t id) {} 
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            Objects of this class should be used to get data from
+            a fanout tranposrt (MPI).  Note that for MPI transports, the
+            ID of the client is always its rank in the communicator.  This implies
+            that the communicator used by the fanout and its client must be the
+            same.  This also implies that the
+            <methodname>setId</methodname> method, in fact, actually does nothing.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>METHODS</title>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPIFanoutClientTransport</methodname>
+                        <methodparam>
+                            <type>int </type><parameter>distributor</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Constructs a fanout client using the default
+                        communicator (<literal>MPI_COMM_WORLD</literal>).
+                        <parameter>distributor</parameter> is the rank of the
+                        process that is fanning out the data (the one with
+                        the <classname>CFanoutMPITransport</classname> object).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <constructorsynopsis>
+                        <methodname>CMPIFanoutClientTransport</methodname>
+                        <methodparam>
+                            <type>MPI_Comm </type><parameter>communicator</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>int </type><parameter>distributor</parameter>
+                        </methodparam>
+                    </constructorsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This constructor also accepts a
+                        <parameter>communicator</parameter> that will be used for
+                        all message passing. This communicator must be the same
+                        as the one used by the peer
+                        <classname>CMPIFanoutTransport</classname> object.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>recv</methodname>
+                        <methodparam>
+                            <type>void** </type><parameter>ppData</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t&amp; </type><parameter>size</parameter>
+                        </methodparam>
+                         
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Gets data from the fanout.  A pointer to the received
+                        data (when done, the application must call
+                        <function>free</function> to release it) is
+                        stored in <parameter>ppData</parameter>.  The
+                        number of bytes of data received are stored in
+                        <parameter>size</parameter>.
+                    </para>
+                    <para>
+                        The pseudo code for this can be though of as:
+                    </para>
+                    <informalexample>
+                        <programlisting>
+send request for data to <literal>distributor</literal>.
+receive message from distributor.
+                        </programlisting>
+                    </informalexample>
+                    <para>
+                        Note that the caller needs to ensure the data received
+                        are not an end.  While this could be done by asking
+                        for the message tag, a more transport portable method
+                        is to check for an empty message.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>send</methodname>
+                        <methodparam>
+                            <type>iovec* </type><parameter>parts</parameter>
+                        </methodparam>
+                        <methodparam>
+                            <type>size_t </type><parameter>numParts</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Since this transport is unidirectional at the application
+                        level, this method throws a
+                        <classname>std::logic_error</classname> exception.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual</modifier>
+                        <type>void  </type>
+                        <methodname>setId</methodname>
+                        <methodparam>
+                            <type>uint64_t </type><parameter>id</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This operation is provided as required by the
+                        base class but is a No-op as the client id is always
+                        the class of the program in the communicator used to
+                        construct the object.  This communicator must be the
+                        same one used to construct the
+                        peer <classname>CMPIFanoutTransport</classname>
+                        object.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+
+</refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>CRingItemMPIDataSource</refentrytitle>
+        <manvolnum>3daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>CRingItemMPIDataSource</refname>
+        <refpurpose>Fanout clumps of ring items.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CRingItemMPIDataSource.h&gt;
+
+class CRingItemMPIDataSource : public CRingItemBlockSourceElement
+{
+public:
+    CRingItemMPIDataSource(const char* ringUri,  size_t chunkSize=1);
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This class fans out data from ring buffer structured files or
+            live ring buffers.  To use this, construct it and then call
+            the base class's <methodname>operator()</methodname> functor
+            method.  The object then reads data from the ring item data
+            source and fans it out to its clients until there's no more
+            data (never for a live ring, end of file for a file).
+        </para>
+        <para>
+            The constructor parameter <parameter>ringUri</parameter>
+            identifiles the data source and can be either a file
+            (<literal>file:</literal> protocol URI) or a live ring
+            (<literal>tcp:</literal> protocol URI).
+        </para>
+        <para>
+            The <parameter>chunkSize</parameter> parameter allows you to tune
+            the performance efficiency of the transport.  Each message will
+            <parameter>cunkSize</parameter> complete ring items unless an
+            end file is hit prior to filfilling this obligations.
+        </para>
+    </refsect1>
+
+</refentry>
 <!-- /manpage -->
