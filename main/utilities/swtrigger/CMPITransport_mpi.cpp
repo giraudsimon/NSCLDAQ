@@ -93,18 +93,19 @@ CMPITransport::recv(void** pData, size_t& size)
     
     if (nBytes) {          // Dont't do zero length mallocs:
         *pData = malloc(nBytes);
-    } else {
-        *pData = nullptr;
-    }
-    MPI_Recv(
+        MPI_Recv(
         *pData, nBytes, MPI_CHAR, m_nLastRankReceived, m_nLastTagReceived,
         m_communicator, MPI_STATUS_IGNORE
-    );
+      );
+      size = nBytes;
+    } else {
+        *pData = nullptr;
+        size = 0;
+    }
     
     
-    // End tags always give size of zero.
     
-    size = (m_nLastTagReceived == dataTag) ? nBytes : 0;
+    
     
 }
 /**
