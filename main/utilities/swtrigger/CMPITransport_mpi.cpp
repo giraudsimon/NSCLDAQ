@@ -99,6 +99,11 @@ CMPITransport::recv(void** pData, size_t& size)
       );
       size = nBytes;
     } else {
+        uint32_t dummy;
+        MPI_Recv(
+            &dummy, sizeof(dummy), m_nLastRankReceived, m_nLastTagReceived, 
+            m_communicator, MPI_STATUS_IGNORE
+        );                                      // stll need to recv with non null buffer.
         *pData = nullptr;
         size = 0;
     }
