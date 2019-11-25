@@ -75,7 +75,7 @@ libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/utilities/IO -I@top_srcdir@/base/dataflo
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
 	CZMQServerTransport.h CSender.h CRingItemTransport.h CRingItemFileTransport.h \
 	CRingBufferTransport.h CDispatcher.h CClientRegistry.h CZMQRouterTransport.h \
-	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \g
+	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \
 	CDataSourceElement.h CParallelWorker.h CDataSinkElement.h  \
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
 	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemBlockSourceElement.h \
@@ -138,6 +138,7 @@ EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.cpp \
+	FullEventEditor.cpp	\
 	$(MPI_FullEventEditor_SRCS)
 
 FullEventEditor_Dependencies=libSwTrigger.la
