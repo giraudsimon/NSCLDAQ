@@ -1,8 +1,8 @@
-package "Event Transformer"
+package "Event Editor"
 version "v1.0"
 
 text "Processes event built data providing user code an opportunity to add \
-additional event data on the end of each event fragment"
+modify the bodies of each event segment of built data."
 
 option "source" s "Data Source" string typestr="URI"
 option "sink"   S "Data Sink"   string typestr="URI"

@@ -30,6 +30,8 @@ MPI_Transformer_SRCS=$(MPI_TRSRCS)
 
 MPI_EventEditor_SRCS=$(MPI_EDITORSRCS)
 
+MPI_FullEventEditor_SRCS=
+
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.
 
@@ -39,7 +41,7 @@ endif
 
 lib_LTLIBRARIES=libSwTrigger.la libTestClassifier.la libTestExtender.la
 
-bin_PROGRAMS=SoftwareTrigger EventFilter Transformer EventEditor
+bin_PROGRAMS=SoftwareTrigger EventFilter Transformer EventEditor  FullEventEditor
 
 
 libSwTrigger_la_SOURCES=CReceiver.cpp CTestTransport.cpp CTestTransport.h zhelpers.hpp \
@@ -73,7 +75,7 @@ libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/utilities/IO -I@top_srcdir@/base/dataflo
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
 	CZMQServerTransport.h CSender.h CRingItemTransport.h CRingItemFileTransport.h \
 	CRingBufferTransport.h CDispatcher.h CClientRegistry.h CZMQRouterTransport.h \
-	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \
+	CZMQDealerTransport.h CFanoutClientTransport.h CProcessingElement.h \g
 	CDataSourceElement.h CParallelWorker.h CDataSinkElement.h  \
 	CThreadedProcessingElement.h CRingItemTransportFactory.h	\
 	CRingItemDispatcher.h CZMQRingItemDispatcher.h CRingItemBlockSourceElement.h \
@@ -83,6 +85,7 @@ include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h
 	CCommunicatorFactoryMaker.h CRingItemMarkingWorker.h CNullTransport.h \
 	CFanoutTransport.h CGather.h CBuiltRingItemExtender.h \
 	CBuiltItemWorker.h CBuiltRingItemEditor.h		\
+	CFullEventEditor.h					\
 	$(MPI_TRANSPORT_HDRS)
 
 
@@ -134,6 +137,14 @@ EventEditor_Dependencies=libSwTrigger.la
 EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
+FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.cpp \
+	$(MPI_FullEventEditor_SRCS)
+
+FullEventEditor_Dependencies=libSwTrigger.la
+
+FullEventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
+
 
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
@@ -145,13 +156,20 @@ libTestExtender_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
+
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
-	transformer.c transformer.h eventeditor.h eventeditor.c
+	transformer.c transformer.h eventeditor.h eventeditor.c \
+	fulleventeditor.h fulleventeditor.c
 
 eventeditor.c: eventeditor.h
 
 eventeditor.h: eventeditor.ggo
 	$(GENGETOPT) <@srcdir@/eventeditor.ggo -Feventeditor
+
+fulleventeditor.c: fulleventeditor.h
+
+fulleventeditor.h: fulleventeditor.ggo
+	$(GENGETOPT) <@srcdir@/fulleventeditor.ggo  -Ffulleventeditor
 
 swtriggerflags.c: swtriggerflags.h
 
