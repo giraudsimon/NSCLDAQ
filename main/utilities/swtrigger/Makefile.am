@@ -139,6 +139,7 @@ EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.cpp \
 	FullEventEditor.cpp	\
+	CFullEventEditorApp.h CFullEventEditorApp.cpp
 	$(MPI_FullEventEditor_SRCS)
 
 FullEventEditor_Dependencies=libSwTrigger.la

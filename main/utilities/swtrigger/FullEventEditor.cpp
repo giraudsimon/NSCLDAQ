@@ -36,31 +36,7 @@ class CFullEventEditorApp;
 
 typedef CFullEventEditor::Editor* (*createEditor)();
 
-/**
- * loadEditor
- *   Given the name/path to a shared library that has a
- *   createFullEventEditor C function invokes that to create that editor.
- *
- *  @param libname - path to the .so.
- *  @return CFullEventEditor::Editor - The editor to use.
-*/
-CFullEventEditor::Editor*
-loadEditor(const std::string& libname)
-{
-    void* pDll  = dlopen(libname.c_str(), RTLD_NOW | RTLD_NODELETE);
-    if (!pDll) {
-        std::string msg = "Editor library load failed: ";
-        msg += dlerror();
-        throw std::runtime_error(msg);
-    }
-    createEditor pFactory = reinterpret_cast<createEditor>(dlsym(pDll, "createFullEventEditor"));
-    if (!pFactory) {
-        std::string msg = "Failed to find 'createFullEventEditor' in editor library: ";
-        msg += dlerror();
-        throw std::runtime_error(msg);
-    }
-    return (pFactory());
-}
+
 
 /**
  * main
@@ -78,10 +54,8 @@ int main(int argc, char**argv)
     CFullEventEditorApp* pApp;
     
     std::string strategy = parsed.parallel_strategy_arg;
-    std::string lib     = parsed.editorlib_arg;
         
     try {
-        CFullEventEditor::Editor* pEditor = loadEditor(lib);
         if (strategy == "zmq") {
             throw std::invalid_argument("ZMQ application not yet implemented");
         } else if (strategy == "mpi") {
