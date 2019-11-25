@@ -31,7 +31,7 @@ class CFullEventEditorApp;
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
-#include <dlfcn.h>
+
 #include <errno.h>
 
 typedef CFullEventEditor::Editor* (*createEditor)();
