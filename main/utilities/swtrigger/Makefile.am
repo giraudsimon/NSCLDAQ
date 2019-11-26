@@ -12,6 +12,8 @@ MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
 MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
 	CMPIBuiltRingItemEditorApp_mpi.cpp
 
+MPI_FULLEDITORSRCS=
+
 if MPI
 
 #  Define the transport sources and headers.
@@ -30,7 +32,7 @@ MPI_Transformer_SRCS=$(MPI_TRSRCS)
 
 MPI_EventEditor_SRCS=$(MPI_EDITORSRCS)
 
-MPI_FullEventEditor_SRCS=
+MPI_FullEventEditor_SRCS= $(MPI_FULLEDITOR_SRCS)
 
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.
@@ -194,8 +196,9 @@ transformer.h: transformer.ggo
 # Note regardless we ensure the MPI sources are distributed in the tarball.
 
 EXTRA_DIST=swtriggerflags.ggo eventfilterflags.ggo ConceptsAndPrograms.xml \
-	CommFramework.xml transformer.ggo eventeditor.ggo $(MPI_TSRCS) \
-	$(MPI_THDRS)  $(MPI_SWTSRCS) $(MPI_EDITORSRCS)
+	CommFramework.xml transformer.ggo eventeditor.ggo fulleventeditor.ggo \
+	$(MPI_TSRCS) \
+	$(MPI_THDRS)  $(MPI_SWTSRCS) $(MPI_EDITORSRCS) $(MPI_FULLEDITORSRCS)
 
 
 ####################################################################################
