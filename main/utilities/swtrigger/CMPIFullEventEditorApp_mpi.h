@@ -55,6 +55,7 @@ class CProcessingElement;
  */
 class CMPIFullEventEditorApp : public CFulLEventEditorApp
 {
+
 public:
     CMPIFullEventEditorApp(int argc, char** argv, gengetopt_args_info& args);
     virtual ~CMPIFullEventEditorApp();

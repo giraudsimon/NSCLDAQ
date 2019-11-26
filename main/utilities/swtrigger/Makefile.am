@@ -12,7 +12,7 @@ MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
 MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
 	CMPIBuiltRingItemEditorApp_mpi.cpp
 
-MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h
+MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp
 
 if MPI
 
