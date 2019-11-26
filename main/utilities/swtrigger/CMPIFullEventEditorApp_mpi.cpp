@@ -19,7 +19,7 @@
  *  @brief: Implement the application using MPI transport and process model.
  */
 
-#inlcude "CMPIFullEventEditorApp_mpi.h"
+#include "CMPIFullEventEditorApp_mpi.h"
 #include "CProcessingElement.h"
 
 #include "CFullEventEditor.h"
@@ -53,12 +53,12 @@
  * @param argc, argv - From main - the raw, unprocessed command line parameters.
  * @param args       - the gengetopt processed arguments.
  */
-CMPIFullEditorApp::CMPIFullEventEditorApp(
+CMPIFullEventEditorApp::CMPIFullEventEditorApp(
     int argc, char** argv, gengetopt_args_info& args
 ) :
     CFullEventEditorApp(args)
 {
-    MPI_Init(argc, argv);
+    MPI_Init(&argc, &argv);
     size_t nWorkers = getWorkerCount();         // Error messagesexit if appropriate.
 }
 /**
@@ -151,11 +151,11 @@ CMPIFullEventEditorApp::createWorker()
     
     // Who we are as that's our fanout id:
     
-    int rank
+    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     CProcessingElement* pResult =
-        new CFullEventEditor(pFanoutClient, *pSender, rank-2, pEditor))
+        new CFullEventEditor(*pFanoutClient, *pSender, rank-2, pEditor);
     return pResult;
 }
 /**
@@ -192,12 +192,11 @@ CMPIFullEventEditorApp::createSorter()
  *    the base class's createRingSink.
  */
 CProcessingElement*
-CMPIFullEventEditorApp::createSInk()
+CMPIFullEventEditorApp::createSink()
 {
     
     CMPITransport*  pReceiverTransport = new CMPITransport();
     CTransport*     pSenderTransport = createRingSink();
-    );
     
     CReceiver* pReceiver = new CReceiver(*pReceiverTransport);
     CSender*   pSender   = new CSender(*pSenderTransport);
@@ -231,7 +230,7 @@ CMPIFullEventEditorApp::getWorkerCount()
         if(myrank == 0) {
             std::cerr << "You must have -np at least 4 to support at least one worker\n";
         }
-        throw std::invalid_argument("Too few processes - need mpirun -np at least 4.")
+        throw std::invalid_argument("Too few processes - need mpirun -np at least 4.");
     }
     
     size_t nWorkers = nProcesses - 3;  // Source, sorter and sink are three.

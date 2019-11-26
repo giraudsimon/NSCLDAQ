@@ -25,6 +25,7 @@ class CFullEventEditorApp;
 #include "CZMQFullEventEditorApp.h"
 
 #ifdef HAVE_MPI
+#include "CMPIFullEventEditorApp_mpi.h"
 #endif
 
 
@@ -52,7 +53,7 @@ int main(int argc, char**argv)
 {
     gengetopt_args_info parsed;
     cmdline_parser(argc, argv, &parsed);
-    CFullEventEditorApp* pApp;
+    CFullEventEditorApp* pApp(0);
     
     std::string strategy = parsed.parallel_strategy_arg;
         
@@ -61,7 +62,7 @@ int main(int argc, char**argv)
             pApp = new CZMQFullEventEditorApp(parsed);
         } else if (strategy == "mpi") {
 #ifdef HAVE_MPI
-            throw std::invalid_argument("MPI Application not yet implemented");
+            pApp = new CMPIFullEventEditorApp(argc, argv, parsed);
 #else
             throw std::invalid_argument("MPI parallelization not supported");
 #endif
@@ -77,5 +78,6 @@ int main(int argc, char**argv)
         std::cerr << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
+    delete pApp;
     exit(EXIT_SUCCESS);
 }

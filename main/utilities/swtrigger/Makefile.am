@@ -32,7 +32,7 @@ MPI_Transformer_SRCS=$(MPI_TRSRCS)
 
 MPI_EventEditor_SRCS=$(MPI_EDITORSRCS)
 
-MPI_FullEventEditor_SRCS= $(MPI_FULLEDITOR_SRCS)
+MPI_FullEventEditor_SRCS= $(MPI_FULLEDITORSRCS)
 
 # Below will cause warning from auto make but will work at least for now.
 # It's needed to get the unittests to use MPICXX as the linker.

@@ -53,7 +53,7 @@ class CProcessingElement;
  *      number of workers implied by -np is overiding the value of --workers.
  *      and the application continues with -np - 3 workers.
  */
-class CMPIFullEventEditorApp : public CFulLEventEditorApp
+class CMPIFullEventEditorApp : public CFullEventEditorApp
 {
 
 public:
