@@ -22,6 +22,7 @@
 #include "fulleventeditor.h"
 class CFullEventEditorApp;
 #include "CFullEventEditor.h"
+#include "CZMQFullEventEditorApp.h"
 
 #ifdef HAVE_MPI
 #endif
@@ -57,7 +58,7 @@ int main(int argc, char**argv)
         
     try {
         if (strategy == "zmq") {
-            throw std::invalid_argument("ZMQ application not yet implemented");
+            pApp = new CZMQFullEventEditorApp(parsed);
         } else if (strategy == "mpi") {
 #ifdef HAVE_MPI
             throw std::invalid_argument("MPI Application not yet implemented");
@@ -66,6 +67,11 @@ int main(int argc, char**argv)
 #endif
         } else {
             throw std::invalid_argument("Invalid --parallel-strategy value");
+        }
+        if (pApp) {
+            exit((*pApp)());
+        } else {
+            throw std::logic_error("Application object not crated.");
         }
     } catch(std::exception& e) {
         std::cerr << e.what() << std::endl;

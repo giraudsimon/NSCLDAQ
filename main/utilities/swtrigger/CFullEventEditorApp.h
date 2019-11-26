@@ -44,7 +44,7 @@ public:
     CTransport* createRingSink();           // Creates a ring transport sink.
     CFullEventEditor::Editor* createUserEditor();
     
-    virtual void operator()() = 0;
+    virtual int operator()() = 0;
 
 };
 
