@@ -82,7 +82,7 @@ CFullEventEditor::process(void* pData, size_t nBytes)
         SegmentDescriptor id(sizeof(m_nId), &m_nId);
         outputSegments.push_back(id);                    // preface output with id.
         
-        size_t nEvents = getEventCount(pData, nBytes);   // # of events.
+        size_t nEvents = countItems(pData, nBytes);   // # of events.
         uint8_t* p     = static_cast<uint8_t*>(pData);
         
         // Iterate over the events.  Note that we need to advance our pointer
@@ -112,10 +112,10 @@ CFullEventEditor::process(void* pData, size_t nBytes)
                 size_t headerSize =
                     sizeof(RingItemHeader) + pEH->s_bodyHeader.s_size +
                     sizeof(uint32_t);
-                pEventBytes += headerSize - sizeof(uint32_t);  // points to size uint32_t.
+                pEventBytes += headerSize + sizeof(uint64_t) - sizeof(uint32_t);  // points to size uint32_t.
                 uint32_t* pBodySize = reinterpret_cast<uint32_t*>(pEventBytes);
                 
-                *pEventBytes = newSize + sizeof(uint32_t);
+                *pBodySize = newSize + sizeof(uint32_t) - headerSize;
                 pRHeader->s_size = newSize + headerSize;
                 
                 
@@ -189,7 +189,7 @@ CFullEventEditor::freeData(std::vector<SegmentDescriptor>& segs)
 iovec*
 CFullEventEditor::getIoVectors(size_t n)
 {
-    if (n < m_nIoVecCapacity) {
+    if (n > m_nIoVecCapacity) {
         free(m_pIovecs);
         m_pIovecs = static_cast<iovec*>(malloc(n * sizeof(iovec)));
         if (!m_pIovecs) {
@@ -215,31 +215,7 @@ CFullEventEditor::getEventBodySize(const std::vector<SegmentDescriptor>& segs)
     }
     return result;
 }
-/**
- * getEventCount
- *   Given a block of events from our data source, determines how many
- *   events are in the block.  The block is assumed to be just a soup
- *   of ring items.  We therefore just count the number of ring item
- *   headers in the data.
- *
- * @param pData - pointer to the message.
- * @param nBytes - number of uint8_t's in the data.
- * @return size_t number of events in nBytes of data starting at pData.
- */
-size_t
-CFullEventEditor::getEventCount(void* pData, size_t nBytes)
-{
-    uint8_t* p = static_cast<uint8_t*>(pData);
-    size_t result(0);
-    while (nBytes) {
-        result++;
-        pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p);  // get to next item.
-        p  += pH->s_size;
-        nBytes -= pH->s_size;
-        
-    }
-    return result;
-}
+
 /**
  * editEvent
  *    Requests the editor to edit the event.   The assumption is that the

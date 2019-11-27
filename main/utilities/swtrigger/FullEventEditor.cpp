@@ -58,7 +58,7 @@ int main(int argc, char**argv)
     std::string strategy = parsed.parallel_strategy_arg;
         
     try {
-        if (strategy == "zmq") {
+        if (strategy == "threaded") {
             pApp = new CZMQFullEventEditorApp(parsed);
         } else if (strategy == "mpi") {
 #ifdef HAVE_MPI

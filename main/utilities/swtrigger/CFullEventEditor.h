@@ -83,7 +83,6 @@ private:
     void freeData(std::vector<SegmentDescriptor>& segs);
     iovec* getIoVectors(size_t n);
     size_t getEventBodySize(const std::vector<SegmentDescriptor>& segs);
-    size_t getEventCount(void* pData, size_t nBytes);
     
     std::vector<SegmentDescriptor> editEvent(pRingItemHeader pItem);
     
