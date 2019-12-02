@@ -2084,7 +2084,311 @@ exern "C" {
     </refsect1>
     
 </refentry>
+<refentry>
+    <refmeta>
+        <refentrytitle>FullEventEditor</refentrytitle>
+        <manvolnum>1daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>FullEventEditor</refname>
+        <refpurpose>Edit the entire body of an event built event.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+    <cmdsynopsis>
+        <command>
+$DAQBIN/FullEventEditor <option>option...</option>
+        </command>
+    </cmdsynopsis>        
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+            This program allows users to edit the complete body of an event built
+            event as a single unit.  User code can extend, replace or use any
+            of the data following the <type>uint32_t</type> byte count
+            for the event at the first 32 bits of the event body.  The framework
+            will touch up the event's ring item header as well as that byte count.
+            User code is responsible for updating internal sizes such as
+        </para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    Fragment header sizes.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Fragment ring item header size field.s
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Fragment body header size fields.
+                </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            <literal>OPTIONS</literal> describes the program options while
+            <literal>User editor code</literal> describes how to write the user
+            editing code that modifies each event.  The code can run with
+            workers editing blocks of events in parallel using either threaded
+            or MPI parallelism.  The output event stream is re-sored in time-stamp
+            order so that output events are in the same order as the un-edited
+            input events.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <variablelist>
+            <varlistentry>
+                <term><option>--source</option> = <replaceable>>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the source of data.  The data source must be
+                        event built data where the ring items and the fragments
+                        of the events have body headers.
+                    </para>
+                    <para>
+                        The URI can be either a file or ring URI.  Ring buffers
+                        can be remote if the system running the distributer
+                        task is runnning NSCLDAQ.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--sink</option>=<replaceable>URI</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies where output data are written. This can be
+                        a file or ring URI.  If a ring URI, the host must
+                        evaluate to the local host and the system actually
+                        doing the writing must run NSCLDAQ.  Note that knowing
+                        which this is for MPI Parallelism can be difficult.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--workers</option>=<replaceable>integer</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the number of parallel workers that will operate
+                        on the data.  Each worker gets clumps of events whose
+                        as determined by <option>--clump-size</option> and works
+                        on clumps in parallel to all other workers.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--clump-size</option>=<replaceable>integer</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the number of events in each work item that
+                        a worker gets per work item request.  
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--paralle-strategy</option>=<replaceable>thread  | mpi</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies how the program will parallelize.  Note that if
+                        <literal>mpi</literal> is chosen the program must
+                        be run with <command>mpirun</command> and that program's
+                        <option>-np</option> value will determine the actual
+                        number of workers that will be used (np - 3 workers will
+                        be used).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>--editorlib</option>=<replaceable>libpath</replaceable></term>
+                <listitem>
+                    <para>
+                        Specifies the path to a shared object library that
+                        contains the code to edit events and a factory
+                        function to produce editor objects.
+                    </para>
+                    <para>
+                        For more information, see <literal>User editor code</literal>
+                        below.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>User editor code.</title>
+        <para>
+            The <application>FullEventEditor</application> program depends on
+            application specific user code to actually edit the event.  This code
+            can modify all data following the size field of the event.   The
+            size field, while accessible, will be automatically updated by
+            <application>FullEventEditor</application> to reflect the size of the
+            modified event body. Furthermore, the size field of the event's ring
+            item header will be updated as well to reflect the updated event size.
+            Note, however that it is the responsibility of the user editing
+            code to update any size fields at the fragment level.  These are at
+            least:
+        </para>
+        <orderedlist>
+            <listitem>
+                <para>
+                    The fragment header size field for modified fragments.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    The fragment ring item size field for modified fragments.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    The sizes of any fragment body headers that are extended.
+                </para>
+            </listitem>
 
+        </orderedlist>
+        <para>
+            Note that the bodies of fragments may also have sizes that require
+            modification.  This is application specific and won't be
+            covered here.
+        </para>
+        <para>
+            The user event editing code is supplied to the
+            <application>FullEventEditor</application> as a shared object
+            library.  The library must contain an <literal>extern "C"</literal>
+            entry point named: <function>createFullEventEditor</function>.
+            That entry is a function that takes no parameters and returns a new
+            instance of an object from a class derived from
+            <classname>CFullEventEditor::Editor</classname>.   That object
+            will be used by a worker to edit events. 
+        </para>
+        <para>
+            It is important that each call to
+            <function>createFullEventEditor</function> return a new object.
+            Only in this way is thread-safety maintained in threaded parallelism.
+            The objects created will live for the program's lifetime.
+        </para>
+        <para>
+            Let's examine the definition of the
+            <classname>CFullEventEditor::Editor</classname> class.  It is defined
+            in the <filename>CFullEventEditor.h</filename> header and
+            has the following, pure virtual,  methods:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>std::vector&lt;SegmentDescriptor&gt;</type>
+                        <methodname> operator()(</methodname>
+                        <methodparam>
+                            <type>void* </type><parameter>pBody</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        This method is called once for each event in the
+                        work units the worker processes.  The application's
+                        parallelism ensures this is called once for every event
+                        in <emphasis>some</emphasis> instance of the user's code.
+                    </para>
+                    <para>
+                        <parameter>pBody</parameter> is a pointer to the body
+                        of the event.  For the event built data this
+                        application is intended to edit, this consists of a
+                        <type>uint32_t</type> containing the self-inclusive
+                        byte count of the body.  While the remainder of the body
+                        can be freely edited, once this method returns, the
+                        application will modify this field to represent the
+                        number of bytes in the modified event body (self-inclusive).
+                    </para>
+                    <para>
+                        The method returns a vector of
+                        <type>SegmentDescriptor</type> structs.  Once we've
+                        finished documenting this class we'll turn our attention
+                        to that struct.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+            
+                <term>
+                    <methodsynopsis>
+                        <modifier>virtual </modifier>
+                        <type>void </type>
+                        <methodname>free</methodname>
+                        <methodparam>
+                            <type>iovec&amp; </type><parameter>desc</parameter>
+                        </methodparam>
+                        <modifier></modifier>
+                    </methodsynopsis>
+                </term>
+                <listitem>
+                    <para>
+                        Elements of the return vector may be describe
+                        either dynamic or or static storage.  When the
+                        event description is no longer needed, this method is
+                        called for each descriptor that's marked its
+                        storage as dynamic.  This method is expected to
+                        free that storage.
+                    </para>
+                </listitem>
+            </varlistentry>
+               
+        </variablelist>
+        <para>
+            When editing an event, the new event will most likely consist largely
+            of the original event with some supplemental data added.  Rather than
+            requiring that your code create a new event laid out in memory. The
+            application asks you to describe the new event in terms of blocks of
+            memory that it will gather into a new event.  This description
+            is the return value from <methodname>operator()</methodname>.
+        </para>
+        <para>
+            <methodname>operator()</methodname> returns a vector of
+            <type>SegmentDescriptor</type> structs.  Each of those, in turn,
+            describes a block of the event and consist of the following
+            fields:
+        </para>
+        <variablelist>
+            <varlistentry>
+                <term>
+                   <type>iovec</type> <structfield>s_description</structfield>
+                </term>
+                <listitem>
+                    <para>
+                        Describes the memory extent of the block.  <type>iovec</type>
+                        is a struct defined in the header
+                        <filename>sys/uio.h</filename>.   It's fields are
+                        <structfield>iov_len</structfield>, the length of the
+                        block being described and
+                        <structfield>iov_base</structfield> a pointer to the
+                        block being described.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>
+                    <type>bool</type> <structfield>s_dynamic</structfield>
+                </term>
+                <listitem>
+                    <para>
+                        This should be <literal>true</literal> if your
+                        code needs <methodname>free</methodname> to be called
+                        when the memory described by
+                        <structfield>s_description</structfield> is no longer
+                        needed.  You can us this to free any dynamically
+                        allocated memory that was used to create this
+                        block.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3daq -->
