@@ -69,7 +69,8 @@ CFullEventEditorApp::createUserEditor()
 {
     if (!m_pEditorFactory) {
         std::string libname = m_params.editorlib_arg;
-        void* pDll  = dlopen(libname.c_str(), RTLD_NOW | RTLD_NODELETE);
+        void* pDll  =
+	  dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
         if (!pDll) {
             std::string msg = "Editor library load failed: ";
             msg += dlerror();
