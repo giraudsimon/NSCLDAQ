@@ -115,7 +115,7 @@ CFullEventEditor::process(void* pData, size_t nBytes)
                 pEventBytes += headerSize + sizeof(uint64_t) - sizeof(uint32_t);  // points to size uint32_t.
                 uint32_t* pBodySize = reinterpret_cast<uint32_t*>(pEventBytes);
                 
-                *pBodySize = newSize + sizeof(uint32_t) - headerSize;
+                *pBodySize = newSize + 2*sizeof(uint32_t) - headerSize;
                 pRHeader->s_size = newSize + headerSize;
                 
                 
