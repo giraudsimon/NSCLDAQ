@@ -97,8 +97,9 @@ CFullEventEditor::process(void* pData, size_t nBytes)
             outputSegments.push_back(ts);    // preceding timestamp.
             
             pRingItemHeader pRHeader = &(pEH->s_ringHeader);
-            
-            p += pRHeader->s_size;          // Before this can get changed.
+
+	    p = reinterpret_cast<uint8_t*>(pRHeader); // point to the ring item.
+            p += pRHeader->s_size;          // Before this can get changed -> next event.
             
             if (pRHeader->s_type == PHYSICS_EVENT) {
                 std::vector<SegmentDescriptor> newBody = editEvent(pRHeader);
