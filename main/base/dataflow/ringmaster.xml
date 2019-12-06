@@ -303,6 +303,13 @@
                         via that socket.
                     </para>
                 </listitem>
+                <listitem>
+                    <para>
+                        The data received on the data transfer socket
+                        will be a stream of Ring Items whose format is defined
+                        in DataFormat.h
+                    </para>
+                </listitem>
             </orderedlist>
         </para>
         <para>
@@ -313,6 +320,14 @@
             class to do this rather than directly interacting with the
             ring master, or rather than interacting via the
             <classname>CRingMaster</classname> class.
+        </para>
+        <para>
+            <classname>CRingAccess</classname> does, however, require that
+            the local host be running the NSCLDAQ system.  When accessing
+            a remote ring it will automatically, if necessary, set up a proxy
+            ring and the dataflow from the remote ring to that proxy so that
+            several requests for the same ring from the same host will be aggregated
+            into that proxy ring (data flows only once).
         </para>
     </section>
 </chapter>

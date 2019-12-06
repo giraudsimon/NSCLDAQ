@@ -225,8 +225,8 @@ tclsh DaqPortManager <replaceable>options...</replaceable>
               order,  the  port number, the application name and the name of the user
               that is running the application.   Note  that  if  there  are  multiple
               instances  of  the  same application run by the same user, They will be
-              qualified by appending an underscore and an application  instance  num?
-              ber.
+              qualified by appending an underscore and an application  instance
+			  number.
                           </para>
                       </listitem>
                     </varlistentry>

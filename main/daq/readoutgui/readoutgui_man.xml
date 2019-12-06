@@ -6964,3 +6964,320 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
 
 </refentry>
 <!-- /manpage -->
+<!-- manpage 5daq -->
+
+<!-- documentatio for the remote control protocol -->
+
+<refentry>
+    <refmeta>
+        <refentrytitle>Readout GUI Remote control protocol</refentrytitle>
+        <manvolnum>5daq</manvolnum>
+    </refmeta>
+    <refnamediv>
+        <refname>Readout GUI Remote control protocol</refname>
+        <refpurpose>
+         Documents the protocol used by the ReadoutGUI's remote control server.
+        </refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <variablelist>
+       <varlistentry>
+        <term>set</term>
+        <listitem>
+            <para>
+             Set the state of the readout GUI.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>begin</term>
+        <listitem>
+            <para>
+             Attempt to begin a run.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>end</term>
+        <listitem>
+            <para>
+             Attempt to end a run.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>get</term>
+        <listitem>
+            <para>
+             Get state from the readout GUI.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>init</term>
+        <listitem>
+            <para>
+             Re-initialize the ReadoutGUI's data sources.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term>masterTransition</term>
+        <listitem>
+            <para>
+             Request an arbitrary state transition.
+            </para>
+        </listitem>
+       </varlistentry>
+      </variablelist>  
+    </refsynopsisdiv>
+    <refsect1>
+        <title>DESCRIPTION</title>
+        <para>
+        The remote control protocol allows an NSCL Reaodut control panel to be
+        driven remotely by a client.  In addition, the client may capture
+        output that goes to the output tabs of the Remote controlled GUI.
+        </para>
+        <para>
+         A remote controlled ReadoutGUI is said to be <firstterm>enslaved</firstterm>.
+         While there is nothing to stop a system from being remote controlled
+         by several clients, this is not recommended as there's not a good
+         way to keep those clients atomically updated as to the system state.
+        </para>
+        <para>
+         GUI control panels must be declared elligible for remote control. See
+         the <literal>Remote control package</literal> section of the
+         <literal>ReadoutGUI & ReadoutShell</literal> chapter of the general
+         documentation for information that describes how to do that.
+        </para>
+        <para>
+         A readout GUI that can be remote controlled advertises two services
+         with the DAQ Port manager:
+        </para>
+        <variablelist>
+         <varlistentry>
+            <term><literal>ReadoutGUIRemoteControl</literal></term>
+            <listitem>
+                <para>
+                 The service to which remote control commands should be
+                 directed.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>ReadoutGUIOutput</literal></term>
+            <listitem>
+                <para>
+                 A service that can be connected to in order to capture output
+                 that normally goes to a remote controlled ReadoutGUI's output
+                 window.  This allows the controlling process to report to its
+                 user the output that normally would only be shown on a
+                 controlled Readout GUI's control panel.
+                </para>
+            </listitem>
+         </varlistentry>
+        </variablelist>
+        <para>
+         The controlling protocol is fully textual.  The connected process will
+         be referred to as the master and the remote controlled.  The
+         connected process can only have one request in-flight at a time.
+         Requests are textual in nature and must be sent as a single contiguous
+         message.  The slave will reply to the request with a message that
+         consists of textual line terminated with the <literal>\n</literal>
+         (newline) character.  Lines will consist of a word of status
+         followed by any additional text needed by the reply.
+        </para>
+        <para>
+         The status word will be either
+         <literal>OK</literal> or <literal>ERROR</literal> or <literal>FAIL</literal>.  <literal>OK</literal>
+         indicates the request was successful and any additional text depends
+         on the request.  <literal>FAIL</literal> and <literal>ERROR</literal> indicate
+         the request failed and
+         any additional text is a human readable error message.
+        </para>
+        <para>
+         The next section will describe the allowed requests.
+        </para>
+    </refsect1>
+    <refsect1>
+     <title>Request verbs, data and their responses.</title>
+     <variablelist>
+      <varlistentry>
+        <term><literal>set</literal> <replaceable>what value</replaceable></term>
+        <listitem>
+            <para>
+             Sets a parameter in the remote controlled GUI.  The following
+             are legal values for <optional>what</optional> and information
+             about the values each parameter can be given:
+            </para>
+            <variablelist>
+             <varlistentry>
+                <term><literal>slave</literal> <literal>1 | 0</literal></term>
+                <listitem>
+                    <para>
+                     If the value is 1, the GUI is set to slave mode.  This
+                     removes or disables most of the run control controls on the GUI
+                     since those could conflict with the desires of the master.
+                    </para>
+                    <para>
+                     If the value is 0, the GUI is removed from slave mode.
+                     The run controls that were removed or disabled when in
+                     slave mode are restored to their normal states and appearance.
+                     This is automatically done when the master closes the
+                     connection to the slave.
+                    </para>
+                    <para>
+                     Note that the run state must be halted in order to enter slave
+                     mode.   This means that the data sources have been setup and
+                     initialized and a run could be started in the slave GUI.
+                    </para>
+                    <para>
+                     On success the return string has no additional values other
+                     than the status word (<literal>OK</literal>).
+                    </para>
+                </listitem>
+             </varlistentry>
+             <varlistentry>
+                <term><literal>run</literal> <replaceable>new-run-number</replaceable></term>
+                <listitem>
+                    <para>
+                     Requests that the run number be changed to
+                     <replaceable>new-run-number</replaceable> which must be a
+                     positive integer.  This is only allowed when slave mode
+                     is enabled.  If this request is issued when the run is not
+                     halted, the new run number will take effect at the
+                     beginning of the next run.
+                    </para>
+                </listitem>
+             </varlistentry>
+             <varlistentry>
+                <term><literal>title</literal> <replaceable>new title string</replaceable></term>
+                <listitem>
+                    <para>
+                     Requests that the run title be changed to
+                     <replaceable>new title string</replaceable>.  This is only
+                     allowed when slave mode is enabled.  If requested in the middle
+                     of the run, the new title will take effect at the beginning
+                     of the next run.  Note that since the ReadoutGUI is
+                     a Tcl application, you must take care not to include or to
+                     properly quote title characters that have significance
+                     to the Tcl interpreter.
+                    </para>
+                </listitem>
+             </varlistentry>
+             <varlistentry>
+                <term><literal>recording</literal> <replaceable>1 | 0</replaceable></term>
+                <listitem>
+                    <para>
+                     Enables or disables event recording.  This is only allowed
+                     when slave mode is enabled and will take effect on the
+                     beginning of the next run.
+                    </para>
+                </listitem>
+             </varlistentry>
+             <varlistentry>
+                <term><literal>destination</literal> <replaceable>directory-path</replaceable></term>
+                <listitem>
+                    <para>
+                     Sets a new top level directory for the event recording file-system.
+                     This is only legal  in slave mode. This should not be done
+                     when the run is actively recording as it can cause errors
+                     when the recording run ends.
+                    </para>
+                </listitem>
+             </varlistentry>
+            </variablelist>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>begin</literal></term>
+        <listitem>
+            <para>
+             Attempts to start a new run.  This is only legal if slave
+             mode is enabled (see <literal>set slave</literal>)
+             <emphasis>and</emphasis>, of course the current run state makes
+             starting a run possible.  
+            </para>
+            <para>
+             This request has no additional data.  If successful
+             <literal>OK</literal> is the reply with no additional data.
+            </para>
+        </listitem>
+      </varlistentry>
+       <varlistentry>
+        <term><literal>end</literal></term>
+        <listitem>
+            <para>
+             Attempts to end an active run.   This is only legal if slave
+             mode is enabled and the current run state allows the run to be
+             ended.  The request has no additional data.
+             The reply on success is <literal>OK</literal> without
+             any additional data.
+            </para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><literal>masterTransition</literal> <replaceable>to-state</replaceable></term>
+        <listitem>
+            <para>
+             Requests a transition to an arbitrary state.  This requires
+             that slave mode is enabled and that the proposed target
+             state, <replaceable>to-state</replaceable> is legal given the
+             current state.  If the state transition was successful
+             <literal>OK</literal> is returned with no additional data.
+            </para>
+            <para>
+             See the chapter on the <literal>ReadoutGUI & ReadoutShell</literal>
+             for a diagram showing the legal states and the transitions allowed
+             from each state.  Note that this request takes as additional data
+             the <emphasis>name</emphasis> of the proposed target state, not
+             the transition name in that diagram (.g. to resume a paused run,
+             the <replaceable>to-state</replaceable> should be <literal>Active</literal>
+             not <literal>Resume</literal>).
+            </para>
+        </listitem>
+       </varlistentry>
+     
+      <varlistentry>
+         <term><literal>init</literal></term>
+         <listitem>
+             <para>
+              Reinitializes the data sources controlled by the readout gui.
+              The GUI must be in slave mode and the state must be
+              <literal>Halted</literal> to successfully request this
+              operation.  <literal>OK</literal> is returned on success
+              with no additional data.
+             </para>
+         </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><literal>get</literal> <replaceable>state | slave</replaceable></term>
+         <listitem>
+             <para>
+              Returns the value of the requested state.  <literal>state</literal>
+              returns the current run state.  On success, this is the string
+              <literal>OK</literal> followed by one of the state names
+               in the ReadoutGUI state diagram shown in the chapter
+               <literal>ReadoutGUI & ReadoutShell</literal>.
+             </para>
+             <para>
+              <literal>slave</literal> returns <literal>OK</literal> followed
+              by <literal>1</literal> if the GUI is in slave state or
+              <literal>0</literal> if not.
+             </para>
+             <para>
+              Failures return <literal>ERROR</literal> and the reason for
+              the error as a human readable string.
+             </para>
+         </listitem>
+      </varlistentry>
+      </variablelist>
+     <para>
+      If an illegal service request is made, the error return will be
+      <literal>FAIL</literal> with a human explanatory error string.
+     </para>
+    </refsect1>
+
+</refentry>
+
+<!-- /manpage -->
