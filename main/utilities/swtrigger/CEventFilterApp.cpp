@@ -40,7 +40,8 @@
  */
 CEventFilterApp::CEventFilterApp(gengetopt_args_info& args) :
     m_pDataSource(nullptr), m_pAcceptedSink(nullptr),
-    m_pRejectedSink(nullptr), m_mask(0), m_value(0)
+    m_pRejectedSink(nullptr), m_mask(0), m_value(0),
+    m_sample(-1), m_rejectCount(0)
 {
     std::string sourceUri = args.source_arg; // mandatory.,
     CRingItemTransport *pSourceXport =
@@ -66,6 +67,7 @@ CEventFilterApp::CEventFilterApp(gengetopt_args_info& args) :
     
     m_mask = args.mask_arg;
     m_value= args.value_arg;
+    m_sample= args.sample_arg;
 }
 /**
  * destructor
@@ -104,8 +106,15 @@ CEventFilterApp::operator()()
                     accepted = true;
                     rejected = false;
                 } else {
-                    accepted = false;
-                    rejected = true;
+		    rejected = true;
+		    m_rejectCount++;
+		    if (m_sample > 0) {
+		      if ((m_rejectCount % m_sample) == 0) {
+			accepted = true; // downscaled acceptance.
+		      }
+		    } else {
+		      accepted = false;
+		    }
                 }
             }
             if (accepted) {

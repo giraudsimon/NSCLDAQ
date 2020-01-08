@@ -52,7 +52,9 @@ private:
     
     uint32_t     m_mask;
     uint32_t     m_value;
-public:
+    int          m_sample;
+    uint32_t     m_rejectCount;
+ public:
     CEventFilterApp(gengetopt_args_info& args);
     virtual ~CEventFilterApp();
     

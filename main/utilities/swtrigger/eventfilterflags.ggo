@@ -6,3 +6,4 @@ option "accepted-sink" a "Where accepted events go" string typestr="URI"
 option "rejected-sink"  r "Where rejected events go (optional)" string optional typestr="URI"
 option "mask" m "Mask anded with classification" int
 option "value" V "Value masked classification must have to be 'accepted'" int
+option "sample" S "If present, 1/S rejected events go to the accepted sink" int optional  default="-1"
