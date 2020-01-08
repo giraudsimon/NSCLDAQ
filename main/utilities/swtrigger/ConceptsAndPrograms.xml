@@ -804,6 +804,23 @@ EventFilter <optional>options...</optional>
                     </para>
                 </listitem>
             </varlistentry>
+	    <varlistentry>
+	      <term><option>--sample</option>=<replaceable>int</replaceable></term>
+	      <listitem>
+		<para>
+		  If supplied and greater than zero, specifies a scaledown
+		  sampling value.  1/--sample rejected events will also be
+		  sent to the accepted ring.  Note that this implies that if
+		  you set --sample=1, all events, sampled and rejected will go
+		  to the accepted ring.
+		</para>
+		<para>
+		  The value of this setting does not affect the events sent to
+		  the rejected ring, if that ring is used.  The sampled events
+		  are sent to both rings.
+		</para>
+	      </listitem>
+	    </varlistentry>
         </variablelist>
     </refsect1>
 </refentry>
