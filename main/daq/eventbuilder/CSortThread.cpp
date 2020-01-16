@@ -77,9 +77,9 @@ CSortThread::run()
         //m_pHandler->observe(*mergedFrags);
         
         COutputThread* pOutput = m_pHandler->getOutputThread();
-        pOutput->queueFragments(mergedFrags);
         releaseFragments(*newData); 
         m_nQueuedFrags -= mergedFrags->size();
+        pOutput->queueFragments(mergedFrags);
 
     }
 }
