@@ -159,11 +159,14 @@ snit::type EventLogger {
             
             set command [list $loggerProgram                        \
                 --source=$options(-ring) --path=$options(-out)      \
-                --oneshot --checksum                                \
+                --oneshot                                           \
                 --number-of-sources=$options(-sources)              \
                 --prefix=$timestamp-run                             \
                 --segmentsize=[DAQParameters::getEventLoggerFileSegmentSize]g \
             ]
+            if {[::DAQParameters::getUseChecksumFlag]} {
+                append command " --checksum"
+            }
 
             set loggerFd [open "| $command |& cat" r]
 
