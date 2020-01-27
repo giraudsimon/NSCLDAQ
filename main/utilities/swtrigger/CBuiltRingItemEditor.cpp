@@ -204,11 +204,22 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
         throw std::invalid_argument("Physics ring item is missing a body header!");
     }
     
+    uint32_t* pbhdr = reinterpret_cast<uint32_t*>(&(pRItem->s_body.u_hasBodyHeader));
+    uint32_t  bodyHeaderSize = *pbhdr;
+    
+    uint8_t*  pBodyB = reinterpret_cast<uint8_t*>(pbhdr);
+    pBodyB += bodyHeaderSize;
+    uint32_t* pBody = reinterpret_cast<uint32_t*>(pBodyB);
+    
+#ifdef UNDEFINED
+    
     uint32_t* pBody =
         reinterpret_cast<uint32_t*>(pRItem->s_body.u_hasBodyHeader.s_body);
+#endif
+
     size_t nBytes = *pBody;
     BodySegment hdr(
-        sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t),
+        sizeof(RingItemHeader) + bodyHeaderSize + sizeof(uint32_t),
         pItem
     );
     result.push_back(hdr);
