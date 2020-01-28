@@ -255,7 +255,7 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
     size_t finalBytes = countBytes(result);
     pItem->s_size = finalBytes;
     *pBody       =
-        finalBytes - (sizeof(RingItemHeader) + sizeof(BodyHeader));
+        finalBytes - (sizeof(RingItemHeader) + bodyHeaderSize);
     
     //  Done, return the result.
     
