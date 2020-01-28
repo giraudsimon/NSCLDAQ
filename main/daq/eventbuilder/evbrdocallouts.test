@@ -22,7 +22,7 @@ if {[catch {
   exit 1
 }
 
-
+if 0 {
 tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC destRing} -setup {
       # set RINGNAME to something
       array set env [list RINGNAME elephant]
@@ -40,6 +40,8 @@ tcltest::test rdo11-0 {test computeLoggerSwitches uses EVBC destRing} -setup {
    set srcSB  "--source=tcp://localhost/[$::EVBC::applicationOptions cget -destring]"
    return [expr {[lindex $switches 0] eq $srcSB}]
 } -result 1
+
+
 
 tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC destRing} -setup {
 
@@ -59,7 +61,7 @@ tcltest::test rdo11-1 {test computeLoggerSwitches doesn't use EVBC destRing} -se
    return [expr {[lindex $switches 0]  eq $srcSB}]
 
 } -result 1
-
+}
 tcltest::test isRunning-0 {Test that we can set running
 } {
   set resList [list]
