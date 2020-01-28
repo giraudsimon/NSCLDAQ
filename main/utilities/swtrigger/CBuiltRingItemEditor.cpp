@@ -206,16 +206,13 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
     
     uint32_t* pbhdr = reinterpret_cast<uint32_t*>(&(pRItem->s_body.u_hasBodyHeader));
     uint32_t  bodyHeaderSize = *pbhdr;
+
     
     uint8_t*  pBodyB = reinterpret_cast<uint8_t*>(pbhdr);
     pBodyB += bodyHeaderSize;
     uint32_t* pBody = reinterpret_cast<uint32_t*>(pBodyB);
     
-#ifdef UNDEFINED
-    
-    uint32_t* pBody =
-        reinterpret_cast<uint32_t*>(pRItem->s_body.u_hasBodyHeader.s_body);
-#endif
+
 
     size_t nBytes = *pBody;
     BodySegment hdr(
@@ -230,6 +227,9 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
     void*  p = firstFragment(pBody);
     while(nBytes) {
         EVB::pFlatFragment pFrag = static_cast<EVB::pFlatFragment>(p);
+	EVB::pFragmentHeader pFragHeader = reinterpret_cast<EVB::pFragmentHeader>(pFrag);  // Fragment header only.
+	pRingItemHeader      pfRitemHdr  = reinterpret_cast<pRingItemHeader>(pFragHeader+1); // Ring item header follows.
+	
         std::vector<BodySegment> fragSegs = editFragment(pFrag);
         result.insert(result.end(), fragSegs.begin(), fragSegs.end());
         
@@ -238,15 +238,16 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
         p = nextFragment(p);
         nBytes -= (sizeof(EVB::FragmentHeader) + pFrag->s_header.s_size);
                    
-        // Adjust the sizes int the fragment header and ring item header
-        
-        size_t finalSize = countBytes(fragSegs);
-        finalSize -= sizeof(EVB::FragmentHeader);   // Ring item size.
-        pFrag->s_header.s_size = finalSize;         // is the payload size.
-        pRingItemHeader pEditedItem =
-            reinterpret_cast<pRingItemHeader>(pFrag+1);
-        pEditedItem->s_size = finalSize;            
-        
+	// The fragment header and ring item header sizes must be adjusted.
+	// There's already a segment to write them to the output we just
+	// need to modify the data in place.
+
+	uint32_t fragmentSize = countBytes(fragSegs); // Includes the ring item hdr and frag hdr.
+	uint32_t finalFragBodySize = fragmentSize - sizeof(EVB::FragmentHeader);
+	pFragHeader->s_size = finalFragBodySize;
+	pfRitemHdr->s_size  = finalFragBodySize;
+	
+       
     }
     
     // Fix up the full size and the event builder's size.
@@ -277,27 +278,35 @@ std::vector<CBuiltRingItemEditor::BodySegment>
 CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
 {
     std::vector<BodySegment> result;
+
+    // Get pointers to each of the chunks of data - ring item header.
+    // body header, body.  We already have the fragment pointer.
+    // Note that the body header may have an extension.  We can
+    // already assume there is a body header.
+
+    pRingItemHeader pRItemHdr = reinterpret_cast<pRingItemHeader>(pFrag+1);
+    pBodyHeader     pBHeader  = reinterpret_cast<pBodyHeader>(pRItemHdr+1);
+    uint32_t bhdrSize = pBHeader->s_size;
+    uint8_t* pBody    = reinterpret_cast<uint8_t*>(pBHeader) + bhdrSize;
+    uint32_t bodySize = pRItemHdr->s_size - bhdrSize;
     
     // Make the first body segment which includes up through the
     // fragment's body header.
+
     
-    BodySegment hdr(
+    
+
+    BodySegment hdr(                                               // Wrong if there's an extension.
         sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) +
-        sizeof(BodyHeader), pFrag
+        bhdrSize, pFrag
     );
     result.push_back(hdr);
     
     // Produce the pointers needed by the user code and invoke it.
     
-    pRingItemHeader pRHeader =
-        reinterpret_cast<pRingItemHeader>(pFrag->s_body);
-    pBodyHeader pBHeader = reinterpret_cast<pBodyHeader>(pRHeader+1);
-    size_t bodySize =
-        pRHeader->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
-    void* pBody = pBHeader+1;
     
     std::vector<BodySegment> segs =
-        (*m_pEditor)(pRHeader, pBHeader, bodySize, pBody);
+        (*m_pEditor)(pRItemHdr, pBHeader, bodySize, pBody);
     result.insert(result.end(), segs.begin(), segs.end());
     
     // Return the full set of body segment descriptors.
