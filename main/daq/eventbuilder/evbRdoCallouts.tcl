@@ -133,7 +133,7 @@ snit::type EVBC::StartOptions {
     method updateLoggerRing {opt value} {
 	set options($opt) $value
 
-	Configuration::Set EventLoggerRing tcp://localhost/$value
+# 	Configuration::Set EventLoggerRing tcp://localhost/$value
 	
     }
     ##
