@@ -182,6 +182,7 @@ PhysicsItemOutput::emptyTimestamped()
     
     
     // Check the payload.. should be a uint32_t sizeof(uint32_t)/sizeof(uint16_t)
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     EQ(
        static_cast<uint32_t>(sizeof(uint32_t)/sizeof(uint16_t)),
@@ -276,6 +277,8 @@ PhysicsItemOutput::countingTimestamped()
        uint32_t s_size;
        uint16_t s_body[10];
      };
+     // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
+     
      struct PayloadShape* pPayload = reinterpret_cast<struct PayloadShape*>(
         pItem->s_body.u_hasBodyHeader.s_body
      );
@@ -370,6 +373,7 @@ PhysicsCountOutput::timestampedItem()
     EQ(static_cast<uint32_t>(0), pBh->s_barrier);
     
     // Check body
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pPhysicsEventCountItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
@@ -453,7 +457,8 @@ ScalerOutput::emptyTimestamped()
     
     // Check body header:
     // Contrived data so sizeof(BodyHeader) is fine.
-		
+	// u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
+    
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);
@@ -461,6 +466,7 @@ ScalerOutput::emptyTimestamped()
     EQ(static_cast<uint32_t>(4), pBh->s_barrier);
     
     // Check body:
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pScalerItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(10), pBody->s_intervalStartOffset);
@@ -534,7 +540,8 @@ ScalerOutput::countingTimestamped()
     
     // Check body header:
     // Contrived data so sizeof(BodyHeader) is fine.
-		
+	// u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
+    
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);
@@ -543,6 +550,7 @@ ScalerOutput::countingTimestamped()
     
     
     // Check body:
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pScalerItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(10), pBody->s_intervalStartOffset);
@@ -635,6 +643,7 @@ TextOutput::emptyTimestamp()
     
     
     // Check body proper.
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pTextItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
@@ -723,6 +732,7 @@ TextOutput::someStringsTimestamp()
     
     
     // Check body:
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pTextItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
@@ -806,6 +816,7 @@ StateChangeOutput::beginTimestamped()
     
 
     // Check body contents.
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pStateChangeItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(12), pBody->s_runNumber);

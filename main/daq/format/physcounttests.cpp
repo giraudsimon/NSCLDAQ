@@ -173,7 +173,9 @@ physcounttests::tscons()
       static_cast<uint64_t>(0x112233445567788ll), 1, 2, 
       static_cast<uint64_t>(54321), 100, stamp, 1 
   );
-
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+	
   pPhysicsEventCountItem pItem = 
     reinterpret_cast<pPhysicsEventCountItem>(item.getItemPointer());
   pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);

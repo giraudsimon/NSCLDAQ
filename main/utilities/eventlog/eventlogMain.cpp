@@ -127,6 +127,25 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  // Utility functions...well really this is where all the action is.
  //
 
+/**
+ * getBody
+ *    Given a ring item returns a pointer to the body.
+ *
+ * @param pItem - pointer to the ring item to check
+ * @return void* - Pointer to the body of the ring item.
+ */
+static void*
+getBody(pStateChangeItem pItem)
+{
+  if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
+    return &(pItem->s_body.u_noBodyHeader.s_body);
+  } else {
+    uint8_t* p =
+      reinterpret_cast<uint8_t*>(&(pItem->s_body.u_hasBodyHeader.s_bodyHeader));
+    return p + pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+  }
+}
+
  /*
  ** Open an event segment.  Event segment filenames are of the form
  **   run-runnumber-segment.evt
@@ -989,9 +1008,7 @@ EventLogMain::badBegin(void* p)
   
   // If the run number changed that's also bod:
   
-  pStateChangeItemBody pBody = (pItem->s_body.u_noBodyHeader.s_mbz) ?
-    &(pItem->s_body.u_hasBodyHeader.s_body) :
-    &(pItem->s_body.u_noBodyHeader.s_body);
+  pStateChangeItemBody pBody = reinterpret_cast<pStateChangeItemBody>(getBody(pItem));
   
   return (pBody->s_runNumber != m_nRunNumber);
   

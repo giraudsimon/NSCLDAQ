@@ -314,7 +314,9 @@ texttests::tscons()
     EQ(static_cast<uint32_t>(2), pH->s_barrier);
     
     // Ensure the body pointers from pItem and from the class jibe:
-    
+		// Use of u_hasBodyHeader.s_body is ok here because we are generating
+		// synthetic events that don't have a body header extension.
+
     pTextItemBody pBody = reinterpret_cast<pTextItemBody>(item.getBodyPointer());
     EQ(
        pBody,

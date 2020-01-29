@@ -863,6 +863,9 @@ CRingItem::initItem(
   pHeader->s_sourceId  = sourceId;
   pHeader->s_barrier   = barrierType;
   
+  // This use of u_hasBodyHeader.s_body is ok because we're making a body
+  // header that has no extension.
+  
   setBodyCursor(m_pItem->s_body.u_hasBodyHeader.s_body);
   updateSize();  
 }

@@ -112,7 +112,9 @@ StateChangeOutput::beginTimestamped()
     
 
     // Check body contents.
-    
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+
     pStateChangeItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(12), pBody->s_runNumber);
     EQ(static_cast<uint32_t>(0), pBody->s_timeOffset);

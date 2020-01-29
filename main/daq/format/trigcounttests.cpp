@@ -120,7 +120,9 @@ PhysicsCountOutput::timestampedItem()
     EQ(static_cast<uint32_t>(0), pBh->s_barrier);
     
     // Check body
-    
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+
     pPhysicsEventCountItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
     EQ(static_cast<uint32_t>(2),  pBody->s_offsetDivisor);

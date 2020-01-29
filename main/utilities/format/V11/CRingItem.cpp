@@ -95,6 +95,8 @@ CRingItem::CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,
   pHeader->s_sourceId  = sourceId;
   pHeader->s_barrier   = barrierType;
   
+  // This is ok because we just generated a body header with no extension.
+  
   setBodyCursor(m_pItem->s_body.u_hasBodyHeader.s_body);
   updateSize();
   
@@ -216,7 +218,9 @@ CRingItem::getBodyPointer() const
     // The result depends on whether or not the item has a body header:
     
     if(hasBodyHeader()) {
-        return (m_pItem->s_body.u_hasBodyHeader.s_body);
+        uint8_t* p =
+        reinterpret_cast<uint8_t*>(&(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader));
+        return p + m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
     } else {
         return (m_pItem->s_body.u_noBodyHeader.s_body);
     }

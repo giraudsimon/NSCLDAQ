@@ -320,7 +320,8 @@ texttests::tscons()
     EQ(static_cast<uint32_t>(2), pH->s_barrier);
     
     // Ensure the body pointers from pItem and from the class jibe:
-    
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
+		
     pTextItemBody pBody = reinterpret_cast<pTextItemBody>(item.getBodyPointer());
     EQ(
        pBody,

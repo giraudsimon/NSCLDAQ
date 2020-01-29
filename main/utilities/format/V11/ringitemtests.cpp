@@ -343,6 +343,7 @@ ritemtests::tsconstruct()
         1, static_cast<uint64_t>(0x1122334455667788ll), 12, 34, 10
     );
     /* Check the body header is ok */
+    // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
     
     pRingItem    pItem = ts.getItemPointer();
     pBodyHeader  pB    = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);

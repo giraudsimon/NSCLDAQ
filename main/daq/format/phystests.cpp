@@ -122,6 +122,9 @@ PhysicsItemOutput::emptyTimestamped()
     
     
     // Check the payload.. should be a uint32_t sizeof(uint32_t)/sizeof(uint16_t)
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+
     
     EQ(
        static_cast<uint32_t>(sizeof(uint32_t)/sizeof(uint16_t)),
@@ -216,6 +219,10 @@ PhysicsItemOutput::countingTimestamped()
        uint32_t s_size;
        uint16_t s_body[10];
      };
+          
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+     
      struct PayloadShape* pPayload = reinterpret_cast<struct PayloadShape*>(
         pItem->s_body.u_hasBodyHeader.s_body
      );

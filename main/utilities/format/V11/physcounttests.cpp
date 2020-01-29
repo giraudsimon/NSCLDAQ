@@ -201,6 +201,9 @@ physcounttests::tscons()
   pPhysicsEventCountItem pItem = 
     reinterpret_cast<pPhysicsEventCountItem>(item.getItemPointer());
   pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+  
+  // u_hasBodyHeader.s_body is ok here because we're generating synthetic events.
+  
   pPhysicsEventCountItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
 
   // Check the header

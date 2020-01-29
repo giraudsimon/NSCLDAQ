@@ -209,17 +209,19 @@ CRingMarkingWorker::createClassifiedParts(
     pMessage p   = static_cast<pMessage>(pData);
  
     // Adjust the body header size and size upwards for the uint32_t:
-    
+
+    uint32_t originalBhdrSize = p->s_item.s_body.u_hasBodyHeader.s_bodyHeader.s_size;
     size_t ringItemSize = p->s_item.s_header.s_size;   // Original size.
     p->s_item.s_header.s_size += sizeof(uint32_t);
     p->s_item.s_body.u_hasBodyHeader.s_bodyHeader.s_size += sizeof(uint32_t);
     
     
-    // Describe the message up through the old body header:
-    // sizeof(BodyHeader) is ok because this is the pre-extension part.
+    // Describe the message up through the old body header - including any
+    // prior extension::
+
     
     vec[0].iov_base = p;
-    vec[0].iov_len  = sizeof(uint64_t) + sizeof(RingItemHeader) + sizeof(BodyHeader);
+    vec[0].iov_len  = sizeof(uint64_t) + sizeof(RingItemHeader) + originalBhdrSize;
     
     // The classification is just the uint32:
     
@@ -227,10 +229,15 @@ CRingMarkingWorker::createClassifiedParts(
     vec[1].iov_len  = sizeof(uint32_t);
     
     // Now the remainder -- see above because the length is exclusive of the
-    // extension.
+    // extension... we find the body making no assumptions about the
+    // presence of an extension before we added ours.
     
-    vec[2].iov_base = p->s_item.s_body.u_hasBodyHeader.s_body;
-    vec[2].iov_len  = ringItemSize - (sizeof(RingItemHeader) + sizeof(BodyHeader));
+    uint8_t* pB =
+        reinterpret_cast<uint8_t*>(&(p->s_item.s_body.u_hasBodyHeader.s_bodyHeader));
+    pB += originalBhdrSize;
+    
+    vec[2].iov_base = pB;
+    vec[2].iov_len  = ringItemSize - (sizeof(RingItemHeader) + originalBhdrSize);
     
 
     return 3;    

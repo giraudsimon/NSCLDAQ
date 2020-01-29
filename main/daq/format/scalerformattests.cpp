@@ -123,7 +123,9 @@ ScalerOutput::emptyTimestamped()
     EQ(static_cast<uint32_t>(4), pBh->s_barrier);
     
     // Check body:
-    
+	// Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+
     pScalerItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(10), pBody->s_intervalStartOffset);
     EQ(static_cast<uint32_t>(12), pBody->s_intervalEndOffset);
@@ -205,7 +207,9 @@ ScalerOutput::countingTimestamped()
     
     
     // Check body:
-    
+    // Use of u_hasBodyHeader.s_body is ok here because we are generating
+	// synthetic events that don't have a body header extension.
+
     pScalerItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
     EQ(static_cast<uint32_t>(10), pBody->s_intervalStartOffset);
     EQ(static_cast<uint32_t>(12), pBody->s_intervalEndOffset);

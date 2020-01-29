@@ -350,7 +350,9 @@ physeventtests::tsconstruct()
         1, static_cast<uint64_t>(0x1122334455667788ll), 12, 34, 10
     );
     /* Check the body header is ok */
-    
+    // Use of u_hasBodyHeader.s_body is ok here because we are generating
+    // synthetic events that don't have a body header extension.
+
     pRingItem    pItem = ts.getItemPointer();
     pBodyHeader  pB    = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     void*        pBody = reinterpret_cast<void*>(

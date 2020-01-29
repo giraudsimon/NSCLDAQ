@@ -154,6 +154,9 @@ DDASSorter::processHits(pRingItemHeader pItem)
     
     pRingItem pFullItem = reinterpret_cast<pRingItem>(pItem);
     
+    // This is ok because Readout does not put body header extensions in
+    // its events.
+    
     uint32_t* pBodySize;
     if (pFullItem->s_body.u_noBodyHeader.s_mbz) {   /// has a body header.
         pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_hasBodyHeader.s_body);
