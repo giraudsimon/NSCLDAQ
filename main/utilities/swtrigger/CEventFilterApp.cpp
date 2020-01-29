@@ -171,6 +171,9 @@ CEventFilterApp::getClassification(void* pEvent)
             "Physcics event has no body header"
         );
     }
+    // sizeof(BodyHeader) ok here because we want to know if the actual
+    // body header is bigger than this...
+    
     int extra = static_cast<int>(bHeaderSize) - sizeof(BodyHeader);
     if (extra < sizeof(uint32_t)) {
         throw std::invalid_argument(

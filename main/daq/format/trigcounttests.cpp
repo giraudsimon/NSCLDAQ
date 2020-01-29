@@ -100,7 +100,8 @@ PhysicsCountOutput::timestampedItem()
     );
     
     // Check header
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(PHYSICS_EVENT_COUNT, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -110,7 +111,8 @@ PhysicsCountOutput::timestampedItem()
     );
     
     // Check Body header
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1234123412341234ll), pBh->s_timestamp);

@@ -49,6 +49,8 @@ CRingFragmentItem::CRingFragmentItem(uint64_t timestamp, uint32_t source, uint32
     reinterpret_cast<pEventBuilderFragment>(getItemPointer());
   pBodyHeader pHeader = &(pFrag->s_bodyHeader);
   
+  // Ok to use sizeof(BodyHeader) here since we're fabricating the body header.
+  
   pHeader->s_size        = sizeof(BodyHeader);
   pHeader->s_timestamp   = timestamp;
   pHeader->s_sourceId    = source;
@@ -173,6 +175,7 @@ CRingFragmentItem::source() const
 }
 /**
  * return the size of thefragment payload
+ * the fragment is assumed to have a body header.
  * 
  * @return size_t
  */
@@ -181,8 +184,9 @@ CRingFragmentItem::payloadSize()
 {
   pEventBuilderFragment pItem =
     reinterpret_cast<pEventBuilderFragment>(getItemPointer());
-    
-  return pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+  
+  return pItem->s_header.s_size - sizeof(RingItemHeader) -
+    pItem->s_bodyHeader.s_size;
 
 }
 /**

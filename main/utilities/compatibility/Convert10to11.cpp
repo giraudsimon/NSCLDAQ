@@ -306,6 +306,7 @@ translateTimestampedScaler(pRingItem pOld)
         reinterpret_cast<NSCLDAQ10::pNonIncrTimestampedScaler>(pOld);
     
     // Figure out how bit the destination ring item is and alloate it:
+    // sizeof(BodyHeader) is ok b/c we're generating a body header.
     
     bool     swap     = mustSwap(pOld);
     uint32_t nScalers = swap ? swal(pSrc->s_scalerCount) : pSrc->s_scalerCount;

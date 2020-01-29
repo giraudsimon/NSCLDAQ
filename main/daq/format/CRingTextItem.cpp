@@ -33,6 +33,8 @@ using namespace std;
                         PACKET_TYPES or MONITORED_VARIABLES.
    \param theStrings - the set of strings in the ring buffer item.
 
+   @note The use of sizeof(Bodyheader) is fine because we're  building the
+         we're building the  body header ourself.
 */
 CRingTextItem::CRingTextItem(uint16_t type, vector<string> theStrings) :
   CRingItem(type, bodySize(theStrings) + sizeof(BodyHeader))
@@ -53,6 +55,9 @@ CRingTextItem::CRingTextItem(uint16_t type, vector<string> theStrings) :
   \param offsetTime - The time in to the run at which this is being inserted.
   \param timestamp  - The absolute time when this is being created.
 
+
+   @note The use of sizeof(Bodyheader) is fine because we're  building the
+         we're building the  body header ourself.
 */
 CRingTextItem::CRingTextItem(uint16_t       type,
 			     vector<string> strings,
@@ -83,6 +88,12 @@ CRingTextItem::CRingTextItem(uint16_t       type,
   \param offsetTime - The time in to the run at which this is being inserted.
   \param timestamp  - The absolute time when this is being created.
   @param divisor    - offsetTime/divisor = seconds into the run (default: 1)
+  
+  
+   @note The use of sizeof(Bodyheader) is fine because we're  building the
+         we're building the  body header ourself.
+
+  
  */
 CRingTextItem::CRingTextItem(
     uint16_t type, uint64_t eventTimestamp, uint32_t source, uint32_t barrier,

@@ -278,6 +278,9 @@ CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
         throw std::bad_alloc();
     }
     // Initialize the output ring item header:
+    // Note that this use of sizeof(BodyHeader) is ok because we don't care
+    // about the contents of the body.  In this use any body header extension
+    // will just be treated as part of the body.
     
     result->s_eventHeader.s_itemHeader.s_size = sizeof(RingItemHeader) + sizeof(BodyHeader);
     result->s_eventHeader.s_itemHeader.s_type = itemType(pFrag);
@@ -290,6 +293,11 @@ CEventAccumulator::allocEventInfo(EVB::pFlatFragment pFrag, int sid)
     } else {
         result->s_eventHeader.s_bodyHeader.s_timestamp = NULL_TIMESTAMP;
     }
+    
+    // In this case we're building the body header for the output ring item
+    // so we know there's no body header extension so the use of
+    // sizeof(BodyHeader) is ok.
+    
     result->s_eventHeader.s_bodyHeader.s_sourceId = sid;
     result->s_eventHeader.s_bodyHeader.s_size     = sizeof(BodyHeader);
     result->s_eventHeader.s_bodyHeader.s_barrier  = 0;
@@ -362,7 +370,9 @@ CEventAccumulator::makeIoVectors()
         m_pIoVectors[m_nIoVecs].iov_base = &(info->s_eventHeader.s_itemHeader);
         m_pIoVectors[m_nIoVecs].iov_len   = sizeof(RingItemHeader);
         
-        // Body header:
+        // Body header -- again in this treatment, any body header extension
+        // is just treated as part of the body and, since we don't care aout
+        // the body contents that's just fine.
         
         m_pIoVectors[m_nIoVecs+1].iov_base = &(info->s_eventHeader.s_bodyHeader);
         m_pIoVectors[m_nIoVecs+1].iov_len  = sizeof(BodyHeader);

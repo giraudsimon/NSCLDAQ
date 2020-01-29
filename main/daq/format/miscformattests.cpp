@@ -115,6 +115,7 @@ MiscFormat::evbFragment()
         10, data
     );
     // Check the header
+    // sizeof(BodyHeader) is ok in this context since we're building the data.
     
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + 10),
@@ -123,6 +124,7 @@ MiscFormat::evbFragment()
     EQ(EVB_FRAGMENT, pItem->s_header.s_type);
     
     // Check the body header
+    // sizeof(BodyHeader) is fine because we've contrived the data.
     
     pBodyHeader p = &(pItem->s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), p->s_size);
@@ -155,6 +157,7 @@ MiscFormat::unknownPayload()
         10, data        
     );
     // Check the header
+    // Since we've contrived the data, sizeof(BodyHeader) is just fine.
     
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + 10),
@@ -163,6 +166,7 @@ MiscFormat::unknownPayload()
     EQ(EVB_UNKNOWN_PAYLOAD, pItem->s_header.s_type);
     
     // Check the body header
+    // Since we've contrived the data  sizeof(BodyHeader) is ok.
     
     pBodyHeader p = &(pItem->s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), p->s_size);

@@ -64,11 +64,15 @@ CPPUNIT_TEST_SUITE_REGISTRATION(FragmakerTests);
 RingItem*
 FragmakerTests::makeBodyHeaderStateChange(StateChangeItem& item, int type)
 {
+  // Ok to us sizeof(BodyHeader) here because we're building contrived
+  // data which has no body header.
+  
   item.s_header.s_size =
     sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(StateChangeItemBody);
   item.s_header.s_type = type;
   
   // the body is unimportant but the body header contents matter:
+  // Again we're contriving the event so we know there's no body header extension.
   
   item.s_body.u_hasBodyHeader.s_bodyHeader.s_size      = sizeof(BodyHeader);
   item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp = 0x12345678;

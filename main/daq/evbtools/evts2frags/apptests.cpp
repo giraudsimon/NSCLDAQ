@@ -228,6 +228,7 @@ pRingItem
 apptests::makeStateChange(uint64_t ts, uint32_t sid, uint32_t type)
 {
   // cmopute the size of the item (fixed body helps).
+  // Ok not to check for body header extension since we've contrived these data.
   
   size_t itemSize =
     sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(StateChangeItemBody);

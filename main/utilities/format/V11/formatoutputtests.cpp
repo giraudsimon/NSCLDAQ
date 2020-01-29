@@ -166,12 +166,14 @@ PhysicsItemOutput::emptyTimestamped()
         0x1234567876543210ll, 123, 0, 0, NULL);
     
     // Make sure the header is right
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t)), pItem->s_header.s_size);
     EQ(PHYSICS_EVENT, pItem->s_header.s_type);
     
     // Make sure the Body header is right:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pBH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)),   pBH->s_size);
     EQ(static_cast<uint64_t>(0x1234567876543210ll), pBH->s_timestamp);
@@ -249,7 +251,8 @@ PhysicsItemOutput::countingTimestamped()
     );
     
     // Check the header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader)
         + sizeof(uint32_t) + 10*sizeof(uint16_t)),
@@ -258,7 +261,8 @@ PhysicsItemOutput::countingTimestamped()
     EQ(PHYSICS_EVENT, pItem->s_header.s_type);
     
     // Check the body header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x8765432123456789ll), pBh->s_timestamp);
@@ -346,7 +350,8 @@ PhysicsCountOutput::timestampedItem()
     );
     
     // Check header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(PHYSICS_EVENT_COUNT, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -356,7 +361,8 @@ PhysicsCountOutput::timestampedItem()
     );
     
     // Check Body header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1234123412341234ll), pBh->s_timestamp);
@@ -436,7 +442,8 @@ ScalerOutput::emptyTimestamped()
     );
     
     // Check header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(ScalerItemBody)
@@ -445,7 +452,8 @@ ScalerOutput::emptyTimestamped()
     EQ(PERIODIC_SCALERS, pItem->s_header.s_type);
     
     // Check body header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);
@@ -513,7 +521,8 @@ ScalerOutput::countingTimestamped()
     );    
     
     // Check header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(PERIODIC_SCALERS, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -524,7 +533,8 @@ ScalerOutput::countingTimestamped()
     );
     
     // Check body header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);
@@ -605,7 +615,8 @@ TextOutput::emptyTimestamp()
         0x1122334455667788ll, 1, 1, 0, stamp, 1234, NULL, MONITORED_VARIABLES, 1
     );
     // Check header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -614,7 +625,8 @@ TextOutput::emptyTimestamp()
     );
     
     // Check body header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pB->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pB->s_timestamp);
@@ -690,7 +702,8 @@ TextOutput::someStringsTimestamp()
         0x1122334455667788ll, 1, 1, 4, stamp, 1234, strings, MONITORED_VARIABLES, 1
     );
     // Check header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -700,7 +713,8 @@ TextOutput::someStringsTimestamp()
     );
     
     // Check body header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pH->s_timestamp);
@@ -772,7 +786,8 @@ StateChangeOutput::beginTimestamped()
         stamp, 0, 12, 1, titleString, BEGIN_RUN
     );
     // Check header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader)
@@ -781,7 +796,8 @@ StateChangeOutput::beginTimestamped()
     EQ(BEGIN_RUN, pItem->s_header.s_type);
     
     // Check body header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(8877665544332211ll), pH->s_timestamp);
@@ -872,7 +888,8 @@ MiscFormat::evbFragment()
         10, data
     );
     // Check the header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + 10),
         pItem->s_header.s_size
@@ -880,7 +897,8 @@ MiscFormat::evbFragment()
     EQ(EVB_FRAGMENT, pItem->s_header.s_type);
     
     // Check the body header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader p = &(pItem->s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), p->s_size);
     EQ(static_cast<uint64_t>(0x8888888877777777ll), p->s_timestamp);
@@ -912,7 +930,8 @@ MiscFormat::unknownPayload()
         10, data        
     );
     // Check the header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + 10),
         pItem->s_header.s_size
@@ -920,7 +939,8 @@ MiscFormat::unknownPayload()
     EQ(EVB_UNKNOWN_PAYLOAD, pItem->s_header.s_type);
     
     // Check the body header
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader p = &(pItem->s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), p->s_size);
     EQ(static_cast<uint64_t>(0x8888888877777777ll), p->s_timestamp);

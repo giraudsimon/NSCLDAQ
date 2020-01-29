@@ -105,12 +105,15 @@ PhysicsItemOutput::emptyTimestamped()
         0x1234567876543210ll, 123, 0, 0, NULL);
     
     // Make sure the header is right
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     
     EQ(static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t)), pItem->s_header.s_size);
     EQ(PHYSICS_EVENT, pItem->s_header.s_type);
     
     // Make sure the Body header is right:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pBH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)),   pBH->s_size);
     EQ(static_cast<uint64_t>(0x1234567876543210ll), pBH->s_timestamp);
@@ -188,7 +191,8 @@ PhysicsItemOutput::countingTimestamped()
     );
     
     // Check the header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(
         static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader)
         + sizeof(uint32_t) + 10*sizeof(uint16_t)),
@@ -197,7 +201,8 @@ PhysicsItemOutput::countingTimestamped()
     EQ(PHYSICS_EVENT, pItem->s_header.s_type);
     
     // Check the body header
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x8765432123456789ll), pBh->s_timestamp);

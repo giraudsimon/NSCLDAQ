@@ -419,9 +419,13 @@ CRingItem::updateSize()
   size_t s = sizeof(RingItemHeader) + getBodySize();
   
   // That body size does not count the body header if it's there.
+  // We need to allow for body header extensions becuse it's possible this
+  // ring item came from a ring rather than being constructed by us:
   
   if (hasBodyHeader()) {
-    s += sizeof(BodyHeader);
+    pRingItem p = getItemPointer();
+    s += p->s_body.u_hasBodyHeader.s_bodyHeader.s_size;   // Use the real body header size.
+    // s += sizeof(BodyHeader);
   } else {
     s += sizeof(uint32_t);
   }
@@ -450,16 +454,24 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
 {
     if (!hasBodyHeader()) {
         // Make space for the body header.
+        // sizeof(BodyHeder) is ok in this context because we're _creating_
+        // the body header with no extension.
         
         uint8_t* pBody = (m_pItem->s_body.u_noBodyHeader.s_body);
         size_t moveSize = sizeof(BodyHeader) - sizeof(uint32_t);
         size_t moveCount= m_pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(uint32_t);
         memmove(pBody + moveSize, pBody, moveCount);
         m_pCursor += moveSize;
-
+        pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+        pHeader->s_size = sizeof(BodyHeader);
     }
     pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-    pHeader->s_size = sizeof(BodyHeader);
+    
+    // Don't tamper with the existing size.  IF there was a body header there
+    // before it may have an extension:
+    
+    //pHeader->s_size = sizeof(BodyHeader);
+   
     pHeader->s_timestamp = timestamp;
     pHeader->s_sourceId  = sourceId;
     pHeader->s_barrier   = barrierType;
@@ -842,6 +854,8 @@ CRingItem::initItem(
 {
   m_pItem->s_header.s_type = type;
   m_pItem->s_header.s_size = 0;
+  
+  // We're making the body header so sizeof(BodyHeader) is ok here.
   
   pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
   pHeader->s_size      = sizeof(BodyHeader);

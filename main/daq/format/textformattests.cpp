@@ -99,7 +99,8 @@ TextOutput::emptyTimestamp()
         0x1122334455667788ll, 1, 1, 0, stamp, 1234, NULL, MONITORED_VARIABLES, 1
     );
     // Check header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -108,7 +109,8 @@ TextOutput::emptyTimestamp()
     );
     
     // Check body header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pB->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pB->s_timestamp);
@@ -184,7 +186,8 @@ TextOutput::someStringsTimestamp()
         0x1122334455667788ll, 1, 1, 4, stamp, 1234, strings, MONITORED_VARIABLES, 1
     );
     // Check header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -194,7 +197,8 @@ TextOutput::someStringsTimestamp()
     );
     
     // Check body header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pH->s_timestamp);

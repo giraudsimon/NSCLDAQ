@@ -94,6 +94,7 @@ void physcounttests::castcons()
     time_t now;
     time(&now);
 
+    
     PhysicsEventCountItem body = {sizeof(PhysicsEventCountItem),
                                   PHYSICS_EVENT_COUNT,
                                   1234, static_cast<uint32_t>(now), 1234568};
@@ -203,7 +204,8 @@ physcounttests::tscons()
   pPhysicsEventCountItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
 
   // Check the header
-
+  // Contrived data so sizeof(BodyHeader) is ok.
+  
   EQ(PHYSICS_EVENT_COUNT, pItem->s_header.s_type);
   EQ(
      static_cast<uint32_t>(

@@ -274,6 +274,10 @@ DDASSorter::freeHit(DDASReadout::ZeroCopyHit* pHit)
 void
 DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
 {
+    
+    // sizeof(BodyHeader) ok here because we're construting the output
+    // event and we know there's no extension.
+    
     uint64_t ts = pHit->s_time;
     m_lastEmittedTimestamp = pHit->s_time;
     uint32_t bodySize  = pHit->s_channelLength + 2*sizeof(uint32_t)

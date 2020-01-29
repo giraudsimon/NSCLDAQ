@@ -222,7 +222,8 @@ void teststate::tstampCons()
     EQ(static_cast<time_t>(666), item.getTimestamp());
     
     // Check the legnth:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     uint32_t properLength = sizeof(RingItemHeader) + sizeof(BodyHeader) +
         sizeof(StateChangeItemBody);
 }
@@ -253,7 +254,8 @@ teststate::tstampCopyCons()
     EQ(static_cast<time_t>(666), item.getTimestamp());
     
     // Check the legnth:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     uint32_t properLength = sizeof(RingItemHeader) + sizeof(BodyHeader) +
         sizeof(StateChangeItemBody);
 }

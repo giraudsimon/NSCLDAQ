@@ -216,6 +216,7 @@ CRingMarkingWorker::createClassifiedParts(
     
     
     // Describe the message up through the old body header:
+    // sizeof(BodyHeader) is ok because this is the pre-extension part.
     
     vec[0].iov_base = p;
     vec[0].iov_len  = sizeof(uint64_t) + sizeof(RingItemHeader) + sizeof(BodyHeader);
@@ -225,7 +226,8 @@ CRingMarkingWorker::createClassifiedParts(
     vec[1].iov_base = classification;
     vec[1].iov_len  = sizeof(uint32_t);
     
-    // Now the remainder:
+    // Now the remainder -- see above because the length is exclusive of the
+    // extension.
     
     vec[2].iov_base = p->s_item.s_body.u_hasBodyHeader.s_body;
     vec[2].iov_len  = ringItemSize - (sizeof(RingItemHeader) + sizeof(BodyHeader));

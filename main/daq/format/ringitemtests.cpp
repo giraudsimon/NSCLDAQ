@@ -356,7 +356,9 @@ physeventtests::tsconstruct()
     void*        pBody = reinterpret_cast<void*>(
         pItem->s_body.u_hasBodyHeader.s_body
     );
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
+  
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pB->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pB->s_timestamp);
     EQ(static_cast<uint32_t>(12), pB->s_sourceId);
@@ -385,7 +387,8 @@ physeventtests::addbodyheader()
     item.setBodyHeader(123, 1, 2);
     
     // Check size:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pRingItem pItem = item.getItemPointer();
     EQ(static_cast<uint32_t>(sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint16_t)*10), 
        pItem->s_header.s_size);

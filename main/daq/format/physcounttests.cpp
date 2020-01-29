@@ -180,7 +180,8 @@ physcounttests::tscons()
   pPhysicsEventCountItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
 
   // Check the header
-
+	// Note this is contrived data so sizeof(BodyHeader) is ok.
+	
   EQ(PHYSICS_EVENT_COUNT, pItem->s_header.s_type);
   EQ(
      static_cast<uint32_t>(
@@ -189,7 +190,8 @@ physcounttests::tscons()
   );
 
   // check the body header.
-
+	// Note this is contrived data so sizeof(BodyHeader) is ok.
+	
   EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pB->s_size);
   EQ(static_cast<uint64_t>(0x112233445567788ll), pB->s_timestamp);
   EQ(static_cast<uint32_t>(1), pB->s_sourceId);

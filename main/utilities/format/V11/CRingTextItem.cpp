@@ -35,6 +35,8 @@ namespace DAQ {
    \param type       - the ring item type. This should be 
                         PACKET_TYPES or MONITORED_VARIABLES.
    \param theStrings - the set of strings in the ring buffer item.
+   
+   @note sizeof(BodyHeader) is ok because were going to generate it.
 
 */
 CRingTextItem::CRingTextItem(uint16_t type, vector<string> theStrings) :
@@ -55,6 +57,8 @@ CRingTextItem::CRingTextItem(uint16_t type, vector<string> theStrings) :
   \param strings - The strings to put in the buffer.
   \param offsetTime - The time in to the run at which this is being inserted.
   \param timestamp  - The absolute time when this is being created.
+   
+   @note sizeof(BodyHeader) is ok because were going to generate it.
 
 */
 CRingTextItem::CRingTextItem(uint16_t       type,
@@ -86,6 +90,9 @@ CRingTextItem::CRingTextItem(uint16_t       type,
   \param offsetTime - The time in to the run at which this is being inserted.
   \param timestamp  - The absolute time when this is being created.
   @param divisor    - offsetTime/divisor = seconds into the run (default: 1)
+     
+   @note sizeof(BodyHeader) is ok because were going to generate it.
+
  */
 CRingTextItem::CRingTextItem(
     uint16_t type, uint64_t eventTimestamp, uint32_t source, uint32_t barrier,

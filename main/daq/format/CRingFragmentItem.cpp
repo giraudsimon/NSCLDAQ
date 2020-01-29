@@ -46,7 +46,9 @@ CRingFragmentItem::CRingFragmentItem(uint64_t timestamp, uint32_t source, uint32
     reinterpret_cast<pEventBuilderFragment>(getItemPointer());
   pBodyHeader pHeader = &(pFrag->s_bodyHeader);
   
-  pHeader->s_size        = sizeof(BodyHeader);
+  // This is fine because we're constructing the body header.
+  
+  pHeader->s_size        = sizeof(BodyHeader);   
   pHeader->s_timestamp   = timestamp;
   pHeader->s_sourceId    = source;
   pHeader->s_barrier = barrier;

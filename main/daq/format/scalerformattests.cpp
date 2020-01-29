@@ -104,7 +104,8 @@ ScalerOutput::emptyTimestamped()
     );
     
     // Check header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(ScalerItemBody)
@@ -113,7 +114,8 @@ ScalerOutput::emptyTimestamped()
     EQ(PERIODIC_SCALERS, pItem->s_header.s_type);
     
     // Check body header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);
@@ -181,7 +183,8 @@ ScalerOutput::countingTimestamped()
     );    
     
     // Check header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     EQ(PERIODIC_SCALERS, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -192,7 +195,8 @@ ScalerOutput::countingTimestamped()
     );
     
     // Check body header:
-    
+    // Note this is contrived data so sizeof(BodyHeader) is ok.
+	
     pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pBh->s_size);
     EQ(static_cast<uint64_t>(0x1111111122222222ll), pBh->s_timestamp);

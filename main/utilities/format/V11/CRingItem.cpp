@@ -87,6 +87,8 @@ CRingItem::CRingItem(uint16_t type, uint64_t timestamp, uint32_t sourceId,
   m_pItem->s_header.s_type = type;
   m_pItem->s_header.s_size = 0;
   
+  //  sizeof(BodyHeader) is ok since we're fabricating the body header.
+  
   pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
   pHeader->s_size      = sizeof(BodyHeader);
   pHeader->s_timestamp = timestamp;
@@ -355,7 +357,8 @@ CRingItem::updateSize()
   // That body size does not count the body header if it's there.
   
   if (hasBodyHeader()) {
-    s += sizeof(BodyHeader);
+    s += m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+    // s += sizeof(BodyHeader);
   } else {
     s += sizeof(uint32_t);
   }
@@ -390,10 +393,14 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
         size_t moveCount= m_pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(uint32_t);
         memmove(pBody + moveSize, pBody, moveCount);
         m_pCursor += moveSize;
-
+        
+        // We knw the body header size...
+        
+        pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+        pHeader->s_size = sizeof(BodyHeader);
     }
     pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-    pHeader->s_size = sizeof(BodyHeader);
+    // pHeader->s_size = sizeof(BodyHeader);   // Leave exising body header size alone.
     pHeader->s_timestamp = timestamp;
     pHeader->s_sourceId  = sourceId;
     pHeader->s_barrier   = barrierType;

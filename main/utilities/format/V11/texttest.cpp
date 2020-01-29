@@ -301,7 +301,8 @@ texttests::tscons()
     pTextItem pItem = reinterpret_cast<pTextItem>(item.getItemPointer());
     
     //Check out the header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     EQ(PACKET_TYPES, pItem->s_header.s_type);
     EQ(
         static_cast<uint32_t>(
@@ -310,7 +311,8 @@ texttests::tscons()
         ), pItem->s_header.s_size
     );
     // The body header:
-    
+    // Contrived data so sizeof(BodyHeader) is fine.
+		
     pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x8877665544332211ll), pH->s_timestamp);
