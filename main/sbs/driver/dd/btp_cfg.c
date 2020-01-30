@@ -488,7 +488,7 @@ static int btp_suspend(
     pm_message_t s_state)
 
 {
-  int state = s_state.event;
+    /* int state = s_state.event; */
     return -EBUSY;
 }
 
@@ -2038,7 +2038,7 @@ static int init_isr (
     /* 
     ** Register the ISR 
     */
-    ret_val = request_irq((unsigned int)unit_p->irq, btk_isr, 
+    ret_val = request_irq((unsigned int)unit_p->irq, (irq_handler_t)btk_isr, 
 			  (unsigned long)IRQF_SHARED, 
 			  bt_name_gp, (void *) unit_p);
     if (0 > ret_val) {

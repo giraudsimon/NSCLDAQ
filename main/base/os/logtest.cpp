@@ -4,6 +4,9 @@
 #include <cppunit/Asserter.h>
 #include <config.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #include <stdexcept>
 #include <string>
@@ -39,7 +42,16 @@ private:
   std::string m_logFile;
 public:
   void setUp() {
-    m_logFile = tmpnam(nullptr);
+    char tplate[100];
+    memset(tplate, 0, sizeof(tplate));
+    strncpy(tplate, "logXXXXXX", sizeof(tplate)-1);
+    int fd = mkstemp(tplate);
+    if (fd < 0) {
+      perror("setUp failed to make temp file.");
+      exit(EXIT_FAILURE);
+    }
+    close(fd);
+    m_logFile = tplate;
     daqlog::setLogFile(m_logFile.c_str());
   }
   void tearDown() {

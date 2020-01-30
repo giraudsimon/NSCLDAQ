@@ -13,6 +13,8 @@
 #include <string>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
 
 class PagedOTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(PagedOTest);
@@ -32,7 +34,16 @@ private:
   std::string m_name;
 public:
   void setUp() {
-    m_name = tmpnam(nullptr);      // Yeah I know but mkstemp etc. don't do what I need.
+    char tplate[100];
+    memcpy(tplate, 0, sizeof(tplate));
+    strncpy(tplate, "TempXXXXXX", sizeof(tplate)-1);
+    int fd = mkstemp(tplate);
+    if (fd < 0) {
+      perror("Failed to make temp file");
+      exit(EXIT_FAILURE);
+    }
+    close(fd);
+    m_name = tplate;
   }
   void tearDown() {
     unlink(m_name.c_str());

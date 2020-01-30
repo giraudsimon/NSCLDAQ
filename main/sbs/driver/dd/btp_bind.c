@@ -731,8 +731,8 @@ bt_error_t btp_hw_unbind(
     **  waking sleeping processes to race for buffer acquisition,
     **  then unlocking the device for use by others.
     */
-    bind_p->phys_addr = (bt_data32_t) NULL;
-    bind_p->sysinfo_p = (bt_data64_t) NULL;
+    bind_p->phys_addr = (bt_data32_t)0;   /* NULL; */
+    bind_p->sysinfo_p = (bt_data64_t)0;   /* NULL; */
 
 btk_hw_unbind:
     FEXIT(retval);

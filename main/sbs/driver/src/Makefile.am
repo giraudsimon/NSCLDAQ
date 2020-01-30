@@ -32,8 +32,8 @@ libbtp_la_CPPFLAGS = -I. -I@srcdir@/../include \
 	-DBT1003 -DNDEBUG -DBT_INLINE \
 	-D_POSIX_C_SOURCE -D_POSIX_THREAD_SEMANTICS \
 	-D_XOPEN_SOURCE	\
-	-O2 -Wall -Wstrict-prototypes $(THREADCXX_FLAGS)  \
-	-Wno-unused-const-variable
+	-O2 -Wall -Wstrict-prototypes $(THREADCXX_FLAGS)   \
+	-std=c99
 
 include_HEADERS =  btpiflib.h
 

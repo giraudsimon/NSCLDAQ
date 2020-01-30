@@ -246,8 +246,10 @@ CDAQShm::attach(std::string name)
   close(fd);
   
   // Add a new mapping entry with refcount 1:
-
-  attachInformation initialInfo = {pMemory, fileSize, 1};
+  // Note that fileSize is only negative in errors which were already handled.
+  // so the cast below is safe as fileSize will be size_t  by now.
+  
+  attachInformation initialInfo = {pMemory, static_cast<size_t>(fileSize), 1};
   m_attachMap[name] = initialInfo;
 
   return pMemory;

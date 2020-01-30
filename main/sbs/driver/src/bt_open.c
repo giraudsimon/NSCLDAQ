@@ -479,7 +479,7 @@ close_end:
  {
         int sema_id;
         union semun sem_union;
-	struct sembuf sem_b;
+	__attribute__((unused)) struct sembuf sem_b;
 
 	sem_b.sem_num = 0;
 	sem_b.sem_op = 1;	/* V */

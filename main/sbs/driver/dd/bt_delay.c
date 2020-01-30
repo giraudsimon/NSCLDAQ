@@ -346,7 +346,7 @@ btk_timeout_t btk_timeout(
     long usec)
 {
 
-    btk_timeout_t retval = (btk_timeout_t) NULL;
+    btk_timeout_t retval = (btk_timeout_t)0;   /* NULL ; */
 
     FUNCTION("btk_timeout");
     LOG_UNKNOWN_UNIT;

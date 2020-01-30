@@ -116,7 +116,7 @@ bt_driver_version_end:
 #if defined (__vxworks)
         sprintf(ver_info_p, "%s", model_version);
 #else
-        snprintf(ver_info_p, BT_DIAG_MAX_REV_INFO, "%s", model_version);
+        snprintf(ver_info_p, (size_t)BT_DIAG_MAX_REV_INFO, "%s", model_version);
 #endif /* defined (__vxworks) */
 
     }

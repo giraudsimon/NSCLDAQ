@@ -36,10 +36,11 @@ static const char revcntrl[] = "@(#)"__FILE__"  $Revision: 1.12 $" __DATE__;
 #include "btapi.h"
 #include "btpiflib.h"
 
-
 #if defined(__sun)
 extern int getpagesize(void);
 #endif /* defined(__sun) */
+
+#include <unistd.h>
  
 
 /******************************************************************************
@@ -80,7 +81,7 @@ bt_error_t bt_mmap(
     int prot_flags = 0;             /* protection flags             */
     void *memory_p = NULL;
     int ret_val = BT_SUCCESS;
-    size_t size_of_page;
+    long size_of_page;              /* Not size_t */
     bt_devaddr_t req_offset;
     bt_devaddr_t req_length;
     bt_devdata_t save_swap;
@@ -123,7 +124,7 @@ bt_error_t bt_mmap(
     /*
     ** Align the mmap to a page boundary
     */
-    size_of_page = getpagesize();
+    size_of_page = sysconf(_SC_PAGESIZE);
     req_offset = map_off - (map_off % size_of_page);
     req_length = map_len + (map_off % size_of_page);
 
@@ -251,7 +252,7 @@ bt_error_t bt_unmmap(
     )
 {
     int ret_val = BT_SUCCESS;
-    size_t size_of_page;
+    long size_of_page;
     bt_devaddr_t req_length;
     bt_data8_t *req_p;
 #if defined (BT951)
@@ -274,7 +275,7 @@ bt_error_t bt_unmmap(
     ** Adjust the length based on whether we needed to
     ** adjust remote offset during the mmap call
     */
-    size_of_page = getpagesize();
+    size_of_page = sysconf(_SC_PAGESIZE);
     req_p = ((bt_data8_t *) mmap_p - ((bt_devaddr_t) mmap_p % size_of_page));
     req_length = map_len + ((bt_devaddr_t) mmap_p % size_of_page);
 

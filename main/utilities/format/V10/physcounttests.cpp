@@ -88,7 +88,7 @@ void physcounttests::castcons()
 
   PhysicsEventCountItem body = {sizeof(PhysicsEventCountItem),
 				PHYSICS_EVENT_COUNT,
-				1234, now, 1234568};
+				1234, static_cast<uint32_t>(now), 1234568};
   memcpy(good.getItemPointer(), &body, sizeof(body));
   uint8_t* p = reinterpret_cast<uint8_t*>(good.getBodyCursor());
   p          += sizeof(PhysicsEventCountItem) - sizeof(RingItemHeader);
