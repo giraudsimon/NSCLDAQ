@@ -35,7 +35,7 @@ private:
 public:
   void setUp() {
     char tplate[100];
-    memcpy(tplate, 0, sizeof(tplate));
+    memset(tplate, 0, sizeof(tplate));
     strncpy(tplate, "TempXXXXXX", sizeof(tplate)-1);
     int fd = mkstemp(tplate);
     if (fd < 0) {
