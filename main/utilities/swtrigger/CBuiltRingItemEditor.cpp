@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <new>
 #include <stdexcept>
-
+#include <iostream>
 /**
  * constructor
  *    @param fanin - client of the fanout transport.
@@ -227,11 +227,22 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
     void*  p = firstFragment(pBody);
     while(nBytes) {
         EVB::pFlatFragment pFrag = static_cast<EVB::pFlatFragment>(p);
-	EVB::pFragmentHeader pFragHeader = reinterpret_cast<EVB::pFragmentHeader>(pFrag);  // Fragment header only.
-	pRingItemHeader      pfRitemHdr  = reinterpret_cast<pRingItemHeader>(pFragHeader+1); // Ring item header follows.
-	
-        std::vector<BodySegment> fragSegs = editFragment(pFrag);
-        result.insert(result.end(), fragSegs.begin(), fragSegs.end());
+        EVB::pFragmentHeader pFragHeader = reinterpret_cast<EVB::pFragmentHeader>(pFrag);  // Fragment header only.
+        pRingItemHeader      pfRitemHdr  = reinterpret_cast<pRingItemHeader>(pFragHeader+1); // Ring item header follows.
+        std::vector<BodySegment> fragSegs;
+        try {
+            fragSegs = editFragment(pFrag);
+            result.insert(result.end(), fragSegs.begin(), fragSegs.end());
+        } catch (std::exception& e) {
+            std::cerr << " User's fragment editing code threw an exception: \n";
+            std::cerr << e.what() << std::endl;
+            std::cerr << std::endl << "This fragment will be removed from the output\n";
+            fragSegs.clear();               // Probably this is the case but...
+        } catch (...) {
+            std::cerr << " User's fragment editing code threw an unanticipated exception type: \n";
+            std::cerr << std::endl << "This fragment will be removed from the output\n";
+            fragSegs.clear();               // Probably this is the case but...
+        }
         
         // This has to come before the size adjustment.
         
@@ -242,10 +253,12 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
 	// There's already a segment to write them to the output we just
 	// need to modify the data in place.
 
-	uint32_t fragmentSize = countBytes(fragSegs); // Includes the ring item hdr and frag hdr.
-	uint32_t finalFragBodySize = fragmentSize - sizeof(EVB::FragmentHeader);
-	pFragHeader->s_size = finalFragBodySize;
-	pfRitemHdr->s_size  = finalFragBodySize;
+        uint32_t fragmentSize = countBytes(fragSegs); // Includes the ring item hdr and frag hdr.
+        if (fragmentSize) {
+            uint32_t finalFragBodySize = fragmentSize - sizeof(EVB::FragmentHeader);
+            pFragHeader->s_size = finalFragBodySize;
+            pfRitemHdr->s_size  = finalFragBodySize;
+        }
 	
        
     }
