@@ -150,7 +150,7 @@ int CMyEndCommand::readOutRemainingData()
                 if(retval<0) {
                     cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module %d, retval = " << k << endl << flush;
                     // Pixie_Print_MSG (ErrMSG);
-                    free(lmdata);
+		     
                     //return -5;
                 } // end error block
 
@@ -180,7 +180,7 @@ int CMyEndCommand::readOutRemainingData()
         retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, k, EndOfRunRead);
         if(retval<0) {
             cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module %d, retval = " << k << endl << flush;
-            free(lmdata);
+
         }
         nFIFOWords[k] += mod_numwordsread;
 
