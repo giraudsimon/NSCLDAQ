@@ -1,4 +1,4 @@
-SUBDIRS =       factories thread os  CopyrightTools cvt uri  headers tclwidgets \
+SUBDIRS =       pugi factories thread os  CopyrightTools cvt uri  headers tclwidgets \
 		security  tcpip plotchart bltsubst plotcontainer \
 		tclutils testutils
 

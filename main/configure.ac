@@ -503,6 +503,7 @@ AC_CONFIG_LINKS([utilities/filter/run-0000-00.evt:utilities/filter/run-0000-00.e
 AC_CONFIG_FILES([Makefile
 		nscldaq
 		daqsetup.bash
+		base/pugi/Makefile
     base/Makefile
     base/factories/Makefile
     base/os/Makefile
