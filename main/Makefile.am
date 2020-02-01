@@ -1,6 +1,13 @@
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=subdir-objects
 
+
+
+CAENDISTRIBDIRS=caendigitizers
+if CAENSUPPORT
+	CAENSUPPORTDIRS=$(CAENDISTRIBDIRS)
+endif
+
 if BUILD_EPICS_TOOLS
 if EPICS
      EPICSDIRS=epics
@@ -21,10 +28,12 @@ endif
 
 SUBDIRS =	 base caenfw-common servers  base/dataflow  \
 		daq utilities $(DOCDIR) \
-		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) examples
+		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) $(CAENSUPPORTDIRS) examples
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
-		 docbuild docconfig simplesetups sbs epics usb ddas examples
+		 docbuild docconfig simplesetups sbs epics usb ddas  \
+		$(CAENDISTRIBDIRS)    \
+		examples
 
 INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
 								@srcdir@/figures/intro-data-flow-diagram-diagnostics.png 
