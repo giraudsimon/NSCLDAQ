@@ -230,6 +230,28 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
         EVB::pFragmentHeader pFragHeader = reinterpret_cast<EVB::pFragmentHeader>(pFrag);  // Fragment header only.
         pRingItemHeader      pfRitemHdr  = reinterpret_cast<pRingItemHeader>(pFragHeader+1); // Ring item header follows.
         std::vector<BodySegment> fragSegs;
+        
+        // There's something seriously wrong with the event if:
+        // 1. The ring item length is > nBytes remaining.
+        // 2. The type is not PHYSICS_EVENT
+        //  In that case we stop processing the event and break out of the
+        //  loop.
+        
+        if (((sizeof(EVB::FragmentHeader) + pfRitemHdr->s_size) > nBytes) || (pfRitemHdr->s_type != PHYSICS_EVENT)) {
+            std::cerr << "The ring item header of a fragment either goes out of\n";
+            std::cerr << "event bounds or the type is no PHYSICS_EVENT\n";
+            std::cerr << "Going on to the next event, the fragments so far will be output\n";
+            std::cerr << "The remainder of the event will not be output\n";
+            
+            std::cerr << "Item size: " << sizeof(EVB::FragmentHeader) + pfRitemHdr->s_size <<"  bytes left: " << nBytes << std::endl;
+            std::cerr << "Item type: " << pfRitemHdr->s_type << " Should be: " << PHYSICS_EVENT << std::endl;
+            
+            // This is safe because the caller uses the fragment descriptors so far
+            // (which are valid) to size the event and the body size.
+            
+            break;      
+        }
+        
         try {
             fragSegs = editFragment(pFrag);
             result.insert(result.end(), fragSegs.begin(), fragSegs.end());
