@@ -251,6 +251,29 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
             
             break;      
         }
+        // Another failure we've seen is a corrupt body header.  Specifically,
+        // the body header looks like it's a bit of trace which, in turn
+        // pushes us off the end of the datablock.
+        // This code:
+        // 1. Assumes there's a body header.
+        // 2. Gets the size of the body header
+        // 3. If it pushes us off the end of the data block,
+        //    whines and aborts this ring item:
+        
+        pRingItem pfragRingItem = reinterpret_cast<pRingItem>(pfRitemHdr);
+        uint32_t   fBodyHeaderSize = pfragRingItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+        
+        // nbytes includes the ring item header and fragment header that precede
+        // the body header:
+        
+        if (fBodyHeaderSize +sizeof(RingItemHeader) + sizeof(EVB::FragmentHeader) > nBytes) {
+            std::cerr << " I got a body header size of " << fBodyHeaderSize
+                << " which, with the ring item and frag headers would push  me off the end of the data "
+                << nBytes << std::endl;
+            std::cerr << " Skipping this event\n";
+            result.clear();
+            return result;                    // empty should be gone.
+        }
         
         try {
             fragSegs = editFragment(pFrag);
