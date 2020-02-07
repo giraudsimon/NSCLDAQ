@@ -323,6 +323,29 @@ void OutputTests::output_5()
 
 void OutputTests::output_6()
 {
+    char payload1[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    char payload2[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = i;
+        payload2[i] = 255-i;       // Different than 1 by a lot.
+    }
+    EVB::Fragment frag1 =
+        {{1235, 55, uint32_t(sizeof(payload1)), 0}, payload1};
+    EVB::Fragment frag2 =
+        {{(5321, 66, uint32_t(sizeof(payload2)), 1}, payload2};
+           
+    EVBFragments list1;
+    EVBFragments list2;
+    list1.push_back({time_t(nullptr), &frag1});
+    list2.push_back({time_t(nullptr), &frag2});
+    
+    (*m_pTestObj)(list1);
+    (*m_pTestObj)(list2);
+    
+    EQ(size_t(2), writtenData.size());
+    checkContents(&frag1, 1, 0);
+    checkContents(&frag2, 1, 1);
+    
     
 }
 // Two observations first is a single, second a double
