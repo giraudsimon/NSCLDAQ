@@ -57,7 +57,7 @@ COrdererOutput::COrdererOutput(int fd) :
     std::cerr.flush();
     maxWrite = 1024*1024;
   } else {
-    std::cerr << " Maximum output write size: " << maxWrite << std::endl;
+    //std::cerr << " Maximum output write size: " << maxWrite << std::endl;
     std::cerr.flush();
   }
   m_nMaxWrite = maxWrite;
