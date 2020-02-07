@@ -143,7 +143,12 @@ install-exec-hook:
 #
 # Tests:
 
-noinst_PROGRAMS = unittests ordertests
+noinst_PROGRAMS = unittests ordertests outputTests
+
+outputTests_SOURCES=TestRunner.cpp outputTests.cpp COrdererOutput.cpp
+outputTests_LDADD=@TCL_LIBS@ @LIBEXCEPTION_LDFLAGS@ @CPPUNIT_LDFLAGS@
+outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+
 
 unittests_DEPENDENCIES = libEventBuilderClient.la cmdline.o cmdline.h
 unittests_SOURCES = TestRunner.cpp lookupTest.cpp  \
@@ -177,10 +182,13 @@ ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
 
 ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
+
+
 check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
-#	./ordertests
-#	./unittests 
+	@builddir@/outputTests
+#	./ordertests            # Broken due to multithreading
+#	./unittests             # Broken by multithreading.
 
 
 
