@@ -171,6 +171,7 @@ private:
         EQ(0, memcmp(
             &(pFrags[f].s_header), pData, sizeof(EVB::FragmentHeader))
         );
+        ASSERT(pFrags[f].s_header.s_size > 0);  // We had some test errors this catchs
         EQ(0, memcmp(
             pFrags[f].s_pBody, pData+sizeof(EVB::FragmentHeader),
             pFrags[f].s_header.s_size
