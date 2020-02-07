@@ -118,17 +118,9 @@ COrdererOutput::operator()(const EvbFragments& event)
     
     size_t nBytes = sizeof(EVB::FragmentHeader) + p->s_header.s_size;
     if (((totalWrite + nBytes) > maxWrite) && (n > 0)) {
-      try {
-        io::writeDataVUnlimited(m_OutputChannel, iovs, n);
-        n = 0;                       // Start at the beginning of the iovs
-        totalWrite = 0;              // Accumulate another buffer.
-      }
-      catch (...) {
-        std::cerr << "Output Thread caught an exception writing data\n";
-        std::cerr.flush();
-        throw;
-        
-      }
+      dumpOutput(iovs, n);
+      n = 0;
+      totalWrite = 0;
     }
     
     iovs[n].iov_base = &(p->s_header);
@@ -139,18 +131,19 @@ COrdererOutput::operator()(const EvbFragments& event)
     
     n += 2;
     totalWrite += nBytes;
+    if (totalWrite > maxWrite) {
+      dumpOutput(iovs, n);
+      n = 0;
+      totalWrite = 0;
+    }
+    
   }
   // If we have a partial buffer, output it:
-  
-  try {
-    if (n) {
-      io::writeDataVUnlimited(m_OutputChannel, iovs, n);
-    }
-  }
-  catch (...) {
-    std::cerr << "Output Thread caught an exception writing data\n";
-    std::cerr.flush();
-    throw;
+
+  if (n) {
+    dumpOutput(iovs, n);
+    n = 0;  // Not strictly needed.
+    totalWrite = 0;
   }
   return;
 
@@ -174,4 +167,24 @@ COrdererOutput::ThrowErrnoString(const char* prefixMessage) const
   msg += Tcl_ErrnoMsg(error);
   
   throw msg;
+}
+/**
+ * dump output via writeDataVUnlimited
+ *
+ * @param iovs - array of write vectors.
+ * @para n    - Number of write vecstors.
+ * @note      - Caller must assure that n>0.
+ */
+void
+COrdererOutput::dumpOutput(iovec* iovs, int n)
+{
+  try {
+    io::writeDataVUnlimited(m_OutputChannel, iovs, n);
+  
+  }
+  catch (...) {
+    std::cerr << "Output Thread caught an exception writing data\n";
+    std::cerr.flush();
+    throw;
+  }  
 }

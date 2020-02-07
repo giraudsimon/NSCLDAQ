@@ -66,6 +66,7 @@ public:
 private:
 
   void ThrowErrnoString(const char* prefixMessage) const;
+  void dumpOutput(iovec* iov, int n);
   
 };
 
