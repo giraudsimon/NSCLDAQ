@@ -88,6 +88,13 @@ CFragmentHandler::getInstance() {return &fhandlerInstance;}
     CPPUNIT_TEST(output_1);
     CPPUNIT_TEST(output_2);
     CPPUNIT_TEST(output_3);
+    CPPUNIT_TEST(output_4);
+    CPPUNIT_TEST(output_5);
+    
+    CPPUNIT_TEST(output_6);
+    CPPUNIT_TEST(output_7);
+    CPPUNIT_TEST(output_8);
+    CPPUNIT_TEST(output_9);
     CPPUNIT_TEST_SUITE_END();
     
     // Test methods
@@ -95,7 +102,13 @@ protected:
     void output_1();
     void output_2();
     void output_3();
+    void output_4();
+    void output_5();
     
+    void output_6();
+    void output_7();
+    void output_8();
+    void output_9();
 // We need a pipe and COrdererOutput:
 
     int m_pipeFds[2];
@@ -261,4 +274,72 @@ private:
     
     checkContents(frags+maxFrags, nFrags - maxFrags, 1);
 }
- 
+// Output exactly one write size/
+
+void OutputTests::output_4()
+{
+    char payload[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload); i++) {
+        payload[i] = i;               // Yeah it wraps a 256.
+    }
+    EVB::Fragment frag = {{1235, 55, uint32_t(sizeof(payload)), 0}, payload};
+    EvbFragments fragList;
+    fragList.push_back({time(nullptr), &frag});
+    
+    (*m_pTestObj)(fragList);
+    
+    EQ(size_t(1), writtenData.size());
+    checkContents(&frag, 1, 0);
+}
+// Output one write size + one small fragment
+
+void OutputTests::output_5()
+{
+    char payload[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload); i++) {
+        payload[i] = i;               // Yeah it wraps a 256.
+    }
+    EVB::Fragment frag = {{1235, 55, uint32_t(sizeof(payload)), 0}, payload};
+    EvbFragments fragList;
+    fragList.push_back({time(nullptr), &frag});
+    
+    ASSERT(100+sizeof(EVB::FragmentHeader) <= m_maxWrites);
+    
+    char payload2[100];
+    for (int i =0; i < 100; i++) {
+        payload2[i] = 255-i;
+    }
+    EVB::Fragment frag2 = {{5321, 123, uint32_t(sizeof(payload2)), 0}, payload2};
+    fragList.push_back({time(nullptr), &frag2});
+    
+    (*m_pTestObj)(fragList);
+    
+    EQ(size_t(2), writtenData.size());
+    checkContents(&frag, 1, 0);
+    checkContents(&frag2, 1, 1);
+}
+
+// Two observations each a single write.
+
+void OutputTests::output_6()
+{
+    
+}
+// Two observations first is a single, second a double
+
+void OutputTests::output_7()
+{
+    
+}
+// Towo observations, first is a double, second a single
+
+void OutputTests::output_8()
+{
+    
+}
+// Two observations, both are doubles.
+
+void OutputTests::output_9()
+{
+    
+}
