@@ -95,6 +95,10 @@ CFragmentHandler::getInstance() {return &fhandlerInstance;}
     CPPUNIT_TEST(output_7);
     CPPUNIT_TEST(output_8);
     CPPUNIT_TEST(output_9);
+    
+    CPPUNIT_TEST(output_10);
+    CPPUNIT_TEST(output_11);
+    CPPUNIT_TEST(output_12);
     CPPUNIT_TEST_SUITE_END();
     
     // Test methods
@@ -109,6 +113,11 @@ protected:
     void output_7();
     void output_8();
     void output_9();
+    
+    void output_10();
+    void output_11();
+    void output_12();
+
 // We need a pipe and COrdererOutput:
 
     int m_pipeFds[2];
@@ -299,7 +308,8 @@ void OutputTests::output_5()
     for (int i =0; i < sizeof(payload); i++) {
         payload[i] = i;               // Yeah it wraps a 256.
     }
-    EVB::Fragment frag = {{1235, 55, uint32_t(sizeof(payload)), 0}, payload};
+    EVB::Fragment frag =
+        {{1235, 55, uint32_t(sizeof(payload)), 0}, payload};
     EvbFragments fragList;
     fragList.push_back({time(nullptr), &frag});
     
@@ -309,7 +319,8 @@ void OutputTests::output_5()
     for (int i =0; i < 100; i++) {
         payload2[i] = 255-i;
     }
-    EVB::Fragment frag2 = {{5321, 123, uint32_t(sizeof(payload2)), 0}, payload2};
+    EVB::Fragment frag2 =
+        {{5321, 123, uint32_t(sizeof(payload2)), 0}, payload2};
     fragList.push_back({time(nullptr), &frag2});
     
     (*m_pTestObj)(fragList);
@@ -332,12 +343,12 @@ void OutputTests::output_6()
     EVB::Fragment frag1 =
         {{1235, 55, uint32_t(sizeof(payload1)), 0}, payload1};
     EVB::Fragment frag2 =
-        {{(5321, 66, uint32_t(sizeof(payload2)), 1}, payload2};
+        {{5321, 66, uint32_t(sizeof(payload2)), 1}, payload2};
            
-    EVBFragments list1;
-    EVBFragments list2;
-    list1.push_back({time_t(nullptr), &frag1});
-    list2.push_back({time_t(nullptr), &frag2});
+    EvbFragments list1;
+    EvbFragments list2;
+    list1.push_back({time(nullptr), &frag1});
+    list2.push_back({time(nullptr), &frag2});
     
     (*m_pTestObj)(list1);
     (*m_pTestObj)(list2);
@@ -352,17 +363,198 @@ void OutputTests::output_6()
 
 void OutputTests::output_7()
 {
+    // Three payloads, first two fill, the last one doesn't.
+    
+    char payload1[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    char payload2[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = i;
+        payload2[i] = 255-1;
+    }
+    char payload3[100];
+    for (int i = 0; i < 100; i++) {
+        payload3[i] = 2*i;
+    }
+    
+    // Fragment descriptors:
+    
+    EVB::Fragment frag1 =
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload1)), 0}, payload1};
+    EVB::Fragment frag2 =
+        {{0x55555555, 2, uint32_t(sizeof(payload2)), 0}, payload2};
+    EVB::Fragment frag3 =
+        {{0x11111111, 1, uint32_t(sizeof(payload3)), 0}, payload3};
+    
+    EvbFragments l1;
+    EvbFragments l2;
+    
+    l1.push_back({time(nullptr), &frag1});
+    l2.push_back({time(nullptr), &frag2});
+    l2.push_back({time(nullptr), &frag3});
+    (*m_pTestObj)(l1);
+    (*m_pTestObj)(l2);
+    
+    EQ(size_t(3), writtenData.size());
+    checkContents(&frag1, 1, 0);
+    checkContents(&frag2, 1, 1);
+    checkContents(&frag3, 1, 2);
     
 }
 // Towo observations, first is a double, second a single
 
 void OutputTests::output_8()
 {
+    // Three payloads, first two fill, the last one doesn't.
     
+    char payload1[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    char payload2[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = i;
+        payload2[i] = 255-1;
+    }
+    char payload3[100];
+    for (int i = 0; i < 100; i++) {
+        payload3[i] = 2*i;
+    }
+    
+    // Fragment descriptors:
+    
+    EVB::Fragment frag1 =
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload1)), 0}, payload1};
+    EVB::Fragment frag2 =
+        {{0x55555555, 2, uint32_t(sizeof(payload2)), 0}, payload2};
+    EVB::Fragment frag3 =
+        {{0x11111111, 1, uint32_t(sizeof(payload3)), 0}, payload3};
+    
+    EvbFragments l1;
+    EvbFragments l2;
+    l1.push_back({time(nullptr), &frag1});
+    l1.push_back({time(nullptr), &frag2});
+    l2.push_back({time(nullptr), &frag3});
+    
+    (*m_pTestObj)(l1);
+    (*m_pTestObj)(l2);
+    
+    EQ(size_t(3), writtenData.size());
+    checkContents(&frag1, 1, 0);
+    checkContents(&frag2, 1, 1);
+    checkContents(&frag3, 1, 2);    
 }
 // Two observations, both are doubles.
 
 void OutputTests::output_9()
 {
+    // Three payloads, first two fill, the last one doesn't.
+    
+    char payload1[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    char payload2[m_maxWrites - sizeof(EVB::FragmentHeader)];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = i;
+        payload2[i] = 255-1;
+    }
+    char payload3[100];
+    char payload4[100];
+    for (int i = 0; i < 100; i++) {
+        payload3[i] = 2*i;
+        payload4[i] = 3*i;
+    }
+
+   EVB::Fragment frag1 =
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload1)), 0}, payload1};
+    EVB::Fragment frag2 =
+        {{0x55555555, 2, uint32_t(sizeof(payload2)), 0}, payload2};
+    EVB::Fragment frag3 =
+        {{0x11111111, 1, uint32_t(sizeof(payload3)), 0}, payload3};
+    EVB::Fragment frag4 =
+        {{0x11111111, 1, uint32_t(sizeof(payload4)), 0}, payload4};
+
+    EvbFragments l1;
+    EvbFragments l2;
+    l1.push_back({time(nullptr), &frag1});
+    l1.push_back({time(nullptr), &frag4});
+    l1.push_back({time(nullptr), &frag2});
+    l2.push_back({time(nullptr), &frag3});
+    
+    (*m_pTestObj)(l1);
+    (*m_pTestObj)(l2);
+    
+    EQ(size_t(4), writtenData.size());
+    checkContents(&frag1, 1, 0);
+    checkContents(&frag4, 1, 1);
+    checkContents(&frag2, 1, 2);
+    checkContents(&frag3, 1, 3);
+        
+}
+// Output one item that's bigger than the max write allowed.!!
+void OutputTests::output_10()
+{
+    int payload[m_maxWrites];
+    for (int i = 0; i < m_maxWrites; i++) {
+        payload[i] = i;
+    }
+    EVB::Fragment frag=
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload)), 0}, payload};
+    EvbFragments l;
+    l.push_back({time(nullptr), &frag});
+    
+    (*m_pTestObj)(l);
+    
+    EQ(size_t(1), writtenData.size());
+    checkContents(&frag, 1, 0);
+}
+// output two items, first bigger than the max write allowed
+
+void OutputTests::output_11()
+{
+    int payload[m_maxWrites];
+    for (int i = 0; i < m_maxWrites; i++) {
+        payload[i] = i;
+    }
+    EVB::Fragment frag=
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload)), 0}, payload};
+        
+    char payload1[100];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = 3*i;
+    }
+    EVB::Fragment frag1 =
+        {{0x55555555, 1,  uint32_t(sizeof(payload1)), 0}, payload1};
+    EvbFragments l;
+    l.push_back({time(nullptr), &frag});
+    l.push_back({time(nullptr), &frag1});
+    
+    (*m_pTestObj)(l);
+    
+    EQ(size_t(2), writtenData.size());
+    checkContents(&frag, 1, 0);
+    checkContents(&frag1, 1, 1);
+    
+}
+// Output two items, second bigger than the max write allowed.
+
+void OutputTests::output_12()
+{
+    int payload[m_maxWrites];
+    for (int i = 0; i < m_maxWrites; i++) {
+        payload[i] = i;
+    }
+    EVB::Fragment frag=
+        {{0xaaaaaaaa, 1, uint32_t(sizeof(payload)), 0}, payload};
+        
+    char payload1[100];
+    for (int i =0; i < sizeof(payload1); i++) {
+        payload1[i] = 3*i;
+    }
+    EVB::Fragment frag1 =
+        {{0x55555555, 1,  uint32_t(sizeof(payload1)), 0}, payload1};
+    EvbFragments l;
+    l.push_back({time(nullptr), &frag1});
+    l.push_back({time(nullptr), &frag});
+    
+    (*m_pTestObj)(l);
+    
+    EQ(size_t(2), writtenData.size());
+    checkContents(&frag1, 1, 0);
+    checkContents(&frag, 1, 1);    
     
 }
