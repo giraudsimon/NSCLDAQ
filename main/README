@@ -28,3 +28,8 @@ The specific switches you may want are:
 --with-epics-rootdir=epicsinstall-dir - Helps the epic tools locate EPICS
                                 support software at build time.
 
+
+ACKNOWLEDGEMENTS:
+   iniparser - public domain from N. Devillard.
+   pugixml   - MIT Licenbse from Arseny Kapulkine
+   CAEN digitizer support - Donated by CAEN Technologies. 

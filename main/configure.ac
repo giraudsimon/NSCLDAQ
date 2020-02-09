@@ -32,23 +32,27 @@ AC_LANG_POP
 
 AC_ARG_ENABLE([caen-digitizer-support], [Build support for CAEN Digitizers], [enable_caen=$enableval],
 						[enable_caen=no])
-AC_ARG_WITH([caen-digitizer-libroot],
-	[Root directory for CAEN Digitizer/VME/Comm library installation],
-	[caen_root=$withval],[caen_root=""])
 
 if test "x$enable_caen" = "xyes"
 then
+	AC_ARG_WITH([caen-digitizer-libroot],
+	[Root directory for CAEN Digitizer/VME/Comm library installation],
+	[caen_root=$withval],[caen_root=""])
+
 	if test "xx$caen_root" != "xx"
 	then
+		AC_MSG_NOTICE([Enabling CAEN digitizer DPP support])
 		CAENCCFLAGS=-I$caen_root/include
 		CAENLDFLAGS="-L$caen_root/lib -lCAENDigitizer -lCAENVME -lCAENComm -Wl,-rpath=$caen_root/lib"
-
+		AM_CONDITIONAL([CAENSUPPORT], [true])
 		AC_SUBST(CAENCCFLAGS)
 		AC_SUBST(CAENLDFLAGS)
-		AM_CONDITIONAL([CAENSUPPORT], [true])
 	else
+		AM_CONDITIONAL([CAENSUPPORT], [false])
 		AC_MSG_ERROR([Using --enable-caen-digitizer-support also requires --with-caen-dgitizer-libroot to specifiy where the CAEN libraries/headers are])
 	fi
+else
+	AM_CONDITIONAL([CAENSUPPORT], [false])
 fi
 
 # Documentation
@@ -527,6 +531,7 @@ AC_CONFIG_FILES([Makefile
 		nscldaq
 		daqsetup.bash
 		base/pugi/Makefile
+		base/iniparser/Makefile
     base/Makefile
     base/factories/Makefile
     base/os/Makefile

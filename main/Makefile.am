@@ -3,9 +3,9 @@ AUTOMAKE_OPTIONS=subdir-objects
 
 
 
-CAENDISTRIBDIRS=caendigitizers
+
 if CAENSUPPORT
-	CAENSUPPORTDIRS=$(CAENDISTRIBDIRS)
+CAENSUPPORTDIRS=caendigitizers
 endif
 
 if BUILD_EPICS_TOOLS
@@ -32,7 +32,7 @@ SUBDIRS =	 base caenfw-common servers  base/dataflow  \
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
 		 docbuild docconfig simplesetups sbs epics usb ddas  \
-		$(CAENDISTRIBDIRS)    \
+		caendigitizers    \
 		examples
 
 INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
