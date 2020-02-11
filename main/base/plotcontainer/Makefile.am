@@ -5,11 +5,13 @@ DOCS=plotcontainer.xml
 
 DESTDIR = @prefix@/TclLibs/plotcontainer
 
+TESTS=tclTests.tcl series.test
+
 install-exec-local:
 	$(mkinstalldirs) $(DESTDIR)
 	$(INSTALL_SCRIPT) $(PKGFILES) $(DESTDIR) 
 
 check-TESTS:
-	(cd @srcdir@; tclsh series.test)
+	(cd @srcdir@ && @TCLSH@ tclTests.tcl)
 
-EXTRA_DIST=$(PKGFILES) $(DOCS)
+EXTRA_DIST=$(PKGFILES) $(DOCS) $(TESTS)
