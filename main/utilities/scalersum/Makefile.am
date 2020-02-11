@@ -5,10 +5,10 @@ sumscaler_SOURCES=   main.cpp App.cpp App.h  CRun.h CRun.cpp \
 	CCumulativeChannel.h CCumulativeChannel.cpp
 nodist_sumscaler_SOURCES=options.c options.h
 
-sumscaler_CPPFLAGS=-I@top_srcdir@/utilities/IO 			\
+sumscaler_CPPFLAGS=-I@top_srcdir@/daq/IO 			\
 		    -I@top_srcdir@/daq/format			\
 		    @LIBTCLPLUS_CFLAGS@
-sumscaler_LDFLAGS = @top_builddir@/utilities/IO/libdaqio.la 	\
+sumscaler_LDFLAGS = @top_builddir@/daq/IO/libdaqio.la 	\
     @top_builddir@/daq/format/libdataformat.la			\
     @LIBEXCEPTION_LDFLAGS@
 

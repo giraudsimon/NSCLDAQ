@@ -7,7 +7,6 @@ SUBDIRS = 				common	\
 					sequencer \
                                         Buffer \
                                         format \
-                                        IO \
 					FormattedIO \
 					filter \
 					conversion \

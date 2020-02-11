@@ -18,7 +18,7 @@ noinst_HEADERS		=	TclServerConnection.h		\
 COMPILATION_FLAGS		=	-I@top_srcdir@/base/headers	\
 				-I@top_srcdir@/base/dataflow	\
 				-I@top_srcdir@/daq/format	\
-                                -I@top_srcdir@/utilities/IO	\
+                                -I@top_srcdir@/daq/IO	\
 				@LIBTCLPLUS_CFLAGS@		\
 				-I@top_srcdir@/servers/portmanager \
 				-I@top_srcdir@/base/os
@@ -30,7 +30,7 @@ BUILT_SOURCES		= 	sclclientargs.c sclclientargs.h
 
 sclclient_LDADD		=	@top_builddir@/servers/portmanager/libPortManager.la \
 				@top_builddir@/daq/format/libdataformat.la	\
-                                @top_builddir@/utilities/IO/libdaqio.la	\
+                                @top_builddir@/daq/IO/libdaqio.la	\
 				@top_builddir@/base/dataflow/libDataFlow.la	\
 				@top_builddir@/servers/portmanager/libPortManager.la \
 				@top_builddir@/base/uri/liburl.la			\

@@ -11,7 +11,7 @@ libConversion_la_SOURCES = CTransformMediator.h \
                            CTransform10p0to11p0.cpp \
                            CTransform11p0to10p0.cpp \
                            CTransformFactory.cpp \
-													CCompositePredicate.cpp 
+			CCompositePredicate.cpp 
 
                            #CTransform11p0to11p0.cpp
 
@@ -25,15 +25,15 @@ include_HEADERS = CTransformMediator.h \
                            CTransform10p0to11p0.h \
                            CTransform11p0to10p0.h \
                            CTransformFactory.h \
-                                                                                                         CPredicate.h  \
-													 CCompositePredicate.h 
+				CPredicate.h  \
+				CCompositePredicate.h 
 
 #                           CTransform11p0to11p0.h
 
 libConversion_la_CXXFLAGS = -I@srcdir@ \
                             -I@top_srcdir@/utilities/format \
                             -I@top_srcdir@/utilities/filter \
-                            -I@top_srcdir@/utilities/IO \
+                            -I@top_srcdir@/daq/IO \
                             -I@top_srcdir@/utilities/FormattedIO \
                             -I@top_srcdir@/utilities/Buffer \
                             -I@top_srcdir@/base/headers \
@@ -43,7 +43,7 @@ libConversion_la_LIBADD = @top_builddir@/utilities/format/V8/libdataformatv8.la 
 			  @top_builddir@/utilities/format/V10/libdataformatv10.la \
 			  @top_builddir@/utilities/format/V11/libdataformatv11.la \
 			  @top_builddir@/utilities/filter/libfilter.la \
-			  @top_builddir@/utilities/IO/libdaqio.la \
+			  @top_builddir@/daq/IO/libdaqio.la \
 			  @top_builddir@/utilities/FormattedIO/libdaqformatio.la \
 			  @LIBTCLPLUS_LDFLAGS@
 
@@ -64,7 +64,7 @@ unittests_LDADD	= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 		   @top_builddir@/utilities/format/V8/libdataformatv8.la	\
 		   @top_builddir@/utilities/format/V10/libdataformatv10.la	\
 		   @top_builddir@/utilities/format/V11/libdataformatv11.la	\
-                   @top_builddir@/utilities/IO/libdaqio.la	\
+                   @top_builddir@/daq/IO/libdaqio.la	\
                    @top_builddir@/utilities/FormattedIO/libdaqformatio.la	\
                    @top_builddir@/utilities/filter/libfilter.la	\
                    @top_builddir@/utilities/Buffer/libbuffer.la	\
@@ -73,7 +73,7 @@ unittests_LDADD	= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 unittests_CPPFLAGS= -I@srcdir@ \
                     -I@top_srcdir@/utilities/Buffer \
                     -I@top_srcdir@/utilities/filter \
-                    -I@top_srcdir@/utilities/IO \
+                    -I@top_srcdir@/daq/IO \
                     -I@top_srcdir@/utilities/FormattedIO \
                     -I@top_srcdir@/utilities/format \
                     -I@top_srcdir@/base/headers \
@@ -107,13 +107,13 @@ format_converter_LDADD = @builddir@/libConversion.la \
 	       @top_builddir@/utilities/format/V10/libdataformatv10.la \
 	       @top_builddir@/utilities/format/V11/libdataformatv11.la \
 	       @top_builddir@/utilities/filter/libfilter.la \
-	       @top_builddir@/utilities/IO/libdaqio.la \
+	       @top_builddir@/daq/IO/libdaqio.la \
 	       @top_builddir@/utilities/FormattedIO/libdaqformatio.la
 
 format_converter_CPPFLAGS = -I@srcdir@ \
                     -I@top_srcdir@/utilities/Buffer \
 		    -I@top_srcdir@/utilities/filter \
-		    -I@top_srcdir@/utilities/IO \
+		    -I@top_srcdir@/daq/IO \
 		    -I@top_srcdir@/utilities/FormattedIO \
 		    -I@top_srcdir@/utilities/format \
 		    -I@top_srcdir@/base/headers

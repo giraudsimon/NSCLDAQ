@@ -44,7 +44,7 @@ include_HEADERS	=  CFilterMain.h \
 #                   COneShotMediator.h 
 
 libfilter_la_CPPFLAGS	= -I@top_srcdir@/utilities/common \
-		-I@top_srcdir@/utilities/IO \
+		-I@top_srcdir@/daq/IO \
 		@LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/uri		\
 		-I@top_srcdir@/daq/format \
@@ -56,7 +56,7 @@ libfilter_la_LDFLAGS	= -version-info $(SOVERSION)	\
 				$(THREADLD_FLAGS)
 
 libfilter_la_LIBADD	= @top_builddir@/utilities/common/libUtilCommon.la \
-			@top_builddir@/utilities/IO/libdaqio.la \
+			@top_builddir@/daq/IO/libdaqio.la \
 			@top_builddir@/daq/format/libdataformat.la \
 			@top_builddir@/base/dataflow/libDataFlow.la \
 			@top_builddir@/base/uri/liburl.la		\
@@ -94,7 +94,7 @@ unittests_SOURCES	= TestRunner.cpp  \
 
 unittests_LDADD		= \
 			@builddir@/libfilter.la	\
-			@top_builddir@/utilities/IO/libdaqio.la \
+			@top_builddir@/daq/IO/libdaqio.la \
 			@top_builddir@/base/dataflow/libDataFlow.la 	\
 			@top_builddir@/base/uri/liburl.la 	\
 			@top_builddir@/daq/format/libdataformat.la	\
@@ -102,7 +102,7 @@ unittests_LDADD		= \
 			@LIBEXCEPTION_LDFLAGS@
 
 unittests_CPPFLAGS=  -I@top_srcdir@/utilities/filter \
-										 -I@top_srcdir@/utilities/IO \
+		 -I@top_srcdir@/daq/IO \
     @LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/uri		\
 		-I@top_srcdir@/base/headers		\

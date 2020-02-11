@@ -68,7 +68,7 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/base/dataflow/libDataFlow.la		\
 	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@
 
-libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/utilities/IO -I@top_srcdir@/base/dataflow \
+libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/daq/IO -I@top_srcdir@/base/dataflow \
 	-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/factories	\
 	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri -I@top_srcdir@/daq/eventbuilder \
@@ -216,7 +216,7 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 unittests_DEPENDENCIES=libSwTrigger.la
 
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
-unittests_LDFLAGS= @top_builddir@/utilities/IO/libdaqio.la \
+unittests_LDFLAGS= @top_builddir@/daq/IO/libdaqio.la \
 	$(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 
 

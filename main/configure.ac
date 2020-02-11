@@ -550,7 +550,6 @@ AC_CONFIG_FILES([Makefile
     utilities/format/V8/Makefile
     utilities/format/V10/Makefile
     utilities/format/V11/Makefile
-    utilities/IO/Makefile
     utilities/FormattedIO/Makefile
     utilities/newscaler/Makefile
     utilities/newscaler/ScalerDisplay.tcl
@@ -565,6 +564,7 @@ AC_CONFIG_FILES([Makefile
     epics/Makefile
     daq/Makefile
     daq/format/Makefile
+    daq/IO/Makefile
     daq/readoutgui/Makefile
     daq/readoutgui/InstallRoot.tcl
     daq/readoutgui/ReadoutShell.tcl

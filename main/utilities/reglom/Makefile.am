@@ -1,9 +1,9 @@
 bin_PROGRAMS=unglom timecheck reglom
 
 
-common_cxxflags=-I@top_srcdir@/daq/eventbuilder -I@top_srcdir@/daq/format -I@top_srcdir@/utilities/IO @LIBTCLPLUS_CFLAGS@
+common_cxxflags=-I@top_srcdir@/daq/eventbuilder -I@top_srcdir@/daq/format -I@top_srcdir@/daq/IO @LIBTCLPLUS_CFLAGS@
 common_ldflags=@top_builddir@/daq/eventbuilder/libFragmentIndex.la @top_builddir@/daq/format/libdataformat.la \
-	@top_builddir@/utilities/IO/libdaqio.la @top_builddir@/base/dataflow/libDataFlow.la \
+	@top_builddir@/daq/IO/libdaqio.la @top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/uri/liburl.la @LIBEXCEPTION_LDFLAGS@ -Wl,"-rpath=@libdir@"
 
 unglom_SOURCES=Unglom.cpp CUnglom.cpp CUnglom.h
