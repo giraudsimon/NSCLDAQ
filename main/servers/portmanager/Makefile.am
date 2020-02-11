@@ -38,7 +38,7 @@ TCLPACKAGES=ConnectionManager.tcl \
 
 TCLAPPS=DaqPortManager.tcl
 
-TCLTESTS=connectionmanager.test portallocator.test portmanager.test log.test
+TCLTESTS=connectionmanager.test portallocator.test portmanager.test log.test tclTests.tcl
 
 PYTHON_TESTS=@srcdir@/PortManagerTests.py
 
@@ -76,6 +76,7 @@ cpptest_CPPFLAGS = $(COMPILATION_FLAGS)
 
 
 check-TESTS: cpptest
+	@TCLSH_CMD@ tclTests.tcl
 	for f in @srcdir@/*.test;do @TCLSH_CMD@ $$f; done
 	@builddir@/cpptest
 	for f in $(PYTHON_TESTS); do PYTHONPATH=@prefix@/pythonLibs @PYTHON@ $$f; done
