@@ -161,6 +161,7 @@ test 2.1 {connect disconnect test} {} {
     testCleanup
     
     set message [lreplace $contents 0 4]
+    set message [lrange $message 1 end]
     if  {$message == "Connection accepted from $expectedhost"} {
         set result 1
     } else {
