@@ -350,10 +350,6 @@ tcltest::test clear-comand {clear method fires -command exactly once.} \
         set a
     } -result 1
 
-tcltest::test failure {Test that fails} \
--body {
- set a 1
- } -result 0
  
 #----------------------------------------------------------------------------
 

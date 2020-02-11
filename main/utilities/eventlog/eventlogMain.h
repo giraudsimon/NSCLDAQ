@@ -32,6 +32,8 @@ class CRingBuffer;
 class CRingItem;
 class CRingStateChangeItem;
 class CZCopyRingBuffer;
+class RingChunk;
+
 
 /*!
    Class that represents the event log application.
@@ -42,7 +44,7 @@ class CZCopyRingBuffer;
 class EventLogMain
 {
   // Per object data:
-
+private:
   CRingBuffer*      m_pRing;
   std::string       m_eventDirectory;
   uint64_t          m_segmentSize;
@@ -58,13 +60,9 @@ class EventLogMain
   pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
   uint32_t          m_nRunNumber;
+  RingChunk*        m_pChunker;
   
-  
-  typedef struct _Chunk {
-    void*    s_pStart;
-    size_t   s_nBytes;
-    unsigned s_nEnds;
-  } Chunk, pChunk;
+
   
   // Constructors and canonicals:
 
@@ -102,8 +100,7 @@ private:
 
   void writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar);  
   void waitForLotsOfData(); 
-  void getChunk(int fd, Chunk& nextChunk);
-  bool nextItemWraps();
+
   size_t writeWrappedItem(int fd, int& ends);
   void writeData(int fd, void* pData, size_t nBytes);
   void checksumData(void* pData, size_t nBytes);
