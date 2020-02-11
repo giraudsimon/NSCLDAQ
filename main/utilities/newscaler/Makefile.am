@@ -4,7 +4,7 @@ PACKAGE_FILES=nameMap.tcl channel.tcl scalerconfig.tcl page.tcl \
 	singleModel.tcl ratioModel.tcl scalermain.tcl header.tcl reports.tcl\
 	scalerUtil.tcl stripparam.tcl stripratio.tcl emptyModel.tcl zoomPrompt.tcl
 TEST_FILES=nameMap.test channel.test channelcmd.test singleModel.test \
-	ratioModel.test stripparam.test stripratio.test emptyModel.test
+	ratioModel.test stripparam.test stripratio.test emptyModel.test tclTest.tcl
 APP_FILES=ScalerDisplay.tcl.in
 IMAGES=red.gif green.gif amber.gif
 
@@ -46,7 +46,7 @@ install-exec-hook:
 
 
 check-TESTS: check_PROGRAMS
-	for f in  @srcdir@/*.test; do echo Testing $$f  ; @TCLSH_CMD@ $$f; done
+	@TCLSH_CMD@ @srcdir@/tclTests.tcl
 
 
 EXTRA_DIST=$(PACKAGE_FILES) $(TEST_FILES) $(INTERACTIVE_TESTS) $(APP_FILES) $(IMAGES) \
