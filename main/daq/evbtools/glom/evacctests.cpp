@@ -11,6 +11,9 @@
 #include <fragment.h>
 #include <DataFormat.h>
 #include <CRingScalerItem.h>
+#include <CFileDataSource.h>
+#include <CRingItem.h>
+#include <URL.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +56,9 @@ class evaccTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(addfrag_5);   // Adding a fragment to an event would overflow.
   CPPUNIT_TEST(addfrag_6);   // Fragment bigger than buffer by itself.
   CPPUNIT_TEST(addfrag_7);   // Fragment overflows maxfrags/event.
+  CPPUNIT_TEST(addfrag_8);
+  CPPUNIT_TEST(addfrag_9);   // Test slide doesn't fail.
+  CPPUNIT_TEST(addfrag_10);
   
   CPPUNIT_TEST(flush_1);    // Event flushing. tests.
   CPPUNIT_TEST(flush_2);
@@ -114,6 +120,9 @@ protected:
   void addfrag_5();
   void addfrag_6();            // Fragment bigger than buffer.
   void addfrag_7();
+  void addfrag_8();
+  void addfrag_9();
+  void addfrag_10();
   
   void flush_1();
   void flush_2();
@@ -124,9 +133,39 @@ protected:
   void oob_1();
   void oob_2();
   void oob_3();
+private:
+  URL makeUri();
 };  
 
 CPPUNIT_TEST_SUITE_REGISTRATION(evaccTest);
+
+
+static int randint(int low, int high)
+{
+  int range = high - low;
+  double r  = drand48() * range;   // random in range.
+  return int(r + low);           // should be beweeen [low, high).
+}
+static std::vector<uint16_t>
+randomBody(uint16_t* pBody, size_t nBytes)
+{
+  std::vector<uint16_t> result;
+  for (int i =0; i < nBytes; i++) {
+    uint16_t n = uint16_t(randint(0, 65536));
+    *pBody++ = n;
+    result.push_back(n);
+  }
+  return result;
+}
+
+URL
+evaccTest::makeUri()
+{
+  std::string uri="file://./";
+  uri += m_filename;
+  URL url(uri);
+  return url;
+}
 
 void evaccTest::construct() {
   EQ(m_fd, m_pTestObj->m_nFd);
@@ -1269,7 +1308,7 @@ void evaccTest::oob_3()
   pHdr->s_timestamp = 0x12345678;
   pHdr->s_sourceId  = 5;
   pHdr->s_barrier   = 0;
-  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);;
+  pHdr->s_size        = sizeof(RingItemHeader) + sizeof(BodyHeader);
   pRingItemHeader pItem =
     reinterpret_cast<pRingItemHeader>(pHdr+1);
   pItem->s_type = PHYSICS_EVENT;
@@ -1329,4 +1368,599 @@ void evaccTest::oob_3()
   
   EQ(pOriginalItem->s_header.s_size, pReadItem->s_size);
   ASSERT(memcmp(pReadItem, pOriginalItem, pReadItem->s_size) == 0);
+}
+//
+// Add a fragment that exactly fills,
+// add another fragment (flushes).
+// Flush manuall7.
+// Ensure both are fine.
+
+void
+evaccTest::addfrag_8()
+{
+    uint8_t local[1020];              // For the whole buffer:
+    EVB::pFragmentHeader pHdr =
+      reinterpret_cast<EVB::pFragmentHeader>(local);
+    pRingItemHeader pRHdr =
+      reinterpret_cast<pRingItemHeader>(pHdr+1);
+    pBodyHeader pBHdr =
+      reinterpret_cast<pBodyHeader>(pRHdr+1);
+    uint8_t* pBody =
+      reinterpret_cast<uint8_t*>(pBHdr+1);
+    
+    // Compute the body size:
+    
+    size_t totalHeaderSize =
+      sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader)
+      + sizeof(BodyHeader);
+    size_t totalBodySize = sizeof(local) - totalHeaderSize;
+    
+    // Fill in realistic shit:
+    
+    //     Fragment header:
+    
+    pHdr->s_timestamp = 1;
+    pHdr->s_sourceId  = 1;
+    pHdr->s_size     =
+      totalBodySize + sizeof(BodyHeader) + sizeof(RingItemHeader);
+    pHdr->s_barrier = 0;
+    
+    //    Ring item header:
+    
+    pRHdr->s_size = pHdr->s_size;
+    pRHdr->s_type = PHYSICS_EVENT;
+    
+    //    Body Header -- no extension.
+    
+    pBHdr->s_size      = sizeof(BodyHeader);
+    pBHdr->s_timestamp = pHdr->s_timestamp;
+    pBHdr->s_sourceId  = pHdr->s_sourceId;
+    pBHdr->s_barrier   = pHdr->s_barrier;
+    
+    //    Body are a counting pattern:
+    
+    for (int i =0; i < totalBodySize; i++) {
+      pBody[i] = i;
+    }
+    // Submit the fragment:
+    
+    m_pTestObj->addFragment(
+      reinterpret_cast<EVB::pFlatFragment>(pHdr), 1
+    );
+    m_pTestObj->finishEvent();       // Event is done.
+    m_pTestObj->flushEvents();      // Force the slide.
+    
+    // Submit a second (smaller) fragment and flush.
+    
+    pHdr->s_timestamp =2;
+    pHdr->s_sourceId = 2;
+    pHdr->s_size     =
+      sizeof(BodyHeader) + sizeof(RingItemHeader) + totalBodySize/2;
+    pRHdr->s_size    = pHdr->s_size;
+    pBHdr->s_timestamp = pHdr->s_timestamp;
+    pBHdr->s_sourceId  = pHdr->s_sourceId;
+    
+    for (int i =0; i < totalBodySize/2; i++) {
+      pBody[i] = 255-i;
+    }
+    m_pTestObj->addFragment(
+      reinterpret_cast<EVB::pFlatFragment>(pHdr), 1
+    );
+    m_pTestObj->finishEvent();
+    m_pTestObj->flushEvents();
+    
+    // The file should have two events with a single fragment each.
+    // Let's look at it:
+    
+    URL url = makeUri();
+    std::vector<uint16_t> dummy;
+    CFileDataSource itemSource(url, dummy);
+    CRingItem* pItem1 = itemSource.getItem();
+    CRingItem* pItem2 = itemSource.getItem();
+    
+    // SHouldn't be any more items:
+    
+    CRingItem* pNoMore = itemSource.getItem();
+    EQ(static_cast<CRingItem*>(nullptr), pNoMore);
+    
+    // Let's look at the items:
+    //     First item
+    //  The ring item should be the original size +
+    //  an additional uint32_t, ring item and body headers.
+    
+    pRingItem pRawItem1= pItem1->getItemPointer();
+    uint32_t sbSize =
+      totalBodySize + sizeof(uint32_t) + 2*sizeof(RingItemHeader) +
+        2*sizeof(BodyHeader) + sizeof(EVB::FragmentHeader);
+        
+    
+    // Total ring item header and body header:
+    
+    EQ(sbSize, pRawItem1->s_header.s_size);
+    EQ(PHYSICS_EVENT, pRawItem1->s_header.s_type);
+    EQ(uint64_t(1), pRawItem1->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(1), pRawItem1->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), pRawItem1->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    
+    // Body size word in the body:
+    
+    uint32_t* pItem1Body =
+      reinterpret_cast<uint32_t*>(pRawItem1->s_body.u_hasBodyHeader.s_body);
+    uint32_t evbodSize =
+      sizeof(uint32_t) + sizeof(EVB::FragmentHeader) +
+      sizeof(RingItemHeader) + sizeof(BodyHeader)    + totalBodySize;
+    EQ(evbodSize, *pItem1Body);
+
+    // THere's one fragment right after thant:
+    
+    EVB::pFragmentHeader pFHdr =
+      reinterpret_cast<EVB::pFragmentHeader>(pItem1Body+1);
+    EQ(uint64_t(1), pFHdr->s_timestamp);
+    EQ(uint32_t(1), pFHdr->s_sourceId);
+    EQ(uint32_t(0), pFHdr->s_barrier);
+    evbodSize =
+      totalBodySize + sizeof(RingItemHeader) + sizeof(BodyHeader);
+    EQ(evbodSize, pFHdr->s_size);
+  
+    pRingItemHeader pRHdr1 = reinterpret_cast<pRingItemHeader>(pFHdr+1);
+    EQ(evbodSize, pRHdr1->s_size);
+    EQ(PHYSICS_EVENT, pRHdr1->s_type);
+    
+    pBodyHeader pBHdr1 = reinterpret_cast<pBodyHeader>(pRHdr1+1);
+    EQ(uint64_t(1), pBHdr1->s_timestamp);
+    EQ(uint32_t(1), pBHdr1->s_sourceId);
+    EQ(uint32_t(0), pBHdr1->s_barrier);
+    uint8_t* pBody1 = reinterpret_cast<uint8_t*>(pBHdr1+1); //no ext.
+    for (int i =0; i < totalBodySize; i++) {
+      EQ(uint8_t(i), pBody1[i]);
+    }
+    
+    //     Second item
+    
+    pRingItem pRawItem2
+      = reinterpret_cast<pRingItem>(pItem2->getItemPointer());
+    uint32_t item2Size = totalBodySize/2 + sizeof(EVB::FragmentHeader)
+      + sizeof(uint32_t) + 2*sizeof(RingItemHeader) + 2*sizeof(BodyHeader);
+    EQ(item2Size, pRawItem2->s_header.s_size);
+    EQ(PHYSICS_EVENT, pRawItem2->s_header.s_type);
+    EQ(uint64_t(2), pRawItem2->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(1), pRawItem2->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), pRawItem2->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    
+    uint32_t* pBSize2 = reinterpret_cast<uint32_t*>(
+      pRawItem2->s_body.u_hasBodyHeader.s_body
+    );
+    item2Size = totalBodySize/2 + sizeof(uint32_t) +
+      sizeof (EVB::FragmentHeader) + sizeof(RingItemHeader) +
+      sizeof(BodyHeader);
+    EQ(item2Size, *pBSize2);
+    
+    EVB::pFragmentHeader pFHdr2 =
+      reinterpret_cast<EVB::pFragmentHeader>(pBSize2+1);
+    EQ(uint64_t(2), pFHdr2->s_timestamp);
+    EQ(uint32_t(2), pFHdr2->s_sourceId);
+    EQ(uint32_t(0),  pFHdr2->s_barrier);
+    item2Size = totalBodySize/2 + sizeof(RingItemHeader) +
+      sizeof(BodyHeader);
+    EQ(item2Size, pFHdr2->s_size);
+    
+    pRingItemHeader pRHdr2 =
+      reinterpret_cast<pRingItemHeader>(pFHdr2+1);
+    EQ(item2Size, pRHdr2->s_size);
+    EQ(PHYSICS_EVENT, pRHdr2->s_type);
+    pBodyHeader pBHdr2 = reinterpret_cast<pBodyHeader>(pRHdr2+1);
+    EQ(uint64_t(2), pBHdr2->s_timestamp);
+    EQ(uint32_t(2), pBHdr2->s_sourceId);
+    EQ(uint32_t(0), pBHdr2->s_barrier);
+    
+    uint8_t* pB2 = reinterpret_cast<uint8_t*>(pBHdr2+1);
+    for (int i = 0; i < totalBodySize/2; i++) {
+      EQ(uint8_t(255-i), pB2[i]);
+    }
+    
+    
+    
+    // Free the read items.
+    
+    delete pItem1;
+    delete pItem2;
+    
+}
+// Create a single fragment event.
+// create a double fragment event but force a flush between
+// the fragments.
+//  This exercises the slideCurrentEventToFront.
+//
+void
+evaccTest::addfrag_9()
+{
+  // First fragment
+  
+  uint8_t local[100];
+  EVB::pFragmentHeader f1Fhdr
+    = reinterpret_cast<EVB::pFragmentHeader>(local);
+  pRingItemHeader f1Rhdr = reinterpret_cast<pRingItemHeader>(f1Fhdr + 1);
+  pBodyHeader     f1Bhdr = reinterpret_cast<pBodyHeader>(f1Rhdr+1);
+  uint8_t* pBody1 = reinterpret_cast<uint8_t*>(f1Bhdr + 1);
+  uint32_t bodySize1 = sizeof(local) - sizeof(EVB::FragmentHeader) -
+    sizeof(RingItemHeader) - sizeof(BodyHeader);
+  
+  //     Fill in fragment header.
+  
+  f1Fhdr->s_size = sizeof(local) - sizeof(EVB::FragmentHeader);
+  f1Fhdr->s_timestamp = uint64_t(0x11111111);
+  f1Fhdr->s_sourceId  = 12;
+  f1Fhdr->s_barrier   = 0;
+  
+  //    Fill in the ring item header.
+  
+  f1Rhdr->s_size = f1Fhdr->s_size;
+  f1Rhdr->s_type = PHYSICS_EVENT;
+  
+  //     Fill in the body header
+  
+  f1Bhdr->s_timestamp = f1Fhdr->s_timestamp;
+  f1Bhdr->s_sourceId  = f1Fhdr->s_sourceId;
+  f1Bhdr->s_barrier   = 0;
+  f1Bhdr->s_size      = sizeof(BodyHeader);
+  
+  // Fill the body:
+  
+  for (int i =0; i < bodySize1; i++) {
+    pBody1[i] = i;
+  }
+  m_pTestObj->addFragment(
+    reinterpret_cast<EVB::pFlatFragment>(f1Fhdr), 1
+  );
+  
+  
+  // finish but don't flush the event.
+  
+  m_pTestObj->finishEvent();      // A one fragment event.
+  
+  // Second event first fragemtn
+  
+  //   We'll use the same sizes etc. but different body contents.
+  //   Different timestamps and body header contents.
+  
+  f1Fhdr->s_timestamp = uint64_t(0x11111222);
+  f1Fhdr->s_sourceId  = 10;
+   
+  f1Bhdr->s_timestamp = f1Fhdr->s_timestamp;
+  f1Bhdr->s_sourceId  = f1Fhdr->s_sourceId;
+  f1Bhdr->s_barrier   = 0;
+  f1Bhdr->s_size      = sizeof(BodyHeader);
+  
+  for (int i =0; i <bodySize1; i++) {
+    pBody1[i] = 255-i;
+  }
+  m_pTestObj->addFragment(
+    reinterpret_cast<EVB::pFlatFragment>(f1Fhdr), 1
+  );
+  
+  // flush events to force the slide.
+  
+  m_pTestObj->flushEvents();              // Forces a slide.
+  
+  // Second event second fragment
+  
+  f1Fhdr->s_timestamp = uint64_t(0x11111234);
+  f1Fhdr->s_sourceId  = 12;
+  
+  f1Bhdr->s_timestamp = f1Fhdr->s_timestamp;
+  f1Bhdr->s_sourceId  = f1Fhdr->s_sourceId;
+  f1Bhdr->s_barrier   = 0;
+  f1Bhdr->s_size      = sizeof(BodyHeader);
+  
+  for (int i =0; i <bodySize1; i++) {
+    pBody1[i] = i*2;
+  }
+  m_pTestObj->addFragment(
+    reinterpret_cast<EVB::pFlatFragment>(f1Fhdr), 1
+  );
+  
+  
+  // finish evend and flush fragments.
+  
+  m_pTestObj->finishEvent();
+  m_pTestObj->flushEvents();    // Put it all out to file.
+  
+  // Check the events in the output file.
+  
+  URL uri = makeUri();
+  std::vector<uint16_t> dummy;
+  CFileDataSource itemSource(uri, dummy);
+  CRingItem* pItem1 = itemSource.getItem(); // One fragment.
+  CRingItem* pItem2 = itemSource.getItem(); // Two fragments.
+  
+  // SHouldn't be any more items:
+  
+  CRingItem* pNoMore = itemSource.getItem();
+  EQ(static_cast<CRingItem*>(nullptr), pNoMore);
+  
+  // First event has one fragment painstakingly check everything:
+  
+  uint32_t evSize1 =
+    sizeof(local) + sizeof(uint32_t) + sizeof(RingItemHeader) +
+      sizeof(BodyHeader);
+  pRingItem pRaw1 = pItem1->getItemPointer();
+  EQ(evSize1, pRaw1->s_header.s_size);
+  EQ(PHYSICS_EVENT, pRaw1->s_header.s_type);
+  EQ(uint64_t(0x11111111), pRaw1->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+  EQ(uint32_t(1), pRaw1->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+  EQ(uint32_t(0), pRaw1->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+
+  //   There's a size long and  one fragment.
+  
+  uint32_t* pSize = reinterpret_cast<uint32_t*>(
+    pRaw1->s_body.u_hasBodyHeader.s_body
+  );
+  evSize1 = sizeof(local) + sizeof(uint32_t);
+  EQ(evSize1, *pSize);
+  
+  EVB::pFragmentHeader pFh1 =
+    reinterpret_cast<EVB::pFragmentHeader>(pSize+1);
+  EQ(uint64_t(0x11111111), pFh1->s_timestamp);
+  EQ(uint32_t(12), pFh1->s_sourceId);
+  EQ(uint32_t(0), pFh1->s_barrier);
+  evSize1 = sizeof(local) - sizeof(EVB::FragmentHeader);
+  EQ(evSize1, pFh1->s_size);
+  
+  pRingItemHeader pH1 = reinterpret_cast<pRingItemHeader>(pFh1+1);
+  EQ(evSize1, pH1->s_size);
+  EQ(PHYSICS_EVENT, pH1->s_type);
+  
+  pBodyHeader pB1 = reinterpret_cast<pBodyHeader>(pH1+1);
+  EQ(uint64_t(0x11111111), pB1->s_timestamp);
+  EQ(uint32_t(12), pB1->s_sourceId);
+  EQ(uint32_t(0), pB1->s_barrier);
+  
+  uint8_t* p  = reinterpret_cast<uint8_t*>(pB1+1);
+  for (int i =0; i < bodySize1; i++) {
+    EQ(uint8_t(i), p[i]);
+  }
+  
+  // Second event has a pair of Fragments.
+  
+  pRingItem pRaw2 = pItem2->getItemPointer();
+  uint32_t evSize2 =
+    sizeof(local)*2 + sizeof(uint32_t) +
+    sizeof(RingItemHeader) + sizeof(BodyHeader);
+  EQ(evSize2, pRaw2->s_header.s_size);
+  EQ(PHYSICS_EVENT, pRaw2->s_header.s_type);
+ 
+  EQ(uint64_t(0x11111234), pRaw2->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+  EQ(uint32_t(1), pRaw2->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+  EQ(uint32_t(0), pRaw2->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+  EQ(uint32_t(sizeof(BodyHeader)), pRaw2->s_body.u_hasBodyHeader.s_bodyHeader.s_size);
+  
+  evSize2 = sizeof(local)*2 + sizeof(uint32_t);
+  pSize   = reinterpret_cast<uint32_t*>(pRaw2->s_body.u_hasBodyHeader.s_body);
+  EQ(evSize2, *pSize);
+  
+  //     First fragment:
+  
+  EVB::pFragmentHeader pFrag1 = reinterpret_cast<EVB::pFragmentHeader>(pSize+1);
+  EQ(uint64_t(0x11111222), pFrag1->s_timestamp);
+  EQ(uint32_t(10),         pFrag1->s_sourceId);
+  EQ(uint32_t(0),          pFrag1->s_barrier);
+  uint32_t fragSize = sizeof(local) - sizeof(EVB::FragmentHeader);
+  EQ(fragSize, pFrag1->s_size);
+    
+  pRingItemHeader pRf1 = reinterpret_cast<pRingItemHeader>(pFrag1+1);
+  EQ(PHYSICS_EVENT, pRf1->s_type);
+  EQ(fragSize, pRf1->s_size);
+  
+  pBodyHeader pBf1 = reinterpret_cast<pBodyHeader>(pRf1+1);
+  EQ(pFrag1->s_timestamp, pBf1->s_timestamp);
+  EQ(pFrag1->s_sourceId,  pBf1->s_sourceId);
+  EQ(pFrag1->s_barrier, pBf1->s_barrier);
+  EQ(uint32_t(sizeof(BodyHeader)), pBf1->s_size);
+  uint8_t* pf1 = reinterpret_cast<uint8_t*>(pBf1+1);
+  fragSize -= (sizeof(RingItemHeader) + sizeof(BodyHeader)); // body payload size
+  for (int i =0; i < fragSize; i++) {
+    EQ(uint8_t(255-i), pf1[i]);
+  }
+  
+  //   Second fragment
+  
+  EVB::pFragmentHeader pFrag2 = reinterpret_cast<EVB::pFragmentHeader>(
+    pf1 + fragSize
+  );
+  EQ(uint64_t(0x11111234), pFrag2->s_timestamp);
+  EQ(uint32_t(12), pFrag2->s_sourceId);
+  EQ(uint32_t(0), pFrag2->s_barrier);
+  fragSize = sizeof(local) - sizeof(EVB::FragmentHeader);
+  EQ(fragSize, pFrag2->s_size);
+  
+  pRingItemHeader pRf2 = reinterpret_cast<pRingItemHeader>(pFrag2 + 1);
+  EQ(pFrag2->s_size, pRf2->s_size);
+  EQ(PHYSICS_EVENT, pRf2->s_type);
+  pBodyHeader pBf2 = reinterpret_cast<pBodyHeader>(pRf2+1);
+  EQ(pFrag2->s_timestamp, pBf2->s_timestamp);
+  EQ(pFrag2->s_sourceId,  pBf2->s_sourceId);
+  EQ(pFrag2->s_barrier,   pBf2->s_barrier);
+  EQ(uint32_t(sizeof(BodyHeader)), pBf2->s_size);
+  
+  uint8_t* pf2 = reinterpret_cast<uint8_t*>(pBf2+1);
+  fragSize -= (sizeof(RingItemHeader) + sizeof(BodyHeader));
+  for (int i =0; i < fragSize; i++) {
+    EQ(uint8_t(i*2), pf2[i]);
+  }
+  
+  
+  // Release the ring items that getItem created.
+  delete pItem1;
+  delete pItem2;
+        
+}
+void
+evaccTest::addfrag_10()
+{
+  // Randomly sized fragments (total max 100 uint16_t words.
+  // Random number of fragments/event (max fragments 5).
+  // Each fragment will have random contents.
+  // Each fragment will have a random sourceid from 1-5.
+  // timestamps will increment by a random amount from 0-500.
+  // We'll keep track of all that information in vectors for the
+  // comparison later.
+  // We'll make 100 events.
+  // Note we don't seed the randomizer so we should get
+  // reproducible (from run to run) events.
+  // An event is characterized by the following information:
+  
+  struct Event {
+    uint32_t s_bodySize;
+    size_t   s_nFrags;
+    std::vector<EVB::FragmentHeader>        s_fragmentHeaders;
+    std::vector<RingItemHeader>        s_ringItemHeaders;
+    std::vector<BodyHeader>            s_bodyHeaders;
+    std::vector<std::vector<uint16_t>> s_payloads;
+  };
+  
+  uint64_t  stamp = 0;
+  std::vector<Event> events;
+  int       numEvents = 100;
+  for (int evt =0; evt < numEvents; evt++) {
+    int nFrags = randint(1, 6);
+    Event event;
+    event.s_nFrags = nFrags;
+    event.s_bodySize = sizeof(uint32_t);           // Leading size.
+    for (int frag = 0; frag < nFrags; frag++) {
+      int nBodySize= randint(1, 100);    // bytes.
+      nBodySize = (nBodySize/sizeof(uint16_t) ) * sizeof(uint16_t); // full words.
+      stamp += randint(0, 500);
+      uint32_t sid = randint(0, 5);
+      
+      // Storage needed for the fragment is the size of the payload,
+      // with a body header, ring item header and a fragment header added on
+      
+      size_t totalStorage = nBodySize + sizeof(EVB::FragmentHeader) +
+        sizeof(RingItemHeader) + sizeof(BodyHeader);
+      uint8_t storage[totalStorage];
+      
+      uint32_t eventSize = nBodySize + sizeof(BodyHeader) + sizeof(RingItemHeader);
+      event.s_bodySize += totalStorage;
+      
+      // Let's fill in the fragment header:
+      
+      EVB::pFragmentHeader pFh = reinterpret_cast<EVB::pFragmentHeader>(storage);
+      pFh->s_timestamp = stamp;
+      pFh->s_sourceId  = sid;
+      pFh->s_barrier   = 0;
+      pFh->s_size      = eventSize;
+      event.s_fragmentHeaders.push_back(*pFh);
+      
+      // Now the ring item header:
+      
+      pRingItemHeader pRh = reinterpret_cast<pRingItemHeader>(pFh+1);
+      pRh->s_size = eventSize;
+      pRh->s_type = PHYSICS_EVENT;
+      event.s_ringItemHeaders.push_back(*pRh);
+      
+      // The body header:
+      
+      pBodyHeader pBh  = reinterpret_cast<pBodyHeader>(pRh+1);
+      pBh->s_size = sizeof(BodyHeader);
+      pBh->s_timestamp = stamp;
+      pBh->s_sourceId  = sid;
+      pBh->s_barrier   = 0;
+      event.s_bodyHeaders.push_back(*pBh);
+      
+      // The payload:
+      
+      uint16_t* pBody = reinterpret_cast<uint16_t*>(pBh+1);
+      event.s_payloads.push_back(randomBody(pBody, nBodySize/sizeof(uint16_t)));
+      
+      // add the fragment to the current event:
+      
+      m_pTestObj->addFragment(
+        reinterpret_cast<EVB::pFlatFragment>(pFh), 100  // output sid <- 100.  
+      );
+      
+    }
+    m_pTestObj->finishEvent();
+    events.push_back(event);          // Save for comparison
+  }
+  m_pTestObj->flushEvents();          // Finish writing the output file.
+
+  // Now Compare the data with the events we stored in the
+  // events  vector of structs.
+  
+  URL uri = makeUri();
+  std::vector<uint16_t> dummy;
+  CFileDataSource src(uri, dummy);
+  
+  for (int evt = 0; evt < 100; evt++) {
+    CRingItem* pItem = src.getItem();
+    pRingItem pRawItem = pItem->getItemPointer();
+    Event& e = events[evt];
+    uint32_t totalEventSize = e.s_bodySize + sizeof(RingItemHeader) +
+      sizeof(BodyHeader);
+    EQ(totalEventSize, pRawItem->s_header.s_size);
+    EQ(PHYSICS_EVENT, pRawItem->s_header.s_type);
+    
+    // Timestamp comes from the last item:
+    
+    uint64_t estamp = e.s_fragmentHeaders.back().s_timestamp;
+    EQ(estamp, pRawItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(100), pRawItem->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), pRawItem->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    EQ(
+       uint32_t(sizeof(BodyHeader)),
+       pRawItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size
+    );
+    uint32_t* pbSize = reinterpret_cast<uint32_t*>(
+      pRawItem->s_body.u_hasBodyHeader.s_body
+    );
+    EQ(e.s_bodySize, *pbSize);
+    
+    EVB::pFragmentHeader pFrag =
+      reinterpret_cast<EVB::pFragmentHeader>(pbSize+1);
+    uint32_t bytesLeft = *pbSize - sizeof(uint32_t);
+    for (int f =0; f < e.s_nFrags; f++) {
+      ASSERT(bytesLeft >= sizeof(EVB::FragmentHeader)); // space for headr.
+      // Check the header then check that there's enough space
+      // for the full fragment:
+      
+      EQ(e.s_fragmentHeaders[f].s_timestamp, pFrag->s_timestamp);
+      EQ(e.s_fragmentHeaders[f].s_sourceId,  pFrag->s_sourceId);
+      EQ(e.s_fragmentHeaders[f].s_barrier,   pFrag->s_barrier);
+      EQ(e.s_fragmentHeaders[f].s_size,     pFrag->s_size);
+      
+      ASSERT(
+        bytesLeft >=
+        (sizeof(EVB::FragmentHeader) + e.s_fragmentHeaders[f].s_size)
+      );
+      // Check Ring item header contents.
+      
+      pRingItemHeader pRh = reinterpret_cast<pRingItemHeader>(pFrag+1);
+      EQ(e.s_ringItemHeaders[f].s_size, pRh->s_size);
+      EQ(e.s_ringItemHeaders[f].s_type, pRh->s_type);
+      
+      // Body header check:
+      
+      pBodyHeader pBh = reinterpret_cast<pBodyHeader>(pRh+1);
+      EQ(e.s_bodyHeaders[f].s_size, pBh->s_size);
+      EQ(e.s_bodyHeaders[f].s_timestamp, pBh->s_timestamp);
+      EQ(e.s_bodyHeaders[f].s_sourceId,  pBh->s_sourceId);
+      EQ(e.s_bodyHeaders[f].s_barrier,   pBh->s_barrier);
+      
+      uint16_t* payload = reinterpret_cast<uint16_t*>(pBh+1);
+      std::vector<uint16_t>& epayload(e.s_payloads[f]);
+      for (int i =0; i < epayload.size(); i++) {
+        EQ(epayload[i], payload[i]);
+      }
+      // Next fragment:
+      
+      pFrag =reinterpret_cast<EVB::pFragmentHeader>(
+        payload + epayload.size()
+      );
+      
+    }
+    delete pItem;
+  }
+  CRingItem* pItem = src.getItem();
+  EQ((CRingItem*)(nullptr), pItem);
+  
 }

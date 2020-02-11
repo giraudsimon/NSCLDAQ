@@ -30,8 +30,13 @@ unittests_SOURCES=TestRunner.cpp Asserts.h bufffragreadertests.cpp evacctests.cp
 	CBufferedFragmentReader.cpp \
 	CEventAccumulator.cpp 
 unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/uri -I@top_srcdir@/daq/format \
+	-I@top_srcdir/utilities/IO	\
 	-I@top_srcdir@/base/os @LIBTCLPLUS_CFLAGS@
+
 unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
+	@top_builddir@/utilities/IO/libdaqio.la    \
+	@top_builddir@/base/uri/liburl.la	\
 	@top_builddir@/base/os/libdaqshm.la	\
 	@CPPUNIT_LDFLAGS@ @LIBEXCEPTION_LDFLAGS@
 
