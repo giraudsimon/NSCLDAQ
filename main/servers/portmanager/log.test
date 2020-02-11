@@ -28,15 +28,16 @@ proc getLevel {contents} {
     return [lindex $contents 0]
 }
 proc getHost {contents} {
-    return [lindex $contents 4]
+    return [lindex $contents 5]
 }
 proc getMessage {contents} {
-    return [lrange $contents 5 end]
+    return [lrange $contents 6 end]
 }
 
 proc processLog {} {
    
     set contents [readTestFile]
+
     set level    [getLevel $contents]
     set host     [getHost  $contents]
     set message  [getMessage $contents]
