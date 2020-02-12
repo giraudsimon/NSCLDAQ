@@ -11,7 +11,8 @@
 #include "RingChunk.h"
 #include <CRingItem.h>
 #include <DataFormat.h>
-
+#include <ringbufint.h>     // Internal ring buffer structures.
+#include <CAllButPredicate.h>
 
 extern std::string uniqueName(std::string);
 
@@ -19,6 +20,8 @@ class chunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(chunkTest);
   CPPUNIT_TEST(chunk_1);
   CPPUNIT_TEST(chunk_2);
+  CPPUNIT_TEST(chunk_3);
+  CPPUNIT_TEST(chunk_4);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -42,6 +45,8 @@ private:
 protected:
   void chunk_1();
   void chunk_2();
+  void chunk_3();
+  void chunk_4();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(chunkTest);
@@ -140,6 +145,7 @@ void chunkTest::chunk_2()
   
   // Results should look like the prior one:
   
+  ASSERT(!m_pTestObj->nextItemWraps());   // Should not wrap.
   Chunk data;
   m_pTestObj->getChunk(data);
   
@@ -181,4 +187,166 @@ void chunkTest::chunk_2()
   pConsumer->skip(data.s_nBytes);
   pConsumer->skip(sizeof(RingItemHeader));    // remove the partial rin gitem.
    
+}
+void chunkTest::chunk_3()
+{
+  // We're going to ensure the first ring item overwraps the
+  // ring buffer top.. We do this by being pretty dirty -
+  // set the put and get pointers 1 byte back from the top
+  // and insert our ring items.
+  //
+  // nextItemWraps should be true.
+  // Once we pull that out, we shouild get 9 ring items in the next chunk.
+  //
+  
+  size_t skipBytes = pRing->bytesToTop();
+  pRing->skip(skipBytes - 1);
+  pConsumer->skip(skipBytes - 1);
+  
+  // Make the ring items in the ringbuffer and tally the total size:
+  // Note the first one should wrap:
+  
+  size_t totalSize= 0;
+  for (int i = 0; i < 10; i++) {
+    CRingItem item(PHYSICS_EVENT, i, 10-i);
+    uint8_t* p = static_cast<uint8_t*>(item.getBodyCursor());
+    for (int j = 0; j < 256; j++) {
+      *p++ = j+i;
+    }
+    item.setBodyCursor(p);
+    item.updateSize();
+    pRingItem pRaw = item.getItemPointer();
+    totalSize += pRaw->s_header.s_size;
+    item.commitToRing(*pRing);
+  }
+  ASSERT(m_pTestObj->nextItemWraps());
+  CAllButPredicate pred;
+  //  Look at the wrapped item:
+  
+  CRingItem* pWrappedItem = CRingItem::getFromRing(*pConsumer, pred);
+  pRingItemHeader pr =
+    reinterpret_cast<pRingItemHeader>(pWrappedItem->getItemPointer());
+  EQ(PHYSICS_EVENT, pr->s_type);
+  
+  pBodyHeader pB = reinterpret_cast<pBodyHeader>(pr+1);
+  EQ(uint64_t(0), pB->s_timestamp);
+  EQ(uint32_t(10), pB->s_sourceId);
+  EQ(uint32_t(0),  pB->s_barrier);
+  uint8_t* pData = reinterpret_cast<uint8_t*>(pB+1);
+  size_t   dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+  EQ(size_t(256), dataSize);
+  for (int i = 0; i < dataSize; i++) {
+    EQ(uint8_t(i), pData[i]);
+  }
+  
+  size_t   nBytes = pr->s_size;
+  int      nItems = 1;
+  Chunk    data;
+  delete pWrappedItem;
+  
+  m_pTestObj->getChunk(data);
+  EQ(totalSize - nBytes, data.s_nBytes);
+  EQ(0U, data.s_nBegins);
+  EQ(0U, data.s_nEnds);
+  
+  size_t nRemaining = data.s_nBytes;
+  uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
+  while (nRemaining) {
+    pr = reinterpret_cast<pRingItemHeader>(p);
+    EQ(PHYSICS_EVENT, pr->s_type);
+    
+    pB = reinterpret_cast<pBodyHeader>(pr+1);
+    EQ(uint64_t(nItems), pB->s_timestamp);
+    EQ(uint32_t(10-nItems), pB->s_sourceId);
+    EQ(uint32_t(0), pB->s_barrier);
+    pData   = reinterpret_cast<uint8_t*>(pB+1);
+    dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    EQ(size_t(256), dataSize);
+    for (int i =0; i < dataSize; i++) {
+      EQ(uint8_t(nItems+i), pData[i]);
+    }
+    
+    nRemaining -= pr->s_size;
+    p          += pr->s_size;
+    nItems++;
+  }
+  EQ(10, nItems);
+}
+void chunkTest::chunk_4()
+{
+  // Same a chunk 3 but we put the entire ring item header prior to
+  // the wrap.
+  
+  size_t skipBytes = pRing->bytesToTop();
+  pRing->skip(skipBytes - sizeof(RingItemHeader));
+  pConsumer->skip(skipBytes - sizeof(RingItemHeader));
+  
+  // Make the ring items in the ringbuffer and tally the total size:
+  // Note the first one should wrap:
+  
+  size_t totalSize= 0;
+  for (int i = 0; i < 10; i++) {
+    CRingItem item(PHYSICS_EVENT, i, 10-i);
+    uint8_t* p = static_cast<uint8_t*>(item.getBodyCursor());
+    for (int j = 0; j < 256; j++) {
+      *p++ = j+i;
+    }
+    item.setBodyCursor(p);
+    item.updateSize();
+    pRingItem pRaw = item.getItemPointer();
+    totalSize += pRaw->s_header.s_size;
+    item.commitToRing(*pRing);
+  }
+  ASSERT(m_pTestObj->nextItemWraps());
+  CAllButPredicate pred;
+  //  Look at the wrapped item:
+  
+  CRingItem* pWrappedItem = CRingItem::getFromRing(*pConsumer, pred);
+  pRingItemHeader pr =
+    reinterpret_cast<pRingItemHeader>(pWrappedItem->getItemPointer());
+  EQ(PHYSICS_EVENT, pr->s_type);
+  
+  pBodyHeader pB = reinterpret_cast<pBodyHeader>(pr+1);
+  EQ(uint64_t(0), pB->s_timestamp);
+  EQ(uint32_t(10), pB->s_sourceId);
+  EQ(uint32_t(0),  pB->s_barrier);
+  uint8_t* pData = reinterpret_cast<uint8_t*>(pB+1);
+  size_t   dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+  EQ(size_t(256), dataSize);
+  for (int i = 0; i < dataSize; i++) {
+    EQ(uint8_t(i), pData[i]);
+  }
+  
+  size_t   nBytes = pr->s_size;
+  int      nItems = 1;
+  Chunk    data;
+  delete pWrappedItem;
+  
+  m_pTestObj->getChunk(data);
+  EQ(totalSize - nBytes, data.s_nBytes);
+  EQ(0U, data.s_nBegins);
+  EQ(0U, data.s_nEnds);
+  
+  size_t nRemaining = data.s_nBytes;
+  uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
+  while (nRemaining) {
+    pr = reinterpret_cast<pRingItemHeader>(p);
+    EQ(PHYSICS_EVENT, pr->s_type);
+    
+    pB = reinterpret_cast<pBodyHeader>(pr+1);
+    EQ(uint64_t(nItems), pB->s_timestamp);
+    EQ(uint32_t(10-nItems), pB->s_sourceId);
+    EQ(uint32_t(0), pB->s_barrier);
+    pData   = reinterpret_cast<uint8_t*>(pB+1);
+    dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    EQ(size_t(256), dataSize);
+    for (int i =0; i < dataSize; i++) {
+      EQ(uint8_t(nItems+i), pData[i]);
+    }
+    
+    nRemaining -= pr->s_size;
+    p          += pr->s_size;
+    nItems++;
+  }
+  EQ(10, nItems); 
 }
