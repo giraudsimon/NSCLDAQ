@@ -1,7 +1,7 @@
 bin_PROGRAMS		=	eventlog
 BUILT_SOURCES		= 	eventlogargs.c eventlogargs.h
 
-eventlog_SOURCES	=	eventlog.cpp eventlogMain.cpp
+eventlog_SOURCES	=	eventlog.cpp eventlogMain.cpp RingChunk.h RingChunk.cpp
 nodist_eventlog_SOURCES =       eventlogargs.c eventlogargs.h
 
 noinst_HEADERS		=	eventlogMain.h

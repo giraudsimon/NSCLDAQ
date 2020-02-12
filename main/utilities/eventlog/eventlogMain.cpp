@@ -18,7 +18,7 @@
 #include "eventlogMain.h"
 #include "eventlogargs.h"
 
-
+#include "RingChunk.h"
 
 #include <CRingBuffer.h>
 
@@ -89,7 +89,8 @@ class noData :  public CRingBuffer::CRingBufferPredicate
    m_fChangeRunOk(false),
    m_prefix("run"),
    m_pItem(nullptr),
-   m_nItemSize(0)
+   m_nItemSize(0),
+   m_pChunker(0)
  {
  }
 
@@ -127,24 +128,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  // Utility functions...well really this is where all the action is.
  //
 
-/**
- * getBody
- *    Given a ring item returns a pointer to the body.
- *
- * @param pItem - pointer to the ring item to check
- * @return void* - Pointer to the body of the ring item.
- */
-static void*
-getBody(pStateChangeItem pItem)
-{
-  if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
-    return &(pItem->s_body.u_noBodyHeader.s_body);
-  } else {
-    uint8_t* p =
-      reinterpret_cast<uint8_t*>(&(pItem->s_body.u_hasBodyHeader.s_bodyHeader));
-    return p + pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-  }
-}
+
 
  /*
  ** Open an event segment.  Event segment filenames are of the form
@@ -192,7 +176,7 @@ getBody(pStateChangeItem pItem)
     std::cerr << " Continuing to record data\n";
     
    }
-   
+   m_pChunker->setFd(fd);
    return fd;
 
  } 
@@ -474,6 +458,8 @@ getBody(pStateChangeItem pItem)
 
    m_fChecksum = (parsed.checksum_flag != 0);
    m_fChangeRunOk = (parsed.combine_runs_flag != 0);
+   
+   m_pChunker = new CRingChunk(m_pRing, m_fChangeRunOk);
 
  }
 
@@ -664,21 +650,6 @@ EventLogMain::shaFile(int run) const
 }
 
 
-/**
- * waitForData
- *    Wait until the ring item has at least a required number of bytes
- *    for us.  The blocking part of the wait increases with each failure
- *    in order to adapt to actual data rates.
- *
- *  @param nBytes - desired minimum number of bytes in the ring.
- */
-void
-EventLogMain::waitForData(size_t nBytes)
-{
-  while (m_pRing->availableData() < nBytes)
-    ;
-
-}
 
 
 /**
@@ -719,6 +690,7 @@ void
 EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
 {
   m_nRunNumber = runNumber;
+  m_pChunker->setRunNumber(runNumber);
   
   int endsSeen(0);
   Chunk nextChunk;
@@ -728,13 +700,15 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     
     // Get a contigous chunk.
     
-    getChunk(fd, nextChunk);
+    m_pChunker->getChunk(fd, nextChunk);
+    m_nBeginsSeen += nextChunk.s_nBegins;
+    endsSeen   += nextChunk.s_nEnds;
     if(nextChunk.s_nBytes)  {
       writeData(fd, nextChunk.s_pStart, nextChunk.s_nBytes);
       m_pRing->skip(nextChunk.s_nBytes);
       bytesSoFar += nextChunk.s_nBytes;
       if (bytesSoFar >= m_segmentSize) {
-        closeEventSegment(fd);
+        m_pChunker->closeEventSegment();
         fd = openEventSegment(runNumber, ++segno);
         bytesSoFar  = 0;
       }
@@ -744,18 +718,18 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     // See if we've got a balanced set of begins/ends:
     
     if(endsSeen == m_nBeginsSeen) {
-      closeEventSegment(fd);
+      m_pChunker->closeEventSegment();
       return;                      // The run is recorded.
     } else if (endsSeen && dataTimeout()) {
       
       // If we time out on data, then end abnormally:
       
-      closeEventSegment(fd);
+      m_pChunker->closeEventSegment();
       std::cerr << " Timed out with " << m_nBeginsSeen - endsSeen
         << " ends still not seen\n";
       return;
     }
-    if (nextItemWraps()) {                               // Note we just let the next chunk
+    if (m_pChunker->nextItemWraps()) {                               // Note we just let the next chunk
       bytesSoFar += writeWrappedItem(fd, endsSeen);     // see if we need to open a new segment
     }
   }
@@ -784,88 +758,8 @@ EventLogMain::waitForLotsOfData()
   m_pRing->blockWhile(p, 1);
   m_pRing->setPollInterval(priorPollInterval);
 }
-/**
- * getChunk
- *    Get the next contiguous chunk of ring items.
- *    The search stops when either we have no more data available or
- *    the next ring item wraps.  Ring items are considered to wrap if
- *    either there's less than a uint32_t before the top of the ring
- *    or if there's a uint32_t ring item size that shows there's not enough
- *    space before the ring top to hold the item.
- *
- *  @param fd    - File descriptor in case we need to exit.
- *  @param[out] nextChunk - will describe the chunk of data we've gotten.
- */
-void
-EventLogMain::getChunk(int fd, Chunk& nextChunk)
-{
-  nextChunk.s_pStart  = m_pRing->getPointer();
-  nextChunk.s_nBytes  = 0;
-  nextChunk.s_nEnds   = 0;
-  
-  size_t bytesAvail = m_pRing->availableData();
-  
-  
-  // Adjust the bytes available by the amount left before a wrap, if that's
-  // < a ring item header we have a wrap:
-  
-  size_t bytesToWrap = m_pRing->bytesToTop();
-  if (bytesToWrap < bytesAvail) bytesAvail = bytesToWrap;
-  if (bytesAvail < sizeof(RingItemHeader)) return;
-  
-  /*
-   *  Now we look at the data availalble;
-   *  - Count bytes that contain full ring items:
-   *  - Count any state transition items we see.
-   */
-  
-  uint8_t* p = static_cast<uint8_t*>(nextChunk.s_pStart);
-  while(1) {
-    pRingItemHeader h = reinterpret_cast<pRingItemHeader>(p);
-    // Not even enough space for a header:
 
-    if ((sizeof(RingItemHeader)) > bytesAvail) return;
-    
-    if ((h->s_size) > bytesAvail) return; // no full items left.
-    nextChunk.s_nBytes += h->s_size;
-    bytesAvail -= h->s_size;
-    p += h->s_size;
-    if (h->s_type == BEGIN_RUN) {
-      m_nBeginsSeen++;
-      if(badBegin(h)) {
-        closeEventSegment(fd);
-        std::cerr << " Begin run changed run number without --combine-runs "
-          << " or too many begin runs for the data source count\n";
-        exit(EXIT_FAILURE);
-      }
-    }
-    if (h->s_type == END_RUN)   nextChunk.s_nEnds++;
-  }
-  
-}
-/**
- * nextItemWraps
- *    @return bool:  true if the next wring item wraps;
- *
- *    The next item wraps if:
- *    -  There's less than the size of a ring item header to the top.
- *    -  When we get the next uint32_t there's less than that amount of space
- *       left to the top:
- */
-bool
-EventLogMain::nextItemWraps()
-{
-  // Wait for at least a uint32_t:
-  
-  waitForData(sizeof(uint32_t));
-  size_t nToTop = m_pRing->bytesToTop();
-  uint32_t* p   = static_cast<uint32_t*>(m_pRing->getPointer());
-  
-  // Counting on short circuit here which is ok by C++ standard.
-  
-  return (nToTop < sizeof(RingItemHeader)) || (*p > nToTop);
-  
-}
+
 /**
  * writeWrappedItem
  *    Assuming the next item in the ring buffer wraps, we write it.
@@ -883,7 +777,7 @@ EventLogMain::nextItemWraps()
 size_t
 EventLogMain::writeWrappedItem(int fd, int& ends)
 {
-  waitForData(sizeof(uint32_t));
+  m_pChunker->waitForData(sizeof(uint32_t));
   uint32_t nSize;
   m_pRing->peek(&nSize, sizeof(uint32_t));
   
@@ -894,7 +788,7 @@ EventLogMain::writeWrappedItem(int fd, int& ends)
   if (pH->s_type == BEGIN_RUN) {
     m_nBeginsSeen++;
     if(badBegin(pH)) {
-        closeEventSegment(fd);
+        m_pChunker->closeEventSegment();
         std::cerr << " Begin run changed run number without --combine-runs "
           << " or too many begin runs for the data source count\n";
         exit(EXIT_FAILURE);
@@ -970,20 +864,7 @@ EventLogMain::checksumData(void* pData, size_t nBytes)
   );
     
 }
-/**
- *  closeEventSegment
- *     Truncate the event segment to its current size and close it.
- *
- *   @param fd - file descriptor open on the event segment.
- */
-void
-EventLogMain::closeEventSegment(int fd)
-{
-  off_t fileSize = lseek(fd, 0, SEEK_CUR);  // Tricky way to get the offset.
-  ftruncate(fd, fileSize);
-  close(fd);
-  
-}
+
 /**
  * badBegin
  *    @param p - pointer to a state transition item with type BEGIN_RUN
@@ -1008,7 +889,8 @@ EventLogMain::badBegin(void* p)
   
   // If the run number changed that's also bod:
   
-  pStateChangeItemBody pBody = reinterpret_cast<pStateChangeItemBody>(getBody(pItem));
+  pStateChangeItemBody pBody =
+    reinterpret_cast<pStateChangeItemBody>(m_pChunker->getBody(pItem));
   
   return (pBody->s_runNumber != m_nRunNumber);
   

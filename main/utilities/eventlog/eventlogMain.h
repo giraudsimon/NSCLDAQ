@@ -32,7 +32,7 @@ class CRingBuffer;
 class CRingItem;
 class CRingStateChangeItem;
 class CZCopyRingBuffer;
-class RingChunk;
+class CRingChunk;
 
 
 /*!
@@ -60,7 +60,7 @@ private:
   pRingItemHeader   m_pItem;
   size_t            m_nItemSize;
   uint32_t          m_nRunNumber;
-  RingChunk*        m_pChunker;
+  CRingChunk*        m_pChunker;
   
 
   
@@ -95,7 +95,6 @@ private:
   size_t itemSize(CRingItem& item) const;
   std::string shaFile(int runNumber) const;
   
-  void waitForData(size_t nBytes);         // Wait until the ring has nBytes of data.
 
 
   void writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar);  
@@ -104,7 +103,6 @@ private:
   size_t writeWrappedItem(int fd, int& ends);
   void writeData(int fd, void* pData, size_t nBytes);
   void checksumData(void* pData, size_t nBytes);
-  void closeEventSegment(int fd);
   bool badBegin(void* p);
 };
 
