@@ -62,7 +62,7 @@ fakeruns_CPPFLAGS=-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/base/os		\
 				@OPENSSL_INCLUDES@
 
-eventlogTests_SOURCES = TestRunner.cpp eventlogTests.cpp
+eventlogTests_SOURCES = TestRunner.cpp eventlogTests.cpp chunkTests.cpp RingChunk.cpp
 eventlogTests_CPPFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/headers		\
 				@LIBTCLPLUS_CFLAGS@			\
 				-I@top_srcdir@/daq/format		\

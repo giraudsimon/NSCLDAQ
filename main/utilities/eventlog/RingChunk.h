@@ -76,7 +76,7 @@ public:
     
     // What used to be in eventlogMain
     
-    void getChunk(int fd, Chunk& nextChunk);
+    void getChunk(Chunk& nextChunk);
     bool nextItemWraps();
     void closeEventSegment();
     void waitForData(size_t nBytes);

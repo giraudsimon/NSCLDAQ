@@ -700,7 +700,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     
     // Get a contigous chunk.
     
-    m_pChunker->getChunk(fd, nextChunk);
+    m_pChunker->getChunk( nextChunk);
     m_nBeginsSeen += nextChunk.s_nBegins;
     endsSeen   += nextChunk.s_nEnds;
     if(nextChunk.s_nBytes)  {
@@ -717,7 +717,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
     
     // See if we've got a balanced set of begins/ends:
     
-    if(endsSeen == m_nBeginsSeen) {
+    if(endsSeen >= m_nBeginsSeen) {
       m_pChunker->closeEventSegment();
       return;                      // The run is recorded.
     } else if (endsSeen && dataTimeout()) {

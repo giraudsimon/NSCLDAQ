@@ -74,11 +74,10 @@ CRingChunk::setFd(int newFd)
  *    or if there's a uint32_t ring item size that shows there's not enough
  *    space before the ring top to hold the item.
  *
- *  @param fd    - File descriptor in case we need to exit.
  *  @param[out] nextChunk - will describe the chunk of data we've gotten.
  */
 void
-CRingChunk::getChunk(int fd, Chunk& nextChunk)
+CRingChunk::getChunk(Chunk& nextChunk)
 {
   nextChunk.s_pStart  = m_pRing->getPointer();
   nextChunk.s_nBytes  = 0;
@@ -153,7 +152,6 @@ CRingChunk::nextItemWraps()
  *  closeEventSegment
  *     Truncate the event segment to its current size and close it.
  *
- *   @param fd - file descriptor open on the event segment.
  */
 void
 CRingChunk::closeEventSegment()
