@@ -61,7 +61,7 @@ install-exec-local:
 #
 #  The distribution should contain the tcl files as well as their unit tests:
 #
-EXTRA_DIST =$(TCLPACKAGES) $(TCLAPPS) $(TCLTESTS) $(PYTHON_PACKAGES) $(PYTHON_TESTS) portmanager.xml
+EXTRA_DIST =$(TCLPACKAGES) $(TCLAPPS) $(TCLTESTS) $(PYTHON_PACKAGES) $(PYTHON_TESTS) portmanager.xml 
 
 #
 #  The tests are all TCL tests and can be unconditionally run.
@@ -76,8 +76,7 @@ cpptest_CPPFLAGS = $(COMPILATION_FLAGS)
 
 
 check-TESTS: cpptest
-	@TCLSH_CMD@ tclTests.tcl
-	for f in @srcdir@/*.test;do @TCLSH_CMD@ $$f; done
+	@TCLSH_CMD@ @srcdir@/tclTests.tcl
 	@builddir@/cpptest
 	for f in $(PYTHON_TESTS); do PYTHONPATH=@prefix@/pythonLibs @PYTHON@ $$f; done
 
