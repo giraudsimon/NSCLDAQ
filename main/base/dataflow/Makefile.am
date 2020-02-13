@@ -78,7 +78,7 @@ ringtostdout_LDADD	=  @builddir@/libDataFlow.la \
 
 ringtostdout_CXXFLAGS	=  $(AM_CXXFLAGS) $(THREADCXX_FLAGS)
 
-stdintoring_SOURCES = stdintoring.cpp 
+stdintoring_SOURCES = stdintoring.cpp stdintoringUtils.h stdintoringUtils.cpp
 nodist_stdintoring_SOURCES=stdintoringsw.c stdinringtosw.h
 
 stdintoring_DEPENDENCIES = libDataFlow.la 
