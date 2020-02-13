@@ -45,7 +45,7 @@ static const uint32_t LOWER16BITMASK(0xFFFF);        // lower 16 bits
  *    owndata flag is set false since we never need to delete nothing.
  */
 RawChannel::RawChannel() :
-    s_time(0.0), s_chanid(0), s_ownData(false), s_ownDataSize(0),
+    s_moduleType(0),s_time(0.0), s_chanid(0), s_ownData(false), s_ownDataSize(0),
     s_channelLength(0), s_data(nullptr)
 {}
 
@@ -64,6 +64,7 @@ RawChannel::RawChannel() :
  * @throws std::bad_alloc if the malloc fails.
  */
 RawChannel::RawChannel(size_t nWords) :
+s_moduleType(0),
 s_time(0.0), s_chanid(0), s_ownData(true), s_ownDataSize(nWords),
     s_channelLength(0), s_data(nullptr)
 {
@@ -83,6 +84,7 @@ s_time(0.0), s_chanid(0), s_ownData(true), s_ownDataSize(nWords),
  *        buserrors will happen in the best case.
  */
 RawChannel::RawChannel(size_t nWords, void* pZCopyData) :
+s_moduleType(0),
 s_time(0.0), s_chanid(0), s_ownData(false), s_ownDataSize(nWords),
     s_channelLength(nWords), s_data(static_cast<uint32_t*>(pZCopyData))
 {}
