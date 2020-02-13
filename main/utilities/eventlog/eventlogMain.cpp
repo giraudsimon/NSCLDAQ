@@ -234,7 +234,6 @@ class noData :  public CRingBuffer::CRingBufferPredicate
           if (pItem->type() == RING_FORMAT) {
             pFormatItem = pItem;
           } else if (pItem->type() == BEGIN_RUN) {
-            m_nBeginsSeen = 1;
             break;
           } else {
             // If not a begin or a ring_item we're tossing it out.
@@ -318,7 +317,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
 
 
    // Figure out what file to open and how to set the pItem:
-
+    
     if (m_fRunNumberOverride) {
       runNumber  = m_nOverrideRunNumber;
       fd         = openEventSegment(runNumber, segment);
@@ -328,7 +327,10 @@ class noData :  public CRingBuffer::CRingBufferPredicate
       fd         = openEventSegment(runNumber, segment);
       pItem      = new CRingStateChangeItem(item);
     }
-   
+    if (pItem->type() == BEGIN_RUN) {
+      std::cerr << "Begin run in recordRun \n";
+      m_nBeginsSeen++;
+    }
 
     // If there is a format item, write it out to file:
     // Note there won't be if the run number has been overridden.
@@ -713,8 +715,8 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
         bytesSoFar  = 0;
       }
     }
-    endsSeen      += nextChunk.s_nEnds;
-    
+
+    std::cout << "Begins " << m_nBeginsSeen << " ends: " << endsSeen << std::endl;
     // See if we've got a balanced set of begins/ends:
     
     if(endsSeen >= m_nBeginsSeen) {
