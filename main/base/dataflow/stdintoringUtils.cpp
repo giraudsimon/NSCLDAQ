@@ -107,11 +107,11 @@ computeSize(struct header* pHeader)
 {
   if ((pHeader->s_type & 0xffff) == 0) {
     uint8_t swappedSize[4];
-    memcpy(swappedSize, &pHeader->s_size, 4);
+    memcpy(swappedSize, &(pHeader->s_size), sizeof(uint32_t));
     uint32_t result = 0;
     for (int i =0; i < 4; i++) {
       uint32_t byte = swappedSize[i];
-      byte          = byte << (24 - 4*i);
+      byte          = byte << (24 - 8*i);
       result       |= byte;
     }
     return result;

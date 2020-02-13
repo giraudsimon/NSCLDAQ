@@ -101,7 +101,7 @@ noinst_PROGRAMS = unittests producer consumer
 
 unittests_SOURCES = TestRunner.cpp StaticTests.cpp TransferTests.cpp testcommon.cpp \
 		DifferenceTests.cpp BlockingTests.cpp InfoTests.cpp \
-		ManageTest.cpp WhilePredTest.cpp crmastertests.cpp RemoteTests.cpp
+		ManageTest.cpp WhilePredTest.cpp crmastertests.cpp RemoteTests.cpp stdintoringTests.cpp stdintoringUtils.cpp stdintoringUtils.h stdintoringsw.c
 
 unittests_LDADD   = -L@prefix@/lib $(CPPUNIT_LDFLAGS) \
 			@builddir@/libDataFlow.la		\
