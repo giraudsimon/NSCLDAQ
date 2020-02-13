@@ -26,7 +26,7 @@ EXTRA_DIST=ddasSortOptions.ggo
 noinst_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp sortertests.cpp \
-	refcountTests.cpp arenaTests.cpp	\
+	refcountTests.cpp arenaTests.cpp rawchTests.cpp	\
 	DDASSorter.cpp DDASSorter.h				\
 	HitManager.cpp 	HitManager.h ZeroCopyHit.h ZeroCopyHit.cpp	\
 	RawChannel.h RawChannel.cpp \
