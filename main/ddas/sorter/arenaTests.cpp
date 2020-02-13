@@ -49,7 +49,7 @@ void arenaTest::alloc_1()
   // We get a buffer of exactly the requested size and
   // no reference counts.
   
-  DDASReadout::ReferenceCountedBuffer* pBuffer - m_pTestObj->allocate(100);
+  DDASReadout::ReferenceCountedBuffer* pBuffer = m_pTestObj->allocate(100);
   EQ(size_t(100), pBuffer->s_size);
   ASSERT(!pBuffer->isReferenced());
   ASSERT(pBuffer->s_pData);
