@@ -25,10 +25,10 @@
 
 class CRingBuffer;
 
-struct header {
+typedef struct header {
   uint32_t s_size;
   uint32_t s_type;
-};
+} *pHeader;
 
 int integerize(const char* str);
 uint32_t computeSize(struct header* pHeader);

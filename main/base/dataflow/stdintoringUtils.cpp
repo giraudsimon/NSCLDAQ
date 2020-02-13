@@ -164,10 +164,10 @@ putData(CRingBuffer& ring, void* pBuffer, size_t nBytes)
     
     size_t putSize(0);
     size_t bytesLeft(nBytes);
-    uint8_t* p;
+    uint8_t* p = reinterpret_cast<uint8_t*>(pBuffer);
     while (bytesLeft > sizeof(struct header)) {
         uint32_t itemSize = computeSize(reinterpret_cast<header*>(p));
-        if (itemSize < bytesLeft) {
+        if (itemSize <= bytesLeft) {
             putSize   += itemSize;
             bytesLeft -= itemSize;
             p         += itemSize;
