@@ -92,11 +92,15 @@ ZeroCopyHit::setHit(
     m_pArena = pArena;
     
     // Finish off the refcount business of only modifying the reference count
-    // for a different buffer:
+    // for a different buffer.  In this branch of code we don't have to
+    // worry about pPrior being null because
+    // 1. That's going to be different than pBuffer by definition.
+    // 2. In that case of course we want to reference the buffer.
     
-    if (pPriorBuffer && (pBuffer != pPriorBuffer)) {
+    if (pBuffer != pPriorBuffer) {
         reference();
     }
+
 }
 /**
  * freeHit
