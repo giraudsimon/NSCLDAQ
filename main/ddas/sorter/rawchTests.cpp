@@ -19,6 +19,17 @@ class rawchTest : public CppUnit::TestFixture {
   
   CPPUNIT_TEST(copyin_1);
   CPPUNIT_TEST(setdata_1);
+  
+  CPPUNIT_TEST(settime_1);
+  CPPUNIT_TEST(settime_2);
+  
+  CPPUNIT_TEST(setlength_1);
+  CPPUNIT_TEST(setlength_2);
+  
+  CPPUNIT_TEST(setchan_1);
+  
+  CPPUNIT_TEST(validate_1);
+  CPPUNIT_TEST(validate_2);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -38,6 +49,17 @@ protected:
   
   void copyin_1();
   void setdata_1();
+  
+  void settime_1();
+  void settime_2();
+  
+  void setlength_1();
+  void setlength_2();
+  
+  void setchan_1();
+  
+  void validate_1();
+  void validate_2();
 private:
   void makeHit(
     uint32_t* hit,
@@ -75,7 +97,7 @@ rawchTest::makeHit(
   memset(hit, 0, sizeof(uint32_t)*4);
   hit[0] =
     (eventSize << 17) | (hdrSize << 12) | (crate << 8) | (slot << 4) | chan;
-  hit[1] = rawTime | 0xffffffff;
+  hit[1] = rawTime & 0xffffffff;
   hit[2] = (rawTime >> 32) | (cfdTime << 16);
   hit[3] = energy;
   
@@ -153,4 +175,94 @@ void rawchTest::setdata_1()
   EQ(0, ch.s_ownDataSize);         // I don't own any data!
   EQ(4, ch.s_channelLength);
   EQ((uint32_t*)(data), ch.s_data);
+}
+
+void rawchTest::settime_1()
+{
+  // Set the time without a calibration.  That puts the raw time
+  // value in the time member (I think).
+  
+  uint32_t data[4];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(4, data);
+  ch.SetTime();
+  
+  EQ(double(12345678), ch.s_time);
+}
+
+void rawchTest::settime_2()
+{
+  // Set time with a calibration multiplier.
+  uint32_t data[4];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(4, data);
+  ch.SetTime(2.0);
+  
+  EQ(double(12345678*2), ch.s_time);
+  
+}
+
+void rawchTest::setlength_1()
+{
+  // GThe length from makeHit will be four:
+  
+  uint32_t data[4];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(4, data);
+  ch.SetLength();
+  
+  EQ(4, ch.s_channelLength);
+}
+void rawchTest::setlength_2()
+{
+  // Jigger the eventlength field in the hit
+  // channel length should change accordingly.
+  
+  uint32_t data[8];
+  makeHit(data, 1,2,3, 12345678, 100);
+  data[0] = (data[0] & 0x80010000) |  (8 << 17);   // Change the event length->8
+  
+  DDASReadout::RawChannel ch;
+  ch.setData(8, data);
+  ch.SetLength();
+  EQ(8, ch.s_channelLength);
+  
+}
+void rawchTest::setchan_1()
+{
+  // Channel is extracted properly from the hit:
+  
+  uint32_t data[4];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(4, data);
+  ch.SetChannel();
+  
+  EQ(3, ch.s_chanid);
+}
+
+void rawchTest::validate_1()
+{
+  /// Valid length check ok
+  
+  uint32_t data[4];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(4, data);
+  ch.SetLength();
+  EQ(0, ch.Validate(4));
+}
+void rawchTest::validate_2()
+{
+  // invalid length.
+  
+  uint32_t data[8];
+  makeHit(data, 1,2,3, 12345678, 100);
+  DDASReadout::RawChannel ch;
+  ch.setData(8, data);
+  ch.SetLength();
+  EQ(1, ch.Validate(8));         // Size field says 4
 }
