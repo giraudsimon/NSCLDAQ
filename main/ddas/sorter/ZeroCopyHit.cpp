@@ -75,12 +75,25 @@ ZeroCopyHit::setHit(
     BufferArena* pArena
 )
 {
-    if (m_pBuffer) dereference();
+    // We have to be really careful here.
+    // if pBuffer is the same as m_pBuffer, this dance
+    // can prematurely return the buffer to the pool.
+    // If that's the case, this operations
+    
+    if (m_pBuffer && (m_pBuffer != pBuffer)) {
+        dereference();
+    }
     
     setData(nWords, pHitData);
+    ReferenceCountedBuffer* pPriorBuffer = m_pBuffer;
     m_pBuffer = pBuffer;
     m_pArena = pArena;
-    reference();
+    // Finish off the business of only modifying the reference count
+    // for a different buffer:
+    
+    if (pPriorBuffer && (pBuffer != pPriorBuffer)) {
+        reference();
+    }
 }
 /**
  * freeHit

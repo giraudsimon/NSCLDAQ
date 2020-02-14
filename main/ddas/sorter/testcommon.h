@@ -27,6 +27,7 @@ void makeHit(
   int crate, int slot, int chan, uint64_t rawTime, uint16_t energy,
   uint16_t cfdTime = 0
 );
+int randRange(int n);
 
 
 #endif

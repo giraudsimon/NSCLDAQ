@@ -20,6 +20,7 @@
  */
 #include "testcommon.h"
 #include <string.h>
+#include <cstdlib>
 /**
  * makeHit
  *    Given parameters for a hit, creates the data for a 4 longword hit.
@@ -48,4 +49,13 @@ void makeHit(
   hit[3] = energy;
   
 }
-//////////////
+/**
+ * Return an uniformly distributed random integer in the range [0,n)
+ * @param n - top end of range.
+ * @return int
+ */
+int randRange(int n)
+{
+    double r = std::rand();
+    return (int)(r/RAND_MAX) * n;
+}
