@@ -79,7 +79,9 @@ ZeroCopyHit::setHit(
     // if pBuffer is the same as m_pBuffer, this dance
     // can prematurely return the buffer to the pool.
     // If that's the case, this operations
-    
+    //  m_pBuffer is initially null as well until first use.
+    //  See: daqdev/NSCLDAQ#1036  issue.
+    //
     if (m_pBuffer && (m_pBuffer != pBuffer)) {
         dereference();
     }
@@ -88,7 +90,8 @@ ZeroCopyHit::setHit(
     ReferenceCountedBuffer* pPriorBuffer = m_pBuffer;
     m_pBuffer = pBuffer;
     m_pArena = pArena;
-    // Finish off the business of only modifying the reference count
+    
+    // Finish off the refcount business of only modifying the reference count
     // for a different buffer:
     
     if (pPriorBuffer && (pBuffer != pPriorBuffer)) {
