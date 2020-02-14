@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "RawChannel.h"
+#include "testcommon.h"
 
 #include <stdexcept>
 #include <string.h>
@@ -61,11 +62,7 @@ protected:
   void validate_1();
   void validate_2();
 private:
-  void makeHit(
-    uint32_t* hit,
-    int crate, int slot, int chan, uint64_t rawTime, uint16_t energy,
-    uint16_t cfdTime=0
-  );
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rawchTest);
@@ -73,35 +70,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(rawchTest);
 ///////////////////////////////////////////////////////////////////////////////
 // Utilities
 
-/**
- * makeHit
- *    Given parameters for a hit, creates the data for a 4 longword hit.
- *
- * @param[out] hit - Pointer to a uint32_t[4]  which will receive the hit.
- * @param    crate   - Hit crate number.
- * @param    slot    - Hit slot number.
- * @param    chan    - Hit chanel number.
- * @param    rawTime - The hit time from the clock.
- * @param    energy  - Energy value.
- * @param    cfdTime - Defaults to 0, the CFD fractional time.
- */
-void
-rawchTest::makeHit(
-  uint32_t* hit,
-  int crate, int slot, int chan, uint64_t rawTime, uint16_t energy,
-  uint16_t cfdTime
-)
-{
-  int eventSize = 4;
-  int hdrSize   = 4;
-  memset(hit, 0, sizeof(uint32_t)*4);
-  hit[0] =
-    (eventSize << 17) | (hdrSize << 12) | (crate << 8) | (slot << 4) | chan;
-  hit[1] = rawTime & 0xffffffff;
-  hit[2] = (rawTime >> 32) | (cfdTime << 16);
-  hit[3] = energy;
-  
-}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Tests
 
