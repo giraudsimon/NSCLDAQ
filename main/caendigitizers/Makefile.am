@@ -1,1 +1,1 @@
-SUBDIRS=dpp-pha
+SUBDIRS=dpp-pha dpp-psd
