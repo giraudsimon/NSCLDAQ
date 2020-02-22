@@ -1,0 +1,73 @@
+#
+#  This establishes which version of NSCLDAQ we're using and where it's installed:
+#  Supposedly  you only need to change this definition to update to a newer
+#  version of the software:
+
+INSTDIR=@prefix@/skeletons/caen-dpp-pha
+DAQROOT=@prefix@
+DAQLIB=@prefix@/lib
+DAQINC=@prefix@/inc
+
+
+
+PHALIBDIR=..
+CAENCOMDIR=../CAENComm-1.2
+CAENVMEDIR=../CAENVMELib-2.41
+CAENDIGDIR=../CAENDigitizer_2.7.9
+INIPARSERDIR=../iniparser
+
+CAENINCS=-I$(CAENCOMDIR)/include -I$(CAENVMEDIR)/include \
+	-I$(CAENDIGDIR)/include
+CAENLIBS=-L$(CAENDIGDIR)/lib -lCAENDigitizer -Wl,-rpath=$(CAENDIGDIR)/lib  \
+	-L$(CAENVMEDIR)/lib  -lCAENVME -Wl,-rpath=$(CAENVMEDIR)/lib        \
+	-L$(CAENCOMDIR)/lib  -lCAENComm -Wl,-rpath=$(CAENCOMDIR)/lib
+
+INPARSERINCS= -I$(INIPARSERDIR)/include
+INIPARSERLIBS=-L$(INIPARSERDIR)/lib -liniparser -Wl,-rpath=$(INIPARSERDIR)/lib
+PHAINCS=-I$(PHALIBDIR)
+PHALIBS=-L$(PHALIBDIR) -lCaenPha -lpugi
+
+
+include $(INSTDIR)/etc/SBSRdoMakeIncludes
+
+
+#
+#  The following allow you to add flags to all the default C and C++ compilation
+#  rules.  In most cases C and C++ share the same set of compilation flags so:
+#
+#
+
+USERCCFLAGS=$(CAENINCS) $(INIPARSERINCS) $(PHAINCS)
+USERCXXFLAGS=$(USERCCFLAGS)
+
+#  If you have additional load flags (e.g. library dirs and libs):
+
+USERLDFLAGS=$(PHALIBS) $(INIPARSERLIBS) $(CAENLIBS)
+
+all: Readout regdump
+
+#
+#  This is a list of the objects that go into making the application
+#  Make, in most cases will figure out how to build them:
+
+OBJECTS=Skeleton.o
+
+Readout: $(OBJECTS) ../libpugi.a ../libCaenPha.a
+	$(CXXLD) -o Readout $(OBJECTS) $(USERLDFLAGS) $(LDFLAGS)
+
+
+regdump: regdump.o
+	$(CXXLD) -o regdump regdump.o $(USERLDFLAGS) $(LDFLAGS)
+
+clean:  
+	rm -f $(OBJECTS) Readout regdump.o regdump
+
+depend:
+	makedepend $(USERCXXFLAGS) *.cpp *.c 
+
+
+help:
+	echo make           - Build Readout.
+	echo make clean     - Remove products from previous builds.
+	echo make depend    - Add header dependencies to Makefile.
+
