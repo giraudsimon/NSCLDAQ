@@ -30,13 +30,16 @@ AC_LANG_POP
 
 #  CAEN Digitizer support is optional:
 
-AC_ARG_ENABLE([caen-digitizer-support], [Build support for CAEN Digitizers], [enable_caen=$enableval],
-						[enable_caen=no])
+AC_ARG_ENABLE([caen-digitizer-support], 
+	     AC_HELP_STRING([--enable-caen-digitizer-support],
+	     [Build support for CAEN Digitizers]), 
+	     [enable_caen=$enableval], [enable_caen=no])
 
 if test "x$enable_caen" = "xyes"
 then
 	AC_ARG_WITH([caen-digitizer-libroot],
-	[Root directory for CAEN Digitizer/VME/Comm library installation],
+	AC_HELP_STRING([ --with-caen-digitizer-libroot],
+	[Root directory for CAEN Digitizer/VME/Comm library installation]),
 	[caen_root=$withval],[caen_root=""])
 
 	if test "xx$caen_root" != "xx"
