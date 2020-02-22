@@ -694,6 +694,7 @@ AC_CONFIG_FILES([Makefile
     ddas/readoutdriver/Makefile
     caendigitizers/Makefile
     caendigitizers/dpp-pha/Makefile
+    caendigitizers/dpp-pha/skel/Makefile
     caendigitizers/dpp-psd/Makefile
     cookbooks/Makefile
     ])
