@@ -1,1 +1,1 @@
-SUBDIRS=dpp-pha dpp-psd
+SUBDIRS=dpp-pha dpp-psd caendump
