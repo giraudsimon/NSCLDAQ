@@ -9,7 +9,7 @@ DAQLIB=@prefix@/lib
 DAQINC=@prefix@/inc
 
 CAENCXXFLAGS=@CAENCCFLAGS@ -I$(DAQINC)
-CAENLDFLAGS=-lCAENDPP_PHA @CAENLDFLAGS@ -L$(DAQLIB) -liniparser -lpugixml
+CAENLDFLAGS=-lCAENDPP_PSD -lCAENDPP_PHA @CAENLDFLAGS@ -L$(DAQLIB) -liniparser -lpugixml
 
 
 
@@ -30,7 +30,7 @@ USERCXXFLAGS=$(USERCCFLAGS)
 
 USERLDFLAGS=$(CAENLDFLAGS)
 
-all: Readout 
+all: Readout
 
 #
 #  This is a list of the objects that go into making the application
@@ -40,6 +40,7 @@ OBJECTS=Skeleton.o
 
 Readout: $(OBJECTS) 
 	$(CXXLD) -o Readout $(OBJECTS) $(USERLDFLAGS) $(LDFLAGS)
+
 
 clean:  
 	rm -f $(OBJECTS) Readout regdump.o regdump

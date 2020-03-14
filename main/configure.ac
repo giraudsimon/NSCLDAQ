@@ -696,6 +696,7 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-pha/Makefile
     caendigitizers/dpp-pha/skel/Makefile
     caendigitizers/dpp-psd/Makefile
+    caendigitizers/dpp-psd/skel/Makefile
     cookbooks/Makefile
     ])
 

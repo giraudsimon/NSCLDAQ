@@ -14,3 +14,9 @@ libCAENDPP_PSD_la_SOURCES=CCompoundTrigger.cpp  CDPpPsdEventSegment.cpp \
 include_HEADERS=CCompoundTrigger.h  CDPpPsdEventSegment.h  \
 	COneOnlyEventSegment.h  CPsdCompoundEventSegment.h \
 	CPsdTrigger.h  PSDParameters.h
+
+install-exec-hook:
+	$(mkinstalldirs) @prefix@/skeletons/dpp-psd
+	$(INSTALL_DATA) @srcdir@/skel/*.cpp @prefix@/skeletons/dpp-psd
+	$(INSTALL_DATA) @srcdir@/skel/*.h   @prefix@/skeletons/dpp-psd
+	$(INSTALL_DATA) @srcdir@/skel/Makefile @prefix@/skeletons/dpp-psd
