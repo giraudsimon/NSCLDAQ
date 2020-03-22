@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+                      "file:///usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd
+"
+>
+<book>
+    <bookinfo>
+      <title>Support for CAEN digitizers</title>
+      <author><firstname>Ron</firstname><surname>Fox</surname></author>
+      <revhistory>
+          <revision>
+             <revnumber>1.0</revnumber>
+             <date>December 26, 2019</date>
+             <authorinitials>RF</authorinitials>
+             <revremark>Original Release</revremark>
+          </revision>
+      </revhistory>
+    </bookinfo>
+    <chapter>
+       <title>Introduction</title>
+       <para>
+            Support for a limited set of CAEN digitizers running either DPP-PHA
+            or DPP-PSD firmware by CAEN and has been contributed back to
+            NSCLDAQ as of version 12.0.
+            This document describes:
+       </para>
+       <itemizedlist>
+        <listitem>
+           <para>
+              How to build NSCLDAQ with this optional support included and the
+              software pre-requisistes needed to perform this build.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              An overview of the support. 
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              How to create a readout program for DPP-PHA digitizers. 
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              How to create a readout program for DPP-PSD digitizers
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              How to create a readout program that mixes DPP-PHA and DPP-PSD
+              digitizers.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              How to configure the ReadoutGUI and event builder to use these
+              devices.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Guidance on writing SpecTcl event processors for this sort of data. 
+           </para>
+        </listitem>
+       </itemizedlist>
+    </chapter>
+    <chapter>
+       <title>Overview</title>
+       <para>
+            Support for the CAEN digitizers is provided through classes that
+            allow the SBSreadout skeleton to read data from synchronized sets
+            of these digitizers.  Separate class sets have been made availabl for
+            the DPP-PHA and DPP-PSD digitizers.
+       </para>
+       <para>
+        Each of these digitizers has a large number of parameters that must be
+        set up properly to optimize pulse processing performed on-board.
+        CAEN supplies a setup/acquisition tool called COMPASS which can be
+        used to configure these parameters and see the effect of parameter
+        set choices on spectra produced by the digitizers.
+       </para>
+       <para>
+        COMPASS is available for free download from <ulink url='http://caen.it' />.
+        COMPASS can work with single digitizers or with groups of digitizers and
+        can be used to create parameter sets for synchronized sets of digitizers.
+        These parameter sets are written to XML configuration files.
+       </para>
+       <para>
+        The NSCLDAQ support classes set up the digitizers they manage by processing
+        the XML configuration files that were written by COMPASS.   These configuration
+        files are processed at the start of each run, allowing the digitizer settings
+        to be modified beteween runs.
+       </para>
+       <para>
+         Data from digitizers consists of a sequence of time ordered events from
+         each independent digitizer.  Each digitizer event represents data from
+         a single channel.  Channel events are timestamped.  The sorted event
+         streams from each digitizer must be merged into a single time ordered
+         stream of channel events and then coincident events built into meaningful
+         events.
+       </para>
+       <para>
+          The NSCL Event builder was created for exactly that purpose.  THerefore,
+          when the SBS readout program has been tailored to read CAEN digitizer
+          events, each digitizer card is assigned a unique source id.  This
+          allows the NSCL Event builder to merge and glom events across
+          all digitizers.  
+       </para>
+       <para>
+        We will say more about the special requirements for using the SBS readout
+        program with the NSCLDAQ Event builder in a later chapter.
+       </para>
+    </chapter>
+    <chapter>
+       <title>Creating event segments for DPP-PHA digitizers</title>
+       <para>
+        This chapter describes how to create a version of the SBS readout program
+        that can setup and read data from the DPP-PHA digitizers.  The steps you
+        need to follow are roughly:
+       </para>
+       <itemizedlist>
+        <listitem>
+           <para>
+              Use CAEN COMPASS to setup the digitizers, including using its
+              synchronization wizard to set up several digitizers to run in
+              a synchronized manner.  This part of the procedure is beyond the
+              scope of this document.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Obtain a copy of the DPP-PHA skeleton. 
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Edit the skeleton code to include the digitizers you want to
+              read.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Compile and test the code you've written. 
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Configure the ReadoutGUi to run the event builder to build events
+              from the channel events that are produced by the Readout.
+              This will be described in a later chapter.
+           </para>
+        </listitem>
+       </itemizedlist>
+       <para>
+        In addition to describing this process we'll also provide a definition
+        of the structure of the bodies of ring items produced by the resulting
+        readout.
+       </para>
+       <section>
+          <title>Obtaining a copy of the DPP-PHA skeleton.</title>
+          <para>
+            If you've set up the environment variables for the version of
+            NSCLDAQ you are using, you can get a copy of the DPP-PHA skeleton
+            code by creating a new empty directory, making it your current working
+            directory and issuing the command:
+          </para>
+          <informalexample>
+            <programlisting>
+cp $DAQROOT/skeletons/dpp-pha/* .
+            </programlisting>
+          </informalexample>
+          <para>
+            This should result in the following files:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><filename>Skeleton.h</filename></term>
+               <listitem>
+                   <para>
+                    The header for the skeleton application class that
+                    defines your event segments scaler banks and triggers.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><filename>Skeleton.cpp</filename></term>
+               <listitem>
+                   <para>
+                    Implementation of the skeleton.  This file will need to
+                    be modified by you to match your experimental needs.
+                    The modifications you need to make will be described in the
+                    next section.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><filename>Makefile</filename></term>
+               <listitem>
+                   <para>
+                    Makefile for the program.  This is a modified version of the
+                    SBSReadout Makefile that already includes the directives
+                    needed to properly compile and link the skeleton as is with
+                    the CAEN DPP-PHA support libraries. 
+                   </para>
+                   <para>
+                    You may need to modify this file if:
+                   </para>
+                   <itemizedlist>
+                    <listitem>
+                       <para>
+                          You require additional external libraries. 
+                       </para>
+                    </listitem>
+                    <listitem>
+                       <para>
+                          You are combining the readout with DPP-PSD digitizers.
+                          This is described in a separate chapter.
+                       </para>
+                    </listitem>
+                   </itemizedlist>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <caution>
+            <title>You cannot mix CAEN DPP digitizers with non CAEN digitizers</title>
+            <para>
+                The readout requirements of the CAEN DPP digitizers are
+                unique enough that you cannot mix reading out the CAEN digitizers
+                with non-CAEN digitizers in a single Readout program.  What you
+                can do, however is read CAEN Digitizers via the CONET fiber optic
+                link and have a second readout program read the non CAEN DPP
+                digitizers via a VME controller from the same VME crate using,
+                an SBS VME bus bridge or VMUSBReadout with a VM-USB controller.
+            </para>
+        </caution>
+        <para>
+                Once you've copied the skeleton, you can optionally build it
+                to create an empty readout:
+        </para>
+        <informalexample>
+            <programlisting>
+make
+            </programlisting>
+        </informalexample>
+       </section>
+       <section>
+          <title>Edits you must make to the DPP-PHA skeleton</title>
+          <para>
+            In this chapter we will take alook at the edits you will have to
+            make to the <filename>Skeleton.cpp</filename> file to create an
+            actual working Readout program.  As you look at the existing file,
+            note that it is an example of a fully functional readout. Therefore
+            you'll need to remove/modify existing as well as to add new lines of
+            code.
+          </para>
+          <para>
+            Briefly what you will need to do is:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Create a new <classname>CompassEventSegment</classname>  for
+                  each digitzer board in your system. 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Create a <classname>CompassMultiModuleEventSegment</classname>
+                  and add the
+                  <classname>CompasEventSegment</classname> objects you made
+                  to it.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Create a <classname>CompassTrigger</classname>  object and
+                  add all the boards to it.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Establish your <classname>CompassMultiModuleEventSegement</classname>
+                  as the experiment's event segment and your
+                  <classname>CompassTrigger</classname> object as the event
+                  trigger.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Let's take a look at the sample <filename>Skeleton.cpp</filename>'s
+          </para>
+          <example>
+            <title>DPP-PHA's <methodname>SetupReadout</methodname> method.</title>
+            <programlisting>
+void
+Skeleton::SetupReadout(CExperiment* pExperiment)
+{
+  CReadoutMain::SetupReadout(pExperiment);
+
+  // Create an event segment for each board:
+  CompassEventSegment* pBoard1 =                           <co id='phaCompassSegment' />
+    new CompassEventSegment("./compass-settings.xml", // Compass config file.
+                            1,                     // Module evb source id.
+                            CAEN_DGTZ_USB,
+                            0, 0, 0x22220000, "cheats.txt");
+
+  CompassMultiModuleEventSegment *mainSegment =           <co id='phaCompassMultiseg' />
+    new CompassMultiModuleEventSegment;
+
+  mainSegment-&gt;addModule(pBoard1);                     <co id='phaCompassMultiAddBoard' />
+
+
+
+  // Establish your trigger here by creating a trigger object
+  // and establishing it.
+
+  // The trigger needs to know about all modules too:
+
+  CompassTrigger* pTrigger = new CompassTrigger;        <co id='phaTrigger' />
+  pTrigger-&gt;addModule(pBoard1);                      <co id='phaTriggerAddBoard' />
+
+  // Create and add your event segments here, by creating them and invoking CExperiment's
+  // AddEventSegment
+
+  pExperiment-&gt;AddEventSegment(mainSegment);         <co id='phaAddSegment' />
+  pExperiment-&gt;EstablishTrigger(pTrigger);           <co id='phaEstTrigger' />
+
+
+}
+
+            </programlisting>
+          </example>
+          <calloutlist>
+            <callout arearefs='phaCompassSegment' >
+                <para>
+                    For each CAEN DPP-PHA digitizer board you are using, you
+                    must create a <classname>CompassEventSegment</classname>.
+                    This class is responsible for configuring the board and
+                    reading it out.
+                </para>
+                <para>
+                    Here's the declaration of the constructor for this
+                    class:
+                </para>
+                <constructorsynopsis>
+                    <methodname>CompassEventSegment</methodname>
+                    <methodparam>
+                        <type>std::string</type><parameter>filename</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>int</type><parameter>sourceid</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>CAEN_DGTZ_ConnectionType</type><parameter>linkType</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>int</type><parameter>linknum</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>int</type><parameter>node</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>int</type><parameter>base</parameter>
+                        <initializer></initializer>
+                    </methodparam>
+                    <methodparam>
+                        <type>const char*</type><parameter>pCheatFile</parameter>
+                        <initializer>nullptr</initializer>
+                    </methodparam>
+                </constructorsynopsis>
+                <para>
+                    These parameters have the following meaning:
+                </para>
+                <variablelist>
+                    <varlistentry>
+                       <term><parameter>filename</parameter></term>
+                       <listitem>
+                           <para>
+                            The name of the file created by COMPASS to configure
+                            the digitizers. Note that this file, in general,
+                            can contain the configuration for several digitizers.
+                            The connection parameters that follow
+                            will be matched against segments of this file to
+                            locate the configuration for this board
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>sourceId</parameter></term>
+                       <listitem>
+                           <para>
+                            From the event builder's perspective, each digitizer
+                            is an event source and must be assigned a unique
+                            source id.  This parameter provides that source id.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>linkType</parameter></term>
+                       <listitem>
+                           <para>
+                            Defines how the digitizer is connected to the system.
+                            The enumerated type provides several values, but in
+                            practice only two are useful:
+                            <literal>CAEN_DGTZ_USB</literal>  indicates
+                            the digitizers are in a VME crate that is controlled by
+                            a CAEN V1718 VME bus bridge.  Tempting as it may be,
+                            this type does <emphasis>not</emphasis> support
+                            VM-USB controllers.  <literal>CAEN_DGTZ_OpticalLink</literal>
+                            indicates that the digitizers are either directly
+                            connected to a CONET card/daisychain (recommended)
+                            or controlled via a V2718 controller (not recommended).
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>linkNum</parameter></term>
+                       <listitem>
+                           <para>
+                            The link number connected to the digitizer.  This is
+                            <literal>0</literal> if the link type is
+                            <literal>CAEN_DGTZ_USB</literal> and the
+                            CONET link number if <literal>CAEN_DGTZ_OpticaLink</literal>.
+                            For each CONET interface board in the computer, the links
+                            are numbered from 0 from the top tab of the
+                            board to the bottom of the board.  See e.g.
+                            <ulink uri='https://www.caen.it/wp-content/uploads/2017/10/A3818_both_big2.jpg' />
+                            for a diagram.
+                           </para>
+                           <para>
+                            For multiple CONET board, trial and error may be
+                            needed to determine which set of links each board
+                            controls.  In any event at that point you might
+                            want to use several readout computers so that
+                            the I/O and computing bandwidth of the host is
+                            not exceeded.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>node</parameter></term>
+                       <listitem>
+                           <para>
+                            This must be <literal>0</literal> for connection
+                            type <literal>CAEN_DGTZ_USB</literal>.
+                            For <literal>CAEN_DGTZ_OpticaLink</literal>, each
+                            link can support a daisy chain of up to targets, or
+                            nodes. The nodes are numbered sequentially from 0 to
+                            7 as they occur along the daisy chain.  Refer to
+                            3.2 of the A3818 user manual for more information
+                            about setting up a CONET daisy chain.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>base</parameter></term>
+                       <listitem>
+                           <para>
+                            If the digitizers are controlled via a VME controller,
+                            this parameter is their base address in the VME
+                            bus.  The module's base addresses are configured
+                            via rotary switches on the board. See the user
+                            manual for the V1730 or V1725, figure 7.2 for
+                            the location and meaning of these rotary switches.
+                           </para>
+                           <para>
+                            Each digitizer must specifiy a unique, non-overlapping
+                            address space in its VME bus.
+                           </para>
+                           <para>
+                            If the link type is <literal>CAEN_DGTZ_OpticaLink</literal>,
+                            this must be zero.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>cheatFile</parameter></term>
+                       <listitem>
+                           <para>
+                            The Compass XML file specifies how to configure
+                            the digitizer.  In some cases, it may be desirable
+                            or necessary to tweak register values after the
+                            digitizer is initialized but before acquisition
+                            is started.  
+                           </para>
+                           <para>
+                            This parameter provides the ability to specify
+                            a <firstterm>cheat file</firstterm>. The cheat file
+                            allows you to perform these tweaks.  If this parameter
+                            is null (the default), no cheats are performed.
+                            Otherwise, this specifies the path to the cheat file.
+                           </para>
+                           <para>
+                            The cheat file format id described in the section
+                            <xref endterm='cheatfile' linkend='cheatfile' />
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </callout>
+            <callout arearefs='phaCompassMultiseg' >
+                <para>
+                    Digitizer readout is controlled by a 
+                    <classname>CompassMultimoduleEventSegment</classname>.
+                    This line constructs one of those.  You must put your
+                    <classname>CompassEventSegment</classname> instances into
+                    one of these, even if you are only reading a single digitizer.
+                </para>
+            </callout>
+            <callout arearefs='phaCompassMultiAddBoard' >
+                <para>
+                    Shows how to add a board to the
+                    <classname>CompassMultiModuleEventSegment</classname>
+                    instance.
+                </para>
+            </callout>
+            <callout arearefs='phaTrigger' >
+                <para>
+                    The event trigger is implemented by polling for data
+                    ready in any of the digitizer boards in the system.  This
+                    is done by a <classname>CompassTrigger</classname> object
+                    that is created here.
+                </para>
+            </callout>
+            <callout arearefs='phaTriggerAddBoard' >
+                <para>
+                    The <classname>CompassTrigger</classname> object needs
+                    to know about all of the boards in order to know how
+                    to poll for a trigger.  This line adds the board
+                    we created to the trigger. You must do this for every
+                    <classname>CompassEventSegment</classname> you created and
+                    added to the <classname>CompassMultiModuleEventSegment</classname>.
+                </para>
+            </callout>
+            <callout arearefs='phaAddSegment' >
+                <para>
+                    The <classname>CompassMultiModuleEventSegment</classname>
+                    instance must be set as the event segment for the Readout.
+                    You should only create and set one of these otherwise
+                    each trigger may produce ring items with several channel hits
+                    and those may not build into proper events.
+                </para>
+            </callout>
+            <callout arearefs='phaEstTrigger' >
+                <para>
+                    Similarly, your <classname>CompassTrigger</classname> object
+                    must be set as the experiment's trigger.
+                </para>
+            </callout>
+          </calloutlist>
+       </section>
+       <section>
+          <title>Compiling and testing</title>
+          <para>
+          </para>
+       </section>
+       <section>
+          <title>Structure of data read by the DPP-PHA skeleton</title>
+          <para>
+          </para>
+       </section>
+       <section>
+        <title id='cheatfile'>Cheat files</title>
+        <para>
+            
+        </para>
+       </section>
+    </chapter>
+    <chapter>
+       <title>Creating event segments for DPP-PSD digitizers</title>
+       <para>
+       </para>
+    </chapter>
+    <chapter>
+        <title>Creating Readouts that mix DPP-PSD and DPP-PHA segments</title>
+        <para>
+            
+        </para>
+    </chapter>
+    <chapter>
+       <title>Configuring the Event builder to create events.</title>
+       <para>
+       </para>
+    </chapter>
+    <appendix>
+        <title>
+            Reference material
+        </title>
+        <para>
+            
+        </para>
+    </appendix>
+</book>
