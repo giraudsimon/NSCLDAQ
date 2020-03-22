@@ -94,15 +94,14 @@ CTCLApplication* gpTCLApplication = new Skeleton;
    \param pExperiment - Pointer to the experiment object.
 
 */
-CompassEventSegment* pBoard1;            // So SetupScalers can see it.
+
 void
 Skeleton::SetupReadout(CExperiment* pExperiment)
 {
   CReadoutMain::SetupReadout(pExperiment);
 
   // Create an event segment for each board:
-
-  pBoard1 = 
+  CompassEventSegment* pBoard1 = 
     new CompassEventSegment("./compass-settings.xml", // Compass config file.
 			    1,                     // Module evb source id.
 			    CAEN_DGTZ_USB, 
@@ -159,15 +158,6 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   pExperiment->setScalerTrigger(pTrigger);
 
   // Create and add your scaler modules here.
-  
-  // Note that there's an optional additional argument to the 
-  // CAENPHAScalers class that defaults to zero that sets the
-  // source id of scaler items.
-  // e.g. CAENPHAScalers* pBoard1Scalers = new CAENPHAScalers(pBoard1, 2);
-  //  will use source id 2.
-
-  CAENPHAScalers* pBoard1Scalers = new CAENPHAScalers(pBoard1);
-  pExperiment->AddScalerModule(pBoard1Scalers);
 
 }
 /*!
