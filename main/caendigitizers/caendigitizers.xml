@@ -430,7 +430,7 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
                             For each CONET interface board in the computer, the links
                             are numbered from 0 from the top tab of the
                             board to the bottom of the board.  See e.g.
-                            <ulink uri='https://www.caen.it/wp-content/uploads/2017/10/A3818_both_big2.jpg' />
+                            <ulink url='https://www.caen.it/wp-content/uploads/2017/10/A3818_both_big2.jpg' />
                             for a diagram.
                            </para>
                            <para>
@@ -598,11 +598,11 @@ USERLDFLAGS=$(CAENLDFLAGS)
           <para>
             Use the command:
           </para>
-          <informalexmple>
+          <informalexample>
             <programlisting>
 make
             </programlisting>
-          </informalexmple>
+          </informalexample>
           <para>
             To compile and link your program.  Prior to running it be sure the
             compass configuration file(s) you refer to have been created where
@@ -764,7 +764,7 @@ make
             Compass or not well supported by the implementation at this
             time.  Once the digitizer is configured but before it is
             started, you can optionally process a
-            <firsterm>cheat file</firsterm>
+            <firstterm>cheat file</firstterm>
         </para>
         <para>
             The cheat file specifies changes to the configuration
@@ -811,7 +811,7 @@ make
                 </listitem>
             </varlistentry>
             <varlistentry>
-               <term><literla>|</literla></term>
+               <term><literal>|</literal></term>
                <listitem>
                    <para>
                     The address is the address of a register.
@@ -859,18 +859,81 @@ make
     <chapter>
        <title>Creating event segments for DPP-PSD digitizers</title>
        <para>
+        The DPP-PSd firmware allows CAEN digitizers to perform
+        pulse shape discrimination.  This involves integrating
+        the background subtracted pulse within two integration
+        windows, a short and a long window.
+       </para>
+       <para>
+        This chapter will describe how to create event segments for
+        the DPP-PSD firmware in CAEN x730 and x725 modules.  While
+        it is possible to mix DPP-PSD and DPP-PHA modules it is not
+        possible to mix CAEN DPP modules with other types of
+        modules in the same Readout program.  Mixing
+        DPP-PSD and DPP-PHA modules will be described in the
+        next chapter.
        </para>
     </chapter>
     <chapter>
         <title>Creating Readouts that mix DPP-PSD and DPP-PHA segments</title>
         <para>
-            
+            This chapter is divided into the following sections:
         </para>
+        <itemizedlist>
+            <listitem>
+               <para>
+                  First we describe how to get the skeleton for DPP-PSD
+                  readout.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                   Next we describe how to modify the skeleton to readout the
+                   set of digitizers you are using.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  We describe how to build the resulting Readout program.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Finally we describe the structure of events readout
+                  from the DPP-PSD digitizers.
+               </para>
+            </listitem>
+        </itemizedlist>
+        <section>
+            <title>Obtaining the DPP-PSD skeleton</title>
+            <para></para>
+        </section>
+        <section>
+           <title>Modifying the DPP-PSD skeleton</title>
+           <para>
+           </para>
+        </section>
+        <section>
+           <title>Building the DPP-PSD readout program</title>
+           <para>
+           </para>
+        </section>
+        <section>
+           <title>Event format from the DPP-PSD readout.</title>
+           <para>
+           </para>
+        </section>
     </chapter>
     <chapter>
        <title>Configuring the Event builder to create events.</title>
        <para>
        </para>
+    </chapter>
+    <chapter>
+        <title>caendump</title>
+        <para>
+            
+        </para>
     </chapter>
     <appendix>
         <title>
