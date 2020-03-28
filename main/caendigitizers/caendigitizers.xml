@@ -558,18 +558,302 @@ Skeleton::SetupReadout(CExperiment* pExperiment)
        <section>
           <title>Compiling and testing</title>
           <para>
+            The skeleton program comes with a Makefile that is easy to modify
+            for your own purposes.  Normally this Makefile does not need to
+            be modified as combining CAEN DPP digitizers with other modules
+            is not supported by this Readout framework (DPP-PHA and DPP-PSD
+            may be combined and we'll get to that later).
+          </para>
+          <para>
+            The lines that cane be modified in the unlikely circumstance that you
+            need to are:
+          </para>
+          <informalexample>
+            <programlisting>
+USERCCFLAGS=$(CAENCXXFLAGS) 
+...
+USERLDFLAGS=$(CAENLDFLAGS)
+
+            </programlisting>
+          </informalexample>
+          <para>
+            The <literal>USERCCFLAGS</literal> variable can be modified to add
+            more compilation flags.  Do not remove the <literal>$(CAENCXXFLAGS)</literal>
+            macro invocation from this definition as this macro supplies flags that
+            are necessary to compile the the DPP-PHA readout Skeleton.cpp file.
+          </para>
+          <para>
+            The <literal>USERLDFLAGS</literal> variable can be modified to add
+            more linker flags.  Again, do no remove the <literal>$(CAENLDFLAGS)</literal>
+            macro invocation.  It supplies loader directives to link in
+            the libraries needed by the CAEN DPP-PHA readout program.
+          </para>
+          <para>
+            In the unlikely event that you add more source files to the
+            Readout program, modify the <literal>OBJECTS</literal>
+            definition, adding your additional desired objects.
+            These will be compiled with the USERCCFLAGS and linked into the
+            Readout program using the USERLDFLAGS you've defined.
+          </para>
+          <para>
+            Use the command:
+          </para>
+          <informalexmple>
+            <programlisting>
+make
+            </programlisting>
+          </informalexmple>
+          <para>
+            To compile and link your program.  Prior to running it be sure the
+            compass configuration file(s) you refer to have been created where
+            your objects expect them.
+          </para>
+          <para>
+            You can now run the program, either by itself or under the
+            NSCL Readout GUI (to use an event builder) and use
+            $DAQBIN/dumper to look at some of the events.
+            The next section describes the format of the data read out by
+            the DPP-PHA event segments.
           </para>
        </section>
        <section>
           <title>Structure of data read by the DPP-PHA skeleton</title>
           <para>
+            This section describes the format of the data readout by the DPP-PHA
+            readout program.  Note that usually, individual channel hits are
+            assembled into events using the NSCL event builder.  The wrapping
+            of data by the  NSCL Event builder is beyond the scope of this document.
+            See the NSCLDAQ event builder documentation for that information.
           </para>
+          <para>
+            Before going into the event structure in detail, a note about timestamps.
+            The V725 and V730 boards have a different timestamp clock rate.
+            The readout framework adjusts the timestamps from both boards
+            so that the event is tagged with a timestamp in nanoseconds.  This
+            allows the event builder to properly build data from these boards
+            (and e.g. XIA DDAS boards as well) correctly).
+          </para>
+          <para>
+            Here's a text picture of the structure of each hit's body:  Note that
+            the body header contains the source id, which in turn tells you
+            which module this packet comes from.
+          </para>
+          <example>
+            <title>DPP-PHA event structure.</title>
+            <programlisting>
++----------------------------------+
+| Event Size in bytes (uint32_t)   |
++----------------------------------+
+| Channel number (uint32_t)        |
++----------------------------------+
+|     Time tag (uint64_t) in ns    |  <co id="dpp-pha-timetag" />
++----------------------------------+
+|     Energy (uint16_t)            |  <co id="dpp-pha-packing" />
++----------------------------------+
+|     Extras 1  (uint16_t)         |  <co id ="dpp-pha-extras" />
++----------------------------------+
+|     Extras 2 (uint16_t)          |
++----------------------------------+
+| ... optional waveform data       |  <co id="dpp-pha-optionalwf" />
+|       ....                       |
+            </programlisting>
+          </example>
+          <calloutlist>
+            <callout arearefs='dpp-pha-timetag' >
+                <para>
+                    This is not the raw time tag from the digitizer.
+                    The digitizer has a 32 bit timestamp with
+                    an optional 16 bit extension that could be
+                    put in the one of the extras (see below).
+                    This timestamp can only cover a relatively short
+                    period of time (a few seconds).  Therefore,
+                    the readout program tracks wrap arounds (this is
+                    fine as long as there are not two wraps between
+                    hits), and calibrates the resulting tag to
+                    nanoseconds.  This value is the 64 bit nanosecond
+                    timestamp that also accounts for raw stamp
+                    rollovers.
+                </para>
+            </callout>
+            <callout arearefs='dpp-pha-packing' >
+                <para>
+                    A quick note that there are no pad words.
+                    Event data is tight packed.
+                </para>
+            </callout>
+            <callout arearefs='dpp-pha-extras' >
+                <para>
+                    In addition to the results of the DPP algorithm,
+                    extra words can be included in the data
+                    depending on how the digitizer is configured.
+                    These two words are called Extras 1 and
+                    Extras 2. Their contents depend on how you've
+                    configured the digitizer.
+                </para>
+            </callout>
+            <callout arearefs='dpp-pha-optionalwf' >
+                <para>
+                    Waveform data can be included.  Up to two
+                    traces of data can be put into the event
+                    depending on the configuration of the digitzer.
+                    Waveform data may also be completely
+                    suppressed, if that's how the digitizer
+                    is configured.  The form of waveform data
+                    is shown below:
+                </para>
+            </callout>
+          </calloutlist>
+          <example>
+            <title>DPP-PHA waveform data</title>
+            <programlisting>
++-----------------------------+
+| No. of Samples (uint32_t)   |
++-----------------------------+
+|  Dual trace flag (uint16_t) |
++-----------------------------+
+|  First trace                |   <co id='dpp-pha-trace1' />
+    ....
++-----------------------------+
+|  Optional second trace      |   <co id='dpp-pha-trace2' />
+     ....
++-----------------------------+
+            </programlisting>
+          </example>
+          <para>
+            The digitizer can record two waveforms per channel.
+            The contents of these waveforms depends on the
+            digitizer configuration. The waveform packet
+            begins with a uint32_t that contains the number of
+            samples in each trace (if there are two traces both
+            have the same number of samples).  If no traces
+            are recorded, this value is 0.
+          </para>
+          <para>
+            Following the number of samples is a dual trace flag.
+            This is present even if no waveforms are being recorded.
+            This flag is nonzero if waveforms are being recorded
+            and there will be two of them.  Otherwise, this flag
+            is zero.
+          </para>
+          <calloutlist>
+            <callout arearefs='dpp-pha-trace1' >
+                <para>
+                    This packet of contains one uint16_t trace
+                    value per sample.  Naturally, if the number of
+                    samples is zero, there will be no data words here.
+                </para>
+            </callout>
+            <callout arearefs='dpp-pha-trace2' >
+                <para>
+                    This packet is only present if the dual trace
+                    flag is nonzero.  It contains the second trace.
+                    Note, once more this contains a 16 bit integer
+                    per trace value.  This is omitted if the  number
+                    of samples is zero or the dual trace flag is
+                    zero but the number of samples is
+                    nonzero.
+                </para>
+            </callout>
+          </calloutlist>
        </section>
        <section>
         <title id='cheatfile'>Cheat files</title>
         <para>
-            
+            Sometimes there are tweaks  you will want to make to the
+            digitizer configuration that are not supported by
+            Compass or not well supported by the implementation at this
+            time.  Once the digitizer is configured but before it is
+            started, you can optionally process a
+            <firsterm>cheat file</firsterm>
         </para>
+        <para>
+            The cheat file specifies changes to the configuration
+            of the digitizer.  The cheat file is optionally
+            specified when the digitizer is constructed. If
+            omitted, no cheats will be applied.  Each cheat
+            file line consists of three space separated fields.
+        </para>
+        <orderedlist>
+            <listitem>
+               <para>
+                  The first field is a single character that
+                  specifies an operation.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The second field is an address, usually a register
+                  address.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The final field is a value. 
+               </para>
+            </listitem>
+        </orderedlist>
+        <para>
+            Cheat files can also have empty lines and lines that
+            begin with a <literal>#</literal>.  These lines are
+            ignored.
+        </para>
+        <para>
+            Here are the operations and what they do:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>.</literal></term>
+               <listitem>
+                   <para>
+                    The address is the address of a register.
+                    The value is set into the register.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literla>|</literla></term>
+               <listitem>
+                   <para>
+                    The address is the address of a register.
+                    The value is bitwise ored into the register's
+                    current value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>*</literal></term>
+               <listitem>
+                   <para>
+                    The address is the address of a register.
+                    The value is bitwise anded with the register.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>i</literal></term>
+               <listitem>
+                   <para>
+                    The address is a channel number.
+                    The value is one of the
+                    legal values of its pile up rejection counters
+                    in the digitizer. The value can
+                    be 128, 1024, or 8192.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>t</literal></term>
+               <listitem>
+                   <para>
+                    The address is ignored. The value is a proposed
+                    value for the module's aggregate transfer
+                    threshold.  This is the second parameter to
+                    the function
+                    <function>CAEN_DGTZ_SetDPPEventAggregation</function>
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
        </section>
     </chapter>
     <chapter>
