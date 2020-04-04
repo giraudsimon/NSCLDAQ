@@ -873,10 +873,7 @@ make
         DPP-PSD and DPP-PHA modules will be described in the
         next chapter.
        </para>
-    </chapter>
-    <chapter>
-        <title>Creating Readouts that mix DPP-PSD and DPP-PHA segments</title>
-        <para>
+      <para>
             This chapter is divided into the following sections:
         </para>
         <itemizedlist>
@@ -906,20 +903,757 @@ make
         </itemizedlist>
         <section>
             <title>Obtaining the DPP-PSD skeleton</title>
-            <para></para>
+            <para>
+                The DPP-PSD readout is a specialized version of the SBS readout
+                skeleton.  An event segment class has been written to support
+                individual board and an over-arching event segment manages the
+                collection of boards in the system.  
+            </para>
+            <para>
+                To obtain the skeleton readout program create an empty
+                directory and cd into it then, if the DAQROOT environment
+                variable points to the top level installation directory
+                of your NSCLDAQ installation:
+            </para>
+            <informalexample>
+                <programlisting>
+cp $DAQROOT/skeletons/dpp-psd/* .
+                </programlisting>
+            </informalexample>
+            <para>
+                Copies the skeleton files into the current working directory.
+                This comprises the following files:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><filename>Skeleton.h</filename></term>
+                   <listitem>
+                       <para>
+                        Header for the skeleton code file.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><filename>Skeleton.cpp</filename></term>
+                   <listitem>
+                       <para>
+                        Skeleton source code you must modify.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><filename>Makefile</filename></term>
+                   <listitem>
+                       <para>
+                        Makefile to build the Readout program.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
         </section>
         <section>
            <title>Modifying the DPP-PSD skeleton</title>
            <para>
+            Let's start by looking at the skeleton's
+            implementation of the <methodname>SetupReadout</methodname>
+            method.  Then we'll describe in general what you need to do
+            to build a multi-board system.
            </para>
+           <example>
+            <title>DPP-PSD <methodname>SetupReadout</methodname> skeleton implementation</title>
+            <programlisting>
+void
+Skeleton::SetupReadout(CExperiment* pExperiment)
+{
+  CReadoutMain::SetupReadout(pExperiment);
+
+  CDPpPsdEventSegment* pSegment =                <co id='psd-board' />
+    new CDPpPsdEventSegment(PSDBoardParameters::usb, 0, 0, 0x33330000, 1, "../settings.xml");
+  CPsdCompoundEventSegment*  pCompound = new CPsdCompoundEventSegment(); <co id='psd-mgmnt' />
+  pCompound-&gt;addModule(pSegment);               <co id='psd-addmodule' />
+
+  pExperiment-&gt;AddEventSegment(pCompound);      <co id='psd-establishsegment' />
+
+  CPsdTrigger* pTrigger = new CPsdTrigger;      <co id='psd-trigger' />
+  pTrigger-&gt;addModule(pSegment);                <co id='psd-addtrigger' />
+  pExperiment-&gt;EstablishTrigger(pTrigger);      <co id='psd-esttrigger' />
+
+}
+
+            </programlisting>
+           </example>
+           <para>
+            If you've looked at the DPP-PHA skeleton you'll see significant
+            differences.  The DPP-PSD skeleton was written second and I tried
+            to learn from the experience of building the DPP-PHA skeleton,
+            however many of the concepts are identical.
+           </para>
+           <calloutlist>
+            <callout arearefs='psd-board' >
+                <para>
+                    Every digitizer board in the system must have a
+                    corresponding <classname>CDPpPsdEventSegment</classname>
+                    object createdto manage it. The parameters to the constructor
+                    establish the connection parameters to the digitizer,
+                    it's source id and the COMPASS configuration file
+                    that contains its configuration.
+                </para>
+                <para>
+                    Here's the formal declaration of that class's constructor>
+                </para>
+                <constructorsynopsis>
+                    <methodname>CDPpPsdEventSegment</methodname>
+                        <methodparam>
+                            <type>PSDBoardParameters::LinkType </type><parameter>linkType</parameter>
+                            <initializer></initializer>
+                        </methodparam>
+                        <methodparam>
+                            <type>int</type><parameter>linkNum</parameter>
+                            <initializer></initializer>
+                        </methodparam>                    
+                        <methodparam>
+                            <type>int </type><parameter>nodeNum</parameter>
+                            <initializer></initializer>
+                        </methodparam>
+                        <methodparam>
+                            <type>int </type><parameter>base</parameter>
+                            <initializer></initializer>
+                        </methodparam>   
+                        <methodparam>
+                            <type>int</type><parameter> sourceid</parameter>
+                            <initializer></initializer>
+                        </methodparam>
+                        <methodparam>
+                            <type>const char* </type><parameter>configFile</parameter>
+                            <initializer></initializer>
+                        </methodparam>
+                </constructorsynopsis>
+                <para>
+                    The parameters of the constructor are as follows:
+                </para>
+                <variablelist>
+                    <varlistentry>
+                       <term><parameter>linkType</parameter></term>
+                       <listitem>
+                           <para>
+                            This can be either
+                            <literal>PSDBoardParameters::usb</literal> if the
+                            connection to the digitizer is either usb to a
+                            desktop digitizer or to a CAEN V1718 USB VME
+                            controller, or <literal>PSDBoardParameters::conet</literal>
+                            if the connection to the digitizer is either
+                            direct CONET (optical fiber) or via a CAEN V2718
+                            optical CVME crate controller.  For high rate applications,
+                            I recommend direct CONET connection.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>linknum</parameter></term>
+                       <listitem>
+                           <para>
+                            If the link type is PSDBoardParameters::usb, this
+                            should be zero.  Otherwise, this is the number of the
+                            link the fiber optic connecting to either this
+                            digitizer or its V2718 crate controller.
+                            See <ulink url='https://www.caen.it/wp-content/uploads/2017/10/A3818_both_big2.jpg' />
+                            for information that describes how to determine the
+                            linkid on a single CONET interface card.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>base</parameter></term>
+                       <listitem>
+                           <para>
+                            If the digitizers are VME cards controlled by either
+                            a V1718 or V2718 controller, this parameter is the
+                            VME base address assigned to the module via its
+                            rotary switches.  Each card must have a unique
+                            base address and its address space must not overlap
+                            any other cards in the system.  If the digitizers
+                            are directly connected to CONET, this must be
+                            zero.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    
+                    <varlistentry>
+                       <term><parameter>nodeNum</parameter></term>
+                       <listitem>
+                           <para>
+                            Each CONET link can service up to eight digitizers
+                            by daisy chaining the fiber optics.  The Tx
+                            fiber goes from the interface to the Rx input
+                            of the node 0 and the Tx Fiber then goes from
+                            the Tx of that board to the Rx of node 1 and
+                            so on until the Tx of the last board goes back to the
+                            Rx input of the interface board.
+                           </para>
+                           <para>
+                            The nodes on this ring network are numbered from 0
+                            to 7 starting with the first board connected to the
+                            Tx of the interface board. Refer to
+                            3.2 of the A3818 user manual for more information
+                            about setting up a CONET daisy chain and how
+                            the nodes are numbered along the chain.
+                            For USB connections this should also be zero.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>sourceid</parameter></term>
+                       <listitem>
+                           <para>
+                            This is the source id that will be assigned to hits
+                            from the channels on this board.  Each board in the
+                            entire system must have a unique source id.
+                            This source id will be used by the NSCL event builder
+                            to weave together hits from several modules into
+                            events.
+                           </para>
+                           <para>
+                            If you are mixing data from CAEN digitizers
+                            with other data sources, again
+                            <emphasis>every</emphasis> data source
+                            in the system must have a unique
+                            source id.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><parameter>configFile</parameter></term>
+                       <listitem>
+                           <para>
+                            Is the path to the configuration file that was
+                            used to configure the digitizer in COMPASS.  This
+                            configuration file can be used for several digitizers.
+                            The connection parameters in the configuration file
+                            will be matched against the configuration parameters
+                            for this board to determine which board configuration
+                            to use.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist>
+            </callout>
+            <callout arearefs='psd-mgmnt' >
+                <para>
+                    Board readout is managed by a
+                    <classname>CPsdCompundEventSegment</classname>.  Therefore
+                    you must instantiate exactly one of these to manage the
+                    readout from the devices.
+                </para>
+            </callout>
+            <callout arearefs='psd-addmodule' >
+                <para>
+                    Each module object must be added to the
+                    <classname>CPsdCompoundEventSegment</classname>
+                    so that it knows it must configure and readout
+                    the board.
+                </para>
+            </callout>
+            <callout arearefs='psd-establishsegment' >
+                <para>
+                    The <classname>CPsdCompoundEventSegment</classname>
+                    must then be established as the experiment's
+                    event segment.
+                </para>
+            </callout>
+            <callout arearefs='psd-trigger' >
+                <para>
+                    The trigger for reading data is that at
+                    least one digitizer has data available to read.
+                    The <classname>CPsdTrigger</classname> class,
+                    is therefore instantiated to fairly poll
+                    the triggers in the digitizers.
+                </para>
+            </callout>
+            <callout arearefs='psd-addtrigger' >
+                <para>
+                    <classname>CPsdTrigger</classname> also needs
+                    to know about the individual
+                    <classname>CDPpPsdEventSegment</classname>
+                    objects as it polls data availability by
+                    asking each segment if it is ready to be read out.
+                </para>
+            </callout>
+            <callout arearefs='psd-esttrigger' >
+                <para>
+                    Finally the <classname>CPsdTrigger</classname>
+                    object is established as the event trigger
+                    for the Readout program.
+                </para>
+            </callout>
+           </calloutlist>
+           <para>
+            Thus preparing a Skeleton consists of:
+           </para>
+           <orderedlist>
+            <listitem>
+               <para>
+                  Creating a <classname>CDPpPsdEventSegment</classname>  object
+                  for each digitizer.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Creating a <classname>CPsdCompoundEventSegment</classname>
+                  object to manage all <classname>CDPpPsdEventSegment</classname>
+                  objects and adding each of those objects to the
+                  <classname>CPsdCompoundEventSegment</classname> object and
+                  finally adding the compound event segment to the experiment's
+                  event segment.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Creating a <classname>CPsdTrigger</classname> object
+                  to poll the boards to determine if they can be readout.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Add each board to the trigger object. 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Establish the <classname>CPsdTrigger</classname>  object
+                  as the Readout's trigger.
+               </para>
+            </listitem>
+           </orderedlist>
         </section>
         <section>
            <title>Building the DPP-PSD readout program</title>
            <para>
+            Normally the Makefile provided with the skeleton is sufficient and
+            does not require modification.  This is because the CAEN digitizers
+            are multi-event buffered devices and it's not supported to
+            operate them in conjunction with other devices.  An actual
+            event might be read out in response to several re-triggerings
+            across several channels in the same or different boards.
+           </para>
+           <para>
+            If you do need to modify the skeleton to include additional
+            files and, perhaps, include additional libraries, the following
+            definitions in the Makefile can be modified:
+           </para>
+           <variablelist>
+            <varlistentry>
+               <term><literal>USERCCFLAGS</literal></term>
+               <listitem>
+                   <para>
+                    This definition supplies the compilation
+                    flags to the g++ compiler.  You can use
+                    this to add include directories or define
+                    pre-processor symbols or add any additional
+                    compilation flags you need.
+                   </para>
+                   <para>
+                    <emphasis>Do not</emphasis> remove the
+                    <literal>$(CAENCXXFLAGS)</literal> from
+                    that definition.  It is required for the
+                    build to locate headers for the CAEN digitizer
+                    support libraries.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>USERLDFLAGS</literal></term>
+               <listitem>
+                   <para>
+                    This definition provides flags to the g++
+                    command's dispatch of  <command>ld</command>
+                    the linker.  If you need additional libraries,
+                    or other link time flags and directives,
+                    they can be appended to this definition.
+                   </para>
+                   <para>
+                    <emphasis>Do not</emphasis> remove the
+                    <literal>$(CAENLDFLAGS)</literal> from this
+                    definition as it specifies the libraries
+                    and other link directives needed to
+                    link in the CAEN digitizer support libraries.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>OBJECTS</literal></term>
+               <listitem>
+                   <para>
+                    Provides the names of additional objects to link
+                    into the final Readout.  Append to this if you
+                    have additional source or pre-built object
+                    modules you need.  
+                   </para>
+                   <para>
+                    Unless you specify exact build rules for
+                    the objects from source, the g++ will be
+                    used for files with C++ extensions and
+                    gcc for files with C extensions.  The
+                    compilation flags will be determined by
+                    both rules in the centralized
+                    <filename>$DAQROOT/ect/SBSRdoMakeIncludes</filename>
+                    file and the <literal>USERCCFLAGS</literal>.
+                   </para>
+                   <para>
+                    If you have other requirements you may, of course
+                    specifiy a dependency and associated Makefile
+                    build rule.  Doing this is beyond the scope of
+                    this document.  See primers on gnumake
+                    for more information about how to do that.
+                   </para>
+                </listitem>
+            </varlistentry>
+           </variablelist>
+           <para>
+            Once the Makefile is to your liking:
+           </para>
+           <informalexample>
+            <programlisting>
+make
+            </programlisting>
+           </informalexample>
+           <para>
+            Will build your tailored Readout program. After you've
+            fixed any compilation errors you can either run the
+            Readout program directly on the system interfaced to the
+            digitizers or set up the program to run as a
+            data source with the ReadoutShell
            </para>
         </section>
         <section>
            <title>Event format from the DPP-PSD readout.</title>
+           <para>
+            This section describes the format for each hit
+            (channel event) from the PSD digitizers.  Normally,
+            hits are sent to an event builder where they are wrapped
+            in event builder headers and bundled into events
+            that consist of hits that have occured within some
+            time period of a first hit.
+           </para>
+           <para>
+            This section will describe the raw body of hits
+            produced by the Readout program prior to event building.
+            Each event is a ring item of type
+            <literal>PHYSICS_EVENT</literal>.   These events
+            have the standard body header that carries the
+            timestamp and source id among other things.
+            The actual body of the event follows the body header
+            and has the following structure:
+           </para>
+           <example>
+            <title>Format of DPP-PSD event bodies</title>
+            <programlisting>
++-----------------------------------+
+| Size of hit body (uint32_t)       |
++-----------------------------------+
+| Raw cumulative timestamp uint64_t |  <co id='psdstruct-stamp' />
++-----------------------------------+
+| channel number (uint16_t)         |
++-----------------------------------+
+|  Short gate charge (uint16_t)     |
++-----------------------------------+
+|  Long gate charge (uint16_t)      |
++-----------------------------------+
+|  Baseline (uint16_t)              |
++-----------------------------------+
+| Pile up rejection flag (uint16_t) |
++-----------------------------------+
+| Wave form data ...  see below     |
+       ...
++-----------------------------------+
+            </programlisting>
+           </example>
+            <calloutlist>
+                <callout arearefs='psdstruct-stamp' >
+                    <para>
+                        The timestamp in the raw hit from the digitizer
+                        is 32 bits wide and is in digitizer
+                        size specific units.   This has two problems.
+                        First, 32 bits of timestamp only allow for
+                        a few seconds of run time before the timestamp
+                        rolls over.  Second, device specific units of
+                        the raw timestamp would make event building
+                        with a heterogeneous set of digitizers
+                        impossible.  The event builder expects
+                        all data sources to be running at the same
+                        timestamp frequency.
+                    </para>
+                    <para>
+                        The timestamp in the event body is computed
+                        using wrap detection and a carry counter to
+                        produce a true 64 bit timestamp in the
+                        device units.   This timestamp is accurate
+                        as long as the channel it comes from
+                        does not roll over more than once between
+                        hits.
+                    </para>
+                    <para>
+                        The resulting timestamp is then multiplied by
+                        the number of nanoseconds per digitizer
+                        timestamp tick and the resulting timestamp
+                        in nanoseconds is put into the event's body
+                        header.   The event builder only cares
+                        about the body header.  This allows all digitizers
+                        to present timestamps with a common time base
+                        (nanosecond units) to the event builder.
+                    </para>
+                    <para>
+                        Note that the software supporting XIA
+                        Pixie16 modules also presents body header
+                        timestamps in nanosecond units making it
+                        possible to directly build XIA and
+                        CAEN digital data acquisition system event
+                        fragments together.
+                    </para>
+                </callout>
+            </calloutlist>
+            <para>
+                The remainder of the event structure should be
+                self explanatory from the description of the
+                digitizer, with the exception of the waveform
+                data.  Note that the digitizer this hit came
+                from can be deduced from the source id located
+                in the hit's body header.
+            </para>
+            <para>
+                The digitizers can be told to acquire waveforms.
+                The structure of waveform data is as follows:
+            </para>
+            
+            
+            <example>
+                <title>DPP-PSD waveform data</title>
+                <programlisting>
++-------------------------------------------+
+|  sample Size of waveform data (uint32_t)  | <co id='psdfmt-wfsize' />'
++-------------------------------------------+
+|  Number of samples     (uint32_t)         | <co id='psdfmt-trlen' />
++-------------------------------------------+
+|  Dual trace (uint8_t)                     | <co id='psdfmt-dt' />
++-------------------------------------------+
+|  Analog probe selector (uint8_t)          | <co id='psdfmt-aprobe' />
++-------------------------------------------+
+|  Trace 1 (no samples * uint16_t)          |
++-------------------------------------------+
+|  Optional Trace2 (no samples *uint16_t)   | <co id='psdfmt-tr2' />
++-------------------------------------------+
+                </programlisting>
+            </example>
+            <calloutlist>
+                <callout arearefs='psdfmt-wfsize' >
+                    <para>
+                        Provides the number of bytes of waveform
+                        data.  The size is inclusive of this
+                        longword.
+                        Note that if there is not waveform
+                        data, this will be <literal>sizeof(uint32_t)</literal>.
+                        That indicates there is no data following the
+                        size word.
+                    </para>
+                </callout>
+                <callout arearefs='psdfmt-trlen' >
+                    <para>
+                        This  and subsequent words are only present
+                        if there is trace data
+                        (the prior longword is not sizeof(uint32_t)).
+                        In that case, this is the number of samples
+                        in each trace.  Note that in dual trace mode,
+                        both traces have the same number of samples,
+                        making it unecessary to have two trace lengths.
+                    </para>
+                </callout>
+                <callout arearefs='psdfmt-dt' >
+                    <para>
+                        This byte is non-zero if there are two traces
+                        or zero if only one.
+                    </para>
+                </callout>
+                <callout arearefs='psdfmt-aprobe' >
+                    <para>
+                        This word along with the dual trace flag
+                        describes the meaning of the data in the trace(s).
+                        This is essentially the value of the
+                        board configuration register bits 12,13.
+                        The meaning of these bits depends on whether
+                        dual trace is enabled.
+                    </para>
+                    <para>
+                        If dual trace is not enabled, a value of zero
+                        means the trace is the input waveform.
+                        A value of 1 means the trace is the CFD
+                        waveform.
+                    </para>
+                    <para>
+                        If dual trace is enabled;
+                        A value of zero means the first trace
+                        is the input waveform while the second trace
+                        is the runnning baseline determination.  A value
+                        of 1 means that the first trace is the CFD and
+                        the second trace, again the running baseline
+                        determination. A value of 2 means that the
+                        first trace is the input waveform and the second
+                        trace the CFD.
+                    </para>
+                    <para>
+                        If only it were that simple.  The
+                        CFD trace is only available if CFD discrimination
+                        is enabled.  If it is disabled, then the
+                        "CFD" trace is actually the smoothed input
+                        trace.
+                    </para>
+                </callout>
+                <callout arearefs='psdfmt-tr2' >
+                    <para>
+                        Note that the second trace is not present unless
+                        the dual trace flag is nonzero.
+                    </para>
+                </callout>
+            </calloutlist>
+        </section>
+    </chapter>
+    <chapter>
+        <title>Creating Readouts that mix DPP-PSD and DPP-PHA segments</title>
+        <para>
+            There are two ways to mix DPP-PSD and DPP-PHA event segments.
+        </para>
+        <itemizedlist>
+            <listitem>
+               <para>
+                  Use one readout program for the DPP-PHA digitizers
+                  and a second for the DPP-PSD digitizers.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Use a single readout and combine the data from
+                  both digitizers.
+               </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            Note that whichever you choose, you must determine which
+            of the digitizers is the master timing source on the
+            daisy chain and configure both types of digitizers
+            accordingly.  Using the COMPASS synchronization
+            wizard can help you with this.
+        </para>
+        <para>
+            If you use two readouts, you can stil have a common
+            XML configuration file as both programs can locate
+            their digitizers from within the XML configuration and
+            will ignore digitizers they've not been told about.
+        </para>
+        <para>
+            The remainder of this chapter will describe how to
+            merge data from both digitizers into a single readout
+            program.  Briefly here are the steps to follow:
+        </para>
+        <itemizedlist>
+           <listitem>
+              <para>
+                 Obtain the DPP-PSD skeleton. 
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Add appropriate <literal>#include</literal>
+                 definitions to pull in the class headers you need
+                 from the DPP-PHA framework.
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Edit the skeleton to make DPP-PSD event segments
+                 and a <classname>CDPpPsdCompoundEventSegment</classname>
+                 as you normally would for configuring
+                 the the skeleton
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Add to that configuration the
+                 <classname>CompassEventSegment</classname> objects
+                 and <classname>CompassMultiModuleEventSegment</classname>
+                 as you normally would for the DPP-PHA skeleton.
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                Create a <classname>COneOnlyEventSegment</classname>
+                object and insert into it both the
+                <classname>CDPpPsdCompoundEventSegment</classname>
+                and the <classname>CCompassMultiModuleEventSegement</classname>
+                you created in the previous steps.
+                Register that object as Readout's event segment.
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Create and fill both <classname>CPsdTrigger</classname>
+                 and <classname>CompassTrigger</classname> objects
+                 as you would for the DPP-PSD and DPP-PHA
+                 skeletons.
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Create a <classname>CCompoundTrigger</classname>
+                 object and insert both the DPP-PHA and DPP-PSD
+                 trigger objects into it. Then register
+                 this compound trigger object as the event trigger.
+              </para>
+           </listitem>
+           <listitem>
+              <para>
+                 Edit the Makefile so that it will link in the
+                 CAENDPP_PHA library in addition to the
+                 libraries it already does (that library
+                 has the DPP-PHA support code we're using).
+                 Then build the resulting code.
+              </para>
+           </listitem>
+        </itemizedlist>
+        <para>
+         The remaining sections of this chapter:
+        </para>
+        <itemizedlist>
+         <listitem>
+            <para>
+               Show the extra <literal>#include</literal>
+               directives you need to add to the top
+               of the DPP-PSD <filename>Skeleton.cpp</filename>
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Provide a sample edit of Skeleton.cpp to
+               manage a single DPP-PSD and DPP-PHA module.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Show the Makefile edits required to build
+               the resulting Readout program.
+            </para>
+         </listitem>
+        </itemizedlist>
+        <section>
+            <title>Include additional Headers in the skeleton</title>
+            <para>
+                
+            </para>
+        </section>
+        <section>
+           <title>Editing the <methodname>SetupReadout</methodname> method</title>
+           <para>
+           </para>
+        </section>
+        <section>
+           <title>Makefile edits required.</title>
            <para>
            </para>
         </section>
