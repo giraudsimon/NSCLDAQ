@@ -166,7 +166,7 @@ readRegisterDefs()
 {
   std::ifstream in("./registers.txt");
   if (!in) {
-    std::cerr << "Can't find registeres.txt - register definition file \n";
+    std::cerr << "Can't find registers.txt - register definition file \n";
     Usage();
   }
   in >> std::hex;
