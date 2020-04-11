@@ -112,8 +112,8 @@
         program with the NSCLDAQ Event builder in a later chapter.
        </para>
     </chapter>
-    <chapter>
-       <title>Creating event segments for DPP-PHA digitizers</title>
+    <chapter id='dpppha-evtseg'>
+       <title id='dpppha-evtseg-title'>Creating event segments for DPP-PHA digitizers</title>
        <para>
         This chapter describes how to create a version of the SBS readout program
         that can setup and read data from the DPP-PHA digitizers.  The steps you
@@ -1609,11 +1609,9 @@ make
            </listitem>
            <listitem>
               <para>
-                 Edit the Makefile so that it will link in the
-                 CAENDPP_PHA library in addition to the
-                 libraries it already does (that library
-                 has the DPP-PHA support code we're using).
-                 Then build the resulting code.
+                 Note the DPP-PSD skeleton already links both the
+                 DPP-PSD and PP-PHA support libraries so no
+                 modification should be required.
               </para>
            </listitem>
         </itemizedlist>
@@ -1644,37 +1642,680 @@ make
         <section>
             <title>Include additional Headers in the skeleton</title>
             <para>
-                
+                In order to merge modules we need to add the
+                following preprocessor <literal>#include</literal>
+                directives to the top of the Skeleton.cpp amongst
+                the other <literal>#include</literal> directives:
             </para>
+            <example>
+                <title>Combining DPP-PSD and DPP-PSD Skeleton headers</title>
+                <programlisting>
+
+#include &lt;COneOnlyEventSegment.h&gt;        <co id='comb-oohdr' />
+
+
+#include &lt;CompassTrigger.h&gt;
+#include &lt;CompassMultiModuleEventSegment.h&gt;
+#include &lt;CompassEventSegment.h&gt;         <co id='combo-phahdr'/>
+#include &lt;CompassProject.h&gt;
+                </programlisting>
+            </example>
+            <calloutlist>
+                <callout arearefs='comb-oohdr' >
+                    <para>
+                        This header brings in the class we'll
+                        use to combine the two compound event
+                        segments for the PHA and PSD boards.
+                        We'll have more to say about it when
+                        we look at the edits to
+                        <methodname>SetupReadout</methodname>
+                    </para>
+                </callout>
+                <callout arearefs='combo-phahdr' >
+                    <para>
+                        These headers just include the set of
+                        class headers included in the
+                        DPP-PHA skeleton.  They give us access
+                        to the classes we need to create DPP-PHA
+                        board, event segment and trigger objects.
+                    </para>
+                </callout>
+            </calloutlist>
         </section>
         <section>
            <title>Editing the <methodname>SetupReadout</methodname> method</title>
            <para>
+            Now let's look at the combined
+            <methodname>SetupReadout</methodname> implementation.
+            If you're not yet familiar with building Readout programs
+            that can read DPP-PSD and DPP-PHA modules by themselves,
+            become familiar now.  This discussion assumes that
+            familiarity.
            </para>
+           <example>
+            <title>Implementing <methodname>SetupReadout</methodname> combining DPP-PSD and DPP-PHA modules</title>
+            <programlisting>
+void
+Skeleton::SetupReadout(CExperiment* pExperiment)
+{
+  CReadoutMain::SetupReadout(pExperiment);
+                                          <co id='comb-dpp-psd' />
+  CDPpPsdEventSegment* pPsdBoard =
+    new CDPpPsdEventSegment(PSDBoardParameters::usb, 0, 0, 0x33330000, 1, "../settings.xml");
+  CPsdCompoundEventSegment*  pPsd = new CPsdCompoundEventSegment();
+  pPsd-&gt;addModule(pPsdBoard);
+
+                                         <co id='comb-dpp-pha' />
+  CompassEventSegment* pPhaBoard = 
+    new CompassEventSegment("./settings.xml", // Compass config file.
+			    1,                     // Module evb source id.
+			    CAEN_DGTZ_USB, 
+			    0, 0, 0x22220000);
+  
+  CompassMultiModuleEventSegment *pPha = 
+    new CompassMultiModuleEventSegment;
+
+  pPha-&gt;addModule(pPhaBoard);
+
+  COneOnlyEventSegment* pCombined = new COneOnlyEventSegment; <co id='comb-comb-seg' />
+  pCombined-&gt;addModule(pPsd);                              <co id='comb-comb-psd' />
+  pCombined-&gt;addModule(pPha);                              <co id='comb-comb-pha' />
+
+  pExperiment-&gt;AddEventSegment(pCombined);                <co id='comb-estseg' />
+
+  CPsdTrigger* pPsdTrigger = new CPsdTrigger;                <co id='comb-psdtrig' />
+  pPsdTrigger-&gt;addModule(pPsdBoard);
+  CompassTrigger* pPhaTrigger = new CompassTrigger;          <co id='comb-pha-trig' />
+  pPhaTrigger-&gt;addModule(pPhaBoard);
+
+  CCompoundTrigger* pTrigger = new CCompoundTrigger;       <co id='comb-combtrigger' />
+  pTrigger-&gt;addTrigger(pPsdTrigger);                    <co id='comb-combpsd-trig' />
+  pTrigger-&gt;addTrigger(pPhaTrigger);                    <co id='comb-combpha-trig' />
+
+  pExperiment-&gt;EstablishTrigger(pTrigger);              <co id='comb-esttrig' />
+  
+}
+
+            </programlisting>
+           </example>
+           <calloutlist>
+            <callout arearefs='comb-dpp-psd' >
+                <para>
+                    This section of code creates an event segment with a
+                    single DPP-PSD board. You can expand that code to have
+                    as many DPP-PSD boards as you need.
+                </para>
+            </callout>
+            <callout arearefs='comb-dpp-pha' >
+                <para>
+                    Similarly, this section of code creates an event segment
+                    with a single DPP-PHA board.  You can expand that cde
+                    to have as many DPP-PHA boards as you need.
+                </para>
+            </callout>
+            <callout arearefs='comb-comb-seg' >
+                <para>
+                    The <classname>COneOnlyEventSegment</classname> class
+                    is a container for event segments.  The SBS readout framework
+                    supplies a compound event segment already, but that segment
+                    glues all contained event segments that have data to supply
+                    into a single event. This is not suitable for use
+                    here as we want each hit to live in its own ring item.
+                </para>
+                <para>
+                    The <classname>COneOnlyEventSegment</classname>, like the
+                    compound event segments for DPP-PHA or DPP-PSD segments
+                    stops asking event segments for data once one of them
+                    supplies data.   Like the DPP-PHA and DPP-PSD segments,
+                    it does a round robbin polling to ensure that
+                    DPP-PSD does not starve out DPP-PHA or vica versa.
+                </para>
+            </callout>
+            <callout arearefs='comb-comb-psd' >
+                <para>
+                    Here we add the DPP-PSD compound event segment we generated
+                    to the overall compound segment for the event.
+                </para>
+            </callout>
+            <callout arearefs='comb-comb-pha' >
+                <para>
+                    Similarly we add the DPP-PHA segment.
+                </para>
+            </callout>
+            <callout arearefs='comb-estseg' >
+                <para>
+                    Finally the <classname>COneOnlyEventSegment</classname>
+                    compound event segement is set as the experiments event
+                    segment.  
+                </para>
+            </callout>
+            <callout arearefs='comb-psdtrig' >
+                <para>
+                    A PSD trigger is created as before and the PSD modules
+                    added to it.
+                </para>
+            </callout>
+            <callout arearefs='comb-pha-trig' >
+                <para>
+                    Similarly a PHA trigger is created and the PHA module
+                    added to it.
+                </para>
+            </callout>
+            <callout arearefs='comb-combtrigger' >
+                <para>
+                    A compound trigger is a container trigger. It's trigger
+                    check method will return the OR of all of its component
+                    triggers.  Creating this trigger object allows us to
+                    combine the trigger for both the PSD and PHA
+                    modules.
+                </para>
+            </callout>
+            <callout arearefs='comb-combpsd-trig' >
+                <para>
+                    Adds the PSD trigger to the compound trigger object.
+                </para>
+            </callout>
+            <callout arearefs='comb-combpha-trig' >
+                <para>
+                    Similarly adds the PHA trigger to the compound trigger
+                    object.
+                </para>
+            </callout>
+            <callout arearefs='comb-esttrig' >
+                <para>
+                    Establishing the compound trigger as the event trigger
+                    allows the Readout to initiate a readout if either a
+                    PHA module or a PSD module have data.
+                </para>
+            </callout>
+           </calloutlist>
         </section>
         <section>
            <title>Makefile edits required.</title>
            <para>
+            By using the PSD Readout as a starting point, both the DPP-PHA
+            and DPP-PSD support libraries are linked into the Readout.
+            At this point in time, the same is
+            <emphasis>not</emphasis> the case for the PHA readout skeleton.
+           </para>
+           <para>
+            If you use the PSD readout as a starting point, no Makefile
+            changes are needed.
            </para>
         </section>
     </chapter>
     <chapter>
-       <title>Configuring the Event builder to create events.</title>
+       <title>Configuring the Event builder and ReadoutGUI to create events.</title>
        <para>
+        CAEN Digitizer Readout programs treat each module in the sysem as a unique
+        data source.   Each module produces a time ordered sequence of
+        hits.  But the data read across modules does not guarantee a totally
+        time ordered set of fragments across all modules in the system.
        </para>
+       <para>
+        Treating each module as a separate data source requires a few special
+        bits of handling when setting up the event builder.
+       </para>
+       <itemizedlist>
+        <listitem>
+           <para>
+              Since Readout only issues one Begin run and End run ring item, but has
+              several data sources, the Readout program must be configured to
+              not mark these records with a barrier type.  Otherewise at the
+              start and end of each run, the event builder will stall on
+              a barrier wait until there's a barrier timeout.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The source id given to the Readout program should match one of the
+              module sourceids.  That ensures that the non physics hit ring items
+              (Begin run, end run, pause run, esuem run, scaler, trigger count),
+              are emitted with a source id that is one of the module sourceids.
+              This is a best practice, you can use an additional source id just
+              for those records.  See below, however.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The ring fragment source(s) for the event builder must be
+              configured to accept data from all source ids their Readout's
+              emit.
+           </para>
+        </listitem>
+       </itemizedlist>
+       <para>
+            Let's look at an example where the Readout program has
+            three modules, configured for source id 1, 2 and 3.
+            The Readout program must haved the following command line options
+            specified in its data source specification in the ReadoutShell:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><option>-ring</option></term>
+               <listitem>
+                   <para>
+                    As usual this must be supplied and should specify
+                    a ring buffer into which the raw hit data will be put.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--sourceid</option></term>
+               <listitem>
+                   <para>
+                    As a best practice, this should specify one of the
+                    source ids (e.g. <literal>1</literal>) configured
+                    for one of the module event segment objects.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--no-barriers</option></term>
+               <listitem>
+                   <para>
+                    Turns off barrier synchronization.
+                    This must be specified for <emphasis>ALL</emphasis> readout
+                    programs in the event builder, not just the CAEN ones.
+                    If any Readout program doesn not have this flag, the
+                    event builder will stall until a barrier timeout at all
+                    run state transitions.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The ReadoutGUI's <filename>ReadoutCallouts.tcl</filename> file
+            specifies both the use of the event builder and ring fragment
+            sources that will take data from the raw ring item rings, package
+            them up and send them off to the event builder.
+        </para>
+        <para>
+            The form of the command used to specify how ring fragment
+            sources are started is:
+        </para>
+        <informalexample>
+            <programlisting>
+::EVBC::registerRingSource sourceURI tstamplib ids info ?expectHeaders? ?oneshot? ?timeout? ?timeoffset?
+            </programlisting>
+        </informalexample>
+        <para>
+            Used with the CAEN Digitizer library, the <parameter>ids</parameter>
+            parameter must specify all parameter ids as a well formatted
+            Tcl list.  Suppose we have the Readout program described
+            above (source ids 1,2,3), putting data in tcp://spdaq20/caenraw.
+            We would need to register a ring fragment source as follows:
+        </para>
+        <example>
+            <title>Specifying the ring fragment source for a CAEN digitizer collection</title>
+            <programlisting>
+::EVBC::registerRingSource tcp://spdaq20:/caenraw "tstamplib"" \
+                                    [list 1 2 3] "CAEN_DIGITIZERS" 1 1
+            </programlisting>
+        </example>
+        <para>
+            Note how the source ids is a list of the source ids emitted
+            by the Readout program.  We've also specified that the ring fragment
+            source operates only for a single run.  This is suitable for cases
+            when you've specified the event builder will start up fresh for each
+            new run.
+        </para>
     </chapter>
     <chapter>
         <title>caendump</title>
         <para>
-            
+            When troubleshooting a configuration it can sometimes be useful
+            to look at the contents of digitizer registers.  <filename>caendump</filename>
+            is a program that provide that dump.
         </para>
+        <para>
+            Here's the usage text you get if you just issue the command
+            <command>$DAQBIN/caendump</command>
+        </para>
+        <informalexample>
+            <programlisting>
+Can't find registers.txt - register definition file
+Usage
+   caendump linktype linknum node [base]
+     linktype: 0 USB, 1 Optical
+     base is needed if the link is to a VME bus bridge and is
+     the module's base address
+     Note the file registers.txt will be read in in the cwd to
+     decide which registers to dump.
+
+            </programlisting>
+        </informalexample>
+        <para>
+            Note the first line.  It says that there must be a file
+            named <filename>registers.txt</filename> must exits
+             in the current working directory.   This file describes the
+             registers you want to dump.  The file is a text file that is
+             made up of lines that contain three fields.  In order:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term>The textual name of the register</term>
+               <listitem>
+                   <para>
+                    This should not have any whilespace.  Legal examples:
+                    <literal>Acquisition</literal> or
+                    <literal>DPP_Control</literal>.
+                    <literal>DPP Control</literal> is not legal.
+                   </para>
+                   <para>
+                    This text labels the data dumped for that register.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>The register address.</term>
+               <listitem>
+                   <para>
+                    For VME interfaces, this is the offset from the module
+                    base address at which the register is located. You can get this
+                    value from the CAEN register level documentation for the
+                    module, which you need to interpret the output in any event.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Per channel flag</term>
+               <listitem>
+                   <para>
+                    Some registers have an instance per channel.  These have
+                    base addresses in the CAEN documentation that look like
+                    <literal>anbc</literal> where, a,b,c are hex digits
+                    and n is the literal n.  For these registers,
+                    specify a base address of <literal>a0bc</literal> and set
+                    this flag to be 1 to dump all 16 registers.
+                   </para>
+                   <para>
+                    For single registers, whose addresses are given in the form
+                    <literal>abcd</literal>  where a,b,c and d are hex digits,
+                    give the base address as documented and set the flag to 0.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The command line parameters for <filename>caendump</filename> supply
+            the connection parameters to allow the program to access the
+            desired digitizer.
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>linktype</literal></term>
+               <listitem>
+                   <para>
+                    Is the manner in which the digitizer is connected to the
+                    host computer.  <literal>0</literal> should be used for
+                    VME USB controllers or for USB connected desktop digitizers.
+                    <literal>1</literal> should be used for optically connected
+                    digitizers e.g. VME CONET controllers or digitizers directly
+                    connected by fiber optics.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>linknum</term>
+               <listitem>
+                   <para>
+                    The integer link number connected to the digitizer or
+                    the VME interface controlling the digitizer crate. Refer
+                    to the discussion in 
+                    <link linkend='dpppha-evtseg' endterm='dpppha-evtseg-title' />
+                    for constructing an event segment to determine the value of
+                    this term.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>node</term>
+               <listitem>
+                   <para>
+                    Used only in CONET connections. This is the node number
+                    of the target on the CONET daisy chain.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>base</term>
+               <listitem>
+                   <para>
+                    If the module is interfaced via a VME controller, this is
+                    its VME base address configured into the module's rotary
+                    switches.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        
     </chapter>
     <appendix>
         <title>
             Reference material
         </title>
         <para>
-            
+            For the most part, this material can be ignored by end users.
+            This section is provided for completeness to document the set of
+            classes and structs that form the support code.  
         </para>
+        <para>
+            This appendix is divided into two sections.  The first documents
+            the DPP-PHA support clases and the second, the DPP-PSD support classes.
+        
+        </para>
+        <section>
+            <title>DPP-PHA support classes.</title>
+            <para>
+                The DPP-PHA support classes went through  couple of iterations.
+                The first version was built to operate with the configuration files
+                used by a discontinued CAEN Product called
+                <literal>MC<superscript>2</superscript>A</literal>.  CAEN released the
+                more functional COMPASS data acquisition tool.  The original
+                customers then requested that the DPP-PHA support operate
+                with the XML based configuration files written by that program.
+            </para>
+            <para>
+                The original support therefore mostly still exists as a layer
+                of code in this second iteration.  
+            </para>
+            <para>
+                Note tht the pugixml library, included in the CAEN DPP support
+                is used to do XML parsing.  For information about this
+                library see
+                <ulink url='https://pugixml.org/' />
+            </para>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CAENPhaChannelParameters</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CAENPhaChannelParameters</refname>
+                  <refpurpose>Capture per channel parameters and their parsing.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CAENPhaCHannelParameters.h&gt;
+
+class CAENPhaChannelParameters
+{
+
+public:
+  CAENPhaChannelParameters(pugi::xml_document&amp; doc);
+  CAENPhaChannelParameters() :  m_xml(empty) {}          // Default constructor
+  CAENPhaChannelParameters(const CAENPhaChannelParameters&amp; rhs);
+  CAENPhaChannelParameters&amp; operator=(const CAENPhaChannelParameters&amp; rhs);
+
+
+  void unpack();
+
+public:
+  typedef enum _Polarity {positive, negative} Polarity;
+  typedef enum _Coupling {ac, dc} Coupling;
+
+
+  bool enabled;
+
+
+  unsigned  dcOffset;
+  unsigned  decimation;
+  unsigned  digitalGain;
+  Polarity  polarity;
+  unsigned  range;
+
+
+  double    decayTime;
+  double   trapRiseTime;
+  double   flattopDelay;
+  double   trapFlatTop ;
+  unsigned BLMean;
+  unsigned trapGain;
+  unsigned otReject;
+  unsigned peakMean;
+  double   baselineHoldoff;
+  double   peakHoldoff;
+  double   trapPeaking;
+
+
+  unsigned threshold;
+  unsigned rccr2smoothing;
+  double   inputRiseTime;
+  double   triggerHoldoff;
+  double   triggerValidationWidth;    
+  bool     coincidenceWindow;        
+  double   preTrigger;               
+
+
+
+  bool     trResetEnabled;
+  unsigned trGain;
+  unsigned trThreshold;
+  unsigned trHoldoff;
+
+
+  bool       energySkim;
+  unsigned   lld;
+  unsigned   uld;
+  bool       fastTriggerCorrection;
+  bool       baselineClip;
+  unsigned   baselineAdjust;
+  double     acPoleZero;
+  Coupling   inputCoupling;
+  double     fineGain;
+
+
+  bool psdCutEnable;
+  double psdLowCut;
+  double psdHighCut;
+};
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>METHODS</title>
+                      <para>
+                        The following methods are provided for this class:
+                      </para>
+                      <variablelist>
+                        <varlistentry>
+                           <term>
+                              <constructorsynopsis>
+                                  <methodname>CAENPhaChannelParameters</methodname>
+                                  <methodparam>
+                                      <type>pugi::xml_document&amp;</type><parameter>doc</parameter>
+                                      <initializer></initializer>
+                                  </methodparam>
+                              </constructorsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                  Constructs the object with a PugiXML document
+                                  that will be used to parse the channel parameters.
+                             </para>
+                          </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                              <constructorsynopsis>
+                                  <methodname>CAENPhaChannelParameters</methodname>
+                                  <void />
+                              </constructorsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                  Constructs an empty channel parameters object.
+                                  This is normally used to create a placeholder
+                                  that will be the target of an assignment later.
+                             </para>
+                          </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <constructorsynopsis>
+                                <methodname>CAENPhaChannelParameters</methodname>
+                                <methodparam>
+                                    <type>const CAENPhaChannelParameters&amp;</type>
+                                    <parameter> rhs</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                            </constructorsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                Supports copy construction.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>CAENPhaChannelParameters&amp; </type>
+                               <methodname>operator=</methodname>
+                               <methodparam>
+                                   <type>const CAENPhaChannelParameters&amp;</type>
+                                   <parameter> rhs</parameter>
+                                <initializer></initializer>
+                               </methodparam>
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                Supports assignment from another channel
+                                parameters object.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>void </type>
+                               <methodname>unpack</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                Unpack the XML into the parameters.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                      </variablelist>
+                </refsect1>
+                <refsect1>
+                    <title>
+                        PUBLIC DATA and TYPES.
+                    </title>
+                    <para></para>
+                </refsect1>
+            </refentry>
+        </section>
+        <section>
+            <title>DPP-PSD support classes.</title>
+            <para>
+                
+            </para>
+        </section>
     </appendix>
 </book>
