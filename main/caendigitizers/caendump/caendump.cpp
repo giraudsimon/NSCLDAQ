@@ -76,7 +76,7 @@ static
 void Usage()
 {
     std::cerr << "Usage\n";
-    std::cerr << "   regdump linktype linknum node [base]\n";
+    std::cerr << "   caendump linktype linknum node [base]\n";
     std::cerr << "     linktype: 0 USB, 1 Optical\n";
     std::cerr << "     base is needed if the link is to a VME bus bridge and is\n";
     std::cerr << "     the module's base address\n";
@@ -165,6 +165,10 @@ static void
 readRegisterDefs()
 {
   std::ifstream in("./registers.txt");
+  if (!in) {
+    std::cerr << "Can't find registeres.txt - register definition file \n";
+    Usage();
+  }
   in >> std::hex;
   while (!in.eof()) {
     std::string name;
