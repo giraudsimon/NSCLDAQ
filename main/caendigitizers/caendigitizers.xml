@@ -2129,7 +2129,7 @@ Usage
             <refentry>
                <refmeta>
                   <refentrytitle>CAENPhaChannelParameters</refentrytitle>
-                  <manvolnum>ma</manvolnum>
+                  <manvolnum>3DPP-PHA</manvolnum>
                </refmeta>
                <refnamediv>
                   <refname>CAENPhaChannelParameters</refname>
@@ -3471,23 +3471,949 @@ public:
                             </listitem>
                         </varlistentry>
                     </variablelist>
+                    
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CompassEventSegment</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CompassEventSegment</refname>
+                  <refpurpose>Event segment configured by COMPASS</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CompassEventSegment.h&gt;
+class CompassEventSegment : public  CEventSegment
+{
+
+
+
+public:
+    CompassEventSegment(
+        std::string filename, int sourceId,
+        CAEN_DGTZ_ConnectionType linkType, int linkNum, int node, int base,
+        const char* pCheatFile=nullptr
+    );
+    
+    
+    // A great deal of this could possibly be factored into a common base class.
+    
+    virtual void initialize();
+    virtual void clear();
+    virtual void disable();
+    virtual size_t read(void* pBuffer, size_t maxwords);
+   
+    bool checkTrigger();
+    
+    // Delegations to the module (for synchronized chains).
+    
+    bool isMaster();
+    void startMaster();
+    void startSlave();
+public:
+    bool               m_countersActive;
+    uint16_t           m_lastTriggerCount[16];           // overflow
+    uint16_t           m_lastMissedTriggerCount[16];     // detectors.
+    
+    uint32_t           m_triggerCount[16];
+    uint32_t           m_missedTriggers[16];  
+};
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This class is an event segment that encapsulates
+                        a <classname>CAENPha</classname> object. The
+                        object is configured using a matching module
+                        in an XML configuration file produced by the
+                        COMPASS data acquisition program from CAEN.
+                      </para>
+                      <para>
+                        Before diving into the methods, a word
+                        about COMPASS and COMPASS configuration files.
+                        COMPASS is a CAEN data acquisition program
+                        that can be used to optimize the configuration
+                        of DPP-PHA and DPP-PSD digitizers.
+                        COMPASS can run a group of synchronized digitizers
+                        simultaneously and includes a wizard for
+                        synchronizing the digitizers.
+                        It writes
+                        XML files that capture the configuration of the
+                        digitizers it is running. 
+                      </para>
+                      <para>
+                        COMPASS XML files describe a group of
+                        digitizers.  <classname>CompassEventSegment</classname>
+                        only operates a single digitizer.  The digitizer
+                        in the XML files that matches the connection
+                        paramters passed to the constructor of
+                        <classname>CompassEventSegment</classname>
+                        is used to supply configuration data for
+                        the module run by this event segment.
+                      </para>
+                </refsect1>
+                <refsect1>
+                    <title>METHODS</title>
                     <para>
- 
-  
- 
-  
-  
-
-
+                        Note that the virtual methods in
+                        <classname>CompassEventSegment</classname>
+                        provide and implement the interface to
+                        <classname>CEventSegment</classname>.  These
+                        will not be descdribed here as they are adequately
+                        described in the NSCL documentation set.
+                    </para>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <constructorsynopsis>
+                                <methodname>CompassEventSegment</methodname>
+                                <methodparam>
+                                    <type>std::string </type><parameter>filename</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>sourceId</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>CAEN_DGTZ_ConnectionType </type>
+                                    <parameter>linkType</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>linkNum</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>node</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int</type><parameter> base</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>const char*</type><parameter> pCheatFile</parameter>
+                                    <initializer>nullptr</initializer>
+                                </methodparam>
+                            </constructorsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                The <parameter>linkType</parameter>,
+                                <parameter>linkNum</parameter>,
+                                <parameter>node</parameter> and
+                                <parameter>baseAddress</parameter>
+                                parameters provice the connection information
+                                that allows the CAEN digitizer library to
+                                talk with the digitizer. These are also
+                                compared with the connection parameters
+                                in the configuration file to determine which
+                                digitizer described in
+                                <parameter>filename</parameter>
+                                provides the configuration for
+                                this module.
+                               </para>
+                               <para>
+                                Finally, the <parameter>pCheatFile</parameter>,
+                                if not null provides a cheat file
+                                for the <classname>CAENPHa</classname>
+                                object enclosed by this class.
+                                See the doucmentation for
+                                <classname>CAEENPHa</classname>
+                                for a description of cheat files.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>bool </type>
+                               <methodname>checkTrigger</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                Interfaces to the multi module CAEN
+                                trigger class.  This method returns
+                                true if there is either un-submitted
+                                internally buffered data or the
+                                module has data in its buffers that
+                                can be read now.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>bool </type>
+                               <methodname>isMaster</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                Part of the multi-module synchronization
+                                support.  If the module is configured
+                                as the synchronization/clock master,
+                                returns <literal>true</literal>.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>void </type>
+                               <methodname>startMaster</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                If the board is a master,
+                                it must be the last board started andyou
+                                must use <methodname>startMaster</methodname>
+                                to start it.  Normally, if you are using
+                                a <classname>CompassMultiModuleEventSegment</classname>,
+                                that class takes care of getting everything
+                                started in the right order,
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>void </type>
+                               <methodname>startSlave</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                If the board is a slave on the clock
+                                and synchroniziation daisy chain,
+                                this this method should be called after
+                                configurtion to prime the board to
+                                respond to the hardware start signal.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </refsect1>
+                <refsect1>
+                    <title>PUBLIC Attributes</title>
+                    <para>
+                        The module has a set of counters, two per channel.
+                        These are 16 bit counters that describe the
+                        number of triggers and number of missed
+                        triggers.  It's possible to arrange for these
+                        to be included in the event data.
+                    </para>
+                    <para>
+                        If this feature is enabled,
+                        <varname>m_countersActive</varname>
+                        will be <literal>true</literal>.  In that
+                        case, <varname>m_lastTriggerCounts</varname>
+                        is an array of the 16 bit trigger counts
+                        for each channel and
+                        <varname>m_lastMissedTriggerCount</varname>,
+                        the count of missed triggers.
+                    </para>
+                    <para>
+                        Because they can roll over relatively
+                        rapidly on a macroscopic time-scale, the 16
+                        bit counters are relatively useless.
+                        The <varname>m_triggerCount</varname> and
+                        <varname>m_missedTirgges</varname> arrays
+                        account for rollovers and maintain 32 bit
+                        counters
+                    </para>
+                    <para>
+                        One use of this feature is to create
+                        a scaler bank from <classname>CAENPHAScalers</classname>
+                        to turn these values in to scalers that can be displayed
+                        on the NSCLDAQ scaler display program.
                     </para>
                 </refsect1>
             </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CAENPHAScalers</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CAENPHAScalers</refname>
+                  <refpurpose>Create scaler readouts from DPP-PHA trigger counters.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CAENPHAScalers.h&gt;
+class CAENPHAScalers : public CScaler
+{
+public:
+    CAENPHAScalers(CompassEventSegment* pEventSegment, int srcid = 0);
+    virtual std::vector&lt;uint32_t&gt; read();
+    virtual int sourceId() {return m_nSourceId;}
+};
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This class associates itslf with the
+                        trigger counters of a CAEN DPP-PHA digitizer.
+                        The constructor is given the event segment as
+                        a pointer and, whenever a scaler readout is
+                        triggered, makes two scalers from the trigger
+                        count and missed trigger counts for
+                        each channel in that order.
+                      </para>
+                      <para>
+                        <parameter>srcid</parameter> in the
+                        constructor provides the source id to be
+                        associatd with the scaler readouts.
+                      </para>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CompassMultiModuleEventSegment</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CompassMultiModuleEventSegment</refname>
+                  <refpurpose>"Fair" readout of several DPP-PHA digitizers.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CompassMultiModuleEventSegment.h&gt;
+
+class CompassMultiModuleEventSegment : public CEventSegment
+{
+
+public:
+  CompassMultiModuleEventSegment();
+    virtual void initialize();
+    virtual void clear();
+    virtual void disable();
+    virtual size_t read(void* pBuffer, size_t maxwords);
+public:
+  void addModule(CompassEventSegment* p);
+};
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This class is a container for
+                        <classname>CompassEventSegment</classname>
+                        objects.  It supports managing several
+                        DPP-PHA modules as a single event segment.
+                        There are some tricks that need to be
+                        played in order to get a synchronized start
+                        and fair readout.  This class plays those tricks.
+                      </para>
+                      <para>
+                        Once constructed, clients can add modules
+                        to the event segment by calling
+                        <methodname>addModule</methodname>.
+                      </para>
+                      <para>
+                        The remainder of the methods implement the
+                        <classname>CEventSegment</classname> interface.
+                      </para>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CompassProject</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CompassProject</refname>
+                  <refpurpose>Parse Compass XML file module definitions.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CompassProject.h&gt;
+ 
+ class CompassProject {
+public:
+    typedef std::pair&lt;unsigned, CAENPhannelParameters*&gt;  ChannelInfo;
+    typedef struct {
+        CAEN_DGTZ_ConnectionType s_linkType;
+        int                      s_linkNum;
+        int                      s_node;
+        int                      s_base;
+    } ConnectionParameters, *pConnectionParameters;
+private:
+    std::string m_filename;
+    pugi::xml_document m_doc;
+    CAENPhaChannelParameters        m_channelDefaults;
+
+public:
+    CompassProject(const char* file);    
+    void operator()();                    // Parse the configuration.
+public:
+    std::vector&lt;CAENPhaParameters*&gt; m_boards;
+    std::vector&lt;ConnectionParameters&gt; m_connections;    
+
+};
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This class implements the parser for the
+                        COMPASS XML Configuration files.    It
+                        accepts the path to the configuration
+                        file as the constructor parameter
+                        <parameter>file</parameter>.
+                        <methodname>operator()</methodname> then
+                        processes the file building public
+                        data from which the configuration can be pulled.
+                      </para>
+                </refsect1>
+                <refsect1>
+                <title>PUBLIC Types and Attributes</title>
+                    <para>
+                        The  <methodname>opertor()</methodname> processes
+                        the enteri configuration file. This results in
+                        a set of connection parameters and configurations
+                        of the board at each connection.
+                    </para>
+                    <para>
+                        The client software matches up connection parameters
+                        with actual board connection parametes and uses the
+                        corresponding configuration to configure the board.
+                        For the client software to do its job, data
+                        are exported.
+                    </para>
+                    <para>
+                        The class defines one public data type of use;
+                        the <structname>ConnectionParameters</structname>.
+                        The fields of this structure
+                        contain the connection parameters that
+                        describe how a digitizer is connected to a host system:
+                    </para>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <type>CAEN_DGTZ_ConnectionType </type>
+                            <structfield>s_linkType</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The type of link to the digitizer.
+                                See <filename>CAENDigitizerType.h</filename>
+                                in the CAEN digitizer library installation
+                                include file directory for legal values.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int </type><structfield>s_linkNum</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The link number.  This is mainly used for
+                                optical links where there may be more than
+                                one optical interface per system and selects
+                                the specific optical interface daisy chain
+                                the board is on.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int</type><structfield>s_node</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Indicates the node of the interface system
+                                (position on optical daisy chain or USB system),
+                                at which the board lives.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int</type><structfield>s_base</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                For modules controlled via a VME controller,
+                                this is the base address configured into the
+                                module's rotary switches.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                    <para>
+                        Two attributes are also exposed to clients:
+                    </para>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <type>std::vector&lt;CAENPhaParameters*&gt; </type>
+                            <varname>m_boards</varname>
+                           </term>
+                           <listitem>
+                               <para>
+                                This vector are the decoded parameters (board and
+                                per channel) for each board described
+                                in the configuration file.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>std::vector&lt;ConnectionParameters&gt; </type>
+                            <varname>m_connections</varname>
+                           </term>
+                           <listitem>
+                               <para>
+                                For each element of the
+                                <varname>m_boards</varname> configuration
+                                array, this array will have a corresonding
+                                entry that describes the connection to that
+                                board. 
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CompassTrigger</refentrytitle>
+                  <manvolnum>3DPP-PHA</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CompassTrigger</refname>
+                  <refpurpose>Trigger on DPP-PHA data ready.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CompassTrigger.h&gt;
+
+class CompassTrigger : public CEventTrigger
+{
+
+public:
+    CompassTrigger();
+    void addModule(CompassEventSegment* module);
+    virtual bool operator()();
+    
+};
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                    <title>DESCRIPTION</title>
+                      <para>
+                        <classname>CompassTrigger</classname>
+                        provides an event trigger which will
+                        be satisfied when any member board has
+                        data that can be submitted to Readout's
+                        ring buffer. Note that it's not necessary
+                        for these data to be held in hardware
+                        fifos. Each module contributes several hits
+                        per read, but only one hit can be emitted
+                        per trigger.  Therefore the event segments
+                        hold the remaining hits in internal buffers.
+                      </para>
+                      <para>
+                        A trigger could be responded to by
+                        providing a hit from an internal hit buffer
+                        that has not yet been emitted or by
+                        reading a module, buffering its data and
+                        then emitting the first hit from that buffer.
+                      </para>
+                      <para>
+                        The <methodname>addModule</methodname>
+                        allows the client to add a module that
+                        will be polled during the call to
+                        <methodname>operator()</methodname>.
+                      </para>
+                </refsect1>
+            </refentry>
+            
         </section>
         <section>
             <title>DPP-PSD support classes.</title>
             <para>
-                
+                DPP-PSD support is provided by classes that
+                are described in this section.
             </para>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CCompoundTrigger</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CCompoundTrigger</refname>
+                  <refpurpose>Mix DPP-PHA and DPP-PSD triggers</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CCompoundTrigger.h&gt;
+
+class CCompoundTrigger : public  CEventTrigger
+{
+
+public:
+
+    virtual void setup();
+    virtual void teardown();
+    virtual bool operator()();
+    
+    void addTrigger(CEventTrigger* pTrigger);
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                    <title>DESCRIPTION</title>
+                    <para>
+                      The <classname>CCompoundTrigger</classname>
+                      class aggregates triggers from a variety
+                      of sources and performs the logical OR on
+                      them when checked.  Thus if any component
+                      trigger is set, <classname>CCompoundTrigger</classname>
+                      is set.
+                    </para>
+                    <para>
+                        After construction,
+                        <classname>addTrigger</classname>
+                        can be used to add component triggers to the
+                        class.  Once a trigger is raised,
+                         it is still the responsibility of the
+                         event segment(s) to perform a fair
+                         readout so that no single event source
+                         can starve any other event source.
+                    </para>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CDPpPsdEventSegment</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CDPpPsdEventSegment</refname>
+                  <refpurpose>Manage a single DPP-PSD module.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CDPpPsdEventSegment.h&gt;
+
+class CDPpPsdEventSegment : public CEventSegment
+{
+
+public:
+    CDPpPsdEventSegment(
+        PSDBoardParameters::LinkType linkType, int linkNum, int nodeNum,
+        int base, int sourceid, const char* configFile
+    );
+
+    
+  virtual void   initialize();
+  virtual size_t read(void* pBuffer, size_t maxwords) ;
+  bool    checkTrigger();
+  void    disable();
+  
+  // Support for multiple boards:
+  
+  bool isMaster();
+  void startAcquisition();  
+
+};
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                    <title>DESCRIPTION</title>
+                    <para>
+                      Manages a single DPP-PSD module. Module
+                      configuration comes from the module
+                      configuration stanza in a COMPASS configuration
+                      file that has connection parameters that match
+                      those passed to the constructor of this object.
+                    </para>
+                    <para>
+                        Note that the configuration file is
+                        processed every time a run starts so
+                        changes to the configuration file made
+                        after a run starts will be reflected in
+                        the next run.
+                    </para>
+                </refsect1>
+                <refsect1>
+                    <title>METHODS</title>
+                    <para>
+                        In this section we're only going to document the methods
+                        that are not part of the
+                        <classname>CEventSegment</classname> interface.
+                        The <classname>CEventSegment</classname>
+                        interface methods are documented sufficiently
+                        in the NSCLDAQ documentation.
+                    </para>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <constructorsynopsis>
+                                <methodname>CDPpPsdEventSegment</methodname>
+                                <methodparam>
+                                    <type>PSDBoardParameters::LinkType </type>
+                                    <parameter>linkType</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>linkNum</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>nodeNum</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>base</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>int </type><parameter>sourceid</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                                <methodparam>
+                                    <type>const char* </type>
+                                    <parameter>configFile</parameter>
+                                    <initializer></initializer>
+                                </methodparam>
+                            </constructorsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                This constructor establishes
+                                the connection parameters for a board
+                                and the COMPASS configuration file
+                                that will be processed to determine
+                                how to configure the board and
+                                its channels.
+                               </para>
+                               <para>
+                                <parameter>linkType</parameter>,
+                                <parameter>linkNum</parameter>,
+                                <parameter>node</parameter> and
+                                <parameter>base</parameter> are the
+                                link parameters that must exactly
+                                match the connection parameters of
+                                one of the boads described in the
+                                COMPASS configuration file
+                                indicated by
+                                <parameter>configFile</parameter>
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>bool </type>
+                               <methodname>isMaster</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                This method returns
+                                <literal>true</literal> if this board
+                                is configured to be the timing master.
+                                The timing master board must be started
+                                last as it will emit hardware signals
+                                to start the slave boards in a
+                                synchronized manner.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <methodsynopsis>
+                               <type>void </type>
+                               <methodname>startAcquisition</methodname>
+                               <void />
+                            </methodsynopsis>
+                           </term>
+                           <listitem>
+                               <para>
+                                If this board is configured as a timing master,
+                                it is started.  If the board is configured as a timing
+                                slave, it is primed to start on receipt
+                                of the start signals emitted by the
+                                master.
+                               </para>
+                            </listitem>
+                        </varlistentry>                        
+                    </variablelist>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>COneOnlyEventSegment</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>COneOnlyEventSegment</refname>
+                  <refpurpose>Only alow one contribution into an event segment</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                <programlisting>
+#include &lt;COneOnlyEventSegment&gt;
+
+class COneOnlyEventSegment : public CEventSegment
+{
+
+    COneOnlyEventSegment();
+    
+    virtual void initialize();
+    virtual void clear();
+    virtual void disable();
+    virtual size_t read(void* pBuffer, size_t maxwords);
+    
+    void addModule(CEventSegment* p);
+
+};
+                    
+                </programlisting>
+
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        For CAEN Digitizer readouts, each trigger
+                        should only produce one hit in a ring item.
+                        If you are mixing together several CAEN-DPP
+                        event segments, you need to put them
+                        together using this compound event segment
+                        class.  A typical use case is combining DPP-PHA
+                        and DPP-PSD readouts.
+                      </para>
+                      <para>
+                        After constructing the object, use
+                        <methodname>addModule</methodname> to
+                        add the event segments you need.
+                        The <methodname>read</methodname> method
+                        responds to the trigger by asking its event segments
+                        in a round robin way to contribute data.
+                        Once data are contributed,
+                        <methodname>read</methodname> stops and
+                        remembers where it left off.  Fair
+                        readout is done by responding to the next
+                        trigger by first asking the next module
+                        after the one most recently producing data
+                        to contribute.  For this purpose, the
+                        modules are treated as if they form a circular
+                        list in the order in which they were
+                        added to the segment.
+                      </para>
+                      <para>
+                        This round robin scheme should prevent
+                        low rate modules from being starved of the
+                        opportunity to contribute data to the
+                        output ring by higher rate modules.
+                      </para>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CPsdCompoundEventSegment </refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CPsdCompoundEventSegment </refname>
+                  <refpurpose>Manage a chain of DPP-PSD modules</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+class CPsdCompoundEventSegment  : public CEventSegment
+{
+                     m_nextRead;
+public:
+    CPsdCompoundEventSegment();
+    virtual ~CPsdCompoundEventSegment();
+    virtual void initialize();
+    virtual void clear();
+    virtual void disable();
+    virtual size_t read(void* pBuffer, size_t maxwords);
+    
+    void addModule(CDPpPsdEventSegment* p);
+
+};
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This class allows you to build an
+                        event segment out of a set of DPP-PSD Modules.  THe
+                        segment is presumed to be a time-synchronized
+                        daisy chain with a timing master and
+                        several slaves.  
+                      </para>
+                      <para>
+                        Build the list by constructing the individual
+                        module objects, constructing this class
+                        and then invoking
+                        <methodname>addModule</methodname>
+                        to add each module object to the
+                        <classname>CPsdCompoundEventSegment</classname>.
+                      </para>
+                      <para>
+                        When <methodname>initialize</methodname>
+                        is called, each contained module
+                        is asked to initialize.
+                        The code then primes all the slave modules
+                        to start and finally, starts the
+                        timing master module.
+                      </para>
+                      <para>
+                        There is nothing to stop you from building
+                        an object consisting entirely of slaves.
+                        This will most likely be done when using
+                        <classname>COneOnlyEventSegment</classname>
+                        to mix both DPP-PSD and DPP-PHA modules.
+                        In that case, all slave modules will be
+                        synchronized and when the timing master
+                        in another segment is started, all will
+                        start in a synchronized manner.
+                      </para>
+                      <para>
+                        In a singles experiment, where timing
+                        synchonization isn't important, you
+                        can just as easily program all modules
+                        as masters and all will start up but
+                        unsynchronized.
+                      </para>
+                      <para>
+                        When the object's <methodname>read</methodname>
+                        method is invokded a fair, round robin
+                        scheme is used to request data from
+                        modules so that low rate modules will not
+                        be starved by high rate modules.
+                        This is done by treating the modules as
+                        a cirular list and, after a module
+                        hit is received, responding to the
+                        next
+                        <methodname>read</methodname> call by
+                        starting to look for data beginning with the next
+                        module in the object.
+                      </para>
+                </refsect1>
+            </refentry>
         </section>
     </appendix>
 </book>
