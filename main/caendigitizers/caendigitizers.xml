@@ -4414,6 +4414,572 @@ public:
                       </para>
                 </refsect1>
             </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>CPsdTrigger</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>CPsdTrigger</refname>
+                  <refpurpose>Trigger determination for DPP-PSD modules</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;CPsdTrigger.h&gt;
+class CPsdTrigger : public CEventTrigger {
+public:
+    virtual bool operator()();
+    void addModule(CDPpPsdEventSegment* p);
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        <classname>CPsdTrigger</classname> is <classname>CEventTrigger</classname>
+                        that polls a set of <classname>CDPpPsdEventSegment></classname>
+                        objects to determine if any of them have data ready to
+                        send to the output ring buffer. Note that these objects
+                        may have internally buffere data or data buffered in the
+                        digitizer module they manage.
+                      </para>
+                      <para>
+                        <methodname>addModule</methodname> is used to incrementally
+                        build up the set of objects that will be polled by this
+                        trigger object.
+                      </para>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>PSDChannelParameters</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>PSDChannelParameters</refname>
+                  <refpurpose>Hold per channel DPP-PSD configuration</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;PSDChannelParameters.h&gt;
+
+struct PSDChannelParameters {
+    double s_channelTimeOffset;            // Ns time offset for timestamps.
+    enum {positive, negative}
+           s_polarity;                     // Input signal polarity.
+    double s_threshold;                    // Trigger threshold in lsb.
+    enum {
+        fixed,
+        samples16,
+        samples64,
+        samples256,
+        samples1024,
+        samples4096,
+        samples16384
+    }      s_blineNsMean;                  // samples to average for baseline:
+    double s_cfdDelay;                     // CFD delay parameter.
+    bool   s_enabled;                      // Channel is turned on.
+    unsigned s_cfdSmoothing;                 // CFD interpolation samples.
+    double s_purGap;                           // Pile up rejection gap.
+    enum {
+        vpp2V, vpphalfV
+    }  s_dynamicRange;                    // Input dynamic range.
+    double s_shortGate;                   // Short gate in ns.
+    enum {
+        frac25,
+        frac50,
+        frac75,
+        frac100
+    }  s_cfdFraction;                    // CFD Fraction.
+    enum {
+        led, cfd
+    }  s_discriminatorType;             // Leading edge or cfd discriminator.
+    double s_fixedBline;               // Baseline if fixed is chosen.
+    double s_triggerHoldoff;           // ns of trigger holdoff.
+    double s_gateLen;                  // Long gate length in ns.
+    double s_dcOffset;                 // Baseline dc offset.
+    enum {
+        lsb2_5fc,
+        lsb10fc,
+        lsb40fc,
+        lsb160fc,
+        lsb640fc,
+        lsb2560fc
+    } s_coarseGain;                 // Coarse gain in femto coulombs/lsb.
+    double s_gatePre;               // integration prior to gate(?).
+    double s_preTrigger;            // Waveform capture pre-trigger.
+};
+
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>DESCRIPTION</title>
+                      <para>
+                        This data only struct contains the configuration data that
+                        can be applied to a single channel of a DPP-PSD
+                        digitizer.  See also
+                        <structname>PSDBoardParameters</structname> and
+                        <structname>PSDParameters</structname>, which
+                        hold the the entire parameters for one board
+                        (including a vector of <structname>PSdChannelParmeters</structname>),
+                        and parse an entire compass file for DPP-PSD
+                        modules.
+                      </para>
+                </refsect1>
+                <refsect1>
+                    <title>DATA MEMBERS</title>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_channelTimeOffset</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                In a syncrhonized system, the start pulse travels down
+                                the module daisy chain.  Because of propagation delays,
+                                cable lengths and
+                                the time it takes each module to output the
+                                start after seeing it on the input,
+                                each module will get the start pulse a little
+                                later than the previous module on the daisy chain.
+                               </para>
+                               <para>
+                                <structfield>s_channelTimeOffset</structfield>
+                                allows you to compensate for this timing skew
+                                by programming a delay into each module between
+                                receiving the start pulse and actually starting
+                                (it's the start that zeroes a module's timestamp
+                                counter).  By programming successively
+                                longer delays as you go towards the
+                                master module, you can get a much better
+                                synchronization of the timestamp clear
+                                in all modules.  Naturally, an external
+                                start with a star cabling configuration
+                                and measured cables, makes this unecessary
+                                at the cost of external hardware.
+                               </para>
+                               <para>
+                                This value is expressed in
+                                nanoseconds and converted by the
+                                module initialization code to
+                                register values.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum </type><structfield>s_polarity</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                This enumerated field is used to inform the channel
+                                of the signal input polarity to expect.
+                                Legal values are  either
+                                <literal>positive</literal>
+                                or <literal>negative</literal>.
+                                It is necessary to program tis properly
+                                (as well as setting the DC offset for the
+                                channel to keep the signal inside the
+                                dynamic range of the digitizer), because
+                                the DPP algorithms all operate on a positive
+                                going pulse.  If a channel has been
+                                programmed as <literal>negative</literal>,
+                                the signal will be digitally inverted
+                                prior to the DPP-PSD algorithm.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_threshold</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The leading edge discriminator
+                                trigger threshold value.  When the (possibly inverted)
+                                digitizer value is above this value, the
+                                channel declares a trigger.  Note that
+                                better timing on the trigger time can be gotten
+                                by enabling the CFD.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_blineNsMean</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Contains an enumerated type that selects the
+                                number of samples to average when computing he
+                                signal baseline value.  Note that after a trigger,
+                                baseline computation is, of course disabled and the
+                                baseline frozen for a settable period
+                                of time.
+                               </para>
+                               <para>
+                                Valid values are:
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>fixed</literal></term>
+                                   <listitem>
+                                       <para>
+                                        The baseline is not computed from input
+                                        signal but, instead is a programmable
+                                        fixed value. 
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples16</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A running average of 16 consecutive
+                                        samples is used to compue the baseline
+                                        value.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples64</literal></term>
+                                   <listitem>
+                                       <para>
+                                        The baseline is computed from
+                                        a running average of 64 consecutive samples.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples256</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A running average of 256 consecutive
+                                        samples is used to compute the
+                                        baseline.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples1024</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A running average of 1K samples
+                                        is used to compute the baseline
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples4096</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A running average of 4K samples is used
+                                        to compute the baseline.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>samples16384</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A running average of 16K samples is used
+                                         to compute the baseline.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_cfdDelay</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                This parameter is only meaningful if the
+                                CFD is enabled.  It is the CFD delay
+                                parameter in nanoseconds.
+                                Initialization code converts it to
+                                register values appropriate to the
+                                actual digitizer.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool   </type><structfield>s_enabled</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If <literal>true</literal> this channel is enabled.
+                                If <literal>false</literal>, the channel is
+                                disabled. Disabled channels will not buffer
+                                data nor participate in module trigger
+                                decisions.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>unsigned </type><structfield>s_cfdSmoothing</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                This value is an integer between
+                                <literal>0</literal> and <literal>4</literal>
+                                inclusive and selects the input smoothing
+                                value. Note that the smoothed input
+                                can be used by both the CFD and LED.
+                               </para>
+                               <para>
+                                <literal>0</literal> means input smoothing is disabled.
+                                <literal>1</literal> means two samples are averaged to smoothy
+                                the input
+                                <literal>2</literal> means 4 sample
+                                <literal>3</literal> means 8 samples
+                                and <literal>4</literal> means 16 samples.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_purGap</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Sets the pile up rejection gap. See register
+                                <literal>0x1n7c</literal>.  The pi8le up rejection
+                                gap determines the threshold at which a
+                                pile up is detected when the signal rises
+                                again after falling off.  This value is
+                                set in digitizer conversion units.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_dynamicRange</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The XX725 and XX750 digitizers have dual
+                                dynamic ranges.  This parameter selects the
+                                channel's dynamic range. Legal values
+                                are <literal>vpp2V</literal> which
+                                sets a 2V peak to peak range and
+                                <literal>vpphalfV</literal> which sets
+                                a 0.5V peak to peak range (half).
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_shortGate</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                To provide pulse shape discrimination information,
+                                the digitizer integrates the value
+                                of the signal over a short gate and a long
+                                gate.  <structfield>s_shortGate</structfield>
+                                determines the length of the short gate
+                                in nanoseconds.  This value is converted to
+                                register units by the initialization
+                                code.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_cfdFraction</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                This parameter is only used if the
+                                CFD is enabled.  It determines the
+                                CFD fraction value.   Legal values are:
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>frac25</literal></term> 
+                                   <listitem>
+                                       <para>
+                                        25% scaling factor (1/4).
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>frac50</literal></term>
+                                   <listitem>
+                                       <para>
+                                        50% scaling factor.
+                                       </para>
+                                    </listitem>
+                                </varlistentry><varlistentry>
+                                   <term><literal>frac75</literal></term>
+                                   <listitem>
+                                       <para>
+                                        75% scaling factor
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>frac100</term>
+                                   <listitem>
+                                       <para>
+                                        No scaling done (100% scaling factor).
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum </type><structfield>s_discriminatorType</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Selects the type of discriminator that will be used.
+                                <literal>led</literal> uses a leading edge
+                                discriminator while <literal>cfd</literal>
+                                employs a constant fraction discriminator.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_fixedBline</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If a fixed baseline is used, this is
+                                the value of that baseline.  The integerized version
+                                of this value will be programmed into
+                                the fixed baseline register
+                                (0x1n64).
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_triggerHoldoff</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The trigger hold off in nanoseconds.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_gateLen</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Long integration gate length in nanoseconds.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_dcOffset</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Channel DC offset value in percentage of full scale
+                                (that is 0-100).
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_coarseGain</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The coarse gain selector expressed as  femto
+                                Coulombs per least significant bit of the
+                                integration returned.  This is one of:
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>lsb2_5fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 2.5 fC
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>lsb10fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 10 fC
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>lsb40fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 40fC
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>lsb160fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 160fC
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>lsb640fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 640fC
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>lsb2560fc</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Least significant bit is 2650fC.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_gatePre</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Nuber of nanoseconds of integration prior to the
+                                gate.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_preTrigger</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Nanoseconds of waveform capture prior to the
+                                trigger.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </refsect1>
+            </refentry>
         </section>
     </appendix>
 </book>
