@@ -19,4 +19,4 @@ install-exec-hook:
 	$(mkinstalldirs) @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @srcdir@/skel/*.cpp @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @srcdir@/skel/*.h   @prefix@/skeletons/dpp-psd
-	$(INSTALL_DATA) @srcdir@/skel/Makefile @prefix@/skeletons/dpp-psd
+	$(INSTALL_DATA) @builddir@/skel/Makefile @prefix@/skeletons/dpp-psd
