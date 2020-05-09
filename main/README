@@ -1,2 +1,40 @@
+
 Note this set of releases of NSCLDAQ are still considered experimental.  Use at your
 own risk for now.  We recommend 11.3 instead.
+
+NSCLDAQ-10.0 throws away spectrodaq as the data distribution server, replacing
+it with a set of ring buffers and their proxies.
+
+NSCLDAQ-11.0 Makes significant changes to the bodies of ring items in order to
+better support the event builder.
+
+
+See http://docs.nscl.msu.edu/daq for documentation including how to 
+port existing software from older versions of NSCLDAQ as well
+as how to hook in your SpecTcl data analysis software.
+
+To build unwrap the tarball cd to the directory it creates and
+
+./configure --prefix=where-it-goes {other options}
+
+make install
+
+prior to doing this you'll want to 
+./configure --help 
+
+The specific switches you may want are:
+
+--enable-sbs=kernel-source-dir - build support for the SBS VME interface
+                                 kernel-source-dir contains a configured
+                                 kernel source tree.
+--enable-epics-tools=yes | no - enable/disabel the build of some EPICS
+                                tools.
+--with-epics-rootdir=epicsinstall-dir - Helps the epic tools locate EPICS
+                                support software at build time.
+
+
+ACKNOWLEDGEMENTS:
+   iniparser - public domain from N. Devillard.
+   pugixml   - MIT Licenbse from Arseny Kapulkine
+   CAEN digitizer support - Donated by CAEN Technologies. 
+
