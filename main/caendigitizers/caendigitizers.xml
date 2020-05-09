@@ -4980,6 +4980,631 @@ struct PSDChannelParameters {
                     </variablelist>
                 </refsect1>
             </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>PSDBoardParameters</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>PSDBoardParameters</refname>
+                  <refpurpose>Boad level parameters for DPP-PSD boards/</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+struct PSDBoardParameters
+{
+    typedef enum _LinkType {
+        usb, conet
+    } LinkType;
+    
+    
+    
+    std::string s_modelName;
+    int         s_serialNumber;
+    LinkType    s_linkType;
+    int        s_linkNum;
+    int        s_node;
+    int        s_base;
+    int        s_psPerSample;
+    
+    
+    
+    bool       s_extClock;           
+    bool       s_energy;   
+    enum {
+        disabled,
+        couples,
+        andOneToAll,
+        oneChannelVeto        
+    }        s_coincidenceMode;      
+    enum {
+        software, sIn, firstTrigger
+    }   s_startMode;                 
+    double s_coincidenceTriggerOut;   
+    bool s_timeTag;               
+    bool s_calibrateBeforeStart;  
+    bool s_softwareTriggerAtStart;
+    bool s_includeExtras;        
+    double s_recordLength;       
+    double s_startDelay;         
+    bool   s_waveforms;          
+    enum {
+        nim, ttl
+    }     s_ioLevel;             
+    enum {
+        level0,
+        level1,
+        softwareTrigger,
+        externalTrigger,
+        globalOrTrigger,
+        running,
+        delayedRunning,
+        sampleClock,
+        pllClock,
+        busy,
+        pllUnlocked,
+        vProbe,
+        syncIn
+    } s_triggerOutputMode;       
+    double s_eventAggregation;
+    
+    // per channel parameters - 16 channels.
+    
+    PSDChannelParameters s_channelConfig[16];
+    
+};
+
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                         <title>
+                            DESCRIPTION
+                         </title>
+                      <para>
+                        This data member only struct contains the
+                        data required to configura a single DPP-PSD digitizer
+                        module (board).  It includes the per channel
+                        configuration data in the <structfield>s_channelConfig</structfield>
+                        array.
+                      </para>
+                </refsect1>
+                <refsect1>
+                    <title>DATA MEMBERS</title>
+                    <variablelist>
+                        <varlistentry>
+                           <term>
+                            <type>std::string </type><structfield>s_modelName</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Contains a textual version of the model of the digitzer,
+                                e.g. <literal>V1725</literal>.  This is
+                                gotten via a call to
+                                <function>CAEN_DGTZ_GetInfo</function>
+                                once the digitizer has been opened.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int   </type><structfield>s_serialNumber</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Contains the module serial number.
+                                This is gotten from the module
+                                via a call to
+                                <function>CAEN_DGTZ_GetInfo</function>
+                                once the digitizer has been opened.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>LinkType </type><structfield>s_linkType</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Contains the type of connection used to access
+                                the digitizer.  <type>LinkType</type>
+                                can be either
+                                <literal>usb</literal> or
+                                <literal>conet</literal>  Note that
+                                these two encapsulate both direct
+                                connection to the digitizer or connection
+                                via a USB/conet VME bus bridge.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int</type><structfield>s_linkNum</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The number of the link used to
+                                connect the host to the digitizer.
+                                This is most often non-zero for
+                                <literal>conet</literal> when it
+                                selects the specific optical link
+                                that connects the host to the digitizer,
+                                or the CONET/VME bus bridge controlling
+                                the digitizer.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int </type><structfield>s_node</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The node number of the digitizer on
+                                the interface (link) it's attached to.  For CONET daisychains,
+                                his is clear and easy to figure out. For
+                                destktop digitizers connected to USB,
+                                you'll probably have to probe...and then be sure
+                                not to move cables around so that renumertions
+                                hold the node numbers constant.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int</type><structfield>s_base</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                For digitizers that are interfaced to the host
+                                over VME interfaces, this is the digitizer's
+                                base address.  For all other digitizers,
+                                this should be zero.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>int </type><structfield>s_psPerSample</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Speed of the digitizer ins picoseconds/sample.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool </type><structfield>s_extClock</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If <literal>true</literal> the
+                                digitizer will be enabled to accept
+                                an external clock.  In general internal
+                                clock should only be used for stand-alone
+                                digitizers and for master digitizers in
+                                a synchronized daisy chain (though even then
+                                an external clock could be used).
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool </type><structfield>s_energy</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If <literal>true</literal> then the list mode,
+                                DPP parameters extracted from the waveform
+                                will be included in the digitizer output.
+                                If <literal>false</literal>, only waveforms
+                                will have valid values.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_coincidenceMode</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                    Selects the module trigger
+                                    coincidence mode.  This can
+                                    be one of:
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>disabled</literal></term>
+                                   <listitem>
+                                       <para>
+                                        No coincidence requirement.  THis is the same as
+                                        triggering on the or of a couple
+                                        trigger.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>couples</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Both channels in a couple must
+                                        fire (couple AND requirement).
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>andOneToAll</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Channel pairs require a motherboard trigger
+                                        as well.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>oneChannelVeto </literal></term>
+                                   <listitem>
+                                       <para>
+                                        A single channel can veto the trigger.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_startMode</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Selects the condition required for the
+                                digitizer to start accepting triggers.
+                                This can be one of
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>software</literal></term>
+                                   <listitem>
+                                       <para>
+                                        A software start will zero the timestamp
+                                        counter and begin acquisition.
+                                        This is suitable for stand-alone
+                                        modules and masters on a synchronized
+                                        daisy chain of modules.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>sIn</literal></term>
+                                   <listitem>
+                                       <para>
+                                        The module will start taking data
+                                        when it senses a true going edge on the
+                                        <literal>SIN</literal> front panel
+                                        input.  Prior to this, a software
+                                        start must have been issued to arm
+                                        the module.  This is suitable for slaves
+                                         in a synchronized daisy chain
+                                         or all modules if an external start is
+                                         used to start data taking, rather than
+                                         a master module.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>firstTrigger</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Data takings starts on the first external
+                                        trigger.  The module must first have been
+                                        armed to accept this start via a software start.
+                                        This is suitable for slave modules on a
+                                        synchronized daisy chain and for all modules
+                                        in a synchronized set if an
+                                        externally generated start
+                                        pulse is used
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_coincidenceTriggerOut</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If true, the detection of a valid coincidence
+                                trigger will output a pulse on the
+                                <literal>TRGOUT</literal> output.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool </type><structfield>s_timeTag</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Currently this field is not used.
+                                Digitizers are always programmed to produce
+                                a time tag.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type> bool </type><structfield>s_calibrateBeforeStart</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                The digitizers have a calibrtaion function.  If
+                                this field is <literal>true</literal> the
+                                calibration will be performed prior to
+                                loading the digitizer configuration.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            '<type>bool</type><structfield> s_softwareTriggerAtStart</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Currently unused. I believe the intent is that if
+                                <literal>true</literal>, the module will
+                                be software triggerred when it is started.
+                                We use software start and daisy chain hardware
+                                starts instead of this.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool </type><structfield>s_includeExtras</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Currently unused. The intent is that if true,
+                                the so-called extra1 and extra2 data will be
+                                included in the data bufferded for each
+                                event in the digitizer.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_recordLength</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Length of waveform captured in nanoseconds.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>double </type><structfield>s_startDelay</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Nanoseconds after start pulse or software start
+                                the  module actually zeroes its timestamps and is
+                                able to take data.  This is used to get 
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>bool</type><structfield>s_waveforms</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                If <literal>true</literal>, enables waveforms
+                                to be recorded in the data buffer along with
+                                the results of the DPP computations.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_ioLevel</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                An enumerated type that selects the signalling
+                                level on the front panel.  Legal values are
+                                <literal>nim </literal> and <literal>ttl</literal>
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>enum</type><structfield>s_triggerOutputMode</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Selects which signal will be presented to the
+                                <literal>TRG OUT</literal> lemo.  Legal values
+                                are:
+                               </para>
+                               <variablelist>
+                                <varlistentry>
+                                   <term><literal>level0</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Continuously de-assserted.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>level1</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Continuously asserted.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>softwareTrigger</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Pulses when a software trigger has been
+                                        requested of the module.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>
+                                    <literal>externalTrigger</literal>
+                                   </term>
+                                   <listitem>
+                                       <para>
+                                        Pulses when an external trigger has been input
+                                        to e.g. the <literal>TRG IN</literal>
+                                        Lemo connector.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>
+                                    <literal>globalOrTrigger</literal>
+                                   </term>
+                                   <listitem>
+                                       <para>
+                                        Pulses when the motherboard generates a
+                                        global OR trigger.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>
+                                    <literal>running</literal>
+                                   </term>
+                                   <listitem>
+                                       <para>
+                                        Logical true when the board is running.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>
+                                    <literal>delayedRunning</literal>
+                                   </term>
+                                   <listitem>
+                                       <para>
+                                        True when the board is running after a
+                                        start delay.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>sampleClock</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Echoes the clock sent to the ADCs to
+                                        accept samples.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>pllClock</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Echoes the clock input to the PLL clock.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>busy</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Asserted when the digitizer is busy.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>pllUnlocked</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Asserted when the PLL has lost lock.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term>
+                                    <literal>vProbe</literal>
+                                   </term>
+                                   <listitem>
+                                       <para>
+                                        Presents the selected virtual probe.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                                <varlistentry>
+                                   <term><literal>syncIn</literal></term>
+                                   <listitem>
+                                       <para>
+                                        Reflects the S-IN input.
+                                       </para>
+                                    </listitem>
+                                </varlistentry>
+                               </variablelist>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                           <term>
+                            <type>PSDChannelParameters </type><structfield>s_channelConfig[16]</structfield>
+                           </term>
+                           <listitem>
+                               <para>
+                                Contains the 16 per channel parameter structs.
+                                Note that not all of them may be actually used,
+                                for example, in desktop digitizers.
+                               </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </refsect1>
+            </refentry>
+            <refentry>
+               <refmeta>
+                  <refentrytitle>PSDParameters</refentrytitle>
+                  <manvolnum>3DPP-PSD</manvolnum>
+               </refmeta>
+               <refnamediv>
+                  <refname>PSDParameters</refname>
+                  <refpurpose>Parse COMPASS file into parameters.</refpurpose>
+                </refnamediv>
+                <refsynopsisdiv>
+                    <programlisting>
+#include &lt;PSDParameters.h&gt;
+
+struct PSDParameters {
+public:
+    std::vector&lt;PSDBoardParameters&gt; s_boardParams;
+public:
+
+    void parseConfigurationFile(const char* pFilename);
+}
+                    </programlisting>
+                </refsynopsisdiv>
+                <refsect1>
+                      <title>DESCRIPTION</title>
+                      <para>
+                        This class is responsible for processing
+                        a COMPASS configuration file and producing,
+                        as a result a vector of <classname>PSDBoardParameter</classname>
+                        objects.  The
+                        method <methodname>parseConfigurationFile</methodname>
+                        simple takes <parameter>pFilename</parameter>
+                        which is a pointer to the character string
+                        path to the file to process.
+                      </para>
+                </refsect1>
+            </refentry>
         </section>
     </appendix>
 </book>
