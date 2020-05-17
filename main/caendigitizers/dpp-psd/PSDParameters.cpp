@@ -74,9 +74,11 @@ PSDParameters::parseConfiguration(pugi::xml_document& doc)
         );
     }
     for (int i = 0; i < boards.size(); i++) {
-        s_boardParams.emplace(s_boardParams.end());
-        PSDBoardParameters& board(s_boardParams.back());
-        configureBoard(boards[i], board);
+        if (isPsd(boards[i])) {
+            s_boardParams.emplace(s_boardParams.end());
+            PSDBoardParameters& board(s_boardParams.back());
+            configureBoard(boards[i], board);
+        }
     }
 }
 /**
@@ -791,4 +793,22 @@ PSDParameters::setTriggerOutMode(
         msg += mode;
         throw msg;
     }
+}
+
+/**
+ * isPsd
+ *    @param board - <board> tag node.
+ *    @return bool - true if the board uses  PSD firmware.
+ *    @note PSD firmwards have <amcFirmware><major>... of 136.
+ */
+bool
+PSDParameters::isPsd(pugi::xml_node& board)
+{
+    pugi::xml_node amcFw = getNodeByNameOrThrow(
+        board, "amcFirmware", "<board> has no amcFirmware tag"
+    );
+    pugi::xml_node major = getNodeByNameOrThrow(
+        amcFw, "major", "<amcFirmware> has no major tag");
+    return (getUnsignedContents(major) == 136);
+    
 }

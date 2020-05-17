@@ -301,6 +301,7 @@ public:
     void setTriggerOutMode(
         PSDBoardParameters& board, const std::string& mode
     );
+    bool isPsd(pugi::xml_node& board);
 };
 
 
