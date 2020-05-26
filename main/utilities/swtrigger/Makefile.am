@@ -97,18 +97,15 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
 	CRingBlockDataSink.cpp $(MPI_SoftwareTrigger_SRCS)
 
+
+
 SoftwareTrigger_DEPENDENCIES=libSwTrigger.la
-
-
-
 SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp \
 	CEventFilterApp.cpp CEventFilterApp.h
-
-EventFilter_Dependencies=libSwTrigger.la
-
+EventFilter_DEPENDENCIES=libSwTrigger.la
 EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
@@ -121,8 +118,7 @@ Transformer_SOURCES=Transformer.cpp transformer.c transformer.h \
         CRingBlockDataSink.cpp 				\
 	CZMQTransformerApp.cpp CZMQTransformerApp.h
 
-Transformer_Dependencies=libSwTrigger.la
-
+Transformer_DEPENDENCIES=libSwTrigger.la
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
@@ -134,8 +130,7 @@ EventEditor_SOURCES=eventeditor.h eventeditor.c \
 	EventEditor.cpp CBuiltRingItemEditorApp.h CBuiltRingItemEditorApp.cpp	\
 	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp
 
-EventEditor_Dependencies=libSwTrigger.la
-
+EventEditor_DEPENDENCIES=libSwTrigger.la
 EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
@@ -147,8 +142,7 @@ FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.c
 	CRingBlockDataSink.h CRingBlockDataSink.cpp\
 	$(MPI_FullEventEditor_SRCS)
 
-FullEventEditor_Dependencies=libSwTrigger.la
-
+FullEventEditor_DEPENDENCIES=libSwTrigger.la
 FullEventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
@@ -157,11 +151,12 @@ FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+libTestClassifier_la_DEPENDENCIES=libSwTrigger.la
 
 libTestExtender_la_SOURCES=CTestExtender.cpp
 libTestExtender_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
-
+libTestExtender_la_DEPENDENCIES=libSwTrigger.la
 
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
@@ -213,7 +208,6 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 	zmqworkertests.cpp	\
 	$(libSwTrigger_la_SOURCES)
 
-unittests_DEPENDENCIES=libSwTrigger.la
 
 unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @top_builddir@/daq/IO/libdaqio.la \
