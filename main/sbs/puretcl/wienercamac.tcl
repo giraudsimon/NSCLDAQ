@@ -47,11 +47,7 @@
 #   package.
 
 set here    [file dirname [info script]]
-set libDir  [file join $here ..]
-set wd [pwd]
-cd $libDir
-set libDir [pwd]
-cd $wd
+set libDir  [file normalize [file join $here ..]]
 
 if {[lsearch $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]
@@ -60,11 +56,12 @@ if {[lsearch $auto_path $libDir] == -1} {
 
 package provide wienercamac 1.1
 package require Vme
+package require camacutils
 
 namespace eval wienercamac {
 
 
-    #  caamac is an array with indices of the
+    #  caamac is an array with indHices of the
     #  form vmecrate,camaccrate
     #  containing vme mapping names of the form vc32_vme_camac
     #  where vme is a vme crate and camac is a camac crate number.
@@ -77,58 +74,25 @@ namespace eval wienercamac {
     set camac(dummy) ""
 
     proc BranchBase {crate {vme 0}} {
-	variable camac
-	
-
-	# If the branch has not yet been mapped, do so on demand, and
-	# save in the camac array:
-	
-	if {![info exists camac($vme,$crate)]} {
-	    append name vc32_ $vme _ $crate
-	    set camac($vme,$crate) \
-		[vme create $name -device standard     \
-		     -crate $vme                       \
-		     [expr 0x800000 + $crate * 0x8000] \
-	       	     0x80000]
-	    
-	}
-	return $camac($vme,$crate)
+        variable camac
+        
+    
+        # If the branch has not yet been mapped, do so on demand, and
+        # save in the camac array:
+        
+        if {![info exists camac($vme,$crate)]} {
+            append name vc32_ $vme _ $crate
+            set camac($vme,$crate) \
+            [vme create $name -device standard     \
+                 -crate $vme                       \
+                 [expr 0x800000 + $crate * 0x8000] \
+                     0x80000]
+            
+        }
+        return $camac($vme,$crate)
     }
     
     
-    proc isValid {b c n} {
-		if {($b < 0) || ($b > 7)} {
-		    error "Branch $b is out of range"
-		}
-		#--ddc change to match number of vc32's
-		if {($c != 0)} {
-		    error "Crate $c is out of range"
-		}
-		if {($n < 0) || ($n > 31)} {
-		    error "Slot $n is out of range"
-		}
-	}
-	
-    proc isValidf {f} {
-		if {($f < 0) || ($f > 31)} {
-		    error "Function code $f is out of range"
-		}
-	    }
-    proc isValida {a} {
-		if { ($a < 0) || ($a > 15)} {
-		    error "Subaddress $a is out of range"
-		}
-    }
-    
-    proc isRead  {f} {
-		return [expr ($f < 8)]
-    }
-    proc isWrite {f} { 
-	return [expr ($f > 15) && ($f < 24)]
-    }
-    proc isCtl   {f} {
-		return [expr !([isWrite $f] || [isRead $f])]
-    }
 
     #  given a function code and a subaddress returns
     #  the address offset into a crate. Note that
@@ -210,7 +174,7 @@ namespace eval wienercamac {
 	#   The second, the offset within that crate to the slot.
 	proc cdreg {b c n {v 0}}  {
 	
-	    isValid $b $c $n;			# Error's if invalid camac op.
+	    camacutils::isValid $b $c $n;			# Error's if invalid camac op.
 	    set base    [BranchBase $b $v];	# Base id the crate controller.
 	    set offset  [expr $n << 10];	# Offset to the slot.
 	    
@@ -236,8 +200,8 @@ namespace eval wienercamac {
 	#
 	#     Return errors if the fcode or subaddress are bad.
 	#    
-	    isValidf $f
-	    isValida $a
+	    camacutils::isValidf $f
+	    camacutils::isValida $a
 	
 	    set vmeid [lindex $reg 0];		# VME address id.
 	    set module [lindex $reg 1];		# Base address of module within map.
@@ -290,7 +254,7 @@ namespace eval wienercamac {
 	
 	proc qstop {reg f a {maxn -1}} {
 	
-	    if {![isRead $f]} {
+	    if {![camacutils::isRead $f]} {
 			error "Qstop functions must be read operations"
 	    }
 	    set result ""
@@ -317,7 +281,7 @@ namespace eval wienercamac {
 	#    count is exceeded.
 	#
 	proc qscan {reg f a {maxn -1}} {
-	    if {![isRead $f]} {
+	    if {![camacutils::isRead $f]} {
 			error "Qscan functions must be read operations."
 	    }
 	    set result ""
@@ -347,7 +311,7 @@ namespace eval wienercamac {
 	#    same camac bcnaf.  The data read are returned as a list.
 	#
 	proc cblock {reg f a num} {
-	    if {![wiener::camac::isRead $f]} {
+	    if {![camacutils::isRead $f]} {
 			error "Counted block operations must be reads"
 	    }
 	    set result ""

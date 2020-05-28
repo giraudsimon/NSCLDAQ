@@ -14,18 +14,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CINPUTSTATSCOMMAND_H
-#define __CINPUTSTATSCOMMAND_H
+#ifndef CINPUTSTATSCOMMAND_H
+#define CINPUTSTATSCOMMAND_H
 
 
 #include <TCLObjectProcessor.h>
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 // Forward definitions:

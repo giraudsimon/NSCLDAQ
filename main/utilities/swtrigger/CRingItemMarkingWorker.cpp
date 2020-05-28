@@ -96,7 +96,7 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
             void* pNext = nextItem(p);
             // Items that are not PHYSICS_EVENTS are not classified:
             
-            if (p->s_item.s_header.s_type != PHYSICS_EVENT) {
+            if (itemType(&p->s_item) != PHYSICS_EVENT) {
     
                 messageParts[nParts].iov_base = p;
                 messageParts[nParts].iov_len  = messageSize(p);
@@ -105,7 +105,7 @@ CRingMarkingWorker::process(void* pData, size_t nBytes)
                 // If there's no body  header, that's a fatal error.
                 
                 pRingItem pRItem = &p->s_item;
-                if (pRItem->s_body.u_noBodyHeader.s_mbz == 0) {
+                if (!hasBodyHeader(pRItem) == 0) {
                     throw std::invalid_argument("Got a physics event with no body header!!");
                 } else {
                     CRingItem* pRingItemObj = CRingItemFactory::createRingItem(pRItem);
@@ -187,7 +187,7 @@ size_t
 CRingMarkingWorker::messageSize(const void* pData)
 {
     const Message* pm = static_cast<const Message*>(pData);
-    return sizeof(uint64_t) + pm->s_item.s_header.s_size;
+    return sizeof(uint64_t) + itemSize(&(pm->s_item));
 }
 /**
  * createClassifiedParts
@@ -210,10 +210,12 @@ CRingMarkingWorker::createClassifiedParts(
  
     // Adjust the body header size and size upwards for the uint32_t:
 
-    uint32_t originalBhdrSize = p->s_item.s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-    size_t ringItemSize = p->s_item.s_header.s_size;   // Original size.
+    pBodyHeader bH = static_cast<pBodyHeader>(bodyHeader(&p->s_item));
+    uint32_t originalBhdrSize =
+        bH->s_size;
+    size_t ringItemSize = itemSize(&(p->s_item));   // Original size.
     p->s_item.s_header.s_size += sizeof(uint32_t);
-    p->s_item.s_body.u_hasBodyHeader.s_bodyHeader.s_size += sizeof(uint32_t);
+    bH->s_size += sizeof(uint32_t);
     
     
     // Describe the message up through the old body header - including any
@@ -233,7 +235,7 @@ CRingMarkingWorker::createClassifiedParts(
     // presence of an extension before we added ours.
     
     uint8_t* pB =
-        reinterpret_cast<uint8_t*>(&(p->s_item.s_body.u_hasBodyHeader.s_bodyHeader));
+        reinterpret_cast<uint8_t*>(bodyHeader(&(p->s_item)));
     pB += originalBhdrSize;
     
     vec[2].iov_base = pB;

@@ -74,13 +74,7 @@ snit::type controlClient {
   #                server e.g. Readout exited.
   #
   method Get {device channel} {
-    puts $connection "Get $device $channel"
-    set response [gets $connection]
-    if {[eof $connection]} {
-      return -code error "USB control client has lost connection to server"
-    }
-    return $response
-
+    return [$self _Transaction "Get $device $channel"]
   }
   # Set device channel value
   #      Attempts to set the value of a channel within a device.
@@ -90,28 +84,30 @@ snit::type controlClient {
   #     Failure - Generally because the connection was dropped by the server.
   #
   method Set {device channel value} {
-    puts $connection "Set $device $channel $value"
-    set response [gets $connection]
-    if {[eof $connection]} {
-      return -code error "USB control client has lost connection to server"
-    }
-    return $response
+    return [$self _Transaction "Set $device $channel $value"]
+    
   }
   # Update device
   #     Force the device settings/readings to be udpated.
   #
   method Update device {
-    puts $connection "Update $device"
-    set response [gets $connection]
-    if {[eof $connection]} {
-      return -code error "USB control client has lost connection to server"
-    }
-    return $response
+    return [$self _Transaction "Update $device"]
+    
   }
   # Get monitored data.
   #
   method Monitor device {
-    puts $connection "mon $device"
+    return [$self _Transaction "mon $device"]
+  }
+  ##
+  # _Transaction
+  #    Sends a line of text to the server and gets its response.
+  #
+  # @param line - line to send to server.
+  # @return text - reply from servr.
+  # @throws if server droppe the connection
+  method _Transaction line {
+    puts $connection $line
     set response [gets $connection]
     if {[eof $connection]} {
       return -code error "USB control client has lost connection to server"

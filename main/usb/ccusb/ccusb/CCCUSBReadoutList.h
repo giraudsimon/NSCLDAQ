@@ -20,37 +20,14 @@
  %}
 
  #endif
- #ifndef __CCUSBREADOUTLIST_H
- #define __CCUSBREADOUTLIST_H
+ #ifndef CCUSBREADOUTLIST_H
+ #define CCUSBREADOUTLIST_H
 
- #ifndef __STL_STRING
  #include <string>
- #ifndef __STL_STRING
- #define __STL_STRING
- #endif
- #endif
-
- #ifndef __STL_VECTOR
  #include <vector>
- #ifndef __STL_VECTOR
- #define __STL_VECTOR
- #endif
- #endif
-
- #ifndef __CRT_STDINT_H
  #include <stdint.h>
- #ifndef __CRT_STDINT_H
- #define __CRT_STDINT_H
- #endif
- #endif
-
- #ifndef __CRT_SYS_TYPES_H
  #include <sys/types.h>
- #ifndef __CRT_SYS_TYPES_H
- #define __CRT_SYS_TYPES_H
- #endif
- #endif
-
+ 
 
  /*!
    In general, the CC-USB will be used by building list of CAMAC operations (stacks in the
@@ -105,7 +82,7 @@
 
    virtual void addRead16(int n, int a, int f, bool lamWait=false);
    virtual void addRead24(int n, int a, int f, bool lamWait=false);
-
+   virtual void addRead(int n, int a, int f, bool lamWait=false, bool longwd=false);
    virtual void addControl(int n, int a, int f);
 
 
@@ -152,7 +129,9 @@ private:
   static bool validSlot(int n);
   static bool validSubaddress(int a);
 
-
+  void addGenericQop(
+      int type, int n, int a, int f, uint16_t max, bool lamWait, bool longwd
+  );
   
 };
 

@@ -1,7 +1,12 @@
 SCRIPT_FILES=@srcdir@/mwutil.tcl @srcdir@/notebook.tcl @srcdir@/tablelist.tcl @srcdir@/tablelistSortByColumn.tcl \
 	@srcdir@/tablelistWidget.tcl  @srcdir@/tabnbook.tcl @srcdir@/FrameSequencer.tcl @srcdir@/FrameManager.tcl \
 	@srcdir@/RingStatus.tcl @srcdir@/ChannelLabel.tcl @srcdir@/TransientLabel.tcl @srcdir@/scaleControl.tcl \
-	@srcdir@/nsclspinbox.tcl
+	@srcdir@/nsclspinbox.tcl \
+	@srcdir@/tkutils.tcl \
+	@srcdir@/warning.tcl @srcdir@/NSCLBgerror.tcl @srcdir@/bells.tcl \
+	@srcdir@/icon.tcl @srcdir@/titledSpinBox.tcl @srcdir@/bindDown.tcl \
+	@srcdir@/meter.tcl
+
 
 DOCS=RingStatus.xml ScaleControl_man.xml Frames.xml transientLabel.xml
 

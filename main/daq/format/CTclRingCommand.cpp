@@ -46,6 +46,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <utils.h>
 
 using namespace std;
 
@@ -253,45 +254,49 @@ CTclRingCommand::get(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     
     // Actual upcast depends on the type...and that describes how to format:
     
+    CTCLObject result;
+    result.Bind(interp);
+    result += "type";
+    result += pSpecificItem->typeName();
     
     switch(pSpecificItem->type()) {
         case BEGIN_RUN:
         case END_RUN:
         case PAUSE_RUN:
         case RESUME_RUN:
-            formatStateChangeItem(interp, pSpecificItem);
+            formatStateChangeItem(interp, pSpecificItem, result);
             break;
         case PERIODIC_SCALERS:
-            formatScalerItem(interp, pSpecificItem);
+            formatScalerItem(interp, pSpecificItem, result);
             break;
         case PACKET_TYPES:
         case MONITORED_VARIABLES:
-            formatStringItem(interp, pSpecificItem);
+            formatStringItem(interp, pSpecificItem, result);
             break;
         case RING_FORMAT:
-            formatFormatItem(interp, pSpecificItem);
+            formatFormatItem(interp, pSpecificItem, result);
             break;
         case PHYSICS_EVENT:
-            formatEvent(interp, pSpecificItem);
+            formatEvent(interp, pSpecificItem, result);
             break;
         case EVB_FRAGMENT:
         case EVB_UNKNOWN_PAYLOAD:
-            formatFragment(interp, pSpecificItem);
+            formatFragment(interp, pSpecificItem, result);
             break;
         case PHYSICS_EVENT_COUNT:
-            formatTriggerCount(interp, pSpecificItem);
+            formatTriggerCount(interp, pSpecificItem, result);
             break;
         case EVB_GLOM_INFO:
-            formatGlomParams(interp,  pSpecificItem);
+            formatGlomParams(interp,  pSpecificItem, result);
             break;
         case ABNORMAL_ENDRUN:
-            formatAbnormalEnd(interp, pSpecificItem);
+            formatAbnormalEnd(interp, pSpecificItem, result);
         default:
             break;;
             // TO DO:
     }
     
-    
+    interp.setResult(result);
     delete pSpecificItem;
 }
 
@@ -340,46 +345,41 @@ CTclRingCommand::formatBodyHeader(CTCLInterpreter& interp, CRingItem* p)
  *
  *      type       - ring item type (textual)
  *      run        - run number
- *      timeoffset - Time offset in seconds.
+ *      timeoffset - Time offset.
+ *      divisor    - time divisor
+ *      offsetsec - time offset in seconds.
  *      realtime   - Time of day of the ring item (can use with [time format])
  *      title      - The run title.
+ *      source     - the original source id of the data.
  *      bodyheader - only if there is a body header in the item.  That in turn is a dict with
  *                   timestamp, source, and barrier keys.
  */
  
 void
-CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem)
+CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem, CTCLObject& result)
 {
     CRingStateChangeItem* p = reinterpret_cast<CRingStateChangeItem*>(pItem);
-    CTCLObject result;
-    result.Bind(interp);
-    
-    // type:
-    
-    result += "type";
-    result += p->typeName();
     
     result += "run";
     result += static_cast<int>(p->getRunNumber());
     
-    result += "timeoffset";
-    result += static_cast<int>(p->getElapsedTime());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
+    setTiming(
+        result,
+        p->getElapsedTime(), p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
     
     result += "title";
     result += p->getTitle();
+    
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     
     if (p->hasBodyHeader()) {
         result += "bodyheader";
         result += formatBodyHeader(interp, p);        
-    }
-    
-    interp.setResult(result);
-    
-    
+    }    
 }
 /**
  * formatScalerItem
@@ -387,11 +387,14 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
  *    dict with the keys:
  *    - type - going to be Scaler
  *    - start - When in the run the start was.
+ *    - startsec - Start time in seconds
  *    - end   - When in the run the end of the period was.
+ *    - endsecs - end time in seconds.
  *    - realtime  Time emitted ([clock format] can take this)
  *    - divisor - What to divide start or end by to get seconds.
  *    - incremental - Bool true if this is incremental.
  *    - scalers     - List of scaler values.
+ *    - source      - Original source id.
  *
  *    If there is a body header, the bodyheader key will be present and will be
  *    the body header dict.
@@ -400,23 +403,24 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
  *    @param pSpecificItem - Actually a CRingScalerItem pointer.
  */
 void
-CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingScalerItem* pItem = reinterpret_cast<CRingScalerItem*>(pSpecificItem);
     
     // Stuff outside the body header
    
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pItem->typeName();
     
     result += "start";
     result += static_cast<int>(pItem->getStartTime());
     
+    result += "startsec";
+    result += static_cast<double>(pItem->computeStartTime());
+    
     result += "end";
     result += static_cast<int>(pItem->getEndTime());
+    
+    result += "endsec";
+    result += static_cast<double>(pItem->computeEndTime());
     
     result += "realtime";
     result += static_cast<int>(pItem->getTimestamp());
@@ -426,6 +430,9 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     
     result += "incremental";
     result += static_cast<int>(pItem->isIncremental() ? 1 : 0);
+    
+    result += "source";
+    result += static_cast<int>(pItem->getOriginalSourceId());
     
     // Now the scaler vector itself:
     
@@ -445,9 +452,6 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         result += "bodyheader";
         result += formatBodyHeader(interp, pItem);
     }
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatStringItem:
@@ -456,32 +460,28 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
  *    -   type - result of typeName.
 *     -  timeoffset will have the offset time.
 *     -  divisor will have the time divisor to get seconds.
+*     -  offsetsec - time offset in seconds.
 *     -  realtime will have something that can be given to [clock format] to get
 *        when this was emitted
+*     -  source - the original source id.
 *     -  strings - list of strings that are in the ring item.
 *     -  bodyheader - if the item has a body header.
 *     @param interp - the intepreter object whose result will be set by this.
 *     @param pSpecificItem - Actually a CRingTextItem pointer.
 *     */
 void
-CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingTextItem* p = reinterpret_cast<CRingTextItem*>(pSpecificItem);
     
-    CTCLObject result;
-    result.Bind(interp);
+    setTiming(
+        result,
+        p->getTimeOffset(), p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
     
-    result += "type";
-    result += p->typeName();
-    
-    result += "timeoffset";
-    result += static_cast<int>(p->getTimeOffset());
-    
-    result += "divisor";
-    result += static_cast<int>(p->getTimeDivisor());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     CTCLObject stringList;
     stringList.Bind(interp);
@@ -496,8 +496,6 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         result += "bodyheader";
         result += formatBodyHeader(interp, p);
     }
-    
-    interp.setResult(result);
 }
 /**
  * formatFormatitem
@@ -511,24 +509,16 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
  *    @param pSpecificItem - Actually a CDataFormatItem pointer.
 */ 
 void
-CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CDataFormatItem* p = reinterpret_cast<CDataFormatItem*>(pSpecificItem);
     
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
 
     result += "major";
     result += static_cast<int>(p->getMajor());
     
     result += "minor";
     result += static_cast<int>(p->getMinor());
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatEvent
@@ -542,13 +532,8 @@ CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificI
 */ 
 
 void
-CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pSpecificItem->typeName();
     
     result += "size";
     result += static_cast<int>(pSpecificItem->getBodySize());
@@ -565,8 +550,6 @@ CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem)
         result += "bodyheader";
         result += formatBodyHeader(interp, pSpecificItem);
     }
-    
-    interp.setResult(result);
 }
 
 /**
@@ -584,14 +567,8 @@ CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem)
  *    @param pSpecificItem - The ring item.
  */
 void
-CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pSpecificItem->typeName();
-    
     CRingFragmentItem* p = reinterpret_cast<CRingFragmentItem*>(pSpecificItem);
     
     result += "timestamp";
@@ -616,9 +593,6 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
     CTCLObject body(pBody);
     body.Bind(interp);
     result += body;
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatTriggerCount
@@ -630,45 +604,38 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
 *     *   bodyheader if the item has a body header present.
 *     *   timeoffset - 123 (offset into the run).
 *     *   divisor    - 1   divisor needed to turn that to seconds.
+*     *   offsetsec  - offset in seconds.
 *     *   triggers   - 1000 Number of triggers (note 64 bits).
 *     *   realtime   - 0 time of day emitted.
+*     *   source     - source id of the item.
 */
     
 void
-CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingPhysicsEventCountItem* p =
         reinterpret_cast<CRingPhysicsEventCountItem*>(pSpecificItem);
     
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
-    
-    result += "timeoffset";
-    result += static_cast<int>(p->getTimeOffset());
-    
-    result += "divisor";
-    result += static_cast<int>(p->getTimeDivisor());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
-    
+    setTiming(
+        result, p->getTimeOffset(),
+        p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
+        
     uint64_t ec = p->getEventCount();
     Tcl_Obj* eventCount = Tcl_NewWideIntObj(static_cast<Tcl_WideInt>(ec));
     CTCLObject eventCountObj(eventCount);
     eventCountObj.Bind(interp);
     result += "triggers";
     result += eventCountObj;
+
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     if (p->hasBodyHeader()) {
         result += "bodyheader";
         result += formatBodyHeader(interp, pSpecificItem);
     }
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatGlomParams
@@ -682,14 +649,9 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
  *        how the timestamp for the items are derived fromt he timestamps
  *        of their constituent fragments.
 */
-void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CGlomParameters *p = reinterpret_cast<CGlomParameters*>(pSpecificItem);
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
     
     result += "isBuilding";
     result += (p->isBuilding() ? 1 : 0);
@@ -711,24 +673,16 @@ void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpec
     } else {
         result += "average";
     }
-    
-    
-    interp.setResult(result);
-    
 }
 /**
  * formatAbnormalEnd
  *   We only provide  the type (Abnormal End).
  */
 void
-CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
 
-    CTCLObject result;
-    result.Bind(interp);
-    result += "type";
-    result += pSpecificItem->typeName();
-    interp.setResult(result);
+    // place holder for later stuff.
 }
 
 CRingItem*
@@ -810,26 +764,28 @@ CTclRingCommand::getFromRing(CRingBuffer &ring, CTimeout& timer)
 
     return CRingItemFactory::createRingItem(buffer.data());
 }
-
-
-
-uint32_t CTclRingCommand::swal(uint32_t value)
+/**
+ * setTiming
+ *   Adds timing dict info to the  result
+ * @param result -reference to the result being bult.
+ * @param offset  offset value.
+ * @param divisor - divisor -> seconds.
+ * @param secs    - Seconds.
+ * @param stamp   - time_t
+ */
+void CTclRingCommand::setTiming(
+    CTCLObject& result, int offset, int divisor, double seconds,
+    int stamp
+)
 {
-    union {
-        uint32_t asValue;
-        char asBytes[sizeof(uint32_t)];
-    } value1, value2;
-
-    value1.asValue = value;
-
-    for (int fwIndex=0, bkwdIndex=sizeof(uint32_t);
-         fwIndex<sizeof(uint32_t) && bkwdIndex>=0;
-         fwIndex++, bkwdIndex--) {
-        value2.asBytes[fwIndex] = value1.asBytes[bkwdIndex];
-    }
-
-    return value2.asValue;
-
+result += "timeoffset";
+    result += offset;
+    result += "divisor";
+    result += divisor;
+    result += "offsetsec";
+    result += seconds;
+    result += "realtime";
+    result += stamp;
 }
 
 

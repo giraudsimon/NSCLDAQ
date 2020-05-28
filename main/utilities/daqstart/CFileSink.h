@@ -15,18 +15,15 @@
 */
 
 
-#ifndef __CFILESINK_H  //Required for current class
-#define __CFILESINK_H
+#ifndef CFILESINK_H  //Required for current class
+#define CFILESINK_H
 
 //
 // Include files:
 //
 
-                               //Required for base classes
-#ifndef __CSINK_H     //CSink
 #include "CSink.h"
-#endif
- 
+
 class CFileSink  : public CSink        
 {
 private:

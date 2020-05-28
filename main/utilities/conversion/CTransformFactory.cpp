@@ -15,37 +15,33 @@
 */
 
 #include "CTransformFactory.h"
+#include <stdexcept>
 
 using namespace std;
 
 namespace DAQ {
   namespace Transform {
 
-    //
-    CTransformFactory::CTransformFactory()
-      : m_creators()
-    {
-    }
-
-    //
+    
     void
-    CTransformFactory::setCreator(int vsnFrom, int vsnTo, std::unique_ptr<CTransformCreator> pCreator)
+    CTransformFactory::setCreator(int vsnFrom, int vsnTo, CTransformCreator* pCreator)
     {
-      pair<int,int> transformId(vsnFrom, vsnTo);
-
-      m_creators[transformId] = move(pCreator);
+      uint64_t key = (static_cast<uint64_t>(vsnFrom) << 32) | vsnTo;
+      addCreator(key, pCreator);
     }
 
 
     //
-    unique_ptr<CBaseMediator>
+    CBaseMediator*
     CTransformFactory::create(int vsnFrom, int vsnTo)
     {
-      const pair<int, int> transformId(vsnFrom, vsnTo);
-
-      auto& pCreator = m_creators.at(transformId);
-
-      return (*pCreator)();
+      uint64_t key = (static_cast<uint64_t>(vsnFrom) << 32) | vsnTo;
+      auto result = TransformFactory::create(key);
+      if (result == nullptr) {
+        throw std::out_of_range("No such mediator creating from factory");
+      }
+      return result; 
+      
 
     }
 

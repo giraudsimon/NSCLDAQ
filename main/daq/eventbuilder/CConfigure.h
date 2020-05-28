@@ -18,12 +18,11 @@
  * @brief Define class for evb configuration management.
  */
 
-#ifndef _CCONFIGURE_H
-#define _CCONFIGURE_H
+#ifndef CCONFIGURE_H
+#define CCONFIGURE_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
+
 
 // Forward class/type definitions:
 

@@ -44,7 +44,7 @@ public:
     virtual ~CClassifierApp() {}                     // for destructor chaining.
     
     virtual int operator()() = 0;                    // Run the application
-protected:
+public:
     typedef CRingMarkingWorker::Classifier* (*ClassifierFactory)();
     ClassifierFactory getClassifierFactory(); 
 };

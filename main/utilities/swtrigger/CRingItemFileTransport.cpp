@@ -87,8 +87,8 @@ void CRingItemFileTransport::recv(void** ppData, size_t& size)
     }
     // There's an item to return and m_pCursor points to it.
     
-    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(m_pCursor);
-    size                    = pHeader->s_size;
+    pRingItem pHeader = reinterpret_cast<pRingItem>(m_pCursor);
+    size                    = itemSize(pHeader);
     void* pItem             = malloc(size);
     if (!pItem) {
         throw std::bad_alloc();    

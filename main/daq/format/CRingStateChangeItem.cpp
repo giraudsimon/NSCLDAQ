@@ -20,6 +20,7 @@
 #include <RangeError.h>
 #include <sstream>
 #include <string.h>
+#include <stdexcept>
 
 
 using namespace std;
@@ -42,14 +43,11 @@ CRingStateChangeItem::CRingStateChangeItem(uint16_t reason) :
 
   // Fill in the body:
 
-
-  pStateChangeItemBody pItem =
-    reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
-  pItem->s_runNumber    = 0;
-  pItem->s_timeOffset   = 0;
-  pItem->s_Timestamp = static_cast<uint32_t>(time(NULL));
-  memset(pItem->s_title, 0, TITLE_MAXSIZE+1);
-  pItem->s_offsetDivisor = 1;
+  fillStateChangeBody(getItemPointer(), 0,  0, 1, time(nullptr), "", 0);
+  if (!isStateChange()) {
+      throw std::logic_error("Invalid ring item type for state change");
+  }
+  
 }
 /*!
    Fully specified construction the initial values of the various
@@ -75,17 +73,12 @@ CRingStateChangeItem::CRingStateChangeItem(uint16_t reason,
 {
   init();
 
-  // Everything should work just fine now:
-
-  pStateChangeItemBody pItem =
-    reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
-
-  pItem->s_runNumber = runNumber;
-  pItem->s_timeOffset= timeOffset;
-  pItem->s_Timestamp = timestamp;
-  setTitle(title);		// takes care of the exception.
-  pItem->s_offsetDivisor = 1;
-
+  fillStateChangeBody(
+      getItemPointer(), runNumber, timeOffset, 1, timestamp, title.c_str(), 0
+  );
+  if (!isStateChange()) {
+    throw std::logic_error("Invalid ring item type for state change");
+  }
 }
 /**
  * constructor - for timetamped item.
@@ -115,14 +108,13 @@ CRingStateChangeItem::CRingStateChangeItem(
     init();
     // Everything should work just fine now:
   
-    pStateChangeItemBody pItem =
-        reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
-
-    pItem->s_runNumber = runNumber;
-    pItem->s_timeOffset= timeOffset;
-    pItem->s_Timestamp = timestamp;
-    setTitle(title);		// takes care of the exception.
-    pItem->s_offsetDivisor = offsetDivisor;    
+    fillStateChangeBody(
+        getItemPointer(), runNumber, timeOffset, offsetDivisor,
+        timestamp, title.c_str(), sourceId
+    );
+    if (!isStateChange()) {
+      throw std::logic_error("Invalid ring item type for state change");
+    }
 }
 /*!
    Constructor that copies/converts an existing ring item into a state change
@@ -253,6 +245,18 @@ CRingStateChangeItem::getElapsedTime() const
     return pItem->s_timeOffset;
 }
 /**
+ * getTimeDivisor
+ *    Return the divisor used for timing (conversion from ticks to seconds)
+ * @return uint32_t
+ */
+uint32_t
+CRingStateChangeItem::getTimeDivisor() const
+{
+  pStateChangeItemBody pItem =
+        reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
+  return pItem->s_offsetDivisor;
+}
+/**
  * getElapsedTime
  *
  * @return float - Elapsed time taking into account the divisor.
@@ -323,6 +327,22 @@ CRingStateChangeItem::getTimestamp() const
 
     return pItem->s_Timestamp;
 }
+/**
+ * getOriginalSourceId
+ *    Return the source id with wich the item was originally constructed.
+ *    The body header can be re-written by glom and therefore the original source
+ *    id is squirreled away in the body itself.  This returns that
+ *    squirreled value.
+ *
+ * @return uint32_t
+ */
+uint32_t
+CRingStateChangeItem::getOriginalSourceId() const
+{
+  pStateChangeItemBody pItem =
+        reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
+  return pItem->s_originalSid;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -363,11 +383,12 @@ CRingStateChangeItem::toString() const
   std::ostringstream out;		//  Build up via outputting to this psuedo stream.
 
   uint32_t run       = getRunNumber();
-  
+  uint32_t sid       = getOriginalSourceId();
   string   title     = getTitle();
   string   timestamp = timeString(getTimestamp());
 
-  out <<  timestamp << " : Run State change : " << typeName();
+  out <<  timestamp << " : Run State change: " << typeName();
+  out << " originally from source id: " <<  sid;
   out << " at " << computeElapsedTime() << " seconds into the run\n";
   out << bodyHeaderToString();
   out << "Title     : " << title << std::endl;

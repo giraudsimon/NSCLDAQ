@@ -501,7 +501,7 @@ if (!pZmqFactory) {
                         <type>void</type>
                         <methodname>free</methodname>
                         <methodparam>
-                            <type>iovec&</type><parameter>extension</parameter>
+                            <type>iovec&amp;</type><parameter>extension</parameter>
                         </methodparam>
                         <modifier></modifier>
                     </methodsynopsis>
@@ -1278,7 +1278,7 @@ $DAQBIN/EventFilter <optional>OPTIONS</optional>...
                     Specifies the value the classifier must have to accept
                     a  event after the mask is applied. In other words. An event
                     is accepted if
-                    <literal>classifier &amp mask == value</literal>.
+                    <literal>classifier &amp; mask == value</literal>.
                 </para>
             </listitem>
            </varlistentry>
@@ -1545,7 +1545,7 @@ $DAQBIN/Transformer <optional>OPTIONS</optional>...
                         <type>void</type>
                         <methodname>free</methodname>
                         <methodparam>
-                            <type>iovec&</type><parameter>extension</parameter>
+                            <type>iovec&amp;</type><parameter>extension</parameter>
                         </methodparam>
                         <modifier></modifier>
                     </methodsynopsis>
@@ -3039,7 +3039,7 @@ public:
 iovec part;
 part.iov_len = nBytes;
 part.iov_base = pBase;
-sendMessage(&part, 1);
+sendMessage(&amp;part, 1);
 ...
                         </programlisting>
                     </informalexample>
@@ -3209,7 +3209,7 @@ public:
 
 class CNullTransport :  public CTransport
 {
-    void recv(void** ppData, size_t& size);
+    void recv(void** ppData, size_t&amp; size);
     void send(iovec* parts, size_t numParts);
 };
         </synopsis>
@@ -3254,7 +3254,7 @@ public:
 
 public:
     
-    virtual void recv(void** ppData, size_t& size);
+    virtual void recv(void** ppData, size_t&amp; size);
     virtual  void    send(iovec* parts, size_t numParts);
     
     void addMessage(void* pData, size_t nBytes);
@@ -4826,7 +4826,7 @@ class CRingMarkingWorker : public CParallelWorker
 public:
     class Classifier {
     public:
-        virtual uint32_t operator()(CRingItem& item) = 0;
+        virtual uint32_t operator()(CRingItem&amp; item) = 0;
     };
     
 public:
@@ -5080,7 +5080,7 @@ class CZMQRingItemThreadedWorker : public CThreadedProcessingElement
 {
 public:
     CZMQRingItemThreadedWorker(
-        const char* routerUri, uint64_t clientId, CSender& sender,
+        const char* routerUri, uint64_t clientId, CSender&amp; sender,
         CProcessor* processor
 };
         </synopsis>

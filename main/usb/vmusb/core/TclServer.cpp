@@ -27,6 +27,7 @@ using namespace std;
 #include "CMonCommand.h"
 #include "CWatchCommand.h"
 #include "CRunStateCommand.h"
+#include "tclUtil.h"
 #include <CCtlConfiguration.h>
 #include <DataBuffer.h>
 #include <CBufferQueue.h>
@@ -147,8 +148,8 @@ TclServer::scheduleExit()
 void
 TclServer::setResult(string msg)
 {
-  Tcl_Obj* result = Tcl_NewStringObj(msg.c_str(), -1);
-  Tcl_SetObjResult(m_pInterpreter->getInterpreter(), result);
+  tclUtil::setResult(*m_pInterpreter, msg);        // in tclUtil.h
+  
 }
 
 void TclServer::init()
@@ -350,12 +351,9 @@ TclServer::EventLoop()
 void
 TclServer::initModules()
 {
-  // this code was inside of the Initialize method of CControl 
-  bool mustRelease(false);
-  if (CRunState::getInstance()->getState() == CRunState::Active) {
-    mustRelease = true;
-    CControlQueues::getInstance()->AcquireUsb();
-  }
+  // this code was inside of the Initialize method of CControl
+  
+  bool mustRelease = acquireUSBIfNeeded();
 
   auto& modules( m_config.getModules());
 
@@ -363,11 +361,7 @@ TclServer::initModules()
     auto module = (*p);
     module->Initialize(*m_pVme);
   }
-#if 0  
-  for ( auto& module : modules ) {
-    module->Initialize(*m_pVme);
-  }
-#endif
+
   if (mustRelease) {
     CControlQueues::getInstance()->ReleaseUsb();
   }
@@ -625,12 +619,8 @@ TclServer::sendWatchedVariables()
 	// If necessary get a buffer.
 	
 	if (!pBuffer) {
-	  pBuffer               = gFreeBuffers.get();
-	  pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
-	  pBuffer->s_bufferType = TYPE_STRINGS;
+    pBuffer = getBuffer();
 	  pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-	  pStrings->s_stringCount = 0;
-	  pStrings->s_ringType    = MONITORED_VARIABLES;
 	  pDest                 = pStrings->s_strings;
 	}
 	
@@ -660,13 +650,8 @@ TclServer::sendWatchedVariables()
 	  */
 	  if ((setCommand.size() + pBuffer->s_bufferSize + 1) > pBuffer->s_storageSize) {
 	    gFilledBuffers.queue(pBuffer);
-	    
-	    pBuffer               = gFreeBuffers.get();
-	    pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
-	    pBuffer->s_bufferType = TYPE_STRINGS;
+	    pBuffer = getBuffer();
 	    pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-	    pStrings->s_stringCount = 0;
-	    pStrings->s_ringType    = MONITORED_VARIABLES;
 	    pDest                 = pStrings->s_strings;
 	    
 	  }
@@ -706,8 +691,44 @@ TclServer::Exit(Tcl_Event* pEvent, int flags)
 void
 TclServer::stackTrace()
 {
-  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", kfFALSE);
-  const char* msg = errorInfo.Get(TCL_GLOBAL_ONLY);
+  std::string msg = tclUtil::getTclTraceback(*m_pInterpreter);
+  
   
   std::cerr << msg << std::endl;
+}
+/**
+ * getBuffer
+ *    Get an initialized string buffer
+ *  @return DataBuffer*
+ */
+DataBuffer*
+TclServer::getBuffer()
+{
+    DataBuffer* pBuffer;
+    pStringsBuffer pStrings;
+    
+    pBuffer               = gFreeBuffers.get();
+	  pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
+	  pBuffer->s_bufferType = TYPE_STRINGS;
+	  pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
+	  pStrings->s_stringCount = 0;
+	  pStrings->s_ringType    = MONITORED_VARIABLES;
+    
+    return pBuffer;
+}
+/**
+ * acquireUSBIfNeeded
+ *   If necessary lock the control queues and acquire the VMUSB
+ *   from the readout thread
+ * @return true - if acquisition was needed.
+ */
+bool
+TclServer::acquireUSBIfNeeded()
+{
+  bool mustRelease(false);
+  if (CRunState::getInstance()->getState() == CRunState::Active) {
+    mustRelease = true;
+    CControlQueues::getInstance()->AcquireUsb();
+  }
+  return mustRelease;
 }

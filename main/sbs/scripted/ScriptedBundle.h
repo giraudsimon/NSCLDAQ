@@ -1,5 +1,5 @@
-#ifndef __SCRIPTEDBUNDLE_H
-#define __SCRIPTEDBUNDLE_H
+#ifndef SCRIPTEDBUNDLE_H
+#define SCRIPTEDBUNDLE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -46,7 +46,7 @@ struct ScriptedBundle {
   // Stuff to set up the bundle:
 
   void processHardwareFile(const char* pFilename, CTCLInterpreter& rInterp);
-  void addCreator(CModuleCreator& rCreator);
+  void addCreator(const char* type, CModuleCreator& rCreator);
 
 
 };

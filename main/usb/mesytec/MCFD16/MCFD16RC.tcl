@@ -18,6 +18,7 @@ package provide mcfd16rc 1.0
 package require snit
 package require Utils
 package require usbcontrolclient
+package require MCFD16Common
 
 ## A class that formulates RC commands for the MCFD-16 and initializes a
 #  transactions through a communication proxy. The proxy is intended to abstract
@@ -463,21 +464,7 @@ snit::type MCFD16RC {
   # @returns result of _Transaction
   method SetTriggerSource {trigId source veto} {
 
-    if {$trigId ni [list 0 1 2]} {
-        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-        return -code error -errorinfo MCFD16RC::SetTriggerSource $msg
-    }
-
-    set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
-    if {$source ni [dict keys $sourceBits]} {
-        set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
-        return -code error -errorinfo MCFD16RC::SetTriggerSource $msg
-    }
-
-    set value [dict get $sourceBits $source]
-    if {[string is true $veto]} {
-        set value [expr {$value + 0x40}]
-    }
+    set value [MCFD16Common::computeTriggerBits $trigId $source $veto]
 
     set adr [dict get $offsetsMap trig${trigId}_source]
     return [$_proxy Write $adr $value]
@@ -489,21 +476,16 @@ snit::type MCFD16RC {
   #
   # @returns list. first element is source, second element is veto enabled
   method GetTriggerSource {trigId} {
-    if {$trigId ni [list 0 1 2]} {
-        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-        return -code error -errorinfo MCFD16RC::SetTriggerSource $msg
-    }
+    MCFD16Common::errorOnInvalidTriggerId $trigId
 
-      set adr [dict get $offsetsMap trig${trigId}_source]
+    set adr [dict get $offsetsMap trig${trigId}_source]
     set code [$_proxy Read $adr]
 
-    set vetoEnabled [expr {($code&0x40)!=0}]
-    set source      [expr {$code&0xbf}]
-  
-    set sourceNameMap [dict create   1 or 2 multiplicity 4 pair_coinc 8 \
-                                    mon 16 pat_or_0 32 pat_or_1 64 veto 128 gg]
+    set decoded [MCFD16Commmon::getTriggerFields $code]
+    set vetoEnabled [lindex $decoded 1]
+    set source      [lindex $decoded 0]
 
-    return [list [dict get $sourceNameMap $source] $vetoEnabled]
+    return [list [MCFD16Common::triggerSourceName $source] $vetoEnabled]
   }
 
   ## @brief Set which channels contribute to the OR
@@ -516,11 +498,8 @@ snit::type MCFD16RC {
   # 
   # @returns result of last transactions
   method SetTriggerOrPattern {patternId pattern} {
-    if {$patternId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
-    }
-
+    
+    MCFD16Common::validateTriggerOrId $patternId
     if {![Utils::isInRange 0 0xffff $pattern]} {
       set msg {Invalid bit pattern provided. Must be in range [0,65535].}
       return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
@@ -544,13 +523,9 @@ snit::type MCFD16RC {
   #
   # @returns integer whose set bits represent the channel states.
   #
-  method GetTriggerOrPattern {patternId} {
-
-    if {$patternId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
-    }
-
+  method GetTriggerOrPattern {patternId} {  
+    MCFD16Common::validateTriggerOrId $patternId
+    
     set lowAddr [dict get $offsetsMap or${patternId}_pattern_lo]
     set highAddr [dict get $offsetsMap or${patternId}_pattern_hi]
 

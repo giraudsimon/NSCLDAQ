@@ -14,15 +14,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCAENV560REGISTERS_H
-#define __CCAENV560REGISTERS_H
-
-#ifndef __CRT_STDINT_H
+#ifndef CCAENV560REGISTERS_H
+#define CCAENV560REGISTERS_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /*
    This file defines the register layout and bits for the 

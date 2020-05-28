@@ -26,8 +26,8 @@ package require eventLogBundle
 package require DataSourceManager
 package require DataSourceMonitor
 package require DataSourceUI
-package require rdoCalloutsBundle;     # Auto registers.
 package require ExpFileSystem
+package require rdoCalloutsBundle;     # Auto registers.
 package require ExpFileSystemConfig
 package require Diagnostics
 package require StateManager

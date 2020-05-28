@@ -95,7 +95,7 @@ FragmakerTests::makeNoHeaderStateChange(StateChangeItem& item, int type)
     sizeof(RingItemHeader) + sizeof(uint32_t) + sizeof(StateChangeItemBody);
   item.s_header.s_type = type;
   
-  item.s_body.u_noBodyHeader.s_mbz = 0;
+  item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
  
   return reinterpret_cast<RingItem*>(&item);
 }
@@ -152,7 +152,9 @@ void FragmakerTests::hasHeader_3()
   
   // give Item a null timestamp.
   
-  pBodyHeader pB = &(item.s_body.u_hasBodyHeader.s_bodyHeader);
+  
+  pBodyHeader pB =
+    reinterpret_cast<pBodyHeader>(bodyHeader(reinterpret_cast<pRingItem>(&item)));
   pB->s_timestamp = NULL_TIMESTAMP;
   
   EVB::FragmentHeader hdr = m_pTestObj->makeHeader(

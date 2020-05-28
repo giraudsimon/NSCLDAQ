@@ -13,37 +13,13 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __DAQSHM_H
-#define __DAQSHM_H
+#ifndef DAQSHM_H
+#define DAQSHM_H
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-
-#ifndef __CRT_STDDEF_H
 #include <stddef.h>		// for size_t.
-#ifndef __CRT_STDDEF_H
-#define __CRT_STDDEF_H
-#endif
-#endif
-
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRT_UNISTD_H
-#endif
-#endif
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -97,6 +73,7 @@ public:
 
 private:
   static ssize_t fdSize(int fd);
+  static void setLastErrorFromErrno();
 public:
   static const int Success;
   static const int Exists;

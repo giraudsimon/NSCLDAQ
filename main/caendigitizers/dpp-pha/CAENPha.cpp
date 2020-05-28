@@ -82,14 +82,8 @@ CAENPha::CAENPha(
     throw std::pair<std::string, int>("Open failed", status);
   }
   conet_node = node;
+  initBuffers();
   
-  for (int i =0; i < CAEN_DGTZ_MAX_CHANNEL; i++) {
-    m_dppBuffer[i]  = 0;
-    m_nDppEvents[i] = 0;
-    m_nOffsets[i]   = 1;
-    m_nTimestampAdjusts[i] = 0;
-    m_nLastTimestamp[i]    = 0;
-  }
   
   status = CAEN_DGTZ_GetInfo(m_handle, &m_info);
   if (status != CAEN_DGTZ_Success) {
@@ -238,13 +232,9 @@ CAENPha::shutdown()
   if (status != CAEN_DGTZ_Success) {
     throw std::pair<std::string, int>("Failed to free dpp events buffer", status);
   }
-  for (int i=0; i < CAEN_DGTZ_MAX_CHANNEL; i++) {
-    m_dppBuffer[i] = 0;
-    m_nDppEvents[i] = 0;
-    m_nOffsets[i]  =1;
-    m_nTimestampAdjusts[i] = 0;
-    m_nLastTimestamp[i]    = 0;
-  }
+  
+  initBuffers();
+  
 }
 /**
  * haveData
@@ -1213,4 +1203,20 @@ CAENPha::startSlave()
   if (status != CAEN_DGTZ_Success) {
     throw std::pair<std::string, int>("Failed to start or arm acquisition", status);
   }
+}
+/**
+ * initBuffers
+ *    Initialize the book keeping used to manage buffered hit data.
+ *    Factorization initiated by daqdev/NSCLDAQ#700
+ */
+void
+CAENPha::initBuffers()
+{
+  for (int i =0; i < CAEN_DGTZ_MAX_CHANNEL; i++) {
+    m_dppBuffer[i]  = 0;
+    m_nDppEvents[i] = 0;
+    m_nOffsets[i]   = 1;
+    m_nTimestampAdjusts[i] = 0;
+    m_nLastTimestamp[i]    = 0;
+  }  
 }

@@ -1,5 +1,5 @@
-#ifndef __CV1X90CREATOR_H
-#define __CV1X90CREATOR_H
+#ifndef CV1X90CREATOR_H
+#define CV1X90CREATOR_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,9 +17,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CMODULECREATOR_H
 #include "CModuleCreator.h"
-#endif
 
 
 /*!
@@ -30,23 +28,11 @@ class CV1x90Creator : public CModuleCreator
 {
   // Constructors and canonicals.
 public:
-  CV1x90Creator(std::string type);
+  CV1x90Creator();
   virtual ~CV1x90Creator();
-  CV1x90Creator(const CV1x90Creator& rhs);
-  CV1x90Creator& operator=(const CV1x90Creator& rhs);
-  int operator==(const CV1x90Creator& rhs) const;
-  int operator!=(const CV1x90Creator& rhs) const;
-
-  // The virtual interface defined by CModuleCreator:
-
-  virtual CReadableObject*
-  Create(CTCLInterpreter& rInterp,
-	 CTCLResult&      rResult,
-	 int              nArgs,
-	 char**           pArgs);
-
-  virtual std::string Help();
-    
+  
+  virtual CReadableObject* Create(const char* name, CTCLInterpreter& rInterp);
+	 
 };
 
 #endif

@@ -93,7 +93,7 @@ namespace EVB {
 
   typedef struct __attribute__((__packed__)) _FlatFragment {
     FragmentHeader s_header;
-    int            s_body[];
+    int            s_body[0];
   } FlatFragment, *pFlatFragment;
 
 #ifdef __cplusplus
@@ -110,7 +110,7 @@ namespace EVB {
 #define NS(type) type
 #endif
     void freeFragment(NS(pFragment) p);
-    NS(pFragment) allocateFragment(NS(pFragmentHeader) pHeader);
+    NS(pFragment) allocateFragment(const NS(FragmentHeader*) pHeader);
     NS(pFragment) newFragment(uint64_t timestamp, uint32_t sourceId, uint32_t size);
 
     size_t fragmentChainLength(NS(pFragmentChain) p);

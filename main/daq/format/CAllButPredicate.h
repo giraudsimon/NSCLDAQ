@@ -1,5 +1,5 @@
-#ifndef __CALLBUTPREDICATE_H
-#define __CALLBUTPREDICATE_H
+#ifndef CALLBUTPREDICATE_H
+#define CALLBUTPREDICATE_H
 
 
 /*
@@ -18,11 +18,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-
-#ifndef __CRINGSELECTIONPREDICATE_H
 #include "CRingSelectionPredicate.h"
-#endif
-
 
 /*!
    This predicate accepts all types except the non sampled items in the list.

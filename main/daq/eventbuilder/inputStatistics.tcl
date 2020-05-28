@@ -168,11 +168,7 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
     # @param value   - new value:
     #
     method _unsignedOption {optname value} {
-	if {[string is integer -strict $value]} {
-	    set options($optname) [format %u $value]
-	} else {
-	    set options($optname) $value
-	}
+        set options($optname) [EVB::utility::_formatUnsigned $value]
     }
 }
 
@@ -274,11 +270,7 @@ snit::widget ::EVB::inputStatistics::queueDisplay {
     # @param value   - new value:
     #
     method _unsignedOption {optname value} {
-	if {[string is integer -strict $value]} {
-	    set options($optname) [format %u $value]
-	} else {
-	    set options($optname) $value
-	}
+        set options($optname) [EVB::utility::_formatUnsigned $value]
     }
     ##
     # _unsignedReadlOption
@@ -812,21 +804,3 @@ proc ::EVB::test::inputStatistics::queueDisplay {} {
     
 }
 
-
-##
-# Testing utility to update a widget option from a trace on a variable
-# that has a name matching the option:
-#
-# @param widget - the widget to modify.
-# @param name1  - name of the variable (and option)
-# @param name2  - index of the variable if an array.
-# @param op     - operation performed.
-#
-
-if {[info proc ::EVB::test::updateWidgetOption] eq ""} {
-    proc ::EVB::test::updateWidgetOption {widget name1 name2 op} {
-        upvar #0 $name1 value
-        $widget configure $name1 $value
-        return ""
-    }
-}

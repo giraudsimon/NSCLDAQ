@@ -20,3 +20,5 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/skel/*.cpp @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @srcdir@/skel/*.h   @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @builddir@/skel/Makefile @prefix@/skeletons/dpp-psd
+
+EXTRA_DIST=skel/*.cpp skel/*.h skel/Makefile.in

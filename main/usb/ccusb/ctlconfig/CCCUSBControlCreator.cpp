@@ -31,7 +31,15 @@
  * @return CControlHardware* Pointer to the newly created module.
  */
   CControlHardware*
-CCCUSBControlCreator::operator()()
+CCCUSBControlCreator::operator()(void* unused)
 {
   return (new CCCUSBControl);
+}
+/**
+ * describe - return a module description string.
+ */
+std::string
+CCCUSBControlCreator::describe() const
+{
+  return "ccusb - Wraps the CCUSB module";
 }

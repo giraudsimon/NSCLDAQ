@@ -54,16 +54,16 @@ tcltest::test vanilla-add {Add a channel using the original style} \
     
     # And to destroy the channel we made:
     
-    ::channel_0 destroy
+    ::channel_0.0 destroy
 } \
 -body {
     channel a 0
     
     set object [::scalerconfig::channelMap get a]
-    lappend result $object;                      # Should be channel_0
-    lappend result [$object cget -incremental];  # SB 1.
+    lappend result $object;                      # Should be channel_0.0
+    lappend result [$object cget -incremental];  # SB 1
     lappend result [$object cget -width];        # SB 32.
-} -result [list ::channel_0 1 32]
+} -result [list ::channel_0.0 1 32]
 
 tcltest::test dup_name {Adding a channel with a duplicate name gives a nice error} \
 -cleanup {
@@ -71,14 +71,14 @@ tcltest::test dup_name {Adding a channel with a duplicate name gives a nice erro
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy
+    ::channel_0.0 destroy
 } \
 -body {
     channel a 0
     set status [catch {channel a 1} msg]
     
     list $status $msg
-} -result [list 1 "Channel a is already defined as 0"]
+} -result [list 1 "Channel a is already defined as 0.0"]
 
 
 tcltest::test dup_channelId {Adding a channel with a duplicate channel id gives errors too} \
@@ -87,14 +87,14 @@ tcltest::test dup_channelId {Adding a channel with a duplicate channel id gives 
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy    
+    ::channel_0.0 destroy    
 } \
 -body {
     channel a 0
     set status [catch {channel b 0} msg]
     list $status $msg
     
-} -result [list 1 "A channel with index 0 already has a name"]
+} -result [list 1 "A channel with index 0.0 already has a name"]
 
 tcltest::test channel_with_width {Use the -width option with channels.} \
 -cleanup {
@@ -103,12 +103,12 @@ tcltest::test channel_with_width {Use the -width option with channels.} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy    
+    ::channel_0.0 destroy    
 } \
 -body {
     channel -width 24 a 0
     
-    channel_0 cget -width
+    channel_0.0 cget -width
 } -result 24
 
 tcltest::test channel_with_bothopts {use -width and -incremental} \
@@ -119,13 +119,13 @@ tcltest::test channel_with_bothopts {use -width and -incremental} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy    
+    ::channel_0.0 destroy    
 } \
 -body {
     channel -width 24 -incremental 0 a 0
     
-    lappend result [channel_0 cget -width]
-    lappend result [channel_0 cget -incremental]
+    lappend result [channel_0.0 cget -width]
+    lappend result [channel_0.0 cget -incremental]
 } -result [list 24 0]
 
 tcltest::test channel_with_limits {use -lowlim and -hilim} \
@@ -136,12 +136,12 @@ tcltest::test channel_with_limits {use -lowlim and -hilim} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy 
+    ::channel_0.0 destroy 
 } \
 -body {
     channel -lowlim 100 -hilim 200 {Some name} 0
-    lappend result [channel_0 cget -lowlim]
-    lappend result [channel_0 cget -hilim]
+    lappend result [channel_0.0 cget -lowlim]
+    lappend result [channel_0.0 cget -hilim]
 } -result [list 100 200]
 
 
@@ -153,11 +153,11 @@ tcltest::test api_names {Test api element to get scaler names} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_0 destroy 
-    ::channel_2 destroy 
-    ::channel_1 destroy 
-    ::channel_5 destroy 
-    ::channel_4 destroy 
+    ::channel_0.0 destroy 
+    ::channel_2.0 destroy 
+    ::channel_1.0 destroy 
+    ::channel_5.0 destroy 
+    ::channel_4.0 destroy 
 } \
 -body {
     channel a 0
@@ -178,7 +178,7 @@ tcltest::test api_rate_ok {Test API entry to get a scaler rate - valid name} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_1 destroy 
+    ::channel_1.0 destroy 
 } \
 -body {
     channel a 1
@@ -200,7 +200,7 @@ tcltest::test api_total_ok {Test API scaler total getter - valid name} \
     
     ::scalerconfig::channelMap destroy
     nameMap ::scalerconfig::channelMap
-    ::channel_1 destroy 
+    ::channel_1.0 destroy 
 } \
 -body {
     channel abcd 1

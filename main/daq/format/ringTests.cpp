@@ -430,7 +430,7 @@ void RingTests::getNoBodyHeaderBegin() {
     EQ(TCL_OK, status);
     
     auto cmdResult = getResult();
-    std::cout << cmdResult << std::endl;
+  
 
     /* We expect the result to be a dict with:
        type       - ring item type (textual)
@@ -462,6 +462,13 @@ void RingTests::getNoBodyHeaderBegin() {
     status = getDictItem(result, "title", item);
     EQ(TCL_OK, status);
     EQ(std::string("A test title"), item);
+    
+    // There should be a source dict item and its value should be zero since
+    // there was no body header at construct time.
+    
+    status = getDictItem(result, "source", item);
+    EQ(TCL_OK, status);
+    EQ(std::string("0"), item);
     
     // There should not be a bodyheader dict item:
     
@@ -509,6 +516,12 @@ void RingTests::getBodyHeaderBegin() {
     status = getDictItem(result, "title", item);
     EQ(TCL_OK, status);
     EQ(std::string("A test title"), item);
+    
+    // Should be a source item and it'll have the source id (1).
+    
+    status = getDictItem(result, "source", item);
+    EQ(TCL_OK, status);
+    EQ(std::string("1"), item);
     
     /*
      * There should be a bodyheader which itself is a dict containing:
@@ -586,7 +599,6 @@ void RingTests::getNoBodyHeaderScaler()
     EQ(TCL_OK, status);
     ASSERT(scalers);
     
-    // This must be a 10 element list with a counting pattern:
     
     CTCLObject scls(scalers);
     scls.Bind(m_pInterp);
@@ -594,6 +606,23 @@ void RingTests::getNoBodyHeaderScaler()
     for(int i = 0; i < 10; i++) {
         EQ(i, int(scls.lindex(i)));
     }
+    // Should have a source and it's 0 by default.
+    
+    status = getDictItem(result, "source", item);
+    EQ(TCL_OK, status);
+    EQ(std::string("0"), item);
+    
+    // In 12.0 we added startsec and endsec to get the times computed in seconds:
+    
+    EQ(TCL_OK, getDictItem(result, "startsec", item));
+    EQ(std::string("0.0"), item);
+    
+    EQ(TCL_OK, getDictItem(result, "endsec", item));
+    EQ(std::string("10.0"), item);
+    
+    // This must be a 10 element list with a counting pattern:
+    
+    
     // No body header:
     
     status = getDictItem(result, "bodyheader", item);
@@ -660,6 +689,21 @@ void RingTests::getBodyHeaderScaler() {
     for(int i = 0; i < 10; i++) {
         EQ(i, int(scls.lindex(i)));
     }
+    // Source id should be source with a value of 1:
+    
+    status = getDictItem(result, "source", item);
+    EQ(TCL_OK, status);
+    EQ(std::string("1"), item);
+    
+    // NSCLDAQ 12 also makes a startsec and endsec:
+    
+    EQ(TCL_OK, getDictItem(result, "startsec", item));
+    EQ(std::string("0.0"), item);
+    
+    EQ(TCL_OK, getDictItem(result, "endsec", item));
+    EQ(std::string("5.0"), item);
+       
+    
     // Now there should be a body:
     
    /*
@@ -736,6 +780,17 @@ void RingTests::getNoBodyHeaderPacketTypes()
     EQ(std::string("Type 2"), std::string(stringList.lindex(1)));
     EQ(std::string("Type 3"), std::string(stringList.lindex(2)));
     
+    // Should be a source with a value of zero:
+    
+    stat = getDictItem(pResult, "source", item);
+    EQ(TCL_OK, stat);
+    EQ(std::string("0"), item);
+    
+    // 12.0 adds offsetsec so users don't need to compute:
+    
+    EQ(TCL_OK, getDictItem(pResult, "offsetsec", item));
+    EQ(std::string("20.0"), item);
+    
     // NO body header:
     
     EQ(TCL_ERROR, getDictItem(pResult, "bodyheader", item));
@@ -790,6 +845,17 @@ void RingTests::getBodyHeaderPacketTypes(){
     EQ(std::string("Type 2"), std::string(stringList.lindex(1)));
     EQ(std::string("Type 3"), std::string(stringList.lindex(2)));
     
+    // source with value 1:
+    
+    stat = getDictItem(pResult, "source", item);
+    EQ(TCL_OK, stat);
+    EQ(std::string("1"), item);
+    
+    // 12.0 adds offsetsec:
+    
+    EQ(TCL_OK, getDictItem(pResult, "offsetsec", item));
+    EQ(std::string("20.0"), item);
+    
     //  body header:  By now we believe the contents.
     
     EQ(TCL_OK, getDictItem(pResult, "bodyheader", item));
@@ -817,7 +883,7 @@ void RingTests::getRingFormat(){
     EQ(std::string("Ring Item format version"), item);
     
     EQ(TCL_OK, getDictItem(result, "major", item));
-    EQ(std::string("11"), item);
+    EQ(std::string("12"), item);
     
     EQ(TCL_OK, getDictItem(result, "minor", item));
     EQ(std::string("0"), item);
@@ -998,6 +1064,16 @@ void RingTests::getPhysicsEventCount(){
     
     EQ(TCL_OK, getDictItem(result, "realtime", item));
     EQ(std::string("0"), item);
+    
+    // "source" with value 0 should be there:
+    
+    EQ(TCL_OK, getDictItem(result, "source", item));
+    EQ(std::string("0"), item);
+    
+    // 12.0 adds offsetsec - offset in fp seconds:
+    
+    EQ(TCL_OK, getDictItem(result, "offsetsec", item));
+    EQ(std::string("123.0"), item);
 }
 void RingTests::getPhysicsEventCountBodyHeader() {
     int stat = tryCommand("ring attach tcp://localhost/tcltestring");
@@ -1032,6 +1108,14 @@ void RingTests::getPhysicsEventCountBodyHeader() {
     
     EQ(TCL_OK, getDictItem(result, "realtime", item));
     EQ(std::string("0"), item);
+    
+    EQ(TCL_OK, getDictItem(result, "source", item));
+    EQ(std::string("2"), item);
+    
+    // 12.0 adds offsetsec
+    
+    EQ(TCL_OK, getDictItem(result, "offsetsec", item));
+    EQ(std::string("123.0"), item);
     
     EQ(TCL_OK, getDictItem(result, "bodyheader", item));
     
@@ -1071,7 +1155,7 @@ void RingTests::getGlomInfo(){
 }
 void RingTests::getWithPredicate()
 {
-    std::cout << "getWithPredicate" << std::endl;
+  
     // We're going to request an item using a predicate that only allows
     // BEGIN_RUN and END_RUN items.  Then we'll emit a begin run and a bunch
     // of events and an end run.  We should only see the begin and

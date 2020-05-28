@@ -1,5 +1,5 @@
-#ifndef __CCAMACMODULE_H
-#define __CCAMACMODULE_H
+#ifndef CCAMACMODULE_H
+#define CCAMACMODULE_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,12 +17,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 
 class CCAMACBranch;

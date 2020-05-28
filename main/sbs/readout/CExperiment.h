@@ -16,39 +16,16 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CRT_TIME_H
 #include  <time.h>
-#ifndef __CRT_TIME_H
-#define __CRT_TIME_H
-#endif
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
+#include <TCLObject.h>
+#include <CElapsedTime.h>
 
 class CTCLInterpreter;
 
-#ifndef _TCLOBJECT_H
-#include <TCLObject.h>
-#endif
+
 
 // Forwared definitions:
 
@@ -61,7 +38,7 @@ class CTriggerLoop;
 class CRingBuffer;
 class CEventSegment;
 class CScaler;
-
+class CRingItem;
 
 struct gengetopt_args_info;
 
@@ -93,10 +70,8 @@ private:
 
   size_t                 m_nDataBufferSize; //!< current event buffer size.
 
-  uint64_t               m_nLastScalerTime; // last scaler time in ms since epoch (usually).
+  double                 m_nLastScalerTime; // last scaler time in ms since epoch (usually).
   uint64_t               m_nEventsEmitted;
-  uint64_t               m_nRunStartStamp; /* Run start time in ms since epoch. */
-  uint64_t               m_nPausedmSeconds; /*Seconds paused in ms. */
                                              
   uint64_t                m_nEventTimestamp;
   uint32_t                m_nSourceId;
@@ -106,7 +81,7 @@ private:
   bool                    m_fHavemore;      // If true readout has more events.
   bool                    m_fWantZeroCopy;  // Want zero copy ring items.
   bool                    m_fNeedVmeLock;
-
+	CElapsedTime            m_runTime;
 
   // Canonicals:
 
@@ -161,12 +136,12 @@ public:
   void setZeroCopy(bool state) {m_fWantZeroCopy = state;}
 private:
   void readScalers();
-  
+	void readEvent(CRingItem& item);
+	
   static int HandleEndRunEvent(Tcl_Event* evPtr, int flags);
   static int HandleTriggerLoopError(Tcl_Event* evPtr, int flags);
   static CTCLObject createCommand(
     CTCLInterpreter* pInterp, const char* verb, std::string parameter);
-  static uint64_t getTimeMs();
 
 };
 

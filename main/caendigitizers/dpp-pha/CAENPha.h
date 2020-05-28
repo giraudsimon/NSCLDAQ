@@ -109,6 +109,7 @@ private:
   uint16_t fineGainRegister(double value, int k, int m);
   int      fgShiftCount(int M, int k);    
   void processCheatFile();
+  void initBuffers();
   
 };
 #endif

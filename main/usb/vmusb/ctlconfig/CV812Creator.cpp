@@ -26,7 +26,15 @@
  * @return CControlHardware* - pointer to a CV812
  */
   CControlHardware*
-CV812Creator::operator()()
+CV812Creator::operator()(void* unused)
 {
   return (new CV812);
+}
+/**
+ * describe what's being made:
+ */
+std::string
+CV812Creator::describe() const
+{
+  return "caenv812/caenv895 - discriminator control module";
 }

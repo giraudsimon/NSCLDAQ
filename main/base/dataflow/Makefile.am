@@ -50,7 +50,7 @@ libRingBuffer_la_CXXFLAGS	=	$(THREADCXX_FLAGS) \
 
 bin_PROGRAMS 	= ringtostdout stdintoring
 
-ringtostdout_SOURCES = ringtostdout.cpp  
+ringtostdout_SOURCES = ringtostdout.cpp  stdintoringUtils.cpp
 nodist_ringtostdout_SOURCES = ringtostdoutsw.c ringtostdoutsw.h
 
 ringtostdout_CPPFLAGS=$(COMPILATION_FLAGS)
@@ -133,7 +133,7 @@ TESTS=./unittests
 
 EXTRA_DIST=ringprimitives.xml ringbuffer_user.xml ringbuffer_man.xml ringlib.xml ringmaster.xml ringpipes.xml tclring.xml \
 	RingMaster.tcl ringbuffer.tcl \
-	ringtostdoutsw.ggo stdintoringsw.ggo 
+	ringtostdoutsw.ggo stdintoringsw.ggo ringutils.tcl
 
 #-------------- My installation... includes tcl scripts/packages.
 
@@ -142,5 +142,8 @@ install-exec-local:
 	$(mkinstalldirs)  @prefix@/TclLibs
 	$(INSTALL_SCRIPT) @builddir@/.libs/libRingBuffer.* @prefix@/TclLibs
 	echo "pkg_mkIndex -verbose @prefix@/TclLibs *.so" | $(TCLSH_CMD)
+	$(mkinstalldirs) @prefix@/TclLibs/ring
+	$(INSTALL_SCRIPT) @srcdir@/ringutils.tcl @prefix@/TclLibs/ring
+	echo "pkg_mkIndex -verbose @prefix@/TclLibs/ring *.tcl" | $(TCLSH_CMD)
 	$(INSTALL_SCRIPT) @srcdir@/ringbuffer.tcl @bindir@/ringbuffer
 

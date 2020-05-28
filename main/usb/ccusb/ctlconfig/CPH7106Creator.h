@@ -60,7 +60,8 @@
 class CPH7106Creator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* unused);
+  std::string describe() const;
 };
 
 

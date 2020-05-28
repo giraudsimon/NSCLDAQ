@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCCUSBCONTROLCREATOR_H
-#define __CCCUSBCONTROLCREATOR_H
+#ifndef CCCUSBCONTROLCREATOR_H
+#define CCCUSBCONTROLCREATOR_H
 
 
 /**
@@ -26,10 +26,7 @@
 
 #include <memory>
 #include <CControlHardware.h>
-
-#ifndef __CMODULECREATOR_H
 #include <CModuleCreator.h>
-#endif
 
 
 /**
@@ -38,7 +35,8 @@
 class CCCUSBControlCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* unused);
+  std::string describe() const;
 };
 
 

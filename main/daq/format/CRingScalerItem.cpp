@@ -39,15 +39,9 @@ CRingScalerItem::CRingScalerItem(size_t numScalers) :
 	    bodySize(numScalers))
 {
   init(numScalers);
-  pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
-  
-  pScalers->s_intervalStartOffset = 0;
-  pScalers->s_intervalEndOffset   = 0;
-  pScalers->s_timestamp = static_cast<uint32_t>(time(NULL));
-  pScalers->s_scalerCount = numScalers;
-  pScalers->s_isIncremental = 1;
-  pScalers->s_intervalDivisor = 1;
-  memset(pScalers->s_scalers, 0, numScalers*sizeof(uint32_t));
+  uint32_t dummy[numScalers];
+  memset(dummy, 0, numScalers*sizeof(uint32_t));
+  fillScalerBody(getItemPointer(), 0, 0, 1, time(nullptr), numScalers, 1, dummy, 0);
 }
 /*!
   Construct a scaler item with all the info specified.
@@ -69,19 +63,11 @@ CRingScalerItem::CRingScalerItem(uint32_t startTime,
   CRingItem(PERIODIC_SCALERS, bodySize(scalers.size()))
 {
   init(scalers.size());
+  fillScalerBody(
+      getItemPointer(), startTime, stopTime, 1, timestamp, scalers.size(),
+      isIncremental? 1:0, scalers.data(), 0
+  );
 
-  pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
-    
-  pScalers->s_intervalStartOffset = startTime;
-  pScalers->s_intervalEndOffset   = stopTime;
-  pScalers->s_timestamp           = timestamp;
-  pScalers->s_scalerCount         = scalers.size();
-  pScalers->s_isIncremental = isIncremental ? 1: 0;
-  pScalers->s_intervalDivisor = timeOffsetDivisor;
-
-  for (int i = 0; i  < scalers.size(); i++) {
-    pScalers->s_scalers[i] = scalers[i];
-  }
   updateSize();
 }
 /**
@@ -110,18 +96,11 @@ CRingScalerItem::CRingScalerItem(
     )
 {
     init(scalers.size());
-    pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
-      
-    pScalers->s_intervalStartOffset = startTime;
-    pScalers->s_intervalEndOffset   = stopTime;
-    pScalers->s_timestamp           = timestamp;
-    pScalers->s_scalerCount         = scalers.size();
-    pScalers->s_isIncremental = incremental ? 1 : 0;
-    pScalers->s_intervalDivisor = timeDivisor;
-
-    for (int i = 0; i  < scalers.size(); i++) {
-      pScalers->s_scalers[i] = scalers[i];
-    }    
+    
+    fillScalerBody(
+      getItemPointer(), startTime, stopTime, timeDivisor, timestamp,
+      scalers.size(), incremental ? 1 : 0, scalers.data(), source
+    );
     updateSize();
 }
 
@@ -388,7 +367,20 @@ CRingScalerItem::getScalerCount() const
 
     return pScalers->s_scalerCount;
 }
-  
+/**
+ * getOriginalSourceId
+ *    Return the source id that was originally used to construt the item
+ *    when it was emitted.  Glom is allowed to rewrite the body header source id
+ *    this allows us to retain information about which data source actually produced
+ *    the source.
+ * @return uint32_t
+ */
+uint32_t
+CRingScalerItem::getOriginalSourceId() const
+{
+  pScalerItemBody pScalers = reinterpret_cast<pScalerItemBody>(getBodyPointer());
+  return pScalers->s_originalSid;
+}
 /////////////////////////////////////////////////////////////////////////////////////
 //
 // Private utilities
@@ -442,6 +434,7 @@ CRingScalerItem::toString() const
   float end   = computeEndTime();
   float start = computeStartTime();
   string   time  = timeString(getTimestamp());
+  uint32_t sid   = getOriginalSourceId();
   vector<uint32_t> scalers = getScalers();
   for (int i =0; i < scalers.size(); i++) {
     scalers[i] = scalers[i] & m_ScalerFormatMask; // Mask off unused bits.
@@ -449,7 +442,7 @@ CRingScalerItem::toString() const
 
   float   duration = end - start;
 
-  out << time << " : Scalers:\n";
+  out << time << " : Scalers (original Source Id " << sid << "):\n";
   out << "Interval start time: " << start << " end: " << end << " seconds in to the run\n\n";
   out << bodyHeaderToString();
   out << (isIncremental() ? "Scalers are incremental" : "Scalers are not incremental") << std::endl;

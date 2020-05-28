@@ -14,12 +14,26 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCONTROLHARDWARE_H
-#define __CCONTROLHARDWARE_H
+#ifndef CCONTROLHARDWARE_H
+#define CCONTROLHARDWARE_H
 
 #include <CVMUSB.h>
 #include <CControlHardwareT.h>
+class CVMUSBReadoutList;
 
 using CControlHardware = CControlHardwareT<CVMUSB>;
-
+/**
+ * @class CVMUSBControlHardware
+ *    This specialization allows us to provide VMUSB specific
+ *    utilities that all derived classes  can use.
+ */
+class CVMUSBControlHardware : public ::CControlHardware
+{
+protected:
+    void doList(
+        CVMUSB& ctlr, CVMUSBReadoutList& list,
+        void* data, size_t expectedSize, size_t* actualSize,
+        const char* msg
+);
+};
 #endif

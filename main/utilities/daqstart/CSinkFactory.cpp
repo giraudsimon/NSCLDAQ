@@ -16,19 +16,31 @@
 #include "CSink.h"
 
 #include <string.h>
+#include <utility>
 
 using namespace std;
 
-
-
 // Static attribute storage and initialization for CSinkFactory
 
+CSinkFactory*  CSinkFactory::m_pInstance(nullptr);
 
-// The map below holds the set of sink creators that have been
-// registered:
+// static methods:
 
-CSinkFactory::SinkCreatorDictionary CSinkFactory::m_SinkCreators;
-
+/**
+ * getInstance
+ *  @return CSinkFactory - pointer to the singleton instance -- which is created
+ *                         if necessary.
+ */
+CSinkFactory*
+CSinkFactory::getInstance()
+{
+	// Not threadsafe.
+	
+	if (!m_pInstance) {
+		m_pInstance = new CSinkFactory;
+	}
+	return m_pInstance;
+}
 
 // Functions for class CSinkFactory
 
@@ -59,55 +71,13 @@ CSinkFactory::Create(string  sType,
 		     string sCommand, string  sName)  
 {
   // Find the sink creator
-
-  CSinkCreator* pSinkCreator = LocateCreator(sType);
-  if(!pSinkCreator) {
-    return (CSink*)NULL;
-  }
-
-  // Ask if the sink name is legal...
-
-  if(pSinkCreator->isNameLegal(sName)) {
-    return pSinkCreator->Create(sCommand,
-				sName);	// Legal sink name.
-  }
-  else {
-    return (CSink*)NULL;	// Illegal sink name.
-  }
+	
+	std::pair<const char*, const char*> userData(sCommand.c_str(), sName.c_str());
+	return m_factory.create(sType, &userData);
 }  
 
-/*! 
 
-Description:
-
-Returns a pointer to the sink creator that will create the sink of type
-requested by the caller:
-
-
-Parameters:
-
-\param sType (const string [in])
-      Type of string to create.
-
-\return CSinkCreator*
-\retval 0  - String creation failed.
-\retval != 0 - Pointer to the  new sink.
-
-*/
-CSinkCreator* 
-CSinkFactory::LocateCreator(string sType)  
-{
-  SinkIterator i = m_SinkCreators.find(sType);
-  if(i == m_SinkCreators.end()) {
-    return (CSinkCreator*)NULL;	// No such sink creator.
-  }
-  return i->second;
-
-}  
-
-/*! 
-
-
+/*
 
 Add a new sink creator to the supported set.
 Note that any existing creator with the same name will
@@ -127,7 +97,7 @@ Parameters:
 void 
 CSinkFactory::AddCreator(string sType, CSinkCreator* pSink)  
 {
-  m_SinkCreators[sType] = pSink;
+  m_factory.addCreator(sType, pSink);
 }
 /*!
    Split a sink name into it's component pieces.  The pieces are

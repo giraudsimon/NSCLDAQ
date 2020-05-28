@@ -14,27 +14,13 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CMARKERCOMMAND_H
-#define __CMARKERCOMMAND_H
+#ifndef CMARKERCOMMAND_H
+#define CMARKERCOMMAND_H
 
 
 #include "CDeviceCommand.h"
-
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 
 
 class CTCLInterpreter;
@@ -88,7 +74,7 @@ public:
 private:
   virtual int create(CTCLInterpreter& interp, 
 		     std::vector<CTCLObject>& objv);
-  void Usage(CTCLInterpreter& interp, const char* msg, std::vector<CTCLObject>& objv);
+  
 };
 
 #endif

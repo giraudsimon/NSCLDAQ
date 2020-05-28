@@ -1,5 +1,5 @@
-#ifndef __CRINGTEXTITEM_H
-#define __CRINGTEXTITEM_H
+#ifndef CRINGTEXTITEM_H
+#define CRINGTEXTITEM_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan

@@ -130,9 +130,9 @@ CEvents2Fragments::processItem(void* pItem)
     EVB::FragmentHeader hdr = m_HeaderMaker.makeHeader(p);
     
     m_Writer << hdr;
-    m_Writer.put(p, p->s_header.s_size);
+    m_Writer.put(p, itemSize(p));
     
-    return hdr.s_size;     // ring item size.
+    return itemSize(p);     // ring item size.
 }
 /**
  * runEnded

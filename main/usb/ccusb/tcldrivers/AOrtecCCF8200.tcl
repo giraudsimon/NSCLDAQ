@@ -9,6 +9,7 @@ package require Utils
 package require CCUSBDriverSupport
 
 
+
 ## @brief Low-level driver for the Ortec Camac CF8200 CFD
 #
 # This class provides the ability to do basic write, read, and control
@@ -585,18 +586,9 @@ itcl::body AOrtecCCF8200::WriteWidths {widths} {
 itcl::body AOrtecCCF8200::Execute {grouping script} {
 
 
-# create a new readout list
-  set rdoList [cccusbreadoutlist::CCCUSBReadoutList %AUTO%]
 
-  # extract the proc we want to use to manipulate the stack
-  set cmd [lindex $script 0]
 
-  # if there are arguments provided, use them. otherwise, dont.
-  if {[llength $script]>1} { 
-    $cmd $rdoList {*}[lreplace $script 0 0] 
-  } else {
-    $cmd $rdoList 
-  }
+  set rdoList [::CCUSBDriverSupport::makeList $this $script]
 
   # At this point the list will contain some commands added by the cmd
   # command

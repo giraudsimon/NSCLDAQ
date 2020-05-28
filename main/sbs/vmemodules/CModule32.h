@@ -14,17 +14,11 @@
 	     East Lansing, MI 48824-1321
 */  
 
-#ifndef __CMODULE32_H
-#define __CMODULE32_H
+#ifndef CMODULE32_H
+#define CMODULE32_H
 
 #include "VmeModule.h"
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 
 /*!

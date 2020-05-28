@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CTCLCONTROLMODULE_H
-#define CTCLCONTROLMODULE_H
+#ifndef CTCLVMECONTROLMODULE_H
+#define CTCLVMECONTROLMODULE_H
 
 
 /**
@@ -79,7 +79,9 @@ public:
   virtual std::string getMonitoredData();
 
 private:
-  static std::string swigPointer(void* pObject, std::string type);
+  void makeCommand(CTCLObject& command, CVMUSB& vme, const char* subcommand);
+  std::string executeCommand(CTCLObject& command);
+  
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
 };
 #endif

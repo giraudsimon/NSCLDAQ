@@ -18,7 +18,8 @@ namespace WienerMDGG16
   {
     public:
       /**! The factory method */
-      virtual CControlHardware* operator()(); 
+      virtual CControlHardware* operator()(void* userData);
+      std::string describe() const;
   };
 
 } // end namespace 

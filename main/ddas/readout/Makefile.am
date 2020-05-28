@@ -28,6 +28,7 @@ DDASReadout_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBusy.cpp 
 DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
+	-I@top_srcdir@/base/os						\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
 	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\" \
 	-DSORTING
@@ -61,17 +62,4 @@ install-exec-hook:
 
 EXTRA_DIST=crate_1 envset README
 
-noinst_PROGRAMS=unittests 
-unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
-	RawChannel.cpp RawChannel.h		\
-	refcbtests.cpp ReferenceCountedBuffer.cpp ReferenceCountedBuffer.h \
-	arenatests.cpp BufferArena.cpp BufferArena.h			\
-	zcopyhittests.cpp ZeroCopyHit.cpp ZeroCopyHit.h			\
-	mreadertests.cpp ModuleReader.cpp ModuleReader.h 		\
-	hmtests.cpp CHitManager.cpp CHitManager.h
-unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS) -DSORTING
-unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
-
-#  This is fixed in 12.0-pre1.
-# TESTS=unittests
 

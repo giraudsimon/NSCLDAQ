@@ -142,6 +142,7 @@ int
 RawChannel::SetLength()
 {
     s_channelLength = channelLength(s_data);
+    return 0;
 }
 
 /**
@@ -285,7 +286,8 @@ uint32_t
 RawChannel::channelLength(void* pData)
 {
     uint32_t* p = static_cast<uint32_t*>(pData);
-    return (*p & CHANNELLENGTHMASK) >> CHANNELLENGTHSHIFT;
+    uint32_t result = (*p & CHANNELLENGTHMASK) >> CHANNELLENGTHSHIFT;
+    return result;
 }
 
 

@@ -30,15 +30,10 @@ using namespace std;
 CRingPhysicsEventCountItem::CRingPhysicsEventCountItem() :
   CRingItem(PHYSICS_EVENT_COUNT)
 {
-  init();
-  pPhysicsEventCountItemBody pItem =
-    reinterpret_cast<pPhysicsEventCountItemBody>(getBodyPointer());
-    
-  pItem->s_timeOffset = 0;
-  pItem->s_timestamp = static_cast<uint32_t>(time(NULL));
-  pItem->s_eventCount = 0;
-  pItem->s_offsetDivisor = 1;
-  setBodyCursor(&(pItem[1]));
+  
+  void* p = fillEventCountBody(getItemPointer(), 0, 1, time(nullptr), 0, 0); 
+  
+  setBodyCursor(p);
   updateSize();
 }
 /*!
@@ -54,14 +49,10 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(uint64_t count,
   CRingItem(PHYSICS_EVENT_COUNT)
 {
 
-  pPhysicsEventCountItemBody pItem =
-    reinterpret_cast<pPhysicsEventCountItemBody>(getBodyPointer());
+  void* p =
+    fillEventCountBody(getItemPointer(), timeOffset, 1, time(nullptr), count, 0);
   
-  pItem->s_timeOffset  = timeOffset;
-  pItem->s_timestamp = static_cast<uint32_t>(time(NULL));
-  pItem->s_eventCount = count;
-  pItem->s_offsetDivisor = 1;
-  setBodyCursor(&(pItem[1]));
+  setBodyCursor(p);
   updateSize();
 }
 /*!
@@ -75,15 +66,10 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(uint64_t count,
 						       time_t   stamp) :
   CRingItem(PHYSICS_EVENT_COUNT)
 {
-  init();
-  pPhysicsEventCountItemBody pItem =
-    reinterpret_cast<pPhysicsEventCountItemBody>(getBodyPointer());
-
-  pItem->s_timeOffset  = timeOffset;
-  pItem->s_timestamp  = stamp;
-  pItem->s_eventCount = count;
-  pItem->s_offsetDivisor = 1;
-  setBodyCursor(&(pItem[1]));
+  
+  void* p =
+    fillEventCountBody(getItemPointer(), timeOffset, 1, stamp, count, 0);
+  setBodyCursor(p);
   updateSize();
 }
 
@@ -106,14 +92,10 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(
     int divisor) :
   CRingItem(PHYSICS_EVENT_COUNT, timestamp, source, barrier)
 {
-  pPhysicsEventCountItemBody pBody =
-    reinterpret_cast<pPhysicsEventCountItemBody>(getBodyPointer());
-  pBody->s_timeOffset    = timeoffset;
-  pBody->s_offsetDivisor = divisor;
-  pBody->s_timestamp     = stamp;
-  pBody->s_eventCount    = count;
-
-  setBodyCursor(&(pBody[1]));
+  void* p = fillEventCountBody(
+      getItemPointer(), timeoffset, divisor, stamp, count, source
+  );
+  setBodyCursor(p);
   updateSize();
 }
 
@@ -130,7 +112,6 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(const CRingItem& rhs)  :
   if (type() != PHYSICS_EVENT_COUNT) {
     throw bad_cast();
   }
-  init();
 
 }
 /*!
@@ -140,7 +121,6 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(const CRingItem& rhs)  :
 CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(const CRingPhysicsEventCountItem& rhs) :
   CRingItem(rhs)
 {
-  init();
 }
 /*!
   Destructor chaining:
@@ -159,7 +139,7 @@ CRingPhysicsEventCountItem::operator=(const CRingPhysicsEventCountItem& rhs)
 {
   if (this != &rhs) {
     CRingItem::operator=(rhs);
-    init();
+
   }
   return *this;
 }
@@ -295,6 +275,19 @@ CRingPhysicsEventCountItem::setEventCount(uint64_t count)
 
   pItem->s_eventCount = count;
 }
+/**
+ * getOriginalSourceId
+ *   @return uint32_t - the item's original source id the body header
+ *           can get re-written by Glom.  This preserves the id of the
+ *           original data source.
+ */
+uint32_t
+CRingPhysicsEventCountItem::getOriginalSourceId() const
+{
+  pPhysicsEventCountItemBody pItem =
+    reinterpret_cast<pPhysicsEventCountItemBody>(getBodyPointer());
+  return pItem->s_originalSid;
+}
 //////////////////////////////////////////////////////////
 //
 // Virtual method overrides.
@@ -328,6 +321,7 @@ CRingPhysicsEventCountItem::toString() const
   uint32_t offset = getTimeOffset();
   uint32_t divisor= getTimeDivisor();
   uint64_t events = getEventCount();
+  uint32_t sid    = getOriginalSourceId();
   
   float fOffset = static_cast<float>(offset)/static_cast<float>(divisor);
   
@@ -336,7 +330,7 @@ CRingPhysicsEventCountItem::toString() const
       << fOffset << " seconds into the run\n";
   out << " Average accepted trigger rate: " 
       <<  static_cast<double>(events)/fOffset
-      << " events/second \n";
+      << " events/second originally from sid: " << sid << std::endl;
 
   return out.str();
 }
@@ -347,13 +341,3 @@ CRingPhysicsEventCountItem::toString() const
 //
 
 
-/*
-** initialize by setting the item pointer and body cursor
-** appropriatly.
-*/
-void
-CRingPhysicsEventCountItem::init()
-{
-
-
-}

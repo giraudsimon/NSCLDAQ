@@ -8,8 +8,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-CControlHardware*CMxDCResetCreator::operator()()
+CControlHardware*CMxDCResetCreator::operator()(void* unused)
 {
   return (new CMxDCReset);
 }
 
+std::string CMxDCResetCreator::describe() const
+{
+  return "mxdcreset - reset Mesytec RC bus";
+}

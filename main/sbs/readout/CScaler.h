@@ -1,5 +1,5 @@
-#ifndef __CSCALER_H
-#define __CSCALER_H
+#ifndef CSCALER_H
+#define CSCALER_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -15,23 +15,9 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __COBJECT_H
 #include "CObject.h"
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /*!
    Base class for classes that read a scaler module.

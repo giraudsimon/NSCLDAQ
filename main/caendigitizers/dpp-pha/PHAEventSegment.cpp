@@ -18,6 +18,7 @@
 #include "CAENPhaParameters.h"
 #include "CAENPhaChannelParameters.h"
 #include "DPPConfig.h"
+#include "CAENPhaBuffer.h"
 extern "C" {
 #include <iniparser.h>
 }
@@ -46,10 +47,7 @@ PHAEventSegment::PHAEventSegment(const char* iniFile, int id) :
  */
 PHAEventSegment::~PHAEventSegment()
 {
-    delete m_pPha;                        // NO-OP if this is null.
-    m_pPha = nullptr;                     // not really needed for destruction
-    delete m_pParams;
-    m_pParams = nullptr;
+    freeStorage();
 }
 
 /**
@@ -74,11 +72,7 @@ PHAEventSegment::initialize()
 {
     // Kill off any hanging pha driver.
     
-    delete m_pPha;
-    m_pPha = nullptr;                    // In case we throw and then get called again.
-    
-    delete m_pParams;
-    m_pParams = nullptr;
+    freeStorage();
     
     // Read and parse the .ini file.  Assume that the resulting dict is nullptr
     // for errors:
@@ -274,7 +268,7 @@ PHAEventSegment::read(void* pBuffer, size_t maxwords)
   }
   setTimestamp(dppData->TimeTag);        // Event timestamp.
   setSourceId(m_id);                     // Source id from member data.         
-  size_t eventSize = computeEventSize(*dppData, *wfData);
+  size_t eventSize = CAENPhaBuffer::computeEventSize(*dppData, *wfData);
   
   if ((eventSize / sizeof(uint16_t)) > maxwords) {
     throw std::string("PHAEventSegment size exceeds maxwords - expand max event size");
@@ -282,13 +276,13 @@ PHAEventSegment::read(void* pBuffer, size_t maxwords)
   
   // Header consists of the total inclusive size in bytes and the channel #
   
-  pBuffer = putLong(pBuffer, eventSize);
-  pBuffer = putLong(pBuffer, chan);
+  pBuffer = CAENPhaBuffer::putLong(pBuffer, eventSize);
+  pBuffer = CAENPhaBuffer::putLong(pBuffer, chan);
   
   // Body is dpp data followed by wf data:
   
-  pBuffer = putDppData(pBuffer, *dppData);
-  pBuffer = putWfData(pBuffer, *wfData);
+  pBuffer = CAENPhaBuffer::putDppData(pBuffer, *dppData);
+  pBuffer = CAENPhaBuffer::putWfData(pBuffer, *wfData);
   
   
   return (eventSize / sizeof(uint16_t)); 
@@ -307,146 +301,7 @@ PHAEventSegment::checkTrigger()
     return m_pPha->haveData();
 }
 
-/**
- * putWord
- *    Put a word into the buffer.
- *
- * @param pDest - pointer to where the word goes
- * @param data  -uint16_t to put.
- * @return void* Pointer to the next free slot in the buffer.
- */
-void*
-PHAEventSegment::putWord(void* pDest, uint16_t data)
-{
-    uint16_t* p = reinterpret_cast<uint16_t*>(pDest);
-    *p++ = data;
-    
-    return p;
-}
-/**
- * putLong
- *  Put a 32 bit long into the buffer.
- *
- * @param pDest - pointer to where the data goes.
- * @param data  - uint32_t to put.
- * @return void* - pointer to the next free slot in the buffer.
- */
-void*
-PHAEventSegment::putLong(void* pDest, uint32_t data)
-{
-    uint32_t* p = reinterpret_cast<uint32_t*>(pDest);
-    *p++ = data;
-    return p;
-}
 
-/**
- * putQuad
- *    Put a 64 bit quadword into the buffer.
- *
- * @param pDest - pointer to where the data goes.
- * @param data  - the data.
- * @return void* - points to the next free slot in the buffer.
- */
-void*
-PHAEventSegment::putQuad(void* pDest, uint64_t data)
-{
-    uint64_t* p = reinterpret_cast<uint64_t*>(pDest);
-    *p++ = data;
-    return p;
-}
-
-/**
- * computeEventSize
- *    Figure out how big the event is, in bytes, including a 32 bit event size.
- *
- *  @param dppInfo - reference to the CAEN_DGTZ_PHA_Event_t containing the event.
- *  @param wfInfo  - reference to the CAEN_DGTZ_PHA_Waveforms_t containing decoded waveforms.
- *  @return size_t - Number of bytes the event will require in the data stream.
- */
-size_t
-PHAEventSegment::computeEventSize(
-    const CAEN_DGTZ_DPP_PHA_Event_t& dppInfo, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wfInfo
-)
-{
-    size_t result = sizeof(uint32_t);               // Size of event
-    
-    // The dpp info is a time tag (uint64_t), E, extras, (16 bits )and
-    // extras2 (32 bits)):
-    
-    result += sizeof(uint64_t)   +                    // Time tag.
-              2*sizeof(uint16_t) +                    // E, Extras.
-              sizeof(uint32_t);                       // Extras2.
-              
-    // Waveform data size is a bit more complex.  See the putWfData
-    // method for considerations.
-    
-    result += sizeof(uint32_t) + sizeof(uint16_t);  // Ns, and dualtrace flag.
-    if (wfInfo.Ns) {
-        // If there are samples, there's always at least one trace of 16 bit words:
-        
-      size_t nBytes = wfInfo.Ns * sizeof(uint16_t);
-      result += nBytes;
-      
-      //  If dual trace there's a second one:
-      
-      if (wfInfo.DualTrace) {
-	result += nBytes;
-      }
-    }
-    return result;
-}
-
-/**
- * putDppData
- *    Puts the DPP data into the event buffer.
- * @param pDest - where to put the DPP Data.
- * @param dpp   - Reference to the dpp data.
- * @return - pointer to the next free slot in the buffer.
- */
-void*
-PHAEventSegment::putDppData(void* pDest, const CAEN_DGTZ_DPP_PHA_Event_t& dpp)
-{
-    pDest = putQuad(pDest, (dpp.TimeTag));
-    pDest = putWord(pDest, (dpp.Energy));
-    pDest = putWord(pDest, (dpp.Extras));
-    pDest = putLong(pDest, (dpp.Extras2));
-    
-    return pDest;
-}
-
-/**
- * putWfData
- *    Put the waveform data to the output buffer.
- *    We put the following information:
- *    -   ns - number of samples (32 bits)
- *    -   dt - Non zero if ther are two traces (16 bits).
- *             note that we widen this in order to make alignment better.
- *    -   First trace if ns > 0 ns*16 bits.
- *    -   Second trace if ns > 0 && dual trace  ns * 16 bits.
- *
- * @param pDest - pointer to where the data must go
- * @param wf    - Reference to CAEN_DGTZ_PHA_Waveforms_t - the decoded waveforms.
- * @return void* - Pointer to the next free memory of the buffer (where next data goes).
- */
-void*
-PHAEventSegment::putWfData(void* pDest, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wf)
-{
-  pDest = putLong(pDest, wf.Ns);                            // # samples.
-  pDest = putWord(pDest, wf.DualTrace);
-    size_t nBytes = wf.Ns * sizeof(uint16_t);
-    if (nBytes > 0) {                                   // There are waveforms:
-      uint8_t* p = reinterpret_cast<uint8_t*>(pDest);
-        memcpy(p, wf.Trace1, nBytes);               // Write trace 1...
-        p +=  nBytes;
-        
-        if (wf.DualTrace) {                            // Write second trace too:
-            memcpy(p, wf.Trace2, nBytes);
-            p += nBytes;
-        }
-	pDest = p;
-    }
-    return pDest;
-}
 
 /**
  * makeChannelKey
@@ -468,4 +323,16 @@ PHAEventSegment::makeChannelKey(unsigned chan, const char* subkey)
 
   s << chan << ":" << subkey;
   return s.str();
+}
+/**
+ * freeStorage
+ *    Release dynamic storage:
+ */
+void
+PHAEventSegment::freeStorage()
+{
+    delete m_pPha;                        // NO-OP if this is null.
+    m_pPha = nullptr;                     // not really needed for destruction
+    delete m_pParams;
+    m_pParams = nullptr;  
 }

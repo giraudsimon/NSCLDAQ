@@ -31,6 +31,8 @@
 #include "CDataSinkElement.h"
 #include "CRingItemTransportFactory.h"
 #include "CRingBlockDataSink.h"
+#include "CMPIAppStrategy_mpi.h"
+
 
 #include "swtriggerflags.h"
 
@@ -39,193 +41,83 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include <iostream>
+///////////////////////////// our strategy class ////////////////
+/**
+ * @class CMPIClassifierStrategy
+ *    Derived from CMPIAppStrategy understand how to create
+ *    our application processor.
+ */
+class CMPIClassifierStrategy : public CMPIAppStrategy {
+private:
+    CClassifierApp::ClassifierFactory m_pFactory;
+public:
+    CMPIClassifierStrategy(
+        int argc, char** argv, gengetopt_args_info& args,
+        CClassifierApp::ClassifierFactory factory
+    );
+    virtual CProcessingElement* createApplicationWorker(
+        CFanoutClientTransport& source, CSender& sink, int id
+    );
+};
+
+/**
+ * constructor:
+ *    construct the base class and save our factory so we can
+ *    create the worker.
+ * @param factory  -- our classifier factory.
+ */
+CMPIClassifierStrategy::CMPIClassifierStrategy(
+    int argc, char** argv, gengetopt_args_info& args,
+    CClassifierApp::ClassifierFactory factory
+) :
+    CMPIAppStrategy(argc, argv, args),
+    m_pFactory(factory)
+{}
+
+/**
+ * createApplicationWorker
+ *
+ * @param source - source transport.
+ * @param sink   - data sink.
+ * @param id     - sink id.
+ */
+CProcessingElement*
+CMPIClassifierStrategy::createApplicationWorker(
+    CFanoutClientTransport& source, CSender& sink, int id
+)
+{
+     CRingMarkingWorker::Classifier* pClassifier = (*m_pFactory)();
+     return new CRingMarkingWorker(source, sink, id, pClassifier);
+}
+///////////////////// The application ////////////////////
 
 /**
  * constructor
- *    We're just going to save the parameters (shallow copy)
- *    and initialize MPI.  operator() does the lion's share of the work
- *  @param argv - comand line parameters.
- *  @param argc  - command line parameter count.
- *  @param args  - processed args thanks t gengetopt.
+ *    Construct our base class and our strategy object.
  */
-
 CMPIClassifierApp::CMPIClassifierApp(
-    int argc, char** argv, gengetopt_args_info& args
-) :  CClassifierApp(args)
+        int argc, char** argv, gengetopt_args_info& args
+) :
+    CClassifierApp(args),
+    m_strategy(nullptr)
 {
-    // We need at least 5 processes to operate (see
-    // the header for the rank assigments).
-    
-    MPI_Init(&argc, &argv);
-    
-    int nProcs;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    if (nProcs < 4) {
-        std::cerr << "This program needs at least 4 processes to run\n";
-        throw std::invalid_argument("Too few processes");
-    }
-    // If the # workers consistent with n procs then warn he user
-    // that the n procs overrides... only warn in rank 1:
-    
-    int workerCount = args.workers_arg;
-    nProcs -= 3;
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    if ((nProcs != workerCount) && (rank == 0)) {
-        std::cerr << "**WARNING** number of MPI processes is not consistent with ";
-        std::cerr << " the number of workers \n" << " requested in --workers\n";
-        std::cerr << " --workers = " << workerCount;
-        std::cerr << " MPI processes supports " << nProcs << " workers\n";
-        std::cerr << nProcs << " workers will be used\n";
-        
-     } 
+      ClassifierFactory fact = getClassifierFactory();
+      m_strategy = new CMPIClassifierStrategy(argc, argv, args, fact);
 }
+
 /**
  * destructor
  */
-CMPIClassifierApp::~CMPIClassifierApp() {}
-
+CMPIClassifierApp::~CMPIClassifierApp()
+{
+    delete m_strategy;
+}
 /**
  * operator()
- *    Called to run the operation. For MPI, each process run one operation.
- *    Our job, therefore, is to select which operation to run,
- *    set up its transports, instantiate it and run it.
+ *   Run the strategy.
  */
-
 int
 CMPIClassifierApp::operator()()
 {
-    CProcessingElement* e = createProcessingElement();  // Figure out what we're running
-    
-    // Do we neeed a delay here?
-    
-    (*e)();
-    delete e;
-    MPI_Finalize();
-    return EXIT_SUCCESS;
-}
-//////////////////////////////////////////////////////////////////////////////
-// createProcessingElement
-
-CProcessingElement*
-CMPIClassifierApp::createProcessingElement()
-{
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    CProcessingElement* pResult(0);
-    
-    switch (rank) {
-    case 0:
-        pResult = createDataSource();
-        break;
-    case 1:
-        pResult = createSorter();
-        break;
-    case 2:
-        pResult = createSink();
-        break;
-    default:
-        pResult = createWorker();
-        break;
-    }
-    
-    return pResult;
-}
-/**
- * createDataSource
- *    Called for rank 0 - this sets up the initial data source
- *    that sends blocks of ring items to workers.
- */
-CProcessingElement*
-CMPIClassifierApp::createDataSource()
-{
-    return new CRingItemMPIDataSource(m_params.source_arg, m_params.clump_size_arg);
-}
-
-
-/**
- * createWorker
- *    Called to create a worker process.  This is called for ranks >
- *    3.  We create the a fanout client transport for rank 0  and
- *    associate it with a worker object.
- *    Note that the classifier object needs to be gotten from the supplied
- *    library.
- */
-CProcessingElement*
-CMPIClassifierApp::createWorker()
-{
-    // We need the classifier object the user provided:
-    
-    ClassifierFactory fact = getClassifierFactory();
-    CRingMarkingWorker::Classifier* pClassifier = (*fact)();
-    
-    // We need an MPI fanout client
-    // a sink (to the sorter) a client id (our rank).
-    // and we have the classifier.
-    
-    CFanoutClientTransport* pFanoutClient = new CMPIFanoutClientTransport(0);
-    CTransport*             pSendingTransport = new CMPITransport(1);
-    CSender*                pSender       = new CSender(*pSendingTransport);
-    
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);       // For my ID.
-    
-    CProcessingElement* pResult =
-        new CRingMarkingWorker(*pFanoutClient, *pSender, rank-2, pClassifier);
-    
-    return pResult;
-}
-/**
- * createSorter
- *    Called for rank 1 - creates a recipient that sorts data and pushes
- *    the sorted data to the sink.
- */
-CProcessingElement*
-CMPIClassifierApp::createSorter()
-{
-    // Compute the number of workers:
-    
-    int nProcs;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    int nWorkers = nProcs - 3;        // Three non worker procs.
-    
-    // Make a receiver transport and a sender transport that sends
-    // data to rank 2 (the sink).  Bind these into CReceiver and CSender objects:
-    
-    CMPITransport* pReceiverTransport = new CMPITransport();   // only receives.
-    CMPITransport* pSenderTransport   = new CMPITransport(2);  // Sends to 2.
-    
-    CReceiver* pReceiver = new CReceiver(*pReceiverTransport);
-    CSender*   pSender   = new CSender(*pSenderTransport);
-    
-    
-    // Note the window parameter is obsolete.
-    
-    CProcessingElement* pResult = new CRingItemSorter(*pReceiver, *pSender, 0, nWorkers);
-    return pResult;
-}
-/**
- * createSink
- *    Creates the data sink process.
- *    -  Create a transport to receive data from the sorter.
- *    -  Manufactures a sink from the ring tranport factory and the sink_arg
- *       specification in the parameters.
- *    -  Binds the transports into senders and receivers.
- *    -  Constructs a CRingBlockDataSink to use at the transport and returns that.
- */
-CProcessingElement*
-CMPIClassifierApp::createSink()
-{
-    
-    CMPITransport*  pReceiverTransport = new CMPITransport();
-    CTransport*     pSenderTransport = CRingItemTransportFactory::createTransport(
-        m_params.sink_arg, CRingBuffer::producer
-    );
-    
-    CReceiver* pReceiver = new CReceiver(*pReceiverTransport);
-    CSender*   pSender   = new CSender(*pSenderTransport);
-    
-    CProcessingElement* pResult = new CRingBlockDataSink(*pReceiver, *pSender);
-    return pResult;
+    return (*m_strategy)();
 }

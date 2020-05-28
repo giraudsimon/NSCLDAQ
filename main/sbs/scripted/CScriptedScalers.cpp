@@ -19,10 +19,12 @@
 #include "CDigitizerDictionary.h"
 #include "CModuleCommand.h"
 #include "CReadOrder.h"
+#include "CScriptedSegment.h"
 #include "ScriptedBundle.h"
 #include <RangeError.h>
 #include <ErrnoException.h>
 #include <TCLException.h>
+#include <io.h>
 
 
 #include <stdlib.h>
@@ -92,25 +94,21 @@ CScriptedScalers::initialize()
     throw error;
   }
   catch(string msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      msg.c_str(), CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(const char* msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      msg, CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(CTCLException& tclfail) {
-    string error = "Configuration file processing failed\n";
-    error       +=tclfail.ReasonText();
-    error       += "\nTraceback:\n";
-    error       += tclfail.getTraceback();
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      tclfail.ReasonText(), tclfail.getTraceback().c_str()
+    );
   }
   catch (...) {
     throw "Configuration file processing failed";
@@ -181,11 +179,13 @@ CScriptedScalers::isComposite() const
 }
 /*
 ** delegate add a creator to the bundle:
+**  @param type - type of module.
+**  @param creator - creator for the module.
 */
 void
-CScriptedScalers::addCreator(CModuleCreator& creator)
+CScriptedScalers::addCreator(const char* type, CModuleCreator& creator)
 {
-  m_pBundle->addCreator(creator);
+  m_pBundle->addCreator(type, creator);
 }
 
 /*!
@@ -205,8 +205,8 @@ CScriptedScalers::addUserWrittenCreators()
 void 
 CScriptedScalers::addStandardCreators()
 {
-  addCreator(*(new CCAENV830Creator));
-  addCreator(*(new CSIS3300Creator));
+  addCreator("caenv830", *(new CCAENV830Creator));
+  addCreator("sis3300", *(new CSIS3300Creator));
 }
 
 /*
@@ -219,45 +219,12 @@ CScriptedScalers::addStandardCreators()
  * is correct.
  *  @return string
  *  @throws CErrnoException for ENOENTRY if there is no matching file.
+ *  @note daqdev/NSCLDAQ#700 - has had the penguin snot factored out of it.
  */
 string
 CScriptedScalers::getConfigurationFile()
 {
-  // SCALER_FILE:
-
-  const char* path = getenv("SCALER_FILE");
-  if (path && (access(path, R_OK) == 0) ) {
-
-    return string(path);
-  }
-
-  // ~/config/scalers.tcl
-
-  const char* home = getenv("HOME");
-  if (home) {
-    string path(home);
-    path += string("/config/scalers.tcl");
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-
-  }
-
-  //  cwd/scalers.tcl
-
-  char here[PATH_MAX];
-  char* pResult = getcwd(here, PATH_MAX);
-  if (pResult) {
-    string path(here);
-    path += "/scalers.tcl";
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-  }
-  errno = ENOENT;
-  throw CErrnoException("Locating a configuration file");
-
+  return CScriptedSegment::locateConfigFile("SCALER_FILE", "scalers.tcl");
   
-
 }
  

@@ -14,28 +14,14 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CGDG_H
-#define __CGDG_H
-#ifndef __CCONTROLHARDWARE_H
+#ifndef CGDG_H
+#define CGDG_H
+
 #include "CControlHardware.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-
 #include <CControlModule.h>
+
 class CVMUSB;
 
 
@@ -49,7 +35,7 @@ class CVMUSB;
    - base  - The base address of the module. We assume that address modifiers
              will be extended user data.
 */
-class CGDG : public CControlHardware
+class CGDG : public CVMUSBControlHardware
 {
 private:
   CControlModule*      m_pConfiguration;

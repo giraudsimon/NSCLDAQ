@@ -14,38 +14,15 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CVMUSBMODULE_H
-#define __CVMUSBMODULE_H
+#ifndef CVMUSBMODULE_H
+#define CVMUSBMODULE_H
 
-
-#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-
 #include <CControlModule.h>
+
 class CVMUSB;
 
 /**
@@ -69,7 +46,7 @@ class CVMUSB;
  * lists with one element... however if the run is active each list execution will pause/resume
  * the run so be aware and use with caution.
  */
-class CVMUSBModule : public CControlHardware
+class CVMUSBModule : public CVMUSBControlHardware
 {
   // Canonical operations:
 public:

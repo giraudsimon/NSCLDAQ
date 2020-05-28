@@ -19,8 +19,8 @@
 # @brief  Defines the extended Tcl_Event structures
 # @author <fox@nscl.msu.edu>
 */
-#ifndef __EVENTS_H
-#define __EVENTS_H
+#ifndef EVENTS_H
+#define EVENTS_H
 /**
  * Events are sometimes passed from threads to threads running interpreter
  * event loops via Tcl_ThreadQueueEvent.  These events are defined by a

@@ -28,6 +28,10 @@ Driver for CAEN C894 - CAEN 16 Channel LED
 #include <string.h>
 #include <unistd.h>
 
+#include <iostream>
+#include <string>
+#include <XXUSBConfigurableObject.h>
+
 using namespace std;
 
 // Register offsets:
@@ -559,6 +563,18 @@ C894::configFileToShadow()
   Tcl_Interp* pInterp = Tcl_CreateInterp();
   int status          = Tcl_EvalFile(pInterp, filename.c_str());
 
+   
+  // Warn about errors on std::cerr
+  
+  if (status != TCL_OK) {
+   std::cerr << "**Warning** Error processing C894 configuration file: "
+    << filename << " : " << Tcl_GetStringResult(pInterp);
+   std::cerr << " : " << XXUSB::getTclTraceback(pInterp)
+    << std::endl;
+   std::cerr << " Processing continues\n";
+   
+  }
+  
   // Ignore errors as some items may have been set:
 
   // The threshold array:
@@ -568,7 +584,7 @@ C894::configFileToShadow()
     if (value) {
       int iValue;
       if (sscanf(value, "%i", &iValue) == 1) {
-	m_thresholds[i] = iValue;
+        m_thresholds[i] = iValue;
       }
     }
   }

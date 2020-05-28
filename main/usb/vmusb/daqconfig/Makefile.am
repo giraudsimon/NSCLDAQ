@@ -50,12 +50,13 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CULMTrigger.cpp \
 				CLeCroy4300B.cpp \
 				CLeCroy4434.cpp \
-				CXLMFERA.cpp \
+				CXLMFERA.cpp CXLMFERACommand.cpp \
 				CXLMTimestamp.cpp \
 				CLeCroy2551.cpp \
 				CMQDC32StackBuilder.cpp \
 				CMQDC32RdoHdwr.cpp	\
-				CDeviceCommand.cpp
+				CDeviceCommand.cpp \
+				tclUtil.cpp
 
 
 
@@ -112,11 +113,12 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				@top_srcdir@/usb/common/devices/CBCNAF.h \
 				@top_srcdir@/usb/common/devices/CCNAF.h \
 				@top_srcdir@/usb/common/devices/CNAF.h \
-				CXLMFERA.h \
+				CXLMFERA.h CXLMFERACommand.h \
 				CXLMTimestamp.h \
 				CMQDC32StackBuilder.h \
 				CMQDC32RdoHdwr.h \
-				MQDC32Registers.h
+				MQDC32Registers.h \
+				tclUtil.h
 
 
 libVMUSBDaqConfig_la_CXXFLAGS=@THREADCXX_FLAGS@
@@ -153,7 +155,7 @@ cmdtests_SOURCES=TestRunner.cpp Asserts.h ad811test.cpp \
 	v977tests.cpp masetests.cpp mtdctests.cpp delaytests.cpp \
 	xlmferatests.cpp cbdtests.cpp xlmtimestamptests.cpp mqdctests.cpp \
 	cbdcratetests.cpp ulmtriggertests.cpp lrs4300tests.cpp lrs4434tests.cpp \
-	lrs2551tests.cpp
+	lrs2551tests.cpp ctlexporttests.cpp
 
 
 cmdtests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libVMUSBDaqConfig_la_CXXFLAGS) $(libVMUSBDaqConfig_la_CPPFLAGS)

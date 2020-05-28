@@ -19,13 +19,14 @@ package provide mcfd16gui 1.0
 package require mcfd16usb
 package require snit
 package require Tk
-#package require FrameSwitcher
+# Below assume TclLibs is in auto_path.
 package require FrameManager
 package require scriptheadergenerator
 package require TclSourceFilter
 package require mcfd16channelnames
 package require ChannelLabel
-
+package require Utils
+package require tkutils
 
 ## "Base" type for MCFD16View ################
 #
@@ -1353,24 +1354,18 @@ snit::type LoadFromFilePresenter {
   #
   # @param  path    the path to a file containing state 
   method Load {path} {
-    if {![file exists $path]} {
-      set msg "Cannot load from $path, because file does not exist."
-      tk_messageBox -icon error -message $msg
-    } elseif {! [file readable $path]} { 
-      set msg "Cannot load from $path, because file is not readable."
-      tk_messageBox -icon error -message $msg
-    }
-    set f [open $path r]
+    if {[tktuils::checkFileReadable $path]} {
+      set f [open $path r]
       set content [chan read $f]
       catch {close $f}
 
-    set executableLines [$self FilterOutNonAPICalls $content]
+      set executableLines [$self FilterOutNonAPICalls $content]
 
       
     # determine the first
       set devName [$self ExtractDeviceName [lindex $executableLines 0]]
-    if {[llength [info commands $devName]]>0} {
-	if {[$_contentFr cget -handle] ne $devName} {
+      if {[llength [info commands $devName]]>0} {
+      if {[$_contentFr cget -handle] ne $devName} {
         rename $devName {}
       } else {
         set msg "Device driver instance in load file shares same name "
@@ -1380,20 +1375,22 @@ snit::type LoadFromFilePresenter {
         return
       }
     }
-
-    set fakeHandle [MCFD16Memorizer $devName]
-
-    # load state into device
-    $self EvaluateAPILines $executableLines
-
-    # update the actual content
-    set realHandle [$self SwapInHandle $fakeHandle]
-    $_contentFr Update
-    set fakeHandle [$self SwapInHandle $realHandle]
-
-    $fakeHandle destroy
-
-    [[$_contentFr GetCurrent] cget -view] SetOutOfSync 1
+  
+      set fakeHandle [MCFD16Memorizer $devName]
+  
+      # load state into device
+      
+      Utils::runGlobally $executableLines
+  
+      # update the actual content
+      set realHandle [$self SwapInHandle $fakeHandle]
+      $_contentFr Update
+      set fakeHandle [$self SwapInHandle $realHandle]
+  
+      $fakeHandle destroy
+  
+      [[$_contentFr GetCurrent] cget -view] SetOutOfSync 1
+    }
   }
 
   method FilterOutNonAPICalls {content} {
@@ -1431,11 +1428,6 @@ snit::type LoadFromFilePresenter {
     return $name
   }
 
-  method EvaluateAPILines {lines} {
-    foreach line $lines {
-      uplevel #0 eval $line
-    }
-  }
 
   # Type data .... 
   typevariable _validAPICalls ;# list of calls consider valid API calls
@@ -1606,8 +1598,7 @@ snit::widget ChannelEnableDisableView {
   # @retval 0 - string was empty or all whitespace
   # @retval 1 - otherwise
   method ValidateName {name} {
-    set name [string trim $name]
-    return [expr [string length $name]!=0]
+    return [Utils::nonemptyString $name]
   }
 
   ## Reset channel to a simple string
@@ -2259,16 +2250,8 @@ snit::type ORPatternPanelPresenter {
   #
   #
   method Commit {} {
-    set handle [$self cget -handle]
-    if {$handle eq {}} {
-       return -code error "User cannot commit unless a device exists"
-    }
-
-    set view [$self cget -view]
-    if {$view eq {}} {
-       return -code error "User cannot commit unless a view exists"
-    }
-
+    $self _canModify
+    
     $self CommitViewToModel
     $self Update
   }
@@ -2296,15 +2279,8 @@ snit::type ORPatternPanelPresenter {
   #
   #
   method Update {} {
-    set handle [$self cget -handle]
-    if {$handle eq {}} {
-       return -code error "User cannot commit unless a device exists"
-    }
-
-    set view [$self cget -view]
-    if {$view eq {}} {
-       return -code error "User cannot commit unless a view exists"
-    }
+    $self _canModify
+    
     $self UpdateViewFromModel
   }
 
@@ -2386,6 +2362,22 @@ snit::type ORPatternPanelPresenter {
   # updatig the view from the logger.
   method SetCommandLoggerAsHandle logger {
     set options(-handle) $logger
+  }
+  ##
+  # _canModify
+  #    Report an error if we don't have all the bits and pieces
+  #    needed to modify the device:
+  #
+  method _canModify {} {
+    set handle [$self cget -handle]
+    if {$handle eq {}} {
+       return -code error "User cannot commit unless a device exists"
+    }
+
+    set view [$self cget -view]
+    if {$view eq {}} {
+       return -code error "User cannot commit unless a view exists"
+    }
   }
 }
 

@@ -14,40 +14,21 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CXLM_H
-#define __CXLM_H
+#ifndef CXLM_H
+#define CXLM_H
 
-#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
-#endif
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
+#include <iostream>
 
 
 // Forward class definitions:
 
 class CReadoutModule;
 class CVMUSB;
-class CVMUSBReadoutList;
 
 /*!
    Provides base class support for XLM based readout targets.
@@ -76,6 +57,11 @@ public:				// 'constants'.
   static const uint32_t  REQ_X;		// FPGA bus.
   static const uint32_t  REQ_A;		// SRAM A bus
   static const uint32_t  REQ_B;		// SRAM B bus
+		static const uint8_t   registerAmod;
+		static const uint8_t   blockTransferAmod;
+
+
+		static const float     vmusbClockTick;
 
 public:				// Canonicals:
   CXLM();
@@ -94,7 +80,7 @@ public:
 
   // XLM support functions derived classes can use these:
 protected:
-  void loadFirmware(CVMUSB& controller,  std::string path) throw(std::string);
+  void loadFirmware(CVMUSB& controller,  std::string path);
   void accessBus(CVMUSB& controller,  uint32_t accessPattern);
 
   void addBusAccess(CVMUSBReadoutList& list, uint32_t accessPattern, 
@@ -286,6 +272,8 @@ class CFirmwareLoader
      * DSP is not booted.
      */ 
     void bootFPGA();
+				void dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data);
+				void doList(CVMUSBReadoutList& list);
 }; // end of FirmwareLoader class
 
 ///////////////////////////////////////////////////////////////////////////////

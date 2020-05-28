@@ -33,8 +33,8 @@
 // (c) Copyright NSCL 1999, All rights reserved Interactor.h
 //
 
-#ifndef __INTERACTOR_H  //Required for current class
-#define __INTERACTOR_H
+#ifndef INTERACTOR_H  //Required for current class
+#define INTERACTOR_H
 
 class CInteractor      
 {                       

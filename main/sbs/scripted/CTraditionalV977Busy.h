@@ -14,18 +14,13 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CTRADTIONALV977BUSY_H
-#define __CTRADITIONALV977BUSY_H
+#ifndef CTRADTIONALV977BUSY_H
+#define CTRADITIONALV977BUSY_H
 
 // include base class header:
 
-#ifndef __CUBSY_H
 #include <Busy.h>
-#endif
-
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
 
 // forward classes
 

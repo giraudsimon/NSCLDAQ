@@ -31,94 +31,53 @@ static const char* Copyright = "(C) Copyright Michigan State University 1977, Al
 #include "CModuleCreator.h"    	
 #include "CReadableObject.h"
 #include <TCLInterpreter.h>
-#include <TCLResult.h>			
 
-using namespace std;
+/**
+ * Completely rewritten for daqdev/NSCLDAQ#510 - in terms of extensible
+ * factory.
+ */
 
+/**
+ * constructor
+ *    Construct this base class.
+ */
+CModuleCreator::CModuleCreator()
+{}
+/**
+ * virtual destructor to allow destructor chaining.
+ */
+CModuleCreator::~CModuleCreator()
+{}
 
-
-/*!
-	Constructor: The only thing we need to do is initialize
-	the module type field:
-	
-	\param rType const string& [in]
-				Type name of the parameter.  This turns out to be the
-				module_type for tcl commands of the form:
-			module create module_type
-*/
-CModuleCreator::CModuleCreator (const string& rType)
-   : m_sModuleType(rType)
- 
-{   
-} 
-
-/*!
-    There is nothing interesting to do for the destructor.
-*/    
- CModuleCreator::~CModuleCreator ( )  //Destructor - Delete dynamic objects
+/**
+ * operator()
+ *    The extensible factory calls this to create a new object
+ *    for this type.  We do the impedance matching needed to invoke
+ *    the Create method.
+ *
+ * @param userData - actually a std::pair<const char*, CTCLInterpreter*>*
+ *      The character is the module name/command while the interpreter is the
+ *      interpreter in which the command representing the module is registered.
+ * @return CReadableObject* - the return value from Create.
+ */
+CReadableObject*
+CModuleCreator::operator()(void* userData)
 {
-}
-
-/*!
-    Copy construction. We are constructed as an exact copy of the parameter
-*/
-CModuleCreator::CModuleCreator (const CModuleCreator& rhs) :
-	m_sModuleType(rhs.m_sModuleType)
-{
-
-} 
-
-/*!
-	Assignment.  rhs is copied into this.  The only difference
-	between assignment and copy construction is that copy constructed
-	objects are being created, and assignment objects have longer duration.
-	
-	\param rhs ConstCModuleCreator& [in]
-		 The rhs of the assignment operation.
-		 
-	 \return a new object that can be put into the readout
-	 subsystem.
-
-*/
-CModuleCreator& 
-CModuleCreator::operator= (const CModuleCreator& rhs)
-{ 
-   if(this != &rhs) {
-      m_sModuleType = rhs.m_sModuleType;
-   }
-
-  return *this;
-}
-
-/*!
-   Test for equality.  The assumption is that there cannot be
-   two modules with the same mdule name.
+  std::pair<const char*, CTCLInterpreter*>* pData =
+   reinterpret_cast<std::pair<const char*, CTCLInterpreter*>*>(userData);
    
-   \param rhs  CModuleCreator& [in] rhs of the == operator.
-*/
-int 
-CModuleCreator::operator== (const CModuleCreator& rhs) const
-{ 
-   return (m_sModuleType == rhs.m_sModuleType);
+  const char*      pName   = pData->first;
+  CTCLInterpreter* pInterp = pData->second;
+  return Create(pName, *pInterp);
 }
-
-// Functions for class CModuleCreator
-
-/*!  Function: 	
- 
-
-Returns true if the input string 
-matches the module type.
-	\param rType const string& [in]  The type of module being searched
-			for.
-	\return  One of:
-		- true - If rType == m_sModuleType
-		-false - if not.
-
-*/
-bool
-CModuleCreator::Match(const string& rType)   const
-{ 
-   return (rType == m_sModuleType);
-}  
-
+/**
+ * describe
+ *    Returns text to describe the thingy we create.  Derived classes can
+ *    build this up and store it in the protected m_helpText string.
+ *  @return std::string
+ */
+std::string
+CModuleCreator::describe() const
+{
+ return m_helpText;
+}

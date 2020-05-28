@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
+#include <CMutex.h>
 
 
 using namespace std;
 
 
 
-
+ConversionFactory* ConversionFactory::m_pInstance(nullptr);
 
 
 /**
@@ -195,7 +196,8 @@ CChannel::StateHandler(connection_handler_args args)
   if (op == CA_OP_CONN_UP) {	// Just connected...
     pChannel->m_fConnected = true;
     if(!pChannel->m_fUpdateHandlerEstablished) {
-      pChannel->m_pConverter = CConversionFactory::Converter(ca_field_type(id));
+      pChannel->m_pConverter =
+        ConversionFactory::getInstance()->Converter(ca_field_type(id));
       ca_add_event(pChannel->m_pConverter->requestType(), 
 		   id, UpdateHandler, (void*)pChannel, 
 		   &(pChannel->m_eventHandlerId));
@@ -251,27 +253,84 @@ CChannel::UpdateHandler(event_handler_args args)
  *  Connection factory converter instantiator.
  *   \param type - the underlying epics data type of the channel.
  */
-CConverter*
-CConversionFactory::Converter(short type) {
-  switch (type) {
-  case DBF_STRING:
-    return new CStringConverter;
-    break;
-  case DBF_CHAR:
-  case DBF_SHORT:
-  case DBF_LONG:
-  case DBF_ENUM:
-    return new CIntegerConverter;
-    break;
-  case DBF_FLOAT:
-  case DBF_DOUBLE:
-    return new CFloatConverter;
-    break;
-    // Default is a string as well:
-  default:
-    return new CStringConverter;
-  }
+
+// daqdev/NSCLDAQ#510 - implement the conversion factory in terms
+//   of a generic extensible factory:
+
+
+class CStringConverterCreator : public ConverterCreator
+{
+public:
+  CConverter* operator()(void* userdata) { return new CStringConverter;}
+  std::string describe() const {return "Convert a string process variable";}
+};
+class CIntegerConverterCreator : public ConverterCreator
+{
+public:
+  CConverter* operator()(void* userdata) { return new CIntegerConverter; }
+  std::string describe() const {return "Convert an integer process variable";}
+};
+class CFloatConverterCreator : public ConverterCreator
+{
+public:
+  CConverter* operator()(void* userdata) {return new CFloatConverter;}
+  std::string describe() const {return "Convert a floating point PV";}
+};
+
+/**
+ * ConverstionFactory construction - stock m_factory
+ * with the appropriate creators.
+ * @note this is a private constructor as the factory is a singleton
+ */
+ConversionFactory::ConversionFactory()
+{
+    m_factory.addCreator(DBF_STRING, new CStringConverterCreator);
+    
+    m_factory.addCreator(DBF_CHAR, new CIntegerConverterCreator);
+    m_factory.addCreator(DBF_SHORT, new CIntegerConverterCreator);
+    m_factory.addCreator(DBF_LONG, new CIntegerConverterCreator);
+    m_factory.addCreator(DBF_ENUM, new CIntegerConverterCreator);
+    
+    m_factory.addCreator(DBF_FLOAT, new CFloatConverterCreator);
+    m_factory.addCreator(DBF_DOUBLE, new CFloatConverterCreator);
 }
+/**
+ * ConversionFactory get instance:
+ *   If it does not yet exist create the singleton which also
+ *   stocks the factory:
+ *   @note since this happens in the state change handler thread
+ *         and we don't know if there might be several concurrently
+ *         running, we need to be threadsafe:
+ */
+
+static CMutex factoryCreationMutex;
+ConversionFactory*
+ConversionFactory::getInstance()
+{
+  CriticalSection s(factoryCreationMutex);  // makes this threadsafe
+  
+  if (!m_pInstance) {
+    m_pInstance = new ConversionFactory;
+  }
+  return m_pInstance;
+}
+
+/**
+ *  Converter - delegate to the extensible factory.
+ *              if it comes up empty, return a string converter
+ *              as the default.
+ *  @param type - data type code (e.g. DBF_LONG).
+ */
+CConverter*
+ConversionFactory::Converter(short type)
+{
+  CConverter* result = m_factory.create(type);
+  if (!result) {
+    result = new CStringConverter;
+  }
+  return result;
+}
+
 
 /////////////////////////////////////////////////////////////
 /*!

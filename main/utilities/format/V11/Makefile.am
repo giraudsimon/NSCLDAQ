@@ -34,21 +34,24 @@ nscldaq11_HEADERS = CRingItem.h \
 libdataformatv11_la_CFLAGS = -I@srcdir@/..
 
 libdataformatv11_la_CXXFLAGS = -I@srcdir@/.. \
+				-I@top_srcdir@/base/os \
                                @LIBTCLPLUS_CFLAGS@
 
-libdataformatv11_la_LDFLAGS = @LIBTCLPLUS_LDFLAGS@
+libdataformatv11_la_LDFLAGS = @top_builddir@/base/os/libdaqshm.la \
+	@LIBTCLPLUS_LDFLAGS@
 
 noinst_PROGRAMS = unittests
 
 unittests_SOURCES	= TestRunner.cpp \
-										ringitemtests.cpp teststate.cpp	\
-										scalertests.cpp texttest.cpp physcounttests.cpp		\
-                                                                                physeventtests.cpp \
-										formatoutputtests.cpp dataformattests.cpp       \
-										fragmenttest.cpp glomparamtests.cpp factorytests.cpp 
+			ringitemtests.cpp teststate.cpp	\
+			scalertests.cpp texttest.cpp physcounttests.cpp		\
+			 physeventtests.cpp \
+			formatoutputtests.cpp dataformattests.cpp       \
+			fragmenttest.cpp glomparamtests.cpp factorytests.cpp 
 
 unittests_LDADD	= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 			@builddir@/libdataformatv11.la	\
+			@top_builddir@/base/os/libdaqshm.la \
 			@LIBEXCEPTION_LDFLAGS@
 
 unittests_CFLAGS= -I@srcdir@/..
@@ -56,6 +59,7 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
 		    @CPPUNIT_CFLAGS@ \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
+		-I@top_srcdir@/base/os \
                     -I@top_srcdir@/base/testutils
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \

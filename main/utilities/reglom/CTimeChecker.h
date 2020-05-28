@@ -21,6 +21,7 @@
 
 #ifndef CTIMECHECKER_H
 #define CTIMECHECKER_H
+#include "CRingItemDecoder.h"
 class CFragmentHandler;
 class CEndOfEventHandler;
 class CRingItem;
@@ -36,13 +37,14 @@ struct FragmentInfo;
  *    events are out of order.  It's a ringitemdecoder like class that can
  *    be used by the analysis sample framework.
  */
-class CRingItemDecoder {
+class CTimeCheckDecoder : public CRingItemDecoder
+{
 private:
     std::uint64_t m_lastStamp;
     unsigned      m_ooCount;
     
 public:
-    CRingItemDecoder();
+    CTimeCheckDecoder();
     
     // Required interfaces
     

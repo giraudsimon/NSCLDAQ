@@ -1,5 +1,5 @@
-#ifndef __CUNITCHANNEL_H
-#define __CUNITCHANNEL_H
+#ifndef CUNITCHANNEL_H
+#define CUNITCHANNEL_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,9 +16,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCHANNEL_H
 #include "CChannel.h"
-#endif
 
 
 class CUnitChannel : public CChannel

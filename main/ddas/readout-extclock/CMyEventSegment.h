@@ -1,5 +1,5 @@
-#ifndef __CMYEVENTSEGMENT_H
-#define __CMYEVENTSEGMENT_H
+#ifndef CMYEVENTSEGMENT_H
+#define CMYEVENTSEGMENT_H
 
 #include <Configuration.h>
 #include <SystemBooter.h>

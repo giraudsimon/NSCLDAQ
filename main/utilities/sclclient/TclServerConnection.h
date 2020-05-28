@@ -27,21 +27,12 @@
 // (c) Copyright NSCL 1999, All rights reserved .h
 //
 
-#ifndef __TCLSERVERCONNECTION_H  //Required for current class
-#define __TCLSERVERCONNECTION_H
+#ifndef TCLSERVERCONNECTION_H  //Required for current class
+#define TCLSERVERCONNECTION_H
 
                                //Required for base classes
-#ifndef __TCPCLIENT_H
 #include "TcpClient.h"
-#endif
-                               
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 
 class TclServerConnection  : public TcpClientConnection        
 {                       

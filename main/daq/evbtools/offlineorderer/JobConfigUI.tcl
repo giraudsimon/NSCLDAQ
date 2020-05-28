@@ -501,12 +501,7 @@ snit::type JobConfigUIPresenter {
         $m_observer acceptCreation 1
       }
 
-      # destroy this dialogue if it is ours to destroy
-      if {$options(-ismaster)} {
-        set widget [$m_view getWindowName]
-        set top [winfo toplevel $widget]
-        destroy $top
-      }
+      $self destroyView
     } else {
 
       # there were errors!, tell the user about them so they can fix
@@ -525,13 +520,19 @@ snit::type JobConfigUIPresenter {
       $m_observer acceptCreation 0
     }
 
+    $self destroyView
+  }
+  ##
+  # destroyView
+  #   If we are the master, destroy the toplevel that contains us:
+  #
+  method destroyView {} {
     if {$options(-ismaster)} {
       set widget [$m_view getWindowName]
       set top [winfo toplevel $widget]
       destroy $top
     }
   }
-
   ## @brief Retrieve the view
   #
   # @returns string

@@ -22,16 +22,11 @@
  */
 
 
-#ifndef __RINGBUFFERQUEUE_H
-#define __RINGBUFFERQUEUE_H
+#ifndef RINGBUFFERQUEUE_H
+#define RINGBUFFERQUEUE_H
 
-#ifndef __CBUFFERQUEUE_H
 #include <CBufferQueue.h>
-#endif
-
-#ifndef __CRINGITEM_H
 #include <CRingItem.h>
-#endif
 
 /*
  *  A RingBuffer queue is a CBufferQueue whose elements are pointers

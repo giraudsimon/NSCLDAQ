@@ -15,8 +15,9 @@
 #include <TCLInterpreter.h>
 #include <TCLException.h>
 #include <CErrnoException.h>
-
+#include <XXUSBConfigurableObject.h>
 #include <tcl.h>
+
 #include <unistd.h>
 
 #include <iostream>
@@ -74,7 +75,16 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   try {
     if (m_initScript != "") {
       if (access(m_initScript.c_str(), R_OK) == 0) {
-        Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
+        try {
+          Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
+        }
+        catch (...) {
+          Tcl_Interp* pRaw = Globals::pMainInterpreter->getInterpreter();
+          std::cerr << "Error executing init script " << m_initScript << std::endl;
+          std::cerr << ": " << Tcl_GetStringResult(pRaw) << ": "
+          << XXUSB::getTclTraceback(pRaw) << std::endl;
+          std:: cerr << "Processing continues\n";
+        }
       } else {
         throw CErrnoException("Checking accessibility of --init-script");
       }

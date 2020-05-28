@@ -34,20 +34,13 @@ int CCBD8210CrateController::simpleWrite16(int n, int a, int f, uint16_t data, u
         
         CVMUSBReadoutList list;
         status = m_ctlr->vmeWrite16(addr, CVMUSBReadoutList::a24UserData, data);
-//        list.addWrite16(addr, CVMUSBReadoutList::a24UserData, data);
-//        list.addDelay(1); // add 1 clock = 12.5us
-//
-//        uint32_t dummy;        
-//        size_t nbytes;        
-//        status = m_ctlr->executeList(list,&dummy,sizeof(dummy),&nbytes);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleWrite16(int,int,int,uint16_t,uint16_t&)";
-            std::cerr << " failed vmeWrite16 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << " d = " << data << std::endl;
-        }
+
+        checkStatus(
+         status,
+         "CCBD8210CrateController::simpleWrite16(int,int,int,uint16_t,uint16_t&)",
+         m_branch,m_crate,n,a,f
+        );
+        
         bool q = qTest();
         bool x = xTest();
         qx = formXQ(x,q);
@@ -74,25 +67,18 @@ int CCBD8210CrateController::simpleWrite24(int n, int a, int f, uint32_t data, u
         uint16_t hidata = ( (data>>16) & 0xff );
 
         status = m_ctlr->vmeWrite16(addr|word24bit, CVMUSBReadoutList::a24UserData, hidata);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)";
-            std::cerr << " failed vmeWrite32 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << " d = " << data << std::endl;
-        }
+        checkStatus(
+         status, "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)",
+         m_branch,m_crate,n,a,f
+        );
+        
 
         status = m_ctlr->vmeWrite16(addr|word16bit, CVMUSBReadoutList::a24UserData, lodata);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)";
-            std::cerr << " failed vmeWrite32 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << " d = " << data << std::endl;
-
-        }
+        checkStatus(
+         status, "CCBD8210CrateController::simpleWrite32(int,int,int,uint32_t,uint16_t&)",
+         m_branch, m_crate, n,a,f
+        );
+        
 
         bool q = qTest();
         bool x = xTest();
@@ -116,20 +102,11 @@ int CCBD8210CrateController::simpleRead16( int n, int a, int f, uint16_t& data, 
         addr = word16bit | addr; 
         CVMUSBReadoutList list;
         status = m_ctlr->vmeRead16(addr, CVMUSBReadoutList::a24UserData, &data);
-//        list.addRead16(addr, CVMUSBReadoutList::a24UserData);
-//        list.addDelay(1); // add 1 clock = 12.5us
-
-//        size_t nbytes;        
-//        status = m_ctlr->executeList(list,&data,sizeof(data),&nbytes);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleRead16(int,int,int,uint16_t&,uint16_t&)";
-            std::cerr << " failed vmeRead16 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << std::endl;
-        }
-
+        checkStatus(
+         status, "CCBD8210CrateController::simpleRead16(int,int,int,uint16_t&,uint16_t&)",
+         m_branch, m_crate, n,a,f
+        );
+        
         bool q = qTest();
         bool x = xTest();
         qx = formXQ(x,q);
@@ -150,24 +127,18 @@ int CCBD8210CrateController::simpleRead24( int n, int a, int f, uint32_t& data, 
         uint16_t lodata=0, hidata=0;
 
         status = m_ctlr->vmeRead16(addr|word24bit, CVMUSBReadoutList::a24UserData,&hidata);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)";
-            std::cerr << " failed vmeRead32 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << std::endl;
-        }
+        checkStatus(
+         status, "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)",
+         m_branch, m_crate, n,a,f
+        );
+        
 
         status = m_ctlr->vmeRead16(addr|word16bit, CVMUSBReadoutList::a24UserData,&lodata);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)";
-            std::cerr << " failed vmeRead32 with error = " << status;
-            std::cerr << std::endl;
-            std::cerr << "b = " << m_branch << " c = " << m_crate
-                      << " n = " << n << " a = " << a << " f = " << f
-                      << std::endl;
-        }
+        checkStatus(
+         status, "CCBD8210CrateController::simpleRead32(int,int,int,uint32_t&,uint16_t&)",
+         m_branch, m_crate, n,a,f
+        );
+        
 
         data  = (  lodata & 0xffff );
         data |= ( (hidata & 0xff)<<16 );
@@ -219,11 +190,11 @@ bool CCBD8210CrateController::xTest()
 
         uint16_t res = 0;
         int status = m_ctlr->vmeRead16(addr, CVMUSBReadoutList::a24UserData, &res);
-        if (status<0) {
-            std::cerr << "CCBD8210CrateController::qTest()";
-            std::cerr << " failed vmeRead16 with error = " << status;
-            std::cerr << std::endl;
+        if (status < 0) {
+         std::cerr << "CCBD8210CrateController::qTest() failed with status "
+                   << status << std::endl;
         }
+        
         res &= CCBD8210CamacBranchDriver::XMask;
         flag = (res > 0);
     }
@@ -254,4 +225,24 @@ int CCBD8210CrateController::executeList(CCamacReadoutList& list, void* pbuffer,
 uint16_t CCBD8210CrateController::formXQ(uint16_t x, uint16_t q) const
 {
   return ((x<<1) | q);
+}
+/**
+ * checkStatus
+ *    If an error occured, report it to std::cerr
+ *  @param stat - status of an operation.
+ *  @param msg  - message to lead off report.
+ *  @param b,c,n,a,f - operations being performed.
+ */
+void
+CCBD8210CrateController::checkStatus(
+ int stat, const char* msg, int b, int c, int n, int a, int f
+)
+{
+ if (stat < 0) {
+  std::cerr << msg << " failed with status " << stat;
+  std::cerr << std::endl;
+  std::cerr << "b = " << b << " c = " << c
+            << " n = " << n << " a = " << a << " f = " << f
+            << std::endl;
+ }
 }

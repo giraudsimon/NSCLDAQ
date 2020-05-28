@@ -20,21 +20,12 @@
 # @author <fox@nscl.msu.edu>
 */
 
-#ifndef __CDUPLICATETIMESTATCOMMAND_H
-#define __CDUPLICATETIMESTATCOMMAND_H
+#ifndef CDUPLICATETIMESTATCOMMAND_H
+#define CDUPLICATETIMESTATCOMMAND_H
 
 
-
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 
 // Forward definitions:

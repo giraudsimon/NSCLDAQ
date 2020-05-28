@@ -17,8 +17,10 @@
 #include <config.h>
 #include "CTclModule.h"
 #include <TCLInterpreter.h>
+#include <XXUSBConfigurableObject.h>
 #include <arpa/inet.h>
-
+#include <iostream>
+#include "tclUtil.h"
 /**
  * Construction simply saves the nam of the command ensemble:
  *
@@ -77,7 +79,8 @@ CTclModule::Initialize(CCCUSB& controller)
   command            += " Initialize ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command);
+  
 }
 /**
  * Similarly wrap the list in a swig pointer and execute the command's
@@ -93,7 +96,7 @@ CTclModule::addReadoutList(CCCUSBReadoutList& list)
   command            += " addReadoutList ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command);
 }
 
 /**
@@ -111,7 +114,7 @@ CTclModule::onEndRun(CCCUSB& controller)
   command            += " onEndRun ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command.c_str());
 }
 /**
  * Clone is just a virtual copy construction:
@@ -133,27 +136,26 @@ CTclModule::clone() const
 std::string
 CTclModule::swigPointer(void* p, std::string  type)
 {
-  char result [10000];
-  std::string hexified;		// Bigendian.
-
-  uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
-
-  // Note that doing the byte reversal this way should be
-  // 64 bit clean..and in fact should work for any sized ptr.
-
-  static const char hex[17] = "0123456789abcdef";
-  register const unsigned char *u = (unsigned char *) &p;
-  register const unsigned char *eu =  u + sizeof(void*);
-  for (; u != eu; ++u) {
-    register unsigned char uu = *u;
-    hexified += hex[(uu & 0xf0) >> 4];
-    hexified += hex[uu & 0xf];
+  return tclUtil::swigPointer(p, type);
+  
+}
+/**
+ * evalOrThrow
+ *    Evaluate a script at global level and report any error messages
+ *
+ * @param command -command to execute.
+ */
+void
+CTclModule::evalOrThrow(const std::string& cmd)
+{
+  try {
+    m_pInterp->GlobalEval(cmd.c_str());
+  } catch (...) {
+    Tcl_Interp* pRaw = m_pInterp->getInterpreter();
+    const char* pResult = Tcl_GetStringResult(pRaw);
+    std::string trace   = XXUSB::getTclTraceback(pRaw);
+    std::cerr << "Error executing command: " << cmd << ": "
+      << pResult << ": " << trace << std::endl;
+    throw;
   }
-  sprintf(result, "_%s_p_%s", hexified.c_str(), type.c_str());
-
-  return std::string(result);
-
-  char pointerArray[1000];
-  sprintf(pointerArray, "_%x_p_%s", htonl((uint64_t)p), type.c_str());
-  return std::string(pointerArray);
 }

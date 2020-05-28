@@ -167,22 +167,8 @@ void TestRctlPackage::begin()
   
   // Should throw to start a new run:
 
-
-  bool threw = false;
-  bool threwstate = false;
-  try {
-    pkg->begin();
-  }
-  catch (CStateException& e) {
-    threwstate = true;
-    threw      = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(threwstate);
-
+  CPPUNIT_ASSERT_THROW(pkg->begin(), CStateException);
+  
   // Stop the run as part of the cleanup:
 
   m_pExperiment->Stop();
@@ -202,47 +188,14 @@ void TestRctlPackage::pause()
 
   EQ(RunState::paused, m_pRunState->m_state);
 
-  // Should not be able to pause again:
-
-  bool threw = false;
-  bool state = false;
-
-  try {
-    pkg->pause();
-  }
-  catch (CStateException& e) {
-    threw = true;
-    state = true;
-  }
-  catch(...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(state);
-
+  CPPUNIT_ASSERT_THROW(pkg->pause(), CStateException);
+  
   // If the run state is halted, we still should not be able
   // to pause the run:
 
   m_pExperiment->Stop();	// End the run in the experiment
   m_pRunState->m_state = RunState::inactive;
-
-  threw = false;
-  state = false;
-
-  try {
-    pkg->pause();
-  }
-  catch (CStateException& e) {
-    threw = true;
-    state = true;
-  }
-  catch(...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(state);
-
-
+  CPPUNIT_ASSERT_THROW(pkg->pause(), CStateException);
 
 }
 
@@ -254,44 +207,17 @@ void TestRctlPackage::resume()
 
   // Run is halted should not be legal to resume.
 
-  bool threw = false;
-  bool state = false;
-
-  try {
-    pkg->resume();
-  }
-  catch (CStateException& e) {
-    threw = true;
-    state = true;
-  }
-  catch(...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(state);
-
+  CPPUNIT_ASSERT_THROW(pkg->resume(), CStateException);
+  
   // Should not be legal to resume the run when it's active either:
 
   pkg->begin();
-  threw = false;
-  state = false;
-  try {
-    pkg->resume();
-  }
-  catch (CStateException& e) {
-    threw = true;
-    state = true;
-  }
-  catch(...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(state);
-
+  CPPUNIT_ASSERT_THROW(pkg->resume(), CStateException);
+  
   // After a pause resume is legal:
 
-  pkg->pause();
-  pkg->resume();
+  CPPUNIT_ASSERT_NO_THROW(pkg->pause());
+  CPPUNIT_ASSERT_NO_THROW(pkg->resume());
   EQ(RunState::active, m_pRunState->m_state);
 
   // Clean up by ending the run:
@@ -319,22 +245,8 @@ void TestRctlPackage::end()
 
   // when run is inactive, it's illegal to stop it again:
 
-  bool threw = false;
-  bool state = false;
-
-  try {
-    pkg->end();
-  }
-  catch (CStateException& e) {
-    threw = true;
-    state = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(state);
-
+  CPPUNIT_ASSERT_THROW(pkg->end(), CStateException);
+  
 }
 //
 // Check the begin command.. Should start the run if inactive.
@@ -352,38 +264,11 @@ void TestRctlPackage::begincommand()
 
   // Doing a begin again should fail:
 
-  try {
-    result = m_pInterp->Eval("begin");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("begin"), CTCLException);
+  
   pkg->pause();
-  threw  = false;
-  tcl    = false;
-
-  // Doing a begin again should fail:
-
-  try {
-    result = m_pInterp->Eval("begin");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("begin"), CTCLException);
+  
   pkg->end();			// end the run.
 
 }
@@ -396,8 +281,6 @@ void TestRctlPackage::pausecommand()
 {
   CRunControlPackage *pkg = CRunControlPackage::getInstance(*m_pInterp);
   string              result;
-  bool                threw = false;
-  bool                tcl   = false;
 
   result = m_pInterp->Eval("begin"); // start the run.
 
@@ -408,38 +291,11 @@ void TestRctlPackage::pausecommand()
   
   // Pause should not be allowed in the pause state:
 
-  try {
-    result = m_pInterp->Eval("pause");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("pause"), CTCLException);
+  
   pkg->end();
-  threw = false;
-  tcl   = false;
-
-  // Pause not allowed in the inactive state too:'
-
-  try {
-    result = m_pInterp->Eval("pause");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("pause"), CTCLException);
+  
 }
 
 // Check the resume command.  It operates under the same constraints
@@ -450,9 +306,7 @@ void TestRctlPackage::resumecommand()
 {
   CRunControlPackage* pkg = CRunControlPackage::getInstance(*m_pInterp);
   string              result;
-  bool                threw = false;
-  bool                tcl   = false;
-
+  
   result = m_pInterp->Eval("begin");
   result = m_pInterp->Eval("pause"); // Now resume is legal:
 
@@ -461,37 +315,13 @@ void TestRctlPackage::resumecommand()
 
   // Now let's try some illegals:
   // Can't resum an active run:
-  try {
-    result = m_pInterp->Eval("resume");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("resume"), CTCLException);
+  
   // Can't resume an inactive run:
 
   pkg->end();
-  threw = false;
-  tcl   = false;
-
-  try {
-    result = m_pInterp->Eval("resume");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("resume"), CTCLException);
+  
 
 }
 // Check the end command. It operates under the same constraints
@@ -501,29 +331,14 @@ void TestRctlPackage::endcommand()
 {
   CRunControlPackage* pkg = CRunControlPackage::getInstance(*m_pInterp);
   string              result;
-  bool                threw = false;
-  bool                tcl   = false;
+ 
 
   result = m_pInterp->Eval("begin"); // end is legal now:
 
   result = m_pInterp->Eval("end");
   EQ(RunState::inactive, m_pRunState->m_state);
-
-  // After the run is inactive, end is not legal:
-
-  try {
-    result = m_pInterp->Eval("end");
-  }
-  catch (CTCLException& e) {
-    threw = true;
-    tcl   = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(tcl);
-
+  CPPUNIT_ASSERT_THROW(m_pInterp->Eval("end"), CTCLException);
+  
   // Paused runs, on the other hand, can be ended:
 
   pkg->begin();

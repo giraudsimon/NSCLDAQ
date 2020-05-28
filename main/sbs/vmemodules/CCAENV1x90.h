@@ -61,36 +61,14 @@ software.
 
 
 */
-#ifndef __CCAENV1x90_H
-#define __CCAENV1x90_h
+#ifndef CCAENV1x90_H
+#define CCAENV1x90_h
 
 
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-
-
-#ifndef __DESIGNBYCONTRACT_H
 #include "DesignByContract.h"
-#ifndef __DESIGNBYCONTRACT_H
-#define __DESIGNBYCONTRACT_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H 
-#endif
-#endif
-
-#ifndef VMEMODULE_H
 #include <VmeModule.h>
-#endif
 
 
 // Class definitions.

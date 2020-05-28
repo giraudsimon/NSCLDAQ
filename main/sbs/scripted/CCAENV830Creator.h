@@ -1,3 +1,18 @@
+/*
+    This software is Copyright by the Board of Trustees of Michigan
+    State University (c) Copyright 2005.
+
+    You may use this software under the terms of the GNU public license
+    (GPL).  The terms of this license are described at:
+
+     http://www.gnu.org/licenses/gpl.txt
+
+     Author:
+             Ron Fox
+	     NSCL
+	     Michigan State University
+	     East Lansing, MI 48824-1321
+*/
 /*!
   Creates a CCAENV830 readout module.   This module is suitable for use
   in the main readout section for systems that require e.g. precise absolute
@@ -27,24 +42,16 @@
   through TCL scripting.
 
 */
-#ifndef __CCAENV830CREATOR_H  //Required for current class
-#define __CCAENV830CREATOR_H
+#ifndef CCAENV830CREATOR_H  //Required for current class
+#define CCAENV830CREATOR_H
 
 //
 // Include files:
 //
 
                                //Required for base classes
-#ifndef __CMODULECREATOR_H     //CModuleCreator
 #include "CModuleCreator.h"
-#endif
- 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 class CTCLInterpreter;
 class CTCLResult;
@@ -60,21 +67,8 @@ private:
 public:
   CCAENV830Creator ();
   virtual ~CCAENV830Creator ( );
-  CCAENV830Creator (const CCAENV830Creator& rhs );
-  CCAENV830Creator& operator= (const CCAENV830Creator& rhs);
-  int operator== (const CCAENV830Creator& rhs) const;
-  int operator!= (const CCAENV830Creator& rhs) const {
-      return !(operator==(rhs));
-   }
 
-  // Class operations:
-
-public:
-
-   virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-				       CTCLResult& rResult, 
-				       int nArgs, char** pArgs)   ; // 
-   virtual   std::string  Help (); // 
+   virtual CReadableObject* Create (const char* name, CTCLInterpreter& rInterp);
 
 };
 

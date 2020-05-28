@@ -19,6 +19,7 @@
 #include "CGetCommand.h"
 
 #include "CCtlConfiguration.h"
+#include "TclServer.h"
 #include <TCLObject.h>
 #include <TCLInterpreter.h>
 #include "CControlModule.h"
@@ -27,6 +28,7 @@
 #include <CVMUSB.h>
 #include <CMutex.h>
 #include <tcl.h>
+
 
 using namespace std;
 
@@ -78,11 +80,9 @@ CGetCommand::operator()(CTCLInterpreter& interp,
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
-  bool mustRelease(false);
-  if (CRunState::getInstance()->getState() == CRunState::Active) {
-    mustRelease = true;
-    CControlQueues::getInstance()->AcquireUsb();
-  }
+  
+	bool mustRelease = TclServer::acquireUSBIfNeeded();
+  
 
   // Now try the command returning any string error that is thrown:
   string result =   pModule->Get(m_Vme, point.c_str());

@@ -14,27 +14,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CDOCUMENTEDVARS_H
-#define __CDOCUMENTEDVARS_H
+#ifndef CDOCUMENTEDVARS_H
+#define CDOCUMENTEDVARS_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 

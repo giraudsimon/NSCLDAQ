@@ -13,18 +13,16 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CV812CREATOR_H
-#define __CV812CREATOR_H
+#ifndef CV812CREATOR_H
+#define CV812CREATOR_H
 
 /**
  * @file CV812Creator.h
  * @brief define a creator for CV812 in the module factory.
  */
 
-#ifndef __CMODULECREATOR_H
-#include <CModuleCreator.h>
-#endif
 
+#include <CModuleCreator.h>
 #include <CControlHardware.h>
 #include <memory>
 
@@ -34,7 +32,8 @@
 class CV812Creator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* userData);
+  std::string describe() const;
 };
 
 #endif

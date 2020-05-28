@@ -15,8 +15,8 @@
 */
 
 
-#ifndef __CRINGITEMFACTORY_H
-#define __CRINGITEMFACTORY_H
+#ifndef CRINGITEMFACTORY_H
+#define CRINGITEMFACTORY_H
 
 class CRingItem;
 

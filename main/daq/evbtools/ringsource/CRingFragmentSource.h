@@ -83,6 +83,7 @@ private:
     
     std::pair<size_t, EVB::pFragment> makeFragments(CRingBufferChunkAccess::Chunk& c);
     bool timedOut();
+    void throwIfNotExpectingBodyHeaders(const char* msg);
 };
 
 

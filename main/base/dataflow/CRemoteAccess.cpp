@@ -383,17 +383,8 @@ CRingAccess::local(std::string host)
   if (host == std::string(hostname)) {
     return true;
   }
-
-  struct addrinfo  hints = {AI_CANONNAME | AI_V4MAPPED | AI_ADDRCONFIG,
-			    AF_UNSPEC, 0, 0, 
-			    0, NULL, NULL, NULL};
-			    
-
-  struct addrinfo* hostInfo;
-  getaddrinfo(hostname, NULL, &hints, &hostInfo);
-
-  std::string fqhostname(hostInfo->ai_canonname);
-  freeaddrinfo(hostInfo);
+  std::string fqhostname = Os::getfqdn(hostname);
+  
 
   // If the host has no periods append the domain name from
   // fqhostname.

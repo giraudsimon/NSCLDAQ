@@ -260,6 +260,7 @@ SampleDriver::clone(const CControlHardware& rhs)
 class SampleCreator : public CModuleCreator {
 public:
   CControlHardware* operator()(std::string name);
+  std::string describe() const;
 };
 
 /**
@@ -273,6 +274,15 @@ CControlHardware*
 SampleCreator::operator()(std::string name)
 {
   return new SampleDriver(name);
+}
+
+/**
+ * describe - return a description of the driver ..edit as appropriate:
+ */
+std::string
+SampleCreator::describe() const
+{
+  return "This is a creator for a sample driver - this string should have been edited";
 }
 
 /**

@@ -37,35 +37,17 @@ Each of these represents a keyword/value pair.
 //
 // Copyright 
 
-#ifndef __SCONFIGURABLEOBJECT_H  //Required for current class
-#define __SCONFIGURABLEOBJECT_H
+#ifndef SCONFIGURABLEOBJECT_H  //Required for current class
+#define SCONFIGURABLEOBJECT_H
 
 //
 // Include files:
 //
 
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
-#ifndef __TCLRESULT_H
 #include <TCLResult.h>        //Required for include files  
-#endif
-
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 // forward definitions. 

@@ -309,6 +309,7 @@ int CMyEndCommand::handleEndRun(Tcl_Event* pEvt, int flags)
 {
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
   pEnd->s_thisPtr->endRun();
+	return TCL_OK;
 }
 
 int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
@@ -316,6 +317,7 @@ int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
 
   pEnd->s_thisPtr->readOutRemainingData();
+	return TCL_OK;
 }
 
 void CMyEndCommand::rescheduleEndTransition() {

@@ -14,13 +14,43 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CEVENTORDERCLIENT_H
-#define __CEVENTORDERCLIENT_H
+#ifndef CEVENTORDERCLIENT_H
+#define CEVENTORDERCLIENT_H
 
 #include <string>
 #include <stdint.h>
 #include <list>
 #include <sys/uio.h>
+
+/**
+ *  This client object is responsible for sending data to the event builder
+ *  in the format expected  by that process.  The outer format of a message is:
+ */
+
+namespace EVB {
+  typedef struct _ClientMessageHeader {
+    uint32_t  s_bodySize;          // # bytes of message body.
+    uint32_t  s_msgType;           // Type of message.
+  } ClientMessageHeader, *pClientMessageHeader;
+  
+  // Message type codes (bit encoded for the hell of it)
+  
+  static const uint32_t CONNECT   =1;
+  static const uint32_t FRAGMENTS =2;
+  static const uint32_t DISCONNECT=4;
+}
+
+/**  A connect message body has has a fixed size info string and a set of connection ids.
+ *   this gets marshalled to:
+ */
+static const unsigned EVB_MAX_DESCRIPTION=80;      // Description string size.
+namespace EVB {
+  typedef struct _ConnectBody {
+    char     s_description[EVB_MAX_DESCRIPTION];  // Description string.
+    uint32_t s_nSids;                             // Number of sids on this link.
+    uint32_t s_sids[0];                           // actually s_nSids follow.
+  } ConnectBody, *pConnectBody;
+}
 
 
 namespace EVB {
@@ -74,9 +104,15 @@ public:
 
 private:
   static size_t message(void** msg, const void* request, size_t requestSize, const  void* body, size_t bodySize);
+  
   std::string getReplyString();	
   static void freeChain(EVB::pFragmentChain pChain);
   iovec* makeIoVec(EVB::Fragment& Frag, iovec* pVecs);
+  
+  void   message(size_t nItems, iovec* parts);
+  size_t bytesInChain(EVB::pFragmentChain pFrags);
+  size_t iovecsInChain(EVB::pFragmentChain pFrags);
+  void   fillFragmentDescriptors(iovec* pVec, EVB::pFragmentChain pFrags);
 };
 
 

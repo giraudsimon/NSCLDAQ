@@ -100,7 +100,8 @@ CInit::operator()(CTCLInterpreter& interp,
   CriticalSection lock(CVMUSB::getGlobalMutex());
 
   // Initialize the Modules loaded into the tclserver 
-  // via the controlconfig.tcl script 
+  // via the controlconfig.tcl script
+  
   Globals::pTclServer->initModules();
 
   tclUtil::setResult(interp, string("Init - initialization procedures executed"));

@@ -14,12 +14,10 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef _CCAEN894CREATOR_H
-#define _CCAEN894CREATOR_H
+#ifndef CCAEN894CREATOR_H
+#define CCAEN894CREATOR_H
 
-#ifndef _CMODULECREATOR_H
 #include "CModuleCreator.h"
-#endif
 
 #include <CControlHardware.h>
 
@@ -42,7 +40,8 @@
 class CCAEN894Creator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* unused);
+  virtual std::string describe() const;
 };
 
 #endif

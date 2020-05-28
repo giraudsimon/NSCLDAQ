@@ -251,30 +251,25 @@ CExperiment::Start(bool resume)
     // 
     //
     time_t stamp = time(&stamp);	// Absolute timestamp for this 'event'.
-    uint64_t msTime = getTimeMs();	// Current time in ms.
-  
+    
     if (m_pRunState->m_state != RunState::paused) {
-      m_nRunStartStamp  = msTime;
       m_nEventsEmitted  = 0;
-      m_nLastScalerTime = msTime;
-      m_nPausedmSeconds  = 0;
-      
+      m_runTime.start();
     }
     if (resume) {
       pMain->logProgress("This is a resume run");
-      m_nPausedmSeconds += (msTime - m_nLastScalerTime);
-      m_nLastScalerTime = msTime;
+      m_nLastScalerTime = m_runTime.measure();
     } else {
       pMain->logProgress("This is a begin run");
     }
 
-    uint32_t elapsedTime = (msTime - m_nRunStartStamp - m_nPausedmSeconds)/1000;
+    uint32_t elapsedTime = m_runTime.measure()*1000;   // Milliseconds
 
     CRingStateChangeItem item(NULL_TIMESTAMP, m_nSourceId,
         m_useBarriers ? BARRIER_START : 0,
         resume ? RESUME_RUN : BEGIN_RUN,  m_pRunState->m_runNumber,
         elapsedTime, stamp,
-        std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE));
+        std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE), 1000);
     item.commitToRing(*m_pRing);
     pMain->logProgress("Emitted the state change object");
     
@@ -301,7 +296,7 @@ CExperiment::Start(bool resume)
           0, // count
           0, // time offset
           static_cast<uint32_t>(time(NULL)), // time now
-          1);
+          1000);                             // Consistent that time is ms.
   
   
       count.commitToRing(*m_pRing);
@@ -341,6 +336,7 @@ CExperiment::Start(bool resume)
 void
 CExperiment::Stop(bool pause)
 {
+  
   CReadoutMain* pMain = CReadoutMain::getInstance();
   pMain->logProgress("CExperiment::Stop entered");
   if (pause && (m_pRunState->m_state != RunState::active)) {
@@ -413,10 +409,9 @@ CExperiment::syncEndRun(bool pause)
 
   // Create the run state item and commit it to the ring.
 
-  time_t now;
-  time(&now);
-  uint64_t msTime = getTimeMs();
-  uint32_t endOffset = (msTime - m_nRunStartStamp - m_nPausedmSeconds)/1000;
+  time_t now = time(nullptr);
+  
+  uint32_t endOffset = m_runTime.measure() * 1000;        // milliseconds
 
   uint16_t        itemType;
   RunState::State finalState;
@@ -433,7 +428,8 @@ CExperiment::syncEndRun(bool pause)
   CRingStateChangeItem item(
     NULL_TIMESTAMP, m_nSourceId,
     m_useBarriers ? BARRIER_END : 0, itemType, m_pRunState->m_runNumber,
-    endOffset, now, std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE)
+    endOffset, now,
+    std::string(m_pRunState->m_pTitle).substr(0, TITLE_MAXSIZE), 1000
   );
   item.commitToRing(*m_pRing);
   pMain->logProgress("State change item emitted");
@@ -582,38 +578,12 @@ CExperiment::ReadEvent()
           PHYSICS_EVENT, 0, m_nSourceId, 0,
           m_nDataBufferSize + 100, m_pRing
         );
-    
-        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-        size_t nWords =
-          m_pReadout->read(pBuffer +2 , m_nDataBufferSize - sizeof(uint32_t));
-  
-        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
-          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
-          item.setBodyCursor(pBuffer + nWords+2);
-          item.updateSize();
-          if (m_needHeader) {
-            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
-          }
-          item.commitToRing(*m_pRing);
-          m_nEventsEmitted++;
-        }
+        readEvent(item);    
+        
       } else {
         CRingItem item(PHYSICS_EVENT, m_nDataBufferSize + 100);
-        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-  
-        size_t nWords =
-          m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
-  
-        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
-          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
-          item.setBodyCursor(pBuffer + nWords+2);
-          item.updateSize();
-          if (m_needHeader) {
-            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
-          }
-          item.commitToRing(*m_pRing);
-          m_nEventsEmitted++;
-        }
+        readEvent(item);
+        
       }
       m_pReadout->clear();	// do any post event clears.
     } while(m_fHavemore);
@@ -633,15 +603,12 @@ CExperiment::ReadEvent()
 void
 CExperiment::readScalers()
 {
-  time_t           now     = time(&now);
-  uint64_t         msTime  = getTimeMs();
-  uint32_t         startTime = 
-    (m_nLastScalerTime  - m_nRunStartStamp - m_nPausedmSeconds);
-  uint32_t         endTime   =
-    (msTime - m_nRunStartStamp - m_nPausedmSeconds);
-
-  m_nLastScalerTime = msTime;
-
+  time_t           now     = time(nullptr);
+  
+  uint32_t         startTime = m_nLastScalerTime * 1000;
+  m_nLastScalerTime          = m_runTime.measure();
+  uint32_t         endTime   = m_nLastScalerTime * 1000;
+  
   // can only do scaler readout if we have a root scaler bank:
 
   if (m_pScalers) {
@@ -653,12 +620,11 @@ CExperiment::readScalers()
     
     m_pScalers->clear();	// Clear scalers after read.
 
-    CRingScalerItem  item(timestamp, srcid, BARRIER_NOTBARRIER,
-                          startTime,
-			  endTime,
-			  now,
-			  scalers,
-                          1000);  // ms time.
+    CRingScalerItem  item(
+      timestamp, srcid, BARRIER_NOTBARRIER, startTime, endTime, now,
+			scalers, 1000
+    );
+    
     item.commitToRing(*m_pRing);
 			  
   }
@@ -712,12 +678,12 @@ CExperiment::DocumentPackets()
 
   if (packetDefs.size()) {
     time_t           now     = time(&now);
-    uint64_t         msTime  = getTimeMs();
-    uint32_t         offset = (msTime - m_nRunStartStamp - m_nPausedmSeconds)/1000;
-    CRingTextItem item(PACKET_TYPES, NULL_TIMESTAMP, m_nSourceId, BARRIER_NOTBARRIER,
-                       packetDefs,
-                       offset,
-                       static_cast<uint32_t>(now));
+    uint32_t         offset  = m_runTime.measure() * 1000;
+
+    CRingTextItem item(
+      PACKET_TYPES, NULL_TIMESTAMP, m_nSourceId, BARRIER_NOTBARRIER,
+      packetDefs, offset, static_cast<uint32_t>(now), 1000
+    );
     item.commitToRing(*m_pRing);
   }
 }
@@ -733,7 +699,7 @@ void
 CExperiment::ScheduleRunVariableDump()
 {
   CVariableBuffers* pVars = CVariableBuffers::getInstance();
-  uint64_t timeOffset = m_nRunStartStamp + m_nPausedmSeconds;
+  uint64_t timeOffset = m_runTime.measure() * 1000;
   pVars->triggerRunVariableBuffer(m_pRing, timeOffset);
   pVars->triggerStateVariableBuffer(m_pRing, timeOffset);
 }
@@ -816,25 +782,6 @@ int CExperiment::HandleEndRunEvent(Tcl_Event* evPtr, int flags)
   return 1;
 }
 
-/**
- * Return the current time of day in ms from the Realtime clock.
- * @return uint64_t  
- * @retval ms since the epoch.
- */
-uint64_t 
-CExperiment::getTimeMs()
-{
-  timespec currentTime;
-  uint64_t msTime;
-  clock_gettime(CLOCK_REALTIME, &currentTime); // We can assume no errors (see the  manpage).
-
-  msTime = currentTime.tv_sec;
-  msTime = msTime * 1000;	// seconds ->ms.
-  msTime += currentTime.tv_nsec/(1000*1000); // ns-> ms.
-
-  return msTime;
-
-}
 /**
  * setTimestamp
  *
@@ -967,4 +914,30 @@ CExperiment::createCommand(
     command += parameter;
     
     return command;
+}
+
+/**
+ * readEvent
+ *    Once a ring item has been allocated/gotten,
+ *    Read a physics event into it.
+ * @param item - reference to the ring item.
+ */
+void
+CExperiment::readEvent(CRingItem& item)
+{
+  uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
+
+  size_t nWords =
+    m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
+
+  if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
+    *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
+    item.setBodyCursor(pBuffer + nWords+2);
+    item.updateSize();
+    if (m_needHeader) {
+      item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
+    }
+    item.commitToRing(*m_pRing);
+    m_nEventsEmitted++;
+  }  
 }

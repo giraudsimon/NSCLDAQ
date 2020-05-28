@@ -13,22 +13,18 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CEVBFRAMEWORKAPP_H
-#define __CEVBFRAMEWORKAPP_H
+#ifndef CEVBFRAMEWORKAPP_H
+#define CEVBFRAMEWORKAPP_H
 
-#ifndef __STL_LIST
+
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
 
 // forward definitions.
 
 struct gengetopt_args_info;
 class  CEVBClientApp;
 class  CEventOrderClient;
-#ifndef __EVBFRAMEWORK_H
+#ifndef EVBFRAMEWORK_H
 class  CEVBFragmentList;	/* Could be prior defined completely. */
 #endif
 /**

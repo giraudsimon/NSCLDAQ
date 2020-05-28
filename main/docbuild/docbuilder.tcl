@@ -116,8 +116,27 @@ proc processMetaDirectory {directory} {
 
   set ::metafiles [glob -nocomplain [file join $directory *.xml]]
 
+} 
+##
+# isCommentTag
+#   Returns true if a line is a <!-- type -->
+#   line
+#
+# @param line - line of text.
+# @param type - the line type we care about.
+#
+proc isCommentTag {line type} {
+    set listline [split $line " "]
+    set tagopen [lindex $listline 0]
+    set tagname [lindex $listline 1]
+    set tagclose [lindex $listline 2]
+    if {($tagopen eq "<!--")    &&
+        ($tagname eq "$type") &&
+        ($tagclose eq "-->")} {
+          return 1
+        }
+    return 0
 }
-
 #-------------------------------------------------------------
 #  Incorporate chapter text into a part.
 #  Text is incorporated up to the line that starts
@@ -135,16 +154,9 @@ proc processMetaDirectory {directory} {
 #
 proc incorporateChapter {fd name} {
     while {![eof $fd]} {
-	set line [gets $fd]
-	set listline [split $line " "]
-	set tagopen [lindex $listline 0]
-	set tagname [lindex $listline 1]
-	set tagclose [lindex $listline 2]
-	if {($tagopen eq "<!--")    &&
-	    ($tagname eq "/chapter") &&
-	    ($tagclose eq "-->")} return
-	append ::parts($name) $line "\n"
-       
+      set line [gets $fd]
+      if {[isCommentTag $line /chapter]} return
+      append ::parts($name) $line "\n"
     }
 }
 
@@ -165,16 +177,9 @@ proc incorporateChapter {fd name} {
 #
 proc incorporateManpage {fd section} {
     while {![eof $fd]} {
-	set line [gets $fd]
-	set listline [split $line " "]
-	set tagopen  [lindex $listline 0]
-	set tagname  [lindex $listline 1]
-	set tagclose [lindex $listline 2]
-
-	if {($tagopen eq "<!--")    &&
-	    ($tagname eq "/manpage") &&
-	    ($tagclose eq "-->")} return
-	append ::sections($section) $line "\n"
+      set line [gets $fd]
+      if {[isCommentTag $line /manpage]} return
+      append ::sections($section) $line "\n"
     }
 }
 

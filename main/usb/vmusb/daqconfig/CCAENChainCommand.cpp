@@ -19,6 +19,7 @@
 #include "CConfiguration.h"
 #include <CReadoutModule.h>
 #include <CCAENChain.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -59,22 +60,11 @@ CCAENChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
   // need exactly 3 elements, command, create, name.
 
-  if (objv.size() != 3) {
-    Usage("Incorrect parameter count for create subcommand", objv);
-    return TCL_ERROR;
-  }
-
-  // Get the chain name.  This must not be the name of an existing 'adc' module.
-
-  string   name    = objv[2];
+  
   CConfiguration* pConfig = getConfiguration();
-
-  if (pConfig->findAdc(name)) {
-    Usage("Duplicate module creation attempted", objv);
-    return TCL_ERROR;
-  }
-
-  // At this point everything should work just fine:
+	std::string name = tclUtil::newName(interp, pConfig, objv);
+  
+	  // At this point everything should work just fine:
 
   CCAENChain*      pChain = new CCAENChain;
   CReadoutModule*  pModule= new CReadoutModule(name, *pChain);
@@ -83,26 +73,4 @@ CCAENChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
   pConfig->setResult(name);
   return TCL_OK;
 
-}
-/*
-   The usage command needs to return a usage specific to our requirements.
-*/
-void 
-CCAENChainCommand::Usage(string msg, vector<CTCLObject>& objv)
-{
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i =0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-
-  result += "Usage\n";
-  result += "    caenchain create name\n";
-  result += "    caenchain config name config-params\n";
-  result += "    caenchain cget   name\n";
-
-  getConfiguration()->setResult(result);
 }

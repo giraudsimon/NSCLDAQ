@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CEVBCLIENTAPP_H
-#define __CEVBCLIENTAPP_H
+#ifndef CEVBCLIENTAPP_H
+#define CEVBCLIENTAPP_H
 /**
  * This file defines the abstract base class that must be extended to
  * produce a specific event builder data source client based on the

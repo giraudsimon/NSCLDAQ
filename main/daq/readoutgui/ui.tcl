@@ -25,10 +25,37 @@ package require img::png
 
 package provide ui   1.0
 package provide ReadoutGUIPanel 1.0
+package require Utils
 
-
-namespace eval ::ReadoutGUIPanel {}
+namespace eval ::ReadoutGUIPanel {
+    
+}
 namespace eval ::ReadougGUIPanel {}
+
+snit::macro getDefaultLogging {} {
+    return  [dict create \
+        output [list]           \
+        log [list]              \
+        error [list -background white -foreground red] \
+        warning [list -foreground magenta]              \
+    ]
+}
+
+##
+# ReadoutGUIPanel::defaultLogging
+#   Return the default value for -showlog
+#
+# @return dict
+#
+proc ::ReadoutGUIPanel::getDefaultLogging {} {
+    return [dict create \
+        output [list]           \
+        log [list]              \
+        error [list -background white -foreground red] \
+        warning [list -foreground magenta]              \
+    ]
+}
+    
 
 #------------------------------------------------------------------------------
 # Menubar:
@@ -490,8 +517,15 @@ proc ::ReadoutGUIPanel::setTitle title {
 # ::ReadoutGUIPanel::getRun
 #
 #  @return - The current run number.
+#  @note   - If this is called early -- I mean really early,
+#            during e.g. bundle load time, the runIdWidget might
+#            not exist yet..
+#            in that case, return -1... an invalid run number.
 #
 proc ::ReadoutGUIPanel::getRun   {} {
+    if {$::ReadoutGUIPanel::runIdWidget eq ""} {
+        return -1
+    }
     return [$::ReadoutGUIPanel::runIdWidget cget -run]
 }
 ##
@@ -956,8 +990,7 @@ namespace eval RunControlDisable {
   # @param to - the current machine state.
   proc attach {to} {
     variable prevState
-    set rc [RunControlSingleton::getInstance]
-    set prevState [$rc cget -state]
+    set prevState [::RunControlSingleton::getState]
   }
 
 ##
@@ -992,13 +1025,10 @@ namespace eval RunControlDisable {
   # widgets to the state they were at registration. This is just
   # a cleanup step.
   proc unregister {} {
-    variable prevState 
-    set rc [RunControlSingleton::getInstance]
-    $rc configure -state $prevState
-
-    set sm [RunstateMachineSingleton %AUTO%]
-    $sm removeCalloutBundle RunControlDisable
-    $sm destroy
+    variable prevState
+    RunControlSingleton::setState $prevState
+    RunStateMachineConvenience::removeBundle RunControlDisable
+    
   }
 
   namespace export attach leave enter
@@ -1018,9 +1048,9 @@ namespace eval RunControlEnable {
   # @param to - the current machine state.
   # 
   proc attach {to} {
-    variable prevState 
+    variable prevState
+    set prevState [::RunControlSingleton::getState]
     set rc [RunControlSingleton::getInstance]
-    set prevState [$rc cget -state]
     $rc _updateAppearance
   }
 
@@ -1063,13 +1093,10 @@ namespace eval RunControlEnable {
   # widgets to the state they were at registration. This is just
   # a cleanup step.
   proc unregister {} {
-    variable prevState 
-    set rc [RunControlSingleton::getInstance]
-    $rc configure -state $prevState
-
-    set sm [RunstateMachineSingleton %AUTO%]
-    $sm removeCalloutBundle RunControlEnable
-    $sm destroy
+    variable prevState
+    RunControlSingleton::setState $prevState
+    RunStateMachineConvenience::removeBundle RunControlEnable
+    
   }
 
   namespace export attach leave enter
@@ -1093,7 +1120,8 @@ namespace eval ::RunControlSingleton {
 #
 proc ::RunControlSingleton::updateStateBundleOrder {} {
   catch {RunControlEnable::unregister}
-  catch {RunControlDisable::unregister}
+  catch RunControlDisable::unregister
+    
 
   RunControlEnable::register
   RunControlDisable::register
@@ -1118,6 +1146,32 @@ proc ::RunControlSingleton::getInstance {{path ""} args} {
     }
     return $::RunControlSingleton::theInstance
 }
+##
+# ::RunControlSingleton::getState
+#
+#    Get the state of the run control singelton
+#
+# @return string.
+#
+proc ::RunControlSingleton::getState {} {
+    variable prevState
+    set rc [RunControlSingleton::getInstance]
+    return [$rc cget -state]
+    
+}
+##
+# ::RunControlSingleton::setState
+#
+#   Set the state of the run control singleton
+#
+#  @param state  - new state.
+#
+proc ::RunControlSingleton::setState {state} {
+    set rc [RunControlSingleton::getInstance]
+    $rc configure -state $state
+}
+
+
 
 ##
 #  attach
@@ -1500,18 +1554,7 @@ snit::widgetadaptor ElapsedTimeDisplay {
         
         set now [expr {int($now/1000)}]
         
-        #  Figure out the broken down time:
-        
-        set seconds [expr {$now % 60}]
-        set now     [expr {int($now/60)}]; # Minutes
-        set min     [expr {$now % 60}]
-        set now     [expr {int($now/60)}]; # Hours
-        set hours   [expr {$now %24}]
-        set days    [expr {int($now/24)}]
-        
-        # Format it:
-        
-        set formattedNow [format "%d %02d:%02d:%02d" $days $hours $min $seconds]
+        return [Utils::formatDeltaTime $now]
     }
 }
 ##
@@ -1847,6 +1890,42 @@ proc ::TimedRun::getInstance {{win ""} args} {
     }
     return $::TimedRun::theInstance
 }
+##
+#   TimedRun::_setWidgetState
+# Set the timed run state depending on the
+# run state.
+#
+# @param state - run state to use..
+#
+proc ::TimedRun::_setWidgetState {state} {
+    set w  [::TimedRun::getInstance]
+    if {$state in [list Paused Active]} {
+        set state disabled
+    } else {
+        set state normal
+    }
+    $w configure -state $state
+    
+}
+##
+#   TimedRun::_formatWidgetTime
+#
+#    Given a widget that has -secs, -mins, -hours and -days
+#    returns the formatted time string represented by that widget.
+#
+# @param w  - Widget.
+# @return string - formatted string.
+#
+proc ::TimedRun::_formatWidgetTime {w} {
+    set secs [$w cget -secs]
+    set mins [$w cget -mins]
+    set hrs  [$w cget -hours]
+    set days [$w cget -days]
+    
+    return [expr {
+        (($days*24 + $hrs)*60 + $mins)*60 + $secs
+    }]
+}
 
 #  Callback bundle:
 
@@ -1860,13 +1939,7 @@ proc ::TimedRun::getInstance {{win ""} args} {
 #
 proc ::TimedRun::attach {state} {
     
-    set w  [::TimedRun::getInstance]
-    if {$state in [list Paused Active]} {
-        set state disabled
-    } else {
-        set state normal
-    }
-    $w configure -state $state
+    ::TimedRun::_setWidgetState $state
 }
 
 ##
@@ -1891,12 +1964,7 @@ proc ::TimedRun::enter {from to} {
     
     # normal/disabled state handling:
     
-    if {$to in [list Active Paused]} {
-        set state disabled
-    } else {
-        set state normal
-    }
-    $w configure -state $state
+    ::TimedRun::_setWidgetState $to
     
     #  Timed run handling:
     
@@ -1907,12 +1975,7 @@ proc ::TimedRun::enter {from to} {
             # Compute the run length, save it in ::TimedRun::lastAlarmTime
             # and setup an _alarm for tha time.
             
-            set secs [$w cget -secs]
-            set mins [$w cget -mins]
-            set hrs  [$w cget -hours]
-            set days [$w cget -days]
-            
-            set runTime [expr {(($days*24 + $hrs)*60 + $mins)*60 + $secs}]
+            set runTime [::TimedRun::_formatWidgetTime $w]
             
             $et addAlarm  $runTime ::TimedRun::_alarm
             set ::TimedRun::lastAlarmTime $runTime
@@ -1964,14 +2027,8 @@ proc ::ReadoutGUIPanel::setTimed {state} {
 #
 proc ::ReadoutGUIPanel::getRequestedRunTime {} {
     set w [::TimedRun::getInstance]
-    set secs [$w cget -secs]
-    set mins [$w cget -mins]
-    set hrs  [$w cget -hours]
-    set days [$w cget -days]
+    return [::TimedRun::_formatWidgetTime $w]
     
-    return [expr {
-        (($days*24 + $hrs)*60 + $mins)*60 + $secs
-    }]
 }
 ##
 # ::ReadoutGUIPanel::setRequestedRunTime
@@ -2070,12 +2127,8 @@ snit::widgetadaptor OutputWindow {
 
     option -history    -default 1000
     option -logclasses -default [list output log error warning debug]
-    option -showlog    -default [list                         \
-        output  [list]                                        \
-        log     [list]                                        \
-        error   [list -background white -foreground red]      \
-        warning [list -foreground magenta]                     \
-    ] -configuremethod _updateTagOptions
+    option -showlog    -default [getDefaultLogging] \
+        -configuremethod _updateTagOptions
     option -monitorcmd [list]
     
     # If non empty, this is the log file fd.
@@ -2432,12 +2485,8 @@ snit::widgetadaptor TabbedOutput {
     option -height      -configuremethod _RelayOption
     option -history     -configuremethod _RelayOption -default 1000
     option -logclasses  -configuremethod _RelayOption -default [list output log error warning debug]
-    option -showlog     -configuremethod _RelayOption -default [list                         \
-        output  [list]                                        \
-        log     [list]                                        \
-        error   [list -background white -foreground red]      \
-        warning [list -foreground magenta]                     \
-    ]
+    option -showlog     -configuremethod _RelayOption \
+        -default [getDefaultLogging]
     option -monitorcmd  -configuremethod _RelayOption -default [list]
     option -errorclasses [list error warning]
 

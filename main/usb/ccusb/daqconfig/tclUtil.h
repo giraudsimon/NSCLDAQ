@@ -13,25 +13,16 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __TCLUTIL_H
-#define __TCLUTIL_H
+#ifndef TCLUTIL_H
+#define TCLUTIL_H
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 class CTCLInterpreter;
 class CTCLObject;
+class CReadoutModule;
+class CConfiguration;
 
 /*! \file tclUtil.h
       This is just a few Tcl utilities.  They are unbound functions
@@ -42,6 +33,11 @@ namespace tclUtil {
   void setResult(CTCLInterpreter& interp, std::string msg);
   void Usage(CTCLInterpreter& interp, std::string msg, 
 	     std::vector<CTCLObject>& objv, std::string usage);
-
+  std::string swigPointer(void* p, std::string type);
+  CReadoutModule* getModule(
+    CConfiguration& config,
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
+  );
+  void listConfig(CTCLInterpreter& interp, CReadoutModule* pModule);
 };
 #endif

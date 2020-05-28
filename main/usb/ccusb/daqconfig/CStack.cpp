@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <string.h>
 #include <Globals.h>
+#include <algorithm>
 
 
 #include <iostream>
@@ -162,14 +163,11 @@ void
 CStack::Initialize(CCCUSB& controller)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
-  while(p != modules.end()) {
-    CReadoutHardware* pModule = *p;                                // Wraps the hardware.
-
-    pModule->Initialize(controller); 
-
-    p++;
-  }
+  std::for_each(
+   modules.begin(), modules.end(),
+   [&controller](CReadoutHardware* p) {p->Initialize(controller);}
+  );
+  
   if (m_pConfiguration->cget("-type") == std::string("scaler")) {
     m_incrementalScalers = m_pConfiguration->getBoolParameter("-incremental");
   }
@@ -187,13 +185,11 @@ void
 CStack::addReadoutList(CCCUSBReadoutList& list)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
-  while (p != modules.end()) {
-    CReadoutHardware* pModule = *p;
-    pModule->addReadoutList(list);
-    
-    p++;
-  }
+  std::for_each(
+   modules.begin(), modules.end(),
+   [&list](CReadoutHardware* p) {p->addReadoutList(list);}
+  );
+  
 }
 
 /*!
@@ -204,15 +200,12 @@ void
 CStack::onEndRun(CCCUSB& controller)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
-  while(p != modules.end()) {
-    CReadoutHardware* pModule = *p;                       // Wraps the hardware.
-
-    pModule->onEndRun(controller); 
-
-    p++;
-  }
-
+  
+  std::for_each(
+    modules.begin(), modules.end(),
+    [&controller](CReadoutHardware* p) {p->onEndRun(controller); }
+  );
+  
 }
 /*!
   Clone virtualizes copy construction.

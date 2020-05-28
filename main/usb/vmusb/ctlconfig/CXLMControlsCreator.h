@@ -18,7 +18,8 @@ class CXLMControlsCreator : public ::CModuleCreator
 {
   public:
    /**! The factory method */
-   virtual CControlHardware* operator()(); 
+   virtual CControlHardware* operator()(void* userData);
+   std::string describe() const;
 };
 
 

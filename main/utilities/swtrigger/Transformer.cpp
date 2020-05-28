@@ -19,7 +19,7 @@
  *  @brief: Main program for the transformer program.
  */
 
-#include "transformer.h"
+#include "swtriggerflags.h"
 #include <stdlib.h>
 #include <string>
 #include <iostream>

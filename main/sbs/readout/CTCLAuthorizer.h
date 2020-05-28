@@ -15,32 +15,14 @@
 */
 
 
-#ifndef __CTCLAUTHORIZER_H  //Required for current class
-#define __CTCLAUTHORIZER_H
+#ifndef CTCLAUTHORIZER_H  //Required for current class
+#define CTCLAUTHORIZER_H
 
 
-#ifndef __TCOBJECTLPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>        //Required for include files
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 class CTCLObject;
 class CTCLVariable;
@@ -128,7 +110,7 @@ protected:
 	                 std::string& rOutname, std::string& rCanonicalIP)   ;
 
   Int_t   Usage(CTCLInterpreter& rInterp);
-
+  std::pair<std::vector<std::string>, std::vector<std::string>> getAuthInfo();
 
 };
 

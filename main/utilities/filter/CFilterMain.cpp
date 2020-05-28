@@ -33,6 +33,10 @@ static const char* Copyright = "(C) Copyright Michigan State University 2014, Al
 #include "filterargs.h"
 #include "CFatalException.h"
 #include <stdexcept>
+#include "CFilterTestSink.h"
+#include "CFilterTestSource.h"
+
+bool CFilterMain::m_testing(false);
 
 /**! Constructor
   Constructs a mediator object with a CCompositeFilter
@@ -44,7 +48,8 @@ static const char* Copyright = "(C) Copyright Michigan State University 2014, Al
 */
 CFilterMain::CFilterMain(int argc, char** argv)
   : m_mediator(0),
-  m_argsInfo(new gengetopt_args_info)
+  m_argsInfo(new gengetopt_args_info),
+  m_pSink(nullptr)
 {
   cmdline_parser(argc,argv,m_argsInfo);  
 
@@ -55,13 +60,15 @@ CFilterMain::CFilterMain(int argc, char** argv)
           m_argsInfo->number_of_sources_arg); 
     } else {
       m_mediator = new CInfiniteMediator(0,new CCompositeFilter,0);
-    } 
+    }
+    
     // Set up the data source 
     CDataSource* source = constructDataSource(); 
     m_mediator->setDataSource(source);
 
     // Set up the sink source 
-    CDataSink* sink = constructDataSink(); 
+    CDataSink* sink = constructDataSink();
+    m_pSink = sink;
     m_mediator->setDataSink(sink);
 
     // set up the skip and count args
@@ -112,7 +119,19 @@ void CFilterMain::registerFilter(const CFilter* filter)
 
   main_filter->registerFilter(filter);
 }
-
+/**
+ * putRingItem
+ *    Puts a ring item to the data sink.  This is our solution to
+ *    daqdev/NSCLDAQ#804 - support filter elements creating several ring items
+ *    per input ring item.
+ *
+ * @param pRingItem - pointer to the ring item to put to the sink.
+ */
+ void
+ CFilterMain::putRingItem(CRingItem* pRingItem)
+ {
+  m_pSink->putItem(*pRingItem);
+ }
 
 /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
@@ -127,6 +146,9 @@ void CFilterMain::registerFilter(const CFilter* filter)
 */
 CDataSource* CFilterMain::constructDataSource()
 {
+ if (m_testing) {
+  return new CFilterTestSource;
+ } else {
   // Set up default source type
   std::string source_name("-");
   if (m_argsInfo->source_given) {
@@ -141,6 +163,7 @@ CDataSource* CFilterMain::constructDataSource()
   
   CDataSource* source=0;
   return CDataSourceFactory().makeSource(source_name,sample,exclude);
+ }
 }
 
 /**! Set up the data sink
@@ -150,6 +173,9 @@ CDataSource* CFilterMain::constructDataSource()
 */
 CDataSink* CFilterMain::constructDataSink()
 {
+ if (m_testing) {
+  return new CFilterTestSink;
+ } else {
   // Set up default source type
   std::string sink_name("-");
   if (m_argsInfo->sink_given) {
@@ -158,6 +184,7 @@ CDataSink* CFilterMain::constructDataSink()
 
   CDataSink* sink=CDataSinkFactory().makeSink(sink_name);
   return sink;
+ }
 }
 
 /**! The main loop

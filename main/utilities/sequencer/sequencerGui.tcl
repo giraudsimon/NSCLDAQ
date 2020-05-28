@@ -54,34 +54,28 @@ set columnCount 0
 
 #  Disable changes to the run plan:
 
-proc disableChanges {table} {
-    $table configure -state disabled
+proc setChangeState {table state} {
+    $table configure -state $state
     set top [winfo toplevel $table]
     set menu $top.menu.file;		#  Maybe we could 'find this'.
     set last [$menu index end]
     for {set entry 0} {$entry <= $last} {incr entry} {
-	catch {$menu entrycget $entry -label} label
-	puts "Label: $label"
-	if {$label eq "Clear..."} {
-	    $menu entryconfigure $entry -state disabled
-	}
-    }
+        catch {$menu entrycget $entry -label} label
+        puts "Label: $label"
+        if {$label eq "Clear..."} {
+            $menu entryconfigure $entry -state $state
+        }
+    }    
+}
+proc disableChanges {table} {
+    setChangeState $table disabled 
 }
 
 
 #  Enable changes to the run plan:
 
 proc enableChanges {table} {
-    $table configure -state normal
-    set top [winfo toplevel $table]
-    set menu $top.menu.file;		#  Maybe we could 'find this'.
-    set last [$menu index end]
-    for {set entry 0} {$entry <= $last} {incr entry} {
-	catch {$menu entrycget $entry -label} label;   # could be separator.
-	if {$label eq "Clear..."} {
-	    $menu entryconfigure $entry -state normal
-	}
-    }
+    setChangeState $table normal
 }
 
 #  Read the configuration file.
@@ -335,15 +329,8 @@ proc nextStep {button table} {
     set cols [$table cget -cols]
 
     if {$runStep >= $rows}  {
-        $table tag delete current
-        $button configure -text "Execute Plan" \
-            -command [list executePlan $button $table]
-	enableChanges $table
-	tk_messageBox -icon info                        \
-	    -message {Run plan has ended}               \
-	    -title   {plan status}                      \
-	    -type    ok
-	set ::seqController::plannedRun 0;#  runs started are not planned.
+        enableGUIChanges $table $button
+        endPlannedRun
         return
     }
     # Extract the run settings... and also exit if the first
@@ -351,15 +338,8 @@ proc nextStep {button table} {
     #
     set settings [$table get $runStep,0 $runStep,$cols]
     if {[lindex $settings 0] eq ""} {
-        $table tag delete current
-        $button configure -text "Execute Plan" \
-            -command [list executePlan $button $table]
-	enableChanges $table
-	tk_messageBox -icon info                        \
-	    -message {Run plan has ended}               \
-	    -title   {plan status}                      \
-	    -type    ok
-	set ::seqController::plannedRun 0;# runs started are not planned.
+        enableGUIChanges $table $button
+        endPLannedRun
         return
     }
     # Ok remove the highlight from the prior row, and highlight
@@ -376,17 +356,13 @@ proc nextStep {button table} {
         set action  [lindex $columnInfo($i) 1]
         if {$action ne ""} {
             if {[$action $name $setting]} {
-		# 
-		# Action returning nonzero is an error
-		#
-		planAborted
-		$table tag delete current
-
-		enableChanges $table
-		$button configure -text "Execute Plan" \
-		    -command [list executePlan $button $table]		
-		return
-	    }
+                # 
+                # Action returning nonzero is an error
+                #
+                planAborted
+                enableGUIChanges $table $button
+            
+            }   
         }
     }
     # Run might have gotten aborted:
@@ -394,12 +370,32 @@ proc nextStep {button table} {
     if {$runStep < $rows} {
 	startPlannedRun  $button $table
     } else {
-        $table tag delete current
-	enableChanges $table
-        $button configure -text "Execute Plan" \
-            -command [list executePlan $button $table]
-
+        enableGUIChanges $table $button
     }
+}
+##
+# endPlannedRun
+#   End the planned run.
+#
+proc endPlannedRun {} {
+    tk_messageBox -icon info                        \
+            -message {Run plan has ended}               \
+            -title   {plan status}                      \
+            -type    ok
+    set ::seqController::plannedRun 0;#  runs started are not planned.
+}
+##
+# enableGUIChanges
+#   Turn on GUI changes
+# @param table -the table to enable.
+# @param button -the button to enable.
+#
+proc enableGUIChanges {table button} {
+    $table tag delete current
+    enableChanges $table
+    $button configure -text "Execute Plan" \
+        -command [list executePlan $button $table]
+
 }
 #
 # Execute the run plan
@@ -437,14 +433,7 @@ proc abortPlan {button table} {
 	stopPlannedRun
     }
     planAborted
-
-    $table tag delete current
-    
-    enableChanges $table
-
-    $button configure -text "Execute Plan" \
-        -command [list executePlan $button $table]
-
+    enableGUIChanges $table $button
     set ::seqController::plannedRun 0
 }
 #-------------------------------------------------------------------------

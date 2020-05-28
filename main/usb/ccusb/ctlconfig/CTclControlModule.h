@@ -79,7 +79,10 @@ public:
  
 
 private:
-  static std::string swigPointer(void* pObject, std::string type);
+  void makeCommand(CTCLObject& command, CCCUSB& usb, const char* subcommand);
+  std::string executeCommand(CTCLObject& objv);
+  
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
+  
 };
 #endif

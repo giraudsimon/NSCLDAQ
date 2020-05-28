@@ -4,7 +4,7 @@
 AC_PREREQ(2.61)
 
 
-AC_INIT(nscldaq,11.4-010, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,12.0-000, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
@@ -589,6 +589,7 @@ AC_CONFIG_FILES([Makefile
     utilities/reglom/Makefile
     utilities/scalerReader/Makefile
     utilities/swtrigger/Makefile
+    epics/epicslib/Makefile
     epics/chanlog/Makefile
     epics/controlpush/Makefile
     epics/epicsdisplay/Makefile

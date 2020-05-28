@@ -1,5 +1,5 @@
-#ifndef __CCAENV1X90OPCODES_H
-#define __CCAENV1X90OPCODES_H
+#ifndef CCAENV1X90OPCODES_H
+#define CCAENV1X90OPCODES_H
 
 /*!
    This file defines the microsequencer opcodes

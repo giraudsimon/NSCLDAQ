@@ -14,6 +14,8 @@
 
 package require tcltest
 package require snit
+package require Utils
+
 set loadFailure 0
 tcltest::test pkgrequire-0 {Ensure that we can require the package
 } {set ::loadFailure [catch {package require mcfd16gui}]} 0
@@ -739,7 +741,8 @@ tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces s
   # ::lines contains only valid API calls
   MCFD16Memorizer ::asdf
 
-  loader EvaluateAPILines $::lines
+  #loader EvaluateAPILines $::lines
+  Utils::runGlobally $::lines
 
   set res [list]
   lappend res [::asdf GetThreshold 0]

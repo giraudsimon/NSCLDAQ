@@ -102,7 +102,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 
 
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
-	connectionList.tcl observer.tcl barriers.tcl GUI.tcl inputStatistics.tcl \
+	connectionList.tcl  barriers.tcl GUI.tcl inputStatistics.tcl \
 	late.tcl outputStatistics.tcl utility.tcl latePopup.tcl \
 	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl
 
@@ -144,25 +144,30 @@ install-exec-hook:
 #
 # Tests:
 
-noinst_PROGRAMS = unittests ordertests outputTests
+noinst_PROGRAMS = transmittests ordertests fragcmdtests outputtests
 
-outputTests_SOURCES=TestRunner.cpp outputTests.cpp COrdererOutput.cpp
-outputTests_LDADD=@TCL_LIBS@ @LIBEXCEPTION_LDFLAGS@ @CPPUNIT_LDFLAGS@
-outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+outputtests_SOURCES = TestRunner.cpp outputTests.cpp \
+	COrdererOutput.cpp
+outputtests_CPPFLAGS=$(COMPILATION_FLAGS) @LIBTCLPLUS_CFLAGS@ \
+	@CPPUNIT_CFLAGS@ @TCL_FLAGS@
 
+outputtests_LDFLAGS= @top_builddir@/base/os/libdaqshm.la \
+        @top_builddir@/servers/portmanager/libPortManager.la \
+        @top_builddir@/base/tcpip/libTcp.la \
+        @top_builddir@/base/thread/libdaqthreads.la \
+        @LIBTCLPLUS_LDFLAGS@ \
+        @CPPUNIT_LDFLAGS@ @TCL_LDFLAGS@
 
-unittests_DEPENDENCIES = libEventBuilderClient.la cmdline.o cmdline.h
-unittests_SOURCES = TestRunner.cpp lookupTest.cpp  \
-	connectTest.cpp  
-nodist_unittests_SOURCES = cmdline.c cmdline.h
+transmittests_SOURCES = TestRunner.cpp  transmittests.cpp  \
+	CEventOrderClient.cpp CEventOrderClient.h
 
-unittests_LDADD = @builddir@/libEventBuilderClient.la \
-	$(libEventBuilder_la_LIBADD) \
+transmittests_LDFLAGS= @top_builddir@/base/os/libdaqshm.la \
 	@top_builddir@/servers/portmanager/libPortManager.la \
-	@top_builddir@/base/tcpip/libTcp.la 	\
-	@CPPUNIT_LDFLAGS@ @THREADLD_FLAGS@
-
-unittests_CPPFLAGS=$(COMPILATION_FLAGS)
+	@top_builddir@/base/tcpip/libTcp.la \
+	@top_builddir@/base/thread/libdaqthreads.la \
+	@LIBTCLPLUS_LDFLAGS@ \
+	@CPPUNIT_LDFLAGS@
+transmittests_CPPFLAGS=$(COMPILATION_FLAGS) @LIBTCLPLUS_CFLAGS@
 
 
 
@@ -183,13 +188,21 @@ ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
 
 ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
+fragcmdtests_SOURCES=TestRunner.cpp fragcmdtests.cpp		\
+	CFragmentHandlerCommand.cpp				\
+	fragcmdstubs.h fragcmdstubs.cpp
+
+fragcmdtests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
+fragcmdtests_LDADD=@CPPUNIT_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@
+
+
 
 
 check-TESTS:
+	@builddir@/transmittests  
+	@builddir@/outputtests
+	@builddir@/fragcmdtests
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
-	@builddir@/outputTests
-#	./ordertests            # Broken due to multithreading
-#	./unittests             # Broken by multithreading.
 
 
 

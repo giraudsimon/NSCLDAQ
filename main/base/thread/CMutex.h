@@ -1,5 +1,5 @@
-#ifndef __CMUTEX_H
-#define __CMUTEX_H
+#ifndef CMUTEX_H
+#define CMUTEX_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,12 +16,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_PTHREAD_H
 #include <pthread.h>
-#ifndef __CMUTEX_H
-#define __CMUTEX_H
-#endif
-#endif
 
 /*!
   Direct encapsulation of a pthread mutex attribute block.  We only support the

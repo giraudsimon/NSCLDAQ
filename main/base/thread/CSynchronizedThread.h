@@ -1,5 +1,5 @@
-#ifndef __CSYNCHRONIZEDTHREAD_H
-#define __CSYNCHRONIZEDTHREAD_H
+#ifndef CSYNCHRONIZEDTHREAD_H
+#define CSYNCHRONIZEDTHREAD_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2009.
@@ -16,17 +16,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef DAQHWYAPI_THREAD_H
 #include <Thread.h>
-#endif
-
-#ifndef  __CMUTEX_H
 #include <CMutex.h>
-#endif
-
-#ifndef  __CCONDITION_H
 #include <CCondition.h>
-#endif
 
 /**
  * This is an encapsulation of a thread that has some initialization that may be

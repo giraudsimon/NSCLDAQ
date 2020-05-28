@@ -36,7 +36,7 @@
 #include <os.h>
 #include <CRunState.h>
 #include <CControlQueues.h>
-
+#include <io.h>
 
 #include <CPortManager.h>
 #include <CMutex.h>
@@ -505,22 +505,14 @@ CTheApplication::initializeBufferPool()
 string
 CTheApplication::makeConfigFile(string baseName)
 {
-  string home(getenv("HOME"));
-  string pathsep("/");
-  string config("config");
-  string dir;
   
-  // The user can define a CONFIGDIR env variable to move the configuration dir.
-
-  if (getenv("CONFIGDIR")) {
-    dir =getenv("CONFIGDIR");
-  } else {
-    dir = home + pathsep + config;
-  }
-
-
-  string result = dir +  pathsep + baseName;
-  return result;
+  std::string result;
+  result = io::getReadableFileFromEnvdir("CONFIGDIR", baseName.c_str());
+  if (result != "") return result;
+  
+  std::string path = "/config/";
+  path += baseName;
+  return io::getReadableFileFromHome(path.c_str());
 
 }
 

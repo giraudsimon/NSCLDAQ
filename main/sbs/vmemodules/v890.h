@@ -25,15 +25,10 @@
    this communication as that's hidden from you.
 
 */
-#ifndef __V890_H
-#define __V890_H
+#ifndef V890_H
+#define V890_H
 
-#ifndef __CRTL_STDINT_H
 #include <stdint.h>
-#ifndef __CRTL_STDINT_H
-#define __CRTL_STDINT_H
-#endif
-#endif
 
 class CAENV890 {
   int             m_nSlot;

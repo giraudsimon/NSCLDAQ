@@ -14,19 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef _CTCLMODULE_H
-#define _CTCLMODULE_H
+#ifndef CTCLMODULE_H
+#define CTCLMODULE_H
 
-#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class definitions:
 
@@ -72,6 +64,7 @@ public:
 
 private:
   std::string swigPointer(void* p, std::string typeName);
+  void evalOrThrow(const std::string& cmd);
   
 };
 

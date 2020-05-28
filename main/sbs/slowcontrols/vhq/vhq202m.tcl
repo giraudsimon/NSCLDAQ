@@ -32,11 +32,7 @@
 # 
 
 set here    [file dirname [info script]]
-set libDir  [file join $here ..]
-set wd [pwd]
-cd $libDir
-set libDir [pwd]
-cd $wd
+set libDir  [file normalize [file join $here ..]]
 
 if {[lsearch $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]
@@ -55,8 +51,8 @@ namespace eval vhq {
 
     
     proc isController { controller } {
-	variable controllers
-	return [lsearch -exact $controllers $controller]
+        variable controllers
+        return [lsearch -exact $controllers $controller]
     }
 
     proc RemoveController { idx } {
@@ -73,24 +69,27 @@ namespace eval vhq {
 
     # Turn status register 1 bits for a channel into {bitname 0|1} form.
 
+    # Returns a list of bit names/bit values
+    #
+    proc decodeBits {bits bitnames} {
+        set result [list]
+        foreach bit $bitnames {
+            lappend result "$bit [expr $bits & 1]"
+            set bits [expr $bits >> 1]
+        }
+        return $result
+    }
     proc decode1 {bits} {
-	set bitnames {vz manual plus off kill rampup stable error}
-	foreach bit $bitnames {
-	    lappend result "$bit [expr $bits & 1]"
-	    set bits [expr $bits >> 1]
-	}
-	return $result
+        
+        set bitnames {vz manual plus off kill rampup stable error}
+        return [decodeBits $bits $bitnames]
+        
     }
 
     proc decode2 {bits} {
-	set bitnames \
-	{ilimit OpComplete FpChanged Voverset Inhibited OverVorI BadQuality}
-  
-        foreach bit $bitnames {
-	    lappend result "$bit [expr $bits & 1]"
-	    set bits [expr $bits >> 1]
-	}
-	return $result
+        set bitnames \
+            {ilimit OpComplete FpChanged Voverset Inhibited OverVorI BadQuality}
+        return [decodeBits $bits $bitnames]
     }
 
     namespace export create delete id stat1 stat2
@@ -107,7 +106,7 @@ proc vhq::create {base {crate 0}} {
     append name $crate _ $base
 
     if {[vhq::isController $name] != -1} {
-	error "There's already a controller mapped to that address"
+        error "There's already a controller mapped to that address"
     }
 
     vme create $name -device /dev/vme16d16 -crate $crate $base 0x50
@@ -115,16 +114,15 @@ proc vhq::create {base {crate 0}} {
 
     return $name
 }
+
 #
 # vhq::delete name
 #   Delete an existing vhq202m controller handle and all resources
 #   associated with it.
 #
 proc vhq::delete {name} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    }
+    vhq::_checkController $name
+    
     vme delete $name
     RemoveController $idx
 } 
@@ -133,10 +131,7 @@ proc vhq::delete {name} {
 #     Returns the serial number of a vhq controller module.
 #
 proc vhq::id {name} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    }
+    vhq::_checkController $name
     return [$name get -w 0x3c]
 }
 #
@@ -147,10 +142,7 @@ proc vhq::id {name} {
 #    sublist.  The sublists are of the form: {bitname 0|1}
 #
 proc vhq::stat1 {name} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    }
+    vhq::_checkController $name
 
     set reg [$name get -w 0]
     set abits [expr $reg & 0xff]
@@ -170,10 +162,7 @@ proc vhq::stat1 {name} {
 #    each bit is encoded as a two element list: {bitname 0|1}
 #
 proc vhq::stat2 {name} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    }
+    vhq::_checkController $name
 
     set reg [$name get -w 0x30]
     if {$reg & 1} {
@@ -199,10 +188,7 @@ proc vhq::stat2 {name} {
 #    ?value?  - if provided is the new ramp speed in [2,255]
 #
 proc vhq::rampspeed {name chan args} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    }
+    vhq::_checkController $name
 
 #   Figure out which channel is specified:
 
@@ -239,11 +225,7 @@ proc vhq::rampspeed {name chan args} {
 #    begun towards the target.
 #
 proc vhq::setv {name chan args} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    
-}
+    vhq::_checkController $name
 
 #   Figure out which channel is specified:
 
@@ -290,11 +272,7 @@ proc vhq::setv {name chan args} {
 #    hardware voltage limit.  Units are 10% of full scale.
 #
 proc vhq::limit {name type chan args} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    
-    }
+    vhq::_checkController $name
 #
 #    First determine the channels, as these determine the offsets
 #    to all registers:
@@ -345,11 +323,7 @@ proc vhq::limit {name type chan args} {
 #    Returns the actual voltage from the selected chan.
 #
 proc vhq::actual {name chan} {
-    set idx [vhq::isController $name]
-    if {$idx == -1} {
-	error "No such controller $name exists"
-    
-    }
+    vhq::_checkController $name
 
 #   Figure out which channel is specified:
 
@@ -365,4 +339,17 @@ proc vhq::actual {name chan} {
 
     set values [$name get -w $voffset]
     return [lappend values [$name get -w $ioffset]]
+}
+
+##
+# vhq::_checkController
+#   If the named controller does not exist, otuput an error
+#   message
+# @param name  - name of the controller
+#
+proc vhq::_checkController {name} {
+    set idx [vhq::isController $name]
+    if {$idx == -1} {
+        error "No such controller $name exists"
+    }
 }

@@ -32,45 +32,16 @@
   
 
 */
-#ifndef __CREADORDER_H  //Required for current class
-#define __CREADORDER_H
+#ifndef CREADORDER_H  //Required for current class
+#define CREADORDER_H
 
-#ifndef _CREADABLEOBJECT_H
 #include "CReadableObject.h"
-#endif
-
-#ifdef HAVE_STD_NAMESPACE
-using namespace std;
-#endif
-
-
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#define __TCL_H
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
+using namespace std;
 // Forward Definitions:
 
 class CTCLInterpreter;

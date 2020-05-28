@@ -74,9 +74,9 @@ namespace eval UniqueInstance {
 	    set contents [read $fd]
 	    close $fd
 	    if {$contents == "[pid]@[exec hostname]\n"} {
-		return 1
+    		return 1
 	    } else {
-		return 0
+    		return 0
 	    }
 	} else {
 	    return 1

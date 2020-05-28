@@ -6,12 +6,12 @@ common_ldflags=@top_builddir@/daq/eventbuilder/libFragmentIndex.la @top_builddir
 	@top_builddir@/daq/IO/libdaqio.la @top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/uri/liburl.la @LIBEXCEPTION_LDFLAGS@ -Wl,"-rpath=@libdir@"
 
-unglom_SOURCES=Unglom.cpp CUnglom.cpp CUnglom.h
+unglom_SOURCES=Unglom.cpp CUnglom.cpp CUnglom.h CRingItemDecoder.h Main.cpp
 unglom_CXXFLAGS=$(common_cxxflags)
 unglom_LDFLAGS=$(common_ldflags)
 
 
-timecheck_SOURCES=Timecheck.cpp CTimeChecker.cpp CTimeChecker.h
+timecheck_SOURCES=Timecheck.cpp CTimeChecker.cpp CTimeChecker.h CRingItemDecoder.h Main.cpp
 timecheck_CXXFLAGS=$(common_cxxflags)
 timecheck_LDFLAGS=$(common_ldflags)
 

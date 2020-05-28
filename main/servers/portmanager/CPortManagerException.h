@@ -1,5 +1,5 @@
-#ifndef __CPORTMANAGEREXCEPTION_H
-#define __CPORTMANAGEREXCEPTION_H
+#ifndef CPORTMANAGEREXCEPTION_H
+#define CPORTMANAGEREXCEPTION_H
 /*!
  *   This is an exception class that 
  * provides support for the exceptions that can be thrown by the
@@ -13,20 +13,9 @@
 //    East Lansing, MI 48824-1321
 //
 
-#ifndef  EXCEPTION_H
 #include <Exception.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef OSTREAM_DAQH
 #include <ostream>
-#endif
 
 class CPortManagerException : public CException
 {

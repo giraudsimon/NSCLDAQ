@@ -213,16 +213,9 @@ proc ::SSHPipe::begin {source runNum title} {
 #         word that we are not already paused.
 #
 proc ::SSHPipe::pause source {
-    ::SSHPipe::_errorIfDead $source
- 
-    if {![::SSHPipe::_notIdle $source]} {
-        set sourceInfo $::SSHPipe::activeProviders($source)
-
-        set host [dict get $sourceInfo parameterization host]
-        set path [dict get $sourceInfo parameterization path]
-        error "A run is not active in $path@$host so no pause is possible."
-    }    
-    ::SSHPipe::_send $source pause
+   ::SSHPipe::_errorIfDead $source
+   ::SSHPipe::_complainIfIdle $source pause 
+   ::SSHPipe::_send $source pause
 }
 ##
 # resume
@@ -236,14 +229,7 @@ proc ::SSHPipe::pause source {
 #         word that we are not already paused.
 #
 proc ::SSHPipe::resume source {
-
-    if {![::SSHPipe::_notIdle $source]} {
-        set sourceInfo $::SSHPipe::activeProviders($source)
-        set host [dict get $sourceInfo parameterization host]
-        set path [dict get $sourceInfo parameterization path]
-        error "A run is not active in $path@$host so no resume is possible."
-    }
-
+   ::SSHPipe::_complainIfIdle $source resume
     ::SSHPipe::_send $source resume    
 }
 ##
@@ -258,12 +244,8 @@ proc ::SSHPipe::resume source {
 #         word that we are not already paused.
 #
 proc ::SSHPipe::end source {
-    if {![::SSHPipe::_notIdle $source]} {
-        set sourceInfo $::SSHPipe::activeProviders($source)
-        set host [dict get $sourceInfo parameterization host]
-        set path [dict get $sourceInfo parameterization path]
-        error "A run is not active in $path@$host so no end is possible."
-    }    
+    ::SSHPipe::_complainIfIdle $source end
+    
     ::SSHPipe::_send $source end
     
     dict set ::SSHPipe::activeProviders($source) idle true
@@ -300,6 +282,23 @@ proc ::SSHPipe::capabilities {} {
 #-------------------------------------------------------------------------------
 # Private utilities:
 #
+##
+# _complainIfIdle
+#   Throw an error if the source is idle when trying a transition that
+#   requires not idle source.
+#
+# @param sid -- the source id.
+# @param reqstate - The requested state.
+#
+proc ::SSHPipe::_complainIfIdle {sid reqstate} {
+   if {![::SSHPipe::_notIdle $sid]} {
+        set sourceInfo $::SSHPipe::activeProviders($sid)
+        set host [dict get $sourceInfo parameterization host]
+        set path [dict get $sourceInfo parameterization path]
+        error "A run is not active in $path@$host so no $reqstate is possible."
+    }    
+    
+}
 
 ##
 # _readable

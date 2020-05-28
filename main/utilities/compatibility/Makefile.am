@@ -14,7 +14,7 @@ EXTRA_DIST=compatibilitybuffer.ggo loggeroptions.ggo eventlog-compat.in \
 
 
 compatibilitybuffer_LDADD = \
-	@top_builddir@/daq/format/libdataformat.la
+	@top_builddir@/daq/format/libdataformat.la @top_builddir@/base/os/libdaqshm.la
 compatibilitybuffer_CPPFLAGS = -I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
 	-I@top_srcdir@/base/os
 

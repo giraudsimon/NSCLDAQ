@@ -1262,19 +1262,8 @@ CDPpPsdEventSegment::setLVDSLevel1Trigger()
 void
 CDPpPsdEventSegment::setLVDSSwTrigger()
 {
-  // Enable software trigger:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Unable to enable sw trigger in mask register");
-  // Enable new LVDS Features:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x100),
-		   "Unable to enable new lvds featurs in FP IO control register"
-		   );
-  // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x100);
+  
 }
 /**
  setLVDSExternalTrigger
@@ -1283,19 +1272,8 @@ CDPpPsdEventSegment::setLVDSSwTrigger()
 void
 CDPpPsdEventSegment::setLVDSExternalTrigger()
 {
-  // Enable software trigger:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x40000000),
-		   "Unable to enable sw trigger in mask register");
-  // Enable new LVDS Features:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x100),
-		   "Unable to enable new lvds featurs in FP IO control register"
-		   );
-  // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x40000000, 0x100);
+  
 }
 /**
  setLVDSGlobalOrTrigger
@@ -1312,14 +1290,8 @@ CDPpPsdEventSegment::setLVDSGlobalOrTrigger()
   }
   //  Enable the couples to participate
 
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0xff),
-		   "Could not set the FP-GPO Trigger enable mask register");
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x100),
-		   "Could not write the FP-IO control register");
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+  setLVDSOutputMode(0xff, 0x100);
+  
 }
 /**
  setLVDSRun
@@ -1328,20 +1300,8 @@ CDPpPsdEventSegment::setLVDSGlobalOrTrigger()
 void
 CDPpPsdEventSegment::setLVDSRun()
 {
-  // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects run state
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x10100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x10100);
+  
 }
 /**
  setLVDSDelayedRun
@@ -1350,20 +1310,8 @@ CDPpPsdEventSegment::setLVDSRun()
 void
 CDPpPsdEventSegment::setLVDSDelayedRun()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects delayed run state
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x110100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x110100);
+   
 }
 /**
  setLVDSSampleCLock
@@ -1372,20 +1320,8 @@ CDPpPsdEventSegment::setLVDSDelayedRun()
 void
 CDPpPsdEventSegment::setLVDSSampleClock()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects Sample Clock
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x50100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x50100);
+   
 }
 
 /** 
@@ -1396,22 +1332,8 @@ CDPpPsdEventSegment::setLVDSSampleClock()
 void
 CDPpPsdEventSegment::setLVDSPLLClock()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects Motherboard virtual probe
-  // and set that probe to the CLK Phase (presumably the PLL Recovered 
-  // clock?
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x90100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x90100);
+   
 }
 /**
  setLVDSBusy
@@ -1423,22 +1345,8 @@ CDPpPsdEventSegment::setLVDSPLLClock()
 void
 CDPpPsdEventSegment::setLVDSBusy()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects Motherboard virtual probe
-  // and set that probe to the Busy/Unlock but not setting bit
-  // 20 (PLL Lock lost).
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0xd0100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0xd0100);
+  
 }
 /**
  *  setLVDSPllLockLost
@@ -1450,22 +1358,8 @@ CDPpPsdEventSegment::setLVDSBusy()
 void
 CDPpPsdEventSegment::setLVDSPLLLockLost()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  // Enable new features; trgout reflects Motherboard virtual probe
-  // and set that probe to the Busy/Unlock but not setting bit
-  // 20 (PLL Lock lost).
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x1d0100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x1d0100);
+   
 }
 /**
  setLVDSVirtualProbe
@@ -1474,20 +1368,8 @@ CDPpPsdEventSegment::setLVDSPLLLockLost()
 void 
 CDPpPsdEventSegment::setLVDSVirtualProbe()
 {
-   // set the global trigger mask:triggers -> FPIO.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
-		   "Failed to write the global trigger mask");
-
-  //   Select the channel virtual probes.
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x20100),
-		   "Failed to write the FP I/O COntrol register");
-
- // Set the lVDS to reflect triggers:
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
-		   "Unable to set LVDS output");
+    setLVDSOutputMode(0x80000000, 0x20100);
+   
 }
 /**
   setLVDSSIN
@@ -1496,20 +1378,39 @@ CDPpPsdEventSegment::setLVDSVirtualProbe()
 */
 void
 CDPpPsdEventSegment::setLVDSSIN()
-{   // set the global trigger mask:triggers -> FPIO.
+{
+    setLVDSOutputMode(0x80000000, 0x30100);
+    
+}
+/**
+ * setLVDSOutputMode
+ *    Sets the LVDS trigger mode.
+ *    This involves a dance of setting the global trigger mask to
+ *    accept FPIO triggers, setting the LVDS trigger out mode
+ *    and setting the LVDS outputs to reflect those triggers.
+ *
+ * @param maskValue  -  Trigger mask value
+ * @param fpioValue - the value to put in the FPIO register.
+ * 
+ * @note All register writes are done with throwIfBadStatus so
+ *       failures will result in an exception.
+ */
+void
+CDPpPsdEventSegment::setLVDSOutputMode(uint32_t maskValue, uint32_t fpioValue)
+{
+   // set the global trigger mask:triggers -> FPIO.
 
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
+  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, maskValue),
 		   "Failed to write the global trigger mask");
 
-  // Enable new features; trgout reflects SIN
+  // Set the FP/IO register as requested.
 
-
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x30100),
+  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, fpioValue),
 		   "Failed to write the FP I/O COntrol register");
 
  // Set the lVDS to reflect triggers:
 
   throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
 		   "Unable to set LVDS output");
+}    
 
-}

@@ -1844,6 +1844,503 @@ EVB::setDisconnectCallback disconnect                   <co id='evb_disconnect_c
 <!-- /chapter -->
 
 <!-- manpage 3daq -->
+    <refentry>
+       <refmeta id="daq3-fragment.h">
+          <refentrytitle id="daq3-fragment.h.title">fragment.h</refentrytitle>
+          <manvolnum>3daq</manvolnum>
+       </refmeta>
+       <refnamediv>
+          <refname>fragment.h</refname>
+          <refpurpose>Define event builder fragment structures.</refpurpose>
+        </refnamediv>
+        <refsynopsisdiv>
+            <synopsis>
+/**
+ * The conditional directives in this file are for two reasons:
+ * - In C++ sources, the headers will qualify the type and function
+ *   definitions with the ::EVB:: namepsace.
+ * - The implementations of the support functions are in C
+ *
+ * All of this is to support C programmers as well as C++.
+ */
+
+#ifdef __cplusplus
+namespace EVB {
+#endif
+  /*
+   *  Below are valid barrier types.
+   *  These are #defines rather than enums so that the
+   *  known width data types are used to make data transportable
+   *  between 32/64 bit system.
+   */
+
+#define BARRIER_NOTBARRIER   0	/* Not a barrier event. */
+#define BARRIER_START        1	/* Data taking starting (BEGIN/RESUME) */
+#define BARRIER_END          2	/* Data taking endng (END/PAUSE) */
+#define BARRIER_SYNCH        3  /* time synchronization barrier */
+
+
+#ifdef UINT64_C
+#define NULL_TIMESTAMP UINT64_C(0xffffffffffffffff)
+#else
+#define NULL_TIMESTAMP __UINT64_C(0xffffffffffffffff)
+#endif
+  
+  typedef struct __attribute__((__packed__))_FragmentHeader {
+    uint64_t       s_timestamp;	//&lt; Fragment time relative to globally synchronized clock.
+    uint32_t       s_sourceId ;	//&lt; Unique source identifier.
+    uint32_t       s_size;	// Bytes in fragment payload.
+    uint32_t       s_barrier;   // Non zero for barrier events - the barrier type.
+  } FragmentHeader, *pFragmentHeader;
+
+
+  typedef struct __attribute__((__packed__)) _Fragment {
+    FragmentHeader   s_header;
+    void*           s_pBody;
+  } Fragment, *pFragment;
+
+  typedef struct __attribute__((__packed__)) _FragmentChain {
+    struct _FragmentChain*    s_pNext;
+    pFragment         s_pFragment;
+  } FragmentChain, *pFragmentChain;
+
+
+  typedef struct __attribute__((__packed__)) _FlatFragment {
+    FragmentHeader s_header;
+    int            s_body[0];
+  } FlatFragment, *pFlatFragment;
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+  extern "C" {
+#define NS(type) EVB::type
+#else
+#define NS(type) type
+#endif
+    void freeFragment(NS(pFragment) p);
+    NS(pFragment) allocateFragment(const NS(FragmentHeader*) pHeader);
+    NS(pFragment) newFragment(uint64_t timestamp, uint32_t sourceId, uint32_t size);
+
+    size_t fragmentChainLength(NS(pFragmentChain) p);
+#ifdef __cplusplus
+  }
+#endif
+  #undef NS
+
+#endif
+                
+            </synopsis>
+        </refsynopsisdiv>
+        <refsect1>
+                 <title>DESCRIPTION</title>
+              <para>
+                <filename>fragment.h</filename> is a header that is deployed
+                for NSCLDAQ. It was first first deployed for NSCLDAQ-V10.2 and
+                has, for the most poart, not evolved since.  
+              </para>
+              <para>
+                <filename>fragment.h</filename> provides constants, data type
+                definitions and unbound functions that can be used in either
+                C++ Or C code.  When compiledin C++, all data types live in the
+                <literal>::EVB</literal> namespace.  In C, since namespaces don't
+                exist, this namespace specification is turned off.
+                The functions live in the top level namespace (<literal>::</literal>)
+                in C++ and have C bindings so that they can be used
+                from either C or C++ software.
+              </para>
+        </refsect1>
+        <refsect1>
+            <title>DATA STRUCTURES</title>
+            <para>
+                The primary purpose of the <filename>fragment.h</filename>
+                header is to provide definitions of data structures that
+                are used both externally and internally by the NSCLDAQ event
+                building pipeline.
+            </para>
+            <para>
+                The first of these structs, <structname>FragmentHeader</structname>
+                (and its pointer <type>pFragmentHeader</type>) contain headers
+                that are used by the event builder to process fragment payloads.
+                By extracting all such data into a <structname>FragmentHeader</structname>,
+                the event builder and related software can perform many operations
+                on event fragments while knowing nothing about their contents.
+            </para>
+            <para>
+                The fields of this tightly packed struct are:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><type>uint64_t</type><structfield>s_timestamp</structfield></term>
+                   <listitem>
+                       <para>
+                        The 64 bit timestamp of the fragment.  The event builder
+                        first orders fragments by timestamp and then glues together
+                        timestamps that occur within a prescribed interval of the
+                        first unattached fragment into events.
+                       </para>
+                       <para>
+                        The first part of this process is called
+                        <firstterm>Ordering</firstterm>, the second part
+                        <firstterm>glomming</firstterm>.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><type>uint32_t</type><structfield>s_sourceId</structfield></term>
+                   <listitem>
+                       <para>
+                        Is a value that should be unique among data sources and
+                        event builder outputs.  It  represents the data source
+                        from which this data came from.   Since the NSCLDAQ supports
+                        multi-level event building, an event building pipeline must
+                        be assigned a data source as well.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><type>uint32_t</type><structfield>s_size</structfield></term>
+                   <listitem>
+                       <para>
+                        Number of bytes in the fragment payload.   The actual
+                        location of the fragment payload depends on the
+                        struct used to hold both the fragment and the payload.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><type>uint32_t</type><structfield>s_barrier</structfield></term>
+                   <listitem>
+                       <para>
+                        The barrier type of the fragment.  The event builder supports
+                        a data synchroniziation mechanism called barrier synchronization.
+                        Barrier synchronization means that if a fragment is encountered
+                        from a data source with a non-zero
+                        <structfield>s_barrier</structfield>, no more data
+                        will be emitted from that source until fragments at
+                        the front of all data source queues have fragments with a
+                        matching value for <structfield>s_barrier</structfield>.
+                       </para>
+                       <para>
+                        Barriers can thus be though of as markers that separate data
+                        before they were emitted in all sources from data (if any)
+                        after they were emitted.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                The next struct we will describe is a struct that allows fragments
+                and their payloads to be constructed without copying the bulk
+                fragment data (the payload).  This type is called a
+                <structname>Fragment</structname> and has a pointer type
+                <structname>pFragment</structname>.
+            </para>
+            <para>
+                <structname>Fragment</structname> is a packed struct with
+                the following fields.
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><type>FragmentHeader</type><structfield>s_header</structfield></term>
+                   <listitem>
+                       <para>
+                        A fragment header as described above.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><type>void*</type><structfield>s_pBody</structfield></term>
+                   <listitem>
+                       <para>
+                        A pointer to the payload. The number of bytes of payload
+                        are described by the <structfield>s_size</structfield>
+                        field of the <structfield>s_header</structfield> struct.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        
+            <para>
+                An ordered list of fragments may be held by
+                <structname>FragmentChain</structname>
+                items.  <structname>FragmentChain</structname> and its pointer type,
+                <type>pFragmentChain</type>, provide for a linked list of
+                fragments where each element of the list is a
+                <structname>FragmentChain</structname>
+            </para>
+            <para>
+                <structname>FragmentChain</structname> is a packed struct containing
+                the following fields:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term><type>pFragmentChain</type><structfield>s_pNext</structfield></term>
+                  <listitem>
+                    <para>
+                        Pointer to the next fragment in the chain.  This pointer
+                        should be <literal>nullptr</literal> (C++) or
+                        <literal>NULL</literal> (C) at the end of the chain.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><type>pFragment</type><structfield>s_pFragment</structfield></term>
+                  <listitem>
+                   <para>
+                    Pointer to the fragment at this element in the chain.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+            <para>
+                Sometimes it's useful to have the fragment payload inline with the
+                fragment header.  This is, for example, the structure of fragments
+                in an assembled event.  The packet <structname>FlatFragment</structname>
+                and its pointer type <type>pFlatFragment</type> describes this
+                structure.
+            </para>
+            <para>
+                <structname>FlatFragment</structname> has the fields:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><type>FlatFragment</type> <structfield>s_header</structfield></term>
+                   <listitem>
+                       <para>
+                        Contains the fragment header.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><type>int</type><structfield>s_body[0]</structfield></term>
+                   <listitem>
+                       <para>
+                        Contains the body.  The actual size of this field is
+                        held in the <structfield>s_size</structfield> field of the
+                        <structfield>s_header</structfield> struct.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect1>
+        <refsect1>
+            <title>CONSTANTS</title>
+            <para>
+                Several constants are defined by this header:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><literal>BARRIER_NOTBARRIER</literal></term>
+                   <listitem>
+                       <para>
+                        When placed in a the <structfield>s_barrier</structfield>
+                        field of a <structname>FragmentHeader</structname>,
+                        this value indicates the fragment does not require any barrier
+                        synchronization.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>BARRIER_START</literal></term>
+                   <listitem>
+                       <para>
+                        When placed in the <structfield>s_barrier</structfield>
+                        field of a <structname>FragmentHeader</structname>,
+                        this indicates the fragment should be syncrhonized as
+                        start of runs.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>BARRIER_END</literal></term>
+                   <listitem>
+                       <para>
+                        When placed in the <structfield>s_barrier</structfield>
+                        field of a <structname>FragmentHeader</structname>,
+                        this indicates the fragment should be syncrhonized as
+                        end of runs.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>BARRIER_SYNCH</literal></term>
+                   <listitem>
+                       <para>
+                        When placed in the <structfield>s_barrier</structfield>
+                        field of a <structname>FragmentHeader</structname>,
+                        this indicates an external time syncrhonization was
+                        triggered and barrier synchronization should accompany it.
+                        Note that this is not currently used.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>NULL_TIMESTAMP</literal></term>
+                   <listitem>
+                       <para>
+                        When placed in the
+                        <structfield>s_timestamp</structfield> field of
+                        <structname>FragmentHeader</structname>, indicates
+                        to the event orderer the data source cannot assign a timestamp
+                        to this fragment.  The event orderer will then assign
+                        the most recently used event timestamp from the same
+                        data source.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect1>
+        <refsect1>
+            <title>FUNCTIONS</title>
+            <para>
+                 Four functions are exported by <filename>fragment.h</filename>.
+                 In the descriptions below the notation
+                 <literal>[EVB::]</literal> means that when used
+                 from C++, the types described live in the
+                 <literal>EVB</literal> namespace.  Conditional
+                 compilation directives in <filename>fragment.h</filename>
+                 minimize the 
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term>
+                    <funcsynopsis>
+                    <funcprototype><funcdef> void<function>freeFragment</function></funcdef>
+                    <paramdef>
+                      <parameter>[EVB::]pFragment p</parameter>
+                    </paramdef>
+                    </funcprototype>
+                    </funcsynopsis>
+                   </term>
+                   <listitem>
+                       <para>
+                        Given a pointer to a fragment where both the
+                        header and the body are dynamically
+                        allocated, frees the body had  header.
+                        The free operation is done in critical section
+                        making it thread-safe.  
+                       </para>
+                       <para>
+                        The fragment must have been allocated with
+                        <function>newFragment</function>,
+                        or <function>allocateFragment</function>as fragment
+                        header and fragment body pools are used to
+                        minimize the actual number of calls to
+                        <function>malloc</function> and
+                        <function>free</function> to improve performance
+                        of programs that do a lot of dynamic fragment
+                        allocation and deallocation.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>
+                    <funcsynopsis>
+                    <funcprototype><funcdef> [EVB::]pFragment<function>allocateFragment</function></funcdef>
+                    <paramdef>
+                      <parameter>const [EVB::]FragmentHeader* pHeader</parameter>
+                    </paramdef>
+                    </funcprototype>
+                    </funcsynopsis>
+                   </term>
+                   <listitem>
+                       <para>
+                        Given a pointer to a fragment header that has
+                        already been filled in, allocates a fragment]
+                        header and fragment body linking them together
+                        in a <type>[EVB::]Fragment</type>.  The
+                        header of that object will be filled in by copying
+                        the data in <parameter>pHeader</parameter>.
+                        The body must be filled in by the caller.
+                       </para>
+                       <para>
+                        The resulting fragment must be freed using
+                        <function>freeFragment</function> function.
+                       </para>
+                       <para>
+                        Fragment dynamic alocation using the functions
+                        described in this section is managed by maintaining
+                        and re-using storage from a pool of the fixed
+                        length fragments (header + pointer) and
+                        several pools of fixed size fragment bodies.
+                        Allocating a fragment means allocating an object
+                        from the header pool (or malloc-ing it),
+                        locating the pool of the smallest bodies
+                        large enough to accomodate
+                        <literal>pHeader->s_size</literal> and
+                        allocating one of its bodies or mallocing a new
+                        one if that pool is empty.
+                       </para>
+                       <para>
+                        Freeing a fragment means returning the
+                        <type>[EVB::]Fragment</type> to the fixed length
+                        pool of fragment structs and the body back
+                        to its original pool.  This scheme turns
+                        out to provide a significant performance
+                        advantage over mallocing and freeing
+                        objects each time they're needed.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>
+                    <funcsynopsis>
+                    <funcprototype><funcdef> [EVB::]pFragment<function>newFragment</function></funcdef>
+                    <paramdef>
+                      <parameter>uint64_t timestamp</parameter>
+                      <parameter>uint32_t sourceId</parameter>
+                      <parameter>uint32_t size</parameter>
+                    </paramdef>
+                    </funcprototype>
+                    </funcsynopsis>
+                   </term>
+                   <listitem>
+                       <para>
+                        Allocates a fragment and its body from the
+                        and fills it in from the functions parameters.
+                        The header's <structfield>s_barrier</structfield>
+                        is set to <literal>BARRIER_NOTBARRIER</literal>
+                        (the most common case).  If you want to create
+                        a barrier, allocate the fragment and the
+                        explicitly set the <structfield>s_barrier</structfield>
+                        field of the resulting fragment to the
+                        correct barrier type.
+                       </para>
+                       <para>
+                        The returned value is a pointer to a dynamically
+                        allocated fragment that must be freed
+                        using <function>freeFragment</function>
+                        when it is no longer needed.top
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>
+                    <funcsynopsis>
+                    <funcprototype><funcdef> size_t<function>fragmentChainLength</function></funcdef>
+                    <paramdef>
+                      <parameter>[EVB::]pFragmentChain p</parameter>
+                    </paramdef>
+                    </funcprototype>
+                    </funcsynopsis>
+                   </term>
+                   <listitem>
+                       <para>
+                        Returns the amount of stroage required
+                        to convert the fragment chain <parameter>p</parameter>
+                        int a soup of flat fragments.  This can be used
+                        to size the buffer needed to hold a chain of
+                        fragments when sending it to the orderer or other
+                        recipient over some communication media.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect1>
+    </refentry>
 	 <refentry id="daq3-evbclientfw-usercode">
         <refentryinfo>
             <author>

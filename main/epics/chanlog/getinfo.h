@@ -1,5 +1,5 @@
-#ifndef __GETINFO_H
-#define __GETINFO_H
+#ifndef GETINFO_H
+#define GETINFO_H
 
 void EpicsInit(int argc, char** argv);
 void EpicsShutdown();

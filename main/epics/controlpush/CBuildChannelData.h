@@ -41,37 +41,17 @@ second a struct containing:
  The assumption is that the channels being visited
  are all CUintChannel objects.
 */
-#ifndef __CBUILDCHANNELDATA_H  //Required for current class
-#define __CBUILDCHANNELDATA_H
+#ifndef CBUILDCHANNELDATA_H  //Required for current class
+#define CBUILDCHANNELDATA_H
 
 //
 // Include files:
 //
 
-                               //Required for base classes
-#ifndef __CCHANNELVISITOR_H     //CChannelVisitor
 #include "CChannelVisitor.h"
-#endif
- 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-
-#ifndef __CRT_TIME_H
 #include <time.h>
-#define __CRT_TIME_H
-#endif
 
 // Forward class definitions:
 class CChannel;

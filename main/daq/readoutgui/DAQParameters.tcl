@@ -50,7 +50,7 @@ proc DAQParameters::setDefaults {} {
     Configuration::Set EventLogUseGUIRunNumber   0
     Configuration::Set EventLogUseChecksumFlag   1
     Configuration::Set EventLogRunFilePrefix     "run"
-    Configuration::Set EventLogSegmentSize       2;    #Gigabytes.
+    Configuration::Set EventLogSegmentSize       1000000;    #Gigabytes (unlimited).
 }
 # DAQParameters::environmentOverrides
 #   Overrides the defaults with information from the environment

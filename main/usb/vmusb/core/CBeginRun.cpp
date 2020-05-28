@@ -32,6 +32,7 @@
 #include <TclServer.h>
 #include <CTheApplication.h>
 #include <CMonVar.h>
+#include <tcl.h>
 
 using std::vector;
 using std::string;
@@ -136,9 +137,21 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   pState->setTitle(string(titleString));
   pApp->logProgress("New title set");
   
+  // Reconnect the controller.
+  
+  bool reconnected = reconnect();
+  pApp->logProgress("Reconnected VMUSB");
+  
+  
   // Now we can start the run.
 
+  
   Globals::pConfig = new CConfiguration;
+  
+  // Export the controller to the configuration's interpreter
+  
+  exportController(Globals::pUSBController, Globals::pConfig);
+  
   string errorMessage = "begin - Configuration file processing failed: ";
   try {
     Globals::pConfig->processConfiguration(Globals::configurationFilename);
@@ -146,26 +159,35 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   }
   catch (string msg) {
     errorMessage += msg;
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp,  errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (const char* msg) {
     errorMessage += msg;
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp, errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (CException& e) {
     errorMessage += e.ReasonText();
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp, errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (...) {
+    
     // Configuration file processing error of some sort...
 
     tclUtil::setResult(interp, errorMessage);
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
 		       
@@ -198,10 +220,7 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   pState->setState(CRunState::Starting);     // Prevent monitor thread for accessing.
   pApp->logProgress("Set state to starting");
   
-  // Reconnect the VM-USB:
 
-  bool reconnected = reconnect();
-  pApp->logProgress("Reconnected VMUSB");
 
   CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
   pReadout->setControllerResetState(reconnected);
@@ -217,3 +236,22 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   return TCL_OK;
 }
 
+/**
+ * exportControler
+ *   daqdev/NSCLDAQ#992
+ *     Export the VMUSB controller as a swig pointer stored in the
+ *     variable name Globals::aController.  This allows
+ *     constructors of scripts accessing the VMUSB to play with the
+ *     controller.  Not so kosher but it is done in some cases.
+ *
+ * @param pController - pointer to the actual VMUSB controller.
+ * @param pConfig     - pointer to the configuration whose interpreter
+ *                      this variable is set in.
+ * @note if necessary the namespace is created.
+ */
+void
+CBeginRun::exportController(CVMUSB* pController, CConfiguration* pConfig)
+{
+  pConfig->exportController(pController);
+
+}

@@ -21,19 +21,11 @@
 //  Original author: Ron Fox
 ///////////////////////////////////////////////////////////
 
-#ifndef __CCAENV977_H
-#define __CCAENV977_H
+#ifndef CCAENV977_H
+#define CCAENV977_H
 
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 // Forward definitions.
 

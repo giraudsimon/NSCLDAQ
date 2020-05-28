@@ -1,5 +1,5 @@
-#ifndef __CEVENTTRIGGER_H
-#define __CEVENTTRIGGER_H
+#ifndef CEVENTTRIGGER_H
+#define CEVENTTRIGGER_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.

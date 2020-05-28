@@ -69,16 +69,6 @@ static const unsigned int USBVHIGH1(0x40);       // additional bits of some of t
 static const unsigned int USBVHIGH2(0x44);       // additional bits of the other interrupt vectors.
 
 
-// Bits in the list target address word:
-
-static const uint16_t TAVcsID0(1); // Bit mask of Stack id bit 0.
-static const uint16_t TAVcsSel(2); // Bit mask to select list dnload
-static const uint16_t TAVcsWrite(4); // Write bitmask.
-static const uint16_t TAVcsIMMED(8); // Target the VCS immediately.
-static const uint16_t TAVcsID1(0x10);
-static const uint16_t TAVcsID2(0x20);
-static const uint16_t TAVcsID12MASK(0x30); // Mask for top 2 id bits
-static const uint16_t TAVcsID12SHIFT(4);
 
 //   The following flag determines if enumerate needs to init the libusb:
 

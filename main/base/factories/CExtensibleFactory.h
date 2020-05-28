@@ -22,6 +22,7 @@
 #include <vector>
 #include <map>
 #include <CCreator.h>
+#include <algorithm>
 
 
 /*!
@@ -96,34 +97,34 @@ cerr << "No creator for  " << "subclass" << endl;
 */
 
 
-template <class T>
-class CExtensibleFactory
+template <class L, class T>
+class CGenericExtensibleFactory
 {
 private:
-  typedef  std::map<std::string, CCreator<T>* > CreatorMap;
+  typedef  std::map<L, CCreator<T>* > CreatorMap;
   CreatorMap m_creators;
 
   class visitor {
-    std::vector<std::string>&  m_descriptions;
+    std::vector<L>&  m_descriptions;
   public:
     visitor(std::vector<std::string>& descriptions) :
       m_descriptions(descriptions) {}
-    void operator()(std::pair<std::string, CCreator<T>*> item) {
+    void operator()(std::pair<L, CCreator<T>*> item) {
       m_descriptions.push_back(item.second->describe());
     }
   };
 
 public:
-  void addCreator(std::string type,
+  void addCreator(L type,
 		  CCreator<T>* pCreator) {
     m_creators[type] = pCreator;
   }
-  T* create(std::string type) {
+  T* create(L type, void* userData = nullptr) {
     if(m_creators.find(type) == m_creators.end()) {
       return reinterpret_cast<T*>(NULL);
     } 
     else {
-      return (*(m_creators.find(type)->second))();
+      return (*(m_creators.find(type)->second))(userData);
     }
   }
   std::vector<std::string> getDescriptions() {
@@ -135,5 +136,8 @@ public:
   }
   
 };
+
+template<class T>
+using CExtensibleFactory = CGenericExtensibleFactory<std::string, T>;
 
 #endif

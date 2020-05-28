@@ -136,10 +136,11 @@ CRingItemFactory::createRingItem(const void* pItem)
   /* Make a 'vanilla' CRing item that we can pass into the other creator */
 
   const RingItem* pRitem = reinterpret_cast<const RingItem*>(pItem);
-  CRingItem baseItem(pRitem->s_header.s_type, pRitem->s_header.s_size);
+  uint32_t sItem = itemSize(pRitem);
+  CRingItem baseItem(itemType(pRitem), sItem);
   uint8_t*  pBody  = reinterpret_cast<uint8_t*>(baseItem.getItemPointer());
-  memcpy(pBody, pRitem, pRitem->s_header.s_size);
-  pBody += pRitem->s_header.s_size;
+  memcpy(pBody, pRitem, sItem);
+  pBody += sItem;
   baseItem.setBodyCursor(pBody);
   baseItem.updateSize();
 

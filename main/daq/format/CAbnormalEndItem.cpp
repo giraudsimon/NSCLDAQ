@@ -83,8 +83,7 @@ CAbnormalEndItem::operator==(const CAbnormalEndItem& rhs) const
 int
 CAbnormalEndItem::operator==(const CRingItem& rhs) const
 {
-    const pRingItem pItem = const_cast<const pRingItem>(rhs.getItemPointer());
-    return (pItem->s_header.s_type == ABNORMAL_ENDRUN);
+    return (rhs.type() == ABNORMAL_ENDRUN);
 }
 
 

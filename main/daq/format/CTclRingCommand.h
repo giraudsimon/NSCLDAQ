@@ -21,23 +21,12 @@
 */
 
 
-#ifndef __CTCLRINGCOMMAND_H
-#define __CTCLRINGCOMMAND_H
+#ifndef CTCLRINGCOMMAND_H
+#define CTCLRINGCOMMAND_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __TCLOBJECT_H
 #include <TCLObject.h>
-#endif
 
 class CTCLInterpreter;
 class CRingBuffer;
@@ -87,20 +76,23 @@ protected:
     // Local utilities.
 private:
     CTCLObject formatBodyHeader(CTCLInterpreter& interp, CRingItem* pItem);
-    void formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem);
-    void formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem);
+    void formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem, CTCLObject& result);
+    void formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
 
     CRingItem* getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate,
                            unsigned long timeout);
     CRingItem* getFromRing(CRingBuffer& ring, CTimeout& timeout);
-    uint32_t swal(uint32_t value);
+    void setTiming(
+        CTCLObject& result, int offset, int divisor, double seconds,
+        int stamp
+    );
 };
 
 #endif

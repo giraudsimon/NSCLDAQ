@@ -13,32 +13,20 @@
              Michigan State University
              East Lansing, MI 48824-1321
 */
-#ifndef __RINGSELECTORMAIN_H
-#define __RINGSELECTORMAIN_H
+#ifndef RINGSELECTORMAIN_H
+#define RINGSELECTORMAIN_H
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-
-#ifndef __RINGBUFFERQUEUE_H
 #include "RingBufferQueue.h"
-#endif
-
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRT_UNISTD_H
-#define __CRT_UNISTD_H
-#endif
-#endif
+#include <vector>
 
 
 class CRingBuffer;
 class CRingSelectionPredicate;
 struct gengetopt_args_info;
+class CAllButPredicate;
+class CDesiredTypesPredicate;
 
 /*!
    This class is the ring selector application. Written as a separate class, we
@@ -81,5 +69,11 @@ public:
   // Utilities:
 
   void        writeBlock(int fd, void* pData, size_t size);
+  void        addTypes(
+      CDesiredTypesPredicate& p, std::vector<int>& types, bool sample=false
+  );
+  void addExceptions(
+      CAllButPredicate& p, std::vector<int>& types, bool sample=false
+  );
 };
 #endif

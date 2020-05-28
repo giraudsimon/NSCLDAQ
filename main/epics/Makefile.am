@@ -1,1 +1,1 @@
-SUBDIRS = controlpush chanlog epicsdisplay
+SUBDIRS = epicslib controlpush chanlog epicsdisplay

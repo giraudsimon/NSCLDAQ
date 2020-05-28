@@ -14,30 +14,14 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __COUTPUTTHREAD_H
-#define __COUTPUTTHREAD_H
+#ifndef COUTPUTTHREAD_H
+#define COUTPUTTHREAD_H
 
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __THREAD_H
 #include <Thread.h>
-#ifndef __THREAD_H
-#define __THREAD_H
-#endif
-#endif
+#include <CElapsedTime.h>
 
 // Forward definitions:
 
@@ -101,6 +85,7 @@ class CSystemControl;
 
 class COutputThread  : public Thread
 {
+private:
    // Private data type:
    
    typedef uint64_t (*TimestampExtractor)(void*);
@@ -115,9 +100,8 @@ private:
 
   // other data:
 private:
-  int         m_elapsedSeconds;	   /* Seconds into the run. */
-  timespec    m_startTimestamp;    //!< Run start time.
-  timespec    m_lastStampedBuffer; //!< Seconds into run of last stamped buffer.
+	
+
   size_t      m_nOutputBufferSize;       //!< size of output buffer in bytes.
                                    //!< determined at the start of a run.
   uint8_t*    m_pBuffer;	   //!< Pointer to the current buffer.
@@ -131,6 +115,9 @@ private:
   TimestampExtractor m_pSclrTimestampExtractor;
   StateChangeCallback m_pBeginRunCallback;
   CSystemControl& m_systemControl;
+
+	double      m_lastScaler;	
+	CElapsedTime m_runTime;
 
 
   // Constuctors and other canonicals.
@@ -175,8 +162,8 @@ private:
   void getTimestampExtractor();
 
   bool hasOptionalHeader();
-
   void scheduleApplicationExit(int status);
+	void emitStateChange(uint32_t type, uint32_t barrier);
 };
 
 

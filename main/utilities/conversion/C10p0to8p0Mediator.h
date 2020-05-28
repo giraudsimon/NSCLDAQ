@@ -36,7 +36,7 @@ namespace DAQ {
      */
     class C10p0to8p0MediatorCreator : public CTransformCreator {
     public:
-      std::unique_ptr<CBaseMediator> operator()() const;
+      CBaseMediator* operator()(void* unused);
     };
 
 

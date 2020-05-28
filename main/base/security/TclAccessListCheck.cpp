@@ -52,7 +52,7 @@ CTclAccessListCheck::CTclAccessListCheck(Tcl_Interp* pInterp,
   m_pInterp(0)
 {
   m_pInterp     = new CTCLInterpreter(pInterp);
-  m_pAccessList = new CTCLVariable(m_pInterp, rName, kfFALSE); 
+  m_pAccessList = new CTCLVariable(m_pInterp, rName, TCLPLUS::kfFALSE); 
 }
 
 //////////////////////////////////////////////////////////////////////////////

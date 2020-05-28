@@ -20,22 +20,9 @@
 #include <errno.h>
 #include <string>
 #include <iostream>
-
-
-#ifndef DAQHWYAPI_RUNNABLE_H
 #include <Runnable.h>
-#endif
-
-#ifndef DAQHWYAPI_SYNCHRONIZABLE_H
 #include <Synchronizable.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 

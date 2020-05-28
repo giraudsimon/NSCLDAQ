@@ -1,6 +1,7 @@
 DRIVERDest=@prefix@/TclLibs/vmusbdrivers
 
-TCLDRIVERS=sis330xdriver.tcl sis3300.tcl  VMUSBDriverSupport.tcl vmusb.tcl \
+TCLDRIVERS=sis3300defs.tcl \
+	sis330xdriver.tcl sis3300.tcl  VMUSBDriverSupport.tcl vmusb.tcl \
            AXLM72.tcl APpacXLM72.tcl ACrdcXLM72.tcl AXLM72Scaler.tcl \
 	   ACAENV288.tcl ACAENN568B.tcl AGD16XLM72.tcl AXLM72Generic.tcl \
 	ALevel3XLM72Readout.tcl

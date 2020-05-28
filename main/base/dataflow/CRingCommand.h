@@ -1,6 +1,6 @@
 
-#ifndef __CRINGCOMMAND_H
-#define __CRINGCOMMAND_H
+#ifndef CRINGCOMMAND_H
+#define CRINGCOMMAND_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -17,9 +17,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __TCLOBJECTPROCESSOR_H
+
 #include <TCLObjectProcessor.h>
-#endif
 
 class CTCLInterpreter;
 class CTCLObject;

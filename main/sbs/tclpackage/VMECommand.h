@@ -16,31 +16,14 @@
 
 // Class: CVmeCommand                     //ANSI C++
 
-#ifndef __VMECOMMAND_H  //Required for current class
-#define __VMECOMMAND_H
+#ifndef VMECOMMAND_H  //Required for current class
+#define VMECOMMAND_H
 
 #include <iostream>                 
-
-
-                               //Required for base classes
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
-#ifndef _VMEMAPCOMMAND_H
 #include <VMEMapCommand.h>
-#endif
-
-#ifndef __STL_MAP                               
 #include <map>        //Required for include files
-#define __STL_MAP
-#endif
-
-#ifndef __STL_STRING
 #include <string>        //Required for include files
-#define __STL_STRING
-#endif
-
 #include <VmeModule.h>
 
 class CVmeCommand  : public CTCLProcessor        

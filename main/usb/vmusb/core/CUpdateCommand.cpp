@@ -15,6 +15,7 @@
 */
 #include <config.h>
 #include "CUpdateCommand.h"
+#include "TclServer.h"
 
 #include "CCtlConfiguration.h"
 #include <TCLObject.h>
@@ -75,11 +76,7 @@ CUpdateCommand::operator()(CTCLInterpreter& interp,
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
-  bool mustRelease(false);
-  if (CRunState::getInstance()->getState() == CRunState::Active) {
-    mustRelease = true;
-    CControlQueues::getInstance()->AcquireUsb();
-  }
+  bool mustRelease = TclServer::acquireUSBIfNeeded();
 
   string result =   pModule->Update(m_Vme);
   interp.setResult( result);

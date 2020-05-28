@@ -1,5 +1,5 @@
-#ifndef __CCAMACBRANCH_H
-#define __CCAMACBRANCH_H
+#ifndef CCAMACBRANCH_H
+#define CCAMACBRANCH_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,12 +16,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 
 /*!

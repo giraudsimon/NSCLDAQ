@@ -34,51 +34,16 @@
 #ifndef CVMEPTR_H
 #define CVMEPTR_H
 
-#ifndef __SYS_MMAN_H
 #include <sys/mman.h>
-#endif
-
-#ifndef __UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifndef __TYPES_H
 #include <sys/types.h>
-#endif
-
-
-#ifndef __HISTOTYPES_H
 #include <daqdatatypes.h>
-#endif
-
-#ifndef __RANGEERROR_H
 #include <RangeError.h>
-#endif
-
 #include <CVMEInterface.h>
-
-#ifndef __STRING
 #include <string>
-#endif
-
-#ifndef __MMAPERROR_H
 #include <MmapError.h>
-#endif
-
-#ifndef __CXX_IOSTREAM
 #include <iostream>
-#ifndef __CXX_IOSTREAM
-#define __CXX_IOSTREAM
-#endif
-#endif
-
-#ifndef __STDINT_H
 #include <stdint.h>
-#ifndef __STDINT_H
-#define __STDINT_H
-#endif
-#endif
-
 #include <stdexcept>
 
 template<class T>

@@ -13,27 +13,13 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CSIS3820_H
-#define __CSIS3820_H
+#ifndef CSIS3820_H
+#define CSIS3820_H
 
-#ifndef __CMODULE32_H
 #include "CModule32.h"
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
 #include <VmeModule.h>
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /*!
    Controls an SIS3820 module.  The SIS3820 is a 32 channel latching
