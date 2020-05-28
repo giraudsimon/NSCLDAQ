@@ -21,6 +21,7 @@
 package provide rdoCalloutsBundle 1.0
 package require RunstateMachine
 package require ReadoutGUIPanel
+package require ExpFileSystem
 
 ##
 #  Provides a RunstateMachine callback bundle that implements the old
@@ -165,8 +166,14 @@ proc ::rdoCallouts::reload {} {
     }
 
     # Look for an load the new file:
+    # daqdev/NSCLDAQ#1029  To honor the fact that EVENTS can move the
+    # stagearea we need to get the stagaearea from the configuration as that's
+    # already folded that in:
     
-    foreach directory [list ~ ~/stagearea/experiment/current [pwd]] {
+    set stagearea [ExpFileSystem::getStageArea]
+    set expcurrent [file join $stagearea experiment current]
+    
+    foreach directory [list ~ $expcurrent [pwd]] {
         set candidate [file join $directory ReadoutCallouts.tcl]
         if {[file readable $candidate]} {
             uplevel #0 source $candidate
