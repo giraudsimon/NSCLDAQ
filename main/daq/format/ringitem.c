@@ -571,6 +571,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
     
     fillRingHeader(pItem, itemSize, type);
 
+
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
  
