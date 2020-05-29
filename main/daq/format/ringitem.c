@@ -293,6 +293,7 @@ int
 hasBodyHeader(const RingItem* pItem)
 {
  uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_empty;
+
  int result = hdrSize > sizeof(uint32_t);
  return result;
 }
@@ -320,13 +321,16 @@ bodyPointer(RingItem* pItem)
     // -  Body header size is nonzero - Body header size is given  by the
     //    value.
     
+
     if (pItem->s_body.u_noBodyHeader.s_empty) { //nscldaq12.
         uint32_t hdrBytes    = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
         uint8_t* pBodyHeader = (uint8_t*)(
          &(pItem->s_body.u_hasBodyHeader.s_bodyHeader)  
         );
         pResult = pBodyHeader + hdrBytes;
-    } else {                         // NSCLDAQ-11 no body header.
+
+    } else {
+
         pResult = (void*)pItem->s_body.u_noBodyHeader.s_body;
     }
     
