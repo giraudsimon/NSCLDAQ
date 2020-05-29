@@ -40,8 +40,8 @@ proc ::versionUtils::parseVersion {vsnString} {
   variable format2
 
   if {![::versionUtils::validFormat $vsnString]} {
-    return -code 1 -errorinfo  "::versionUtils::parseVersion passed a version string with invalid" \
-          " format. String was \"$vsnString\""
+    return -code 1 \
+    "::versionUtils::parseVersion passed a version string with invalid format. String was '$vsnString'"
   }
 
   set parsedVersion [list]
