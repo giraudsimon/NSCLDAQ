@@ -418,7 +418,7 @@ formatScalerItem(
     */
     size_t itemSize =
         sizeof(RingItemHeader) + sizeof(ScalerItemBody) + sizeof(uint32_t)
-        + scalerCount*sizeof(uint32_t);
+        + (scalerCount)*sizeof(uint32_t);
     pRingItem pItem = (pRingItem)malloc(itemSize);
     
   
@@ -542,7 +542,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
   if (pItem) {
     /* Fill in the headers and get a body pointer: */
     
-    fillHeader(pItem, sizeof(StateChangeItem), type);
+    fillHeader(pItem, itemSize, type);
 
     pItem->s_body.u_noBodyHeader.s_mbz   = 0;
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);
