@@ -241,6 +241,13 @@ snit::type EventLogger {
         }
     }
     ##
+    # getPid
+    #   Get the logger PID list.
+    #
+    method getPid {} {
+        return $loggerPids
+    }
+    ##
     # _handleInput
     #   Called when the logger fd is readable:
     #   - Actual input is relayed as a log message to the console.
@@ -833,6 +840,78 @@ proc ::multilogger::loadLoggers {} {
         close $fd
     }
 }
+#-----------------------------------------------------------------------------
+#  Snit megawidget that shows which loggers are still active
+#  as they're being shut down.  The hull is a top level.
+#
+#
+#  @class LoggerList - the displays the list of active loggers.
+#
+# OPTIONS
+#  -loggers - The list of logger objects.
+#
+snit::widgetadaptor multilogger::LoggerDisplay {
+    option -loggers -default [list] -configuremethod _CfgLoggerlist
+    component loggers
+    
+    variable items [list];       #Item ids in the treeview.
+    
+    ##
+    #  Build the component widgets,
+    #  and lay them out as appropriate.
+    #
+    constructor args {
+        installhull using toplevel
+        wm title $win {Stopping multiloggers}
+        set f [ttk::frame $win.f]
+        install loggers using ttk::treeview $f.loggers \
+            -columns [list Ring Directory] -selectmode none -show headings \
+            -yscrollcommand  [list $f.sb set]
+        $loggers heading 0 -text Ring
+        $loggers heading 1 -text Directory
+        ttk::scrollbar $f.sb -orient vertical -command [list $loggers yview]
+        
+        grid $f -sticky nsew
+        grid $loggers $f.sb -sticky nsew
+        
+            
+    }
+        #---------------------------------------------------------------------
+        # Private methods
+        
+        ##
+        # _CfgLoggerlist
+        #    Called to configure the set of loggers.
+        #   - Clear the logger list.
+        #   - for each logger extract the logger ring and logger directory
+        #      and add it tothe tree.
+        #
+        #  @param optn  -name of the option being provided.
+        #  @param optv  - valueof the option
+        method _CfgLoggerlist {optn optv} {
+            set options($optn) $optv
+            
+            # Clear the tree:
+            
+            foreach item $items {
+                $loggers delete $item
+            }
+            set items [list]
+            
+            foreach logger $optv {
+                set dir [$logger cget -out]
+                set ring [$logger cget -ring]
+                
+                set item [$loggers insert {} end]
+                $loggers set $item 0 $ring
+                $loggers set $item 1 $dir
+                
+                lappend items $item
+            }
+        }
+            
+        
+}
 
 #------------------------------------------------------------------------------
 #  Our state transition methods:
@@ -890,15 +969,28 @@ proc ::multilogger::enter {from to} {
        
         # ensure they all vanished within their timeout or kill:
         
+        # Put up a little top level GUI thta shows which
+        # Multiloggers need stopping 
+        
+        multilogger::LoggerDisplay .loggerstostop -loggers $::multilogger::Loggers]
+        set remaining $::multilogger::Loggers
         foreach logger $::multilogger::Loggers {
+            puts "Stopping multilogger: [$logger cget -ring] -> [$logger cget -out]"
             $logger stop
             
-            # If multilogger is recording but the 'central' eventlogger is not,l
-            # increment the run number to avoid stomping on event files next time
-            # around.
-            
-            
+            # remove the stopped logger from the GUI.
+
+            set remaining [lrange $remaining 1 end]
+            .loggerstostop configure -loggers $remaining
         }
+        # Destroy the top level.
+         
+         destroy .loggerstostop
+        
+        # If multilogger is recording but the 'central' eventlogger is not,l
+        # increment the run number to avoid stomping on event files next time
+        # around.
+
         if {$::multilogger::recordAlways && ![::ReadoutGUIPanel::recordData]} {
                 ::ReadoutGUIPanel::setRun [expr {[::ReadoutGUIPanel::getRun] + 1}]
             }

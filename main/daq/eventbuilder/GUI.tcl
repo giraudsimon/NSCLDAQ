@@ -185,8 +185,8 @@ snit::widgetadaptor ::EVB::summary {
             $win.connections -text {Connections}
         
         
-        label $win.flowlabel -text "Flow Control: "
-        label $win.flow      -text "Accepting Data"
+        ttk::label $win.flowlabel -text "Flow Control: "
+        ttk::label $win.flow      -text "Accepting Data"
         
         # layout the widgets:
        
@@ -233,9 +233,11 @@ snit::widgetadaptor ::EVB::summary {
 #   | Per queue source statistics      | Per queue barrier statistics        | 
 #   | (EVB::inputStatstics::queueStats | EVB::BarrierStats::queueBarriers    |
 #   +------------------------------------------------------------------------+
+#   |                Flow control label                                      |
+#   +------------------------------------------------------------------------+
 #
 # OPTIONS:
-#
+#  -flowcontrol             - Set the status of the flow control label.
 # METHODS:
 #    getQueueStatistics     - Returns the queue source statistics widget
 #    getBarrierStatistics   - Returns the barrier statistics widget.
@@ -246,6 +248,10 @@ snit::widgetadaptor ::EVB::sourceStatistics {
     component connections
     component vertPane
     component paneFrame
+    component flowLabel
+    
+    option -flowcontrol -default 0 -configuremethod _ConfigFlowControl
+    
     delegate option * to hull
     
     ##
@@ -272,7 +278,9 @@ snit::widgetadaptor ::EVB::sourceStatistics {
             -width 250 -height 100 -title {Barrier statistics}
         
         install connections using EVB::connectionList $win.connections \
-            -text "Connected clients" 
+            -text "Connected clients"
+        
+        install flowLabel using ttk::label $win.flow -text "Flow Control: Accepting Data"
         
 
         # Layout the components:
@@ -291,6 +299,8 @@ snit::widgetadaptor ::EVB::sourceStatistics {
         $vertPane add $paneFrame -weight 1
         $vertPane add $connections -weight 1
         grid $vertPane -sticky nsew
+        
+        grid $flowLabel -sticky w
 
         grid columnconfigure $win 0 -weight 1
         grid rowconfigure $win 0 -weight 0 
@@ -299,7 +309,36 @@ snit::widgetadaptor ::EVB::sourceStatistics {
         
         $self configurelist $args
     }
+    #------------------------------------------------------------------------
+    # Private methods:
     
+    
+    ##
+    # _ConfigFlowControl
+    #     Configure the flow control state.  This affects the flowLabel
+    #     widget:
+    #
+    # @param optname - the option being configured (-flowcontrol I guess).
+    # @param optval  - the boolean  value:
+    #                - False- Flow Control:  Accepting Data
+    #                - True - FLow Control:  Flow control Active.
+    #
+    method _ConfigFlowControl {optname optval} {
+         snit::boolean validate $optval
+         set options($optname) $optval
+         
+         set baseText "Flow Control: "
+         if {$optval} {
+            append baseText "Flow Control Active"
+         } else {
+            append baseText "Accepting Data"
+         }
+         
+         $flowLabel configure -text $baseText
+    }
+    #------------------------------------------------------------------------
+    # public methods:
+    #    
     ##
     # getQueueStatistics
     #
@@ -334,6 +373,8 @@ snit::widgetadaptor ::EVB::sourceStatistics {
 #   +-------------------------------------------------+
 #   |      EVB::BarrierStats::queueBarriers           |
 #   +-------------------------------------------------+
+#   |     flow on/off label                           |
+#   +-------------------------------------------------+
 #
 # OPTIONS:
 #     - -incompletecount - Sets the number of incomplete
@@ -342,7 +383,7 @@ snit::widgetadaptor ::EVB::sourceStatistics {
 #                        widget.
 #     - -heterogenouscount - Sets the number of complete barriers that were
 #                        heterogenous in type.
-#
+#     0 -flowcontrol - Sets the flow control label.
 # METHODS:
 #    - setStatistic sourceid barriertype count -
 #                         sets the barrier statistics for a source id.
@@ -352,6 +393,9 @@ snit::widgetadaptor ::EVB::sourceStatistics {
 snit::widgetadaptor EVB::barrierStatistics {
     component summary
     component perQueue
+    component flowLabel
+    
+    option -flowcontrol -default 0 -configuremethod _CfgFlow
     
     delegate option -text to hull
     delegate option * to summary
@@ -368,17 +412,43 @@ snit::widgetadaptor EVB::barrierStatistics {
         
         install  summary using EVB::BarrierStats::Summary $win.summary
         install perQueue using EVB::BarrierStats::queueBarriers  $win.perqueue
+        install flowLabel using ttk::label $win.flow -text "Flow Control: Accepting Data"
        
          
         grid $summary -sticky new
         grid $perQueue -sticky news
+        grid $flowLabel -sticky e
   
         grid configure $win -padx 5 -pady 5 
         grid columnconfigure $win 0 -weight 1           
   
         $self configurelist $args
     }
+    #-----------------------------------------------------------------------------
+    # Private methods
+    ##
+    # _CfgFlow - configure flow control label.
+    #
+    # @param optname - name of the option.
+    # @param optval  - boolean option value.
+    method _CfgFlow {optname optval} {
+        snit::boolean validate $optval
+        set options($optname) $optval
+        
+        set text {Flow Control: }
+        if {$optval } {
+            append text "Flow Control Active"
+        } else {
+            append text "Accepting Data"
+        }
+        $flowLabel configure -text $text
+    }
+
 }
+
+
+
+
 ##
 # @class EVB::errorStatistics
 #
@@ -389,7 +459,11 @@ snit::widgetadaptor EVB::barrierStatistics {
 #    +--------------------------------------------------------+
 #    | EVB::lateFragments   | EVB::BarrierStats::incomplete   |
 #    +--------------------------------------------------------+
+#    |                        Flow control                    |
+#    +--------------------------------------------------------+
 #
+# OPTIONS:
+#   - -flowcontrol - boolean controlling the flow control label
 # METHODS:
 #   - getLateStatistics       - Returns the EVB::lateFragments widget.
 #   - getIncompleteStatistics - Returns the EVB::BarrierStats::incomplete widget.
@@ -398,9 +472,11 @@ snit::widgetadaptor EVB::barrierStatistics {
 snit::widgetadaptor EVB::errorStatistics {
     component lateStats
     component incompleteStats
+    component flowLabel
     
+    option -flowcontrol -default 0 -configuremethod _CfgFlow
     delegate option * to hull
-    
+    delegate method * to hull
     ##
     # constructor
     #
@@ -411,14 +487,40 @@ snit::widgetadaptor EVB::errorStatistics {
         
         install lateStats using       EVB::lateFragments            $win.late
         install incompleteStats using EVB::BarrierStats::incomplete $win.inc
+        install flowLabel       using ttk::label $win.flow -text {Flow Control: Accepting Data}
         
         grid $win.late $win.inc -sticky nsew -padx 5 -pady 5
+        grid $flowLabel -columnspan 2 -sticky w
+        
         grid columnconfigure $win 0 -weight 1 -uniform a 
         grid rowconfigure $win 0 -weight 1 
 
         grid configure $win -padx 5 -pady 5 
 
         $self configurelist $args
+    }
+    #-----------------------------------------------------------------------
+    # Private methods.
+    
+    ##
+    # _CfgFlow
+    #    Configure the flow control label.
+    #
+    # @param optname  - name of the config option.
+    # @param optval   - option value (bool).
+    #
+    method _CfgFlow {optname optval} {
+        snit::boolean validate $optval
+        set options($optname) $optval
+        
+        set text {Flow Control: }
+        if {$optval} {
+            append text {Flow control Active}
+        } else {
+            append text {Accepting Data}
+        }
+        
+        $flowLabel configure -text $text
     }
     #-----------------------------------------------------------------------
     # Public methods.
@@ -441,7 +543,115 @@ snit::widgetadaptor EVB::errorStatistics {
         return $incompleteStats
     }
 }
-
+#-----------------------------------------------------------------------------
+# @class EVB::RingStatus
+#    This is a frame that consists of a RingStatus widget and a label
+#    The label reflects the flow off/on status of the event builder while
+#     RingStatus show sthe backlog by pid of rings involved in the Event builder.
+#
+# OPTION
+#    -flowcontrol - boolean true means flow off.
+#
+snit::widgetadaptor EVB::RingStatus {
+    component status
+    component flowLabel
+    option    -flowcontrol -default 0 -configuremethod _ConfigFlow
+    delegate method * to status
+    delegate option * to status
+    constructor args {
+        installhull using ttk::frame
+        install status using ::RingStatus $win.status
+        install flowLabel using ttk::label $win.flow -text "Flow Control: Accepting Data"
+        
+        grid $status;              # row 0
+        grid $flowLabel;           # row 1
+        
+        # Handle expansion correctly.
+        
+        grid rowconfigure $win 0  -weight 1
+        grid rowconfigure $win 1 -weight 1
+        grid columnconfigure $win 0 -weight 1
+        
+        #
+        
+        $self configurelist $args
+    }
+    ##
+    # _ConfigFlow
+    #   Set the flow control label appropriately:
+    #
+    # @param optname    -name of the configuration option (-flowcontrol)
+    # @param optval     -proposed new value.  Must be a boolean:
+    #                   - False - Text is "Flow control: Accepting Data"
+    #                   - True  - Text is "Flow control:  Flow Control Active"
+    #
+    method _ConfigFlow {optname optval} {
+        snit::boolean validate $optval
+        set options($optname) $optval
+        
+        set text "Flow control: "
+        if {$optval} {
+            append text " Flow Control Active"
+        } else {
+            append text " Accepting Data"
+        }
+        $flowLabel configure -text $text
+    }
+}
+#-----------------------------------------------------------------------------
+# @class EVB::OutOfOrderWindow
+#    This widget just consists of a frame containing and out of order
+#    window and a label widget to show the flow control state.
+#
+#  OPTIONS:
+#    -flowcontrol - boolean indicating if flow control is active (true) or not
+#                  (false).  Controls the text in the label field.
+#
+snit::widgetadaptor EVB::OutOfOrderWindow {
+    component ooWindow
+    component flowLabel
+    option -flowcontrol -default 0 -configuremethod _CfgFlowControl
+    
+    delegate option * to ooWindow
+    delegate method * to ooWindow
+    
+    constructor args {
+        installhull using ttk::frame
+        install ooWindow using ::OutOfOrderWindow $win.oo
+        install flowLabel using ttk::label $win.flow -text "Flow Control: Accepting Data"
+        
+        grid $ooWindow
+        grid $flowLabel
+        
+        grid columnconfigure $win 0 -weight 1
+        grid rowconfigure    $win 0 -weight 1
+        grid rowconfigure    $win 1 -weight 1
+        
+        $self configurelist $args
+    }
+    ##
+    # _CfgFlowControl
+    #     Configure the flow control widget.
+    #
+    # @param optname   - name of the option configured (-flowcontrol e.g.)
+    # @param optval    - new boolean value for the option:
+    #                  - True - flowLabel will display "Flow Control: Flow Control Active"
+    #                  - False - flowlabel will display "Flow COntrol: Accepting Data"
+    #
+    method _CfgFlowControl {optname optval} {
+        snit::boolean validate $optval
+        set options($optname) $optval
+        
+        set text "Flow control: "
+        if {$optval} {
+            append text "FLow Control Active"
+        } else {
+            append text "Accepting Data"
+        }
+        
+        $flowLabel configure -text $text
+    }
+}
 #-----------------------------------------------------------------------------
 #
 # @class EVB::statusNotebook
@@ -467,6 +677,8 @@ snit::widgetadaptor EVB::statusNotebook {
     component barrierStats
     component errorStats
     component ringStats
+    
+    option -flowcontrol -default 0 -configuremethod _CfgFlow
     
     delegate option * to hull
     delegate method * to hull
@@ -496,10 +708,10 @@ snit::widgetadaptor EVB::statusNotebook {
         install sourceStats using EVB::sourceStatistics $win.sources
         $hull add $sourceStats -text {Source Statistics}
         
-        install ringStats using RingStatus $win.ringstats
+        install ringStats using EVB::RingStatus $win.ringstats
         $hull add $ringStats -text {Output Ring Stats}
         
-        install ooStats using OutOfOrderWindow $win.oo
+        install ooStats using EVB::OutOfOrderWindow $win.oo
         $hull add $ooStats -text {Out of order}
         set outOfOrderTabno 3
         
@@ -626,7 +838,19 @@ snit::widgetadaptor EVB::statusNotebook {
             $self setErrorsNormal
         }
     }
-
+    ##
+    # _CfgFLow
+    #   Configure flow control - configure flow control of the components.
+    #
+    method _CfgFlow {optname optval} {
+        snit::boolean validate $optval
+        set options($optname) $optval
+        
+        foreach comp [list $summaryStats $sourceStats $ooStats $barrierStats \
+                        $errorStats $ringStats] {
+            $comp configure -flowcontrol $optval
+        }
+    }
 }
 
 #-----------------------------------------------------------------------------

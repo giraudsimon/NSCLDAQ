@@ -1278,7 +1278,7 @@ $DAQBIN/EventFilter <optional>OPTIONS</optional>...
                     Specifies the value the classifier must have to accept
                     a  event after the mask is applied. In other words. An event
                     is accepted if
-                    <literal>classifier &amp mask == value</literal>.
+                    <literal>classifier &amp; mask == value</literal>.
                 </para>
             </listitem>
            </varlistentry>

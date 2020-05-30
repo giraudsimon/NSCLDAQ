@@ -126,6 +126,9 @@ set options {
     {window.arg     10   "Sorting window in seconds."}
     {fifothreshold.arg 20480 "FIFO Threshold value for DDAS Readout"}
     {buffersize.arg    16384 "Buffer size value for DDAS Readout"}
+    {infinity.arg   "off" "on|off - enable/disable infinity clock"}
+    {clockmultiplier.arg 1 "Time stamp multiplier for external clock"}
+        
 }
 
 set mandatory [list readouthost sortring sorthost cratedir]
@@ -162,8 +165,16 @@ set readoutCmd [file join $bindir DDASReadout]
 set readoutHost [dict get $parsed readouthost]
 set fifoThreshold [dict get $parsed fifothreshold]
 set bufferSize    [dict get $parsed buffersize]
+set infinity    [dict get $parsed infinity]
+set clkmult      [dict get $parsed clockmultiplier]
 
-set readoutCmd "FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
+if {$infinity} {
+    set infstring "INFINITY_CLOCK=1"
+} else {
+    set infstring ""
+}
+
+set readoutCmd "$infstring FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
 
 foreach optMapEntry $ddasOptionMap {
     set opt [lindex $optMapEntry 0]

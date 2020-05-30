@@ -259,7 +259,20 @@ fillStateChangeBody(
  * These are functions that produce ring items.
  *
  */
-
+/**
+ * hasBodyHeader
+ *    @param pItem - pointer to a ring item.
+ *    @return int (bool) - True if there is a body header.
+ *    @note This anticipates daqdev/NSCLDAQ#1030.  Specifically there's no
+ *          body header if the header size is either 0 or sizeof(uint32_t).
+ */
+int
+hasBodyHeader(pRingItem pItem)
+{
+ uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_mbz;
+ int result = hdrSize > sizeof(uint32_t);
+ return result;
+}
 /**
  * bodyPointer
  *
@@ -279,16 +292,37 @@ bodyPointer(pRingItem pItem)
         body header:
     */
 
+    // There are two cases (anticipating) daqdev/NSCLDAQ#1030:
+    // -  Body header size is zero - nscldaq11, no body header.
+    // -  Body header size is nonzero - Body header size is given  by the
+    //    value.
     
     if (pItem->s_body.u_noBodyHeader.s_mbz) {
-        pResult = (void*)pItem->s_body.u_hasBodyHeader.s_body;
+        uint32_t hdrBytes    = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+        uint8_t* pBodyHeader = (uint8_t*)(
+         &(pItem->s_body.u_hasBodyHeader.s_bodyHeader)  
+        );
+        pResult = pBodyHeader + hdrBytes;
     } else {
         pResult = (void*)pItem->s_body.u_noBodyHeader.s_body;
     }
     
     return pResult;
 }
-
+/**
+  * bodyHeader
+  *    @param pItem - Pointer to a ring item.
+  *    @return void* - Pointer to a body header.
+  */
+ void*
+ bodyHeader(pRingItem pItem)
+ {
+  if (hasBodyHeader(pItem)) {
+   return &(pItem->s_body);
+  } else {
+   return NULL;
+  }
+ }
 
 /**
  * Format a physics event item.  The payload is put in the event body preceded by the uin32-T
@@ -329,6 +363,7 @@ bodyPointer(pRingItem pItem)
    fillPhysicsBody(pBody, nWords, pPayload);
    return (pPhysicsEventItem)pItem;
  }
+ 
 
 /**
  * Create/Format a trigger count item.
@@ -383,7 +418,7 @@ formatScalerItem(
     */
     size_t itemSize =
         sizeof(RingItemHeader) + sizeof(ScalerItemBody) + sizeof(uint32_t)
-        + scalerCount*sizeof(uint32_t);
+        + (scalerCount)*sizeof(uint32_t);
     pRingItem pItem = (pRingItem)malloc(itemSize);
     
   
@@ -507,7 +542,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
   if (pItem) {
     /* Fill in the headers and get a body pointer: */
     
-    fillHeader(pItem, sizeof(StateChangeItem), type);
+    fillHeader(pItem, itemSize, type);
 
     pItem->s_body.u_noBodyHeader.s_mbz   = 0;
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);

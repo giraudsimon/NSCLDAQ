@@ -25,7 +25,7 @@
 #include <tcl.h>
 #include <Globals.h>
 #include <stdlib.h>
-
+#include <stdexcept>
 #include <set>
 
 #include <iostream>
@@ -609,6 +609,7 @@ CStack::getListNumber()
   if (trigger == Interrupt) {
     return static_cast<uint8_t>(getIntegerParameter("-stack"));
   }
+  throw std::logic_error("CStack::getListNumber -list does not have a stack number!!");
 }
 /*
    Custom validator for the -modules switch.  This validator checks that

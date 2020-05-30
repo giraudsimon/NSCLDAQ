@@ -388,7 +388,7 @@ public:
 
 
     int loadList(int listNumber, CCCUSBReadoutList& list) {
-       loadList((uint8_t)listNumber, list);
+       return loadList((uint8_t)listNumber, list);
     }
 
 

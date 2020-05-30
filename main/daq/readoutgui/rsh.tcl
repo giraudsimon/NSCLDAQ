@@ -82,7 +82,7 @@ namespace eval  ssh {
 	# @parma command - the plain old command we're trying to run.
 	#
 	proc actualCommand {command} {
-		if {[array names ::env SINGULARITY_CONTAINER] eq ""} {
+		if {[array names ::env SING_IMAGE] eq ""} {
 			# not in a container env.
 			
 			return $command
@@ -90,7 +90,7 @@ namespace eval  ssh {
 		#
 		#  We're in a container:
 		
-		set container $::env(SINGULARITY_CONTAINER)
+		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
 		return "singularity exec $bindings $container $command"
 	}

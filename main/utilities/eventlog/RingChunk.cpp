@@ -191,9 +191,10 @@ CRingChunk::getBody(void* p)
     if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
       return &(pItem->s_body.u_noBodyHeader.s_body);
     } else {
-      uint8_t* p =
+      uint8_t* result =
         reinterpret_cast<uint8_t*>(&(pItem->s_body.u_hasBodyHeader.s_bodyHeader));
-      return p + pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+      result = result + pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+      return result;
     }
 }
 
