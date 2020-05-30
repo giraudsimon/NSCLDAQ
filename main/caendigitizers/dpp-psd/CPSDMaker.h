@@ -44,7 +44,7 @@ class CPSDMaker {
 private:
   CPsdCompoundEventSegment*  m_pReadout;
   CPsdTrigger*               m_pTrigger;
-  std::string                   m_configFile;
+  std::string                m_configFile;
 public:
     CPSDMaker(const char* filename);
     void generate();
