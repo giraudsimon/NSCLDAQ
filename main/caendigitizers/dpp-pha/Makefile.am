@@ -11,13 +11,14 @@ libCAENDPP_PHA_la_LDFLAGS=$(CAENLDFLAGS) \
 libCAENDPP_PHA_la_SOURCES=CAENPhaChannelParameters.cpp  CAENPhaParameters.cpp \
 	CompassEventSegment.cpp  CompassProject.cpp  config.cpp     PHAEventSegment.cpp  \
 	PHATrigger.cpp CAENPha.cpp  CAENPHAScalers.cpp     CompassMultiModuleEventSegment.cpp  \
-	CompassTrigger.cpp  DPPConfig.cpp  PHAMultiModuleSegment.cpp
+	CompassTrigger.cpp  DPPConfig.cpp  PHAMultiModuleSegment.cpp CompassMaker.cpp
+
 
 
 include_HEADERS=CAENPhaChannelParameters.h  CAENPhaParameters.h  CompassEventSegment.h    \
 	CompassProject.h  config.h     PHAEventSegment.h        PHATrigger.h \
 	CAENPha.h                   CAENPHAScalers.h     CompassMultiModuleEventSegment.h \
-	CompassTrigger.h  DPPConfig.h  PHAMultiModuleSegment.h
+	CompassTrigger.h  DPPConfig.h  PHAMultiModuleSegment.h CompassMaker.h
 
 install-exec-hook:
 	$(mkinstalldirs) @prefix@/skeletons/dpp-pha
