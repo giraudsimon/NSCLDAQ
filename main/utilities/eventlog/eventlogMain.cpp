@@ -80,7 +80,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
  EventLogMain::EventLogMain() :
    m_pRing(0),
    m_eventDirectory(string(".")),
-   m_segmentSize((static_cast<uint64_t>(1.9*G))),
+   m_segmentSize((static_cast<uint64_t>(0xffffffffffffffff))),  // uint64_t max.
    m_exitOnEndRun(false),
    m_nSourceCount(1),
    m_fRunNumberOverride(false),

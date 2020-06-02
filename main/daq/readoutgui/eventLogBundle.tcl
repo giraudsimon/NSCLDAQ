@@ -1088,7 +1088,7 @@ snit::widgetadaptor EventLog::ParameterPrompter {
         ttk::button $win.knownrings    \
             -text {Known Rings...} -command [mymethod _browseRings]
         
-        ttk::spinbox $win.segsize -width 5 -from 2 -to 200 -textvariable [myvar options(-segmentsize)]
+        ttk::spinbox $win.segsize -width 8 -from 2 -to 10000000 -textvariable [myvar options(-segmentsize)]
         ttk::label $win.seglabel -text {seg. size GB}
         
         message $win.help -text "
