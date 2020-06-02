@@ -504,11 +504,10 @@ for $run either does not exist or is not a directory"
         
         set eventFiles [glob -nocomplain [file join $destDir ${fileBaseName}*.evt]]
         foreach file $eventFiles {
-          
-          set linkName [file join $completeDir [file tail $file]]
-          
-          if {[catch {exec ln -sr $file $linkName} msg]} { ;   # Want to force relative.
-            puts stderr "Could not link $linkName -> $file : $msg"
+
+          catch {
+            set linkName [file join $completeDir [file tail $file]]
+            catch {exec ln -sr $file $linkName};   # Want to force relative.
           }
         }
         file attributes $completeDir -permissions $perms; # Restor prior perms.
@@ -584,7 +583,11 @@ proc ::EventLog::_getSegmentInfo {} {
         set baseName [file tail $segment]
         set linkName [file join $currentDir $baseName]
         if {![file exists $linkName]} {
+<<<<<<< HEAD
           
+=======
+          puts "Linking $linkName -> $segment"
+>>>>>>> daqdev/NSCLDAQ#1033
           catch {exec ln -sr $segment $linkName}
         }
     }
@@ -882,6 +885,7 @@ proc ::EventLog::enter {from to} {
         if {! $::EventLog::failed} {
           ::EventLog::runEnding
         }
+<<<<<<< HEAD
       }
       if {($from in [list Active Paused]) && ($to eq "NotReady")} {
         # if the start was aborted then we should not try to cleanup
@@ -901,6 +905,16 @@ proc ::EventLog::enter {from to} {
   
       }
   }
+=======
+        # Create the exit file:
+        set fd [open [::EventLog::_getExitFile] w]
+        puts $fd "dummy"
+        close $fd
+      	::EventLog::runEnding
+      } 
+
+    }
+>>>>>>> daqdev/NSCLDAQ#1033
 }
 ##
 # ::EventLog::leave
@@ -912,6 +926,7 @@ proc ::EventLog::enter {from to} {
 # @param to   - State we will enter.
 #
 proc ::EventLog::leave {from to} {
+<<<<<<< HEAD
   
   # None of this needs to be done if we're not recording.
   
@@ -929,6 +944,14 @@ proc ::EventLog::leave {from to} {
     if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
       if {! $::EventLog::failed} { 
         set  ::EventLog::expectingExit 1
+=======
+  if {($from eq "Halted") && ($to eq "Active")} {
+      if {[catch {::EventLog::runStarting} msg]} {
+        set trace $::errorInfo
+        set ::EventLog::failed 1
+        ::ReadoutGUIPanel::Log EventLogManager error "$msg : $trace"
+        error "$msg : $trace"
+>>>>>>> daqdev/NSCLDAQ#1033
       }
       set ::EventLog::failed 0
     }
