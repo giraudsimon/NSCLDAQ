@@ -268,18 +268,8 @@ CRingItem::getBodyPointer() const
     // ring items are packed structs.
     
     
+    return bodyPointer(m_pItem);
     
-    
-    // Get the body header size:
-    
-    size_t bhdrSize = m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-    if (bhdrSize == 0) bhdrSize = sizeof(uint32_t);
-    
-    uint8_t* pBody =
-      reinterpret_cast<uint8_t*>(&m_pItem->s_body.u_noBodyHeader) + bhdrSize;
-    return pBody;
-  
-
 }
 /*!
    \return void*
@@ -316,13 +306,10 @@ CRingItem::getItemPointer() const
 uint32_t
 CRingItem::type() const
 {
-  uint32_t rawType = m_pItem->s_header.s_type;
-  if (mustSwap()) {
-    return swal(rawType);
-  }
-  else {
-    return rawType;
-  }
+  return itemType(m_pItem);
+  
+  uint32_t rawType = itemType(m_pItem);
+  return rawType;
 }
 /*!
    \return uint32_t
@@ -331,13 +318,10 @@ CRingItem::type() const
 uint32_t
 CRingItem::size() const
 {
-  uint32_t rawSize = m_pItem->s_header.s_size;
-  if (mustSwap()) {
-    return swal(rawSize);
-  }
-  else {
-    return rawSize;
-  }
+  
+  uint32_t rawSize = itemSize(m_pItem);
+  return rawSize;
+  
 }
 
 /**
@@ -348,7 +332,8 @@ CRingItem::size() const
 bool
 CRingItem::hasBodyHeader() const
 {
-    return (m_pItem->s_body.u_noBodyHeader.s_mbz != 0);
+    return ::hasBodyHeader(m_pItem);
+  
 }
 /**
  * getEventTimestamp
@@ -362,8 +347,9 @@ CRingItem::getEventTimestamp() const
     throwIfNoBodyHeader(
         "Attempted to get a timestamp from an event that does not have one"
     );
-
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_timestamp;
+    
 }
 /**
  * getSourceId
@@ -378,7 +364,8 @@ CRingItem::getSourceId() const
     throwIfNoBodyHeader(
         "Attempted to get the source ID from an event that does not have one"
     );
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_sourceId;
 }
 /**
  * getBarrierType
@@ -392,7 +379,8 @@ CRingItem::getBarrierType() const
     throwIfNoBodyHeader(
         "Attempted to get the barrier type from an event that does not have one"
     );
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_barrier;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -424,7 +412,8 @@ CRingItem::updateSize()
   
   if (hasBodyHeader()) {
     pRingItem p = getItemPointer();
-    s += p->s_body.u_hasBodyHeader.s_bodyHeader.s_size;   // Use the real body header size.
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    s += b->s_size;   // Use the real body header size.
     // s += sizeof(BodyHeader);
   } else {
     s += sizeof(uint32_t);
@@ -456,10 +445,11 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
         // Make space for the body header.
         // sizeof(BodyHeder) is ok in this context because we're _creating_
         // the body header with no extension.
+        //  Have to do it this way because bodyHeader will return nullptr.
         
         uint8_t* pBody = (m_pItem->s_body.u_noBodyHeader.s_body);
         size_t moveSize = sizeof(BodyHeader) - sizeof(uint32_t);
-        size_t moveCount= m_pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(uint32_t);
+        size_t moveCount= itemSize(m_pItem) - sizeof(RingItemHeader) - sizeof(uint32_t);
         memmove(pBody + moveSize, pBody, moveCount);
         m_pCursor += moveSize;
         pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
@@ -505,11 +495,11 @@ CRingItem::commitToRing(CRingBuffer& ring)
       throw std::logic_error("Zero copy ring commit done on a different ring");
     }
     updateSize();
-    ring.skip(m_pItem->s_header.s_size);
+    ring.skip(itemSize(m_pItem));
   
   } else {
     updateSize();
-    ring.put(m_pItem, m_pItem->s_header.s_size);
+    ring.put(m_pItem, itemSize(m_pItem));
   }
 }
 
@@ -624,11 +614,8 @@ CRingItem::getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate)
   ring.peek(&header, sizeof(header)); 
 
   bool otherOrder(false);
-  uint32_t size = header.s_size;
-  if ((header.s_type & 0xffff0000) != 0) {
-    otherOrder = true;
-    size = swal(size);
-  }
+  uint32_t size = itemSize(reinterpret_cast<pRingItem>(&header));
+  
   // Create the item and fill it in:
 
   CRingItem* pItem = new CRingItem(header.s_type, size);
@@ -673,7 +660,7 @@ CRingItem::copyIn(const CRingItem& rhs)
   
   m_swapNeeded  = rhs.m_swapNeeded;
   memcpy(m_pItem, rhs.m_pItem, 
-	 rhs.m_pItem->s_header.s_size); 
+	 itemSize(rhs.m_pItem));
 
   
   
@@ -681,7 +668,7 @@ CRingItem::copyIn(const CRingItem& rhs)
   // therefore when updating it we need to allow for that in the arithmetic below.
 
   m_pCursor    = reinterpret_cast<uint8_t*>(m_pItem);
-  m_pCursor   += m_pItem->s_header.s_size;
+  m_pCursor   += itemSize(m_pItem);
   m_fZeroCopy = false;
   m_pRingBuffer = nullptr;
   
@@ -747,7 +734,7 @@ CRingItem::bodyHeaderToString() const
     std::stringstream result;
     
     if (hasBodyHeader()) {
-        pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+        pBodyHeader pHeader = reinterpret_cast<pBodyHeader>(bodyHeader(m_pItem));
         result << "Body Header:\n";
         result << "Timestamp:    " << pHeader->s_timestamp << std::endl;
         result << "SourceID:     " << pHeader->s_sourceId  << std::endl;
@@ -832,7 +819,7 @@ CRingItem::timeString(time_t theTime)
 void
 CRingItem::throwIfNoBodyHeader(std::string msg) const
 {
-    if (m_pItem->s_body.u_noBodyHeader.s_mbz == 0) {
+    if (!hasBodyHeader()) {
         throw msg;
     }
 }
@@ -856,6 +843,7 @@ CRingItem::initItem(
   m_pItem->s_header.s_size = 0;
   
   // We're making the body header so sizeof(BodyHeader) is ok here.
+  // bodyHeader will give a null here.
   
   pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
   pHeader->s_size      = sizeof(BodyHeader);

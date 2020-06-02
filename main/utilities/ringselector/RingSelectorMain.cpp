@@ -214,7 +214,7 @@ RingSelectorMain::processData()
   while(1) {
     CRingItem* pItem = CRingItem::getFromRing(*m_pRing, *m_pPredicate);
     RingItem*  pData = pItem->getItemPointer();
-    size_t     size  = pData->s_header.s_size;
+    size_t     size  = itemSize(pData);
     if (m_nonBlocking) {
       CRingItem* pQueueElement = m_queues.getFree();
       if(pQueueElement) {

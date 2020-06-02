@@ -155,7 +155,7 @@ void sortertest::ringitemOut()
   CRingItem* pGotten = CRingItem::getFromRing(*m_pSinkConsumer,all);
   pRingItem pRawGotten = pGotten->getItemPointer();
   
-  ASSERT(memcmp(pRawItem, pRawGotten, pRawItem->s_header.s_size) == 0);
+  ASSERT(memcmp(pRawItem, pRawGotten, itemSize(pRawItem)) == 0);
   
   delete pGotten;
 }

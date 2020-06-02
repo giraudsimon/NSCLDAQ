@@ -136,8 +136,9 @@ CRingItemDecoder::decodePhysicsEvent(CPhysicsEventItem* pItem)
         }
         // Fetch the size of the ring item:
         
-        pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(info.s_itemhdr);
-        size_t    nBytes= pItem->s_size;
+        pRingItem pItem =
+            reinterpret_cast<pRingItem>(info.s_itemhdr);
+        size_t    nBytes= itemSize(pItem);
         write(m_sourceMap[info.s_sourceId].s_nFd, pItem, nBytes);
         
         // See if the timestamp and update last timestamp.
@@ -162,7 +163,7 @@ CRingItemDecoder::decodeOtherItems(CRingItem* pItem)
         if (m_sourceMap.count(sid) == 0) {
             makeNewInfoItem(sid);
         }
-        size_t nBytes = pItem->getItemPointer()->s_header.s_size;
+        size_t nBytes = itemSize(pItem->getItemPointer());
         write(m_sourceMap[sid].s_nFd, pItem->getItemPointer(), nBytes);
         
         // Don't update the timestmap.

@@ -229,23 +229,7 @@ CFileDataSource::openFile()
 uint32_t
 CFileDataSource::getItemSize(RingItemHeader& header)
 {
-  uint32_t size = header.s_size;
-  uint32_t type = header.s_type;
-  
-  // If necessary, byte swap the size:
-
-  if ((type & 0xffff0000) != 0) {
-    union {
-      uint8_t  bytes[4];
-      uint32_t l;
-    } lsize;
-    lsize.l = size;
-    size = 0;
-    for (int i=0; i < 4; i++) {
-      size |= (lsize.bytes[i] << 4*(3-i));
-    }
-  }
-
+  uint32_t size = itemSize(reinterpret_cast<pRingItem>(&header));
 
   return size;
 }

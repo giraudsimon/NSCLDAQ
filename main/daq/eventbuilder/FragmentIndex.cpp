@@ -57,14 +57,10 @@ void FragmentIndex::indexFragments(uint16_t* begin, uint16_t* end)
     info.s_barrier = frag->s_header.s_barrier;
     info.s_itemhdr = reinterpret_cast<uint16_t*>(frag->s_body);
     uint16_t sizeBodyHeader = *(info.s_itemhdr+4);
-    if (sizeBodyHeader==0) {
-      info.s_itembody = info.s_itemhdr
-                        + (sizeof(RingItemHeader)+4)/sizeof(uint16_t);;
-    } else {
-			 //std::cout << "BH size = " << sizeBodyHeader << std::endl;
-      info.s_itembody = info.s_itemhdr
-                        + (sizeof(RingItemHeader)+sizeBodyHeader) /sizeof(uint16_t);
-    }
+    info.s_itembody   = reinterpret_cast<uint16_t*>(
+        bodyPointer(reinterpret_cast<pRingItem>(info.s_itemhdr))
+    );
+    
 
     m_frags.push_back(info);
 

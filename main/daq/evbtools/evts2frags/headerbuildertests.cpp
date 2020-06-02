@@ -152,7 +152,9 @@ void FragmakerTests::hasHeader_3()
   
   // give Item a null timestamp.
   
-  pBodyHeader pB = &(item.s_body.u_hasBodyHeader.s_bodyHeader);
+  
+  pBodyHeader pB =
+    reinterpret_cast<pBodyHeader>(bodyHeader(reinterpret_cast<pRingItem>(&item)));
   pB->s_timestamp = NULL_TIMESTAMP;
   
   EVB::FragmentHeader hdr = m_pTestObj->makeHeader(

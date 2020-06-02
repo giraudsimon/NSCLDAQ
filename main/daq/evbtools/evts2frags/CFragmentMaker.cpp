@@ -48,18 +48,19 @@ CFragmentMaker::makeHeader(RingItem* pItem)
     
     // The payload size is always the size of the ring item.
     
-    result.s_size = pItem->s_header.s_size;
+    result.s_size = itemSize(pItem);
     
     // Some actions depend on the item type:
     
-    uint32_t type = pItem->s_header.s_type;
+    uint32_t type = itemType(pItem);
     typeDependentProcessing(type);
     
     // If there's a body header (nonzero body header size), that
     // determines the remainder of the contents of the header.
     
-    pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-    if (pB->s_size != 0) {
+    
+    if (hasBodyHeader(pItem)) {
+        pBodyHeader pB = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
         result.s_timestamp = pB->s_timestamp;
         result.s_sourceId  = pB->s_sourceId;
         result.s_barrier   = pB->s_barrier;
@@ -74,7 +75,7 @@ CFragmentMaker::makeHeader(RingItem* pItem)
     if (result.s_timestamp == NULL_TIMESTAMP) {
         result.s_timestamp = m_nLastTimestamp;
     } else {
-        m_nLastTimestamp = pB->s_timestamp;   // otherwise update the last
+        m_nLastTimestamp = result.s_timestamp;   // otherwise update the last
     }
     return result;
 }

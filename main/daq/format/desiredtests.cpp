@@ -45,7 +45,7 @@ void desiredtests::selecttest() {
   CDesiredTypesPredicate p;
   p.addDesiredType(123);
   
-  RingItemHeader h = {sizeof(RingItemHeader), 0};
+  RingItemHeader h = {sizeof(RingItemHeader), 1};  // Else mustswap => 1.
   prod.put(&h, sizeof(h));	// should not make the cut.
   ASSERT(p(cons));
   EQ((size_t)0, cons.availableData());

@@ -267,7 +267,7 @@ fillStateChangeBody(
  *          body header if the header size is either 0 or sizeof(uint32_t).
  */
 int
-hasBodyHeader(pRingItem pItem)
+hasBodyHeader(const RingItem* pItem)
 {
  uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_mbz;
  int result = hdrSize > sizeof(uint32_t);
@@ -284,7 +284,7 @@ hasBodyHeader(pRingItem pItem)
  * @return void* - Pointer to the internal payload of the ring item.
  */
 void*
-bodyPointer(pRingItem pItem)
+bodyPointer(RingItem* pItem)
 {
     void* pResult;
     
@@ -315,7 +315,7 @@ bodyPointer(pRingItem pItem)
   *    @return void* - Pointer to a body header.
   */
  void*
- bodyHeader(pRingItem pItem)
+ bodyHeader(RingItem* pItem)
  {
   if (hasBodyHeader(pItem)) {
    return &(pItem->s_body);

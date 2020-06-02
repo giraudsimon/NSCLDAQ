@@ -105,11 +105,12 @@ DDASSorter::processChunk(CRingBufferChunkAccess::Chunk& chunk)
       
       // If there's a source id, pull it out and save it in m_sid.
       
-      if (fullItem.s_body.u_noBodyHeader.s_mbz) {
-	m_sid = fullItem.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
+      if (hasBodyHeader(&fullItem)) {
+          m_sid =
+            (reinterpret_cast<pBodyHeader>(bodyHeader(&fullItem)))->s_sourceId;
       }
       
-      switch (item.s_type) {
+      switch (itemType(&fullItem)) {
       case PHYSICS_EVENT:
             processHits(&item);
             break;
@@ -157,12 +158,7 @@ DDASSorter::processHits(pRingItemHeader pItem)
     // This is ok because Readout does not put body header extensions in
     // its events.
     
-    uint32_t* pBodySize;
-    if (pFullItem->s_body.u_noBodyHeader.s_mbz) {   /// has a body header.
-        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_hasBodyHeader.s_body);
-    } else {                                     // does not have a body header
-        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_noBodyHeader.s_body);
-    }
+    uint32_t* pBodySize = static_cast<uint32_t*>(bodyPointer(pFullItem));    
     
     uint32_t bodySize   = *pBodySize++;
     uint32_t moduleType = *pBodySize++;

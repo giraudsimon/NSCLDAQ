@@ -245,7 +245,8 @@ CRingFragmentItem::toString() const
     // Make a low level base class ring item and then invoke the factory
     // to make it the right type of object:
     const _RingItemHeader* pHeader = reinterpret_cast<const _RingItemHeader*>(This->payloadPointer());
-    CRingItem       rawItem(pHeader->s_type, pHeader->s_size);
+    const RingItem* pRawItem = reinterpret_cast<const RingItem*>(pHeader);
+    CRingItem       rawItem(itemType(pRawItem), itemSize(pRawItem));
 
     uint8_t* pBody = reinterpret_cast<uint8_t*>(rawItem.getBodyCursor());
     memcpy(pBody, pHeader+1, pHeader->s_size - sizeof(RingItemHeader));
@@ -266,7 +267,7 @@ CRingFragmentItem::toString() const
     for (int i = 0; i < This->payloadSize(); i++) {
       out << *p++ << ' ';
       if (((i % perLine) == 0) && (i != 0)) {
-	out << std::endl;
+				out << std::endl;
       }
     }
     if (This->payloadSize() % perLine) {

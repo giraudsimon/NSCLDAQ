@@ -433,11 +433,11 @@ ChunkIterator::operator++()
 {
     if(m_pData) {                         // Don't increment end.
         pRingItemHeader pH = (operator->());
-        m_nOffset += pH->s_size;
+        m_nOffset += itemSize(reinterpret_cast<pRingItem>(pH));
         if(m_nOffset < m_nTotalBytes) {    
         
             uint8_t*        p  = static_cast<uint8_t*>(m_pData);
-            p                 += pH->s_size;
+            p                 += itemSize(reinterpret_cast<pRingItem>(pH));
             m_pData = p;
         } else {                      // End.
             m_pData = nullptr;

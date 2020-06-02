@@ -271,7 +271,7 @@ CRingFragmentSource::setFragment(
 uint64_t
 CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
 {
-    if ((item.s_header.s_type == PHYSICS_EVENT) && m_tsExtractor) {
+    if ((itemType(&item) == PHYSICS_EVENT) && m_tsExtractor) {
         pPhysicsEventItem pEvent = reinterpret_cast<pPhysicsEventItem>(&item);
         return (*m_tsExtractor)(pEvent) + m_timestampOffset;
     } else {
@@ -292,7 +292,7 @@ uint32_t
 CRingFragmentSource::barrierType(RingItem& item)
 {
     uint32_t result(0);                // Default result.
-    switch (item.s_header.s_type) {
+    switch (itemType(&item)) {
     case BEGIN_RUN:
         result = 1;
         break;
@@ -322,26 +322,29 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
         RingItemHeader& header(*p);
         RingItem&       item(reinterpret_cast<RingItem&>(header));
         
-        if (item.s_body.u_noBodyHeader.s_mbz == 0) {
+        
+        if (!hasBodyHeader(&item)) {
             setFragment(
                 n, getTimestampFromUserCode(item) , m_nDefaultSid,
                 item.s_header.s_size, barrierType(item), &item
                 
             );
         } else {
+            pBodyHeader pB =
+                reinterpret_cast<pBodyHeader>(bodyHeader(&item));
             setFragment(
                 n,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp +m_timestampOffset,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId,
-                item.s_header.s_size,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier,
+                pB->s_timestamp + m_timestampOffset,
+                pB->s_sourceId,
+                itemSize(&item),
+                pB->s_barrier,
                 &item
             );
         }
         
         // Count end runs and when they happened for one-shot and timeout
         
-        if (header.s_type == END_RUN) {
+        if (itemType(&item) == END_RUN) {
             m_endRunTime = time_t(nullptr);
             m_endsSeen++;
         }

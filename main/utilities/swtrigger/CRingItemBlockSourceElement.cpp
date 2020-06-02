@@ -96,13 +96,14 @@ CRingItemBlockSourceElement::process(void* pData, size_t nBytes)
         // otherwise it comes from the last timestamp seen.
         
         pRingItem pItem = static_cast<pRingItem>(pData);
-        if (pItem->s_header.s_type == RING_FORMAT) {
+        if (itemType(pItem) == RING_FORMAT) {
             // Beginning of a run so:
             
             m_nLastTimestamp = 0;
-        } else if (pItem->s_body.u_noBodyHeader.s_mbz) {   // have a body header else:
+        } else if (hasBodyHeader(pItem)) {   // have a body header else:
+            pBodyHeader pB = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
             uint64_t bheadertstamp =
-                pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp;
+                pB->s_timestamp;
             if (bheadertstamp == NULL_TIMESTAMP) {
                 bheadertstamp = m_nLastTimestamp;            // Null timestamp means last
             }

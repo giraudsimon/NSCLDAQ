@@ -70,12 +70,14 @@ void texttests::simplecons() {
   
   pTextItem pItem = reinterpret_cast<pTextItem>(item.getItemPointer());
   
-  EQ((uint32_t)0, pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
-  EQ((uint32_t)4, pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
+  pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+    bodyPointer(reinterpret_cast<pRingItem>(pItem)));
+  EQ((uint32_t)0, pB->s_timeOffset);
+  EQ((uint32_t)4, pB->s_stringCount);
 
   // Check the contents:
 
-  const char* p = pItem->s_body.u_noBodyHeader.s_body.s_strings;
+  const char* p = pB->s_strings;
   EQ(s1, string(p));
   p  += strlen(p) + 1;
   EQ(s2, string(p));
@@ -106,15 +108,18 @@ void texttests::fullcons()
 		     5678);
   
   pTextItem pItem = reinterpret_cast<pTextItem>(item.getItemPointer());
-  EQ((uint32_t)1234, pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
-  EQ((uint32_t)4, pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
-  EQ((uint32_t)5678, pItem->s_body.u_noBodyHeader.s_body.s_timestamp);
+  pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+        bodyPointer(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQ((uint32_t)1234, pB->s_timeOffset);
+  EQ((uint32_t)4, pB->s_stringCount);
+  EQ((uint32_t)5678, pB->s_timestamp);
 
 
 
    // Check the contents:
 
-  const char* p = pItem->s_body.u_noBodyHeader.s_body.s_strings;
+  const char* p = pB->s_strings;
   EQ(s1, string(p));
   p  += strlen(p) + 1;
   EQ(s2, string(p));
@@ -161,13 +166,16 @@ void texttests::castcons()
   try {
     CRingTextItem item(ritem);
     pText = reinterpret_cast<pTextItem>(item.getItemPointer());
-    EQ((uint32_t)1234, pText->s_body.u_noBodyHeader.s_body.s_timeOffset);
-    EQ((uint32_t)4321, pText->s_body.u_noBodyHeader.s_body.s_timestamp);
-    EQ((uint32_t)4,    pText->s_body.u_noBodyHeader.s_body.s_stringCount);
+    pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+       bodyPointer(reinterpret_cast<pRingItem>(pText))
+    );
+    EQ((uint32_t)1234, pB->s_timeOffset);
+    EQ((uint32_t)4321, pB->s_timestamp);
+    EQ((uint32_t)4,    pB->s_stringCount);
     
     // Check the contents:
     
-    char* p = pText->s_body.u_noBodyHeader.s_body.s_strings;
+    char* p = pB->s_strings;
     EQ(s1, string(p));
     p  += strlen(p) + 1;
     EQ(s2, string(p));
@@ -245,13 +253,13 @@ void texttests::copycons()
   CRingTextItem copy(original);
 
   EQ(original.getBodySize(), copy.getBodySize());
-  _RingItem* porig = original.getItemPointer();
-  _RingItem* pcopy = copy.getItemPointer();
-
+  pRingItem porig = original.getItemPointer();
+  pRingItem pcopy = copy.getItemPointer();
+  
   // headers must match 
 
-  EQ(porig->s_header.s_size, pcopy->s_header.s_size);
-  EQ(porig->s_header.s_type, pcopy->s_header.s_type);
+  EQ(itemSize(porig), itemSize(pcopy));
+  EQ(itemType(porig), itemType(pcopy));
 
   // Contents must match:
 
@@ -297,17 +305,19 @@ texttests::tscons()
     //Check out the header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    EQ(PACKET_TYPES, pItem->s_header.s_type);
+    EQ(PACKET_TYPES, uint32_t(itemType(reinterpret_cast<pRingItem>(pItem))));
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(TextItemBody)
             + stringSize 
-        ), pItem->s_header.s_size
+        ), itemSize(reinterpret_cast<pRingItem>(pItem))
     );
     // The body header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    pBodyHeader pH = reinterpret_cast<pBodyHeader>(
+       bodyHeader(reinterpret_cast<pRingItem>(pItem))
+    );
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x8877665544332211ll), pH->s_timestamp);
     EQ(static_cast<uint32_t>(1), pH->s_sourceId);
@@ -320,7 +330,7 @@ texttests::tscons()
     pTextItemBody pBody = reinterpret_cast<pTextItemBody>(item.getBodyPointer());
     EQ(
        pBody,
-       reinterpret_cast<pTextItemBody>(&(pItem->s_body.u_hasBodyHeader.s_body))
+      reinterpret_cast<pTextItemBody>(bodyPointer(reinterpret_cast<pRingItem>(pItem)))
     );
     // Check the body contents against what was constructed:
     
