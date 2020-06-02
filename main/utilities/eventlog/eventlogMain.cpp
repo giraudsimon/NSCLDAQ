@@ -165,17 +165,7 @@ class noData :  public CRingBuffer::CRingBufferPredicate
      perror("Open failed for event file segment"); 
      exit(EXIT_FAILURE);
    }
-   // Try to pre-allocate the file - it's not fatal if we can't might not
-   // be enough disk space yet but the file may not fill it; or the
-   // underlying file system might just not support it.
    
-   int status = fallocate(fd, FALLOC_FL_KEEP_SIZE, 0, m_segmentSize);
-   if (status) {
-    std::cerr << "Failed to preallocate event segment " << nameString
-      << " " << strerror(errno) << std::endl;
-    std::cerr << " Continuing to record data\n";
-    
-   }
    m_pChunker->setFd(fd);
    return fd;
 
