@@ -188,16 +188,7 @@ void*
 CRingChunk::getBody(void* p)
 {
     pRingItem pItem = static_cast<pRingItem>(p);
-
-    if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
-      return &(pItem->s_body.u_noBodyHeader.s_body);
-    } else {
-      uint8_t* result =
-        reinterpret_cast<uint8_t*>(&(pItem->s_body.u_hasBodyHeader.s_bodyHeader));
-      result = result + pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-      return result;
-    }
-
+    return bodyPointer(pItem);
 }
 
 /**
@@ -227,3 +218,4 @@ CRingChunk::badBegin(void* p)
   
   
 }
+

@@ -466,11 +466,10 @@ extern "C" {
     const char* pTitle, int type
   );
   pAbnormalEndItem formatAbnormalEndItem();
-  
 
-  int  hasBodyHeader(pRingItem pItem);
-  void* bodyPointer(pRingItem pItem);
-  void* bodyHeader(pRingItem pItem);
+  int  hasBodyHeader(const RingItem* pItem);
+  void* bodyPointer(RingItem* pItem);
+  void* bodyHeader(RingItem* pItem);
 
   
   uint32_t itemSize(const RingItem* pItem);
