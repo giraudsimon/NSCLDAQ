@@ -646,7 +646,8 @@ proc resume {} {
 proc forceFailure {} {
   set machine [RunstateMachineSingleton %AUTO%]
   if { [catch { $machine transition NotReady } msg] } {
-    error "Transition to not ready failed with message : $msg"
+    set trace $::errorInfo
+    error "Transition to not ready failed with message : $msg : $trace"
   }
   $machine destroy    
 }

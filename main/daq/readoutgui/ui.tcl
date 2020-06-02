@@ -490,8 +490,15 @@ proc ::ReadoutGUIPanel::setTitle title {
 # ::ReadoutGUIPanel::getRun
 #
 #  @return - The current run number.
+#  @note   - If this is called early -- I mean really early,
+#            during e.g. bundle load time, the runIdWidget might
+#            not exist yet..
+#            in that case, return -1... an invalid run number.
 #
 proc ::ReadoutGUIPanel::getRun   {} {
+    if {$::ReadoutGUIPanel::runIdWidget eq ""} {
+        return -1
+    }
     return [$::ReadoutGUIPanel::runIdWidget cget -run]
 }
 ##
