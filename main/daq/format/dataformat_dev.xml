@@ -7062,6 +7062,7 @@ typedef struct _RingItem {
     struct {
       uint32_t s_empty;
       uint8_t  s_body[0];
+
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
@@ -7482,6 +7483,7 @@ typedef struct _RingItem {
     struct {
       uint32_t s_empty;
       uint8_t  s_body[0];
+
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
