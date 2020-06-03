@@ -61,11 +61,15 @@
       The general structure of a ring item is:
     </para>
     <programlisting>
+#ifndef DISABLE_V11_COMPATIBILITY
+#define s_mbz s_empty
+#endif
+
 typedef PSTRUCT _RingItem {
   RingItemHeader s_header;
   union {
     struct {
-      uint32_t s_mbz;
+      uint32_t s_empty;
       uint8_t  s_body[1];
     } u_noBodyHeader;
     struct {
@@ -88,6 +92,14 @@ typedef PSTRUCT _RingItem {
       To representation the different body formats, there are different structs
       defined that are all variations of this theme. In the end, these are being
       treated as data entities without methods of their own.
+    </para>
+    <para>
+      If the preprocessor symbol <literal>DISABLE_V11_COMPATIBILITY</literal>
+      is not defined, then s_mbz can be used (as in version 11) for the s_empty
+      field.  This is done, as shown via a preprocessor symbol, its use may cause
+      problems if there are other structs with fields named <structfield>s_mbz</structfield>,
+      therefore at compile time <literal>-DDISABLE_V11_COMPATIBILITY</literal>
+      will turn off this definition.
     </para>
     <para>
       The header of each item type is of type <structname>RingItemHeader</structname>
@@ -114,7 +126,7 @@ typedef PSTRUCT _RingItem {
               Contains a value that uniquely defines the type of
               datain the item.  While this is a 32 bit field,
               the actual type values a 16 bits wide, with the
-              remaining 16 bit set to zero.  This allows consumer
+              remaining 16 bits set to zero.  This allows consumer
               software to detect byte order differences between
               systems that generate the data and consumer systems.
             </para>
@@ -139,7 +151,7 @@ typedef PSTRUCT _RingItem {
     <para>
       The body header includes a timestamp, event source and barrier information
       either emitted by or intended for the event building pipeline.  This
-      header is either a <type>uint32_t</type> containing zero, which indicates
+      header is either a <type>uint32_t</type> containing sizeof(uint32_t), which indicates
       there is no header, or a structure of the following type: 
     </para>
     <programlisting>
@@ -161,7 +173,8 @@ typedef struct _BodyHeader {
             The size of the header.  This value includes the
             <varname>s_size</varname> field.  Thus you can also
             think of items that don't have a body header
-            as having a header size of zero.  We promise to maintain
+            as having a header size of sizeof(uint32_t); The size of the s_size
+            elementWe promise to maintain
             backwards compatility by adding any new elements to the
             end of the body header.  Thus you can use
             <varname>s_size</varname> to determine where the
@@ -1085,7 +1098,7 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
             <function>formatNonIncrTSScalerItem</function>, which was introduced
             in NSLCDAQ-10.1-100 to support S800 scaler items that provide event
             timestamps, the functions below provide a body header of length
-            zero (no body header).
+            sizeof(uint32_t) (Body header that only consists of the s_size field.).
         </para>
         <variablelist>
             <varlistentry>
@@ -1265,8 +1278,10 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
                         NSCLDAQ-11.0 or later, returns a pointer to the
                         body payload of the item. The body payload is the
                         section of the ring item that is just after the
-                        Body Header or, if the body header is not emitted, after
-                        the zero longwords.
+                        Body Header.  Note that this method can properly deal
+                        with NSCLDAQ-11 or NSCLDAQ-12 data in the sense that
+                        a body header size of zero or sizeof(uint32_t) is interpreted
+                        to mean there's no body header.
                     </para>
                 </listitem>
             </varlistentry>
@@ -1646,7 +1661,8 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
          <para>
             Returns a pointer to the start of the body.  Note that this returns
             a pointer to the body payload, that is the first byte after the
-            Body Header if one is present or the byte after the zero indicating
+            Body Header if one is present or the byte after the zero (Version 11) or
+            sizeof(uint32_t) (verion 12 or later) indicating
             there is no body header if one is not.
          </para>
          <methodsynopsis>
@@ -1753,7 +1769,8 @@ g++ -o myApplication src1.o src2.o ... -L$DAQROOT/lib \
         <para>
             Returns <literal>true</literal> if the ring item has a body header.
             Returns <literal>false</literal> if not.  Note that the condition
-            for returning true is that the length of the body header is non zero.
+            for returning true is that the length of the body header is greater than
+            sizeof(uint32_t).
         </para>
         <methodsynopsis>
             <modifier></modifier>
@@ -3416,7 +3433,7 @@ item.commitToRing(aring);
             Provides for comparison for functional equivalence between two
             ring text items.  The item is compared with
             <parameter>rhs</parameter>.
-            The comparison returns non zero if there is functioal equivalence.
+            The comparison returns non zero if there is functional equivalence.
         </para>
         <methodsynopsis>
             <type>int</type>
@@ -6771,7 +6788,7 @@ typedef struct _RingItem {
   RingItemHeader s_header;
   union {
     struct {
-      uint32_t s_mbz;
+      uint32_t s_empty;
       uint8_t  s_body[1];
     } u_noBodyHeader;
     struct {
@@ -6794,7 +6811,7 @@ typedef struct _StateChangeItem  {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t            s_mbz;      
+            uint32_t            s_empty;      
             StateChangeItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -6820,7 +6837,7 @@ typedef struct _ScalerItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz;          
+            uint32_t       s_empty;          
             ScalerItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -6842,7 +6859,7 @@ typedef struct _TextItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz; 
+            uint32_t       s_empty; 
             TextItemBody   s_body;
         } u_noBodyHeader;
         struct {
@@ -6858,7 +6875,7 @@ typedef struct _PhysicsEventItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t      s_mbz;
+            uint32_t      s_empty;
             uint16_t      s_body[];  
         } u_noBodyHeader;
         struct {
@@ -6880,7 +6897,7 @@ typedef struct _PhysicsEventCountItem {
     RingItemHeader   s_header;
     union {
         struct {
-            uint32_t             s_mbz; 
+            uint32_t             s_empty; 
             PhysicsEventCountItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -6900,14 +6917,14 @@ typedef struct _EventBuilderFragment {
 
 typedef struct _DataFormat {
     RingItemHeader s_header;
-    uint32_t       s_mbz;   
+    uint32_t       s_empty;   
     uint16_t       s_majorVersion;
     uint16_t       s_minorVersion;
 } DataFormat, *pDataFormat;
 
 typedef struct _GlomParameters  {
     RingItemHeader s_header;
-    uint32_t       s_mbz;
+    uint32_t       s_empty;
     uint64_t       s_coincidenceTicks;
     uint16_t       s_isBuilding;
     uint16_t       s_timestampPolicy;
@@ -6916,7 +6933,7 @@ typedef struct _GlomParameters  {
 
 typedef strucst _AbnormalEndItem {
     RingItemHeader s_header;
-    uint32_t      s_mbz;                   // Empty body header.
+    uint32_t      s_empty;                   // Empty body header.
 
 } AbnormalEndItem, *pAbnormalEndItem;
 
@@ -7053,7 +7070,7 @@ typedef strucst _AbnormalEndItem {
                                 <type>uint32_t</type>, the most significant 16
                                 bits of this field are always zero, and the least
                                 significant bits are always non-zero allowing
-                                code to determinethe endianness of data  in this
+                                code to determine the endianness of data  in this
                                 item (including the size).
                             </para>
                         </listitem>
@@ -7126,7 +7143,7 @@ typedef struct _RingItem {
   RingItemHeader s_header;
   union {
     struct {
-      uint32_t s_mbz;
+      uint32_t s_empty;
       uint8_t  s_body[1];
     } u_noBodyHeader;
     struct {
@@ -7145,8 +7162,9 @@ typedef struct _RingItem {
                     body headers.
                 </para>
                 <para>
-                    The <structfield>s_mbz</structfield> field is zero indicating
-                    that the item has not body header.
+                    The <structfield>s_empty</structfield> field is zero
+                    (Version 11) or sizeof(uint32_t) (Version 12+) indicating
+                    that the item has no body header.
                 </para>
                 <para>
                     The <structfield>s_bodyHeader</structfield> is the
@@ -7170,7 +7188,7 @@ typedef struct _StateChangeItem  {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t            s_mbz;       /* Must be zero - no body header*/
+            uint32_t            s_empty;       /* Must be sizeof(uint32_t) - no body header*/
             StateChangeItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -7187,8 +7205,9 @@ typedef struct _StateChangeItem  {
                     (<structfield>u_hasBodyHeader</structfield>) or
                     not (<structfield>u_noBodyHeader</structfield>).
                     You can tell which version of the union to use by examining
-                    the <structfield>s_mbz</structfield> field.  If this is
-                    zero use <structfield>u_noBodyHeader</structfield> otherwise
+                    the <structfield>s_empty</structfield> field.  If this is
+                    zero (version 11) or sizeof(uint32_t) (version 12+)
+                    use <structfield>u_noBodyHeader</structfield> otherwise
                     use <structfield>u_hasBodyHeader</structfield>
                 </para>
                 <para>
@@ -7260,7 +7279,7 @@ typedef struct _ScalerItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz;              /* Must be zero .. no header */
+            uint32_t       s_empty;              /* Must be sizeof(uint32_t).. no header */
             ScalerItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -7273,7 +7292,8 @@ typedef struct _ScalerItem {
                 <para>
                     The union has the standard branches that most <type>RingItem</type>s
                     have, <structfield>u_noBodyHeader</structfield> when
-                    <structfield>s_mbz</structfield> is zero indicating a lack
+                    <structfield>s_empty</structfield> is zero (version 11)
+                    or sizeof(uint32_t) (version 12) indicating a lack
                     of a body header and
                     <structfield>s_hasBodyHeader</structfield> when it is
                     the size of an action <type>BodyHeader</type> struct.
@@ -7334,7 +7354,7 @@ typedef struct _ScalerItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz;            /* Must be zero (no body header) */
+            uint32_t       s_empty;            /* Must be sizeof(uint32_t) (no body header) */
             TextItemBody   s_body;
         } u_noBodyHeader;
         struct {
@@ -7390,7 +7410,7 @@ typedef struct _PhysicsEventItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t      s_mbz;
+            uint32_t      s_empty;
             uint16_t      s_body[];      /* Aribrtary length body */
         } u_noBodyHeader;
         struct {
@@ -7421,13 +7441,13 @@ typedef struct _PhysicsEventItem {
                 <programlisting>
 typedef struct _DataFormat {
     RingItemHeader s_header;
-    uint32_t       s_mbz;              /* No body header */
+    uint32_t       s_empty;              /* No body header */
     uint16_t       s_majorVersion;     /* FORMAT_MAJOR */
     uint16_t       s_minorVersion;     /* FORMAT_MINOR */
 } DataFormat, *pDataFormat;
                 </programlisting>
                 <para>
-                    As the <structfield>s_mbz</structfield> implies,
+                    As the <structfield>s_empty</structfield> implies,
                     This item does not have a body header.  All data submitted
                     to a single ring buffer is assumed to be in a compatible
                     format.  The <structfield>s_majorVersion</structfield> and
@@ -7456,7 +7476,7 @@ typedef struct _PhysicsEventCountItem {
     RingItemHeader   s_header;
     union {
         struct {
-            uint32_t             s_mbz;      /* Must be zero - no body header*/
+            uint32_t             s_empty;      /* Must be sizeof(uint32_t) - no body header*/
             PhysicsEventCountItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -7547,7 +7567,7 @@ typedef struct _EventBuilderFragment {
                 <programlisting>
 typedef struct _GlomParameters  {
     RingItemHeader s_header;
-    uint32_t       s_mbz;
+    uint32_t       s_empty;
     uint64_t       s_coincidenceTicks;
     uint16_t       s_isBuilding;
     uint16_t       s_timestampPolicy;
@@ -7555,7 +7575,7 @@ typedef struct _GlomParameters  {
 } GlomParameters, *pGlomParameters;
                 </programlisting>
                 <para>
-                    As you can see by the <structfield>s_mbz</structfield> field,
+                    As you can see by the <structfield>s_empty</structfield> field,
                     this item does not have a ring body header.  The
                     <structfield>s_isBuilding</structfield>, is non zero if
                     glom is gluing events together and zero otherwise.
@@ -7573,7 +7593,7 @@ typedef struct _GlomParameters  {
 
 typedef strucst _AbnormalEndItem {
     RingItemHeader s_header;
-    uint32_t      s_mbz;                   // Empty body header.
+    uint32_t      s_empty;                   // Empty body header.
 
 } AbnormalEndItem, *pAbnormalEndItem;
 
