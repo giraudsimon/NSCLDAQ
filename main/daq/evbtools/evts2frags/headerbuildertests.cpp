@@ -95,7 +95,7 @@ FragmakerTests::makeNoHeaderStateChange(StateChangeItem& item, int type)
     sizeof(RingItemHeader) + sizeof(uint32_t) + sizeof(StateChangeItemBody);
   item.s_header.s_type = type;
   
-  item.s_body.u_noBodyHeader.s_mbz = 0;
+  item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
  
   return reinterpret_cast<RingItem*>(&item);
 }

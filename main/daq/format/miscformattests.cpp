@@ -91,7 +91,7 @@ MiscFormat::dataFormat()
     
     //Check body:
     
-    EQ(static_cast<uint32_t>(0), pItem->s_mbz);
+    EQ(static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_empty);
     EQ(FORMAT_MAJOR, pItem->s_majorVersion);
     EQ(FORMAT_MINOR, pItem->s_minorVersion);
     
@@ -201,7 +201,7 @@ MiscFormat::glomParameters()
     
     // Check body:
     
-    EQ(static_cast<uint32_t>(0), pItem->s_mbz);
+    EQ(static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_empty);
     EQ(static_cast<uint64_t>(100), pItem->s_coincidenceTicks);
     EQ(static_cast<uint16_t>(1), pItem->s_isBuilding);
     EQ(static_cast<uint16_t>(GLOM_TIMESTAMP_AVERAGE), pItem->s_timestampPolicy);
@@ -215,7 +215,7 @@ MiscFormat::abnormalend()
     pAbnormalEndItem pItem = formatAbnormalEndItem();
     EQ(static_cast<uint32_t>(sizeof(AbnormalEndItem)), pItem ->s_header.s_size);
     EQ(ABNORMAL_ENDRUN, pItem->s_header.s_type);
-    EQ(uint32_t(0), pItem->s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), pItem->s_empty);
     free(pItem);
 }
 
@@ -226,7 +226,7 @@ MiscFormat::abnormalendclass()
     pRingItem pItem = item.getItemPointer();
     EQ(static_cast<uint32_t>(sizeof(AbnormalEndItem)), pItem->s_header.s_size);
     EQ(ABNORMAL_ENDRUN, pItem->s_header.s_type);
-    EQ(uint32_t(0), pItem->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), pItem->s_body.u_noBodyHeader.s_empty);
     
 }
 void

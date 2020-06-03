@@ -395,7 +395,7 @@ static void outputEventFormat()
     DataFormat format;
     format.s_header.s_size = sizeof(DataFormat);
     format.s_header.s_type = RING_FORMAT;
-    format.s_mbz         = 0;
+    format.s_empty        = sizeof(uint32_t);
     format.s_majorVersion = FORMAT_MAJOR;
     format.s_minorVersion = FORMAT_MINOR;
     

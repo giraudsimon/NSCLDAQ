@@ -14,6 +14,10 @@
 	     East Lansing, MI 48824-1321
 */
 
+/** daqdev/NSCLDAQ#1030 - changes s_mbz -> s_empty with sizeof(uint32_t)
+ *  implemented.
+ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -269,7 +273,7 @@ fillStateChangeBody(
 int
 hasBodyHeader(const RingItem* pItem)
 {
- uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_mbz;
+ uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_empty;
  int result = hdrSize > sizeof(uint32_t);
  return result;
 }
@@ -297,13 +301,13 @@ bodyPointer(RingItem* pItem)
     // -  Body header size is nonzero - Body header size is given  by the
     //    value.
     
-    if (pItem->s_body.u_noBodyHeader.s_mbz) {
+    if (pItem->s_body.u_noBodyHeader.s_empty) { //nscldaq12.
         uint32_t hdrBytes    = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
         uint8_t* pBodyHeader = (uint8_t*)(
          &(pItem->s_body.u_hasBodyHeader.s_bodyHeader)  
         );
         pResult = pBodyHeader + hdrBytes;
-    } else {
+    } else {                         // NSCLDAQ-11 no body header.
         pResult = (void*)pItem->s_body.u_noBodyHeader.s_body;
     }
     
@@ -356,7 +360,7 @@ bodyPointer(RingItem* pItem)
    
    fillHeader(pItem, itemSize, PHYSICS_EVENT);
 
-   pItem->s_body.u_noBodyHeader.s_mbz = 0;           /* No body header. */
+   pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);           /* No body header. */
    
    pBody = bodyPointer(pItem);
    
@@ -391,7 +395,7 @@ formatTriggerCountItem(uint32_t runTime, time_t stamp, uint64_t triggerCount)
 
   fillHeader(pItem, itemSize, PHYSICS_EVENT_COUNT);
 
-  pItem->s_body.u_noBodyHeader.s_mbz = 0;
+  pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
   fillEventCountBody(pItem, runTime, 1, stamp, triggerCount);
 
@@ -429,7 +433,7 @@ formatScalerItem(
     
     fillHeader(pItem, itemSize, PERIODIC_SCALERS);
 
-    pItem->s_body.u_noBodyHeader.s_mbz = 0;
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
     fillScalerBody(pItem, btime, etime, 1, timestamp, scalerCount, 1, pCounters);
    
@@ -506,7 +510,7 @@ formatTextItem(unsigned nStrings, time_t stamp, uint32_t runTime,  const char** 
     }
     fillHeader(pItem, itemSize, type);
 
-    pItem->s_body.u_noBodyHeader.s_mbz = 0;
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
     
     fillTextItemBody(pItem, runTime, 1, stamp, nStrings, pStrings);
@@ -544,7 +548,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
     
     fillHeader(pItem, itemSize, type);
 
-    pItem->s_body.u_noBodyHeader.s_mbz   = 0;
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);
  
   }
@@ -575,7 +579,7 @@ formatDataFormat()
     if (pItem) {
       fillHeader((pRingItem)pItem, sizeof(DataFormat), RING_FORMAT);
         
-        pItem->s_mbz           = 0;
+        pItem->s_empty = sizeof(uint32_t);
         pItem->s_majorVersion  = FORMAT_MAJOR;
         pItem->s_minorVersion  = FORMAT_MINOR;
     }
@@ -901,7 +905,7 @@ formatGlomParameters(uint64_t interval, int isBuilding, int timestampPolicy)
         pResult->s_header.s_size = sizeof(GlomParameters);
         pResult->s_header.s_type = EVB_GLOM_INFO;
         
-        pResult->s_mbz = 0;
+        pResult->s_empty = sizeof(uint32_t);
         pResult->s_coincidenceTicks = interval;
         pResult->s_isBuilding = isBuilding;
         pResult->s_timestampPolicy = timestampPolicy;
@@ -919,7 +923,7 @@ pAbnormalEndItem
 formatAbnormalEndItem()
 {
     pAbnormalEndItem p = (pAbnormalEndItem)(malloc(sizeof(AbnormalEndItem)));
-    p->s_mbz = 0;
+    p->s_empty = sizeof(uint32_t);
     p->s_header.s_size = sizeof(AbnormalEndItem);
     p->s_header.s_type = ABNORMAL_ENDRUN;
     

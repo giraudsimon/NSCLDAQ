@@ -160,8 +160,9 @@ CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
     pRingItem pItem = reinterpret_cast<pRingItem>(pFrag->s_body);
     
     // If there's no body header just output as is:
+    // Note this is v11 and v12 clean
     
-    if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
+    if (pItem->s_body.u_noBodyHeader.s_empty <= sizeof(uint32_t)) {
         io::writeData(m_nFd, pItem, pItem->s_header.s_size);
     } else {
         // Otherwise we need to modify the sid. We assume this is an

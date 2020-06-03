@@ -84,7 +84,7 @@ PhysicsCountOutput::itemformat()
   EQMSG("Time stamp", static_cast<uint32_t>(666), pItem->s_body.u_noBodyHeader.s_body.s_timestamp);
   EQMSG("Trigger count", static_cast<uint64_t>(0xaaaa), pItem->s_body.u_noBodyHeader.s_body.s_eventCount);
   EQMSG("Offset Divisor", static_cast<uint32_t>(1), pItem->s_body.u_noBodyHeader.s_body.s_offsetDivisor);
-  EQMSG("Mbz", static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_mbz);
+  EQMSG("empty", static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_body.u_noBodyHeader.s_empty);
 
 
   free(pItem);

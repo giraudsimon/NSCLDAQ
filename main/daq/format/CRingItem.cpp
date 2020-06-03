@@ -14,6 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
+// daqdev/NSCLDAQ#1030 changes implemented.
+
 #include <config.h>
 #include "CRingItem.h"
 #include "DataFormat.h"
@@ -61,7 +63,7 @@ CRingItem::CRingItem(uint16_t type, size_t maxBody) :
   newIfNecessary(maxBody);
   m_pItem->s_header.s_type = type;
   m_pItem->s_header.s_size = 0;
-  m_pItem->s_body.u_noBodyHeader.s_mbz = 0;
+  m_pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t); 
   setBodyCursor(m_pItem->s_body.u_noBodyHeader.s_body);
   updateSize();
   

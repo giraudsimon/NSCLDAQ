@@ -200,7 +200,7 @@ translateStateChange(pRingItem pOld)
     pHdr->s_size = swap ? swal(sizeof(dest)) : sizeof(dest);
     pHdr->s_type = pOld->s_header.s_type;
     
-    // Finally the mbz field
+    // Finally the mbz field -- this is to V11 not V12.
     
     dest.s_mbz = 0;
     
@@ -272,7 +272,7 @@ translateIncrementalScalers(pRingItem pOld)
     pDest->s_hdr.s_size = swap ? swal(nBytes) : nBytes;
     pDest->s_hdr.s_type = PERIODIC_SCALERS;
     
-    // last the mbz field.
+    // last the mbz field.  -- this is to V11 not V12.
     
     pDest->s_mbz = 0;
     
@@ -394,7 +394,7 @@ translateTextItem(pRingItem pOld)
     pDest->s_header.s_type = pSrc->s_header.s_type;
     pDest->s_header.s_size = swap ? swal(newItemSize) : newItemSize;
     
-    // Fill in the mbz, write and free the dest item:
+    // Fill in the mbz, write and free the dest item:  -- this is to V11 not V12.
     
     pDest->s_mbz = 0;
     simpleWrite(reinterpret_cast<pRingItem>(pDest));
@@ -432,7 +432,7 @@ translateTriggerCount(pRingItem pOld)
     dest.s_header.s_size = sizeof(dest);
     dest.s_header.s_type = pSrc->s_header.s_type;
     
-    dest.s_mbz = 0;
+    dest.s_mbz = 0;   //  -- this is to V11 not V12.
     // Write the output:
     
     simpleWrite(reinterpret_cast<pRingItem>(&dest));

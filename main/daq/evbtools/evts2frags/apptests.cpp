@@ -270,7 +270,7 @@ apptests::makeStateChange(uint32_t type)
   p->s_header.s_size = itemSize;
   p->s_header.s_type = type;
   
-  p->s_body.u_noBodyHeader.s_mbz = 0;
+  p->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
   return reinterpret_cast<pRingItem>(p);
 }

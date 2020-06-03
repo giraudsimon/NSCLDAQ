@@ -90,7 +90,7 @@ void PhysicsItemOutput::empty() {
 
   // mbz check:
   
-  EQ(static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_mbz);
+  EQ(static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_body.u_noBodyHeader.s_empty);
 
   free(pItem);
 }

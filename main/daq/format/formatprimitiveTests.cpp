@@ -15,9 +15,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-/** @file:  
- *  @brief: 
+/** @file:  formatprimitiveTests.cpp
+ *  @brief:  tests for the formatting functions in DataFormat.h
  */
+
+// daqdev/NSCLDAQ#1030 - changes applied.
+
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
@@ -108,7 +111,7 @@ void fmtprimtest::event_1()
        p->s_header.s_size
     );
     EQ(PHYSICS_EVENT, p->s_header.s_type);
-    EQ(uint32_t(0), p->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
     
     uint16_t* pB = p->s_body.u_noBodyHeader.s_body;
     uint32_t* pWds = (uint32_t*)(pB);
@@ -135,7 +138,7 @@ void fmtprimtest::trgcount_1()
        p->s_header.s_size
     );
     EQ(PHYSICS_EVENT_COUNT, p->s_header.s_type);
-    EQ(uint32_t(0), p->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
     
     pPhysicsEventCountItemBody pB = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(123), pB->s_timeOffset);
@@ -167,7 +170,7 @@ void fmtprimtest::scaler_1()
         p->s_header.s_size
     );
     EQ(PERIODIC_SCALERS, p->s_header.s_type);
-    EQ(uint32_t(0), p->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
     
     pScalerItemBody b= &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(0), b->s_intervalStartOffset);
@@ -238,7 +241,7 @@ void fmtprimtest::text_1()
         stringSizes
     ), p->s_header.s_size);
     EQ(MONITORED_VARIABLES, p->s_header.s_type);
-    EQ(uint32_t(0), p->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
     
     pTextItemBody b = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(123), b->s_timeOffset);
@@ -269,7 +272,7 @@ void fmtprimtest::state_1()
         sizeof(RingItemHeader) + sizeof(uint32_t) + sizeof(StateChangeItemBody)
     ), p->s_header.s_size);
     EQ(BEGIN_RUN, p->s_header.s_type);
-    EQ(uint32_t(0), p->s_body.u_noBodyHeader.s_mbz);
+    EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
     
     auto b = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(12), b->s_runNumber);
@@ -286,7 +289,7 @@ void fmtprimtest::hasbodyhdr_1()
     // false if mbz == 0
     
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = 0;
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     ASSERT(!hasBodyHeader(&item));
     
 }
@@ -295,7 +298,7 @@ void fmtprimtest::hasbodyhdr_2()
     // false if mbz == sizeof(uint32_t)
     
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = sizeof(uint32_t);
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     ASSERT(!hasBodyHeader(&item));
 }
 void fmtprimtest::hasbodyhdr_3()
@@ -303,7 +306,7 @@ void fmtprimtest::hasbodyhdr_3()
     // true if mbz > sizeof(uint32_t).
     
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = sizeof(uint32_t)*2;
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t)*2;
     ASSERT(hasBodyHeader(&item));
 }
 
@@ -312,7 +315,7 @@ void fmtprimtest::hasbodyhdr_3()
 void fmtprimtest::bodyptr_1()
 {
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = 0;      // No body header.
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);      // No body header.
     void* pBody = bodyPointer(&item);
     void* pExpected = &(item.s_body.u_noBodyHeader.s_body);
     EQ(pExpected, pBody);
@@ -324,7 +327,7 @@ void fmtprimtest::bodyptr_2()
     // mbz == sizeof(uint32_t) -> pointer to just past that too.
     
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = sizeof(uint32_t);
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     void* pBody = bodyPointer(&item);
     void* pExpected = &(item.s_body.u_noBodyHeader.s_body);
     EQ(pExpected, pBody);
@@ -332,7 +335,7 @@ void fmtprimtest::bodyptr_2()
 void fmtprimtest::bodyptr_3()
 {
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = sizeof(BodyHeader);
+    item.s_body.u_hasBodyHeader.s_bodyHeader.s_size = sizeof(BodyHeader);
     void* pBody = bodyPointer(&item);
     void* pExpected = &(item.s_body.u_hasBodyHeader.s_body);
     EQ(pExpected, pBody);
@@ -354,14 +357,14 @@ void fmtprimtest::bodyheader_1()
     // mbz = 0 -> nullptr.
     
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = 0;
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     ASSERT(!bodyHeader(&item));
 }
 void fmtprimtest::bodyheader_2()
 {
     // mbz = sizeof(uint32_t) -> nullptr.
     RingItem item;
-    item.s_body.u_noBodyHeader.s_mbz = sizeof(uint32_t);
+    item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     ASSERT(!bodyHeader(&item));
     
 }
