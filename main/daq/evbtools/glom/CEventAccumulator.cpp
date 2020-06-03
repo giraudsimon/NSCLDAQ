@@ -162,6 +162,7 @@ CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
     // If there's no body header just output as is:
     // Note this is v11 and v12 clean
     
+
     if (!hasBodyHeader(pItem)) {
         io::writeData(m_nFd, pItem, pItem->s_header.s_size);
     } else {

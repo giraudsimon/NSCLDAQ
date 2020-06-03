@@ -111,7 +111,6 @@ void fmtprimtest::event_1()
     );
     EQ(PHYSICS_EVENT, p->s_header.s_type);
     EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
-
     
     uint16_t* pB = p->s_body.u_noBodyHeader.s_body;
     uint32_t* pWds = (uint32_t*)(pB);
@@ -139,7 +138,10 @@ void fmtprimtest::trgcount_1()
     );
     EQ(PHYSICS_EVENT_COUNT, p->s_header.s_type);
     EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     
     pPhysicsEventCountItemBody pB = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(123), pB->s_timeOffset);
@@ -172,7 +174,10 @@ void fmtprimtest::scaler_1()
     );
     EQ(PERIODIC_SCALERS, p->s_header.s_type);
     EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     
     pScalerItemBody b= &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(0), b->s_intervalStartOffset);
@@ -244,7 +249,10 @@ void fmtprimtest::text_1()
     ), p->s_header.s_size);
     EQ(MONITORED_VARIABLES, p->s_header.s_type);
     EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     
     pTextItemBody b = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(123), b->s_timeOffset);
@@ -276,7 +284,10 @@ void fmtprimtest::state_1()
     ), p->s_header.s_size);
     EQ(BEGIN_RUN, p->s_header.s_type);
     EQ(uint32_t(sizeof(uint32_t)), p->s_body.u_noBodyHeader.s_empty);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     
     auto b = &(p->s_body.u_noBodyHeader.s_body);
     EQ(uint32_t(12), b->s_runNumber);
@@ -332,7 +343,10 @@ void fmtprimtest::bodyptr_2()
     
     RingItem item;
     item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     void* pBody = bodyPointer(&item);
     void* pExpected = &(item.s_body.u_noBodyHeader.s_body);
     EQ(pExpected, pBody);
@@ -363,7 +377,10 @@ void fmtprimtest::bodyheader_1()
     
     RingItem item;
     item.s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#1030
     ASSERT(!bodyHeader(&item));
 }
 void fmtprimtest::bodyheader_2()
