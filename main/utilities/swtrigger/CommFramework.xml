@@ -501,7 +501,7 @@ if (!pZmqFactory) {
                         <type>void</type>
                         <methodname>free</methodname>
                         <methodparam>
-                            <type>iovec&</type><parameter>extension</parameter>
+                            <type>iovec&amp;</type><parameter>extension</parameter>
                         </methodparam>
                         <modifier></modifier>
                     </methodsynopsis>
@@ -1545,7 +1545,7 @@ $DAQBIN/Transformer <optional>OPTIONS</optional>...
                         <type>void</type>
                         <methodname>free</methodname>
                         <methodparam>
-                            <type>iovec&</type><parameter>extension</parameter>
+                            <type>iovec&amp;</type><parameter>extension</parameter>
                         </methodparam>
                         <modifier></modifier>
                     </methodsynopsis>
