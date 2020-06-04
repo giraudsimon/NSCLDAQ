@@ -154,6 +154,7 @@ class clienttest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(disconnect_1);
     CPPUNIT_TEST(disconnect_2);
+
     CPPUNIT_TEST(disconnect_3);
     
     CPPUNIT_TEST(frag_1);
@@ -191,6 +192,7 @@ protected:
     void frag_3();
     void frag_4();
     void frag_5();
+
 private:
     CPortManager*  m_pPortManager;
     int            m_nPort;
@@ -391,6 +393,7 @@ void clienttest::connect_2()
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim    = thread->m_rSimulator;
 
+
     
     std::list<int> sources;                // No sources.
     CPPUNIT_ASSERT_NO_THROW(
@@ -421,6 +424,7 @@ void clienttest::connect_3()
     
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim(thread->m_rSimulator);
+
 
     
     std::list<int> sources;                // No sources.
@@ -496,7 +500,6 @@ void clienttest::disconnect_2()
     
 
     SimulatorThread* thread = setupSimulator();
-
     
     std::list<int> sources;                // No sources.
     
@@ -631,6 +634,11 @@ void clienttest::frag_3()
      // fragment chain with one element contain
      
     SimulatorThread* thread = setupSimulator();
+
+
+
+
+
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -648,6 +656,7 @@ void clienttest::frag_3()
     
     std::list<int> sources; sources.push_back(1);
     m_pClient->Connect("Fragment test", sources);
+
     Simulator& sim(thread->m_rSimulator);
     sim.setResponse("Faile faile\n");
     
@@ -796,3 +805,37 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
     delete thread;
 
 }
+=======
+    
+    m_pClient->submitFragments(&head);
+    
+    delete m_pClient;             // drops connection
+    m_pClient = nullptr;
+    thread.join();
+    
+    // Lets' look at that second message.
+    
+    Simulator::Request m = sim.m_requests.at(1);
+    EVB::ClientMessageHeader& h(m.s_hdr);
+    EVB::pFlatFragment         f = static_cast<EVB::pFlatFragment>(m.s_body);
+    
+    EQ(EVB::FRAGMENTS, h.s_msgType);
+    EQ(sizeof(EVB::FragmentHeader) + 100, size_t(h.s_bodySize));
+    
+    // The fragment heder:
+    
+    EVB::FragmentHeader& fh(f->s_header);
+    EQ(frag.s_header.s_size, fh.s_size);
+    EQ(frag.s_header.s_sourceId, fh.s_sourceId);
+    EQ(frag.s_header.s_timestamp, fh.s_timestamp);
+    EQ(frag.s_header.s_barrier, fh.s_barrier);
+    
+    // The data:
+    
+    uint8_t* fbody = reinterpret_cast<uint8_t*>(f->s_body);
+    for (int i =0; i < 100; i++) {
+        EQ(data[i], fbody[i]);
+    }
+    
+}
+>>>>>>> daqdev/NSCLDAQ#1027
