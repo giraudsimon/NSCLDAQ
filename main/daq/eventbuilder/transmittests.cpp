@@ -63,7 +63,9 @@ struct Simulator {
     }
         
     void operator()();
+
     void setResponse(const char* r) {m_response = r;}
+
 };
 // accept a connection on m_nPort, accept messages on the port an reply
 // OK to them until disconnected.
@@ -102,6 +104,7 @@ void Simulator::operator()() {
             
             pBody = nullptr;
             pConn->Write(m_response.c_str(), m_response.size());
+
         } catch(...) {
             break;
         }
@@ -115,6 +118,7 @@ void Simulator::operator()() {
 
 class SimulatorThread : public Thread
 {
+
 public:
     Simulator&  m_rSimulator;
 public:
@@ -157,6 +161,7 @@ class clienttest : public CppUnit::TestFixture {
     CPPUNIT_TEST(frag_3);
     CPPUNIT_TEST(frag_4);
     CPPUNIT_TEST(frag_5);
+
     CPPUNIT_TEST_SUITE_END();
 protected:
     void chainbytes_1();
@@ -190,10 +195,13 @@ private:
     CPortManager*  m_pPortManager;
     int            m_nPort;
     CEventOrderClient* m_pClient;
+
 private:
     SimulatorThread* setupSimulator();
     void             cleanupSimulator(SimulatorThread* thread);
     
+
+
 public:
     clienttest() :m_pPortManager(nullptr) {}
     void setUp() {
@@ -379,8 +387,10 @@ void clienttest::connect_1()
 void clienttest::connect_2()
 {
     // Connect but no sources
+
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim    = thread->m_rSimulator;
+
     
     std::list<int> sources;                // No sources.
     CPPUNIT_ASSERT_NO_THROW(
@@ -391,7 +401,9 @@ void clienttest::connect_2()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
-    thread->join();                  // Wait on thread exit.
+
+    thread.join();                  // Wait on thread exit.
+
     
     // Check out the results... should be one request, a connection.
     
@@ -409,6 +421,7 @@ void clienttest::connect_3()
     
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim(thread->m_rSimulator);
+
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -423,7 +436,9 @@ void clienttest::connect_3()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
-    thread->join();                  // Wait on thread exit.
+
+    thread.join();                  // Wait on thread exit.
+
     
     Simulator::Request r = sim.m_requests[0];
     EVB::pConnectBody b = static_cast<EVB::pConnectBody>(r.s_body);
@@ -461,6 +476,7 @@ void clienttest::connect_4()
     thread.join();
     
     
+
 }
 void clienttest::disconnect_1()
 {
@@ -478,7 +494,9 @@ void clienttest::disconnect_2()
 {
     // Good disconnect with simulator.
     
+
     SimulatorThread* thread = setupSimulator();
+
     
     std::list<int> sources;                // No sources.
     
@@ -488,8 +506,10 @@ void clienttest::disconnect_2()
     delete m_pClient;
     m_pClient = nullptr;
     
+
     thread->join();
     Simulator& sim(thread->m_rSimulator);
+
     
     // Should be two messges, a connect and a disconnect:
     
@@ -774,4 +794,5 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
 {
     delete &(thread->m_rSimulator);    // We know it's dynamic.
     delete thread;
+
 }
