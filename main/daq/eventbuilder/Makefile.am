@@ -143,25 +143,20 @@ install-exec-hook:
 #
 # Tests:
 
-noinst_PROGRAMS = unittests ordertests outputTests
-
-outputTests_SOURCES=TestRunner.cpp outputTests.cpp COrdererOutput.cpp
-outputTests_LDADD=@TCL_LIBS@ @LIBEXCEPTION_LDFLAGS@ @CPPUNIT_LDFLAGS@
-outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+noinst_PROGRAMS = transmittests ordertests 
 
 
-unittests_DEPENDENCIES = libEventBuilderClient.la cmdline.o cmdline.h
-unittests_SOURCES = TestRunner.cpp lookupTest.cpp  \
-	connectTest.cpp  
-nodist_unittests_SOURCES = cmdline.c cmdline.h
 
-unittests_LDADD = @builddir@/libEventBuilderClient.la \
-	$(libEventBuilder_la_LIBADD) \
+transmittests_SOURCES = TestRunner.cpp  transmittests.cpp  \
+	CEventOrderClient.cpp CEventOrderClient.h
+
+transmittests_LDFLAGS= @top_builddir@/base/os/libdaqshm.la \
 	@top_builddir@/servers/portmanager/libPortManager.la \
-	@top_builddir@/base/tcpip/libTcp.la 	\
-	@CPPUNIT_LDFLAGS@ @THREADLD_FLAGS@
-
-unittests_CPPFLAGS=$(COMPILATION_FLAGS)
+	@top_builddir@/base/tcpip/libTcp.la \
+	@top_builddir@/base/thread/libdaqthreads.la \
+	@LIBTCLPLUS_LDFLAGS@ \
+	@CPPUNIT_LDFLAGS@
+transmittests_CPPFLAGS=$(COMPILATION_FLAGS) @LIBTCLPLUS_CFLAGS@
 
 
 
@@ -185,10 +180,9 @@ ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
 
 check-TESTS:
+	@builddir@/transmittests  
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 	@builddir@/outputTests
-#	./ordertests            # Broken due to multithreading
-#	./unittests             # Broken by multithreading.
 
 
 
