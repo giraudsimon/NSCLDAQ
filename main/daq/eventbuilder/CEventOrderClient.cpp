@@ -128,6 +128,7 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
   uint8_t* connectionBody(0);
   sprintf(portNumber, "%u", m_port);
   m_pConnection = new CSocket();
+
   try {
     m_pConnection->Connect(m_host, std::string(portNumber));
     
@@ -215,8 +216,6 @@ CEventOrderClient::disconnect()
     m_fConnected = false;
     throw;
   }
-  delete m_pConnection;
-  m_pConnection = nullptr;
   m_fConnected = false;
 }
 /**
@@ -244,6 +243,7 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
     
     pDescription[0].iov_base = &hdr;
     pDescription[0].iov_len = sizeof(EVB::ClientMessageHeader);
+
     fillFragmentDescriptors(pDescription+1, pChain);
     
 
