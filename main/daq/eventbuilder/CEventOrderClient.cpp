@@ -235,7 +235,7 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
     pDescription = static_cast<iovec*>(malloc((nIovsInChain+1)*sizeof(iovec)));
     
     pDescription[0].iov_base = &hdr;
-    pDescription[1].iov_len = sizeof(EVB::ClientMessageHeader);
+    pDescription[0].iov_len = sizeof(EVB::ClientMessageHeader);
     fillFragmentDescriptors(pDescription+1, pChain);
     
 

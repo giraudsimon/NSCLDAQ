@@ -146,6 +146,9 @@ class clienttest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(disconnect_1);
     CPPUNIT_TEST(disconnect_2);
+    
+    CPPUNIT_TEST(frag_1);
+    CPPUNIT_TEST(frag_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void chainbytes_1();
@@ -166,6 +169,9 @@ protected:
     
     void disconnect_1();
     void disconnect_2();
+    
+    void frag_1();
+    void frag_2();
 private:
     CPortManager*  m_pPortManager;
     int            m_nPort;
@@ -359,7 +365,7 @@ void clienttest::connect_2()
     Simulator       sim(m_nPort);
     SimulatorThread thread(sim);
     thread.start();
-    usleep(100);
+    usleep(200);
     
     std::list<int> sources;                // No sources.
     CPPUNIT_ASSERT_NO_THROW(
@@ -389,7 +395,7 @@ void clienttest::connect_3()
     Simulator       sim(m_nPort);
     SimulatorThread thread(sim);
     thread.start();
-    usleep(100);
+    usleep(200);
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -431,7 +437,7 @@ void clienttest::disconnect_2()
     Simulator       sim(m_nPort);
     SimulatorThread thread(sim);
     thread.start();
-    usleep(100);
+    usleep(200);
     
     std::list<int> sources;                // No sources.
     
@@ -453,5 +459,92 @@ void clienttest::disconnect_2()
     EQ(EVB::DISCONNECT, r.s_hdr.s_msgType);
     EQ(uint32_t(0),     r.s_hdr.s_bodySize);
     
+    
+}
+void clienttest::frag_1()
+{
+    // Empty fragment chain is legal and results in an empty fragments
+    //msg.
+    
+     Simulator       sim(m_nPort);
+    SimulatorThread thread(sim);
+    thread.start();
+    usleep(200);
+    
+    std::list<int> sources;                // No sources - not caller checks not us.
+    
+    m_pClient->Connect("A test", sources);
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        m_pClient->submitFragments(nullptr);
+    );
+    delete m_pClient;
+    m_pClient = nullptr;
+    thread.join();
+    
+    EQ(size_t(2), sim.m_requests.size());
+    Simulator::Request f = sim.m_requests[1];
+    
+    EQ(EVB::FRAGMENTS, f.s_hdr.s_msgType);
+    EQ(uint32_t(0), f.s_hdr.s_bodySize);
+    
+}
+
+void clienttest::frag_2()
+{
+    // fragment chain with one element containing a counting pattern.
+
+    Simulator       sim(m_nPort);
+    SimulatorThread thread(sim);
+    thread.start();
+    usleep(200);
+
+    
+    uint8_t data[100];
+    for (int i =0;i < 100; i++) { data[i] = i;}
+    
+    EVB::Fragment      frag;
+    frag.s_header.s_size = 100;
+    frag.s_header.s_sourceId = 1;
+    frag.s_header.s_timestamp = 0x123456789;
+    frag.s_header.s_barrier = 0;
+    frag.s_pBody = data;
+    
+    EVB::FragmentChain head;
+    head.s_pNext =nullptr;
+    head.s_pFragment = &frag;
+    
+    std::list<int> sources; sources.push_back(1);
+    m_pClient->Connect("Fragment test", sources);
+    
+    m_pClient->submitFragments(&head);
+    
+    delete m_pClient;             // drops connection
+    m_pClient = nullptr;
+    thread.join();
+    
+    // Lets' look at that second message.
+    
+    Simulator::Request m = sim.m_requests.at(1);
+    EVB::ClientMessageHeader& h(m.s_hdr);
+    EVB::pFlatFragment         f = static_cast<EVB::pFlatFragment>(m.s_body);
+    
+    EQ(EVB::FRAGMENTS, h.s_msgType);
+    EQ(sizeof(EVB::FragmentHeader) + 100, size_t(h.s_bodySize));
+    
+    // The fragment heder:
+    
+    EVB::FragmentHeader& fh(f->s_header);
+    EQ(frag.s_header.s_size, fh.s_size);
+    EQ(frag.s_header.s_sourceId, fh.s_sourceId);
+    EQ(frag.s_header.s_timestamp, fh.s_timestamp);
+    EQ(frag.s_header.s_barrier, fh.s_barrier);
+    
+    // The data:
+    
+    uint8_t* fbody = reinterpret_cast<uint8_t*>(f->s_body);
+    for (int i =0; i < 100; i++) {
+        EQ(data[i], fbody[i]);
+    }
     
 }

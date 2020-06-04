@@ -93,7 +93,7 @@ namespace EVB {
 
   typedef struct __attribute__((__packed__)) _FlatFragment {
     FragmentHeader s_header;
-    int            s_body[];
+    int            s_body[0];
   } FlatFragment, *pFlatFragment;
 
 #ifdef __cplusplus
