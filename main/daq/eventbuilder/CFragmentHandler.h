@@ -281,7 +281,7 @@ public:
   // here are the operations we advertised:
 
 public:
-  void addFragments(size_t nSize, EVB::pFlatFragment pFragments);
+  void addFragments(size_t nSize, const EVB::FlatFragment* pFragments);
 
   void setBuildWindow(time_t windowWidth);
   time_t getBuildWindow() const;
@@ -352,8 +352,8 @@ private:
   void flushQueues(bool completely=false);
   std::pair<time_t, ::EVB::pFragment>* popOldest();
   void   dataLate(const ::EVB::Fragment& fragment);		    // Data late handler.
-  void   addFragment(EVB::pFlatFragment pFragment);
-  size_t totalFragmentSize(EVB::pFragmentHeader pHeader);
+  void   addFragment(const EVB::FlatFragment* pFragment);
+  size_t totalFragmentSize(const EVB::FragmentHeader* pHeader);
   bool   queuesEmpty();
   bool   noEmptyQueue();
 
