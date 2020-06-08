@@ -180,6 +180,12 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
     errno = ECONNREFUSED;
     throw CErrnoException("Failed connection to server");
   }
+  catch (std::string msg) {
+    delete m_pConnection;
+    m_pConnection = nullptr;
+    m_fConnected = false;
+    throw;
+  }
   m_fConnected = true;
 
 }
@@ -206,9 +212,13 @@ CEventOrderClient::disconnect()
     message(1, &d);
   }
   catch (...) {
+    delete m_pConnection;
+    m_pConnection = nullptr;
+    m_fConnected = false;
     throw;
   }
- 
+  delete m_pConnection;
+  m_pConnection = nullptr;
   m_fConnected = false;
 }
 /**
@@ -277,7 +287,7 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
   // method:
   if (nFragments == 0) return;
   EVB::pFragmentChain pChain = new EVB::FragmentChain[nFragments];
-  for (size_t i; i < nFragments; i++) {
+  for (size_t i = 0; i < nFragments; i++) {
     pChain[i].s_pFragment = &(ppFragments[i]);
     if (i != nFragments-1) {
       pChain[i].s_pNext = &(pChain[i+1]);
@@ -313,7 +323,7 @@ CEventOrderClient::submitFragments(EVB::FragmentPointerList& fragments)
   
   EVB::pFragmentChain pChain = new EVB::FragmentChain[nFrags];
   auto p = fragments.begin();
-  size_t i;
+  size_t i(0);
   while (p != fragments.end()) {
     pChain[i].s_pFragment = *p;
     if (i != nFrags-1) {
@@ -322,6 +332,7 @@ CEventOrderClient::submitFragments(EVB::FragmentPointerList& fragments)
       pChain[i].s_pNext = nullptr;
     }
     p++;
+    i++;
   }
   try {
     submitFragments(pChain);
