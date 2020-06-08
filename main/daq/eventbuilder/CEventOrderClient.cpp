@@ -273,78 +273,26 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
 void
 CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments)
 {
-  // Each fragment requires 2 iovector elements:
-  // One for the header and one for the body, First ensure we have enough:
-  
-  
-  
-  if (m_nIovecSize < 2*nFragments + 1) {
-    free(m_pIovec);
-    m_pIovec = static_cast<iovec*>(
-      malloc((2*nFragments+1) * sizeof(iovec) )  // +1 for the header stuff
-    );
-    if (!m_pIovec) {
-      throw std::bad_alloc();
+  // Just make a fragment chain out of the fragments and use the previous
+  // method:
+  if (nFragments == 0) return;
+  EVB::pFragmentChain pChain = new EVB::FragmentChain[nFragments];
+  for (size_t i; i < nFragments; i++) {
+    pChain[i].s_pFragment = &(ppFragments[i]);
+    if (i != nFragments-1) {
+      pChain[i].s_pNext = &(pChain[i+1]);
+    } else {
+      pChain[i].s_pNext = nullptr;
     }
-    m_nIovecSize = 2*nFragments + 1;
   }
-  iovec* p = m_pIovec;
-  
-  // Fill in the header and it's iovec:
-  
-  
-  uint32_t hdrsize = strlen("FRAGMENTS");
-  uint8_t header[hdrsize + 2*sizeof(uint32_t)];  // fragments size piggy backs.
-  
-  memcpy(header, &hdrsize, sizeof(uint32_t));
-  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS"));
-  
-  p->iov_base = header;
-  p->iov_len  = hdrsize + 2*sizeof(uint32_t);
-   
-  p++;
-  uint32_t payloadSize = 0;
-  
-  for (int i =0; i < nFragments; i++) {
-    iovec* pNext = makeIoVec(ppFragments[i], p);
-    payloadSize += p[0].iov_len;
-    payloadSize += p[1].iov_len;
-    
-    p = pNext;
+  try {
+    submitFragments(pChain);
   }
-  // Fill in the payload size field of the header:
-  //           "FRAGMENTS"  string length
-  memcpy(header + hdrsize + sizeof(uint32_t), &payloadSize , sizeof(uint32_t));
-  
-  // Now we can pull the fd from the soccket and use the gather version of
-  // io::writeData No data copies -- hoorah.
-  //
-  int sock = m_pConnection->getSocketFd();
-  
-  int iovLen = 2*nFragments + 1;
-  
-  // This loop is because there's a maximum number of I/O vector elements
-  // allowed.  We've squirreled that at construction time in:  m_nIovecMaxSize
-  
-  iovec* pVec = m_pIovec;
-  while (iovLen) {
-    int nToWrite = iovLen;
-    if (iovLen >  m_nIovecMaxSize) nToWrite =  m_nIovecMaxSize;
-    
-    io::writeDataVUnlimited(sock, pVec, nToWrite);
-    iovLen -= nToWrite;
-    pVec   += nToWrite;
+  catch (...) {
+    delete []pChain;
+    throw;
   }
-  
-  // Get the response and complain  if it's not "OK"
-  
-  std:: string reply = getReplyString();
-  if (reply != "OK") {
-    errno = ENOTSUP;
-    throw CErrnoException("Reply from 'FRAGMENTS' message");
-
-  }
-
+  delete []pChain;
 }
 /**
  * Given an STL list of pointers to events:
@@ -359,40 +307,30 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
 void
 CEventOrderClient::submitFragments(EVB::FragmentPointerList& fragments)
 {
-  if (fragments.size() == 0) return; // degenerate edge case...empty list...don't send.
+  size_t nFrags = fragments.size();
+  if (nFrags == 0) return; // degenerate edge case...empty list...don't send.
   
-  EVB::pFragmentChain pChain = new EVB::FragmentChain;
-  try {
-
-    // Do the first one:
-    
-    EVB::FragmentPointerList::iterator src = fragments.begin();
-    EVB::pFragmentChain pPrior = pChain;
-    pPrior->s_pNext = 0;
-    pPrior->s_pFragment = *src++;
-    
-    // Do the remainder of the chain.. if there are any:'
-    
-    while (src != fragments.end()) {
-      // Allocate the new element and fill it in.
-      EVB::pFragmentChain pNext = new EVB::FragmentChain;
-      pNext->s_pNext = 0;
-      pNext->s_pFragment = *src++;
-      
-      // Link this to the previous element.
-      
-      pPrior->s_pNext = pNext;
-      pPrior = pNext;
+  
+  EVB::pFragmentChain pChain = new EVB::FragmentChain[nFrags];
+  auto p = fragments.begin();
+  size_t i;
+  while (p != fragments.end()) {
+    pChain[i].s_pFragment = *p;
+    if (i != nFrags-1) {
+      pChain[i].s_pNext  = &(pChain[i+1]);
+    } else {
+      pChain[i].s_pNext = nullptr;
     }
-    submitFragments(pChain);
-  } catch(...) {
-    // Clean the chain and then rethrow.
-
-    freeChain(pChain);
-    throw;
+    p++;
   }
-  freeChain(pChain);
-
+  try {
+    submitFragments(pChain);
+  }
+  catch (...) {
+    delete []pChain;
+  }
+  delete []pChain;
+  
 }
 
 /*-------------------------------------------------------------------------------------*/
