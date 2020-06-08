@@ -182,6 +182,7 @@ snit::type EVB::Connection {
         set sources [list]
         for {set i 0} {$i < $sourceCount} {incr i} {
             
+
             binary scan $body @${cursor}i sid
             lappend sources $sid
             incr cursor 4
@@ -311,12 +312,14 @@ snit::type EVB::Connection {
             $self _Close ERROR
             return
         }
+
         if {[eof $socket]} {
             catch puts $socket "ERROR - unable to read header\n"
             puts stderr "EOF on read of header! ignore connection."
             $self _Close ERROR
             return
         }
+
         #
         #  Decode the header and read the body, if there is one:
         #
@@ -342,6 +345,7 @@ snit::type EVB::Connection {
         # the body consist of 80 characters of description  and
         # a count of source ids followed by that many source ids.
     
+
         set alive 1
     
         # Pull out the description and the source id list
@@ -375,6 +379,7 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
+
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
@@ -391,6 +396,7 @@ snit::type EVB::Connection {
        #  Presumably the most common case is "FRAGMENTS"
     
        if {$msgType == $EVB::FRAGMENTS} {
+
     
             
             # protocol allows FRAGMENTS here:
@@ -409,7 +415,7 @@ snit::type EVB::Connection {
             } else {
                 flush $socket
             }
-            
+
             EVB::handleFragments $socket $fragments;    # Handle fragments in C++
     
             $callbacks invoke -fragmentcommand [list] [list]
@@ -417,7 +423,9 @@ snit::type EVB::Connection {
             
         # Protocol allows a DISCONNECT here as well as fragments.. note disconnect
         # has no body data.:
+
         } elseif {$msgType == $EVB::DISCONNECT} {
+
             # There is no body in disconnect messages.
             
             puts $socket "OK"

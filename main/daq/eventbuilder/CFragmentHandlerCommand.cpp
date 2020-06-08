@@ -80,6 +80,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
 
 	try {    
     if (objv.size() != 3) {
+
       interp.setResult(std::string("Incorrect number of parameters"));
       return TCL_ERROR;
     }
@@ -94,15 +95,15 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
     }
     // The second object is a byte array object containing the message body:
 		
-		int msgLength;
-		const unsigned char* msg;
-
-		msg = Tcl_GetByteArrayFromObj(objv[2].getObject(), &msgLength);
-	    
-		// Dispatch the body as the flattened fragments they are:
-		
-		CFragmentHandler* pHandler = CFragmentHandler::getInstance();
-		pHandler->addFragments(msgLength, reinterpret_cast<const EVB::FlatFragment*>(msg));
+    int msgLength;
+    const unsigned char* msg;
+    
+    msg = Tcl_GetByteArrayFromObj(objv[2].getObject(), &msgLength);
+    
+    // Dispatch the body as the flattened fragments they are:
+    
+    CFragmentHandler* pHandler = CFragmentHandler::getInstance();
+    pHandler->addFragments(msgLength, reinterpret_cast<const EVB::FlatFragment*>(msg));
     
 
 
