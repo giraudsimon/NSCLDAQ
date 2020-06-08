@@ -216,6 +216,10 @@ CEventOrderClient::disconnect()
     m_fConnected = false;
     throw;
   }
+
+  delete m_pConnection;
+  m_pConnection = nullptr;
+
   m_fConnected = false;
 }
 /**
@@ -333,7 +337,6 @@ CEventOrderClient::submitFragments(EVB::FragmentPointerList& fragments)
       pChain[i].s_pNext = nullptr;
     }
     p++;
-
     i++;
 
   }
