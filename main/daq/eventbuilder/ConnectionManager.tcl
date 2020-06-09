@@ -180,8 +180,8 @@ snit::type EVB::Connection {
         binary scan $body A80i description sourceCount
         set cursor 84;                # where we start.
         set sources [list]
-        
-        for {set i 0} {$i < $sources} {incr i} {
+        for {set i 0} {$i < $sourceCount} {incr i} {
+            
             binary scan $body @${cursor}i sid
             lappend sources $sid
             incr cursor 4
@@ -305,6 +305,7 @@ snit::type EVB::Connection {
         # Get the header and get the body.
         # The header is a string, but the body is a counted binary block:
     
+
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             catch {puts $socket "ERROR {Could not read header expecting CONNECT}"}; # Might fail.
             $self _Close ERROR
@@ -314,12 +315,15 @@ snit::type EVB::Connection {
         #  Decode the header and read the body, if there is one:
         #
         binary scan $header "ii" bodySize msgType
-        
     
-        if {[catch {$self read $socket $bodySize} body]} {
+    
+        if {[catch {read $socket $bodySize} body]} {
+            puts "Could not read body: $body"
             puts $socket "ERROR {Corrupt body in CONNECT message}"
             $self _Close ERROR
+            return
         }
+    
     
         # Must be a CONNECT message with a non-zero body.
         #
@@ -329,10 +333,10 @@ snit::type EVB::Connection {
             $self _Close ERROR
             return
         }
+        
         # the body consist of 80 characters of description  and
         # a count of source ids followed by that many source ids.
     
-        puts $socket "OK"
         set alive 1
     
         # Pull out the description and the source id list
@@ -365,17 +369,8 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
-        set status [catch {read $socket 4} header]
         
-        set status [catch {
-            set header [$self _ReadCountedString $options(-]
-    #	    set body   [$self _ReadBinaryData    $socket]
-        } msg]
-        if {[eof $options(-socket)]} {
-            $self _Close LOST
-            return;		# Nothing else to do.
-        }
-        if {[catch {read $socket 4} header]} {
+        if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
                 return
@@ -386,13 +381,20 @@ snit::type EVB::Connection {
                 error "Failure reading FRAGMENTS"
             }
         }
-        binary scan $header ii bodySize msgType
-        
+        set result [binary scan $header ii bodySize msgType]
     
        #  Presumably the most common case is "FRAGMENTS"
     
-       if {$msgType eq $EVB::FRAGMENTS} {
+       if {$msgType == $EVB::FRAGMENTS} {
     
+            
+            # protocol allows FRAGMENTS here:
+            # TODO: Handle errors as a close
+            
+            # We can read the fragments from the socket:
+            
+            set fragments [read $socket $bodySize]
+            
             # Acknowledging the fragments here allows next bunch to be prepared
             # in the caller.
             
@@ -402,12 +404,7 @@ snit::type EVB::Connection {
             } else {
                 flush $socket
             }
-            # protocol allows FRAGMENTS here:
-            # TODO: Handle errors as a close
             
-            # We can read the fragments from the socket:
-            
-            set fragments [read $socket $bodySize]
             EVB::handleFragments $socket $fragments;    # Handle fragments in C++
     
             $callbacks invoke -fragmentcommand [list] [list]
@@ -415,8 +412,7 @@ snit::type EVB::Connection {
             
         # Protocol allows a DISCONNECT here as well as fragments.. note disconnect
         # has no body data.:
-    
-        } elseif {$msgType eq $EVB::DISCONNECT} {
+        } elseif {$msgType == $EVB::DISCONNECT} {
             # There is no body in disconnect messages.
             
             puts $socket "OK"
