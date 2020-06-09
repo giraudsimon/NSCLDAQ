@@ -32,13 +32,20 @@ class fragcmdtest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE_END();
     
 private:
-
+    CTCLInterpreter*         m_pInterp;
+    CFragmentHandlerCommand* m_pCmd;
+    CFragmentHandler*        m_pStubs;
 public:
     void setUp() {
-        
+        m_pInterp = new CTCLInterpreter;
+        m_pCmd    = new CFragmentHandlerCommand(*m_pInterp,"handle");
+        m_pStubs  = CFragmentHandler::getInstance();
     }
     void tearDown() {
-        
+        delete m_pStubs;
+        CFragmentHandler::m_pInstance = nullptr;
+        delete m_pCmd;
+        delete m_pInterp;
     }
 protected:
     void test_1();
