@@ -62,7 +62,7 @@ int Eventbuilder_Init(Tcl_Interp* pInterp)
   
   
   
-  new CFragmentHandlerCommand(*pInterpObject, "EVB::handleFragment");
+  new CFragmentHandlerCommand(*pInterpObject, "EVB::handleFragments");
   new CInputStatsCommand(*pInterpObject, "EVB::inputStats");
   new COutputStatsCommand(*pInterpObject, "EVB::outputStats");
   new CDLateStatsCommand(*pInterpObject, "EVB::dlatestats");

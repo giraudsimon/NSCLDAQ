@@ -82,7 +82,7 @@ snit::type EVB::Connection {
 
     variable alive 0
     variable callbacks
-    variable expecting
+    variable expecting ""
     variable stateMethods -array [list FORMING _Connect ACTIVE _Fragments]
 
 
@@ -301,6 +301,7 @@ snit::type EVB::Connection {
     #         We just transition to ERROR, and close out
     #
     method _Connect socket {
+        puts stderr "Orderer $self connect called $options(-state) : $expecting"
     
         # Get the header and get the body.
         # The header is a string, but the body is a counted binary block:
@@ -311,14 +312,20 @@ snit::type EVB::Connection {
             $self _Close ERROR
             return
         }
+        if {[eof $socket]} {
+            catch puts $socket "ERROR - unable to read header\n"
+            puts stderr "EOF on read of header! ignore connection."
+            $self _Close ERROR
+            return
+        }
         #
         #  Decode the header and read the body, if there is one:
         #
         binary scan $header "ii" bodySize msgType
-    
+        puts stderr "Header: [string length $header]"
     
         if {[catch {read $socket $bodySize} body]} {
-            puts "Could not read body: $body"
+            puts stderr "Could not read body: $body"
             puts $socket "ERROR {Corrupt body in CONNECT message}"
             $self _Close ERROR
             return
@@ -344,8 +351,9 @@ snit::type EVB::Connection {
         set decodedBody [$self _DecodeConnectBody $body]
         set description [lindex $decodedBody 0]
         set sourceIds   [lindex $decodedBody 1]
-    
-    
+        puts stderr "Connected with $description '$sourceIds'"
+        puts $socket "OK"
+        flush $socket
     
         # Save the description and transition to the active state:
             # Register ourself with the event builder core
@@ -369,7 +377,7 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
-        
+        puts stderr "_Fragments"
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
