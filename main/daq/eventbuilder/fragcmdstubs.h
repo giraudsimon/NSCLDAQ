@@ -26,10 +26,9 @@
 class CFragmentHandler
 {
 public:
-
     unsigned long      m_nLastSize;
     const EVB::FlatFragment* m_pLastFrags;
-    static CFragmentHandler* m_pInstance;
+   static CFragmentHandler* m_pInstance;
 public:
     void addFragments(unsigned long nFrags, const EVB::FlatFragment* pFrags);
     static CFragmentHandler* getInstance();

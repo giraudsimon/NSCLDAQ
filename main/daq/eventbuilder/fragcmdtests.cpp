@@ -61,6 +61,7 @@ protected:
 CPPUNIT_TEST_SUITE_REGISTRATION(fragcmdtest);
 
 
+
 void fragcmdtest::frags_1()
 {
     // Zero length fragments.
@@ -83,6 +84,7 @@ void fragcmdtest::frags_1()
 
 void fragcmdtest::frags_2()
 {
+
     CTCLObject name; name.Bind(*m_pInterp);
     name = "command";
     CTCLObject sock; sock.Bind(*m_pInterp);
