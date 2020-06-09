@@ -143,7 +143,7 @@ install-exec-hook:
 #
 # Tests:
 
-noinst_PROGRAMS = transmittests ordertests 
+noinst_PROGRAMS = transmittests ordertests fragcmdtests
 
 
 
@@ -177,12 +177,19 @@ ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
 
 ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
+fragcmdtests_SOURCES=TestRunner.cpp		\
+	CFragmentHandlerCommand.cpp		\
+	fragcmdstubs.h fragcmdstubs.cpp
+
+fragcmdtests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
+fragcmdtests_LDADD=@CPPUNIT_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@
 
 
 check-TESTS:
 	@builddir@/transmittests  
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 	@builddir@/outputTests
+	@builddir@/fragcmdtests
 
 
 
