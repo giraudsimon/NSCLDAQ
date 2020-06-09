@@ -180,6 +180,7 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
     throw CErrnoException("Failed connection to server");
   }
   catch (std::string msg) {
+    std::cerr << " Message send failed " << msg << std::endl;
     delete m_pConnection;
     m_pConnection = nullptr;
     m_fConnected = false;

@@ -301,6 +301,7 @@ snit::type EVB::Connection {
     #         We just transition to ERROR, and close out
     #
     method _Connect socket {
+        puts stderr "Orderer $self connect called $options(-state) : $expecting"
     
         # Get the header and get the body.
         # The header is a string, but the body is a counted binary block:
@@ -311,23 +312,19 @@ snit::type EVB::Connection {
             $self _Close ERROR
             return
         }
-
         if {[eof $socket]} {
             catch puts $socket "ERROR - unable to read header\n"
             puts stderr "EOF on read of header! ignore connection."
             $self _Close ERROR
             return
         }
-
         #
         #  Decode the header and read the body, if there is one:
         #
         binary scan $header "ii" bodySize msgType
-    
 
         if {[catch {read $socket $bodySize} body]} {
             puts stderr "Could not read body: $body"
-
             puts $socket "ERROR {Corrupt body in CONNECT message}"
             $self _Close ERROR
             return
@@ -379,6 +376,10 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
+<<<<<<< HEAD
+=======
+        puts stderr "_Fragments"
+>>>>>>> Completed testing of end to end
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
