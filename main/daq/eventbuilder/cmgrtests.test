@@ -31,6 +31,11 @@ package require EVB::ConnectionManager
 
 
 
+proc writeConnectmsg {description sids} {
+    # figure out the body size and write the header.
+}
+
+
 tcltest::test create_1 {Create Connection object} \
 -setup {
     set tempname [tcltest::makeFile "" cmgr_testdata.dat]
@@ -46,7 +51,6 @@ tcltest::test create_1 {Create Connection object} \
 -body {
    set mgr [EVB::Connection junk -socket $readfd]
    
-            
 
 } -result ::junk
 
@@ -247,3 +251,4 @@ tcltest::test disconnect_1 {Disconnect when expecting fragments} \
    $mgr cget -state 
 } -result CLOSED
    
+                

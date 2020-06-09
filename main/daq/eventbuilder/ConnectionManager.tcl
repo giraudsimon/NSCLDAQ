@@ -182,7 +182,6 @@ snit::type EVB::Connection {
         set sources [list]
         for {set i 0} {$i < $sourceCount} {incr i} {
             
-
             binary scan $body @${cursor}i sid
             lappend sources $sid
             incr cursor 4
@@ -325,8 +324,10 @@ snit::type EVB::Connection {
         #
         binary scan $header "ii" bodySize msgType
     
+
         if {[catch {read $socket $bodySize} body]} {
             puts stderr "Could not read body: $body"
+
             puts $socket "ERROR {Corrupt body in CONNECT message}"
             $self _Close ERROR
             return
@@ -345,7 +346,6 @@ snit::type EVB::Connection {
         # the body consist of 80 characters of description  and
         # a count of source ids followed by that many source ids.
     
-
         set alive 1
     
         # Pull out the description and the source id list
@@ -379,7 +379,6 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
-
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
@@ -396,7 +395,6 @@ snit::type EVB::Connection {
        #  Presumably the most common case is "FRAGMENTS"
     
        if {$msgType == $EVB::FRAGMENTS} {
-
     
             
             # protocol allows FRAGMENTS here:
