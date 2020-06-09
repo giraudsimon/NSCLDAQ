@@ -200,8 +200,6 @@ check-TESTS:
 	@builddir@/outputtests
 	@builddir@/fragcmdtests
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
-	@builddir@/outputTests
-	@builddir@/fragcmdtests
 
 
 

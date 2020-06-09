@@ -22,6 +22,7 @@
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
 #include "fragcmdstubs.h"
+
 #define protected public
 #include "CFragmentHandlerCommand.h"
 #undef protected
@@ -58,6 +59,7 @@ protected:
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(fragcmdtest);
+
 
 void fragcmdtest::frags_1()
 {
