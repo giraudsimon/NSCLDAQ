@@ -145,7 +145,7 @@ install-exec-hook:
 # Tests:
 
 
-noinst_PROGRAMS = transmittests ordertests 
+noinst_PROGRAMS = transmittests ordertests fragcmdtests
 
 
 outputtests_LDFLAGS= @top_builddir@/base/os/libdaqshm.la \
@@ -185,6 +185,7 @@ ordertests_LDADD = 	@top_builddir@/base/thread/libdaqthreads.la 	\
 
 ordertests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 
+
 fragcmdtests_SOURCES=TestRunner.cpp fragcmdtests.cpp		\
 	CFragmentHandlerCommand.cpp				\
 	fragcmdstubs.h fragcmdstubs.cpp
@@ -194,17 +195,14 @@ fragcmdtests_LDADD=@CPPUNIT_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@
 
 
 
-
 check-TESTS:
 	@builddir@/transmittests  
-<<<<<<< HEAD
 	@builddir@/outputtests
 	@builddir@/fragcmdtests
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
-=======
-	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 	@builddir@/outputTests
->>>>>>> daqdev/NSCLDAQ#1027 :Started tests of client side protocl changes
+	@builddir@/fragcmdtests
+
 
 
 
