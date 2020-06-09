@@ -79,7 +79,7 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   uint8_t* msgBody(0);
 
 	try {    
-    if (objv.size() != 2) {
+    if (objv.size() != 3) {
       interp.setResult(std::string("Incorrect number of parameters"));
       return TCL_ERROR;
     }
