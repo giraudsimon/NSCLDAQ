@@ -219,5 +219,35 @@ tcltest::test fragments_2 {Longword body containing 0xaaaaaaaa} \
    binary scan $::fragmentBody i v
    format 0x%x [expr {$v & 0xffffffff}];    # In case 64 bit integers.
 } -result 0xaaaaaaaa
+
+   
+##
+#  I'm allowed to disconnect as well when expecting fragments.
+
+
+tcltest::test disconnect_1 {Disconnect when expecting fragments} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd -state ACTIVE]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set message [binary format ii 0 $EVB::DISCONNECT]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Fragments $readfd
+   
+   $mgr cget -state 
+} -result CLOSED
    
                 
