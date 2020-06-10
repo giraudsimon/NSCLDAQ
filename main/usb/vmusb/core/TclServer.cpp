@@ -27,6 +27,7 @@ using namespace std;
 #include "CMonCommand.h"
 #include "CWatchCommand.h"
 #include "CRunStateCommand.h"
+#include "tclUtil.h"
 #include <CCtlConfiguration.h>
 #include <DataBuffer.h>
 #include <CBufferQueue.h>
@@ -147,8 +148,8 @@ TclServer::scheduleExit()
 void
 TclServer::setResult(string msg)
 {
-  Tcl_Obj* result = Tcl_NewStringObj(msg.c_str(), -1);
-  Tcl_SetObjResult(m_pInterpreter->getInterpreter(), result);
+  tclUtil::setResult(*m_pInterpreter, msg);        // in tclUtil.h
+  
 }
 
 void TclServer::init()
@@ -363,11 +364,7 @@ TclServer::initModules()
     auto module = (*p);
     module->Initialize(*m_pVme);
   }
-#if 0  
-  for ( auto& module : modules ) {
-    module->Initialize(*m_pVme);
-  }
-#endif
+
   if (mustRelease) {
     CControlQueues::getInstance()->ReleaseUsb();
   }
@@ -706,8 +703,8 @@ TclServer::Exit(Tcl_Event* pEvent, int flags)
 void
 TclServer::stackTrace()
 {
-  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", kfFALSE);
-  const char* msg = errorInfo.Get(TCL_GLOBAL_ONLY);
+  std::string msg = tclUtil::getTclTraceback(*m_pInterpreter);
+  
   
   std::cerr << msg << std::endl;
 }

@@ -146,18 +146,24 @@ CBeginRun::operator()(CTCLInterpreter& interp,
   }
   catch (string msg) {
     errorMessage += msg;
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp,  errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (const char* msg) {
     errorMessage += msg;
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp, errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
   }
   catch (CException& e) {
     errorMessage += e.ReasonText();
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     tclUtil::setResult(interp, errorMessage);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
@@ -166,6 +172,8 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     // Configuration file processing error of some sort...
 
     tclUtil::setResult(interp, errorMessage);
+    errorMessage += " ";
+    errorMessage += tclUtil::getTclTraceback(interp);
     pApp->logStateChangeStatus("configuration file processing failed");
     return TCL_ERROR;
 		       

@@ -1,7 +1,7 @@
 
 
 #include "CSystemControl.h"
-
+#include "tclUtil.h"
 #include <CBeginRun.h>
 #include <CEndRun.h>
 #include <CPauseRun.h>
@@ -13,12 +13,16 @@
 
 #include <TCLLiveEventLoop.h>
 #include <TCLInterpreter.h>
+#include <Exception.h>
+#include <stdexcept>
+#include <string>
 #include <CErrnoException.h>
 #include <CMonVar.h>
 #include <CRunState.h>
 
 #include <tcl.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <iostream>
 
@@ -77,8 +81,33 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   // If there's an initialization script then run it now:
   
   if (m_initScript != "") {
+    bool ok(true);
+    std::string msg;
     if (access(m_initScript.c_str(), R_OK) == 0) {
+      try {
             Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
+      } catch (CException& e) {
+        msg = e.ReasonText();
+        ok = false;
+      } catch (std::exception& e) {
+        msg = e.what();
+        ok = false;
+      }
+      catch (std::string m) {
+        msg = m;
+        ok = false;
+      }
+      catch (...) {
+        msg = "Unanticipated exception type processing init script";
+        ok = false;
+      }
+      if (!ok) {
+        msg += " : ";
+        msg += tclUtil::getTclTraceback(*Globals::pMainInterpreter);
+        std::cerr << "Failure processing initialization script: "
+          << msg << std::endl;
+        exit(EXIT_FAILURE);
+      }
     } else {
             throw CErrnoException("Checking accessibility of --init-script");
     }
