@@ -117,7 +117,7 @@ snit::type DataSourceManager {
         set status [catch {package require $package} msg]
         
         if {$status} {
-            error "No provider named $name could be found check the package load path"
+            error "No provider named $name could be found check the package load path : $msg : $::errorInfo"
         }
         if {![namespace exists ::$name]} {
             error "The ${name}_Provider package does not provide the ::${name}:: namespace so it cannot be a provider."
@@ -557,7 +557,7 @@ snit::type DataSourceManager {
 
       set provider [dict get $dataSources($id) provider]
       if {[catch {::${provider}::init $id} msg]} {
-        error [list [list $provider $id] $msg]
+        error [list [list $provider $id] "$msg : $::errorInfo"]
       }
 
     }
@@ -594,7 +594,7 @@ snit::type DataSourceManager {
       foreach id $sources {
         set provider [dict get $dataSources($id) provider]
         if {[catch {::${provider}::init $id} msg]} {
-          lappend messages [list [list $provider $id] $msg]
+          lappend messages [list [list $provider $id] "$msg $::errorInfo"]
         }
       }
 
