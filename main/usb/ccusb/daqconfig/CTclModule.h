@@ -72,6 +72,7 @@ public:
 
 private:
   std::string swigPointer(void* p, std::string typeName);
+  void evalOrThrow(const std::string& cmd);
   
 };
 

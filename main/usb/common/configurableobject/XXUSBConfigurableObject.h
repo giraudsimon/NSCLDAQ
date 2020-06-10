@@ -56,6 +56,8 @@
 #endif
 #endif
 
+#include <tcl.h>
+
 
 // Typedefs for the parameter checker are in the global namespace:
 
@@ -279,6 +281,10 @@ private:
   static void releaseEnumConstraint(void* pConstraint);
   static void releaseLimitsConstraint(void* pConstraint);
 };
+
+// Some unbound utilities:
+
+std::string getTclTraceback(Tcl_Interp* pInterp);
 
 };
 #endif

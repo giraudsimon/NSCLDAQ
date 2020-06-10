@@ -95,7 +95,13 @@ CTclControlModule::Initialize(CCCUSB& vme)
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
 
   if (status != TCL_OK) {
-    throw std::string(Tcl_GetStringResult(interp));
+    std::string msg(" Error executing executing: ");
+    msg += std::string(command);
+    msg += ": ";
+    msg += Tcl_GetStringResult(interp);
+    msg += ": ";
+    msg += XXUSB::getTclTraceback(interp);
+    throw std::string(msg);
   }
 }
 
@@ -129,8 +135,12 @@ CTclControlModule::Update(CCCUSB& vme)
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
   std::string result = std::string(Tcl_GetStringResult(interp));
   if (status != TCL_OK) {
-    std::string msg = "ERROR - ";
+    std::string msg = "ERROR - executing command: ";
+    msg += std::string(command);
+    msg += ": ";
     msg += result;
+    msg += ": ";
+    msg += XXUSB::getTclTraceback(interp);
     return msg;
   }
   return result;
@@ -173,8 +183,12 @@ CTclControlModule::Set(CCCUSB& vme, std::string parameter, std::string value)
   std::string result = Tcl_GetStringResult(interp);
 
   if (status != TCL_OK) {
-    std::string msg = "ERROR - ";
+    std::string msg = "ERROR - Executing command ";
+    msg += std::string(command);
+    msg += ": ";
     msg += result;
+    msg += ": ";
+    msg += XXUSB::getTclTraceback(interp);
     return msg;
   }
   return result;
@@ -214,8 +228,12 @@ CTclControlModule::Get(CCCUSB& vme, std::string parameter)
   std::string result = Tcl_GetStringResult(interp);
 
   if (status != TCL_OK) {
-    std::string msg = "ERROR - ";
+    std::string msg = "ERROR - Executing  command";
+    msg += std::string("command");
+    msg += ": ";
     msg += result;
+    msg += ": ";
+    msg += XXUSB::getTclTraceback(interp);
     return msg;
   }
   return result;

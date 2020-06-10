@@ -90,9 +90,9 @@ unittests_CXXFLAGS = \
 
 unittests_LDADD = \
 			@builddir@/libCCUSBCtlConfig.la \
-			@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 			@TCL_LDFLAGS@ \
 			@LIBTCLPLUS_LDFLAGS@  \
+			@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 			@CPPUNIT_LDFLAGS@
 
 unittests_DEPENDENCIES = \

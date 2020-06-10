@@ -1300,3 +1300,22 @@ CConfigurableObject::releaseConstraintCheckers()
 }
 
 
+/**
+ * getTclTraceback
+ *    Return the traceback for a Tcl Error. This comes from
+ *    the global variable errorInfo.  If that variable is not
+ *    defined, a string indicating no traceback is available.
+ *
+ * @param interp - raw Tcl interpreter.
+ * @return std::string
+ */
+std::string
+XXUSB::getTclTraceback(Tcl_Interp* pInterp)
+{
+  const char* trace = Tcl_GetVar(pInterp, "errorInfo", TCL_GLOBAL_ONLY);
+  if (!trace) {
+    trace = " No Tcl traceback information is available";
+  }
+  return std::string(trace);
+  
+}

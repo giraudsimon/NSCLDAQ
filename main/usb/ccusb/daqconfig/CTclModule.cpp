@@ -17,7 +17,9 @@
 #include <config.h>
 #include "CTclModule.h"
 #include <TCLInterpreter.h>
+#include <XXUSBConfigurableObject.h>
 #include <arpa/inet.h>
+#include <iostream>
 
 /**
  * Construction simply saves the nam of the command ensemble:
@@ -77,7 +79,8 @@ CTclModule::Initialize(CCCUSB& controller)
   command            += " Initialize ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command);
+  
 }
 /**
  * Similarly wrap the list in a swig pointer and execute the command's
@@ -93,7 +96,7 @@ CTclModule::addReadoutList(CCCUSBReadoutList& list)
   command            += " addReadoutList ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command);
 }
 
 /**
@@ -111,7 +114,7 @@ CTclModule::onEndRun(CCCUSB& controller)
   command            += " onEndRun ";
   command            += pointer;
 
-  m_pInterp->GlobalEval(command.c_str());
+  evalOrThrow(command.c_str());
 }
 /**
  * Clone is just a virtual copy construction:
@@ -156,4 +159,24 @@ CTclModule::swigPointer(void* p, std::string  type)
   char pointerArray[1000];
   sprintf(pointerArray, "_%x_p_%s", htonl((uint64_t)p), type.c_str());
   return std::string(pointerArray);
+}
+/**
+ * evalOrThrow
+ *    Evaluate a script at global level and report any error messages
+ *
+ * @param command -command to execute.
+ */
+void
+CTclModule::evalOrThrow(const std::string& cmd)
+{
+  try {
+    m_pInterp->GlobalEval(cmd.c_str());
+  } catch (...) {
+    Tcl_Interp* pRaw = m_pInterp->getInterpreter();
+    const char* pResult = Tcl_GetStringResult(pRaw);
+    std::string trace   = XXUSB::getTclTraceback(pRaw);
+    std::cerr << "Error executing command: " << cmd << ": "
+      << pResult << ": " << trace << std::endl;
+    throw;
+  }
 }

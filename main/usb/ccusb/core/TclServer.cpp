@@ -41,6 +41,7 @@ using namespace std;
 #include <DataBuffer.h>
 #include <Globals.h>
 #include <DataFormat.h>
+#include "XXUSBConfigurableObject.h"
 
 static const int VarUpdateInterval(1);
 
@@ -446,9 +447,7 @@ TclServer::Exit(Tcl_Event* pEvent, int flags)
 void
 TclServer::stackTrace()
 {
-  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", kfFALSE);
-  const char* msg =  errorInfo.Get(TCL_GLOBAL_ONLY);
-  if (msg) {
-    std::cerr << msg << std::endl;
-  }
+  std::cerr << XXUSB::getTclTraceback(m_pInterpreter->getInterpreter())
+    << std::endl;
+  
 }
