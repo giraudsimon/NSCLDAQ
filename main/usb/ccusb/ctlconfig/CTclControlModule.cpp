@@ -99,6 +99,7 @@ CTclControlModule::Update(CCCUSB& vme)
   
   return executeCommand(command);
   
+
 }
 /**
  * Set
@@ -128,7 +129,7 @@ CTclControlModule::Set(CCCUSB& vme, std::string parameter, std::string value)
   command += value;
 
   return executeCommand(command);
-  
+
 }
 /**
  * Get
@@ -154,7 +155,6 @@ CTclControlModule::Get(CCCUSB& vme, std::string parameter)
   command += parameter;
 
   return executeCommand(command);
-  
 }
 /**
  * clone

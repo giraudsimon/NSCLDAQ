@@ -26,6 +26,8 @@
 #include <list>
 #include <tcl.h>
 
+#include <tcl.h>
+
 
 // Typedefs for the parameter checker are in the global namespace:
 

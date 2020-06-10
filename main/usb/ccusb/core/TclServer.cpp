@@ -442,6 +442,7 @@ TclServer::stackTrace()
   std::cerr << XXUSB::getTclTraceback(m_pInterpreter->getInterpreter())
     << std::endl;
   
+
 }
 /**
  * initStringBuffer
@@ -461,3 +462,4 @@ TclServer::initStringBuffer(DataBuffer* pBuffer)
   char* pDest             = pStrings->s_strings;
   return pDest;
 }
+

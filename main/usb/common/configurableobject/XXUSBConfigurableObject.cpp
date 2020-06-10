@@ -1300,6 +1300,7 @@ CConfigurableObject::isValidTypedList(
   validator.s_checker.first  = typeEnforcer; // Require integer but 
   validator.s_checker.second = NULL;      // No range requirements. 
 
+
   // See if there are size constraints
   
   if (size) {
@@ -1312,22 +1313,27 @@ CConfigurableObject::isValidTypedList(
   return isList(name, value, &validator);
 }
 
-/**
- * getTclTraceback
- *    Return the traceback for a Tcl Error. This comes from
- *    the global variable errorInfo.  If that variable is not
- *    defined, a string indicating no traceback is available.
- *
- * @param interp - raw Tcl interpreter.
- * @return std::string
- */
-std::string
-XXUSB::getTclTraceback(Tcl_Interp* pInterp)
-{
-  const char* trace = Tcl_GetVar(pInterp, "errorInfo", TCL_GLOBAL_ONLY);
-  if (!trace) {
-    trace = " No Tcl traceback information is available";
-  }
-  return std::string(trace);
-  
-}
+
+  /**
+  * getTclTraceback
+  *  daqdev/NSCLDAQ#1011 - Provide tracebacks on script errors.
+  *    Return the Tcl error traceback. This can be used to obtain
+  *    traceback information when reporting errors in script execution.
+  *    This method depends on the global variable "errorInfo" containing
+  *    the traceback information
+  *
+  *  @param interp  - The interpreter for which we want error traceback.
+  *  @return std::string - the error traceback.
+  */
+ std::string
+ XXUSBConfigurbleObject::getTclTraceback(CTCLInterpreter& interp)
+ {
+     const char* trace = Tcl_GetVar(
+        interp.getInterpreter(), "errorInfo",  TCL_GLOBAL_ONLY
+      );
+     if (trace == nullptr) {
+      trace = " - no traceback information available";
+     }
+     
+     return std::string(trace);
+ }

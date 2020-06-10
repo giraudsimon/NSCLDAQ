@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include "tclUtil.h"
+
 /**
  * Construction simply saves the nam of the command ensemble:
  *
@@ -154,7 +155,7 @@ CTclModule::evalOrThrow(const std::string& cmd)
     Tcl_Interp* pRaw = m_pInterp->getInterpreter();
     const char* pResult = Tcl_GetStringResult(pRaw);
     std::string trace   = XXUSB::getTclTraceback(pRaw);
-    std::cerr << "Error executing command: " << cmd << ": "
+    std::cerr <<"Error executing command: " << cmd << ": "
       << pResult << ": " << trace << std::endl;
     throw;
   }
