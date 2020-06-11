@@ -252,6 +252,8 @@ CBeginRun::operator()(CTCLInterpreter& interp,
 void
 CBeginRun::exportController(CVMUSB* pController, CConfiguration* pConfig)
 {
+
   pConfig->exportController(pController);
+
 
 }

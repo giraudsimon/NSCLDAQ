@@ -58,7 +58,7 @@ protected:
   virtual int operator()(CTCLInterpreter& interp,
 			 std::vector<CTCLObject>& objv);
 private:
-  static void exportController(CVMUSB* pController, CConfiguration* pConfig);
+  void exportController(CVMUSB* pController, CConfiguration* pConfig);
 
 };
 
