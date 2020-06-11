@@ -366,13 +366,10 @@ tcltest::test addSource-3 {Add source failed in provider} \
     set sid [$manager addSource Test [dict create]]
     
     set status [catch {$manager startAll} msg]
-    list $status $msg
-    lrange $status 0 1
-} -result [list 1 "At least one source could not start:]
+    
+} -result 1
 
-if {$debug} {
-    tcltest::cleanupTests
-}
+
 
 #-----------------------------------------------------------------------------#
 #

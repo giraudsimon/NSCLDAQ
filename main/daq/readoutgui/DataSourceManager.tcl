@@ -346,7 +346,6 @@ snit::type DataSourceManager {
 		    set msg "$msg : $::errorInfo"
                     incr failures
                     set msg [string map [list \" \\\"] $msg]
-                    puts "Failure: $msg"
                     lappend errors [join $msg " "]
                 }
             }
