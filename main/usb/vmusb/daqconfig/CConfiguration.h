@@ -35,7 +35,7 @@
 class CTCLInterpreter;
 class CReadoutModule;
 class CTCLObjectProcessor;
-
+class CVMUSB;
 
 /*!
    This class encapsulates the configuration of
@@ -106,7 +106,7 @@ public:
 
   void setResult(std::string);
 
-
+  void exportController(CVMUSB* pController);
 
   // Utilties.
 

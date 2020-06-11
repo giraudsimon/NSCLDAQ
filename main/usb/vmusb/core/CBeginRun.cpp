@@ -252,17 +252,6 @@ CBeginRun::operator()(CTCLInterpreter& interp,
 void
 CBeginRun::exportController(CVMUSB* pController, CConfiguration* pConfig)
 {
-  CTCLInterpreter*  pInterp = pConfig->getInterpreter();
-  Tcl_Interp*       pRaw = pInterp->getInterpreter();
-  
-  // Make the namespace:
-  
-  Tcl_CreateNamespace(pRaw, "::Globals", nullptr, nullptr
-  );
-  
-  // create the swig pointer and store it in the
-  // ::Globals::aController variable:
-  
-  std::string value = tclUtil::swigPointer(pController, "CVMUSB");
-  Tcl_SetVar(pRaw, "::Globals::aController", value.c_str(), 0);
+  pConfig->exportController(pController);
+
 }

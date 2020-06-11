@@ -155,7 +155,7 @@ cmdtests_SOURCES=TestRunner.cpp Asserts.h ad811test.cpp \
 	v977tests.cpp masetests.cpp mtdctests.cpp delaytests.cpp \
 	xlmferatests.cpp cbdtests.cpp xlmtimestamptests.cpp mqdctests.cpp \
 	cbdcratetests.cpp ulmtriggertests.cpp lrs4300tests.cpp lrs4434tests.cpp \
-	lrs2551tests.cpp
+	lrs2551tests.cpp ctlexporttests.cpp
 
 
 cmdtests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libVMUSBDaqConfig_la_CXXFLAGS) $(libVMUSBDaqConfig_la_CPPFLAGS)
