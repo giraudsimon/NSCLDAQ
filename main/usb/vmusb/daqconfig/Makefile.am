@@ -55,7 +55,8 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CLeCroy2551.cpp \
 				CMQDC32StackBuilder.cpp \
 				CMQDC32RdoHdwr.cpp	\
-				CDeviceCommand.cpp
+				CDeviceCommand.cpp \
+				tclUtil.cpp
 
 
 
@@ -116,7 +117,8 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				CXLMTimestamp.h \
 				CMQDC32StackBuilder.h \
 				CMQDC32RdoHdwr.h \
-				MQDC32Registers.h
+				MQDC32Registers.h \
+				tclUtil.h
 
 
 libVMUSBDaqConfig_la_CXXFLAGS=@THREADCXX_FLAGS@

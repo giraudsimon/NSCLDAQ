@@ -43,5 +43,7 @@ namespace tclUtil {
   void Usage(CTCLInterpreter& interp, std::string msg, 
 	     std::vector<CTCLObject>& objv, std::string usage);
   std::string getTclTraceback(CTCLInterpreter& interp);
+  std::string swigPointer(void* p, std::string type);
+  
 };
 #endif
