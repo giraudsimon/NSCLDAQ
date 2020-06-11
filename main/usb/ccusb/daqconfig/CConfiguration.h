@@ -35,7 +35,7 @@
 class CTCLInterpreter;
 class CReadoutModule;
 class CTCLObjectProcessor;
-
+class CCCUSB;
 
 /*!
    This class encapsulates the configuration of
@@ -98,6 +98,7 @@ public:
 
   void setResult(std::string);
 
+  void exportController(CCCUSB* pController);
 
 
   // Utilties.
