@@ -34,12 +34,14 @@ namespace tclUtil {
   void Usage(CTCLInterpreter& interp, std::string msg, 
 	     std::vector<CTCLObject>& objv, std::string usage);
   std::string swigPointer(void* p, std::string type);
+
   CReadoutModule* getModule(
     CConfiguration& config,
     CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
   );
   void listConfig(CTCLInterpreter& interp, CReadoutModule* pModule);
   std::string getTclTraceback(CTCLInterpreter& interp);
+
 
 };
 #endif
