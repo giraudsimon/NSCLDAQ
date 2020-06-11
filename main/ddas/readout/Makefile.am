@@ -72,5 +72,6 @@ unittests_SOURCES=TestRunner.cpp rawchtests.cpp \
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS) -DSORTING
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
 
-TESTS=unittests
+#  This is fixed in 12.0-pre1.
+# TESTS=unittests
 

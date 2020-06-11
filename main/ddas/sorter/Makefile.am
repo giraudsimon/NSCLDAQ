@@ -36,4 +36,5 @@ unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp sortertests.cpp \
 unittests_CXXFLAGS=$(ddasSort_CXXFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS=$(ddasSort_LDFLAGS) @CPPUNIT_LDFLAGS@
 
-TESTS=@builddir@/unittests
+#  Fixed in 12.0-pre1
+#TESTS=@builddir@/unittests
