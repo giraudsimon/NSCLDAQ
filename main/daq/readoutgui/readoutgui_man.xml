@@ -1933,6 +1933,15 @@ package require ReadoutGUIAppLauncher
              widget's layout is being managed by the pack algorithm. There is no problem if you are
              planning to use this with the ReadoutGUI, because that uses the grid algorithm. 
            </para>
+	   <para>
+	     Note that beginning with NSCLDAQ-V11.4-010, when the widget that
+	     contains the start buttons is destroyed all of the active
+	     subprocesses will be sent a SIGTERM signal asking them to exit.
+	     If you do not want your application to exit, you'll need to catch
+	     and handle the SIGTERM signal in your application. Normally, when
+	     used in ReadoutGUI it's perfectly ok for subprocesses started with
+	     this application to exit when the GUI exits.
+	   </para>
         </refsect1>
         <refsect1>
            <title>

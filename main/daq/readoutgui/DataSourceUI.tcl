@@ -312,7 +312,7 @@ snit::widgetadaptor DialogWrapper {
     destructor {
         catch {$win.actionframe.ok     configure -command [list]}
         catch {$win.actionframe.cancel configure -command [list]}
-        catch {$win bind <Destroy> [list]}
+        catch {bind  $win <Destroy> [list]}
         
     }
     #-------------------------------------------------------------------------de

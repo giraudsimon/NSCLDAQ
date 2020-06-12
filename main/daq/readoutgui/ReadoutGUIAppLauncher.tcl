@@ -118,6 +118,8 @@ snit::type ReadoutGUIAppLauncher {
 	component view
 	variable commandDict 
 	variable nColumns
+	variable processes [list]
+	variable view_widget
 
 	### \brief Constructor
 	#
@@ -130,6 +132,9 @@ snit::type ReadoutGUIAppLauncher {
 		install view using AppLauncherView $view_name $self
 		set commandDict [dict create]
 		set nColumns $nCols
+		bind $view_name <Destroy> [mymethod _destructionHandler  %W]
+		set view_widget $view_name
+
 	}
 
 	### \brief Destructor
@@ -137,6 +142,12 @@ snit::type ReadoutGUIAppLauncher {
 	# It destroys the view.
 	#
 	destructor {
+		bind $view <Destroy>  ""
+		
+		foreach process $processes {
+			catch {exec kill $process};         # Some may already be gone, others pipelines.
+		}
+		
 		catch {destroy $view}
 	}
 
@@ -173,6 +184,7 @@ snit::type ReadoutGUIAppLauncher {
 		set command [dict get $commandDict $buttonName command]
 
 		set process [exec {*}$command &]
+		lappend processes $process
 	}
 
 	### \brief Disable a specific button 
@@ -193,7 +205,7 @@ snit::type ReadoutGUIAppLauncher {
 		$buttonName configure -state !disabled
         }
 
-	### \brief Display the view on the ReadoutGUI (or any other root parent)
+	### \brief Display the view on the ReadoutGUI (or any other gridded  parent)
 	#
 	# \param parent		the name of the view's parent widget
 	#
@@ -217,5 +229,24 @@ snit::type ReadoutGUIAppLauncher {
 	method _setCommandDict {cmdDict} {
 		set commandDict $cmdDict
 	}
+	##
+	# _destructionHandler
+	#    Destroy this object if the view is being destroyed.  Note that
+	#    the destruction handler will be called on all widgets in the hierarchy
+	#    therefore we need to ensure the view widget is actually being destroyed.
+	#    our action is to:
+	#    - Remove the binding.
+	#    - Destroy ourself.
+	#   This will also kill off any extant subprocesses.
+	#
+	# @param widget   - widget being destroyed.
+	method _destructionHandler widget {
+		if {$widget eq $view_widget} {
+			bind $view <Destroy> "";           # Remove the binding.
+			catch {$self destroy};             # Catch in case returning is problematic.
+		}
+	}
+        
+    
 }
 
