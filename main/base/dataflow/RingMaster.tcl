@@ -112,6 +112,7 @@ set shmDirectory [file join / dev shm]
 set localhost   [list "127.0.0.1" "::1"];		# IP address of localhost connections.
 set knownRings  [list];			# Registered rings.
 
+array set ::RingUsage [list]
 
 #----------------------------------------------------------------------
 #
@@ -156,7 +157,7 @@ proc isRemoteProxy name {
 #
 proc enumerateRings {} {
     emitLogMsg debug "enumerateRings"
-    set files [glob -nocomplain [file join $::shmDirectory *]]
+    set files [glob -nocomplain -- [file join $::shmDirectory *]]
     set ::knownRings [list]
 
     emitLogMsg debug "Initial file list: $files"
@@ -173,7 +174,7 @@ proc enumerateRings {} {
           #
           if {[isRemoteProxy $shmname]} { 
             emitLogMsg info "Deleting remote proxy $file"
-            catch {file delete -force $file}
+            catch {file delete -force -- $file}
           } else {
             emitLogMsg info "Adding preexisting $shmname to list of known ring buffers"
             lappend ::knownRings $shmname
@@ -221,7 +222,7 @@ proc RemoteHoist {socket client tail} {
 	puts $socket "ERROR $ringname does not exist"
     } else {
 	puts $socket "OK BINARY FOLLOWS"
-	exec $::hoisterProgram $ringname $client >@ $socket  &
+	exec -- $::hoisterProgram $ringname $client >@ $socket  &
 	releaseResources $socket $client
       emitLogMsg info "feeder pipeline started to send data from local ring(=$ringname) to host(=$client)"
     }
@@ -253,17 +254,17 @@ proc killClients ringName {
     
     set producerPID [lindex $ringUsage 3]
     if {$producerPID != -1} {
-	emitLogMsg debug "Killing producer: $producerPID"
-	catch {exec kill -9 $producerPID}
+      emitLogMsg debug "Killing producer: $producerPID"
+      catch {exec -- kill -9 $producerPID}
     }
     # Now the consumers:
 
     set consumerInfo [lindex $ringUsage 6]
     foreach client $consumerInfo {
-	set pid [lindex $client 0]
-	if {$pid != -1} {;	# Should not need this but...
+      set pid [lindex $client 0]
+      if {$pid != -1} {;	# Should not need this but...
 	    emitLogMsg debug "Killing consumer: $pid"
-	    catch {exec kill -9 $pid}
+	    catch {exec -- kill -9 $pid}
 	}
     }
 }
@@ -347,12 +348,68 @@ proc Register {socket client tail} {
 
 }
 #-------------------------------------------------------------------------------
+# pruneRings
+#    Goes through the list of ringbuffers know to us.
+#    for each ring buffer name, determines if the file associated with it
+#    still exists.   If it does not:
+#    1.  The processes we know of associated with the ring are destroyed.
+#    2.  The ring is removed from ::knownRings.
+#
+proc pruneRings {} {
+    set rings $::knownRings
+
+    set deleted [list]
+    set clients [list]
+    foreach ring $::knownRings {
+      set ringFile [file join $::shmDirectory $ring]
+    
+      if {![file exists $ringFile]} {
+        emitLogMsg info "Must delete $ring fing buffer shared memory file missing."
+        lappend deleted $ring
+        # Can't use killClients because that relies on ring usage
+        # which gets information from the shared memory that is no longer
+        # there!!. So we iterate over ::RingUsge indices:
+        
+        foreach index [array names ::RingUsage] {
+          set usages $::RingUsage($index)
+          foreach usage $usages {
+            if {[lindex $usage 0] eq $ring} {
+              emitLogMsg info "Must remove client with $usage pid = [lindex $usage 2]"
+              lappend $clients $index
+              exec -- kill -9 [lindex $usage 2];    # Kill the process.
+            }
+          }
+        }
+        
+      }
+    }
+    # The rings we need to remove from ::knownRings are in deleted.
+    # the indices whose sockets we need to kill are in clients:
+    
+    # Release resources associated with the deleted rings:
+    
+    foreach client $clients {
+      set usage $::RingUsage($client)
+      releaseResources $client [lindex $usage 4]
+    }
+    # Remove the rings from the ::knownRings list:
+    
+    foreach ring $deleted {
+      set index [lsearch -exact $::knownRings $ring]
+      if {$index != -1} {
+        set ::knownRings [lreplace $::knownRings $index $index]
+      }
+    }
+}
+    
+
+#-------------------------------------------------------------------------------
 #
 #  Figure out the known rings.. return them alphabetized.
 #
 proc listRings {} {
     emitLogMsg debug listRings
-
+    pruneRings
     return [lsort $::knownRings]
 }
 
@@ -400,41 +457,41 @@ proc removeUsageEntry {socket name type pid}  {
 #
 #  Parameters:
 #    socket - The socket to close
-#    host   - The host the socket was connecte to.
+#    host   - The host the socket was connecteD to.
 #
 proc releaseResources {socket host} {
-    emitLogMsg debug "releaseResources $socket $host"
+  emitLogMsg debug "releaseResources $socket $host"
 
-    if {[array names ::RingUsage $socket] ne ""} {
+  if {[array names ::RingUsage $socket] ne ""} {
 	# There are resources to kill off:
 
-	set usage $::RingUsage($socket)
-  set name    [lindex $usage 0 0]
-  set type    [lindex $usage 0 1]
-  set pid     [lindex $usage 0 2]
-  set comment [lindex $usage 0 3]
-  emitLogMsg info "Removing usage entry: ring=$name, type=$type, pid=$pid, comment='$comment'"
-	unset ::RingUsage($socket)
-	emitLogMsg debug $usage
+    set usage $::RingUsage($socket)
+    set name    [lindex $usage 0 0]
+    set type    [lindex $usage 0 1]
+    set pid     [lindex $usage 0 2]
+    set comment [lindex $usage 0 3]
+    emitLogMsg info "Removing usage entry: ring=$name, type=$type, pid=$pid, comment='$comment'"
+    unset ::RingUsage($socket)
+    emitLogMsg debug $usage
+  
+    foreach connection $usage {
+        set ring   [lindex $connection 0]
+        set type   [lindex $connection 1]
+  
+        if {$type eq "producer"} {
+          emitLogMsg debug "Disconnecting producer from ring(=$ring)"
+          catch {ringbuffer disconnect producer $ring}
+        } else {
+          set typeList [split $type .]
+          set index [lindex $typeList 1]
+          emitLogMsg debug "Disconnecting consumer $index from ring(=$ring)"
+          catch {ringbuffer disconnect consumer $ring $index}
+        }
 
-	foreach connection $usage {
-	    set ring   [lindex $connection 0]
-	    set type   [lindex $connection 1]
-
-	    if {$type eq "producer"} {
-		emitLogMsg debug "Disconnecting producer from ring(=$ring)"
-		catch {ringbuffer disconnect producer $ring}
-	    } else {
-		set typeList [split $type .]
-		set index [lindex $typeList 1]
-		emitLogMsg debug "Disconnecting consumer $index from ring(=$ring)"
-		catch {ringbuffer disconnect consumer $ring $index}
-	    }
-
-	}
     }
+  }
 
-    catch {close $socket}
+  catch {close $socket}
 }
 #---------------------------------------------------------------------------------
 #
@@ -454,18 +511,18 @@ proc Connect {socket client message} {
      # The client must be local:
 
     if {$client ni $::localhost} {
-	emitLogMsg error "Ring connection failed. Connections are only allowed from localhost"
-  puts $socket "ERROR Ring connections from remote hosts are forbidden"
-	releaseResources $socket $client
-	return
+      emitLogMsg error "Ring connection failed. Connections are only allowed from localhost"
+      puts $socket "ERROR Ring connections from remote hosts are forbidden"
+      releaseResources $socket $client
+      return
     }
     #  The message must have a ringname, a connection type a pid and a comment:
 
     if {[llength $message] != 5} {
-	emitLogMsg error "Ring connection failed. '$message' is not a valid connection message"
-  puts $socket "ERROR Invalid message format"
-	releaseResources $socket $client
-  return
+      emitLogMsg error "Ring connection failed. '$message' is not a valid connection message"
+      puts $socket "ERROR Invalid message format"
+      releaseResources $socket $client
+      return
     }
 
     # Pull out the pieces of the message:
@@ -477,7 +534,7 @@ proc Connect {socket client message} {
 
     # Just record this:
 
-    lappend ::RingUsage($socket) [list $name $type $pid $comment]
+    lappend ::RingUsage($socket) [list $name $type $pid $comment $client]
 
     emitLogMsg info "Added usage entry : ring=$name, type=$type, pid=$pid, comment='$comment'"
 
@@ -544,17 +601,17 @@ proc List {socket client message} {
     emitLogMsg info "LIST requested by $client"
 
     if {$message ne "LIST"} {
-	releaseResources $socket $client
-	return
+      releaseResources $socket $client
+      return
     }
     set rings [listRings]
     set result [list]
     foreach ring $rings {
-	if {![catch {ringbuffer usage $ring} usage]} {
-	    lappend result [list $ring $usage]
-	} else {
-    emitLogMsg warning "Failed while retrieving usage information for registered ring(=$ring)"
-  }
+      if {![catch {ringbuffer usage $ring} usage]} {
+          lappend result [list $ring $usage]
+      } else {
+        emitLogMsg warning "Failed while retrieving usage information for registered ring(=$ring)"
+      }
     }
     puts $socket "OK"
     puts $socket $result
@@ -757,6 +814,6 @@ socket -server onConnection $listenPort
 
 emitLogMsg debug "Server listen established on port $listenPort entering event loop"
 
-
+set forever 0
 vwait forever;				# Start the event loop.
 
