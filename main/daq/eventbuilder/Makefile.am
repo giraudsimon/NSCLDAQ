@@ -30,7 +30,7 @@ libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFra
 	CSourceCommand.cpp CDeadSourceCommand.cpp CReviveSocketCommand.cpp \
 	CFlushCommand.cpp CResetCommand.cpp CConfigure.cpp CDuplicateTimeStatCommand.cpp \
 	COutOfOrderTraceCommand.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp \
-	CSortThread.cpp
+	CSortThread.cpp BarrierAbortCommand.cpp
 
 
 
@@ -85,7 +85,8 @@ noinst_HEADERS = CFragmentHandlerCommand.h CFragmentHandler.h  \
 	CBarrierTraceCommand.h CPartialBarrierCallback.h CSourceCommand.h CDeadSourceCommand.h \
 	CReviveSocketCommand.h CFragReader.h CFragWriter.h CFlushCommand.h CResetCommand.h \
 	CConfigure.h fragio.h CDuplicateTimeStatCommand.h CXonXOffCallbackCommand.h \
-	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h CSortThread.h
+	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h CSortThread.h \
+	BarrierAbortCommand.h
 
 
 
