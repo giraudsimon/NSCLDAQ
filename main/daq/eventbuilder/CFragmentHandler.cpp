@@ -1097,6 +1097,38 @@ CFragmentHandler::observe(EvbFragments& event)
   m_sorter.queueFragments(frags);
 }
 /**
+ * abortBarrier
+ *   - If barrier processing is underway:
+ *   - If there's a complete barrier force it out now.
+ *   - If there's not a complete barrier, force the generation
+ *     of an incomplewte barrier.
+ *  This is a no-op if there is no pending barrier.
+ */
+void
+CFragmentHandler::abortBarrierProcessing()
+{
+  // Presumably this is done rarely so we're not that
+  // worried about performance.
+  
+  size_t nBarriers = countPresentBarriers();
+  if (nBarriers) {
+   EvbFragments& outputList(*(new EvbFragments)); // Deleted by sorter/output
+   if (nBarriers == m_FragmentQueues.size()) {
+     // Good barrier:
+     
+     goodBarrier(outputList);
+     observe(outputList);
+     findOldest();
+     return;
+   } else {
+    // partial barrier.
+    
+    generateMalformedBarrier(outputList);
+    observe(outputList);
+   }
+  }
+}
+/**
  * dataLate
  * 
  *  This method is called by addFragment in the event a fragment timestamp

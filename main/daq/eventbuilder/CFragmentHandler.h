@@ -345,6 +345,8 @@ public:
   void resetTimestamps();
   void clearQueues();
   void observe(EvbFragments& event); // pass built events on down the line.
+  
+  void abortBarrierProcessing();     // If barriers are inprogress declare incomplete now.
 
   // utility methods:
 
