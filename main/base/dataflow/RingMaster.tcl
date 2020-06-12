@@ -114,6 +114,8 @@ set knownRings  [list];			# Registered rings.
 
 array set ::RingUsage [list]
 
+set rotateTime  [expr {60*60*24}];   #rotate time seconds.
+
 #----------------------------------------------------------------------
 #
 #  Determine if a ring name is a remote proxy.
@@ -765,8 +767,45 @@ proc openWithBackup {path {mode w}} {
     set name [file tail $path]
     set name [file join ~ $name]
     set fd [open $name $mode]
+    set path $name
   }
+  set ::logFilename $path
   return $fd
+}
+##
+# logCommand
+#    This is the command used to by the log system to issue log messages.
+#    We use this to support log rotation. We only have one level of rotation:
+#    ::logFilename and ::logFilename.1
+#   If the atime of the log file currently being used is older than rotateTime ago,
+#   the log file is rotated.
+#
+# @param level - the log level
+# @param msg   - the log message.
+#
+# Global variables:
+#    rotateTime   - Number of seconds between rotations.
+#    logFilename  - Name of the log file.
+#    logFile      - channel on which logging is done.
+#
+proc logCommand {level msg} {
+    #  Check for need to rotate.
+    puts "Log: $level : $msg"
+    file stat $::logFilename  fInfo
+    set now [clock seconds]
+    set age [expr {$now - $fInfo(atime)}]
+    puts "Logfile is $age Seconds"
+    if {$age > $::rotateTime} {
+      # Time to rotate the log file:
+      
+      close $::logFile
+      file delete -force ${::logFilename}.1
+      file rename -force  $::logFilename ${::logFilename}.1
+      file delete -force $::logFilename
+      set ::logFile [open $::logFilename w]
+    }
+    puts $::logFile  "$level -[clock format [clock seconds]] - $msg"
+    flush $::logFile
 }
 #---------------------------------------------------------------------------------
 #
@@ -781,11 +820,16 @@ if {$logFilePath eq {}} {
 }
 
 ::log::lvChannelForall $logFile
+::log::lvCmdForall logCommand
 
 # First enable all logging levels:
 
 set verbosityLevel [dict get $params v]
 setLoggingVerbosity $verbosityLevel
+
+# Setup log writing so that we can rotate.
+
+
 
 #
 #  Entry point. We get our listen port from the NSCL Port manage.  This 
