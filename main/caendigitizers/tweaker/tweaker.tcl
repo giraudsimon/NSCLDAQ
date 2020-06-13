@@ -59,6 +59,7 @@ package require snit
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
+    variable root;        # document root element handle.
     
     
     constructor {args} {
@@ -70,6 +71,16 @@ snit::type COMPASSdom {
         set xml [read $fd]
         close $fd
         set dom [dom parse $xml]
+        
+        #  The only verification we can make at at this time
+        #  is that the dom root element is a
+        #  <configuration> tag.
+        
+        set root [$dom documentElement]
+        set tag [$root nodeName]
+        if {$tag ne "configuration"} {
+            error "$filename does not contain a COMPASS configuration file"
+        }
     }
 }
     
