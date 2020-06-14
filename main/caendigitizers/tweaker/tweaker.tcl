@@ -82,6 +82,107 @@ snit::type COMPASSdom {
             error "$filename does not contain a COMPASS configuration file"
         }
     }
+    #----------------------------- public methods -----------------------------
+    ##
+    # getBoards
+    #    Gets handles to each board in the system.
+    #
+    # @return - list of board handles.
+    # @note   - <board> tags are immediate children of the root (<configuration>)
+    #           node.  We make no assumptions about whether or not there are
+    #           other non <board> children:
+    #
+    method getBoards {} {
+        set children [$root childNodes];    # Operations on the board affect underlying dom.
+        set result [list]
+        foreach child $children {
+            if {[$child nodeName] eq "board"} {
+                lappend result $child
+            }
+        }
+        return $result
+    }
+    ##
+    # getBoardDescription
+    #   Returns a description of a board (e.g. one returned from getBoards)
+    #  @param board - a board id e.g. an element of the list returned by getBoards.
+    #  @return dict - with the following keys:
+    #                 model  - model name of the digitizer.
+    #                 serial - model serial number
+    #                 dpptype - Type of dpp  (PHA or PSD or waveform).
+    #                 connecton - OPTICAL or USB
+    #                 link      - Connection link number.
+    #                 node      - CONET node number.
+    #                 address   - VME base address.
+    #        
+    #
+    method getBoardDescription {board} {
+        set result [dict create]
+        set children [$board childNodes]
+        foreach child $children {
+            set tag [$child nodeName]
+            
+            #  Only do the next bit if the tag is interesting to us:
+            
+            if {$tag in [list modelName serialNumber linkNum connectionType amcFirmware address conetNode]} {
+                set value [[$child firstChild] nodeValue]
+                switch  -exact -- $tag {
+                    modelName {
+                        dict set result model $value
+                    }
+                    serialNumber {
+                        dict set result serial $value
+                    }
+                    amcFirmware {
+                        set dppType [$self _computeDppType $child]
+                        dict set result dpptype $dppType
+                    }
+                    connectionType {
+                        dict set result connection $value
+                    }
+                    linkNum {
+                        dict set result link $value
+                    }
+                    conetNode {
+                        dict set result node $value
+                    }
+                    address {
+                        dict set result address $value
+                    }
+                }
+            }
+        }
+        
+        return $result
+    }
+    #--------------------------- private methods ------------------------------
+    ##
+    # _computeDppType
+    #   Given the <amcFirmware> tag node, determines the firmware type.
+    #   - Get the firmware major node.
+    #   - if the value of that node is 139 -> PHA
+    #   - if the value of that node is 136 -> PSD
+    #   - Otherwise, at least for now, waveform.
+    #
+    # @param amcfw  - Amc firmware node tag.
+    # @result the firmware type string
+    #
+    method _computeDppType {amcfw} {
+        set major [$amcfw getElementsByTagName major]
+        if {[llength $major] == 0} {
+            error "<amcFirmware> tag does not have a <major> tag"
+        }
+        set result [[$major firstChild] nodeValue]
+        if {$result eq 136} {
+            set result PSD
+        } elseif {$result eq 139} {
+            set result PHA
+        } else {
+            set result waveform
+        }
+        
+        return $result
+    }
 }
     
 
