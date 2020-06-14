@@ -56,6 +56,11 @@ package require snit
 #                         to access each board.
 #   getBoardDescription - Get a description of a board given a token
 #                         from getBoards.
+#   getChannels         - Returns a dict of all channel nodes.
+#                         keys are channel numbers (indices)
+#                         and values are nodes.
+#   getChannelValue     - Returns the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
+#   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED). 
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
@@ -155,6 +160,96 @@ snit::type COMPASSdom {
         
         return $result
     }
+    ##
+    # getChannels
+    #   @param board  The board to get the information from.
+    #   @return dict of channel number/value pairs one for each channel in the
+    #           digitizer.
+    #   @note channel are top level relative to the board node.
+    #
+    method getChannels {board} {
+        set chans [$board getElementsByTagName channel]
+        set result [dict create]
+        
+        foreach channel $chans {
+            set numbernode [$channel getElementsByTagName index]
+            set number [[$numbernode firstChild] nodeValue]
+            dict set result $number $channel
+        }
+        
+        return $result
+    }
+    ##
+    # getChannelValue
+    #   Return the current value of a parameter (e.g. SRV_PARAM_CH_ENABLED)
+    #   for a channel. This is a bit tricky.  The channel node may have an
+    #   explicit setting for the parameter or it may just be defaulted.
+    #   If the channel has a value, there will be a subtree in the channel
+    #   node of the form:
+    # \verbatim
+    #    <values>
+    #       <entry>
+    #          <key>parameter-name (e.g. SRV_PARAM_CH_ENABLED)</key>
+    #          <value bunc-o-attributes>parameter-value</value>
+    #      ...
+    # \endverbatim
+    #
+    #  If there isn't a node of that form under the channel tree, the value is
+    #  gotten from a bunch of default parameter values that are in a subtree
+    #  just below the board node of the form:
+    #
+    # \verbatim
+    #     <parameters>
+    #        <entry>
+    #           <key>parameter-name</key>
+    #           <value>
+    #              <value bunch-o-attributes>default-value</value>
+    #              <descriptor>
+    #                 bunch-o-stuff describing min/max/step/units etc.
+    #                 that may be useful in setting up GUI elements
+    #                 that control that parameter.
+    #              </descriptor>
+    #           ...
+    # @param board    - Board the channel is in (makes finding <parameters> easier/faster).
+    # @param chan     - channel in the board.
+    # @param name     - Parameter name.  If this does not exist in <parameters> an error is thrown.
+    # @return string - parameter value - may have other representations (e.g. numeric)
+    # @note it's up to the caller to ensure that the parameter is a channel and not a board
+    #       parameter.  Channel parameters have names of the form SRV_PARAM_CH_*
+    #       board level pameters will be of the form SRV_PARAM_* where * does not have
+    #       CH_ as a substring.
+    #
+    method getChannelValue {board chan name} {
+        set actual [$self _getChannelValue $chan $name]
+        if {$actual eq ""} {
+            set actual [$self _getParamValue $board $name]
+        }
+        
+        #  If at the end of all of this, the result is nil, it's an error
+        
+        if {$actual eq ""} {
+            error "There is no channel parameter named $name"
+        } else {
+            return $actual
+        }
+    }
+    ##
+    # getBoardValue
+    #   Returns the value of a board level parameter.
+    #   See the DOM tree described in getChannelParameter above.  The
+    #   results of this are only gotten from the <parameters> tag subtree
+    #
+    # @param board - board dom tree root.
+    # @param name -  name of the parameter.
+    # @return string - value of parameter
+    # 
+    method getBoardValue {board name} {
+        set actual [$self _getParamValue $board $name]
+        set {$actual} {
+            error "There's no parameter named $name"
+        }
+        return $actual
+    }
     #--------------------------- private methods ------------------------------
     ##
     # _computeDppType
@@ -183,6 +278,74 @@ snit::type COMPASSdom {
         
         return $result
     }
+    ##
+    # _getChannelValue
+    #   Get the value of a parameter from a channel tag
+    #
+    # @param chan - <channel> tag node.
+    # @param name - paramter name (e.g. SRV_PARAM_CH_ENABLED).
+    # @return string - parameter value string.
+    # @retval ""  - There is no parameter named $name
+    #
+    method _getChannelValue {chan name} {
+        set values [$chan getElementsByTagName values];   # there's always a <values> tag
+        set entries [$values getElementsByTagName entry];  #this could be empty though.
+        set result ""
+        foreach entry $entries {
+            #
+            # Entries have keys which contain the parameter name:
+            #  The value is the value of the parameter.
+            
+            set key [$entry getElementsByTagName key]
+            set pname [[$key firstChild] nodeValue]
+            if {$pname eq $name} {
+                #
+                #  The <value> tag contents are wht we need:
+                
+                set value [$entry getElementsByTagName value]
+                set result [[$value firstChild] nodeValue]
+                break
+            }
+            
+        }
+        return $result
+    }
+    ##
+    # _getParamValue
+    #   Get the value of a parameter from the board <parameters>
+    #   subtree of the dom.  This could be a board level parameter
+    #   or it could be a default value for channel parameter.
+    #
+    # @param board  - <board> tag node.
+    # @param name   - Name of the parameter e.g. SRV_PARAM_CH_ENABLED
+    # @return string - value parameter string.
+    # @retval ""    - If there's no matching parameter name.
+    #
+    method _getParamValue {board name} {
+        set result ""
+        set params [$board getElementsByTagName parameters]
+        set entries [$params getElementsByTagName entry]
+        
+        foreach entry $entries {
+            set key [$entry getElementsByTagName key]
+            set pname [[$key firstChild] nodeValue]
+            if {$pname eq $name} {
+                #
+                #  note the folowing searches the entire subtree, there'll be 2 matches:
+                #  The first match is the outer <value> tag.
+                #  The second match is the inner <value> tag which is what we want:
+                
+                set values [$entry getElementsByTagName value]
+                set value [lindex $values 1]
+                set result [[$value firstChild] nodeValue]
+                break
+            }
+        }
+        
+        return $result
+    }
+        
+    
 }
     
 
