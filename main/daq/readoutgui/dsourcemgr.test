@@ -369,6 +369,9 @@ tcltest::test addSource-3 {Add source failed in provider} \
     
 } -result 1
 
+if {$debug} {
+    tcltest::cleanupTests
+}
 
 #-----------------------------------------------------------------------------#
 #
