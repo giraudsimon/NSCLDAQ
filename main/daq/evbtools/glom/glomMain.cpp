@@ -231,7 +231,7 @@ outputEventCount(pRingItemHeader pItem)
 {
     pAccumulator->flushEvents();      // Write any complete events to output.
     
-    // Forma the physics event count item.
+    // Format the physics event count item.
     
     CRingScalerItem* pScaler = dynamic_cast<CRingScalerItem*>(
         CRingItemFactory::createRingItem(pItem)  
