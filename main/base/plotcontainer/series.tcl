@@ -29,6 +29,14 @@ package require snit
 #    * -xdata  - Provides a list of data points that define the data x coordinates
 #    * -ydata  - Provides a list of data points that define the data y coordinates
 #    * -command - Script called when either x or y data are modified.
+#    * -ptlimit - Maximum number of points that are allowed in the
+#                 series.  If adding a point exceeds this,
+#                 every other point in the first 1/4 of the series
+#                 are removed. The assumption is that early points
+#                 are older points and that therefore they can be
+#                 show in lower resolution.  This works under the
+#                 assumption the points are a time series for a
+#                 strip chart.
 #
 # METHODS
 #    * append  - Appends an x/y point to the coordinates.
@@ -75,8 +83,8 @@ snit::type Plotchart::series {
         lappend options(-ydata) $y
 
         set ptLimit $options(-ptlimit)
-	if {($ptLimit > 0) && ([llength $options(-xdata)] > $ptLimit)} {
-	    $self _ReducePts
+            if {($ptLimit > 0) && ([llength $options(-xdata)] > $ptLimit)} {
+            $self _ReducePts
 	} 
 
         $self _OnChanged
