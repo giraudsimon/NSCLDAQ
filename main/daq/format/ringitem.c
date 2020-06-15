@@ -321,23 +321,14 @@ bodyPointer(RingItem* pItem)
     // -  Body header size is nonzero - Body header size is given  by the
     //    value.
     
-<<<<<<< HEAD
-
-=======
->>>>>>> daqdev/NSCLDAQ#1030
     if (pItem->s_body.u_noBodyHeader.s_empty) { //nscldaq12.
         uint32_t hdrBytes    = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
         uint8_t* pBodyHeader = (uint8_t*)(
          &(pItem->s_body.u_hasBodyHeader.s_bodyHeader)  
         );
         pResult = pBodyHeader + hdrBytes;
-<<<<<<< HEAD
-
-    } else {
-
-=======
     } else {                         // NSCLDAQ-11 no body header.
->>>>>>> daqdev/NSCLDAQ#1030
+
         pResult = (void*)pItem->s_body.u_noBodyHeader.s_body;
     }
     
@@ -580,11 +571,9 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
 
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
-<<<<<<< HEAD
+
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
-=======
-    fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);
->>>>>>> daqdev/NSCLDAQ#1030
+
  
   }
   /* Either return the null pointer we got or the filled in beast: */
