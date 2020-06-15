@@ -1,3 +1,4 @@
+
 Dec 16, 2010 
       - Fix error in CRingItem copy construction ... if there was a
 	payload, the m_pCursor member was not being set to point to the
@@ -1236,3 +1237,32 @@ Work on 11.0-rc11 begins
 	from the keyboard - only up/down arrows.
         * Reorder initialization in vmusb readout - first prime everything
 	  then initialize.
+
+-- Bunch of neglect in maintaining this.
+
+11.4.010 (based on issues tacked on to release milestone):
+
+*  Ensure the MCFD16 regression error repoted in daqdev/NSCLDAQ#947 was fixed
+   it appears to have been fixed in 11.2-006.
+*  Fix errror in trimming old scaler data. The specification was that the trim
+   would be half of the points in the oldest quarter of the data. In fact it had
+   been half of the points in the oldest 1/2 of the data daqdev/NSCLDAQ#936
+*  Ensure that processes that are started from buttons set up in the ReadoutGUI
+   from the application launcher (main/daq/readoutGgui/ReadoutGUIAppLauncher.tcl
+   are forced to exit when the application windows are destroyed.  Found and fixed
+   an error, as well in DataSourceUI.tcl in specifying the <Destroy> binding for
+   its window daqdev/NSCLDAQ#931
+*  If a ringbuffer's shared memory file is deleted, the ring master will now
+   (eventually) delete all resources and clients that are attached to the ring.
+   The actual deletion happens when the RingMaster process is next requested to
+   list the ringbuffer usage data. daqdev/NSCLDAQ#922
+*  RingMaster logs will now only contain at most 48 hours of data. After 24 hours
+   the current log is rotated out into ringmaster.log.1 overwriting anything
+   previously there.  Thus there are at most 24 hours of data in the current
+   logfile and another 24 hours in the .1 file daqdev/NSCLDAQ#900
+*  Provide an EventBuilder button to support overriding barrier timeout waits
+   flushing any the partial barrier when clicked.   This can be used to end runs
+   faster in the event that something has gone wrong with a data source.
+   daqdev/NSCLDAQ#645
+
+Deployment date:

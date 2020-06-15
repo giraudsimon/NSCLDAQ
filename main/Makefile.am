@@ -47,6 +47,7 @@ install-data-local:
 	$(INSTALL_SCRIPT) config.h @prefix@/include
 	touch @prefix@/pythonLibs/nscldaq/__init__.py
 	echo "Version: "NSCLDAQ-$(VERSION) built on `hostname` `date` > @prefix@/VERSION
+	$(INSTALL_DATA) @srcdir@/ChangeLog @prefix@
 	$(INSTALL_SCRIPT) daqsetup.bash @prefix@
 	$(INSTALL_DATA) @srcdir@/figures/*.png @prefix@/share/html/figures
 
