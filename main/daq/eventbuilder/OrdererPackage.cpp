@@ -42,6 +42,7 @@
 #include "CXonXOffCallbackCommand.h"
 #include "COutOfOrderTraceCommand.h"
 #include "CFragmentHandler.h"
+#include "BarrierAbortCommand.h"
 
 static const char* version = "1.0"; // package version string.
 
@@ -78,7 +79,7 @@ int Eventbuilder_Init(Tcl_Interp* pInterp)
   new CDuplicateTimeStatCommand(*pInterpObject, "EVB::dupstat");
   new CXonXoffCallbackCommand(*pInterpObject, "EVB::onflow");
   new COutOfOrderTraceCommand(*pInterpObject, "EVB::ootrace");
-
+  new CBarrierAbortCommand(*pInterpObject, "EVB::abortbarrier");
   // Setup the output stage:
 
   

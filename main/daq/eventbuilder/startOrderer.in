@@ -26,10 +26,11 @@ proc start args {
     
     
     EVB::createGui .evbGui
-    pack .evbGui
+    grid .evbGui -columnspan 2 -sticky nsew
     
-    button .reset -text Reset -command [list EVB::reset]
-    pack .reset -side bottom
+    ttk::button .reset -text Reset -command [list EVB::reset]
+    ttk::button .babort -text {Abort Barrier} -command [list EVB::abortbarrier]
+    grid .reset .babort
     
     EVB::maintainGUI .evbGui
     
