@@ -110,7 +110,7 @@ typdef union Body {
     so that decoders know what format the ring is in.
 */
 
-static const uint16_t FORMAT_MAJOR  = 11;  /* nscldaq-11. */
+static const uint16_t FORMAT_MAJOR  = 12;  /* nscldaq-12. */
 static const uint16_t FORMAT_MINOR  =  0;  /* nscldaq-x.0 */
 
 /* state change item type codes: */
@@ -235,7 +235,9 @@ typedef PSTRUCT _StateChangeItemBody {
   uint32_t        s_timeOffset;
   uint32_t        s_Timestamp;
   uint32_t        s_offsetDivisor;
+  uint32_t        s_originalSid;     // 12.0 original source id.
   char            s_title[TITLE_MAXSIZE+1];
+
 } StateChangeItemBody, *pStateChangeItemBody;
 
 typedef PSTRUCT _StateChangeItem  {
@@ -274,6 +276,7 @@ typedef PSTRUCT _ScalerItemBody {
   uint32_t        s_intervalDivisor;  /* 11.0 sub second time intervals */
   uint32_t        s_scalerCount;
   uint32_t        s_isIncremental;    /* 11.0 non-incremental scaler flag */
+  uint32_t        s_originalSid;
   uint32_t        s_scalers[0];
 } ScalerItemBody, *pScalerItemBody;
 
@@ -302,6 +305,7 @@ typedef PSTRUCT _TextItemBody {
   uint32_t       s_timestamp;
   uint32_t       s_stringCount;
   uint32_t       s_offsetDivisor;
+  uint32_t        s_originalSid;
   char           s_strings[0];
 } TextItemBody, *pTextItemBody;
 
@@ -348,6 +352,7 @@ typedef PSTRUCT __PhysicsEventCountItemBody {
   uint32_t       s_timeOffset;
   uint32_t       s_offsetDivisor;
   uint32_t       s_timestamp;
+  uint32_t        s_originalSid;
   uint64_t       s_eventCount;	/* Maybe 4Gevents is too small ;-) */
 } PhysicsEventCountItemBody, *pPhysicsEventCountItemBody;
 

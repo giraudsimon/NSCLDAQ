@@ -143,11 +143,12 @@ fillPhysicsBody(void* pBody, uint32_t wordCount, const void* pEvent)
  *  @param divisor - offset/divisor = seconds.
  *  @param unixTime- Unix time of day.
  *  @param count   - Number of events.
+ *  @param sid     - value of s_originalSid
  */
 static void
 fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
-    uint64_t count)
+    uint64_t count, uint32_t sid)
 {
     pPhysicsEventCountItemBody pBody = (pPhysicsEventCountItemBody)bodyPointer(pItem);
     
@@ -155,6 +156,7 @@ fillEventCountBody(
     pBody->s_offsetDivisor = divisor;
     pBody->s_timestamp     = unixTime;
     pBody->s_eventCount    = count;
+    pBody->s_originalSid    = sid;
 }
 /**
  * fillScalerBody
@@ -172,11 +174,15 @@ fillEventCountBody(
  * @param incremental - True if these are incremental scalers.
  * @param pScalers    - Pointer to scalers. The assumption is that each scaler
  *                      is a uint32_t.
+ * @param sid         - value of s_originalSid
  */
 static void
 fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
-    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers)
+    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
+    uint32_t sid
+    
+)
 {
     pScalerItemBody pBody = (pScalerItemBody)bodyPointer(pItem);
     pBody->s_intervalStartOffset = start;
@@ -185,6 +191,7 @@ fillScalerBody(
     pBody->s_intervalDivisor     = divisor;
     pBody->s_scalerCount         = count;
     pBody->s_isIncremental       = incremental;
+    pBody->s_originalSid         = sid;
     
     if(count > 0) {
         memcpy(pBody->s_scalers, pScalers, count*sizeof(uint32_t));
@@ -201,11 +208,12 @@ fillScalerBody(
  * @param unixTime - time_t at which this is being emitted.
  * @param nStrings - Number of strings
  * @param ppStrings - Pointer to the strings.
+ * @param sid       - Sourceid
  */
 static void
 fillTextItemBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
-    uint32_t nStrings, const char** ppStrings)
+    uint32_t nStrings, const char** ppStrings, int sid)
 {
     int i;
     pTextItemBody pBody = (pTextItemBody)bodyPointer(pItem);
@@ -214,6 +222,7 @@ fillTextItemBody(
     pBody->s_timestamp     = unixTime;
     pBody->s_stringCount   = nStrings;
     pBody->s_offsetDivisor = divisor;
+    pBody->s_originalSid   = sid;
     
     char* pDest = pBody->s_strings;
     for (i =0; i < nStrings; i++) {
@@ -235,11 +244,12 @@ fillTextItemBody(
  *  @param divisor  - offset/divisor = seconds.
  *  @param unixTime - Unix time_t at which this is being emitted.
  *  @param title    - Pointer to the run title.
+ *  @param sid      - Sourceid.
  */
 static void
 fillStateChangeBody(
     pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
-    uint32_t unixTime, const char* pTitle)
+    uint32_t unixTime, const char* pTitle, int sid)
 {
     pStateChangeItemBody pBody = (pStateChangeItemBody)bodyPointer(pItem);
     
@@ -247,6 +257,7 @@ fillStateChangeBody(
     pBody->s_timeOffset    = offset;
     pBody->s_Timestamp     = unixTime;
     pBody->s_offsetDivisor = divisor;
+    pBody->s_originalSid   = sid;
     
     /*
       Zero out the title and copy in at most TITLE_MAXSIZE bytes of title:
@@ -397,7 +408,7 @@ formatTriggerCountItem(uint32_t runTime, time_t stamp, uint64_t triggerCount)
 
   pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
-  fillEventCountBody(pItem, runTime, 1, stamp, triggerCount);
+  fillEventCountBody(pItem, runTime, 1, stamp, triggerCount, 0);
 
   return (pPhysicsEventCountItem)pItem;
 }
@@ -435,7 +446,7 @@ formatScalerItem(
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
-    fillScalerBody(pItem, btime, etime, 1, timestamp, scalerCount, 1, pCounters);
+    fillScalerBody(pItem, btime, etime, 1, timestamp, scalerCount, 1, pCounters, 0);
    
     /* Return a pointer to the item. */
     return (pScalerItem)pItem;
@@ -513,7 +524,7 @@ formatTextItem(unsigned nStrings, time_t stamp, uint32_t runTime,  const char** 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
     
-    fillTextItemBody(pItem, runTime, 1, stamp, nStrings, pStrings);
+    fillTextItemBody(pItem, runTime, 1, stamp, nStrings, pStrings, 0);
     
     return (pTextItem)pItem;
 }
@@ -549,7 +560,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
     fillHeader(pItem, itemSize, type);
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
-    fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);
+    fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
  
   }
   /* Either return the null pointer we got or the filled in beast: */
@@ -747,7 +758,10 @@ formatTimestampedTriggerCountItem (
         
         /* Fill in the body */
         
-        fillEventCountBody(pItem, runTime, offsetDivisor, stamp, triggerCount);
+        fillEventCountBody(
+             pItem, runTime, offsetDivisor, stamp, triggerCount,
+             sourceId
+        );
     }
     
     /* Return either the item or null if allocation failed. */
@@ -794,7 +808,7 @@ formatTimestampedScalerItem(
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillScalerBody(
             pItem, btime, etime, timeIntervalDivisor, timeofday, nScalers,
-            isIncremental, pCounters
+            isIncremental, pCounters, sourceId
         );
     }
     return (pScalerItem)pItem;
@@ -838,7 +852,8 @@ formatTimestampedTextItem(
         fillRingHeader(pItem, itemSize, type);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillTextItemBody(
-            pItem, runTime, timeIntervalDivisor, stamp, nStrings, ppStrings
+            pItem, runTime, timeIntervalDivisor, stamp, nStrings, ppStrings,
+            sourceId
         );
     }
     return (pTextItem)pItem;
@@ -878,7 +893,7 @@ formatTimestampedStateChange(
         fillHeader(pItem, itemSize, type);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillStateChangeBody(
-            pItem, runNumber, offset, offsetDivisor, stamp, pTitle
+            pItem, runNumber, offset, offsetDivisor, stamp, pTitle, sourceId
         );
     }
     return (pStateChangeItem)pItem;

@@ -817,7 +817,7 @@ void RingTests::getRingFormat(){
     EQ(std::string("Ring Item format version"), item);
     
     EQ(TCL_OK, getDictItem(result, "major", item));
-    EQ(std::string("11"), item);
+    EQ(std::string("12"), item);
     
     EQ(TCL_OK, getDictItem(result, "minor", item));
     EQ(std::string("0"), item);
