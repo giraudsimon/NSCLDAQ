@@ -143,9 +143,19 @@ install-exec-hook:
 #
 # Tests:
 
-noinst_PROGRAMS = transmittests ordertests fragcmdtests
+noinst_PROGRAMS = transmittests ordertests fragcmdtests outputtests
 
+outputtests_SOURCES = TestRunner.cpp outputTests.cpp \
+	COrdererOutput.cpp
+outputtests_CPPFLAGS=$(COMPILATION_FLAGS) @LIBTCLPLUS_CFLAGS@ \
+	@CPPUNIT_CFLAGS@ @TCL_FLAGS@
 
+outputtests_LDFLAGS= @top_builddir@/base/os/libdaqshm.la \
+        @top_builddir@/servers/portmanager/libPortManager.la \
+        @top_builddir@/base/tcpip/libTcp.la \
+        @top_builddir@/base/thread/libdaqthreads.la \
+        @LIBTCLPLUS_LDFLAGS@ \
+        @CPPUNIT_LDFLAGS@ @TCL_LDFLAGS@
 
 transmittests_SOURCES = TestRunner.cpp  transmittests.cpp  \
 	CEventOrderClient.cpp CEventOrderClient.h
@@ -185,9 +195,11 @@ fragcmdtests_CXXFLAGS=$(COMPILATION_FLAGS) @TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@
 fragcmdtests_LDADD=@CPPUNIT_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@
 
 
+
+
 check-TESTS:
 	@builddir@/transmittests  
-	@builddir@/outputTests
+	@builddir@/outputtests
 	@builddir@/fragcmdtests
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 
