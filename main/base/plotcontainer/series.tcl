@@ -265,11 +265,13 @@ snit::type Plotchart::series {
     #   removing every other point in the first 1/4 of the points.
     #
     method _ReducePts {} {
-	set pts [expr $options(-ptlimit)/4]
+	set pts [expr $options(-ptlimit)/8];   # number of points removed!
 	
 	for {set i 0} {$i < $pts} {incr i} {
 	    set options(-xdata) [lreplace $options(-xdata) $i $i]
 	    set options(-ydata) [lreplace $options(-ydata) $i $i]
+        
+        # Note this all works because the point indices slid down.
 	}
 	
     }
