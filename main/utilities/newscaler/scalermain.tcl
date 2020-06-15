@@ -409,25 +409,25 @@ proc saveStripcharts   {filename} {
 proc updateStripcharts {} {
     variable ymax_new
     if {$::stripcharts ne ""} {
-	set ymax -1
-	foreach item [_getStripItems] {
-	    if {[$item hasUpdated]} {
-		set name [$item name]
-		set y [$item rate]
-		set t [$item time]
-		set ymax [expr {max($ymax, $y)}]
-		
-		$::stripcharts addSeriesPoint $name $t $y
-	    }
-	}
-	
-	# If needed update the -ymax to autoscale that axis.
-	if {$::autoY} {
-	    if {$ymax > [$::stripcharts cget -ymax]} {
-		set ymax [expr {$ymax * 1.1}]
-		$::stripcharts configure -ymax $ymax
-	    }
-	}
+        set ymax -1
+        foreach item [_getStripItems] {
+            if {[$item hasUpdated]} {
+                set name [$item name]
+                set y [$item rate]
+                set t [$item time]
+                set ymax [expr {max($ymax, $y)}]
+                
+                $::stripcharts addSeriesPoint $name $t $y
+            }
+        }
+        
+        # If needed update the -ymax to autoscale that axis.
+        if {$::autoY} {
+            if {$ymax > [$::stripcharts cget -ymax]} {
+                set ymax [expr {$ymax * 1.1}]
+                $::stripcharts configure -ymax $ymax
+            }
+        }
     }
 }
 
@@ -819,9 +819,9 @@ proc _lremove {listName val {byval false}} {
     upvar $listName lst
 
     if {$byval} {
-	set lst [lsearch -all -inline -not $lst $val]
+        set lst [lsearch -all -inline -not $lst $val]
     } else {
-	set lst [lreplace $lst $val $val]
+        set lst [lreplace $lst $val $val]
     }
 
     return $lst
