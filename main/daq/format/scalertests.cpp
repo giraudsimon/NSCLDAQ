@@ -31,6 +31,7 @@ class scltests : public CppUnit::TestFixture {
   CPPUNIT_TEST(origsid_1);
   CPPUNIT_TEST(origsid_2);
   CPPUNIT_TEST(origsid_3);
+
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -56,6 +57,7 @@ protected:
   void origsid_1();
   void origsid_2();
   void origsid_3();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(scltests);
