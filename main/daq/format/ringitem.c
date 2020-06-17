@@ -27,7 +27,6 @@
  *  Static utilities:
  *---------------------------------------------------------------------------*/
 
-
 /**
 * sizeStringArray
 *
@@ -60,6 +59,7 @@ sizeStringArray(unsigned nStrings, const char** ppStrings)
 * @param type  - Type of the ring item.
 * @return void* - pointer to just past the header.
 */
+
 void*
 fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
 {
@@ -139,6 +139,7 @@ fillPhysicsBody(void* pBody, uint32_t wordCount, const void* pEvent)
  *  @param sid     - value of s_originalSid
  *  @return void*  - Pointer to the next byte after the body.
  */
+
 void*
 fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
@@ -172,7 +173,9 @@ fillEventCountBody(
  * @param sid         - value of s_originalSid
  * @return void*      - Pointer to the next byte after the scaler body.
  */
+
 void*
+
 fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
     uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
@@ -212,6 +215,7 @@ fillScalerBody(
  * @param sid       - Sourceid
  * @return void*   - Pointer just past the end of the text item body.
  */
+
 void*
 fillTextItemBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
@@ -568,8 +572,6 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
     /* Fill in the headers and get a body pointer: */
     
     fillRingHeader(pItem, itemSize, type);
-
-
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
 
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
