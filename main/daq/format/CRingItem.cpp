@@ -61,13 +61,10 @@ CRingItem::CRingItem(uint16_t type, size_t maxBody) :
   // If necessary, dynamically allocate (big max item).
 
   newIfNecessary(maxBody);
-
-  
   uint32_t* pAfter = static_cast<uint32_t*>(fillRingHeader(m_pItem, 0, type)); 
   *pAfter++ = sizeof(uint32_t);                 // NO body header.
   
   setBodyCursor(pAfter);
-
   updateSize();
   
 }

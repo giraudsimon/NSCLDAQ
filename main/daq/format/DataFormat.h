@@ -481,7 +481,8 @@ extern "C" {
   
   void* fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
   void* fillBodyHeader(
-      pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier
+      pRingItem pItem, uint64_t timestamp, uint32_t sourceId,
+      uint32_t barrier
   );
   void* fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
