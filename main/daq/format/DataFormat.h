@@ -475,6 +475,30 @@ extern "C" {
   uint16_t itemType(const RingItem* pItem);
   int      mustSwap(const RingItem* pItem);
 
+  // Make these visible so that e.g. ring item classes can use
+  // proven code.
+  
+  void fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
+  void fillBodyHeader(
+      pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier
+  );
+  void fillEventCountBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint64_t count, uint32_t sid
+  );
+  void fillScalerBody(
+    pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
+    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
+    uint32_t sid
+  );
+  void fillTextItemBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint32_t nStrings, const char** ppStrings, int sid
+  );
+  void fillStateChangeBody(
+    pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
+    uint32_t unixTime, const char* pTitle, int sid
+  );
 #ifdef __cplusplus
 }
 #endif

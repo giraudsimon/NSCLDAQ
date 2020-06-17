@@ -37,12 +37,6 @@ static uint32_t swal(uint32_t l)
     return result;
 }
 
- static void fillHeader(pRingItem pItem, uint32_t size, uint32_t type)
- {
-    pItem->s_header.s_size = size;
-    pItem->s_header.s_type = type;
- }
- 
 /**
 * sizeStringArray
 *
@@ -74,7 +68,7 @@ sizeStringArray(unsigned nStrings, const char** ppStrings)
 * @param size  - Size of the ring item.
 * @param type  - Type of the ring item.
 */
-static void
+void
 fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
 {
     pItem->s_header.s_size = size;
@@ -92,7 +86,7 @@ fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
  *    @param sourceId  - Id of source of data.
  *    @param barrier   - Barrier type.
  */
-static void
+void
 fillBodyHeader(
     pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier)
 {
@@ -145,7 +139,7 @@ fillPhysicsBody(void* pBody, uint32_t wordCount, const void* pEvent)
  *  @param count   - Number of events.
  *  @param sid     - value of s_originalSid
  */
-static void
+void
 fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
     uint64_t count, uint32_t sid)
@@ -176,7 +170,7 @@ fillEventCountBody(
  *                      is a uint32_t.
  * @param sid         - value of s_originalSid
  */
-static void
+void
 fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
     uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
@@ -210,7 +204,7 @@ fillScalerBody(
  * @param ppStrings - Pointer to the strings.
  * @param sid       - Sourceid
  */
-static void
+void
 fillTextItemBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
     uint32_t nStrings, const char** ppStrings, int sid)
@@ -246,7 +240,7 @@ fillTextItemBody(
  *  @param title    - Pointer to the run title.
  *  @param sid      - Sourceid.
  */
-static void
+void
 fillStateChangeBody(
     pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
     uint32_t unixTime, const char* pTitle, int sid)
@@ -268,12 +262,7 @@ fillStateChangeBody(
     memset(pBody->s_title, 0, TITLE_MAXSIZE+1);
     strncpy(pBody->s_title, pTitle, TITLE_MAXSIZE);
 }
-/*------------------------------------------------------------------------------------*/
-/**
- * Implement the functions prototypes in DataFormat.h
- * These are functions that produce ring items.
- *
- */
+
 /**
  * hasBodyHeader
  *    @param pItem - pointer to a ring item.
@@ -369,7 +358,7 @@ bodyPointer(RingItem* pItem)
      return (pPhysicsEventItem)pItem;
    }
    
-   fillHeader(pItem, itemSize, PHYSICS_EVENT);
+   fillRingHeader(pItem, itemSize, PHYSICS_EVENT);
 
    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);           /* No body header. */
    
@@ -404,7 +393,7 @@ formatTriggerCountItem(uint32_t runTime, time_t stamp, uint64_t triggerCount)
     return (pPhysicsEventCountItem)pItem;
   }
 
-  fillHeader(pItem, itemSize, PHYSICS_EVENT_COUNT);
+  fillRingHeader(pItem, itemSize, PHYSICS_EVENT_COUNT);
 
   pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
@@ -442,7 +431,7 @@ formatScalerItem(
       return (pScalerItem)pItem;
     }
     
-    fillHeader(pItem, itemSize, PERIODIC_SCALERS);
+    fillRingHeader(pItem, itemSize, PERIODIC_SCALERS);
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
@@ -519,7 +508,7 @@ formatTextItem(unsigned nStrings, time_t stamp, uint32_t runTime,  const char** 
     if (!pItem) {
       return (pTextItem)pItem;
     }
-    fillHeader(pItem, itemSize, type);
+    fillRingHeader(pItem, itemSize, type);
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
@@ -557,7 +546,7 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
   if (pItem) {
     /* Fill in the headers and get a body pointer: */
     
-    fillHeader(pItem, itemSize, type);
+    fillRingHeader(pItem, itemSize, type);
 
     pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
@@ -588,7 +577,7 @@ formatDataFormat()
 {
     pDataFormat pItem = malloc(sizeof(DataFormat));
     if (pItem) {
-      fillHeader((pRingItem)pItem, sizeof(DataFormat), RING_FORMAT);
+      fillRingHeader((pRingItem)pItem, sizeof(DataFormat), RING_FORMAT);
         
         pItem->s_empty = sizeof(uint32_t);
         pItem->s_majorVersion  = FORMAT_MAJOR;
@@ -627,7 +616,7 @@ formatEVBFragment(uint64_t timestamp, uint32_t sourceId, uint32_t barrier,
     /* Only fill in the item if we could allocate it. */
     
     if (pItem) {
-        fillHeader((pRingItem)pItem, itemSize, EVB_FRAGMENT);
+        fillRingHeader((pRingItem)pItem, itemSize, EVB_FRAGMENT);
         
         pItem->s_bodyHeader.s_size        = sizeof(BodyHeader);
         pItem->s_bodyHeader.s_timestamp   = timestamp;
@@ -704,7 +693,7 @@ formatTimestampedEventItem(
         /* Fill in the headers: */
         
        
-        fillHeader(pItem, itemSize, PHYSICS_EVENT);
+        fillRingHeader(pItem, itemSize, PHYSICS_EVENT);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         
         void* pBody = bodyPointer(pItem);
@@ -749,7 +738,7 @@ formatTimestampedTriggerCountItem (
     if (pItem) {
         /* Fill in the header: */
         
-        fillHeader((pRingItem)pItem, itemSize, PHYSICS_EVENT_COUNT);
+        fillRingHeader((pRingItem)pItem, itemSize, PHYSICS_EVENT_COUNT);
         
         
         /* Fill in the body header */
@@ -890,7 +879,7 @@ formatTimestampedStateChange(
     pRingItem pItem = (pRingItem)malloc(itemSize);
     
     if (pItem) {
-        fillHeader(pItem, itemSize, type);
+        fillRingHeader(pItem, itemSize, type);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillStateChangeBody(
             pItem, runNumber, offset, offsetDivisor, stamp, pTitle, sourceId
