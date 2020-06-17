@@ -28,6 +28,8 @@ class texttests : public CppUnit::TestFixture {
   CPPUNIT_TEST(copycons);
   CPPUNIT_TEST(tscons);
   CPPUNIT_TEST(fractionalRunTime);
+  CPPUNIT_TEST(origsid);     // v12.0-pre1
+  CPPUNIT_TEST(tsorigsid);   // v12.0-pre1
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -46,6 +48,8 @@ protected:
   void copycons();
   void tscons();
   void fractionalRunTime();
+  void origsid();
+  void tsorigsid();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(texttests);
@@ -373,4 +377,31 @@ texttests::fractionalRunTime()
       strings, 1234, stamp, 3
     );
     EQ(static_cast<float>(1234.0/3.0), item.computeElapsedTime());
+}
+
+// V12.0-pre1.
+
+void texttests::origsid()
+{
+  // Apologies to Dr. Seuss.
+  const char* strings[4] = {"one string", "two string", "three string", "more"};
+  time_t now = time(nullptr);
+  pTextItem pItem = formatTextItem(4, now, 10, strings, PACKET_TYPES);
+  pTextItemBody pBody = reinterpret_cast<pTextItemBody>(bodyPointer(
+   reinterpret_cast<pRingItem>(pItem) 
+  ));
+  EQ(uint32_t(0), pBody->s_originalSid);
+}
+void texttests::tsorigsid()
+{
+// Apologies to Dr. Seuss.
+  const char* strings[4] = {"one string", "two string", "three string", "more"};
+  time_t now = time(nullptr);
+  pTextItem pItem = formatTimestampedTextItem(
+   0x123456789, 6, 0, 4, now, 10, strings, PACKET_TYPES, 1 
+  );
+  pTextItemBody pBody = reinterpret_cast<pTextItemBody>(bodyPointer(
+   reinterpret_cast<pRingItem>(pItem) 
+  ));
+  EQ(uint32_t(6), pBody->s_originalSid);
 }
