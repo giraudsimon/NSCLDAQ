@@ -67,12 +67,17 @@ sizeStringArray(unsigned nStrings, const char** ppStrings)
 * @param pItem - Pointer to the ring item.
 * @param size  - Size of the ring item.
 * @param type  - Type of the ring item.
+* @return void* - pointer to just past the header.
 */
-void
+void*
 fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
 {
-    pItem->s_header.s_size = size;
-    pItem->s_header.s_type = type;
+    pRingItemHeader pHdr = &(pItem->s_header);
+    
+    pHdr->s_size = size;
+    pHdr->s_type = type;
+    
+    return pHdr +1;
 }
 
 /**
@@ -85,8 +90,9 @@ fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
  *    @param timestamp - s_timestamp value.
  *    @param sourceId  - Id of source of data.
  *    @param barrier   - Barrier type.
+ *    @return void* - pointer just past the body header.
  */
-void
+void*
 fillBodyHeader(
     pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier)
 {
@@ -101,6 +107,8 @@ fillBodyHeader(
     pH->s_timestamp = timestamp;
     pH->s_sourceId  = sourceId;
     pH->s_barrier   = barrier;
+    
+    return pH+1;
 }
 
 /**
@@ -138,8 +146,9 @@ fillPhysicsBody(void* pBody, uint32_t wordCount, const void* pEvent)
  *  @param unixTime- Unix time of day.
  *  @param count   - Number of events.
  *  @param sid     - value of s_originalSid
+ *  @return void*  - Pointer to the next byte after the body.
  */
-void
+void*
 fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
     uint64_t count, uint32_t sid)
@@ -151,6 +160,7 @@ fillEventCountBody(
     pBody->s_timestamp     = unixTime;
     pBody->s_eventCount    = count;
     pBody->s_originalSid    = sid;
+    return pBody+1;                     // Fixed length body so this is fine.
 }
 /**
  * fillScalerBody
@@ -169,8 +179,9 @@ fillEventCountBody(
  * @param pScalers    - Pointer to scalers. The assumption is that each scaler
  *                      is a uint32_t.
  * @param sid         - value of s_originalSid
+ * @return void*      - Pointer to the next byte after the scaler body.
  */
-void
+void*
 fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
     uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
@@ -190,6 +201,11 @@ fillScalerBody(
     if(count > 0) {
         memcpy(pBody->s_scalers, pScalers, count*sizeof(uint32_t));
     }
+    // Figure out the return value:
+    
+    uint8_t* p = (uint8_t*)(pBody+1);
+    p += count*sizeof(uint32_t);
+    return p;
 }
 /**
  * fillTextItemBody
@@ -203,8 +219,9 @@ fillScalerBody(
  * @param nStrings - Number of strings
  * @param ppStrings - Pointer to the strings.
  * @param sid       - Sourceid
+ * @return void*   - Pointer just past the end of the text item body.
  */
-void
+void*
 fillTextItemBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
     uint32_t nStrings, const char** ppStrings, int sid)
@@ -217,13 +234,19 @@ fillTextItemBody(
     pBody->s_stringCount   = nStrings;
     pBody->s_offsetDivisor = divisor;
     pBody->s_originalSid   = sid;
-    
+    size_t totalSize = 0;
     char* pDest = pBody->s_strings;
     for (i =0; i < nStrings; i++) {
         size_t copySize = strlen(ppStrings[i]) + 1;
+        totalSize += copySize;
         memcpy(pDest, ppStrings[i], copySize);
         pDest += copySize;
     }
+    // Figure out the pointer past the end of the item:
+    
+    uint8_t* p = (uint8_t*)(pBody+1);
+    p += totalSize;
+    return p;
 }
 
 /**
@@ -240,7 +263,7 @@ fillTextItemBody(
  *  @param title    - Pointer to the run title.
  *  @param sid      - Sourceid.
  */
-void
+void*
 fillStateChangeBody(
     pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
     uint32_t unixTime, const char* pTitle, int sid)
@@ -261,6 +284,10 @@ fillStateChangeBody(
     
     memset(pBody->s_title, 0, TITLE_MAXSIZE+1);
     strncpy(pBody->s_title, pTitle, TITLE_MAXSIZE);
+    
+    // Fixed size so:
+    
+    return pBody+1;
 }
 
 /**
