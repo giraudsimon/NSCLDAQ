@@ -479,16 +479,15 @@ extern "C" {
   // Make these visible so that e.g. ring item classes can use
   // proven code.
   
-  void fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
-  void fillBodyHeader(
+  void* fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
+  void* fillBodyHeader(
       pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier
   );
-  void fillEventCountBody(
+  void* fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
     uint64_t count, uint32_t sid
   );
-  void fillScalerBody(
-
+  void* fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
     uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
     uint32_t sid
