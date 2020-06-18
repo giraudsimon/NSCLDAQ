@@ -97,6 +97,8 @@ public:
 
   uint64_t getEventCount() const;
   void     setEventCount(uint64_t count);
+  
+  uint32_t getOriginalSourceId() const;
 
 
   // Virtual method overrides:
@@ -107,7 +109,7 @@ public:
 
 
 private:
-  void init();
+
 };
 
 #endif
