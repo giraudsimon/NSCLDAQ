@@ -27,6 +27,10 @@ class teststate : public CppUnit::TestFixture {
   CPPUNIT_TEST(tstampCons);
   CPPUNIT_TEST(tstampCopyCons);
   CPPUNIT_TEST(fractionalRunTime);
+  
+  CPPUNIT_TEST(origsid_1);    // Added for nscldaq-12pre1
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -55,6 +59,9 @@ protected:
   
   void fractionalRunTime();
   
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(teststate);
@@ -251,4 +258,28 @@ teststate::fractionalRunTime()
     );
     float offset = orig.computeElapsedTime();
     EQ(static_cast<float>(5.0/2.0), offset);
+}
+
+// Added for 12.x - original source id checks.
+
+void teststate::origsid_1()
+{
+  CRingStateChangeItem item;          // Sid of zero.
+  
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void teststate::origsid_2()
+{
+  CRingStateChangeItem item(BEGIN_RUN, 124, 0, time(nullptr), "Test Title");
+  EQ(uint32_t(0), item.getOriginalSourceId());
+  
+  
+}
+void teststate::origsid_3()
+{
+  CRingStateChangeItem item(
+    0x123456789a, 12, 0, BEGIN_RUN,
+    10, 0, time(nullptr), "This is a test"
+  );
+  EQ(uint32_t(12), item.getOriginalSourceId());
 }
