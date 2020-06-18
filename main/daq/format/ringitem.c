@@ -262,6 +262,7 @@ fillTextItemBody(
  *  @param unixTime - Unix time_t at which this is being emitted.
  *  @param title    - Pointer to the run title.
  *  @param sid      - Sourceid.
+ *  @note overlong titles are silently truncated.
  */
 void*
 fillStateChangeBody(
