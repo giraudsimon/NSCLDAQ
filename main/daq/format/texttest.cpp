@@ -30,6 +30,9 @@ class texttests : public CppUnit::TestFixture {
   CPPUNIT_TEST(fractionalRunTime);
   CPPUNIT_TEST(origsid);     // v12.0-pre1
   CPPUNIT_TEST(tsorigsid);   // v12.0-pre1
+  CPPUNIT_TEST(origsid_1);
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -50,6 +53,9 @@ protected:
   void fractionalRunTime();
   void origsid();
   void tsorigsid();
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(texttests);
@@ -404,4 +410,26 @@ void texttests::tsorigsid()
    reinterpret_cast<pRingItem>(pItem) 
   ));
   EQ(uint32_t(6), pBody->s_originalSid);
+}
+
+void texttests::origsid_1()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(PACKET_TYPES, strings);
+ EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void texttests::origsid_2()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(PACKET_TYPES, strings, 12340, time(nullptr));
+ EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void texttests::origsid_3()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(
+     PACKET_TYPES, 0x9876543210, 777, 0, strings, 10, time(nullptr)
+ );
+ 
+ EQ(uint32_t(777), item.getOriginalSourceId());
 }
