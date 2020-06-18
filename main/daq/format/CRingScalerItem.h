@@ -107,6 +107,7 @@ public:
   std::vector<uint32_t> getScalers() const;
 
   uint32_t getScalerCount() const;
+  uint32_t getOriginalSourceId() const;
 
   // Virtual methods overriddent:
 
