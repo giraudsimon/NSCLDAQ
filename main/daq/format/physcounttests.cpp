@@ -288,5 +288,3 @@ void physcounttests::origsid_4()
   EQ(uint32_t(80), item.getOriginalSourceId());
 }
   
-  
-
