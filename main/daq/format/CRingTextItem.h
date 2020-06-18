@@ -109,18 +109,20 @@ public:
 
   void     setTimestamp(time_t stamp);
   time_t   getTimestamp() const;
-
+  uint32_t getOriginalSourceId() const;
+  
   // Virtual methods all ring overrides.
 
   virtual std::string typeName() const;
   virtual std::string toString() const;
+  
 
   //private utilities:
 private:
   size_t bodySize(std::vector<std::string> strings) const;
   bool   validType() const;
-  void   copyStrings(std::vector<std::string> strings);
-  void   init();
+  
+  std::vector<const char*> makeStringPointers(const std::vector<std::string>& strings);
 };
 
 
