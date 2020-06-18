@@ -87,27 +87,7 @@ void teststate::fullcons()
   EQ(PAUSE_RUN, item.type());
   EQ((uint32_t)1234, item.getRunNumber());
   EQ((uint32_t)5678, item.getElapsedTime());
-  EQ((time_t)(314159), item.getTimestamp());
-
-  // The title does not fit in this one:
-
-  string title("supercalifragalisticexpialidocious");
-  while (title.size() <= TITLE_MAXSIZE) {
-    title += title;
-  }
-  
-
-  bool threw(false);
-  try {
-    CRingStateChangeItem(RESUME_RUN,
-			 1234, 5678, 314159,
-			 title);
-  }
-  catch (CRangeError& except) {
-    threw = true;
-  }
-  ASSERT(threw);
-  
+  EQ((time_t)(314159), item.getTimestamp());  
   
 }
 // Test construction that effectively up-casts a CRingItem.
