@@ -31,7 +31,6 @@ class scltests : public CppUnit::TestFixture {
   CPPUNIT_TEST(origsid_1);
   CPPUNIT_TEST(origsid_2);
   CPPUNIT_TEST(origsid_3);
-
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -386,4 +385,5 @@ void scltests::origsid_3()
     0x123456789a, 5, 0, 10, 20, time(nullptr), scalers
   );
   EQ(uint32_t(5), item.getOriginalSourceId());
+
 }
