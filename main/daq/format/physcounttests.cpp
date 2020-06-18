@@ -23,6 +23,10 @@ class physcounttests : public CppUnit::TestFixture {
   CPPUNIT_TEST(fractionalTime);
   CPPUNIT_TEST(origsid);              // V12.0-pre1
   CPPUNIT_TEST(tsorigsid);            // V12.0-pre1.
+  CPPUNIT_TEST(origsid_1);    // Added 12.0pre1
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
+  CPPUNIT_TEST(origsid_4);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -44,6 +48,10 @@ protected:
   void fractionalTime();
   void origsid();
   void tsorigsid();
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
+  void origsid_4();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(physcounttests);
@@ -255,3 +263,28 @@ void physcounttests::tsorigsid()
   
   free(pItem);
 }
+
+void physcounttests::origsid_1()
+{
+  CRingPhysicsEventCountItem item;
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_2()
+{
+  CRingPhysicsEventCountItem item(100, 10);
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_3()
+{
+  CRingPhysicsEventCountItem item(200, 10, time(nullptr));
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_4()
+{
+  CRingPhysicsEventCountItem item(
+    0x9876543210, 80, 0, 314159, 100, time(nullptr)
+  );
+  EQ(uint32_t(80), item.getOriginalSourceId());
+}
+  
+  
