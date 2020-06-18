@@ -432,4 +432,5 @@ void texttests::origsid_3()
  );
  
  EQ(uint32_t(777), item.getOriginalSourceId());
+
 }
