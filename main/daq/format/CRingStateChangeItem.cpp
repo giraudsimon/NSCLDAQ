@@ -245,6 +245,18 @@ CRingStateChangeItem::getElapsedTime() const
     return pItem->s_timeOffset;
 }
 /**
+ * getTimeDivisor
+ *    Return the divisor used for timing (conversion from ticks to seconds)
+ * @return uint32_t
+ */
+uint32_t
+CRingStateChangeItem::getTimeDivisor() const
+{
+  pStateChangeItemBody pItem =
+        reinterpret_cast<pStateChangeItemBody>(getBodyPointer());
+  return pItem->s_offsetDivisor;
+}
+/**
  * getElapsedTime
  *
  * @return float - Elapsed time taking into account the divisor.

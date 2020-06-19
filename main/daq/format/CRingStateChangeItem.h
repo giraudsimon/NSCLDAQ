@@ -94,6 +94,7 @@ public:
 
   void setElapsedTime(uint32_t offset);
   uint32_t getElapsedTime() const;
+  uint32_t getTimeDivisor() const;
   float    computeElapsedTime() const;
 
   void setTitle(std::string title) ;
