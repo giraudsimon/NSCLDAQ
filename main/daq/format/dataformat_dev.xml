@@ -7062,7 +7062,6 @@ typedef struct _RingItem {
     struct {
       uint32_t s_empty;
       uint8_t  s_body[0];
-
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
@@ -7273,7 +7272,7 @@ typedef strucst _AbnormalEndItem {
   int  hasBodyHeader(const RingItem* pItem);
   void* bodyPointer(RingItem* pItem);
   void* bodyHeader(RingItem* pItem);
-  
+
   uint32_t itemSize(const RingItem* pItem);
   uint16_t itemType(const RingItem* pItem);
   int      mustSwap(const RingItem* pItem);
@@ -7483,7 +7482,6 @@ typedef struct _RingItem {
     struct {
       uint32_t s_empty;
       uint8_t  s_body[0];
-
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
