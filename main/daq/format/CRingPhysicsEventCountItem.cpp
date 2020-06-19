@@ -68,7 +68,7 @@ CRingPhysicsEventCountItem::CRingPhysicsEventCountItem(uint64_t count,
 {
   
   void* p =
-    fillEventCountBody(getItemPointer(), timeOffset, 1, time(nullptr), count, 0);
+    fillEventCountBody(getItemPointer(), timeOffset, 1, stamp, count, 0);
   setBodyCursor(p);
   updateSize();
 }
