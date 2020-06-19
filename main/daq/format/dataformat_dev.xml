@@ -2142,6 +2142,12 @@ delete item;                                           <co id="cringitem.delete"
                                       <void /><modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
+               <type>float</type>
+               <methodname>computeStartTime</methodname>
+               <void />
+               <modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
                 <type>void</type> <methodname>setEndTime</methodname>
                 <methodparam>
                     <type>uint32_t</type> <parameter>endTime</parameter>
@@ -2150,6 +2156,17 @@ delete item;                                           <co id="cringitem.delete"
             <methodsynopsis>
                 <type>uint32_t</type> <methodname>getEndTime</methodname>
                 <void /> <modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
+               <type>float</type>
+               <methodname>computeEndTime</methodname>
+               <void />
+               <modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getTimeDivisor</methodname>
+               <void /><modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
                 <type>void</type>
@@ -2190,6 +2207,11 @@ delete item;                                           <co id="cringitem.delete"
                 <type>uint32_t</type> <methodname>getScalerCount</methodname>
                                       <void /> <modifier>const</modifier>
             </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getOriginalSourceId</methodname>
+               <void /> <modifier>const</modifier>
+            </methodsynopsis>     // Since NSCLDAQ-12.0
             <!-- 11.0 additions -->
             
             <methodsynopsis>
@@ -2373,13 +2395,25 @@ delete item;                                           <co id="cringitem.delete"
             Returns the counting interval start time.
         </para>
         <methodsynopsis>
+           <type>float</type>
+           <methodname>computeStartTime</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Computes the counting interval start time in seconds.
+          The method <methodname>getStartTime</methodname> gets
+          the start time in "tick" units.  To convert this
+          time to seconds, the ticks must be divided by the time
+          divisor.  This convenience method performs that computation.
+        </para>
+        <methodsynopsis>
             <type>void</type> <methodname>setEndTime</methodname>
             <methodparam>
                 <type>uint32_t</type> <parameter>endTime</parameter>
             </methodparam>
         </methodsynopsis>
         <para>
-            Sets the intervale end time to
+            Sets the interval end time to
             <parameter>endTime</parameter>.
             This is supposed to be the number of seconds in to the run
             at which the scalers for this item were read and cleared.
@@ -2393,6 +2427,38 @@ delete item;                                           <co id="cringitem.delete"
             Returns the time offset into the run at which the scalers were read.
             For a properly formatted item, this value should be larger than
             that returned by <methodname>getStartTime</methodname>.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getTimeDivisor</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          NSCLDAQ-11.0 introduced subsecond precision for run
+          offset times.  This is accomplished by allowing the
+          time offsets to be provided in arbitrary tick units along
+          with a divisor that, when dividing those ticks in a floating
+          point division produces seconds.
+        </para>
+        <para>
+          <methodname>getTimeDivisor</methodname> returns this
+          timing divisor.  Note that ordinarily, just to get
+          run offset times in seconds, just use the
+          <methodname>computeStartTime</methodname> and
+          <methodname>computeEndTime</methodname> methods..
+        </para>
+        <methodsynopsis>
+           <type>float</type>
+           <methodname>computeEndTime</methodname>
+           <void /> <modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Returns the interval end time in units of seconds.
+          The method <methodname>getEndTime</methodname>
+          returns the end time in counter tick units.  To convert
+          those units to seconds they must be divided by the time
+          divisor.  This convenience method performs that
+          computation.
         </para>
         <methodsynopsis>
             <type>void</type>
@@ -2459,6 +2525,23 @@ delete item;                                           <co id="cringitem.delete"
         </methodsynopsis>
         <para>
             Returns the number of scalers in the item.
+        </para>
+        <!-- 12.0 addition  -->
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getOriginalSourceId</methodname>
+           <void /> <modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          The Source id of the ring item in the body header can be
+          re-written by the event building pipeline.  Since the original
+          sourceid (the one supplied to construct the ring item) is
+          important for determining the actual meaning of the scaler
+          data in analysis, that source id is stored, as well in the
+          scaler body.  This method returns that value.  
+        </para>
+        <para>
+          This method is an NSCLDAQ-12.0 addition.
         </para>
         <!-- 11.0 additions -->
         
@@ -2749,6 +2832,16 @@ delete pItem;                                                <co id="scaler.dele
                                       <void /><modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getTimeDivisor</methodname>
+               <void /><modifier>const</modifier> 
+            </methodsynopsis>        // added V12.0
+            <methodsynopsis>
+               <type>float</type>
+               <methodname>computeElapsedTime</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
                 <type>void</type> <methodname>setTitle</methodname>
                 <methodparam>
                     <type>std::string</type> <parameter>title</parameter>
@@ -2770,6 +2863,11 @@ delete pItem;                                                <co id="scaler.dele
                 <type>time_t</type> <methodname>getTimestamp</methodname>
                                     <void /> <modifier>const</modifier>
             </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getOriginalSourceId</methodname>
+               <void /> <modifier>const</modifier>
+            </methodsynopsis>    // Added in 12.0
     
             <!-- 11.0 additions -->
             
@@ -3006,6 +3104,34 @@ delete pItem;                                                <co id="scaler.dele
             Returns the object's current elapsed run time value.
         </para>
         <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getTimeDivisor</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Returns the time divisor.
+          <methodname>getElapsedTime</methodname> returns the time
+          into the run in ticks with arbitrary units. The time divisor,
+          introduced in version 11.0 allows <methodname>cmoputeElapsedTime</methodname>
+          to convert these ticks into seconds.  This method
+          returns the value of that time divisor.
+        </para>
+        <para>
+          The purpose of the timing divisor is to support sub-second
+          timing resolution for these run offsets.
+        </para>
+        <methodsynopsis>
+           <type>float</type>
+           <methodname>computeElapsedTime</methodname>
+           <void />
+        </methodsynopsis>
+        <para>
+          Returns the elapsed time into the run in seconds.
+          This is done by getting the elapsed time in ticks and
+          dividing it by the timing divisor in a floating point
+          division.
+        </para>
+        <methodsynopsis>
             <type>void</type> <methodname>setTitle</methodname>
             <methodparam>
                 <type>std::string</type> <parameter>title</parameter>
@@ -3044,6 +3170,26 @@ delete pItem;                                                <co id="scaler.dele
         </methodsynopsis>
         <para>
             Returns the value of the absolute run time.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getOriginalSourceId</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          In an environment where the NSCL event builder is used,
+          the source Id of a ring item determines which data source
+          emitted the item.  To support multi-level event building,
+          however event builders, themselves are data sources
+          and rewrite the source id stored in the body header to the
+          source id assigned to the event builder.  In order
+          to allow state change items to be tracked back to their
+          original data source the source id used to construct
+          a <classname>CRingStateChangeItem</classname> object,
+          beginning with NSCLDAQ-V12.0, is also stored in the state
+          change body.  <methodname>getOriginalSourceId</methodname>
+          returns that source id and should, in most cases, be used
+          rather than the value in the body header.
         </para>
         <!-- 11.0 additions -->
         
@@ -3264,6 +3410,16 @@ item.commitToRing(aring);
                                       <void /><modifier>const</modifier>
             </methodsynopsis>
             <methodsynopsis>
+               <type>float</type>
+               <methodname>computeElapsedTime</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getTimeDivisor</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
                 <type>void</type> <methodname>setTimestamp</methodname>
                 <methodparam>
                     <type>time_t</type> <parameter>stamp</parameter>
@@ -3273,7 +3429,11 @@ item.commitToRing(aring);
                 <type>time_t</type> <methodname>getTimestamp</methodname>
                                     <void /><modifier>const</modifier>
             </methodsynopsis>
-            
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getOriginalSourceId</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>   // Since V12.0
             <!-- 11.0 additions -->
             <methodsynopsis>
                 <modifier>virtual</modifier><type>std::string</type>
@@ -3474,6 +3634,31 @@ item.commitToRing(aring);
             Returns the most recently set time offset for the item.
         </para>
         <methodsynopsis>
+           <type>float</type>
+           <methodname>computeElapsedTime</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Since NSCLDAQ-V11.0, elapsed run time is represented in
+          arbitrary ticks.  A time divisor is then provided which,
+          in a floating point division of an elapsed run time
+          produces the elapsed time in seconds.
+        </para>
+        <para>
+          The convenience method <methodname>computeElapsedTime</methodname>
+          peforms that computation and returns the elapsed run time
+          in seconds.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getTimeDivisor</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Returns the timing divisor that is used to convert
+          elapsed run times to seconds.
+        </para>
+        <methodsynopsis>
             <type>void</type> <methodname>setTimestamp</methodname>
             <methodparam>
                 <type>time_t</type> <parameter>stamp</parameter>
@@ -3488,6 +3673,28 @@ item.commitToRing(aring);
         </methodsynopsis>
         <para>
             Returns the item's absolute timestamp.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getOriginalSourceId</methodname>
+           <void />
+        </methodsynopsis>
+        <para>
+          This method was added in NSCLDAQ-12.0.  In environments that use
+          the NSCLDAQ event builder, each event source is identified
+          with a unique source id.  An event builder, itself,
+          can be used as a data source in a multi-level event builder.
+          This means that event builders can rewrite the body headers
+          of items they otherwise emit unmodified.
+        </para>
+        <para>
+          Since the original source id is a unique identification
+          of where the data in this ring item comes from, beginning
+          with NSCLDAQ-12.0, the
+          source id supplied at constrution time is also stored
+          in the ring item body itself.  This method returns
+          <emphasis>that</emphasis> source id and should be used
+          to identify the source of this data.
         </para>
         <!-- 11.0 additions -->
         <methodsynopsis>
@@ -3514,7 +3721,7 @@ item.commitToRing(aring);
       <refsect1>
         <title>Exceptions</title>
         <para>
-            Construction from a list item can throw a
+            Construction from a ring item can throw a
             <type>std::bad_cast</type> exception if the underlying
             ring item is not either a
             <literal>PACKET_TYPES</literal> or
@@ -3934,6 +4141,16 @@ item.commitToRing(aring);
                 </methodparam>
             </methodsynopsis>
             <methodsynopsis>
+               <type>float</type>
+               <methodname>computeElapsedTime</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getTimeDivisor</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>
+            <methodsynopsis>
                 <type>time_t</type>   <methodname>getTimestamp</methodname>
                                       <void />
                                       <modifier>const</modifier>
@@ -3954,6 +4171,11 @@ item.commitToRing(aring);
                     <type>uint64_t</type> <parameter>count</parameter>
                 </methodparam>
             </methodsynopsis>
+            <methodsynopsis>
+               <type>uint32_t</type>
+               <methodname>getOriginalSourceId</methodname>
+               <void /><modifier>const</modifier>
+            </methodsynopsis>    // Added in V12.0
 
             <!-- 11.0 additions -->
             
@@ -4140,6 +4362,26 @@ item.commitToRing(aring);
             <parameter>offset</parameter>.
         </para>
         <methodsynopsis>
+           <type>float</type>
+           <methodname>computeElapsedSourceId</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Since NSCLDAQ-11.0, the elapsed time can is expressed
+          in arbitrary ticks that are at least one tick per second.
+          This allows for sub-second precision.  This
+          method returns the elapsed time in units of second.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getTimeDivisor</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          Returns the conversion divisor that converts the elapsed
+          time ticks into seconds.
+        </para>
+        <methodsynopsis>
             <type>time_t</type>   <methodname>getTimestamp</methodname>
                                   <void />
                                   <modifier>const</modifier>
@@ -4172,6 +4414,30 @@ item.commitToRing(aring);
         </methodsynopsis>
         <para>
             Sets the event count field of the item to <parameter>count</parameter>.
+        </para>
+        <methodsynopsis>
+           <type>uint32_t</type>
+           <methodname>getOriginalSourceId</methodname>
+           <void /><modifier>const</modifier>
+        </methodsynopsis>
+        <para>
+          This method is available since NSCLDAQ V12.0.
+          When the NSCLDAQ event builder is used, each data source
+          is assigned a unique source id.  Since multi-level event
+          building is supported, the event builders themselves are
+          assigned source ids and, emit data with body headers that
+          reflect the event builder's source id.
+        </para>
+        <para>
+          This means that the source id of the body header can no longer
+          be used to identify the actual source of the event count item.
+          Therefore, beginning in NSCLDAQ-12.0, the source id used to
+          construct these items is also stored in the item body, which
+          the event builder does not touch.
+          <methodname>getOriginalSourceId</methodname> returns
+          this source id and should be used rather than the
+          source id in the item's body header to identify the source
+          of this data.
         </para>
         <!-- 11.0 additions -->
         
@@ -4940,6 +5206,12 @@ item.commitToRing(aring);
           <para>
             The item contains the major and minor version of the least recently
             released version of NSCDAQ capable of processing the item completely.
+          </para>
+          <para>
+            In NSCLDAQ-12.0, this has been updated to contain
+            12.0 reflecting the addition of original source id
+            fields in scaler, state change, event count and text
+            items.
           </para>
        </refsect1>
        <refsect1>
@@ -6789,11 +7061,11 @@ typedef struct _RingItem {
   union {
     struct {
       uint32_t s_empty;
-      uint8_t  s_body[1];
+      uint8_t  s_body[0];
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
-        uint8_t s_body[];
+        uint8_t s_body[0];
     } u_hasBodyHeader;
   } s_body;
 } RingItem, *pRingItem;
@@ -6804,6 +7076,7 @@ typedef struct _StateChangeItemBody {
   uint32_t        s_timeOffset;
   uint32_t        s_Timestamp;
   uint32_t        s_offsetDivisor;
+  uint32_t        s_originalSid;     // Added in V12.0
   char            s_title[TITLE_MAXSIZE+1];
 } StateChangeItemBody, *pStateChangeItemBody;
 
@@ -6829,8 +7102,9 @@ typedef struct _ScalerItemBody {
   uint32_t        s_timestamp;
   uint32_t        s_intervalDivisor; 
   uint32_t        s_scalerCount;
-  uint32_t        s_isIncremental;   
-  uint32_t        s_scalers[1];
+  uint32_t        s_isIncremental;
+  uint32_t        s_originalSid;    // Added in v12.0
+  uint32_t        s_scalers[0];
 } ScalerItemBody, *pScalerItemBody;
 
 typedef struct _ScalerItem {
@@ -6852,7 +7126,8 @@ typedef struct _TextItemBody {
   uint32_t       s_timestamp;
   uint32_t       s_stringCount;
   uint32_t       s_offsetDivisor;
-  char           s_strings[];
+  uint32_t       s_originalSid;     // Added in V12.0
+  char           s_strings[0];
 } TextItemBody, *pTextItemBody;
 
 typedef struct _TextItem {
@@ -6880,7 +7155,7 @@ typedef struct _PhysicsEventItem {
         } u_noBodyHeader;
         struct {
             BodyHeader    s_bodyHeader;
-            uint16_t      s_body[];
+            uint16_t      s_body[0];
         } u_hasBodyHeader;
     } s_body;
 } PhysicsEventItem, *pPhysicsEventItem;
@@ -6890,6 +7165,7 @@ typedef struct __PhysicsEventCountItemBody {
   uint32_t       s_timeOffset;
   uint32_t       s_offsetDivisor;
   uint32_t       s_timestamp;
+  uint32_t        s_originalSid;    // Added in V12.0
   uint64_t       s_eventCount;
 } PhysicsEventCountItemBody, *pPhysicsEventCountItemBody;
 
@@ -6911,7 +7187,7 @@ typedef struct _PhysicsEventCountItem {
 typedef struct _EventBuilderFragment {
   RingItemHeader s_header;
   BodyHeader     s_bodyHeader;
-  uint8_t       s_body[];
+  uint8_t       s_body[0];
 } EventBuilderFragment, *pEventBuilderFragment;
 
 
@@ -6991,8 +7267,41 @@ typedef strucst _AbnormalEndItem {
   
  pAbnormalEndItem formatAbnormalEndItem();
   
+  // Most of these were added in V12.0
   
-  void* bodyPointer(pRingItem pItem);
+  int  hasBodyHeader(const RingItem* pItem);
+  void* bodyPointer(RingItem* pItem);
+  void* bodyHeader(RingItem* pItem);
+  
+  uint32_t itemSize(const RingItem* pItem);
+  uint16_t itemType(const RingItem* pItem);
+  int      mustSwap(const RingItem* pItem);
+
+  // Make these visible so that e.g. ring item classes can use
+  // proven code.
+  
+  void* fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
+  void* fillBodyHeader(
+      pRingItem pItem, uint64_t timestamp, uint32_t sourceId,
+      uint32_t barrier
+  );
+  void* fillEventCountBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint64_t count, uint32_t sid
+  );
+  void* fillScalerBody(
+    pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
+    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
+    uint32_t sid
+  );
+  void* fillTextItemBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint32_t nStrings, const char** ppStrings, int sid
+  );
+  void* fillStateChangeBody(
+    pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
+    uint32_t unixTime, const char* pTitle, int sid
+  );
 
 </programlisting>
 
@@ -7022,9 +7331,31 @@ typedef strucst _AbnormalEndItem {
                 Starting with NSCLDAQ 11.0, ring items may have an additional
                 <type>BodyHeader</type>.  The first field of this
                 is the size of the body header (allowing for future expansion).
-                If the body header size is <literal>0</literal> there is no
+                If the body header size is <literal>sizeof(uint32_t)</literal> there is no
                 body header.  The body header is intended to carry information
                 relevant to data that requires an event builder for assembly.
+              </para>
+              <note>
+                <title>NOTE:</title>
+                <para>
+                  The use of <literal>sizeof(uint32_t)</literal>
+                  to denote an empty body header is new as of NSCLDAQ V12.0.
+                  In NSCLDAQ 11.0, which introduced body headers, the
+                  value <literal>0</literal> was used to indicate
+                  the lack of a body  header.   NSCLDAQ 12.0 will
+                  properly process either of those body header values.
+                </para>
+              </note>
+              <para>
+                NSCLDAQ 12.0 introduces a new
+                <structfield>s_originalSid</structfield> field
+                for state change, scaler, event count and text
+                ring items that is used to hold the source id
+                used to construc the item. This allows the event
+                builder to modify the body headers in ways it always
+                has, but to nonetheless retain the ability to
+                determine which data source originally emitted
+                the item.
               </para>
               <para>
                 STRUCTURES below describes each of the ring items defined
@@ -7116,6 +7447,12 @@ typedef strucst _AbnormalEndItem {
                         <listitem>
                             <para>
                                 The id of the source that produced this item.
+                                Note that the event builder can modify
+                                this source id.  For  ring items where
+                                the original source id is important, the
+                                version 12.0 adds the field
+                                <structfield>s_originalSid</structfield>
+                                to maintain that value.
                             </para>
                         </listitem>
                     </varlistentry>
@@ -7144,11 +7481,11 @@ typedef struct _RingItem {
   union {
     struct {
       uint32_t s_empty;
-      uint8_t  s_body[1];
+      uint8_t  s_body[0];
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
-        uint8_t s_body[];
+        uint8_t s_body[0];
     } u_hasBodyHeader;
   } s_body;
 } RingItem, *pRingItem;
@@ -7227,6 +7564,7 @@ typedef struct _StateChangeItemBody {
   uint32_t        s_timeOffset;
   uint32_t        s_Timestamp;
   uint32_t        s_offsetDivisor;
+  uint32_t        s_originalSid;     // 12.0 original source id.
   char            s_title[TITLE_MAXSIZE+1];
 } StateChangeItemBody, *pStateChangeItemBody;
                 </programlisting>
@@ -7260,6 +7598,18 @@ typedef struct _StateChangeItemBody {
                     The additional <type>char</type> allocated ensures the
                     title has a null terminator.  See <literal>CONSTANTS</literal>
                     below for more information about <literal>TITLE_MAXSIZE</literal>.
+                </para>
+                <para>
+                  The <structfield>s_originalSid</structfield> field
+                  is new in V12.0 and allows the body to maintain knowledge of
+                  the ring item's original source id in the presence of
+                  the event builder's manipulation of body headers.
+                  The functions prototyped in
+                  <filename>DataFormat.h</filename> that format
+                  ring state change items set this field properly.
+                  <classname>CRingStateCHangeItem</classname> uses
+                  those functions to format its ring item and therefore
+                  also properly sets this field.
                 </para>
               </refsect2>
               <refsect2>
@@ -7310,7 +7660,8 @@ typedef struct _ScalerItem {
   uint32_t        s_intervalDivisor;  /* 11.0 sub second time intervals */
   uint32_t        s_scalerCount;
   uint32_t        s_isIncremental;    /* 11.0 non-incremental scaler flag */
-  uint32_t        s_scalers[1];
+  uint32_t        s_originalSid;      /* V12.0 */
+  uint32_t        s_scalers[0];
 } ScalerItemBody, *pScalerItemBody;
                 </programlisting>
                 <para>
@@ -7334,10 +7685,25 @@ typedef struct _ScalerItem {
                     to compute rates.
                 </para>
                 <para>
-                    Finally <structfield>s_scalerCount</structfield> is the
+                    <structfield>s_scalerCount</structfield> is the
                     number of scalers in item and <structfield>s_scales</structfield>
                     is the location of the first element of the array of 32
                     bit wide scalers.
+                </para>
+                <para>
+                  <structfield>s_orignalSid</structfield> contains
+                  the sourceid of the data source that originally
+                  emitted this item. This field is immune from the
+                  manipulations the event builder performs on the
+                  body header.  The <filename>DataFormat.h</filename>
+                  functions that format scaler items, as well as
+                  the <classname>CRingScalerItem</classname> 
+                  initialize this field correctly.
+                </para>
+                <para>
+                  <structfield>s_scalers</structfield> is actually
+                  an array of <structfield>s_scalerCount</structfield>
+                  members containing the actual scaler values.
                 </para>
               </refsect2>
               <refsect2>
@@ -7373,7 +7739,8 @@ typedef struct _TextItemBody {
   uint32_t       s_timestamp;
   uint32_t       s_stringCount;
   uint32_t       s_offsetDivisor;
-  char           s_strings[];
+  uint32_t       s_originalSid;   /* Added in V12.0   */
+  char           s_strings[0];
 } TextItemBody, *pTextItemBody;
                 </programlisting>
                 <para>
@@ -7395,6 +7762,16 @@ typedef struct _TextItemBody {
                     points to the first byte of an array of bytes that contain
                     the null terminated strings carried by the item.  The
                     format of these strings is entirely up to the emitter.
+                </para>
+                <para>
+                  <structfield>s_originalSid</structfield>
+                  contains the source id of the data source that
+                  emitted this item. This value is immune to the
+                  modifications event builders can make on the
+                  source id in the body header.   The
+                  functions prototyped in <filename>DataFormat.h</filename>
+                  and <classname>CRingTextItem</classname>
+                  properly initialize this field for you.
                 </para>
               </refsect2>
               <refsect2>
@@ -7500,6 +7877,7 @@ typedef struct __PhysicsEventCountItemBody {
   uint32_t       s_timeOffset;
   uint32_t       s_offsetDivisor;
   uint32_t       s_timestamp;
+  uint32_t        s_originalSid;     /* Added with version 12.0 */
   uint64_t       s_eventCount;	/* Maybe 4Gevents is too small ;-) */
 } PhysicsEventCountItemBody, *pPhysicsEventCountItemBody;
                 </programlisting>
@@ -7511,6 +7889,20 @@ typedef struct __PhysicsEventCountItemBody {
                     truncated <type>time_t</type> value that identifies the
                     absolute time at which this item was emitted.
                 </para>
+                <para>
+                  The <structfield>s_originalSid</structfield>, added
+                  in NSCLDAQ V12.0 contains the source id of the data
+                  source that originally emitted this item.  This
+                  field is immune to the transformations the event builder
+                  performs on the source id in the body header and,
+                  therefore, should be used to get the source id
+                  that generated this item.
+                  The functions prototyped in
+                  <filename>DataFormat.h</filename>, as well
+                  as the <classname>CRingPhysicsEventCountItem</classname>
+                  transparently set this field's value appropriately.
+                </para>
+                
                 <para>
                     <structfield>s_eventCount</structfield> are the number
                     of triggers that have been responded to since the start
@@ -8376,8 +8768,236 @@ typedef strucst _AbnormalEndItem {
 
             <!-- end of 11.0 additions -->
    
+            <!-- These functions were added in version 12.0 -->
    
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>int  </type>
+              <function>hasBodyHeader</function>
 
+          </funcdef>
+          <paramdef>
+              <parameter><type>const RingItem* </type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>int  </type>
+              <function>hasBodyHeader</function>
+
+          </funcdef>
+          <paramdef>
+              <parameter><type>const RingItem* </type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>void* </type>
+              <function>bodyHeader</function>
+              
+          </funcdef>
+          <paramdef>
+                  <parameter>RingItem* <type></type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>uint32_t </type>
+              <function>itemSize</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>const RingItem* </type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis> 
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>uint16_t </type>
+              <function>itemType</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>const RingItem* </type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>int</type>
+              <function>mustSwap</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>const RingItem* </type> pItem</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>void* </type>
+              <function>fillRingHeader</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>pRingItem </type> pItem</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> size</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> type</parameter>
+          </paramdef>
+      </funcprototype>
+      
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>void* </type>
+              <function>fillBodyHeader</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>pRingItem pItem</type> </parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint64_t </type> timestamp</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> sourceId</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> barrier</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>void* </type>
+              <function>fillEventCountBody</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>pRingItem </type> pItem</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> offse</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> divisor</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> unixTime</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint64_t </type> count</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> sid</parameter>
+          </paramdef>
+      </funcprototype>
+  </funcsynopsis>
+  <funcsynopsis>
+      <funcprototype>
+          <funcdef>
+              <type>void* </type>
+              <function>fillScalerBody</function>
+          </funcdef>
+          <paramdef>
+              <parameter><type>pRingItem </type> pItem</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> start</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> end</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> divisor</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> unixTime</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> count</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>int </type> incremental</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t* </type> pScalers</parameter>
+          </paramdef>
+          <paramdef>
+              <parameter><type>uint32_t </type> sid</parameter>
+          </paramdef>
+      </funcprototype>
+      </funcsynopsis>
+      <funcsynopsis>
+          <funcprototype>
+              <funcdef>
+                  <type>void* </type>
+                  <function>fillTextItemBody</function>
+              </funcdef>
+              <paramdef>
+                  <parameter><type>pRingItem </type> pItem</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> offset</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> divisor</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> unixTime</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> nStrings</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>const char** </type> ppStrings</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>int </type> sid</parameter>
+              </paramdef>
+          </funcprototype>
+          
+      </funcsynopsis>
+      <funcsynopsis>
+          <funcprototype>
+              <funcdef>
+                  <type>void* </type>
+                  <function>fillStateChangeBody</function>
+              </funcdef>
+              <paramdef>
+                  <parameter><type>pRingItem </type> pItem</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> run</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> offset</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> divisor</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>uint32_t </type> unixTime</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>const char* </type> pTitle</parameter>
+              </paramdef>
+              <paramdef>
+                  <parameter><type>int</type>  sid</parameter>
+              </paramdef>
+          </funcprototype>
+      </funcsynopsis>
+  
           </refsynopsisdiv>
           <refsect1>
              <title>
@@ -9184,8 +9804,480 @@ typedef strucst _AbnormalEndItem {
                         </listitem>
                     </varlistentry>
                         <!-- end of 11.0 additions -->
-                              
-                         </variablelist>
+                        <!-- 12.0 additions -->
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>int  </type>
+                                    <function>hasBodyHeader</function>
+                      
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>const RingItem* </type> pItem</parameter>
+                                </paramdef>
+                            </funcprototype>
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Returns non zero if the ring item pointed to by
+                            <parameter>pItem</parameter> contains a body header.
+                            Note that this works both with 11.x and 12.x data
+                            (e.g. it understands the body header size can be either
+                            <literal>0</literal> as it is for 11.x and
+                            <literal>sizeof(uint32_t)</literal>) as it is for
+                            12.x
+                           </para>
+                           <para>
+                              If there is no body header, zero is returned.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>bodyHeader</function>
+                                    
+                                </funcdef>
+                                <paramdef>
+                                        <parameter>RingItem* <type></type> pItem</parameter>
+                                </paramdef>
+                            </funcprototype>
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Returns a pointer to the body header of the
+                            ring item pointed at by <parameter>pItem</parameter>.
+                            If <parameter>pItem</parameter> has no body header
+                            a <literal>nullptr</literal> is returned.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                          <funcsynopsis>
+                              <funcprototype>
+                                  <funcdef>
+                                      <type>uint32_t </type>
+                                      <function>itemSize</function>
+                                  </funcdef>
+                                  <paramdef>
+                                      <parameter><type>const RingItem* </type> pItem</parameter>
+                                  </paramdef>
+                              </funcprototype>
+                          </funcsynopsis> 
+                       </term>
+                       <listitem>
+                           <para>
+                            Returns the number of bytes that make up the
+                            ring item pointed to by <parameter>pItem</parameter>.
+                            This is a short cut for returning
+                            <literal>pItem->s_header.s_size</literal> byte swapped
+                            if needed.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>uint16_t </type>
+                                    <function>itemType</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>const RingItem* </type> pItem</parameter>
+                                </paramdef>
+                            </funcprototype>
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Returns the item type of the ring item pointed to by
+                            <parameter>pItem</parameter>.  If necessary the
+                            contents of the 
+                            <literal>pItem->s_header.s_type</literal> field
+                            are byte swapped before being returned.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                          <funcsynopsis>
+                              <funcprototype>
+                                  <funcdef>
+                                      <type>int</type>
+                                      <function>mustSwap</function>
+                                  </funcdef>
+                                  <paramdef>
+                                      <parameter><type>const RingItem* </type> pItem</parameter>
+                                  </paramdef>
+                              </funcprototype>
+                          </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Returns non-zero if the ring item pointed to by
+                            <parameter>pItem</parameter> was generated on a system
+                            with a different byte ordering than the host.
+                            Note that the actual method of byte swapping required
+                            by the host to recover the original data strongly
+                            depends on the data itself.  Therefore, unless otherwise
+                            explicitly stated, the user of these methods is responsible
+                            for actually performing any byte reordering required
+                            to recover the original data in the hosts native
+                            byte ordering.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>fillRingHeader</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>pRingItem </type> pItem</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> size</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> type</parameter>
+                                </paramdef>
+                            </funcprototype>
+                            
+                        </funcsynopsis>
+
+                       </term>
+                       <listitem>
+                           <para>
+                            Given a pointer to a ring item being formatted;
+                            <parameter>pItem</parameter>, fills in the ring item
+                            header with the specified <parameter>size</parameter>
+                            and <parameter>type</parameter> values.
+                            The return value of this function is a pointer to the
+                            first byte following the ring item header.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>fillBodyHeader</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>pRingItem pItem</type> </parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint64_t </type> timestamp</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> sourceId</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> barrier</parameter>
+                                </paramdef>
+                            </funcprototype>
+                          </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Fills in the body header of a ring item pointed to
+                            by <parameter>pItem</parameter> with
+                            <parameter>timestamp</parameter>, <parameter>sourceId</parameter>,
+                            and <parameter>barrier</parameter> (as the barrier Id).
+                           </para>
+                           <para>
+                            Naturally it is important that <parameter>pItem</parameter>
+                            point to sufficient storage to provide for at least
+                            a ring item header and a body header.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>fillEventCountBody</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>pRingItem </type> pItem</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> offset</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> divisor</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> unixTime</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint64_t </type> count</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> sid</parameter>
+                                </paramdef>
+                            </funcprototype>
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Fills in the ring item body pointed to by
+                            <parameter>pRingItem</parameter> as an event count
+                            ring item body.  <parameter>offset</parameter> is the
+                            time offset into the run of at which this item was emittted,
+                            and <parameter>divisor</parameter> is the divisor needed
+                            to convert <parameter>offset</parameter> to seconds.
+                            <parameter>unixTime</parameter> is a time from e.g.
+                            <function>time</function>(2) that specifies the clock
+                            time at which the item is emitted.
+                           </para>
+                           <para>
+                            <parameter>sid</parameter> is the id of the data
+                            source that is generating this ring item and
+                            <parameter>count</parameter> is the number of event
+                            triggers that have been honored for the run at this
+                            point into the run.
+                           </para>
+                           <para>
+                            Naturally <parameter>pItem</parameter> must point to
+                            sufficient storage to hold an event count ring item body.
+                            The return value is a pointer to the first byte of
+                            storage following the body.
+                          </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>fillScalerBody</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>pRingItem </type> pItem</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> start</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> end</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> divisor</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> unixTime</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> count</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>int </type> incremental</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t* </type> pScalers</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> sid</parameter>
+                                </paramdef>
+                            </funcprototype>
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Fills in the scaler item body pointed to by
+                            <parameter>pItem</parameter> with the data
+                            in its parameter list.   Naturally,
+                            <parameter>pItem</parameter> must point to sufficient
+                            storage to hold all of these data.  The return value
+                            points just past the scaler item body formatted.
+                           </para>
+                           <para>
+                            <parameter>start</parameter>, <parameter>end</parameter>
+                            and <parameter>divisor</parameter> provide the time
+                            offset from the beginning of the run over which the
+                            scaler items counted.  <parameter>start</parameter>
+                            and <parameter>end</parameter> are in arbitrary units
+                            that can be converted to seconds by performing a
+                            floating point division by <parameter>divisor</parameter>.
+                            This provides support for sub second resolution
+                           </para>
+                           <para>
+                            <parameter>unixTime</parameter> provides the clock time
+                            (value of <function>time</function>(2)) at which the
+                            scaler item was generated.
+                           </para>
+                           <para>
+                            <parameter>count</parameter> is the number of scalers
+                            to record and <parameter>pScalers</parameter> points to
+                            an array of <parameter>count</parameter> <type>uint32_t</type>
+                            values that are the scaler counts themselves.
+                           </para>
+                           <para>
+                            <parameter>sid</parameter> is the id of the data source
+                            producing this scaler item.  It is stored in a way
+                            that makes it immune to the maniuplations the event
+                            builder performs on the body header of the ring item.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                        <funcsynopsis>
+                            <funcprototype>
+                                <funcdef>
+                                    <type>void* </type>
+                                    <function>fillTextItemBody</function>
+                                </funcdef>
+                                <paramdef>
+                                    <parameter><type>pRingItem </type> pItem</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> offset</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> divisor</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> unixTime</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>uint32_t </type> nStrings</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>const char** </type> ppStrings</parameter>
+                                </paramdef>
+                                <paramdef>
+                                    <parameter><type>int </type> sid</parameter>
+                                </paramdef>
+                            </funcprototype>
+                            
+                        </funcsynopsis>
+                       </term>
+                       <listitem>
+                           <para>
+                            Fills in the body of the text ring item where the
+                            body is pointed to by <parameter>pItem</parameter>.
+                            The storage pointed to by <parameter>pItem</parameter>
+                            must be large enough to contain the body, this includes
+                            the strings.  The return value of this function
+                            is a pointer to the next free byte of storage following
+                            the filled in body.
+                           </para>
+                           <para>
+                            <parameter>offset</parameter> and <parameter>divisor</parameter>
+                            provide the offset into the run at which the item was
+                            emitted and a conversion divisor to turn that
+                            value into seconds. <parameter>unixTime</parameter>
+                            is the clock time at which the item was created and is
+                            a value returned from <function>time</function>(2).
+                           </para>
+                           <para>
+                            The body will be filled in with <parameter>nStrings</parameter>
+                            strings and <parameter>ppStrings</parameter> is a pointer
+                            to an array of pointers to those strings.
+                           </para>
+                           <para>
+                            Finally <parameter>sid</parameter> is the source id to be
+                            saved in the body so that it is immune to manipulations
+                            performed by the event builder on the body header of
+                            the ring item.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term>
+                          <funcsynopsis>
+                              <funcprototype>
+                                  <funcdef>
+                                      <type>void* </type>
+                                      <function>fillStateChangeBody</function>
+                                  </funcdef>
+                                  <paramdef>
+                                      <parameter><type>pRingItem </type> pItem</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>uint32_t </type> run</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>uint32_t </type> offset</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>uint32_t </type> divisor</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>uint32_t </type> unixTime</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>const char* </type> pTitle</parameter>
+                                  </paramdef>
+                                  <paramdef>
+                                      <parameter><type>int</type>  sid</parameter>
+                                  </paramdef>
+                              </funcprototype>
+                          </funcsynopsis>
+
+                       </term>
+                       <listitem>
+                           <para>
+                            Fills the body of state change ring item.
+                            The body is pointed to by <parameter>pItem</parameter>
+                            which must point to sufficient storage to
+                            hold the data.  The return value of this function
+                            is a pointer to the first byte past the filled in
+                            body.
+                           </para>
+                           <para>
+                            The run is identified by the run number supplied
+                            by <parameter>run</parameter> and a run title
+                            string, <parameter>pTitle</parameter>.  The
+                            maximum number of characters allowed in a title
+                            string, exclusive of the null termination is
+                            <literal>TITLE_MAXSIZE</literal>.  If
+                            <parameter>pTitle</parameter> points to a string
+                            whose length is longer than that, the string will
+                            be silently truncated as it is copied into the item
+                            body.
+                           </para>
+                           <para>
+                            <parameter>offset</parameter> and <parameter>divisor</parameter>
+                            provide the offset time into the run at which this
+                            event was logged.  <parameter>offset</parameter>
+                            is in arbitrary units which when divided by
+                            <parameter>divisor</parameter> produce seconds.
+                            <parameter>unixTime</parameter> is the value of
+                            <function>time</function>(2), the clock time at which
+                            the item is being produced.
+                           </para>
+                           <para>
+                            Finally, <parameter>sid</parameter> is the source id
+                            of the data source generating this header.  It is immune
+                            from the modifications the event builder performs
+                            on body headers.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+
+  
+                        <!-- end of 12.0 additions -->
+                </variablelist>
           </refsect1>
           <refsect1>
             <title>RETURNS</title>
