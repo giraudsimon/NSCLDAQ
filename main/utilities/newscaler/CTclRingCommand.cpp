@@ -340,9 +340,12 @@ CTclRingCommand::formatBodyHeader(CTCLInterpreter& interp, CRingItem* p)
  *
  *      type       - ring item type (textual)
  *      run        - run number
- *      timeoffset - Time offset in seconds.
+ *      timeoffset - Time offset.
+ *      divisor    - time divisor
+ *      timeoffsetsec - time offset in seconds.
  *      realtime   - Time of day of the ring item (can use with [time format])
  *      title      - The run title.
+ *      source     - the original source id of the data.
  *      bodyheader - only if there is a body header in the item.  That in turn is a dict with
  *                   timestamp, source, and barrier keys.
  */
@@ -365,11 +368,20 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
     result += "timeoffset";
     result += static_cast<int>(p->getElapsedTime());
     
+    result += "divisor";
+    result += static_cast<int>(p->getTimeDivisor());
+    
+    result += "timeoffsetsec";
+    result += static_cast<double>(p->computeElapsedTime());
+    
     result += "realtime";
     result += static_cast<int>(p->getTimestamp());
     
     result += "title";
     result += p->getTitle();
+    
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     
     if (p->hasBodyHeader()) {
@@ -387,11 +399,14 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
  *    dict with the keys:
  *    - type - going to be Scaler
  *    - start - When in the run the start was.
+ *    - startsecs - Start time in seconds
  *    - end   - When in the run the end of the period was.
+ *    - endsecs - end time in seconds.
  *    - realtime  Time emitted ([clock format] can take this)
  *    - divisor - What to divide start or end by to get seconds.
  *    - incremental - Bool true if this is incremental.
  *    - scalers     - List of scaler values.
+ *    - source      - Original source id.
  *
  *    If there is a body header, the bodyheader key will be present and will be
  *    the body header dict.
@@ -415,8 +430,14 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     result += "start";
     result += static_cast<int>(pItem->getStartTime());
     
+    result += "startsec";
+    result += static_cast<double>(pItem->computeStartTime());
+    
     result += "end";
     result += static_cast<int>(pItem->getEndTime());
+    
+    result += "endsec";
+    result += static_cast<double>(pItem->computeEndTime());
     
     result += "realtime";
     result += static_cast<int>(pItem->getTimestamp());
@@ -426,6 +447,9 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     
     result += "incremental";
     result += static_cast<int>(pItem->isIncremental() ? 1 : 0);
+    
+    result += "source";
+    result += static_cast<int>(pItem->getOriginalSourceId());
     
     // Now the scaler vector itself:
     
@@ -456,8 +480,10 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
  *    -   type - result of typeName.
 *     -  timeoffset will have the offset time.
 *     -  divisor will have the time divisor to get seconds.
+*     -  offsetsec - time offset in seconds.
 *     -  realtime will have something that can be given to [clock format] to get
 *        when this was emitted
+*     -  source - the original source id.
 *     -  strings - list of strings that are in the ring item.
 *     -  bodyheader - if the item has a body header.
 *     @param interp - the intepreter object whose result will be set by this.
@@ -480,8 +506,14 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     result += "divisor";
     result += static_cast<int>(p->getTimeDivisor());
     
+    result += "offsetsec";
+    result += static_cast<double>(p->computeElapsedTime());
+    
     result += "realtime";
     result += static_cast<int>(p->getTimestamp());
+    
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     CTCLObject stringList;
     stringList.Bind(interp);
@@ -630,8 +662,10 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
 *     *   bodyheader if the item has a body header present.
 *     *   timeoffset - 123 (offset into the run).
 *     *   divisor    - 1   divisor needed to turn that to seconds.
+*     *   offsetsec  - offset in seconds.
 *     *   triggers   - 1000 Number of triggers (note 64 bits).
 *     *   realtime   - 0 time of day emitted.
+*     *   source     - source id of the item.
 */
     
 void
@@ -652,8 +686,12 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
     result += "divisor";
     result += static_cast<int>(p->getTimeDivisor());
     
+    result += "offsetsec";
+    result += static_cast<double>(p->computeElapsedTime());
+    
     result += "realtime";
     result += static_cast<int>(p->getTimestamp());
+
     
     uint64_t ec = p->getEventCount();
     Tcl_Obj* eventCount = Tcl_NewWideIntObj(static_cast<Tcl_WideInt>(ec));
@@ -661,6 +699,9 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
     eventCountObj.Bind(interp);
     result += "triggers";
     result += eventCountObj;
+
+    result += "source";
+    result += static_cast<int>(p->getOriginalSourceId());
     
     if (p->hasBodyHeader()) {
         result += "bodyheader";
