@@ -482,6 +482,7 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     
     result += "source";
     result += static_cast<int>(p->getOriginalSourceId());
+
     
     CTCLObject stringList;
     stringList.Bind(interp);
