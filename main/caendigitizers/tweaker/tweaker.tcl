@@ -63,6 +63,11 @@ package require snit
 #   getBoardValue       - Get the value of a board level parameter.
 #   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
 #   setBoardValue       - Set the value of a board level parameter.
+# TODO:
+#   getParamDescription - Return information about a parameter.
+#   getXml              - Returns the current XML of the dom.
+    
+
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
