@@ -60,7 +60,9 @@ package require snit
 #                         keys are channel numbers (indices)
 #                         and values are nodes.
 #   getChannelValue     - Returns the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
-#   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED). 
+#   getBoardValue       - Get the value of a board level parameter.
+#   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
+#   setBoareValue       - Set the value of a board level parameter.
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
