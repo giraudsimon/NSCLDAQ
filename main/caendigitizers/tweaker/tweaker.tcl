@@ -62,7 +62,7 @@ package require snit
 #   getChannelValue     - Returns the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
 #   getBoardValue       - Get the value of a board level parameter.
 #   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
-#   setBoareValue       - Set the value of a board level parameter.
+#   setBoardValue       - Set the value of a board level parameter.
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
@@ -235,6 +235,7 @@ snit::type COMPASSdom {
             return $actual
         }
     }
+    
     ##
     # getBoardValue
     #   Returns the value of a board level parameter.
@@ -251,6 +252,67 @@ snit::type COMPASSdom {
             error "There's no parameter named $name"
         }
         return $actual
+    }
+    ##
+    # setChannelValue
+    #   Sets the value of a channel level parameter.  Note that this is a bit
+    #   tricky.  If there's already a channel level subtree for this
+    #   channel and this parameter it's <value> contents can just be modified.
+    #   if not, however, a new dom tree must be created for that channel.
+    #
+    # @param board   - board to modify
+    # @param channel - channel dom tree top to modify.
+    # @param name    - name of the parameter to modify.
+    # @param value   - New value of the parameter.
+    # @note  The caller must ensure this is an actual channel parameter else
+    #        an invalid parameter node in the <channel> subtree will get
+    #        made/modified
+    method setChannelValue {board channel name value} {
+        
+        #  If there's no channel level dom for this parameter
+        #  we need to make a default one we can modify using the
+        # board default to get a template.
+            
+        set valueTag [$self _getChannelParamDom  $channel $name]
+        if {$valueTag eq ""} {
+            set valueTag \
+                [$self _createTemplateChannelParam $board $channel $name]
+        }
+        # If there's still no entry that means we could not find the parameter
+        # at the board level..
+            
+        if {$valueTag eq "" } {
+            error "There is no such parameter named $name"
+        }
+        #  Now that we have an actual entry for name we can set its value:
+        
+        set valueNode [$valueTag firstChild]
+        $valueNode nodeValue $value
+        
+        
+    }
+    ##
+    # setBoardValue
+    #   Sets the value of a board level parameter.  Note that channel default
+    #   values are also board level parameters.  This is the simplest of the
+    #   setters, we just have to modify a dom subtree that's already there
+    #   rather than making a new one.
+    #
+    # @param board - board dom tree root.
+    # @param name - name of the parameter.
+    # @param value - new parameter value.
+    #
+    method setBoardValue {board name value} {
+        set descr [$self _getParamDom $board $name]
+        if {$descr eq ""} {
+            error "No such parameter description $name"
+        }
+        # Within the description there are nested <value> tags:
+        
+        set values [$descr getElementsByTagName value]
+        set valuetag [lindex $values 1];              # The nexted tag.
+        set valuenode [$valuetag firstChild]
+        $valuenode nodeValue $value
     }
     #--------------------------- private methods ------------------------------
     ##
@@ -290,6 +352,24 @@ snit::type COMPASSdom {
     # @retval ""  - There is no parameter named $name
     #
     method _getChannelValue {chan name} {
+        set valueTag [$self _getChannelParamDom $chan $name]
+        set result ""
+        if {$valueTag ne ""} {
+            set result [[$valueTag firstChild] nodeValue]
+        } 
+        return $result
+    }
+    ##
+    #  _getChannelParamDom
+    #     Given the name of a parameter returns either the dom element of the
+    #     <value> tag for that parameter or an empty string if there is not one.
+    #
+    #  @param chan - <channel> tag node.
+    #  @param name - Name of the parameter to look for.
+    #  @return string - dom node of the <value> subtag.
+    #  @retval ""     - There's no matching entry.
+    #
+    method _getChannelParamDom {chan name} {
         set values [$chan getElementsByTagName values];   # there's always a <values> tag
         set entries [$values getElementsByTagName entry];  #this could be empty though.
         set result ""
@@ -304,8 +384,7 @@ snit::type COMPASSdom {
                 #
                 #  The <value> tag contents are wht we need:
                 
-                set value [$entry getElementsByTagName value]
-                set result [[$value firstChild] nodeValue]
+                set result [$entry getElementsByTagName value]
                 break
             }
             
@@ -318,12 +397,36 @@ snit::type COMPASSdom {
     #   subtree of the dom.  This could be a board level parameter
     #   or it could be a default value for channel parameter.
     #
-    # @param board  - <board> tag node.
+    # @param chan  - <board> tag node.
     # @param name   - Name of the parameter e.g. SRV_PARAM_CH_ENABLED
     # @return string - value parameter string.
     # @retval ""    - If there's no matching parameter name.
     #
     method _getParamValue {board name} {
+        set result ""
+        set entry [$self _getParamDom $board $name]
+        if {$entry ne ""} {
+            #
+            #  getElemnentsByTagName the entire subtree, there'll be 2 matches:
+            #  The first match is the outer <value> tag.
+            #  The second match is the inner <value> tag which is what we want:
+            
+            set values [$entry getElementsByTagName value]
+            set value [lindex $values 1]
+            set result [[$value firstChild] nodeValue]
+        }
+        return $result
+    }
+    ##
+    # _getParamDom
+    #    Get the <entry> dom for a specific board parameter.
+    #
+    # @param board - board node.
+    # @param name  - name fo the parameter string.
+    # @return string - id of <entry> of the specified parameter.
+    # @retval ""   - no matching parameter name.
+    #
+    method _getParamDom {board name} {
         set result ""
         set params [$board getElementsByTagName parameters]
         set entries [$params getElementsByTagName entry]
@@ -332,21 +435,59 @@ snit::type COMPASSdom {
             set key [$entry getElementsByTagName key]
             set pname [[$key firstChild] nodeValue]
             if {$pname eq $name} {
-                #
-                #  note the folowing searches the entire subtree, there'll be 2 matches:
-                #  The first match is the outer <value> tag.
-                #  The second match is the inner <value> tag which is what we want:
-                
-                set values [$entry getElementsByTagName value]
-                set value [lindex $values 1]
-                set result [[$value firstChild] nodeValue]
-                break
+                return $entry
             }
         }
-        
-        return $result
     }
+    ##
+    # _createTemplateChannelParam
+    #    Creates a template channel value entry for the specified
+    #    parmeter type.  The caller must have determined that this
+    #    node does not yet exist.
+    #    for the value of the parameter, we'll set the default value.
+    #
+    #    What we need to do is crate an XML fragment node that contains
+    #    <entry>
+    #      <key>name</key>
+    #      <value> ...</value>  -- cloned from the default value node.
+    #    </entry>
+    #    And insert that as a child to the channel's <values> tag.
+    #
+    # @param board  - The board dom subtree.
+    # @param channel - The channel dom subtree into which we're inserting
+    # @param name    - name of the parameter.
+    # @return string - <value> tag dom node.
+    # @retval ""     - No such parameter defined.
+    #
+    method _createTemplateChannelParam {board channel name} {
+        set boardLvl [$self _getParamDom $board $name]
+        if {$boardLvl eq ""} {
+            return "";            # no such parameter defined.
+        }
+        # Let's make the fragments we need:
         
+        set entry [$dom createElement entry]
+        set key   [$dom createElement key]
+        set keytext [$dom createTextNode $name]
+        set originalValues [$boardLvl getElementsByTagName value]
+        set originalValue  [lindex $originalValues 1]
+        set value  [$originalValue clone -deep];    #value attributes and contents.
+        
+        #  Let's put this all together as a fragment tree:
+        
+        $entry appendChild $key ;     #<entry<key /></entry>
+        $key   appendChild $keytext;  #<entry><key>name</key></entry>
+        $entry appendChild $value;     #<entry><key>name</key><value... /></entry
+        
+        # We have all the fragments we need, now let's get the channel's
+        # <value> tag and insert what we need 
+        
+        set valuestag [$channel getElementsByTagName values]
+        $valuestag appendChild $entry
+        
+        return $value;                # The value dom node as promised.
+    }
+    
     
 }
     
