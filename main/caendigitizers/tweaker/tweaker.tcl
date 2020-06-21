@@ -62,8 +62,7 @@ package require snit
 #   getChannelValue     - Returns the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
 #   getBoardValue       - Get the value of a board level parameter.
 #   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
-#   setBoardValue       - Set the value of a board level parameter.
-# TODO:
+#   setBoardValue       - Set the value of a board level parameter
 #   getParamDescription - Return information about a parameter.
 #   getXml              - Returns the current XML of the dom.
     
@@ -319,6 +318,101 @@ snit::type COMPASSdom {
         set valuenode [$valuetag firstChild]
         $valuenode nodeValue $value
     }
+    ##
+    # getParamDescription
+    #    Get a description of a parameter for board.
+    #
+    # @param board    - board from which we get the parameter.
+    # @param name     - name of the parameter.
+    # @return dict    - Dictionary containing the following key/values:
+    #                   * type  - Data type e.g. numeric, boolean, selection
+    #                   * minimmum - for numeric the minimum allowed value.
+    #                   * maximum  - in numeric the maxiumum allowed value.
+    #                   * step     - Parameter granularity in numeric parameters.
+    #                   * units    - Units of measure in numeric parameters.
+    #                   * values   - Valid values for selection parameters.
+    #                   * default  - default parameter value.
+    # @note an error is thrown if there is no matching parameter defined in this
+    #       board
+    #   
+    method getParamDescription {board name} {
+        set descriptor [$self _findDescriptor $board $name]
+        if {$descriptor eq ""} {
+            error "There is no such parameter named $name"
+        }
+        #  ALl parameters have a default value:
+        
+        set dflttag [$descriptor getElementsByTagName defaultValue]
+        set defnode [$dflttag firstChild]
+        if {$defnode ne ""} {
+            set default [$defnode nodeValue]
+        } else {
+            set default ""
+        }
+        
+        set result [dict create default $default]
+        
+        # The remainder depends on the type of the parameter:
+        
+        set typetag [$descriptor getElementsByTagName type]
+        set type    [[$typetag firstChild] nodeValue]
+        if {$type eq "DOUBLE"} {
+            #  Type is numeric. We have minimum, maximum step and units.
+            
+            set step [[[$descriptor getElementsByTagName step] firstChild] nodeValue]
+            set minimum [[[$descriptor getElementsByTagName minimum] firstChild] nodeValue]
+            set max [[[$descriptor getElementsByTagName maximum] firstChild] nodeValue]
+            
+            set unitstag [$descriptor getElementsByTagName udm]
+            if {$unitstag ne ""} {
+                set units [[$unitstag firstChild] nodeValue]
+            } else {
+                set units ""
+            }
+            
+            dict set result type numeric
+            dict set result step $step
+            dict set result minimum $minimum
+            dict set result maxiumum $max
+            dict set result units $units
+            
+        } elseif {$type eq "TEXT"} {
+            
+            # TEXT elements are choices from a set of <values>.
+            
+            set choiceTags [$descriptor getElementsByTagName values]
+            set choices [list]
+            foreach choice $choiceTags {
+                set choiceValue [[$choice firstChild] nodeValue]
+                lappend choices $choiceValue
+            }
+            
+            dict set result type selection
+            dict set result values $choices
+            
+            
+        } elseif {$type eq "BOOLEAN"} {
+            # Booleans only have types.
+            
+            dict set result type boolean
+            
+        } else {
+            error "Parameter $name has an unsupported datatype: $type"
+        }
+        
+        return $result
+        
+    }
+    ##
+    # getXML
+    #   Return the XML contents of the document.
+    #
+    # @return text - current xml
+    #
+    method getXML {} {
+        return [$root asXML -indent 2]
+    }
+    
     #--------------------------- private methods ------------------------------
     ##
     # _computeDppType
@@ -492,10 +586,41 @@ snit::type COMPASSdom {
         
         return $value;                # The value dom node as promised.
     }
+    ##
+    # _findDescriptor
+    #    Locate the _descriptor tag that's associated with a specific
+    #    board's parameter.  Each board has a <parameters> tag. Within
+    #    those tags are <descriptor> tags which describe the
+    #    parameters that are legal for *this* board.  This should
+    #    not be confused with the set of <paramDescriptor> tags after all
+    #   boards which describe the set of parameters that are the union of all
+    #   parameters accepted by all boards.
+    #
+    # @param board - the board for which we're looking up the parameter.
+    # @param name  - name of the parameter we're looking up (value of the
+    #                <id> tag of the <descriptor>).
+    # @return string - dom element handle for the requested parameter.
+    # @retval ""     - If there's no match.
+    #
+    method _findDescriptor {board name} {
+        set descriptors [$board getElementsByTagName descriptor]
+        set result ""
+        foreach descriptor $descriptors {
+            set idtag [$descriptor getElementsByTagName id]
+            set pname  [[$idtag firstChild] nodeValue]
+            if {$pname eq $name} {
+                set result $descriptor
+                break
+            }
+        }
+        return $result
+    }
+        
+    
+        
     
     
 }
-    
 
     
 
