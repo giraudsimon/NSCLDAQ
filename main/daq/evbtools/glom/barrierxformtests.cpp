@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <wait.h>
+
 #include <time.h>
 #include <fragment.h>
 #include <sys/uio.h>
@@ -57,6 +58,7 @@ private:
     
     int  m_glomOutput;  // glom -stdout -> input from glom.
     int  m_glomStdout;
+
     int  m_glomPid;
 public:
     void setUp() {
@@ -68,6 +70,7 @@ public:
                 << strerror(e) << std::endl;
             throw std::logic_error(msg.str());
         }
+
         m_glomStdin  = pipefds[0];
         m_glomInput  = pipefds[1];
         
@@ -95,13 +98,17 @@ public:
         
         m_glomPid    = fork();
         if (m_glomPid == 0) {
+<<<<<<< HEAD
             close(m_glomInput);
             close(m_glomOutput);
+=======
+>>>>>>> daqdev/NSCLDAQ#1016 -
             // Child process...
             // set up our stdin to be glomInput
             // and stdout to be glomOutput then
             // start glom .
             
+<<<<<<< HEAD
             dup2(m_glomStdin, STDIN_FILENO);
             dup2(m_glomStdout, STDOUT_FILENO);
             execl(glomcmd.c_str(), glomcmd.c_str(), "--dt=100", nullptr);
@@ -116,6 +123,15 @@ public:
     }
     void tearDown() {
         
+=======
+            dup2(m_glomInput, STDIN_FILENO);
+            dup2(m_glomOutput, STDOUT_FILENO);
+            execl(glomcmd.c_str(), "--dt=100", nullptr);
+            exit(EXIT_SUCCESS);
+        }
+    }
+    void tearDown() {
+>>>>>>> daqdev/NSCLDAQ#1016 -
         close(m_glomInput);
         close(m_glomOutput);
         
@@ -126,11 +142,17 @@ public:
         int status;
         waitpid(m_glomPid, &status, 0);
     }
+<<<<<<< HEAD
 
+=======
+protected:
+    void test_1();
+>>>>>>> daqdev/NSCLDAQ#1016 -
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(barriertest);
 
+<<<<<<< HEAD
 void barriertest::begin_1()
 {
     
@@ -267,4 +289,8 @@ void barriertest::end_1()
     EQ(uint32_t(5), p->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
     
     
+=======
+void barriertest::test_1()
+{
+>>>>>>> daqdev/NSCLDAQ#1016 -
 }
