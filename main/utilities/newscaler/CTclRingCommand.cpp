@@ -399,7 +399,7 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
  *    dict with the keys:
  *    - type - going to be Scaler
  *    - start - When in the run the start was.
- *    - startsecs - Start time in seconds
+ *    - startsec - Start time in seconds
  *    - end   - When in the run the end of the period was.
  *    - endsecs - end time in seconds.
  *    - realtime  Time emitted ([clock format] can take this)

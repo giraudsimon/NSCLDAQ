@@ -54,6 +54,7 @@ snit::type Channel {
     option -lowlim      ""
     option -hilim       ""
     option -name        ""
+    option -source    0
     
     variable total 0
     variable rate  0
