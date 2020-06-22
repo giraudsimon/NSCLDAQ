@@ -467,8 +467,8 @@ proc scaler item {
     
     set channel 0
     foreach counter [dict get $item scalers] {
-        if {[info command ::channel_$channel$sourceId] ne ""} {
-            ::channel_$channel$sourceId update $counter $dt
+        if {[info command ::channel_$channel.$sourceId] ne ""} {
+            ::channel_$channel.$sourceId update $counter $dt
         }
         
         incr channel
@@ -485,7 +485,7 @@ proc scaler item {
     
     # If the end time is longer than duration, use it:
     
-    set elapsed [expr {$end/[dict get $item divisor]}]
+    set elapsed $end
     if {$elapsed > $::duration} {
         set ::duration $elapsed
         $h configure -elapsed $elapsed
@@ -494,7 +494,7 @@ proc scaler item {
     # header to supply  an sid, just make a blank source id:
     
     
-    $h update $sid $sourceId
+    $h update $sourceId $dt
     
     # If the user has extended us with a UserUpdate call that:
     
@@ -523,7 +523,7 @@ proc beginRun {item} {
     # begin run is received from this one.
         
     
-    foreach counter info command ::channel_*$sourceId] {
+    foreach counter [info command ::channel_*$srcid] {
         $counter clear
     }
     
@@ -556,7 +556,7 @@ proc beginRun {item} {
 ##
 # endRun
 #   state -> inactive.
-#
+
 proc endRun   {item} {
     
     set ::clearStrips 1;     # Next begin can clear stripcharts.

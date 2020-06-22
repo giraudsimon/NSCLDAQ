@@ -37,6 +37,10 @@ package provide scalerUtil 1.0
 # @return string - The formatted elapsed time.
 #
 proc formatElapsedTime secs {
+    set seconds [expr {int($secs)}]
+    set frac    [expr {int(100*($secs - $seconds))}]
+    set secs $seconds
+
     
     set seconds [expr {$secs %60}]
     
@@ -48,5 +52,5 @@ proc formatElapsedTime secs {
     
     set days [expr {int($hours/24)}]
     
-    return [format "%d %02d:%02d:%02d" $days $hrs $minutes $seconds]
+    return [format "%d %02d:%02d:%02d.%02d" $days $hrs $minutes $seconds $frac]
 }
