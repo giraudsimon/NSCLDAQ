@@ -38,18 +38,24 @@
 #include <io.h>
 #include <stdint.h>
 #include <DataFormat.h>
+#include <CFileDataSource.h>
+#include <vector>
+#include <CRingItem.h>
 
 
 class barriertest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(barriertest);
     CPPUNIT_TEST(begin_1);
+    CPPUNIT_TEST(end_1);
     CPPUNIT_TEST_SUITE_END();
-    
+protected:
+    void begin_1();
+    void end_1();
 private:
-    int  m_glomStdin;
+    int  m_glomStdin;   // output to glom -> stdin for glom
     int  m_glomInput;
     
-    int  m_glomOutput;
+    int  m_glomOutput;  // glom -stdout -> input from glom.
     int  m_glomStdout;
     int  m_glomPid;
 public:
@@ -101,11 +107,15 @@ public:
             execl(glomcmd.c_str(), glomcmd.c_str(), "--dt=100", nullptr);
             exit(EXIT_SUCCESS);
         } else {
+            
             close(m_glomStdin);
             close(m_glomStdout);
+            
         }
+        usleep(250*1000);    // Let everything settle
     }
     void tearDown() {
+        
         close(m_glomInput);
         close(m_glomOutput);
         
@@ -116,14 +126,14 @@ public:
         int status;
         waitpid(m_glomPid, &status, 0);
     }
-protected:
-    void begin_1();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(barriertest);
 
 void barriertest::begin_1()
 {
+    
     // A pair of begin run records results in a pair of begin
     // run records with only the first one having the barrier set.
     // Note - using a barrier type of 5 is a trick to prevent the
@@ -137,7 +147,7 @@ void barriertest::begin_1()
     frag.s_timestamp = 0x1234567890;
     frag.s_sourceId  = 1;
     frag.s_size      = pItem->s_header.s_size;
-    frag.s_barrier   = 1;
+    frag.s_barrier   = 5;
     
     // Submit two of these to glom.
     
@@ -151,10 +161,87 @@ void barriertest::begin_1()
     io::writeDataV(m_glomInput, vec, 2);
     io::writeDataV(m_glomInput, vec, 2);
     free(pItem);
+ 
     
     // Read data back from glom.. Should be two state change
     // items.  The first will have a barrier in the body header.
     // the second should not.
+    
+    std::vector<uint16_t> exclude;
+    CFileDataSource src(m_glomOutput, exclude);
+    
+    // First should be a ring format item
+    
+    CRingItem* pRItem = src.getItem();
+    ASSERT(pRItem);
+    EQ(RING_FORMAT, pRItem->type());
+    pDataFormat p = reinterpret_cast<pDataFormat>(pRItem->getItemPointer());
+    EQ(FORMAT_MAJOR, p->s_majorVersion);
+    EQ(FORMAT_MINOR, p->s_minorVersion);
+    delete pRItem;
+    
+    // Second should be a BEGIN run with barrier of 5:
+    
+    pRItem = src.getItem();
+    ASSERT(pRItem);
+    EQ(BEGIN_RUN, pRItem->type());
+    ASSERT(pRItem->hasBodyHeader());
+    EQ(uint32_t(5), pRItem->getBarrierType());
+    delete pRItem;
+    
+    // third should be a BEGn run with a barrier type 0:
+    
+    pRItem = src.getItem();
+    ASSERT(pRItem);
+    EQ(BEGIN_RUN, pRItem->type());
+    ASSERT(pRItem->hasBodyHeader());
+    EQ(uint32_t(0), pRItem->getBarrierType());
+    delete pRItem;
+}
+void barriertest::end_1()
+{
+    
+    // Valid begin run:
+
+    time_t now = time(nullptr);
+    pStateChangeItem pItem = formatTimestampedStateChange(
+        0x1234567890, 1, 5, now, 0, 124,  1,  "Testing", BEGIN_RUN
+    );
+    EVB::FragmentHeader frag;
+    frag.s_timestamp = 0x1234567890;
+    frag.s_sourceId  = 1;
+    frag.s_size      = pItem->s_header.s_size;
+    frag.s_barrier   = 5;
+    
+    // Submit two of these to glom.
+    
+    iovec vec[2];
+    vec[0].iov_len = sizeof(frag);
+    vec[0].iov_base = &frag;
+    
+    vec[1].iov_len = frag.s_size;
+    vec[1].iov_base = pItem;
+    
+    io::writeDataV(m_glomInput, vec, 2);
+    io::writeDataV(m_glomInput, vec, 2);
+    
+    
+    // Now valid endruns (we needed the begin runs to crank up
+    // the nesting count in glom).
+    
+    pItem->s_header.s_type = END_RUN;
+    io::writeDataV(m_glomInput, vec, 2);
+    io::writeDataV(m_glomInput, vec, 2);
+    free(pItem);
+    
+    // Ok so Glom should emit in order:
+    // Format
+    // Begin run (barrier)
+    // Begin run (not barrier)
+    // end run (not barrier)
+    // end run (barrier).
+    
+    // Skip the format and begin run items:
     
     uint8_t inbound[frag.s_size];
     pStateChangeItem p = reinterpret_cast<pStateChangeItem>(inbound);
@@ -163,22 +250,21 @@ void barriertest::begin_1()
     
     DataFormat fmt;
     size_t fsize = io::readData(m_glomOutput, &fmt, sizeof(fmt));
-    EQ(fsize, sizeof(fmt));
-    EQ(FORMAT_MAJOR, fmt.s_majorVersion);
-    EQ(FORMAT_MINOR, fmt.s_minorVersion);
     
-    // First begin run:
+    // First/second begin runs:
     
     size_t n = io::readData(m_glomOutput, inbound, frag.s_size);
-    EQ(size_t(frag.s_size), n);
-    EQ(uint32_t(5), p->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    n        = io::readData(m_glomOutput, inbound, frag.s_size);
     
-    // Second begin run:
+    // First end run isn't a barrier:
     
-    n = io::readData(m_glomOutput, inbound, frag.s_size);
-    EQ(size_t(frag.s_size), n);
+    n        = io::readData(m_glomOutput, inbound, frag.s_size);
     EQ(uint32_t(0), p->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
     
+    // Second end run is a barrier:
+    
+    n        = io::readData(m_glomOutput, inbound, frag.s_size);
+    EQ(uint32_t(5), p->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
     
     
 }
