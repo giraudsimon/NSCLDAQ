@@ -38,6 +38,9 @@
 #include <io.h>
 #include <stdint.h>
 #include <DataFormat.h>
+#include <CFileDataSource.h>
+#include <vector>
+#include <CRingItem.h>
 
 
 #include <time.h>
@@ -127,6 +130,7 @@ public:
         usleep(250*1000);    // Let everything settle
     }
     void tearDown() {
+        
         close(m_glomInput);
         close(m_glomOutput);
         
@@ -137,8 +141,7 @@ public:
         int status;
         waitpid(m_glomPid, &status, 0);
     }
-protected:
-    void begin_1();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(barriertest);
