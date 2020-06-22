@@ -494,7 +494,7 @@ proc scaler item {
     # header to supply  an sid, just make a blank source id:
     
     
-    $h update $sid $sourceId
+    $h update $sourceId $dt
     
     # If the user has extended us with a UserUpdate call that:
     
@@ -556,7 +556,7 @@ proc beginRun {item} {
 ##
 # endRun
 #   state -> inactive.
-#
+
 proc endRun   {item} {
     
     set ::clearStrips 1;     # Next begin can clear stripcharts.

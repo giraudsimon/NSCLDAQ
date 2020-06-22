@@ -38,5 +38,7 @@ package require Utils
 # @return string - The formatted elapsed time.
 #
 proc formatElapsedTime secs {
+
     return [Utils::formatDeltaTime $secs]
+
 }
