@@ -1,0 +1,141 @@
+<refentry>
+   <refmeta>
+      <refentrytitle>scalersum</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>scalersum</refname>
+      <refpurpose>Offline scaler summing program</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+scalersum <optional><option>--omit-labels</option></optional>
+          <optional><option>--name-file</option></optional>
+         <optional><option>--flip</option></optional> <replaceable>file1...</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This program computes and output scaler sums from event files. The
+            output files can include scaler labels provided from the
+            file specified by <option>--name-file</option> or can be without
+            labels (if scalers are 32 bits wide, see <literal>NAME FILE FORMAT</literal>
+            below).  The orientation of the output can either be one scaler
+            per row and one file per column or it can be one scaler per column,
+            one row per input file (if <option>--flip</option> is specified).
+          </para>
+          <para>
+            Output files are essentially comma separated fields (CSV)
+            and therefore can be easily imported
+            to e.g. Excel worksheets.  Note, however that the quoting
+            of labels is rather done in a primitive manner and does not support
+            embedded quotation marks.  For example a scaler lable like:
+            <literal>Detector 1" above beam axis</literal> will get rendered as
+            <literal>"Detector 1" above beam axis"</literal> which is incorrect,
+            so take care when choosing scaler labels (e.g in the above you might use
+            <literal>Detector 1 inch above beam axis</literal> or perhaps even better
+            <literal>Detector 2.54cm above beam axis</literal>).
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>NAME FILE FORMAT</title>
+      <para>
+         The <option>--name-file</option> option allows you to supply a file
+         containing scaler label information.  The format of this file is not
+         the same as the scaler definition file that the scaler display requires.
+         See, however <program>makeNameFile</program> (next reference page).
+      </para>
+      <para>
+         The name file format describes each scaler channel, one-per-line.  Each
+         line contains four fields that are space separated these contain on order
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>Source ID</term>
+            <listitem>
+                <para>
+                  The original source id of the scaler channel.  Note that
+                  prior to NSCLDAQ-12, the rewrites of the body header performed
+                  by <program>glom</program>, lost information about the original
+                  source id.  This information is retained in the bodies of
+                  NSCLDAQ-12 and later scaler ring items.  This value should
+                  refer to this original source id.
+               </para>
+                <para>
+                  Note that when event building is not used, this is normally
+                  (though it need not be) zero.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Channel Number</term>
+            <listitem>
+                <para>
+                  The channel number of the scaler item within its data source.
+                  This is the <type>uint32_t</type>
+                  offset at which that channel appears in the array
+                  of scalers read for that data source.  Offsets are numbered
+                  from <literal>0</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Width</term>
+            <listitem>
+                <para>
+                  Since there are still a few CAMAC systems in use and scalers from
+                  those systems are 24 bits wide and may contain bits set in their
+                  top 8 bits, this provides the bit-width of the scaler channel.
+                  This should normally be either <literal>32</literal>
+                  or <literal>24</literal> (CAMAC).  Note, however the software
+                  supports any bit width between <literal>1</literal>
+                  and <literal>32</literal>.   Wider scalers are not supported
+                  in NSCLDAQ as each scaler item in a ring item is 32 bits wide.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Label</term>
+            <listitem>
+                <para>
+                  The label that identifies the scaler. 
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Note that if a scaler label is not provided for a scaler that appears
+         in the data, the scaler will be labeled with its sourceid and channel number.
+      </para>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>makeNameFile</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>makeNameFile</refname>
+      <refpurpose>Create name file for scalersum from ScalerDisplay file</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+makeNameFile <replaceable>def-file name-file</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            See the previous man page (<command>scalersum</command>).
+            This utility script reads a scaler display definition
+            file (<replaceble>def-file</replaceble>) and writes
+            <program>scalersum</program> scaler name file
+            (<replaceable>name-file</replaceable>).
+          </para>
+    </refsect1>
+</refentry>
