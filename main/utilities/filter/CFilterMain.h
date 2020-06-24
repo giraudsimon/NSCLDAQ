@@ -28,6 +28,7 @@ class CMediator;
 class CDataSource;
 class CFilter;
 class CDataSink;
+class CRingItem;
 struct gengetopt_args_info;
 
 class CFilterMain
@@ -36,6 +37,7 @@ class CFilterMain
   private:
     CMediator* m_mediator; //!< The mediator
     struct gengetopt_args_info* m_argsInfo; //!< The parsed options
+    CDataSink* m_pSink;    //!< data sink.
 
   public:
     /**! Constructor
@@ -76,6 +78,7 @@ class CFilterMain
      * \returns ptr to the mediator
      */
     CMediator* getMediator() { return m_mediator; }
+    void putRingItem(CRingItem* pRingItem);
 
   private:
     // Private utility functions 

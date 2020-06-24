@@ -44,7 +44,8 @@ static const char* Copyright = "(C) Copyright Michigan State University 2014, Al
 */
 CFilterMain::CFilterMain(int argc, char** argv)
   : m_mediator(0),
-  m_argsInfo(new gengetopt_args_info)
+  m_argsInfo(new gengetopt_args_info),
+  m_pSink(nullptr)
 {
   cmdline_parser(argc,argv,m_argsInfo);  
 
@@ -61,7 +62,8 @@ CFilterMain::CFilterMain(int argc, char** argv)
     m_mediator->setDataSource(source);
 
     // Set up the sink source 
-    CDataSink* sink = constructDataSink(); 
+    CDataSink* sink = constructDataSink();
+    m_pSink = sink;
     m_mediator->setDataSink(sink);
 
     // set up the skip and count args
@@ -112,7 +114,19 @@ void CFilterMain::registerFilter(const CFilter* filter)
 
   main_filter->registerFilter(filter);
 }
-
+/**
+ * putRingItem
+ *    Puts a ring item to the data sink.  This is our solution to
+ *    daqdev/NSCLDAQ#804 - support filter elements creating several ring items
+ *    per input ring item.
+ *
+ * @param pRingItem - pointer to the ring item to put to the sink.
+ */
+ void
+ CFilterMain::putRingItem(CRingItem* pRingItem)
+ {
+  m_pSink->putItem(*pRingItem);
+ }
 
 /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
