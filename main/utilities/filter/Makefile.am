@@ -94,7 +94,8 @@ unittests_SOURCES	= TestRunner.cpp  \
 						testmultiple.cpp \
 						CTestFilter.h \
 						CTestFilter.cpp CFilterTestSource.cpp \
-						CFilterTestSource.h
+						CFilterTestSource.h \
+						CFilterTestSink.cpp CFilterTestSink.h
 
 
 unittests_LDADD		= \
