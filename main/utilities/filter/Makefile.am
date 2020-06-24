@@ -14,7 +14,11 @@ libfilter_la_SOURCES = CFilterMain.cpp \
                        CMediatorException.cpp \
                        CAbnormalEndRunFilterHandler.cpp \
 			CRunStatistics.cpp  \
-			 SatisfyTclPlus.cpp 
+			 SatisfyTclPlus.cpp  \
+			CFilterTestSource.cpp \
+			 CFilterTestSource.h \
+			CFilterTestSink.cpp CFilterTestSink.h
+
 
 nodist_libfilter_la_SOURCES=filterargs.c filterargs.h
 
@@ -88,9 +92,7 @@ unittests_SOURCES	= TestRunner.cpp  \
 						oneshothandlertests.cpp \
 						abnormalendrunfiltertests.cpp  \
 						CTestFilter.h \
-						CTestFilter.cpp CFilterTestSource.cpp \
-						CFilterTestSource.h \
-						CFilterTestSink.cpp CFilterTestSink.h
+						CTestFilter.cpp
 
 
 unittests_LDADD		= \

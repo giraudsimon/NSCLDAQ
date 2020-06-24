@@ -38,6 +38,8 @@ class CFilterMain
     CMediator* m_mediator; //!< The mediator
     struct gengetopt_args_info* m_argsInfo; //!< The parsed options
     CDataSink* m_pSink;    //!< data sink.
+public:
+    static bool m_testing;      //!<  forces use of test sources and sinks.
 
   public:
     /**! Constructor

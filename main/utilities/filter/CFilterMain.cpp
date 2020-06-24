@@ -33,6 +33,10 @@ static const char* Copyright = "(C) Copyright Michigan State University 2014, Al
 #include "filterargs.h"
 #include "CFatalException.h"
 #include <stdexcept>
+#include "CFilterTestSink.h"
+#include "CFilterTestSource.h"
+
+bool CFilterMain::m_testing(false);
 
 /**! Constructor
   Constructs a mediator object with a CCompositeFilter
@@ -56,7 +60,8 @@ CFilterMain::CFilterMain(int argc, char** argv)
           m_argsInfo->number_of_sources_arg); 
     } else {
       m_mediator = new CInfiniteMediator(0,new CCompositeFilter,0);
-    } 
+    }
+    
     // Set up the data source 
     CDataSource* source = constructDataSource(); 
     m_mediator->setDataSource(source);
@@ -141,6 +146,9 @@ void CFilterMain::registerFilter(const CFilter* filter)
 */
 CDataSource* CFilterMain::constructDataSource()
 {
+ if (m_testing) {
+  return new CFilterTestSource;
+ } else {
   // Set up default source type
   std::string source_name("-");
   if (m_argsInfo->source_given) {
@@ -155,6 +163,7 @@ CDataSource* CFilterMain::constructDataSource()
   
   CDataSource* source=0;
   return CDataSourceFactory().makeSource(source_name,sample,exclude);
+ }
 }
 
 /**! Set up the data sink
@@ -164,6 +173,9 @@ CDataSource* CFilterMain::constructDataSource()
 */
 CDataSink* CFilterMain::constructDataSink()
 {
+ if (m_testing) {
+  return new CFilterTestSink;
+ } else {
   // Set up default source type
   std::string sink_name("-");
   if (m_argsInfo->sink_given) {
@@ -172,6 +184,7 @@ CDataSink* CFilterMain::constructDataSink()
 
   CDataSink* sink=CDataSinkFactory().makeSink(sink_name);
   return sink;
+ }
 }
 
 /**! The main loop
