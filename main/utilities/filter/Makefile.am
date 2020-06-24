@@ -91,6 +91,7 @@ unittests_SOURCES	= TestRunner.cpp  \
 						transparentfiltertests.cpp \
 						oneshothandlertests.cpp \
 						abnormalendrunfiltertests.cpp  \
+						testmultiple.cpp \
 						CTestFilter.h \
 						CTestFilter.cpp
 
