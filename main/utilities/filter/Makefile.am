@@ -88,9 +88,9 @@ unittests_SOURCES	= TestRunner.cpp  \
 						oneshothandlertests.cpp \
 						abnormalendrunfiltertests.cpp  \
 						CTestFilter.h \
-						CTestFilter.cpp
+						CTestFilter.cpp CFilterTestSource.cpp \
+						CFilterTestSource.h
 
-#						oneshotmediatortests.cpp  
 
 unittests_LDADD		= \
 			@builddir@/libfilter.la	\
