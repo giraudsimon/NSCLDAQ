@@ -21,6 +21,12 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#include "CFilterTestSource.h"
+#include "CFilterTestSink.h"
+#include <CDataFormatItem.h>
+#include <CGlomParameters.h>
+#include <CRingStateChangeItem.h>
+#include <time.h>
 
 #include "CFilterTestSource.h"
 #include "CFilterTestSink.h"
@@ -43,7 +49,6 @@ class testmultiple : public CppUnit::TestFixture {
     CPPUNIT_TEST(src_1);
     CPPUNIT_TEST(src_2);
     CPPUNIT_TEST(src_3);
-    
     CPPUNIT_TEST(sink_1);
     CPPUNIT_TEST(sink_2);
     CPPUNIT_TEST(sink_3);
@@ -73,6 +78,7 @@ private:
     CFilterTestSource* m_pSrc;
     CFilterTestSink*   m_pSink;
     CFilterMain*       m_pFilter;
+
 public:
     void setUp() {
         m_pSrc = new CFilterTestSource;
@@ -121,6 +127,7 @@ void testmultiple::src_2()
 }
 void testmultiple::src_3()
 {
+
     // If a put a few items in the src they come out in the right order:
     
     CDataFormatItem item1;
@@ -302,3 +309,4 @@ void testmultiple::scaler_1()
     EQ(PERIODIC_SCALERS, pSink->m_sink[3]->type());
     EQ(END_RUN, pSink->m_sink[4]->type());
 }
+
