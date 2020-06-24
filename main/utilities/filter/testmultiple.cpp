@@ -21,6 +21,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+
 #include "CFilterTestSource.h"
 #include "CFilterTestSink.h"
 #include <CDataFormatItem.h>
@@ -90,9 +91,11 @@ public:
         delete m_pFilter;
     }
 
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(testmultiple);
+
 
 void testmultiple::src_1()
 {
