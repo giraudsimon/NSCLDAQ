@@ -93,7 +93,8 @@ unittests_SOURCES	= TestRunner.cpp  \
 						abnormalendrunfiltertests.cpp  \
 						testmultiple.cpp \
 						CTestFilter.h \
-						CTestFilter.cpp
+						CTestFilter.cpp CFilterTestSource.cpp \
+						CFilterTestSource.h
 
 
 unittests_LDADD		= \
