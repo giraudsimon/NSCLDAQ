@@ -276,7 +276,7 @@ pFragment allocateFragment(const FragmentHeader* pHeader)
 extern "C" {
 pFragment newFragment(uint64_t timestamp, uint32_t sourceId, uint32_t size)
 {
-  FragmentHeader h = {timestamp, sourceId, size};
+  FragmentHeader h = {timestamp, sourceId, size, BARRIER_NOTBARRIER};
   return allocateFragment(&h);
 }
 }
