@@ -41,6 +41,7 @@ class CFilterMain
 public:
     static bool m_testing;      //!<  forces use of test sources and sinks.
 
+
   public:
     /**! Constructor
       Constructs a mediator object with a CCaesarFilter
