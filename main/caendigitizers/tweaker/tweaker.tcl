@@ -682,6 +682,111 @@ snit::widgetadaptor BoolChannelControl {
     }
     
 }
+##
+# @class SelectChannelControl
+#    Provides a combobox control that controls a channel parameter
+#    that is a list of possible values.  A label to the right
+#    of the box describes the parameter being controlled in human
+#    readable terms.
+#
+# OPTIONS:
+#    -dom   - Object encapsulating the dom.
+#    -board - DOM subobject that is the board in the DOM.
+#    -channel - DOM subobject that is the channe in the dom.
+#    -name  - Name of the parameter in the XML.
+#    -text  - Human readable value.
+#
+snit::widgetadaptor SelectChannelControl {
+    component selector
+    component title
+    
+    option -dom -default ""     -readonly 1
+    option -board -default ""   -readonly 1
+    option -channel -default "" -readonly 1
+    option -name -default ""    -readonly 1
+    
+    delegate option -text to title
+    delegate option *     to selector
+    delegate method *     to selector
+    
+    variable value ""
+    
+    constructor args {
+        # Use a ttk::frame as the hull.
+        
+        installhull using ttk::frame
+        
+        # Create and layout the widgets.
+        
+        install title using ttk::label $win.title
+        install selector using ttk::combobox  $win.selector -width 32 \
+            -textvariable [myvar value]
+        
+        grid $selector $title -sticky w
+        
+        # Can't configure before installing title because
+        # it's where the -text option is implemented.
+        
+        $self configurelist $args
+        
+        if {$options(-dom) eq ""} {
+            error "-dom is a required option"
+        }
+        if {$options(-board) eq ""} {
+            error "-board is a required option"
+        }
+        if {$options(-channel) eq ""} {
+            error "-chan is a required option"
+        }
+        if {$options(-name) eq ""} {
+            error "-name is a required option"
+        }
+        set info [$options(-dom) getParamDescription $options(-board) $options(-name)]
+        if {[dict get $info type] ne "selection"} {
+            error "-name value is not an enumerated parameter"
+        }
+        set choices [dict get $info values]
+        
+        $selector configure -values $choices
+        
+        
+        # set the current value of the box.
+        
+        set value \
+            [$options(-dom) getChannelValue $options(-board) $options(-channel)\
+             $options(-name)]
+        $selector set $value
+        
+        # idiotic though it may seem, there's no -command option
+        # for comboboxes so we'll set a write trace on [myvar value]
+        # and use it's firing to update the value of the parameter.
+        
+        trace add variable [myvar value] write [mymethod _onChange]
+        
+    }
+    destructor {
+        # Need to kill off the trace -- if the var still exists...:
+        # 
+        catch {trace remove variable       \
+            [myvar value] write [mymethod _onChange]}
+        
+    }
+    #----------------------------  Private methods --------------
+    
+    ##
+    # _onChange
+    #   Trace handler for changes to the value variable.
+    #   This causes the associated parameter to be modified.
+    
+    method _onChange {var1 index op} {
+        set newValue [$selector get]
+        puts "New value $newValue"
+        $options(-dom) setChannelValue \
+            $options(-board) $options(-channel) $options(-name) $newValue
+    }
+}
+    
+
     
 
 
@@ -703,8 +808,8 @@ snit::widgetadaptor BoolChannelControl {
 #   closeFile  - Remove the filename (and [modified if present]) from the title.
 #
 snit::type titleManager {
-    option -appname -readonly 1
-    option -widget -readonly 1
+    option -appname -default "" -readonly 1
+    option -widget -default ""  -readonly 1
     
     variable  filename  "";      # non empty if file is open.
     variable  isModified 0;      # boolean true if the file is modified..
