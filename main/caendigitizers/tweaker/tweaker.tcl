@@ -373,7 +373,7 @@ snit::type COMPASSdom {
             dict set result type numeric
             dict set result step $step
             dict set result minimum $minimum
-            dict set result maxiumum $max
+            dict set result maximum $max
             dict set result units $units
             
         } elseif {$type eq "TEXT"} {
@@ -627,7 +627,7 @@ snit::type COMPASSdom {
 #    -dom                    - The DOM Object containing the parsed COMPASS XML
 #    -board                  - The board DOM subelement.
 #    -channel                - The channel DOM subelement.
-#    -param                  - The parameter name e.g. SRV_CH_PARAM_ENABLED
+#    -name                 - The parameter name e.g. SRV_CH_PARAM_ENABLED
 #
 # @note - It is the creators responsibility to ensure the parameter
 #         is boolean.  To ensure this use the createControl proc.
@@ -636,7 +636,7 @@ snit::widgetadaptor BoolChannelControl {
     option -dom -default "" -readonly 1
     option -board -default "" -readonly 1
     option -channel -default "" -readonly 1
-    option -param -default "" -readonly 1
+    option -name -default "" -readonly 1
     
     delegate option * to hull
     delegate method * to hull
@@ -660,14 +660,14 @@ snit::widgetadaptor BoolChannelControl {
         if {$options(-channel) eq ""} {
             error "-channel required to construct BoolControl"
         }
-        if {$options(-param) eq ""} {
-            error "-param required to construct BoolControl"
+        if {$options(-name) eq ""} {
+            error "-name required to construct BoolControl"
         }
         
         #  Set the check button to the current value of the parameter:
         
         set value [$options(-dom) getChannelValue    \
-            $options(-board) $options(-channel) $options(-param)]
+            $options(-board) $options(-channel) $options(-name)]
         
     }
     #---------------------- private methods --------------------
@@ -678,7 +678,7 @@ snit::widgetadaptor BoolChannelControl {
     #    We get the current state and set the parameter accordingly.
     #
     method _toggle {} {
-        $options(-dom) setChannelValue $options(-board) $options(-channel) $options(-param) $value
+        $options(-dom) setChannelValue $options(-board) $options(-channel) $options(-name) $value
     }
     
 }
@@ -786,11 +786,132 @@ snit::widgetadaptor SelectChannelControl {
     }
 }
     
-
+##
+# @class NumericChannelControl
+#
+#   Provides a controller for a channel with a numeric value.
+#   the control will take the form of a spinbox with from, to and increment
+#   determined from the parameter descriptor.
+#   There will be a fixed label displaying the units (again from the descriptor)
+#   and a label that can be configured with human readable
+#   names e.g. instead of SRV_PARAM_CH_TRAP_TRISE trap. rise-time.
+#
+# OPTIONS:
+#   -dom    - COMPASSDom that contains the parsed XML>
+#   -board  - DOM subelement that is the board.
+#   -channel - DOM subelement that is the channel.
+#   -name   - Parameter name e.g. SRV_PARAM_CH_TRAP_TRISE
+#   -text   - Textual label (e.g. trap. rise-time).
+#
+snit::widgetadaptor NumericChannelControl {
+    component selector
+    component units
+    component title
     
+    option -dom -default ""     -readonly 1
+    option -board -default ""   -readonly 1
+    option -channel -default "" -readonly 1
+    option -name -default ""    -readonly 1
+    delegate option -text to title
+    delegate method * to selector
+    delegate option * to selector
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        # Create  the widgets.  We can't actually
+        # fully configure the selector yet:
+        
+        install selector using \
+            ttk::spinbox $win.select -command [mymethod _onChange]
+        install units using ttk::label $win.units
+        install title using ttk::label $win.title
+        
+        # Process the configuration:
+        
+        $self configurelist $args
+        if {$options(-dom) eq ""} {
+            error "-dom option is mandatory"
+        }
+        if {$options(-board) eq ""} {
+            error "-board option is mandatory"
+        }
+        if {$options(-channel) eq ""} {
+            error "-channel option is mandatory"
+        }
+        if {$options(-name) eq ""} {
+            error "-name option is mandatory"
+        }
+        
+        
+        # Fully configure the units and spinbox based on the
+        # parameter description.
+        
+        set info  [$options(-dom) getParamDescription \
+            $options(-board)  $options(-name)]
+        if {[dict get $info type] ne "numeric"} {
+            error "$options(-name) is not a numeric parameter"
+        }
+        $selector configure -from [dict get $info minimum] \
+            -to [dict get $info maximum] -increment [dict get $info step]
+        $units configure -text [dict get $info units]
+        
+        $selector set [$options(-dom) getChannelValue \
+            $options(-board) $options(-channel) $options(-name)]
+        
+        # Now that everything is configured do the layout.
+        
+        grid $selector $units $title -sticky w
+        
+    }
+    
+    
+    #----------------------------- private methods ---------------------
+    
+    ##
+    # _onChange
+    #   Spinbox value changed so we need to change the value of the
+    #   parameter to match
+    #
+    method _onChange {} {
+        set newValue [$selector get]
+        $options(-dom) setChannelValue \
+            $options(-board) $options(-channel) $options(-name) $newValue
+    }
+}
+##
+# createChannelControl
+#   Given a dom board, channel, parameter name/title and widget path,
+#   create the appropriate widget type to control that parameter.
+#
+# @param dom     - COMPASSdom object holding the XML to edit.
+# @param board   - the board subdom.
+# @param channel - The channel subdom.
+# @param param   - name of the parameter (e.g. SRV_PARAM_CH_POLARITY)
+# @param title   - English name of the parameter (e.g. polarity)
+# @param widget  - Desired widget path.
+#
+proc createChannelControl {dom board channel param title widget} {
 
-
-
+   # Get a description of the paramter and based on the type figure out
+   # the command we need to execute:
+   
+   set info [$dom getParamDescription $board $param]
+   set type [dict get $info type]
+   
+   if {$type eq "numeric"} {
+    set command NumericChannelControl
+   } elseif {$type eq "boolean"} {
+    set command BoolChannelControl
+   } elseif {$type eq "selection"} {
+    set command SelectChannelControl
+   } else {
+    error "Unrecognized parameter type for $param : $type"
+   }
+   
+    return [$command $widget \
+        -dom $dom -board $board -channel $channel -name $param -text $title]
+}
 
 #----------------------- titleManager class ----------------------
 ##
