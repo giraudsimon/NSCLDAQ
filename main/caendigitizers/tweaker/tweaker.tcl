@@ -614,15 +614,76 @@ snit::type COMPASSdom {
             }
         }
         return $result
+    } 
+}
+#--------------------------------Control widgets --------------------------
+
+##
+# @class BoolChannelControl
+#
+#    Provides a control element for a boolean parameter
+#
+# OPTIONS:
+#    -dom                    - The DOM Object containing the parsed COMPASS XML
+#    -board                  - The board DOM subelement.
+#    -channel                - The channel DOM subelement.
+#    -param                  - The parameter name e.g. SRV_CH_PARAM_ENABLED
+#
+# @note - It is the creators responsibility to ensure the parameter
+#         is boolean.  To ensure this use the createControl proc.
+#
+snit::widgetadaptor BoolChannelControl {
+    option -dom -default "" -readonly 1
+    option -board -default "" -readonly 1
+    option -channel -default "" -readonly 1
+    option -param -default "" -readonly 1
+    
+    delegate option * to hull
+    delegate method * to hull
+    
+    variable value "false"
+    
+    constructor args {
+        installhull using ttk::checkbutton -command [mymethod _toggle] \
+            -onvalue true -offvalue false -variable [myvar value]
+        
+        $self configurelist $args
+        
+        #  All of the args must be present.
+        
+        if {$options(-dom) eq ""} {
+            error "-dom required to construct BoolControl"
+        }
+        if {$options(-board) eq ""} {
+            error "-board required to construct BoolControl"
+        }
+        if {$options(-channel) eq ""} {
+            error "-channel required to construct BoolControl"
+        }
+        if {$options(-param) eq ""} {
+            error "-param required to construct BoolControl"
+        }
+        
+        #  Set the check button to the current value of the parameter:
+        
+        set value [$options(-dom) getChannelValue    \
+            $options(-board) $options(-channel) $options(-param)]
+        
     }
-        
+    #---------------------- private methods --------------------
     
-        
-    
+    ##
+    # _toggle
+    #    Called when the checkbutton state changes.
+    #    We get the current state and set the parameter accordingly.
+    #
+    method _toggle {} {
+        $options(-dom) setChannelValue $options(-board) $options(-channel) $options(-param) $value
+    }
     
 }
-
     
+
 
 
 
@@ -642,8 +703,8 @@ snit::type COMPASSdom {
 #   closeFile  - Remove the filename (and [modified if present]) from the title.
 #
 snit::type titleManager {
-    option -appname -readonly
-    option -widget -readonly
+    option -appname -readonly 1
+    option -widget -readonly 1
     
     variable  filename  "";      # non empty if file is open.
     variable  isModified 0;      # boolean true if the file is modified..
