@@ -25,13 +25,7 @@
 ##
 # tweaker.tcl
 #    This Tcl script allows some of the values for digitizers in the COMPASS
-#    configuration file to be tweaked.  We envision the following minimally
-#    for all digitizer types:
-#
-#    -  DC offset.
-#    -  Trigger threshold.
-#    -  Pre-trigger
-#  Additional digitizer specific values may be modified as well.
+#    configuration file to be tweaked. 
 #
 
 #  Information about the program:
@@ -780,7 +774,7 @@ snit::widgetadaptor SelectChannelControl {
     
     method _onChange {var1 index op} {
         set newValue [$selector get]
-        puts "New value $newValue"
+        
         $options(-dom) setChannelValue \
             $options(-board) $options(-channel) $options(-name) $newValue
     }
@@ -911,6 +905,260 @@ proc createChannelControl {dom board channel param title widget} {
    
     return [$command $widget \
         -dom $dom -board $board -channel $channel -name $param -text $title]
+}
+
+#------------------------ board level GUI elements -----------------------
+
+##
+#  There's going to be a lot of similarity here between this and the
+#  classes that provide encapsulated GUI elements for channel level
+#  objects but I'm too stupid to know how to meaningfully know how to
+#  factor those comonalities out into a base class.
+
+##
+# @class BoolBoardControl
+#    Provides a controll element for a board level boolean parameter.
+#
+# OPTIONS:
+#   -dom        - Dom object that holds the XML.
+#   -board      - Board Dom identifier/command at the <board> tag.
+#   -name       - Parameter name e.g. SRV_PARAM_TR_SW_OUT_PROPAGATE.
+#   -text      - English name of the parameter (e.g. prop. trigger).
+#
+snit::widgetadaptor BoolBoardControl {
+    option -dom -default ""   -readonly 1
+    option -board -default "" -readonly 1
+    option -name -default ""  -readonly 1
+    
+    delegate option * to hull;      # include -text.
+    delegate method * to hull
+    
+    variable value "false"
+    
+    constructor args {
+        installhull using ttk::checkbutton -command [mymethod _onToggle] \
+            -onvalue true -offvalue false -variable [myvar value]
+        
+        
+        $self configurelist $args
+        
+        if {$options(-dom) eq "" } {
+            error "-dom is a required construction option"
+        }
+        if {$options(-board) eq ""} {
+            error "-board is a required construction option"
+        }
+        if {$options(-name) eq ""} {
+            error "-name is a required construction option"
+        }
+        set value [$options(-dom) getBoardValue $options(-board) $options(-name)]
+        
+    }
+    #------------------------ private methods --------------------------
+    
+    ##
+    # _onToggle
+    #    Process clicks in the checkbutton.
+    # @note value has the updated value of the checkbutton.
+    #
+    method _onToggle {} {
+        $options(-dom) setBoardValue $options(-board) $options(-name) $value
+    }
+}
+##
+# @class SelectBoardControl
+#     provides a combobox from which an enumerated parameter type
+#     can be selected for a board parameter such as e.g. SRV_PARAM_COINC_MODE
+#     (board level coincidence mode).
+#
+# OPTIONS:
+#   -dom        - COMPASSdom object that's being configured.
+#   -board      - board identifier within the -dom that we're configuring.
+#   -name       - Parameter name (e.g. SRV_PARAM_COINC_MODE).
+#   -text       - textual label e.g. "coinc. mode"
+#     
+snit::widgetadaptor SelectBoardControl {
+    component selector
+    component title
+    
+    option -dom -default   "" -readonly 1
+    option -board -default "" -readonly 1
+    option -name  -default "" -readonly 1
+    
+    delegate option -text to title
+    delegate option *     to selector
+    delegate method *     to selector
+    
+    variable value ""
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        install title using ttk::label $win.title
+        install selector using ttk::combobox  $win.selector -width 32 \
+            -textvariable [myvar value]
+        
+        $self configurelist $args
+        
+        if {$options(-dom) eq ""} {
+            error "-dom is required at construction"
+        }
+        if {$options(-board) eq ""} {
+            error "-board is required at construction"
+        }
+        if {$options(-name) eq ""} {
+            error "-name is required at construction"
+        }
+        # Figure out and configure the selection choices:
+        
+        set info [$options(-dom) getParamDescription $options(-board) $options(-name)]
+        if {[dict get $info type] ne "selection"} {
+            error "$options(-name) is not an enumerated parameter"
+        }
+        $selector configure -values [dict get $info values]
+        
+        #  Set current value:
+        
+        set value \
+            [$options(-dom) getBoardValue $options(-board) $options(-name)]
+        
+        # now we can do a meaningful layout:
+        
+        grid $selector $title -sticky w
+        
+        # Use a trace on value to know when things have changed:
+        
+        trace add variable [myvar value] write [mymethod _onChange]
+    }
+    destructor {
+        # Need to kill off the trace -- if the var still exists...:
+        # 
+        catch {trace remove variable       \
+            [myvar value] write [mymethod _onChange]}
+        
+    }
+    #--------------- private methods ---------------------------------------
+    
+    ##
+    # _onChange
+    #   The value changed - set the parameter.
+    #
+    method _onChange {name index op} {
+        set newValue [$selector get]
+        
+        $options(-dom) setBoardValue $options(-board) $options(-name) $newValue
+    }
+}
+##
+# @class NumericBoardControl
+#     Control a board level numeric parameter. e.g. SRV_PARAM_START_DELAY
+#
+# OPTIONS:
+#  -dom      - COMPASSdom object containing the parsed XML
+#  -board    - Board to be controlled in the -dom object.
+#  -name     - parameter name e.g. SRV_PARAM_START_DELAY
+#  -title    - Human readable parameter e.g. "start delay"
+#
+snit::widgetadaptor NumericBoardControl {
+    component selector
+    component units
+    component title
+    
+    option -dom -default ""     -readonly 1
+    option -board -default ""   -readonly 1
+    option -name -default ""    -readonly 1
+    
+    delegate option -text to title
+    delegate method * to selector
+    delegate option * to selector
+    
+    constructor args {
+        installhull using ttk::frame
+        install selector using \
+            ttk::spinbox $win.select -command [mymethod _onChange]
+        install units using ttk::label $win.units
+        install title using ttk::label $win.title
+        
+        # Process the configuration:
+        
+        $self configurelist $args
+        if {$options(-dom) eq ""} {
+            error "-dom option is mandatory"
+        }
+        if {$options(-board) eq ""} {
+            error "-board option is mandatory"
+        }
+        
+        if {$options(-name) eq ""} {
+            error "-name option is mandatory"
+        }
+        
+        # Fully configure the units and spinbox based on the
+        # parameter description.
+        
+        set info  [$options(-dom) getParamDescription \
+            $options(-board)  $options(-name)]
+        if {[dict get $info type] ne "numeric"} {
+            error "$options(-name) is not a numeric parameter"
+        }
+        $selector configure -from [dict get $info minimum] \
+            -to [dict get $info maximum] -increment [dict get $info step]
+        $units configure -text [dict get $info units]
+        
+        $selector set [$options(-dom) getBoardValue \
+            $options(-board)  $options(-name)]
+        
+        # Now that everything is configured do the layout.
+        
+        grid $selector $units $title -sticky w
+        
+        
+    }
+    #----------------------------- private methods ---------------------
+    
+    ##
+    # _onChange
+    #   Spinbox value changed so we need to change the value of the
+    #   parameter to match
+    #
+    method _onChange {} {
+        set newValue [$selector get]
+        $options(-dom) setBoardValue \
+            $options(-board)  $options(-name) $newValue
+    }
+}
+
+##
+# createBoardControl
+#    Given a dom, board and parameter name, creates the
+#    appropriate control to manage that parameter.
+#
+# @param dom    - COMPASSdom object being edited.
+# @param board  - Board in the DOM
+# @param param  - name of the parameter (e.g. SRV_PARAM_START_DELAY).
+# @param title  - Human readable title string (e.g. "start delay").
+# @param widget - widget path to the GUI object to create
+#
+proc createBoardControl {dom board param title widget} {
+   # Get a description of the paramter and based on the type figure out
+   # the command we need to execute:
+   
+   set info [$dom getParamDescription $board $param]
+   set type [dict get $info type]
+   
+   if {$type eq "numeric"} {
+    set command NumericBoardControl
+   } elseif {$type eq "boolean"} {
+    set command BoolBoardControl
+   } elseif {$type eq "selection"} {
+    set command SelectBoardControl
+   } else {
+    error "Unrecognized parameter type for $param : $type"
+   }
+   
+    return [$command $widget \
+        -dom $dom -board $board  -name $param -text $title]
+    
 }
 
 #----------------------- titleManager class ----------------------
