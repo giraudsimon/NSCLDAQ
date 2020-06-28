@@ -119,6 +119,7 @@ snit::type COMPASSdom {
     #                 link      - Connection link number.
     #                 node      - CONET node number.
     #                 address   - VME base address.
+    #                 channels  - Number of channels.
     #        
     #
     method getBoardDescription {board} {
@@ -129,7 +130,7 @@ snit::type COMPASSdom {
             
             #  Only do the next bit if the tag is interesting to us:
             
-            if {$tag in [list modelName serialNumber linkNum connectionType amcFirmware address conetNode]} {
+            if {$tag in [list modelName serialNumber linkNum connectionType dppType channelCount address conetNode]} {
                 set value [[$child firstChild] nodeValue]
                 switch  -exact -- $tag {
                     modelName {
@@ -138,9 +139,15 @@ snit::type COMPASSdom {
                     serialNumber {
                         dict set result serial $value
                     }
-                    amcFirmware {
-                        set dppType [$self _computeDppType $child]
-                        dict set result dpptype $dppType
+                    dppType {
+                        if {$value eq "DPP_PSD"} {
+                            dict set result dpptype psd
+                        } elseif {$value eq "DPP_PHA"} {
+                            dict set result dpptype pha
+                        } else {
+                            error "Unrecognized DPP type: $value"    
+                        }
+                        
                     }
                     connectionType {
                         dict set result connection $value
@@ -153,6 +160,9 @@ snit::type COMPASSdom {
                     }
                     address {
                         dict set result address $value
+                    }
+                    channelCount {
+                        dict set result channels $value
                     }
                 }
             }
