@@ -33,12 +33,20 @@ class testmultiple : public CppUnit::TestFixture {
     CPPUNIT_TEST(src_1);
     CPPUNIT_TEST(src_2);
     CPPUNIT_TEST(src_3);
+    
+    CPPUNIT_TEST(sink_1);
+    CPPUNIT_TEST(sink_2);
+    CPPUNIT_TEST(sink_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
     void src_1();
     void src_2();
     void src_3();
+    
+    void sink_1();
+    void sink_2();
+    void sink_3();
 private:
     CFilterTestSource* m_pSrc;
     CFilterTestSink*   m_pSink;
@@ -102,4 +110,43 @@ void testmultiple::src_3()
     }
     ASSERT(!m_pSrc->getItem());
 
+}
+
+void testmultiple::sink_1()
+{
+    // If I don't put any thing in a sink is empty:
+    
+    ASSERT(m_pSink->m_sink.empty());
+}
+void testmultiple::sink_2()
+{
+    // If I put a single ring item a pointer to a copy of it will
+    // be in the sink vector.
+    
+    CRingStateChangeItem item(BEGIN_RUN, 1, 0, time(nullptr), "The title string");
+    m_pSink->putItem(item);
+    
+    EQ(size_t(1), m_pSink->m_sink.size());
+    CRingItem* pSunk = m_pSink->m_sink[0];
+    ASSERT(item == *pSunk);
+}
+void testmultiple::sink_3()
+{
+    // If I put several items copies of them will be in the sink in the right
+    // order
+    
+    CDataFormatItem item1;
+    CGlomParameters item2(100, true, CGlomParameters::first);
+    CRingStateChangeItem item3(BEGIN_RUN, 1, 0, time(nullptr), "The title string");
+    CRingStateChangeItem item4(END_RUN, 1, 100, time(nullptr), "The title string");
+    std::vector<CRingItem*> items = {&item1, &item2, &item3, &item4};
+    
+    for (int i =0; i < items.size(); i++) {
+        m_pSink->putItem(*items[i]);
+    }
+    
+    EQ(items.size(), m_pSink->m_sink.size());
+    for (int i =0; i < items.size(); i++) {
+        ASSERT(*items[i] == *(m_pSink->m_sink[i]));
+    }
 }
