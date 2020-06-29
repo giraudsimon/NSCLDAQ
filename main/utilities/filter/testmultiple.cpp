@@ -28,6 +28,8 @@
 #include <CRingStateChangeItem.h>
 #include <CAbnormalEndItem.h>
 #include <CDataFormatItem.h>
+#include <CRingPhysicsEventCountItem.h>
+#include <CRingScalerItem.h>
 #include <time.h>
 #include <DataFormat.h>
 #include "CFilterMain.h"
@@ -47,6 +49,11 @@ class testmultiple : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(abend_1);
     CPPUNIT_TEST(emptyrun_1);
+    CPPUNIT_TEST(scaler_1);
+    // We could do more but let's face it. We've demonstrated at this point
+    // that I can ask the filter to output arbitrary ring items
+    // in addition to what I return back to the filter...win
+    // We can put daqdev/NSCLDAQ#804 to bed as solved.
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -60,6 +67,7 @@ protected:
     
     void abend_1();
     void emptyrun_1();
+    void scaler_1();
 private:
     CFilterTestSource* m_pSrc;
     CFilterTestSink*   m_pSink;
@@ -215,6 +223,15 @@ public:
         }
         return pItem;
     }
+    CRingItem* handleScalerItem(CRingScalerItem* pItem)
+    {
+        CRingPhysicsEventCountItem item(100, 10);
+        m_pMain->putRingItem(&item);
+        return pItem;
+    }
+    
+    
+    
     CFilter* clone() const {
         return new CTestFilter1(m_pMain);
     }
@@ -245,4 +262,40 @@ void testmultiple::emptyrun_1()
     
     ASSERT(begin == *(pSink->m_sink[1]));
     ASSERT(end == *(pSink->m_sink[2]));
+}
+void testmultiple::scaler_1()
+{
+    // Scaler item can emit physics event count too
+
+    CTestFilter1 filter(m_pFilter);
+    m_pFilter->registerFilter(&filter);
+    CRingStateChangeItem begin(BEGIN_RUN, 1, 0, time(nullptr), "The title string");
+    std::vector<uint32_t> scalers;
+    for (int i =0; i <32; i++) {
+        scalers.push_back(i);
+    }
+    CRingScalerItem scaler(0, 10, time(nullptr), scalers);
+    CRingStateChangeItem end(END_RUN, 1, 100, time(nullptr), "The title string");
+    
+    CFilterTestSource* pSrc = dynamic_cast<CFilterTestSource*>(
+        m_pFilter->getMediator()->getDataSource()
+    );
+    pSrc->addItem(&begin);
+    pSrc->addItem(&scaler);
+    pSrc->addItem(&end);
+    
+    (*m_pFilter)();
+    
+    // I shoulid have a format item, a begin run, an event count item,
+    // a scaler item and an end run.
+    
+    CFilterTestSink* pSink = dynamic_cast<CFilterTestSink*>(
+        m_pFilter->getMediator()->getDataSink()
+    );
+    EQ(size_t(5), pSink->m_sink.size());
+    EQ(RING_FORMAT, pSink->m_sink[0]->type());
+    EQ(BEGIN_RUN, pSink->m_sink[1]->type());
+    EQ(PHYSICS_EVENT_COUNT, pSink->m_sink[2]->type());
+    EQ(PERIODIC_SCALERS, pSink->m_sink[3]->type());
+    EQ(END_RUN, pSink->m_sink[4]->type());
 }
