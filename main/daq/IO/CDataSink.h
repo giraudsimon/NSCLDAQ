@@ -36,7 +36,7 @@ public:
 
 
     /*!
-    * DEPRECATED - A method defining how to send ring items to the sink
+    *  - A method defining how to send ring items to the sink
     *
     * Instead of using this method, the user should use the overload of the
     * insertion operator (operator<<) for CRingItems.

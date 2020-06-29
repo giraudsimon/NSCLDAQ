@@ -73,7 +73,7 @@ class CTestSourceSink : public CDataSource, public CDataSink
     virtual ~CTestSourceSink();
 
     /*!
-     * \brief DEPRECATED - Insert a ring item into the sink
+     * \brief  - Insert a ring item into the sink
      * \param item
      */
     virtual void putItem(const CRingItem& item);
@@ -102,7 +102,7 @@ class CTestSourceSink : public CDataSource, public CDataSink
     virtual void read(char* pBuffer, size_t nBytes);
 
     /*!
-     * \brief DEPRECATED - Extract a ring item from the source
+     * \brief  - Extract a ring item from the source
      * \return
      */
     virtual CRingItem* getItem() {return nullptr;}
