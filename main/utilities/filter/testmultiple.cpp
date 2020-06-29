@@ -28,6 +28,8 @@
 #include <CRingStateChangeItem.h>
 #include <CAbnormalEndItem.h>
 #include <CDataFormatItem.h>
+#include <CRingPhysicsEventCountItem.h>
+#include <CRingScalerItem.h>
 #include <time.h>
 #include <DataFormat.h>
 #include "CFilterMain.h"
@@ -74,6 +76,11 @@ class testmultiple : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(abend_1);
     CPPUNIT_TEST(emptyrun_1);
+    CPPUNIT_TEST(scaler_1);
+    // We could do more but let's face it. We've demonstrated at this point
+    // that I can ask the filter to output arbitrary ring items
+    // in addition to what I return back to the filter...win
+    // We can put daqdev/NSCLDAQ#804 to bed as solved.
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -258,7 +265,9 @@ public:
     }
     
     
-        CFilter* clone() const {
+    
+    CFilter* clone() const {
+
         return new CTestFilter1(m_pMain);
     }
 };
@@ -326,4 +335,3 @@ void testmultiple::scaler_1()
     EQ(PERIODIC_SCALERS, pSink->m_sink[3]->type());
     EQ(END_RUN, pSink->m_sink[4]->type());
 }
-
