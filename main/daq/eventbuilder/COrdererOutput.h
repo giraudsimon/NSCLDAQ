@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CORDEREROUTPUT_H
-#define __CORDEREROUTPUT_H
+#ifndef CORDEREROUTPUT_H
+#define CORDEREROUTPUT_H
 #include "CFragmentHandler.h"
 #include <tcl.h>
 #include <io.h>

@@ -13,22 +13,12 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __EVBFRAMEWORK_H
-#define __EVBFRAMEWORK_H
+#ifndef EVBFRAMEWORK_H
+#define EVBFRAMEWORK_H
 
-#ifndef __CRT_STDINT_H
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
 
 struct gengetopt_args_info;
 

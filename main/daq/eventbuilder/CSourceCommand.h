@@ -18,12 +18,11 @@
  * @brief provide command to add data source queues.
  */
 
-#ifndef __CSOURCECOMMAND_H
-#define __CSOURCECOMMAND_H
+#ifndef CSOURCECOMMAND_H
+#define CSOURCECOMMAND_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
+
 
 
 // Forward definitions:

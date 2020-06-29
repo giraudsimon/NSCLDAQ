@@ -1,5 +1,5 @@
-#ifndef _CUNKNOWNFRAGMENT_H
-#define _CUNKNOWNFRAGMENT_H
+#ifndef CUNKNOWNFRAGMENT_H
+#define CUNKNOWNFRAGMENT_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,16 +17,8 @@
  * @author Ron Fox <fox@nscl.msu.edu>
  */
 
-#ifndef __CRINGFRAGMENT_H
 #include "CRingFragmentItem.h"
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 /**
  * @class CUnknownFragment

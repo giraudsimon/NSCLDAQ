@@ -17,26 +17,10 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_UNISTD_H
+
 #include <unistd.h>
-#ifndef __CRTUNISTD_H
-#define __CRTUNISTD_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 struct _RingItem;
 class CRingBuffer;

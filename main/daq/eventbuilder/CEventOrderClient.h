@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CEVENTORDERCLIENT_H
-#define __CEVENTORDERCLIENT_H
+#ifndef CEVENTORDERCLIENT_H
+#define CEVENTORDERCLIENT_H
 
 #include <string>
 #include <stdint.h>

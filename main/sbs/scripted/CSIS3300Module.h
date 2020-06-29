@@ -14,14 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CSIS3300MODULE_H
-#define __CSIS3300MODULE_H
+#ifndef CSIS3300MODULE_H
+#define CSIS3300MODULE_H
 
 #include "CConfigurableObject.h"
-
-#ifndef __CDIGITIZERMODULE_H
 #include <CDigitizerModule.h>
-#endif
 
 class CSIS3300;
 

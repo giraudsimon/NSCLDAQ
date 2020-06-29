@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CBARRIERSTATSCOMMAND_H
-#define __CBARRIERSTATSCOMMAND_h
+#ifndef CBARRIERSTATSCOMMAND_H
+#define CBARRIERSTATSCOMMAND_h
 
 /**
  * @file CBarrierStatsCommand.h
@@ -23,20 +23,16 @@
  *        Tcl command to get barrier statistics.
  */
 
-#ifndef __TCLOBJECTPROCESSOR_H
+
 #include <TCLObjectProcessor.h>
-#endif
+
 
 // These headers must be included because C++ does not allow
 // nested class typedefs.
 
-#ifndef __CBARRIESTATS_H
-#include "CBarrierStats.h"
-#endif
 
-#ifndef __CINCOMPLETEBARRIERSTATS_H
+#include "CBarrierStats.h"
 #include "CIncompleteBarrierStats.h"
-#endif
 
 // Forward class/type definitions:
 

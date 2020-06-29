@@ -34,39 +34,15 @@
 // (c) Copyright NSCL 1999, All rights reserved HostListCheck.h
 //
 
-#ifndef __HOSTLISTCHECK_H  //Required for current class
-#define __HOSTLISTCHECK_H
+#ifndef HOSTLISTCHECK_H  //Required for current class
+#define HOSTLISTCHECK_H
 
-                               //Required for base classes
-#ifndef __ACCESSLISTCHECK_H
 #include "AccessListCheck.h"
-#endif
-
-#ifndef __STRINGINTERACTOR_H
 #include "StringInteractor.h"
-#endif
-
-
-#ifndef __CRTL_IN_H
-#ifdef WIN32
-#include <winsock.h>
-#else
 #include <netinet/in.h>
-#endif
-#define __CRTL_IN_H
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
-#ifndef __CPP_IOSTREAM
 #include <iostream>
-#ifndef __CPP_IOSTREAM
-#define __CPP_IOSTREAM
-#endif
-#endif
+
                                
 class CHostListCheck  : public CAccessListCheck        
 {                       

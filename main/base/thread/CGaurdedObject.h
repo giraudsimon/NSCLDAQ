@@ -14,16 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CGAURDEDOBJECT_H
-#define __CGAURDEDOBJECT_H
+#ifndef CGAURDEDOBJECT_H
+#define CGAURDEDOBJECT_H
 using namespace std;		// Needed for spectrodaq includes.
 
-#ifndef __PTHREAD_H
 #include <pthread.h>
-#ifndef __PTHREAD_H
-#define __PTHREAD_H
-#endif
-#endif
 
 
 

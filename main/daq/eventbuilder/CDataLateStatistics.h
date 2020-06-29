@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CDATALATESTATISTICS_H
-#define __CDATALATESTATISTICS_H
+#ifndef CDATALATESTATISTICS_H
+#define CDATALATESTATISTICS_H
 
 /**
  * @file CDataLateStatistics.h
@@ -22,31 +22,10 @@
  *        statistics on data late event fragments.
  */
 
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /**
  * @class CDataLateStatistics

@@ -36,48 +36,16 @@ When one is found it is used to create the actual module.
 //   East Lansing, MI 48824-1321
 //   mailto:fox@nscl.msu.edu
 
-#ifndef __CMODULECOMMAND_H  //Required for current class
-#define __CMODULECOMMAND_H
+#ifndef CMODULECOMMAND_H  //Required for current class
+#define CMODULECOMMAND_H
 
 
-#ifndef __CDigitizerDictionary_H
 #include <CDigitizerDictionary.h>
-#endif
-
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
-//
-// Include files:
-//
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_LIST   // we have a list of creators.
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __STL_MAP    // and a map of modules.
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __CRTL_ASSERT_H
 #include <assert.h>
-#ifndef __CRTL_ASSERT_H
-#define __CRTL_ASSERT_H
-#endif
-#endif
 
 // forward class definitions:
 

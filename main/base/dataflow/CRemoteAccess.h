@@ -1,5 +1,5 @@
-#ifndef __CREMOTEACCESS_H
-#define __CREMOTEACCESS_H
+#ifndef CREMOTEACCESS_H
+#define CREMOTEACCESS_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -15,19 +15,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRT_UNISTD_H
-#define __CRT_UNISTD_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 class CRingBuffer;

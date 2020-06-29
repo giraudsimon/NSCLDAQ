@@ -1,5 +1,5 @@
-#ifndef __SCRIPTEDBUNDLE_H
-#define __SCRIPTEDBUNDLE_H
+#ifndef SCRIPTEDBUNDLE_H
+#define SCRIPTEDBUNDLE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.

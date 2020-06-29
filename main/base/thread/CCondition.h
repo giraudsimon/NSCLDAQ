@@ -1,5 +1,5 @@
-#ifndef __CCONDITION_H
-#define __CCONDITION_H
+#ifndef CCONDITION_H
+#define CCONDITION_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,19 +16,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRT_PTHREAD_H
 #include <pthread.h>
-#ifndef __CRT_PTHREAD_H
-#define __CRT_PTHREAD_H
-#endif
-#endif
-
-#ifndef __CRT_TIME
 #include <time.h>
-#ifndef __CRT_TIME
-#define __CRT_TIME
-#endif
-#endif
 
 
 class CMutex;

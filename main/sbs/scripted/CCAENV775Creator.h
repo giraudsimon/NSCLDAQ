@@ -24,25 +24,12 @@
 //
 // Copyright 
 
-#ifndef __CCAENV775CREATOR_H  //Required for current class
-#define __CCAENV775CREATOR_H
+#ifndef CCAENV775CREATOR_H  //Required for current class
+#define CCAENV775CREATOR_H
 
-//
-// Include files:
-//
 
-//Required for base classes
-
-#ifndef __CMODULECREATOR_H     //CModuleCreator
 #include "CModuleCreator.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 

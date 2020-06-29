@@ -26,18 +26,14 @@
 //
 // Copyright 
 
-#ifndef __CCHANNELLIST_H  //Required for current class
-#define __CCHANNELLIST_H
+#ifndef CCHANNELLIST_H  //Required for current class
+#define CCHANNELLIST_H
 
 //
 // Include files:
 //
-#ifndef __STL_LIST
+
 #include <list>        //Required for include files  
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
 
 // Forward channel definitions.
 

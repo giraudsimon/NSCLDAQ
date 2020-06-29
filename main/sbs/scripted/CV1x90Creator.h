@@ -1,5 +1,5 @@
-#ifndef __CV1X90CREATOR_H
-#define __CV1X90CREATOR_H
+#ifndef CV1X90CREATOR_H
+#define CV1X90CREATOR_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,9 +17,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CMODULECREATOR_H
 #include "CModuleCreator.h"
-#endif
 
 
 /*!

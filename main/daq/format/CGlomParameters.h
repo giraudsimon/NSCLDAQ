@@ -1,5 +1,5 @@
-#ifndef __CGLOMPARAMETERS_H
-#define __CGLOMPARAMETERS_H
+#ifndef CGLOMPARAMETERS_H
+#define CGLOMPARAMETERS_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,16 +16,9 @@
  * @author  Ron Fox <fox@nscl.msu.edu>
  */
 
-#ifndef __CRINGITEM_H
-#include "CRingItem.h"
-#endif
 
-#ifndef __CPPRTL_TYPEINFO
+#include "CRingItem.h"
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 /**
  * @class CGlomParameters

@@ -1,5 +1,5 @@
-#ifndef __CRINGSTATECHANGEITEM_H
-#define __CRINGSTATECHANGEITEM_H
+#ifndef CRINGSTATECHANGEITEM_H
+#define CRINGSTATECHANGEITEM_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -17,32 +17,12 @@
 */
 
 
-#ifndef __CRINGITEM_H
+
 #include <CRingItem.h>
-#endif
-
-
-#ifndef __DATAFORMAT_H
 #include <DataFormat.h>
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#endif
-#endif
-
-#ifndef __RANGEERROR_H
 #include <RangeError.h>
-#endif
 
 /*!
   This class represents a state change item.

@@ -1,5 +1,5 @@
-#ifndef __CRINGMASTER_H
-#define __CRINGMASTER_H
+#ifndef CRINGMASTER_H
+#define CRINGMASTER_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -17,12 +17,7 @@
 */
 
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class definitions.
 

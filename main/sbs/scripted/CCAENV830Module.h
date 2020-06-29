@@ -1,5 +1,5 @@
-#ifndef __CCAENV830MODULE_H
-#define __CCAENV830MODULE_H
+#ifndef CCAENV830MODULE_H
+#define CCAENV830MODULE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2009.
@@ -18,13 +18,9 @@
 
 
 
-#ifndef __CDIGITIZERMODULE_H
 #include "CDigitizerModule.h"
-#endif
 
-#ifdef HAVE_STD_NAMESPACE
 using namespace std;
-#endif
 
 
 

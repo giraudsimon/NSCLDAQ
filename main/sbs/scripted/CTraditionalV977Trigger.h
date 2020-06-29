@@ -13,18 +13,13 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CTRADITIONALV977TRIGGER_H
-#define __CTRADITIONALV977TRIGGER_H
+#ifndef CTRADITIONALV977TRIGGER_H
+#define CTRADITIONALV977TRIGGER_H
 
 // Base class header.
 
-#ifndef __TRIGGER_H
 #include <Trigger.h>
-#endif
-
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
 
 // Forward definitions.
 

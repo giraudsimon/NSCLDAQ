@@ -32,24 +32,15 @@ specified module type and produces a ReadOrder Module.
 //
 
 
-#ifndef __CPACKETCREATOR_H  //Required for current class
-#define __CPACKETCREATOR_H
+#ifndef CPACKETCREATOR_H  //Required for current class
+#define CPACKETCREATOR_H
 
 //
 // Include files:
 //
 
-                               //Required for base classes
-#ifndef __CMODULECREATOR_H     //CModuleCreator
 #include "CModuleCreator.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward definitions:
 //

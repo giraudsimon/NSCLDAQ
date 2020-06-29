@@ -1,5 +1,5 @@
-#ifndef __RINGBUFINT_H
-#define __RINGBUFINT_H
+#ifndef RINGBUFINT_H
+#define RINGBUFINT_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -22,12 +22,7 @@
   intended to be included by client software and therefore should not
   be installed if possible.
 */
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRT_UNISTD_H
-#define __CRT_UNISTD_H
-#endif
-#endif
 
 
 /* constants - These are defined in this way so that they

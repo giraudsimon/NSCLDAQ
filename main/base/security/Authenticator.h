@@ -32,17 +32,11 @@
 // (c) Copyright NSCL 1999, All rights reserved Authenticator.h
 //
 
-#ifndef __AUTHENTICATOR_H  //Required for current class
-#define __AUTHENTICATOR_H
+#ifndef AUTHENTICATOR_H  //Required for current class
+#define AUTHENTICATOR_H
 
-#ifndef __INTERACTOR_H
 #include "Interactor.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
 
 class CAuthenticator      
 {                       

@@ -13,29 +13,13 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CSCRIPTEDSCALERS_H
-#define __CSCRIPTEDSCALERS_H
+#ifndef CSCRIPTEDSCALERS_H
+#define CSCRIPTEDSCALERS_H
 
 
-#ifndef __CSCALER_H
 #include <CScaler.h>
-#endif
-
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 #include <stdint.h>
 
 // Forward definitions:

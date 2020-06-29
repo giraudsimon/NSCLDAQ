@@ -1,5 +1,5 @@
-#ifndef __CCHANEL_H
-#define __CHANNEL_H
+#ifndef CCHANEL_H
+#define CHANNEL_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,27 +16,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __EPICS_CADEF
 #include <cadef.h>
-#ifndef __EPICS_CADEF
-#define __EPICS_CADEF
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CRT_TIME
 #include <time.h>
-#ifndef __CRT_TIME
-#define __CRT_TIME
-#endif
-#endif
-
 #include <typeinfo>
 
 class CConverter;

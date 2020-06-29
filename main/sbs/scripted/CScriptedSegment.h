@@ -1,5 +1,5 @@
-#ifndef __CSCRIPTEDSEGMENT_H
-#define __CSCRIPTEDSEGMENT_H
+#ifndef CSCRIPTEDSEGMENT_H
+#define CSCRIPTEDSEGMENT_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -18,17 +18,8 @@
 */
 
 
-#ifndef __CEVENTSEGMENT_H
 #include <CEventSegment.h>
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 class CDigitizerDictionary;
 class CReadOrder;

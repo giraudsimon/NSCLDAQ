@@ -1,5 +1,5 @@
-#ifndef __TESTCOMMON_H
-#define __TESTCOMMON_H
+#ifndef TESTCOMMON_H
+#define TESTCOMMON_H
 
 #include <string>
 

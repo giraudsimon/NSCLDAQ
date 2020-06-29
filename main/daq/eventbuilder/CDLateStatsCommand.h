@@ -13,26 +13,16 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CDLATESTATSCOMMAND_H
-#define __CDLATESTATSCOMMAND_H
+#ifndef CDLATESTATSCOMMAND_H
+#define CDLATESTATSCOMMAND_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
+
 #include <TCLObjectProcessor.h>
-#endif
 
-#ifndef __CRT_STDINT_H
+
+
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
 
 // forward definitions:
 
