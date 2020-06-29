@@ -26,7 +26,14 @@
 #include <CDataFormatItem.h>
 #include <CGlomParameters.h>
 #include <CRingStateChangeItem.h>
+#include <CAbnormalEndItem.h>
+#include <CDataFormatItem.h>
 #include <time.h>
+#include <DataFormat.h>
+#include "CFilterMain.h"
+#include "CMediator.h"
+#include "CFilter.h"
+
 
 class testmultiple : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(testmultiple);
@@ -37,6 +44,9 @@ class testmultiple : public CppUnit::TestFixture {
     CPPUNIT_TEST(sink_1);
     CPPUNIT_TEST(sink_2);
     CPPUNIT_TEST(sink_3);
+    
+    CPPUNIT_TEST(abend_1);
+    CPPUNIT_TEST(emptyrun_1);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -47,17 +57,29 @@ protected:
     void sink_1();
     void sink_2();
     void sink_3();
+    
+    void abend_1();
+    void emptyrun_1();
 private:
     CFilterTestSource* m_pSrc;
     CFilterTestSink*   m_pSink;
+    CFilterMain*       m_pFilter;
 public:
     void setUp() {
         m_pSrc = new CFilterTestSource;
         m_pSink= new CFilterTestSink;
+        
+        CFilterMain::m_testing = true;
+        const char* filterargs[4] = {
+            "filter", "--source=-", "--sink=-", "--oneshot"
+        };
+        m_pFilter = new CFilterMain(4, const_cast<char**>(filterargs));
+        
     }
     void tearDown() {
         delete m_pSrc;
         delete m_pSink;
+        delete m_pFilter;
     }
 
 };
@@ -149,4 +171,78 @@ void testmultiple::sink_3()
     for (int i =0; i < items.size(); i++) {
         ASSERT(*items[i] == *(m_pSink->m_sink[i]));
     }
+}
+void testmultiple::abend_1()
+{
+    // Running the filter with only an abnormal end in the source
+    // results in an abnormal end in the sink.
+ 
+    CMediator* pMed = m_pFilter->getMediator();
+    CFilterTestSource* pSrc = dynamic_cast<CFilterTestSource*>(pMed->getDataSource());
+    CFilterTestSink*   pSink = dynamic_cast<CFilterTestSink*>(pMed->getDataSink());
+    
+    /// Test that the testing flag made the right source/sink
+    
+    ASSERT(pSrc);
+    ASSERT(pSink);
+    
+    CAbnormalEndItem abend;
+    pSrc->addItem(&abend);
+    
+    (*m_pFilter)();
+    
+    EQ(size_t(1), pSink->m_sink.size());
+    ASSERT(abend == *(pSink->m_sink[0]));
+    
+}
+
+/**
+ *  The next test and simple filter emits a format item prior to any
+ *  begin run it produces.
+ */
+class CTestFilter1  : public CFilter
+{
+private:
+    CFilterMain* m_pMain;
+public:
+    CTestFilter1(CFilterMain* pMain) : m_pMain(pMain) {}
+    
+    CRingItem* handleStateChangeItem(CRingStateChangeItem* pItem)
+    {
+        if (pItem->type() == BEGIN_RUN) {
+            CDataFormatItem format;
+            m_pMain->putRingItem(&format);
+        }
+        return pItem;
+    }
+    CFilter* clone() const {
+        return new CTestFilter1(m_pMain);
+    }
+};
+
+void testmultiple::emptyrun_1()
+{
+    CTestFilter1 filter(m_pFilter);
+    m_pFilter->registerFilter(&filter);
+    CRingStateChangeItem begin(BEGIN_RUN, 1, 0, time(nullptr), "The title string");
+    CRingStateChangeItem end(END_RUN, 1, 100, time(nullptr), "The title string");
+    CFilterTestSource* pSrc = dynamic_cast<CFilterTestSource*>(
+        m_pFilter->getMediator()->getDataSource()
+    );
+    pSrc->addItem(&begin);
+    pSrc->addItem(&end);
+    
+    (*m_pFilter)();
+    
+    // The sink should have a data format item begin and end.
+    CFilterTestSink* pSink = dynamic_cast<CFilterTestSink*>(
+        m_pFilter->getMediator()->getDataSink()
+    );
+    EQ(size_t(3), pSink->m_sink.size());
+    
+    CRingItem* fmt = pSink->m_sink[0];
+    EQ(RING_FORMAT, fmt->type());
+    
+    ASSERT(begin == *(pSink->m_sink[1]));
+    ASSERT(end == *(pSink->m_sink[2]));
 }
