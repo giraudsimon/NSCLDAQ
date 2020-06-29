@@ -33,6 +33,7 @@
 #define TCLAUTHORIZER_H
 
 #include <libtclplusdatatypes.h>
+
 #include <string>        //Required for include files
 #include <TCLInterpreter.h>        //Required for include files
 #include <TCLProcessor.h>
