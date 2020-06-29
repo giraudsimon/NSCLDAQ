@@ -26,7 +26,14 @@
 #include <CDataFormatItem.h>
 #include <CGlomParameters.h>
 #include <CRingStateChangeItem.h>
+#include <CAbnormalEndItem.h>
+#include <CDataFormatItem.h>
 #include <time.h>
+#include <DataFormat.h>
+#include "CFilterMain.h"
+#include "CMediator.h"
+#include "CFilter.h"
+
 
 #include "CFilterTestSource.h"
 #include "CFilterTestSink.h"
@@ -64,6 +71,9 @@ class testmultiple : public CppUnit::TestFixture {
     CPPUNIT_TEST(sink_1);
     CPPUNIT_TEST(sink_2);
     CPPUNIT_TEST(sink_3);
+    
+    CPPUNIT_TEST(abend_1);
+    CPPUNIT_TEST(emptyrun_1);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -74,11 +84,11 @@ protected:
     void sink_1();
     void sink_2();
     void sink_3();
-
     
     void abend_1();
     void emptyrun_1();
     void scaler_1();
+
 private:
     CFilterTestSource* m_pSrc;
     CFilterTestSink*   m_pSink;
@@ -239,6 +249,7 @@ public:
         }
         return pItem;
     }
+
     CRingItem* handleScalerItem(CRingScalerItem* pItem)
     {
         CRingPhysicsEventCountItem item(100, 10);
@@ -247,8 +258,7 @@ public:
     }
     
     
-    
-    CFilter* clone() const {
+        CFilter* clone() const {
         return new CTestFilter1(m_pMain);
     }
 };
@@ -278,6 +288,7 @@ void testmultiple::emptyrun_1()
     
     ASSERT(begin == *(pSink->m_sink[1]));
     ASSERT(end == *(pSink->m_sink[2]));
+
 }
 void testmultiple::scaler_1()
 {
