@@ -60,6 +60,10 @@ class testmultiple : public CppUnit::TestFixture {
     // that I can ask the filter to output arbitrary ring items
     // in addition to what I return back to the filter...win
     // We can put daqdev/NSCLDAQ#804 to bed as solved.
+    
+    CPPUNIT_TEST(sink_1);
+    CPPUNIT_TEST(sink_2);
+    CPPUNIT_TEST(sink_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -70,6 +74,7 @@ protected:
     void sink_1();
     void sink_2();
     void sink_3();
+
     
     void abend_1();
     void emptyrun_1();
@@ -189,6 +194,7 @@ void testmultiple::sink_3()
     for (int i =0; i < items.size(); i++) {
         ASSERT(*items[i] == *(m_pSink->m_sink[i]));
     }
+
 }
 void testmultiple::abend_1()
 {
