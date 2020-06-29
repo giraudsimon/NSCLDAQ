@@ -30,19 +30,23 @@ FIGUREDIR=@prefix@/share/html/figures
 
 install-exec-hook:
 	$(mkinstalldirs) $(INSTDIR) 
-	$(mkinstalldirs) $(GRAPHDIR)
-	$(mkinstalldirs) $(FIGUREDIR)
-	$(mkinstalldirs) @prefix@/share/pdfs
 	install @libdir@/libTclRingBuffer.so $(INSTDIR)
 	(cd @srcdir@; $(INSTALL_SCRIPT) $(PACKAGE_FILES) $(INSTDIR))
 	echo pkg_mkIndex -verbose $(INSTDIR) "*.tcl" | @TCLSH_CMD@
 	echo "package ifneeded TclRingBuffer 1.0 [list load [file join \$$dir libTclRingBuffer.so]]" >> $(INSTDIR)/pkgIndex.tcl
 	install @builddir@/ScalerDisplay.tcl @bindir@/ScalerDisplay
+
+if BUILD_DOCS
+install-data-hook:
+	$(mkinstalldirs) @prefix@/share/pdfs
+	$(mkinstalldirs) $(GRAPHDIR)
+	$(mkinstalldirs) $(FIGUREDIR)
 	$(CHAPTER2BOOK) -s @srcdir@/scalerdisplay_user.xml -b @srcdir@/scalerdisplay_user_bookinfo.xml -o .
 	$(INSTALL_DATA)  $(BOOK) @prefix@/share/pdfs
 	(cd @srcdir@; install $(IMAGES) $(GRAPHDIR))
 	install $(FIGURES) $(FIGUREDIR)
 
+endif
 
 
 check-TESTS: check_PROGRAMS

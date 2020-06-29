@@ -211,6 +211,9 @@ newfile.write(textTree+'\n')
 newfile.close()
 
 # generate the pdf is desired
+# Note this is a bit nasty and not quite right because
+# really autoconf should be determining how to build pdf's from .xml's.
+#
 if args.pdf:
 	currentWd = os.getcwd()
 	print currentWd
