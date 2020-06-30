@@ -21,23 +21,12 @@
 */
 
 
-#ifndef __CTCLRINGCOMMAND_H
-#define __CTCLRINGCOMMAND_H
+#ifndef CTCLRINGCOMMAND_H
+#define CTCLRINGCOMMAND_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __TCLOBJECT_H
 #include <TCLObject.h>
-#endif
 
 class CTCLInterpreter;
 class CRingBuffer;

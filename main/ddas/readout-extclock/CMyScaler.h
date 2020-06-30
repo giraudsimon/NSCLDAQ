@@ -4,8 +4,8 @@
  H.L. Crawford 6/13/2010
 *********************************************************/
 
-#ifndef __MYSCALER_H
-#define __MYSCALER_H
+#ifndef MYSCALER_H
+#define MYSCALER_H
 
 #include <config.h>
 #include <CScaler.h>

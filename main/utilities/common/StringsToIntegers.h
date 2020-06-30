@@ -1,5 +1,5 @@
-#ifndef __STRINGSTOINTEGERS_H
-#define __STRINGSTOINTEGERS_H
+#ifndef STRINGSTOINTEGERS_H
+#define STRINGSTOINTEGERS_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,23 +17,9 @@
              East Lansing, MI 48824-1321
 */
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __CINVALIDARGUMENTEXCEPTION_H
 #include <CInvalidArgumentException.h>
-#endif
 
 
 

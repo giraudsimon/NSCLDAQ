@@ -14,23 +14,11 @@ Michigan State University
 East Lansing, MI 48824-1321
 */
 
-#ifndef __LOGGINGREADOUTLIST_H
-#define __LOGGINGREADOUTLIST_H
+#ifndef LOGGINGREADOUTLIST_H
+#define LOGGINGREADOUTLIST_H
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
 #include "CCCUSBReadoutList.h"
 
 class CLoggingReadoutList : public CCCUSBReadoutList

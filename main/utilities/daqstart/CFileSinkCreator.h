@@ -20,17 +20,15 @@
 */
 
 
-#ifndef __CFILESINKCREATOR_H  //Required for current class
-#define __CFILESINKCREATOR_H
+#ifndef CFILESINKCREATOR_H  //Required for current class
+#define CFILESINKCREATOR_H
 
 //
 // Include files:
 //
 
                                //Required for base classes
-#ifndef __CSINKCREATOR_H     //CSinkCreator
 #include "CSinkCreator.h"
-#endif
  
 class CFileSinkCreator  : public CSinkCreator        
 {

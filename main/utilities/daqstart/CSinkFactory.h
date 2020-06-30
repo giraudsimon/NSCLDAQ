@@ -17,8 +17,8 @@
 
 
 
-#ifndef __CSINKFACTORY_H  //Required for current class
-#define __CSINKFACTORY_H
+#ifndef CSINKFACTORY_H  //Required for current class
+#define CSINKFACTORY_H
 
 //
 // Include files:
@@ -26,21 +26,8 @@
 
 //   STL String class.
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-//  STL map class - holds the creators:
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
 
 
 

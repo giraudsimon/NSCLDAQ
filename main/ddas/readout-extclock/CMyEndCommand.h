@@ -1,5 +1,5 @@
-#ifndef __MYEND_H
-#define __MYEND_H
+#ifndef MYEND_H
+#define MYEND_H
 
 #include <CEndCommand.h>
 
