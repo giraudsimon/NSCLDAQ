@@ -21,6 +21,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#include <unistd.h>
 
 #include "CElapsedTime.h"
 
@@ -46,4 +47,12 @@ CPPUNIT_TEST_SUITE_REGISTRATION(aTestSuite);
 
 void aTestSuite::test_1()
 {
+    // sleep a second. the measurement should be longer
+    // than one second but < 1.25 to be generous.
+    
+    usleep(1000000);
+    double time = m_pTime->measure();
+    ASSERT(time >= 1.0);
+    ASSERT(time <= 1.25);
+    
 }
