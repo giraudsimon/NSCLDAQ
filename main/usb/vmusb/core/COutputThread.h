@@ -14,30 +14,13 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __COUTPUTTHREAD_H
-#define __COUTPUTTHREAD_H
+#ifndef COUTPUTTHREAD_H
+#define COUTPUTTHREAD_H
 
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __THREAD_H
 #include <Thread.h>
-#ifndef __THREAD_H
-#define __THREAD_H
-#endif
-#endif
 
 // Forward definitions:
 

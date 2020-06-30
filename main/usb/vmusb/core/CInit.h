@@ -15,27 +15,12 @@
 */
 
 
-#ifndef __CINIT_H
-#define __CINIT_H
+#ifndef CINIT_H
+#define CINIT_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 
 
 class CTCLInterpreter;

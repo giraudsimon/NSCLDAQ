@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CREADOUTHARDWARE_H
-#define __CREADOUTHARDWARE_H
+#ifndef CREADOUTHARDWARE_H
+#define CREADOUTHARDWARE_H
 
 // Forward class definitions:
 

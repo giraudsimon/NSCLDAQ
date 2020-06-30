@@ -13,14 +13,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CCAENCHAINCOMMAND_H
-#define __CCAENCHAINCOMMAND_H
+#ifndef CCAENCHAINCOMMAND_H
+#define CCAENCHAINCOMMAND_H
 
-
-#ifndef __CADCCOMMAND_H
 #include "CADCCommand.h"
-#endif
-
 
 /*!
     This class creates and configures CAEN Chains for the VM-USB readout software.
