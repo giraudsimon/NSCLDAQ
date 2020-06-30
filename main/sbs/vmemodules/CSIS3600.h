@@ -13,18 +13,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CSIS3600_H
-#define __CSIS3600_H
-#ifndef __CMODULE32_H
+#ifndef CSIS3600_H
+#define CSIS3600_H
 #include <CModule32.h>
-#endif
-
-
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
 
 #include <VmeModule.h>
 

@@ -1,5 +1,5 @@
-#ifndef __CTRIGGERLOOP_H
-#define __CTRIGGERLOOP_H
+#ifndef CTRIGGERLOOP_H
+#define CTRIGGERLOOP_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -19,10 +19,7 @@
 
 // Headers:
 
-#ifndef __DAQHWAPI_THREAD_H
 #include <Thread.h>
-#endif
-
 
 // Forward class definitions
 

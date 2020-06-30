@@ -12,15 +12,11 @@
      version's software is based on.
 
 */
-#ifndef __CAMAC_H
-#define __CAMAC_H
+#ifndef CAMAC_H
+#define CAMAC_H
 
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
-
 #include <stdint.h>
-
 #include <config.h>
 
 /*----------------------------------------------------------------------

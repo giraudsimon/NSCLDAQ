@@ -15,8 +15,8 @@
 */
 
 
-#ifndef __CAMACMAP_H
-#define __CAMACMAP_H
+#ifndef CAMACMAP_H
+#define CAMACMAP_H
 
   /*
   ** CAMAC/BIT3 device interface functions:

@@ -1,5 +1,5 @@
-#ifndef __CTIMEDTRIGGER_H
-#define __CTIMEDTRIGGER_H
+#ifndef CTIMEDTRIGGER_H
+#define CTIMEDTRIGGER_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -16,17 +16,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CEVENTTRIGGER_h
 #include <CEventTrigger.h>
-#endif
-
-
-#ifndef __CRT_TIME_H		// for struct timespec.
 #include <time.h>
-#ifndef __CRT_TIME_H
-#define __CRT_TIME_H
-#endif
-#endif
 
 /*!
   This class defines a trigger that fires at fixed, periodic time intervals.

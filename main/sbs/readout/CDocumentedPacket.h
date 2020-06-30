@@ -17,15 +17,10 @@
 
 //////////////////////////CDocumentedPacket.h file//////////////////////////////////
 
-#ifndef __CDOCUMENTEDPACKET_H  
-#define __CDOCUMENTEDPACKET_H
+#ifndef CDOCUMENTEDPACKET_H  
+#define CDOCUMENTEDPACKET_H
                                
-#ifndef __STL_STRING
 #include <string>   
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 

@@ -1,5 +1,5 @@
-#ifndef __CCAENV1X90OPCODES_H
-#define __CCAENV1X90OPCODES_H
+#ifndef CCAENV1X90OPCODES_H
+#define CCAENV1X90OPCODES_H
 
 /*!
    This file defines the microsequencer opcodes
@@ -10,12 +10,7 @@
 */
 
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 namespace CCAENV1x90Opcodes 
 {

@@ -11,21 +11,14 @@
 //
 // Copyright 
 
-#ifndef __CSCALERBANK_H  //Required for current class
-#define __CSCALERBANK_H
+#ifndef CSCALERBANK_H  //Required for current class
+#define CSCALERBANK_H
 
 //
 // Include files:
 //
-
-#ifndef __DAQTYPES_H
 #include <daqdatatypes.h>
-#endif
-
-                               //Required for base classes
-#ifndef __CREADORDER_H     //*CReadOrder
 #include "CReadOrder.h"
-#endif
 
 
 // Forward class references:

@@ -14,29 +14,13 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CENDCOMMAND_H
-#define __CENDCOMMAND_H
+#ifndef CENDCOMMAND_H
+#define CENDCOMMAND_H
 
 
-#ifndef __TCLPACKAGEDOBJECTPROCESSOR_H
 #include <TCLPackagedObjectProcessor.h>
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 #include <tuple>
 
 // Forward class defs:

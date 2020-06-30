@@ -14,22 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __RUNSTATE_H
-#define __RUNSTATE_H
+#ifndef RUNSTATE_H
+#define RUNSTATE_H
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 

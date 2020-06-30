@@ -14,29 +14,18 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCAENV785_H  //Required for current class
-#define __CCAENV785_H
+#ifndef CCAENV785_H  //Required for current class
+#define CCAENV785_H
 
-#ifndef __CDIGITIZERMODULE_H     //CDigitizerModule
 #include "CDigitizerModule.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifdef HAVE_STD_NAMESPACE
-using namespace std;
-#endif
-
-
-
-#ifndef __CCAENMODULE_H
 #include "CCAENModule.h"
-#endif
+
+using namespace std;
+
+
+
+
 
 // Forward definitions:
 

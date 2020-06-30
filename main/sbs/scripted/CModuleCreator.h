@@ -36,19 +36,14 @@ a string module type.  And the following key members:
 //   mailto:fox@nscl.msu.edu
 //
 
-#ifndef __CMODULECREATOR_H  //Required for current class
-#define __CMODULECREATOR_H
+#ifndef CMODULECREATOR_H  //Required for current class
+#define CMODULECREATOR_H
 
 //
 // Include files:
 //
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class definitions:
 

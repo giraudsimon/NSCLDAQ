@@ -1,5 +1,5 @@
-#ifndef __CCAENCHAIN_H
-#define __CCAENCHAIN_H
+#ifndef CCAENCHAIN_H
+#define CCAENCHAIN_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -21,20 +21,9 @@
 
 // Headers required:
 
-#ifndef __STL_VECTOR
 #include <vector>
-#define __STL_VECTOR
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
-#ifndef __CRANGEERROR_H
 #include <RangeError.h>
-#endif
-
 #include <stdint.h>
 
 

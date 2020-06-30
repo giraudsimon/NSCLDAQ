@@ -16,14 +16,11 @@
 
 // Class: CVMEMapCommand                     //ANSI C++
 
-#ifndef __CVMEMAPCOMMAND_H  //Required for current class
-#define __CVMEMAPCOMMAND_H
+#ifndef CVMEMAPCOMMAND_H  //Required for current class
+#define CVMEMAPCOMMAND_H
 
                                //Required for base classes
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
 #include <VmeModule.h>
 
                          

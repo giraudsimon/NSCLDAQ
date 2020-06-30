@@ -40,14 +40,7 @@
 #define VMEMODULE_H
 
 #include <CVME.h>
-
-#ifndef _CRT_STDINT_H
-
 #include <stdint.h>
-#ifndef _CRT_STDINT_H
-#define _CRT_STDINT_H
-#endif
-#endif
 
 class CVmeModule
 {

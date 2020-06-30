@@ -13,12 +13,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CSIS3300CREATOR_H
-#define __CSIS3300CREATOR_H
+#ifndef CSIS3300CREATOR_H
+#define CSIS3300CREATOR_H
 
-#ifndef __CMODULECREATOR_h
 #include <CModuleCreator.h>
-#endif
 
 /*!
    recognizer/creator within the scriptable readout framework

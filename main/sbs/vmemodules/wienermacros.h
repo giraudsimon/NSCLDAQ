@@ -11,24 +11,13 @@
 
     /* CAMAC and buffer manipulation. */
 
-#ifndef _WIENERMACROS_H  
-#define _WIENERMACROS_H
+#ifndef WIENERMACROS_H  
+#define WIENERMACROS_H
 
 
-#ifndef __CRT_STDIO_H
 #include <stdio.h>
-#define __CRT_STDIO_H
-#endif
-
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#define __CRT_UNISTD_H
-#endif
-
-
-#ifndef __CAMAC_H
 #include <camac.h>
-#endif
 
 
 
