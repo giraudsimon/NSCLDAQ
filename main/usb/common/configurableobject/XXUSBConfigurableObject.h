@@ -14,48 +14,16 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCONFIGURABLEOBJECT_H
-#define __CCONFIGURABLEOBJECT_H
+#ifndef CCONFIGURABLEOBJECT_H
+#define CCONFIGURABLEOBJECT_H
 
 // Necessary includes (kept to a minimum using forward class defs).
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-
-#ifndef __STL_MAP
 #include <map>			// also defines std::pair
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_SET
 #include <set>
-#ifndef __STL_SET
-#define __STL_SET
-#endif
-#endif
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
 #include <tcl.h>
 
 

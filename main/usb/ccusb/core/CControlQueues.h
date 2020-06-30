@@ -14,18 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCONTROLQUEUES_H
-#define __CCONTROLQUEUES_H
-#ifndef __CGAURDEDOBJECT_H
+#ifndef CCONTROLQUEUES_H
+#define CCONTROLQUEUES_H
+
 #include <CGaurdedObject.h>
-#endif
-
-#ifndef __CBUFFERQUEUE_H
 #include <CBufferQueue.h>
-#endif
-
-
-
 
 /*! 
 

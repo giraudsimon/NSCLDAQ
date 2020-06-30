@@ -14,8 +14,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CMODULECREATORT_H
-#define __CMODULECREATORT_H
+#ifndef CMODULECREATORT_H
+#define CMODULECREATORT_H
 
 #include <memory>
 

@@ -15,29 +15,16 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CMODULEFACTORYT_H
-#define __CMODULEFACTORYT_H
+#ifndef CMODULEFACTORYT_H
+#define CMODULEFACTORYT_H
 
 /**
  * @file CModuleFactoryT.h
  * @brief Defines a factory for control modules in the Tcl server.
  * @author Ron Fox <fox@nscl.msu.edu>
  */
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
 #include <memory>
 
 template<class Ctlr> class CControlHardwareT;
