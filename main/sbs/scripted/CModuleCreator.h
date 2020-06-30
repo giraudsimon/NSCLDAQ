@@ -40,15 +40,17 @@ a string module type.  And the following key members:
 #define CMODULECREATOR_H
 
 
-
 //
 // Include files:
 //
+
 #include <CExtensibleFactory.h>
 #include <string>
 #include <CReadableObject.h>
 
 using CModuleCreatorType = CCreator<CReadableObject>;
+#include <string>
+
 
 // Forward class definitions:
 

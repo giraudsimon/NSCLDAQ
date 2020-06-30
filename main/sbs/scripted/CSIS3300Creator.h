@@ -18,6 +18,7 @@
 
 #include <CModuleCreator.h>
 #include <stdint.h>
+
 /*!
    recognizer/creator within the scriptable readout framework
    for SIS 3300/3301 flash adc modules.
