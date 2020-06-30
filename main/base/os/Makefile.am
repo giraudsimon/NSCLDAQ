@@ -32,7 +32,8 @@ unittests_SOURCES = TestRunner.cpp createTests.cpp removeTests.cpp \
 	attachTests.cpp \
         detachTests.cpp timeoutTests.cpp semaphoretests.cpp \
 	closeunusedtests.cpp \
-	testBufferedOutput.cpp logtest.cpp poutputtests.cpp testiov.cpp
+	testBufferedOutput.cpp logtest.cpp poutputtests.cpp testiov.cpp \
+	eltest.cpp
 
 unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
