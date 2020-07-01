@@ -38,6 +38,11 @@ package require Tk
 package require tdom
 package require snit
 
+#----------------------- Global data -------------------------------
+
+set xmlFile "";                      # COMPASSdom object -- see below
+set title   "";                      # Title manager object.
+
 #----------------------- COMPASSdom class --------------------------
 ##
 # COMPASSdom
@@ -59,13 +64,13 @@ package require snit
 #   setBoardValue       - Set the value of a board level parameter
 #   getParamDescription - Return information about a parameter.
 #   getXml              - Returns the current XML of the dom.
-    
-
+#   wasModiied          - Returns true if the DOM has been changed.
+#
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
     variable root;        # document root element handle.
-    
+    variable modified 0
     
     constructor {args} {
         if {[llength $args] != 1} {
@@ -297,7 +302,7 @@ snit::type COMPASSdom {
         set valueNode [$valueTag firstChild]
         $valueNode nodeValue $value
         
-        
+        set modified 1
     }
     ##
     # setBoardValue
@@ -321,6 +326,8 @@ snit::type COMPASSdom {
         set valuetag [lindex $values 1];              # The nexted tag.
         set valuenode [$valuetag firstChild]
         $valuenode nodeValue $value
+        
+        set modified 1
     }
     ##
     # getParamDescription
@@ -416,7 +423,16 @@ snit::type COMPASSdom {
     method getXML {} {
         return [$root asXML -indent 2]
     }
-    
+    ##
+    # wasModified
+    #   @return bool - true if the dom has been modified.
+    #   @note that this can give a false positive if a
+    #                  value was changed and the restored to its original
+    #                  value.
+    #
+    method wasModified {} {
+        return $modified
+    }
     #--------------------------- private methods ------------------------------
     ##
     # _computeDppType
@@ -1268,7 +1284,7 @@ snit::type titleManager {
     }
 }
 
-#------------------------------------------------------------------------------
+#-------------------------- menu processing -----------------------------------
 ##
 # help->About
 #   Pop up the help about dialog.
@@ -1281,6 +1297,63 @@ proc help->About {} {
     
     tk_messageBox -icon info -type ok -title "Program information" -message $msg
 }
+
+##
+# file->Open
+#    Open a file:
+#    *   If there's a dom and it's been modified prompt user to save it first.
+#    *   Prompt the file.
+#    *   Save the file if given.
+#
+proc file->Open {} {
+    if {$::xmlFile ne ""} {
+        if {[$::xmlFile wasModified]} {
+            offerSave
+        }
+        $::xmlFile destroy
+        set ::xmlFile "";            # we no longer have an XML file.
+        #
+        #  There's no longer an open file - the user could decline to
+        #  choose one.
+        #
+        
+        if {$::title ne ""} {
+            $::title closeFile
+            
+        }
+        .appmenu.filemenu entryconfigure 2 -state disabled
+        .appmenu.filemenu entryconfigure 3 -state disabled
+    }
+
+    #
+    #  Prompt the file to read:
+    #
+    
+    set filename [tk_getOpenFile                         \
+        -title {Choose configuration file}               \
+        -filetypes {
+            {{XML Files}  {.xml }                    }
+            {{Configuration files}  {.config}        }
+            {{Compass files}        {.compass}       }
+            {{ All Files}           *                }
+        }                                                \
+    ]
+    if {$filename ne ""} {
+        set ::xmlFile [COMPASSdom %AUTO% $filename]
+        if {$::title ne ""} {
+            $::title openFile $filename
+        }
+        .appmenu.filemenu entryconfigure 2 -state normal
+        .appmenu.filemenu entryconfigure 3 -state normal
+    }
+    
+    
+}
+    
+
+    
+
+
 ##
 # createAppMenu
 #    Create the application menu. This consists of the following:
@@ -1300,10 +1373,10 @@ proc createAppMenu {} {
 
     menu .appmenu.filemenu -tearoff 0
     .appmenu add cascade -label File -menu .appmenu.filemenu
-    .appmenu.filemenu add command -label Open...
+    .appmenu.filemenu add command -label Open... -command file->Open
     .appmenu.filemenu add separator
-    .appmenu.filemenu add command -label Save
-    .appmenu.filemenu add command -label {Save As...}
+    .appmenu.filemenu add command -label Save -state disabled
+    .appmenu.filemenu add command -label {Save As...} -state disabled
     .appmenu.filemenu add separator
     .appmenu.filemenu add command -label Exit
     .appmenu.filemenu add command -label Quit
@@ -1315,6 +1388,9 @@ proc createAppMenu {} {
     
     . configure -menu .appmenu
 }
+
+set title [titleManager %AUTO% -appname tweaker -widget .]
+createAppMenu
 
     
 
