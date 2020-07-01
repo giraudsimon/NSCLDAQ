@@ -43,6 +43,7 @@ package require snit
 set xmlFile "";                      # COMPASSdom object -- see below
 set title   "";                      # Title manager object.
 
+
 #----------------------- COMPASSdom class --------------------------
 ##
 # COMPASSdom
@@ -63,14 +64,15 @@ set title   "";                      # Title manager object.
 #   setChannelValue     - Set the value of a channel parameter (e.g. SRV_PARAM_CH_ENABLED).
 #   setBoardValue       - Set the value of a board level parameter
 #   getParamDescription - Return information about a parameter.
-#   getXml              - Returns the current XML of the dom.
+#   getXML              - Returns the current XML of the dom.
 #   wasModiied          - Returns true if the DOM has been changed.
-#
+#   getFilename         - Get current filename.
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
     variable root;        # document root element handle.
     variable modified 0
+    variable filename;   # currrent filepath.
     
     constructor {args} {
         if {[llength $args] != 1} {
@@ -432,6 +434,13 @@ snit::type COMPASSdom {
     #
     method wasModified {} {
         return $modified
+    }
+    ##
+    # getFilename
+    #     @return string - name of file the XML was read from.
+    #
+    method getFilename {} {
+        return $filename
     }
     #--------------------------- private methods ------------------------------
     ##
@@ -1286,6 +1295,23 @@ snit::type titleManager {
 
 #-------------------------- menu processing -----------------------------------
 ##
+# offerSave
+#   Ask the user if they want to save the file and, if so,
+#   invoke file->SaveAs  to prompt for a file to use to save
+#   the XML.
+#
+proc offerSave {} {
+    set fname [$xmlFile getFilename]
+    set response [tk_messageBox                             \
+        -title {Save modified file} -type yesno -icon question \
+        -default yes -message "$fname has been modified Save?"
+    ]
+    if {$response eq "yes"} {
+        file->SaveAs
+    }
+}
+
+##
 # help->About
 #   Pop up the help about dialog.
 #
@@ -1297,6 +1323,50 @@ proc help->About {} {
     
     tk_messageBox -icon info -type ok -title "Program information" -message $msg
 }
+##
+# file->SaveAs
+#   Ask for the name of a file.
+#   and save the XML into that file if selected.
+#   Title is told the file was saved.  The XML Is re-read so that
+#   it's idea of the filename is updated.
+#
+proc file->SaveAs {} {
+    set fname [tk_getSaveFile                                \
+        -title {Save XML file to..} -defaultextension xml    \
+        -confirmoverwrite 1                                  \
+        -initialfile [$::xmlFile getFilename]                  \
+        -filetypes {
+            {{XML files}  {.xml}             }
+            {{Configuration files} {.config} }
+            {{Compass files} {.compass}      }
+            {{All files}      *              }
+        }                                                   \
+    ]
+    if {$fname ne ""} {
+        
+        # Save the file:
+        
+        set fd [open $fname w]
+        set xml [$::xmlFile getXML]
+        puts $fd $xml
+        close $fd
+        #
+        #  Close the existing file:
+        #
+        $::title closeFile
+        $::xmlFile destroy
+        set $::xmlFile ""
+        #
+        # Open the saved file:
+        #
+        set ::xmlFile [COMPASSdom %AUTO% $fname]
+        $::title openFile $fname
+    }
+}
+    
+
+    
+
 
 ##
 # file->Open
@@ -1346,8 +1416,6 @@ proc file->Open {} {
         .appmenu.filemenu entryconfigure 2 -state normal
         .appmenu.filemenu entryconfigure 3 -state normal
     }
-    
-    
 }
     
 
@@ -1376,7 +1444,7 @@ proc createAppMenu {} {
     .appmenu.filemenu add command -label Open... -command file->Open
     .appmenu.filemenu add separator
     .appmenu.filemenu add command -label Save -state disabled
-    .appmenu.filemenu add command -label {Save As...} -state disabled
+    .appmenu.filemenu add command -label {Save As...} -state disabled -command file->SaveAs
     .appmenu.filemenu add separator
     .appmenu.filemenu add command -label Exit
     .appmenu.filemenu add command -label Quit
