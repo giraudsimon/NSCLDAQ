@@ -67,12 +67,17 @@ set title   "";                      # Title manager object.
 #   getXML              - Returns the current XML of the dom.
 #   wasModiied          - Returns true if the DOM has been changed.
 #   getFilename         - Get current filename.
+#   resetModified       - Reset the modified flag.
+#  OPTIONS:
+#   -modifycommand - Provides a script to execute when the DOM Is first modified.
 #
 snit::type COMPASSdom {
     variable dom;         # Tcl DOM
     variable root;        # document root element handle.
     variable modified 0
     variable filename;   # currrent filepath.
+    
+    option -modifycommand -default [list]
     
     constructor {args} {
         if {[llength $args] != 1} {
@@ -304,7 +309,7 @@ snit::type COMPASSdom {
         set valueNode [$valueTag firstChild]
         $valueNode nodeValue $value
         
-        set modified 1
+        $self _markModified
     }
     ##
     # setBoardValue
@@ -329,7 +334,7 @@ snit::type COMPASSdom {
         set valuenode [$valuetag firstChild]
         $valuenode nodeValue $value
         
-        set modified 1
+        $self _markModified
     }
     ##
     # getParamDescription
@@ -423,7 +428,7 @@ snit::type COMPASSdom {
     # @return text - current xml
     #
     method getXML {} {
-        return [$root asXML -indent 2]
+        return [$root asXML -indent 2 -xmlDeclaration 1 -encString UTF-8]
     }
     ##
     # wasModified
@@ -441,6 +446,13 @@ snit::type COMPASSdom {
     #
     method getFilename {} {
         return $filename
+    }
+    ##
+    # resetModified
+    #    Reset the modified flag.  This can be called when the DOM is saved
+    #
+    method resetModified {} {
+        set modified 0
     }
     #--------------------------- private methods ------------------------------
     ##
@@ -643,7 +655,23 @@ snit::type COMPASSdom {
             }
         }
         return $result
-    } 
+    }
+    ##
+    # _markModified
+    #    Mark the DOM modified:
+    #    - Set the modified variable to 1.
+    #    - If previously it was not 1, call the -modifycommand script.
+    #
+    method _markModified {} {
+        set previously $modified
+        set modified 1;            # In case script queries state.
+        
+        if {($previously == 0) && ($options(-modifycommand) ne "")} {
+            # We have a transition to modified and a script was established:
+            
+            uplevel #0 $options(-modifycommand)
+        }
+    }
 }
 #--------------------------------Control widgets --------------------------
 
@@ -1294,6 +1322,33 @@ snit::type titleManager {
 }
 
 #-------------------------- menu processing -----------------------------------
+
+##
+# onDomModified
+#    Called when the DOM is modified sets the modified flag in the title.
+#
+proc onDomModified {} {
+    
+     $::title modifyFile
+    
+}
+
+##
+# openXML
+#   Open the XML file the caller must ensure there is no open XML file:
+#   - The ::xmlFile is set with the object command for the new COMPASSdom
+#   - Any standard callbacks are established by this proc.
+#   - the title bar is updated with the new filename.
+#
+# @param filename - name of the XML file to open:
+#
+proc openXML {filename} {
+    set ::xmlFile [COMPASSdom %AUTO% $filename]
+    $::xmlFile configure -modifycommand onDomModified    
+    $::title openFile $filename
+
+}
+
 ##
 # offerSave
 #   Ask the user if they want to save the file and, if so,
@@ -1359,11 +1414,28 @@ proc file->SaveAs {} {
         #
         # Open the saved file:
         #
-        set ::xmlFile [COMPASSdom %AUTO% $fname]
+        openXML $fname
         $::title openFile $fname
     }
 }
+##
+# file->Save
+#    Save the XML to the same file.
+#    - The XML Is gotten and saved to the current file.
+#    - The DOM's modify flag is cleared.
+#    - The title is told the file has been saved
+#
+proc file->Save {} {
+    set fname [$::xmlFile getFilename]
+    set xml   [$::xmlFile getXML]
+    set fd    [open $fname w]
+    puts $fd $xml
+    close $fd
     
+    $::xmlFile resetModified
+    $::title   saveFile
+}
+
 
     
 
@@ -1387,10 +1459,8 @@ proc file->Open {} {
         #  choose one.
         #
         
-        if {$::title ne ""} {
-            $::title closeFile
+        $::title closeFile
             
-        }
         .appmenu.filemenu entryconfigure 2 -state disabled
         .appmenu.filemenu entryconfigure 3 -state disabled
     }
@@ -1409,17 +1479,35 @@ proc file->Open {} {
         }                                                \
     ]
     if {$filename ne ""} {
-        set ::xmlFile [COMPASSdom %AUTO% $filename]
-        if {$::title ne ""} {
-            $::title openFile $filename
-        }
+        openXML $filename
+        
         .appmenu.filemenu entryconfigure 2 -state normal
         .appmenu.filemenu entryconfigure 3 -state normal
     }
+    
+    #  Tear down any existing GUI and set up the GUI associated with the (new) DOM
 }
     
-
-    
+##
+# file->Exit
+#   If the there's a modified DOM, offer to save it.
+#   Exit the program.
+#
+proc file->Exit {} {
+    if {$::xmlFile ne ""} {
+        if {[$::xmlFile wasModified]} {
+            offerSave
+        }
+    }
+    exit 0
+}
+##
+# file->Quit
+#    Exit without offering to save.
+#
+proc file->Quit {} {
+    exit 0
+}
 
 
 ##
@@ -1446,8 +1534,8 @@ proc createAppMenu {} {
     .appmenu.filemenu add command -label Save -state disabled
     .appmenu.filemenu add command -label {Save As...} -state disabled -command file->SaveAs
     .appmenu.filemenu add separator
-    .appmenu.filemenu add command -label Exit
-    .appmenu.filemenu add command -label Quit
+    .appmenu.filemenu add command -label Exit -command file->Exit
+    .appmenu.filemenu add command -label Quit -command file->Quit
     
     
     menu .appmenu.helpmenu -tearoff 0
