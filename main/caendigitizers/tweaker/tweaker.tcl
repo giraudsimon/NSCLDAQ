@@ -43,6 +43,63 @@ package require snit
 set xmlFile "";                      # COMPASSdom object -- see below
 set title   "";                      # Title manager object.
 
+set GUIColumns 4;                    # Number of controls per column of GUI.
+
+##
+# These lists are list of parameters that will be controlled by the
+# app.  Each list composed c  pairs. The first element of each pair is
+# the XML parameter name, the second the displayed parameter name on the GUI.
+
+
+# All boards have these parameters.
+
+#              Board level parameters
+
+set commonBoardParameters [list                      \
+    [list SRV_PARAM_START_DELAY {Start Delay}]       \
+    [list SRV_PARAM_START_MODE  {Start Mode} ]       \
+    [list SRV_PARAM_COINC_MODE  {Coincidence mode}]  \
+    [list SRV_PARAM_COINC_TRGOUT {Coincidence window} ] \
+]
+
+set psdBoardParameters [list                         \
+    [list SRV_PARAM_TRGOUT_MODE {Trigger output}]    \
+];           # only on PSD boards.
+set phaBoardParameters [list];           # only PHA boards have this.
+
+#  Channel level parameters.
+
+set commonChannelParameters [list                               \
+    [list SRV_PARAM_CH_ENABLED  {Enabled}]                      \
+    [list SRV_PARAM_CH_POLARITY {Input Polarity}]               \
+    [list SRV_PARAM_CH_INDYN {Dynamic Range}]                   \
+    [list SRV_PARAM_CH_BLINE_DCOFFSET {DC Offset}]              \
+    [list SRV_PARAM_CH_THRESHOLD Threshold]                     \
+    [list SRV_PARAM_CH_TRG_HOLDOFF {Trigger HOldoff}]           \
+]
+
+set psdChannelParameters [list                                 \
+    [list SRV_PARAM_CH_CFD_DELAY {CFD Delay}]                   \
+    [list SRV_PARAM_CH_CFD_FRACTION {CFD Fraction}]             \
+    [list SRV_PARAM_CH_DISCR_MODE  {Discriminator Mode}]        \
+    [list SRV_PARAM_CH_CFD_SMOOTHEXP {CFD Smoothing}]          \
+    [list SRV_PARAM_CH_GATESHORT {Short Gate}]                  \
+    [list SRV_PARAM_CH_GATE      {Long Gate}]                   \
+    [list SRV_PARAM_CH_GATEPRE   {Pre-trigger}]                 \
+    [list SRV_PARAM_CH_ENERGY_COARSE_GAIN {Coarse-gain}]        \
+]
+
+set phaChannelParameters [list                                  \
+    [list SRV_PARAM_CH_TTF_DELAY {TTF Delay}]                   \
+    [list SRV_PARAM_CH_TTF_SMOOTHING {TTF Smoothing}]           \
+    [list SRV_PARAM_CH_TRAP_TFLAT {Trapezoid flattop}]          \
+    [list SRV_PARAM_CH_PEAK_NSMEAN {Peak averaging}]            \
+    [list SRV_PARAM_CH_TRAP_POLEZERO {Pole zero}]                   \
+    [list SRV_PARAM_CH_PEAK_HOLDOFF {Peak holdoff}]            \
+    [list SRV_PARAM_CH_TRAP_TRISE   {Rise-time}]                \
+    [list SRV_PARAM_CH_TRAP_PEAKING {Peaking time}]             \
+]
+
 
 #----------------------- COMPASSdom class --------------------------
 ##
@@ -153,9 +210,9 @@ snit::type COMPASSdom {
                     }
                     dppType {
                         if {$value eq "DPP_PSD"} {
-                            dict set result dpptype psd
+                            dict set result dpptype PSD
                         } elseif {$value eq "DPP_PHA"} {
-                            dict set result dpptype pha
+                            dict set result dpptype PHA
                         } else {
                             error "Unrecognized DPP type: $value"    
                         }
@@ -949,7 +1006,7 @@ snit::widgetadaptor NumericChannelControl {
 # @param widget  - Desired widget path.
 #
 proc createChannelControl {dom board channel param title widget} {
-
+    
    # Get a description of the paramter and based on the type figure out
    # the command we need to execute:
    
@@ -1201,6 +1258,7 @@ snit::widgetadaptor NumericBoardControl {
 # @param param  - name of the parameter (e.g. SRV_PARAM_START_DELAY).
 # @param title  - Human readable title string (e.g. "start delay").
 # @param widget - widget path to the GUI object to create
+# @return string - widget name.
 #
 proc createBoardControl {dom board param title widget} {
    # Get a description of the paramter and based on the type figure out
@@ -1320,6 +1378,155 @@ snit::type titleManager {
         wm title $options(-widget) $title
     }
 }
+#------------------------- CONTROL GUI ------------------------------------
+
+##
+# createBoardPage
+#    Create and fill a frame with the board common controls.
+#
+# @param widget  - The name of the container widget that should be created.
+# @param board   - The board DOM element in the ::xmlFile COMPASSdom
+# @param params - The list of pairs of parameter,label to control
+# @return string - widget path of the frame we're creating.
+# 
+proc createBoardPage {widget board params} {
+    ttk::labelframe $widget -text {Board Parameters}
+    
+    set row 0
+    set col 0
+    set cidx 0
+    foreach param $params {
+        set xmlName [lindex $param 0]
+        set label   [lindex $param 1]
+        set wname   $widget.ctl[incr cidx]
+        
+        grid [createBoardControl $::xmlFile $board $xmlName $label $wname] \
+            -row $row -column $col -sticky w -padx [list 0 5]
+        
+        if {[incr col] >= $::GUIColumns} {
+            set col 0
+            incr row
+        }
+    }    
+    return $widget
+}
+##
+# createChanPage
+#  Create and fill a frame with the controls for single channel
+#
+# @param widget   - name of container widget that should be created.
+# @param cno      - Channel number could be used to decorate the page.
+# @param board    - ::xmlFile board DOM element in which the channel lives.
+# @param chan     - ::xmlFile channel DOM element in which the channel lives.
+# @param params   - the list of parameter,label pairs that indicate the
+#                   things we're going to control and how to label them.
+# @return string  - widget path of the frame we're creating ($widget).
+#
+proc createChanPage {widget cno board chan params} {
+
+    set label "Channel $cno parameters"
+    ttk::labelframe $widget -text $label
+    
+    set row 0
+    set col 0
+    set cidx 0
+    foreach param $params {
+        set xmlName [lindex $param 0]
+        set label   [lindex $param 1]
+        set wname   $widget.ctl[incr cidx]
+        
+        grid [createChannelControl $::xmlFile $board $chan $xmlName $label $wname]  \
+            -row $row -column $col -sticky w -padx [list 0 5]
+        
+        if {[incr col] >= $::GUIColumns} {
+            set col 0
+            incr row
+        }
+        incr cidx
+    }
+    return $widget
+}
+##
+# stockBoardNotebook
+#
+#   Create a tabbed notebook to control a board.
+#   The notebook will have a tab that contains board parameters and
+#   one tab for each channel in the board.
+# @param widget - Name of the widget to create.
+# @param board  - Board id in COMPASSdom.
+# @return title - Title of the tab in which this notebook can be put.
+#
+proc stockBoardNotebook {widget board} {
+    
+    # get the board information and construct the tab title as well
+    # as board identifying text at the top of each tab's window.
+    
+    set info [$::xmlFile getBoardDescription $board]
+    set model [dict get $info model]
+    set sn    [dict get $info serial]
+    set tabTitle "$model SN $sn"
+    
+    ttk::notebook $widget
+    
+    #  Figure out the board level and channel level params to control:
+    
+    set type [dict get $info dpptype]
+    set boardParams $::commonBoardParameters
+    set chanParams  $::commonChannelParameters
+    if {$type eq "PSD"} {
+        lappend boardParams {*}$::psdBoardParameters
+        lappend chanParams  {*}$::psdChannelParameters
+    } elseif {$type eq "PHA"} {
+        lappend boardParams {*}$::phaBoardParameters
+        lappend chanParams  {*}$::phaChannelParameters
+    } else {
+        error "Unsupported board DPP type: $type"
+    }
+    
+    $widget add [createBoardPage $widget.board $board $boardParams] -text board
+    set chans [$::xmlFile getChannels $board]
+    set chno 0
+    foreach chan [dict key $chans] {
+        set c [dict get $chans $chan]
+        $widget add [createChanPage $widget.chan$chno $chno $board $c $chanParams] -text "Chan $chno"
+        
+        incr chno
+    }
+    
+    return $tabTitle
+    
+}
+
+
+##
+# teardownGUI
+#   By destroying the top level notebook all children in the notebook
+#   get destroyed as well.
+#
+proc teardownGUI {} {
+    destroy .topnotebook
+}
+##
+# loadGUI
+#   - Create .topnotebook, the top level notebook.
+#   - foreach board in the dom add a tab to that notebook that consists
+#     of a tabbed notebook itself.
+#   - in the board tabs add a tab 'board level' with the board level parameters
+#   - and a tab for each channel in the board with channel level parameters.
+#
+proc loadGUI {} {
+    ttk::notebook .topnotebook
+    set boards [$::xmlFile getBoards]
+    foreach board $boards {
+        set bwidget [string tolower $board]
+        set tabName [stockBoardNotebook .topnotebook.$bwidget $board]
+        .topnotebook add .topnotebook.$bwidget -text $tabName
+    }
+    grid .topnotebook -sticky nswe
+}
+
+    
+
 
 #-------------------------- menu processing -----------------------------------
 
@@ -1486,6 +1693,9 @@ proc file->Open {} {
     }
     
     #  Tear down any existing GUI and set up the GUI associated with the (new) DOM
+    
+    teardownGUI
+    loadGUI
 }
     
 ##
