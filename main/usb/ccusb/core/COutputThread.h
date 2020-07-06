@@ -23,6 +23,7 @@ using namespace std;
 
 #include <stdint.h>
 #include <string>
+#include <CElapsedTime.h>
 
 // Forward definitions:
 
@@ -95,11 +96,9 @@ private:
 
   // other data:
 private:
-  unsigned int m_elapsedSeconds;   // Seconds into the run.
+
   uint32_t    m_sequence;	   // Buffer sequence number.
   uint32_t    m_outputBufferSize;  // Bytes in output buffers.
-  timespec      m_startTimestamp;    //!< Run start time.
-  timespec      m_lastStampedBuffer; //!< Seconds into run of last stamped buffer.
   std::string m_ringName;
   CRingBuffer* m_pRing;
   uint64_t    m_nEventsSeen;
@@ -115,6 +114,9 @@ private:
   TimestampExtractor m_pSclrTimestampExtractor;
   StateChangeCallback m_pBeginRunCallback;
   CSystemControl&   m_systemControl;
+  
+  double        m_lastScalerTime;
+  CElapsedTime  m_runTime;
   
   // Constuctors and other canonicals.
 
