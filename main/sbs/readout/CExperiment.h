@@ -20,12 +20,12 @@
 #include <string>
 #include  <time.h>
 #include <tcl.h>
+#include <TCLObject.h>
+#include <CElapsedTime.h>
 
 class CTCLInterpreter;
 
-#ifndef _TCLOBJECT_H
-#include <TCLObject.h>
-#endif
+
 
 // Forwared definitions:
 
@@ -70,10 +70,8 @@ private:
 
   size_t                 m_nDataBufferSize; //!< current event buffer size.
 
-  uint64_t               m_nLastScalerTime; // last scaler time in ms since epoch (usually).
+  double                 m_nLastScalerTime; // last scaler time in ms since epoch (usually).
   uint64_t               m_nEventsEmitted;
-  uint64_t               m_nRunStartStamp; /* Run start time in ms since epoch. */
-  uint64_t               m_nPausedmSeconds; /*Seconds paused in ms. */
                                              
   uint64_t                m_nEventTimestamp;
   uint32_t                m_nSourceId;
@@ -83,7 +81,7 @@ private:
   bool                    m_fHavemore;      // If true readout has more events.
   bool                    m_fWantZeroCopy;  // Want zero copy ring items.
   bool                    m_fNeedVmeLock;
-
+	CElapsedTime            m_runTime;
 
   // Canonicals:
 
@@ -143,7 +141,6 @@ private:
   static int HandleTriggerLoopError(Tcl_Event* evPtr, int flags);
   static CTCLObject createCommand(
     CTCLInterpreter* pInterp, const char* verb, std::string parameter);
-  static uint64_t getTimeMs();
 
 };
 
