@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string>
 #include <Thread.h>
+#include <CElapsedTime.h>
 
 // Forward definitions:
 
@@ -84,6 +85,7 @@ class CSystemControl;
 
 class COutputThread  : public Thread
 {
+private:
    // Private data type:
    
    typedef uint64_t (*TimestampExtractor)(void*);
@@ -98,9 +100,8 @@ private:
 
   // other data:
 private:
-  int         m_elapsedSeconds;	   /* Seconds into the run. */
-  timespec    m_startTimestamp;    //!< Run start time.
-  timespec    m_lastStampedBuffer; //!< Seconds into run of last stamped buffer.
+	
+
   size_t      m_nOutputBufferSize;       //!< size of output buffer in bytes.
                                    //!< determined at the start of a run.
   uint8_t*    m_pBuffer;	   //!< Pointer to the current buffer.
@@ -114,6 +115,9 @@ private:
   TimestampExtractor m_pSclrTimestampExtractor;
   StateChangeCallback m_pBeginRunCallback;
   CSystemControl& m_systemControl;
+
+	double      m_lastScaler;	
+	CElapsedTime m_runTime;
 
 
   // Constuctors and other canonicals.
