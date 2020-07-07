@@ -261,19 +261,19 @@ CChannel::UpdateHandler(event_handler_args args)
 class CStringConverterCreator : public ConverterCreator
 {
 public:
-  CConverter* operator()() { return new CStringConverter;}
+  CConverter* operator()(void* userdata) { return new CStringConverter;}
   std::string describe() const {return "Convert a string process variable";}
 };
 class CIntegerConverterCreator : public ConverterCreator
 {
 public:
-  CConverter* operator()() { return new CIntegerConverter; }
+  CConverter* operator()(void* userdata) { return new CIntegerConverter; }
   std::string describe() const {return "Convert an integer process variable";}
 };
 class CFloatConverterCreator : public ConverterCreator
 {
 public:
-  CConverter* operator()() {return new CFloatConverter;}
+  CConverter* operator()(void* userdata) {return new CFloatConverter;}
   std::string describe() const {return "Convert a floating point PV";}
 };
 

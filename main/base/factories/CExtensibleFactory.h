@@ -118,12 +118,12 @@ public:
 		  CCreator<T>* pCreator) {
     m_creators[type] = pCreator;
   }
-  T* create(L type) {
+  T* create(L type, void* userData = nullptr) {
     if(m_creators.find(type) == m_creators.end()) {
       return reinterpret_cast<T*>(NULL);
     } 
     else {
-      return (*(m_creators.find(type)->second))();
+      return (*(m_creators.find(type)->second))(userData);
     }
   }
   std::vector<std::string> getDescriptions() {
