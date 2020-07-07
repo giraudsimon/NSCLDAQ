@@ -7,6 +7,7 @@ COMPILATION_FLAGS =  $(VMEBUILDEADERS) \
 	-I@top_srcdir@/sbs/nsclapi 	\
 	-I@top_srcdir@/sbs/vmemodules\
 	-I@top_srcdir@/sbs/readout   \
+	-I@top_srcdir@/base/os      \
 	-DVME $(TCL_FLAGS) \
 	-DINSTDIR=\"@prefix@\" -g -pthread
 
