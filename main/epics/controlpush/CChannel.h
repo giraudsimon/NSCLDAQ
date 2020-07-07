@@ -1,5 +1,5 @@
 #ifndef CCHANEL_H
-#define CHANNEL_H
+#define CCHANEL_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -20,6 +20,7 @@
 #include <string>
 #include <time.h>
 #include <typeinfo>
+#include <CExtensibleFactory.h>
 
 class CConverter;
 
@@ -116,7 +117,7 @@ protected:
 **    In the connection handler for the channel
 **    get the underlying data type using ca_field_type
 **    Pass that in to an invocation of 
-**      CConversionFactory::Converter();
+**      CConversionFactory::getInstance->Converter();
 **    This dynamically allocates a converter, call the pointer to it
 **     pConverter
 **    Invoke pConverter->requestType()
@@ -168,8 +169,23 @@ public:
    particular epics data type.
    If no type exists, an exception is thrown.
 */
-class CConversionFactory {
+
+// per daqdev/NSCLDAQ#510 - recasting in terms of extensible factories.
+
+
+using ConverterFactory = CGenericExtensibleFactory<short, CConverter>;
+using ConverterCreator = CCreator<CConverter>;
+
+
+class ConversionFactory {
+  static ConversionFactory* m_pInstance;
+  ConverterFactory           m_factory;
 public:
-  static CConverter* Converter(short type);
+  static ConversionFactory* getInstance();
+  CConverter* Converter(short type);
+  
+private:
+  ConversionFactory();
+  
 };
 #endif
