@@ -120,7 +120,6 @@ public:
     m_creators[type] = pCreator;
   }
   T* create(L type, void* userData = nullptr) {
-
     if(m_creators.find(type) == m_creators.end()) {
       return reinterpret_cast<T*>(NULL);
     } 
