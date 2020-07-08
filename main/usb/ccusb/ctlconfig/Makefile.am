@@ -45,6 +45,7 @@ libCCUSBCtlConfig_la_CPPFLAGS	= -I@top_srcdir@/usb/ccusb		\
 					-I@top_srcdir@/base/headers	\
 					-I@top_srcdir@/base/thread	\
 					-I@top_srcdir@/base/os		\
+					-I@top_srcdir@/base/factories \
 					@TCL_FLAGS@ @THREADCXX_FLAGS@
 
 libCCUSBCtlConfig_la_LIBADD	= 	@top_builddir@/usb/ccusb/ccusb/libCCUSB.la          \
@@ -84,6 +85,7 @@ unittests_CXXFLAGS = \
 	    -I@top_srcdir@/usb/ccusb \
 	    -I@top_srcdir@/usb/common/slowcontrols \
 	    -I@top_srcdir@/usb/common/configurableobject \
+	-I@top_srcdir@/base/factories	\
 			@TCL_FLAGS@ \
 			@LIBTCLPLUS_CFLAGS@ \
 			$(CPPUNIT_INCLUDES)

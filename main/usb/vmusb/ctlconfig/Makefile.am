@@ -12,6 +12,7 @@ COMPILATION_FLAGS=@THREADCXX_FLAGS@ -I@top_srcdir@/usb/vmusb/vmusb		\
 					-I@top_srcdir@/base/headers \
 					-I@top_srcdir@/base/thread	\
 					-I@top_srcdir@/base/os		\
+					-I@top_srcdir@/base/factories	\
 					@TCL_FLAGS@
 
 libVMUSBCtlConfig_la_CXXFLAGS	= $(COMPILATION_FLAGS)
