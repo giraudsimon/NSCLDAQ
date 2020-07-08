@@ -41,7 +41,7 @@
 #include "CModuleCreator.h"
 #include <string>
 
-
+class CReadableObject;
  
 
 class CCAENV785Creator  : public CModuleCreator        
@@ -49,22 +49,11 @@ class CCAENV785Creator  : public CModuleCreator
 public:
 	//   Constructors and other cannonical operations.
 	
-  CCAENV785Creator (const char* recognize="caenv785");
-  ~CCAENV785Creator ( );
-  CCAENV785Creator (const CCAENV785Creator& aCCAENV785Creator );
-  CCAENV785Creator& operator= (const CCAENV785Creator& aCCAENV785Creator);
-  int operator== (const CCAENV785Creator& rhs) const;
-  int operator!= (const CCAENV785Creator& rhs) const;
+  CCAENV785Creator ();
+  ~CCAENV785Creator ();
 
-  // Class operations:
-
-public:
-
-   virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-						   CTCLResult& rResult, 
-						   int nArgs, char** pArgs)   ; 
-   virtual   std::string  Help (); 
-
+   virtual   CReadableObject* Create (const char* name, CTCLInterpreter& rInterp);
+						   
 };
 
 #endif

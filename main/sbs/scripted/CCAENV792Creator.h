@@ -38,23 +38,9 @@
 class CCAENV792Creator  : public CModuleCreator        
 {
 public:
-	// Consructors and other canonical operations:
-	
-  CCAENV792Creator ();
-  virtual ~CCAENV792Creator ( );  
-   CCAENV792Creator (const CCAENV792Creator& aCCAENV792Creator );
-   CCAENV792Creator& operator= (const CCAENV792Creator& aCCAENV792Creator);
-   int operator== (const CCAENV792Creator& aCCAENV792Creator) const;
-
-  // Class operations:
-
-public:
-
-   virtual   CReadableObject* 
-		  Create (CTCLInterpreter& rInterp, CTCLResult& rResult, 
-			     int nArgs, char** pArgs)   ; // 
-   virtual   std::string  Help ()   ; 
-
+  CCAENV792Creator();
+  virtual ~CCAENV792Creator() {}
+  virtual CReadableObject* Create(const char* name, CTCLInterpreter& interp);
+  
 };
-
-#endif
+	#endif

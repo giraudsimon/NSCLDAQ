@@ -236,13 +236,14 @@ CScriptedSegment::getConfigurationFile()
    Add a new module creator this is the mechanism a user written addUserWrittenCreators
    would use to add creators it instantiated into the set supported by the module
    command (For that matter, addStandardCrators uses it too).
+   @param type    - type of module to add.
    @param creator - reference to the module creator to add.
 
 */
 void
-CScriptedSegment::addCreator(CModuleCreator& creator)
+CScriptedSegment::addCreator(const char* type, CModuleCreator& creator)
 {
-  m_pBundle->addCreator(creator);
+  m_pBundle->addCreator(type, creator);
 }
 
 /*!
@@ -275,10 +276,10 @@ CScriptedSegment::addStandardCreators()
   // All creators are dynamically created ..presumably destruction of the
   // CModuleCommand will delete them ??!?
 
-  addCreator(*(new CCAENV775Creator()));
-  addCreator(*(new CCAENV785Creator()));
-  addCreator(*(new CCAENV792Creator()));
-  addCreator(*(new CCAENV830Creator()));
-  addCreator(*(new CSIS3300Creator()));
-  addCreator(*(new CV1x90Creator("v1x90")));
+  addCreator("caenv775", *(new CCAENV775Creator()));
+  addCreator("caenv785", *(new CCAENV785Creator()));
+  addCreator("caenv792", *(new CCAENV792Creator()));
+  addCreator("caenv830", *(new CCAENV830Creator()));
+  addCreator("sis3300", *(new CSIS3300Creator()));
+  addCreator("caenv1x90", *(new CV1x90Creator()));
 }

@@ -181,11 +181,13 @@ CScriptedScalers::isComposite() const
 }
 /*
 ** delegate add a creator to the bundle:
+**  @param type - type of module.
+**  @param creator - creator for the module.
 */
 void
-CScriptedScalers::addCreator(CModuleCreator& creator)
+CScriptedScalers::addCreator(const char* type, CModuleCreator& creator)
 {
-  m_pBundle->addCreator(creator);
+  m_pBundle->addCreator(type, creator);
 }
 
 /*!
@@ -205,8 +207,8 @@ CScriptedScalers::addUserWrittenCreators()
 void 
 CScriptedScalers::addStandardCreators()
 {
-  addCreator(*(new CCAENV830Creator));
-  addCreator(*(new CSIS3300Creator));
+  addCreator("caenv830", *(new CCAENV830Creator));
+  addCreator("sis3300", *(new CSIS3300Creator));
 }
 
 /*

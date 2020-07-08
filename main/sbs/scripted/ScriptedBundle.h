@@ -46,7 +46,7 @@ struct ScriptedBundle {
   // Stuff to set up the bundle:
 
   void processHardwareFile(const char* pFilename, CTCLInterpreter& rInterp);
-  void addCreator(CModuleCreator& rCreator);
+  void addCreator(const char* type, CModuleCreator& rCreator);
 
 
 };

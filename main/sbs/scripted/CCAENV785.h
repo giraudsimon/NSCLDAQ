@@ -63,7 +63,7 @@ private:
   bool      m_fMultiEvent; //!< true if multievent mode.
 
 public:
-  // Construtors and other cannonical functions:
+  // Constructors and other cannonical functions:
 
   CCAENV785(const std::string &rName, CTCLInterpreter& rInterp,
 	    int nChannels=32);

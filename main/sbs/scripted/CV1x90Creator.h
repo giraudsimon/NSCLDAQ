@@ -28,23 +28,11 @@ class CV1x90Creator : public CModuleCreator
 {
   // Constructors and canonicals.
 public:
-  CV1x90Creator(std::string type);
+  CV1x90Creator();
   virtual ~CV1x90Creator();
-  CV1x90Creator(const CV1x90Creator& rhs);
-  CV1x90Creator& operator=(const CV1x90Creator& rhs);
-  int operator==(const CV1x90Creator& rhs) const;
-  int operator!=(const CV1x90Creator& rhs) const;
-
-  // The virtual interface defined by CModuleCreator:
-
-  virtual CReadableObject*
-  Create(CTCLInterpreter& rInterp,
-	 CTCLResult&      rResult,
-	 int              nArgs,
-	 char**           pArgs);
-
-  virtual std::string Help();
-    
+  
+  virtual CReadableObject* Create(const char* name, CTCLInterpreter& rInterp);
+	 
 };
 
 #endif

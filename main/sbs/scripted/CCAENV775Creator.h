@@ -46,20 +46,11 @@ public:
   //   Constructors and other cannonical operations.
   
   CCAENV775Creator ();
-  ~CCAENV775Creator ( );
-  CCAENV775Creator (const CCAENV775Creator& aCCAENV775Creator );
-  CCAENV775Creator& operator= (const CCAENV775Creator& aCCAENV775Creator);
-  int operator== (const CCAENV775Creator& aCCAENV775Creator) const;
-  
-  
-  // Class operations:
+  virtual ~CCAENV775Creator ( );
   
 public:
   
-  virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-				      CTCLResult& rResult, 
-				      int nArgs, char** pArgs)   ; 
-  virtual   std::string  Help (); 
+  virtual CReadableObject* Create(const char* name, CTCLInterpreter& rInterp); 
   
 };
 

@@ -67,21 +67,8 @@ private:
 public:
   CCAENV830Creator ();
   virtual ~CCAENV830Creator ( );
-  CCAENV830Creator (const CCAENV830Creator& rhs );
-  CCAENV830Creator& operator= (const CCAENV830Creator& rhs);
-  int operator== (const CCAENV830Creator& rhs) const;
-  int operator!= (const CCAENV830Creator& rhs) const {
-      return !(operator==(rhs));
-   }
 
-  // Class operations:
-
-public:
-
-   virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-				       CTCLResult& rResult, 
-				       int nArgs, char** pArgs)   ; // 
-   virtual   std::string  Help (); // 
+   virtual CReadableObject* Create (const char* name, CTCLInterpreter& rInterp);
 
 };
 

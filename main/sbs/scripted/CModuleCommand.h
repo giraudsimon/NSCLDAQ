@@ -46,6 +46,8 @@ When one is found it is used to create the actual module.
 #include <list>
 #include <map>
 #include <assert.h>
+#include <CExtensibleFactory.h>
+#include <CReadableObject.h>
 
 // forward class definitions:
 
@@ -59,15 +61,13 @@ class CModuleCommand  : public CTCLProcessor
 {
 	// Type definitions:
 public:
-typedef std::list<CModuleCreator*>  CreatorList;
-typedef CreatorList::iterator  CreatorIterator;
-
-
+ using ModuleFactory = CExtensibleFactory<CReadableObject>;
+ 
 private:
   
   // Private Member data:
-   CDigitizerDictionary*           m_pModules;  //!< Created module lookup. 
-   CreatorList                     m_Creators; //!< List of Creators.
+   CDigitizerDictionary*           m_pModules;  //!< Created module lookup.
+   ModuleFactory                   m_factory;
 
 
 private:
@@ -88,18 +88,6 @@ private:
     void operator()(std::pair<std::string, CReadableObject*> p);
 
   };
-  // Function class to build up the output of module -types:
-  class TypesGatherer
-  {
-  private:
-    CTCLResult& m_rResult;
-  public:
-    TypesGatherer(CTCLResult& rResult) :
-      m_rResult(rResult)
-    {}
-    void operator()(CModuleCreator* pModule);
-
-  };
   
 
 public:
@@ -117,36 +105,11 @@ private:
 public:
 
 public:
-// Selectors:
-   CDigitizerDictionary& getModules()
-   { 
-     return *m_pModules;
-   }
-   CreatorList getCreators() const
-   {
-      return m_Creators;
-   }
-
-protected:
-   // Mutators:
-
-   void setModules(CDigitizerDictionary* pModules)
-   {
-      m_pModules = pModules;
-   }
-   void setCreators(const CreatorList& creators)
-   {
-      m_Creators = creators;
-   }
-public:
 
    virtual int operator() (CTCLInterpreter& rInterp, 
 			   CTCLResult& rResult, 
 			   int nArgs, char** pArgs); 
-   void AddCreator (CModuleCreator* pCreator);
-   CreatorIterator CreatorBegin();
-   CreatorIterator CreatorEnd();
-   int             CreatorSize();
+   void AddCreator (const char* type, CModuleCreator* pCreator);
    
    CDigitizerDictionary::ModuleIterator DigitizerBegin();
    CDigitizerDictionary::ModuleIterator DigitizerEnd();
@@ -171,7 +134,7 @@ public:
 		  CTCLResult& rResult, 
 		  int nArgs, char** pArgs); 
 
-  CreatorIterator FindCreator(const std::string& ModuleType);
+ 
 };
 
 #endif

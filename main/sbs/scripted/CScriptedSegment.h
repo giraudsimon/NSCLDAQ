@@ -20,12 +20,13 @@
 
 #include <CEventSegment.h>
 #include <string>
+#include "CModuleCreator.h"
 
 class CDigitizerDictionary;
 class CReadOrder;
 class CTCLInterpreter;
 class CModuleCommand;
-class CModuleCreator;
+
 
 struct ScriptedBundle;
 
@@ -53,7 +54,7 @@ public:
   // protected members:
 
 protected:
-  void addCreator(CModuleCreator& creator);
+  void addCreator(const char* type, CModuleCreator& creator);
   void addStandardCreators();
   virtual void addUserWrittenCreators(); // Hook for user written readout modules.
   virtual std::string getConfigurationFile(); // Hook for users to override default config file

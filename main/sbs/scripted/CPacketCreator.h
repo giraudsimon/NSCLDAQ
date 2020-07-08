@@ -57,22 +57,11 @@ private:
 public:
   // COnstructors and other cannonical operations:
 
-  CPacketCreator (const std::string& rType,
-		  CDigitizerDictionary* pDictionary); //!< Construtor..
+  CPacketCreator (const std::string& rType, CDigitizerDictionary* pDictionary); //!< Construtor..
  virtual ~ CPacketCreator ( );	                   //!< destructor
- CPacketCreator (const CPacketCreator& aCPacketCreator ); //!< copy
- CPacketCreator& operator= (const CPacketCreator& aCPacketCreator); //!< assign
- int operator== (const CPacketCreator& aCPacketCreator) const; //!< compare.
- int operator!= (const CPacketCreator& aCPacketCReator) const; //!< inequal compare
-
 
 public:
 
- virtual   CReadableObject* Create (CTCLInterpreter& rInterp,
-				    CTCLResult&      rResult,
-				    int nArgs, char** pArgs)   ; //!< Create a module.
- virtual   std::string Help ()   ;     	  //!< Contribute to help. 
- 
+ virtual CReadableObject* Create (const char* name, CTCLInterpreter& rInterp);
 };
-
 #endif

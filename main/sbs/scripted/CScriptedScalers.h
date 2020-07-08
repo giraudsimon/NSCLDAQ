@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include "CModuleCreator.h"
 
 // Forward definitions:
 
@@ -28,7 +29,7 @@ class CTCLInterpreter;
 class CDigitizerDictionary;
 class CReadOrder;
 class CModuleCommand;
-class CModuleCreator;
+
 
 struct ScriptedBundle;
 /*!
@@ -58,7 +59,7 @@ public:
 
   virtual bool isComposite() const;
 protected:
-  void addCreator(CModuleCreator& creator);
+  void addCreator(const char* type, CModuleCreator& creator);
   void addStandardCreators();
   virtual void addUserWrittenCreators();
   virtual std::string getConfigurationFile();

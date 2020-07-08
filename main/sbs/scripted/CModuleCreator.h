@@ -39,11 +39,16 @@ a string module type.  And the following key members:
 #ifndef CMODULECREATOR_H  //Required for current class
 #define CMODULECREATOR_H
 
+
+
 //
 // Include files:
 //
-
+#include <CExtensibleFactory.h>
 #include <string>
+#include <CReadableObject.h>
+
+using CModuleCreatorType = CCreator<CReadableObject>;
 
 // Forward class definitions:
 
@@ -52,58 +57,20 @@ class CTCLInterpreter;
 class CTCLResult;
 
 
-class CModuleCreator      
+class CModuleCreator    : public CModuleCreatorType  
 {
-private:
+protected:
   
-  // Private Member data:
-
-   std::string m_sModuleType;                  //!<  Module type string
-   
+  std::string m_helpText;
 public:
 	// Constructors and other cannonical operations:
 	
-   CModuleCreator (const std::string& rType);
-   virtual  ~ CModuleCreator ( );  
-   CModuleCreator (const CModuleCreator& aCModuleCreator );
-   CModuleCreator& operator= (const CModuleCreator& rhs);
-   int operator== (const CModuleCreator& rhs)  const;
-   int operator!=  (const CModuleCreator& rhs) const {
-      return !(operator==(rhs));
-   }
-   
-// Selectors:
+   CModuleCreator ();
+   virtual  ~CModuleCreator ( );  
 
-public:
-
-          //Get accessor function for non-static attribute data member
-  std::string getModuleType() const
-  {
-     return m_sModuleType;
-  }   
-
-// Attribute mutators:
-
-protected:
-
-          //Set accessor function for non-static attribute data member
-  void setModuleType (const std::string am_sModuleType)
-  { 
-     m_sModuleType = am_sModuleType;
-  }   
-
-  // Class operations:
-
-public:
-
-   bool    Match (const std::string& rType) const;
-   virtual CReadableObject* 
-	   Create (CTCLInterpreter& rInterp, 
-		   CTCLResult& rResult, 
-		   int nArgs, 
-		   char** pArgs)   = 0 ; 
-   virtual  std::string  Help ()   = 0 ; 
-
+  CReadableObject* operator()(void* userData);
+  virtual CReadableObject* Create (const char* name, CTCLInterpreter& rInterp) = 0;
+  std::string describe() const;
 };
 
 #endif
