@@ -40,7 +40,8 @@
 class CCAEN894Creator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* unused);
+  virtual std::string describe() const;
 };
 
 #endif

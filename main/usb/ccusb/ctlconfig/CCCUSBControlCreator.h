@@ -35,7 +35,8 @@
 class CCCUSBControlCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* unused);
+  std::string describe() const;
 };
 
 

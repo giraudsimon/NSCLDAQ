@@ -22,6 +22,7 @@
 #include <vector>
 #include <map>
 #include <CCreator.h>
+#include <algorithm>
 
 
 /*!

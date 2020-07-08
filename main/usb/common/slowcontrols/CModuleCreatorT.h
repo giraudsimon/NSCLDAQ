@@ -18,6 +18,7 @@
 #define CMODULECREATORT_H
 
 #include <memory>
+#include <CExtensibleFactory.h>
 
 /**
  * @file CModuleCreatorT.h
@@ -28,23 +29,8 @@
 
 template<class Ctlr> class CControlHardwareT;
 
-/**
- * @class CModuleCreator
- *
- *     Creates modules of a specific type.  This is an ABC
- */
 template<class Ctlr>
-class CModuleCreatorT
-{
-public:
-  /**! \brief Factory method
-   *
-   * Derived classes must implement this.
-   *
-   * \returns new instance of type derived from CControlHardwareT<Ctlr>
-   */
-  virtual CControlHardwareT<Ctlr>* operator()() = 0; 
-};
+using CModuleCreatorT = CCreator<CControlHardwareT<Ctlr>>;
 
 
 #endif
