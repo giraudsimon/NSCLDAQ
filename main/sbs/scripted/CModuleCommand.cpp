@@ -54,8 +54,8 @@ CModuleCommand::CModuleCommand (CTCLInterpreter* pInterp,
 				CDigitizerDictionary* pDictionary,
 				const string&         rCommand) :
   CTCLProcessor(rCommand, pInterp),
-		m_pModules(pDictionary)
-		
+  m_pModules(pDictionary)
+
 {
    Register();
 			
@@ -201,33 +201,30 @@ CModuleCommand::Create(CTCLInterpreter& rInterp,
       // Determine if this is a duplicate module:
       
       if(DigitizerFind(ModuleName) != DigitizerEnd()) {
-								rResult  = "Duplicate module name: ";
-								rResult += ModuleName;
-								status = TCL_ERROR;
+	rResult  = "Duplicate module name: ";
+	rResult += ModuleName;
+	status = TCL_ERROR;
       } else {
-								std::pair<const char*, CTCLInterpreter*> info(ModuleName.c_str(), &rInterp);	
-								CReadableObject* pModule = m_factory.create(Moduletype, &info);
-								if(!pModule) {
-										rResult  = "Unable create module type: ";
-										rResult += Moduletype;
-										rResult += " does not have an associated creator";
-										status = TCL_ERROR;
-								}	else {
-									// Meet the expectations of Configure:
-								
-												pArgs += 2;
-												nArgs -= 2;
-												if (nArgs > 0) {
-													int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
-													
-												}
-												if (status == TCL_OK) {
-													m_pModules->DigitizerAdd(pModule);
-												}
+	std::pair<const char*, CTCLInterpreter*> info(ModuleName.c_str(), &rInterp);	
+	CReadableObject* pModule = m_factory.create(Moduletype, &info);
+	if(!pModule) {
+	  rResult  = "Unable create module type: ";
+	  rResult += Moduletype;
+	  rResult += " does not have an associated creator";
+	  status = TCL_ERROR;
+	}	else {
+	  // Meet the expectations of Configure:
+	    
+	    pArgs[1] = pArgs[0];
+	    pArgs++;
+	    nArgs--;
+	    int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
+	    m_pModules->DigitizerAdd(pModule);
+
 										}
 								}
    }
-			return status;   
+   return status;   
 }  
 
 /*! 

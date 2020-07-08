@@ -245,6 +245,7 @@ CScriptedSegment::addStandardCreators()
   addCreator("caenv830", *(new CCAENV830Creator()));
   addCreator("sis3300", *(new CSIS3300Creator()));
   addCreator("caenv1x90", *(new CV1x90Creator()));
+
 }
 
 /**
@@ -263,6 +264,7 @@ CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
   msg   += "\nAt: \n";
   msg   += where;
   throw msg;
+
 }
 /**
  * locateConfigFile
