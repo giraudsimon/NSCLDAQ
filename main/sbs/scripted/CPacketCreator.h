@@ -57,7 +57,7 @@ private:
 public:
   // COnstructors and other cannonical operations:
 
-  CPacketCreator (const std::string& rType, CDigitizerDictionary* pDictionary); //!< Construtor..
+ CPacketCreator (const std::string& rType, CDigitizerDictionary* pDictionary); //!< Construtor..
  virtual ~ CPacketCreator ( );	                   //!< destructor
 
 public:
