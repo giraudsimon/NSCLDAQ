@@ -31,7 +31,8 @@
  */
 class CChicoTriggerCreator : public CModuleCreator
 {
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* userData);
+  std::string describe() const;
 };
 
 #endif

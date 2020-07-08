@@ -39,9 +39,13 @@ CTclModuleCreator::CTclModuleCreator(CTCLInterpreter& interp)
  * @return CControlHardware* Pointer to the newly created module.
  */
 CControlHardware*
-CTclModuleCreator::operator()()
+CTclModuleCreator::operator()(void* unused)
 {
   return new CTclControlModule(m_interpreter);
 }
 
 
+std::string CTclModuleCreator::describe() const
+{
+  return "tcl - Encapsulate a TCL driver.";
+}

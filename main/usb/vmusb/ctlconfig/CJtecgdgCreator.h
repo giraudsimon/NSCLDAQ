@@ -33,7 +33,8 @@
 class CJtecgdgCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* userData);
+  std::string describe() const;
 };
 
 #endif

@@ -200,7 +200,8 @@ CUserDriver::clone() const
 class CUserDriverCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()();
+  virtual CControlHardware* operator()(void* userData);
+  std::string describe() const;
 };
 /**
  * operator()
@@ -209,11 +210,15 @@ public:
  * @return CControlHardware*  - Pointer to the newly, dynamically created object.
  */
 CControlHardware*
-CUserDriverCreator::operator()()
+CUserDriverCreator::operator()(void* unused)
 {
   return (new CUserDriver);
 }
-
+std::string
+CUserDriverCreator::describe() const
+{
+  return "UserDriverCreator -this should be modified to reflect the actual driver";
+}
 /*-----------------------------------------------------------------------------------
  * Tcl package initialization.
  *
@@ -230,8 +235,7 @@ extern "C" {
   int Userdriver_Init(Tcl_Interp* pInterp)
   {
     CModuleFactory* pFact = CModuleFactory::instance(); // the module factory is a singleton.
-    pFact->addCreator("mydriver", 
-                      unique_ptr<CModuleCreator>(new CUserDriverCreator));
+    pFact->addCreator("mydriver",  (new CUserDriverCreator));
 
     return TCL_OK;
   }

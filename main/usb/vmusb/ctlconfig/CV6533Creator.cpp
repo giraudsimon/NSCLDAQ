@@ -24,7 +24,15 @@
  */
 
   CControlHardware*
-CV6533Creator::operator()()
+CV6533Creator::operator()(void* unused)
 {
   return (new CV6533);
+}
+/**
+ * describe the module created.
+ */
+std::string
+CV6533Creator::describe() const
+{
+  return "v6533 - CAEN VME High voltage controller";
 }
