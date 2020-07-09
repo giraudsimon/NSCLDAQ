@@ -27,7 +27,7 @@
 //   STL String class.
 
 #include <string>
-#include <map>
+#include <CExtensibleFactory.h>
 
 
 
@@ -36,31 +36,34 @@
 class CSinkCreator;
 class CSink;
 
+// We're encapsulating this type of factory:
+
+using SinkFactory = CExtensibleFactory<CSink>;
+
 // CSinkFactory definition:
+//  daqdev/NSCLDAQ#510 - recast as a singleton wrapping an extensible factory.
 
-class CSinkFactory      
+class CSinkFactory  
 {
-  // Type definitions:
-public:
-  typedef std::map<std::string, CSinkCreator*> SinkCreatorDictionary;
-  typedef SinkCreatorDictionary::iterator SinkIterator;
-private:
   
-  static SinkCreatorDictionary   m_SinkCreators;
+private:
+  static CSinkFactory* m_pInstance;  
+  SinkFactory m_factory;
+
+  // Con/destructors must be private for singletons:
+private:
+  CSinkFactory() {}
+  ~CSinkFactory() {}
 
 
 public:
-
-
-public:
-
-  static  CSink* Create (std::string  sType, 
+  static CSinkFactory* getInstance();
+  CSink* Create (std::string  sType, 
 			 std::string sCommand, std::string  sName)   ; 
-  static  void AddCreator (std::string sType, CSinkCreator* pSink)   ; 
+  void AddCreator (std::string sType, CSinkCreator* pSink);
   static  int  SplitName(char* sName, char** ppParts);
 
-protected:
-  static  CSinkCreator* LocateCreator (std::string sType)   ; 
+
   
 
 

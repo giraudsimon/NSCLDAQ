@@ -370,9 +370,7 @@ CDAQStart::CreateSink(const char* name)
     free(name1);
     free(name2);
 
-  return CSinkFactory::Create(sType,
-			      string(*m_pArgv),
-			      sName);
+  return CSinkFactory::getInstance()->Create(sType, string(*m_pArgv), sName);
 }
 /*!
    Report the exit of a process.

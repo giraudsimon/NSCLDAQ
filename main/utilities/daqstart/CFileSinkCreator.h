@@ -35,17 +35,12 @@ class CFileSinkCreator  : public CSinkCreator
 public:
     CFileSinkCreator ();		//!< Constructor.
     virtual  ~ CFileSinkCreator ( ); //!< Destructor.
-    CFileSinkCreator (const CFileSinkCreator& rSource ); //!< Copy construction.
-    CFileSinkCreator& operator= (const CFileSinkCreator& rhs); //!< Assignment.
-    int operator== (const CFileSinkCreator& rhs) const; //!< == comparison.
-    int operator!= (const CFileSinkCreator& rhs) const; //!< != comparison.
-
 
 public:
 
     virtual   bool isNameLegal (std::string Name)   ; 
     virtual   CSink* Create (std::string sCommand, std::string sName)   ; 
-    
+    std::string describe() const;
 
 };
 
