@@ -30,8 +30,6 @@
 #include <CExtensibleFactory.h>
 
 
-
-
 // Forward classes
 
 class CSinkCreator;
