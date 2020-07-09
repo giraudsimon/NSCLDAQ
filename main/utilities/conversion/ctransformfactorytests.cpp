@@ -70,24 +70,27 @@ public:
   }
 protected:
 void create_0() {
-  factory.setCreator( 10, 11,
-                      unique_ptr<CTransformCreator>( new CGenericCreator<DumbyTransform>()));
-  CPPUNIT_ASSERT_NO_THROW_MESSAGE("Create called with valid vsn specifiers should not throw",
-                                  factory.create(10, 11));
+  factory.setCreator( 10, 11, ( new CGenericCreator<DumbyTransform>()));
+  CPPUNIT_ASSERT_NO_THROW_MESSAGE(
+      "Create called with valid vsn specifiers should not throw",
+      factory.create(10, 11)
+  );
 
 }
 
 void create_1() {
-  factory.setCreator( 10, 11,
-                      unique_ptr<CTransformCreator>( new CGenericCreator<DumbyTransform>()));
-  CPPUNIT_ASSERT_MESSAGE("Create called with valid vsn specifiers should return non-null",
-                         nullptr != factory.create(10, 11));
+  factory.setCreator( 10, 11, ( new CGenericCreator<DumbyTransform>()));
+  CPPUNIT_ASSERT_MESSAGE(
+      "Create called with valid vsn specifiers should return non-null",
+      nullptr != factory.create(10, 11)
+  );
 
 }
 void create_2() {
-  CPPUNIT_ASSERT_THROW_MESSAGE("Create called with invalid vsn specifiers should throw",
-                               factory.create(10, 11),
-                               std::out_of_range);
+  CPPUNIT_ASSERT_THROW_MESSAGE(
+      "Create called with invalid vsn specifiers should throw",
+      factory.create(10, 11) , std::out_of_range
+  );
 
 }
 

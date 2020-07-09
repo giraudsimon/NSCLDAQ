@@ -61,7 +61,7 @@ Main::Main(int argc, char **argv)
 
   setUpTransformFactory();
 
-  m_pMediator = m_factory.create(transformSpec.first, transformSpec.second);
+  m_pMediator.reset(m_factory.create(transformSpec.first, transformSpec.second));
   m_pMediator->setDataSource(pSource);
   m_pMediator->setDataSink(pSink);
 }
@@ -109,14 +109,10 @@ int Main::run()
 //
 void Main::setUpTransformFactory()
 {
-  m_factory.setCreator(  8, 10,
-                         unique_ptr<CTransformCreator>(new C8p0to10p0MediatorCreator()));
-  m_factory.setCreator(  10, 8,
-                         unique_ptr<CTransformCreator>(new C10p0to8p0MediatorCreator()));
-  m_factory.setCreator( 10, 11,
-                           unique_ptr<CTransformCreator>(new C10p0to11p0MediatorCreator()));
-  m_factory.setCreator( 11, 10,
-                           unique_ptr<CTransformCreator>(new CGenericCreator<CTransform11p0to10p0>()));
+  m_factory.setCreator(  8, 10, (new C8p0to10p0MediatorCreator()));
+  m_factory.setCreator(  10, 8, (new C10p0to8p0MediatorCreator()));
+  m_factory.setCreator( 10, 11, (new C10p0to11p0MediatorCreator()));
+  m_factory.setCreator( 11, 10, (new CGenericCreator<CTransform11p0to10p0>()));
 
 }
 
