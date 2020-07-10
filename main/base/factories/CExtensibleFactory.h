@@ -105,7 +105,7 @@ private:
   CreatorMap m_creators;
 
   class visitor {
-    std::vector<L>  m_descriptions;
+    std::vector<L>&  m_descriptions;
   public:
     visitor(std::vector<std::string>& descriptions) :
       m_descriptions(descriptions) {}
