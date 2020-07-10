@@ -116,7 +116,7 @@ public:
    int                                  DigitizerSize();
    CDigitizerDictionary::ModuleIterator DigitizerFind(const std::string& rName)
    {
-	return m_pModules->DigitizerFind(rName);
+     return m_pModules->DigitizerFind(rName);
    }
    std::string            Usage();
 

@@ -53,7 +53,9 @@ using namespace std;
 CModuleCommand::CModuleCommand (CTCLInterpreter* pInterp,
 				CDigitizerDictionary* pDictionary,
 				const string&         rCommand) :
-  CTCLProcessor(rCommand, pInterp)
+  CTCLProcessor(rCommand, pInterp),
+		m_pModules(pDictionary)
+		
 {
    Register();
 			
@@ -212,12 +214,16 @@ CModuleCommand::Create(CTCLInterpreter& rInterp,
 										status = TCL_ERROR;
 								}	else {
 									// Meet the expectations of Configure:
-									
-										  pArgs[1] = pArgs[0];
-												pArgs++;
-												nArgs--;
-												int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
-												m_pModules->DigitizerAdd(pModule);
+								
+												pArgs += 2;
+												nArgs -= 2;
+												if (nArgs > 0) {
+													int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
+													
+												}
+												if (status == TCL_OK) {
+													m_pModules->DigitizerAdd(pModule);
+												}
 										}
 								}
    }
