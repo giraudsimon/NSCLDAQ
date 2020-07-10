@@ -55,7 +55,6 @@ CModuleCommand::CModuleCommand (CTCLInterpreter* pInterp,
 				const string&         rCommand) :
   CTCLProcessor(rCommand, pInterp),
   m_pModules(pDictionary)
-
 {
    Register();
 			
@@ -219,10 +218,9 @@ CModuleCommand::Create(CTCLInterpreter& rInterp,
 	    pArgs++;
 	    nArgs--;
 	    int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
-	    m_pModules->DigitizerAdd(pModule);
-
-										}
-								}
+	    m_pModules->DigitizerAdd(pModule);	    
+	}
+      }
    }
    return status;   
 }  
