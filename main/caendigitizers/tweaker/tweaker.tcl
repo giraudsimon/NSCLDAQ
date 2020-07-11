@@ -32,7 +32,7 @@
 
 set programAuthors {Ron Fox}
 set programVersion {v1.0-000}
-set programReleaseDate {June 13, 2020}
+set programReleaseDate {July 11, 2020}
 
 package require Tk
 package require tdom
@@ -65,7 +65,9 @@ set commonBoardParameters [list                      \
 set psdBoardParameters [list                         \
     [list SRV_PARAM_TRGOUT_MODE {Trigger output}]    \
 ];           # only on PSD boards.
-set phaBoardParameters [list];           # only PHA boards have this.
+set phaBoardParameters [list                 \
+    [list SRV_PARAM_OUT_SELECTION {Trigger output}] \
+];           # only PHA boards have this.
 
 #  Channel level parameters.
 
@@ -1185,6 +1187,7 @@ snit::widgetadaptor SelectBoardControl {
     delegate method *     to selector
     
     variable value ""
+    variable xmlValues -array [list]
     
     constructor args {
         installhull using ttk::frame
@@ -1210,12 +1213,24 @@ snit::widgetadaptor SelectBoardControl {
         if {[dict get $info type] ne "selection"} {
             error "$options(-name) is not an enumerated parameter"
         }
-        $selector configure -values [dict get $info values]
+        
+        set xmlchoices [dict get $info values]
+        set choices [list]
+        foreach xml $xmlchoices {
+            set choice [getReadableValueName $xml]
+            lappend choices $choice
+            set xmlValues($choice) $xml
+        }
+        
+        $selector configure -values $choices
         
         #  Set current value:
+         # set the current value of the box.
         
-        set value \
+        set xml \
             [$options(-dom) getBoardValue $options(-board) $options(-name)]
+        set value [getReadableValueName $xml]
+        $selector set $value
         
         # now we can do a meaningful layout:
         
@@ -1240,8 +1255,9 @@ snit::widgetadaptor SelectBoardControl {
     #
     method _onChange {name index op} {
         set newValue [$selector get]
+        set xml $xmlValues($newValue)
         
-        $options(-dom) setBoardValue $options(-board) $options(-name) $newValue
+        $options(-dom) setBoardValue $options(-board) $options(-name) $xml
     }
 }
 ##
