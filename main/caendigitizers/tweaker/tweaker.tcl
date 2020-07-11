@@ -100,6 +100,68 @@ set phaChannelParameters [list                                  \
     [list SRV_PARAM_CH_TRAP_PEAKING {Peaking time}]             \
 ]
 
+#
+#  This array will be read in from the COMPASS properties file.
+#   it will have property names as keys and values as values.
+# 
+array set properties [list]
+
+# Property filename:
+
+set propertyFile [file join [file dirname [info script]] i18n_en.properties]
+
+#----------------------- Property handling -------------------------
+##
+# readProperties
+#   Reads the properties file into the properties array.  Property keys will be
+#   the array indices.
+#
+proc readProperties {} {
+    set fd [open $::propertyFile r]
+    while {![eof $fd]} {
+        set line [gets $fd]
+        if {$line ne ""}  {
+            set parsed [split $line =]
+            set ::properties([lindex $parsed 0]) [lrange $parsed 1 end]
+        }
+    }
+    close $fd
+}
+##
+# getReadableParameterName
+#    Translates a parameter name into a readable parameter name.
+#    If there's a property named parameter.name.$paramName the value
+#    of that property is used.  If not the fallback name provided is used.
+#
+# @param paramName - the parameter name to use.
+# @param fallback  - The name to use if there's no property.
+# @return string   - English name of the parameter
+#
+proc getReadableParameterName {paramName fallback} {
+    set propname parameter.name.$paramName
+    if {[array names ::properties $propname] eq ""} {
+        return $fallback
+    } else {
+        return $::properties($propname)
+    }
+}
+##
+# getReadableValueName
+#   Given a parameter value attempts to translate it into a human readable value.
+#   If there's a translation property,  its key will be parameter.value.value-string
+#   if there's no translation, we'll return the input value.
+#
+# @param compassValue - the compass XML value.
+# @return string - the human readable parameter value.
+#
+proc getReadableValueName {compassValue} {
+    set propname parameter.value.$compassValue
+    if {[array names ::properties $propname] eq ""} {
+        return  $compassValue
+    } else {
+        return $::properties($propname)
+    }
+}
 
 #----------------------- COMPASSdom class --------------------------
 ##
@@ -1755,8 +1817,11 @@ proc createAppMenu {} {
     . configure -menu .appmenu
 }
 
+
+
 set title [titleManager %AUTO% -appname tweaker -widget .]
 createAppMenu
+readProperties
 
     
 
