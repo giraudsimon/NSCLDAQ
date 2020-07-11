@@ -43,7 +43,7 @@ package require snit
 set xmlFile "";                      # COMPASSdom object -- see below
 set title   "";                      # Title manager object.
 
-set GUIColumns 4;                    # Number of controls per column of GUI.
+set GUIColumns 3;                    # Number of controls per column of GUI.
 
 ##
 # These lists are list of parameters that will be controlled by the
@@ -122,7 +122,7 @@ proc readProperties {} {
         set line [gets $fd]
         if {$line ne ""}  {
             set parsed [split $line =]
-            set ::properties([lindex $parsed 0]) [lrange $parsed 1 end]
+            set ::properties([lindex $parsed 0]) [lindex $parsed 1]
         }
     }
     close $fd
@@ -813,6 +813,7 @@ snit::widgetadaptor BoolChannelControl {
     option -board -default "" -readonly 1
     option -channel -default "" -readonly 1
     option -name -default "" -readonly 1
+
     
     delegate option * to hull
     delegate method * to hull
@@ -887,6 +888,10 @@ snit::widgetadaptor SelectChannelControl {
     
     variable value ""
     
+    # Look up table from english names -> XML values.
+    
+    variable xmlValues -array [list] 
+    
     constructor args {
         # Use a ttk::frame as the hull.
         
@@ -921,16 +926,23 @@ snit::widgetadaptor SelectChannelControl {
         if {[dict get $info type] ne "selection"} {
             error "-name value is not an enumerated parameter"
         }
-        set choices [dict get $info values]
+        set xmlchoices [dict get $info values]
+        set choices [list]
+        foreach xml $xmlchoices {
+            set choice [getReadableValueName $xml]
+            lappend choices $choice
+            set xmlValues($choice) $xml
+        }
         
         $selector configure -values $choices
         
         
         # set the current value of the box.
         
-        set value \
+        set xml \
             [$options(-dom) getChannelValue $options(-board) $options(-channel)\
              $options(-name)]
+        set value [getReadableValueName $xml]
         $selector set $value
         
         # idiotic though it may seem, there's no -command option
@@ -956,9 +968,10 @@ snit::widgetadaptor SelectChannelControl {
     
     method _onChange {var1 index op} {
         set newValue [$selector get]
+        set xml $xmlValues($newValue)
         
         $options(-dom) setChannelValue \
-            $options(-board) $options(-channel) $options(-name) $newValue
+            $options(-board) $options(-channel) $options(-name) $xml
     }
 }
     
@@ -1460,6 +1473,7 @@ proc createBoardPage {widget board params} {
     foreach param $params {
         set xmlName [lindex $param 0]
         set label   [lindex $param 1]
+        set label   [getReadableParameterName $xmlName $label]
         set wname   $widget.ctl[incr cidx]
         
         grid [createBoardControl $::xmlFile $board $xmlName $label $wname] \
@@ -1495,6 +1509,7 @@ proc createChanPage {widget cno board chan params} {
     foreach param $params {
         set xmlName [lindex $param 0]
         set label   [lindex $param 1]
+        set label   [getReadableParameterName $xmlName $label]
         set wname   $widget.ctl[incr cidx]
         
         grid [createChannelControl $::xmlFile $board $chan $xmlName $label $wname]  \
