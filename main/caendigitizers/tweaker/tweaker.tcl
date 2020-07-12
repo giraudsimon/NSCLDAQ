@@ -1,3 +1,6 @@
+#!/bin/sh
+# Start tclsh \
+    exec /usr/bin/tclsh8.6 ${0} ${@}
 #/*
 #*-------------------------------------------------------------
 # 
@@ -108,26 +111,40 @@ set phaChannelParameters [list                                  \
 # 
 array set properties [list]
 
-# Property filename:
-
-set propertyFile [file join [file dirname [info script]] i18n_en.properties]
-
+# Candidate locations for Property filename:
+#  First location is just in the same directory as the script (e.g. testing)
+#  or just handed out.  Second location is ../etc relative to the script
+#  that's where to expect it if it's installed as part of NSCLDAQ.
+#
+set propertyFile [list   \
+    [file join [file dirname [info script]] i18n_en.properties]   \
+    [file join [file dirname [info script]] .. etc i18n_en.properties] \
+]
 #----------------------- Property handling -------------------------
 ##
 # readProperties
 #   Reads the properties file into the properties array.  Property keys will be
 #   the array indices.
+#   We hunt for the properties file in the locations specified in ::propertyFile
+#   If we can't find it, all the translations will just give the fallback values.
+#   Which are not terrible for parameter names and are just the XML names of the
+#   parameters for enumerated parameter values.
 #
 proc readProperties {} {
-    set fd [open $::propertyFile r]
-    while {![eof $fd]} {
-        set line [gets $fd]
-        if {$line ne ""}  {
-            set parsed [split $line =]
-            set ::properties([lindex $parsed 0]) [lindex $parsed 1]
+    foreach file $::propertyFile  {
+        if {[file readable $file]} {
+            set fd [open $file r]
+            while {![eof $fd]} {
+                set line [gets $fd]
+                if {$line ne ""}  {
+                    set parsed [split $line =]
+                    set ::properties([lindex $parsed 0]) [lindex $parsed 1]
+                }
+            }
+            close $fd            
+            break
         }
     }
-    close $fd
 }
 ##
 # getReadableParameterName
