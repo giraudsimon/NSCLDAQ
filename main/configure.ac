@@ -698,6 +698,7 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-psd/Makefile
     caendigitizers/dpp-psd/skel/Makefile
     caendigitizers/caendump/Makefile
+    caendigitizers/tweaker/Makefile
     cookbooks/Makefile
     ])
 

@@ -1,4 +1,4 @@
-SUBDIRS=dpp-pha dpp-psd caendump
+SUBDIRS=dpp-pha dpp-psd caendump tweaker
 
 
 install-exec-hook:
