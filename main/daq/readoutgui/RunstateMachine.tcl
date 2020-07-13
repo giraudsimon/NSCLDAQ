@@ -204,6 +204,7 @@ snit::type RunstateMachine {
         set manager [BundleManager getInstance]
         if {$to in $validTransitions($state)} {
             $manager invoke leave $state $to
+
             set from $state
             set state $to
             $manager invoke enter $from $to
@@ -246,7 +247,7 @@ snit::type RunstateMachine {
     method precheckTransitionForErrors {to} {
         set manager [BundleManager getInstance]
         return [$manager precheck $state $to]
-      
+
     }
     
     #--------------------------------------------------------------------------
