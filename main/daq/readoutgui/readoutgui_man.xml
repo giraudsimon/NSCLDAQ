@@ -3460,6 +3460,31 @@ set <replaceable>sm</replaceable> [RunstateMachineSingleton %AUTO%]
                 for the callout bundles are invoked in the order in which the
                 bundles were registered.
             </para>
+            <para>
+               As of NSCLDAQ 11.3 and The <command>precheckTransitionForErrors</command>
+               was added to the set of procs a bundle may implement.
+               This proc is optional not mandatory. If a bundle implements
+               that proc, it is called prior to any state transition attempt.  The
+               current and destination states are passed in that order as parameters.
+               If the bundle wishes to veto the state transition, it returns a
+               non-empty string describing why.  The set of veto strings will be
+               output to the user as conditions to correct in order to allow the
+               transition.  If all bundles return empty strings, the transition
+               will be attempted.
+            </para>
+            <para>
+               As of NSCLDAQ-12, the additional <command>failure</command> method
+               was added to the set of procs a bundle may implement.  If
+               This proc is purely optiona.   If implemented when a callback
+               to a bundle fails, this method is called for all bundles that
+               succeeded in the execution of that callback.  Note that if
+               several bundles succeed, failure is called in reverse registration
+               order.  This allows succeeding callbacks to cleanup as needed for
+               aborted transitions.  The arguments passed to the original callback
+               are passed to the <command>failure</command> method.  Note that
+               errors from calls to <command>failure</command> are completely
+               ignored.
+            </para>
         </refsect1>
         <refsect1>
             <title>EXAMPLES</title>
