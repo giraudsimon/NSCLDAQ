@@ -86,7 +86,6 @@ snit::type RunstateMachine {
         Paused   {NotReady Halted Active}
     }
     
-    
     #---------------------------------------------------------------------------
     #  Instance variables
     
@@ -94,6 +93,7 @@ snit::type RunstateMachine {
     
     variable state NotReady
     
+    #  List of currently registered bundle namespaces.
     
     
     ##
@@ -264,12 +264,7 @@ snit::type RunstateMachine {
     method _setState newState {
         set state $newState
     }
-    
-    
-    #----------------------------------------------------------------------------
-    #  Private procs.
-    
-    
+
 }
 
 

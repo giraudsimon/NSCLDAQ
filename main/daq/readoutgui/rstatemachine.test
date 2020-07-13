@@ -49,7 +49,6 @@ tcltest::test addbundle-1  {Add a new bundle lets me list it.} \
 } \
 -cleanup {
     $s removeCalloutBundle testBundle
-    $s destroy
     namespace delete testBundle
 } \
 -body {
@@ -85,6 +84,7 @@ tcltest::test addbundle-3 {Double registration is not allowed} \
 -cleanup {
     $s removeCalloutBundle testBundle
     $s destroy    
+
     namespace delete testBundle
 } \
 -body {
@@ -142,6 +142,7 @@ tcltest::test addbundle-5 {Exported namespace procs must have the right paramete
 } \
 -result [list 1 {testBundle has interface procs with the wrong number of params: attach(1), leave(2)}]
 
+
 tcltest::test addbundle-6 {Properly added namespace bundles become a namespace ensemble.} \
 -setup {
     set s [RunstateMachine %AUTO%]
@@ -153,6 +154,7 @@ tcltest::test addbundle-6 {Properly added namespace bundles become a namespace e
     }
 } \
 -cleanup {
+
     $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
@@ -315,6 +317,7 @@ tcltest::test transitions-2 {Transitions invoke leave callback}  \
     $s addCalloutBundle testBundle    
 } \
 -cleanup {
+
     $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
@@ -348,6 +351,7 @@ tcltest::test transitions-3 {Transitions invoke the enter callback} \
 } \
 -cleanup {
     $s removeCalloutBundle testBundle
+
     $s destroy
     namespace delete testBundle
 } \
@@ -447,6 +451,7 @@ tcltest::test failedTransition-0 {Test that a failed callout bundle will cause s
   set state [rm getState]
   list $status $state
 } -result [list 1 NotReady]
+
 
 #  Testing solution of issue daqdev/NSCLDAQ#659
     
@@ -633,6 +638,7 @@ namespace eval FailBundle {
     catch {rm transition Starting}
     set ::failureInfo
 } -result [list Ok2 Ok1]
+
 #-----------------------------------------------------------------------------
 #
 # Singleton tests
