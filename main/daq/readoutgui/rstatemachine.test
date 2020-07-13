@@ -435,8 +435,10 @@ tcltest::test failedTransition-0 {Test that a failed callout bundle will cause s
   namespace forget FailBundle
   rm destroy
 } -body {
-  rm transition Starting
-} -result "Failed leave NotReady to Starting" -returnCodes 1
+  set status [catch {rm transition Starting}]
+  set state [rm getState]
+  list $status $state
+} -result [list 1 NotReady]
 
 #-----------------------------------------------------------------------------
 #

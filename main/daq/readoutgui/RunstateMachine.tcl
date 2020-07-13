@@ -57,6 +57,10 @@ package require snit
 #   listTransitions
 #   getState
 #
+#  daqdev/NSCLDAQ#659 - We keep track of the successful bundle calls and, if one
+#                       fails we call the optional method failed in the successful
+#                       bundles.
+#
 #  Any methods that start with _ are considered private.  Note that
 #
 #   _setState  will be used by the tests to force the state machine to a
@@ -68,6 +72,11 @@ snit::type RunstateMachine {
     #--------------------------------------------------------------------------
     #  Class variables:
     
+    #
+    #   validTransitions defines the legal edges of the state machine.
+    #   this is an array indexed by state name with values a list of valid transitions.
+    #
+    
     typevariable validTransitions -array {
         NotReady {NotReady Starting}
         Starting {NotReady Halted}
@@ -76,7 +85,7 @@ snit::type RunstateMachine {
         Paused   {NotReady Halted Active}
     }
     
-    # Arra indexed by callback name contents are the number of parameters the
+    # Array indexed by callback name contents are the number of parameters the
     # callback must accept.
     
     typevariable requiredExports -array [list \
@@ -85,13 +94,11 @@ snit::type RunstateMachine {
     #---------------------------------------------------------------------------
     #  Instance variables
     
+    # Current state.
+    
     variable state NotReady
     
-    #
-    #   validTransitions defines the legal edges of the state machine.
-    #   this is an array indexed by state name with values a list of valid transitions.
-    #
-    
+    #  List of currently registered bundle namespaces.
     
     variable callouts [list]
     
@@ -299,12 +306,28 @@ snit::type RunstateMachine {
     #  _callback
     #    Perform a callback in the list of callbacks.
     #
-    # @param callback - Name of the namespace callback method (e.g. enter)
+    # @param method - Name of the namespace callback method (e.g. enter)
     # @param args     - Arguments to hand to the callback method
     #
+    #  daqdev/NSCLDAQ#659 - we keep track of the successful callbacks.
+    #  If there is a callback failure:
+    #   - Call the failure method on each of the bundles passing the same
+    #     args we got (normally this will be from/to)
+    #   - re-signal the failure along with the original traceback.
+    #   - any failures of the failure method are just absorbed and dropped.
+    #
     method _callback {method args} {
+        
+        set succeeded [list]
         foreach cb $callouts {
-            $cb $method {*}$args
+            if {[catch {$cb $method {*}$args} msg]} {
+                set traceback $::errorInfo
+                foreach s $succeeded {
+                    catch {_callBundleMethodIfExists $cb failure $args}
+                }
+                error "$msg from $traceback"
+            }
+            lappend succeded $cb
         }
     }
     
@@ -373,6 +396,28 @@ snit::type RunstateMachine {
             set badList [join $badList ", "]
             set requiredList [join $requiredList ", "]
             error "$name has interface procs with the wrong number of params: $badList should be: $requiredList"
+        }
+    }
+    #----------------------------------------------------------------------------
+    #  Private procs.
+    
+    ##
+    # _callBundleMethodIfExists
+    #    If the specified method of the specified bundle exists it is called.
+    #    This is used to allow for optional methods see e.g.
+    #    issue: daqdev/NSCLDAQ#659
+    #
+    # @param bundle     - bundle namespace name.
+    # @param methodname - Name of the bundle method
+    # @param args       - args to pass.
+    #
+    #   @note if ::$bundle::$methodname exists its' called:
+    #            ::$bundle::$methodname {*}$args
+    #
+    proc _callBundleMethodIfExists {bundle methodname $args} {
+        set qualifiedProc $::bundle::$methodname
+        if {[info procs $qualifiedProc] ne ""}  {
+            $qualifiedProc {*}$args
         }
     }
 }
@@ -460,6 +505,7 @@ snit::type ClientRunstateMachine {
 
     return $retval
   }
+  
 
 }; # end of ClientRunstateMachine snit::type
 
@@ -522,6 +568,7 @@ snit::type RemoteControllableRunstateMachine {
   method isSlave {} {
     return [expr {$currentStateMachine eq $clientStateMachine}]
   }
+  
 }
 
 ##
