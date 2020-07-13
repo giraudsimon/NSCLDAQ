@@ -1448,7 +1448,7 @@ protected:
         </para>
         <variablelist>
             <varlistentry>
-                <term><type>std::uint32_t </type><structfield>s_nBytes</structfield><</term>
+                <term><type>std::uint32_t </type><structfield>s_nBytes</structfield></term>
                 <listitem>
                     <para>
                         Number of bytes in this chunk of data.  This may be

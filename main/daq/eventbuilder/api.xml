@@ -1887,8 +1887,8 @@ namespace EVB {
 #endif
   
   typedef struct __attribute__((__packed__))_FragmentHeader {
-    uint64_t       s_timestamp;	//< Fragment time relative to globally synchronized clock.
-    uint32_t       s_sourceId ;	//< Unique source identifier.
+    uint64_t       s_timestamp;	//&lt; Fragment time relative to globally synchronized clock.
+    uint32_t       s_sourceId ;	//&lt; Unique source identifier.
     uint32_t       s_size;	// Bytes in fragment payload.
     uint32_t       s_barrier;   // Non zero for barrier events - the barrier type.
   } FragmentHeader, *pFragmentHeader;

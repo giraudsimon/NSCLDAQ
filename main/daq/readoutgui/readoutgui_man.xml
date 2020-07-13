@@ -7072,7 +7072,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
         <para>
          GUI control panels must be declared elligible for remote control. See
          the <literal>Remote control package</literal> section of the
-         <literal>ReadoutGUI & ReadoutShell</literal> chapter of the general
+         <literal>ReadoutGUI &amp; ReadoutShell</literal> chapter of the general
          documentation for information that describes how to do that.
         </para>
         <para>
@@ -7252,7 +7252,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
              <literal>OK</literal> is returned with no additional data.
             </para>
             <para>
-             See the chapter on the <literal>ReadoutGUI & ReadoutShell</literal>
+             See the chapter on the <literal>ReadoutGUI &amp; ReadoutShell</literal>
              for a diagram showing the legal states and the transitions allowed
              from each state.  Note that this request takes as additional data
              the <emphasis>name</emphasis> of the proposed target state, not
@@ -7283,7 +7283,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
               returns the current run state.  On success, this is the string
               <literal>OK</literal> followed by one of the state names
                in the ReadoutGUI state diagram shown in the chapter
-               <literal>ReadoutGUI & ReadoutShell</literal>.
+               <literal>ReadoutGUI &amp; ReadoutShell</literal>.
              </para>
              <para>
               <literal>slave</literal> returns <literal>OK</literal> followed

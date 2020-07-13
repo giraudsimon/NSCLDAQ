@@ -11903,7 +11903,7 @@ public:
                 <para>
                   Supports dereferencing an iterator as if it were a pointer
                   to a ring item header.  For example, given an iterator p,
-                  <literal>reinterpret_cast&lt;pRingItem&gt;(&(*p))</literal>
+                  <literal>reinterpret_cast&lt;pRingItem&gt;(&amp;(*p))</literal>
                   produces a pointer to the ring item as a whole.
                 </para>
             </listitem>
