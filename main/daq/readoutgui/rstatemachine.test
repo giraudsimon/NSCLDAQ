@@ -440,6 +440,186 @@ tcltest::test failedTransition-0 {Test that a failed callout bundle will cause s
   list $status $state
 } -result [list 1 NotReady]
 
+#  Testing solution of issue daqdev/NSCLDAQ#659
+    
+tcltest::test failure-callback-1 {Failure callbacks don't get called if there are no successes.} \
+-setup {
+    set ::failureInfo [list]
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle FailBundle
+
+    
+} \
+-cleanup {
+  rm destroy
+  namespace forget FailBundle
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list]
+
+tcltest::test failure-callback-2  {If there's a success it's falure callback is called} \
+-setup {
+    set ::failureInfo [list]
+namespace eval OkBundle {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+        puts "setting failure info to $args"
+        set ::failureInfo $args
+    }
+    namespace export attach enter leave failure
+}
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle OkBundle
+    rm addCalloutBundle FailBundle
+    
+    
+} \
+-cleanup {
+  rm destroy
+  namespace forget FailBundle
+  namespace forget OkBundle
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list [list NotReady Starting]]
+
+tcltest::test failure-callback-3 {Failures called in reverse registration order} \
+-setup {
+    set ::failureInfo [list]
+namespace eval OkBundle1 {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+       lappend ::failureInfo Ok1
+    }
+    namespace export attach enter leave failure
+}
+namespace eval OkBundle2 {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+       lappend ::failureInfo Ok2
+    }
+    namespace export attach enter leave failure
+}
+
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle OkBundle1
+    rm addCalloutBundle OkBundle2
+    rm addCalloutBundle FailBundle
+    
+    
+} \
+-cleanup {
+  rm destroy
+  namespace forget FailBundle
+  namespace forget OkBundle1
+  namespace forget OkBundle2
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list Ok2 Ok1]
 #-----------------------------------------------------------------------------
 #
 # Singleton tests

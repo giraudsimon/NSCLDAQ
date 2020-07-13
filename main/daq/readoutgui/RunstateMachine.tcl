@@ -235,7 +235,6 @@ snit::type RunstateMachine {
     #
     method transition to {
         if {$to in $validTransitions($state)} {
-            
             $self _callback leave $state $to
             set from $state
             set state $to
@@ -275,13 +274,9 @@ snit::type RunstateMachine {
     method precheckTransitionForErrors {to} {
       set errors [list]
       foreach cb $callouts {
-        # skip bundles that do not implement the precheckTransitionForErrors
-        if {[llength [info procs ::${cb}::precheckTransitionForErrors]] != 0} {
-
-          set error [::${cb}::precheckTransitionForErrors $state $to]
-          if {$error ne {}} {
+        set error [_callBundleMethodIfExists $cb precheckTransitionForErrors [list $state $to]]
+        if {$error ne {}} {
             lappend errors [list $cb $error]
-          }
         }
       }
       return $errors
@@ -322,16 +317,13 @@ snit::type RunstateMachine {
         foreach cb $callouts {
             if {[catch {$cb $method {*}$args} msg]} {
                 set traceback $::errorInfo
-                foreach s $succeeded {
-                    catch {_callBundleMethodIfExists $cb failure $args}
+                foreach s [lreverse $succeeded] {
+                    catch {_callBundleMethodIfExists $s failure $args} 
                 }
                 error "$msg from $traceback"
             }
-            lappend succeded $cb
+            lappend succeeded $cb
         }
-    }
-    
-    method _precheckTransitionForErrors {from to} {
     }
     ##
     # _checkRequiredExports
@@ -410,14 +402,17 @@ snit::type RunstateMachine {
     # @param bundle     - bundle namespace name.
     # @param methodname - Name of the bundle method
     # @param args       - args to pass.
+    # @return - whatever the callback returns if it exists, "" if not.
     #
     #   @note if ::$bundle::$methodname exists its' called:
     #            ::$bundle::$methodname {*}$args
     #
-    proc _callBundleMethodIfExists {bundle methodname $args} {
-        set qualifiedProc $::bundle::$methodname
+    proc _callBundleMethodIfExists {bundle methodname args} {
+        set qualifiedProc ::${bundle}::$methodname
         if {[info procs $qualifiedProc] ne ""}  {
-            $qualifiedProc {*}$args
+            return [$qualifiedProc {*}$args]
+        } else {
+            return ""
         }
     }
 }
