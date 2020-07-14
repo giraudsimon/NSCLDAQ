@@ -229,7 +229,9 @@ proc ::SSHPipe::pause source {
 #         word that we are not already paused.
 #
 proc ::SSHPipe::resume source {
+
    ::SSHPipe::_complainIfIdle $source resume
+
     ::SSHPipe::_send $source resume    
 }
 ##
