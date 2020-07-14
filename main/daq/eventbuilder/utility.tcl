@@ -407,3 +407,14 @@ snit::widgetadaptor EVB::utility::sortedPair {
     }
     
 }
+##
+# EVB::utility _formatUnsigned
+#
+#   Factored common code from various _unsignedOption methods
+proc EVB::utility::_formatUnsigned {value} {
+    if {[string is integer -strict $value]} {
+            return  [format %u $value]
+        } else {
+            return  $value
+        }
+}

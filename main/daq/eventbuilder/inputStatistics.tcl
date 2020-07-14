@@ -168,11 +168,7 @@ snit::widget ::EVB::inputStatistics::summaryDisplay {
     # @param value   - new value:
     #
     method _unsignedOption {optname value} {
-	if {[string is integer -strict $value]} {
-	    set options($optname) [format %u $value]
-	} else {
-	    set options($optname) $value
-	}
+        set options($optname) [EVB::utility::_formatUnsigned $value]
     }
 }
 
