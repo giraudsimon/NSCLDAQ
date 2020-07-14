@@ -679,26 +679,26 @@ snit::widgetadaptor EVBC::eventbuildercp {
     #
 
     constructor args {
-	installhull using ttk::frame
-  ttk::frame $win.leftStretch
-  ttk::frame $win.rightStretch
-
-	install glomparams using ::EVBC::glomparams $win.build \
-	    -title {Event building parameters (vsn 11)} -relief groove
-	install tee using ::EVBC::intermedRing $win.tee \
-	    -title {Ordered Fragment Ring} -relief groove
-	install outring using ::EVBC::destring $win.oring \
-	    -title {Destination ring} -relief groove
-
-	grid $glomparams -column 0 -row 0 -sticky w -pady 3 -pady 3
-  grid $win.leftStretch -column 1 -row 0  -sticky nsew
-	grid $tee -column 2 -row 0 -sticky ew -pady 3 -pady 3
-  grid $win.rightStretch -column 3 -row 0  -sticky nsew
-	grid $outring -column 4 -row 0 -sticky e -pady 3 -pady 3
-
-  grid columnconfigure $win {1 3} -weight 1
-
-	$self configurelist $args
+        installhull using ttk::frame
+        ttk::frame $win.leftStretch
+        ttk::frame $win.rightStretch
+      
+        install glomparams using ::EVBC::glomparams $win.build \
+            -title {Event building parameters (vsn 11)} -relief groove
+        install tee using ::EVBC::intermedRing $win.tee \
+            -title {Ordered Fragment Ring} -relief groove
+        install outring using ::EVBC::destring $win.oring \
+            -title {Destination ring} -relief groove
+    
+        grid $glomparams -column 0 -row 0 -sticky w -pady 3 -pady 3
+        grid $win.leftStretch -column 1 -row 0  -sticky nsew
+        grid $tee -column 2 -row 0 -sticky ew -pady 3 -pady 3
+        grid $win.rightStretch -column 3 -row 0  -sticky nsew
+        grid $outring -column 4 -row 0 -sticky e -pady 3 -pady 3
+      
+        grid columnconfigure $win {1 3} -weight 1
+      
+        $self configurelist $args
     }
     #-------------------------------------------------------
     #  Configuration processors.
@@ -712,13 +712,13 @@ snit::widgetadaptor EVBC::eventbuildercp {
     # @param value    - Proposed new value.
     #
     method _configState {optname value} {
-	if {$value ni [list normal disabled]} {
-	    error "$optname value must be one of {norma, disabled} was $value"
-	}
-	foreach w [list $glomparams $tee $outring] {
-	    $w configure -state $value
-	}
-	set options($optname) $value
+        if {$value ni [list normal disabled]} {
+            error "$optname value must be one of {norma, disabled} was $value"
+        }
+        foreach w [list $glomparams $tee $outring] {
+            $w configure -state $value
+        }
+        set options($optname) $value
     }
     
 }
