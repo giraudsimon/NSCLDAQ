@@ -274,7 +274,7 @@ snit::type RunstateMachine {
     method precheckTransitionForErrors {to} {
       set errors [list]
       foreach cb $callouts {
-        set error [_callBundleMethodIfExists $cb precheckTransitionForErrors [list $state $to]]
+        set error [_callBundleMethodIfExists $cb precheckTransitionForErrors  $state $to]
         if {$error ne {}} {
             lappend errors [list $cb $error]
         }
@@ -594,6 +594,19 @@ snit::type RunstateMachineSingleton {
         install StateMachine using set actualObject
         
     }
+}
+namespace eval RunStateMachineConvenience {
+    
+}
+##
+# RunStateMachineConvenience::removeBundle
+#   Convenience proc to remove a callout bundle from the state machine
+#  singleton
+#
+proc RunStateMachineConvenience::removeBundle {name} {
+    set sm [RunstateMachineSingleton %AUTO%]
+    $sm removeCalloutBundle $name
+    $sm destroy
 }
 
 
