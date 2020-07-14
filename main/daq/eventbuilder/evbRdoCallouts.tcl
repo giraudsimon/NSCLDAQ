@@ -334,22 +334,13 @@ proc EVBC::start args {
     wm geometry .waiting $where
     label    .waiting.for -text "Waiting for event builder to start up"
     pack     .waiting.for
-    set ports [::portAllocator create %AUTO]
-    set appName [::EVBC::getAppName]
-    set hunting $appName
-    set found 0
-    set me $::tcl_platform(user)
+    
     set timeoutPasses 1000
+    set port ""
     for {set i 0} {$i < $timeoutPasses} {incr i} {
-        set allocations [$ports listPorts]
-        foreach allocation $allocations {
-            set name [lindex $allocation 1]
-            set owner [lindex $allocation 2]
-            if {($name eq $hunting) && ($me eq $owner)} {
-            set found 1
-            }
-        }
-        if {!$found} {
+        set port [::EVBC::_getEvbPort]
+        
+        if {$port eq ""} {
             update idletasks
             after 500
         } else {
@@ -358,8 +349,8 @@ proc EVBC::start args {
     }
     $ports destroy
     destroy .waiting
-    if {!$found} {
-	error "Event builder failed to start within timeout"
+    if {$port eq ""} {
+        error "Event builder failed to start within timeout"
     }
 
 }
@@ -430,20 +421,8 @@ proc EVBC::getOrdererPort {} {
    #
     #  Figure out what port the event builder is running on... or if it's running
     #
-    set portManager [::portAllocator create %AUTO%]
-    set allocations [$portManager listPorts]
-    set user $::tcl_platform(user)
-    set appName "ORDERER:$user:$::EVBC::appNameSuffix"
-    set port ""
-    foreach allocation $allocations {
-        set name  [lindex $allocation 1]
-        set owner [lindex $allocation 2]
-        if {($name eq $appName) && ($owner eq $user)} {
-            set port [lindex $allocation 0]
-            break
-        }
-    }
-    $portManager destroy
+    
+    set port [::EVBC::_getEvbPort]
     
     if {$port eq ""} {
         error "EVBC::startRingSource Unable to locate the event builder service"
@@ -752,6 +731,23 @@ proc EVBC::isRunning {} {
 ###############################################################################
 
 ##
+# EVBC::_getEvbPort
+#   @return mixed
+#   @retval integer - port number on which the event builder is waiting for
+#                    connections.
+#   @retval string "" - The event builder isn't yet advertising
+#
+proc EVBC::_getEvbPort {} {
+    set appName [::EVBC::getAppName]
+    set user    $::tcl_platform(user)
+    set manager [::portAllocator %AUTO%]
+    set result  [$manager findServer $appName $user]
+    $manager destroy
+    
+    return $result
+}
+
+##
 # EVBC::_paramsChanged
 #
 #  @return bool - true if the event builder parameters have changed
@@ -819,8 +815,7 @@ proc EVBC::_CheckPipeline {msgPrefix} {
 #
 # Called when the event builder pipeline has input ready.
 # Read the input line and _Output it.
-# TODO:  This should go to the output screen of the ReadoutGUI.
-#s
+#
 # If the EOF is reached close the pipe and collect the error message as well.
 #
 proc EVBC::_PipeInputReady {} {
@@ -1105,23 +1100,17 @@ proc EVBC::_waitForEventBuilder {} {
 
     # Figure out which port the event builder is listening on:
 
-    set ports [::portAllocator create %AUTO%]
-    set me $::tcl_platform(user)
-    set name [EVBC::getAppName]
-    set port -1
-    set allocations [$ports listPorts]
-    foreach allocation $allocations {
-	if {([lindex $allocation 1] eq $name) && ([lindex $allocation 2] eq $me)} {
-	    set port [lindex $allocation 0]
-	    break
-	}
+    
+    set port [EVBC::_getEvbPort]
+    
+    if {$port eq ""} {
+        error "EVBC::_waitForEventBuilder - event builder isn't advertising port"
     }
-    $ports destroy
 
     #  Try to connect every 100ms until success:
 
     while {[catch {socket localhost $port} fd]} {
-	after 100
+        after 100
     }
     close $fd
 }
