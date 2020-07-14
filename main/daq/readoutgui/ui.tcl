@@ -27,8 +27,35 @@ package provide ui   1.0
 package provide ReadoutGUIPanel 1.0
 
 
-namespace eval ::ReadoutGUIPanel {}
+namespace eval ::ReadoutGUIPanel {
+    
+}
 namespace eval ::ReadougGUIPanel {}
+
+snit::macro getDefaultLogging {} {
+    return  [dict create \
+        output [list]           \
+        log [list]              \
+        error [list -background white -foreground red] \
+        warning [list -foreground magenta]              \
+    ]
+}
+
+##
+# ReadoutGUIPanel::defaultLogging
+#   Return the default value for -showlog
+#
+# @return dict
+#
+proc ::ReadoutGUIPanel::getDefaultLogging {} {
+    return [dict create \
+        output [list]           \
+        log [list]              \
+        error [list -background white -foreground red] \
+        warning [list -foreground magenta]              \
+    ]
+}
+    
 
 #------------------------------------------------------------------------------
 # Menubar:
@@ -2110,12 +2137,8 @@ snit::widgetadaptor OutputWindow {
 
     option -history    -default 1000
     option -logclasses -default [list output log error warning debug]
-    option -showlog    -default [list                         \
-        output  [list]                                        \
-        log     [list]                                        \
-        error   [list -background white -foreground red]      \
-        warning [list -foreground magenta]                     \
-    ] -configuremethod _updateTagOptions
+    option -showlog    -default [getDefaultLogging] \
+        -configuremethod _updateTagOptions
     option -monitorcmd [list]
     
     # If non empty, this is the log file fd.
@@ -2472,12 +2495,8 @@ snit::widgetadaptor TabbedOutput {
     option -height      -configuremethod _RelayOption
     option -history     -configuremethod _RelayOption -default 1000
     option -logclasses  -configuremethod _RelayOption -default [list output log error warning debug]
-    option -showlog     -configuremethod _RelayOption -default [list                         \
-        output  [list]                                        \
-        log     [list]                                        \
-        error   [list -background white -foreground red]      \
-        warning [list -foreground magenta]                     \
-    ]
+    option -showlog     -configuremethod _RelayOption \
+        -default [getDefaultLogging]
     option -monitorcmd  -configuremethod _RelayOption -default [list]
     option -errorclasses [list error warning]
 
