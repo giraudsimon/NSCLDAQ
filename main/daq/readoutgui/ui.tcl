@@ -1026,6 +1026,7 @@ namespace eval RunControlDisable {
   # a cleanup step.
   proc unregister {} {
     variable prevState
+
     RunControlSingleton::setState $prevState
     RunStateMachineConvenience::removeBundle RunControlDisable
     
@@ -1156,7 +1157,11 @@ proc ::RunControlSingleton::getInstance {{path ""} args} {
 proc ::RunControlSingleton::getState {} {
     variable prevState
     set rc [RunControlSingleton::getInstance]
+<<<<<<< HEAD
     return [$rc cget -state]
+=======
+    retrun [$rc cget -state]
+>>>>>>> daqdev/NSCLDAQ#700 - factor out some singleton code into convenience
     
 }
 ##
