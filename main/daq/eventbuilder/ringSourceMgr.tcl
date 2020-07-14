@@ -108,6 +108,7 @@ proc ::RingSourceMgr::getOrdererPort {} {
 
   set port [::EVBC::getOrdererPort]
 
+
   if {$port eq ""} {
     return -code error "RingSourceMgr::getOrdererPort Unable to locate the event builder service"
   }
