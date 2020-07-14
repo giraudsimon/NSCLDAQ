@@ -62,6 +62,31 @@ namespace eval ::EVB {
     variable lastLatewidgetStats [list]
     
 }
+#----------------------------------------------------------------------------
+#
+#  Common utility procs: daqdev/NSCLDAQ#700
+#
+
+##
+# _processFlowControl
+#    - Validates that the flow control option is boolean.
+#    - computes the correct string to put in the flow control widget.
+#    Factoring this out of the various widgets that display flow control
+#    supports a common set of strings.
+# @note further factoring would involve a re-arrangement of the GUI such that
+#       there's a status tab below the tabbed notebook.
+# @param optval - value of the configuration option.
+#
+proc processFlowControl {optval} {
+    snit::boolean validate $optval
+    set text "Flow control: "
+    if {$optval} {
+        append text "Flow Control Active"
+    } else {
+        append text "Accepting Data"
+    }
+    return $text
+}
 
 #-----------------------------------------------------------------------------
 #
@@ -212,12 +237,9 @@ snit::widgetadaptor ::EVB::summary {
     #    Handles changes to the -flowcontrol option value.
     #
     method _SetFlowControl {optname optval} {
-        if {$optval} {
-            $win.flow config -text {Flow control active}
-        } else {
-            $win.flow config -text {Accepting Data}
-        }
+        set text [_processFlowControl $optval]
         set options($optname) $optval
+        $win.flow config -text $text
     }
 }
 ##
@@ -324,17 +346,9 @@ snit::widgetadaptor ::EVB::sourceStatistics {
     #                - True - FLow Control:  Flow control Active.
     #
     method _ConfigFlowControl {optname optval} {
-         snit::boolean validate $optval
-         set options($optname) $optval
-         
-         set baseText "Flow Control: "
-         if {$optval} {
-            append baseText "Flow Control Active"
-         } else {
-            append baseText "Accepting Data"
-         }
-         
-         $flowLabel configure -text $baseText
+        set text [_processFlowControl $optval]   
+        set options($optname) $optval        
+        $flowLabel configure -text $text
     }
     #------------------------------------------------------------------------
     # public methods:
@@ -383,7 +397,7 @@ snit::widgetadaptor ::EVB::sourceStatistics {
 #                        widget.
 #     - -heterogenouscount - Sets the number of complete barriers that were
 #                        heterogenous in type.
-#     0 -flowcontrol - Sets the flow control label.
+#     -flowcontrol - Sets the flow control label.
 # METHODS:
 #    - setStatistic sourceid barriertype count -
 #                         sets the barrier statistics for a source id.
@@ -432,15 +446,8 @@ snit::widgetadaptor EVB::barrierStatistics {
     # @param optname - name of the option.
     # @param optval  - boolean option value.
     method _CfgFlow {optname optval} {
-        snit::boolean validate $optval
+        set text [_processFlowControl $optval]
         set options($optname) $optval
-        
-        set text {Flow Control: }
-        if {$optval } {
-            append text "Flow Control Active"
-        } else {
-            append text "Accepting Data"
-        }
         $flowLabel configure -text $text
     }
 
@@ -510,16 +517,8 @@ snit::widgetadaptor EVB::errorStatistics {
     # @param optval   - option value (bool).
     #
     method _CfgFlow {optname optval} {
-        snit::boolean validate $optval
+        set text [_processFlowControl $optval]
         set options($optname) $optval
-        
-        set text {Flow Control: }
-        if {$optval} {
-            append text {Flow control Active}
-        } else {
-            append text {Accepting Data}
-        }
-        
         $flowLabel configure -text $text
     }
     #-----------------------------------------------------------------------
@@ -586,15 +585,8 @@ snit::widgetadaptor EVB::RingStatus {
     #                   - True  - Text is "Flow control:  Flow Control Active"
     #
     method _ConfigFlow {optname optval} {
-        snit::boolean validate $optval
+        set text [_processFlowControl
         set options($optname) $optval
-        
-        set text "Flow control: "
-        if {$optval} {
-            append text " Flow Control Active"
-        } else {
-            append text " Accepting Data"
-        }
         $flowLabel configure -text $text
     }
 }
@@ -639,16 +631,9 @@ snit::widgetadaptor EVB::OutOfOrderWindow {
     #                  - False - flowlabel will display "Flow COntrol: Accepting Data"
     #
     method _CfgFlowControl {optname optval} {
-        snit::boolean validate $optval
+        
+        set text [_processFlowControl $optval]
         set options($optname) $optval
-        
-        set text "Flow control: "
-        if {$optval} {
-            append text "FLow Control Active"
-        } else {
-            append text "Accepting Data"
-        }
-        
         $flowLabel configure -text $text
     }
 }
