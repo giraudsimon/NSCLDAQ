@@ -455,4 +455,5 @@ proc EVB::utility::_setStateFromBool {w b} {
         set state disabled
     }
     $w configure -state $state
+
 }
