@@ -548,8 +548,7 @@ snit::type ReadoutGuiRemoteControl {
       $self _reply ERROR "Run number must be a positive integer was '$value'"
       return
     } else {
-      if {![$self _slaveMode]} {
-        $self _reply ERROR "Not in slave mode"
+      if {![$self _requireSlaveMode]} {
         return
       }
       ::ReadoutGUIPanel::setRun $value
@@ -557,8 +556,7 @@ snit::type ReadoutGuiRemoteControl {
     }
 
   } elseif {$what eq "title"} {
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _requireSlaveMode]} {
       return
     }
     ::ReadoutGUIPanel::setTitle $value
@@ -569,8 +567,7 @@ snit::type ReadoutGuiRemoteControl {
       $self _reply ERROR "set recording value must be a boolean was: $value"
       return
     } else {
-      if {![$self _slaveMode]} {
-        $self _reply ERROR "Not in slave mode"
+      if {![$self _requireSlaveMode]} {
         return
       }
       if {$value} {
@@ -588,8 +585,7 @@ snit::type ReadoutGuiRemoteControl {
       $self _reply ERROR "set destination - cannot write to $value"
       return
     } else {
-      if {![$self _slaveMode]} {
-        $self _reply ERROR "Not in slave mode"
+      if {![$self _requireSlaveMode]} {
         return
       }
       ::Configuration::Set Stagearea $value
@@ -609,8 +605,7 @@ snit::type ReadoutGuiRemoteControl {
   #
   method _begin {} {
     ::ReadoutGUIPanel::Log RemoteControl output _begin
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _RequireSlaveMode]} {
       return
     }
 
@@ -633,8 +628,7 @@ snit::type ReadoutGuiRemoteControl {
   method _end {} {
     ::ReadoutGUIPanel::Log RemoteControl output _end
     flush stdout
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _requireSlaveMode]} {
       return
     }
     set sm [::RunstateMachineSingleton %AUTO%]
@@ -660,8 +654,7 @@ snit::type ReadoutGuiRemoteControl {
   method _masterTransition {to} {
     
       
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _requireSlaveMode]} {
       return
     }
     set sm [::RunstateMachineSingleton %AUTO%]
@@ -684,8 +677,7 @@ snit::type ReadoutGuiRemoteControl {
   #
   method _init {} {
     ::ReadoutGUIPanel::Log RemoteControl output "_init"
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _requireSlaveMode]} {
       return
     }
     set sm [::RunstateMachineSingleton %AUTO%]
@@ -749,8 +741,7 @@ snit::type ReadoutGuiRemoteControl {
   method _transitionTo {state} {
     ::ReadoutGUIPanel::Log RemoteControl output "_transitionTo '$state'"
     flush stdout
-    if {![$self _slaveMode]} {
-      $self _reply ERROR "Not in slave mode"
+    if {![$self _requireSlaveMode]} {
       return
     }
     set sm [::RunstateMachineSingleton %AUTO%]
@@ -787,6 +778,18 @@ snit::type ReadoutGuiRemoteControl {
     } else {
       return true
     }
+  }
+  ##
+  # _requireSlaveMode
+  #   If not in slave give an error repply
+  #
+  # @return bool - slave state (true if can continue).
+  method _requireSlaveMode {} {
+    if {![$self _slaveMode]} {
+      $self _reply ERROR "Must be in slave mode to do this"
+      return false
+    }
+    return true
   }
 }
 ##
