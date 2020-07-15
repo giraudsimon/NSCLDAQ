@@ -513,10 +513,6 @@ namespace eval OkBundle {
       
     }
     proc failure args {
-<<<<<<< HEAD
-=======
-        puts "setting failure info to $args"
->>>>>>> daqdev/NSCLDAQ#659 -
         set ::failureInfo $args
     }
     namespace export attach enter leave failure
@@ -549,11 +545,9 @@ namespace eval FailBundle {
     
 } \
 -cleanup {
-<<<<<<< HEAD
   rm removeCalloutBundle OkBundle
   rm removeCalloutBundle FailBundle
-=======
->>>>>>> daqdev/NSCLDAQ#659 -
+
   rm destroy
   namespace forget FailBundle
   namespace forget OkBundle
@@ -633,12 +627,10 @@ namespace eval FailBundle {
     
 } \
 -cleanup {
-<<<<<<< HEAD
     rm removeCalloutBundle OkBundle1
     rm removeCalloutBundle OkBundle2
     rm removeCalloutBundle FailBundle
-=======
->>>>>>> daqdev/NSCLDAQ#659 -
+
   rm destroy
   namespace forget FailBundle
   namespace forget OkBundle1
@@ -649,10 +641,7 @@ namespace eval FailBundle {
     catch {rm transition Starting}
     set ::failureInfo
 } -result [list Ok2 Ok1]
-<<<<<<< HEAD
 
-=======
->>>>>>> daqdev/NSCLDAQ#659 -
 #-----------------------------------------------------------------------------
 #
 # Singleton tests
