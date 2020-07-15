@@ -498,7 +498,6 @@ namespace eval OkBundle {
       
     }
     proc failure args {
-        puts "setting failure info to $args"
         set ::failureInfo $args
     }
     namespace export attach enter leave failure
