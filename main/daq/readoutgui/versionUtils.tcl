@@ -124,29 +124,15 @@ proc ::versionUtils::lessThan {lhs rhs} {
 # 
 # @return boolean value indicating whether the lhs major,minor,patch are 
 #         greater than those in rhs in an element by element fashion
+
 #
 proc ::versionUtils::greaterThan {lhs rhs} {
-  # Extract the relevant pieces from the version
-  set lhsMajor [lindex $lhs 0]
-  set lhsMinor [lindex $lhs 1]
-  set lhsPatch [lindex $lhs 2]
-
-  set rhsMajor [lindex $rhs 0]
-  set rhsMinor [lindex $rhs 1]
-  set rhsPatch [lindex $rhs 2]
-
-  if {$lhsMajor==$rhsMajor} {
-    if {$lhsMinor==$rhsMinor} {
-      # patch versions alone determine the result 
-      return [expr [::versionUtils::comparePatch $lhsPatch $rhsPatch] > 0]
-    } else {
-      # minor versions differ so they alone determine the result 
-      return [expr {$lhsMinor} > {$rhsMinor}]
-    }
-  } else {
-    # major versions differ so they alone determine the result 
-    return [expr {$lhsMajor} > {$rhsMajor}]
+  if {$lhs eq $rhs} {
+    return 0;               # the two are equal.
   }
+  
+  return [expr {![::versionUtils::lessThan $lhs $rhs]}]
+  
 }
 
 ##
