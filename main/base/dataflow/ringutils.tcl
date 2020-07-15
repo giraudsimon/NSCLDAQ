@@ -47,6 +47,7 @@ package require portAllocator
 proc getRingUsage {{host localhost}} {
     portAllocator create manager -hostname $host
     set ports [manager findServerAllUsers RingMaster]
+
     manager destroy
 
     if {[llength $ports] == 0} {

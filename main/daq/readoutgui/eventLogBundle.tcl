@@ -35,6 +35,7 @@ package require ui
 package require snit
 
 package require ring
+package require ringutils
 
 package require portAllocator
 package require DataSourceUI
@@ -586,11 +587,6 @@ proc ::EventLog::_getSegmentInfo {} {
         set baseName [file tail $segment]
         set linkName [file join $currentDir $baseName]
         if {![file exists $linkName]} {
-<<<<<<< HEAD
-          
-=======
-          puts "Linking $linkName -> $segment"
->>>>>>> daqdev/NSCLDAQ#1033
           catch {exec ln -sr $segment $linkName}
         }
     }
@@ -851,11 +847,7 @@ proc ::EventLog::runEnding {} {
 # @param state - Current state.
 #
 proc ::EventLog::attach {state} {
-<<<<<<< HEAD
 
-=======
-  puts "Eventlog::attach"
->>>>>>> daqdev/NSCLDAQ#1033
     StageareaValidation::correctFixableProblems
 }
 
@@ -892,7 +884,6 @@ proc ::EventLog::enter {from to} {
         if {! $::EventLog::failed} {
           ::EventLog::runEnding
         }
-<<<<<<< HEAD
       }
       if {($from in [list Active Paused]) && ($to eq "NotReady")} {
         # if the start was aborted then we should not try to cleanup
@@ -912,16 +903,7 @@ proc ::EventLog::enter {from to} {
   
       }
   }
-=======
-        # Create the exit file:
-        set fd [open [::EventLog::_getExitFile] w]
-        puts $fd "dummy"
-        close $fd
-      	::EventLog::runEnding
-      } 
 
-    }
->>>>>>> daqdev/NSCLDAQ#1033
 }
 ##
 # ::EventLog::leave
@@ -933,7 +915,6 @@ proc ::EventLog::enter {from to} {
 # @param to   - State we will enter.
 #
 proc ::EventLog::leave {from to} {
-<<<<<<< HEAD
   
   # None of this needs to be done if we're not recording.
   
@@ -951,14 +932,6 @@ proc ::EventLog::leave {from to} {
     if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
       if {! $::EventLog::failed} { 
         set  ::EventLog::expectingExit 1
-=======
-  if {($from eq "Halted") && ($to eq "Active")} {
-      if {[catch {::EventLog::runStarting} msg]} {
-        set trace $::errorInfo
-        set ::EventLog::failed 1
-        ::ReadoutGUIPanel::Log EventLogManager error "$msg : $trace"
-        error "$msg : $trace"
->>>>>>> daqdev/NSCLDAQ#1033
       }
       set ::EventLog::failed 0
     }
