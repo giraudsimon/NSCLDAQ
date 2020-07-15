@@ -35,6 +35,7 @@ package require ui
 package require snit
 
 package require ring
+package require ringutils
 
 package require portAllocator
 package require DataSourceUI
@@ -1373,46 +1374,7 @@ NSCLDAQ-11.0 eventlog program or later. "
         return tcp://[lindex $ringInfo 1]/[lindex $ringInfo 0]
     }
     
-    ##
-    # getRingUsage
-    #
-    #  Get the rings used/known by a ringmaster.
-    #
-    # @param host - defaults to localhost Host for which to ask for this
-    #               information
-    #
-    # @return list - Returns the list from the LIST command to that ringmaster.
-    #
-    proc getRingUsage {{host localhost}} {
-        portAllocator create manager -hostname $host
-        set ports [manager listPorts]
-        manager destroy
     
-        set port -1
-        foreach item $ports {
-            set port [lindex $item 0]
-            set app  [lindex $item 1]
-            if {$app eq "RingMaster"} {
-                set port $port
-                break
-            }
-        }
-        if {$port == -1} {
-            error "No RingMaster server  on $host"
-        }
-    
-        set sock [socket $host $port]
-        fconfigure $sock -buffering line
-        puts $sock LIST
-        gets $sock OK
-        if {$OK ne "OK"} {
-            error "Expected OK from Ring master but got $OK"
-        }
-        gets $sock info
-        close $sock
-        return $info
-    }
-
 }
 ##
 # EventLog::promptParameters
