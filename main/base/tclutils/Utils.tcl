@@ -88,7 +88,6 @@ namespace eval Utils {
     set display [format "%d-%02d:%02d:%02d" $days $hours $minutes $seconds]
     return $display    
   }
-
   ##
   # nonemptyString
   #   @param name - string value to check.

@@ -28,6 +28,7 @@ package require ChannelLabel
 package require Utils
 package require tkutils
 
+
 ## "Base" type for MCFD16View ################
 #
 # The MCFD16CommonView and MCFD16IndividualView both delegate some methods to
