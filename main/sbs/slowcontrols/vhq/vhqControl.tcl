@@ -85,6 +85,15 @@ set AlarmText(Voverset)   {Voltage above max.}
 set AlarmText(OverVorI)   {Voltage or current above max}
 set AlarmText(ilimit)     {Current limit}
 set AlarmText(BadQuality) {Poor regulation}
+
+set configFileTypes [list            \
+                    [list {Configurations} .cfg]      \
+                    [list {Settings}       .settings] \
+                    [list {Tcl Scripts}    .tcl]      \
+                    [list {Tk Scripts}     .tk]       \
+                    [list {All Files}      *]] 
+
+
 #------------------------------------------------------------------------------
 # getModel  maxv maxi
 #        Given voltage and current maxima, determines the correct model name
@@ -213,12 +222,8 @@ proc logAlarm {logwidget panelwidget what which value} {
 #
 proc getConfigFile {} {
     return [tk_getOpenFile -defaultextension .cfg      \
-                           -filetypes [list            \
-                                           [list {Configurations} .cfg]      \
-                                           [list {Settings}       .settings] \
-                                           [list {Tcl Scripts}    .tcl]      \
-                                           [list {Tk Scripts}     .tk]       \
-                                           [list {All Files}      *]] ]
+                           -filetypes $::configFileTypes \
+            ]
 }
 #------------------------------------------------------------------------------
 # configurePanel  panel config
@@ -343,12 +348,7 @@ proc fileRead panel {
 proc fileWrite panel {
     set config [tk_getSaveFile -defaultextension .cfg                        \
                                -title {Chose a file to write}                \
-                               -filetypes [list                              \
-                                           [list {Configurations} .cfg]      \
-                                           [list {Settings}       .settings] \
-                                           [list {Tcl Scripts}    .tcl]      \
-                                           [list {Tk Scripts}     .tk]       \
-                                           [list {All Files}      *]]        \
+                               -filetypes $::configFileTypes                 \
                ]
     if {$config ne ""} {
         # If we can't open the config file... can't save:
