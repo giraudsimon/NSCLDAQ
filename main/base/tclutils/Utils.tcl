@@ -70,4 +70,22 @@ namespace eval Utils {
     }
     return $res
   }
+  ##
+  # formatDeltaTime
+  #   Formats a time interval
+  #
+  # @param delta - number of seconds in the interval.
+  # @return string of the form "%d-%02d:%02d:%02d"
+  #
+  proc formatDeltaTime {delta} {
+    set seconds [expr {$delta % 60}]
+    set delta   [expr {$delta/60}]
+    set minutes [expr {$delta % 60}]
+    set delta   [expr {$delta / 60}]
+    set hours   [expr {$delta % 24}]
+    set days    [expr {$delta / 24}]
+  
+    set display [format "%d-%02d:%02d:%02d" $days $hours $minutes $seconds]
+    return $display    
+  }
 }
