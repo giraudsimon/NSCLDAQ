@@ -1262,16 +1262,7 @@ snit::widget getChannelName {
     variable plotting     0
     variable channelName  {}
     variable hiddenWidget {}
-
-    # early versions of snit don't have myvar so:
-
-    method  myvar {var} {
-        append name $selfns ::$var
-        return $name
-    }
-
-
-
+    
     constructor args {
 	$self configurelist $args
 
@@ -1284,8 +1275,8 @@ good you fed it garbage}
 
 	set work [frame $win.work]
 	label $work.chanlabel -text {EPICS Channel: }
-	entry $work.channel    -textvariable [$self myvar channelName]
-	checkbutton $work.plot -variable [$self myvar plotting] -text {Add to plot}
+	entry $work.channel    -textvariable [myvar channelName]
+	checkbutton $work.plot -variable [myvar plotting] -text {Add to plot}
 
 	set action [frame $win.action -relief groove -borderwidth 4]
 	button $action.ok     -text Ok      -command [mymethod onOk]
@@ -2098,12 +2089,6 @@ snit::widget alarmConfiguration {
     variable color            0
     variable colorvalue       {red}
 
-    # myvar was not implemented in early snits.
-
-    method  myvar {var} {
-        append name $selfns ::$var
-        return $name
-    }
     constructor args {
 
 	# Build the gui and lay it out:
@@ -2111,28 +2096,28 @@ snit::widget alarmConfiguration {
 	set work [frame $win.work -relief groove -borderwidth 3]
 
 	label $work.label        -text {Alarm configuration for: }
-	checkbutton $work.enable -text {Enable Alarms} -variable [$self myvar options(-enable)]
+	checkbutton $work.enable -text {Enable Alarms} -variable [myvar options(-enable)]
 	checkbutton $work.asym   -text {Asymmetric acceptable range} \
-	                         -variable [$self myvar options(-asymmetric)] \
+	                         -variable [myvar options(-asymmetric)] \
 				 -command [mymethod onAsymmetricToggle]
 	label       $work.nominallbl -text {Nominal:}
-	entry       $work.nominal    -textvariable [$self myvar options(-nominal)]
+	entry       $work.nominal    -textvariable [myvar options(-nominal)]
 	label       $work.plus       -text {+}
-	entry       $work.range1     -textvariable [$self myvar range1]
-	checkbutton $work.pct1       -variable [$self myvar range1IsPct] -text {%}
+	entry       $work.range1     -textvariable [myvar range1]
+	checkbutton $work.pct1       -variable [myvar range1IsPct] -text {%}
 	label       $work.minus      -text {-}
-	entry       $work.range2     -textvariable [$self myvar range2]
-	checkbutton $work.pct2       -variable [$self myvar range2IsPct] -text {%}
+	entry       $work.range2     -textvariable [myvar range2]
+	checkbutton $work.pct2       -variable [myvar range2IsPct] -text {%}
 
 	label       $work.actions    -text {Alarm Actions:}
 	checkbutton $work.page       -text {Add to alarm page}  \
-	                             -variable [$self myvar page]
+	                             -variable [myvar page]
 	checkbutton $work.popup      -text {Pop up alarm window} \
-	                             -variable [$self myvar popup]
+	                             -variable [myvar popup]
 	checkbutton $work.beep       -text {Emit periodic beeps} \
-	                             -variable [$self myvar beep]
+	                             -variable [myvar beep]
 	checkbutton $work.color      -text {Color in table...} \
-	                             -variable [$self myvar color] \
+	                             -variable [myvar color] \
 				     -command  [mymethod onChooseColor]
 
 	set action [frame $win.action]
