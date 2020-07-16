@@ -35,7 +35,6 @@ package require ui
 package require snit
 
 package require ring
-package require ringutils
 
 package require portAllocator
 package require DataSourceUI
@@ -1339,7 +1338,7 @@ NSCLDAQ-11.0 eventlog program or later. "
         set dlg [DialogWrapper $win.ringbrowser.dialog]
         $dlg configure \
             -form [EventLog::RingBrowser [$dlg controlarea].f \
-                -rings [getRingUsage]]
+                -rings [ring usage]]
         pack $dlg
         set action [$win.ringbrowser.dialog modal]
 
