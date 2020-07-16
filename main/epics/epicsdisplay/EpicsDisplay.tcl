@@ -3,6 +3,7 @@
 set scriptdir [file dirname [info script]]
 lappend auto_path [file join $scriptdir .. TclLibs];   # s.b TclLibs dir.
 
+
 package require tkutils
 
 #  The user must have supplied a command line argument

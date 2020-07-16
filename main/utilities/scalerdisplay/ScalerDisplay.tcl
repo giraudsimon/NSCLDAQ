@@ -1,8 +1,10 @@
 # Meant to be run on Tclserver.
 # 
+
 set scriptdir [file dirname [info script]]
 lappend auto_path [file join $scriptdir ..];    #s.b TclLibs dir.
 package require tkutils
+
 
 #  We require DAQHOST to be an environment
 #  variable that is the name of the spdaq system.
