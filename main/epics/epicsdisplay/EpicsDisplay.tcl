@@ -1,12 +1,6 @@
 # Meant to be run on Tclserver.
 #
 
-puts  "---------------------------------"
-
-
-puts  $argc
-puts  $argv
-
 #  The user must have supplied a command line argument
 #  which is the name of their setup file.
 #

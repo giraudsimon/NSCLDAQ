@@ -1,12 +1,6 @@
 # Meant to be run on Tclserver.
 # 
 
-puts  "---------------------------------"
-
-
-puts  $argc
-puts  $argv
-
 
 #  We require DAQHOST to be an environment
 #  variable that is the name of the spdaq system.
