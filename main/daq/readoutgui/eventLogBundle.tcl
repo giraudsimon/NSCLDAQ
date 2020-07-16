@@ -35,7 +35,6 @@ package require ui
 package require snit
 
 package require ring
-package require ringutils
 
 package require portAllocator
 package require DataSourceUI
