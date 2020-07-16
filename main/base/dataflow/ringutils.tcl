@@ -40,6 +40,9 @@ package require portAllocator
 #
 # @return list - Returns the list from the LIST command to that ringmaster.
 # @note factored out from eventlogBundle.
+# @note Unlike ringbuffer usage in CRingCommand.cpp, this can contact a remote
+#       ringmaster and therefore return information about the ring buffers in
+#       other hosts.
 #
 proc getRingUsage {{host localhost}} {
     portAllocator create manager -hostname $host
