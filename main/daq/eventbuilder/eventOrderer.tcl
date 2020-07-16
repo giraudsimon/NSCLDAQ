@@ -85,19 +85,16 @@ snit::type EVB::EventBuilder {
 	#  Give the user a chance to not start this one:
 	#
 
-	set existingApps [$pa listPorts] 
-	foreach app $existingApps {
-	    set registeredName [lindex $app 1]
-	    if {$appName eq $registeredName} {
-		set reply [tk_messageBox -type yesno -title {Duplicate event builder} \
+    set existing [$pa findServerAllUsers $registeredName]
+    if {[llength $existing] > 0} {
+        set reply [tk_messageBox -type yesno -title {Duplicate event builder} \
 			       -message "An event orderer named $appName already exists are you sure you want to start?"
 			   ]
 		if {$reply eq "no"} {
 		    exit -1
 		}
-	    }
-	}
-
+    }
+	
 	set port [$pa allocatePort $appName]
 	$pa destroy
 

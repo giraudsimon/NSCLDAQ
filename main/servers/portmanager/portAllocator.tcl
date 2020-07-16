@@ -137,7 +137,7 @@ package require snit
     #  @param service -name of the service.
     #  @return list of pairs.  The first item in each pair is the user.
     #          the second the port.
-    method findServer {service} {
+    method findServerAllUsers {service} {
         set allocations [$self listPorts]
         set port ""
         set result [list]
