@@ -88,4 +88,14 @@ namespace eval Utils {
     set display [format "%d-%02d:%02d:%02d" $days $hours $minutes $seconds]
     return $display    
   }
+  ##
+  # nonemptyString
+  #   @param name - string value to check.
+  #   @return bool - nonzero if name is a nonempty string after
+  #                  blank removal.
+  #
+  proc nonemptyString {name} {
+   set name [string trim $name]
+   return [expr [string length $name]!=0] 
+  }
 }

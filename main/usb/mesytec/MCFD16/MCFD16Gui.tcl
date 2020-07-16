@@ -19,13 +19,13 @@ package provide mcfd16gui 1.0
 package require mcfd16usb
 package require snit
 package require Tk
-#package require FrameSwitcher
+# Below assume TclLibs is in auto_path.
 package require FrameManager
 package require scriptheadergenerator
 package require TclSourceFilter
 package require mcfd16channelnames
 package require ChannelLabel
-
+package require Utils
 
 ## "Base" type for MCFD16View ################
 #
@@ -1606,8 +1606,7 @@ snit::widget ChannelEnableDisableView {
   # @retval 0 - string was empty or all whitespace
   # @retval 1 - otherwise
   method ValidateName {name} {
-    set name [string trim $name]
-    return [expr [string length $name]!=0]
+    return [Utils::nonemptyString $name]
   }
 
   ## Reset channel to a simple string
