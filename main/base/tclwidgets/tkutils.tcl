@@ -57,6 +57,7 @@ namespace eval tkutils {
             exit -1
         }
     }
+
     ##
     # checkFileExists
     #    Check a file exists.  If not a message box indicating
@@ -95,5 +96,6 @@ namespace eval tkutils {
         return 1
             
     }
+
     
 }
