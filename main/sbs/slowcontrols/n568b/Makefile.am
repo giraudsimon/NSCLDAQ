@@ -16,7 +16,7 @@ install-exec-local:
 	for f in $(PACKAGES) ; do $(INSTALL_SCRIPT) @srcdir@/$$f $(DRIVERDIR); done
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f $(APPDIR)/`basename $$f .tcl`; done
 	for f in $(HELPFILES); do $(INSTALL_DATA)   @srcdir@/$$f $(HELPDIR); done
-	echo "pkg_mkIndex $(DRIVERDIR) *.tcl" | $(TCLSH_CMD)
+	echo "pkg_mkIndex -verbose $(DRIVERDIR) *.tcl" | $(TCLSH_CMD)
 
 
 EXTRA_DIST= $(PACKAGES) $(APPS) $(MANPAGES) $(HELPFILES) n568.xml
