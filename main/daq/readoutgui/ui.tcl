@@ -25,7 +25,7 @@ package require img::png
 
 package provide ui   1.0
 package provide ReadoutGUIPanel 1.0
-
+package require Utils
 
 namespace eval ::ReadoutGUIPanel {
     
@@ -1553,18 +1553,7 @@ snit::widgetadaptor ElapsedTimeDisplay {
         
         set now [expr {int($now/1000)}]
         
-        #  Figure out the broken down time:
-        
-        set seconds [expr {$now % 60}]
-        set now     [expr {int($now/60)}]; # Minutes
-        set min     [expr {$now % 60}]
-        set now     [expr {int($now/60)}]; # Hours
-        set hours   [expr {$now %24}]
-        set days    [expr {int($now/24)}]
-        
-        # Format it:
-        
-        set formattedNow [format "%d %02d:%02d:%02d" $days $hours $min $seconds]
+        return [Utils::formatDeltaTime $now]
     }
 }
 ##

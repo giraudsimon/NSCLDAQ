@@ -35,6 +35,8 @@ package require BWidget
 package require rbc
 package require Iwidgets
 package require snit
+package require Utils
+
 namespace import ::rbc::stripchart
 namespace import ::rbc::vector
 
@@ -306,6 +308,22 @@ proc makeGui {} {
 
     bind $tableWidget <Double-Button-1> [list configureChannelAlarm %x %y]
 }
+#------------------------------------------------------------------------------
+#  setRowComment
+#   Sets the comment value for the specified row.
+# @param row
+# @param comment  (note this is trimleft-ed before used)
+#
+proc setRowComment {row comment} {
+    global tableWidget
+    set comment [string trimleft $comment]
+
+    $tableWidget configure -state normal
+    $tableWidget set $row,3 $comment
+    $tableWidget configure -state disable
+    
+}
+
 #---------------------------------------------------------------------------------
 # clearAlarmSetup name row
 #       Clears alarm information for  a channel.. This includes the
@@ -328,17 +346,8 @@ proc clearAlarmSetup {name row} {
     if {$actindex != -1} {
 	set comment [lreplace $comment $actindex [expr $actindex +1]]
     }
-    set comment [string trimleft $comment]
-
-    $tableWidget configure -state normal
-    $tableWidget set $row,3 $comment
-    $tableWidget configure -state disable
-
-    set bgcolor [$tableWidget cget -background]
-    set line [getTableLine $name]
-    $tableWidget clear tags $line,0 $line,3
-    .value$line  configure -background $bgcolor
-    .units$line  configure -background $bgcolor
+    setRowComment $row $comment
+    
 }
 
 #------------------------------------------------------------------------------
@@ -373,11 +382,7 @@ proc setRowAlarmText {row nominal range actions} {
 
 
     append comment " " tolerance " " $spec " " alarmaction " " $alarmactions
-    set comment [string trimleft $comment]
-
-    $tableWidget configure -state normal
-    $tableWidget set $row,3 $comment
-    $tableWidget configure -state disable
+    setRowComment $row $comment
 }
 
 #------------------------------------------------------------------------------
@@ -507,7 +512,7 @@ proc configureChannelAlarm {x y} {
 	set alarmactions [list]
 	foreach act $actions {
 	    if {[lindex $act 0] eq "color"} {
-		append act = [lindex $act 1]
+            append act = [lindex $act 1]
 	    }
 	    lappend alarmactions $act
 	}
@@ -872,50 +877,50 @@ proc fireAlarm {name value actions} {
     # Now do action dependent stuff:
 
     foreach action $actions {
-	set request [lindex $action 0]
-	switch -exact -- $request {
-	    color {
-		set line [getTableLine $name]
-		if {$line > 0} {
-		    set color [$tableWidget tag cget $name -background]
-		    $tableWidget tag row $name $line
-		    .value$line configure -background $color
-		    .units$line configure -background $color
-		}
-	    }
-	    page {
-		if {![winfo exists .alarmpage]} {
-		    alarmPage .alarmpage -windowdismisscommand [list destroy .alarmpage]
-		}
-		if {[.alarmpage get $name] eq ""} {
-		    set line [getTableLine $name]
-		    set units [.units$line cget -text]
-		    set spec $channelAlarms($name)
-		    set low [lindex $spec 0]
-		    set high [lindex $spec 1]
-		    .alarmpage add $name $low $high $value $units
-		}
-		.alarmpage update $name $value
-	    }
-	    popup {
-		#  Create the popup if it does not exist:
-
-		if {[array names channelPopups $name] eq "" || ![winfo exists $channelPopups($name)]} {
-		    set channelPopups($name) [alarmPopup .popup$popupIndex -name $name \
-					                 -command [list dismissAlarmPopup %W $name] \
-							 -initialtime $channelAlarmState($name)]
-
-		}
-		$channelPopups($name) configure -value $value
-		$channelPopups($name) updateDuration
-		if {$transition} {
-		    $channelPopups($name) configure -initialtime $channelAlarmState($name)
-		}
-	    }
-	    beep {
-		bell -nice
-	    }
-	}
+        set request [lindex $action 0]
+        switch -exact -- $request {
+            color {
+                set line [getTableLine $name]
+                if {$line > 0} {
+                    set color [$tableWidget tag cget $name -background]
+                    $tableWidget tag row $name $line
+                    .value$line configure -background $color
+                    .units$line configure -background $color
+                }
+            }
+            page {
+                if {![winfo exists .alarmpage]} {
+                    alarmPage .alarmpage -windowdismisscommand [list destroy .alarmpage]
+                }
+                if {[.alarmpage get $name] eq ""} {
+                    set line [getTableLine $name]
+                    set units [.units$line cget -text]
+                    set spec $channelAlarms($name)
+                    set low [lindex $spec 0]
+                    set high [lindex $spec 1]
+                    .alarmpage add $name $low $high $value $units
+                }
+                .alarmpage update $name $value
+            }
+            popup {
+                #  Create the popup if it does not exist:
+        
+                if {[array names channelPopups $name] eq "" || ![winfo exists $channelPopups($name)]} {
+                    set channelPopups($name) [alarmPopup .popup$popupIndex -name $name \
+                                             -command [list dismissAlarmPopup %W $name] \
+                                     -initialtime $channelAlarmState($name)]
+    
+                }
+                $channelPopups($name) configure -value $value
+                $channelPopups($name) updateDuration
+                if {$transition} {
+                    $channelPopups($name) configure -initialtime $channelAlarmState($name)
+                }
+            }
+            beep {
+                bell -nice
+            }
+        }
     }
 }
 #-----------------------------------------------------------------------------
@@ -938,31 +943,30 @@ proc cancelAlarm {name value actions} {
     # Do action dependent stuff:
 
     foreach action $actions {
-	set request [lindex $action 0]
-	switch -exact -- $request {
-	    color {
-		puts "clearing color for $name"
-		set line [getTableLine $name]
-		if {$line > 0} {
-		    set bgcolor [$tableWidget cget -background]
-		    $tableWidget clear tags $line,0 $line,3
-		    .value$line configure -background $bgcolor
-		    .units$line configure -background $bgcolor
-		}
-	    }
-	    page {
-		if {[winfo exists .alarmpage]} {
-		    if {[.alarmpage get $name] ne ""} {
-			.alarmpage update $name $value
-		    }
-		}
-	    }
-	    popup {
-
-	    }
-	    beep {
-	    }
-	}
+        set request [lindex $action 0]
+        switch -exact -- $request {
+            color {
+                set line [getTableLine $name]
+                if {$line > 0} {
+                    set bgcolor [$tableWidget cget -background]
+                    $tableWidget clear tags $line,0 $line,3
+                    .value$line configure -background $bgcolor
+                    .units$line configure -background $bgcolor
+                }
+            }
+            page {
+                if {[winfo exists .alarmpage]} {
+                    if {[.alarmpage get $name] ne ""} {
+                    .alarmpage update $name $value
+                    }
+                }
+            }
+            popup {
+    
+            }
+            beep {
+            }
+        }
     }
 
     # unset the variable's channelAlarmState element if it exists..
@@ -1487,26 +1491,20 @@ snit::widget alarmPopup {
     #     options(-value) and configured into the $win.data.value widget.
     #
     onconfigure -value value {
-	set options(-value) $value
-	$win.data.value configure -text $value
+        set options(-value) $value
+        $win.data.value configure -text $value
     }
     # updateDuration
     #      Computes the difference between >now< and initialtime and displays that in
     #      $win.data.duration
     #
     method updateDuration {} {
-	set now [clock seconds]
-	set delta [expr {$now - $options(-initialtime)}]
-	set seconds [expr {$delta % 60}]
-	set delta   [expr {$delta/60}]
-	set minutes [expr {$delta % 60}]
-	set delta   [expr {$delta / 60}]
-	set hours   [expr {$delta % 24}]
-	set days    [expr {$delta / 24}]
+        set now [clock seconds]
+        set delta [expr {$now - $options(-initialtime)}]
+        set display [Utils::formatDeltaTime $delta]
 
-	set display [format "%d-%02d:%02d:%02d" $days $hours $minutes $seconds]
-
-	$win.data.duration configure -text $display
+    
+        $win.data.duration configure -text $display
 
     }
     # onDismiss
@@ -1804,19 +1802,13 @@ snit::widget alarmPage {
     #   name   - Name of the channel
     #
     method updateDuration name {
-	set now [clock seconds]
-	set alarmtime [lindex $channels($name) 4]
-	set delta [expr {$now - $alarmtime}]
-	set seconds [expr {$delta % 60}]
-	set delta   [expr {$delta / 60}]
-	set minutes [expr {$delta % 60}]
-	set delta   [expr {$delta / 60}]
-	set hours   [expr {$delta % 24}]
-	set delta   [expr {$delta / 24}]
-
-	set deltastamp [format "%d-%02d:%02d:%02d" $delta $hours $minutes $seconds]
-	set tableline [lindex $channels($name) 5]
-	$win.infoframe.tablewindow.table set $tableline,4 $deltastamp
+        set now [clock seconds]
+        set alarmtime [lindex $channels($name) 4]
+        set delta [expr {$now - $alarmtime}]
+        set deltastamp [Utils::formatDeltaTime $delta]
+        
+        set tableline [lindex $channels($name) 5]
+        $win.infoframe.tablewindow.table set $tableline,4 $deltastamp
     }
 
     # add name low high value units
