@@ -99,45 +99,14 @@ namespace eval camac {
 	return $camac($vme,$branch) 
     }
 
-    proc isValid {b c n} {
-	if {($b < 0) || ($b > 7)} {
-	    error "Branch $b is out of range"
-	}
-	if {($c < 0) || ($c > 7)} {
-	    error "Crate $c is out of range"
-	}
-	if {($n < 0) || ($n > 31)} {
-	    error "Slot $n is out of range"
-	}
-    }
-    proc isValidf {f} {
-	if {($f < 0) || ($f > 31)} {
-	    error "Function code $f is out of range"
-	}
-    }
-    proc isValida {a} {
-	if { ($a < 0) || ($a > 15)} {
-	    error "Subaddress $a is out of range"
-	}
-    }
-
-    proc isRead  {f} {
-	return [expr ($f < 8)]
-    }
-    proc isWrite {f} { 
-	return [expr ($f > 15) && ($f < 24)]
-    }
-    proc isCtl   {f} {
-	return [expr !([isWrite $f] || [isRead $f])]
-    }
     proc Encode {c n {a 0} {f 0}} {
-	set reg [expr ($c << 16) | ($n << 11)]
-	set reg [expr $reg | ($a << 7) | ($f << 2)]
-	return $reg
+        set reg [expr ($c << 16) | ($n << 11)]
+        set reg [expr $reg | ($a << 7) | ($f << 2)]
+        return $reg
     }
 
     proc Offset {a f} {
-	return [expr ($a << 7) | ($f << 2)]
+    	return [expr ($a << 7) | ($f << 2)]
     }
 
     proc CSR {b {vme 0}} {
@@ -213,7 +182,7 @@ namespace eval camac {
     #
     proc cdreg {b c n {vme 0}}  {
 	
-	isValid $b $c $n       ;# Error's if invalid camac op.
+	camacutils::isValid $b $c $n       ;# Error's if invalid camac op.
 	set branch [camac::BranchBase $vme $b]
 	set offset [camac::Encode $c $n]
 	
@@ -240,8 +209,8 @@ namespace eval camac {
 	#
 	#     Return errors if the fcode or subaddress are bad.
 	#    
-	camac::isValidf $f
-	camac::isValida $a
+	camacutils::isValidf $f
+	camacutils::isValida $a
 	
 	# Extract the VME space and module offset from the handle:
 	
@@ -252,12 +221,12 @@ namespace eval camac {
 	set address [expr $module + [camac::Offset $a $f]]
 	
 	
-	if {[camac::isRead $f]} {		;# Read operation for 32 bits:
+	if {[camacutils::isRead $f]} {		;# Read operation for 32 bits:
 	    set hi [$branch get -w $address]
 	    set lo [$branch get -w [expr $address + 2]]
 	    set data [expr (($hi & 0xff) << 16) | ($lo & 0xffff)]
 	}
-	if {[camac::isWrite $f]} {		;# Write operation for 32 bits:
+	if {[camacutils::isWrite $f]} {		;# Write operation for 32 bits:
 	    set hi [expr (($data >> 16) & 0xff)]
 	    set lo [expr $data & 0xffff]
 	    $branch set -w $address $hi
@@ -266,7 +235,7 @@ namespace eval camac {
 	}
 	
 	
-	if {[camac::isCtl $f]} {		# Control function.
+	if {[camacutils::isCtl   $f]} {		# Control function.
 	    $branch  get -w [expr $address + 2]
 	    set data 0
 	}
@@ -294,8 +263,8 @@ namespace eval camac {
 	#
 	#     Return errors if the fcode or subaddress are bad.
 	#    
-	camac::isValidf $f
-	camac::isValida $a
+	camacutils::isValidf $f
+	camacutils::isValida $a
 	
 	# Extract vme address space and module base:
 	
@@ -307,15 +276,15 @@ namespace eval camac {
 
 
 
-	if {[camac::isRead $f]} {		;# Read operation for 32 bits:
+	if {[camacutils::isRead $f]} {		;# Read operation for 32 bits:
 	    set data [$branch get -w $address]
 	}
-	if {[camac::isWrite $f]} {		;# Write operation for 32 bits:
+	if {[camacutils::isWrite $f]} {		;# Write operation for 32 bits:
 	    set lo [expr $data & 0xffff]
 	    $branch set -w $address $lo
 	    set data $data
 	}
-	if {[camac::isCtl $f]} {		# Non transfer operation.
+	if {[camacutils::isCtl   $f]} {		# Non transfer operation.
 	    $branch get -w $address
 	    set data 0
 	}
@@ -341,7 +310,7 @@ namespace eval camac {
     
     proc qstop {reg f a {maxn -1}} {
 	
-	if {![::camac::isRead $f]} {
+	if {![::camacutils::isRead $f]} {
 	    error "Qstop functions must be read operations"
 	}
 	set result ""
@@ -366,7 +335,7 @@ namespace eval camac {
     #    count is exceeded.
     #
     proc qscan {reg f a {maxn -1}} {
-	if {![::camac::isRead $f]} {
+	if {![::camacutils::isRead $f]} {
 	    error "Qscan functions must be read operations."
 	}
 	set result ""
@@ -394,7 +363,7 @@ namespace eval camac {
     #    same camac bcnaf.  The data read are returned as a list.
     #
     proc cblock {reg f a num} {
-	if {![::camac::isRead $f]} {
+	if {![::camacutils::isRead $f]} {
 	    error "Counted block operations must be reads"
 	}
 	set result ""
