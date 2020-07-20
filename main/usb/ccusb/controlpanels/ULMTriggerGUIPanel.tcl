@@ -64,6 +64,7 @@ itcl::class ATrigger2367 {
 
     destroy $wtrigger
   }
+  private method decodeBitRegister 
   private method Connect {b c host port module slot}
 	public method wienercfsa {m f args}
 	public method SetupGUI {parent filename}
@@ -783,7 +784,26 @@ itcl::body ATrigger2367::UpdateWires {c} {
 		}
 	}
 }
-
+itcl::body ATrigger2367::decodeBitRegister {} {
+  global variable bit
+  decodeTrigger
+  foreach v [array names variable] {
+		if {[string match *Bypass $v] == 1} {
+			set mask [expr 1<<$bit($v)]
+			set variable($v) [expr ($variable(Bypasses) & $mask)>>$bit($v)]
+		} elseif {[string match *Trigger $v] == 1} {
+			set mask [expr 1<<$bit($v)]
+			set variable($v) [expr ($variable(TriggerBox) & $mask)>>$bit($v)]
+		} elseif {[string match *Clock $v] == 1} {
+			set mask [expr 1<<$bit($v)]
+			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
+		} elseif {[string match *Sync $v] == 1} {
+      set mask [expr 1<<$bit($v)]
+      set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
+    }
+	}
+	UpdateWires $wtrigger
+}
 itcl::body ATrigger2367::ReadStatus {} {
 	global module function address
 	global variable bit inspect increment
@@ -793,33 +813,8 @@ itcl::body ATrigger2367::ReadStatus {} {
 		set variable($v) [lindex [wienercfsa $module $function($v) $address($v)] 0]
 	}
 	# Scale to appropriate units
-	foreach v [array names increment] {
-		set variable($v) [expr $variable($v) * $increment($v)]
-	}
-	# Decode bit registers
-	foreach v [array names variable] {
-		if {[string match *Bypass $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(Bypasses) & $mask)>>$bit($v)]
-		}
-		if {[string match *Trigger $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(TriggerBox) & $mask)>>$bit($v)]
-		}
-#		if {[string match *Busy $v] == 1} {
-#			set mask [expr 1<<$bit($v)]
-#			set variable($v) [expr ($variable(BusyBox) & $mask)>>$bit($v)]
-#		}
-		if {[string match *Clock $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
-		}
-	    if {[string match *Sync $v] == 1} {
-		set mask [expr 1<<$bit($v)]
-		set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
-	    }
-	}
-	UpdateWires $wtrigger
+  decodeBitRegister
+  
 }
 
 itcl::body ATrigger2367::WriteConfigFile {} {
@@ -884,30 +879,8 @@ itcl::body ATrigger2367::ReadConfigFile {} {
 	}
 	close $ch
 	# Decode bit registers
-	foreach v [array names variable] {
-		if {[string match *Bypass $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(Bypasses) & $mask)>>$bit($v)]
-		}
-		if {[string match *Trigger $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(TriggerBox) & $mask)>>$bit($v)]
-		}
-#		if {[string match *Busy $v] == 1} {
-#			set mask [expr 1<<$bit($v)]
-#			set variable($v) [expr ($variable(BusyBox) & $mask)>>$bit($v)]
-#		}
-		if {[string match *Clock $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-		    set variable($v) [expr ($variable(ClockBox) & $mask)>>$bit($v)]
-		}
-		if {[string match *Sync $v] == 1} {
-			set mask [expr 1<<$bit($v)]
-			set variable($v) [expr ($variable(SyncBox) & $mask)>>$bit($v)]
-		}		
-	    
-	}
-	UpdateWires $wtrigger
+  decodeBitRegister
+	
 }
 
 itcl::body ATrigger2367::LockGUI {lockStatus} {
