@@ -30,14 +30,8 @@ exec tclsh ${0} ${@}
 #  We assume we're one down from the top.
 
 set here [file dirname [info script]]
-set libdir [file join $here .. TclLibs]
-#
-# Canonicalize $here/..
-#
-set wd [pwd]
-cd $libdir
-set libdir [pwd]
-cd $wd
+set libdir [file normalize  [file join $here .. TclLibs]]
+
 #   
 #  Prepend to auto_path only if it's not already 
 #  there.

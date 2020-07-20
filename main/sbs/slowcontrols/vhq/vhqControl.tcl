@@ -43,15 +43,9 @@ exec tclsh $0 $@
 #  Note that ./.. is canonicalized to an absolute path.
 #
 set here [file dirname [info script]]
-set libdir [file join $here .. TclLibs]
+set libdir [file normalize [file join $here .. TclLibs]]
 set helpdir   [file join $here .. TclLibs data vhq]
 
-# Normalize to an absolute path.
-
-set wd [pwd]
-cd $libdir
-set libdir [pwd]
-cd $wd
 
 if {[lsearch $auto_path $libdir] == -1} {
     set auto_path [concat $libdir $auto_path]
