@@ -181,7 +181,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one pedestal value is out of range
   public method SetPedestals {peds} {
-    Execute 1 [list sSetPedestals $peds]
+    Execute 1 [list sSetPedestals [list $peds]]
   }
 
   ## @brief Write the lower thresholds to memory
@@ -196,7 +196,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one threshold value is out of range
   public method SetLowerThresholds {lth} {
-    Execute 1 [list sSetLowerThresholds $lth]
+    Execute 1 [list sSetLowerThresholds [list $lth]]
   }
 
   ## @brief Write the upper thresholds to memory
@@ -211,7 +211,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one threshold value is out of range
   public method SetUpperThresholds {uth} {
-    Execute 1 [list sSetUpperThresholds $uth]
+    Execute 1 [list sSetUpperThresholds [list $uth]]
   }
 
   ## @brief Read 16 channels of data corresponding to last set programming mode
@@ -645,7 +645,9 @@ itcl::body APhillips71xx::sSetPedestals {stack peds} {
     $stack addWrite24 $node $ch 20 $ped
   }
 }
-
+####
+# TODO: Refactor - set mode and then common list maker.
+#
 itcl::body APhillips71xx::sSetLowerThresholds {stack lth} {
 
   # check to see if the pedestal values are sensible
@@ -707,18 +709,7 @@ itcl::body APhillips71xx::Execute {grouping script} {
 #ensure there is a device to execute the readout list
   if {$device ne ""} {
 
-    # create a new readout list
-    set rdoList [cccusbreadoutlist::CCCUSBReadoutList %AUTO%]
-
-    # extract the proc we want to use to manipulate the stack
-    set cmd [lindex $script 0]
-
-    # if there are arguments provided, use them. otherwise, dont.
-    if {[llength $script]>1} { 
-      $cmd $rdoList {*}[lreplace $script 0 0] 
-    } else {
-      $cmd $rdoList 
-    }
+   set rdoList [::CCUSBDriverSupport::makeList $this $script]
 
     # At this point the list will contain some commands added by the cmd
     # command
