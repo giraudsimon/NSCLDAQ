@@ -223,6 +223,7 @@ namespace eval camac {
     #      reg - A module handle gotten from cdreg.
     #
     proc cfsa {reg f a {data 0}} {
+
         #
         #     Return errors if the fcode or subaddress are bad.
         #    
