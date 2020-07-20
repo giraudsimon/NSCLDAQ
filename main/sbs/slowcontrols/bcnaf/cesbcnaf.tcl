@@ -45,6 +45,7 @@ package require bcnafutils
 
 proc usage {} {
     puts stderr " usage:\n\t  cesbcnaf.tcl b c n a f \[d\]"
+
 }
 
 

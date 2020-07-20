@@ -42,7 +42,9 @@ proc usage {} {
     puts stderr " usage:\n\t  wienerbcnaf.tcl b c n a f \[d\]"
 }
 
+
 bcnafutils::checkUsage wienerbcnaf.tcl
+
 
 set module [wienercamac::cdreg $b $c $n]
 set output [wienercamac::cfsa $module  $f $a $d]
