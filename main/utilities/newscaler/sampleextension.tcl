@@ -18,7 +18,11 @@ exec tclsh "$0" ${1+"$@"}
 #	     Michigan State University
 #	     East Lansing, MI 48824-1321
 
+##
+#  Requires daqsetup.tcl to have been run
 
+lappend auto_path [file join $::env(DAQROOT) TclLibs]
+package require Utils
 
 ##
 # @file samplextension.tcl
@@ -76,7 +80,7 @@ proc UserEndRun {} {
     
     # Note the line below assumes the run is no longer than a day:
     
-    puts "Run $run ended at [clock format [clock seconds]] after running for [formatElapsed $rtime]"
+    puts "Run $run ended at [clock format [clock seconds]] after running for [Utils::formatDeltaTime $rtime]"
     
 }
 
