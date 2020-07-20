@@ -43,7 +43,7 @@ if {[lsearch -exact $auto_path $libdir] == -1} {
 package require camac
 
 proc usage {} {
-    puts stderr " usage:\n\t  bcnaf.tcl b c n a f \[d\]"
+    puts stderr " usage:\n\t  xesbcnaf.tcl b c n a f \[d\]"
 }
 
 

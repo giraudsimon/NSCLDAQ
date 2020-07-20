@@ -38,7 +38,7 @@ package require camac
 # usage: bcnaf.tcl b c n a f [d]
 
 proc usage {} {
-    puts stderr " usage:\n\t  bcnaf.tcl b c n a f \[d\]"
+    puts stderr " usage:\n\t  wienerbcnaf.tcl b c n a f \[d\]"
 }
 
 set nparams [llength $argv]
@@ -56,8 +56,8 @@ set f [lindex $argv 4]
 set d ""
 if {($f > 15) && ($f < 24)} {
     if {$nparams != 6} {
-	usage
-	exit -1
+      usage
+      exit -1
     }
     set d [lindex $argv 5]
 }
