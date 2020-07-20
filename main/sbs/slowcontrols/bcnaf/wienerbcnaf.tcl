@@ -45,7 +45,6 @@ proc usage {} {
 
 bcnafutils::checkUsage wienerbcnaf.tcl
 
-
 set module [wienercamac::cdreg $b $c $n]
 set output [wienercamac::cfsa $module  $f $a $d]
 set data [lindex $output 0]
