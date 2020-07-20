@@ -34,6 +34,7 @@ if {[lsearch -exact $auto_path $libdir] == -1} {
 }
 
 package require camac
+package require bcnafutils
 
 # usage: bcnaf.tcl b c n a f [d]
 
@@ -41,26 +42,7 @@ proc usage {} {
     puts stderr " usage:\n\t  wienerbcnaf.tcl b c n a f \[d\]"
 }
 
-set nparams [llength $argv]
-
-if {$nparams < 5} {
-  usage
-  exit -1
-}
-
-set b [lindex $argv 0]
-set c [lindex $argv 1]
-set n [lindex $argv 2]
-set a [lindex $argv 3]
-set f [lindex $argv 4]
-set d ""
-if {($f > 15) && ($f < 24)} {
-    if {$nparams != 6} {
-      usage
-      exit -1
-    }
-    set d [lindex $argv 5]
-}
+bcnafutils::checkUsage wienerbcnaf.tcl
 
 set module [wienercamac::cdreg $b $c $n]
 set output [wienercamac::cfsa $module  $f $a $d]
