@@ -104,7 +104,7 @@ namespace eval camac {
         set reg [expr $reg | ($a << 7) | ($f << 2)]
         return $reg
     }
-
+   
     proc Offset {a f} {
     	return [expr ($a << 7) | ($f << 2)]
     }
@@ -158,6 +158,23 @@ namespace eval camac {
 		set splitdecoded [split $decoded "_"]
 		return [lindex $splitdecoded  1]
     }
+    ##
+    # getXQ
+    #  Given a branch identifiction, return
+    #  returns a list that consists of the most recent q,x
+    #  response.
+    #
+    # @param branch branch id to check.
+    # @return list - 2 element list consisting of Q,X in that order.
+    #
+    proc getXQ {branch} {
+        set B [camac::ExtractB      $branch]
+        set V [camac::ExtractVME    $branch]
+        
+        lappend data [camac::Q $B $V]
+        lappend data [camac::X $B $V]
+        return $data
+    }
 
     #
     #  cdreg b c n
@@ -206,48 +223,44 @@ namespace eval camac {
     #      reg - A module handle gotten from cdreg.
     #
     proc cfsa {reg f a {data 0}} {
-	#
-	#     Return errors if the fcode or subaddress are bad.
-	#    
-	camacutils::isValidf $f
-	camacutils::isValida $a
-	
-	# Extract the VME space and module offset from the handle:
-	
-	set branch [lindex $reg 0]
-	set module [lindex $reg 1]
-	
-	
-	set address [expr $module + [camac::Offset $a $f]]
-	
-	
-	if {[camacutils::isRead $f]} {		;# Read operation for 32 bits:
-	    set hi [$branch get -w $address]
-	    set lo [$branch get -w [expr $address + 2]]
-	    set data [expr (($hi & 0xff) << 16) | ($lo & 0xffff)]
-	}
-	if {[camacutils::isWrite $f]} {		;# Write operation for 32 bits:
-	    set hi [expr (($data >> 16) & 0xff)]
-	    set lo [expr $data & 0xffff]
-	    $branch set -w $address $hi
-	    $branch set -w [expr $address + 2] $lo
-	    set data $data
-	}
-	
-	
-	if {[camacutils::isCtl   $f]} {		# Control function.
-	    $branch  get -w [expr $address + 2]
-	    set data 0
-	}
-	
-	#    Now pick up the q and x and build the reply list:
-	
-	set B [camac::ExtractB      $branch]
-	set V [camac::ExtractVME    $branch]
-	
-	lappend data [camac::Q $B $V]
-	lappend data [camac::X $B $V]
-	
+        #
+        #     Return errors if the fcode or subaddress are bad.
+        #    
+        camacutils::isValidf $f
+        camacutils::isValida $a
+        
+        # Extract the VME space and module offset from the handle:
+        
+        set branch [lindex $reg 0]
+        set module [lindex $reg 1]
+        
+        
+        set address [expr $module + [camac::Offset $a $f]]
+        
+        
+        if {[camacutils::isRead $f]} {		;# Read operation for 32 bits:
+            set hi [$branch get -w $address]
+            set lo [$branch get -w [expr $address + 2]]
+            set data [expr (($hi & 0xff) << 16) | ($lo & 0xffff)]
+        }
+        if {[camacutils::isWrite $f]} {		;# Write operation for 32 bits:
+            set hi [expr (($data >> 16) & 0xff)]
+            set lo [expr $data & 0xffff]
+            $branch set -w $address $hi
+            $branch set -w [expr $address + 2] $lo
+            set data $data
+        }
+        
+        
+        if {[camacutils::isCtl   $f]} {		# Control function.
+            $branch  get -w [expr $address + 2]
+            set data 0
+        }
+        
+        #    Now pick up the q and x and build the reply list:
+        
+        set data [concat $data [getXQ $branch]]
+        
 	return $data
     }
     #
@@ -291,13 +304,9 @@ namespace eval camac {
 
 	#    Now pick up the q and x and build the reply list:
 	
-	set B [camac::ExtractB $branch]
-	set V [camac::ExtractVME $branch]
-
 	
-	lappend data [camac::Q $B $V]
-	lappend data [camac::X $B $V]
-	
+    set data [concat $data [getXQ $branch]]
+    
 	return $data
     }
     #
@@ -347,9 +356,9 @@ namespace eval camac {
 	    set x [lindex $op 2]
 	    if {!$x} {return $result}
 	    if {!$q} {
-		set a 0
-		set reg [::camac::IncN $reg]
-		continue
+            set a 0
+            set reg [::camac::IncN $reg]
+            continue
 	    }
 	    lappend result $data
 	    incr a
