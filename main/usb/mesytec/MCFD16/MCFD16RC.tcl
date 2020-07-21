@@ -476,12 +476,9 @@ snit::type MCFD16RC {
   #
   # @returns list. first element is source, second element is veto enabled
   method GetTriggerSource {trigId} {
-    if {$trigId ni [list 0 1 2]} {
-        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-        return -code error -errorinfo MCFD16RC::SetTriggerSource $msg
-    }
+    MCFD16Common::errorOnInvalidTriggerId $trigId
 
-      set adr [dict get $offsetsMap trig${trigId}_source]
+    set adr [dict get $offsetsMap trig${trigId}_source]
     set code [$_proxy Read $adr]
 
     set vetoEnabled [expr {($code&0x40)!=0}]

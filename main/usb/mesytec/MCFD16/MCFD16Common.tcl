@@ -29,6 +29,17 @@ package provide MCFD16Common 1.0
 #
 namespace eval MCFD16Common {
     ##
+    # errorOnInvalidTriggerId
+    #   Throws an error if the trigger id is not valid.
+    # @param trigId  - id of the trigger.
+    #
+    proc errorOnInvalidTriggerId trigId {
+        if {$trigId ni [list 0 1 2]} {
+            set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
+            return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
+        }
+    }
+    ##
     # computeTriggerBits
     #    Given a trigger source/veto, returns the appropriate
     #    value to write as the trigger bits.
@@ -39,11 +50,8 @@ namespace eval MCFD16Common {
     # @return int   - The bits to write to the trigger register.
     #
     proc computeTriggerBits {trigId source veto} {
-        if {$trigId ni [list 0 1 2]} {
-            set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-            return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
-        }
-
+        errorOnInvalidTriggerId $trigId
+        
         set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
         if {$source ni [dict keys $sourceBits]} {
             set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."

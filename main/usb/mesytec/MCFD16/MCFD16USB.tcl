@@ -555,12 +555,8 @@ snit::type MCFD16USB {
   #
   # @returns list. first element is source, second element is veto enabled
   method GetTriggerSource {trigId} {
-
-    if {$trigId ni [list 0 1 2]} {
-        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-        return -code error -errorinfo MCFD16USB::GetTriggerSource $msg
-    }
-
+    MCFD16Common::errorOnInvalidTriggerId $trigId
+    
     if {$m_needsUpdate} {
       $self Update
     }
