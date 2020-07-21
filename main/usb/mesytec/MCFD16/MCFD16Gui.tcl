@@ -2258,16 +2258,8 @@ snit::type ORPatternPanelPresenter {
   #
   #
   method Commit {} {
-    set handle [$self cget -handle]
-    if {$handle eq {}} {
-       return -code error "User cannot commit unless a device exists"
-    }
-
-    set view [$self cget -view]
-    if {$view eq {}} {
-       return -code error "User cannot commit unless a view exists"
-    }
-
+    $self _canModify
+    
     $self CommitViewToModel
     $self Update
   }
@@ -2295,15 +2287,8 @@ snit::type ORPatternPanelPresenter {
   #
   #
   method Update {} {
-    set handle [$self cget -handle]
-    if {$handle eq {}} {
-       return -code error "User cannot commit unless a device exists"
-    }
-
-    set view [$self cget -view]
-    if {$view eq {}} {
-       return -code error "User cannot commit unless a view exists"
-    }
+    $self _canModify
+    
     $self UpdateViewFromModel
   }
 
@@ -2385,6 +2370,22 @@ snit::type ORPatternPanelPresenter {
   # updatig the view from the logger.
   method SetCommandLoggerAsHandle logger {
     set options(-handle) $logger
+  }
+  ##
+  # _canModify
+  #    Report an error if we don't have all the bits and pieces
+  #    needed to modify the device:
+  #
+  method _canModify {} {
+    set handle [$self cget -handle]
+    if {$handle eq {}} {
+       return -code error "User cannot commit unless a device exists"
+    }
+
+    set view [$self cget -view]
+    if {$view eq {}} {
+       return -code error "User cannot commit unless a view exists"
+    }
   }
 }
 
