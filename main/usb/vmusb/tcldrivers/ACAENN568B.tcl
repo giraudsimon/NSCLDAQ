@@ -227,7 +227,8 @@ itcl::class ACAENN568B {
   # @returns slave response for the offset
   public method TestCommunication {}
 
-
+  
+  
   ## @brief Parse the status register for a specific channel
   #
   # The status register encodes the data for the coarse gain,
@@ -276,6 +277,14 @@ itcl::class ACAENN568B {
   #
   public method GetVariable {v} {set $v}
 
+  ##
+  # _checkStatus
+  #  @param node  - caennet node.
+  #  @param reply - reply from a CAENET operation.
+  #  @param doing - What we're doing at the time.
+  #  @throw throws an error if the reply contained an error status.
+  #
+  private method _checkStatus {node reply doing}
 
 } ;# end of class definition
 
@@ -304,13 +313,9 @@ itcl::body ACAENN568B::ReadModuleIdentifier {} {
     set data [$caennet Receive]
 
     # check for bad response code from n568b
-    set status [lindex $data 0]
-    if {$status !=0 } {
-      set msg "$this: bad response code from n568b at node=$number. "
-      append msg [format "Error code=0x%x." $status]
-      return -code error -errorinfo ACAENN568B::ReadModuleIdentifier $msg
-    }
-
+    
+    _checkStatus $number $data ACAENN56b::ReadModuleIdentifier
+    
     # good data... convert the binary data to a normal character string.
     set trimmedData [lreplace $data 0 0] ;# remove the error code 
     return [binary format c* $trimmedData]
@@ -334,16 +339,13 @@ itcl::body ACAENN568B::ReadAllParameters {} {
     set data [$caennet Receive]
 
     # check for a bad response code
-    set status [lindex $data 0]
-    if {$status!=0} {
-      set msg "$this: bad response for n568b at node $number. "
-      append msg [format "Error code=0x%x." $status]
-      return -code error -errorinfo ACAENN568B::ReadAllParameters $msg
-    }
+    
+    _checkStatus $number $data ACAENN568B::ReadAllParameters
 
     set data [lreplace $data 0 0] ;# strip the error code for simple processing
 
-    # the response was good...parse the status reg for each of the channels 
+    # the response was good...parse the status reg for each of the channels
+    
     set result [list]
     for {set ch 0} {$ch < 16} {incr ch} {
 
@@ -382,12 +384,8 @@ itcl::body ACAENN568B::ReadOffset {} {
   set data [$caennet Receive]
 
   # check for bad error code from slave
-  set status [lindex $data 0]
-  if {$status!=0} {
-    set msg "$this: bad response from n568b at node $number. "
-    append msg [format "Error code=0x%x." $status]
-    return -code error -errorinfo ACAENN568B::ReadOffset $msg
-  }
+  
+  _checkStatus $number $data ACAENN568B::ReadOffset
 
   # strip the error code before sending out..
   return [lreplace $data 0 0]
@@ -413,22 +411,15 @@ itcl::body ACAENN568B::ReadChannelParameters {channel} {
   # 0xn03, where n is the slot number. This differs from the manual's value 0x0n3.
   set code [expr ($channel<<8)| 0x3]
   set status [$caennet SendCode $number $code]
-  if {$status} {
-    set msg "$this: error reading channel parameters. Module number: $number. "
-    append msg "Error code: $status"
-    return -code error -errorinfo ACAENN568B::ReadChannelParameters $msg
-  } 
+  _checkStatus $number $status "ACAENN568B::ReadChannelParameters"
+   
 
   # wait for response from n568b
   set data [$caennet Receive]
 
   # check for bad response code
-  set status [lindex $data 0]
-  if {$status!=0} {
-    set msg "$this: Bad response from N568B. Module number: $number."
-    append msg [format "Error code=0x%x." $status]
-    return -code error -errorinfo ACAENN568B::ReadChannelParameters $msg
-  }
+  
+  _checkStatus $number $data ACAENN568B::ReadChannelParameters
 
   # unpack the encoded data retrieved from the device
   set parsedStatus [ParseStatusRegister [lindex $data 3]]
@@ -450,13 +441,8 @@ itcl::body ACAENN568B::ReadMUXStatusAndLastChAccess {} {
   } 
   set data [$caennet Receive]
 
-  set status [lindex $data 0]
-  if {$status!=0} {
-    set msg "$this: bad response from n568b at node $number. "
-    append msg [format "Error code=0x%x." $status]
-    return -code error -errorinfo ACAENN568B::ReadMUXStatusAndLastChAccess $msg
-  }
-
+  _checkStatus $number $data ACAENN568B::ReadMUXStatusAndLastChAccess
+  
   # remove the error code
   set datum [lindex $data 1] 
 
@@ -529,13 +515,10 @@ itcl::body ACAENN568B::SetParameter {channel parameter value} {
     # receive error code from slave
     set data [$caennet Receive] 
 
-    # scream if it is a nonzero code 
-    set status [lindex $data 0]
-    if {$status!=0} {
-      set msg "$this: bad response from device at node $number. "
-      append msg [format "Error code=0x%x." $status]
-      return -code error -errorinfo ACAENN568B::SetParameters $msg
-    }
+    # scream if it is a nonzero code
+    
+    _checkStatus $number $data ACAENN568B::SetParameters
+    
 
   }
 
@@ -561,13 +544,8 @@ itcl::body ACAENN568B::SetOffset {value} {
     return -code error -errorinfo ACAENN568B::SetOffset $msg
   } 
   set data [$caennet Receive]
-  set status [lindex $data 0]
-  if {$status!=0} {
-    set msg "$this: bad response from device at node $number. "
-    append msg [format "Error code=0x%x." $status]
-    return -code error -errorinfo ACAENN568B::SetOffset $msg
-  }
-
+  _checkStatus $number $data ACAENN568B::SetOffset
+  
   # strip off the error code before sending out
   return [lreplace $data 0 0]
 }
@@ -733,4 +711,13 @@ itcl::body ACAENN568B::InitIfChanged {filename aname hashfile} {
 	puts $hashfd $newhash
 	close $hashfd
     }
+}
+
+itcl::body ACAENN568B::_checkStatus {node data doing} {
+set status [lindex $data 0]
+    if {$status !=0 } {
+      set msg "$this: bad response code from n568b at node=$node. "
+      append msg [format "Error code=0x%x." $status]
+      return -code error -errorinfo $doing $msg
+    }  
 }
