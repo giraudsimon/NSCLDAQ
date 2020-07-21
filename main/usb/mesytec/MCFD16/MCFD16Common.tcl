@@ -112,6 +112,5 @@ namespace eval MCFD16Common {
             return -code error -errorinfo MCFD16XX::SetTriggerOrPattern $msg
         }
     }
-=======
->>>>>>> daqdev/NSCLDAQ#700
+
 }
