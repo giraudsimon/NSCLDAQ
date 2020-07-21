@@ -113,7 +113,6 @@ itcl::class AGD16XLM72Panel {
   # custom spinboxes used in this class
 	public method DrawEntryGD16 {c x y id var label color}
 	public method IncrementGD16 {var amount}
-	# public method DecrementGD16 {var}
 	public method StopRepeatGD16 {}
 
   ## \brief Makes all of the child widgets disabled
@@ -447,32 +446,6 @@ itcl::body AGD16XLM72Panel::IncrementGD16 {var amount} {
 	$proxy SetDelayWidth $i $gd16(delay$i) $gd16(width$i)
 }
 
-#
-#  Should be obsolete now that 'amount' was added as a parameter
-#  to IncrementGD16
-#
-#itcl::body AGD16XLM72Panel::DecrementGD16 {var} {
-#	global gd16
-#	if {[info exist gd16(firstClick)] == 0} {
-#		set gd16(firstClick) 1
-#	}
-#	if {$gd16(firstClick) == 1} {
-#		set gd16(repeatID) [after 500 $this DecrementGD16 $var]
-#		set gd16(firstClick) 0
-#	} else {
-#		set gd16(repeatID) [after 50 $this DecrementGD16 $var]
-#	}
-#	if {$gd16(locked) == 1} {
-#		return
-#	}
-#	set gd16($var) [expr $gd16($var) - 1]
-#	if {$gd16($var) < 0} {
-#		set gd16($var) 0
-#	}
-#	if {[string match delay* $var]} {set i [string trimleft $var delay]}
-#	if {[string match width* $var]} {set i [string trimleft $var width]}
-#	$proxy SetDelayWidth $i $gd16(delay$i) $gd16(width$i)
-#}
 
 #
 itcl::body AGD16XLM72Panel::StopRepeatGD16 {} {
