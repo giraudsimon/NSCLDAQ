@@ -1382,6 +1382,7 @@ snit::type LoadFromFilePresenter {
       # load state into device
       
       Utils::runGlobally $executableLines
+
   
       # update the actual content
       set realHandle [$self SwapInHandle $fakeHandle]
