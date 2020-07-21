@@ -1379,7 +1379,8 @@ snit::type LoadFromFilePresenter {
       set fakeHandle [MCFD16Memorizer $devName]
   
       # load state into device
-      $self EvaluateAPILines $executableLines
+      
+      Utils::runGlobally $executableLines
   
       # update the actual content
       set realHandle [$self SwapInHandle $fakeHandle]
@@ -1427,11 +1428,6 @@ snit::type LoadFromFilePresenter {
     return $name
   }
 
-  method EvaluateAPILines {lines} {
-    foreach line $lines {
-      uplevel #0 eval $line
-    }
-  }
 
   # Type data .... 
   typevariable _validAPICalls ;# list of calls consider valid API calls

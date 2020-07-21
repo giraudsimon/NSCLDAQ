@@ -98,4 +98,18 @@ namespace eval Utils {
    set name [string trim $name]
    return [expr [string length $name]!=0] 
   }
+  ##
+  # runGlobally
+  #   Given a list of input lines, runs them as Tcl Commands
+  #   at the global level.
+  #
+  # @param lines -the lines to run.
+  # @note as in the original, eval is used rather than just
+  #       the uplevel command itself.
+  #
+  proc runGlobally lines {
+    foreach line $lines {
+      uplevel #0 eval $line
+    }
+  }
 }

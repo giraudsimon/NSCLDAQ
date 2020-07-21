@@ -7,6 +7,7 @@ package require mscf16memorizer
 package require BlockCompleter
 package require TclSourceFilter
 package require tkutils
+package require Utils
 
 ## @brief Logic for the LoadFromFileView
 #
@@ -83,7 +84,8 @@ snit::type MSCF16FileLoader {
       set fakeHandle [MSCF16Memorizer $devName]
   
       # load state into device
-      $self EvaluateAPILines $executableLines
+      
+      Utils::runGlobally $executableLines
   
       # update the actual content, swapping in the handle triggers the 
       # view to be updated...
@@ -134,11 +136,6 @@ snit::type MSCF16FileLoader {
     return $name
   }
 
-  method EvaluateAPILines {lines} {
-    foreach line $lines {
-      uplevel #0 eval $line
-    }
-  }
   # Type data .... 
   typevariable _validAPICalls ;# list of calls consider valid API calls
 
@@ -198,14 +195,10 @@ snit::type MSCF16NameLoader {
 
     set executableLines [$_filter Filter $content]
 
-    $self EvaluateAPILines $executableLines
+    Utils::runGlobally $executableLines
   }
 
-  method EvaluateAPILines {lines} {
-    foreach line $lines {
-      uplevel #0 eval $line
-    }
-  }
+  
   # Type data .... 
   typevariable _validAPICalls ;# list of calls consider valid API calls
 
