@@ -179,23 +179,16 @@ snit::type MSCF16NameLoader {
   }
 
   method Load {path} {
-    if {![file exists $path]} {
-      set msg "Cannot load from $path, because file does not exist."
-      tk_messageBox -icon error -message $msg
-      return
-    } elseif {! [file readable $path]} { 
-      set msg "Cannot load from $path, because file is not readable."
-      tk_messageBox -icon error -message $msg
-      return
+ 
+    if {[tkutils::checkFileReadable $path]} {
+      set scriptFile [open $path r]
+      set content [chan read $scriptFile]
+      close $scriptFile
+  
+      set executableLines [$_filter Filter $content]
+  
+      Utils::runGlobally $executableLines
     }
-
-    set scriptFile [open $path r]
-    set content [chan read $scriptFile]
-    close $scriptFile
-
-    set executableLines [$_filter Filter $content]
-
-    Utils::runGlobally $executableLines
   }
 
   

@@ -17,7 +17,7 @@ package provide mcfd16usb 1.0
 
 package require snit
 package require Utils
-
+package require MCFD16Common
 
 ## @brief USB Communications Package for the Mesystec MCFD16
 #
@@ -542,22 +542,8 @@ snit::type MCFD16USB {
   #
   # @returns result of _Transaction
   method SetTriggerSource {trigId source veto} {
-    if {$trigId ni [list 0 1 2]} {
-        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
-        return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
-    }
-
-    set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
-    if {$source ni [dict keys $sourceBits]} {
-        set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
-        return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
-    }
-
-    set value [dict get $sourceBits $source]
-    if {[string is true $veto]} {
-        set value [expr {$value + 0x40}]
-    }
-
+    
+    set value [MCFD16Common::computeTriggerBits $trigId $source $veto]
     return [$self _Transaction "TR $trigId $value"]
   }
 

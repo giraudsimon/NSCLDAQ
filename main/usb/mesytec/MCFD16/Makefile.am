@@ -4,8 +4,8 @@ SUBDIRS=figures
 DRIVERDest = @prefix@/TclLibs/mesytec
 
 TCLDRIVERS = MCFD16USB.tcl MCFD16RC.tcl MCFD16Gui.tcl MCFD16CommandLogger.tcl \
-						 MCFD16Memorizer.tcl ScriptHeaderGenerator.tcl MCFD16GuiApp.tcl \
-						 MCFD16Factory.tcl MCFD16ChannelNames.tcl
+	 MCFD16Memorizer.tcl ScriptHeaderGenerator.tcl MCFD16GuiApp.tcl \
+	 MCFD16Factory.tcl MCFD16ChannelNames.tcl MCFD16Common.tcl
 TCLAPPS = MCFD16Control.tcl
 
 DOCS = mcfd16control.xml

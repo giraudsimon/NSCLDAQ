@@ -14,6 +14,8 @@
 
 package require tcltest
 package require snit
+package require Utils
+
 set loadFailure 0
 tcltest::test pkgrequire-0 {Ensure that we can require the package
 } {set ::loadFailure [catch {package require mcfd16gui}]} 0
@@ -727,39 +729,6 @@ tcltest::test loader_isvalidapicall-0 { valid api calls are accepted
   loader IsValidAPICall "name SetThreshold"
 } -result 1
 }
-
-tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces state
-} -setup {
-  # there are 8 lines in a usb protocol header
-  set ::lines [generateTestAPICalls]
-  LoadFromFilePresenter loader {} 
-} -cleanup {
-  loader destroy
-} -body {
-  # ::lines contains only valid API calls
-  MCFD16Memorizer ::asdf
-
-  loader EvaluateAPILines $::lines
-
-  set res [list]
-  lappend res [::asdf GetThreshold 0]
-  lappend res [::asdf GetGain 0]
-  lappend res [::asdf GetWidth 0]
-  lappend res [::asdf GetDeadtime 0]
-  lappend res [::asdf GetDelay 0]
-  lappend res [::asdf GetFraction 0]
-  lappend res [::asdf GetPolarity 0]
-  lappend res [::asdf GetMode]
-  lappend res [::asdf RCEnabled]
-  lappend res [::asdf PulserEnabled]
-  lappend res [::asdf GetChannelMask]
-  lappend res [::asdf GetTriggerSource 0]
-  lappend res [::asdf GetTriggerOrPattern 0]
-  set res 
-} -result {2 2 2 2 3 20 neg common 1 0 0 {pat_or_1 1} 65535}
-
-
-
 ###############################################################################
 
 # don't build the gui 
