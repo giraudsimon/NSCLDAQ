@@ -57,6 +57,43 @@ namespace eval tkutils {
             exit -1
         }
     }
-        
+    ##
+    # checkFileExists
+    #    Check a file exists.  If not a message box indicating
+    #    it does not is displayed.
+    #
+    # @param file - path to file to check
+    # @return bool - true if the file existed, false if not.
+    # @note so intended usage is:
+    #   if {[tkutils::checkFileExists $filename]}  .. do stuff to file
+    #
+    proc checkFileExists {filename} {
+        if {![file exists $filename]} {
+            tk_messageBox -icon error -title {No such file} -type ok \
+                -message "$filename does not exist!"
+            return 0
+        }
+        return 1
+    }
+    ##
+    # checkFileReadable
+    #    Check that a file exists and is readable.
+    #
+    # @param filename - name of the file to check
+    # @return bool    - true if readable.
+    #
+    proc checkFileReadable {filename} {
+        if {[tkutils::checkFileExists $filename]} {
+            if {![file readable $filename]} {
+                tk_messageBox -icon error -title {Unreadable file} -type ok \
+                    -message "$filename exists but is not readable by this user"
+                return 0
+            }
+        } else {
+            return 0
+        }
+        return 1
+            
+    }
     
 }

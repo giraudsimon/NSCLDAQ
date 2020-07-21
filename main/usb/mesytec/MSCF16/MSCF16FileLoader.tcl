@@ -6,6 +6,7 @@ package require mscf16guiapp
 package require mscf16memorizer
 package require BlockCompleter
 package require TclSourceFilter
+package require tkutils
 
 ## @brief Logic for the LoadFromFileView
 #
@@ -59,54 +60,48 @@ snit::type MSCF16FileLoader {
   #
   # @param  path    the path to a file containing state 
   method Load {path} {
-    if {![file exists $path]} {
-      set msg "Cannot load from $path, because file does not exist."
-      tk_messageBox -icon error -message $msg
-    } elseif {! [file readable $path]} { 
-      set msg "Cannot load from $path, because file is not readable."
-      tk_messageBox -icon error -message $msg
-    }
-
-    set scriptFile [open $path r]
-    set content [chan read $scriptFile]
-    set executableLines [$_filter Filter $content]
-
-
-    # determine the first
-    set devName [$self ExtractDeviceName [lindex $executableLines 0]]
-    if {[llength [info commands $devName]]>0} {
-      if {[$_presenter cget -handle] ne $devName} {
-        rename $devName {}
-      } else {
-        set msg "Device driver instance in load file shares same name "
-        append msg "as current driver ($devName). User must use a different "
-        append msg "instance name in the load file."
-        tk_messageBox -icon error -message $msg
-        return
+    if {[tkutils::checkFileReadable $path]} {
+      set scriptFile [open $path r]
+      set content [chan read $scriptFile]
+      set executableLines [$_filter Filter $content]
+  
+  
+      # determine the first
+      set devName [$self ExtractDeviceName [lindex $executableLines 0]]
+      if {[llength [info commands $devName]]>0} {
+        if {[$_presenter cget -handle] ne $devName} {
+          rename $devName {}
+        } else {
+          set msg "Device driver instance in load file shares same name "
+          append msg "as current driver ($devName). User must use a different "
+          append msg "instance name in the load file."
+          tk_messageBox -icon error -message $msg
+          return
+        }
       }
+  
+      set fakeHandle [MSCF16Memorizer $devName]
+  
+      # load state into device
+      $self EvaluateAPILines $executableLines
+  
+      # update the actual content, swapping in the handle triggers the 
+      # view to be updated...
+      $_presenter configure -autoupdate 1
+      set realHandle [$self SwapInHandle $fakeHandle]
+  
+      # pass the real handle back in, but make sure that that does not 
+      # trigger an UpdateViewFromModel. So... we turn autoupdate off, then
+      # the real handle can be put back. 
+      $_presenter configure -autoupdate 0
+      set fakeHandle [$self SwapInHandle $realHandle]
+  
+      # now make sure that the state of the view makes it to the device.
+      $_presenter Commit
+  
+      $fakeHandle destroy
+      catch {close $loadFile}
     }
-
-    set fakeHandle [MSCF16Memorizer $devName]
-
-    # load state into device
-    $self EvaluateAPILines $executableLines
-
-    # update the actual content, swapping in the handle triggers the 
-    # view to be updated...
-    $_presenter configure -autoupdate 1
-    set realHandle [$self SwapInHandle $fakeHandle]
-
-    # pass the real handle back in, but make sure that that does not 
-    # trigger an UpdateViewFromModel. So... we turn autoupdate off, then
-    # the real handle can be put back. 
-    $_presenter configure -autoupdate 0
-    set fakeHandle [$self SwapInHandle $realHandle]
-
-    # now make sure that the state of the view makes it to the device.
-    $_presenter Commit
-
-    $fakeHandle destroy
-    catch {close $loadFile}
   }
 
   ## @brief Replace current handle with a new handle

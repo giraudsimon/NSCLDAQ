@@ -26,6 +26,7 @@ package require TclSourceFilter
 package require mcfd16channelnames
 package require ChannelLabel
 package require Utils
+package require tkutils
 
 ## "Base" type for MCFD16View ################
 #
@@ -1353,24 +1354,18 @@ snit::type LoadFromFilePresenter {
   #
   # @param  path    the path to a file containing state 
   method Load {path} {
-    if {![file exists $path]} {
-      set msg "Cannot load from $path, because file does not exist."
-      tk_messageBox -icon error -message $msg
-    } elseif {! [file readable $path]} { 
-      set msg "Cannot load from $path, because file is not readable."
-      tk_messageBox -icon error -message $msg
-    }
-    set f [open $path r]
+    if {[tktuils::checkFileReadable $path]} {
+      set f [open $path r]
       set content [chan read $f]
       catch {close $f}
 
-    set executableLines [$self FilterOutNonAPICalls $content]
+      set executableLines [$self FilterOutNonAPICalls $content]
 
       
     # determine the first
       set devName [$self ExtractDeviceName [lindex $executableLines 0]]
-    if {[llength [info commands $devName]]>0} {
-	if {[$_contentFr cget -handle] ne $devName} {
+      if {[llength [info commands $devName]]>0} {
+      if {[$_contentFr cget -handle] ne $devName} {
         rename $devName {}
       } else {
         set msg "Device driver instance in load file shares same name "
@@ -1380,20 +1375,21 @@ snit::type LoadFromFilePresenter {
         return
       }
     }
-
-    set fakeHandle [MCFD16Memorizer $devName]
-
-    # load state into device
-    $self EvaluateAPILines $executableLines
-
-    # update the actual content
-    set realHandle [$self SwapInHandle $fakeHandle]
-    $_contentFr Update
-    set fakeHandle [$self SwapInHandle $realHandle]
-
-    $fakeHandle destroy
-
-    [[$_contentFr GetCurrent] cget -view] SetOutOfSync 1
+  
+      set fakeHandle [MCFD16Memorizer $devName]
+  
+      # load state into device
+      $self EvaluateAPILines $executableLines
+  
+      # update the actual content
+      set realHandle [$self SwapInHandle $fakeHandle]
+      $_contentFr Update
+      set fakeHandle [$self SwapInHandle $realHandle]
+  
+      $fakeHandle destroy
+  
+      [[$_contentFr GetCurrent] cget -view] SetOutOfSync 1
+    }
   }
 
   method FilterOutNonAPICalls {content} {
