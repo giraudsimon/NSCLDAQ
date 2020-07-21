@@ -563,16 +563,14 @@ snit::type MCFD16USB {
 
     set code [dict get $m_moduleState Trig${trigId}_src]
 
-    set vetoEnabled [expr {($code&0x40)!=0}]
-    set source      [expr {$code&0xbf}]
+    set decoded [MCFD16Common::getTriggerFields $code]
+    set vetoEnabled [lindex $decoded 1]
+    set source      [lindex $decoded 0]
 
     # SW 2.18 supports not having bit set in the source mask.
     
     
-    set sourceNameMap [dict create 0 none  1 or 2 multiplicity 4 pair_coinc 8 \
-                                    mon 16 pat_or_0 32 pat_or_1 128 gg]
-    set sourceName [dict get $sourceNameMap $source]
-
+    set sourceName [MCFD16Common::triggerSourceName $source]
     return [list $sourceName $vetoEnabled]
   }
 

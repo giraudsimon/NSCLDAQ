@@ -481,13 +481,11 @@ snit::type MCFD16RC {
     set adr [dict get $offsetsMap trig${trigId}_source]
     set code [$_proxy Read $adr]
 
-    set vetoEnabled [expr {($code&0x40)!=0}]
-    set source      [expr {$code&0xbf}]
-  
-    set sourceNameMap [dict create   1 or 2 multiplicity 4 pair_coinc 8 \
-                                    mon 16 pat_or_0 32 pat_or_1 64 veto 128 gg]
+    set decoded [MCFD16Commmon::getTriggerFields $code]
+    set vetoEnabled [lindex $decoded 1]
+    set source      [lindex $decoded 0]
 
-    return [list [dict get $sourceNameMap $source] $vetoEnabled]
+    return [list [MCFD16Common::triggerSourceName $source] $vetoEnabled]
   }
 
   ## @brief Set which channels contribute to the OR

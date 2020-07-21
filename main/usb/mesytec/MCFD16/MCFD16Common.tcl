@@ -64,4 +64,34 @@ namespace eval MCFD16Common {
         }
         return $value
     }
+    ##
+    #  getTriggerFields
+    #    Given a trigger specification returns the source code
+    #    and veto enabled flag.
+    #
+    # @param code - the code from the device.
+    # @return list - [lst source vetoenabled]
+    # @note might not look like this is worth it but if the
+    #       bit allocation changes in a firmware turn it centralizes
+    #       that knowledge.
+    #
+    proc getTriggerFields {code} {
+        set vetoEnabled [expr {($code&0x40)!=0}]
+        set source      [expr {$code&0xbf}]
+        return [list $source $vetoEnabled]
+    }
+    ##
+    # triggerSourceName
+    #    Takes the trigger selector and translates it to a trigger
+    #    name
+    #
+    # @param source - source id.
+    # @return string - trigger source name.
+    #
+    proc triggerSourceName {source} {
+        set sourceNameMap [dict create 0 none  1 or 2 multiplicity 4 pair_coinc 8 \
+                                    mon 16 pat_or_0 32 pat_or_1 128 gg]
+        set sourceName [dict get $sourceNameMap $source]
+        return $sourceName
+    }
 }
