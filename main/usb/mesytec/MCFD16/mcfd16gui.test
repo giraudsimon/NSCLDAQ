@@ -764,8 +764,6 @@ tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces s
 
 
 
-
-
 # don't build the gui 
 snit::method ChannelEnableDisableView BuildGUI {} {}
 
