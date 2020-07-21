@@ -40,6 +40,7 @@ namespace eval MCFD16Common {
         }
     }
     ##
+
     # computeTriggerBits
     #    Given a trigger source/veto, returns the appropriate
     #    value to write as the trigger bits.
@@ -56,6 +57,11 @@ namespace eval MCFD16Common {
         if {$source ni [dict keys $sourceBits]} {
             set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
             return -code error -errorinfo MCFD16XX::SetTriggerSource $msg
+
+        set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
+        if {$source ni [dict keys $sourceBits]} {
+            set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
+            return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
         }
 
         set value [dict get $sourceBits $source]
@@ -106,4 +112,6 @@ namespace eval MCFD16Common {
             return -code error -errorinfo MCFD16XX::SetTriggerOrPattern $msg
         }
     }
+=======
+>>>>>>> daqdev/NSCLDAQ#700
 }
