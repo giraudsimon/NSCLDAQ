@@ -122,7 +122,10 @@ itcl::class ALevel3XLM72 {
   public method OnBegin item
   public method OnEnd item 
   public method OnPause item
-  public method OnResume item 
+  public method OnResume item
+	
+	private method _bg1 {}
+	private method _bg2 {}
 
 # stack methods
 
@@ -263,7 +266,7 @@ itcl::body ALevel3XLM72::ReadTrigger {}	{
 }
 
 itcl::body ALevel3XLM72::SetValues {} {
-	global l3
+		global l3
     set l3(setflag) true
     global page1_set
     global page1_writefile
@@ -272,15 +275,11 @@ itcl::body ALevel3XLM72::SetValues {} {
     global page3_set
     global page3_writefile
 
-    BG_yellow $l3(page3_writefile)
-    BG_green  $l3(page3_set)
-    BG_yellow $l3(page2_writefile)
-    BG_green  $l3(page2_set)
-    BG_yellow $l3(page1_writefile)
-    BG_green  $l3(page1_set)
+		_bg2
+    
 
     if {$l3(readflag) == true} {
-	BG_green $l3(page1_writefile)
+				BG_green $l3(page1_writefile)
         BG_green $l3(page2_writefile)
         BG_green $l3(page3_writefile)
     }
@@ -344,13 +343,8 @@ itcl::body ALevel3XLM72::ReadXLM {} {
 	global l3 diagnostics
 
     set l3(setflag) true
-
-    BG_yellow $l3(page3_writefile)
-    BG_green  $l3(page3_set)
-    BG_yellow $l3(page2_writefile)
-    BG_green  $l3(page2_set)
-    BG_yellow $l3(page1_writefile)
-    BG_green  $l3(page1_set)
+	  _bg2
+    
     
 #    MapXLM 0 $slot XLM
 #    RequestBus XLM X
@@ -813,12 +807,8 @@ itcl::body ALevel3XLM72::ReadFile {} {
     set l3(readflag) true
     set file $l3(valuesfile)
 
-    BG_green $l3(page3_writefile)
-    BG_yellow  $l3(page3_set)
-    BG_green $l3(page2_writefile)
-    BG_yellow  $l3(page2_set)
-    BG_green $l3(page1_writefile)
-    BG_yellow  $l3(page1_set)
+		_bg1
+    
 
     puts "reading from $file"
     set f [open $file "r"]
@@ -863,13 +853,8 @@ itcl::body ALevel3XLM72::WriteFile {} {
 	global l3
     set l3(readflag) false
     set file $l3(valuesfile)
-
-    BG_green $l3(page3_writefile)
-    BG_yellow  $l3(page3_set)
-    BG_green $l3(page2_writefile)
-    BG_yellow  $l3(page2_set)
-    BG_green $l3(page1_writefile)
-    BG_yellow  $l3(page1_set)
+		_bg1
+    
 
     if {$l3(setflag) == true} {
         BG_green $l3(page1_set)
@@ -939,4 +924,25 @@ itcl::body ALevel3XLM72::OnPause item {
 }
 itcl::body ALevel3XLM72::OnResume item {
   LockGUI
+}
+itcl::body ALevel3XLM72::_bg1 {} {
+	global l3
+	
+	BG_green $l3(page3_writefile)
+	BG_yellow  $l3(page3_set)
+	BG_green $l3(page2_writefile)
+	BG_yellow  $l3(page2_set)
+	BG_green $l3(page1_writefile)
+	BG_yellow  $l3(page1_set)
+}
+itcl::body ALevel3XML72::_bg2 {} {
+	global l3
+
+	BG_yellow $l3(page3_writefile)
+	BG_green  $l3(page3_set)
+	BG_yellow $l3(page2_writefile)
+	BG_green  $l3(page2_set)
+	BG_yellow $l3(page1_writefile)
+	BG_green  $l3(page1_set)
+
 }
