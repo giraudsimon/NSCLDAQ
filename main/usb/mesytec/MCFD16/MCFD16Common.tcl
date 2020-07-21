@@ -55,7 +55,7 @@ namespace eval MCFD16Common {
         set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
         if {$source ni [dict keys $sourceBits]} {
             set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
-            return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
+            return -code error -errorinfo MCFD16XX::SetTriggerSource $msg
         }
 
         set value [dict get $sourceBits $source]
@@ -93,5 +93,17 @@ namespace eval MCFD16Common {
                                     mon 16 pat_or_0 32 pat_or_1 128 gg]
         set sourceName [dict get $sourceNameMap $source]
         return $sourceName
+    }
+    ##
+    # validateTriggerOrId
+    #
+    #  @param patternId id of the trigger or pattern.
+    #  @throw error if the pattern is invalid.
+    #
+    proc validateTriggerOrId {patternId} {
+        if {$patternId ni [list 0 1]} {
+            set msg "Invalid pattern id argument provided. Must be 0 or 1."
+            return -code error -errorinfo MCFD16XX::SetTriggerOrPattern $msg
+        }
     }
 }

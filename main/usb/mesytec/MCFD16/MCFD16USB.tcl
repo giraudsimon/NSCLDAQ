@@ -584,11 +584,9 @@ snit::type MCFD16USB {
   # 
   # @returns result of last transactions
   method SetTriggerOrPattern {trigId pattern} {
-    if {$trigId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16USB::SetTriggerOrPattern $msg
-    }
-
+    
+    MCFD16Common::validateTriggerOrId $trigId
+    
     if {![Utils::isInRange 0 0xffff $pattern]} {
       set msg {Invalid bit pattern provided. Must be in range [0,65535].}
       return -code error -errorinfo MCFD16USB::SetTriggerOrPattern $msg
@@ -613,11 +611,7 @@ snit::type MCFD16USB {
   # @returns integer whose set bits represent the channel states.
   #
   method GetTriggerOrPattern {patternId} {
-
-    if {$patternId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16USB::GetTriggerOrPattern $msg
-    }
+    MCFD16Common::validateTriggerOrId $patternId
 
     if {$m_needsUpdate} {
       $self Update

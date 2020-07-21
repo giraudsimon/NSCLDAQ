@@ -498,11 +498,8 @@ snit::type MCFD16RC {
   # 
   # @returns result of last transactions
   method SetTriggerOrPattern {patternId pattern} {
-    if {$patternId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
-    }
-
+    
+    MCFD16Common::validateTriggerOrId $patternId
     if {![Utils::isInRange 0 0xffff $pattern]} {
       set msg {Invalid bit pattern provided. Must be in range [0,65535].}
       return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
@@ -526,13 +523,9 @@ snit::type MCFD16RC {
   #
   # @returns integer whose set bits represent the channel states.
   #
-  method GetTriggerOrPattern {patternId} {
-
-    if {$patternId ni [list 0 1]} {
-        set msg "Invalid pattern id argument provided. Must be 0 or 1."
-        return -code error -errorinfo MCFD16RC::SetTriggerOrPattern $msg
-    }
-
+  method GetTriggerOrPattern {patternId} {  
+    MCFD16Common::validateTriggerOrId $patternId
+    
     set lowAddr [dict get $offsetsMap or${patternId}_pattern_lo]
     set highAddr [dict get $offsetsMap or${patternId}_pattern_hi]
 
