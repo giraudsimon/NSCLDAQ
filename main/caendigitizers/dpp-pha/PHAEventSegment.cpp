@@ -47,10 +47,7 @@ PHAEventSegment::PHAEventSegment(const char* iniFile, int id) :
  */
 PHAEventSegment::~PHAEventSegment()
 {
-    delete m_pPha;                        // NO-OP if this is null.
-    m_pPha = nullptr;                     // not really needed for destruction
-    delete m_pParams;
-    m_pParams = nullptr;
+    freeStorage();
 }
 
 /**
@@ -75,11 +72,7 @@ PHAEventSegment::initialize()
 {
     // Kill off any hanging pha driver.
     
-    delete m_pPha;
-    m_pPha = nullptr;                    // In case we throw and then get called again.
-    
-    delete m_pParams;
-    m_pParams = nullptr;
+    freeStorage();
     
     // Read and parse the .ini file.  Assume that the resulting dict is nullptr
     // for errors:
@@ -330,4 +323,16 @@ PHAEventSegment::makeChannelKey(unsigned chan, const char* subkey)
 
   s << chan << ":" << subkey;
   return s.str();
+}
+/**
+ * freeStorage
+ *    Release dynamic storage:
+ */
+void
+PHAEventSegment::freeStorage()
+{
+    delete m_pPha;                        // NO-OP if this is null.
+    m_pPha = nullptr;                     // not really needed for destruction
+    delete m_pParams;
+    m_pParams = nullptr;  
 }
