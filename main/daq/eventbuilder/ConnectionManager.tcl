@@ -301,7 +301,6 @@ snit::type EVB::Connection {
     #         We just transition to ERROR, and close out
     #
     method _Connect socket {
-        puts stderr "Orderer $self connect called $options(-state) : $expecting"
     
         # Get the header and get the body.
         # The header is a string, but the body is a counted binary block:
@@ -377,9 +376,12 @@ snit::type EVB::Connection {
         # Read the header:
         
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         puts stderr "_Fragments"
 >>>>>>> Completed testing of end to end
+=======
+>>>>>>> Remove debugging output that was inadvertently left in.
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
