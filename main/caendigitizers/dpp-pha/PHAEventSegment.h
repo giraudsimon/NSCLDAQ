@@ -77,9 +77,9 @@ public:
     
     // Utilities
 private:
-    
     std::string makeChannelKey(unsigned chan, const char* subkey);
     void freeStorage();
+
 };
 
 
