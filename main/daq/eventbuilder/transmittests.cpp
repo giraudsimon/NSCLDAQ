@@ -200,7 +200,6 @@ private:
     void             cleanupSimulator(SimulatorThread* thread);
     
 
-
 public:
     clienttest() :m_pPortManager(nullptr) {}
     void setUp() {
@@ -386,11 +385,16 @@ void clienttest::connect_1()
 void clienttest::connect_2()
 {
     // Connect but no sources
+<<<<<<< HEAD
 
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim    = thread->m_rSimulator;
 
 
+=======
+    SimulatorThread* thread = setupSimulator();
+    Simulator&       sim    = thread->m_rSimulator;
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     std::list<int> sources;                // No sources.
     CPPUNIT_ASSERT_NO_THROW(
@@ -401,9 +405,13 @@ void clienttest::connect_2()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
+<<<<<<< HEAD
 
     thread.join();                  // Wait on thread exit.
 
+=======
+    thread->join();                  // Wait on thread exit.
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     // Check out the results... should be one request, a connection.
     
@@ -421,8 +429,11 @@ void clienttest::connect_3()
     
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim(thread->m_rSimulator);
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -437,9 +448,13 @@ void clienttest::connect_3()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
+<<<<<<< HEAD
 
     thread.join();                  // Wait on thread exit.
 
+=======
+    thread->join();                  // Wait on thread exit.
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     Simulator::Request r = sim.m_requests[0];
     EVB::pConnectBody b = static_cast<EVB::pConnectBody>(r.s_body);
@@ -448,6 +463,7 @@ void clienttest::connect_3()
         EQ(uint32_t(i), b->s_sids[i]);
     }
     cleanupSimulator(thread);
+<<<<<<< HEAD
 }
 void clienttest::connect_4()
 {
@@ -478,16 +494,22 @@ void clienttest::connect_4()
     
     
 
+=======
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
 }
 void clienttest::connect_4()
 {
 
     // connect with source specs.
 
+    // We can't use setupSimulator because that assumes a successful
+    // connection:
+    
+    
     Simulator       sim(m_nPort, "Failed - no such luck\n");
     SimulatorThread thread(sim);
     thread.start();
-    usleep(200);
+    usleep(200);     
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -501,6 +523,7 @@ void clienttest::connect_4()
     delete m_pClient;
     m_pClient = nullptr;
     thread.join();
+    
     
 }
 void clienttest::disconnect_1()
@@ -519,7 +542,10 @@ void clienttest::disconnect_2()
 {
     // Good disconnect with simulator.
     
+<<<<<<< HEAD
 
+=======
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     SimulatorThread* thread = setupSimulator();
     
     std::list<int> sources;                // No sources.
@@ -530,10 +556,15 @@ void clienttest::disconnect_2()
     delete m_pClient;
     m_pClient = nullptr;
     
+<<<<<<< HEAD
 
     thread->join();
     Simulator& sim(thread->m_rSimulator);
 
+=======
+    thread->join();
+    Simulator& sim(thread->m_rSimulator);
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     // Should be two messges, a connect and a disconnect:
     
@@ -545,7 +576,28 @@ void clienttest::disconnect_2()
     EQ(EVB::DISCONNECT, r.s_hdr.s_msgType);
     EQ(uint32_t(0),     r.s_hdr.s_bodySize);
     cleanupSimulator(thread);
+<<<<<<< HEAD
     
+}
+void clienttest::disconnect_3()
+{
+    // Good disconnect with simulator.
+    
+    SimulatorThread* thread = setupSimulator();
+    Simulator&       sim(thread->m_rSimulator);
+    std::list<int> sources;                // No sources.
+=======
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
+    
+    m_pClient->Connect("A test", sources);
+    sim.setResponse("Faile faile faile\n");
+    CPPUNIT_ASSERT_THROW(
+        m_pClient->disconnect(), std::string
+    );
+    delete m_pClient;
+    m_pClient = nullptr;
+    thread->join();
+    cleanupSimulator(thread);
 }
 void clienttest::disconnect_3()
 {
@@ -564,26 +616,6 @@ void clienttest::disconnect_3()
     m_pClient = nullptr;
     thread->join();
     cleanupSimulator(thread);
-}
-void clienttest::disconnect_3()
-{
-    // Good disconnect with simulator.
-    
-    Simulator       sim(m_nPort);
-    SimulatorThread thread(sim);
-    thread.start();
-    usleep(200);
-    
-    std::list<int> sources;                // No sources.
-    
-    m_pClient->Connect("A test", sources);
-    sim.setResponse("Faile faile faile\n");
-    CPPUNIT_ASSERT_THROW(
-        m_pClient->disconnect(), std::string
-    );
-    delete m_pClient;
-    m_pClient = nullptr;
-    thread.join();
 }
 void clienttest::frag_1()
 {
@@ -617,6 +649,7 @@ void clienttest::frag_2()
     // fragment chain with one element containing a counting pattern.
 
     SimulatorThread* thread = setupSimulator();
+<<<<<<< HEAD
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -680,6 +713,8 @@ void clienttest::frag_3()
 
 
 
+=======
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -852,7 +887,8 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
     
     delete m_pClient;             // drops connection
     m_pClient = nullptr;
-    thread.join();
+    thread->join();
+    Simulator& sim(thread->m_rSimulator);
     
     // Lets' look at that second message.
     
@@ -877,19 +913,16 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
     for (int i =0; i < 100; i++) {
         EQ(data[i], fbody[i]);
     }
+    cleanupSimulator(thread);
     
 }
 void clienttest::frag_3()
 {
     // Fail response.
     
-     // fragment chain with one element containing a counting pattern.
-
-    Simulator       sim(m_nPort);
-    SimulatorThread thread(sim);
-    thread.start();
-    usleep(200);
-
+     // fragment chain with one element contain
+     
+    SimulatorThread* thread = setupSimulator();
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -907,23 +940,22 @@ void clienttest::frag_3()
     
     std::list<int> sources; sources.push_back(1);
     m_pClient->Connect("Fragment test", sources);
-    
+    Simulator& sim(thread->m_rSimulator);
     sim.setResponse("Faile faile\n");
     
     CPPUNIT_ASSERT_THROW(m_pClient->submitFragments(&head), std::string);
     
     delete m_pClient;             // drops connection
     m_pClient = nullptr;
-    thread.join();
+    thread->join();
+    cleanupSimulator(thread);
 }
 void clienttest::frag_4()
 {
     // counted array of fragments instead of chain -- a few fragments.
     
-    Simulator       sim(m_nPort);
-    SimulatorThread thread(sim);
-    thread.start();
-    usleep(200);
+    SimulatorThread* thread = setupSimulator();
+    Simulator& sim(thread->m_rSimulator);
     
     uint8_t data[100];
     for (int i =0; i < 100; i++) {
@@ -949,7 +981,7 @@ void clienttest::frag_4()
     
     delete m_pClient;
     m_pClient = nullptr;
-    thread.join();
+    thread->join();
     
     // Verify faithful transmission of fragments:
     
@@ -975,6 +1007,7 @@ void clienttest::frag_4()
         }
         hdr = reinterpret_cast<EVB::pFragmentHeader>(is);
     }
+    cleanupSimulator(thread);
     
 }
 void clienttest::frag_5()
@@ -983,10 +1016,8 @@ void clienttest::frag_5()
     
     // counted array of fragments instead of chain -- a few fragments.
     
-    Simulator       sim(m_nPort);
-    SimulatorThread thread(sim);
-    thread.start();
-    usleep(200);
+    SimulatorThread* thread = setupSimulator();
+    Simulator&       sim(thread->m_rSimulator);
     
     uint8_t data[100];
     for (int i =0; i < 100; i++) {
@@ -1013,7 +1044,7 @@ void clienttest::frag_5()
     );
     delete m_pClient;
     m_pClient = nullptr;
-    thread.join();
+    thread->join();
     
     // Verify faithful transmission of fragments:
     
@@ -1038,6 +1069,27 @@ void clienttest::frag_5()
             is++;
         }
         hdr = reinterpret_cast<EVB::pFragmentHeader>(is);
+<<<<<<< HEAD
     }    
 }
 >>>>>>> Tested/debugged the remaining fragment sender overloads.
+=======
+    }
+    cleanupSimulator(thread);
+}
+
+SimulatorThread* clienttest::setupSimulator()
+{
+    Simulator* pSim = new Simulator(m_nPort);
+    SimulatorThread* result = new SimulatorThread(*pSim);
+    result->start();
+    usleep(200);
+           
+    return result;
+}
+void clienttest::cleanupSimulator(SimulatorThread* thread)
+{
+    delete &(thread->m_rSimulator);    // We know it's dynamic.
+    delete thread;
+}
+>>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
