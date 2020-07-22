@@ -414,7 +414,11 @@ private:
   );
 
   void insertFragment(time_t clockTime, EVB::pFragment pFrag, SourceQueue& dest);
-  
+  void handleDequeuedFragments(
+    Sources::iterator& p, EvbFragments& partialSort,
+    std::deque<EvbFragments*>* pFrags,
+    std::list<std::pair<SourceQueue*, EvbFragments*>>& statcopy
+  );
   // Static private methods:
 
   static void IdlePoll(ClientData obj);

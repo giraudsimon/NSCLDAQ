@@ -888,22 +888,8 @@ CFragmentHandler::flushQueues(bool completely)
       }
       
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
-      XoffQueue(p->second);
-      XonQueue(p->second);
-      if (!partialSort.empty()) {
-        
-           if (partialSort.front().second->s_header.s_timestamp <
-                m_nMostRecentlyPopped) {
-            dataLate(*partialSort.front().second);
-          }
-          //updateQueueStatistics(p->second, partialSort);
-          statcopy.push_back({&(p->second), &partialSort});
-          pFrags->push_back(&partialSort);    
-      } else {
-      
-        delete &partialSort;
-      }
-      
+      handleDequeuedFragments(p, partialSort, pFrags, statcopy);
+     
       
     }
   } else {
@@ -926,19 +912,8 @@ CFragmentHandler::flushQueues(bool completely)
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
       CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
       DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-      XoffQueue(p->second);
-      XonQueue(p->second);
-      if (!partialSort.empty()) {
-        if (partialSort.front().second->s_header.s_timestamp <
-            m_nMostRecentlyPopped) {
-          dataLate(*partialSort.front().second);
-        }
-        statcopy.push_back({&(p->second), &partialSort});
-        //updateQueueStatistics(p->second, partialSort);
-        pFrags->push_back(&partialSort);
-      } else {
-        delete &partialSort;
-      }
+      handleDequeuedFragments(p, partialSort, pFrags, statcopy);
+      
       
     }   
 
@@ -2065,4 +2040,34 @@ CFragmentHandler::insertFragment(
   dest.s_lastTimestamp   = dest.s_queue.back().second->s_header.s_timestamp;
   
   
+}
+/**
+ * handleDequeuedFragments
+ *    Prepares a set of dequeued fragments to be passed on to the
+ *    full sort thread.
+ * @param p  - iterator selecting the source queue this all comes from.
+ * @param partialsort - the partially sorted set of entries  to pass.
+ * @param statcopy    - Statistics.
+ *
+ */
+void
+CFragmentHandler::handleDequeuedFragments(
+    Sources::iterator& p, EvbFragments& partialSort,
+    std::deque<EvbFragments*>* pFrags,
+    std::list<std::pair<SourceQueue*, EvbFragments*>>& statcopy
+  )
+{
+     XoffQueue(p->second);
+     XonQueue(p->second);
+     if (!partialSort.empty()) {
+       if (partialSort.front().second->s_header.s_timestamp <
+           m_nMostRecentlyPopped) {
+         dataLate(*partialSort.front().second);
+       }
+       statcopy.push_back({&(p->second), &partialSort});
+       //updateQueueStatistics(p->second, partialSort);
+       pFrags->push_back(&partialSort);
+     } else {
+       delete &partialSort;
+     }
 }
