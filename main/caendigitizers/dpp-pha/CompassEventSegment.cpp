@@ -21,7 +21,7 @@
 #include <CAENDigitizer.h>
 #include <CAENDigitizerType.h>
 #include "CompassProject.h"
-
+#include "CAENPhaBuffer.h"
 
 #include <sstream>
 #include <iostream>
@@ -174,7 +174,7 @@ CompassEventSegment::read(void* pBuffer, size_t maxwords)
   
   setTimestamp(dppData->TimeTag);        // Event timestamp - in ns from CAENPha
   setSourceId(m_id);                     // Source id from member data.         
-  size_t eventSize = computeEventSize(*dppData, *wfData);
+  size_t eventSize = CAENPhaBuffer::computeEventSize(*dppData, *wfData);
   //std::cout <<std::dec<< "\tSourceID:"<< m_id << "\tEnergy:" << dppData->Energy<<"\tTs:"<<dppData->TimeTag<<std::endl;
  
   if ((eventSize / sizeof(uint16_t)) > maxwords) {
@@ -183,13 +183,13 @@ CompassEventSegment::read(void* pBuffer, size_t maxwords)
   
   // Header consists of the total inclusive size in bytes and the channel #
   
-  pBuffer = putLong(pBuffer, eventSize);
-  pBuffer = putLong(pBuffer, chan);
+  pBuffer = CAENPhaBuffer::putLong(pBuffer, eventSize);
+  pBuffer = CAENPhaBuffer::putLong(pBuffer, chan);
   
   // Body is dpp data followed by wf data:
   
-  pBuffer = putDppData(pBuffer, *dppData);
-  pBuffer = putWfData(pBuffer, *wfData);
+  pBuffer = CAENPhaBuffer::putDppData(pBuffer, *dppData);
+  pBuffer = CAENPhaBuffer::putWfData(pBuffer, *wfData);
 	
 	// If the counters are enabled, this chanel's counters need to be updated
 	// from extras2
@@ -265,147 +265,4 @@ CompassEventSegment::setupBoard(CAENPhaParameters& board)
     m_board->setup();
     
 }
-
-
-/**
- * putWord
- *    Put a word into the buffer.
- *
- * @param pDest - pointer to where the word goes
- * @param data  -uint16_t to put.
- * @return void* Pointer to the next free slot in the buffer.
- */
-void*
-CompassEventSegment::putWord(void* pDest, uint16_t data)
-{
-    uint16_t* p = reinterpret_cast<uint16_t*>(pDest);
-    *p++ = data;
-    
-    return p;
-}
-/**
- * putLong
- *  Put a 32 bit long into the buffer.
- *
- * @param pDest - pointer to where the data goes.
- * @param data  - uint32_t to put.
- * @return void* - pointer to the next free slot in the buffer.
- */
-void*
-CompassEventSegment::putLong(void* pDest, uint32_t data)
-{
-    uint32_t* p = reinterpret_cast<uint32_t*>(pDest);
-    *p++ = data;
-    return p;
-}
-
-/**
- * putQuad
- *    Put a 64 bit quadword into the buffer.
- *
- * @param pDest - pointer to where the data goes.
- * @param data  - the data.
- * @return void* - points to the next free slot in the buffer.
- */
-void*
-CompassEventSegment::putQuad(void* pDest, uint64_t data)
-{
-    uint64_t* p = reinterpret_cast<uint64_t*>(pDest);
-    *p++ = data;
-    return p;
-}
-
-/**
- * computeEventSize
- *    Figure out how big the event is, in bytes, including a 32 bit event size.
- *
- *  @param dppInfo - reference to the CAEN_DGTZ_PHA_Event_t containing the event.
- *  @param wfInfo  - reference to the CAEN_DGTZ_PHA_Waveforms_t containing decoded waveforms.
- *  @return size_t - Number of bytes the event will require in the data stream.
- */
-size_t
-CompassEventSegment::computeEventSize(
-    const CAEN_DGTZ_DPP_PHA_Event_t& dppInfo, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wfInfo
-)
-{
-    size_t result = sizeof(uint32_t);               // Size of event
-    
-    // The dpp info is a time tag (uint64_t), E, extras, (16 bits )and
-    // extras2 (32 bits)):
-    
-    result += sizeof(uint64_t)   +                    // Time tag.
-              2*sizeof(uint16_t) +                    // E, Extras.
-              sizeof(uint32_t);                       // Extras2.
-              
-    // Waveform data size is a bit more complex.  See the putWfData
-    // method for considerations.
-    
-    result += sizeof(uint32_t) + sizeof(uint16_t);  // Ns, and dualtrace flag.
-    if (wfInfo.Ns) {
-        // If there are samples, there's always at least one trace of 16 bit words:
-        
-      size_t nBytes = wfInfo.Ns * sizeof(uint16_t);
-      result += nBytes;
-      
-      //  If dual trace there's a second one:
-      
-      if (wfInfo.DualTrace) {
-	result += nBytes;
-      }
-    }
-    return result;
-}
-
-/**
- * putDppData
- *    Puts the DPP data into the event buffer.
- * @param pDest - where to put the DPP Data.
- * @param dpp   - Reference to the dpp data.
- * @return - pointer to the next free slot in the buffer.
- */
-void*
-CompassEventSegment::putDppData(void* pDest, const CAEN_DGTZ_DPP_PHA_Event_t& dpp)
-{
-    pDest = putQuad(pDest, (dpp.TimeTag));
-    pDest = putWord(pDest, (dpp.Energy));
-    pDest = putWord(pDest, (dpp.Extras));
-    pDest = putLong(pDest, (dpp.Extras2));
-    
-    return pDest;
-}
-
-/**
- * putWfData
- *    Put the waveform data to the output buffer.
- *    We put the following information:
- *    -   ns - number of samples (32 bits)<
- *    -   dt - Non zero if ther are two traces (16 bits).
- *             note that we widen this in order to make alignment better.
- *    -   First trace if ns > 0 ns*16 bits.
- *    -   Second trace if ns > 0 && dual trace  ns * 16 bits.
- *
- * @param pDest - pointer to where the data must go
- * @param wf    - Reference to CAEN_DGTZ_PHA_Waveforms_t - the decoded waveforms.
- * @return void* - Pointer to the next free memory of the buffer (where next data goes).
- */
-void*
-CompassEventSegment::putWfData(void* pDest, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wf)
-{
-  pDest = putLong(pDest, wf.Ns);                            // # samples.
-  pDest = putWord(pDest, wf.DualTrace);
-    size_t nBytes = wf.Ns * sizeof(uint16_t);
-    if (nBytes > 0) {                                   // There are waveforms:
-      uint8_t* p = reinterpret_cast<uint8_t*>(pDest);
-        memcpy(p, wf.Trace1, nBytes);               // Write trace 1...
-        p +=  nBytes;
-        
-        if (wf.DualTrace) {                            // Write second trace too:
-            memcpy(p, wf.Trace2, nBytes);
-            p += nBytes;
-        }
-	pDest = p;
-    }
-    return pDest;
-}
-
 
