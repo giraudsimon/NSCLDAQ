@@ -142,6 +142,7 @@ private:
     void      setLVDSPLLLockLost();
     void      setLVDSVirtualProbe();
     void      setLVDSSIN();
+    void      setLVDSOutputMode(uint32_t maskValue, uint32_t fpioValue);
 };
 
 
