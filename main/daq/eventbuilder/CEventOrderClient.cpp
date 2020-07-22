@@ -128,7 +128,6 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
   uint8_t* connectionBody(0);
   sprintf(portNumber, "%u", m_port);
   m_pConnection = new CSocket();
-  std::cerr << "Connect called " << description << std::endl;
   try {
     m_pConnection->Connect(m_host, std::string(portNumber));
     
@@ -176,12 +175,10 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
     free(pBody);
   }
   catch (CTCPConnectionFailed& e) {
-    std::cerr << " Connection failed\n";
     errno = ECONNREFUSED;
     throw CErrnoException("Failed connection to server");
   }
   catch (std::string msg) {
-    std::cerr << " Message send failed " << msg << std::endl;
     delete m_pConnection;
     m_pConnection = nullptr;
     m_fConnected = false;
