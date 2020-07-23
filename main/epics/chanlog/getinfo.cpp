@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <os.h>
-
-
+#include <epicslib.h>
+#include <string>
 
 const static float TIMEOUT(2.0); // Seconds.
 
@@ -78,10 +78,11 @@ void EpicsShutdown()
     form name:   value units
     \param output (char* [out]):
        String buffer to hold the output
-    \param chan (const char* [in]):
-       String containing the channel name.
        If there was a failure, this will contain an
        error message.
+    \param chan (const char* [in]):
+       String containing the channel name.
+       
 
 */
 void GetChannel(char* output, const char* chan)
@@ -92,57 +93,40 @@ void GetChannel(char* output, const char* chan)
   char units[100];
   strcpy(units, chan);
   strcat(units,".EGU");
-
-  int status = ca_search(chan, &channel_id);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_search failed: %s",
-	    chan, ca_message(status));
-    return;
+  int status;
+  try {
+    epicslib::checkChanStatus(
+      ca_search(chan, &channel_id), chan, "%s: ca_search failed: %s"
+    );
+    
+    epicslib::checkChanStatus(
+      ca_search(units, &units_id), units, "%s: ca_search failed: %s"
+    );
+    
+    epicslib::checkChanStatus(
+      ca_pend_io(TIMEOUT), chan, "%s: ca_pend_io failed %s"
+    );
+    
+    char chanvalue[100];
+    char unitsvalue[100];
+    
+    epicslib::checkChanStatus(
+      ca_get(DBR_STRING, channel_id, chanvalue),
+      chan, "%s: ca_get failed %s"
+    );
+    
+    epicslib::checkChanStatus(
+      ca_get(DBR_STRING, units_id, unitsvalue),
+      units, "%s: ca_get failed %s"
+    );
+    
+    epicslib::checkChanStatus(
+      ca_pend_io(TIMEOUT), chan, "%s: ca_pend_io failed %s"
+    );
+  } catch(std::string msg) {
+    strcpy(output, msg.c_str());   // No way to overwrite check :-()
   }
-
-   status     = ca_search(units, &units_id);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_search failed: %s", 
-	    chan, ca_message(status));
-    return;
-  }
-
-  status    = ca_pend_io(TIMEOUT);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_pend_io failed %s",
-	    chan, ca_message(status));
-    return;
-  }
-
-
-  char chanvalue[100];
-  char unitsvalue[100];
   
-  status = ca_get(DBR_STRING, channel_id, chanvalue);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_get failed %s",
-	    chan, ca_message(status));
-    return;
-  }
-
-  status = ca_get(DBR_STRING, units_id, unitsvalue);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_get failed %s",
-	    units, ca_message(status));
-    return;
-  }
-
-
-  status = ca_pend_io(TIMEOUT);
-  if(status != ECA_NORMAL) {
-    sprintf(output, "%s: ca_pend_io failed %s",
-	    chan, ca_message(status));
-    return;
-  }
-
-  sprintf(output, "%s: %s %s",
-	  chan, chanvalue, unitsvalue);
-
   status    = ca_clear_channel(channel_id);
   SEVCHK(status, "Clear_channel on channel");
 
@@ -151,7 +135,4 @@ void GetChannel(char* output, const char* chan)
 
   status    = ca_pend_io(TIMEOUT);
   SEVCHK(status, "ca_pend_io after clear");
-
-
-
 }
