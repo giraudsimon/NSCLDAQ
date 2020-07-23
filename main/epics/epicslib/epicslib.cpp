@@ -22,6 +22,8 @@
 #include <cadef.h>
 #include <stdio.h>
 #include <string.h>
+#include <os.h>
+
 
 /**
  * checkChanStatus
@@ -45,4 +47,35 @@ epicslib::checkChanStatus(int status, const char* chan, const char* format)
         throw result;
     }
     
+}
+/**
+ * startRepeater
+ *    Starts the epics repeater as a subprocess to us. The
+ *    repeater must be in the path for success.
+ *    Note that if unable to do that we fail silently because
+ *    all that means is we won't have a centralized repeater
+ *    process.
+ * @param argc, argv - parameters passed to the program
+ * #   these are passed to the repeater as well.
+ */
+void
+epicslib::startRepeater(int argc, char** argv)
+{
+  int pid = fork();
+  if(pid < 0) {
+    perror("Failed to fork in startRepeater()");
+    exit(errno);
+  }
+  if (pid == 0) {		// child process
+    if(daemon(0,0) < 0) {
+      perror("Child could not setsid");
+      exit(errno);
+    }
+    argv[0] = const_cast<char*>("caRepeater");
+    int stat = execlp("caRepeater", 
+		      "caRepeater", NULL);
+    perror("Child: execlp failed!!");
+    exit(errno);
+  }
+  Os::usleep(1000);
 }

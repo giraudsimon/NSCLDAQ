@@ -13,40 +13,6 @@ const static float TIMEOUT(2.0); // Seconds.
 
 
 /*!
-   This function kludges around a problem with epics.  It's supposed
-   to start up caRepeater, but evidently:
-   - It does that by forking and making caRepeater the parent process.
-   - the resulting caRepeater identifies to ps as us.
-   - After our process exits, the resulting caRepeater doesn't work quite
-     right but hangs around.
-
-  What we do that seems to work around this is to manually start caRepeater.
-  We assume that caRepeater is in PATH.
-
-*/
-void
-startRepeater(int argc, char** argv)
-{
-  int pid = fork();
-  if(pid < 0) {
-    perror("Failed to fork in startRepeater()");
-    exit(errno);
-  }
-  if (pid == 0) {		// child process
-    if(daemon(0,0) < 0) {
-      perror("Child could not setsid");
-      exit(errno);
-    }
-    argv[0] = const_cast<char*>("caRepeater");
-    int stat = execlp("caRepeater", 
-		      "caRepeater", NULL);
-    perror("Child: execlp failed!!");
-    exit(errno);
-  }
-  Os::usleep(1000);
-}
-
-/*!
   Initializes access to EPICS
   \throw fatal exception caught by epics
         on error.
@@ -54,7 +20,7 @@ startRepeater(int argc, char** argv)
 void EpicsInit(int argc, char** argv)
 {
 
-  startRepeater(argc, argv);
+  epicslib::startRepeater(argc, argv);
   int status = ca_task_initialize();
   SEVCHK(status, "Initialization failed");
   
