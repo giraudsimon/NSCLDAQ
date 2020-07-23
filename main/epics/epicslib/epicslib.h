@@ -28,5 +28,6 @@
 namespace epicslib {
     void checkChanStatus(int status, const char* chan, const char* format);
     void startRepeater(int argc, char** argv);
+
 }
 #endif

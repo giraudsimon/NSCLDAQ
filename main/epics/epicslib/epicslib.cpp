@@ -24,7 +24,6 @@
 #include <string.h>
 #include <os.h>
 
-
 /**
  * checkChanStatus
  *    Given a status if it's not success, throw an std::string.
@@ -46,8 +45,7 @@ epicslib::checkChanStatus(int status, const char* chan, const char* format)
         result = resultBuf;
         throw result;
     }
-    
-}
+y}
 /**
  * startRepeater
  *    Starts the epics repeater as a subprocess to us. The
@@ -78,4 +76,5 @@ epicslib::startRepeater(int argc, char** argv)
     exit(errno);
   }
   Os::usleep(1000);
+
 }
