@@ -765,6 +765,7 @@ CTclRingCommand::getFromRing(CRingBuffer &ring, CTimeout& timer)
 
     return CRingItemFactory::createRingItem(buffer.data());
 }
+
 /**
  * setTiming
  *   Adds timing dict info to the  result
@@ -788,7 +789,6 @@ result += "timeoffset";
     result += "realtime";
     result += stamp;
 }
-
 
 /*-------------------------------------------------------------------------------
  * Package initialization:

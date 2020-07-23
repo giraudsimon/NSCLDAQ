@@ -5,11 +5,10 @@ libdaqshm_la_SOURCES = daqshm.cpp os.cpp io.cpp CTimeout.cpp CSemaphore.cpp \
 	CRingBlockReader.cpp CRingFileBlockReader.cpp CPagedOutput.cpp \
 	CElapsedTime.cpp utils.cpp
 
-
 include_HEADERS      = daqshm.h os.h io.h CTimeout.h CSemaphore.h \
 	CPosixBlockingRecordLock.h CBufferedOutput.h NSCLDAQLog.h \
 	CRingBlockReader.h CRingFileBlockReader.h CPagedOutput.h \
-	CElapsedTime.h
+	CElapsedTime.h utils.h
 
 
 noinst_HEADERS	     = Asserts.h
