@@ -84,9 +84,7 @@ private:
   uint16_t    mapType(uint32_t ringType);
 
   bool        isSwapped(RingItem& header);
-  uint64_t    swaq(uint64_t aquad);
-  uint32_t    swal(uint32_t along);
-  uint16_t    swaw(uint16_t aword);
+ 
 
   // Statistics stuff:
 

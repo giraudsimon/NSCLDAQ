@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <utils.h>
 
 static std::map<uint32_t, uint16_t> typeConversionMap;
 
@@ -561,58 +562,7 @@ CBufferConverter::isSwapped(RingItem& header)
   return ((header.s_header.s_type & 0xffff0000) != 0);
 }
 
-/** 
- * swap a quadword (64 bit) data item.  This follows the
- * algorithm in the final implementation of BSWAP_64 from 
- * http:/blogs.oracle.com/DanXX/entry/optimizing_byte_swapping_for_fun
- * By Dan Anderson (Oct 31, 2008)
- *
- * @param aquad - the quadword to swap.
- * 
- * @return uint64_t
- * @retval the swapped quadword.
- */
-uint64_t 
-CBufferConverter::swaq(uint64_t aquad)
-{
-  return (((uint64_t)(aquad) << 56) | 
-	  (((uint64_t)(aquad) << 40) & 0xff000000000000ULL) | 
-	  (((uint64_t)(aquad) << 24) & 0xff0000000000ULL) | 
-	  (((uint64_t)(aquad) << 8)  & 0xff00000000ULL) | 
-	  (((uint64_t)(aquad) >> 8)  & 0xff000000ULL) | 
-	  (((uint64_t)(aquad) >> 24) & 0xff0000ULL) | 
-	  (((uint64_t)(aquad) >> 40) & 0xff00ULL) | 
-	  ((uint64_t)(aquad)  >> 56));
 
-}
-
-/**
- ** Reverses the bytes in a long word.
- ** @param along - Longword to modify.
- ** @return uint32_t
- ** @retval along with byte order reversed.
- *
- */
-uint32_t 
-CBufferConverter::swal(uint32_t along)
-{
-  return (along << 24)       |
-    ((along << 8) & 0x00ff0000) |
-    ((along >>8)  & 0x0000ff00) |
-    (along >>24);
-}
-/**
- ** Reverses the bytes in a word.
- * @param aword - the word to reverse.
- * @return uint16_t 
- * @retval input word with opposite byte ordering.
- */
-uint16_t
-CBufferConverter::swaw(uint16_t aword)
-{
-  return (aword >> 8) |
-         (aword << 8);
-}
 /**
  ** Return the type of a ring item... if necessary, they type is byteswapped
  ** @param header - Reference to a ring item header.

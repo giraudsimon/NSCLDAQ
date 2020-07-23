@@ -109,7 +109,7 @@ public:
   // Utilities derived classes might want:
 
 protected:
-  static uint32_t  swal(uint32_t datum); // Swap the bytes in a longword.
+  
   void deleteIfNecessary();
   void newIfNecessary(size_t size);
   static std::string timeString(time_t theTime);

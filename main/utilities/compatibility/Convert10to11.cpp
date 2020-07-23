@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utils.h>
 
 
 #ifndef TRUE
@@ -49,25 +50,6 @@ mustSwap(pRingItem p)
   return ((p->s_header.s_type & 0xffff) == 0);
 }
 
-/**
- * swal
- *
- *  Return the input longword byte swapped.
- *
- * @param n - input value
- *
- * @return uint32_t swapped n
- */
-static uint32_t 
-swal(uint32_t n)
-{
-  uint32_t result(0);
-  for (int i = 0; i < 4; i++) {
-    result = (result << 8) | (n & 0xff);
-    n = n >> 8;
-  }
-  return result;
-}
 
 /**
  * itemSize

@@ -89,7 +89,6 @@ private:
     CRingItem* getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate,
                            unsigned long timeout);
     CRingItem* getFromRing(CRingBuffer& ring, CTimeout& timeout);
-    uint32_t swal(uint32_t value);
 };
 
 #endif

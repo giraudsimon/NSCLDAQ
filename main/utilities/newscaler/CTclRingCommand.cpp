@@ -46,6 +46,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <utils.h>
 
 using namespace std;
 
@@ -852,26 +853,6 @@ CTclRingCommand::getFromRing(CRingBuffer &ring, CTimeout& timer)
     return CRingItemFactory::createRingItem(buffer.data());
 }
 
-
-
-uint32_t CTclRingCommand::swal(uint32_t value)
-{
-    union {
-        uint32_t asValue;
-        char asBytes[sizeof(uint32_t)];
-    } value1, value2;
-
-    value1.asValue = value;
-
-    for (int fwIndex=0, bkwdIndex=sizeof(uint32_t);
-         fwIndex<sizeof(uint32_t) && bkwdIndex>=0;
-         fwIndex++, bkwdIndex--) {
-        value2.asBytes[fwIndex] = value1.asBytes[bkwdIndex];
-    }
-
-    return value2.asValue;
-
-}
 
 
 /*-------------------------------------------------------------------------------

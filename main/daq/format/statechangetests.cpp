@@ -34,15 +34,6 @@
 #include "CAbnormalEndItem.h"
 #include <iostream>
 
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    for (int i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////

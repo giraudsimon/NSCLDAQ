@@ -22,20 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "DataFormat.h"
-
+#include <utils.h>
 /*-----------------------------------------------------------------------------
  *  Static utilities:
  *---------------------------------------------------------------------------*/
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    int      i;
-    for (i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
+
 
 /**
 * sizeStringArray
