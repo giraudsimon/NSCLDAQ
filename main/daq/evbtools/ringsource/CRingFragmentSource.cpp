@@ -123,22 +123,12 @@ void
 CRingFragmentSource::setTsExtractor(const char* tsExtractorLib)
 {
     if (tsExtractorLib == nullptr) {
-        if (!m_expectBodyHeaders) {
-            std::cerr << "If --expectbodyheaders is not supplied --timestampextractor is required\n";
-            throw std::logic_error(
-                "If --expectbodyheaders is not supplied --timestampextractor is required"
-            );
-        }
+        throwIfNotExpectingBodyHeaders("If --expectbodyheaders is not supplied --timestampextractor is required");
         return;                      // NO timestamp extractor is ok if we have body headers.
     }
     std::string tsLib(tsExtractorLib);
     if (tsLib == "") {
-        if (!m_expectBodyHeaders) {
-           std::cerr << "If --expectbodyheaders is not supplied --timestampextractor is required\n";
-            throw std::logic_error(
-                "If --expectbodyheaders is not supplied --timestampextractor is required"
-            );
-        }
+        throwIfNotExpectingBodyHeaders("If --expectbodyheaders is not supplied --timestampextractor is required");
         return;   
     }
     // Access the timestamp extractor.  From here on in,
@@ -374,4 +364,20 @@ CRingFragmentSource::timedOut()
     if ((now - m_endRunTime) > m_endRunTimeout) return true;
         
     return false;
+}
+/**
+ * throwIfNotExpectingBodyHeaders
+ *    Outputs an error to cerr and throws it as a string
+ *    if we're not expecting body headers.
+ *    This method was motivated by daqdev/NSCLDAQ#700
+ *
+ *  @p[aram msg - the message to output/throw.
+ */
+void
+CRingFragmentSource::throwIfNotExpectingBodyHeaders(const char* msg)
+{
+    if (!m_expectBodyHeaders) {
+        std::cerr << msg << std::endl;
+        throw std::logic_error(msg);
+    }
 }
