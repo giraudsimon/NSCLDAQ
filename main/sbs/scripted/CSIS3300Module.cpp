@@ -225,10 +225,9 @@ CSIS3300Module::Read(void* pBuffer)
 
   // We always put a jumbo packet structure around this;
 
-  uint16_t* start = p;
-  p+=2;
-  *p = m_id;
-  ++p;
+	uint16_t* start = p;
+	startPacket(p, m_id);
+  
 
   // Now we're ready for the body.
   // Alas we must do each group separately without a loop since we have no
@@ -290,16 +289,8 @@ CSIS3300Module::Read(void* pBuffer)
 
   // Close the packet:
 
-  int wordsRead = (p - start);
-  union {
-    int    l;
-    short  w[2];
-  } lw;
-  lw.l = wordsRead;
-  *start++ = lw.w[0];
-  *start   = lw.w[1];
-
-  return wordsRead;
+	return endPacket(start, p);
+  
 
 }
 
@@ -368,12 +359,14 @@ CSIS3300Module::startPacket(uint16_t* p, uint16_t id)
  *    the packet header:
  *  @param uint16_t* pkstart - pointer to the start of the packet.
  *  @param uint16_t* p       - pointer off end of packet.
+ *  @return packet size in words.
  */
-void
+int
 CSIS3300Module::endPacket(uint16_t* pkstart, uint16_t* p)
 {
 	int subsize =  (p - pkstart);    // # of 16 bit words.
   *pkstart = (subsize & 0xffff);   // Lower 16 bits of size.
 	++pkstart;
 	*pkstart = (subsize >> 16) & 0xffff;  // Upper 16 bits of size
+	return subsize;
 }
