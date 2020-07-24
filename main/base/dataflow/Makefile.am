@@ -50,7 +50,7 @@ libRingBuffer_la_CXXFLAGS	=	$(THREADCXX_FLAGS) \
 
 bin_PROGRAMS 	= ringtostdout stdintoring
 
-ringtostdout_SOURCES = ringtostdout.cpp  
+ringtostdout_SOURCES = ringtostdout.cpp  stdintoringUtils.cpp
 nodist_ringtostdout_SOURCES = ringtostdoutsw.c ringtostdoutsw.h
 
 ringtostdout_CPPFLAGS=$(COMPILATION_FLAGS)
