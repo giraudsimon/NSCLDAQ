@@ -164,6 +164,7 @@ private:
   static void connectToRingMaster();
   void        notifyConnection();
   void        notifyDisconnection();
+  void        validateTransferAccess(ClientMode mode, const char* doing);
 
 };
 
