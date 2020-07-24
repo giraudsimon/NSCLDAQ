@@ -76,7 +76,9 @@ SyncGuard::SyncGuard(Synchronizable& aSync,bool justtry) : syncer(aSync)
 * @return None 
 */      
 SyncGuard::~SyncGuard() {
-  createIfNeeded();
+  if (syncer.sync != NULL) {
+    dshwrapthread_mutex_lock(&(syncer.sync->__monitor_mutex__));
+
 
 
     // Require that I actually own the mutex:
