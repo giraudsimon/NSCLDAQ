@@ -177,6 +177,7 @@ protected:
   std::string         AddressToHostString(in_addr peer);
   void           OpenSocket();
   void throwIfIncorrectState(State required, const char* doing);
+  void dropConnection();
 };
 
 #endif

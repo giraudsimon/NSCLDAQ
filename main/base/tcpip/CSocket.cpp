@@ -451,11 +451,7 @@ CSocket::Shutdown()
   if(shutdown(m_Fd, SHUT_RDWR) < 0) {
     throw CErrnoException("CSocket::Shutdown failed in call to shutdown(2)");
   }
-
-  m_State = Disconnected;
-  close(m_Fd);
-  m_Fd = -1;			// Mark the socket closed.
-OpenSocket();
+  dropConnection();
 }  
 
 /*!
@@ -490,10 +486,7 @@ CSocket::Read(void* pBuffer, size_t nBytes)
   // Check for EOF:
 
   if(nB == 0) {
-    m_State = Disconnected;
-    shutdown(m_Fd, SHUT_RD | SHUT_WR);
-    close(m_Fd);
-    OpenSocket();
+    dropConnection();
     throw CTCPConnectionLost(this, "CSocket::Read: from read(2)");
   }
   // Check for error:
@@ -555,10 +548,7 @@ CSocket::Write(const void* pBuffer, size_t nBytes)
   }
   catch (int err) {
     if (err == EPIPE) {
-      m_State = Disconnected;
-      shutdown(m_Fd, SHUT_RD | SHUT_WR);
-      close(m_Fd);
-      OpenSocket();
+      dropConnection();
       throw CTCPConnectionLost(this,"CSocket::Write - first write of loop");
    
     } else {
@@ -1332,4 +1322,20 @@ CSocket::throwIfIncorrectState(State required, const char* doing)
     throw CTCPBadSocketState(m_State, allowedStates, 
 			     doing);
   }
+}
+/**
+ * dropConnection
+ *    Drop any connection from our side.
+ *    - shutdown is called.
+ *    - the file descriptor is closed.
+ *    - We're set to disconnected.
+ *    - A nwe fd is opened in preparation to re-use.
+ */
+void
+CSocket::dropConnection()
+{
+  m_State = Disconnected;
+  close(m_Fd);
+  m_Fd = -1;			// Mark the socket closed.
+  OpenSocket();
 }
