@@ -18,7 +18,6 @@ ScriptedReadout_DEPENDENCIES = libScriptedRdo.la
 
 
 libScriptedRdo_la_SOURCES = 	CScriptedSegment.cpp		\
-	PacketUtils.h PacketUtils.cpp	\
 	CBoolConfigParam.cpp \
 	CCAENModule.cpp \
 	CCAENV775.cpp \
