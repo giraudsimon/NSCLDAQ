@@ -56,7 +56,6 @@ libSBSProductionReadout_la_SOURCES	=				\
 	CV977Busy.cpp
 
 
-
 libSBSProductionReadout_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
 
