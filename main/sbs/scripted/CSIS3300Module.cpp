@@ -239,68 +239,52 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t*  pkstart = p;
     int groupId              = 1;
     if(m_subpackets) {
-      p += 2;
-      *p = groupId;
-      ++p;
+      startPacket(p, groupId);
     }
-    m_pModule->ReadGroup1(p);
+    p += m_pModule->ReadGroup1(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff;
+			endPacket(pkstart, p);      
     }
   }
   if (m_groupsRead & 0x2) {
+		
     uint16_t* pkstart = p;
     int groupId              = 2;
     if(m_subpackets) {
-      p +=2;
-      *p = groupId;
-      ++p;
+			p = startPacket(p, groupId);
+
     }
-    m_pModule->ReadGroup2(p);
+    p += m_pModule->ReadGroup2(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff;
+			endPacket(pkstart, p);
+      
     }
   }
   if (m_groupsRead & 0x4) {
     uint16_t* pkstart = p;
     int groupId              = 3;
     if(m_subpackets) {
-      p +=2;
-      *p = groupId;
-      ++p;
+			startPacket(p, groupId);
+      
     }
-    m_pModule->ReadGroup3(p);
+    p += m_pModule->ReadGroup3(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff ;
-    }
+			endPacket(pkstart, p);
+		}
   }
   if (m_groupsRead & 0x8) {
     uint16_t* pkstart = p;
     int groupId              = 4;
     if(m_subpackets) {
-      ++p;
-      *p = groupId;
-      ++p;
+			startPacket(p, groupId);
     }
-    m_pModule->ReadGroup4(p);
+    p += m_pModule->ReadGroup4(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff ;
+			endPacket(pkstart, p);
     }
   }
 
@@ -359,4 +343,37 @@ CSIS3300Module::AddConfigParam(CConfigurationParameter* param)
   return AddParameter(param);
 
 
+}
+/**
+ * startPacket
+ *    Begin a packetized entity. Packet have a 32 bit size
+ *    and a 16 bit id.  We hold space for the size
+ *    and set the id.
+ *
+ *  @param p - where the packet tarts.
+ *  @param id - the id
+ *  @return uint16_t* - pointer to packet payload.
+ */
+uint16_t*
+CSIS3300Module::startPacket(uint16_t* p, uint16_t id)
+{
+	p += 2;
+  *p = id;
+	++p;
+	return p;
+}
+/**
+ * endPacket
+ *    Compute the size of  a packet in uint16_t's and put it in
+ *    the packet header:
+ *  @param uint16_t* pkstart - pointer to the start of the packet.
+ *  @param uint16_t* p       - pointer off end of packet.
+ */
+void
+CSIS3300Module::endPacket(uint16_t* pkstart, uint16_t* p)
+{
+	int subsize =  (p - pkstart);    // # of 16 bit words.
+  *pkstart = (subsize & 0xffff);   // Lower 16 bits of size.
+	++pkstart;
+	*pkstart = (subsize >> 16) & 0xffff;  // Upper 16 bits of size
 }

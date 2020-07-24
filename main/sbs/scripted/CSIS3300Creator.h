@@ -17,7 +17,7 @@
 #define CSIS3300CREATOR_H
 
 #include <CModuleCreator.h>
-
+#include <stdint.h>
 /*!
    recognizer/creator within the scriptable readout framework
    for SIS 3300/3301 flash adc modules.
@@ -30,7 +30,7 @@ public:
   virtual ~CSIS3300Creator();
 
   virtual CReadableObject*  Create(const char* name, CTCLInterpreter& rInterp);
-				  
+
 };
 
 

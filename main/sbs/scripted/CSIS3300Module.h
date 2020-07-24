@@ -72,7 +72,9 @@ private:
   bool      getBoolValue(std::string name);
   int       getEnumValue(std::string name);
   SConfigurableObject::ParameterIterator AddConfigParam(CConfigurationParameter* param);
- 
+  uint16_t* startPacket(uint16_t* p, uint16_t id);
+  void      endPacket(uint16_t* pkt, uint16_t* pktend);
+				  
 };
 
 
