@@ -18,6 +18,7 @@ ScriptedReadout_DEPENDENCIES = libScriptedRdo.la
 
 
 libScriptedRdo_la_SOURCES = 	CScriptedSegment.cpp		\
+	PacketUtils.h PacketUtils.cpp	\
 	CBoolConfigParam.cpp \
 	CCAENModule.cpp \
 	CCAENV775.cpp \
@@ -157,6 +158,7 @@ install-exec-local:
 
 noinst_PROGRAMS = unittests
 unittests_SOURCES = TestRunner.cpp factorytests.cpp \
+	PacketUtils.cpp \
 	CModuleCommand.cpp  CDigitizerDictionary.cpp \
 	CModuleCreator.cpp \
 	CCAENModule.cpp CCAENV775.cpp CCAENV775Creator.cpp \
