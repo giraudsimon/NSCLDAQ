@@ -226,8 +226,8 @@ CSIS3300Module::Read(void* pBuffer)
 
   // We always put a jumbo packet structure around this;
 
-	uint16_t* start = p;
-	PacketUtil::startPacket(p, m_id);
+  uint16_t* start = p;
+  p = PacketUtil::startPacket(p, m_id);
   
 
   // Now we're ready for the body.
@@ -239,12 +239,13 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t*  pkstart = p;
     int groupId              = 1;
     if(m_subpackets) {
-      PacketUtil::startPacket(p, groupId);
+      p = PacketUtil::startPacket(p, groupId);
     }
     p += m_pModule->ReadGroup1(p);
 
     if(m_subpackets) {
-			PacketUtil::endPacket(pkstart, p);      
+      PacketUtil::endPacket(pkstart, p);      
+
     }
   }
   if (m_groupsRead & 0x2) {
@@ -252,13 +253,13 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t* pkstart = p;
     int groupId              = 2;
     if(m_subpackets) {
-			p = PacketUtil::startPacket(p, groupId);
+      p = PacketUtil::startPacket(p, groupId);
 
     }
     p += m_pModule->ReadGroup2(p);
 
     if(m_subpackets) {
-			PacketUtil::endPacket(pkstart, p);
+      PacketUtil::endPacket(pkstart, p);
       
     }
   }
@@ -266,25 +267,26 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t* pkstart = p;
     int groupId              = 3;
     if(m_subpackets) {
-			PacketUtil::startPacket(p, groupId);
-      
+      p = PacketUtil::startPacket(p, groupId);
     }
     p += m_pModule->ReadGroup3(p);
 
     if(m_subpackets) {
-			PacketUtil::endPacket(pkstart, p);
-		}
+      PacketUtil::endPacket(pkstart, p);
+
+    }
   }
   if (m_groupsRead & 0x8) {
     uint16_t* pkstart = p;
     int groupId              = 4;
     if(m_subpackets) {
-			PacketUtil::startPacket(p, groupId);
+      p = PacketUtil::startPacket(p, groupId);
+
     }
     p += m_pModule->ReadGroup4(p);
 
     if(m_subpackets) {
-			PacketUtil::endPacket(pkstart, p);
+      PacketUtil::endPacket(pkstart, p);
     }
   }
 
@@ -336,3 +338,4 @@ CSIS3300Module::AddConfigParam(CConfigurationParameter* param)
 
 
 }
+
