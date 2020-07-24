@@ -226,6 +226,7 @@ CSIS3300Module::Read(void* pBuffer)
 
   // We always put a jumbo packet structure around this;
 
+
   uint16_t* start = p;
   p = PacketUtil::startPacket(p, m_id);
   
@@ -240,11 +241,13 @@ CSIS3300Module::Read(void* pBuffer)
     int groupId              = 1;
     if(m_subpackets) {
       p = PacketUtil::startPacket(p, groupId);
+
     }
     p += m_pModule->ReadGroup1(p);
 
     if(m_subpackets) {
       PacketUtil::endPacket(pkstart, p);      
+
 
     }
   }
@@ -253,6 +256,7 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t* pkstart = p;
     int groupId              = 2;
     if(m_subpackets) {
+
       p = PacketUtil::startPacket(p, groupId);
 
     }
@@ -275,6 +279,7 @@ CSIS3300Module::Read(void* pBuffer)
       PacketUtil::endPacket(pkstart, p);
 
     }
+
   }
   if (m_groupsRead & 0x8) {
     uint16_t* pkstart = p;
