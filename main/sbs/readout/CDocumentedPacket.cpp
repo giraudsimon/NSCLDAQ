@@ -22,6 +22,7 @@ static const char* Copyright = "(C) Copyright Michigan State University 2002, Al
 #include "CDocumentedPacketManager.h"
 #include "CInvalidPacketStateException.h"
 #include "CReadoutMain.h"
+#include "PacketUtils.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -117,18 +118,7 @@ CDocumentedPacket::Begin(unsigned short* rPointer)
   }
   m_fPacketInProgress = true;
   m_pHeaderPtr        = rPointer;
-  
-
-  unsigned short* p  = m_pHeaderPtr;
-
-  *p = 0;			// Don't know word count yet so reserve a
-  ++p;				// longword for it.
-  *p = 0;
-  ++p;			
-
-  *p = m_nTag;			// The packet is tagged with our id.
-  ++p;
-  return p;			// Return 'pointer' to packet body.
+	return PacketUtil::startPacket(reinterpret_cast<uint16_t*>(rPointer), m_nTag);
  
 }  
 
@@ -156,22 +146,9 @@ CDocumentedPacket::End(unsigned short* rBuffer)
     throw CInvalidPacketStateException(m_fPacketInProgress,
 			      "Packet must be open to be ended.");
   }
-  int size;
 
-  size = (unsigned short)(rBuffer - m_pHeaderPtr);
 
-  // set the size longword or word (depending on the jumbo-ness of the buffer)
-
-  union {
-    int   l;
-    short w[2];
-  } lw;
-  lw.l = size;
-  m_pHeaderPtr[0]   = lw.w[0];
-  m_pHeaderPtr[1]   = lw.w[1]; 
-  
-
-  // The packet is no longer open.
+  PacketUtil::endPacket(reinterpret_cast<uint16_t*>(m_pHeaderPtr), reinterpret_cast<uint16_t*>(rBuffer));
 
   m_fPacketInProgress = false;
   return rBuffer;

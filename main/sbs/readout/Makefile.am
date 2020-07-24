@@ -19,41 +19,41 @@ TCLPKGDIR   = @prefix@/TclLibs/readoutStateHook
 BUILT_SOURCES=options.c options.h
 
 libSBSProductionReadout_la_SOURCES	=				\
-	PacketUtls.h PacketUtils.cpp \
-						CReadoutMain.cpp		\
-						CTCLAuthorizer.cpp		\
-						CAuthorizedTclServer.cpp	\
-						CExperiment.cpp			\
-						RunState.cpp			\
-						CComposite.cpp			\
-						CScaler.cpp			\
-						CEventSegment.cpp		\
-						CScalerBank.cpp			\
-						CCompoundEventSegment.cpp	\
-						CEventTrigger.cpp		\
-						CNullTrigger.cpp		\
-						CTimedTrigger.cpp		\
-						CCAENV262Trigger.cpp		\
-						CV977Trigger.cpp		\
-						CTriggerLoop.cpp		\
-						CRunControlPackage.cpp		\
-						options.c			\
-						CBeginCommand.cpp		\
-						CPauseCommand.cpp		\
-						CResumeCommand.cpp		\
-						CEndCommand.cpp			\
-						CInitCommand.cpp			\
-						CDocumentedPacket.cpp		\
-						CDocumentedPacketManager.cpp	\
-						CReadoutException.cpp	\
-						CInvalidPacketStateException.cpp \
-						CEventPacket.cpp 	\
-						CVarList.cpp	\
-						CDocumentedVars.cpp		\
-						CVariableBuffers.cpp		\
-						CBusy.cpp			\
-						CCAENV262Busy.cpp		\
-						CV977Busy.cpp
+	PacketUtils.h PacketUtils.cpp \
+	CReadoutMain.cpp		\
+	CTCLAuthorizer.cpp		\
+	CAuthorizedTclServer.cpp	\
+	CExperiment.cpp			\
+	RunState.cpp			\
+	CComposite.cpp			\
+	CScaler.cpp			\
+	CEventSegment.cpp		\
+	CScalerBank.cpp			\
+	CCompoundEventSegment.cpp	\
+	CEventTrigger.cpp		\
+	CNullTrigger.cpp		\
+	CTimedTrigger.cpp		\
+	CCAENV262Trigger.cpp		\
+	CV977Trigger.cpp		\
+	CTriggerLoop.cpp		\
+	CRunControlPackage.cpp		\
+	options.c			\
+	CBeginCommand.cpp		\
+	CPauseCommand.cpp		\
+	CResumeCommand.cpp		\
+	CEndCommand.cpp			\
+	CInitCommand.cpp			\
+	CDocumentedPacket.cpp		\
+	CDocumentedPacketManager.cpp	\
+	CReadoutException.cpp	\
+	CInvalidPacketStateException.cpp \
+	CEventPacket.cpp 	\
+	CVarList.cpp	\
+	CDocumentedVars.cpp		\
+	CVariableBuffers.cpp		\
+	CBusy.cpp			\
+	CCAENV262Busy.cpp		\
+	CV977Busy.cpp
 
 
 libSBSProductionReadout_la_CPPFLAGS=$(COMPILATION_FLAGS)
@@ -150,7 +150,8 @@ tests_DEPENDENCIES=libSBSProductionReadout.la
 
 tests_CPPFLAGS=$(COMPILATION_FLAGS)
 
-tests_LDADD = 	libSBSProductionReadout_la-CExperiment.lo	\
+tests_LDADD = 	libSBSProductionReadout_la-PacketUtils.lo       \
+		libSBSProductionReadout_la-CExperiment.lo	\
 		libSBSProductionReadout_la-CComposite.lo	\
 		libSBSProductionReadout_la-CScaler.lo libSBSProductionReadout_la-CScalerBank.lo	\
 		libSBSProductionReadout_la-CEventSegment.lo libSBSProductionReadout_la-CCompoundEventSegment.lo \
