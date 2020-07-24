@@ -140,6 +140,7 @@ protected:
   void SetupArray(int nDefault);
   void CopyArray(const CIntArrayParam& rhs);
   void SetupStringValue();
+  void copyIn(const CIntArrayParam& rhs);
 };
 
 #endif
