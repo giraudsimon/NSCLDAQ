@@ -178,6 +178,7 @@ protected:
   void           OpenSocket();
   void throwIfIncorrectState(State required, const char* doing);
   void dropConnection();
+
 };
 
 #endif

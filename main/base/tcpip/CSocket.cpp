@@ -1322,6 +1322,7 @@ CSocket::throwIfIncorrectState(State required, const char* doing)
     throw CTCPBadSocketState(m_State, allowedStates, 
 			     doing);
   }
+
 }
 /**
  * dropConnection
@@ -1338,4 +1339,5 @@ CSocket::dropConnection()
   close(m_Fd);
   m_Fd = -1;			// Mark the socket closed.
   OpenSocket();
+
 }
