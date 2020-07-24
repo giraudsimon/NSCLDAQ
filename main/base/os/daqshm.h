@@ -73,6 +73,7 @@ public:
 
 private:
   static ssize_t fdSize(int fd);
+  static void setLastErrorFromErrno();
 public:
   static const int Success;
   static const int Exists;
