@@ -34,6 +34,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <netinet/in.h>
 
 #ifndef TRUE
@@ -175,6 +176,7 @@ protected:
   unsigned short Service(const std::string& rService);
   std::string         AddressToHostString(in_addr peer);
   void           OpenSocket();
+  void throwIfIncorrectState(State required, const char* doing);
 };
 
 #endif

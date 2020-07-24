@@ -204,12 +204,8 @@ CSocket::Connect(const string& host, const string& service)
 { 
   // We must be disconnected to do any of this...
   
-  vector<CSocket::State> allowedStates;
-  allowedStates.push_back(Disconnected);
-
-  if(m_State != Disconnected) throw CTCPBadSocketState(m_State, allowedStates,
-						    "CSocket::Connect");
-
+  throwIfIncorrectState(Disconnected, "CSocket::Connect");
+  
   // If the host is a dotted ip number just translate it.. otherwise
   // try to resolve the name:
 
@@ -255,12 +251,8 @@ CSocket::Connect(unsigned long int IpAddress, unsigned short service)
 {
   // Must be disconnected:
 
-  vector<CSocket::State> allowedStates;
-  allowedStates.push_back(Disconnected);
-
-  if(m_State != Disconnected) throw CTCPBadSocketState(m_State, allowedStates,
-						    "CSocket::Connect");
-
+  throwIfIncorrectState(Disconnected, "CSocket::Connect");
+  
   // Both the ip address and service must be in network byte order to be 
   // acceptable to connect(2).
 
@@ -316,12 +308,9 @@ On success, m_State = Bound
 */
 void 
 CSocket::Bind(const string& service)  
-{ 
-  vector<CSocket::State> allowedStates;
-  allowedStates.push_back(Disconnected);
-  if(m_State != Disconnected) throw CTCPBadSocketState(m_State, allowedStates,
-						       "CSocket::Bind");
-
+{
+  throwIfIncorrectState(Disconnected, "CSocket::Bind");
+  
   // Determine the service in network byte order.
 
   unsigned short port = Service(service);
@@ -367,12 +356,8 @@ CSocket::Listen(unsigned int nBacklog)
 { 
   // Throw CTCPBadSocketState if not bound:
 
-  if(m_State != Bound) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Bound);
-    throw CTCPBadSocketState(m_State, allowedStates, 
-			     "CSocket::Listen");
-  }
+  throwIfIncorrectState(Bound, "CSocket::Listen");
+  
   if(listen(m_Fd, nBacklog) < 0) 
     throw CErrnoException("CSocket::Listen listen(2) failed");
 
@@ -416,12 +401,7 @@ CSocket::Accept(string& client)
 { 
   // Throw CTCPBadSocket if not listening.
 
-  if(m_State != Listening) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Listening);
-    throw CTCPBadSocketState(m_State, allowedStates,
-			     "CSocket::Accept");
-  }
+  throwIfIncorrectState(Listening, "CSocket::Accept");
   
   // Attempt the accept.  If successfule, the return
   // value will be a socket fd.
@@ -465,13 +445,8 @@ CSocket::Shutdown()
 { 
   // Require that the socket be connected.
 
-  if(m_State != Connected) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Connected);
-    throw CTCPBadSocketState(m_State, allowedStates,
-			     "CSocket::Shutdown");
-  }
-
+  throwIfIncorrectState(Connected, "CSocket::Shutdown");
+  
  
   if(shutdown(m_Fd, SHUT_RDWR) < 0) {
     throw CErrnoException("CSocket::Shutdown failed in call to shutdown(2)");
@@ -506,12 +481,8 @@ CSocket::Read(void* pBuffer, size_t nBytes)
 { 
   // Require the socket be connected:
 
-  if(m_State != Connected) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Connected);
-    throw CTCPBadSocketState(m_State, allowedStates,
-			     "CSocket::Read()");
-  }
+  throwIfIncorrectState(Connected, "CSocket::Read");
+  
   // Attempt the read:
 
   int nB = read(m_Fd, pBuffer, nBytes);
@@ -573,13 +544,8 @@ CSocket::Write(const void* pBuffer, size_t nBytes)
 {
   // Require that the socket is connected:
 
-
-  if(m_State != Connected) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Connected);
-    throw CTCPBadSocketState(m_State, allowedStates,
-			     "CSocket::Read()");
-  }
+  throwIfIncorrectState(Connected, "CSocket::Write");
+  
   // Write the data mapping the exceptions as appropriate.
   
 
@@ -631,12 +597,8 @@ CSocket::getPeer(unsigned short&  port, string& peer)
 {
   // Enforce connection requirement:
 
-  if(m_State != Connected) {
-    vector<CSocket::State> allowedStates;
-    allowedStates.push_back(Connected);
-    throw CTCPBadSocketState(m_State, allowedStates,
-			     "CSocket::GetPeer");
-  }
+  throwIfIncorrectState(Connected, "CSocket::getPeer");
+  
   // Try the call to getpeername(2):
 
   sockaddr_in PeerInfo;
@@ -1352,4 +1314,22 @@ CSocket::Flush()
     myfd.revents = 0;
   }
   
+}
+/**
+ * throwIfIncorrectState
+ *    If the current state does not match a required state
+ *    a CTCPBadSocketState is throw indicting that.
+ * @param required - the required state.
+ * @param doing    - what was being done (part of exception string.)
+ * @throws CTCPBadSocketState if m_State != required.
+ */
+void
+CSocket::throwIfIncorrectState(State required, const char* doing)
+{
+ if(m_State != required) {
+    vector<CSocket::State> allowedStates;
+    allowedStates.push_back(required);
+    throw CTCPBadSocketState(m_State, allowedStates, 
+			     doing);
+  }
 }
