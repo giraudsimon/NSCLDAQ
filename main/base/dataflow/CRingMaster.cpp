@@ -383,16 +383,7 @@ CRingMaster::sendLine(std::string line)
       pBuf      += sent;
     }
     else {
-      try {
-	if (badErrno()) {
-	  throw CErrnoException("CRingMaster sending a message to the server");
-	}
-      }
-      catch (...) {
-	m_isConnected = false;	// Lost connection
-	close(m_socket);
-	throw;
-      }
+      throwIfBadErrno();
     }
   }
 }
@@ -422,18 +413,7 @@ CRingMaster::getLine()
       if (data == '\n') return result;
     }
     else if (status < 0) {
-      try {
-	if (badErrno()) {
-
-	  throw CErrnoException("CRingMaster receiving a message from the server");
-	}
-      }
-      catch(...) {
-	m_isConnected = false;
-	close(m_socket);
-	throw;
-	
-      }
+      throwIfBadErrno();
     }
   }
 }
@@ -512,6 +492,19 @@ bool
 CRingMaster::badErrno()
 {
   return !((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR));
+}
+/**
+ * If badErrno is true, close the socket and throw an errno
+ * exception.
+ */
+void
+CRingMaster::throwIfBadErrno()
+{
+  if (badErrno()) {
+    m_isConnected = false;	// Lost connection
+    close(m_socket);
+    throw CErrnoException("CRingMaster sending a message to the server");
+  }
 }
 
 /**********************************************************************************/

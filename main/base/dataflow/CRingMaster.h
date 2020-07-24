@@ -80,6 +80,7 @@ private:
   std::string ipAddress(std::string host);
   int         getPort(std::string host);
   static bool badErrno();
+	void throwIfBadErrno();
   static std::string formatConnection(std::string ringname, const char* type, std::string comment);
   static std::string formatDisconnection(std::string ringname, const char* type);
 };
