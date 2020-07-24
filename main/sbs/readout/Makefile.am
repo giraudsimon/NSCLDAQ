@@ -19,6 +19,7 @@ TCLPKGDIR   = @prefix@/TclLibs/readoutStateHook
 BUILT_SOURCES=options.c options.h
 
 libSBSProductionReadout_la_SOURCES	=				\
+	PacketUtls.h PacketUtils.cpp \
 						CReadoutMain.cpp		\
 						CTCLAuthorizer.cpp		\
 						CAuthorizedTclServer.cpp	\
