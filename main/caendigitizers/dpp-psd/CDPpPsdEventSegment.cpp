@@ -393,10 +393,13 @@ CDPpPsdEventSegment::setupBoard()
             CAEN_DGTZ_ReadRegister(m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT | chSelect, &localTriggerManagement),
             "Reading local trigger management register (CFD Smoothing)"
         );
-        localTriggerManagement &= ~cfdSmoothMask;
+        // We're setting the CFD smoothing and enabling the CFD zero crossings
+        // in the extras words:
+        
+        localTriggerManagement &= ~(cfdSmoothMask | 0x700);   // 0200 is fine timestamp in bottom 10 bits.
         throwIfBadStatus(
             CAEN_DGTZ_WriteRegister(
-                m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT| chSelect, localTriggerManagement | cfdSmooth(i)
+                m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT| chSelect, localTriggerManagement | cfdSmooth(i) | 0x20200
             ),
             "Setting CFD SMoothing in local trigger management register."
         );
@@ -580,7 +583,7 @@ CDPpPsdEventSegment::setupBoard()
 	uint32_t trghoReg = params.s_triggerHoldoff /trghoDivisor;
 	throwIfBadStatus(
 	   CAEN_DGTZ_WriteRegister(m_handle, 0x1074 | chSelect, trghoReg),
-"Unable to set the trigger hold off register value"
+        "Unable to set the trigger hold off register value"
 	);
 
 
@@ -1045,6 +1048,7 @@ CDPpPsdEventSegment::oldestChannel()
  *    |  32 bit long-gate charge value   |
  *    |  16 bit baseline                 |
  *    |  16 bit pileup rejection indicator |
+ *    |  32 bit extras word (could have e.g. CFD time).
  *    |  32 bit waveform length          | (0 if traces are not being sasved.)
  *    |  The waveform data if it was taken |
  *
@@ -1095,6 +1099,7 @@ CDPpPsdEventSegment::formatEvent(void* pBuffer, int chan)
     *p16++ = pHit->Pur;
     
     p32    = reinterpret_cast<uint32_t*>(p16);
+    *p32++ = pHit->Extras;
     
     /* Now the waveforms:
        While the XML does not yet support dual traces,
