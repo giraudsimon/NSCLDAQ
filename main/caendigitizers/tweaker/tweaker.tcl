@@ -63,13 +63,12 @@ set commonBoardParameters [list                      \
     [list SRV_PARAM_START_MODE  {Start Mode} ]       \
     [list SRV_PARAM_COINC_MODE  {Coincidence mode}]  \
     [list SRV_PARAM_COINC_TRGOUT {Coincidence window} ] \
+    [list SRV_PARAM_TRGOUT_MODE {Trigger output}] \
 ]
 
 set psdBoardParameters [list                         \
-    [list SRV_PARAM_TRGOUT_MODE {Trigger output}]    \
 ];           # only on PSD boards.
 set phaBoardParameters [list                 \
-    [list SRV_PARAM_OUT_SELECTION {Trigger output}] \
 ];           # only PHA boards have this.
 
 #  Channel level parameters.
