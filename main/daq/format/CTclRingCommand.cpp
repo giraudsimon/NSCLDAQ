@@ -479,6 +479,7 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         p->getTimeOffset(), p->getTimeDivisor(), p->computeElapsedTime(),
         p->getTimestamp()
     );
+
     
     result += "source";
     result += static_cast<int>(p->getOriginalSourceId());
@@ -684,6 +685,7 @@ CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecific
 {
 
     // place holder for later stuff.
+
 }
 
 CRingItem*
