@@ -61,5 +61,6 @@ protected:
 public:
   static void reportConfigFileFailure(const char* why, const char* where);
   static std::string locateConfigFile(const char* envvar, const char* name);
+
 };
 #endif

@@ -302,3 +302,21 @@ CScriptedSegment::locateConfigFile(const char* envvar, const char* name)
   errno = ENOENT;
   throw CErrnoException("Locating a configuration file");  
 }
+
+/**
+ * reportConfigFileFailure
+ *   Formats and throws a string exception that indicates configuration
+ *   file processing failed:
+ * @param why - reason for the failure.
+ * @param where - traceback string that says where.
+ * @throw std::string
+ */
+void
+CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
+{
+  std::string msg("Configuration file processing failed:\n");
+  msg   += why;
+  msg   += "\nAt: \n";
+  msg   += where;
+  throw msg;
+}
