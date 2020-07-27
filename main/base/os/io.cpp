@@ -428,4 +428,3 @@ std::string getReadableFileFromEnvdir(const char* env, const char* file)
   
   return result;
 }
-
