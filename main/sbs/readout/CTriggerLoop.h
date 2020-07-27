@@ -20,6 +20,7 @@
 // Headers:
 
 #include <Thread.h>
+#include <string>
 
 // Forward class definitions
 
@@ -68,6 +69,8 @@ public:
 
 protected:
   void         mainLoop();
+private:
+  void reportFail(std::string msg);
 };
 
 
