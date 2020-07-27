@@ -224,16 +224,11 @@ Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)
     getInterpreter()->setResult("Host or IP address is not in the authorization list");
     return kfFALSE;
   }
-  StringArray hostnames;
-  CTCLList    HostList(m_pInterpreter, 
-		       m_pHostNames->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
-  HostList.Split(hostnames);
-
-  StringArray hostips;
-  CTCLList    IpList(m_pInterpreter, 
-		     m_pHostIps->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
-  IpList.Split(hostips);
-
+  
+  auto authInfo = getAuthInfo();
+  StringArray& hostnames(authInfo.first);
+  StringArray& hostips(authInfo.second);
+  
   int nLast = hostnames.size() - 1; // Index of last item.
  
   // The delete is done by copying the last entry into the
@@ -244,6 +239,9 @@ Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)
   hostips[idx]   = hostips[nLast];
   hostnames.pop_back();
   hostips.pop_back();
+  CTCLList IpList(m_pInterpreter);
+  CTCLList HostList(m_pInterpreter);
+  
   m_pHostIps->Set(IpList.Merge(hostips), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
   m_pHostNames->Set(HostList.Merge(hostnames),
 		    TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
@@ -270,16 +268,10 @@ std::string CTCLAuthorizer::ListHosts()
   // The result list is built up in Result and then returned.
   // This cannot fail.
 
-  StringArray hostnames;
-  CTCLList    HostList(m_pInterpreter, 
-		       m_pHostNames->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
-  HostList.Split(hostnames);
-
-  StringArray hostips;
-  CTCLList    IpList(m_pInterpreter, 
-		     m_pHostIps->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
-  IpList.Split(hostips);
-
+  auto authInfo = getAuthInfo();
+  StringArray& hostnames(authInfo.first);
+  StringArray& hostips(authInfo.second);
+  
   assert(hostips.size() == hostnames.size());
 
   for(int i=0; i < hostips.size(); i++) {
@@ -430,4 +422,28 @@ CTCLAuthorizer::Usage(CTCLInterpreter& interp)
 
 
   return TCL_ERROR;
+}
+/**
+ * getAuthInfo
+ *    Get the authorized host names and their IP strings.
+ *  @return std::pair<std::vector< std::string>, std::vector<std::string>>
+ *     First element is the list of host names, second the list of
+ *     host IP strings.
+ *
+ */
+std::pair<std::vector<std::string>, std::vector<std::string>>
+CTCLAuthorizer::getAuthInfo()
+{
+  std::pair<std::vector<std::string>, std::vector<std::string>> result;
+  StringArray& hostnames(result.first);
+  CTCLList    HostList(m_pInterpreter, 
+		       m_pHostNames->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
+  HostList.Split(hostnames);
+
+  StringArray& hostips(result.second);
+  CTCLList    IpList(m_pInterpreter, 
+		     m_pHostIps->Get(TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY));
+  IpList.Split(hostips);
+
+  return result;
 }

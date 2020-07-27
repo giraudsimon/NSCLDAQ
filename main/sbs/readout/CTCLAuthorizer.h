@@ -110,7 +110,7 @@ protected:
 	                 std::string& rOutname, std::string& rCanonicalIP)   ;
 
   Int_t   Usage(CTCLInterpreter& rInterp);
-
+  std::pair<std::vector<std::string>, std::vector<std::string>> getAuthInfo();
 
 };
 
