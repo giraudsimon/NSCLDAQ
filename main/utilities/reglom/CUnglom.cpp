@@ -15,8 +15,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-/** @file:  CRingItemDecoder.cpp 
- *  @brief: Implement the CRingItemDecoder class.
+/** @file:  CUnglomDecoder.cpp 
+ *  @brief: Implement the CUnglomDecoder class.
  */
 
 #include "CUnglom.h"
@@ -54,7 +54,7 @@
  *       there's no intial end handler.  std::map constructs to empty so there's
  *       no need to do anything with it.
  */
-CRingItemDecoder::CRingItemDecoder() 
+CUnglomDecoder::CUnglomDecoder() 
 {
     
 }
@@ -70,7 +70,7 @@ CRingItemDecoder::CRingItemDecoder()
  * @param pItem - pointer to the ring item.
  */
 void
-CRingItemDecoder::operator()(CRingItem* pItem)
+CUnglomDecoder::operator()(CRingItem* pItem)
 {
     std::uint32_t itemType = pItem->type();
     CRingItem* pActualItem = CRingItemFactory::createRingItem(*pItem);
@@ -102,7 +102,7 @@ CRingItemDecoder::operator()(CRingItem* pItem)
  *   @param pItem - pointer to the physics even item  object.
  */
 void
-CRingItemDecoder::decodePhysicsEvent(CPhysicsEventItem* pItem)
+CUnglomDecoder::decodePhysicsEvent(CPhysicsEventItem* pItem)
 {
     if (! pItem->hasBodyHeader()) {
         std::cerr << "Warning - an event has no body header - won't be processed\n";
@@ -154,7 +154,7 @@ CRingItemDecoder::decodePhysicsEvent(CPhysicsEventItem* pItem)
  * events.
  */
 void
-CRingItemDecoder::decodeOtherItems(CRingItem* pItem)
+CUnglomDecoder::decodeOtherItems(CRingItem* pItem)
 {
     // For now just elide any items that don't have body headers.
     
@@ -173,7 +173,7 @@ CRingItemDecoder::decodeOtherItems(CRingItem* pItem)
  *  Called on end input file:
  */
 void
-CRingItemDecoder::onEndFile()
+CUnglomDecoder::onEndFile()
 {
     // Close all of the files that are open.
     
@@ -195,7 +195,7 @@ CRingItemDecoder::onEndFile()
  *  @param sid - id of the source to make an info item for.
  */
 void
-CRingItemDecoder::makeNewInfoItem(std::uint32_t sid)
+CUnglomDecoder::makeNewInfoItem(std::uint32_t sid)
 {
     std::stringstream fnameStream;
     fnameStream << "sid-" << std::hex << sid;
@@ -221,7 +221,7 @@ CRingItemDecoder::makeNewInfoItem(std::uint32_t sid)
  *    -  Update sht most recently received timestamp.
  */
 void
-CRingItemDecoder::checkTimestamp(const FragmentInfo& finfo)
+CUnglomDecoder::checkTimestamp(const FragmentInfo& finfo)
 {
     std::uint32_t sid = finfo.s_sourceId;
     std::uint64_t ts  = finfo.s_timestamp;
