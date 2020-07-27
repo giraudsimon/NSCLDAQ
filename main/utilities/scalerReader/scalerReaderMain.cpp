@@ -157,34 +157,23 @@ scalerReaderMain::operator()(int argc, char** argv)
     std::unique_ptr<CRingItem> item(pItem);
     processRingItem(*item);
     
-    if (scalerBuffer > 0 && nbuff != 0 && (scalerBuffer%nbuff) == 0)
-      {
-	// Partial summary
-	std::cout << "#########################################" << std::endl;
-	std::cout << "# Partial summary for Run = " << run << std::endl;
-	std::cout << "Number of scaler buffers read = " << scalerBuffer << std::endl;
-	std::cout << "#########################################" << std::endl;
+    if (scalerBuffer > 0 && nbuff != 0 && (scalerBuffer%nbuff) == 0) {
+        // Partial summary
+        header("Partial summary", run);
+        dumpScalers();
+      
+    }
 
-	for (int i = 0; i < 32; i++){
-	  std::cout << "Channel " << i << " " << scalernumbers[i] << "  Ave Rate = " << (float)scalernumbers[i]/(float)scalerBuffer << std::endl;
-	}
-      }
-
-  }
-
-  // Summary
-  std::cout << "#########################################" << std::endl;
-  std::cout << "# Summary for Run = " << run << std::endl;
-  std::cout << "Number of scaler buffers read = " << scalerBuffer << std::endl;
-  std::cout << "#########################################" << std::endl;
-  
-  for (int i = 0; i < 32; i++){
-    std::cout << "Channel " << i << " " << scalernumbers[i] << "  Ave Rate = " << (float)scalernumbers[i]/(float)scalerBuffer << std::endl;
-  }
+    // Summary
+    
+    header("Summary", run);
+    dumpScalers();
+  }  
   
   return EXIT_SUCCESS;	
     
 }
+
 /////////////////////////////////////////////////////////////////////////////////
 //
 // Private utilities.
@@ -310,4 +299,30 @@ scalerReaderMain::processGlomParams(CGlomParameters& item)
 void
 scalerReaderMain::processUnknownItemType(CRingItem& item)
 {}
-
+/**
+ * dumpScalers
+ *    Ouptut the scaler information under the header to stdout
+ */
+void
+scalerReaderMain::dumpScalers()
+{
+  for (int i = 0; i < 32; i++){
+    std::cout << "Channel " << i << " " << scalernumbers[i] << "  Ave Rate = " << (float)scalernumbers[i]/(float)scalerBuffer << std::endl;
+  }
+    
+}
+/**
+ * header
+ *    Output a header.
+ * @param title - type of summary header.
+ * @param run   - run number.
+ */
+void
+scalerReaderMain::header(const char* title, std::string run)
+{
+    std::cout << "#########################################" << std::endl;
+    std::cout << "# " << title << " = " << run << std::endl;
+    std::cout << "Number of scaler buffers read = " << scalerBuffer << std::endl;
+    std::cout << "#########################################" << std::endl;
+      
+}

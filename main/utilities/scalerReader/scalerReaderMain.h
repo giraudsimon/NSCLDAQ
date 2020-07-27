@@ -55,7 +55,9 @@ private:
   void processFormat(CDataFormatItem& item);
   void processGlomParams(CGlomParameters& item);
   void processUnknownItemType(CRingItem& item);
-  
+private:
+  void dumpScalers();
+  void header(const char* title, std::string nRun);
 };
 
 #endif
