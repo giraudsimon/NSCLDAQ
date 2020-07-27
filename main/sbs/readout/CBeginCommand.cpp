@@ -62,27 +62,23 @@ int
 CBeginCommand::operator()(CTCLInterpreter&    interp,
 			  vector<CTCLObject>& objv)
 {
-  // There should be no command words other than the 'begin' keyword:
-
-  if (objv.size() > 1) {
-    std::string result = "Too many command line parameters:\n";
-    result            += usage();
-    interp.setResult(result);
-    return TCL_ERROR;
-  }
-
-  // Get the package and cast it to a CRunControlPackage:
-
-  CTCLObjectPackage*   pPack       = getPackage();
-  CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
-
-  // Attempt the begin.  We will catch the common types of exceptions in addition 
-  // to the CStateException:
-  //
   bool error = false;
   string result;
   CReadoutMain* pMain = CReadoutMain::getInstance();
+  // There should be no command words other than the 'begin' keyword:
   try {
+    requireExactly(objv, 1, "Too many command line parameters:\n");
+  
+    // Get the package and cast it to a CRunControlPackage:
+  
+    CTCLObjectPackage*   pPack       = getPackage();
+    CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
+  
+    // Attempt the begin.  We will catch the common types of exceptions in addition 
+    // to the CStateException:
+    //
+   
+  
     
     pMain->logStateChangeRequest("Beginning run");
      
