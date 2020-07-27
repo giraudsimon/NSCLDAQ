@@ -127,40 +127,13 @@ PacketTests::exceptions()
 
   // End without begin is an invalid packet state:
 
-  bool thrown = false;
-  bool correct =false;
-
-  try {
-    m_pPacket->End(ph);
-  }
-  catch (CInvalidPacketStateException state) {
-    thrown  =true;
-    correct = true;
-  }
-  catch (...) {
-    thrown = true;
-  }
-  ASSERT(thrown);
-  ASSERT(correct);
-
+  CPPUNIT_ASSERT_THROW(m_pPacket->End(ph), CInvalidPacketStateException );
+  
   // Two opens without a close throws:
 
   m_pPacket->Begin(ph);
-  thrown  = false;
-  correct = false;
-  try {
-    m_pPacket->Begin(ph);
-  }
-  catch (CInvalidPacketStateException state) {
-    thrown  =true;
-    correct = true;
-  }
-  catch (...) {
-    thrown = true;
-  }
-  ASSERT(thrown);
-  ASSERT(correct);
-
+  CPPUNIT_ASSERT_THROW(m_pPacket->Begin(ph), CInvalidPacketStateException);
+  
   // need to end the packet for destruction:
 
   m_pPacket->End(ph);
@@ -215,19 +188,6 @@ void
 PacketTests::mgrmissing()
 {
   CDocumentedPacketManager* pMgr = CDocumentedPacketManager::getInstance();
-  bool threw    = false;
-  bool correct  = false;
+  CPPUNIT_ASSERT_THROW(pMgr->DeletePacket("george"), CNoSuchObjectException);
 
-  try {
-    pMgr->DeletePacket("george");
-  }
-  catch (CNoSuchObjectException& e) {
-    threw   = true;
-    correct = true;
-  }
-  catch (...) {
-    threw = true;
-  }
-  ASSERT(threw);
-  ASSERT(correct);
 }
