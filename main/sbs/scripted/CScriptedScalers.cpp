@@ -24,6 +24,7 @@
 #include <RangeError.h>
 #include <ErrnoException.h>
 #include <TCLException.h>
+#include <io.h>
 
 
 #include <stdlib.h>
@@ -218,45 +219,12 @@ CScriptedScalers::addStandardCreators()
  * is correct.
  *  @return string
  *  @throws CErrnoException for ENOENTRY if there is no matching file.
+ *  @note daqdev/NSCLDAQ#700 - has had the penguin snot factored out of it.
  */
 string
 CScriptedScalers::getConfigurationFile()
 {
-  // SCALER_FILE:
-
-  const char* path = getenv("SCALER_FILE");
-  if (path && (access(path, R_OK) == 0) ) {
-
-    return string(path);
-  }
-
-  // ~/config/scalers.tcl
-
-  const char* home = getenv("HOME");
-  if (home) {
-    string path(home);
-    path += string("/config/scalers.tcl");
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-
-  }
-
-  //  cwd/scalers.tcl
-
-  char here[PATH_MAX];
-  char* pResult = getcwd(here, PATH_MAX);
-  if (pResult) {
-    string path(here);
-    path += "/scalers.tcl";
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-  }
-  errno = ENOENT;
-  throw CErrnoException("Locating a configuration file");
-
+  return CScriptedSegment::locateConfigFile("SCALER_FILE", "scalers.tcl");
   
-
 }
  

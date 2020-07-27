@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
+#include <io.h>
 
 
 // Standard creators:
@@ -184,48 +185,13 @@ CScriptedSegment::read(void* pBuffer, size_t maxwords)
 
    @return std::string
    @throws CErrnoException for ENOENTRY if there is no a matching file.
-
+   @note daqdev/NSCLDAQ#700 This has had the penguin snot factored out of it.
 
 */
 string
 CScriptedSegment::getConfigurationFile()
 {
-
-  // HARDWARE_FILE:
-
-  const char* path = getenv("HARDWARE_FILE");
-  if (path && (access(path, R_OK) == 0) ) {
-
-    return string(path);
-  }
-
-  // ~/config/hardware.tcl
-
-  const char* home = getenv("HOME");
-  if (home) {
-    string path(home);
-    path += string("/config/hardware.tcl");
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-
-  }
-
-  //  cwd/hardware.tcl
-
-  char here[PATH_MAX];
-  char* pResult = getcwd(here, PATH_MAX);
-  if (pResult) {
-    string path(here);
-    path += "/hardware.tcl";
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-  }
-  errno = ENOENT;
-  throw CErrnoException("Locating a configuration file");
-
-  
+  return locateConfigFile("HARDWARE_FILE", "hardware.tcl");
 
 }
 
@@ -297,4 +263,40 @@ CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
   msg   += "\nAt: \n";
   msg   += where;
   throw msg;
+}
+/**
+ * locateConfigFile
+ *    Locate a configuration file according to the search rules used by
+ *    this program.  This can also be used to locate scaler files.
+ *    hence it is public and static:
+ * @param envvar - environment variable that can hold the config file name.
+ * @param name   - Name of the file exclusive of any path.
+ *
+ * @return std::string - path to file.
+ * @throw std::CErrnoException with ENOENT if not found.\
+ * @note search order is envvar, $HOME/config/name, `pwd`/name.
+ */
+std::string
+CScriptedSegment::locateConfigFile(const char* envvar, const char* name)
+{
+  // SCALER_FILE:
+
+  std::string result = io::getReadableEnvFile(envvar);
+  if (result != "") return result;
+
+  // ~/config/scalers.tcl
+
+  result = "/config/";
+  result            += name;
+  result = io::getReadableFileFromHome(name);
+  if (result != "") return result;
+  
+
+  //  cwd/scalers.tcl
+
+  result = io::getReadableFileFromWd(name);
+  if (result != "") return result;
+  
+  errno = ENOENT;
+  throw CErrnoException("Locating a configuration file");  
 }
