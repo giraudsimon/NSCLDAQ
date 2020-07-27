@@ -76,15 +76,15 @@ protected:
     // Local utilities.
 private:
     CTCLObject formatBodyHeader(CTCLInterpreter& interp, CRingItem* pItem);
-    void formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem);
-    void formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem);
-    void formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem);
+    void formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem, CTCLObject& result);
+    void formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
+    void formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result);
 
     CRingItem* getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate,
                            unsigned long timeout);

@@ -254,39 +254,43 @@ CTclRingCommand::get(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     
     // Actual upcast depends on the type...and that describes how to format:
     
+    CTCLObject result;
+    result.Bind(interp);
+    result += "type";
+    result += pSpecificItem->typeName();
     
     switch(pSpecificItem->type()) {
         case BEGIN_RUN:
         case END_RUN:
         case PAUSE_RUN:
         case RESUME_RUN:
-            formatStateChangeItem(interp, pSpecificItem);
+            formatStateChangeItem(interp, pSpecificItem, result);
             break;
         case PERIODIC_SCALERS:
-            formatScalerItem(interp, pSpecificItem);
+            formatScalerItem(interp, pSpecificItem, result);
             break;
         case PACKET_TYPES:
         case MONITORED_VARIABLES:
-            formatStringItem(interp, pSpecificItem);
+            formatStringItem(interp, pSpecificItem, result);
             break;
         case RING_FORMAT:
-            formatFormatItem(interp, pSpecificItem);
+            formatFormatItem(interp, pSpecificItem, result);
             break;
         case PHYSICS_EVENT:
-            formatEvent(interp, pSpecificItem);
+            formatEvent(interp, pSpecificItem, result);
             break;
         case EVB_FRAGMENT:
         case EVB_UNKNOWN_PAYLOAD:
-            formatFragment(interp, pSpecificItem);
+            formatFragment(interp, pSpecificItem, result);
             break;
         case PHYSICS_EVENT_COUNT:
-            formatTriggerCount(interp, pSpecificItem);
+            formatTriggerCount(interp, pSpecificItem, result);
             break;
         case EVB_GLOM_INFO:
-            formatGlomParams(interp,  pSpecificItem);
+            formatGlomParams(interp,  pSpecificItem, result);
             break;
         case ABNORMAL_ENDRUN:
-            formatAbnormalEnd(interp, pSpecificItem);
+            formatAbnormalEnd(interp, pSpecificItem, result);
         default:
             break;;
             // TO DO:
@@ -352,16 +356,9 @@ CTclRingCommand::formatBodyHeader(CTCLInterpreter& interp, CRingItem* p)
  */
  
 void
-CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem)
+CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem, CTCLObject& result)
 {
     CRingStateChangeItem* p = reinterpret_cast<CRingStateChangeItem*>(pItem);
-    CTCLObject result;
-    result.Bind(interp);
-    
-    // type:
-    
-    result += "type";
-    result += p->typeName();
     
     result += "run";
     result += static_cast<int>(p->getRunNumber());
@@ -416,17 +413,12 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
  *    @param pSpecificItem - Actually a CRingScalerItem pointer.
  */
 void
-CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingScalerItem* pItem = reinterpret_cast<CRingScalerItem*>(pSpecificItem);
     
     // Stuff outside the body header
    
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pItem->typeName();
     
     result += "start";
     result += static_cast<int>(pItem->getStartTime());
@@ -491,15 +483,9 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
 *     @param pSpecificItem - Actually a CRingTextItem pointer.
 *     */
 void
-CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingTextItem* p = reinterpret_cast<CRingTextItem*>(pSpecificItem);
-    
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
     
     result += "timeoffset";
     result += static_cast<int>(p->getTimeOffset());
@@ -544,15 +530,10 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
  *    @param pSpecificItem - Actually a CDataFormatItem pointer.
 */ 
 void
-CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CDataFormatItem* p = reinterpret_cast<CDataFormatItem*>(pSpecificItem);
     
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
 
     result += "major";
     result += static_cast<int>(p->getMajor());
@@ -575,13 +556,8 @@ CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificI
 */ 
 
 void
-CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pSpecificItem->typeName();
     
     result += "size";
     result += static_cast<int>(pSpecificItem->getBodySize());
@@ -617,14 +593,8 @@ CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem)
  *    @param pSpecificItem - The ring item.
  */
 void
-CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += pSpecificItem->typeName();
-    
     CRingFragmentItem* p = reinterpret_cast<CRingFragmentItem*>(pSpecificItem);
     
     result += "timestamp";
@@ -670,17 +640,11 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
 */
     
 void
-CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CRingPhysicsEventCountItem* p =
         reinterpret_cast<CRingPhysicsEventCountItem*>(pSpecificItem);
-    
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
-    
+        
     result += "timeoffset";
     result += static_cast<int>(p->getTimeOffset());
     
@@ -724,14 +688,9 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
  *        how the timestamp for the items are derived fromt he timestamps
  *        of their constituent fragments.
 */
-void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
     CGlomParameters *p = reinterpret_cast<CGlomParameters*>(pSpecificItem);
-    CTCLObject result;
-    result.Bind(interp);
-    
-    result += "type";
-    result += p->typeName();
     
     result += "isBuilding";
     result += (p->isBuilding() ? 1 : 0);
@@ -763,14 +722,10 @@ void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpec
  *   We only provide  the type (Abnormal End).
  */
 void
-CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem)
+CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
 
-    CTCLObject result;
-    result.Bind(interp);
-    result += "type";
-    result += pSpecificItem->typeName();
-    interp.setResult(result);
+    // Placeholder for later data.
 }
 
 CRingItem*
