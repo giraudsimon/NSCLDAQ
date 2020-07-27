@@ -42,6 +42,16 @@
 #include <CVME.h>
 #include <stdint.h>
 
+// Convenience macros:
+
+#define SOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint16_t)))
+#define LOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint32_t)))
+
+/**
+ * @class CVmeModule
+ *   Encapsulates a chunk of VME address space providing an imperative,
+ *   rather than data, interface to it.
+ */
 class CVmeModule
 {
  public:
