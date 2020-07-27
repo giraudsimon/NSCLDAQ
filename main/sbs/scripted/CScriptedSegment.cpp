@@ -105,28 +105,25 @@ CScriptedSegment::initialize()
     throw error;
   }
   catch(string msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    reportConfigFileFailure(
+        msg.c_str(), CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(const char* msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    reportConfigFileFailure(
+      msg, CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(CTCLException& tclfail) {
-    string error = "Configuration file processing failed\n";
-    error       +=tclfail.ReasonText();
-    error       += "\nTraceback:\n";
-    error       += tclfail.getTraceback();
-    throw error;
+    reportConfigFileFailure(
+      tclfail.ReasonText(), tclfail.getTraceback().c_str()
+    );
+    
   }
   catch (...) {
-    throw "Configuration file processing failed";
+    throw std::string("Configuration file processing failed");
   }
   
 }
@@ -282,4 +279,22 @@ CScriptedSegment::addStandardCreators()
   addCreator("caenv830", *(new CCAENV830Creator()));
   addCreator("sis3300", *(new CSIS3300Creator()));
   addCreator("caenv1x90", *(new CV1x90Creator()));
+}
+
+/**
+ * reportConfigFileFailure
+ *   Formats and throws a string exception that indicates configuration
+ *   file processing failed:
+ * @param why - reason for the failure.
+ * @param where - traceback string that says where.
+ * @throw std::string
+ */
+void
+CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
+{
+  std::string msg("Configuration file processing failed:\n");
+  msg   += why;
+  msg   += "\nAt: \n";
+  msg   += where;
+  throw msg;
 }

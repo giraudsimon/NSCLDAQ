@@ -19,6 +19,7 @@
 #include "CDigitizerDictionary.h"
 #include "CModuleCommand.h"
 #include "CReadOrder.h"
+#include "CScriptedSegment.h"
 #include "ScriptedBundle.h"
 #include <RangeError.h>
 #include <ErrnoException.h>
@@ -92,25 +93,21 @@ CScriptedScalers::initialize()
     throw error;
   }
   catch(string msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      msg.c_str(), CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(const char* msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      msg, CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(CTCLException& tclfail) {
-    string error = "Configuration file processing failed\n";
-    error       +=tclfail.ReasonText();
-    error       += "\nTraceback:\n";
-    error       += tclfail.getTraceback();
-    throw error;
+    CScriptedSegment::reportConfigFileFailure(
+      tclfail.ReasonText(), tclfail.getTraceback().c_str()
+    );
   }
   catch (...) {
     throw "Configuration file processing failed";

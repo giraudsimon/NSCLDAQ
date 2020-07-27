@@ -58,6 +58,7 @@ protected:
   void addStandardCreators();
   virtual void addUserWrittenCreators(); // Hook for user written readout modules.
   virtual std::string getConfigurationFile(); // Hook for users to override default config file
-
+public:
+  static void reportConfigFileFailure(const char* why, const char* where);
 };
 #endif
