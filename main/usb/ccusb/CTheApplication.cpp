@@ -42,6 +42,7 @@
 #include <CControlQueues.h>
 #include <NSCLDAQLog.h>
 #include <CMutex.h>
+#include <io.h>
 
 #include <CPortManager.h>
 #include <Events.h>
@@ -430,23 +431,13 @@ CTheApplication::setConfigFiles(const char* pDaqConfig, const char* pCtlConfig)
 string
 CTheApplication::makeConfigFile(string baseName)
 {
-  string home(getenv("HOME"));
-  string pathsep("/");
-  string config("config");
-  string dir;
+  std::string result = io::getReadableFileFromEnvdir("CONFIGDIR", baseName.c_str());
+  if (result != "") return result;
   
-  // The user can define a CONFIGDIR env variable to move the configuration dir.
-
-  if (getenv("CONFIGDIR")) {
-    dir =getenv("CONFIGDIR");
-  } else {
-    dir = home + pathsep + config;
-  }
-
-
-  string result = dir +  pathsep + baseName;
-  return result;
-
+  std::string path = "/config/";
+  path            += baseName;
+  return io::getReadableFileFromHome(path.c_str());
+  
 }
 
 
