@@ -40,6 +40,7 @@ namespace io {
   std::string getReadableFileFromHome(const char* file);
   std::string getReadableFileFromWd(const char* file);
   std::string getReadableFileFromEnvdir(const char* env, const char* file);
+
 }
 
 

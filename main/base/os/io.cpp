@@ -400,6 +400,7 @@ getReadableFileFromWd(const char* file)
   
   return result;
 }
+
 /**
  * getReadableFileFromEnvdir
  *   Given an environment variable and a filename
@@ -427,4 +428,4 @@ std::string getReadableFileFromEnvdir(const char* env, const char* file)
   
   return result;
 }
-}                             // namespace.
+

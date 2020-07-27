@@ -320,3 +320,39 @@ CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
   msg   += where;
   throw msg;
 }
+/**
+ * locateConfigFile
+ *    Locate a configuration file according to the search rules used by
+ *    this program.  This can also be used to locate scaler files.
+ *    hence it is public and static:
+ * @param envvar - environment variable that can hold the config file name.
+ * @param name   - Name of the file exclusive of any path.
+ *
+ * @return std::string - path to file.
+ * @throw std::CErrnoException with ENOENT if not found.\
+ * @note search order is envvar, $HOME/config/name, `pwd`/name.
+ */
+std::string
+CScriptedSegment::locateConfigFile(const char* envvar, const char* name)
+{
+  // SCALER_FILE:
+
+  std::string result = io::getReadableEnvFile(envvar);
+  if (result != "") return result;
+
+  // ~/config/scalers.tcl
+
+  result = "/config/";
+  result            += name;
+  result = io::getReadableFileFromHome(name);
+  if (result != "") return result;
+  
+
+  //  cwd/scalers.tcl
+
+  result = io::getReadableFileFromWd(name);
+  if (result != "") return result;
+  
+  errno = ENOENT;
+  throw CErrnoException("Locating a configuration file");  
+}
