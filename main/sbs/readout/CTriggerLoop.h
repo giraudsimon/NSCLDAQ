@@ -20,6 +20,7 @@
 // Headers:
 
 #include <Thread.h>
+#include <string>
 
 #include <string>
 
