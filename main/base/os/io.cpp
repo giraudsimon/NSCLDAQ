@@ -392,9 +392,36 @@ getReadableFileFromWd(const char* file)
   char* pResult = getcwd(here, PATH_MAX);
   if (pResult) {
     std::string path(here);
-    path += "/hardware.tcl";
+    path += file;
     if (access(path.c_str(), R_OK) == 0) {
       result =  path;
+    }
+  }
+  
+  return result;
+}
+/**
+ * getReadableFileFromEnvdir
+ *   Given an environment variable and a filename
+ *   if there's a readable file in that directory
+ *   return the full path.
+ * @param env - environment name.
+ * @param file  name of the file we're looking for in that dir.
+ * @return std::string - full path to file.
+ * @retval "" if there is no file or it's not readable...
+ *            or for that matter if env doesn't translate.
+ *            
+ */
+std::string getReadableFileFromEnvdir(const char* env, const char* file)
+{
+  std::string result;
+  const char* pDir = getenv(env);
+  if (pDir) {
+    std::string path = pDir;
+    path += "/";
+    path += file;
+    if (access(path.c_str(), R_OK) == 0) {
+      result = path;
     }
   }
   
