@@ -38,7 +38,7 @@ class CTriggerLoop;
 class CRingBuffer;
 class CEventSegment;
 class CScaler;
-
+class CRingItem;
 
 struct gengetopt_args_info;
 
@@ -136,7 +136,8 @@ public:
   void setZeroCopy(bool state) {m_fWantZeroCopy = state;}
 private:
   void readScalers();
-  
+	void readEvent(CRingItem& item);
+	
   static int HandleEndRunEvent(Tcl_Event* evPtr, int flags);
   static int HandleTriggerLoopError(Tcl_Event* evPtr, int flags);
   static CTCLObject createCommand(

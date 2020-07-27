@@ -578,38 +578,12 @@ CExperiment::ReadEvent()
           PHYSICS_EVENT, 0, m_nSourceId, 0,
           m_nDataBufferSize + 100, m_pRing
         );
-    
-        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-        size_t nWords =
-          m_pReadout->read(pBuffer +2 , m_nDataBufferSize - sizeof(uint32_t));
-  
-        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
-          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
-          item.setBodyCursor(pBuffer + nWords+2);
-          item.updateSize();
-          if (m_needHeader) {
-            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
-          }
-          item.commitToRing(*m_pRing);
-          m_nEventsEmitted++;
-        }
+        readEvent(item);    
+        
       } else {
         CRingItem item(PHYSICS_EVENT, m_nDataBufferSize + 100);
-        uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
-  
-        size_t nWords =
-          m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
-  
-        if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
-          *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
-          item.setBodyCursor(pBuffer + nWords+2);
-          item.updateSize();
-          if (m_needHeader) {
-            item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
-          }
-          item.commitToRing(*m_pRing);
-          m_nEventsEmitted++;
-        }
+        readEvent(item);
+        
       }
       m_pReadout->clear();	// do any post event clears.
     } while(m_fHavemore);
@@ -940,4 +914,30 @@ CExperiment::createCommand(
     command += parameter;
     
     return command;
+}
+
+/**
+ * readEvent
+ *    Once a ring item has been allocated/gotten,
+ *    Read a physics event into it.
+ * @param item - reference to the ring item.
+ */
+void
+CExperiment::readEvent(CRingItem& item)
+{
+  uint16_t* pBuffer = reinterpret_cast<uint16_t*>(item.getBodyPointer());
+
+  size_t nWords =
+    m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
+
+  if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
+    *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
+    item.setBodyCursor(pBuffer + nWords+2);
+    item.updateSize();
+    if (m_needHeader) {
+      item.setBodyHeader(m_nEventTimestamp, m_nSourceId, 0);
+    }
+    item.commitToRing(*m_pRing);
+    m_nEventsEmitted++;
+  }  
 }
