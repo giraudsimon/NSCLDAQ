@@ -89,6 +89,10 @@ private:
     CRingItem* getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate,
                            unsigned long timeout);
     CRingItem* getFromRing(CRingBuffer& ring, CTimeout& timeout);
+    void setTiming(
+        CTCLObject& result, int offset, int divisor, double seconds,
+        int stamp
+    );
 };
 
 #endif

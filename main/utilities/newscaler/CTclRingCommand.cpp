@@ -296,7 +296,7 @@ CTclRingCommand::get(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
             // TO DO:
     }
     
-    
+    interp.setResult(result);
     delete pSpecificItem;
 }
 
@@ -347,7 +347,7 @@ CTclRingCommand::formatBodyHeader(CTCLInterpreter& interp, CRingItem* p)
  *      run        - run number
  *      timeoffset - Time offset.
  *      divisor    - time divisor
- *      timeoffsetsec - time offset in seconds.
+ *      offsetsec - time offset in seconds.
  *      realtime   - Time of day of the ring item (can use with [time format])
  *      title      - The run title.
  *      source     - the original source id of the data.
@@ -363,17 +363,11 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
     result += "run";
     result += static_cast<int>(p->getRunNumber());
     
-    result += "timeoffset";
-    result += static_cast<int>(p->getElapsedTime());
-    
-    result += "divisor";
-    result += static_cast<int>(p->getTimeDivisor());
-    
-    result += "timeoffsetsec";
-    result += static_cast<double>(p->computeElapsedTime());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
+    setTiming(
+        result,
+        p->getElapsedTime(), p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
     
     result += "title";
     result += p->getTitle();
@@ -385,11 +379,7 @@ CTclRingCommand::formatStateChangeItem(CTCLInterpreter& interp, CRingItem* pItem
     if (p->hasBodyHeader()) {
         result += "bodyheader";
         result += formatBodyHeader(interp, p);        
-    }
-    
-    interp.setResult(result);
-    
-    
+    }    
 }
 /**
  * formatScalerItem
@@ -462,9 +452,6 @@ CTclRingCommand::formatScalerItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         result += "bodyheader";
         result += formatBodyHeader(interp, pItem);
     }
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatStringItem:
@@ -487,17 +474,11 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
 {
     CRingTextItem* p = reinterpret_cast<CRingTextItem*>(pSpecificItem);
     
-    result += "timeoffset";
-    result += static_cast<int>(p->getTimeOffset());
-    
-    result += "divisor";
-    result += static_cast<int>(p->getTimeDivisor());
-    
-    result += "offsetsec";
-    result += static_cast<double>(p->computeElapsedTime());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
+    setTiming(
+        result,
+        p->getTimeOffset(), p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
     
     result += "source";
     result += static_cast<int>(p->getOriginalSourceId());
@@ -515,8 +496,6 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         result += "bodyheader";
         result += formatBodyHeader(interp, p);
     }
-    
-    interp.setResult(result);
 }
 /**
  * formatFormatitem
@@ -540,9 +519,6 @@ CTclRingCommand::formatFormatItem(CTCLInterpreter& interp, CRingItem* pSpecificI
     
     result += "minor";
     result += static_cast<int>(p->getMinor());
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatEvent
@@ -574,8 +550,6 @@ CTclRingCommand::formatEvent(CTCLInterpreter& interp, CRingItem* pSpecificItem, 
         result += "bodyheader";
         result += formatBodyHeader(interp, pSpecificItem);
     }
-    
-    interp.setResult(result);
 }
 
 /**
@@ -619,9 +593,6 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
     CTCLObject body(pBody);
     body.Bind(interp);
     result += body;
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatTriggerCount
@@ -644,20 +615,13 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
 {
     CRingPhysicsEventCountItem* p =
         reinterpret_cast<CRingPhysicsEventCountItem*>(pSpecificItem);
+    
+    setTiming(
+        result, p->getTimeOffset(),
+        p->getTimeDivisor(), p->computeElapsedTime(),
+        p->getTimestamp()
+    );
         
-    result += "timeoffset";
-    result += static_cast<int>(p->getTimeOffset());
-    
-    result += "divisor";
-    result += static_cast<int>(p->getTimeDivisor());
-    
-    result += "offsetsec";
-    result += static_cast<double>(p->computeElapsedTime());
-    
-    result += "realtime";
-    result += static_cast<int>(p->getTimestamp());
-
-    
     uint64_t ec = p->getEventCount();
     Tcl_Obj* eventCount = Tcl_NewWideIntObj(static_cast<Tcl_WideInt>(ec));
     CTCLObject eventCountObj(eventCount);
@@ -672,9 +636,6 @@ CTclRingCommand::formatTriggerCount(CTCLInterpreter& interp, CRingItem* pSpecifi
         result += "bodyheader";
         result += formatBodyHeader(interp, pSpecificItem);
     }
-    
-    
-    interp.setResult(result);
 }
 /**
  * formatGlomParams
@@ -712,10 +673,6 @@ void CTclRingCommand::formatGlomParams(CTCLInterpreter& interp, CRingItem* pSpec
     } else {
         result += "average";
     }
-    
-    
-    interp.setResult(result);
-    
 }
 /**
  * formatAbnormalEnd
@@ -725,7 +682,7 @@ void
 CTclRingCommand::formatAbnormalEnd(CTCLInterpreter& interp, CRingItem* pSpecificItem, CTCLObject& result)
 {
 
-    // Placeholder for later data.
+    // place holder for later stuff.
 }
 
 CRingItem*
@@ -807,7 +764,29 @@ CTclRingCommand::getFromRing(CRingBuffer &ring, CTimeout& timer)
 
     return CRingItemFactory::createRingItem(buffer.data());
 }
-
+/**
+ * setTiming
+ *   Adds timing dict info to the  result
+ * @param result -reference to the result being bult.
+ * @param offset  offset value.
+ * @param divisor - divisor -> seconds.
+ * @param secs    - Seconds.
+ * @param stamp   - time_t
+ */
+void CTclRingCommand::setTiming(
+    CTCLObject& result, int offset, int divisor, double seconds,
+    int stamp
+)
+{
+result += "timeoffset";
+    result += offset;
+    result += "divisor";
+    result += divisor;
+    result += "offsetsec";
+    result += seconds;
+    result += "realtime";
+    result += stamp;
+}
 
 
 /*-------------------------------------------------------------------------------
