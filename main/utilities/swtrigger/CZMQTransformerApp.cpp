@@ -20,7 +20,7 @@
  */
 
 #include "CZMQTransformerApp.h"
-#include "transformer.h"
+#include "swtriggerflags.h"
 #include "CRingItemZMQSourceElement.h"
 #include "CThreadedProcessingElement.h"
 #include "CZMQCommunicatorFactory.h"

@@ -21,7 +21,7 @@
 #ifndef CTRANSFORMERAPP_H
 #define CTRANSFORMERAPP_H
 
-#include "transformer.h"
+#include "swtriggerflags.h"
 #include "CBuiltRingItemExtender.h"
 
 typedef CBuiltRingItemExtender::CRingItemExtender Extender, *pExtender;
@@ -54,7 +54,7 @@ public:
     virtual ~CTransformerApp() {}
     
     virtual int operator()() = 0;                // Concrete class implement this.
-protected:
+public:
     ExtenderFactory getExtenderFactory();
 };
 #endif
