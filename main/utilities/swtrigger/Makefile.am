@@ -5,14 +5,16 @@ MPI_TSRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
 MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource_mpi.h
 
-MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
+MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h 
 
-MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
+MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp \
+	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
-	CMPIBuiltRingItemEditorApp_mpi.cpp
+	CMPIBuiltRingItemEditorApp_mpi.cpp 	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
-MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp
+MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp \
+		CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 if MPI
 
