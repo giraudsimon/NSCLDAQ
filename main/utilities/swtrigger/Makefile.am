@@ -5,7 +5,6 @@ MPI_TSRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
 MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource_mpi.h
 
-
 MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h \
 	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
