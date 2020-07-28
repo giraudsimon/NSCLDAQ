@@ -479,7 +479,6 @@ CTclRingCommand::formatStringItem(CTCLInterpreter& interp, CRingItem* pSpecificI
         p->getTimeOffset(), p->getTimeDivisor(), p->computeElapsedTime(),
         p->getTimestamp()
     );
-
     
     result += "source";
     result += static_cast<int>(p->getOriginalSourceId());
@@ -791,7 +790,6 @@ result += "timeoffset";
     result += "realtime";
     result += stamp;
 }
-
 /*-------------------------------------------------------------------------------
  * Package initialization:
  */
