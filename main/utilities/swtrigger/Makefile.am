@@ -137,7 +137,7 @@ EventEditor_DEPENDENCIES=libSwTrigger.la
 EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
-FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.cpp \
+FullEventEditor_SOURCES = swtriggerflags.h swtriggerflags.c CFullEventEditor.cpp \
 	FullEventEditor.cpp	\
 	CFullEventEditorApp.h CFullEventEditorApp.cpp \
 	CZMQFullEventEditorApp.h CZMQFullEventEditorApp.cpp \

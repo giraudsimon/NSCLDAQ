@@ -22,9 +22,10 @@
 #define CMPIFULLEDITORAPP_MPI_H
 
 #include "CFullEventEditorApp.h"
-#include "fulleventeditor.h"
+#include "swtriggerflags.h"
 
 class CProcessingElement;
+class CMPIAppStrategy;
 
 /**
  * @class CMPIFullEditorApp
@@ -55,20 +56,14 @@ class CProcessingElement;
  */
 class CMPIFullEventEditorApp : public CFullEventEditorApp
 {
-
+private:
+    CMPIAppStrategy* m_strategy;
 public:
     CMPIFullEventEditorApp(int argc, char** argv, gengetopt_args_info& args);
     virtual ~CMPIFullEventEditorApp();
     
     virtual int operator()();
-private:
-    CProcessingElement* createProcessingElement();
-    CProcessingElement* createDataSource();        // Rank 0
-    CProcessingElement* createWorker();            // Rank >=3
-    CProcessingElement* createSorter();            // Rank 1
-    CProcessingElement* createSink();              // Rank 2
     
-    size_t getWorkerCount();
 };
 
 #endif
