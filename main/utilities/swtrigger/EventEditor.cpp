@@ -20,7 +20,7 @@
  */
 
 
-#include "eventeditor.h"
+#include "swtriggerflags.h"
 #include "CBuiltRingItemEditorApp.h"
 #include "CZMQBuiltRingItemEditorApp.h"
 

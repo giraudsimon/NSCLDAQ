@@ -125,7 +125,7 @@ Transformer_DEPENDENCIES=libSwTrigger.la
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
-EventEditor_SOURCES=eventeditor.h eventeditor.c \
+EventEditor_SOURCES=swtriggerflags.h swtriggerflags.c \
 	$(MPI_EventEditor_SRCS) \
 	CTransformerApp.cpp CTransformerApp.h \
         CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
