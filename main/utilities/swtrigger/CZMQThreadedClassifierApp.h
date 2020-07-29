@@ -32,6 +32,7 @@ class CTransport;
 class CSender;
 class CReceiver;
 class CRingItemSorter;
+class CZMQAppStrategy;
 
 class CDataSinkElement;
 
@@ -57,37 +58,12 @@ class CZMQThreadedClassifierApp : public CClassifierApp
 {    
 private:
     
-    // Data source objects.
-    
-    CRingItemZMQSourceElement* m_pSourceElement;
-    CThreadedProcessingElement* m_pSourceThread;
-    
-    // Stuff needed to support the sorter.
-    
-    CTransport*                 m_pSortServer;
-    CReceiver*                  m_pSortReceiver;
-    CTransport*                 m_pSortSource;
-    CSender*                    m_pSortSender;
-    CRingItemSorter*            m_pSortElement;
-    CThreadedProcessingElement* m_pSortThread;
-    
-    // Stuff for the ultimate data sink:
-    
-    CTransport*                 m_pSortClient;
-    CReceiver*                  m_pSortData;
-    CTransport*                 m_pRingSink;
-    CSender*                    m_pRingSender;
-    CDataSinkElement*           m_pSinkElement;
-    CThreadedProcessingElement* m_pSinkThread;
-    
-    std::vector<CThreadedProcessingElement*> m_workers;
+    CZMQAppStrategy*  m_strategy;
     
 public:
     CZMQThreadedClassifierApp(gengetopt_args_info& args);
     virtual ~CZMQThreadedClassifierApp();
     virtual int operator()();
-private:
-    void startWorkers();
 
 };
 
