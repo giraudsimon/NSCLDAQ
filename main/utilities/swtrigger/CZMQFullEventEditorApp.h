@@ -37,6 +37,7 @@ class CReceiver;
 class CRingItemSorter;
 
 class CDataSinkElement;
+class CZMQAppStrategy;
 
 /**
  * @class CZMQFullEventEditorApp
@@ -52,36 +53,13 @@ class CDataSinkElement;
 class CZMQFullEventEditorApp : public CFullEventEditorApp
 {
 private:
-// Data source objects.
+    CZMQAppStrategy* m_strategy;
 
-    CRingItemZMQSourceElement* m_pSourceElement;
-    CThreadedProcessingElement* m_pSourceThread;
-
-    // Stuff needed to support the sorter.
-
-    CTransport*                 m_pSortServer;
-    CReceiver*                  m_pSortReceiver;
-    CTransport*                 m_pSortSource;
-    CSender*                    m_pSortSender;
-    CRingItemSorter*            m_pSortElement;
-    CThreadedProcessingElement* m_pSortThread;
-
-    // Stuff for the ultimate data sink:
-
-    CTransport*                 m_pSortClient;
-    CReceiver*                  m_pSortData;
-    CTransport*                 m_pRingSink;
-    CSender*                    m_pRingSender;
-    CDataSinkElement*           m_pSinkElement;
-    CThreadedProcessingElement* m_pSinkThread;
-
-    std::vector<CThreadedProcessingElement*> m_workers;
 public:
     CZMQFullEventEditorApp(gengetopt_args_info& args);
     virtual ~CZMQFullEventEditorApp();
     virtual int operator()();
-private:
-    void startWorkers();
+
 };
 
 #endif
