@@ -98,7 +98,7 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h CClassifierApp.cpp \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
-	CRingBlockDataSink.cpp $(MPI_SoftwareTrigger_SRCS)
+	CRingBlockDataSink.cpp CZMQAppStrategy.h CZMQAppStrategy.cpp $(MPI_SoftwareTrigger_SRCS)
 
 
 
@@ -119,7 +119,7 @@ Transformer_SOURCES=Transformer.cpp swtriggerflags.c swtriggerflags.h \
 	CTransformerApp.cpp CTransformerApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp 				\
-	CZMQTransformerApp.cpp CZMQTransformerApp.h
+	CZMQTransformerApp.cpp CZMQTransformerApp.h CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
 Transformer_DEPENDENCIES=libSwTrigger.la
 Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
@@ -131,7 +131,8 @@ EventEditor_SOURCES=swtriggerflags.h swtriggerflags.c \
         CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp                          \
 	EventEditor.cpp CBuiltRingItemEditorApp.h CBuiltRingItemEditorApp.cpp	\
-	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp
+	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp \
+	CZMQAppStrategy.h  CZMQAppStrategy.cpp 
 
 EventEditor_DEPENDENCIES=libSwTrigger.la
 EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
@@ -143,7 +144,7 @@ FullEventEditor_SOURCES = swtriggerflags.h swtriggerflags.c CFullEventEditor.cpp
 	CZMQFullEventEditorApp.h CZMQFullEventEditorApp.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp \
 	CRingBlockDataSink.h CRingBlockDataSink.cpp\
-	$(MPI_FullEventEditor_SRCS)
+	$(MPI_FullEventEditor_SRCS) CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
 FullEventEditor_DEPENDENCIES=libSwTrigger.la
 FullEventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
