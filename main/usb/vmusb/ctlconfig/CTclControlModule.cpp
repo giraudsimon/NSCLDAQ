@@ -73,7 +73,6 @@ CTclControlModule::Initialize(CVMUSB& vme)
   makeCommand(command, vme, "Initialize");
   executeCommand(command);
 
-
 }
 
 /**
@@ -120,20 +119,9 @@ CTclControlModule::Update(CVMUSB& vme)
 std::string
 CTclControlModule::Set(CVMUSB& vme, std::string parameter, std::string value)
 {
-<<<<<<< HEAD
+
   CTCLObject command;
   makeCommand(command, vme, "Set");
-=======
-  Tcl_Interp*      interp  = m_interp.getInterpreter();
-  CTCLObject       command;
-  command.Bind(&m_interp);
-
-  std::string baseCommand = m_pConfig->cget("-ensemble");
-  command += baseCommand;
-  command += "Set";
-
-  command += tclUtil::swigPointer(&vme, "CVMUSB");
->>>>>>> daqdev/NSCLDAQ#700 - use swig pointer in tclUtil rather than
   command += parameter;
   command += value;
   return executeCommand(command);
@@ -156,20 +144,9 @@ CTclControlModule::Set(CVMUSB& vme, std::string parameter, std::string value)
 std::string
 CTclControlModule::Get(CVMUSB& vme, std::string parameter)
 {
-<<<<<<< HEAD
+
   CTCLObject command;
   makeCommand(command, vme, "Get");
-=======
-  Tcl_Interp*      interp  = m_interp.getInterpreter();
-  CTCLObject       command;
-  command.Bind(&m_interp);
-
-  std::string baseCommand = m_pConfig->cget("-ensemble");
-  command += baseCommand;
-  command += "Get";
-
-  command += tclUtil::swigPointer(&vme, "CVMUSB");
->>>>>>> daqdev/NSCLDAQ#700 - use swig pointer in tclUtil rather than
   command += parameter;
   return executeCommand(command);
 
@@ -291,7 +268,6 @@ CTclControlModule::getMonitoredData()
 /*-------------------------------------------------------------------------------
 ** Private utilities.
 */
-<<<<<<< HEAD
 /**
  * makeCommand
  *   Makes the base command from the ensemble, a subcommand
@@ -343,8 +319,6 @@ CTclControlModule::executeCommand(CTCLObject& command)
   }
   return result;
 }
-=======
->>>>>>> daqdev/NSCLDAQ#700 - use swig pointer in tclUtil rather than
 /**
  * marshallData
  *   Marshall a block of byte data into a Tcl List in a 

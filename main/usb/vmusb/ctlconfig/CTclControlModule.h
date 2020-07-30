@@ -79,7 +79,6 @@ public:
   virtual std::string getMonitoredData();
 
 private:
-
   void makeCommand(CTCLObject& command, CVMUSB& vme, const char* subcommand);
   std::string executeCommand(CTCLObject& command);
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
