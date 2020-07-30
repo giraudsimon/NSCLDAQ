@@ -82,7 +82,7 @@
 
    virtual void addRead16(int n, int a, int f, bool lamWait=false);
    virtual void addRead24(int n, int a, int f, bool lamWait=false);
-
+   virtual void addRead(int n, int a, int f, bool lamWait=false, bool longwd=false);
    virtual void addControl(int n, int a, int f);
 
 

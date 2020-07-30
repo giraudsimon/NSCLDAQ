@@ -206,19 +206,8 @@ CCCUSBReadoutList::addWrite24(int n, int a, int f, uint32_t data)
 void
 CCCUSBReadoutList::addRead16(int n, int a, int f, bool lamWait)
 {
-  string msg;
-  if (!validRead(n,a,f,msg)) {
-    throw msg;
-  }
-  uint16_t naf = NAF(n,a,f);
-  if (lamWait) {
-    naf |= CONTINUATION;
-    m_list.push_back(naf);
-    m_list.push_back(MODE_LAMWAIT);
-  }
-  else {
-    m_list.push_back(naf);
-  }
+  addRead(n, a, f, lamWait, false);
+  
 }
 /****************************************************************************/
 /*!
@@ -237,11 +226,22 @@ CCCUSBReadoutList::addRead16(int n, int a, int f, bool lamWait)
 void
 CCCUSBReadoutList::addRead24(int n, int a, int f, bool lamWait)
 {
+  addRead(n,a,f,lamWait, true);
+  
+}
+/**
+ * addRead
+ *    generic version of the two reads above.  Adds longwd
+ *    parameter that sets or does not set the 24 bit transfer bit.
+ */
+void
+CCCUSBReadoutList::addRead(int n, int a, int f, bool lamWait, bool longwd)
+{
   string msg;
   if (!validRead(n,a,f,msg)) {
     throw msg;
   }
-  uint16_t naf = NAF(n,a,f, true);
+  uint16_t naf = NAF(n,a,f, longwd);
   if (lamWait) {
     naf |= CONTINUATION;
     m_list.push_back(naf);
@@ -251,6 +251,7 @@ CCCUSBReadoutList::addRead24(int n, int a, int f, bool lamWait)
     m_list.push_back(naf);
   }
 }
+
 /****************************************************************************/
 /*!
    Add a control transfer to the stack.
