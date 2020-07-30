@@ -290,7 +290,6 @@ COutputThread::startRun(DataBuffer& buffer)
 
 
 
-
   m_runTime.start();
   m_lastScalerTime = 0.0;
   
@@ -314,7 +313,6 @@ COutputThread::startRun(DataBuffer& buffer)
   CDataFormatItem format;
   format.commitToRing(*m_pRing);
 
-
   emitStateChange(BEGIN_RUN, BARRIER_START);
   m_nBuffersBeforeCount = BUFFERS_BETWEEN_STATS;
 
@@ -332,10 +330,7 @@ COutputThread::endRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
   emitStateChange(END_RUN, BARRIER_END);
-  		   
-
 }
 
 /**
@@ -351,7 +346,6 @@ COutputThread::pauseRun(DataBuffer& buffer)
   m_pBuffer = 0;
 
   emitStateChange(PAUSE_RUN, BARRIER_END);
-
 }
 /**
  * resumeRun    (Bug #5882)
@@ -364,9 +358,7 @@ COutputThread::resumeRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
   emitStateChange(RESUME_RUN, BARRIER_START);
-
 }
 
 
@@ -784,4 +776,5 @@ void COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
   );
 
   item.commitToRing(*m_pRing);
-}
+
+

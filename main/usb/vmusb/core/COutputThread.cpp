@@ -280,10 +280,8 @@ COutputThread::processBuffer(DataBuffer& buffer)
 */
 void
 COutputThread::startRun(DataBuffer& buffer)
-
 { 
 
-  
   // If there's a begin run callback call it before emitting the begin  run
   // record:
   
@@ -308,6 +306,7 @@ COutputThread::startRun(DataBuffer& buffer)
  
 
   emitStateChange(BEGIN_RUN, BARRIER_START);
+
   
   // Reset the number of buffers of events between event count items:
   
@@ -335,7 +334,6 @@ COutputThread::endRun(DataBuffer& buffer)
 
   emitStateChange(END_RUN, BARRIER_END);
 
-
 }
 /**
  * pauseRun    (Bug#5882)
@@ -347,6 +345,7 @@ COutputThread::pauseRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
+
   emitStateChange(PAUSE_RUN, BARRIER_END);
 
 }
@@ -366,7 +365,6 @@ COutputThread::resumeRun(DataBuffer& buffer)
   free(m_pBuffer);
   m_pBuffer = 0;
   emitStateChange(RESUME_RUN, BARRIER_START);
-
 }
 
 /**!
@@ -868,4 +866,6 @@ COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
   );
 
   item.commitToRing(*m_pRing);
+
 }
+
