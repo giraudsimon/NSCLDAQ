@@ -462,4 +462,3 @@ TclServer::initStringBuffer(DataBuffer* pBuffer)
   char* pDest             = pStrings->s_strings;
   return pDest;
 }
-
