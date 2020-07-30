@@ -162,8 +162,8 @@ private:
   void getTimestampExtractor();
 
   bool hasOptionalHeader();
-
   void scheduleApplicationExit(int status);
+	void emitStateChange(uint32_t type, uint32_t barrier);
 };
 
 

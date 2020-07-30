@@ -280,10 +280,7 @@ COutputThread::processBuffer(DataBuffer& buffer)
 */
 void
 COutputThread::startRun(DataBuffer& buffer)
-{
-
-  time_t timestamp = time(nullptr);
-  
+{ 
   // If there's a begin run callback call it before emitting the begin  run
   // record:
   
@@ -305,16 +302,8 @@ COutputThread::startRun(DataBuffer& buffer)
 
   CDataFormatItem format;
   format.commitToRing(*m_pRing);
-  
  
-  CRingStateChangeItem begin(NULL_TIMESTAMP, Globals::sourceId, BARRIER_START,
-                             BEGIN_RUN,
-			     m_runNumber,
-			     0,
-			     static_cast<uint32_t>(timestamp),
-			     m_title.substr(0, TITLE_MAXSIZE-1), 1000);
-
-  begin.commitToRing(*m_pRing);
+	emitStateChange(BEGIN_RUN, BARRIER_START);
   
   // Reset the number of buffers of events between event count items:
   
@@ -340,22 +329,7 @@ COutputThread::endRun(DataBuffer& buffer)
   free(m_pBuffer);
   m_pBuffer = 0;
 
-  // Determine the absolute timestamp.
-
-  time_t stamp = time(nullptr);
-  
-  // Determine the run relative timestamp:
- 
-  uint32_t offset = m_runTime.measure() * 1000;  // Time  into run in ms.
-  
-  CRingStateChangeItem end(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, END_RUN, m_runNumber,
-		offset, stamp, m_title, 1000
-  );
-
-  end.commitToRing(*m_pRing);
-			   
-
+	emitStateChange(END_RUN, BARRIER_END);
 
 }
 /**
@@ -368,22 +342,8 @@ COutputThread::pauseRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
-  // Determine the absolute timestamp.
-
-  time_t stamp = time(nullptr);
+	emitStateChange(PAUSE_RUN, BARRIER_END);
   
-  // Determine the run relative timestamp:
-  
- 
-  uint32_t offset = m_runTime.measure() * 1000;        // milliseconds.
-  
-  CRingStateChangeItem pause(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, PAUSE_RUN,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  pause.commitToRing(*m_pRing);  
 }
 /**
  * resumeRun    (Bug#5882)
@@ -400,22 +360,8 @@ COutputThread::resumeRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
-  // Determine the absolute timestamp.
-
-  time_t stamp  = time(nullptr);
+	emitStateChange(RESUME_RUN, BARRIER_START);
   
-  // Determine the run relative timestamp:
-  // See Issue #423 - need to factor this.
- 
-  uint32_t  offset = m_runTime.measure() * 1000;  // ms.
-  
-  CRingStateChangeItem resume(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, RESUME_RUN,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  resume.commitToRing(*m_pRing);
 }
 
 /**!
@@ -891,4 +837,30 @@ COutputThread::getTimestampExtractor()
 void COutputThread::scheduleApplicationExit(int status)
 {
   m_systemControl.scheduleExit(status);
+}
+
+/**
+ * emitStateChange
+ *    Create and emit a state change ring item>
+ *
+ * @param type - type of item to create (e.g. BEGIN_RUN)
+ * @param barrier - Barrier type with which to tag the item.
+ */
+void
+COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
+{
+	// Determine the absolute timestamp.
+
+  time_t stamp = time(nullptr);
+  
+  // Determine the run relative timestamp:
+ 
+  uint32_t offset = m_runTime.measure() * 1000;  // Time  into run in ms.
+  
+  CRingStateChangeItem item(
+    NULL_TIMESTAMP, Globals::sourceId, barrier, type, m_runNumber,
+		offset, stamp, m_title, 1000
+  );
+
+  item.commitToRing(*m_pRing);
 }

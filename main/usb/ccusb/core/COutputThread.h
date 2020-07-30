@@ -162,6 +162,7 @@ private:
   void attachRing();
   uint8_t* newOutputBuffer();
   void outputTriggerCount(uint32_t runOffset);
+  void emitStateChange(uint32_t type, uint32_t barrier);
 
 };
 

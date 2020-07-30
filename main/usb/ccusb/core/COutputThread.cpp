@@ -289,7 +289,6 @@ COutputThread::startRun(DataBuffer& buffer)
 {
 
 
-  time_t timestamp = time(nullptr);
   m_runTime.start();
   m_lastScalerTime = 0.0;
   
@@ -313,13 +312,7 @@ COutputThread::startRun(DataBuffer& buffer)
   CDataFormatItem format;
   format.commitToRing(*m_pRing);
 
-
-  CRingStateChangeItem begin(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_START, BEGIN_RUN,
-		m_runNumber, 0, static_cast<uint32_t>(timestamp), m_title, 1000
-  );
-
-  begin.commitToRing(*m_pRing);
+  emitStateChange(BEGIN_RUN, BARRIER_START);
   
   m_nBuffersBeforeCount = BUFFERS_BETWEEN_STATS;
 
@@ -337,20 +330,8 @@ COutputThread::endRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
-  // Determine the absolute timestamp.
-
-  time_t stamp = time(nullptr);
-  
-  uint32_t offset = m_runTime.measure() * 1000;
-  
-  CRingStateChangeItem end(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, END_RUN,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  end.commitToRing(*m_pRing);
-			   
+  emitStateChange(END_RUN, BARRIER_END);
+  		   
 }
 
 /**
@@ -364,18 +345,8 @@ COutputThread::pauseRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
-  // Determine the absolute timestamp.
-
-  time_t stamp = time(nullptr);
-  uint32_t offset = m_runTime.measure() * 1000;
-   
-  CRingStateChangeItem pause(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, PAUSE_RUN,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  pause.commitToRing(*m_pRing);
+  emitStateChange(PAUSE_RUN, BARRIER_END);
+  
 }
 /**
  * resumeRun    (Bug #5882)
@@ -388,20 +359,8 @@ COutputThread::resumeRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-
-  // Determine the absolute timestamp.
-
-  time_t stamp = time(nullptr);
-  
-  uint32_t offset = m_runTime.measure() * 1000;
-  
-  
-  CRingStateChangeItem resume(
-    NULL_TIMESTAMP, Globals::sourceId, BARRIER_END, RESUME_RUN,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  resume.commitToRing(*m_pRing);  
+  emitStateChange(RESUME_RUN, BARRIER_START);
+ 
 }
 
 
@@ -805,4 +764,18 @@ COutputThread::getTimestampExtractor()
 void COutputThread::scheduleApplicationExit(int status)
 {
   m_systemControl.scheduleExit(status);
+}
+
+void COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
+{
+  time_t stamp = time(nullptr);
+  
+  uint32_t offset = m_runTime.measure() * 1000;
+  
+  CRingStateChangeItem item(
+    NULL_TIMESTAMP, Globals::sourceId, barrier, type,
+		m_runNumber, offset, stamp, m_title, 1000
+  );
+
+  item.commitToRing(*m_pRing);
 }
