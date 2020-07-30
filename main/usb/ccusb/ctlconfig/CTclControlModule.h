@@ -81,7 +81,6 @@ public:
 private:
   void makeCommand(CTCLObject& command, CCCUSB& usb, const char* subcommand);
   std::string executeCommand(CTCLObject& objv);
-  
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
   
 };

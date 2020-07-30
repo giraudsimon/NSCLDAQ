@@ -129,7 +129,6 @@ CTclControlModule::Set(CCCUSB& vme, std::string parameter, std::string value)
   command += value;
 
   return executeCommand(command);
-
 }
 /**
  * Get
@@ -155,6 +154,7 @@ CTclControlModule::Get(CCCUSB& vme, std::string parameter)
   command += parameter;
 
   return executeCommand(command);
+
 }
 /**
  * clone
@@ -174,6 +174,71 @@ CTclControlModule::clone() const
  * makeCommand
  *    All commands are of the form:
  *    ensemble-name subcommand controller-object
+ *
+ *    There may or may not be additioanl command words
+ *    depending on the subcommand.  This method
+ *    creates a CTCLObject that contains that part of the
+ *    command.
+ * @param[out] command - object into which the command is generated.
+ * @param  usb    - the usb controller.
+ * @param subcommand   - Subcommand string.
+ * @note command is a reference and will have been bound
+ *               to the interpreter on exit.
+*/
+void
+CTclControlModule::makeCommand(
+  CTCLObject& command, CCCUSB& usb, const char* subcommand
+)
+{
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  if (baseCommand == "") {
+    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
+  }
+
+  // Build the command:
+  
+  CTCLInterpreter* pInterp = &m_interp;
+
+  command.Bind(pInterp);
+  command += baseCommand;	// Base of ensemble
+  command += subcommand;
+
+  // Turn vme into a marshalled pointer.
+
+  std::string vmusbPointer = swigPointer(&usb, "CCCUSB");
+  command += vmusbPointer;  
+}
+/**
+ * executeCommand
+ *    Run a generated command object and return the result
+ *    or throw an exception if there's a failure.
+ * @param command - the generated commando bject.
+ * @return std::string - commnand result.
+ */
+std::string
+CTclControlModule::executeCommand(CTCLObject& command)
+{
+  Tcl_Interp* pInterp = m_interp.getInterpreter();
+  int status = Tcl_EvalObjEx(pInterp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = Tcl_GetStringResult(pInterp);
+
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - Executing  command";
+    msg += std::string("command");
+    msg += ": ";
+    msg += result;
+    msg += ": ";
+    msg += XXUSB::getTclTraceback(pInterp);
+    return msg;
+  }
+  return result;
+}
+/**
+ * Generate a swig pointer from the C++ Pointer and its type.
+ * This is of the form _address_p_typename
+ * @param obj - pointer to the object.
+ * @param type - Type name.
+>>>>>>> /daqdev/NSCLDAQ#700 - factor common code of command generation and
  *
  *    There may or may not be additioanl command words
  *    depending on the subcommand.  This method
