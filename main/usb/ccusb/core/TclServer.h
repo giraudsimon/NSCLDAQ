@@ -30,6 +30,8 @@ class CCCUSB;
 class CTCLInterpreter;
 class CSystemControl;
 
+struct DataBuffer;
+
 /*!
   The TclServer class implements a little Tcl server for our readout software.
   The server is intended to allow external software to perform control operations
@@ -98,6 +100,7 @@ private:
   static void updateVariables(void* pThis);
   void sendWatchedVariables();
   static int Exit(Tcl_Event* pEvent, int flags);
+	char* initStringBuffer(DataBuffer* pBuffer);
 };
  
 
