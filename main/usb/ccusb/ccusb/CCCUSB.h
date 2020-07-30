@@ -38,6 +38,35 @@
 
 class CMutex;
 
+// Constants:
+
+// Identifying marks for the VM-usb:
+//   (SWIG doesn't like this).
+
+#ifndef SWIG
+static const short USB_WIENER_VENDOR_ID(0x16dc);
+static const short USB_VMUSB_PRODUCT_ID(0xb);
+static const short USB_CCUSB_PRODUCT_ID(1);
+
+// Bulk transfer endpoints
+
+static const int ENDPOINT_OUT(2);
+static const int ENDPOINT_IN(0x86);
+
+// Bits in the list target address words (TAV)
+
+static const uint16_t TAVcsWrite(4);  // Operation writes.
+static const uint16_t TAVcsDATA(2);   // DAQ event Data stack.
+static const uint16_t TAVcsSCALER(3); // DAQ scaler data stack.
+static const uint16_t TAVcsCNAF(0xc);   // Immediate execution of a CNAF list.
+static const uint16_t TAVcsIMMED(TAVcsCNAF);
+
+
+// Timeouts:
+
+static const int DEFAULT_TIMEOUT(2000); // ms.
+#endif
+
 /*!
   This class is the low level support for the Wiener/JTEC CCUSB module.
 the CCUSB is a USB CAMAC controller.  To use this class you must first locate
