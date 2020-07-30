@@ -572,7 +572,6 @@ CCCUSBReadoutList::validControl(int n, int a, int f, string& msg)
 }
 
 /**
-
  * addGenericQSop
  *   Factor common Q operation generation.
  * @param type - type of operation e.g. MODE_QSTOP
