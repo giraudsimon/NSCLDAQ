@@ -587,8 +587,7 @@ CCCUSBReadoutList::addGenericQop(int type, int n, int a, int f, uint16_t max, bo
 
   // build up the elements of the stack (three words, naf, mode, max-count).
 
-  uint16_t naf  = NAF(n,a,f) | CONTINUATION;
-  if (longwd) naf |= NAFIsLong;
+  uint16_t naf  = NAF(n,a,f, longwd) | CONTINUATION;
   uint16_t mode = type | CONTINUATION;
   if (lamWait) mode |= MODE_LAMWAIT;
   
