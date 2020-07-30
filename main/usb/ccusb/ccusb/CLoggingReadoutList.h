@@ -20,6 +20,7 @@ East Lansing, MI 48824-1321
 #include <string>
 #include <vector>
 #include "CCCUSBReadoutList.h"
+#include <sstream>
 
 class CLoggingReadoutList : public CCCUSBReadoutList
 {
@@ -70,7 +71,9 @@ class CLoggingReadoutList : public CCCUSBReadoutList
     virtual void addMarker(uint16_t value);    // Add literal value to event.
 
     virtual void addAddressPatternRead16(int n, int a, int f, bool lamWait=false);
-
+private:
+    void logLamwait(std::stringstream& msg, bool lamwait);
+    
 };
 
 #endif
