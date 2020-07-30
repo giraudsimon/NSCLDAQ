@@ -291,20 +291,7 @@ CCCUSBReadoutList::addControl(int n, int a, int f)
 void
 CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
 {
-  string msg;
-  if (!validRead(n,a,f,msg)) {
-    throw msg;
-  }
-
-  // build up the elements of the stack (three words, naf, mode, max-count).
-
-  uint16_t naf  = NAF(n,a,f) | CONTINUATION;
-  uint16_t mode = MODE_QSTOP | CONTINUATION;
-  if (lamWait) mode |= MODE_LAMWAIT;
-  
-  m_list.push_back(naf);
-  m_list.push_back(mode);
-  m_list.push_back(max);
+  addGenericQStop(n, a, f, max, lamWait, false);
 
 }
 
@@ -314,21 +301,8 @@ CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
 void
 CCCUSBReadoutList::addQStop24(int n, int a, int f, uint16_t max, bool lamWait)
 {
-  string msg;
-  if (!validRead(n,a,f,msg)) {
-    throw msg;
-  }
-
-  // build up the elements of the stack (three words, naf, mode, max-count).
-
-  uint16_t naf  = NAF(n,a,f) | CONTINUATION | NAFIsLong;
-  uint16_t mode = MODE_QSTOP | CONTINUATION;
-  if (lamWait) mode |= MODE_LAMWAIT;
+  addGenericQStop(n, a, f, max, lamWait, true);
   
-  m_list.push_back(naf);
-  m_list.push_back(mode);
-  m_list.push_back(max);
-
 }
 /****************************************************************************/
 /*!
@@ -619,3 +593,32 @@ CCCUSBReadoutList::validControl(int n, int a, int f, string& msg)
      
 }
 
+/**
+ * addGenericQStop
+ *   Factor common QStop generation out from short/long
+ * @param n - slot
+ * @param a  - subaddress.
+ * @param max - maximum transfers.
+ * @param lamwait - wait for lam?
+ * @param longwd - is longword.
+ */
+void
+CCCUSBReadoutList::addGenericQStop(int n, int a, int f, uint16_t max, bool lamWait, bool longwd)
+{
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
+
+  // build up the elements of the stack (three words, naf, mode, max-count).
+
+  uint16_t naf  = NAF(n,a,f) | CONTINUATION;
+  if (longwd) naf |= NAFIsLong;
+  uint16_t mode = MODE_QSTOP | CONTINUATION;
+  if (lamWait) mode |= MODE_LAMWAIT;
+  
+  m_list.push_back(naf);
+  m_list.push_back(mode);
+  m_list.push_back(max);
+  
+}

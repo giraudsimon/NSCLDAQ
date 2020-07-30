@@ -129,7 +129,7 @@ private:
   static bool validSlot(int n);
   static bool validSubaddress(int a);
 
-
+  void addGenericQStop(int n, int a, int f, uint16_t max, bool lamWait, bool longwd);
   
 };
 
