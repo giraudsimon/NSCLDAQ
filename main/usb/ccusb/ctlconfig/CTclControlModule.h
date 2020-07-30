@@ -82,7 +82,6 @@ private:
   void makeCommand(CTCLObject& command, CCCUSB& usb, const char* subcommand);
   std::string executeCommand(CTCLObject& objv);
   
-  static std::string swigPointer(void* pObject, std::string type);
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
   
 };
