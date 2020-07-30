@@ -19,11 +19,14 @@
 #include <string>
 #include "RingBufferQueue.h"
 #include <unistd.h>
+#include <vector>
 
 
 class CRingBuffer;
 class CRingSelectionPredicate;
 struct gengetopt_args_info;
+class CAllButPredicate;
+class CDesiredTypesPredicate;
 
 /*!
    This class is the ring selector application. Written as a separate class, we
@@ -66,5 +69,11 @@ public:
   // Utilities:
 
   void        writeBlock(int fd, void* pData, size_t size);
+  void        addTypes(
+      CDesiredTypesPredicate& p, std::vector<int>& types, bool sample=false
+  );
+  void addExceptions(
+      CAllButPredicate& p, std::vector<int>& types, bool sample=false
+  );
 };
 #endif
