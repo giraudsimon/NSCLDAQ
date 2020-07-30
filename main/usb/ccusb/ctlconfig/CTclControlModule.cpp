@@ -205,7 +205,7 @@ CTclControlModule::makeCommand(
 
   // Turn vme into a marshalled pointer.
 
-  std::string vmusbPointer = swigPointer(&usb, "CCCUSB");
+  std::string vmusbPointer = tclUtil::swigPointer(&usb, "CCCUSB");
   command += vmusbPointer;  
 }
 /**
@@ -233,14 +233,10 @@ CTclControlModule::executeCommand(CTCLObject& command)
   }
   return result;
 }
-/**
- * Generate a swig pointer from the C++ Pointer and its type.
- * This is of the form _address_p_typename
- * @param obj - pointer to the object.
- * @param type - Type name.
->>>>>>> /daqdev/NSCLDAQ#700 - factor common code of command generation and
- *
- *    There may or may not be additioanl command words
+/*
+ * makeCommand
+ *    Make a command from a command ensemble.
+ *    There may or may not be additinal command words
  *    depending on the subcommand.  This method
  *    creates a CTCLObject that contains that part of the
  *    command.
@@ -298,6 +294,8 @@ CTclControlModule::executeCommand(CTCLObject& command)
   }
   return result;
 }
+=======
+>>>>>>> /daqdev/NSCLDAQ#700 - remove swigPointer from CTclControlMOdule,
 
 /**
  * marshallData
