@@ -294,6 +294,7 @@ CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
 {
   addGenericQop( MODE_QSTOP, n, a, f, max, lamWait, false);
 
+
 }
 
 /*!
@@ -302,7 +303,9 @@ CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
 void
 CCCUSBReadoutList::addQStop24( int n, int a, int f, uint16_t max, bool lamWait)
 {
+
   addGenericQop(MODE_QSTOP, n, a, f, max, lamWait, true);
+
   
 }
 /****************************************************************************/
@@ -569,6 +572,7 @@ CCCUSBReadoutList::validControl(int n, int a, int f, string& msg)
 }
 
 /**
+
  * addGenericQSop
  *   Factor common Q operation generation.
  * @param type - type of operation e.g. MODE_QSTOP
@@ -580,6 +584,7 @@ CCCUSBReadoutList::validControl(int n, int a, int f, string& msg)
  */
 void
 CCCUSBReadoutList::addGenericQop(int type, int n, int a, int f, uint16_t max, bool lamWait, bool longwd)
+
 {
   string msg;
   if (!validRead(n,a,f,msg)) {
@@ -588,8 +593,11 @@ CCCUSBReadoutList::addGenericQop(int type, int n, int a, int f, uint16_t max, bo
 
   // build up the elements of the stack (three words, naf, mode, max-count).
 
+
   uint16_t naf  = NAF(n,a,f, longwd) | CONTINUATION;
   uint16_t mode = type | CONTINUATION;
+
+  if (longwd) naf |= NAFIsLong;
   if (lamWait) mode |= MODE_LAMWAIT;
   
   m_list.push_back(naf);
