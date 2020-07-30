@@ -19,6 +19,7 @@
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <stdint.h>
+#include <tclUtil.h>
 
 /**
  * constructor
@@ -84,7 +85,7 @@ CTclControlModule::Initialize(CVMUSB& vme)
 
   // Turn vme into a marshalled pointer.
 
-  std::string vmusbPointer = swigPointer(&vme, "CVMUSB");
+  std::string vmusbPointer = tclUtil::swigPointer(&vme, "CVMUSB");
   command += vmusbPointer;
 
   // Run the command:
@@ -120,7 +121,7 @@ CTclControlModule::Update(CVMUSB& vme)
   command += baseCommand;
   command += "Update";
 
-  command += swigPointer(&vme, "CVMUSB");
+  command += tclUtil::swigPointer(&vme, "CVMUSB");
 
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
   std::string result = std::string(Tcl_GetStringResult(interp));
@@ -160,7 +161,7 @@ CTclControlModule::Set(CVMUSB& vme, std::string parameter, std::string value)
   command += baseCommand;
   command += "Set";
 
-  command += swigPointer(&vme, "CVMUSB");
+  command += tclUtil::swigPointer(&vme, "CVMUSB");
   command += parameter;
   command += value;
 
@@ -201,7 +202,7 @@ CTclControlModule::Get(CVMUSB& vme, std::string parameter)
   command += baseCommand;
   command += "Get";
 
-  command += swigPointer(&vme, "CVMUSB");
+  command += tclUtil::swigPointer(&vme, "CVMUSB");
   command += parameter;
 
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
@@ -246,7 +247,7 @@ CTclControlModule::addMonitorList(CVMUSBReadoutList& vmeList)
   std::string baseCommand = m_pConfig->cget("-ensemble");
   command += baseCommand;
   command += "addMonitorList";
-  command += swigPointer(&vmeList, "CVMUSBReadoutList");
+  command += tclUtil::swigPointer(&vmeList, "CVMUSBReadoutList");
 
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
   if (status != TCL_OK) {
@@ -336,43 +337,6 @@ CTclControlModule::getMonitoredData()
 /*-------------------------------------------------------------------------------
 ** Private utilities.
 */
-
-/**
- * Generate a swig pointer from the C++ Pointer and its type.
- * This is of the form _address_p_typename
- * @param obj - pointer to the object.
- * @param type - Type name.
- *
- * @return std::string
- */
-std::string
-CTclControlModule::swigPointer(void* p, std::string  type)
-{
-
-  char result [10000];
-  std::string hexified;		// Bigendian.
-
-  uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
-
-  // Note that doing the byte reversal this way should be
-  // 64 bit clean..and in fact should work for any sized ptr.
-
-  static const char hex[17] = "0123456789abcdef";
-  register const unsigned char *u = (unsigned char *) &p;
-  register const unsigned char *eu =  u + sizeof(void*);
-  for (; u != eu; ++u) {
-    register unsigned char uu = *u;
-    hexified += hex[(uu & 0xf0) >> 4];
-    hexified += hex[uu & 0xf];
-  }
-
-  sprintf(result, "_%s_p_%s", hexified.c_str(), type.c_str());
-
-  return std::string(result);
-
-
-}
-
 /**
  * marshallData
  *   Marshall a block of byte data into a Tcl List in a 

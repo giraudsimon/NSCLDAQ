@@ -79,7 +79,6 @@ public:
   virtual std::string getMonitoredData();
 
 private:
-  static std::string swigPointer(void* pObject, std::string type);
   static CTCLObject* marshallData(CTCLInterpreter* pInterp, void* pData, size_t nBytes);
 };
 #endif
