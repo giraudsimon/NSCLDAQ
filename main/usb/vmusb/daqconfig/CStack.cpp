@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <set>
+#include <algorithm>
 
 #include <iostream>
 using namespace std;
@@ -200,19 +201,16 @@ void
 CStack::Initialize(CVMUSB& controller)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
 
   // external try catch block to make sure that a single
   // failure stops the initialize process in its tracks. We don't
   // want to continue initializing.
   try {
-    while(p != modules.end()) {
-      CReadoutHardware* pModule = *p;                                // Wraps the hardware.
-
-      pModule->Initialize(controller); 
-
-      p++;
-    }
+    std::for_each(
+      modules.begin(), modules.end(),
+      [&controller](CReadoutHardware* p) {p->Initialize(controller);}
+    );
+    
   } catch (std::string& errmsg) {
     std::cout << "An error occurred during initialization! Reason: ";
     std::cout << errmsg << std::flush << std::endl;
@@ -249,13 +247,11 @@ void
 CStack::addReadoutList(CVMUSBReadoutList& list)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
-  while (p != modules.end()) {
-    CReadoutHardware* pModule = *p;
-    pModule->addReadoutList(list);
-    
-    p++;
-  }
+  std::for_each(
+    modules.begin(), modules.end(),
+    [&list](CReadoutHardware* p) { p->addReadoutList(list);}
+  );
+  
 }
 
 /*!
@@ -266,30 +262,24 @@ void
 CStack::onEndRun(CVMUSB& controller)
 {
   StackElements modules = getStackElements();
-  StackElements::iterator p = modules.begin();
-  while(p != modules.end()) {
-
-    // try-catch within the loop because  we want to give all
-    // modules a chance to perform end of run procedures independent
-    // of the success of all other readout hardware. Note also that
-    // we do not rethrow.
-    try {
-      CReadoutHardware* pModule = *p;                                // Wraps the hardware.
-      pModule->onEndRun(controller); 
-
-    } catch (std::string& errmsg) {
-      std::cout << "An error occurred during end run procedures! Reason: ";
-      std::cout << errmsg << std::flush << std::endl;
-    } catch (std::exception& exc) {
-      std::cout << "An error occurred during end run procedures! Reason: ";
-      std::cout << exc.what() << std::flush << std::endl;
-    } catch (...) {
-      std::cout << "An error occurred during end run procedures! ";
-      std::cout << "No reason is provided." << std::flush << std::endl;
-    }
-
-    p++;
-  }
+  std::for_each(
+    modules.begin(), modules.end(),
+    [&controller](CReadoutHardware* p) {
+      try {
+        p->onEndRun(controller);
+      } catch (std::string& errmsg) {
+          std::cout << "An error occurred during end run procedures! Reason: ";
+          std::cout << errmsg << std::flush << std::endl;
+      } catch (std::exception& exc) {
+        std::cout << "An error occurred during end run procedures! Reason: ";
+        std::cout << exc.what() << std::flush << std::endl;
+      } catch (...) {
+        std::cout << "An error occurred during end run procedures! ";
+        std::cout << "No reason is provided." << std::flush << std::endl;
+      }
+    } 
+  );
+  
 }
 /*!
   Clone virtualizes copy construction.
