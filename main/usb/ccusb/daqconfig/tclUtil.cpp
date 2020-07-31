@@ -18,6 +18,9 @@
 
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
+#include <CReadoutModule.h>
+#include <CConfiguration.h>
+
 #include <tcl.h>
 
 using std::vector;
@@ -106,5 +109,74 @@ swigPointer(void* p, std::string  type)
 
 
 }
+/**
+ * getModule
+ *    Locates a module by name along with a pile of other checking.
+ *  @param config - the configuration that has the module.
+ *  @param interp - The interpreter running the command that wants to know.
+ *  @param objv   - The command words for the command being executed.
+ *  @param predicate - Condition that must be true to have enough objv elements.
+ *  @return CReadoutModule*
+ *  @retval nullptr - if the module could not be fetched for any reason.
+ *  @note The form of the command being processed is:
+ *         type subcommand name ...
+ *         Where:
+ *         - type - is the command which is the module type.
+ *         - subcommand - is the subcommand (e.g. config).
+ *         - name - is the name of the module being operated on.
+ */
+CReadoutModule*
+getModule(
+  CConfiguration& config,
+  CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
+)
+{
+  // Valid number of parameters?
+  if(!predicate) {
+    std::string type = objv[0];
+    std::string sc  = objv[1];
+    std::string msg = "Incorrect number of commands for: ";
+    msg += type; msg+= " ";
+    msg += sc;
+    interp.setResult(msg);
+    return nullptr;
+  }
+  // Try to find it:
+  
+  string          name     = objv[2];
+  CReadoutModule* pModule  = config.findAdc(name);
+  if(!pModule) {
+    std::string msg = objv[0];
+    msg += " named ";
+    msg += name;
+    msg += " does not exist.";
+    interp.setResult(msg);
+    return nullptr;
+  }
+  return pModule;
+}
+/**
+ * listConfig
+ *   Set the interpreter result with the configuration of a
+ *   readout module.
+ * @param interp - intepreter who's result is set.
+ * @param pModule - pointer to module that will be listed.
+ */
+void
+listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
+{
+  auto config = pModule->cget();
 
+  Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
+
+  for (int i =0; i < config.size(); i++) {
+    Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
+    Tcl_Obj* value = Tcl_NewStringObj(config[i].second.c_str(), -1);
+
+    Tcl_Obj* sublist[2] = {key, value};
+    Tcl_Obj* sl = Tcl_NewListObj(2, sublist);
+    Tcl_ListObjAppendElement(interp.getInterpreter(), pResult, sl);
+  }
+  Tcl_SetObjResult(interp.getInterpreter(), pResult);  
+}
 };
