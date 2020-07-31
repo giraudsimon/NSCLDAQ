@@ -21,6 +21,7 @@
 #include <CConfiguration.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
+#include <tclUtil.h>
 
 #include <stdlib.h>
 #include <errno.h>
@@ -115,7 +116,7 @@ CMADCScalerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 
   CReadoutModule* pModule = m_Config.findAdc(name);
   if(pModule) {
-    Usage("Duplicate moduel creation attempted", objv);
+    Usage("Duplicate module creation attempted", objv);
     return TCL_ERROR;
   }
 
@@ -211,20 +212,13 @@ CMADCScalerCommand::cget(CTCLInterpreter& interp,
 void
 CMADCScalerCommand::Usage(string msg, std::vector<CTCLObject>& objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "   madcscaler create name ?config?\n";
-  result += "   madcscaler config name config...\n";
-  result += "   madcscaler cget name";
+  
+  std::string usage = "Usage\n";
+  usage += "   madcscaler create name ?config?\n";
+  usage += "   madcscaler config name config...\n";
+  usage += "   madcscaler cget name";
 
-  m_Config.setResult(result);
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 
 }
 /*

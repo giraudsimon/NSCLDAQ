@@ -56,9 +56,9 @@ namespace tclUtil {
    */
   void
   Usage(CTCLInterpreter&    interp,
-	string              msg,
-	vector<CTCLObject>&  objv,
-	string              usage)
+   string              msg,
+   vector<CTCLObject>&  objv,
+   string              usage)
   {
     string result("ERROR: ");
     result += msg;
