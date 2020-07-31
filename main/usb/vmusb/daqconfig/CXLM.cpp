@@ -456,14 +456,8 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
     nRemainingBytes -= blockSize*sizeof(uint32_t);
     // Write the block:
 
-    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
-    if (retData.size() == 0) {
-      string error = strerror(errno);
-      string msg   = "XLM::CFirmwareLoader::loadSRAMA - list execution failed to load the SRAM: ";
-      msg         += error;
-      throw msg;
-    }
-
+    doList(loadList);
+    
   }
 
   // Handle any odd partial block:
@@ -479,19 +473,13 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
       nRemainingBytes -= sizeof(uint32_t);
     }
     // Write the block:
-
-    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
-    if (retData.size() == 0) {
-      string error = strerror(errno);
-      string msg   = "CXM::loadSRAMA - list execution failed to load the SRAM: ";
-      msg         += error;
-      throw msg;
-    }
+  
+    doList(loadList);
   }
 #ifdef DUMPDEBUG  
   dump << endl;
 #endif  
-}
+}                // Any dump string gets closed here.
 
 void CFirmwareLoader::loadSRAM1(uint32_t destAddr, uint32_t* image, uint32_t nBytes)
 {
@@ -664,14 +652,8 @@ void CFirmwareLoader::releaseBusses()
   list.addWrite32(m_baseAddr + BusRequest, registerAmod, uint32_t(0));	// Release bus request.
   list.addWrite32(m_baseAddr + ForceOffBus, registerAmod, uint32_t(0)); // Remove force
 
-  auto retData = m_ctlr.executeList(list, sizeof(uint16_t));
-  if (retData.size() == 0) {
-    string reason = strerror(errno);
-    string message = "XLM::CFirmwareLoader::releaseBusses failed to execute reset list ";
-    message       += reason;
-    throw message;
-  }
-
+  doList(list);
+  
 }
 /**
  * dumpLong
@@ -689,7 +671,23 @@ CFirmwareLoader::dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t da
            << " " << setw(2)  << static_cast<int>(amod)
            << " " << setw(8) << data;
 }
-
+/**
+ * doList
+ *    Peform a list of operations on the controller.
+ * @param list - the list to perform.
+ * @throws std::string with error message on failure.
+ */
+void
+CFirmwareLoader::doList(CVMUSBReadoutList& list)
+{
+  auto retData = m_ctlr.executeList(list, sizeof(uint16_t));
+  if (retData.size() == 0) {
+    string reason = strerror(errno);
+    string message = "XLM::CFirmwareLoader::releaseBusses failed to execute reset list ";
+    message       += reason;
+    throw message;
+  }  
+}
 /*!
   Access some combination of the busses.  The assumption is that since this
   is a one shot, and since I'm ensured that I'll get the bus within 200ns, the host

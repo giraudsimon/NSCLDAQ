@@ -268,6 +268,7 @@ class CFirmwareLoader
      */ 
     void bootFPGA();
 				void dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data);
+				void doList(CVMUSBReadoutList& list);
 }; // end of FirmwareLoader class
 
 ///////////////////////////////////////////////////////////////////////////////
