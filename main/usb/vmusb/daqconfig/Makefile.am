@@ -50,7 +50,7 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CULMTrigger.cpp \
 				CLeCroy4300B.cpp \
 				CLeCroy4434.cpp \
-				CXLMFERA.cpp \
+				CXLMFERA.cpp CXLMFERACommand.cpp \
 				CXLMTimestamp.cpp \
 				CLeCroy2551.cpp \
 				CMQDC32StackBuilder.cpp \
@@ -113,7 +113,7 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				@top_srcdir@/usb/common/devices/CBCNAF.h \
 				@top_srcdir@/usb/common/devices/CCNAF.h \
 				@top_srcdir@/usb/common/devices/CNAF.h \
-				CXLMFERA.h \
+				CXLMFERA.h CXLMFERACommand.h \
 				CXLMTimestamp.h \
 				CMQDC32StackBuilder.h \
 				CMQDC32RdoHdwr.h \

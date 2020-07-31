@@ -91,6 +91,9 @@ private:
 			    std::string key,
 			    std::string value,
 			    std::string errorMessage);
+  CReadoutModule* getModule(
+      CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
+  );
 };
 
 #endif

@@ -209,18 +209,12 @@ CXLMFERACommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 int
 CXLMFERACommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-  if ( (objv.size() < 5) || ((objv.size() & 1) == 0)) {
-    Usage("Incorrect number of command parameters for config", objv);
-    return TCL_ERROR;
-  }
-  /* Get the module name and use it to locate the module or report an error. */
+	CReadoutModule* pModule = getModule(
+		interp, objv,
+		(objv.size() < 5) || ((objv.size() & 1) == 0)
+	);
+	if (!pModule) return TCL_ERROR;
 
-  string name = objv[2];
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (!pModule) {
-    Usage("XLMFERA module does not exist", objv);
-    return TCL_ERROR;
-  }
   /* Process the configuration... this is done inside a try/catch block
     as the configure can throw.
   */
@@ -264,16 +258,11 @@ CXLMFERACommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 int
 CXLMFERACommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-  if (objv.size() != 3) {
-    Usage("Invalid command parameter count for cget", objv);
-    return TCL_ERROR;
-  }
-  string           name    = objv[2];
-  CReadoutModule *pModule = m_Config.findAdc(name);
-  if (!pModule) {
-    Usage("No such  module", objv);
-    return TCL_ERROR;
-  }
+	CReadoutModule* pModule = getModule(
+		interp, objv, obvj.size() != 3
+	);
+	if (!pModule) return TCL_ERROR;
+  
   XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
 
   Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
@@ -383,5 +372,48 @@ CXLMFERACommand::configMessage(std::string base,
  
   return message;
 
+}
+/**
+ *  getModule
+ *     Return the module for a command.  Commands are of the form.
+ *     type subcommand module-name
+ *
+ *     If possible we'll produce the module associated with
+ *     module-name.
+ *  @param interp - References the interpreter
+ *  @param objv   - the encapsulated command words.
+ *  @param pred   - if false, we've not got a valid argument count
+ *                  for the subcommand
+ *  @return CReadoutModule*
+ *  @retval nullptr - if we can't get the module for any reason.
+ *                    in that case the result is set with an error
+ *                    message.
+ */
+CReadoutModule*
+CXLMFERACommand::getModule (
+			CTCLInterpreter& interp, std::vector<CTCLObject>& objv,
+			bool predicate
+)
+{
+	// If not the right number of parameters pull out
+	// the subcommand, construct Usage and return null.
+	
+	if (!predicate) {
+		std::string sc = objv[1];        // subcommand.
+		std::string msg("Incorrect numberof command parameters for ");
+		msg += sc;
+		Usage(msg, objv);
+		return nullptr;
+	}
+	
+	// Get then module name and look for it.
+	
+	string name = objv[2];
+	CReadoutModule* pModule = m_Config.findAdc(name);
+	if (!pModule) {
+		Usage("XLMFERA module does not exist", objv);
+		return nullptr;
+  }
+	return  pModule;
 }
 
