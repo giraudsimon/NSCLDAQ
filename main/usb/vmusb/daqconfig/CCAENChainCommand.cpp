@@ -74,3 +74,17 @@ CCAENChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
   return TCL_OK;
 
 }
+
+/*
+   The usage command needs to return a usage specific to our requirements.
+*/
+void 
+CCAENChainCommand::Usage(string msg, vector<CTCLObject>& objv)
+{
+  std::string usage("Usage\n");
+  usage += "    caenchain create name\n";
+  usage += "    caenchain config name config-params\n";
+  usage += "    caenchain cget   name\n";
+
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
+}

@@ -77,3 +77,18 @@ CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
  
 }
 
+
+/*
+   The usage command needs to return a usage specific to our requirements.
+*/
+void
+CMADCChainCommand::Usage(string msg, vector<CTCLObject>& objv)
+{
+  std::string usage("Usage\n");
+  usage += "    madcchain create name\n";
+  usage += "    madcchain config name config-params\n";
+  usage += "    madcchain cget   name\n";
+	
+	
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
+}

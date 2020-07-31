@@ -234,7 +234,7 @@ CDeviceCommand::Usage(
   std::string usage("Usage\n");
   usage += "    ";
   usage += cmdName;
-  usage += "  create name value\n";
+  usage += "  create name -slot n\n";
   usage += "    ";
   usage += cmdName;
   usage += " config name config-params...\n";

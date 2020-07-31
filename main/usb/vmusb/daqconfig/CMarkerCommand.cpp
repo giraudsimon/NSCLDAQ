@@ -119,3 +119,23 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
   return TCL_OK;
   
 }
+
+
+void
+CMarkerCommand::Usage(CTCLInterpreter& interp, const char *msg, std::vector<CTCLObject>& objv)
+{
+  std::string cmd = objv[0];
+  std::string usage("Usage\n");
+  usage += "    ";
+  usage += cmd;
+  usage += "  create name value\n";
+  usage += "    ";
+  usage += cmd;
+  usage += " config name config-params...\n";
+  usage += "    ";
+  usage += cmd;
+  usage += " cget name";
+  
+	tclUtil::Usage(interp, msg, objv, usage);
+  
+}
