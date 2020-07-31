@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <iostream>
 
 
 // Forward class definitions:
@@ -266,6 +267,7 @@ class CFirmwareLoader
      * DSP is not booted.
      */ 
     void bootFPGA();
+				void dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data);
 }; // end of FirmwareLoader class
 
 ///////////////////////////////////////////////////////////////////////////////

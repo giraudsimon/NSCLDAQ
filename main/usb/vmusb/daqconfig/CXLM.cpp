@@ -446,10 +446,8 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
   while (nRemainingBytes > blockSize*sizeof(uint32_t)) {
     CVMUSBReadoutList  loadList;
     for (int i =0; i < blockSize; i++) {
-#ifdef DUMPDEBUG      
-      dump << "\n" << setw(8) << destAddr 
-           << " " << setw(2)  << static_cast<int>(sramaAmod)
-           << " " << setw(8) << *p;
+#ifdef DUMPDEBUG
+      dumpLong(dump, destAddr, sramAmod, *p);
 #endif      
       loadList.addWrite32(destAddr, sramaAmod,  *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
@@ -472,10 +470,8 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
   if (nRemainingBytes > 0) {
     CVMUSBReadoutList loadList;
     while (nRemainingBytes > 0) {
-#ifdef DUMPDEBUG     
-      dump << "\n" << setw(8) << destAddr 
-           << " " << setw(2)  << static_cast<int>(sramaAmod)
-           << " " << setw(8) << *p;
+#ifdef DUMPDEBUG
+      dumpLong(dump, destAddr, sramaAmod, *p);
 #endif      
       loadList.addWrite32(destAddr, sramaAmod, *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
@@ -676,6 +672,22 @@ void CFirmwareLoader::releaseBusses()
     throw message;
   }
 
+}
+/**
+ * dumpLong
+ *    (debugging) dump address, amod and value to be loaded
+ *    to that address.
+ * @param f - stream to which to do the dump.
+ * @param a - address
+ * @param amod - address modifiter.
+ * @param data - data being dumped.
+ */
+void
+CFirmwareLoader::dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data)
+{
+  f << "\n" << setw(8) << a
+           << " " << setw(2)  << static_cast<int>(amod)
+           << " " << setw(8) << data;
 }
 
 /*!
