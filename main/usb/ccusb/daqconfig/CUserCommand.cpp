@@ -23,6 +23,7 @@
 #include <CReadoutHardware.h>
 #include <Exception.h>
 #include <Globals.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -286,28 +287,20 @@ CUserCommand::getConfiguration()
 void
 CUserCommand::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  string cmdName = objv[0];
-
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    ";
-  result += cmdName;
-  result += "  create name -slot n\n";
-  result += "    ";
-  result += cmdName;
-  result += " config name config-params...\n";
-  result += "    ";
-  result += cmdName;
-  result += " cget name";
   
-  m_Config.setResult(result);  
+  std::string cmdName = objv[0];
+  std::string usage("Usage\n");
+  usage += "    ";
+  usage += cmdName;
+  usage += "  create name -slot n\n";
+  usage += "    ";
+  usage += cmdName;
+  usage += " config name config-params...\n";
+  usage += "    ";
+  usage += cmdName;
+  usage += " cget name";
+  
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 /*******************************************************************/
 /*   Configures an object.  The caller is supposed to have

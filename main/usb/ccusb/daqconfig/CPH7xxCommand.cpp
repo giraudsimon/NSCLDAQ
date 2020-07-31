@@ -22,6 +22,7 @@
 #include <CReadoutModule.h>
 #include <CPH7xx.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -307,20 +308,13 @@ CPH7xxCommand::getConfiguration()
 void
 CPH7xxCommand::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    ph7xxx create name base-address\n";
-  result += "    ph7xxx config name config-params...\n";
-  result += "    ph7xxx cget name";
   
-  m_Config.setResult(result);  
+  std::string usage("Usage\n");
+  usage += "    ph7xxx create name base-address\n";
+  usage += "    ph7xxx config name config-params...\n";
+  usage += "    ph7xxx cget name";
+  
+	tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 /*******************************************************************/
 /*   Configures an object.  The caller is supposed to have

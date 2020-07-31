@@ -22,6 +22,7 @@
 #include <CReadoutModule.h>
 #include <CAD811.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -307,20 +308,14 @@ CAD811Command::getConfiguration()
 void
 CAD811Command::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    ad811 create name -slot n\n";
-  result += "    ad811 config name config-params...\n";
-  result += "    ad811 cget name";
   
-  m_Config.setResult(result);  
+  
+  std::string usage("Usage\n");
+  usage += "    ad811 create name -slot n\n";
+  usage += "    ad811 config name config-params...\n";
+  usage += "    ad811 cget name";
+  
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 /*******************************************************************/
 /*   Configures an object.  The caller is supposed to have

@@ -23,6 +23,7 @@
 #include <CReadoutModule.h>
 #include <CCAEN257.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -310,20 +311,13 @@ CCAEN257Command::getConfiguration()
 void
 CCAEN257Command::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    c257 create name -slot n\n";
-  result += "    c257 config name config-params...\n";
-  result += "    c257 cget name";
   
-  m_Config.setResult(result);  
+  std::string usage("Usage\n");
+  usage += "    c257 create name -slot n\n";
+  usage += "    c257 config name config-params...\n";
+  usage += "    c257 cget name";
+  
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 
 /*******************************************************************/

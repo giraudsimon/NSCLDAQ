@@ -22,6 +22,7 @@
 #include <CReadoutModule.h>
 #include <CLRS2249.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -307,20 +308,13 @@ CLRS2249Command::getConfiguration()
 void
 CLRS2249Command::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    lrs2249 create name base-address\n";
-  result += "    lrs2249 config name config-params...\n";
-  result += "    lrs2249 cget name";
   
-  m_Config.setResult(result);  
+  std::string usage("Usage\n");
+  usage += "    lrs2249 create name base-address\n";
+  usage += "    lrs2249 config name config-params...\n";
+  usage += "    lrs2249 cget name";
+  
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 /*******************************************************************/
 /*   Configures an object.  The caller is supposed to have

@@ -22,6 +22,7 @@
 #include <CReadoutModule.h>
 #include <CC1205.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -302,20 +303,12 @@ C1205Command::getConfiguration()
 void
 C1205Command::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    c1205 create name -slot n\n";
-  result += "    c1205 config name config-params...\n";
-  result += "    c1205 cget name";
   
-  m_Config.setResult(result);  
+  std::string usage("Usage\n");
+  usage += "    c1205 create name -slot n\n";
+  usage += "    c1205 config name config-params...\n";
+  usage += "    c1205 cget name";
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 
 
