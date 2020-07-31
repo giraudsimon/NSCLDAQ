@@ -26,10 +26,6 @@
 
 
 
-
-
-
-
 // Forward class definitions:
 
 class CReadoutModule;
@@ -62,12 +58,12 @@ public:				// 'constants'.
   static const uint32_t  REQ_X;		// FPGA bus.
   static const uint32_t  REQ_A;		// SRAM A bus
   static const uint32_t  REQ_B;		// SRAM B bus
-		static const uint8_t   registerAmod;
-		static const uint8_t   blockTransferAmod;
-
-
-		static const float     vmusbClockTick;
-
+  static const uint8_t   registerAmod;
+  static const uint8_t   blockTransferAmod;
+  
+  
+  static const float     vmusbClockTick;
+  
 public:				// Canonicals:
   CXLM();
   CXLM(const CXLM& rhs);
@@ -277,8 +273,9 @@ class CFirmwareLoader
      * DSP is not booted.
      */ 
     void bootFPGA();
-				void dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data);
-				void doList(CVMUSBReadoutList& list);
+  void dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data);
+  void doList(CVMUSBReadoutList& list);
+
 }; // end of FirmwareLoader class
 
 ///////////////////////////////////////////////////////////////////////////////

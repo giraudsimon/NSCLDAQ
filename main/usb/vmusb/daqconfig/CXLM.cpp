@@ -691,6 +691,24 @@ CFirmwareLoader::doList(CVMUSBReadoutList& list)
     throw message;
   }  
 }
+
+/**
+ * dumpLong
+ *    (debugging) dump address, amod and value to be loaded
+ *    to that address.
+ * @param f - stream to which to do the dump.
+ * @param a - address
+ * @param amod - address modifiter.
+ * @param data - data being dumped.
+ */
+void
+CFirmwareLoader::dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data)
+{
+  f << "\n" << setw(8) << a
+           << " " << setw(2)  << static_cast<int>(amod)
+           << " " << setw(8) << data;
+}
+
 /*!
   Access some combination of the busses.  The assumption is that since this
   is a one shot, and since I'm ensured that I'll get the bus within 200ns, the host
