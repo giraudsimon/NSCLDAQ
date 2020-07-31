@@ -27,6 +27,7 @@
 #include <string>
 #include <Exception.h>
 #include "CConfiguration.h"
+#include "tclUtil.h"
 
 
 /**
@@ -250,26 +251,17 @@ CDeviceCommand::Usage(
   CTCLInterpreter& interp, std::string msg, std::vector<CTCLObject> objv
 )
 {
-  std::string result("ERROR: ");
   std::string cmdName = objv[0];
-
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += std::string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    ";
-  result += cmdName;
-  result += "  create name -slot n\n";
-  result += "    ";
-  result += cmdName;
-  result += " config name config-params...\n";
-  result += "    ";
-  result += cmdName;
-  result += " cget name";
+  std::string usage("Usage\n");
+  usage += "    ";
+  usage += cmdName;
+  usage += "  create name -slot n\n";
+  usage += "    ";
+  usage += cmdName;
+  usage += " config name config-params...\n";
+  usage += "    ";
+  usage += cmdName;
+  usage += " cget name";
   
-  interp.setResult(result);  
+  tclUtil::Usage(interp, msg, objv, usage); 
 }

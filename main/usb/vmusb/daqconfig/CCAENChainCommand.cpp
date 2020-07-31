@@ -19,6 +19,7 @@
 #include "CConfiguration.h"
 #include <CReadoutModule.h>
 #include <CCAENChain.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -90,19 +91,10 @@ CCAENChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void 
 CCAENChainCommand::Usage(string msg, vector<CTCLObject>& objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i =0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
+  std::string usage("Usage\n");
+  usage += "    caenchain create name\n";
+  usage += "    caenchain config name config-params\n";
+  usage += "    caenchain cget   name\n";
 
-  result += "Usage\n";
-  result += "    caenchain create name\n";
-  result += "    caenchain config name config-params\n";
-  result += "    caenchain cget   name\n";
-
-  getConfiguration()->setResult(result);
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }

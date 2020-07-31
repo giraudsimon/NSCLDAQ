@@ -19,6 +19,7 @@
 #include "CConfiguration.h"
 #include <CReadoutModule.h>
 #include <CMADCChain.h>
+#include "tclUtil.h"
 
 using namespace std;
 
@@ -87,19 +88,11 @@ CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void
 CMADCChainCommand::Usage(string msg, vector<CTCLObject>& objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i =0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-
-  result += "Usage\n";
-  result += "    madcchain create name\n";
-  result += "    madcchain config name config-params\n";
-  result += "    madcchain cget   name\n";
-
-  getConfiguration()->setResult(result);
+  std::string usage("Usage\n");
+  usage += "    madcchain create name\n";
+  usage += "    madcchain config name config-params\n";
+  usage += "    madcchain cget   name\n";
+	
+	
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }

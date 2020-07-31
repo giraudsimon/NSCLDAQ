@@ -23,6 +23,7 @@
 #include <CMarker.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
+#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -128,26 +129,18 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void
 CMarkerCommand::Usage(CTCLInterpreter& interp, const char *msg, std::vector<CTCLObject>& objv)
 {
-  std::string result("ERROR: ");
-  std::string cmdName = objv[0];
-
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += std::string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    ";
-  result += cmdName;
-  result += "  create name value\n";
-  result += "    ";
-  result += cmdName;
-  result += " config name config-params...\n";
-  result += "    ";
-  result += cmdName;
-  result += " cget name";
+  std::string cmd = objv[0];
+  std::string usage("Usage\n");
+  usage += "    ";
+  usage += cmd;
+  usage += "  create name value\n";
+  usage += "    ";
+  usage += cmd;
+  usage += " config name config-params...\n";
+  usage += "    ";
+  usage += cmd;
+  usage += " cget name";
   
-  interp.setResult(result);  
+	tclUtil::Usage(interp, msg, objv, usage);
+  
 }

@@ -24,6 +24,7 @@
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
 #include <Exception.h>
+#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -296,20 +297,13 @@ CXLMFERACommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void
 CXLMFERACommand::Usage(std::string msg, std::vector<CTCLObject>& objv)
 {
-  string result("ERROR: ");
-  result += msg;
-  result += "\n";
-  for (int i = 0; i < objv.size(); i++) {
-    result += string(objv[i]);
-    result += ' ';
-  }
-  result += "\n";
-  result += "Usage\n";
-  result += "    XLMFERA create name value\n";
-  result += "    XLMFERA config name config-params...\n";
-  result += "    XLMFERA cget name";
+  
+  std::string usage("Usage\n");
+  usage += "    XLMFERA create name value\n";
+  usage += "    XLMFERA config name config-params...\n";
+  usage += "    XLMFERA cget name";
 
-  m_Config.setResult(result);
+  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
 
 /*******************************************************************/
