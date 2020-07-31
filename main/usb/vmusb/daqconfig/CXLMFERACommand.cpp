@@ -205,12 +205,12 @@ CXLMFERACommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 int
 CXLMFERACommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-	CReadoutModule* pModule = getModule(
-		interp, objv,
-		(objv.size() < 5) || ((objv.size() & 1) == 0)
-	);
-	if (!pModule) return TCL_ERROR;
-	
+  CReadoutModule* pModule = getModule(
+     interp, objv,
+     (objv.size() < 5) || ((objv.size() & 1) == 0)
+  );
+  if (!pModule) return TCL_ERROR;
+  
   /* Process the configuration... this is done inside a try/catch block
     as the configure can throw.
   */
