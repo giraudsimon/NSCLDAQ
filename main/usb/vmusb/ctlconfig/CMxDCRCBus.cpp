@@ -20,7 +20,6 @@ using namespace std;
  *
  */
 CMxDCRCBus::CMxDCRCBus () :
-  CControlHardware(),
   m_maxPollAttempts(1000)
 {}
 
@@ -28,7 +27,7 @@ CMxDCRCBus::CMxDCRCBus () :
  *
  */
 CMxDCRCBus::CMxDCRCBus (const CMxDCRCBus& rhs) :
-  CControlHardware(rhs)
+  CVMUSBControlHardware(rhs)
 {
   copy(rhs);
 }
@@ -37,7 +36,7 @@ CMxDCRCBus& CMxDCRCBus::operator=(const CMxDCRCBus& rhs)
 {
   if (this != &rhs) {
     copy(rhs);
-    CControlHardware::operator=(rhs);
+    CVMUSBControlHardware::operator=(rhs);
   }
 
   return *this;
@@ -169,16 +168,8 @@ void CMxDCRCBus::activate(CVMUSB& ctlr) {
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
-
-  if (status<0) {
-    stringstream errmsg;
-    errmsg << "CMxDCRCBus::activate() - executeList returned status = ";
-    errmsg << status;
-
-    throw errmsg.str();
-  }
-
+  doList(ctlr, *list, data, sizeof(uint16_t), &nBytesRead, "ERROR - CMxDCRCBus::activate()");
+  
 }
 
 
@@ -201,12 +192,11 @@ uint16_t CMxDCRCBus::pollForResponse(CVMUSB& ctlr)
       msg += "Timed out while awaiting response";
       throw msg;
     }
-
     status = ctlr.vmeRead16(base+RCStatus, VMEAMod::a32UserData, &data);
 
     if (status<0) {
       stringstream errmsg;
-      errmsg << "CMxDCRCBus::pollForResponse() - executeList returned status = ";
+      errmsg << "CMxDCRCBus::pollForResponse() - read16 returned status = ";
       errmsg << status;
 
       throw errmsg.str(); // failure while communicating with VM-USB is worthy 
@@ -333,15 +323,8 @@ void CMxDCRCBus::initiateWrite(CVMUSB& ctlr,
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
-  if (status<0) {
-    stringstream errmsg;
-    errmsg << "ERROR - ";
-    errmsg << "CMxDCRCBus::Set - executeList returned status = ";
-    errmsg << status;
-
-    throw errmsg.str();
-  }
+  doList(ctlr, *list, data, sizeof(uint16_t), &nBytesRead, "ERROR - CMxDCRCBus::Set");
+  
 }
 
 void CMxDCRCBus::initiateRead(CVMUSB& ctlr, 
@@ -357,13 +340,6 @@ void CMxDCRCBus::initiateRead(CVMUSB& ctlr,
 
   size_t nBytesRead = 0;
   uint32_t data[128];
-  int status = ctlr.executeList(*list, data, sizeof(uint16_t), &nBytesRead);
-  if (status<0) {
-    stringstream errmsg;
-    errmsg << "ERROR - ";
-    errmsg << "CMxDCRCBus::Get - executeList returned status = ";
-    errmsg << status;
-
-    throw errmsg.str();
-  }
+  doList(ctlr, *list, data, sizeof(uint16_t), &nBytesRead, "ERROR - CMxDCRCBus::Get");
+  
 }

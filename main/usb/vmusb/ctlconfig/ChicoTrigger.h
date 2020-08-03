@@ -35,7 +35,7 @@ class CVMUSB;
    - base  - The base address of the module. We assume that address modifiers
              will be extended user data.
 */
-class ChicoTrigger : public CControlHardware
+class ChicoTrigger : public CVMUSBControlHardware
 {
 private:
   CControlModule*      m_pConfiguration;

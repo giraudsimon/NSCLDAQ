@@ -46,7 +46,7 @@ class CVMUSB;
  * lists with one element... however if the run is active each list execution will pause/resume
  * the run so be aware and use with caution.
  */
-class CVMUSBModule : public CControlHardware
+class CVMUSBModule : public CVMUSBControlHardware
 {
   // Canonical operations:
 public:

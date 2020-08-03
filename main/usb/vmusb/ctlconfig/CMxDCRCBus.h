@@ -10,7 +10,7 @@
 class CVMUSB;
 #include <CControlModule.h>
 
-class CMxDCRCBus : public ::CControlHardware
+class CMxDCRCBus : public CVMUSBControlHardware
 {
   private:
     size_t m_maxPollAttempts;

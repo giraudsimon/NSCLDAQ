@@ -47,7 +47,6 @@ Const(Control)    0x101c;
  * we are stateless.
  */
 ChicoTrigger::ChicoTrigger() :
-  CControlHardware(),
   m_pConfiguration(0)
 {
 }
@@ -55,7 +54,7 @@ ChicoTrigger::ChicoTrigger() :
  * Copy construction just copies and clones us;
  */
 ChicoTrigger::ChicoTrigger(const ChicoTrigger& rhs) :
-  CControlHardware(rhs)
+  CVMUSBControlHardware(rhs)
 {
 }
 /**
@@ -76,7 +75,7 @@ ChicoTrigger&
 ChicoTrigger::operator=(const ChicoTrigger& rhs)
 {
   if (this != &rhs) {
-    CControlHardware::operator=(rhs);
+    CVMUSBControlHardware::operator=(rhs);
   }
   return *this;
 }
@@ -194,11 +193,12 @@ ChicoTrigger::Set(CVMUSB& vme, string parameter, string value)
     // execute the list:
 
     size_t  buffer;
-    int status = vme.executeList(l, &buffer,
-				 sizeof(buffer),
-				 &buffer);
-    if (status < 0) {
-      return "ERROR - VME operation failed";
+    try {
+      doList(
+        vme, l, &buffer, sizeof(buffer), &buffer, "ERROR - Failed set"
+      );
+    } catch (std::string msg) {
+      return msg;
     }
     return "OK";
   }
@@ -242,13 +242,14 @@ ChicoTrigger::Get(CVMUSB& vme, string parameter)
 
   uint32_t buffer[4];		// Expecting to read 4 longs.
   size_t   actuallyRead;
-
-  int status = vme.executeList(l, buffer, sizeof(buffer), &actuallyRead);
-
-  if (status <  0) {
-    return "ERROR - VME operation failed";
+  
+  try  {
+    doList(vme, l, buffer, sizeof(buffer), &actuallyRead, "ERROR - GET Failed");
   }
-
+  catch (std::string msg) {
+    return msg;
+  }
+  
   if (actuallyRead != sizeof(buffer)) {
     return "ERROR - Expected read count incorrect";
   }

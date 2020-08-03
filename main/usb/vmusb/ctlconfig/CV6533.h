@@ -43,7 +43,7 @@ class CVMUSBReadoutList;
  *   - tempn         - Temperature of channel n.
  */
 
-class CV6533 : public CControlHardware
+class CV6533 : public CVMUSBControlHardware
 {
 private:
   CControlModule*    m_pConfiguration;

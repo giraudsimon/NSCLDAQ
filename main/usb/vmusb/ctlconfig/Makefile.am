@@ -18,6 +18,7 @@ COMPILATION_FLAGS=@THREADCXX_FLAGS@ -I@top_srcdir@/usb/vmusb/vmusb		\
 libVMUSBCtlConfig_la_CXXFLAGS	= $(COMPILATION_FLAGS)
 
 libVMUSBCtlConfig_la_SOURCES	= \
+					CControlHardware.cpp \
 					CCtlConfiguration.cpp \
 					CWatchCommand.cpp	\
 					CMonCommand.cpp         \

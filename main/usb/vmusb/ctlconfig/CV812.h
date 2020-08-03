@@ -51,7 +51,7 @@ class CVMUSB;
 
 */
 
-class CV812 : public CControlHardware
+class CV812 : public CVMUSBControlHardware
 {
 private:
   CControlModule*     m_pConfiguration;

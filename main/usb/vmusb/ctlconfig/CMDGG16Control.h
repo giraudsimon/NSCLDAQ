@@ -60,7 +60,7 @@ namespace WienerMDGG16
    *  -configfile  - path to file (must exist)
    *
    */
-  class CControlHdwr : public CControlHardware
+  class CControlHdwr : public CVMUSBControlHardware
   {
     private:
       CDeviceDriver m_dev; //!< low-level driver that handle logic
