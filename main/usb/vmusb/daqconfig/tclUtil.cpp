@@ -17,6 +17,7 @@
 #include "tclUtil.h"
 #include "CReadoutModule.h"
 #include "CConfiguration.h"
+#include <XXUSBConfigurableObject.h>
 
 #include <TCLInterpreter.h>
 #include <TCLObject.h>

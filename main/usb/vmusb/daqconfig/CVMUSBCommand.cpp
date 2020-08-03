@@ -22,6 +22,7 @@
 #include <CVMUSBControl.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
+#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -165,18 +166,13 @@ CVMUSBCommand::create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 int
 CVMUSBCommand::config(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
-  requireAtLeast(objv, 5, "Insufficient command parameters");
-  if ((objv.size() & 1) == 0) {
-    throw std::string("Odd number of command words needed for config");
-  }
-
-  bindAll(interp, objv);
-  std::string name = objv[2];
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (!pModule) {
-    throw std::string("vmusb module does not exist");
-  }
-
+  
+	CReadoutModule* pModule = tclUtil::getModule(
+		m_Config, interp, objv, (objv.size() & 1) == 0
+	);
+	if (!pModule) return TCL_ERROR;
+	std::string name = objv[2];
+	
   // Config the module:
 
   for (int i = 3; i < objv.size(); i+=2) {
@@ -201,39 +197,15 @@ CVMUSBCommand::config(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 int
 CVMUSBCommand::cget(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
-  // validate prameters and extract the name.
-
-  requireExactly(objv, 3, "cget requires exactly three command words");
-  bindAll(interp, objv);
-  std::string name = objv[2];
-
-  // Locate the module.
-
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (!pModule) {
-    throw std::string("No such module name");
-  }
+  
   // Get the configuration and continue.
 
-  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
-
-  CTCLObject result;
-  result.Bind(interp);
-
-  for (int i = 0; i < config.size(); i++) {
-    CTCLObject element;
-    element.Bind(interp);
-    
-    std::string key = config[i].first;
-    std::string value = config[i].second;
-
-    element += key;
-    element += value;
-
-    result += element;
-  }
-  interp.setResult(result);
-
+	CReadoutModule* pModule = tclUtil::getModule(
+		m_Config, interp, objv, objv.size() ==3
+	);
+	if (!pModule) return TCL_ERROR;
+  tclUtil::listConfig(interp, pModule);
+	
   return TCL_OK;
   
 }
