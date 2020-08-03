@@ -222,7 +222,11 @@ public:
   static bool isBoolList(std::string name,std::string value, void* arg);
   static bool isIntList(std::string name, std::string value, void* arg);
   static bool isStringList(std::string name, std::string value, void* arg);
-
+	static bool        isValidTypedList(
+		const std::string& name, const std::string& value,
+		typeChecker typeEnforcer,
+		void* size
+	);
   // Utilities:
 
   // Build enum set from a list of char*'s:
@@ -242,6 +246,7 @@ private:
   void        deleteEnumCheckers();
   void        addEnumCheckers(const EnumCheckers& rhs);
   void        releaseConstraintCheckers();
+	
 
 
   // Constraint releasers.

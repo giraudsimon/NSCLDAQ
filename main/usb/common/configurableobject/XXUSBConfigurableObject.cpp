@@ -1024,23 +1024,8 @@ CConfigurableObject::isList(string name, string value, void* validity)
 bool
 CConfigurableObject::isBoolList(string name, string value, void* size)
 {
-  // Set up our isListParameter struct initialized so that only
-  // elements will be checked:
-
-  isListParameter validator;
-  validator.s_checker.first = isBool;
-  validator.s_checker.second= NULL;
-
-  if (size) {
-    ListSizeConstraint& limits(*static_cast<ListSizeConstraint*>(size));
-    validator.s_allowedSize = limits;
-
-  }
-  else {
-    validator.s_allowedSize = unconstrainedSize;
-
-  }
-  return isList(name, value, &validator);
+  return isValidTypedList(name, value, isBool, size);
+  
 }
 /*!
     Check that this is a valid list of integers.
@@ -1063,21 +1048,8 @@ CConfigurableObject::isBoolList(string name, string value, void* size)
 bool
 CConfigurableObject::isIntList(string name, string value, void* size)
 {
-  isListParameter validator;
-  validator.s_checker.first  = isInteger; // Require integer but 
-  validator.s_checker.second = NULL;      // No range requirements. 
-
- 
+  return isValidTypedList(name, value, isInteger, size);
   
-
-  if (size) {
-    ListSizeConstraint& limits(*static_cast<ListSizeConstraint*>(size));
-    validator.s_allowedSize = limits;
-  }
-  else {
-    validator.s_allowedSize = unconstrainedSize;
-  }
-  return isList(name, value, &validator);
 }
 /*!
     Check for a string list.  String lists are allowed to have just about anything
@@ -1099,19 +1071,10 @@ CConfigurableObject::isIntList(string name, string value, void* size)
 bool
 CConfigurableObject::isStringList(string name, string value, void* validSizes)
 {
-  isListParameter validator;
-  validator.s_checker.first  = static_cast<typeChecker>(NULL);
-  validator.s_checker.second = NULL;
-
-  if (validSizes) {
-    ListSizeConstraint& limits(*static_cast<ListSizeConstraint*>(validSizes));
-    validator.s_allowedSize = limits;
-  }
-  else {
-    validator.s_allowedSize = unconstrainedSize;
-  }
-
-  return isList(name, value, &validator);
+  return isValidTypedList(
+      name, value, static_cast<typeChecker>(nullptr), validSizes
+  );
+  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1315,6 +1278,39 @@ CConfigurableObject::releaseConstraintCheckers()
   m_constraints.clear();
 }
 
+/**
+ * isValidTypedList
+ *    Determines if a typed list is valid:
+ *
+ *  @param name  - name of the configuration parameter
+ *  @param value - proposed value of the parameter.
+ *  @param typeEnforcer - Type checker for individual list elements.
+ *  @param size - Pointer to size constraint value or null if there
+ *                isn't one.
+ *  @return bool - true if the proposed value is valid.
+*/
+bool
+CConfigurableObject::isValidTypedList(
+		const std::string& name, const std::string& value,
+		typeChecker typeEnforcer,
+		void* size
+)
+{
+  isListParameter validator;
+  validator.s_checker.first  = typeEnforcer; // Require integer but 
+  validator.s_checker.second = NULL;      // No range requirements. 
+
+  // See if there are size constraints
+  
+  if (size) {
+    ListSizeConstraint& limits(*static_cast<ListSizeConstraint*>(size));
+    validator.s_allowedSize = limits;
+  }
+  else {
+    validator.s_allowedSize = unconstrainedSize;
+  }
+  return isList(name, value, &validator);
+}
 
 /**
  * getTclTraceback
