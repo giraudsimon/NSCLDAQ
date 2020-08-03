@@ -716,6 +716,7 @@ TclServer::getBuffer()
     
     return pBuffer;
 }
+
 /**
  * acquireUSBIfNeeded
  *   If necessary lock the control queues and acquire the VMUSB
@@ -732,3 +733,4 @@ TclServer::acquireUSBIfNeeded()
   }
   return mustRelease;
 }
+

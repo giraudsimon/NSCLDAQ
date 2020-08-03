@@ -141,6 +141,7 @@ private:
 	DataBuffer* getBuffer();
 public:
 	static bool acquireUSBIfNeeded();
+
 };
  
 
