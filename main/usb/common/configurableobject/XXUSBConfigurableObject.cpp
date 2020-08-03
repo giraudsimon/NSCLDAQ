@@ -50,7 +50,27 @@ inline std::string itos(int i)
   ss << i;
   return ss.str();
 }
-
+/**
+ * checkStrTo
+ *    @param str - string tried to convert with strtoxxxl
+ *    @param end - end pointer from that function.
+ *    @param name - name of the parameter we're trying to convert
+ *    @param message - initial part of the message.
+ *    @throw std::string if conversion failed.
+ */
+static void checkStrTo(
+  const char* str, const char* end, std::string name, const char* message
+)
+{
+  if (end == str) {
+    std::string  msg(message);
+    msg += " ";
+    msg += name;
+    msg += " got: ";
+    msg += str;
+    throw msg;
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //////////////////////// Canonical member functions ///////////////////////
@@ -299,17 +319,15 @@ CConfigurableObject::getIntegerParameter(string name)
 
   char* end;
   int iValue = strtol(value.c_str(), &end, 0);
-  if (end == value.c_str()) {
-    string msg = "Expected an integer parameter value for config. parameter ";
-    msg += name;
-    msg += "got: ";
-    msg += value;
-    throw msg;
-  }
+  checkStrTo(
+    value.c_str(), end, name,
+    "Expected an integer parameter value for config. parameter "
+  );
+  
   return iValue;
 }
 /*! 
-  Same as above but for an integer.  Needed because strtol for something
+  Same as above but for an unsigned integer.  Needed because strtol for something
   bigger than MAXINT returns MAXINT.
 */
 unsigned int
@@ -319,13 +337,11 @@ CConfigurableObject::getUnsignedParameter(string name)
 
   char* end;
   int iValue = strtoul(value.c_str(), &end, 0);
-  if (end == value.c_str()) {
-    string msg = "Expected an integer parameter value for config. parameter ";
-    msg += name;
-    msg += "got: ";
-    msg += value;
-    throw msg;
-  }
+  checkStrTo(
+    value.c_str(), end, name,
+    "Expected an unsigned integer parameter value for config. parameter "
+  );
+  
   return iValue;
 }
 
