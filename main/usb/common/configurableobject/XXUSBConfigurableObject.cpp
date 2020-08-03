@@ -1278,6 +1278,7 @@ CConfigurableObject::releaseConstraintCheckers()
   m_constraints.clear();
 }
 
+
 /**
  * isValidTypedList
  *    Determines if a typed list is valid:
@@ -1300,7 +1301,6 @@ CConfigurableObject::isValidTypedList(
   validator.s_checker.first  = typeEnforcer; // Require integer but 
   validator.s_checker.second = NULL;      // No range requirements. 
 
-
   // See if there are size constraints
   
   if (size) {
@@ -1312,6 +1312,8 @@ CConfigurableObject::isValidTypedList(
   }
   return isList(name, value, &validator);
 }
+
+
 
 
   /**
