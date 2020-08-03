@@ -103,5 +103,7 @@ class CSystemControl
     static CTCLObject makeCommand(CTCLInterpreter* pInterp, 
                                   const char* verb, 
                                   std::string argument);
+    static std::string getEventString(Tcl_Event* pEvent);
+    static Tcl_Event* makeStringEvent(std::string msg);
 };
 #endif

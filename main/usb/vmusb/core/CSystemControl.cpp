@@ -138,13 +138,7 @@ CSystemControl::AcquisitionErrorHandler(Tcl_Event* pEvent, int flags)
 {
     // Get the message text:
     
-    struct event {
-        Tcl_Event     event;
-        StringPayload message;
-    };
-    event* pFullEvent = reinterpret_cast<event*>(pEvent);
-    std::string msg = pFullEvent->message.pMessage;
-    Tcl_Free(pFullEvent->message.pMessage);
+    std::string msg = getEventString(pEvent);
     
     // Try the onTriggerFail command:
     
@@ -197,15 +191,11 @@ int CSystemControl::scheduleExit(int status)
       Tcl_Event     event;
       StringPayload message;
     };
-
-    event* pEvent = reinterpret_cast<event*>(Tcl_Alloc(sizeof(event)));
-    string msg = to_string(status);
-    pEvent->event.proc = CSystemControl::tclExit;
-    pEvent->message.pMessage = Tcl_Alloc( msg.size()+1 );
-    strcpy(pEvent->message.pMessage, msg.c_str() );
+    Tcl_Event* pEvent = makeStringEvent(to_string(status));
+    pEvent->proc = CSystemControl::tclExit;
 
     Tcl_ThreadQueueEvent(Globals::mainThreadId, 
-                         reinterpret_cast<Tcl_Event*>(pEvent),
+                         pEvent,
                          TCL_QUEUE_TAIL);
 
   }
@@ -216,18 +206,52 @@ int CSystemControl::scheduleExit(int status)
 int CSystemControl::tclExit(Tcl_Event* pEvent, int flags)
 {
     // Get the message text:
-    
-    struct event {
-        Tcl_Event     event; 
-        StringPayload message;
-    };
-    event* pFullEvent = reinterpret_cast<event*>(pEvent);
-    std::string msg = pFullEvent->message.pMessage;
-    Tcl_Free(pFullEvent->message.pMessage);
+    std::string msg = getEventString(pEvent);
     
     // Try the onTriggerFail command:
     
     CTCLInterpreter* pInterp = Globals::pMainInterpreter;
     pInterp->GlobalEval(string(makeCommand( pInterp, "exit", msg)));
     return 1;    
+}
+/**
+ * getEventString
+ *   Given a Tcl event with a string hanging on the back,
+ *   retursn the string freeing the extra storage in the event.
+ * @param pEvent pointer to Raw Tcl Event.
+ * @return std::string
+ */
+string
+CSystemControl::getEventString(Tcl_Event* pEvent)
+{
+   struct event {
+        Tcl_Event     event; 
+        StringPayload message;
+    } ;
+    event* pFullEvent = reinterpret_cast<event*>(pEvent);
+    std::string msg = pFullEvent->message.pMessage;
+    Tcl_Free(pFullEvent->message.pMessage);
+   
+    return  msg; 
+}
+/**
+ * makeStringEvent
+ *    Create a string event (event with string payload).
+ * @param msg - string
+ * @return Tcl_Event* event.
+ */
+Tcl_Event*
+CSystemControl::makeStringEvent(std::string msg)
+{
+   struct event {
+        Tcl_Event     event; 
+        StringPayload message;
+    };
+
+    event* pEvent = reinterpret_cast<event*>(Tcl_Alloc(sizeof(event)));
+    pEvent->message.pMessage = Tcl_Alloc( msg.size()+1 );
+    strcpy(pEvent->message.pMessage, msg.c_str() );
+    
+    return reinterpret_cast<Tcl_Event*>(pEvent);
+  
 }
