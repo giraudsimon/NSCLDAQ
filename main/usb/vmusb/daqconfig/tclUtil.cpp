@@ -15,6 +15,8 @@
 */
 #include <config.h>
 #include "tclUtil.h"
+#include "CReadoutModule.h"
+#include "CConfiguration.h"
 
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
@@ -22,6 +24,7 @@
 #include <CConfiguration.h>
 
 #include <tcl.h>
+
 
 using std::vector;
 using std::string;
@@ -165,7 +168,7 @@ getModule(
     return nullptr;
   }
   // Try to find it:
-  
+
   string          name     = objv[2];
   CReadoutModule* pModule  = config.findAdc(name);
   if(!pModule) {
@@ -191,6 +194,7 @@ listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
   auto config = pModule->cget();
 
   Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
+
 
   for (int i =0; i < config.size(); i++) {
     Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
