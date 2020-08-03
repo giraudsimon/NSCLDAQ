@@ -74,7 +74,7 @@ public:
 private:
   virtual int create(CTCLInterpreter& interp, 
 		     std::vector<CTCLObject>& objv);
-  void Usage(CTCLInterpreter& interp, const char* msg, std::vector<CTCLObject>& objv);
+  
 };
 
 #endif
