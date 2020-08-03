@@ -21,6 +21,8 @@
 
 class CTCLInterpreter;
 class CTCLObject;
+class CReadoutModule;
+class CConfiguration;
 
 /*! \file tclUtil.h
       This is just a few Tcl utilities.  They are unbound functions
@@ -33,6 +35,11 @@ namespace tclUtil {
 	     std::vector<CTCLObject>& objv, std::string usage);
   std::string getTclTraceback(CTCLInterpreter& interp);
   std::string swigPointer(void* p, std::string type);
-  
+   CReadoutModule* getModule(
+    CConfiguration& config,
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
+  );
+  void listConfig(CTCLInterpreter& interp, CReadoutModule* pModule);
+
 };
 #endif
