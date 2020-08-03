@@ -732,5 +732,5 @@ TclServer::acquireUSBIfNeeded()
     CControlQueues::getInstance()->AcquireUsb();
   }
   return mustRelease;
-}
 
+}
