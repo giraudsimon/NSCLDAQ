@@ -15,9 +15,6 @@
 */
 #include <config.h>
 #include "tclUtil.h"
-#include "CReadoutModule.h"
-#include "CConfiguration.h"
-#include <XXUSBConfigurableObject.h>
 
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
@@ -25,7 +22,6 @@
 #include <CConfiguration.h>
 
 #include <tcl.h>
-
 
 using std::vector;
 using std::string;
@@ -63,9 +59,9 @@ namespace tclUtil {
    */
   void
   Usage(CTCLInterpreter&    interp,
-   string              msg,
-   vector<CTCLObject>&  objv,
-   string              usage)
+	string              msg,
+	vector<CTCLObject>&  objv,
+	string              usage)
   {
     string result("ERROR: ");
     result += msg;
@@ -78,30 +74,7 @@ namespace tclUtil {
     result += usage;
     setResult(interp, result);
   }
-  /**
-  * getTclTraceback
-  *  daqdev/NSCLDAQ#1011 - Provide tracebacks on script errors.
-  *    Return the Tcl error traceback. This can be used to obtain
-  *    traceback information when reporting errors in script execution.
-  *    This method depends on the global variable "errorInfo" containing
-  *    the traceback information
-  *
-  *  @param interp  - The interpreter for which we want error traceback.
-  *  @return std::string - the error traceback.
-  */
- std::string
- getTclTraceback(CTCLInterpreter& interp)
- {
-     const char* trace = Tcl_GetVar(
-        interp.getInterpreter(), "errorInfo",  TCL_GLOBAL_ONLY
-      );
-     if (trace == nullptr) {
-      trace = " - no traceback information available";
-     }
-     
-     return std::string(trace);
- }
- /**
+/**
  * Generate a swig pointer from the C++ Pointer and its type.
  * This is of the form _address_p_typename
  * @param obj - pointer to the object.
@@ -114,7 +87,7 @@ swigPointer(void* p, std::string  type)
 {
 
   char result [10000];
-  std::string hexified;		// Bigendian.
+  std::string hexified;         // Bigendian.
 
   uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
 
@@ -169,7 +142,7 @@ getModule(
     return nullptr;
   }
   // Try to find it:
-
+  
   string          name     = objv[2];
   CReadoutModule* pModule  = config.findAdc(name);
   if(!pModule) {
@@ -196,7 +169,6 @@ listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
 
   Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
 
-
   for (int i =0; i < config.size(); i++) {
     Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
     Tcl_Obj* value = Tcl_NewStringObj(config[i].second.c_str(), -1);
@@ -207,4 +179,4 @@ listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
   }
   Tcl_SetObjResult(interp.getInterpreter(), pResult);  
 }
-
+};
