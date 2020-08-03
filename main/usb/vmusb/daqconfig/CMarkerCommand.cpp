@@ -136,6 +136,7 @@ CMarkerCommand::Usage(CTCLInterpreter& interp, const char *msg, std::vector<CTCL
   usage += cmd;
   usage += " cget name";
   
-	tclUtil::Usage(interp, msg, objv, usage);
+  tclUtil::Usage(interp, msg, objv, usage);
   
 }
+
