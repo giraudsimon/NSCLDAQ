@@ -139,7 +139,7 @@ swigPointer(void* p, std::string  type)
  *  @param config - the configuration that has the module.
  *  @param interp - The interpreter running the command that wants to know.
  *  @param objv   - The command words for the command being executed.
- *  @param predicate - Condition that must be true to have enough objv elements.
+ *  @param predicate - Condition that must be false to have enough objv elements.
  *  @return CReadoutModule*
  *  @retval nullptr - if the module could not be fetched for any reason.
  *  @note The form of the command being processed is:
@@ -156,7 +156,7 @@ getModule(
 )
 {
   // Valid number of parameters?
-  if(!predicate) {
+  if(predicate) {
     std::string type = objv[0];
     std::string sc  = objv[1];
     std::string msg = "Incorrect number of commands for: ";
