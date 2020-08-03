@@ -622,12 +622,8 @@ TclServer::sendWatchedVariables()
 	// If necessary get a buffer.
 	
 	if (!pBuffer) {
-	  pBuffer               = gFreeBuffers.get();
-	  pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
-	  pBuffer->s_bufferType = TYPE_STRINGS;
+    pBuffer = getBuffer();
 	  pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-	  pStrings->s_stringCount = 0;
-	  pStrings->s_ringType    = MONITORED_VARIABLES;
 	  pDest                 = pStrings->s_strings;
 	}
 	
@@ -657,13 +653,8 @@ TclServer::sendWatchedVariables()
 	  */
 	  if ((setCommand.size() + pBuffer->s_bufferSize + 1) > pBuffer->s_storageSize) {
 	    gFilledBuffers.queue(pBuffer);
-	    
-	    pBuffer               = gFreeBuffers.get();
-	    pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
-	    pBuffer->s_bufferType = TYPE_STRINGS;
+	    pBuffer = getBuffer();
 	    pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-	    pStrings->s_stringCount = 0;
-	    pStrings->s_ringType    = MONITORED_VARIABLES;
 	    pDest                 = pStrings->s_strings;
 	    
 	  }
@@ -707,4 +698,24 @@ TclServer::stackTrace()
   
   
   std::cerr << msg << std::endl;
+}
+/**
+ * getBuffer
+ *    Get an initialized string buffer
+ *  @return DataBuffer*
+ */
+DataBuffer*
+TclServer::getBuffer()
+{
+    DataBuffer* pBuffer;
+    pStringsBuffer pStrings;
+    
+    pBuffer               = gFreeBuffers.get();
+	  pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
+	  pBuffer->s_bufferType = TYPE_STRINGS;
+	  pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
+	  pStrings->s_stringCount = 0;
+	  pStrings->s_ringType    = MONITORED_VARIABLES;
+    
+    return pBuffer;
 }

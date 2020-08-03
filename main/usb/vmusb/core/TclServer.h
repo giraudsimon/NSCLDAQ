@@ -138,6 +138,7 @@ private:
 
   static int Exit(Tcl_Event* pEvent, int flags);
   void stackTrace();
+	DataBuffer* getBuffer();
 
 };
  
