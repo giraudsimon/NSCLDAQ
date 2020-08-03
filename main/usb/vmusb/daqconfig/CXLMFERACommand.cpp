@@ -214,7 +214,7 @@ CXLMFERACommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 		(objv.size() < 5) || ((objv.size() & 1) == 0)
 	);
 	if (!pModule) return TCL_ERROR;
-
+	
   /* Process the configuration... this is done inside a try/catch block
     as the configure can throw.
   */
@@ -229,7 +229,7 @@ CXLMFERACommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(msg, objv);
     return TCL_ERROR;
   }
-
+	std::string name = objv[2];
   m_Config.setResult(name);
   return TCL_OK;
 }
@@ -259,7 +259,7 @@ int
 CXLMFERACommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
 	CReadoutModule* pModule = getModule(
-		interp, objv, obvj.size() != 3
+		interp, objv, objv.size() != 3
 	);
 	if (!pModule) return TCL_ERROR;
   
