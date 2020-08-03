@@ -251,16 +251,12 @@ CTclControlModule::getMonitoredData()
   std::string baseCommand = m_pConfig->cget("-ensemble");
   command += baseCommand;
   command += "getMonitoredData";
-
-  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
-  std::string msg;
-  if (status != TCL_OK) {
-    msg = "ERROR -  ";
-
-  } else {
-    msg = "OK ";
+  std::string result = executeCommand(command);
+  if (result.substr(0, strlen("ERROR")) == "ERROR") {
+    return result;
   }
-  msg += Tcl_GetStringResult(interp);
+  std::string msg("OK ");
+  msg += result;
   return msg;
 
 }
