@@ -351,12 +351,9 @@ TclServer::EventLoop()
 void
 TclServer::initModules()
 {
-  // this code was inside of the Initialize method of CControl 
-  bool mustRelease(false);
-  if (CRunState::getInstance()->getState() == CRunState::Active) {
-    mustRelease = true;
-    CControlQueues::getInstance()->AcquireUsb();
-  }
+  // this code was inside of the Initialize method of CControl
+  
+  bool mustRelease = acquireUSBIfNeeded();
 
   auto& modules( m_config.getModules());
 
@@ -718,4 +715,20 @@ TclServer::getBuffer()
 	  pStrings->s_ringType    = MONITORED_VARIABLES;
     
     return pBuffer;
+}
+/**
+ * acquireUSBIfNeeded
+ *   If necessary lock the control queues and acquire the VMUSB
+ *   from the readout thread
+ * @return true - if acquisition was needed.
+ */
+bool
+TclServer::acquireUSBIfNeeded()
+{
+  bool mustRelease(false);
+  if (CRunState::getInstance()->getState() == CRunState::Active) {
+    mustRelease = true;
+    CControlQueues::getInstance()->AcquireUsb();
+  }
+  return mustRelease;
 }
