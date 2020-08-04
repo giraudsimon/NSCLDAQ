@@ -100,8 +100,7 @@ public:
   virtual CReadoutHardware* clone() const;
 
 private:
-  uint32_t getIntegerParameter(std::string name) const;
-  bool     getBooleanParameter(std::string name) const;
+  
   TriggerSource getTriggerSource() const;
 
 

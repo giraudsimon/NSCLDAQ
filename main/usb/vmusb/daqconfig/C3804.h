@@ -78,8 +78,7 @@ public:
   virtual CReadoutHardware* clone() const;
 
 private:
-  uint32_t   getIntegerParameter(std::string name) const;
-  bool       getBoolParameter(std::string name)    const;
+  
 
   // 32 bit transfers that throw if there's an error:
 
