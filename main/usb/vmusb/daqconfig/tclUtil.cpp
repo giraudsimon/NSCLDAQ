@@ -203,6 +203,35 @@ listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
   }
   Tcl_SetObjResult(interp.getInterpreter(), pResult);
 }
+/**
+ * newName
+ *    Return a name for a new adc module or else set an error.
+ * @param inter - the interpreter.
+ * @param pConfig - pointer to the current configuration object.
+ * @param objv    - Command line parameter.
+ * @return std::string
+ * @retval "" - Error string is in result, report an error.
+ */
+std::string
+newName(CTCLInterpreter& interp, CConfiguration* pConfig, std::vector<CTCLObject>& objv)
+{
+  if (objv.size() != 3) {
+    interp.setResult("Incorrect parameter count for create subcommand");
+    return "";
+  }
 
+  // Get the chain name.  This must not be the name of an existing 'adc' module.
+
+  std::string   name    = objv[2];
+
+  if (pConfig->findAdc(name)) {
+    std::string result("Duplicate module creation attempted - ");
+    result += name;
+    interp.setResult(result);
+    return "";
+  }
+  return name;
+  
+}
 
 };

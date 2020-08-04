@@ -40,6 +40,7 @@ namespace tclUtil {
     CTCLInterpreter& interp, std::vector<CTCLObject>& objv, bool predicate
   );
   void listConfig(CTCLInterpreter& interp, CReadoutModule* pModule);
+  std::string newName(CTCLInterpreter& interp, CConfiguration* pConfig, std::vector<CTCLObject>& objv);
 
 };
 #endif
