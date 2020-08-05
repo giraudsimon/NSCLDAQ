@@ -4,7 +4,7 @@ SCRIPT_FILES=@srcdir@/mwutil.tcl @srcdir@/notebook.tcl @srcdir@/tablelist.tcl @s
 	@srcdir@/nsclspinbox.tcl \
 	@srcdir@/tkutils.tcl \
 	@srcdir@/warning.tcl @srcdir@/NSCLBgerror.tcl @srcdir@/bells.tcl \
-	@srcdir@/icon.tcl
+	@srcdir@/icon.tcl @srcdir@/titledSpinBox.tcl
 
 DOCS=RingStatus.xml ScaleControl_man.xml Frames.xml transientLabel.xml
 
