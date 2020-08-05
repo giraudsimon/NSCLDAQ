@@ -50,8 +50,11 @@ using namespace std;
 
 static const uint8_t   registerAmod(CVMUSBReadoutList::a32UserData);
 static const uint8_t   sramaAmod(CVMUSBReadoutList::a32UserData);
-static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock); 
+static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock);
 
+const uint8_t XLM::CXLM::registerAmod(CVMUSBReadoutList::a32UserData);
+const uint8_t XLM::CXLM::blockTransferAmod(CVMUSBReadoutList::a32UserBlock);
+const float   XLM::CXLM::vmusbClockTick(12.5);
 
 // The IRQ/serial number register is some mess of bits; both in/out
 // we're just going to define a function for extracting the serial number from a read:

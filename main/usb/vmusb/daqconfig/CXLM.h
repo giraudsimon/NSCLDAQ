@@ -18,6 +18,7 @@
 #define CXLM_H
 
 #include "CReadoutHardware.h"
+
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -28,7 +29,6 @@
 
 class CReadoutModule;
 class CVMUSB;
-class CVMUSBReadoutList;
 
 /*!
    Provides base class support for XLM based readout targets.
@@ -57,6 +57,11 @@ public:				// 'constants'.
   static const uint32_t  REQ_X;		// FPGA bus.
   static const uint32_t  REQ_A;		// SRAM A bus
   static const uint32_t  REQ_B;		// SRAM B bus
+		static const uint8_t   registerAmod;
+		static const uint8_t   blockTransferAmod;
+
+
+		static const float     vmusbClockTick;
 
 public:				// Canonicals:
   CXLM();
