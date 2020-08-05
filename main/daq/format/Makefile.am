@@ -62,6 +62,7 @@ libdataformat_la_LIBADD	= @top_builddir@/base/dataflow/libDataFlow.la \
 
 libdataformat_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS)
 
+
 libTclRingBuffer_la_DEPENDENCIES=@builddir@/libdataformat.la
 libTclRingBuffer_la_SOURCES=CTclRingCommand.cpp
 libTclRingBuffer_la_LIBADD=	@builddir@/libdataformat.la     \
@@ -117,12 +118,19 @@ unittests_LDFLAGS	= -Wl,"-rpath-link=$(libdir)"
 ringTests_SOURCES = TestRunner.cpp ringTests.cpp
 ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
                        -I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow
+<<<<<<< HEAD
 ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ @builddir@/libTclRingBuffer.la \
+=======
+ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ libTclRingBuffer.la \
+>>>>>>> daqdev/NSCLDAQ#700 - move the TclRingBuffer package to the
                        @top_builddir@/daq/format/libdataformat.la     \
                                @top_builddir@/base/dataflow/libDataFlow.la    \
                                @LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
 
+<<<<<<< HEAD
 ringTests_DEPENDENCIES=@builddir@/libTclRingBuffer.la @builddir@/libdataformat.la
+=======
+>>>>>>> daqdev/NSCLDAQ#700 - move the TclRingBuffer package to the
 
 
 TESTS=./unittests ./ringTests
