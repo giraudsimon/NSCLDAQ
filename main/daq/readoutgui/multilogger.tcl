@@ -285,7 +285,7 @@ snit::type EventLogger {
 		
 		# If the exit was unexpected, yell:
 		
-		if {! $expectingExit} {
+		if {! $expectingExit || ($::Pending::pendingState ne "Halted"} {
 		    set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
 		    
 		    set dlgmsg "MultiLogger: $msg Check log for errors."

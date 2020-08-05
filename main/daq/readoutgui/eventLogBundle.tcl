@@ -413,9 +413,12 @@ proc ::EventLog::_handleInput {} {
         fileevent $fd readable [list]
         catch {close $fd} msg
 
-        # Log to the output window and pop up and error.
+        # Log to the output window and pop up and error.  It's ok to exit
+        # at this time if we're expecting it or if the pending state is halted.
+        # This covers the idea that the end run passed through the eventlogger
+        # before we got a chance to expect it to here.
 
-        if {!$::EventLog::expectingExit} {
+        if {!$::EventLog::expectingExit && ($::Pending::pendingState ne "Halted")} {
             ::ReadoutGUIPanel::Log EventLogManager error "Unexpected event log error! $msg"
             ::Diagnostics::Error {The event logger exited unexpectedly check EventLogManager tab for errors.!!}
         } else {

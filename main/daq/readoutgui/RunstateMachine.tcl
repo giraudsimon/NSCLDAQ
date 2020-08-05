@@ -613,7 +613,9 @@ proc RunStateMachineConvenience::removeBundle {name} {
 ##------------------------------------------------------------
 # Convenience functions
 #
-
+namespace eval Pending {
+    variable pendingState None;    # During state transitions this will indicate the next state.
+}
 
 ##
 # Global start proc to transition from NotReady -> Starting -> Halted
@@ -630,6 +632,7 @@ proc start {} {
   set state [$machine getState]
   if {$state eq "Starting"} return;                      # don't allow double start.
   # Transition NotReady -> Starting
+  set Pending::pendingState Starting
   if { [catch { $machine transition Starting } msg] } {
     set trace $::errorInfo
     forceFailure
@@ -639,6 +642,7 @@ proc start {} {
 
   $machine destroy
   
+  set Pending::pendingState Halted
   # Transition Starting -> Halted
   after idle {
     set machine [RunstateMachineSingleton %AUTO%]
@@ -650,18 +654,21 @@ proc start {} {
     }
     $machine destroy
   }
+  set Pending::pendingState None
 
 }
 
 proc begin {} {
-  set machine [RunstateMachineSingleton %AUTO%]
+    set machine [RunstateMachineSingleton %AUTO%]
     set state [$machine getState]
     if {$state eq "Active"} return;              # don't allow double begin.
-  if { [catch { $machine transition Active } msg] } {
-    set trace $::errorInfo
-    forceFailure
-    error "begin failed with message : $msg : $trace"
+    set Pending::pendingState Active
+    if { [catch { $machine transition Active } msg] } {
+        set trace $::errorInfo
+        forceFailure
+        error "begin failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
@@ -669,53 +676,61 @@ proc end {} {
   set machine [RunstateMachineSingleton %AUTO%]
     set state [$machine getState]
     if {$state eq "Halted"} return;              # don't allow double end
-
+    set Pending::pendingState Halted
     if { [catch { $machine transition Halted } msg] } {
-    set trace $::errorInfo
-    forceFailure
-    error "end failed with message : $msg : $trace"
+        set trace $::errorInfo
+        forceFailure
+        error "end failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc pause {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState Paused
   if { [catch { $machine transition Paused } msg] } {
     set trace $::errorInfo
     forceFailure
     error "pause failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc resume {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState Active
   if { [catch { $machine transition Active } msg] } {
     set trace $::errorInfo
     forceFailure
     error "resume failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc forceFailure {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState NotReady
   if { [catch { $machine transition NotReady } msg] } {
     set trace $::errorInfo
     error "Transition to not ready failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy    
 }
 
 proc transitionTo {to} {
   set machine [RunstateMachineSingleton %AUTO%]
-
+  set Pending::pendingState $to
   set retCode [catch [$machine transition $to] msg]
   $machine destroy
 
   if {$retCode} {
     return -code error $msg
   } else {
+    set Pending::pendingState None
     return $msg
   }
 }

@@ -823,16 +823,16 @@ proc EVBC::_PipeInputReady {} {
         catch {close $EVBC::pipefd} msg
         EVBC::_Output "Event builder pipeline exited $msg"
         set EVBC::pipefd ""
-	#
-	# Ensure the entire pipeline is dead too, and bitch if this is unexpected:
-	#
-	if {[llength $::EVBC::evbpids] != 0} {
-	    tk_messageBox -icon error -title {EVB pipe exit}  -type ok \
-		-message {An element of the event builder pipeline exited.  Killing the entire pipe}
-	    foreach pid $::EVBC::evbpids {
-		catch {exec kill -9 $pid}
-	    }
-	}
+        #
+        # Ensure the entire pipeline is dead too, and bitch if this is unexpected:
+        #
+        if {[llength $::EVBC::evbpids] != 0} {
+            tk_messageBox -icon error -title {EVB pipe exit}  -type ok \
+            -message {An element of the event builder pipeline exited.  Killing the entire pipe}
+            foreach pid $::EVBC::evbpids {
+                catch {exec kill -9 $pid}
+            }
+        }
     } else {
         EVBC::_Output [gets $EVBC::pipefd]
     }

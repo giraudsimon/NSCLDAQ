@@ -409,6 +409,10 @@ proc ::RingSourceMgr::_SourceDied {fd} {
   dict for {uri info} $::RingSourceMgr::sourceDict {
     set sourceFd [dict get $info fd]
     if {$sourceFd == $fd} {
+      if {$Pending::pendingState ne "Halted"} {
+        tk_messageBox -type ok -icon error -title {Source exited} \
+          -message "The event builder source for $uri exited unexpectedly"
+      }
       dict set ::RingSourceMgr::sourceDict $uri fd  ""
       break;          # No need to go further.
     }
