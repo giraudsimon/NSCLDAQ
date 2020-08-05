@@ -131,17 +131,10 @@ CVMUSBCommand::operator()(CTCLInterpreter& interp,
 int
 CVMUSBCommand::create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
-  std::string name = objv[2];
-  
-  // prevent duplication:
-
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (pModule) {
-    throw std::string("Duplicate module creation attempted");
-  }
+  std::string name = tclUtil::newName(interp, &m_Config, objv);
  
   CVMUSBControl* pNewModule = new CVMUSBControl;
-  pModule = new CReadoutModule(name, *pNewModule);
+  CReadoutModule* pModule = new CReadoutModule(name, *pNewModule);
   m_Config.addAdc(pModule);
 
   if (objv.size() > 3) return config(interp,objv);

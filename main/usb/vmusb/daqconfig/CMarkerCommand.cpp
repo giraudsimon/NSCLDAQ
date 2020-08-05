@@ -98,7 +98,7 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 
   // Get the command elements and validate them:
 
-  string name    = objv[2];
+  string name    = tclUtil::newName(interp, &m_Config, objv);
   string sValue   = objv[3];
 
   errno = 0;
@@ -107,15 +107,10 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(interp, "Invalid value for marker value.", objv);
     return TCL_ERROR;
   }
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (pModule) {
-    Usage(interp, "Duplicate module creation attempted", objv);
-    return TCL_ERROR;
-  }
   // This is a unique module so we can create it:
 
   CMarker* pMarker = new CMarker;
-  pModule    = new CReadoutModule(name, *pMarker);
+  CReadoutModule* pModule    = new CReadoutModule(name, *pMarker);
   pModule->configure("-value", sValue);
 
   m_Config.addAdc(pModule);

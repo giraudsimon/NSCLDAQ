@@ -108,22 +108,14 @@ CMADCScalerCommand::operator()(CTCLInterpreter& interp,
 int
 CMADCScalerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-  // We already know we have at least three elements...
-
-  string name = objv[2];
-
-  // ensure the name is unique:
-
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if(pModule) {
-    Usage("Duplicate module creation attempted", objv);
-    return TCL_ERROR;
-  }
-
+  
+	std::string name = tclUtil::newName(interp, &m_Config, objv);
+	if (name == "") return TCL_ERROR;
+	
   // Tentatively create the module, and bind it to a configuration.
 
   CMADCScaler* pAdc   = new CMADCScaler;
-  pModule         = new CReadoutModule(name, *pAdc);
+  CReadoutModule* pModule         = new CReadoutModule(name, *pAdc);
 
   // If there are additional parameters, attempt to configure the module
   

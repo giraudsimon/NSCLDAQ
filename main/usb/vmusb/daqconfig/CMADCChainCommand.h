@@ -64,7 +64,6 @@ public:
 private:
   virtual int create(CTCLInterpreter& interp,
 		     std::vector<CTCLObject>& objv); // We just need to be sure a chain is created.
-  virtual void Usage(std::string msg, std::vector<CTCLObject>& obvj);
     
 };
 #endif

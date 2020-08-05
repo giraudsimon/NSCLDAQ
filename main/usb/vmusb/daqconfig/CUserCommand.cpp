@@ -133,18 +133,13 @@ CUserCommand::create(CTCLInterpreter& interp,
  
   // Get the name of the module, ensure it will be unique:
 
-  string name = objv[2];
-
-  CReadoutModule* pModule = m_Config.findAdc(name);
-  if (pModule) {
-    Usage("Duplicate module creation attempted: ", objv);
-    return TCL_ERROR;
-  }
+  string name = tclUtil::newName(interp, &m_Config, objv);
+	if (name == "") return TCL_ERROR;
   // Since the module is unique, we can create it we won't register it until
   // the configuration is successful;
 
   CReadoutHardware* pNewModule   = m_pTemplate->clone();
-  pModule        = new CReadoutModule(name, *pNewModule); // Also attaches pAdc to configuration.
+  CReadoutModule* pModule        = new CReadoutModule(name, *pNewModule); // Also attaches pAdc to configuration.
 
   // If there are configuration parametesr, process them; Relies on the fact that
   // all commands have the same length prefix:  type subcommand module-name ...

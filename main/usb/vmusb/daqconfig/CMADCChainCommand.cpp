@@ -56,18 +56,13 @@ CMADCChainCommand::~CMADCChainCommand()
 int
 CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-  if (objv.size() != 3) {
-    Usage("Incorrect parameter count for create subcommand ", objv);
-    return TCL_ERROR;
-  }
 
-   // Get the chain name.  This must not be the name of an existing 'adc' module.
-
-  string   name    = objv[2];
-  CConfiguration* pConfig = getConfiguration();
-
-  if (pConfig->findAdc(name)) {
-    Usage("Duplicate module creation attempted", objv);
+	CConfiguration* pConfig = getConfiguration();
+  string   name    = tclUtil::newName(interp, pConfig, objv);
+	if (name == "") return TCL_ERROR;
+	
+  if (objv.size() < 4) {
+    Usage(interp, "Not enough parameters for create subcommand", objv);
     return TCL_ERROR;
   }
 
@@ -82,17 +77,3 @@ CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
  
 }
 
-/*
-   The usage command needs to return a usage specific to our requirements.
-*/
-void
-CMADCChainCommand::Usage(string msg, vector<CTCLObject>& objv)
-{
-  std::string usage("Usage\n");
-  usage += "    madcchain create name\n";
-  usage += "    madcchain config name config-params\n";
-  usage += "    madcchain cget   name\n";
-	
-	
-  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
-}
