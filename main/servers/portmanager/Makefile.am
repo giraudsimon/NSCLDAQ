@@ -32,7 +32,6 @@ libPortManager_la_CXXFLAGS = $(THREADCXX_FLAGS) 	\
 
 
 TCLPACKAGES=ConnectionManager.tcl \
-	Log.tcl \
 	portAllocator.tcl  \
 	PortManager.tcl
 
