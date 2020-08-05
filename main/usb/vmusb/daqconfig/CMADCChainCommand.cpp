@@ -77,7 +77,6 @@ CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
  
 }
 
-
 /*
    The usage command needs to return a usage specific to our requirements.
 */
@@ -92,3 +91,4 @@ CMADCChainCommand::Usage(string msg, vector<CTCLObject>& objv)
 	
   tclUtil::Usage(*getInterpreter(), msg, objv, usage);
 }
+

@@ -109,8 +109,8 @@ int
 CMADCScalerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
   
-	std::string name = tclUtil::newName(interp, &m_Config, objv);
-	if (name == "") return TCL_ERROR;
+  std::string name = tclUtil::newName(interp, &m_Config, objv);
+  if (name == "") return TCL_ERROR;
 	
 
   // Tentatively create the module, and bind it to a configuration.

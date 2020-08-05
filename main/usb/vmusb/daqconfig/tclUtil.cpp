@@ -219,7 +219,7 @@ listConfig(CTCLInterpreter& interp, CReadoutModule* pModule)
 std::string
 newName(CTCLInterpreter& interp, CConfiguration* pConfig, std::vector<CTCLObject>& objv)
 {
-  if (objv.size() != 3) {
+  if (objv.size() < 3) {
     interp.setResult("Incorrect parameter count for create subcommand");
     return "";
   }
