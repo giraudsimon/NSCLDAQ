@@ -313,6 +313,30 @@ snit::type EventLogger {
             catch {close $channel}
             foreach pid $pids {
                 catch {exec kill -9 $pid}
+		catch {close $channel}
+		incr waitDone;             # Trigger vwait to finish if waiting.
+		set loggerFd -1;           # Set the variables back to show the logger
+		set loggerPids [list];     # no loger exists.
+		catch {close $loggerFd}
+		incr [myvar waitDone];             # Trigger vwait to finish if waiting.
+		set loggerFd -1;           # Set the variables back to show the logger
+		set loggerPids [list];     # no loger exists.
+		
+		# If the exit was unexpected, yell:
+		
+		if {! $expectingExit || ($::Pending::pendingState ne "Halted")} {
+		    set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
+		    
+		    set dlgmsg "MultiLogger: $msg Check log for errors."
+		    tk_messageBox -icon error -type ok -title {Logger exited} \
+			-message $dlgmsg 
+		    
+		    ::ReadoutGUIPanel::Log MultiLogger: error $msg 
+		} else {
+		    set msg "$ring -> $out (pid=$pid) exited normally."
+		    ::ReadoutGUIPanel::Log MultiLogger: log $msg
+		}
+		
             }
         }
       }
