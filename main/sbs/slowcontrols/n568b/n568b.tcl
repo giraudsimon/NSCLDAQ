@@ -162,7 +162,7 @@ proc n568b::GetOffset {controller node} {
 #
 proc n568b::GetChannelParameters {controller node channel} {
     set function [expr ($channel << 8) | 3]
-    set reply [n568b::_command $controller $node $function {Getting channel parameters]
+    set reply [n568b::_command $controller $node $function {Getting channel parameters}]
     
     set chstat [list [lindex $reply 1] \
 		     [lindex $reply 2] \
