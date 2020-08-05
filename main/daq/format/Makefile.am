@@ -1,6 +1,6 @@
 #-------------- The library libdataformat
 
-lib_LTLIBRARIES	=	libdataformat.la
+lib_LTLIBRARIES	=	libdataformat.la libTclRingBuffer.la
 COMPILATION_FLAGS	= -I@top_srcdir@/base/dataflow	\
 		@LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/headers	\
@@ -62,9 +62,34 @@ libdataformat_la_LIBADD	= @top_builddir@/base/dataflow/libDataFlow.la \
 
 libdataformat_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS)
 
+libTclRingBuffer_la_SOURCES=CTclRingCommand.cpp
+libTclRingBuffer_la_LIBADD=	@top_builddir@/daq/format/libdataformat.la     \
+				@top_builddir@/base/dataflow/libDataFlow.la    \
+				@top_builddir@/base/tcpip/libTcp.la		\
+				@top_builddir@/base/os/libdaqshm.la 		\
+				@LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+
+libTclRingBuffer_la_CPPFLAGS=@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
+				-I@top_srcdir@/base/dataflow \
+				-I@top_srcdir@/daq/format \
+				-I@top_srcdir@/base/os 
+
+noinst_HEADERS=CTclRingCommand.h
+
+# Get the package installed:
+
+INSTDIR=@prefix@/TclLibs/ringcommand
+
+
+install-exec-hook:
+	$(mkinstalldirs) $(INSTDIR) 
+	install @libdir@/libTclRingBuffer.so $(INSTDIR)
+	echo "package ifneeded TclRingBuffer 1.0 [list load [file join \$$dir libTclRingBuffer.so]]" >> $(INSTDIR)/pkgIndex.tcl
+
 #------------------- Tests:
 
-noinst_PROGRAMS = unittests
+noinst_PROGRAMS = unittests ringTests
 
 unittests_SOURCES	= TestRunner.cpp selecttest.cpp desiredtests.cpp	\
 			  allbuttests.cpp ringitemtests.cpp teststate.cpp	\
@@ -88,7 +113,16 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
 unittests_LDFLAGS	= -Wl,"-rpath-link=$(libdir)"
 
+ringTests_SOURCES = TestRunner.cpp ringTests.cpp
+ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
+                       -I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow
+ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ libTclRingBuffer.la \
+                       @top_builddir@/daq/format/libdataformat.la     \
+                               @top_builddir@/base/dataflow/libDataFlow.la    \
+                               @LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
 
-TESTS=./unittests
+
+
+TESTS=./unittests ./ringTests
 
 EXTRA_DIST		=	dataformat_user.xml dataformat_dev.xml
