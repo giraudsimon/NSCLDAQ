@@ -64,6 +64,7 @@ public:				// 'constants'.
   
   static const float     vmusbClockTick;
   
+
 public:				// Canonicals:
   CXLM();
   CXLM(const CXLM& rhs);
