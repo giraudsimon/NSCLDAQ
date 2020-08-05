@@ -19,12 +19,7 @@ TCLPACKAGES=Configuration.tcl \
 	DAQParameters.tcl \
 	ExpFileSystemConfig.tcl \
 	InitializeConfiguration.tcl \
-	OS.tcl          \
-	UniqueInstance.tcl \
 	directories.tcl \
-	rsh.tcl \
-	warning.tcl \
-	bells.tcl   \
 	DataSourceManager.tcl \
 	RunstateMachine.tcl \
 	rdoCalloutsBundle.tcl \
@@ -38,21 +33,20 @@ TCLPACKAGES=Configuration.tcl \
 	DataSourceMonitor.tcl \
 	remoteControl.tcl \
 	ReadoutGuiClient.tcl readoutGuiProvider.tcl \
-  versionUtils.tcl error.png \
+	error.png \
   delayProvider.tcl \
   offlineProvider.tcl \
 	multilogger.tcl \
 	stageareaValidation.tcl \
-	ReadoutGUIAppLauncher.tcl icon.tcl \
-	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl \
-	NSCLBgerror.tcl
+	ReadoutGUIAppLauncher.tcl \
+	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl 
 
 
 
 TCLTESTS =    filesystem.test \
 	initconfig.test installroot.test system.test tests.test  ostest.test \
 	sshpipe.test s800.test  rstatemachine.test rdocallouts.test \
-	  state.test versionutils.test delayprovider.test \
+	  state.test  delayprovider.test \
 		applauncher.test
 
 

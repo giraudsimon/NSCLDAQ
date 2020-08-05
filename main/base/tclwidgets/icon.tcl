@@ -20,6 +20,7 @@
 
 
 package provide icon 1.0
+package require Tk
 
 namespace eval icon {
     set here [file dirname [info script]]
