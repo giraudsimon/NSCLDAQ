@@ -71,7 +71,7 @@ snit::type Actions {
         }
 
       }
-      puts stderr "Exiting with $options(-exitok)"
+      #puts stderr "Exiting with $options(-exitok)"
       if {!$options(-exitok)} {
         #  If this is not ok be noisy about this:
         tk_messageBox -type ok -icon error -title "Unexpected actionchild exit" \
@@ -95,6 +95,7 @@ snit::type Actions {
     set input [chan read $fd ]
 
     if {[catch {$self processInput $input} msg]} {
+      puts "processInput failed with $input $::errorInfo"
       $self handleError "Error while parsing '$input'"
       $self handleError "Error: $msg"
       $self handleError "Resetting parser state"
@@ -102,7 +103,7 @@ snit::type Actions {
       set accumulatedOutMsg {}
       set incomplete 0
     }
-
+    #puts "{$msg}"
     return $msg
   }
 
@@ -143,6 +144,7 @@ snit::type Actions {
   # In that case, we keep adding complete packets to our list until all viable text has
   # been processed and then the packets are processed at the end.
   method processInput input {
+    
     #puts "processing input: \"$input\""
 
     if {$incomplete} {
@@ -251,7 +253,7 @@ snit::type Actions {
   #
   # \param content  the accumulated text to process starting with directive
   method buildPacket {content} {
-
+  #puts "Build packet with {$content}"
     set incomplete 1
 
     # find first and second word boundaries 
@@ -261,18 +263,32 @@ snit::type Actions {
     if {$b2 == -1} return
     
     set pktSize [string trim [string range $content $b1 $b2] { \n}]
+    if {![string  is integer -strict $pktSize]} {
+      # Not a packet at all! Let's create new content with size interpolated.
+      set directive [string trim [string range $content 0 $b1]]
+      set remainder [string range $content [expr $b1+1] end]
+      #puts "directive: $directive"
+      #puts "remainder $remainder"
+      set size [string length $remainder]
+      set content "$directive $size $remainder"
+      #puts  "revised contents: '$content'"
+      
+      set b1 [string first { } $content 0]
+      set b2 [string first { } $content [expr $b1+1]]
+      set pktSize [string trim [string range $content $b1 $b2] { \n}]
+    }
     set totalLength [string length $content]
     set remChars [expr $totalLength - ($b2+1)]
-
+    
     if {$remChars >= $pktSize} {
-       set b3 [expr $b2+$pktSize]
+       set b3 [expr {$b2+$pktSize}]
        lappend parsedLine [$self extractFirstWord $content] 
        lappend parsedLine [string range $content [expr $b2+1] $b3] 
        lappend parsedLine [string range $content [expr $b1+1] [expr $b2-1]] 
 
        set incomplete 0
        set content [string range $content [expr $b3+1] end] 
-      
+       #puts "Parsed: $parsedLine"
        return $parsedLine
     } else {
        return ""
@@ -323,6 +339,7 @@ snit::type Actions {
     set msg [lindex $parsedLine 1]
     set dirId [dict get $directiveMap $directive]
     set result {}
+    #puts "$dirId"
     switch $dirId {
       0 { set result [$self handleError $msg ] }
       1 { set result [$self handleLog $msg ]}
