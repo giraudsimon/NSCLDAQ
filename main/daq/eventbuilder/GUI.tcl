@@ -1219,3 +1219,12 @@ proc EVB::updateDupStatsDialog dupStats {
         $EVB::dupDialog update $dupStats
     }
 }
+
+proc onDestroy {widget} {
+    if {$widget eq "."} {
+        exit
+    }
+    
+}
+
+bind . <Destroy> [list onDestroy %W]
