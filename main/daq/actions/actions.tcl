@@ -39,7 +39,8 @@ snit::type Actions {
   variable directiveMap { ERRMSG 0 LOGMSG 1 WRNMSG 2 
                           TCLCMD 3 OUTPUT 4 DBGMSG 5} 
 
-  option -actionbundle -default DefaultActions ;#< callback bundle 
+  option -actionbundle -default DefaultActions ;#< callback bundle
+  option -exitok -default 0
 
   constructor {args} {
     $self configurelist $args
@@ -66,7 +67,15 @@ snit::type Actions {
       if {[catch {close $fd} msg]} {
         if {[lindex $::errorCode 0] eq "CHILDSTATUS"} {
           puts stderr "Child process exited abnormally with status: $::errorCode"
+          
         }
+
+      }
+      puts stderr "Exiting with $options(-exitok)"
+      if {!$options(-exitok)} {
+        #  If this is not ok be noisy about this:
+        tk_messageBox -type ok -icon error -title "Unexpected actionchild exit" \
+          -message "Action handler detected child exited unexpectedly"
       }
     } else {
       $self handleReadable $fd 
