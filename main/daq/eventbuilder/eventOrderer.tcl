@@ -85,6 +85,7 @@ snit::type EVB::EventBuilder {
 	#  Give the user a chance to not start this one:
 	#
 
+
 	set existing [$pa findServerAllUsers $appName]
 	
 	if {[llength $existing] > 0} {
@@ -99,6 +100,7 @@ snit::type EVB::EventBuilder {
 	set port [$pa allocatePort $appName]
 	$pa destroy
 	puts stderr "Got port $port for orderer "
+
 	return $port
     }
     
