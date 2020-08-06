@@ -204,7 +204,6 @@ snit::widgetadaptor ::EVBC::buildparams {
         
         if {$options(-state) eq "normal"} {
             EVB::utility::_setStateFromBool $win.dt $value
-
         }
         set options($optname) $value
     }
