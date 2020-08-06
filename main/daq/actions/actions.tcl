@@ -72,6 +72,7 @@ snit::type Actions {
 
       }
       #puts stderr "Exiting with $options(-exitok)"
+
       if {!$options(-exitok)} {
         #  If this is not ok be noisy about this:
         tk_messageBox -type ok -icon error -title "Unexpected actionchild exit" \
