@@ -257,7 +257,7 @@ snit::type EventLogger {
     #
     method _handleInput {channel} {
 
-      set pid [lindex [pid $channel] 0]
+        set pid [lindex [pid $channel] 0]
 
         if {![eof $channel]} {
             fconfigure $channel -blocking 0
@@ -268,56 +268,54 @@ snit::type EventLogger {
               set ring $options(-ring)
               set out  $options(-out)
               ::ReadoutGUIPanel::Log MultiLogger: output "$ring -> $out (pid=$pid): \"$data\""
+        
+        } elseif {$loggerFd eq $channel} {
+            set ring $options(-ring)
+            set out  $options(-out)
+            
+            catch {close $channel}
+            incr waitDone;             # Trigger vwait to finish if waiting.
+            set loggerFd -1;           # Set the variables back to show the logger
+            set loggerPids [list];     # no loger exists.
+            catch {close $loggerFd}
+            incr [myvar waitDone];             # Trigger vwait to finish if waiting.
+            set loggerFd -1;           # Set the variables back to show the logger
+            set loggerPids [list];     # no loger exists.
+            
+            # If the exit was unexpected, yell:
+            
+            if {! $expectingExit || ($::Pending::pendingState ne "Halted")} {
+                set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
+                
+                set dlgmsg "MultiLogger: $msg Check log for errors."
+                tk_messageBox -icon error -type ok -title {Logger exited} \
+                -message $dlgmsg 
+                
+                ::ReadoutGUIPanel::Log MultiLogger: error $msg 
+            } else {
+                set msg "$ring -> $out (pid=$pid) exited normally."
+                ::ReadoutGUIPanel::Log MultiLogger: log $msg
             }
-        } else {
-            if {$loggerFd eq $channel} {
-		set ring $options(-ring)
-		set out  $options(-out)
 		
-		catch {close $channel}
-		incr waitDone;             # Trigger vwait to finish if waiting.
-		set loggerFd -1;           # Set the variables back to show the logger
-		set loggerPids [list];     # no loger exists.
-		catch {close $loggerFd}
-		incr [myvar waitDone];             # Trigger vwait to finish if waiting.
-		set loggerFd -1;           # Set the variables back to show the logger
-		set loggerPids [list];     # no loger exists.
-		
-		# If the exit was unexpected, yell:
-		
-		if {! $expectingExit || ($::Pending::pendingState ne "Halted"} {
-		    set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
-		    
-		    set dlgmsg "MultiLogger: $msg Check log for errors."
-		    tk_messageBox -icon error -type ok -title {Logger exited} \
-			-message $dlgmsg 
-		    
-		    ::ReadoutGUIPanel::Log MultiLogger: error $msg 
-		} else {
-		    set msg "$ring -> $out (pid=$pid) exited normally."
-		    ::ReadoutGUIPanel::Log MultiLogger: log $msg
-		}
-		
-            } else { 
-		
-		# Log this occurrence as a warning. It is not really an error necessarily, but
-		# should be noted as something potentially bizarre.
-		set ring $options(-ring)
-		set out  $options(-out)
-		set msg "$ring -> $out: closing eventlog process (pid=$pid) different than most recently launched! "
-		append msg "This is not a bad thing if there was a failure during startup of the a previous run."
-		::ReadoutGUIPanel::Log MultiLogger: warning $msg
-		
-		# clean up the pids associated with the pipe and close the pipe 
-		set pids [pid $channel]
-		catch {close $channel}
-		foreach pid $pids {
-		    catch {exec kill -9 $pid}
-		}
+        } else { 
+    
+            # Log this occurrence as a warning. It is not really an error necessarily, but
+            # should be noted as something potentially bizarre.
+            set ring $options(-ring)
+            set out  $options(-out)
+            set msg "$ring -> $out: closing eventlog process (pid=$pid) different than most recently launched! "
+            append msg "This is not a bad thing if there was a failure during startup of the a previous run."
+            ::ReadoutGUIPanel::Log MultiLogger: warning $msg
+            
+            # clean up the pids associated with the pipe and close the pipe 
+            set pids [pid $channel]
+            catch {close $channel}
+            foreach pid $pids {
+                catch {exec kill -9 $pid}
             }
         }
-  }
-
+      }
+    }
 }
 
 
