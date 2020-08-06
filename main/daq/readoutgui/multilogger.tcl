@@ -337,6 +337,7 @@ snit::type EventLogger {
 		    ::ReadoutGUIPanel::Log MultiLogger: log $msg
 		}
 		
+
             }
         }
       }
