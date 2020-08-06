@@ -347,7 +347,6 @@ proc EVBC::start args {
             set i $timeoutPasses
         }
     }
-    $ports destroy
     destroy .waiting
     if {$port eq ""} {
         error "Event builder failed to start within timeout"

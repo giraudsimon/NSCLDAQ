@@ -106,7 +106,7 @@ proc ::RingSourceMgr::addSource [list source tstamplib {id ""} \
 # @returns the event orderer port number
 proc ::RingSourceMgr::getOrdererPort {} {
 
-  set port [::EVBC::getEvbPort]
+  set port [::EVBC::getOrdererPort]
 
   if {$port eq ""} {
     return -code error "RingSourceMgr::getOrdererPort Unable to locate the event builder service"
@@ -386,7 +386,11 @@ proc ::RingSourceMgr::_HandleDataSourceInput {fd info id} {
   if {[eof $fd]} {
     catch {close $fd} msg
     append text "exited: $msg"
-    ::EndrunMon::decEndRunCount;           # One less end run to wait for.
+      ::EndrunMon::decEndRunCount;           # One less end run to wait for.0
+      if {$Pending::pendingState ne "Halted"} {
+        tk_messageBox -type ok -icon error -title {Source exited} \
+          -message "The event builder source for $info ($id) exited unexpectedly"
+      }
     ::RingSourceMgr::_SourceDied  $fd;     # Do the book keeping for a dead source.
   } else {
     append text [gets $fd]
@@ -409,10 +413,7 @@ proc ::RingSourceMgr::_SourceDied {fd} {
   dict for {uri info} $::RingSourceMgr::sourceDict {
     set sourceFd [dict get $info fd]
     if {$sourceFd == $fd} {
-      if {$Pending::pendingState ne "Halted"} {
-        tk_messageBox -type ok -icon error -title {Source exited} \
-          -message "The event builder source for $uri exited unexpectedly"
-      }
+      
       dict set ::RingSourceMgr::sourceDict $uri fd  ""
       break;          # No need to go further.
     }

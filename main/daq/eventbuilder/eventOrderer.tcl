@@ -81,11 +81,10 @@ snit::type EVB::EventBuilder {
 	set pa [portAllocator create %AUTO%]
 
 	#
-	#  If there's already an event builder registered on this por,
+	#  If there's already an event builder registered on this port,
 	#  Give the user a chance to not start this one:
 	#
-
-    set existing [$pa findServerAllUsers $registeredName]
+    set existing [$pa findServerAllUsers $appName]
     if {[llength $existing] > 0} {
         set reply [tk_messageBox -type yesno -title {Duplicate event builder} \
 			       -message "An event orderer named $appName already exists are you sure you want to start?"
@@ -97,7 +96,7 @@ snit::type EVB::EventBuilder {
 	
 	set port [$pa allocatePort $appName]
 	$pa destroy
-
+    puts stderr "Got port $port for orderer "
 	return $port
     }
 
