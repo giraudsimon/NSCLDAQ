@@ -1026,7 +1026,7 @@ namespace eval RunControlDisable {
   # a cleanup step.
   proc unregister {} {
     variable prevState
-    RunControlSingleton::setSstate $prevState
+    RunControlSingleton::setState $prevState
     RunStateMachineConvenience::removeBundle RunControlDisable
     
   }
@@ -1120,7 +1120,8 @@ namespace eval ::RunControlSingleton {
 #
 proc ::RunControlSingleton::updateStateBundleOrder {} {
   catch {RunControlEnable::unregister}
-  catch {RunControlDisable::unregister}
+  catch RunControlDisable::unregister
+    
 
   RunControlEnable::register
   RunControlDisable::register
@@ -1155,7 +1156,7 @@ proc ::RunControlSingleton::getInstance {{path ""} args} {
 proc ::RunControlSingleton::getState {} {
     variable prevState
     set rc [RunControlSingleton::getInstance]
-    retrun [$rc cget -state]
+    return [$rc cget -state]
     
 }
 ##
