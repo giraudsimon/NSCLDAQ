@@ -265,7 +265,7 @@ proc ::EventLog::_getLoggerVersion {evtlogpath} {
     error "Cannot determine eventlog version"
   } else {
     if {[catch {close $pipe} msg]} {
-      puts "Exceptional exit of eventlog : $msg"
+      puts stderr "Exceptional exit of eventlog : $msg"
     }
   }
 
@@ -506,9 +506,9 @@ for $run either does not exist or is not a directory"
         foreach file $eventFiles {
           
           set linkName [file join $completeDir [file tail $file]]
-          puts "Linking $linkName -> $file"
+          
           if {[catch {exec ln -sr $file $linkName} msg]} { ;   # Want to force relative.
-            puts "Could not link $linkName -> $file : $msg"
+            puts stderr "Could not link $linkName -> $file : $msg"
           }
         }
         file attributes $completeDir -permissions $perms; # Restor prior perms.
@@ -584,7 +584,7 @@ proc ::EventLog::_getSegmentInfo {} {
         set baseName [file tail $segment]
         set linkName [file join $currentDir $baseName]
         if {![file exists $linkName]} {
-          puts "Linking $linkName -> $segment"
+          
           catch {exec ln -sr $segment $linkName}
         }
     }
@@ -845,7 +845,7 @@ proc ::EventLog::runEnding {} {
 # @param state - Current state.
 #
 proc ::EventLog::attach {state} {
-  puts "Eventlog::attach"
+
     StageareaValidation::correctFixableProblems
 }
 
