@@ -93,7 +93,6 @@ snit::type RunstateMachine {
     
     variable state NotReady
     
-    #  List of currently registered bundle namespaces.
     
     
     ##
@@ -265,7 +264,6 @@ snit::type RunstateMachine {
     method _setState newState {
         set state $newState
     }
-
 }
 
 

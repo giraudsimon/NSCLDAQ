@@ -49,6 +49,7 @@ tcltest::test addbundle-1  {Add a new bundle lets me list it.} \
 } \
 -cleanup {
     $s removeCalloutBundle testBundle
+    $s destroy
     namespace delete testBundle
 } \
 -body {
@@ -84,7 +85,6 @@ tcltest::test addbundle-3 {Double registration is not allowed} \
 -cleanup {
     $s removeCalloutBundle testBundle
     $s destroy    
-
     namespace delete testBundle
 } \
 -body {
