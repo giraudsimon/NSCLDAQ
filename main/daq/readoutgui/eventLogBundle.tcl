@@ -507,10 +507,10 @@ for $run either does not exist or is not a directory"
 
           
           set linkName [file join $completeDir [file tail $file]]
-          puts "Linking $linkName -> $file"
+          
           if {[catch {exec ln -sr $file $linkName} msg]} { ;   # Want to force relative.
-            puts "Could not link $linkName -> $file : $msg"
 
+            puts stderr "Could not link $linkName -> $file : $msg"
           }
         }
         file attributes $completeDir -permissions $perms; # Restor prior perms.
@@ -586,6 +586,7 @@ proc ::EventLog::_getSegmentInfo {} {
         set baseName [file tail $segment]
         set linkName [file join $currentDir $baseName]
         if {![file exists $linkName]} {
+
           catch {exec ln -sr $segment $linkName}
         }
     }
