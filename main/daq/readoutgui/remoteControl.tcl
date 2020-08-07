@@ -25,6 +25,7 @@ package require portAllocator
 package require RunstateMachine
 package require ui
 package require Configuration
+package require Bundles
 
 
 ##
@@ -75,6 +76,7 @@ snit::type ReadoutGuiRemoteControl {
   
   variable priorRunNumber ""
   variable priorTitle     ""
+  variable host          ""
 
   ##
   # constructor:
@@ -274,7 +276,9 @@ snit::type ReadoutGuiRemoteControl {
       #   the client disconnects.
       set priorRunNumber [::ReadoutGUIPanel::getRun]
       set priorTitle     [::ReadoutGUIPanel::getTitle]
-      ::ReadoutGUIPanel::Log RemoteControl output "Entering slave mode from $clientaddr"
+      ::ReadoutGUIPanel::Log RemoteControl output "Remote control connectionfrom $clientaddr"
+      set host $clientaddr
+      
     }
   }
   ##
@@ -526,6 +530,8 @@ snit::type ReadoutGuiRemoteControl {
         # if not a slave, set it...
         if {!$rctlIsSlave} {
           $rctlPanel slave
+          set bundles [BundleManager getInstance]
+          $bundles invoke remotecontrol OnEnslaved $host
         }  
         if {!$timeIsSlave} {
           $timePanel setSlave 1
@@ -538,6 +544,8 @@ snit::type ReadoutGuiRemoteControl {
         }
         if {$timeIsSlave} {
           $timePanel setSlave 0
+          set bundles [BundleManager getInstance]
+          $bundles invoke remotecontrol OnEmancipation $host
         }
         $self _reply OK
       }

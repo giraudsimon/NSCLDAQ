@@ -22,6 +22,7 @@
 package provide S800_Provider 1.0
 package require s800
 package require ReadoutGUIPanel
+package require Bundles
 
 # Establish the namespace in which the methods and state live and
 # define the state variables.
@@ -117,6 +118,10 @@ proc ::S800::check id {
     set bad [catch {$rctl getState} value]
     if {$bad} {
         ::S800::_failed $id
+        set bundles [BundleManager getInstance]
+        set host [dict get $s800::sourceParams $id host]
+
+        $bundles invoke remotecontrol OnSlaveConnectionLost $host
         return 0
     }  else {
         return 1
