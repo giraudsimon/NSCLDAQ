@@ -48,7 +48,7 @@ TCLTESTS =    filesystem.test \
 	initconfig.test installroot.test system.test tests.test  ostest.test \
 	sshpipe.test s800.test  rstatemachine.test rdocallouts.test \
 	  state.test  delayprovider.test \
-		applauncher.test
+		applauncher.test bundlemgr.test
 
 
 TKTESTS =	readoutguitest.tk  scalerparametergui.tk \

@@ -129,7 +129,8 @@ snit::type BundleManager {
     # @param state - current run state
     # @param where - If supplied, the bundle is added prior to the specified existing
     #                bundle, if not it's appended.
-    #
+    # @throws if duplicate bundle.
+    # @throws if bundle doesn't have 'good' methods.
     # @note When successful (postconditions):
     #   *  The bundle name is added to the callouts variable.
     #   *  A namespace ensemble is generated for that bundle.
@@ -276,7 +277,7 @@ snit::type BundleManager {
         set exports [namespace eval ::${name} { namespace export}] ; #only way I know to list the exports.
         foreach proc [lsort -ascii -increasing [array names optionalExports]]  {
             if {$proc in $exports} {
-                set req [$self _checkParamsCount ::${name}::${proc} $optionalExports($proc)]
+                set req [$self _checkParamCount ::${name}::${proc} $optionalExports($proc)]
                 if {$req ne ""} {
                     error "::${name}::{$proc} requires $req parameters, should require $optionalExports($proc)"
                 }
