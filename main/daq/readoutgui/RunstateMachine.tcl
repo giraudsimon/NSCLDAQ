@@ -19,6 +19,7 @@
 
 package provide RunstateMachine 1.0
 package require snit
+package require Bundles
 
 ##
 # @class RunstateMachine
@@ -85,11 +86,6 @@ snit::type RunstateMachine {
         Paused   {NotReady Halted Active}
     }
     
-    # Array indexed by callback name contents are the number of parameters the
-    # callback must accept.
-    
-    typevariable requiredExports -array [list \
-        enter 2 leave 2 attach 1]
     
     #---------------------------------------------------------------------------
     #  Instance variables
@@ -98,9 +94,7 @@ snit::type RunstateMachine {
     
     variable state NotReady
     
-    #  List of currently registered bundle namespaces.
     
-    variable callouts [list]
     
     ##
     # constructor
@@ -150,10 +144,12 @@ snit::type RunstateMachine {
     #   This list defines what happens on state transitions...specifically,
     #   on leaving an old state and on entering a new state.
     #
+    #  daqdev/NSCLDAQ#711 -for compatibility with 11.x and before.
+    #
     method listCalloutBundles {} {
-        return $callouts
+        set manager [BundleManager getInstance]
+        return [$manager listCalloutBundles]
     }
-    
     ##
     # addCalloutBundle
     #
@@ -173,39 +169,12 @@ snit::type RunstateMachine {
     #   *  The bundle name is added to the callouts variable.
     #   *  A namespace ensemble is generated for that bundle.
     #
+    # daqdev/NSCLDAQ#711 - compatibility with v11 and before e.g.
+    #
     method addCalloutBundle {name {where ""}} {
-        if {![namespace exists ::$name]} {
-            error "No such bundle $name"
-        }
-        if {[lsearch -exact $callouts $name] != -1} {
-            error "$name is already registered as a callback bundle"
-        }
-        $self _checkRequiredExports $name
-        $self _checkRequiredParams $name
-        
-
-        #  Now we can make a namespace ensemble from the bundle and
-        #  add it to the callout list.
-        
-        namespace eval ::${name} {
-            namespace ensemble create
-        }
-        
-        if {$where eq "" } {
-            lappend callouts $name
-        } else {
-            set idx [lsearch -exact $callouts $where]
-            if {$idx == -1} {
-                error "Attempt to register callout bundle $name before $where which does not exist"
-            }
-            set callouts [linsert $callouts $idx $name]
-        }
-        
-        # Finally invoke the attach method:
-        
-        ::$name attach $state
+        set manager [BundleManager getInstance]
+        $manager addCalloutBundle $name $state $where
     }
-    
     ##
     # removeCalloutBundle
     #
@@ -216,13 +185,11 @@ snit::type RunstateMachine {
     #
     # @param name - Name of namespace that holds the bundle methods.
     #
+    #  daqdev/NSCLDAQ#711 - compatibility with v11 and before e.g
+    #
     method removeCalloutBundle name {
-        set index [lsearch -exact $callouts $name]
-        if {$index == -1} {
-            error "$name has not been registered"
-        }
-        set callouts [lreplace $callouts $index $index]
-        rename ::${name} {}
+        set manager [BundleManager getInstance]
+        $manager removeCalloutBundle $name
     }
     ##
     # transition
@@ -234,11 +201,12 @@ snit::type RunstateMachine {
     # @error the transition is to a prohibited state.
     #
     method transition to {
+        set manager [BundleManager getInstance]
         if {$to in $validTransitions($state)} {
-            $self _callback leave $state $to
+            $manager invoke leave $state $to
             set from $state
             set state $to
-            $self _callback enter $from $to
+            $manager invoke enter $from $to
         
         } else {
             error "The transtion from $state to $to is not allowed"
@@ -271,15 +239,14 @@ snit::type RunstateMachine {
     # @param to   state to transition to
     # @returns list of detected problems.
     #
+    #  Reimplemented due to code organization in daqdev/NSCLDAQ#711
+    #  retains compatibility with nscldaq 11 etc.
+   
+    
     method precheckTransitionForErrors {to} {
-      set errors [list]
-      foreach cb $callouts {
-        set error [_callBundleMethodIfExists $cb precheckTransitionForErrors  $state $to]
-        if {$error ne {}} {
-            lappend errors [list $cb $error]
-        }
-      }
-      return $errors
+        set manager [BundleManager getInstance]
+        return [$manager precheck $state $to]
+      
     }
     
     #--------------------------------------------------------------------------
@@ -297,124 +264,12 @@ snit::type RunstateMachine {
     method _setState newState {
         set state $newState
     }
-    ##
-    #  _callback
-    #    Perform a callback in the list of callbacks.
-    #
-    # @param method - Name of the namespace callback method (e.g. enter)
-    # @param args     - Arguments to hand to the callback method
-    #
-    #  daqdev/NSCLDAQ#659 - we keep track of the successful callbacks.
-    #  If there is a callback failure:
-    #   - Call the failure method on each of the bundles passing the same
-    #     args we got (normally this will be from/to)
-    #   - re-signal the failure along with the original traceback.
-    #   - any failures of the failure method are just absorbed and dropped.
-    #
-    method _callback {method args} {
-        
-        set succeeded [list]
-        foreach cb $callouts {
-            if {[catch {$cb $method {*}$args} msg]} {
-                set traceback $::errorInfo
-                foreach s [lreverse $succeeded] {
-                    catch {_callBundleMethodIfExists $s failure $args} 
-                }
-                error "$msg from $traceback"
-            }
-            lappend succeeded $cb
-        }
-    }
-    ##
-    # _checkRequiredExports
-    #
-    #   Checks that a namespace has the required exports for a callback bundle.
-    #   Throws an error if not.
-    #
-    # @param name - Name of the namespace to check
-    # @throw If one or more exports is missing.
-    #
-    method _checkRequiredExports name {
-        
-        # Make a list of missing exported procs.  The only way to figure out which
-        # procs are exported from a namespace is to do a namespace export in the
-        # context of the namespace itself:
-        
-        set exports [namespace eval ::${name} { namespace export}]
-        set missingProcs [list]
-        
-        #
-        #  The sort below is done to make the output repeatable/predictble
-        #  and hence testable.
-        #
-        foreach proc [lsort -ascii -increasing [array names requiredExports]] {
-            if {[lsearch -exact $exports $proc] == -1} {
-                lappend missingProcs $proc
-            }
-        }
-        if {[llength $missingProcs] > 0} {
-            set missingList [join $missingProcs ", "]
-            error "$name is missing the following exported procs: $missingList"
-        }
-    }
-    ##
-    # _checkRequiredParams
-    #
-    #  Checks that a namespace that is being proposed as a callback bundle
-    #  has the right number of parameters for each of the required exported procs.
-    #
-    # @param name - Path to the namespace relative to ::
-    #
-    # @throw If one or more required exports has the wrong argument signature.
-    #
-    method _checkRequiredParams name {
-        
-        set badProcs [list]
-        set actualArgs [list]
-        set requiredArgs [list]
-        foreach proc [lsort -ascii -increasing [array names requiredExports]] {
-            set params [llength [info args ::${name}::${proc}]]
-            if {$params != $requiredExports($proc)} {
-                lappend badProcs     $proc
-                lappend actualArgs   $params
-                lappend requiredArgs $requiredExports($proc)
-            }
-        }
-        if {[llength $badProcs] > 0} {
-            foreach proc $badProcs required $requiredArgs actual $actualArgs {
-                lappend badList       ${proc}(${actual})
-                lappend requiredList  ${proc}(${required})
-            }
-            set badList [join $badList ", "]
-            set requiredList [join $requiredList ", "]
-            error "$name has interface procs with the wrong number of params: $badList should be: $requiredList"
-        }
-    }
+    
+    
     #----------------------------------------------------------------------------
     #  Private procs.
     
-    ##
-    # _callBundleMethodIfExists
-    #    If the specified method of the specified bundle exists it is called.
-    #    This is used to allow for optional methods see e.g.
-    #    issue: daqdev/NSCLDAQ#659
-    #
-    # @param bundle     - bundle namespace name.
-    # @param methodname - Name of the bundle method
-    # @param args       - args to pass.
-    # @return - whatever the callback returns if it exists, "" if not.
-    #
-    #   @note if ::$bundle::$methodname exists its' called:
-    #            ::$bundle::$methodname {*}$args
-    #
-    proc _callBundleMethodIfExists {bundle methodname args} {
-        set qualifiedProc ::${bundle}::$methodname
-        if {[info procs $qualifiedProc] ne ""}  {
-            return [$qualifiedProc {*}$args]
-        } else {
-            return ""
-        }
-    }
+    
 }
 
 

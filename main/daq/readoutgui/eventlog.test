@@ -103,7 +103,6 @@ tcltest::test unregister {::EventLog::unregister unregisters the bundle with the
     ::EventLog::register
 } \
 -cleanup {
-   
     $m destroy
 } \
 -body {

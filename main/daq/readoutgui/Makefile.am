@@ -39,7 +39,8 @@ TCLPACKAGES=Configuration.tcl \
 	multilogger.tcl \
 	stageareaValidation.tcl \
 	ReadoutGUIAppLauncher.tcl \
-	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl 
+	evbparameters.tcl evbsourceprompt.tcl sourceprompt.tcl  \
+	BundleManager.tcl
 
 
 
