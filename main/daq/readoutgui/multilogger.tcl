@@ -999,7 +999,6 @@ proc ::multilogger::enter {from to} {
         multilogger::LoggerDisplay .loggerstostop -loggers $::multilogger::Loggers]
         set remaining $::multilogger::Loggers
         foreach logger $::multilogger::Loggers {
-            puts "Stopping multilogger: [$logger cget -ring] -> [$logger cget -out]"
             $logger stop
             
             # remove the stopped logger from the GUI.
