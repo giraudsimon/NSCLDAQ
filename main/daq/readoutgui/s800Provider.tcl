@@ -19,7 +19,7 @@
 # @author Jeromy Tompkins
 #
 
-package provide S800_Provider 1.0
+package provide S800_Provider 1.1
 package require s800
 package require ReadoutGUIPanel
 package require Bundles
@@ -119,8 +119,7 @@ proc ::S800::check id {
     if {$bad} {
         ::S800::_failed $id
         set bundles [BundleManager getInstance]
-        set host [dict get $s800::sourceParams $id host]
-
+        set host [dict get $::S800::sourceParams $id host]
         $bundles invoke remotecontrol OnSlaveConnectionLost $host
         return 0
     }  else {

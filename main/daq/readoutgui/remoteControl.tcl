@@ -355,7 +355,17 @@ snit::type ReadoutGuiRemoteControl {
     ::ReadoutGUIPanel::setRun $priorRunNumber
     ::ReadoutGUIPanel::setTitle $priorTitle
     $statusmanager setMessage $statusbar "Remote controlled by: nobody"
+    
+    #  If we are in slave mode, call onEmancipation:
+    
+     if {[$self _slaveMode]} {
+      set bundles [BundleManager getInstance]
+      $bundles invoke remotecontrol OnEmancipation $host
+     }
+    
     $self _setMaster
+    
+    
     
   }
 

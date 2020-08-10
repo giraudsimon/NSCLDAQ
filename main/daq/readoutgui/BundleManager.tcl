@@ -201,13 +201,12 @@ snit::type BundleManager {
     #   - any failures of the failure method are just absorbed and dropped.
     #
     method invoke {method args} {
-        
         set succeeded [list]
         foreach cb $callouts {
-            if {[catch {$cb $method {*}$args} msg]} {
+            if {[catch {_callBundleMethodIfExists $cb $method {*}$args} msg]} {
                 set traceback $::errorInfo
                 foreach s [lreverse $succeeded] {
-                    catch {_callBundleMethodIfExists $s failure $args} 
+                    catch {_callBundleMethodIfExists $s failure {*}$args} 
                 }
                 error "$msg from $traceback"
             }
@@ -354,7 +353,7 @@ snit::type BundleManager {
     #            ::$bundle::$methodname {*}$args
     #
     proc _callBundleMethodIfExists {bundle methodname args} {
-        set qualifiedProc ::${bundle}::$methodname
+        set qualifiedProc ::${bundle}::${methodname}
         if {[info procs $qualifiedProc] ne ""}  {
             return [$qualifiedProc {*}$args]
         } else {

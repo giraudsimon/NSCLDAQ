@@ -511,6 +511,7 @@ snit::type s800rctl {
     if {[eof $fd]} {
       # close the channel
       catch {close $fd}
+			
     } else {
       # read what we can from the channel
       if {[catch {gets $fd line} len]} {
