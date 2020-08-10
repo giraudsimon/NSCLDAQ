@@ -231,7 +231,6 @@ proc ::SSHPipe::pause source {
 proc ::SSHPipe::resume source {
 
    ::SSHPipe::_complainIfIdle $source resume
-
     ::SSHPipe::_send $source resume    
 }
 ##
