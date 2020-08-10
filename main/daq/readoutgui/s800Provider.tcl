@@ -120,7 +120,6 @@ proc ::S800::check id {
         ::S800::_failed $id
         set bundles [BundleManager getInstance]
         set host [dict get $::S800::sourceParams $id host]
-
         $bundles invoke remotecontrol OnSlaveConnectionLost $host
         return 0
     }  else {

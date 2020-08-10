@@ -360,6 +360,7 @@ snit::type ReadoutGuiRemoteControl {
     
     #  If we are in slave mode, call onEmancipation:
     
+
      if {[$self slaveMode]} {
       set bundles [BundleManager getInstance]
       $bundles invoke remotecontrol OnEmancipation $host
