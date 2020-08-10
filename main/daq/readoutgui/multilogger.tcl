@@ -201,10 +201,11 @@ snit::type EventLogger {
     #
     method stop {} {
         if {$options(-enable) } {
-
+            
             # First of all only do anything if there is a logger
             # 
             if {[llength $loggerPids] > 0} {
+                puts "Stopping multilogger: $options(-ring) -> $options(-out)"
                 set expectingExit 1;            # So _handleInput does not freak.
                 set afterId                                 \
                     [after [expr $options(-timeout)*1000]   \
@@ -973,7 +974,6 @@ proc ::multilogger::enter {from to} {
         multilogger::LoggerDisplay .loggerstostop -loggers $::multilogger::Loggers]
         set remaining $::multilogger::Loggers
         foreach logger $::multilogger::Loggers {
-            puts "Stopping multilogger: [$logger cget -ring] -> [$logger cget -out]"
             $logger stop
             
             # remove the stopped logger from the GUI.
