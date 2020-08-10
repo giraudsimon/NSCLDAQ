@@ -875,29 +875,32 @@ proc ::EventLog::precheckTransitionForErrors {from to} {
 #   {Paused, Active} -> Halted.
 #
 proc ::EventLog::enter {from to} {
-    if {($from in [list Active Paused]) && ($to eq "Halted")} {
-      # if the start was aborted then we should not try to cleanup
-      if {! $::EventLog::failed} {
-        ::EventLog::runEnding
-      }
-    }
-    if {($from in [list Active Paused]) && ($to eq "NotReady")} {
-      # if the start was aborted then we should not try to cleanup
-      if {! $::EventLog::failed} {
-        # Kill of the event log program since it's not going to see ends:
-        foreach pid $::EventLog::loggerPid {
-            if {$pid != -1} {
-                catch {exec kill -9 $pid}
-            }
+  #  None of this needs to be done if the event log is off.
+  if {[::ReadoutGUIPanel::recordData]} {
+      if {($from in [list Active Paused]) && ($to eq "Halted")} {
+        # if the start was aborted then we should not try to cleanup
+        if {! $::EventLog::failed} {
+          ::EventLog::runEnding
         }
-        # Create the exit file:
-        set fd [open [::EventLog::_getExitFile] w]
-        puts $fd "dummy"
-        close $fd
-      	::EventLog::runEnding
-      } 
-
-    }
+      }
+      if {($from in [list Active Paused]) && ($to eq "NotReady")} {
+        # if the start was aborted then we should not try to cleanup
+        if {! $::EventLog::failed} {
+          # Kill of the event log program since it's not going to see ends:
+          foreach pid $::EventLog::loggerPid {
+              if {$pid != -1} {
+                  catch {exec kill -9 $pid}
+              }
+          }
+          # Create the exit file:
+          set fd [open [::EventLog::_getExitFile] w]
+          puts $fd "dummy"
+          close $fd
+          ::EventLog::runEnding
+        } 
+  
+      }
+  }
 }
 ##
 # ::EventLog::leave
@@ -909,21 +912,26 @@ proc ::EventLog::enter {from to} {
 # @param to   - State we will enter.
 #
 proc ::EventLog::leave {from to} {
-  if {($from eq "Halted") && ($to eq "Active")} {
-      if {[catch {::EventLog::runStarting} msg]} {
-        set trace $::errorInfo
-        set ::EventLog::failed 1
-        ::ReadoutGUIPanel::Log EventLogManager error "$msg : $trace"
-        error "$msg : $trace"
-      }
-      # reset the failure state
-      set ::EventLog::failed 0
-  }
-  if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
-    if {! $::EventLog::failed} { 
-      set  ::EventLog::expectingExit 1
+  
+  # None of this needs to be done if we're not recording.
+  
+  if {[::ReadoutGUIPanel::recordData]} {
+    if {($from eq "Halted") && ($to eq "Active")} {
+        if {[catch {::EventLog::runStarting} msg]} {
+          set trace $::errorInfo
+          set ::EventLog::failed 1
+          ::ReadoutGUIPanel::Log EventLogManager error "$msg : $trace"
+          error "$msg : $trace"
+        }
+        # reset the failure state
+        set ::EventLog::failed 0
     }
-    set ::EventLog::failed 0
+    if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
+      if {! $::EventLog::failed} { 
+        set  ::EventLog::expectingExit 1
+      }
+      set ::EventLog::failed 0
+    }
   }
 }
 
