@@ -11,8 +11,9 @@
 #  The idea is that libtcl/libexception could be or not be centrally
 #  installed, but if not, built from the export directory.
 #
-# Last used with libtclplus-v3.0-010 - that's the minimum required
-#  for 12.0  and newer.
+# Last used with libtclplus-v4.0-000 - that's the minimum required
+#  for 12.0  and newer, due to the movement of the Tcl++ datatypes
+#  into the TCLPLUS namespace.
 
 
 ##
