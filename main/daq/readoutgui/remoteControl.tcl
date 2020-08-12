@@ -694,6 +694,7 @@ snit::type ReadoutGuiRemoteControl {
       return
     }
 
+
     set sm [::RunstateMachineSingleton %AUTO%]
     set status [catch {  
       if {![$self _requireSlaveMode]} {
@@ -850,7 +851,7 @@ snit::type ReadoutGuiRemoteControl {
   # @return bool - slave state (true if can continue).
   method _requireSlaveMode {} {
 
-    if {![$self _slaveMode]} {
+    if {![$self slaveMode]} {
       $self _reply ERROR "Must be in slave mode to do this"
       return false
     }
