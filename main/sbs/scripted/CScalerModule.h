@@ -30,7 +30,7 @@ pointed to by a long*
 // Include files:
 //
 
-#include <daqdatatypes.h>
+#include <libtclplusdatatypes.h>
 #include "CReadableObject.h"
 #include <string>
 
@@ -65,7 +65,7 @@ public:
 
 public:
 
-  virtual   ULong_t* Read (ULong_t* pBuffer)   = 0 ; // 
+  virtual   TCLPLUS::ULong_t* Read (TCLPLUS::ULong_t* pBuffer)   = 0 ; // 
 
 };
 

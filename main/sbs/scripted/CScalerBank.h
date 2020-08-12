@@ -17,7 +17,7 @@
 //
 // Include files:
 //
-#include <daqdatatypes.h>
+#include <libtclplusdatatypes.h>
 #include "CReadOrder.h"
 
 
@@ -55,7 +55,7 @@ public:
    // Class functions:
 public:
 
-    ULong_t* Read (ULong_t* pBuffer)   ; // 
+    TCLPLUS::ULong_t* Read (TCLPLUS::ULong_t* pBuffer)   ; // 
 
 };
 

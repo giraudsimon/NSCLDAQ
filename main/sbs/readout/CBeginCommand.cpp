@@ -86,8 +86,8 @@ CBeginCommand::operator()(CTCLInterpreter&    interp,
 
     RunState* pState =  RunState::getInstance();
 
-    CTCLVariable run(&interp, string("run"), kfFALSE);
-    CTCLVariable title(&interp, string("title"), kfFALSE);
+    CTCLVariable run(&interp, string("run"), TCLPLUS::kfFALSE);
+    CTCLVariable title(&interp, string("title"), TCLPLUS::kfFALSE);
 
     const char* runValue = run.Get();
     const char* titleValue = title.Get();

@@ -48,7 +48,7 @@ using namespace std;
 
 
 /*!
-   Constructor: Constructs an array that is not range checked.
+   Constructor: Constructs an array that is not range checed.
    The array is filled in from a TCL formatted list.
   \param rName const string& [in]
               The parameter name recognized by the 
@@ -245,8 +245,8 @@ CIntArrayParam::SetValue(CTCLInterpreter& rInterp,
   // until it's known that all the values are ok.
   // At this step, the values are also range checked:
   //
-  vector<Long_t> Values;
-  Long_t nLong;
+  vector<TCLPLUS::Long_t> Values;
+  TCLPLUS::Long_t nLong;
   for(int i = 0; i < values.size(); i++) {
       nLong = strtoll(values[i].c_str(), (char**) NULL, 0);
       if( (nLong == 0) && (errno == EINVAL)) {

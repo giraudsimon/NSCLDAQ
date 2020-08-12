@@ -39,8 +39,8 @@
 #ifndef TCPCLIENT_H  //Required for current class
 #define TCPCLIENT_H
 
-#include <daqdatatypes.h>
-#include <daqdatatypes.h>
+
+#include <libtclplusdatatypes.h>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
@@ -184,8 +184,8 @@ protected:
        
 public:
 
-  Bool_t Connect ()    ;
-  Bool_t Connect (const std::string& sRemoteHost, unsigned port) {
+  TCLPLUS::Bool_t Connect ()    ;
+  TCLPLUS::Bool_t Connect (const std::string& sRemoteHost, unsigned port) {
     m_sRemoteHost = sRemoteHost;
     m_nRemotePort = port;
     return Connect();

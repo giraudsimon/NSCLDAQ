@@ -32,7 +32,7 @@
 #ifndef TCLAUTHORIZER_H  //Required for current class
 #define TCLAUTHORIZER_H
 
-#include "daqdatatypes.h"
+#include <libtclplusdatatypes.h>
 #include <string>        //Required for include files
 #include <TCLInterpreter.h>        //Required for include files
 #include <TCLProcessor.h>
@@ -98,20 +98,20 @@ public:
 
   virtual   int operator() (CTCLInterpreter& rInterp, CTCLResult& rResult, 
 			    int nArgs, char* pArgs[])    ;
-  Bool_t AddHost (const std::string& HostOrIp)    ;
-  Bool_t RemoveHost (const std::string& NameOrIP)    ;
+  TCLPLUS::Bool_t AddHost (const std::string& HostOrIp)    ;
+  TCLPLUS::Bool_t RemoveHost (const std::string& NameOrIP)    ;
   std::string ListHosts ()    ;
-  Bool_t Authenticate (const std::string& rNameOrIp)    ;
+  TCLPLUS::Bool_t Authenticate (const std::string& rNameOrIp)    ;
 
 protected:
   int   Process(CTCLInterpreter& rInterp, CTCLResult& rResult, 
 		  int nArgs, char* pArgs[])    ;
-  Bool_t  HostToIp(std::string& rName);
-  Int_t   GetIndex (const std::string& rHostOrIp)   ;
-  Bool_t ConvertHost(const std::string& rInName, 
+  TCLPLUS::Bool_t  HostToIp(std::string& rName);
+  TCLPLUS::Int_t   GetIndex (const std::string& rHostOrIp)   ;
+  TCLPLUS::Bool_t ConvertHost(const std::string& rInName, 
 	                 std::string& rOutname, std::string& rCanonicalIP)   ;
 
-  Int_t   Usage(CTCLResult& rResult);
+  int  Usage(CTCLResult& rResult);
 private:
 	void setResult(const std::string& rResult) {
     if(m_pResult) *m_pResult = rResult;
