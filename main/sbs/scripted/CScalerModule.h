@@ -32,7 +32,6 @@ pointed to by a long*
 
 
 #include <libtclplusdatatypes.h>
-
 #include "CReadableObject.h"
 #include <string>
 
