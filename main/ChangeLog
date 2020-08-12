@@ -6,7 +6,7 @@ Note: From now on the Changelog/release notes will be in reverse chronological
       Furthermore, the log will be based on gitlab issues which will be classified
 	  roughly as maintenance, defect and features.  At the top of the release
 	  we will collect the changes that are known to be needed in user code.
-	  
+
 Full Issue list closed for this release:
 
 Issue   Classification
@@ -183,6 +183,8 @@ Issue   Classification
 	There were comments in code that indicated interfaces were deprecated that
 	were not.  Those comments have been removed.
 
+--------------------------------------------------------------------------------
+>>>>>>> Update change log from the issue list for 12.0-pre1.
 Dec 16, 2010 
       - Fix error in CRingItem copy construction ... if there was a
 	payload, the m_pCursor member was not being set to point to the
