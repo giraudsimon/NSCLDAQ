@@ -165,18 +165,20 @@ snit::type ReadoutGuiRemoteControl {
     set request [expr {$requestfd != -1}]
     return [list $reply $request] 
   }
+  ##
+  # slaveMode
+  #    Returns true if we are in slave mode already.
+  #
+  method slaveMode {} {
 
+    set rctlPanel [::RunControlSingleton::getInstance]
+    set result [$rctlPanel isSlave] 
+    return $result
+  }
   #-----------------------------------------------------------------------------
   # Private methods
   #
-  ##
-  # _slaveMode
-  #    Returns true if we are in slave mode already.
-  #
-  method _slaveMode {} {
-    set rctlPanel [::RunControlSingleton::getInstance]
-    return [$rctlPanel isSlave]
-  }
+  
   ##
   # _setMaster
   #
@@ -186,7 +188,7 @@ snit::type ReadoutGuiRemoteControl {
   method _setMaster {} {
     set rctlPanel [::RunControlSingleton::getInstance]
     set timePanel [::TimedRun::getInstance]
-    if {[$self _slaveMode]} {
+    if {[$self slaveMode]} {
       $rctlPanel master            
       $timePanel setSlave 0
     }
@@ -358,7 +360,7 @@ snit::type ReadoutGuiRemoteControl {
     
     #  If we are in slave mode, call onEmancipation:
     
-     if {[$self _slaveMode]} {
+     if {[$self slaveMode]} {
       set bundles [BundleManager getInstance]
       $bundles invoke remotecontrol OnEmancipation $host
      }
@@ -378,6 +380,7 @@ snit::type ReadoutGuiRemoteControl {
   #    - Execute legal commands.
   #
   method _onCommand {line} {
+
     #set line [gets $replyfd]
 
     #  empty lines can be read just before a channel goes EOF:
@@ -622,6 +625,7 @@ snit::type ReadoutGuiRemoteControl {
   #       the rest.
   #
   method _begin {} {
+    puts "_begin"
     ::ReadoutGUIPanel::Log RemoteControl output _begin
     if {![$self _RequireSlaveMode]} {
       return
@@ -630,8 +634,21 @@ snit::type ReadoutGuiRemoteControl {
     set sm [::RunstateMachineSingleton %AUTO%]
     set currentState [$sm getState]
     if {"Active" in [RunstateMachine listTransitions $currentState]} {
-      $sm transition "Active"
-      $self _reply OK
+      puts "Begin is legal performing precheck."
+      
+      # Perform the precheck and report the results back to us and the
+      # master.
+      
+      set precheckErrors [$sm precheckTransitionErrors $to]
+      puts "Precheck of $to -> '$precheckErrors'"
+      if {[llength $precheckErrors] == 0} {
+        puts "Precheck failed in slave."
+        $self _reply "ERROR $precheckErrors"
+      } else {
+      
+        $sm transition "Active"
+        $self _reply OK
+      }
     } else {
       $self _reply ERROR "The current state ($currentState) does not allow a begin run"
     }
@@ -670,22 +687,45 @@ snit::type ReadoutGuiRemoteControl {
   # @param to   state to transition to
   #
   method _masterTransition {to} {
-    
-      
-    if {![$self _requireSlaveMode]} {
-      return
-    }
+    puts "_masterTransition $to"
     set sm [::RunstateMachineSingleton %AUTO%]
-    set currentState [$sm getState]
-    ::ReadoutGUIPanel::Log \
-      RemoteControl output "State transition from '$currentState' to '$to'"
-    if {[catch {$sm masterTransition $to} msg]} {
-      $self _reply ERROR "The current state ($currentState) does not allow transition to $to state $msg"
-    } else {
-      $self _reply OK
-    }
+    set status [catch {  
+      if {![$self _requireSlaveMode]} {
+        return
+      }
+      
+      set currentState [$sm getState]
+      
+      # Actually check if the transition is allowed:
+      
+      set allowedFinals [RunstateMachine listTransitions $currentState]
+      if {$to ni $allowedFinals} {
+        $self _reply ERROR "The current state ($currentState) does not allow transitionsto $to"
+      } else {
+        ::ReadoutGUIPanel::Log \
+          RemoteControl output "Attempting state transition from '$currentState' to '$to'"
+        
+        # If the to state is requires precheck do it and report errors to master
+        
+        if {$to in  [list "Active"]} {
+          set precheckErrors [$sm precheckTransitionForErrors $to]
+          if {[llength $precheckErrors] > 0} {
+            $self _reply ERROR "Precheck of transition to $to failed: $precheckErrors"
+          }
+        } else {
+        
+          if {[catch {$sm masterTransition $to} msg]} {
+            $self _reply ERROR "Transition of $currentState) -> $to failed:  $msg"
+          } else {
+            $self _reply OK
+          }
+        }
+      }
+    } msg]
     $sm destroy
-
+    if {$status} {
+      $self _reply ERROR "Slave failed transition to $to $msg"
+    }
   }
 
   ##
@@ -803,7 +843,7 @@ snit::type ReadoutGuiRemoteControl {
   #
   # @return bool - slave state (true if can continue).
   method _requireSlaveMode {} {
-    if {![$self _slaveMode]} {
+    if {![$self slaveMode]} {
       $self _reply ERROR "Must be in slave mode to do this"
       return false
     }
