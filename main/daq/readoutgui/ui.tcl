@@ -27,7 +27,7 @@ package provide ui   1.0
 package provide ReadoutGUIPanel 1.0
 package require Utils
 
-namespace eval ::ReadoutGUIPanel {
+namespace eval ReadoutGUIPanel {
     
 }
 
@@ -2958,7 +2958,7 @@ proc ::ReadoutGUIPanel::outputText {text} {
     set w [::Output::getInstance]
     $w puts $text
 }
-proc ::ReadougGUIPanel::outputText {text}  { ::ReadoutGUIPanel::outputText $text }
+proc ::ReadoutGUIPanel::outputText {text}  { ::ReadoutGUIPanel::outputText $text }
 ##
 # ::ReadoutGUIPanel::log
 #
