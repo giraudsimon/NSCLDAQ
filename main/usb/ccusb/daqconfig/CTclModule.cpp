@@ -154,7 +154,7 @@ CTclModule::evalOrThrow(const std::string& cmd)
   } catch (...) {
     Tcl_Interp* pRaw = m_pInterp->getInterpreter();
     const char* pResult = Tcl_GetStringResult(pRaw);
-    std::string trace   = XXUSB::getTclTraceback(pRaw);
+    std::string trace   = tclUtil::getTclTraceback(*m_pInterp);
     std::cerr <<"Error executing command: " << cmd << ": "
       << pResult << ": " << trace << std::endl;
     throw;

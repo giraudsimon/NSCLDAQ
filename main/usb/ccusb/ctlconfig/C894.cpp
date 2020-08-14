@@ -31,6 +31,7 @@ Driver for CAEN C894 - CAEN 16 Channel LED
 #include <iostream>
 #include <string>
 #include <XXUSBConfigurableObject.h>
+#include <tclUtil.h>
 
 using namespace std;
 
@@ -569,7 +570,7 @@ C894::configFileToShadow()
   if (status != TCL_OK) {
    std::cerr << "**Warning** Error processing C894 configuration file: "
     << filename << " : " << Tcl_GetStringResult(pInterp);
-   std::cerr << " : " << XXUSB::getTclTraceback(pInterp)
+   std::cerr << " : " << Tcl_GetVar(pInterp, "errorInfo",  TCL_GLOBAL_ONLY)
     << std::endl;
    std::cerr << " Processing continues\n";
    

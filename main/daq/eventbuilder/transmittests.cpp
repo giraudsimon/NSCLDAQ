@@ -385,16 +385,9 @@ void clienttest::connect_1()
 void clienttest::connect_2()
 {
     // Connect but no sources
-<<<<<<< HEAD
 
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim    = thread->m_rSimulator;
-
-
-=======
-    SimulatorThread* thread = setupSimulator();
-    Simulator&       sim    = thread->m_rSimulator;
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     std::list<int> sources;                // No sources.
     CPPUNIT_ASSERT_NO_THROW(
@@ -405,13 +398,8 @@ void clienttest::connect_2()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
-<<<<<<< HEAD
-
-    thread.join();                  // Wait on thread exit.
-
-=======
     thread->join();                  // Wait on thread exit.
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
+
     
     // Check out the results... should be one request, a connection.
     
@@ -429,11 +417,7 @@ void clienttest::connect_3()
     
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim(thread->m_rSimulator);
-<<<<<<< HEAD
 
-
-=======
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -448,13 +432,7 @@ void clienttest::connect_3()
     
     delete m_pClient;
     m_pClient = nullptr;            // So cleanup doesn't fail.
-<<<<<<< HEAD
-
-    thread.join();                  // Wait on thread exit.
-
-=======
     thread->join();                  // Wait on thread exit.
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     Simulator::Request r = sim.m_requests[0];
     EVB::pConnectBody b = static_cast<EVB::pConnectBody>(r.s_body);
@@ -463,39 +441,7 @@ void clienttest::connect_3()
         EQ(uint32_t(i), b->s_sids[i]);
     }
     cleanupSimulator(thread);
-<<<<<<< HEAD
-}
-void clienttest::connect_4()
-{
 
-    // connect with source specs.
-
-    // We can't use setupSimulator because that assumes a successful
-    // connection:
-    
-    
-    Simulator       sim(m_nPort, "Failed - no such luck\n");
-    SimulatorThread thread(sim);
-    thread.start();
-    usleep(200);     
-    
-    std::list<int> sources;                // No sources.
-    sources.push_back(0);
-    sources.push_back(1);
-    sources.push_back(2);
-    
-    CPPUNIT_ASSERT_THROW(
-        m_pClient->Connect("A test", sources),
-        std::string
-    );
-    delete m_pClient;
-    m_pClient = nullptr;
-    thread.join();
-    
-    
-
-=======
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
 }
 void clienttest::connect_4()
 {
@@ -526,6 +472,8 @@ void clienttest::connect_4()
     
     
 }
+
+
 void clienttest::disconnect_1()
 {
     // disconnect without connect is an error.
@@ -542,10 +490,6 @@ void clienttest::disconnect_2()
 {
     // Good disconnect with simulator.
     
-<<<<<<< HEAD
-
-=======
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     SimulatorThread* thread = setupSimulator();
     
     std::list<int> sources;                // No sources.
@@ -556,15 +500,10 @@ void clienttest::disconnect_2()
     delete m_pClient;
     m_pClient = nullptr;
     
-<<<<<<< HEAD
 
     thread->join();
     Simulator& sim(thread->m_rSimulator);
 
-=======
-    thread->join();
-    Simulator& sim(thread->m_rSimulator);
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     // Should be two messges, a connect and a disconnect:
     
@@ -576,7 +515,8 @@ void clienttest::disconnect_2()
     EQ(EVB::DISCONNECT, r.s_hdr.s_msgType);
     EQ(uint32_t(0),     r.s_hdr.s_bodySize);
     cleanupSimulator(thread);
-<<<<<<< HEAD
+
+
     
 }
 void clienttest::disconnect_3()
@@ -586,8 +526,7 @@ void clienttest::disconnect_3()
     SimulatorThread* thread = setupSimulator();
     Simulator&       sim(thread->m_rSimulator);
     std::list<int> sources;                // No sources.
-=======
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
+
     
     m_pClient->Connect("A test", sources);
     sim.setResponse("Faile faile faile\n");
@@ -599,24 +538,7 @@ void clienttest::disconnect_3()
     thread->join();
     cleanupSimulator(thread);
 }
-void clienttest::disconnect_3()
-{
-    // Good disconnect with simulator.
-    
-    SimulatorThread* thread = setupSimulator();
-    Simulator&       sim(thread->m_rSimulator);
-    std::list<int> sources;                // No sources.
-    
-    m_pClient->Connect("A test", sources);
-    sim.setResponse("Faile faile faile\n");
-    CPPUNIT_ASSERT_THROW(
-        m_pClient->disconnect(), std::string
-    );
-    delete m_pClient;
-    m_pClient = nullptr;
-    thread->join();
-    cleanupSimulator(thread);
-}
+
 void clienttest::frag_1()
 {
     // Empty fragment chain is legal and results in an empty fragments
@@ -649,7 +571,6 @@ void clienttest::frag_2()
     // fragment chain with one element containing a counting pattern.
 
     SimulatorThread* thread = setupSimulator();
-<<<<<<< HEAD
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -710,11 +631,6 @@ void clienttest::frag_3()
     SimulatorThread* thread = setupSimulator();
 
 
-
-
-
-=======
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
     
     uint8_t data[100];
     for (int i =0;i < 100; i++) { data[i] = i;}
@@ -881,215 +797,6 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
     delete thread;
 
 }
-=======
-    
-    m_pClient->submitFragments(&head);
-    
-    delete m_pClient;             // drops connection
-    m_pClient = nullptr;
-    thread->join();
-    Simulator& sim(thread->m_rSimulator);
-    
-    // Lets' look at that second message.
-    
-    Simulator::Request m = sim.m_requests.at(1);
-    EVB::ClientMessageHeader& h(m.s_hdr);
-    EVB::pFlatFragment         f = static_cast<EVB::pFlatFragment>(m.s_body);
-    
-    EQ(EVB::FRAGMENTS, h.s_msgType);
-    EQ(sizeof(EVB::FragmentHeader) + 100, size_t(h.s_bodySize));
-    
-    // The fragment heder:
-    
-    EVB::FragmentHeader& fh(f->s_header);
-    EQ(frag.s_header.s_size, fh.s_size);
-    EQ(frag.s_header.s_sourceId, fh.s_sourceId);
-    EQ(frag.s_header.s_timestamp, fh.s_timestamp);
-    EQ(frag.s_header.s_barrier, fh.s_barrier);
-    
-    // The data:
-    
-    uint8_t* fbody = reinterpret_cast<uint8_t*>(f->s_body);
-    for (int i =0; i < 100; i++) {
-        EQ(data[i], fbody[i]);
-    }
-    cleanupSimulator(thread);
-    
-}
-void clienttest::frag_3()
-{
-    // Fail response.
-    
-     // fragment chain with one element contain
-     
-    SimulatorThread* thread = setupSimulator();
-    
-    uint8_t data[100];
-    for (int i =0;i < 100; i++) { data[i] = i;}
-    
-    EVB::Fragment      frag;
-    frag.s_header.s_size = 100;
-    frag.s_header.s_sourceId = 1;
-    frag.s_header.s_timestamp = 0x123456789;
-    frag.s_header.s_barrier = 0;
-    frag.s_pBody = data;
-    
-    EVB::FragmentChain head;
-    head.s_pNext =nullptr;
-    head.s_pFragment = &frag;
-    
-    std::list<int> sources; sources.push_back(1);
-    m_pClient->Connect("Fragment test", sources);
-    Simulator& sim(thread->m_rSimulator);
-    sim.setResponse("Faile faile\n");
-    
-    CPPUNIT_ASSERT_THROW(m_pClient->submitFragments(&head), std::string);
-    
-    delete m_pClient;             // drops connection
-    m_pClient = nullptr;
-    thread->join();
-    cleanupSimulator(thread);
-}
-void clienttest::frag_4()
-{
-    // counted array of fragments instead of chain -- a few fragments.
-    
-    SimulatorThread* thread = setupSimulator();
-    Simulator& sim(thread->m_rSimulator);
-    
-    uint8_t data[100];
-    for (int i =0; i < 100; i++) {
-        data[i] = i;
-    }
-    EVB::Fragment frags[10];
-    uint64_t timestamp = 0x12456789;
-    for (int i =0; i < 10; i++) {
-        EVB::Fragment& frag(frags[i]);
-        frag.s_header.s_size = 10;
-        frag.s_header.s_sourceId = 1;
-        frag.s_header.s_timestamp = timestamp + i*10;
-        frag.s_header.s_barrier = 0;
-        frag.s_pBody = &(data[i*10]);
-    }
-    
-    std::list<int> sources; sources.push_back(1);
-    m_pClient->Connect("Fragment test", sources);
-    
-    CPPUNIT_ASSERT_NO_THROW(
-        m_pClient->submitFragments(10, frags)
-    );
-    
-    delete m_pClient;
-    m_pClient = nullptr;
-    thread->join();
-    
-    // Verify faithful transmission of fragments:
-    
-    // Body is 100 bytes + 10 headers:
-    
-    EQ(size_t(2), sim.m_requests.size());
-    auto req(sim.m_requests[1]);
-    EQ(uint32_t(10*sizeof(EVB::FragmentHeader) + sizeof(data)), req.s_hdr.s_bodySize);
-    
-    
-    EVB::pFragmentHeader hdr = static_cast<EVB::pFragmentHeader>(req.s_body);
-    for (int f =0; f < 10; f++) {
-        EQ(frags[f].s_header.s_size, hdr->s_size);
-        EQ(frags[f].s_header.s_sourceId, hdr->s_sourceId);
-        EQ(frags[f].s_header.s_timestamp, hdr->s_timestamp);
-        EQ(frags[f].s_header.s_barrier, hdr->s_barrier);
-        uint8_t* sb = static_cast<uint8_t*>(frags[f].s_pBody);
-        uint8_t* is = reinterpret_cast<uint8_t*>(hdr+1);
-        for (int i =0; i < hdr->s_size; i++) {
-            EQ((unsigned int)*sb, (unsigned int)*is);
-            sb++;
-            is++;
-        }
-        hdr = reinterpret_cast<EVB::pFragmentHeader>(is);
-    }
-    cleanupSimulator(thread);
-    
-}
-void clienttest::frag_5()
-{
-    // send but sending a list of pointers to fragments.
-    
-    // counted array of fragments instead of chain -- a few fragments.
-    
-    SimulatorThread* thread = setupSimulator();
-    Simulator&       sim(thread->m_rSimulator);
-    
-    uint8_t data[100];
-    for (int i =0; i < 100; i++) {
-        data[i] = i;
-    }
-    EVB::Fragment frags[10];
-    uint64_t timestamp = 0x12456789;
-    EVB::FragmentPointerList l;
-    for (int i =0; i < 10; i++) {
-        EVB::Fragment& frag(frags[i]);
-        frag.s_header.s_size = 10;
-        frag.s_header.s_sourceId = 1;
-        frag.s_header.s_timestamp = timestamp + i*10;
-        frag.s_header.s_barrier = 0;
-        frag.s_pBody = &(data[i*10]);
-        l.push_back(&frag);
-    }
-    
-     std::list<int> sources; sources.push_back(1);
-    m_pClient->Connect("Fragment test", sources);
-    
-    CPPUNIT_ASSERT_NO_THROW(
-        m_pClient->submitFragments(l)
-    );
-    delete m_pClient;
-    m_pClient = nullptr;
-    thread->join();
-    
-    // Verify faithful transmission of fragments:
-    
-    // Body is 100 bytes + 10 headers:
-    
-    EQ(size_t(2), sim.m_requests.size());
-    auto req(sim.m_requests[1]);
-    EQ(uint32_t(10*sizeof(EVB::FragmentHeader) + sizeof(data)), req.s_hdr.s_bodySize);
-    
-    
-    EVB::pFragmentHeader hdr = static_cast<EVB::pFragmentHeader>(req.s_body);
-    for (int f =0; f < 10; f++) {
-        EQ(frags[f].s_header.s_size, hdr->s_size);
-        EQ(frags[f].s_header.s_sourceId, hdr->s_sourceId);
-        EQ(frags[f].s_header.s_timestamp, hdr->s_timestamp);
-        EQ(frags[f].s_header.s_barrier, hdr->s_barrier);
-        uint8_t* sb = static_cast<uint8_t*>(frags[f].s_pBody);
-        uint8_t* is = reinterpret_cast<uint8_t*>(hdr+1);
-        for (int i =0; i < hdr->s_size; i++) {
-            EQ((unsigned int)*sb, (unsigned int)*is);
-            sb++;
-            is++;
-        }
-        hdr = reinterpret_cast<EVB::pFragmentHeader>(is);
-<<<<<<< HEAD
-    }    
-}
->>>>>>> Tested/debugged the remaining fragment sender overloads.
-=======
-    }
-    cleanupSimulator(thread);
-}
 
-SimulatorThread* clienttest::setupSimulator()
-{
-    Simulator* pSim = new Simulator(m_nPort);
-    SimulatorThread* result = new SimulatorThread(*pSim);
-    result->start();
-    usleep(200);
-           
-    return result;
-}
-void clienttest::cleanupSimulator(SimulatorThread* thread)
-{
-    delete &(thread->m_rSimulator);    // We know it's dynamic.
-    delete thread;
-}
->>>>>>> daqdev/NSCLDAQ#700 Factored out simulator startup and cleanup.
+
+

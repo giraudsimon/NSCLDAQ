@@ -131,6 +131,7 @@ libVMUSBDaqConfig_la_CPPFLAGS = -I@top_srcdir@/usb/common/devices		\
 				@LIBTCLPLUS_CFLAGS@			\
 				-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/base/os		\
+				-I@top_srcdir@/usb/vmusb/daqconfig \
 				$(TCL_FLAGS) 
 
 

@@ -16,6 +16,8 @@
 #include <TCLException.h>
 #include <CErrnoException.h>
 #include <XXUSBConfigurableObject.h>
+#include <tclUtil.h>
+
 #include <tcl.h>
 
 #include <unistd.h>
@@ -82,7 +84,7 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
           Tcl_Interp* pRaw = Globals::pMainInterpreter->getInterpreter();
           std::cerr << "Error executing init script " << m_initScript << std::endl;
           std::cerr << ": " << Tcl_GetStringResult(pRaw) << ": "
-          << XXUSB::getTclTraceback(pRaw) << std::endl;
+		    << tclUtil::getTclTraceback(*Globals::pMainInterpreter) << std::endl;
           std:: cerr << "Processing continues\n";
         }
       } else {

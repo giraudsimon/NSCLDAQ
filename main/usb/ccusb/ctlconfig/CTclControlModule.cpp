@@ -228,74 +228,11 @@ CTclControlModule::executeCommand(CTCLObject& command)
     msg += ": ";
     msg += result;
     msg += ": ";
-    msg += XXUSB::getTclTraceback(pInterp);
+    msg += tclUtil::getTclTraceback(m_interp);
     return msg;
   }
   return result;
 }
-/*
- * makeCommand
- *    Make a command from a command ensemble.
- *    There may or may not be additinal command words
- *    depending on the subcommand.  This method
- *    creates a CTCLObject that contains that part of the
- *    command.
- * @param[out] command - object into which the command is generated.
- * @param  usb    - the usb controller.
- * @param subcommand   - Subcommand string.
- * @note command is a reference and will have been bound
- *               to the interpreter on exit.
-*/
-void
-CTclControlModule::makeCommand(
-  CTCLObject& command, CCCUSB& usb, const char* subcommand
-)
-{
-  std::string baseCommand = m_pConfig->cget("-ensemble");
-  if (baseCommand == "") {
-    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
-  }
-
-  // Build the command:
-  
-  CTCLInterpreter* pInterp = &m_interp;
-
-  command.Bind(pInterp);
-  command += baseCommand;	// Base of ensemble
-  command += subcommand;
-
-  // Turn vme into a marshalled pointer.
-
-  std::string vmusbPointer = tclUtil::swigPointer(&usb, "CCCUSB");
-  command += vmusbPointer;  
-}
-/**
- * executeCommand
- *    Run a generated command object and return the result
- *    or throw an exception if there's a failure.
- * @param command - the generated commando bject.
- * @return std::string - commnand result.
- */
-std::string
-CTclControlModule::executeCommand(CTCLObject& command)
-{
-  Tcl_Interp* pInterp = m_interp.getInterpreter();
-  int status = Tcl_EvalObjEx(pInterp, command.getObject(), TCL_EVAL_GLOBAL);
-  std::string result = Tcl_GetStringResult(pInterp);
-
-  if (status != TCL_OK) {
-    std::string msg = "ERROR - Executing  command";
-    msg += std::string("command");
-    msg += ": ";
-    msg += result;
-    msg += ": ";
-    msg += XXUSB::getTclTraceback(pInterp);
-    return msg;
-  }
-  return result;
-}
-=======
->>>>>>> /daqdev/NSCLDAQ#700 - remove swigPointer from CTclControlMOdule,
 
 /**
  * marshallData

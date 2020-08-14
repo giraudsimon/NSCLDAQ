@@ -159,19 +159,19 @@ CConfiguration::processConfiguration(string configFile)
   catch (char* msg) {
     cerr << "CConfiguration::processConfiguration caught char* exception: "
 	 << msg << endl;
-   cerr << XXUSB::getTclTraceback(m_pInterp->getInterpreter()) << std::endl;
+    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
   catch (CException& error) {
     cerr << "CConfiguration::processConfiguration caught CExcpetion : "
 	 << error.ReasonText() << " while " << error.WasDoing() << endl;
     cerr << Tcl_GetStringResult(m_pInterp->getInterpreter()) << endl;
-    cerr << XXUSB::getTclTraceback(m_pInterp->getInterpreter()) << std::endl;
+    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
   catch (...) {
     cerr << "CConfiguration::processConfiguration caught an unknown exception type\n";
-    cerr << XXUSB::getTclTraceback(m_pInterp->getInterpreter()) << std::endl;
+    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
 }

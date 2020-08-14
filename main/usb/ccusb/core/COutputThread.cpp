@@ -778,3 +778,4 @@ void COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
   item.commitToRing(*m_pRing);
 
 
+}

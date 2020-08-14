@@ -62,7 +62,7 @@ CMADCChainCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 	if (name == "") return TCL_ERROR;
 	
   if (objv.size() < 4) {
-    Usage(interp, "Not enough parameters for create subcommand", objv);
+    Usage("Not enough parameters for create subcommand", objv);
     return TCL_ERROR;
   }
 

@@ -54,10 +54,4 @@ void aTestSuite::test_1()
     double time = m_pTime->measure();
     ASSERT(time >= 1.0);
     ASSERT(time <= 1.25);
-<<<<<<< HEAD
-
 }
-=======
-    
-}
->>>>>>> daqdev/NSCLDAQ#44 - produced common method to measure intervals
