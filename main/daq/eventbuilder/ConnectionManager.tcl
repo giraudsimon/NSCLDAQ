@@ -375,13 +375,6 @@ snit::type EVB::Connection {
     method _Fragments socket {
         # Read the header:
         
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        puts stderr "_Fragments"
->>>>>>> Completed testing of end to end
-=======
->>>>>>> Remove debugging output that was inadvertently left in.
         if {[catch {read $socket $EVB::HeaderSize} header]} {
             if {[eof $socket]} {
                 $self _Close LOST
