@@ -787,7 +787,7 @@ SimulatorThread* clienttest::setupSimulator()
     Simulator* pSim = new Simulator(m_nPort);
     SimulatorThread* result = new SimulatorThread(*pSim);
     result->start();
-    usleep(200);
+    usleep(1000);
            
     return result;
 }
