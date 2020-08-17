@@ -556,7 +556,7 @@ namespace eval FailBundle {
 -body {
     catch {rm transition Starting}
     set ::failureInfo
-} -result [list [list NotReady Starting]]
+} -result [list NotReady Starting]
 
 tcltest::test failure-callback-3 {Failures called in reverse registration order} \
 -setup {
