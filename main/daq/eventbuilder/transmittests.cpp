@@ -462,11 +462,16 @@ void clienttest::connect_4()
     sources.push_back(0);
     sources.push_back(1);
     sources.push_back(2);
-    
-    CPPUNIT_ASSERT_THROW(
-        m_pClient->Connect("A test", sources),
-        std::string
-    );
+    try {
+        CPPUNIT_ASSERT_THROW(
+            m_pClient->Connect("A test", sources),
+            std::string
+        );
+    }
+    catch (CException& e) {
+        std::cerr << "Connect_4: exception is: " << e.ReasonText() << std::endl;
+        throw;
+    }
     delete m_pClient;
     m_pClient = nullptr;
     thread.join();
