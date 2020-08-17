@@ -76,9 +76,8 @@ void Simulator::operator()() {
     std::stringstream port;
     port << m_nPort;
     m_pSocket->Bind(port.str());
-    m_bound = true;
     m_pSocket->Listen();
-    
+    m_bound = true;
     std::string client;
     CSocket* pConn = m_pSocket->Accept(client);
     
@@ -795,7 +794,7 @@ SimulatorThread* clienttest::setupSimulator()
     // millisecond good measure.
     
     while (!pSim->m_bound) usleep(1000);
-    usleep(1000);                  // To let it get to listen.
+    usleep(200000);                  // To let it get to listen.
            
     return result;
 }
