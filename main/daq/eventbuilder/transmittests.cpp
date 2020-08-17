@@ -53,8 +53,10 @@ struct Simulator {
     int                  m_nPort;
     CSocket*             m_pSocket;
     std::string          m_response;
+    volatile bool                 m_bound;
     Simulator(int port, const char* response="OK\n") :
-        m_nPort(port), m_pSocket(nullptr), m_response(response) {}
+        m_nPort(port), m_pSocket(nullptr), m_response(response), m_bound(false)
+        {}
     ~Simulator() {
         delete m_pSocket;
         for (int i =0;i < m_requests.size(); i++) {
@@ -74,6 +76,7 @@ void Simulator::operator()() {
     std::stringstream port;
     port << m_nPort;
     m_pSocket->Bind(port.str());
+    m_bound = true;
     m_pSocket->Listen();
     
     std::string client;
@@ -455,7 +458,6 @@ void clienttest::connect_4()
     Simulator       sim(m_nPort, "Failed - no such luck\n");
     SimulatorThread thread(sim);
     thread.start();
-    usleep(200);     
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
@@ -787,7 +789,13 @@ SimulatorThread* clienttest::setupSimulator()
     Simulator* pSim = new Simulator(m_nPort);
     SimulatorThread* result = new SimulatorThread(*pSim);
     result->start();
-    usleep(1000);
+    
+    // The simulator thread sets its m_bound member flag when
+    // binding to the port.  We poll for it and then give another
+    // millisecond good measure.
+    
+    while (!pSim->m_bound) usleep(1000);
+    usleep(1000);                  // To let it get to listen.
            
     return result;
 }
