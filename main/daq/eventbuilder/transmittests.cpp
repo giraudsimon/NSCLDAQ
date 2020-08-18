@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <Thread.h>
 #include <string.h>
+#include <stdexcept>
 
 // This 'class' accepts a connecton on a port and then saves
 // data from the peer until the connection is broken.
@@ -457,21 +458,22 @@ void clienttest::connect_4()
     Simulator       sim(m_nPort, "Failed - no such luck\n");
     SimulatorThread thread(sim);
     thread.start();
+    // Wait for the simulator thread to be able to accept connections
+    
+    while (!sim.m_bound) usleep(1000);
+    usleep(200000);                  // To let it get to listen.
+           
     
     std::list<int> sources;                // No sources.
     sources.push_back(0);
     sources.push_back(1);
     sources.push_back(2);
-    try {
-        CPPUNIT_ASSERT_THROW(
-            m_pClient->Connect("A test", sources),
-            std::string
-        );
-    }
-    catch (CException& e) {
-        std::cerr << "Connect_4: exception is: " << e.ReasonText() << std::endl;
-        throw;
-    }
+
+    CPPUNIT_ASSERT_THROW(
+        m_pClient->Connect("A test", sources),
+        std::string
+    );
+    
     delete m_pClient;
     m_pClient = nullptr;
     thread.join();
