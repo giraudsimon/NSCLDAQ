@@ -33,7 +33,8 @@ libCCUSBDaqConfig_la_SOURCES	= \
 				CLeCroy4300B.cpp \
 				CULMTrigger.cpp \
 				CMarker.cpp \
-				tclUtil.cpp
+				tclUtil.cpp \
+				Globals.cpp
 
 
 
@@ -68,7 +69,8 @@ noinst_HEADERS		= \
 				CTclModule.h		\
 				CMarker.h		\
 				CCamacCompat.hpp \
-				tclUtil.h
+				tclUtil.h	\
+				Globals.h
 
 
 
@@ -102,8 +104,8 @@ EXTRA_DIST = CCamacCompat.hpp
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp ctlexporttests.cpp \
-	@top_srcdir@/usb/ccusb/Globals.cpp
+unittests_SOURCES=TestRunner.cpp ctlexporttests.cpp 
+
 unittests_LDADD=libCCUSBDaqConfig.la \
 	$(libCCUSBDaqConfig_la_LIBADD) @CPPUNIT_CFLAGS@
 unittests_CXXFLAGS=$(libCCUSBDaqConfig_la_CPPFLAGS) @CPPUNIT_LDFLAGS@

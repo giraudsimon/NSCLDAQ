@@ -34,19 +34,19 @@ noinst_HEADERS			=	 \
 
 
 libCCUSBCtlConfig_la_CPPFLAGS	= -I@top_srcdir@/usb/ccusb		\
-					-I@top_srcdir@/daq/format		\
-					-I@top_srcdir@/usb/ccusb/ccusb		\
-					-I@top_srcdir@/usb/ccusb/daqconfig	\
-					-I@top_srcdir@/usb/ccusb/rdothread	\
-					-I@top_srcdir@/usb/ccusb/router	\
-					-I@top_srcdir@/usb/common/slowcontrols	\
-					-I@top_srcdir@/usb/common/configurableobject \
-					@LIBTCLPLUS_CFLAGS@	\
-					-I@top_srcdir@/base/headers	\
-					-I@top_srcdir@/base/thread	\
-					-I@top_srcdir@/base/os		\
-					-I@top_srcdir@/base/factories \
-					@TCL_FLAGS@ @THREADCXX_FLAGS@
+		-I@top_srcdir@/daq/format		\
+		-I@top_srcdir@/usb/ccusb/ccusb		\
+		-I@top_srcdir@/usb/ccusb/daqconfig	\
+		-I@top_srcdir@/usb/ccusb/rdothread	\
+		-I@top_srcdir@/usb/ccusb/router	\
+		-I@top_srcdir@/usb/common/slowcontrols	\
+		-I@top_srcdir@/usb/common/configurableobject \
+		@LIBTCLPLUS_CFLAGS@	\
+		-I@top_srcdir@/base/headers	\
+		-I@top_srcdir@/base/thread	\
+		-I@top_srcdir@/base/os		\
+		-I@top_srcdir@/base/factories \
+		@TCL_FLAGS@ @THREADCXX_FLAGS@
 
 libCCUSBCtlConfig_la_LIBADD	= 	@top_builddir@/usb/ccusb/ccusb/libCCUSB.la          \
 					@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la \
@@ -78,6 +78,7 @@ unittests_SOURCES = \
 
 unittests_CXXFLAGS = \
 	    -I@srcdir@ \
+	-I@top_srcdir@/usb/ccusb/daqconfig \
 	    -I@top_srcdir@/base/headers \
 	    -I@top_srcdir@/base/testutils \
 	    -I@top_srcdir@/usb/ccusb/ccusb \

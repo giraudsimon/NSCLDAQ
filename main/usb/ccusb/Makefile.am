@@ -12,10 +12,10 @@ SUBDIRS = 	ccusb 		\
 
 bin_PROGRAMS = CCUSBReadout
 
-CCUSBReadout_SOURCES = CTheApplication.cpp Globals.cpp
+CCUSBReadout_SOURCES = CTheApplication.cpp 
 nodist_CCUSBReadout_SOURCES=  cmdline.c cmdline.h
 
-noinst_HEADERS = CTheApplication.h Globals.h
+noinst_HEADERS = CTheApplication.h 
 
 CCUSBReadout_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb \
 	 -I@top_srcdir@/usb/ccusb/daqconfig \
