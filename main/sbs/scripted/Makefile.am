@@ -157,7 +157,6 @@ install-exec-local:
 
 noinst_PROGRAMS = unittests
 unittests_SOURCES = TestRunner.cpp factorytests.cpp \
-	@top_srcdir@/sbs/readout/PacketUtils.cpp \
 	CModuleCommand.cpp  CDigitizerDictionary.cpp \
 	CModuleCreator.cpp \
 	CCAENModule.cpp CCAENV775.cpp CCAENV775Creator.cpp \
@@ -175,6 +174,7 @@ unittests_SOURCES = TestRunner.cpp factorytests.cpp \
 unittests_CPPFLAGS=$(COMPILATION_FLAGS) @CPPUNIT_CFLAGS@ \
 	@LIBTCLPLUS_CFLAGS@ @TCL_CPPFLAGS@
 unittests_LDFLAGS= @CPPUNIT_LDFLAGS@  \
+	@top_builddir@/sbs/readout/libSBSProductionReadout.la		\
 	@top_builddir@/sbs/vmemodules/libSBSDeviceSupport.la    \
         @top_builddir@/sbs/nsclapi/libSBSVmeAPI.la              \
         @top_builddir@/base/thread/libdaqthreads.la     \
