@@ -234,33 +234,39 @@ snit::type ReadoutGuiRemoteControl {
       #  4. Obviously if there are  no instances fail too:
       #
       
-      set services [$allocator listPorts]
-      set foundCount 0
-      foreach service $services {
-        set port [lindex $service 0]
-        set app  [lindex $service 1]
-        if {$app eq "s800rctl"} {
-          incr foundCount
-          set svcport $port
-        }
-      }
-      if {$foundCount == 1} {
-        set requestfd [socket $clientaddr $svcport]
-        chan configure $requestfd -blocking 0 -buffering line
-        chan event $requestfd readable [mymethod _onRequestReadable]
-      } elseif {$foundCount == 0} {
-        set msg "ReadoutGUIRemoteControl::_onConnection Unable to locate "
-        append msg "s800rctl service on $clientaddr"
-        puts stderr $msg
-        ::ReadoutGUIPanel::Log RemoteControl output $msg
-      } else {
-        set msg "ReadoutGUIRemoteControl::_onConnection Multiple s800rctl services"
-        append msg " on $clientaddr\n"
-        append msg "Can't determine which one to connect to"
-        puts stderr $msg
-        ::ReadoutGUIPanel::Log RemoteControl output $msg
-      }
+      ## daqdev/NSCLDAQ#1053 - if NSCLDAQ isn't running on the remote system
+      #  listPorts fails - in that case just don't set up the output forwarder:
       
+      if {![catch {$allocator listPorts} services]} {
+        set foundCount 0
+        foreach service $services {
+          set port [lindex $service 0]
+          set app  [lindex $service 1]
+          if {$app eq "s800rctl"} {
+            incr foundCount
+            set svcport $port
+          }
+        }
+        if {$foundCount == 1} {
+          set requestfd [socket $clientaddr $svcport]
+          chan configure $requestfd -blocking 0 -buffering line
+          chan event $requestfd readable [mymethod _onRequestReadable]
+        } elseif {$foundCount == 0} {
+          set msg "ReadoutGUIRemoteControl::_onConnection Unable to locate "
+          append msg "s800rctl service on $clientaddr"
+          puts stderr $msg
+          ::ReadoutGUIPanel::Log RemoteControl output $msg
+        } else {
+          set msg "ReadoutGUIRemoteControl::_onConnection Multiple s800rctl services"
+          append msg " on $clientaddr\n"
+          append msg "Can't determine which one to connect to"
+          puts stderr $msg
+          ::ReadoutGUIPanel::Log RemoteControl output $msg
+        }
+      } else {
+        puts "Remote controlling system does not appear to be running NSCLDAQ"
+        puts "Output forwarding disabled"
+      }
       $allocator destroy
 
       # now setup the reply socket for receiving requests from the master 
