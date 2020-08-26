@@ -66,7 +66,7 @@ namespace eval ReadoutPixieServer {
     #
     proc _onConnection {socket client port} {
         puts "Pixie16 server client $client connected"
-        PixieServer %AUTO% -socket $socket
+        Pixie16Server %AUTO% -socket $socket
     }
     ##
     #  Get a port publishing the service as pixie16config
