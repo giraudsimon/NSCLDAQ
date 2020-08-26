@@ -1,0 +1,482 @@
+<!-- manpage 3daq -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>pixieplugin</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>pixieplugin</refname>
+      <refpurpose>Suport dynamic configuration of Pixie16 modules via DDASReadout Server.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+$DAQBIN/DDASReadout --init-script=pixieserver.tcl
+            
+#---- pixieserver.tcl:
+
+lappend auto_path [file join $::env(DAQROOT) TclLibs]
+package require pixieplugin
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+       <title>DESCRIPTION</title>
+          <para>
+            pixieplugin is a package that can be sourced into a DDASReadout
+            (or DDASReadout-extcl) readout program that starts a server that
+            can allow remote applications to tweak Pixie16 configuration
+            parameters.  The server requires NSCLDAQ-11.3-020 or later
+            and NSCLDDAS-3.4-000 or later.
+          </para>
+          <para>
+            When the server starts, it registers allocates a TCP/IP listen port
+            from the NSCLDAQ Port manager, registering as the application
+            <literal>pixe16config</literal>. The port manager on the system
+            running the Readout program can, in turn be used to lookup the
+            port to which a connection should be made.
+          </para>
+          <para>
+            For information about communicating with the server once a connection
+            has been made, see <literal>COMMUNICATION PROTOCOL</literal> below.
+          </para>
+          <para>
+            Note that certain files must be present in the current working directory
+            at the time the initialization script is executed. See
+            <literal>FILES</literal> below.  This requirement is not a real
+            restriction because those files must also be present for
+            DDASReadout to operate properly.
+          </para>
+    </refsect1>
+    <refsect1>
+        <title>COMMUNICATION PROTOCOL</title>
+        <para>
+            Communications with the server is completely textual. Each request
+            consist of words of text.  A word of text is text separated from subsequent
+            words by whitespace. Each request consists of a request keyword,
+            that identifies the request being made,
+            followed by parameters as required by each request.  Requests are
+            terminaed by the Unix newline character <literal>\n</literal>.
+        </para>
+        <para>
+            Note that some requests can only be carried out when the pixie16
+            being targeted by the request is idle or all pixie16's are idle.
+            These restrictions will be pointed out in the
+            <literal>REQUEST DESCRIPTIONS</literal>.  All pixie16 modules are idle
+            when the run is halted.
+        </para>
+        <para>
+            The server will respond to the request with consisting of one or more
+            words.  The first word is a status code.  The codes currently
+            understood are:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term>0</term>
+               <listitem>
+                   <para>
+                    Operation was successful. In this case additional words on the
+                    reply line may be data returned by the request.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>-1</term>
+               <listitem>
+                   <para>
+                    When carrying out the request an error was reported from an
+                    XIA API call. THe remainder of the line is a human readable
+                    message that describes the error.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>-1000</term>
+               <listitem>
+                   <para>
+                    A request was performed that required pixie16(s) to be
+                    idle.  The remainder of the response line is an error
+                    message that humans can understand.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>-1001</term>
+               <listitem>
+                   <para>
+                    Parsing the request line failed. The remainder of the line
+                    is a human readable descriptive error message.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            One important point to note. In the XIA API and the server, module
+            selection is by module number, not slot number.  The <literal>Inventory</literal>
+            request can be used to obtain the module number to slot number
+            correspondence. If you don't want to use this, however, the
+            module number can be derived from cfgPixie.txt by subtracting 3 from
+            the line number in tha file (numbered from 1) in which a slot is
+            specified.
+        </para>
+        <para>
+            The following subsection describes each request and the data, if any
+            that can be returned by a successful status (status 0) field in the
+            reply line.
+        </para>
+        <refsect2>
+            <title>REQUEST DESCRIPTIONS</title>
+            <variablelist>
+                <varlistentry>
+                   <term><literal>Inventory</literal></term>
+                   <listitem>
+                       <para>
+                        Returns an inventory of the modules configured into the
+                        DDASReadout(-extclk) program. On success, the status will be
+                        <literal>0</literal> and there will be an additional
+                        number on the returned line.  This number is the number
+                        of modules configured into the Readout.  For each configured
+                        module a line will follow.  The lines will be in module number order
+                        (thus the first additional line contains a description of module 0).
+                       </para>
+                       <para>
+                        Each line that follows has the following integer fields in order:
+                       </para>
+                       <itemizedlist>
+                        <listitem>
+                           <para>
+                              PXI crate slot in which the module lives. 
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              Module firmware revision number. 
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              Module serial number. 
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              Number of bits of resolution in the flash ADC. 
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              Flash ADC sampling rate in Mega-Hertz.
+                           </para>
+                        </listitem>
+                       </itemizedlist>
+                        <para>
+                            For example a module with serial number 123 in crate slot 5
+                            that is a 500MHz 14 bit module revision f will have a
+                            description line like:
+                        </para>
+                        <informalexample>
+                            <programlisting>
+5 15 123 14 500
+                            </programlisting>
+                        </informalexample>
+                    </listitem>
+
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Boot</literal> <replaceable>module-index</replaceable></term>
+                   <listitem>
+                       <para>
+                        Reloads/Resets the firmware for the module
+                        <parameter>module-index</parameter> (an integer module number).
+                        Initial DSP parameters are gotten from the settings file
+                        specified by the cfgPixie
+                        Be very careful using this operation because:
+                       </para>
+                       <itemizedlist>
+                        <listitem>
+                           <para>
+                              Since the assumption is that you are doing this to
+                              clear a hung module, you are allowed to boot
+                              an active module.  Be sure you are not doing this
+                              on an active run.
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              If you are using <literal>INFINITY_CLOCK</literal>,
+                              note that a time synchrzonization will note be
+                              performed unless it is forced via 
+                              DDASReadout's  <command>ddas_sync</command> command.
+                           </para>
+                        </listitem>
+                       </itemizedlist>
+                       <para>
+                            As the modules boot, the XIA API outputs text to its
+                            stdout to display progress.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Readchanpar</literal> <replaceable>module-index channel parameter-name</replaceable></term>
+                   <listitem>
+                       <para>
+                        Reads a channel level parameter from module number
+                        <parameter>module-index</parameter>'s <parameter>channel</parameter>
+                        channel number.  <parameter>parameter-name</parameter> is
+                        a text string that determines which parameter is read.
+                        See the table on page 60-61 of the Pixie16 programmer's manual
+                        for a list of the parameter names and their meanings.
+                       </para>
+                       <para>
+                        On success the double precision parameter value is returned
+                        on the same line as the status.
+                        The transaction below shows the request and reply
+                        for module 0, channel 0 TRIGGER_RISETIME
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Readchanpar 0 0 TRIGGER_RISETIME
+
+Reply (if the rise time is 400ns):
+0 0.4
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Readmodpar</literal> <replaceable>module-index parameter-name</replaceable></term>
+                   <listitem>
+                       <para>
+                        Reads a module level paramter from the module
+                        specified by <parameter>module-index</parameter> (an integer).
+                        The actual parameter value read is specified by the text string
+                        <parameter>parameter-name</parameter> which can be chosen
+                        from the table on page 62 of the Pixie16 programmer's
+                        manual.
+                       </para>
+                       <para>
+                        On success, integer parameter value is returned on the
+                        same line as the status. The transaction below shows
+                        the request and reply for module 0, FAST_FILTER_RANGE
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Readchanpar 0 FAST_FILTER_RANGE
+
+Reply (if the rang is 3):
+
+0 3
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Writechanpar</literal> <replaceable>module-index channel parameter-name value</replaceable></term>
+                   <listitem>
+                       <para>
+                        This operation is only legal for modules that are
+                        not actively taking data. If  the plugin is being used
+                        used in e.g. DDASReadout
+                        the run must be halted to use this request.
+                       </para>
+                       <para>
+                        Writes the value of a channel level parameter.  As for
+                        <command>Readchanpar</command>
+                        <parameter>module-index</parameter> and
+                        <parameter>channel</parameter> select the module and
+                        channel operated on while
+                        <parameter>value</parameter> is the new double-precision
+                        value.  No additional information is returned on the
+                        status line.
+                       </para>
+                       <para>
+                        Here's an example of a successful request to set the
+                        trigger rise time of module 0's channel 0 to 500ns.
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Writechanpar  0 0 TRIGGER_RISETIME 0.5
+
+Successful Response:
+
+0
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Writemodpar</literal> <replaceable>module-index parameter-name value</replaceable></term>
+                   <listitem>
+                       <para>
+                        This operation is only legal for modules that are
+                        not actively taking data.  If the plugin is being used
+                        e.g. DDASReadout the run must be halted to use this
+                        request.
+                       </para>
+                       <para>
+                        The request writes a module level parameter. As with
+                        <literal>Readmodpar</literal>
+                        <parameter>module-index</parameter> selects the module
+                        and <parameter>parameter-name</parameter> the parameter to
+                        modify. <parameter>value</parameter> is a new proposed
+                        value for the parameter.  All module level parameters
+                        are integers.
+                       </para>
+                       <para>
+                        Here's a successful request/response that sets the
+                        FAST_FILTER_RANGE to 4.
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Writemodpar 0 FAST_FILTER_RANGE 4
+
+Successful Reply:
+
+0
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>Saveparams</literal> <replaceable>set-filename</replaceable></term>
+                   <listitem>
+                       <para>
+                        This operation is only legal if
+                        <emphasis>all</emphasis> modules are not actively taking
+                        data.  
+                       </para>
+                       <para>
+                        The XIA API has the ability to create a snapshot of all
+                        DSP Parameters of all modules in the system into
+                        a file.  This file can then be used to rapidly reload
+                        the DSP parameters at a later time.  These files are
+                        called .set files.   This request uses that API
+                        capability to save the current DSP parameters into the
+                        file <parameter>set-filename</parameter>.
+                       </para>
+                       <para>
+                        Several important points:
+                       </para>
+                       <itemizedlist>
+                        <listitem>
+                           <para>
+                              The contents of .set files are specific to the digitzer
+                              models in the crate.  Thus if you have saved a
+                              set file and later change the module in slot 2 
+                              from a 250MHz digitizer to a 500MHz digitizer he
+                              configuration of that digitizer will not be correct
+                              in the .set file and must be regenerated.
+                           </para>
+                           <para>
+                            This is because .set files are essentially dumps of
+                            the DSP parameter memory of each digitizer which contains
+                            the DSP parameters in device units, which vary from
+                            digitizer model to digitizer model.
+                           </para>
+                        </listitem>
+                        <listitem>
+                           <para>
+                              More subtly, the <parameter>set-filename</parameter>
+                              parameter is interpreted in the context of the
+                              <emphasis>server</emphasis> not the client.
+                              It is also written by the server and therefore
+                              the effective user under which the server is
+                              running must have write access to the directory
+                              and, file into which the set file is being written.
+                           </para>
+                        </listitem>
+                       </itemizedlist>
+                       <para>
+                        Sample successful creation of a set file:
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Saveparams /projects/separator/setfiles/meaningful-name.set
+
+Successful reply:
+
+0
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>><literal>Loadparams</literal> <replaceable>set-filename</replaceable></term>
+                   <listitem>
+                       <para>
+                        This request can only be
+                        successfully performed if all configured digizers
+                        are idle (not taking data).
+                       </para>
+                       <para>
+                        This request loads the contents of a .set file into the
+                        DSP parameter memories of all configured modules. Note
+                        that all of the important points described in
+                        <literal>Saveparams</literal> apply with respect to
+                        settings non-portability and filename interpretation,
+                        with the exception that the server only requires
+                        read access to the set file.
+                       </para>
+                       <para>
+                        Sample successfl load oa set file:
+                       </para>
+                       <informalexample>
+                        <programlisting>
+Request:
+
+Loadparams /projects/separator/setfiles/meaningful-name.set
+
+Successful reply:
+
+0
+                        </programlisting>
+                       </informalexample>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect2>
+    </refsect1>
+    <refsect1>
+        <title>FILES</title>
+        <para>
+            The following files must be present in the current working directory
+            of the Tcl intepreter at the time the plugin package is loaded:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><filename>pxisys.ini</filename></term>
+               <listitem>
+                   <para>
+                    A file that describes the slot mapping in terms of the PCI
+                    resources on the PXI backplane.  The contents of this file
+                    depend on the vendor that produced the backplane. We currently
+                    have versions of this file for several crate types stored in
+                    <filename>$DDAS_ROOT/share/crateconfigs</filename>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><filename>cfgPixie16.txt</filename></term>
+               <listitem>
+                   <para>
+                    Describes the module configuration of the crate. This
+                    file also provides a default set file which must exist if
+                    you attempt to boot the modules.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->
