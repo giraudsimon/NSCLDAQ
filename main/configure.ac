@@ -700,6 +700,7 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-psd/skel/Makefile
     caendigitizers/caendump/Makefile
     ddas/pixieplugin/Makefile
+    ddas/pixieplugin/definitions.tcl
     cookbooks/Makefile
     ])
 
