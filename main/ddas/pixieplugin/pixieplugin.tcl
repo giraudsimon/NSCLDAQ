@@ -74,7 +74,7 @@ namespace eval ReadoutPixieServer {
     #
     
     set alloc [::portAllocator create pm]
-    set port [$alloc allocatePort pixe16config]    
+    set port [$alloc allocatePort pixie16config]    
     
     socket -server ::ReadoutPixieServer::_onConnection  $::ReadoutPixieServer::port
 }
