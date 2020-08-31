@@ -18,7 +18,7 @@ MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp \
 		CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 if MPI
-MPI_FLAGS=$(shell $(MPICXX) -showme|cut -d" " -f2-1000)
+MPI_FLAGS=$(shell $(MPICXX) -show|cut -d" " -f2-1000)
 
 #  Define the transport sources and headers.
 
