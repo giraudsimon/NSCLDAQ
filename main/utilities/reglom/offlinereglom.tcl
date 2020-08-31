@@ -39,6 +39,7 @@ lappend auto_path $tcllibdir
 #   This script is installed as a program and is used to fix event files that
 #   come from the NSCL event builder but have out of order timestamps.
 #
+package require removetcllibpath
 package require Tk
 package require snit
 package require DataSourceUI;          # for the DialogWrapper base class.

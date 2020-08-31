@@ -51,7 +51,7 @@ set libdir [file join [file dirname [info script]] .. TclLibs]
 set libdir [file normalize $libdir]
 lappend auto_path $libdir
 
-
+package require removetcllibpath
 package require ring
 package require ringutils
 

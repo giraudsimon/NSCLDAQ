@@ -16,7 +16,7 @@ DRIVERDest=@prefix@/TclLibs/tclutils
 
 TCLDRIVERS= Utils.tcl BlockCompleter.tcl TclSourceFilter.tcl Process.tcl \
    Orphan.tcl observer.tcl ssh.tcl OS.tcl UniqueInstance.tcl versionUtils.tcl \
-	Log.tcl pollmanager.tcl
+	Log.tcl pollmanager.tcl elimTclLibpath.tcl
 
 
 TCLTESTS= utils.test blockcompleter.test tclsourcefilter.test wait.test versionutils.test

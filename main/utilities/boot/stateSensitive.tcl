@@ -11,6 +11,7 @@
 set TclLibs [file join $env(DAQROOT) TclLibs]
 lappend auto_path $TclLibs
 
+package require removetcllibpath
 package require statemanager
 
 statemanager::statemonitor start $env(TRANSITION_REQUEST_URI) $env(TRANSITION_SUBSCRIPTION_URI)

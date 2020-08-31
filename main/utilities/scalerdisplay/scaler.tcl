@@ -54,7 +54,7 @@ set libDir    [file normalize [file join $scriptDir ..]]
 
 lappend auto_path $libDir
 
-
+package require removetcllibpath
 package require blt::tabset
 package require rbc
 

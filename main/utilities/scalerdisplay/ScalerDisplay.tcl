@@ -3,6 +3,8 @@
 
 set scriptdir [file dirname [info script]]
 lappend auto_path [file join $scriptdir ..];    #s.b TclLibs dir.
+
+package require removetcllibpath
 package require tkutils
 
 

@@ -44,7 +44,7 @@ set DDASTclPackages [file join $DDAS_INSTDIR TclLibs]
 set DAQTclPackages  [file join $DAQ_INSTDIR TclLibs]
 
 lappend auto_path $DDASTclPackages $DAQTclPackages
-
+package require removetcllibpath
 package require pixieserver
 package require portAllocator
 package provide pixieplugin 1.0

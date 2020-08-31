@@ -30,6 +30,7 @@ set scriptDir [file dirname [info script]]
 set libdir    [file normalize [file join $scriptDir ..]]
 lappend auto_path $libdir
 
+package require removetcllibpath
 package require Tktable
 package require BWidget
 package require rbc
