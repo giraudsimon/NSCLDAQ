@@ -18,6 +18,7 @@ MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp \
 		CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 if MPI
+MPI_FLAGS=$(shell $(MPICXX) -showme|cut -d" " -f2-1000)
 
 #  Define the transport sources and headers.
 
@@ -69,13 +70,13 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/base/uri/liburl.la			\
 	@top_builddir@/base/dataflow/libDataFlow.la		\
-	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@
+	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@ $(MPI_FLAGS)
 
 libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/daq/IO -I@top_srcdir@/base/dataflow \
 	-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/factories	\
 	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri -I@top_srcdir@/daq/eventbuilder \
-	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@
+	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@ $(MPI_FLAGS)
 
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
 	CZMQServerTransport.h CSender.h CRingItemTransport.h CRingItemFileTransport.h \
