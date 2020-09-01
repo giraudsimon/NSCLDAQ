@@ -388,7 +388,12 @@ snit::type EVB::Connection {
         }
         set result [binary scan $header ii bodySize msgType]
         if {$result != 2} {
-            puts stderr {Header only decoded to $result values instead of 2}
+            puts stderr "Header only decoded to $result values instead of 2"
+            puts stderr "Closing connection due to errors"
+            flush stderr
+            # Closing connection.
+            $self _Close LOST
+            return
         }
     
        #  Presumably the most common case is "FRAGMENTS"
