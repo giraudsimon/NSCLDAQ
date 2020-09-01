@@ -123,16 +123,16 @@ COutputStatsCommand::get(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
   CTCLObject result;
   result.Bind(interp);
 
-  result += static_cast<int>(stats.s_nTotalFragments);
+  result += static_cast<int>(stats.s_nTotalFragments); // 0
   CTCLObject fragList;
   fragList.Bind(interp);
 
-  for (int i = 0; i < stats.s_perSourceFragments.size(); i++) {
+  for (int i = 0; i < stats.s_perSourceFragments.size(); i++) { // 1
     CTCLObject fragEntry;
     fragEntry.Bind(interp);
 
-    fragEntry += static_cast<int>(stats.s_perSourceFragments[i].first);
-    fragEntry += static_cast<int>(stats.s_perSourceFragments[i].second);
+    fragEntry += static_cast<int>(stats.s_perSourceFragments[i].first); //1.0
+    fragEntry += static_cast<int>(stats.s_perSourceFragments[i].second); // 1.1
     fragList += fragEntry;
   }
   result += fragList;

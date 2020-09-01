@@ -1272,6 +1272,8 @@ snit::widgetadaptor EVB::statistics {
     component table
     
     variable inputStatsId
+    variable outputStatsId
+    
     variable afterId -1
     constructor args {
         installhull using ttk::frame
@@ -1281,6 +1283,7 @@ snit::widgetadaptor EVB::statistics {
         scrollbar $win.vscroll -orient vertical -command [list $table yview]
         grid $table $win.vscroll -sticky nsew
         $self _addInputStats
+        $self _addOutputStats
         
         $self _refresh
     }
@@ -1295,6 +1298,7 @@ snit::widgetadaptor EVB::statistics {
     #
     method _refresh {} {
         $self _refreshInputStats
+        $self _refreshOutputStats
         set afterId [after 2000 $self _refresh]
         
     }
@@ -1387,11 +1391,48 @@ snit::widgetadaptor EVB::statistics {
                 set max $depth
             }
         }
-    
         return "$qid:$max"
     }
+    #-----------------------------------------------------
+    #  Output statistics
     
-        
+    ##
+    # _addOutputStats
+    #   Adds the output statistics top level entry to the
+    #   statistics page.  The output statistics consist of
+    #   label line that has column headings and
+    #   a total stat line with children for each known source id.
+    #   the only statistic (header) is the total fragments output.
+    #
+    method _addOutputStats {} {
+        $table insert {} end -text {Output Statistics} -values {Fragments}
+        set outputStatsId [$table insert {} end -text {Total frags} -values 0]
+    }
+    ##
+    # _refreshOutputStats
+    #   Called to refresh the values on the output statistics
+    #   from the event builder.
+    #
+    method _refreshOutputStats {} {
+        set stats [EVB::outputStats get]
+        $table item $outputStatsId -values [lindex $stats 0]
+        set perQ [lindex $stats 1]
+        set sdict [dict create]
+        foreach child [$table children $outputStatsId] {
+            set sid [$table item $child -text]
+            dict append sdict $sid $child
+        }
+        foreach info $perQ {
+            set sid [lindex $info 0]
+            set stat [lindex $info 1]
+            if {[dict exists $sdict $sid]} {
+                set id [dict get $sdict $sid]
+            } else {
+                set id [$table insert $outputStatsId end -text $sid]
+            }
+            $table item $id -values $stat
+        }
+    }
     
 }
 
