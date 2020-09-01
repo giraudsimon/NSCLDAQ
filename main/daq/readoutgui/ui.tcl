@@ -2958,7 +2958,6 @@ proc ::ReadoutGUIPanel::outputText {text} {
     set w [::Output::getInstance]
     $w puts $text
 }
-proc ::ReadoutGUIPanel::outputText {text}  { ::ReadoutGUIPanel::outputText $text }
 ##
 # ::ReadoutGUIPanel::log
 #
