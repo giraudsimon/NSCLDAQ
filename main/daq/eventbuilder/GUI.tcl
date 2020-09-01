@@ -1256,17 +1256,158 @@ snit::widgetadaptor EVB::StatusBar {
         set flowstate "Flow Control Active"
     }
 }
+
+##
+# EVB::statistics
+#   Displays the event builder statistics in a relatively
+#   Compact tabular form.  The table is actually a treeview
+#   and some of the elements can be expanded.
+#   Here are the elements and what expansion gives:
+#
+#   Input statistics  Below this (note children but next items) are:
+#   -  A line of column headers queued fragments, oldest timestamp, newest timestamp, deepest queue, inflight frags
+#   -  Hierarchically below this are the same information for each data source
+#     
+snit::widgetadaptor EVB::statistics {
+    component table
+    
+    variable inputStatsId
+    variable afterId -1
+    constructor args {
+        installhull using ttk::frame
+        install table using ttk::treeview $win.table \
+            -show tree -columns {col1 col2 col3 col4} \
+            -displaycolumns #all -yscrollcommand [list $win.vscroll set]
+        scrollbar $win.vscroll -orient vertical -command [list $table yview]
+        grid $table $win.vscroll -sticky nsew
+        $self _addInputStats
+        
+        $self _refresh
+    }
+    destructor {
+        after cancel $afterId 
+    }
+    #------------------------------------------------------------
+    # Private methods.
+    ##
+    # _refresh
+    #   Refresh the display elements.
+    #
+    method _refresh {} {
+        $self _refreshInputStats
+        set afterId [after 2000 $self _refresh]
+        
+    }
+    #-----------------------------------------------------
+    #  input statistics methods.
+    
+    ##
+    # _addInputStats
+    #   *  Add a line labeled input statistics and column labels
+    #      for the input statistics data
+    #   *  Add the initial line of statistics
+    #   *  Save the id of the statistics in inputStatsId
+    #      as _refresh will create entries for each source id
+    #      hierarchically below it.
+    #
+    method _addInputStats {} {
+        $table insert {} end -text {Input Stats.} \
+            -values [list {qd frags} {oldest ts} {newest ts} {deepest/total}]
+        set inputStatsId [$table insert {} end -text {All} -values [lrepeat 4 0]]
+    }
+    ##
+    # _refreshInputStats
+    #   Get the input stats from the event builder and
+    #   update:
+    #   *  The statistics line in $inputStatsId
+    #   *  Any existing children.
+    #   *  Create any children not yet in existence.
+    method _refreshInputStats {} {
+        set stats [EVB::inputStats]
+        set questats [lindex $stats 3]
+        set deepest [_findDeepestInputQ $questats]
+        $table item $inputStatsId -values [list      \
+            [lindex $stats 4] [lindex $stats 0] [lindex $stats 1] \
+            [lindex $stats 2] $deepest                            \
+        ]
+        # Make a dict with keys source ids and values the
+        # ids of elements that represent the source statistics value
+        # for the that sid.
+        set sourceDict [dict create]
+        set sourceItems [$table children $inputStatsId]
+        foreach item $sourceItems {
+            set sid [$table item $item -text]
+            dict append sourceDict $sid $item
+        }
+        $self _refreshPerQInputStats $sourceDict $questats
+    }
+    ##
+    # _refreshPerQInputStats
+    #    Refresh the per queue input statistics.  If  a q
+    #    already has an entry it will be in the dict. if not
+    #    a new entry is cretaed below inputStatsId.
+    # @param sdict - Dict with source id keys and values the
+    #              id of an element with input stats for that sid.
+    # @param stats - Per queue statistics id, depth bytes, oldest, total.
+    #
+    method _refreshPerQInputStats {sdict stats} {
+        foreach stat $stats {
+            set sid [lindex $stat 0]
+            if {[dict exists $sdict $sid]} {
+                set id [dict get $sdict $sid]
+            } else {
+                set id [$table insert $inputStatsId end -text $sid]
+            }
+            set depth [lindex $stat 1]
+            set oldest [lindex $stat 2]
+            set bytes [expr {[lindex $stat 3]/1024}]kB
+            set dequed [expr {[lindex $stat 4]/1024}]kB
+            set total [expr {[lindex $stat 5]/1024}]kB
+            $table item $id -values [list                   \
+                $depth:$bytes $oldest "" $total            \
+            ]
+            
+        }
+    }
+    ##
+    # _findDeepestInputQ
+    #   Given per queue statistics find the deepest queue.
+    # @param info - list of queue information.
+    # @return string of the form queue : depth
+    # @retval -1:-1 if the info contains no elements.
+    #
+    proc _findDeepestInputQ {info} {
+        set qid -1
+        set max -1
+        foreach q $info {
+            set id [lindex $info 0]
+            set depth [lindex $info 1]
+            if {$depth > $max} {
+                set qid $id
+                set max $depth
+            }
+        }
+    
+        return "$qid:$max"
+    }
+    
+        
+    
+}
+
 ##
 # Top levelGUI
 snit::widgetadaptor EVB::GUI {
     component connections
     component statusbar
-    
+    component statistics    
     constructor args {
         installhull using ttk::frame
+        install statistics using EVB::statistics $win.stats
         install connections using connectionList $win.connections
         install statusbar using EVB::StatusBar $win.statusbar
         
+        grid $statistics  -sticky nsew
         grid $connections -sticky nsew
         grid $statusbar   -sticky nsew
     }

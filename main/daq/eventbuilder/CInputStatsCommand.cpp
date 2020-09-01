@@ -92,13 +92,13 @@ CInputStatsCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>&
   CTCLObject wideInt;
   wideInt.Bind(interp);
  
-  wideInt = (Tcl_WideInt)(stats.s_oldestFragment); 
+  wideInt = (Tcl_WideInt)(stats.s_oldestFragment);  // 0
   result += wideInt;
 
-  wideInt = (Tcl_WideInt)(stats.s_newestFragment);
+  wideInt = (Tcl_WideInt)(stats.s_newestFragment); // 1
   result += wideInt;
 
-  result += (int)(stats.s_totalQueuedFragments);
+  result += (int)(stats.s_totalQueuedFragments); // 2
 
   // Now the individual queue stats as a list of lists:
 
@@ -106,7 +106,7 @@ CInputStatsCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>&
   QueueStatList.Bind(interp);
 
 
-  for (int i = 0; i < stats.s_queueStats.size(); i++) {
+  for (int i = 0; i < stats.s_queueStats.size(); i++) { //3 
     CTCLObject aQueueStat;
     aQueueStat.Bind(interp);
     
@@ -129,7 +129,7 @@ CInputStatsCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>&
   }
   result += QueueStatList;
 
-  wideInt = (Tcl_WideInt)stats.s_inflight;
+  wideInt = (Tcl_WideInt)stats.s_inflight;  // 4
   result += wideInt;                       // Total in flight frags.
   
   interp.setResult(result);
