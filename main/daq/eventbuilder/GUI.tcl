@@ -29,37 +29,20 @@ package provide EVB::GUI 1.0
 package require Tk
 package require snit
 
-package require EVB::inputStatistics
-package require EVB::outputStatistics
-package require EVB::barriers
+#package require EVB::inputStatistics
+#package require EVB::outputStatistics
+#package require EVB::barriers
 package require EVB::connectionList
-package require EVB::Late
-package require EVB::LatePopup
-package require EVB::DuplicateTimestamp
-package require EVB::OutOfOrderUI
-package require RingStatus
-package require ring
+#package require EVB::Late
+#package require EVB::LatePopup
+#package require EVB::DuplicateTimestamp
+#package require EVB::OutOfOrderUI
+#package require RingStatus
+#package require ring
 
 # Establish the EVB namespace into which we're going to squeeze:
 
 namespace eval ::EVB {
-    array set lastLateStats [list]
-    variable  lateDialog ""
-    
-    set lastDupStats [list 0 {}]
-    variable  dupDialog ""
-    
-    
-    variable lastInBytes  0
-    variable lastOutBytes 0
-    variable lastinputstats
-    array set lastinputstats [list]
-    
-    variable ooWidget
-    
-    variable lastLateSummary [list 0  0]
-    variable lastIncompleteStats [list]
-    variable lastLatewidgetStats [list]
     
 }
 #----------------------------------------------------------------------------
@@ -67,6 +50,8 @@ namespace eval ::EVB {
 #  Common utility procs: daqdev/NSCLDAQ#700
 #
 
+
+if 0 {
 ##
 # _processFlowControl
 #    - Validates that the flow control option is boolean.
@@ -1228,3 +1213,75 @@ proc onDestroy {widget} {
 }
 
 bind . <Destroy> [list onDestroy %W]
+}
+
+##
+# statusBar
+#   contains a pair of text widgets. The first one is a label
+#   "Flow control"  the second widget is a label that either contains
+#    "Active" or "Accepting Data" depending onthe state of the flow control.
+#
+snit::widgetadaptor EVB::StatusBar {
+    component state
+    
+    variable flowstate ""
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::label $win.flowlabel -text  "Flow Control: "
+        install state using ttk::label $win.flowstate \
+            -textvariable [myvar flowstate]
+        
+        grid $win.flowlabel -sticky w
+        grid $win.flowstate -row 0 -column 1 -sticky e
+        
+        EVB::onflow add [mymethod _xon] [mymethod _xoff]
+        $self _xon;     # Assume we start up xon'ed.
+    }
+    destructor {
+        EVB::onflow remove [mymethod _xon] [mymethod _xoff]
+    }
+    ##
+    # _xon
+    #   Called when the event builder XON's its clients.
+    #
+    method _xon {} {
+        set flowstate "Accepting Data"
+    }
+    ##
+    # -xoff
+    #   Called when the event builder XOFF"s its clients.
+    #
+    method _xoff {} {
+        set flowstate "Flow Control Active"
+    }
+}
+##
+# Top levelGUI
+snit::widgetadaptor EVB::GUI {
+    component connections
+    component statusbar
+    
+    constructor args {
+        installhull using ttk::frame
+        install connections using connectionList $win.connections
+        install statusbar using EVB::StatusBar $win.statusbar
+        
+        grid $connections -sticky nsew
+        grid $statusbar   -sticky nsew
+    }
+    
+}
+
+#---------------------------------------------------------------------------
+#  Entry point.  Construct the GUI.  That starts it updating.
+
+
+##
+# EVB::createGui
+#    Called by the event orderer when the GUI is being created.
+#
+proc EVB::createGui {win} {
+    EVB::GUI $win
+    pack $win -fill both -expand 1
+}
