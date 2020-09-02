@@ -1273,6 +1273,7 @@ snit::widgetadaptor EVB::statistics {
     
     variable inputStatsId
     variable outputStatsId
+    variable queueStatsId
     
     variable afterId -1
     constructor args {
@@ -1284,6 +1285,7 @@ snit::widgetadaptor EVB::statistics {
         grid $table $win.vscroll -sticky nsew
         $self _addInputStats
         $self _addOutputStats
+        $self _addQueueStats
         
         $self _refresh
     }
@@ -1299,6 +1301,7 @@ snit::widgetadaptor EVB::statistics {
     method _refresh {} {
         $self _refreshInputStats
         $self _refreshOutputStats
+        $self _refreshQueueStats
         set afterId [after 2000 $self _refresh]
         
     }
@@ -1433,7 +1436,99 @@ snit::widgetadaptor EVB::statistics {
             $table item $id -values $stat
         }
     }
+    #-------------------------------------------------------
+    # queue statistics
     
+    # _addQueueStats
+    #   Queue statistics are a combination of input and output
+    #   statistics for a single queue
+    #   
+    #   The headings are
+    #     depth - Depth of input queue.
+    #     oldest ts 
+    #     newest ts 
+    #     outfrag:bytes
+    method _addQueueStats {} {
+        set queueStatsId [$table insert {} end -text {Q stats} \
+            -values [list depth oldest rcvdBytes outbytes]]
+    }
+    ##
+    # _refreshQueueStats
+    #  - Combine the per queue input/output statistics.
+    #  - Make a dict of sources for which we already have entries
+    #  - Foreach statistics entry, if we don't yet have an entry make one
+    #  - Update the values.
+    #
+    method _refreshQueueStats {} {
+        
+        #  Make a dict of sid -> table entries (known now)
+        
+        set children [$table children $queueStatsId]
+        set existsDict [dict create]
+        foreach child $children {
+            set sid [$table item $child -text]
+            dict append existsDict $sid $child
+        }
+        # Get and combine the input/output statistics and combine
+        
+        set inputStats [lindex [EVB::inputStats] 3];   # just the queue
+        
+        set statistics [_makeQstats $inputStats]
+        
+        #  Now we have a dict that's keyed by source id and
+        #  has combined statistics (see _makeQstats below).
+        
+        dict for {sid value} $statistics {
+            if {[dict exists $existsDict $sid]} {
+                set id [dict get $existsDict $sid]
+            } else {
+                # Need to make an  new one:
+                
+                set id [$table insert $queueStatsId end -text $sid]
+            }
+            # Now set the values for entry $id:
+            # value is a dict with the values for the statistics.
+        
+            $table item $id -values [list \
+               [dict get $value depth] [dict get $value oldest] \
+               [dict get $value received]K [dict get $value sent]K \
+            ]
+        }
+    }
+    ##
+    # _makeQstats
+    #   Given per-queue input  stats,
+    #   creates and returns a dict of combined stats.
+    #
+    # @param inputStats - list of per-queue input statistics.
+    # @return dict - keys are source ids, values are dicts with stats
+    #               that have the following keys:
+    #               - depth - current queue depth.
+    #               - oldest - oldest timestamp in the queue.
+    #               - received - # Kbytes queued.
+    #               - sent - #Kbytes sent.
+    #
+    # 
+    proc _makeQstats {inputStats} {
+        set result [dict create]
+        
+        #  Loop over input stats...
+        #  We assume, with good reason, sid's are unique.
+        #
+        foreach stat $inputStats {
+            set sid [lindex $stat 0]
+            set depth [lindex $stat 1]
+            set oldest [lindex $stat 2]
+            set recvd  [expr {[lindex $stat 3]/1024}]
+            set sent   [expr {[lindex $stat 4]/1024}]
+            
+            dict append result $sid [dict create               \
+                depth $depth oldest $oldest received $recvd sent $sent \
+            ]
+        }
+        
+        return $result
+    }
 }
 
 ##
