@@ -1274,6 +1274,8 @@ snit::widgetadaptor EVB::statistics {
     variable inputStatsId
     variable outputStatsId
     variable queueStatsId
+    variable completeBarriersId
+    variable incompleteBarriersId
     
     variable afterId -1
     constructor args {
@@ -1286,6 +1288,7 @@ snit::widgetadaptor EVB::statistics {
         $self _addInputStats
         $self _addOutputStats
         $self _addQueueStats
+        $self _addBarrierStats
         
         $self _refresh
     }
@@ -1302,6 +1305,8 @@ snit::widgetadaptor EVB::statistics {
         $self _refreshInputStats
         $self _refreshOutputStats
         $self _refreshQueueStats
+        $self _refreshBarrierStats
+        
         set afterId [after 2000 $self _refresh]
         
     }
@@ -1450,7 +1455,7 @@ snit::widgetadaptor EVB::statistics {
     #     outfrag:bytes
     method _addQueueStats {} {
         set queueStatsId [$table insert {} end -text {Q stats} \
-            -values [list depth oldest rcvdBytes outbytes]]
+            -values [list depth oldest qdBytes outbytes]]
     }
     ##
     # _refreshQueueStats
@@ -1528,6 +1533,202 @@ snit::widgetadaptor EVB::statistics {
         }
         
         return $result
+    }
+    #-----------------------------------------------------------
+    #   Barrier statistics
+    #
+    
+    ##
+    # _addBarrierStats
+    #   Put int top level elements for incomplete and complete
+    #   barriers.
+    #
+    method _addBarrierStats {} {
+        set completeBarriersId [$table insert {} end -text {Complete Barriers} \
+            -values [list {Number: 0} {Homogeneous: 0} {Heterogeneous: 0} ] \
+        ]
+        set incompleteBarriersId [$table insert {} end -text {Incomplete Barriers} \
+            -values [list {Number: 0} {Homogeneous: 0} {Heterogeneous: 0}]
+        ]
+    }
+    ##
+    # _refreshBarrierStats
+    #   Refreshes the barrier stats -- this can be quite
+    #   complex.  More in the comments below.
+    #
+    method _refreshBarrierStats {} {
+        set stats [EVB::barrierstats]
+        set complete [lindex $stats 0]
+        set incomplete [lindex $stats 1]
+        
+        $self _refreshCompleteBarriers $complete
+        $self _refreshIncompleteBarriers $incomplete
+    }
+    ##
+    # _refreshCompleteBarriers
+    #   Refreshes the UI for complete barriers:
+    #   -  Updates the statistics in the  completeBarriersId entry
+    #   -  Updates or add "Type n" entries with the number of barriers
+    #      of that type seen.
+    #   -  For each source Id we have a line "Source sid" with
+    #      sub lines for fragment type:  and Number:
+    # @param stats - The comlete part of the barrier statistics.
+    #
+    method _refreshCompleteBarriers {stats} {
+        set completecount [lindex $stats 0]
+        set homogeneous  [lindex $stats 1]
+        set heterog      [lindex $stats 2]
+        
+        $table item $completeBarriersId \
+            -values [list "Number: $completecount"            \
+                "Homogeneous: $homogeneous"                   \
+                "Heterogeneous: $heterog"
+            ]
+        
+        set typeinfo    [lindex $stats 3]
+        $self _refreshCompleteBarrierTypes $typeinfo
+        
+        set sourceinfo  [lindex $stats 4]
+        $self _refreshCompleteBarrierSources $sourceinfo
+    }
+    ##
+    # _refreshCompleteBarrierTypes
+    #   Given  a list of pairs containing the barrier type
+    #   and number of times that barrier has been seen, updates
+    #   that part of the complete barrier statistics,
+    #   $comleteBarriers has children.  Ones with names
+    #   like "Type: $n"  represent statistics for barrier type n.
+    #
+    # @param typeinfo - the list of type/count pairs.
+    #
+    method _refreshCompleteBarrierTypes {typeinfo} {
+        
+        #  Make dict of existing barrier type childeren:
+        
+        set typeChildren [dict create]
+        foreach child [$table children $completeBarriersId] {
+            set text [$table item $child -text]
+            if {[lindex $text 0] eq "Type:"} {
+                set id [lindex $text 1]
+                dict append typeChildren $id $child
+            }
+        }
+        #  Now loop over the typeinfo list, if necessary we make
+        #  a new child to $completeBarriersId  These are made at the
+        #  top of the children (sources at the bottom).
+        #
+        foreach info $typeinfo {
+            set type [lindex $info 0]
+            set count [lindex $info 1]
+            if {[dict exists $typeChildren $type]} {
+                set id [dict get $typeChildren $type]
+            } else {
+                set id [$table insert $completeBarriersId 0 \
+                    -text "Type: $type"
+                ]
+            }
+            $table item $id -values "Occured: $count"
+        }
+    }
+    ##
+    # _refreshCompleteBarrierSources
+    #   Refreshes the statistics for per source barrier information.
+    #   Each source will have a single item below completeBarriersId
+    #   Under that source will be children containing the
+    #   barrier type and count of number of times that barrier type
+    #   has been seen by that source.
+    #
+    # @param stats - Statistics consisting of a list of pairs.
+    #                The first element of each item is a source id.
+    #                The second is a pair containing the barrier
+    #                type and number of times that type has been
+    #                received by that source.
+    #
+    method _refreshCompleteBarrierSources {stats} {
+        
+        #  First make a dict of source children to the complete barrier
+        #  top level  The dict has source id keys and
+        #  item id values.
+        
+        set sourceChildren [dict create]
+        foreach child [$table children $completeBarriersId] {
+            set text [$table item $child -text]
+            if {[lindex $text 0] eq "Sid:"} {
+                set sid [lindex $text 1]
+                dict append sourceChildren $sid $child
+            }
+        }
+        #  Now loop over the source statistics.
+        #  ANd update the stats for each single source
+        
+        foreach info $stats {
+            set sid [lindex $info 0]
+            if {[dict exists $sourceChildren $sid]} {
+                set id [dict get $sourceChildren $sid]
+            } else {
+                set id [$table insert $completeBarriersId end \
+                        -text "Sid: $sid"                     \
+                ]
+            }
+            $self _refreshBarrierSource $id [lindex $info 1]
+        }
+    }
+    ##
+    # _refreshBarrierSource
+    #   Refresh the barrier statistics for one source.
+    # @param id - item id of the source.
+    # @param stats - list of pairs of barrier type/count
+    #
+    method _refreshBarrierSource {id stats} {
+        
+        # Make the usual dict of children.  In this
+        # case the children represent barrier types:
+        
+        set typeChildren [dict create]
+        foreach child [$table children $id] {
+            set type [lindex [$table item $child -text] 1]
+            dict append typeChildren $type $child
+        }
+        #  Now update the statistics creating new entries
+        #  as needed.
+        
+        foreach stat $stats {
+            set type [lindex $stat 0]
+            set count [lindex $stat 1]
+            if {[dict exists $typeChildren $type]} {
+                set cid [dict get $typeChildren $type]
+            } else {
+                set cid [$table insert $id end -text "Type: $type"]
+            }
+            $table item $cid -values $count
+        }
+        
+    }
+    ##
+    # _refreshIncompleteBarriers
+    #   Refreshes the incomplete barrier subtree.
+    #
+    # @param stats - the incomplete barrier statistics. A list
+    #                consisting of:
+    #               -  number of incomplete barriers.
+    #               -  Number of homogeneous incompletes.
+    #               -  Number of heterogeneous incompletes.
+    #               -  Missing source count histogram.
+    #               -  Times each source was missed.
+    #
+    method  _refreshIncompleteBarriers stats {
+        
+        #  Update the top level stats then invoke updates for the histogram
+        #  and the source counts:
+        
+        $table item $incompleteBarriersId -values [list \
+            "Number: [lindex $stats 0]"                 \
+            "Homogeneous: [lindex $stats 1]"            \
+            "Heterogeneous: [lindex $stats 2]"          \
+        ]
+        
+        set missingHisto [lindex $stats 2]
+        set missingSources [lindex $stats 3]
     }
 }
 
