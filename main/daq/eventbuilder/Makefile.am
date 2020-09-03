@@ -30,7 +30,8 @@ libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFra
 	CSourceCommand.cpp CDeadSourceCommand.cpp CReviveSocketCommand.cpp \
 	CFlushCommand.cpp CResetCommand.cpp CConfigure.cpp CDuplicateTimeStatCommand.cpp \
 	COutOfOrderTraceCommand.cpp CXonXOffCallbackCommand.cpp COutputThread.cpp \
-	CSortThread.cpp BarrierAbortCommand.cpp
+	CSortThread.cpp BarrierAbortCommand.cpp \
+	COutOfOrderStatsCommand.h COutOfOrderStatsCommand.cpp
 
 
 
