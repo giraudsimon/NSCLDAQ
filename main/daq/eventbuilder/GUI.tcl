@@ -1276,6 +1276,7 @@ snit::widgetadaptor EVB::statistics {
     variable queueStatsId
     variable completeBarriersId
     variable incompleteBarriersId
+    variable dataLateId
     
     variable afterId -1
     constructor args {
@@ -1289,6 +1290,7 @@ snit::widgetadaptor EVB::statistics {
         $self _addOutputStats
         $self _addQueueStats
         $self _addBarrierStats
+        $self _addErrorStats
         
         $self _refresh
     }
@@ -1306,6 +1308,7 @@ snit::widgetadaptor EVB::statistics {
         $self _refreshOutputStats
         $self _refreshQueueStats
         $self _refreshBarrierStats
+        $self _refreshDataLateStats
         
         set afterId [after 2000 $self _refresh]
         
@@ -1813,7 +1816,78 @@ snit::widgetadaptor EVB::statistics {
             $table item $id -values [list "$count times"]
         }
     }
+    #-----------------------------------------------------
+    #  Error counters.
     
+    ##
+    # _addErrorStats
+    #   Adds a line "Errors" with the various error statistics
+    #   children below it.
+    #
+    method _addErrorStats {} {
+        set errorsId [$table insert {} end -text {Errors}]
+        set dataLateId [$table insert $errorsId end -text {Data Late}]
+    }
+    ##
+    #  _refreshDataLateStats
+    #
+    #  Refresh the data late statistics from the EVB::dlatestats
+    #
+    method  _refreshDataLateStats {} {
+        set stats [EVB::dlatestats]
+        
+        # Update the top line with data late count and worst case
+        # timestamp diff.
+        
+        set lates [lindex $stats  0]
+        set worst [lindex $stats 1]
+        
+        $table item $dataLateId -values [list    \
+            "Count: $lates" "Worst dt: $worst"
+        ]
+        
+        set perSource [lindex $stats 2]
+        $self _refreshPerSourceLates $perSource
+    }
+    ##
+    # _refreshPerSourceLates
+    #   Refresh the data lates per source. These will be lines
+    #   subordinate to  $dataLateId containing
+    #   "Source: n"  "Count: m"  "Worst dt: dt"
+    #
+    # @param stats - per source statistics consisting of a list of
+    #                triples where each triple contains
+    #                - source id.
+    #                - Number of times that source was late.
+    #                - Worst case time difference between
+    #                  late fragment and last one emitted.
+    #
+    method _refreshPerSourceLates stats {
+        
+        #  Make the usual sid keyed dict of existing line ids:
+        
+        set sidDict [dict create]
+        foreach child [$table children $dataLateId] {
+            set text [$table item $child]
+            set sid [lindex $text 1]
+            dict append $sidDict $sid $child
+        }
+        # Iterate over the statistics:
+        
+        foreach stat $stats {
+            set sid     [lindex $stats 0]
+            set count   [lindex $stats 1]
+            set worstdt [lindex $stats 2]
+            if {[dict exists $sidDict $sid]} {
+                set id [dict get $sidDict $sid]
+            } else {
+                set id [$table insert $dataLateId end -text "Source: $sid"]
+            }
+            $table item $id -values [list                 \
+                "Count: $count" "Worst dt: $worstdt"      \
+            ]
+        }
+    }
 }
 
 ##
