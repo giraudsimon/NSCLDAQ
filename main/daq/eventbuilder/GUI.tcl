@@ -1727,9 +1727,93 @@ snit::widgetadaptor EVB::statistics {
             "Heterogeneous: [lindex $stats 2]"          \
         ]
         
-        set missingHisto [lindex $stats 2]
-        set missingSources [lindex $stats 3]
+        set missingHisto [lindex $stats 3]
+        $self _updateMissingHisto $missingHisto
+        
+        set missingSources [lindex $stats 4]
+        $self _updateMissingSources $missingSources
     }
+    ##
+    #_updateMissingHisto
+    #    Updates the incomplete barrier type missing histogram.
+    # @param stats - Statistics consisting of a list of pairs
+    #                containing source ids and the number of times
+    #                that source id was missing.
+    #
+    method _updateMissingHisto stats {
+        # Make the usual dict of existing sources.
+        # The lines look like:
+        #   "Missed type n"  "m times" where the first part of
+        # that line is the text and the second the first value.
+        #
+        
+        set histoDict [dict create]
+        foreach child [$table children $incompleteBarriersId] {
+            set text [$table item $child -text]
+            if {[lindex $text 0] eq "Missed"} {
+                set type [lindex $text 2]
+                dict append $histoDict $type $child
+            }
+        }
+        # Now process the statistics updateing existing and
+        # creating new items.
+        
+        foreach stat $stats {
+            set type [lindex $stat 0]
+            set count [lindex $stat 1]
+            
+            if {[dict exists $histoDict $type]} {
+                set id [dict get $histoDict $type]
+            } else {
+                set id [$table insert $incompleteBarriersId 0 \
+                        -text "MIssing type $type"            \
+                ]
+            }
+            $table item $id -values [list   \
+                "$count Times"
+            ]
+        }
+    }
+    ##
+    # _updateMissingSources
+    #   Updates the missing sources part of the incomplete barriers
+    #   display.  This is the same as the histo but
+    #   for sources not present in incomplete barriers.
+    #
+    # @param stats - list of pairs, first element of a pair is the
+    #                source id, second number of times the source
+    #                was missing at barrier timeout.
+    method _updateMissingSources stats {
+        #
+        #  Once more make the dict of existing lines in this
+        #  case lines look like:
+        #    "source id" "missing n times"
+        #
+        
+        set missingDict [dict create]
+        foreach child [$table children $incompleteBarriersId] {
+            set text [$table item $child -text]
+            if {[lindex $text 0] eq "source"} {
+                dict append $missingDict $[lindex $text 1] $child
+            }
+        }
+        #  Now iterate through the stats updating and creating
+        # as needed.
+        
+        foreach stat $stats {
+            set sid [lindex $stat 0]
+            set count [lindex $stat 1]
+            if {[dict exists $missingDict $sid]} {
+                set id [dict get $missingDict $sid]
+            } else {
+                set id [$table insert $incompleteBarriersId end \
+                    -text [list "Source $sid"]                \
+                ]
+            }
+            $table item $id -values [list "$count times"]
+        }
+    }
+    
 }
 
 ##
