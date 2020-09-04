@@ -39,21 +39,28 @@ snit::widgetadaptor EVB::connectionList {
         
 	
         ttk::treeview $win.table -columns [list Host Description State Stalled?] -displaycolumns #all \
-            -show [list headings] -height 8
+            -show [list headings] -height 5 \
+            -yscrollcommand [list $win.vsb set]
         $win.table heading #1 -text Host
         $win.table heading #2 -text Description
         $win.table heading #3 -text State
         $win.table heading #4 -text Stalled
         
+        
+        ttk::scrollbar $win.vsb -orient vertical \
+            -command  [list $win.table yview]
       
-        grid $win.table -sticky nsew
+        grid $win.table $win.vsb -sticky nsew
         grid columnconfigure $win 0 -weight 1
         grid rowconfigure $win 0 -weight 1
       
-        $win.table column #1 -stretch on  
-        $win.table column #2 -stretch on  
-        $win.table column #3 -stretch on  
-        $win.table column #4 -stretch on
+        $win.table column #1 -stretch off -width [expr 8*15]
+        $win.table column #2 -stretch on  -minwidth [expr 16*15]
+        $win.table column #3 -stretch off -width [expr 6*15]
+        $win.table column #4 -stretch off -width [expr 8*15]
+        
+        grid  columnconfigure $win  0 -weight 1
+        grid  columnconfigure $win 1 -weight 0
         
         $self configurelist $args
         $self _update;			# Stock the table and reschedule the update periodicity.

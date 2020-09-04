@@ -115,8 +115,18 @@ snit::widgetadaptor EVB::statistics {
         install table using ttk::treeview $win.table \
             -show tree -columns {col1 col2 col3 col4} \
             -displaycolumns #all -yscrollcommand [list $win.vscroll set]
+        
+        $table column #1 -stretch off -width [expr 8*15]
+        $table column #2 -stretch off -width [expr 10*15]
+        $table column #3 -stretch on -minwidth [expr 10*15]
+        $table column #4 -stretch off   -width [expr 10*15]
         scrollbar $win.vscroll -orient vertical -command [list $table yview]
-        grid $table $win.vscroll -sticky nsew
+        grid $table $win.vscroll -sticky nsw
+        
+        grid rowconfigure $win 0 -weight 1
+        grid columnconfigure $win 0 -weight 1
+        grid columnconfigure $win 1 -weight 0
+        
         $self _addInputStats
         $self _addOutputStats
         $self _addQueueStats
@@ -784,6 +794,13 @@ snit::widgetadaptor EVB::GUI {
         grid $statistics  -sticky nsew
         grid $connections -sticky nsew
         grid $statusbar   -sticky nsew
+        
+        grid rowconfigure $win 0 -weight 1
+        grid rowconfigure $win 1 -weight 0
+        grid rowconfigure $win 2 -weight 0
+        
+        grid columnconfigure $win 0 -weight 1
+
     }
     
 }
