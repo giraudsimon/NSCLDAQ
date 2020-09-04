@@ -28,6 +28,7 @@ if {[lsearch $::auto_path $here] == -1} {
 package provide EVB::GUI 1.0
 package require Tk
 package require snit
+package require ring
 
 
 package require EVB::connectionList
@@ -108,6 +109,7 @@ snit::widgetadaptor EVB::statistics {
     variable incompleteBarriersId
     variable dataLateId
     variable outOfOrderId
+    variable ringStats
     
     variable afterId -1
     constructor args {
@@ -129,6 +131,7 @@ snit::widgetadaptor EVB::statistics {
         
         $self _addInputStats
         $self _addOutputStats
+        $self _addRingStats
         $self _addQueueStats
         $self _addBarrierStats
         $self _addErrorStats
@@ -151,6 +154,7 @@ snit::widgetadaptor EVB::statistics {
         $self _refreshBarrierStats
         $self _refreshDataLateStats
         $self _refreshOutOfOrderStats
+        $self _refreshRingStats
         
         set afterId [after 2000 $self _refresh]
         
@@ -777,6 +781,86 @@ snit::widgetadaptor EVB::statistics {
         set result [list "Count: $count" "Prior TS $lastTs" "Bad TS $badTs"]
         return $result
     }
+    #-------------------------------------------------------
+    # Output Ring buffer statistics.
+    # NOTE:  ::OutputRing contains the name of the ringbuffer.
+    
+    ##
+    # _addRingStats
+    #
+    #  The top line looks like:
+    #    "Ring: ringname" "Size: kbytes" "Backlog kbytes" "Free: kbytes"
+    #  Below this will be lines for each consumer of the form:
+    #    "PID: pid"                      "Backlog kbytes"
+    #
+    method _addRingStats {} {
+        set ringStats [$table insert {} end -text "Ring: $::OutputRing"]
+        
+    }
+    ##
+    # _refreshRingStats
+    #   Called to refresh the ring statistics.  See _addRingStats
+    #   for what this looks like.  We use the ringbuffer command
+    #   from the ring package to get the information about the
+    #   usage of the ::OutputRing
+    #
+    method _refreshRingStats {} {
+        set statistics [ringbuffer usage $::OutputRing]
+        puts stderr $statistics
+        
+        # Set the top level statistics:
+        
+        set size    [expr {[lindex $statistics 0]/1024}]KB
+        set backlog [expr {[lindex $statistics 4]/1024}]KB
+        set free    [expr {[lindex $statistics 1]/1024}]KB
+        
+        $table item $ringStats -values [list  \
+            "Sizes: $size" "Backlog: $backlog" "Free: $free" \
+        ]
+        
+        # Build the usual dict of, in this case consumer PID->element ids:
+        
+        set consumerDict [dict create]
+        foreach child [$table children $ringStats] {
+            puts stderr "'[$table item $child -text]'"
+            set pid [lindex [$table item $child -text] 1]
+            puts stderr $pid
+            dict append consumerDict $pid $child
+        }
+        puts stderr $consumerDict
+        puts stderr "-----------------------------"
+        flush stderr
+        #  Now update or add lines as needed.
+        #  We're also going to make a list of consumer PIDS to prune lines
+            
+        set consumerList [list]
+        foreach item [lindex $statistics 6] {
+            set pid [lindex $item  0]
+            set backlog [expr {[lindex $item 1]/1024}]KB
+            lappend consumerList $pid
+            if {[dict exists $consumerDict $pid]} {
+                set id [dict get $consumerDict $pid]
+            } else {
+                set id [$table insert $ringStats end -text "PID: $pid"]
+            }
+            $table item $id -values [list {} "Backlog: $backlog"]
+        }
+        
+        # Consumers come and go so if we have lines in the consumer dict
+        # that don't appear in the pid list, delete those elements.
+        #
+        dict for {pid id} $consumerDict {
+            if {$pid ni $consumerList} {
+                $table delete $id
+            }
+        }
+            
+        
+    }
+        
+    
+        
+    
 }
 
 ##
