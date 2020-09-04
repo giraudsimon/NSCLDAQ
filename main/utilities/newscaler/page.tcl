@@ -30,6 +30,34 @@ package provide pagedisplay 1.0
 package require Tk
 package require snit
 
+##
+#  The following styling magic works around a defect in Tk 8.6.9
+# with regards to tree view tag handling:
+#  See https://core.tcl-lang.org/tk/tktview?name=509cafafae
+#  for details.
+    
+
+
+apply {name {
+    set newmap {}
+    foreach {opt lst} [ttk::style map $name] {
+        if {($opt eq "-foreground") || ($opt eq "-background")} {
+            set newlst {}
+            foreach {st val} $lst {
+                if {($st eq "disabled") || ($st eq "selected")} {
+                    lappend newlst $st $val
+                }
+            }
+            if {$newlst ne {}} {
+                lappend newmap $opt $newlst
+            }
+        } else {
+            lappend newmap $opt $lst
+        }
+    }
+    ttk::style map $name {*}$newmap
+}} Treeview
+
 
 ##
 # @class page
