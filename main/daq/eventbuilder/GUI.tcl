@@ -806,7 +806,6 @@ snit::widgetadaptor EVB::statistics {
     #
     method _refreshRingStats {} {
         set statistics [ringbuffer usage $::OutputRing]
-        puts stderr $statistics
         
         # Set the top level statistics:
         
@@ -822,14 +821,9 @@ snit::widgetadaptor EVB::statistics {
         
         set consumerDict [dict create]
         foreach child [$table children $ringStats] {
-            puts stderr "'[$table item $child -text]'"
             set pid [lindex [$table item $child -text] 1]
-            puts stderr $pid
             dict append consumerDict $pid $child
         }
-        puts stderr $consumerDict
-        puts stderr "-----------------------------"
-        flush stderr
         #  Now update or add lines as needed.
         #  We're also going to make a list of consumer PIDS to prune lines
             
@@ -875,13 +869,21 @@ snit::widgetadaptor EVB::GUI {
         install connections using connectionList $win.connections
         install statusbar using EVB::StatusBar $win.statusbar
         
+        ttk::frame $win.buttons
+        ttk::button $win.buttons.barabort -text {Abort Barrier} \
+            -command [list EVB::abortbarrier]
+        
+        grid $win.buttons.barabort -sticky w
+        
         grid $statistics  -sticky nsew
         grid $connections -sticky nsew
+        grid $win.buttons -sticky nsew
         grid $statusbar   -sticky nsew
         
         grid rowconfigure $win 0 -weight 1
         grid rowconfigure $win 1 -weight 0
         grid rowconfigure $win 2 -weight 0
+        grid rowconfigure $win 3 -weight 0
         
         grid columnconfigure $win 0 -weight 1
 
