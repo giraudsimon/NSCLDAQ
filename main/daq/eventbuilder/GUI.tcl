@@ -107,6 +107,7 @@ snit::widgetadaptor EVB::statistics {
     variable queueStatsId
     variable completeBarriersId
     variable incompleteBarriersId
+    variable errorsId
     variable dataLateId
     variable outOfOrderId
     variable ringStats
@@ -137,6 +138,13 @@ snit::widgetadaptor EVB::statistics {
         $self _addErrorStats
         
         $self _refresh
+        
+        #  Create and configure tags that will be used to highlight
+        #  Errors e.g.
+        
+        $table tag configure RED -foreground red
+        puts stderr [$table tag names]
+        puts stderr [$table tag configure RED ]
     }
     destructor {
         after cancel $afterId 
@@ -152,12 +160,24 @@ snit::widgetadaptor EVB::statistics {
         $self _refreshOutputStats
         $self _refreshQueueStats
         $self _refreshBarrierStats
+        $self _refreshRingStats
+        
+        # Initialize the tags on the top level stuff so that
+        # they're not red. If there are any counter changes,
+        # the tag RED will be added to highligh the errors.
+        # So intermittent errors will give a 2 second red flash
+        # while persistent errors will keep the items red.
+        
+        foreach item [list $errorsId $dataLateId $outOfOrderId] {
+            $table item $item -tags [list]
+        }
+        
         $self _refreshDataLateStats
         $self _refreshOutOfOrderStats
-        $self _refreshRingStats
         
         set afterId [after 2000 $self _refresh]
         
+        puts stderr [$table tag has RED]
     }
     #-----------------------------------------------------
     #  input statistics methods.
@@ -682,6 +702,7 @@ snit::widgetadaptor EVB::statistics {
     #  Refresh the data late statistics from the EVB::dlatestats
     #
     method  _refreshDataLateStats {} {
+        
         set stats [EVB::dlatestats]
         
         # Update the top line with data late count and worst case
@@ -690,9 +711,21 @@ snit::widgetadaptor EVB::statistics {
         set lates [lindex $stats  0]
         set worst [format 0x%08x [lindex $stats 1]]
         
-        $table item $dataLateId -values [list    \
+        set values [list    \
             "Count: $lates" "Worst dt: $worst"
         ]
+        #
+        #  If there were changes in the statistics,
+        #  set the appropriate items red.
+        #  Note we don't need to do this in the per source
+        #  statistics because totals can only change if a source
+        #  changes.
+        #
+        if {$values ne [$table item $dataLateId -values]} {
+            $table item $dataLateId -tags RED
+            $table item $errorsId   -tags RED
+        }
+        $table item $dataLateId -values $values
         
         set perSource [lindex $stats 2]
         $self _refreshPerSourceLates $perSource
@@ -723,9 +756,9 @@ snit::widgetadaptor EVB::statistics {
         # Iterate over the statistics:
         
         foreach stat $stats {
-            set sid     [lindex $stats 0]
-            set count   [lindex $stats 1]
-            set worstdt [format 0x%08x [lindex $stats 2]]
+            set sid     [lindex $stat 0]
+            set count   [lindex $stat 1]
+            set worstdt [format 0x%08x [lindex $stat 2]]
             if {[dict exists $sidDict $sid]} {
                 set id [dict get $sidDict $sid]
             } else {
@@ -748,8 +781,18 @@ snit::widgetadaptor EVB::statistics {
         set stats [EVB::getoostats]
         set totals [lindex $stats 0]
         set persrc [lindex $stats 1]
-    
-        $table item $outOfOrderId -values [makeOOValueList $totals]
+        #
+        # Once more since these values are totals we don't
+        # need to look at the per source statistics since
+        # they create the totals.
+        #
+        set values [makeOOValueList $totals]
+        if {$values ne [$table item $outOfOrderId -values]} {
+            puts stderr "Red!!! '$values' [$table item $outOfOrderId -values]"
+            $table item $outOfOrderId -tags RED
+            $table item $errorsId -tags RED
+        }
+        $table item $outOfOrderId -values $values
         
         #  Now the per source items done in the usual way:
         #  The text fields for children have the form "Source: id"
@@ -903,3 +946,32 @@ proc EVB::createGui {win} {
     EVB::GUI $win
     pack $win -fill both -expand 1
 }
+
+##
+#  The following styling magic works around a defect in Tk 8.6.9
+# with regards to tree view tag handling:
+#  See https://core.tcl-lang.org/tk/tktview?name=509cafafae
+#  for details.
+    
+
+
+apply {name {
+    set newmap {}
+    foreach {opt lst} [ttk::style map $name] {
+        if {($opt eq "-foreground") || ($opt eq "-background")} {
+            set newlst {}
+            foreach {st val} $lst {
+                if {($st eq "disabled") || ($st eq "selected")} {
+                    lappend newlst $st $val
+                }
+            }
+            if {$newlst ne {}} {
+                lappend newmap $opt $newlst
+            }
+        } else {
+            lappend newmap $opt $lst
+        }
+    }
+    ttk::style map $name {*}$newmap
+}} Treeview
+
