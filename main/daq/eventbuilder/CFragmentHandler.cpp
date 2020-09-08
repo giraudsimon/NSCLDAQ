@@ -149,7 +149,7 @@ CFragmentHandler::getInstance()
     // If needed, construct the object:
     
     if (!m_pInstance) {
-        new CFragmentHandler();    // Constructor sets m_pInstance.
+        m_pInstance = new CFragmentHandler();    // Constructor sets m_pInstance.
     }
     return m_pInstance;
 }
@@ -1719,29 +1719,16 @@ CFragmentHandler::IdlePoll(ClientData data)
   CFragmentHandler* pHandler = reinterpret_cast<CFragmentHandler*>(data);
   pHandler->m_nNow = time(NULL);	// Update tod.
   
-  // Only flush queues if none are xoffed.  If there's a global xoff
-  // we can still flush:
   
-  bool onexoffed = false;
-  bool allxoffed = true;
-  for (auto& qInfo : pHandler->m_FragmentQueues) {
-    auto q = qInfo.second;
-    if (q.s_xoffed) {
-      onexoffed = true;
-    } else {
-      allxoffed = false;
-    }
-  }
-  if (allxoffed || (!onexoffed) || (onexoffed && pHandler->noEmptyQueue()))  {
-      pHandler->flushQueues();
-  }
+  pHandler->flushQueues();   //  Do time window based flush.
+ 
   
   // Since it's possible that fragments have been output from
   // the buffer queue to the output thread while we've been
   // Xoffed -- and hence can't exactly receive data, this
   // allows that to accept data again:
 
-  pHandler->checkXon();
+  pHandler->checkXon();           // May be able to XON.
   // reschedule
 
   pHandler->m_timer = Tcl_CreateTimerHandler(1000*IdlePollInterval,  &CFragmentHandler::IdlePoll, pHandler);
