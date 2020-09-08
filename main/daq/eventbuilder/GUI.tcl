@@ -143,8 +143,6 @@ snit::widgetadaptor EVB::statistics {
         #  Errors e.g.
         
         $table tag configure RED -foreground red
-        puts stderr [$table tag names]
-        puts stderr [$table tag configure RED ]
     }
     destructor {
         after cancel $afterId 
@@ -177,7 +175,6 @@ snit::widgetadaptor EVB::statistics {
         
         set afterId [after 2000 $self _refresh]
         
-        puts stderr [$table tag has RED]
     }
     #-----------------------------------------------------
     #  input statistics methods.
@@ -788,7 +785,6 @@ snit::widgetadaptor EVB::statistics {
         #
         set values [makeOOValueList $totals]
         if {$values ne [$table item $outOfOrderId -values]} {
-            puts stderr "Red!!! '$values' [$table item $outOfOrderId -values]"
             $table item $outOfOrderId -tags RED
             $table item $errorsId -tags RED
         }

@@ -198,6 +198,7 @@ void teststate::tstampCons()
     EQ(true, item.hasBodyHeader());
     EQ(static_cast<uint64_t>(0x1234567890123456ll), item.getEventTimestamp());
     EQ(static_cast<uint32_t>(1), item.getSourceId());
+    EQ(static_cast<uint32_t>(1), item.getOriginalSourceId());
     EQ(static_cast<uint32_t>(0), item.getBarrierType());
     
     // Ensure we cfan still get the other goodies:
