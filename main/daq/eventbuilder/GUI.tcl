@@ -67,7 +67,7 @@ snit::widgetadaptor EVB::StatusBar {
         grid $win.flowstate -row 0 -column 1 -sticky e
         
         EVB::onflow add [mymethod _xon] [mymethod _xoff]
-        $self _xon;     # Assume we start up xon'ed.
+        $self _xon junk;     # Assume we start up xon'ed.
     }
     destructor {
         EVB::onflow remove [mymethod _xon] [mymethod _xoff]
@@ -76,14 +76,14 @@ snit::widgetadaptor EVB::StatusBar {
     # _xon
     #   Called when the event builder XON's its clients.
     #
-    method _xon {} {
+    method _xon {sock} {
         set flowstate "Accepting Data"
     }
     ##
     # -xoff
     #   Called when the event builder XOFF"s its clients.
     #
-    method _xoff {} {
+    method _xoff {sock} {
         set flowstate "Flow Control Active"
     }
 }
@@ -594,52 +594,40 @@ snit::widgetadaptor EVB::statistics {
             "Heterogeneous: [lindex $stats 2]"          \
         ]
         
-        set missingHisto [lindex $stats 3]
-        $self _updateMissingHisto $missingHisto
-        
+        set numMissingHisto [lindex $stats 3]
+        $self _updateMissingHistogram $numMissingHisto
         set missingSources [lindex $stats 4]
         $self _updateMissingSources $missingSources
     }
     ##
-    #_updateMissingHisto
-    #    Updates the incomplete barrier type missing histogram.
-    # @param stats - Statistics consisting of a list of pairs
-    #                containing source ids and the number of times
-    #                that source id was missing.
+    # _updateMissingHistogram
+    #    Updates the statistics of the frequency missing sources
     #
-    method _updateMissingHisto stats {
-        # Make the usual dict of existing sources.
-        # The lines look like:
-        #   "Missed type n"  "m times" where the first part of
-        # that line is the text and the second the first value.
-        #
+    # @param stats - list of pairs of # frags missing , number of times.
+    #
+    method _updateMissingHistogram {stats} {
         
         set histoDict [dict create]
         foreach child [$table children $incompleteBarriersId] {
             set text [$table item $child -text]
             if {[lindex $text 0] eq "Missed"} {
-                set type [lindex $text 2]
-                dict append $histoDict $type $child
+                dict append histoDict [lindex $text 1] $child
             }
         }
-        # Now process the statistics updateing existing and
-        # creating new items.
-        
         foreach stat $stats {
-            set type [lindex $stat 0]
-            set count [lindex $stat 1]
+            set missing [lindex $stat 0]
+            set times   [lindex $stat 1]
             
-            if {[dict exists $histoDict $type]} {
-                set id [dict get $histoDict $type]
+            if {[dict exist $histoDict $missing]} {
+                set id [dict get $histoDict $missing]
             } else {
-                set id [$table insert $incompleteBarriersId 0 \
-                        -text "MIssing type $type"            \
-                ]
+                set id [$table insert $incompleteBarriersId end \
+                    -text "Missed $missing sources"]
             }
-            $table item $id -values [list   \
-                "$count Times"
-            ]
+            $table item $id -values [list "$times times"]
         }
+            
+        
     }
     ##
     # _updateMissingSources
@@ -660,8 +648,8 @@ snit::widgetadaptor EVB::statistics {
         set missingDict [dict create]
         foreach child [$table children $incompleteBarriersId] {
             set text [$table item $child -text]
-            if {[lindex $text 0] eq "source"} {
-                dict append $missingDict $[lindex $text 1] $child
+            if {[lindex $text 0] eq "Source"} {
+                dict append missingDict [lindex $text 1] $child
             }
         }
         #  Now iterate through the stats updating and creating
@@ -674,7 +662,7 @@ snit::widgetadaptor EVB::statistics {
                 set id [dict get $missingDict $sid]
             } else {
                 set id [$table insert $incompleteBarriersId end \
-                    -text [list "Source $sid"]                \
+                    -text "Source $sid"                \
                 ]
             }
             $table item $id -values [list "$count times"]
@@ -746,9 +734,9 @@ snit::widgetadaptor EVB::statistics {
         
         set sidDict [dict create]
         foreach child [$table children $dataLateId] {
-            set text [$table item $child]
+            set text [$table item $child -text]
             set sid [lindex $text 1]
-            dict append $sidDict $sid $child
+            dict append sidDict $sid $child
         }
         # Iterate over the statistics:
         
@@ -792,12 +780,12 @@ snit::widgetadaptor EVB::statistics {
         
         #  Now the per source items done in the usual way:
         #  The text fields for children have the form "Source: id"
-        
+       
         set srcDict [dict create]
         foreach child [$table children $outOfOrderId] {
             set text [$table item $child -text]
             set srcid [lindex $text 1]
-            dict append $srcDict $srcid $child
+            dict append srcDict $srcid $child
         }
         
         foreach stat $persrc {
