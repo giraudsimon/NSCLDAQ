@@ -128,13 +128,6 @@ int
 RawChannel::SetTime(double ticksPerNs, bool useExt)
 {
     if (useExt) {
-        if (s_channelLength >= 4) {
-            SetTime();
-        
-        } else {
-            return 1;
-        }
-    } else {
         // The external timestamp requires a header length of at
         // least 6 words and is always the last two words of the
         // header:
@@ -147,6 +140,14 @@ RawChannel::SetTime(double ticksPerNs, bool useExt)
            s_time = stamp;
         } else {
             return 1;          // There's no external stamp.
+        }
+        
+    } else {
+        if (s_channelLength >= 4) {
+            SetTime();
+        
+        } else {
+            return 1;
         }
     }
     s_time *= ticksPerNs;

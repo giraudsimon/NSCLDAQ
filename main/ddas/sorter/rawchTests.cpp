@@ -23,6 +23,7 @@ class rawchTest : public CppUnit::TestFixture {
   
   CPPUNIT_TEST(settime_1);
   CPPUNIT_TEST(settime_2);
+  CPPUNIT_TEST(settime_3);
   
   CPPUNIT_TEST(setlength_1);
   CPPUNIT_TEST(setlength_2);
@@ -53,6 +54,7 @@ protected:
   
   void settime_1();
   void settime_2();
+  void settime_3();
   
   void setlength_1();
   void setlength_2();
@@ -170,6 +172,28 @@ void rawchTest::settime_2()
   ch.SetTime(2.0);
   
   EQ(double(12345678*2), ch.s_time);
+
+}
+
+void rawchTest::settime_3()
+{
+  // Set time from external stamp and scale.
+  
+
+  uint32_t data[6];
+  makeHit(data, 1,2,3, 12345678, 100);
+  data[4] = 0x54321;
+  data[5] = 0x1234;
+  
+  // Fix up data[0] as well:
+  
+  data[0] = (6 << 17) | (6 << 12) | (1 << 8) | (2 << 4) | 3;
+  
+  DDASReadout::RawChannel ch;
+  ch.setData(6, data);
+  ch.SetTime(2.0, true);
+  
+  EQ(double(0x123400054321*2), ch.s_time);
   
 }
 
