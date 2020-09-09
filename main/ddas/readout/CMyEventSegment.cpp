@@ -97,6 +97,8 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     namespace HR = HardwareRegistry;
 
     std::vector<int> hdwrMap = m_config.getHardwareMap();
+    int numInternalClock(0);
+    int numExternalClock(0);
     for(unsigned int k=0; k<NumModules; k++) {
         auto type = hdwrMap.at(k);
         HR::HardwareSpecification specs = HR::getSpecification(type);
@@ -127,6 +129,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         uint32_t csra = static_cast<uint32_t>(fCsra);
         if (csra & CCSRA_EXTTSENAmask) {
          ModuleRevBitMSPSWord[k] |= ModRevEXTCLKBit;
+         numExternalClock++;
          
          // In external clock mode, the default clock scale factory
          // is 1 but the DDAS_TSTAMP_SCALE_FACTOR environment
@@ -145,8 +148,17 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
           }
          }
          
+        } else {
+         numInternalClock++;
         }
+        // We don't really support both internal and external
+        // clocks in the same readout at present
         
+        if ((numInternalClock > 0) && (numExternalClock > 0)) {
+         std::cerr << "Some modules are set for internal while others for external clock\n";
+         std::cerr << "This is not a supported configuration\n";
+         std::exit(EXIT_FAILURE);
+        }
         
 
         cout << "Module #" << k << " : module id word=0x" << hex << ModuleRevBitMSPSWord[k] << dec;
