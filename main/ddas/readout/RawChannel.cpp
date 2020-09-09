@@ -117,17 +117,36 @@ RawChannel::SetTime()
  * SetTime
  *    Set the time in ns.
  *    @param ticksPerNs - nanoseconds each tick is worth.
+ *    @param useExt     - True if the external clock should be
+ *                        used rather than the internal clock.
  */
 int
-RawChannel::SetTime(double ticksPerNs)
+RawChannel::SetTime(double ticksPerNs, bool useExt)
 {
-    if (s_channelLength >= 4) {
-        SetTime();
-        s_time *= ticksPerNs;
-        return 0;
+    if (useExt) {
+        if (s_channelLength >= 4) {
+            SetTime();
+        
+        } else {
+            return 1;
+        }
     } else {
-        return 1;
+        // The external timestamp requires a header length of at
+        // least 6 words and is always the last two words of the
+        // header:
+        
+        uint32_t headerSize = (s_data[0] & 0x1f000) >> 12;
+        if (headerSize >= 6) {
+           uint64_t extStampHi = s_data[headerSize-1] & 0xffff;
+           uint64_t extStampLo = s_data[headerSize-2];
+           uint64_t stamp      = (extStampHi << 32) | (extStampLo);
+           s_time = stamp;
+        } else {
+            return 1;          // There's no external stamp.
+        }
     }
+    s_time *= ticksPerNs;
+    return 0;
 }
 /**
  * SetLength
