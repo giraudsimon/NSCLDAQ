@@ -12,7 +12,6 @@
 #include <deque>
 #include <fstream>
 
-#include "CHitManager.h"
 #include "ZeroCopyHit.h"
 #include "ModuleReader.h"
 
@@ -40,7 +39,7 @@ private:
     unsigned int *ModEventLen;
 
     unsigned int ModuleRevBitMSPSWord[MAX_NUM_PIXIE16_MODULES]; //word to store rev, bit depth, and MSPS of module for insertion into the data stream.
-    unsigned int ModClockCal[MAX_NUM_PIXIE16_MODULES]; //word to calibration between clock ticks and nanoseconds.
+    double ModClockCal[MAX_NUM_PIXIE16_MODULES]; //word to calibration between clock ticks and nanoseconds.
 
 
 
@@ -54,7 +53,6 @@ private:
     // These variables are used for readout:
     
     std::vector<DDASReadout::ModuleReader*> m_readers;
-    DDASReadout::CHitManager*               m_sorter;
     
     
 public:
@@ -74,8 +72,7 @@ public:
     void synchronize();            //!< Clock synchronization.
     void boot(DAQ::DDAS::SystemBooter::BootType = DAQ::DDAS::SystemBooter::FullBoot);                   //!< load fimrware and start boards.
 
-private:
-    size_t emitHit(void* pBuffer);
+
     
 };
 #endif

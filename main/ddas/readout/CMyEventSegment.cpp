@@ -34,6 +34,8 @@ using namespace std;
 
 using namespace DAQ::DDAS;
 
+const uint32_t CCSRA_EXTTSENAmask(1 << 21);    // Mask for ext ts enable.
+const uint32_t ModRevEXTCLKBit(1 << 21);   // Ext clock indicator.
 
 CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
  : m_config(),
@@ -99,11 +101,60 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         auto type = hdwrMap.at(k);
         HR::HardwareSpecification specs = HR::getSpecification(type);
 
+        
         ModuleRevBitMSPSWord[k] = (specs.s_hdwrRevision<<24) + (specs.s_adcResolution<<16) + specs.s_adcFrequency;
         ModClockCal[k] = specs.s_clockCalibration;
+        
+        // Fold in the external clock  - in our implemenation,
+        // all channels save the external clock or none do..
+        // We'll determine if all do by looking at the CCSRA_EXTSENA
+        // bit of channel control register A of channel 0.
+        // We assume that resolution is limited to 16 bits max
+        // making the resolution field of the ModuleRevBitMSPSWord 5 bits
+        // wide;  So we'll put a 1 in bit 21 if the external clock is used:
+        
+        
+        double fCsra = fCsra;
+        int stat = Pixie16ReadSglChanPar(
+           "CHANNEL_CSRA", &fCsra,  k, 0);
+        if (stat < 0) {
+         std::cerr << "****ERROR Failed to read chanel CSRA Module: " << k
+                   << " status: " << stat << std::endl;
+         std::exit(EXIT_FAILURE);  // Can't go on.
+        }
+        // External clock mode:
+        
+        uint32_t csra = static_cast<uint32_t>(fCsra);
+        if (csra & CCSRA_EXTTSENAmask) {
+         ModuleRevBitMSPSWord[k] |= ModRevEXTCLKBit;
+         
+         // In external clock mode, the default clock scale factory
+         // is 1 but the DDAS_TSTAMP_SCALE_FACTOR environment
+         //variable can override this.
+         // Note that our implementation doesn't well support a mix
+         // of internal and external timestamps in a crate:
+         
+         ModClockCal[k] = 1;
+         const char* override = std::getenv("DDAS_TSTAMP_SCALE_FACTOR");
+         if (override) {
+          ModClockCal[k] = atof(override);
+          if (ModClockCal[k] <= 0) {
+           std::cerr << "Invalid value for DDAS_TSTAMP_SCALE_FACTOR: '"
+            << ModClockCal[k] << "'\n";
+           std::exit(EXIT_FAILURE);
+          }
+         }
+         
+        }
+        
+        
 
         cout << "Module #" << k << " : module id word=0x" << hex << ModuleRevBitMSPSWord[k] << dec;
         cout << ", clock calibration=" << ModClockCal[k] << endl;
+        if (ModuleRevBitMSPSWord[k] & ModRevEXTCLKBit) {
+         cout << "External clock timestamping will be used\n";
+         cout << " With a clock multiplier of " << ModClockCal[k] << std::endl;
+        }
         
         // Create the module reader for this module.
         
@@ -117,24 +168,8 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
 
     mytrigger->Initialize(NumModules);
 
-
-#ifdef PRINTQUEINFO
-    ofile.open("/scratch/data/dump.dat", std::ofstream::out);
-    ofile.flags(std::ios::fixed);
-    ofile.precision(0);
+   
     
-    // For the purpose of debugging... we want all of the output to go to 
-    // the output file
-    std::cout.rdbuf(ofile.rdbuf());
-#endif 
-
-    // specify the time_buffer... units of nanoseconds
-    //buffer set to 10 seconds
-    // @todo - allow this to be settable.
-    
-    uint64_t time_buffer = 10000000000;
-    
-    m_sorter = new DDASReadout::CHitManager(10.0);         // bit kludgy for now.
 }
 
 CMyEventSegment::~CMyEventSegment()
@@ -209,6 +244,11 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             uint32_t* p = static_cast<uint32_t*>(rBuffer);
             *p++        = ModuleRevBitMSPSWord[i];
             maxLongs--;   // count that word.
+            double* pd = reinterpret_cast<double*>(p);
+            *pd++       = ModClockCal[i];   // Clock multiplier.
+            maxLongs -= (sizeof(double)/sizeof(uint32_t)); // Count it.
+            p          = reinterpret_cast<uint32_t*>(pd);
+            
             int readSize = words[i];
             if (readSize > maxLongs) readSize = maxLongs;
             // Truncated to the the nearest event size:
@@ -217,8 +257,6 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 
             // Read the data right into the ring item:
             
-      //      std::cerr << "Going to read " << readSize
-      //          << "(" << words[i] <<") " << " from " << i << std::endl;
             int stat = Pixie16ReadDataFromExternalFIFO(
                 reinterpret_cast<unsigned int*>(p), (unsigned long)readSize, (unsigned short)i
             );
@@ -231,7 +269,9 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             m_pExperiment->haveMore();      // until we fall through the loop
             words[i] -= readSize;           // count down words still to read.
             
-            return (readSize + 1) *sizeof(uint32_t)/sizeof(uint16_t);
+            // Return 16 bit words in the ring item body.
+            
+            return (sizeof(double) + (readSize + 1) *sizeof(uint32_t))/sizeof(uint16_t);
         }
     }
     // If we got here nobody had enough data left since the last trigger:
@@ -257,22 +297,7 @@ void CMyEventSegment::disable()
 void CMyEventSegment::onEnd(CExperiment* pExperiment) 
 {
   return;                       // sorting is offloaded.
-  std::cerr << "Ending run - flushing data in the hit manager\n";
   
-    //Flush hits from the hit manager:
-    
-    m_sorter->flushing(true);
-    if (m_sorter->haveHit()) {  // In case there aren't any:
-        
-        
-        m_pExperiment->ReadEvent();      // read will request retrigger till done.
-    }
-    std:: cerr << "Done\n";
-    m_sorter->flushing(false);
-    for (int i =0; i < m_readers.size(); i++) {
-        m_readers[i]->reset();                 // Clear last known channel timestamps.
-    }
-    std::cerr << "Finished with end run action\n";
 
 }
 
@@ -345,29 +370,4 @@ CMyEventSegment::boot(SystemBooter::BootType type)
 int CMyEventSegment::GetCrateID() const
 {
     return m_config.getCrateId();
-}
-
-/**
- * emitHit
- *    Emit  a single hit from the sorter:
- *
- *  @return size_t number of 16 bit words emitted:
- */
-size_t
-CMyEventSegment::emitHit(void* pBuffer)
-{
-        auto hitInfo = m_sorter->getHit();
-        auto& hit(hitInfo.second);
-        
-        uint32_t* pWords = static_cast<uint32_t*>(pBuffer);
-        *pWords++ = hitInfo.first->m_moduleTypeWord;
-        
-        // Put the channel data in the buffer and set the timestamp:
-        size_t nBytes = hit->s_channelLength * sizeof(uint32_t);
-        memcpy(pWords, hit->s_data, nBytes);
-        setTimestamp(uint64_t(hit->s_time));
-        
-        DDASReadout::ModuleReader::freeHit(hitInfo);   // Return hit storage.
-        
-        return nBytes/sizeof(uint16_t) + sizeof(uint32_t)/sizeof(uint16_t); 
 }
