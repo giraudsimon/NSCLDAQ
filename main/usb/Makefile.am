@@ -1,6 +1,6 @@
-SUBDIRS=common vmusb ccusb loaders caenfwloader mesytec
+SUBDIRS=common usb1 vmusb ccusb loaders caenfwloader mesytec
 
-DIST_SUBDIRS = common vmusb ccusb loaders caenfwloader mesytec
+DIST_SUBDIRS = common usb1 vmusb ccusb loaders caenfwloader mesytec
 
 #
 #  Index the swig wrapper for the XX_USB packages:
