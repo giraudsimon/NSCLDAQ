@@ -20,6 +20,7 @@
  */
 
 #include "USB.h"
+#include "USBDeviceInfo.h"
 #include <stdexcept>
 
 //////////////////////////////////////////////////////////////
@@ -128,4 +129,31 @@ USB::setDebug(int level)
     if (status) {
         throw USBException(status, "Setting libusb-1.0 debug level failed");
     }
+}
+/**
+ * enumerate
+ *    Return a vector of device description object pointers
+ *    for each device attached to the system. The individual
+ *    objects are new' into existence so all must be deleted
+ *    when the application  no longer needs them (as will be the
+ *    case for most of them).
+ * @return std::vector<USBDeviceInfo*> - The devices.
+ * @throw USBException if the lib_get_device_list fails.
+ */
+std::vector<USBDeviceInfo*>
+USB::enumerate()
+{
+    libusb_device** pDevices;
+    ssize_t status = libusb_get_device_list(m_pContext, &pDevices);
+    if (status < 0) {
+        throw USBException(status, "Enumeration failed in get_device_list");
+    }
+    
+    std::vector<USBDeviceInfo*> result;
+    for (int i=0; i < status; i++) {
+        result.push_back(new USBDeviceInfo(pDevices[i]));
+    }
+    libusb_free_device_list(pDevices, status);
+    
+    return result;
 }

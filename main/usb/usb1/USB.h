@@ -24,6 +24,10 @@
 #include <libusb.h>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
+class USBDeviceInfo;
+
 /**
  * @class USBException
  *     This exception is thrown rather than returning error
@@ -72,11 +76,13 @@ private:
 public:
     // Things that affect operation.
     
+    // void setLogCallback(libusb_log_cb cb, int mode) // not supported in our libusb!!
     void setDebug(int level);
-    void setLogLevel(enum libusb_log_level level);
     
 public:
     // enumeration and device management
+    
+    std::vector<USBDeviceInfo*> enumerate();
 };
 
 
