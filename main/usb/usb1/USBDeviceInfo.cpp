@@ -20,7 +20,7 @@
  */
 #include "USBDeviceInfo.h"
 #include "USB.h"
-#include <string.h>
+
 
 static const unsigned MAX_SERIAL(256);
 

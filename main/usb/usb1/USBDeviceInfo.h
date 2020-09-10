@@ -23,7 +23,6 @@
 #define USBDEVICEINFO_H
 #include <libusb.h>
 
-#include <string>
 
 class USBDevice;
 
