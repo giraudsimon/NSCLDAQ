@@ -48,19 +48,25 @@ public:
     USBDeviceInfo(const USBDeviceInfo& rhs);
     virtual ~USBDeviceInfo();
     USBDeviceInfo& operator=(const USBDeviceInfo& rhs);
+    // In case you need to do something not supported (yet) by
+    // the class -note that really you shouild implement that
+    // operation here rather than use this:
+    
+    libusb_device* getHandle() { return m_pDevice; }
+    
+    // Informationals
     
     uint8_t getBus();
     uint8_t getPort();
-    int getConfiguration();
-    void setConfiguration(int config);
+    
     uint16_t getVendor();
     uint16_t getProduct();
-    std::string getSerial();
     
-    void clearHalt();
-    void reset();
+    
     
     USBDevice* open();
+private:
+    void getDescriptor(libusb_device_descriptor& desc); // Throws.
     
 };
 

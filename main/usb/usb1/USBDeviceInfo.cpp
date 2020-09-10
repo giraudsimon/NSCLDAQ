@@ -19,6 +19,10 @@
  *  @brief: Implement the device information class.
  */
 #include "USBDeviceInfo.h"
+#include "USB.h"
+#include <string.h>
+
+static const unsigned MAX_SERIAL(256);
 
 /**
  * default constructor
@@ -83,4 +87,90 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
  USBDeviceInfo::~USBDeviceInfo()
  {
     if (m_pDevice) libusb_unref_device(m_pDevice);
+ }
+ /**
+  * Get the bus number associated with a usb device.
+  *
+  * @return uint8_t - Bus number.
+  * @note  If the m_pDevice is not initialized, likely we'll
+  *        throw a segfault.
+  */
+ uint8_t
+ USBDeviceInfo::getBus()
+ {
+   return libusb_get_bus_number(m_pDevice);
+ }
+ /**
+  * getPort
+  *   Get the device port number
+  *
+  * @return uint8_t
+  * @note  If the m_pDevice is not initialized, likely we'll
+  *        throw a segfault.
+  */
+ uint8_t
+ USBDeviceInfo::getPort()
+ {
+  return libusb_get_port_number(m_pDevice);
+ }
+ 
+ /**
+  * getVendor
+  *   Return the vendor id of the device:
+  *
+  *  @return uint16_t - the vendor code.
+  *  @throw USBException if there are errors getting this information.
+  */
+ uint16_t
+ USBDeviceInfo::getVendor()
+ {
+  libusb_device_descriptor d;
+  getDescriptor(d);
+  return d.idVendor;
+ }
+ /**
+  * getProduct
+  *   @return uint16_t - the product id of the device.
+  *   @throw USBException if there are errors getting this information.
+  */
+ uint16_t
+ USBDeviceInfo::getProduct()
+ {
+  libusb_device_descriptor d;
+  getDescriptor(d);
+  return d.idProduct;
+ }
+ 
+ 
+ /**
+  * open
+  *    Opens a device making it available for transfers.
+  *
+  *  @return USBDevice* object that can be used t operform data transfers.
+  *         destroying the resulting device closes it.
+  *  @note TODO: THIS IS A STUB NOW.
+  */
+ USBDevice*
+ USBDeviceInfo::open()
+ {
+  return nullptr;
+ }
+ //////////////////////////////////////////////////////////
+ // Privet methods.
+ 
+ /**
+  * getDescriptor
+  *    Gets the device descriptor.  Throws as needed for errors.
+  * @param[out] desc - reference to a buffer to receive the device
+  *      descrptor.
+  * @throw USBException - if there's an error.
+  */
+ void
+ USBDeviceInfo::getDescriptor(libusb_device_descriptor& desc)
+ {
+   int status = libusb_get_device_descriptor(m_pDevice, &desc);
+   
+   if (status) {
+    throw USBException(status, "Unable to get_device_descriptor");
+   }
  }
