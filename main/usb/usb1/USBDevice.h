@@ -56,9 +56,9 @@ public:
     std::string getSerial();
     
     int getConfig();
-    void setConfig(int confignum);
+    void setConfig(int config);
     
-    void clearHalt();
+    void clearHalt(unsigned char endpoint);
     void reset();
     
     int controlTransfer(

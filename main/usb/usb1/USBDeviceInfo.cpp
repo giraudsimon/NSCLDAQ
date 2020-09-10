@@ -23,7 +23,7 @@
 #include "USBDevice.h"
 
 
-static const unsigned MAX_SERIAL(256);
+
 
 /**
  * default constructor
