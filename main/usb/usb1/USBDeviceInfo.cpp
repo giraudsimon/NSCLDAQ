@@ -20,6 +20,7 @@
  */
 #include "USBDeviceInfo.h"
 #include "USB.h"
+#include "USBDevice.h"
 
 
 static const unsigned MAX_SERIAL(256);
@@ -148,12 +149,19 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
   *
   *  @return USBDevice* object that can be used t operform data transfers.
   *         destroying the resulting device closes it.
-  *  @note TODO: THIS IS A STUB NOW.
+  *
+  *  @note the return value was new'd into existence.
   */
  USBDevice*
  USBDeviceInfo::open()
  {
-  return nullptr;
+    libusb_device_handle* pHandle;
+    
+    int status = libusb_open(m_pDevice, &pHandle);
+    if (status) {
+     throw USBException(status, "Unable to open the device");
+    }
+    return new USBDevice(pHandle);
  }
  //////////////////////////////////////////////////////////
  // Privet methods.
