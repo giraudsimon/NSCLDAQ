@@ -31,6 +31,8 @@
  *    USBDeviceInfo object that opened us once we're opened.
  *
  *  @note This implementation does not support asynchronous transfers.
+ *  @note for msTimeout parameters in the transfer operations,
+ *        a value of 0 is not a poll but means an infinite timeout.
  *  
  */
 class USBDevice
@@ -65,14 +67,15 @@ public:
         uint8_t reqType, uint8_t request, uint16_t wValue, uint16_t windex,
         unsigned char* pData, uint16_t wLength, unsigned int msTimeout
     );
-    void bulkTransfer(
+    int bulkTransfer(
         unsigned char endpoint, unsigned char* pData, int dLength,
         int& transferred, unsigned msTimeout
     );
-    void interrupt(
+    int interrupt(
         unsigned char endpoint, unsigned char* pData, int dLength,
         int& transferred, unsigned int msTimeout
     );
+    
 
 };
 
