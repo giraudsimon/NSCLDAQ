@@ -109,10 +109,6 @@ class CCCUSB
       ShadowRegisters() {}
     };
     // Class member data.
-    
-public:
-    static std::vector<struct usb_device*> enumerate();
-    static std::string serialNo(struct usb_device* dev);
 
 private:
   static CMutex *m_pGlobalMutex;

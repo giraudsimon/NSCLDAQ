@@ -60,6 +60,9 @@
 #include <string.h>
 
 #include "cmdline.h"
+#include <XXUSBUtil.h>
+#include <USBDevice.h>
+
 
 #ifndef NULL
 #define NULL ((void*)0)
@@ -357,27 +360,24 @@ CTheApplication::startInterpreter()
 void
 CTheApplication::createUsbController(const char* pSerialNo)
 {
-  vector<struct usb_device*> controllers = CCCUSB::enumerate();
-  struct usb_device* pMyController(0);
-
-  if (controllers.size() == 0) {
-    cerr << "There appear to be no CC-USB controllers so I can't run\n";
-    exit(EX_CONFIG);
-  }
-  // If necessary locate the correct device:
-
+  
+  USBDevice* pMyController(nullptr);
   if (pSerialNo) {
-    for (int i = 0; i < controllers.size(); i++) {
-      if (CCCUSB::serialNo(controllers[i]) == pSerialNo) {
-	pMyController = controllers[i];
-	break;
-      }
-    }
+    pMyController = CCCUSBusb::findBySerial(pSerialNo);
   } else {
-    pMyController = controllers[0];
+    auto devices = XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
+    if (devices.size()) {
+      pMyController = devices[0].second;
+      for (int i =1; i < devices.size(); i++) { // Kill off other controllers
+        delete devices[i].second;
+      }
+    } else {
+      throw std::string("There are no CCUSB devices attached to the system");
+    }
   }
-  // This only fails if the serial number was provided
-
+  
+  // or there are no devices:
+  
   if (!pMyController) {
     std::string msg = "Unable to find a CC-USB with the serial number: ";
     msg += pSerialNo;
@@ -394,16 +394,15 @@ CTheApplication::createUsbController(const char* pSerialNo)
 void 
 CTheApplication::enumerate()
 {
-  try {
-    std::vector<struct usb_device*> ccusbs = CCCUSB::enumerate();
-    for (int i = 0; i < ccusbs.size(); i++) {
-      std::cout << "[" << i << "] : " << CCCUSB::serialNo(ccusbs[i]) << std::endl;
-    }
-  }
-  catch (string msg) {
-    std::cerr << "Unable to enumerate CC-USB modules: " << msg << std::endl;
+  auto ccusbs = XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
+  
+
+  for (int i = 0; i < ccusbs.size(); i++) {
+    std::cout << "[" << i << "] : " << ccusbs[i].second << std::endl;
+    delete ccusbs[i].second;               // Kill the controller.
   }
 }
+  
 /* 
   Set the configuration files to the global storage
 

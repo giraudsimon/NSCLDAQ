@@ -424,6 +424,15 @@ XXUSBUtil::writeEndpoint()
     return 0x2;
 }
 /**
+ * vendorId
+ *   @return uint16_t - WIENER USB Vendor id.
+ */
+uint16_t
+XXUSBUtil::vendorId()
+{
+    return 0x16dc;
+}
+/**
  * VMUSBProductId
  *   Returns the product id of a VMUSB.
  * @return uint16_t

@@ -25,12 +25,9 @@
 #include <CCCUSB.h>
 #include <CMutex.h>
 
-//  The structures below are defined in <usb.h> which is included
-//  by the implementation and can be treated as opaque by any of our
-//  clients (they are in fact opaque in usb.h if memory servers.
 
-struct usb_device;
-struct usb_dev_handle;
+class USB;
+class USBDevice;
 
 
 // Forward Class definitions:
@@ -51,12 +48,13 @@ struct usb_dev_handle;
 */
 class CCCUSBusb : public CCCUSB
 {
-
+  private:
+    static USB*            m_usbContext;
 
   // Class member data.
   private:
-    struct usb_dev_handle*  m_handle;  //!< Handle open on the device.
-    struct usb_device*      m_device;  //!< Device we are open on.
+    
+    USBDevice*              m_device;  //!< Device we are open on.
     int                     m_timeout; //!< Timeout used when user doesn't give one.
     std::string             m_serial;  //!< Connected device serial number.
     CMutex*                 m_pMutex;  // Basis for critical sections.
@@ -70,9 +68,12 @@ class CCCUSBusb : public CCCUSB
     // and destruction implies a usb_release_interface(),
     // equality comparison has no useful meaning either:
 
-    CCCUSBusb(struct usb_device* vmUsbDevice);
+    CCCUSBusb(USBDevice* vmUsbDevice);
     virtual ~CCCUSBusb();   // Although this is probably a final class.
 
+    static USB* getUsbContext();    // Get usb context singleton.
+    static USBDevice* findBySerial(const char* serial);
+    
     // Disallowed functions as described above.
   private:
     CCCUSBusb(const CCCUSBusb& rhs);
@@ -241,7 +242,7 @@ class CCCUSBusb : public CCCUSB
     void openUsb();
 
     void resetUSB();
-    void enumerateAndIdentify();
+   
 
 };
 
