@@ -59,7 +59,25 @@ static const uint16_t TAVcsID12SHIFT = 4;
 // Private utilities:
 
 /**
- * imlistToOutPacket
+ * copy32To16
+ *    Copy a vector of 32 bit words to the back of a vector
+ *    of 16 bit words.
+ *
+ *  @param[out] v16  - Output vector.
+ *  @param[in]  v32  - Input vector.
+ */
+static void
+copy32To16(std::vector<uint16_t>& v16, const std::vector<uint32_t>& v32)
+{
+    const uint16_t* src = reinterpret_cast<const uint16_t*>(v32.data());
+    size_t nWds         = v32.size()*(sizeof(uint32_t)/sizeof(uint16_t));
+    for (int i =0; i < nWds; i++) {
+        v16.push_back(*src++);
+    }
+}
+
+/**
+ * listToOutPacket
  *    Converts an operation list into an out packet.
  *
  * @param ta   - Transfer address word.
@@ -71,23 +89,51 @@ static std::vector<uint16_t>
 listToOutPacket(uint16_t ta, const std::vector<uint32_t>& list)
 {
     size_t listLongs = list.size();
-    size_t listwords = listLongs*sizeof(uint32_t)/sizeof(uint16_t);
-    const uint16_t* pList  =
-        reinterpret_cast<const uint16_t*>(list.data());
+    size_t listwords = listLongs*(sizeof(uint32_t)/sizeof(uint16_t));
     
     // Add the TA word;
     
     std::vector<uint16_t> result;
     result.push_back(ta);
     result.push_back(listwords+1);
-    for(int i = 0 ; i < listwords; i++) {
-        result.push_back(*pList++);
-    }
-    
-    // If an immdediat operation, 
+    copy32To16(result, list);
     
     return result;
 }
+/**
+ * vmusbListToOutPacket
+ *   Takes a VMUSB list and creates the output packet needed to
+ *   load it.
+ *
+ * @param listNum  - List number
+ * @param list     - List data.
+ * @param offset   - Where in list memory to load the list.
+ * @return std::vector<uint16_t> - the full out packet.
+ * 
+*/
+static std::vector<uint16_t>
+vmusblistToOutPacket(
+    uint8_t listNum, const std::vector<uint32_t>& list, size_t offset
+)
+{
+    std::vector<uint16_t> result;
+    
+    // The header:
+    
+    uint16_t ta = TAVcsSel | TAVcsWrite;
+    if (listNum & 1) ta    |= TAVcsID0;
+    if (listNum & 2) ta    |= TAVcsID1;
+    if (listNum & 4) ta    |= TAVcsID2;
+    result.push_back(ta);
+    result.push_back(list.size()*(sizeof(uint32_t)/sizeof(uint16_t)));
+    result.push_back(offset);
+    
+    copy32To16(result, list);
+    
+    
+    return result;
+}
+
 ////////////////////////////////////////////////////////////////
 // Public functions:
 
@@ -335,4 +381,43 @@ uint16_t
 XXUSBUtil::CCUSBProductId()
 {
     return 1;
+}
+/**
+ * VMUSB::loadList
+ *    Loads a list into the VMUSB for later triggered execution
+ *    in datataking mode. Note that there are  differences
+ *    between this for the VMUSB and CCUSB. Therefore,
+ *    there are two loadList function, one in the VMUSB child
+ *    namespace and one in the CCUSB child namespace.
+ *  @param pDevice - Pointer to the USBDevice object through which
+ *                   USB operations are done.
+ *  @param listNum - number of the list to load [0-7]
+ *  @param list   - Vector of uint32_t's containing the list.
+ *  @param offset - Offset in VMUSB list memory at which the list is to be loaded.
+ *  @throw std::range_error - if the list number is illegal.
+ *  @throw USBException - if the USBDevice detected errors.
+ *                        or we had a timeout.
+ */
+void
+XXUSBUtil::VMUSB::loadList(
+    USBDevice* pDevice, uint8_t listNum,
+    const std::vector<uint32_t>& list, size_t offset
+)
+{
+    if (listNum > 7) {
+        throw std::range_error("VMUSB lists must be in the range [0-7]");
+    }
+    std::vector<uint16_t> outList = vmusblistToOutPacket(listNum, list, offset);
+    
+    int transferred;
+    int status = pDevice->bulkTransfer(
+        writeEndpoint(),
+        reinterpret_cast<unsigned char*>(outList.data()), list.size()*sizeof(uint16_t),
+        transferred, 0
+    );
+    // Timeout is not possible but...
+    
+    if (status < 0) {
+        throw USBException(status, "Load list timed out with infinite timeout");
+    }
 }

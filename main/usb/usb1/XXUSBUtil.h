@@ -74,14 +74,14 @@ namespace XXUSBUtil {
     // A few operations are somewhat device dependent:
     
     namespace VMUSB {
-        int loadList(
-        USBDevice* pDevice, uint8_t listNum,
-        const std::vector<uint32_t>& list, size_t offset
-    );
+        void loadList(
+            USBDevice* pDevice, uint8_t listNum,
+            const std::vector<uint32_t>& list, size_t offset
+        );
                 
     }
     namespace CCUSB {
-        int loadList(
+        void loadList(
             USBDevice* pDevice, const std::vector<uint32_t>& list,
             bool scaler=false
         );
