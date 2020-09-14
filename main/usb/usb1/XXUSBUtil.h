@@ -60,11 +60,21 @@ namespace XXUSBUtil {
         void* readPacket,  size_t readMax, int msTimeout = 0
     );
     void writeActionRegister(USBDevice* pDevice, uint16_t data);
-    void executeList(
+
+    // Exporting it this way prevents the need to export template
+    // functions:
+    void executeList(               // VMUSB
         USBDevice* pDevice, const std::vector<uint32_t>& list,
         void* pReturnedData, size_t maxRead, size_t& bytesRead,
         int msTimeout = 0
     );
+    
+    void executeList(               // CCUSB
+        USBDevice* pDevice, const std::vector<uint16_t>& list,
+        void* pReturnedData, size_t maxRead, size_t& bytesRead,
+        int msTimeout = 0
+    );
+
     uint8_t readEndpoint();
     uint8_t writeEndpoint();
     uint16_t vendorId();
@@ -82,7 +92,7 @@ namespace XXUSBUtil {
     }
     namespace CCUSB {
         void loadList(
-            USBDevice* pDevice, const std::vector<uint32_t>& list,
+            USBDevice* pDevice, const std::vector<uint16_t>& list,
             bool scaler=false
         );
     }

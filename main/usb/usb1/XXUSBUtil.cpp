@@ -66,11 +66,12 @@ static const uint16_t TAVcsID12SHIFT = 4;
  *  @param[out] v16  - Output vector.
  *  @param[in]  v32  - Input vector.
  */
+template<class T>
 static void
-copy32To16(std::vector<uint16_t>& v16, const std::vector<uint32_t>& v32)
+copy32To16(std::vector<uint16_t>& v16, const std::vector<T>& v32)
 {
     const uint16_t* src = reinterpret_cast<const uint16_t*>(v32.data());
-    size_t nWds         = v32.size()*(sizeof(uint32_t)/sizeof(uint16_t));
+    size_t nWds         = v32.size()*(sizeof(T)/sizeof(uint16_t));
     for (int i =0; i < nWds; i++) {
         v16.push_back(*src++);
     }
@@ -85,17 +86,23 @@ copy32To16(std::vector<uint16_t>& v16, const std::vector<uint32_t>& v32)
  * @return std::vector<uint16_t> containing the resulting list.
  * 
  */
+template<class T>
 static std::vector<uint16_t>
-listToOutPacket(uint16_t ta, const std::vector<uint32_t>& list)
+listToOutPacket(uint16_t ta, const std::vector<T>& list)
 {
     size_t listLongs = list.size();
-    size_t listwords = listLongs*(sizeof(uint32_t)/sizeof(uint16_t));
+    size_t listwords = listLongs*(sizeof(T)/sizeof(uint16_t));
     
     // Add the TA word;
     
     std::vector<uint16_t> result;
     result.push_back(ta);
-    result.push_back(listwords+1);
+    
+    if (sizeof(T) == sizeof(uint32_t)) {     // VMUSB
+        result.push_back(listwords+1);
+    } else {                                 // CCUSB
+        result.push_back(listwords);  
+    }
     copy32To16(result, list);
     
     return result;
@@ -130,6 +137,26 @@ vmusblistToOutPacket(
     
     copy32To16(result, list);
     
+    
+    return result;
+}
+/**
+ * ccusblistToOutPacket
+ *    Convert a CCUSB readout list (to be downloaded) to an output packet.
+ *
+ * @param list - The list
+ * @param scaler - True if this is a scaler list.
+ */
+static std::vector<uint16_t>
+ccusblistToOutPacket(const std::vector<uint16_t>& list, bool scaler)
+{
+    uint16_t ta = TAVcsWrite | TAVcsSel;
+    if (scaler) ta |= TAVcsID0;                 // Scaler bit.
+    
+    std::vector<uint16_t> result;
+    result.push_back(ta);
+    result.push_back(list.size());
+    copy32To16(result, list);
     
     return result;
 }
@@ -320,9 +347,10 @@ XXUSBUtil::writeActionRegister(USBDevice* pDevice, uint16_t data)
  *                    function by the pDevice.
  * @note the transaction method has the CRITICAL_BLOCK
  */
-void
-XXUSBUtil::executeList(
-    USBDevice* pDevice, const std::vector<uint32_t>& list,
+template<class T>
+static void
+executeList(
+    USBDevice* pDevice, const std::vector<T>& list,
     void* pReturnedData, size_t maxRead, size_t& bytesRead,
     int msTimeout
 )
@@ -331,7 +359,7 @@ XXUSBUtil::executeList(
         TAVcsWrite | TAVcsIMMED,
         list
     );
-    int result = transaction(
+    int result = XXUSBUtil::transaction(
         pDevice, outPacket.data(), outPacket.size()*sizeof(uint16_t),
         pReturnedData, maxRead, msTimeout
     );
@@ -341,6 +369,39 @@ XXUSBUtil::executeList(
     }
     bytesRead = result;
 }
+// Specializations for the two controllers:
+
+void
+XXUSBUtil::executeList(
+    USBDevice* pDevice, const std::vector<uint32_t>& list,
+    void* pReturnedData, size_t maxRead, size_t& bytesRead,
+    int msTimeout
+
+)
+{
+    // VMUSB:
+    
+    ::executeList(
+        pDevice, list, pReturnedData, maxRead, bytesRead, msTimeout
+    );
+}
+void
+XXUSBUtil::executeList(
+    USBDevice* pDevice, const std::vector<uint16_t>& list,
+    void* pReturnedData, size_t maxRead, size_t& bytesRead,
+    int msTimeout
+
+)
+{
+    // CCUSB
+    
+    ::executeList(
+        pDevice, list, pReturnedData, maxRead, bytesRead, msTimeout
+    );
+}
+
+
+
 /**
  * readEndpoint
  *   Returns the USB endpoint to use for XXUSB read operations.
@@ -419,5 +480,34 @@ XXUSBUtil::VMUSB::loadList(
     
     if (status < 0) {
         throw USBException(status, "Load list timed out with infinite timeout");
+    }
+}
+/**
+ * CCUSB::loadList
+ *    Loads a list into the CCUSB for later triggered execution.  The
+ *    CCUSB has only an event and a scaler list, in contrast to the
+ *    8 lists a VMUSB has.  Furthermore, the memory for the two  lists
+ *    is dedicated rather than a soup across which all lists span.
+ *    Therefore there's no list number (just a scaler flag), and no
+ *    memory offset parameter:
+ *
+ *  @param pDevice - USBDevice object pointer through which output flows.
+ *  @param list    - The list of operations to perform
+ *  @param scaler  - True if this is a scaler list.
+ */
+void
+XXUSBUtil::CCUSB::loadList(
+    USBDevice* pDevice, const std::vector<uint16_t>& list, bool scaler
+)
+{
+    std::vector<uint16_t> outList = ccusblistToOutPacket(list, scaler);
+    int transferred;
+    int status = pDevice->bulkTransfer(
+        writeEndpoint(),
+        reinterpret_cast<unsigned char*>(outList.data()), list.size()*sizeof(uint16_t),
+        transferred, 0
+    );
+    if (status < 0) {
+        throw USBException(status, "Load list (infinite timeout) failed.");
     }
 }

@@ -72,7 +72,7 @@ static const int DEFAULT_TIMEOUT(2000); // ms.
 the CCUSB is a USB CAMAC controller.  To use this class you must first locate
 a module by invoking enumerate.  enumerate  returns a vector of
 usb_device*s.   One of those can be used to instantiate the CCCUSB 
-object which can the ben operated on.
+object which can the been operated on.
 
 Note there are two sets of methods defined. Those with very precise
 parameter types and those with quite generic parameter types.
