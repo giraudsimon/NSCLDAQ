@@ -5,7 +5,8 @@ COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAG
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os	\
 			-I@top_srcdir@/base/thread \
-			  @TCL_FLAGS@ @THREADCXX_FLAGS@
+			-I@top_srcdir@/usb/usb1   \
+			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @libusb_1_0_CFLAGS@
 
 libVMUSB_la_SOURCES 	=  CVMUSBusb.cpp CVMUSBReadoutList.cpp CVMUSBEthernet.cpp \
 	CVMUSBFactory.cpp \
@@ -38,7 +39,9 @@ libVMUSB_la_LIBADD       = @top_builddir@/base/tcpip/libTcp.la \
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@LIBTCLPLUS_LDFLAGS@			\
 			@top_builddir@/base/os/libdaqshm.la	\
-				$(USB_LIBS)  
+			@top_builddir@/usb/usb1/libUSB1.la \
+			@libusb_1_0_LIBS@
+
 
 AM_CPPFLAGS		= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@  \
 			-I@top_srcdir@/base/tcpip \
@@ -63,10 +66,13 @@ tests_SOURCES = @srcdir@/TestRunner.cpp \
 
 
 tests_CPPFLAGS = -std=c++11 -g -I@prefix@/include -I@top_srcdir@/base/thread \
+		-I@top_srcdir@/base/usb/usb1 @libusb_1_0_CFLAGS@ \
 		$(CPPUNIT_INCLUDES)
 tests_LDADD = @top_builddir@/base/thread/libdaqthreads.la \
 		$(CPPUNIT_LDFLAGS) \
 		@builddir@/libVMUSB.la \
+		@top_builddir@/usb/usb1/libUSB1.la \
+		@libusb_1_0_LIBS@ \
 		 @TCL_LDFLAGS@ \
 		 @LIBTCLPLUS_LDFLAGS@
 

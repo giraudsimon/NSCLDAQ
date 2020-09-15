@@ -28,17 +28,15 @@
 #include <sys/types.h>
 #include <CMutex.h>
 
-//  The structures below are defined in <usb.h> which is included
-//  by the implementation and can be treated as opaque by any of our
-//  clients (they are in fact opaque in usb.h if memory servers.
-
-struct usb_device;
-struct usb_dev_handle;
 
 
 // Forward Class definitions:
 
 class CVMUSBReadoutList;
+class USBDevice;
+class USB;
+
+
 
 /*!
    This class is part of the support package for the Wiener/JTEC VM-USB 
@@ -60,11 +58,12 @@ class CVMUSBReadoutList;
 
 class CVMUSBusb : public CVMUSB 
 {
+private:
+	static USB*         m_pContext;  // USB Context.
 
     // Class member data.
 private:
-    struct usb_dev_handle*  m_handle;	// Handle open on the device.
-    struct usb_device*      m_device;   // Device we are open on.
+    USBDevice*              m_pHandle; // Device we're using.
     int                     m_timeout; // Timeout used when user doesn't give one.
     uint16_t                m_irqMask; // interrupt mask shadow register.
     std::string             m_serial;  // Attached serial number.
@@ -72,9 +71,9 @@ private:
 
     // Static functions.
 public:
-    static std::vector<struct usb_device*> enumerate();
-    static std::string serialNo(struct usb_device* dev);
-
+    static USB*     getUSBContext();
+	static USBDevice* findBySerial(const char* pSerial);
+	static USBDevice* findFirst();
     // Constructors and other canonical functions.
     // Note that since destruction closes the handle and there's no
     // good way to share usb objects, copy construction and
@@ -83,7 +82,7 @@ public:
     // and destruction implies a usb_release_interface(),
     // equality comparison has no useful meaning either:
 
-    CVMUSBusb(struct usb_device* vmUsbDevice);
+    CVMUSBusb(USBDevice* vmUsbDevice);
     virtual ~CVMUSBusb();		// Although this is probably a final class.
 
     // Disallowed functions as described above.
@@ -129,7 +128,6 @@ private:
 
     void initializeShadowRegisters();
     void resetVMUSB();
-    void enumerateAndIdentify();
 };
 
 #endif

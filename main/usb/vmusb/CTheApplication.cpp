@@ -24,6 +24,8 @@
 #include <TclServer.h>
 #include <CVMUSBusb.h>
 #include <CVMUSBFactory.h>
+#include <USBDevice.h>
+#include <XXUSBUtil.h>
 
 #include <TCLInterpreter.h>
 #include <TCLLiveEventLoop.h>
@@ -424,16 +426,12 @@ CTheApplication::startInterpreter()
 void
 CTheApplication::enumerateVMUSB()
 {
-  try {
-    vector<struct usb_device*> controllers = CVMUSBusb::enumerate();
-    for (int i = 0; i < controllers.size(); i++) {
-      std::string serial = CVMUSBusb::serialNo(controllers[i]);
-      std::cout << "[" << i << "] : " << serial << std::endl;
-    }
-    cout.flush();
-  }
-  catch(std::string msg) {
-    std::cerr << "Unable to enumerate VM-USB modules: " << msg << std::endl;
+  auto controllers = XXUSBUtil::enumerateVMUSB(*(CVMUSBusb::getUSBContext()));
+  
+  for (int i =0; i < controllers.size(); i++) {
+    std::cout << "[" << i << "] : "
+      << controllers[i].first << std::endl;
+    delete controllers[i].second;
   }
 }
 /**

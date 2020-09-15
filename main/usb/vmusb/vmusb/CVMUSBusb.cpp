@@ -33,6 +33,12 @@
 #include <stdexcept>
 
 #include <pthread.h>
+#include <CMutex.h>
+#include <USB.h>
+#include <USBDeviceInfo.h>
+#include <USBDevice.h>
+#include <XXUSBUtil.h>
+
 
 #include <thread>
 #include <chrono>
@@ -67,7 +73,9 @@ static const int DRAIN_RETRIES(5);    // Retries.
 
 static bool usbInitialized(false);
 
-void print_stack(const char* beg, const char* end, size_t unitWidth)
+
+
+static void print_stack(const char* beg, const char* end, size_t unitWidth)
 {
   using namespace std;
 
@@ -90,86 +98,81 @@ void print_stack(const char* beg, const char* end, size_t unitWidth)
   cout << dec << setfill(' ');
   cout << "--------" << std::endl;
 }
- 
-/////////////////////////////////////////////////////////////////////
-/*!
-  Enumerate the Wiener/JTec VM-USB devices.
-  This function returns a vector of usb_device descriptor pointers
-  for each Wiener/JTec device on the bus.  The assumption is that
-  some other luck function has initialized the libusb.
-  It is perfectly ok for there to be no VM-USB device on the USB 
-  subsystem.  In that case an empty vector is returned.
-*/
-vector<struct usb_device*>
-CVMUSBusb::enumerate()
-{
-  if(!usbInitialized) {
-    usb_init();
-    usbInitialized = true;
-  }
-  usb_find_busses();		// re-enumerate the busses
-  usb_find_devices();		// re-enumerate the devices.
-  
-  // Now we are ready to start the search:
-  
-  vector<struct usb_device*> devices;	// Result vector.
-  struct usb_bus* pBus = usb_get_busses();
+///////////////////////////////////////////////////////////////
+// Implementation of static methods.
 
-  while(pBus) {
-    struct usb_device* pDevice = pBus->devices;
-    while(pDevice) {
-      usb_device_descriptor* pDesc = &(pDevice->descriptor);
-      if ((pDesc->idVendor  == USB_WIENER_VENDOR_ID)    &&
-	  (pDesc->idProduct == USB_VMUSB_PRODUCT_ID)) {
-	devices.push_back(pDevice);
-      }
-      
-      pDevice = pDevice->next;
-    }
-    
-    pBus = pBus->next;
-  }
-  
-  return devices;
-}
-
+static CMutex sectionMutex;      // Mutext for critical sections
+USB*   CVMUSBusb::m_pContext(0); // USB Context singleton.
 /**
- * Return the serial number of a usb device.  This involves:
- * - Opening the device.
- * - Doing a simple string fetch on the SerialString
- * - closing the device.
- * - Converting that to an std::string which is then returned to the caller.
- *
- * @param dev - The usb_device* from which we want the serial number string.
- *
- * @return std::string
- * @retval The serial number string of the device.  For VM-USB's this is a
- *         string of the form VMnnnn where nnnn is an integer.
- *
- * @throw std::string exception if any of the USB functions fails indicating
- *        why.
+ * getUSBContext
+ *    Get the USB context singleton.
+ * @return USB*  - the one and only USB context used in the program.
  */
-string
-CVMUSBusb::serialNo(struct usb_device* dev)
+USB*
+CVMUSBusb::getUSBContext()
 {
-  usb_dev_handle* pDevice = usb_open(dev);
-
-  if (pDevice) {
-    char szSerialNo[256];	// actual string is only 6chars + null.
-    int nBytes = usb_get_string_simple(pDevice, dev->descriptor.iSerialNumber,
-				       szSerialNo, sizeof(szSerialNo));
-    usb_close(pDevice);
-
-    if (nBytes > 0) {
-      return std::string(szSerialNo);
-    } else {
-      throw std::string("usb_get_string_simple failed in CVMUSBusb::serialNo");
-    }
-				       
-  } else {
-    throw std::string("usb_open failed in CVMUSBusb::serialNo");
+  CriticalSection s(sectionMutex);   // for thread safety.
+  if (!m_pContext) {
+    m_pContext = new USB;
   }
-
+  return m_pContext;
+}
+/**
+ * findBySerial
+ *    Finds the VMUSB that matches a serial number string.
+ *
+ * @param pSerial  - The serial number string to match.
+ * @return USBDevice* - The matching device.
+ * @retval nullptr    - If there is no match.
+ */
+USBDevice*
+CVMUSBusb::findBySerial(const char* pSerial)
+{
+  USBDevice* pResult(nullptr);
+  auto allControllers = XXUSBUtil::enumerateVMUSB(*(getUSBContext()));
+  
+  /*
+   Note this loop  can't break out early on a match
+   because we need to delete _all_ unused USBDevice objects.
+   The loop assumes serial numbers are uniqe, that we won't have
+   more than one match.
+  */
+  for (int i = 0; i < allControllers.size(); i++) {
+    if (allControllers[i].first == pSerial) {
+      pResult = allControllers[i].second;
+    } else {
+      delete allControllers[i].second;
+    }
+  }
+  
+  return pResult;
+}
+/**
+ * findFirst
+ *   Returns a pointer to the first VM:USB device enumerated.
+ *
+ * @return USBDevice*
+ * @retval nullptr - there are no devices.
+ */
+USBDevice*
+CVMUSBusb::findFirst()
+{
+  USBDevice* pResult(nullptr);
+  auto allControllers = XXUSBUtil::enumerateVMUSB(*(getUSBContext()));
+  
+  // Might be no VMUSBs:
+  
+  if (allControllers.size()) {
+    pResult = allControllers[0].second;
+    
+    // Might be more than one -- though then using find-first is foolish.
+    
+    for (int i = 1; i < allControllers.size(); i++) {
+      delete allControllers[i].second;
+    }
+  }
+  
+  return pResult;
 }
 ////////////////////////////////////////////////////////////////////
 /*!
@@ -186,12 +189,11 @@ CVMUSBusb::serialNo(struct usb_device* dev)
       if there is aproblem.
 
 */
-CVMUSBusb::CVMUSBusb(struct usb_device* device) :
-    m_handle(0),
-    m_device(device),
+CVMUSBusb::CVMUSBusb(USBDevice* device) :
+    m_pHandle(device),
     m_timeout(DEFAULT_TIMEOUT)
 {
-  m_serial = serialNo(device);                  // Set the desired serial number.
+  m_serial = m_pHandle->getSerial();
   CMutexAttr  attr;
   attr.setType(PTHREAD_MUTEX_RECURSIVE_NP);
   m_pMutex  = new CMutex(attr);
@@ -205,8 +207,8 @@ CVMUSBusb::CVMUSBusb(struct usb_device* device) :
 */
 CVMUSBusb::~CVMUSBusb()
 {
-    usb_release_interface(m_handle, 0);
-    usb_close(m_handle);
+    m_pHandle->release(0);
+    delete m_pHandle;
     
     delete m_pMutex;
     
@@ -233,8 +235,10 @@ CVMUSBusb::reconnect()
     return false;                      // Success so don't need to reconnect.
   }
   catch (...) {
-    usb_release_interface(m_handle, 0);
-    usb_close(m_handle);
+    m_pHandle->release(0);
+    delete m_pHandle;
+    m_pHandle = findBySerial(m_serial.c_str());
+    
     Os::usleep(1000);			// Let this all happen
     openVMUsb();
     return true;
@@ -256,32 +260,9 @@ CVMUSBusb::reconnect()
 void CVMUSBusb::writeActionRegister(uint16_t data) 
 {
     CriticalSection s(*m_pMutex);
-    char outPacket[100];
-
-
-  // Build up the output packet:
-
-  char* pOut = outPacket;
-
-  pOut = static_cast<char*>(addToPacket16(pOut, 5)); // Select Register block for transfer.
-  pOut = static_cast<char*>(addToPacket16(pOut, 10)); // Select action register wthin block.
-  pOut = static_cast<char*>(addToPacket16(pOut, data));
-
-  // This operation is write only.
-
-  int outSize = pOut - outPacket;
-  int status = usb_bulk_write(m_handle, ENDPOINT_OUT, 
-      outPacket, outSize, DEFAULT_TIMEOUT);
-  if (status < 0) {
-    string message = "Error in usb_bulk_write, writing action register ";
-    message == strerror(-status);
-    throw message;
-  }
-  if (status != outSize) {
-    throw "usb_bulk_write wrote different size than expected";
-  }
-
-  //print_stack(outPacket, outPacket+outSize, sizeof(uint16_t));
+    
+    XXUSBUtil::writeActionRegister(m_pHandle, data);
+  
 
 }
 
@@ -318,26 +299,18 @@ CVMUSBusb::executeList(CVMUSBReadoutList&     list,
 		   size_t                 readBufferSize,
 		   size_t*                bytesRead)
 {
-  size_t outSize;
-  uint16_t* outPacket = listToOutPacket(TAVcsWrite | TAVcsIMMED,
-					list, &outSize);
+  CriticalSection s(*m_pMutex);
+  try {
+    XXUSBUtil::executeList(
+        m_pHandle, list.get(),
+        pReadoutBuffer, readBufferSize, *bytesRead
+    );
     
-    // Now we can execute the transaction:
-    
-  int status = transaction(outPacket, outSize,
-			   pReadoutBuffer, readBufferSize);
-  
-  
-  
-  delete []outPacket;
-  if(status >= 0) {
-    *bytesRead = status;
-  } 
-  else {
-    *bytesRead = 0;
   }
-  return  status;
-  
+  catch (USBException) {
+    return -2;
+  }
+  return 0;  
 }
 
 
@@ -367,29 +340,16 @@ CVMUSBusb::executeList(CVMUSBReadoutList&     list,
 int
 CVMUSBusb::loadList(uint8_t  listNumber, CVMUSBReadoutList& list, off_t listOffset)
 {
-  // Need to construct the TA field, straightforward except for the list number
-  // which is splattered all over creation.
-  
-  uint16_t ta = TAVcsSel | TAVcsWrite;
-  if (listNumber & 1)  ta |= TAVcsID0;
-  if (listNumber & 2)  ta |= TAVcsID1; // Probably the simplest way for this
-  if (listNumber & 4)  ta |= TAVcsID2; // few bits.
-
-  size_t   packetSize;
-  uint16_t* outPacket = listToOutPacket(ta, list, &packetSize, listOffset);
-  int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
-			      reinterpret_cast<char*>(outPacket),
-			      packetSize, DEFAULT_TIMEOUT);
-  if (status < 0) {
-    errno = -status;
-    status= -1;
+  CriticalSection s(*m_pMutex);
+  try {
+    XXUSBUtil::VMUSB::loadList(
+          m_pHandle, listNumber, list.get(), listOffset
+    );
   }
-
-
-  delete []outPacket;
-  return (status >= 0) ? 0 : status;
-
-
+  catch (...) {
+    return -1;
+  }
+  return 0;
   
 }
 /*!
@@ -414,19 +374,28 @@ int
 CVMUSBusb::usbRead(void* data, size_t bufferSize, size_t* transferCount, int timeout)
 {
   CriticalSection s(*m_pMutex);
-  int status = usb_bulk_read(m_handle, ENDPOINT_IN,
-			     static_cast<char*>(data), bufferSize,
-			     timeout);
-  if (status >= 0) {
-    *transferCount = status;
-    status = 0;
-  } 
-  else {
-    errno = -status;
-    status= -1;
-    *transferCount = 0;
+  int status;
+  int xfercount;
+  try {
+    status = m_pHandle->bulkTransfer(
+        XXUSBUtil::readEndpoint(),
+        static_cast<unsigned char*>(data), bufferSize, xfercount,
+        timeout
+    );
   }
-  return status;
+  catch(...) {
+    errno = EIO;
+    return -1;
+  }
+  *transferCount = xfercount;
+  
+  // Timeout is error though partial transfers are possible:
+  
+  if (status < 0) {
+    errno = ETIMEDOUT;
+    return -1;
+  }
+  return 0;
 }
 
 /*! 
@@ -477,88 +446,25 @@ CVMUSBusb::setDefaultTimeout(int ms)
 int
 CVMUSBusb::transaction(void* writePacket, size_t writeSize,
 		    void* readPacket,  size_t readSize)
-{ 
-  char buf[8192];
-  size_t bytesToTransfer;
-
-  //print_stack(reinterpret_cast<char*>(writePacket), 
-  //    reinterpret_cast<char*>(writePacket)+writeSize, sizeof(uint16_t));
-
-    CriticalSection s(*m_pMutex);
-    int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
-		                        		static_cast<char*>(writePacket), writeSize, 
-                                DEFAULT_TIMEOUT);
-    if (status < 0) {
-      errno = -status;
-      return -1;		// Write failed!!
-    } 
-    
-    status    = usb_bulk_read(m_handle, ENDPOINT_IN,
-			      buf, sizeof(buf), m_timeout);
-    if (status < 0) {
-      if ((status == EINTR) || (status == EAGAIN)) {
-	status = 0;                 // can try again.
-      } else {
-	errno = -status;
-	return -2;
-      }
-    } 
-
-    bytesToTransfer =  std::min(static_cast<size_t>(status ), readSize);
-    
-    long bytesRead = bytesToTransfer;
-    auto pReadCursor = reinterpret_cast<char*>(readPacket);
-    // Copy the newly read data into the output buffer
-    pReadCursor = std::copy(
-        buf,
-	buf + bytesToTransfer, pReadCursor);
-
-    int nAttempts = 0;
-    int maxAttempts = readSize/std::min(int(sizeof(buf)),getBufferSize()*2);
-
-
-    if (bytesRead < readSize) {
-        // looks like there might be a bug that causes the first read to
-        // return 0 bytes. Adjust to try at least 1 extra time if needed.
-        maxAttempts += 1;
-
-//        std::cout << "Read " << bytesRead<< " bytes " << std::endl;
-//        std::cout << "need to try again " << maxAttempts << " times"
-//                  << " for all " << readSize << " bytes requested" << std::endl;
-    }
-    // if in events buffering mode, then getBufferSize() returns -1. This
-    // short circuits the while loop below because the maxAttempts will be negative.
-
-    // iteratively read until we have the data we desire
-    while ((bytesRead < readSize) && (nAttempts < maxAttempts)) {
-      size_t bytesLeft = readSize - bytesRead;
-      status = usb_bulk_read(m_handle, ENDPOINT_IN, buf,
-			     sizeof(buf), m_timeout);
-      if (status < 0) {
-          if ( status != -ETIMEDOUT) {
-	    if ( (status == EAGAIN) || (status == EINTR)) {
-	      status = 0;                               // can try again.
-	    } else {
-              errno = -status;
-              return -2;
-	    }
-          } else {
-              return bytesRead;
-          }
-      }
-
-//      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
-      bytesToTransfer = std::min(static_cast<size_t>(status), bytesLeft);
-      pReadCursor = std::copy(
-           buf,
-	   buf+bytesToTransfer, pReadCursor);
-
-      bytesRead += bytesToTransfer;
-
-      nAttempts++;
-    }
-
-    return bytesRead;
+{
+  CriticalSection(*m_pMutex);
+  int status;
+  try {
+    status = XXUSBUtil::transaction(
+      m_pHandle, writePacket, writeSize, readPacket, readSize, m_timeout
+    );
+  }
+  catch (...) {
+    errno = EIO;
+    return -2;
+  }
+  
+  if (status < 0) {
+    errno = ETIMEDOUT;
+    return -2;
+  }
+  return status;
+  
 }
 
 /*
@@ -578,16 +484,16 @@ CVMUSBusb::readRegister(unsigned int address)
 			     sizeof(data),
 			     &count);
     if (status == -1) {
-	char message[100];
-	sprintf(message, "CVMUSBusb::readRegister USB write failed: %s",
-		strerror(errno));
-	throw string(message);
+      char message[100];
+      sprintf(message, "CVMUSBusb::readRegister USB write failed: %s",
+      strerror(errno));
+      throw string(message);
     }
     if (status == -2) {
-	char message[100];
-	sprintf(message, "CVMUSBusb::readRegister USB read failed %s",
-		strerror(errno));
-	throw string(message);
+      char message[100];
+      sprintf(message, "CVMUSBusb::readRegister USB read failed %s",
+    	strerror(errno));
+      throw string(message);
 
     }
 
@@ -641,46 +547,25 @@ CVMUSBusb::writeRegister(unsigned int address, uint32_t data)
 void
 CVMUSBusb::openVMUsb()
 {
-    enumerateAndIdentify();
-    m_handle  = usb_open(m_device);
-    if (!m_handle) {
-        throw "CVMUSBusb::CVMUSBusb  - unable to open the device";
-    }
-
+    
     // Resetting the device causes the usb device to lose its enumeration.
     // It must be found again and then reopened.
-    resetVMUSB();
-
-    enumerateAndIdentify();
     
-    m_handle  = usb_open(m_device);
-    if (!m_handle) {
-        throw "CVMUSBusb::CVMUSBusb  - unable to open the device";
+    m_pHandle->reset();
+    m_pHandle = findBySerial(m_serial.c_str());
+    if (!m_pHandle) {
+        throw "CVMUSBusb::CVMUSBusb  - unable to find/open the device";
     }
-
-    // Now claim the interface.. again this could in theory fail.. but.
-    usb_set_configuration(m_handle, 1);
-    int status = usb_claim_interface(m_handle,
-                                     0);
-    if (status == -EBUSY) {
-        throw "CVMUSBusb::CVMUSBusb - some other process has already claimed";
-
-    }
-
-    if (status == -ENOMEM) {
-        throw "CVMUSBusb::CVMUSBusb - claim failed for lack of memory";
-    }
-    // Errors we don't know about:
-
-    if (status < 0) {
-        std::string msg("Failed to claim the interface: ");
-        msg += strerror(-status);
-        throw msg;
-    }
-
+    
+    // Set the configuration and claim the interface:
+    
+    m_pHandle->setConfig(1);
+    m_pHandle->claim(0);
+   
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // reset the module
+    
     writeActionRegister(ActionRegister::clear);
 
     // Turn off DAQ mode and flush any data that might be trapped in the VMUSB
@@ -745,40 +630,7 @@ void CVMUSBusb::initializeShadowRegisters()
  */
 void CVMUSBusb::resetVMUSB()
 {
-  int status = usb_reset(m_handle);
-  if (status < 0) {
-    throw std::runtime_error("CVMUSB::resetVMUSB() failed to reset the device");
-  }
+  m_pHandle->reset();
+  
 }
 
-
-/*!
- * \brief Enumerate and locate the device by serial number
- *
- * It is expected that the serial number of the device has already been
- * specified. This will enumerate the USB busses and then locate the
- * device on it with a matching serial number. If found, the device is
- * stored by the class for later use.
- *
- * \throws std::string if no device with a matching serial number is found
- */
-void CVMUSBusb::enumerateAndIdentify()
-{
-  // Since we might be re-opening the device we're going to
-  // assume only the serial number is right and re-enumerate
-
-  std::vector<struct usb_device*> devices = enumerate();
-  m_device = 0;
-  for (int i = 0; i < devices.size(); i++) {
-    if (serialNo(devices[i]) == m_serial) {
-      m_device = devices[i];
-      break;
-    }
-  }
-  if (!m_device) {
-    std::string msg = "The VM-USB with serial number ";
-    msg += m_serial;
-    msg += " could not be enumerated";
-    throw msg;
-  }
-}

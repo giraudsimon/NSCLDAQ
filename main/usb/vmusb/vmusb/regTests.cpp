@@ -8,6 +8,7 @@
 #include <CVMUSBusb.h>
 #include <vector>
 #include <stdio.h>
+#include <USBDevice.h>
 
 using namespace std;
 
@@ -28,22 +29,25 @@ class registerTests : public CppUnit::TestFixture {
 
 
 private:
-  struct usb_device*   m_dev;
+  USBDevice*  m_dev;
   CVMUSB*  m_pInterface;
   const CVMUSB::ShadowRegisters* m_pShadow;
 
 public:
   void setUp() {
-    vector<struct usb_device*> devices = CVMUSB::enumerate();
-    if (devices.size() == 0) {
+    m_dev = CVMUSBusb::findFirst();
+  
+  
+    if (m_dev) {
       cerr << " NO USB interfaces\n";
       exit(0);
     }
-    m_pInterface = new CVMUSBusb(devices[0]);
+    m_pInterface = new CVMUSBusb(m_dev);
     m_pShadow = &m_pInterface->getShadowRegisters();
   }
   void tearDown() {
     delete m_pInterface;
+    delete m_dev;
     m_pShadow=0;
   }
 protected:

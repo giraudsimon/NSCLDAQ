@@ -122,16 +122,13 @@ class CVMUSB
 
 	// Class member data.
 private:
-    struct usb_dev_handle*  m_handle;	// Handle open on the device.
-    struct usb_device*      m_device;   // Device we are open on.
-    int                    m_timeout; // Timeout used when user doesn't give one.
-    ShadowRegisters      m_regShadow; // stores copies of all the  
+    
+    ShadowRegisters      m_regShadow; // stores copies of all the
+    int m_timeout;
 
     // Static functions.
 public:
-    static std::vector<struct usb_device*> enumerate();
-    static std::string serialNo(struct usb_device* dev);
-
+    
     static CMutex& getGlobalMutex();
 
     // Constructors and other canonical functions.
@@ -142,10 +139,9 @@ public:
     // and destruction implies a usb_release_interface(),
     // equality comparison has no useful meaning either:
 
-  CVMUSB() :
-    m_handle(0), m_device(0)
+  CVMUSB() : m_timeout(2000)
   {}
-  CVMUSB(struct usb_device* vmUsbDevice);
+
   virtual ~CVMUSB();
 
     // Disallowed functions as described above.
