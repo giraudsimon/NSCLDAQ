@@ -103,8 +103,8 @@ CCCUSBusb::findBySerial(const char* serial)
   Construct the CCCUSBusb object.  This involves storing the
   device descriptor we are given, opening the device and
   claiming it.  Any errors are signalled via const char* exceptions.
-  \param vmUsbDevice   : usb_device*
-      Pointer to a USB device descriptor that we want to open.
+  \param device   : USBDevice*
+      Pointer to a USB device object that we'll do our I/O through.
 
   \bug
       At this point we take the caller's word that this is a CC-USB.

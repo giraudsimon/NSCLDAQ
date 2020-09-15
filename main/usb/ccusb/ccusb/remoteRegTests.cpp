@@ -40,7 +40,6 @@ class RemoteRegisterTests : public CppUnit::TestFixture {
 
 
 private:
-  struct usb_device*   m_dev;
   CCCUSB*  m_pInterface;
 //  const CCCUSB::ShadowRegisters* m_pShadow;
 

@@ -251,11 +251,11 @@ CStack::loadStack(CCCUSB& controller)
       std::string msg(strerror(errno));
       std::string which;
       if (status == -1) {
-	which = "usb_bulk_write";
+       which = "usb_bulk_write";
       } else if (status == -2) {
-	which = "usb_bulk_read";
+       which = "usb_bulk_read";
       } else {
-	which = "list  number decode";
+       which = "list  number decode";
       }
       msg += " during ";
       msg += which;

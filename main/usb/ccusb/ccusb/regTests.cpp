@@ -36,9 +36,9 @@ class registerTests : public CppUnit::TestFixture {
 
 
 private:
-  struct usb_device*   m_dev;
+
   CCCUSB*  m_pInterface;
-//  const CCCUSB::ShadowRegisters* m_pShadow;
+  USBDevice* m_pDevice;
 
 public:
   void setUp() {
@@ -49,12 +49,15 @@ public:
       cerr << " NO USB interfaces\n";
       exit(0);
     }
-    m_pInterface = new CCCUSBusb(devices[0].second);
-//    m_pShadow = &m_pInterface->getShadowRegisters();
+    m_pDevice    = devices[0].second;
+    m_pInterface = new CCCUSBusb(m_pDevice);
+    for (int i = 1; i < devices.size(); i++) {
+      delete devices[i].second;
+    }
   }
   void tearDown() {
     delete m_pInterface;
-//    m_pShadow=0;
+    delete m_pDevice;
   }
 protected:
   void action();
