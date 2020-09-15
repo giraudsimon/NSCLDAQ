@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#error "RawChannel error"
+
 namespace DDASReadout {
     /**
      * @cstruct RawChannel
