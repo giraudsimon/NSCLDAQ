@@ -104,8 +104,9 @@ void c785test::init()
   m_pConfig->configure("-smallthresholds", "on");
   m_pConfig->configure("-fastclear", "12");
 
-  vector<struct usb_device*> interfaces = CVMUSB::enumerate();
-  CVMUSB vme(interfaces[0]);	// We assume there's at least one.
+  auto interface = CVMUSBusb::findFirst();
+  
+  CVMUSBusb vme(interfaces[interface]);	// We assume there's at least one.
 
   m_pConfig->Initialize(vme);	// This should have done the device init.
 
