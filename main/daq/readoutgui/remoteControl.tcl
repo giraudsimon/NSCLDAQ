@@ -59,6 +59,8 @@ package require Bundles
 #
 snit::type ReadoutGuiRemoteControl {
 
+  option -service -default ReadoutGUIRemoteControl -readonly 1
+
   variable listenfd
   variable replyfd -1;             #< receives cmd from master, sends reply 
   variable requestfd -1;           #< sends comds to master, waits for reply
@@ -86,11 +88,11 @@ snit::type ReadoutGuiRemoteControl {
   # @param args - Option value pair list...better by empty.
   #
   constructor args {
-
+    $self configurelist $args
   # Get the port.
 
     set manager [portAllocator %AUTO%]
-    set port    [$manager allocatePort ReadoutGUIRemoteControl]
+    set port    [$manager allocatePort $options(-service)]
 
     # set up the listener:
     set listenfd [socket -server [mymethod _onConnection] $port]
@@ -871,6 +873,7 @@ snit::type ReadoutGuiRemoteControl {
 #
 #
 snit::type OutputMonitor {
+  option -service -default ReadoutGUIOutput -readonly  1
   variable clientfds [list]
 
   variable listenfd
@@ -878,10 +881,11 @@ snit::type OutputMonitor {
   # Constructor get a listen port for ReadoutGUIOutput
   # establish that as a server socket.
   # 
-  constructor {} {
-  set manager [portAllocator %AUTO%]
-  set port    [$manager allocatePort ReadoutGUIOutput]        
-  set listenfd [socket -server [mymethod _onConnect] $port]
+  constructor {args} {
+    $self configurelist $args
+    set manager [portAllocator %AUTO%]
+    set port    [$manager allocatePort $options(-service)]        
+    set listenfd [socket -server [mymethod _onConnect] $port]
   }
   ##
   # destructor
@@ -980,7 +984,7 @@ namespace eval RemoteControlClient {
   variable output ""  ;#< OutputMonitor instance
   variable initialized 0; #< ensure that we are initialized
 
-  proc initialize {} {
+  proc initialize {{service ReadoutGUIRemoteControl} {monitor ReadoutGUIOutput}} {
     variable control
     variable output
     variable initialized
@@ -992,8 +996,8 @@ namespace eval RemoteControlClient {
       set initialized 1
     }
     
-    set control [ReadoutGuiRemoteControl %AUTO%]
-    set output  [OutputMonitor %AUTO%]
+    set control [ReadoutGuiRemoteControl %AUTO% -service $service]
+    set output  [OutputMonitor %AUTO% -service $monitor]
 
     # move the default version of end to a new name called "local_end"
     # if the end has not been defined yet, then that means our new definition
