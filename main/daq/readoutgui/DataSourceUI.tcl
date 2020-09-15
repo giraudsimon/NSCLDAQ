@@ -221,8 +221,15 @@ snit::widgetadaptor PromptDataSource {
         #
         set fieldno 0
         dict for {param prompt} $description {
+            puts "$param : $prompt"
             ttk::label $win.label$fieldno -text [lindex $prompt 0]
             ttk::entry $win.field$fieldno
+            
+            if {[llength $prompt] > 1} {
+                set default [lindex $prompt 1]
+                $win.field$fieldno insert end $default
+            }
+            
             grid $win.label$fieldno -row $fieldno -column 0 -sticky e
             grid $win.field$fieldno -row $fieldno -column 1 -sticky w
             

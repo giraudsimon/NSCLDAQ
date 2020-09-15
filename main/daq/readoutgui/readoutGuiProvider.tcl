@@ -44,14 +44,18 @@ namespace eval ::RemoteGUI {
 #    - user  - Username under which the readoutGUI is running
 #
 proc ::RemoteGUI::parameters {} {
-    return [dict create host [list {Host Name}] user [list {User name}]]
+    return [dict create \
+        host [list {Host Name}] user [list {User name}]  \
+        remoteControlService [list {Remote control service} ReadoutGUIRemoteControl]    \
+        remoteOutputService  [list {Remote output Relay} ReadoutGUIOutput]      \
+    ]
 }
 ##
 # start
 #    Start the data source.  This means
 #    - Locating the run control port
 #    - Locating the monitor port.
-#    - Settint up to monitor output
+#    - Setting up to monitor output
 #    - delegating the start to the s800::start.
 #
 # @param params - Parameterization of the source.

@@ -70,7 +70,6 @@ proc ::S800::start params {
     set host    [dict get $params host]
     set port    [dict get $params port]
     
-    # >> This needs to be changed if this becomes multi server capable.
      
     ## Check if the source id exists already. If not, make a new entry.
     if {![dict exists $::S800::sourceParams $sid]} { 
