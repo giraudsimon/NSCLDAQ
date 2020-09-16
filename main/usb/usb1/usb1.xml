@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- manpage 3daq -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>LIBUSB1 INTRO</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LIBUSB1 INTRO</refname>
+      <refpurpose>Wrappers for userspace USB library.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;USB.h&gt;
+#include &lt;USBDeviceInfo.h&gt;
+#include &lt;USBDevice.h&gt;
+#include &lt;XXUSBUtil.h&gt;
+
+g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>
+                DESCRIPTION
+             </title>
+          <para>
+            This page provides introductory material that describes the
+            <filename>libUSB1</filename> library.  Currently, this provides a
+            simplified interface to the libusb-1.0 usb user space library.
+            However, by using this class library, rather than libusb-1.0's API
+            directly, the maintainers of NSCLDAQ can switch to newer better(?)
+            userspace USB libraries with minimal impact on your code.
+          </para>
+          <para>
+            The library defines three classes and a namespace containing
+            unbound utilities that are primarily intended to support
+            programming the Wiener-JTEC XXUSB controller family.
+          </para>
+          <para>
+            The <classname>USB</classname> provides a top level wrapping
+            of operations that don't actually involve a specific device.
+            The purpose  of this class is to wrap any library call stream
+            context required by the underlying library, and to provide
+            an enumeration of the devices on the USB subsystem.
+          </para>
+          <para>
+            Device enumeration comes in the form of <classname>USBDeviceInfo</classname>
+            devices.  Each <classname>USBDeviceInfo</classname> object
+            provides access to descriptive information about a device attached to
+            the USB subsystem that does not require a connection to the device
+            itself.  A method is provided, as well to open the device.
+          </para>
+          <para>
+            Open devices are represented by <classname>USBDevice</classname> objects.
+            These can be configured and set and transfers of various types
+            can be performed to and from the device.
+          </para>
+          <para>
+            The <literal>XXUSBUtil</literal> namespace provides utility functions
+            that are intended, primarily, to allow you to manage the Wiener-JTEC
+            XXUSB controller family (the VMUSB is a VME usb controller, the
+            CCUSB is a CAMAC USB controller).  Support is provided for
+            enumerations that are restricted to these devices, downloading lists
+            and executing immediate lists.
+          </para>
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->

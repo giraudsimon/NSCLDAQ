@@ -54,6 +54,7 @@ BOOKDIRS = 	@top_srcdir@ \
             @top_srcdir@/base/dataflow\
 	@top_srcdir@/daq/format \
 	@top_srcdir@/usb \
+	@top_srcdir@/usb/usb1 \
 	@top_srcdir@/usb/vmusb \
 	@top_srcdir@/usb/ccusb \
 	@top_srcdir@/daq/readoutgui \
