@@ -1808,9 +1808,9 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
       </para>
       <informalexample>
         <programlisting>
-          package require ReadoutGuiRemoteControl   <co id='remote_control_package' />
+package require ReadoutGuiRemoteControl   <co id='remote_control_package' />
 
-          RemoteControlClient::initialize <co id='remote_control_initialize' />
+RemoteControlClient::initialize <replaceable>?control-service output-service?</replaceable> <co id='remote_control_initialize' />
         </programlisting>
       </informalexample>
       <calloutlist>
@@ -1833,6 +1833,37 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
           </para>
         </callout>
       </calloutlist>
+          <para>
+            The remote control software advertises two services with the NSCL
+            port manager. the first, by default named  <literal>ReadoutGUIRemoteControlService</literal>
+            is used by the master (the system controlling the GUI) to send
+            commands to the slave (the system that specifies it can be controlled).
+            The second, by default named <literal>ReadoutGUIOutput</literal> is used
+            to echo output from the slave to the master. 
+          </para>
+          <para>
+            More than one slave can be started per user in the
+            same system by explicitly specifying the names of these two services
+            to the <command>RemoteControlClient::initialize</command> command.
+            In the master, when setting up the remote controlled data source,
+            just override the default values for these service names.
+          </para>
+          <para>
+            For example:
+          </para>
+          <informalexample>
+            <programlisting>
+package require ReadoutGuiRemoteControl  
+
+RemoteControlClient::initialize control output
+            </programlisting>
+          </informalexample>
+          <para>
+            Specifies the remote control service wil be advertized as
+            <literal>control</literal> and the output  relay service
+            advertised as <literal>output</literal>.
+          </para>
+
       <para>
         To use a slave UI, you must run a readout shell and add data sources
         with the RemoteGUI data source provider for each slave you want your master
@@ -1842,9 +1873,10 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
         for the master ReadoutGUI to enslave it.  
       </para>
       <para>
-        At this time you can only have a single master control panel control
-        any single slave control panel.  This restriction might be lifted in the
-        future.
+        While a slave can only be controlled by a single master, as of
+        NSCLDAQ-12.0, several slaves can be controlled by a master and several
+        slaves can be run by thesame user in a single node by specifying the
+        adverised service names as described in the text above.
       </para>
     </section>
 

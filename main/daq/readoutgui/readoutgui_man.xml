@@ -7108,8 +7108,14 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
                  user the output that normally would only be shown on a
                  controlled Readout GUI's control panel.
                 </para>
+                <para>
+                  As of NSCLDAQ-12.0, the names of these services can be overridden by
+                  supplying them to the <command>RemoteControlClient::initialize</command>
+                  command.
+               </para>
             </listitem>
          </varlistentry>
+         
         </variablelist>
         <para>
          The controlling protocol is fully textual.  The connected process will
