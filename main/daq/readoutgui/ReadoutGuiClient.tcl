@@ -29,18 +29,19 @@ package require snit
 #  a specified host under a specified user.
 #
 # @param host - the host running the server.
+# @param service - the service to find; defaults to ReadouGUIRemoteControl
 # @param user - Optional username of the process providing the service.
 #               Defaults to the current user
 # @return mixed
 # @retval integer - Port number for the service.
 # @retval ""      - There is no process providing that service run by the user
 #
-proc readoutGUIControlPort {host {user {}}} {
+proc readoutGUIControlPort {host {service ReadoutGUIRemoteControl} {user {}}} {
     set a [portAllocator %AUTO% -hostname $host]
     if {$user eq ""} {
         set user $::tcl_platform(user)
     }
-    set port [$a findServer ReadoutGUIRemoteControl $user]
+    set port [$a findServer $service $user]
     $a destroy
     return $port
     
@@ -50,18 +51,19 @@ proc readoutGUIControlPort {host {user {}}} {
 #   Same as above but returns the port of the output monitor service
 #
 # @param host - the host running the server.
+# @param service - Service to lookup, defaults to ReadoutGUIOutput
 # @param user - Optional username of the process providing the service.
 #               Defaults to the current user
 # @return mixed
 # @retval integer - Port number for the service.
 # @retval ""      - There is no process providing that service run by the user
 #
-proc readoutGUIOutputPort {host {user {}}} {
+proc readoutGUIOutputPort {host {service ReadoutGUIOutput} {user {}}} {
     set a [portAllocator %AUTO% -hostname $host]
     if {$user eq ""} {
         set user $::tcl_platform(user)
     }
-    set port [$a findServer ReadoutGUIOutput $user]
+    set port [$a findServer $service $user]
     $a destroy
     return $port
 }
@@ -86,7 +88,7 @@ snit::type ReadoutGUIOutputClient {
     option -user $::tcl_platform(user)
     option -outputcmd [list]
     option -closecmd  [list]
- 
+    option -service -default ReadoutGUIOutput -readonly 1
  
     variable clientfd -1
     
@@ -128,7 +130,7 @@ snit::type ReadoutGUIOutputClient {
         #
         #  Figure out which port is the listener
         #
-        set port [readoutGUIOutputPort $options(-host) $options(-user)]
+        set port [readoutGUIOutputPort $options(-host) $options(-service) $options(-user)]
         if {$port eq ""} {
             return false
         }

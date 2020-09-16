@@ -131,6 +131,7 @@ snit::type ReadoutGuiRemoteControl {
   #
   # @throws error if no request connection exists over which to communicate
   method send {script} {
+  
     if {$requestfd != -1} {
 
       set requestReply ""
@@ -304,6 +305,7 @@ snit::type ReadoutGuiRemoteControl {
   # @note the reply is a list not just textual glomming.
   #
   method _reply {status {tail ""}} {
+    
     ReadoutGUIPanel::Log RemoteControl debug "Reply to master '$status $tail'"
     set message $status
     if {$tail ne ""} {
@@ -338,9 +340,12 @@ snit::type ReadoutGuiRemoteControl {
   # @param line - the line of text gotten from the client.
   #
   method _executeCommand line {
+    
     set verb [lindex $line 0]
     set tail [lrange $line 1 end]
 
+
+    
     $self _$verb {*}$tail;    # The executors are responsible for replying.
     ::ReadoutGUIPanel::Log RemoteControl debug "Executing '$line'"
   }
@@ -352,7 +357,7 @@ snit::type ReadoutGuiRemoteControl {
   #    -  set the replyfd attribute to -1 so new clients canconnect
   #
   method _onClientExit {} {
-    puts "_onClientExit"
+
     if {$replyfd != -1} {
       catch {close $replyfd}
       set replyfd -1
@@ -458,7 +463,7 @@ snit::type ReadoutGuiRemoteControl {
   # check to see if the channel eof is reached
     if {[eof $replyfd]} {
       $self _onClientExit
-      puts "EOF on replyfd"
+
       set replyfd -1
     } else {
     # read whatever we can from the channel
@@ -491,7 +496,7 @@ snit::type ReadoutGuiRemoteControl {
   # @returns ""
   method _onRequestReadable {} {
     if {[eof $requestfd]} {
-      puts "EOF on request fd"
+  
       catch {close $requestfd}
       $self _onClientExit
       set requestfd -1 
@@ -634,7 +639,6 @@ snit::type ReadoutGuiRemoteControl {
   #       the rest.
   #
   method _begin {} {
-    puts "_begin"
     ::ReadoutGUIPanel::Log RemoteControl output _begin
     if {![$self _RequireSlaveMode]} {
       return
@@ -643,15 +647,15 @@ snit::type ReadoutGuiRemoteControl {
     set sm [::RunstateMachineSingleton %AUTO%]
     set currentState [$sm getState]
     if {"Active" in [RunstateMachine listTransitions $currentState]} {
-      puts "Begin is legal performing precheck."
+
       
       # Perform the precheck and report the results back to us and the
       # master.
       
       set precheckErrors [$sm precheckTransitionErrors $to]
-      puts "Precheck of $to -> '$precheckErrors'"
-      if {[llength $precheckErrors] == 0} {
-        puts "Precheck failed in slave."
+
+      if {[llength $precheckErrors] > 0} {
+        puts "Precheck failed in slave. $precheckErrors"
         $self _reply "ERROR $precheckErrors"
       } else {
       
@@ -698,9 +702,6 @@ snit::type ReadoutGuiRemoteControl {
   method _masterTransition {to} {
     
       
-    if {![$self _requireSlaveMode]} {
-      return
-    }
 
 
     set sm [::RunstateMachineSingleton %AUTO%]
@@ -726,6 +727,13 @@ snit::type ReadoutGuiRemoteControl {
           set precheckErrors [$sm precheckTransitionForErrors $to]
           if {[llength $precheckErrors] > 0} {
             $self _reply ERROR "Precheck of transition to $to failed: $precheckErrors"
+          } else {
+            set status [catch {$sm masterTransition $to} msg]
+            if {$status} {
+              $self _reply ERROR "Transition failed: $msg"
+            } else {
+              $self _reply OK
+            }
           }
         } else {
         

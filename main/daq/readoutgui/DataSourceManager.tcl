@@ -111,21 +111,21 @@ snit::type DataSourceManager {
         if {[$self _isLoaded $name]} {
             error "The $name provider is already loaded."
         }
-        
         set package ${name}_Provider
-
-        set status [catch {package require $package} msg]
         
+        set status [catch {package require $package} msg]
         if {$status} {
+            puts stderr "Loading ${name} failed: $msg\n $::errorInfo"
             error "No provider named $name could be found check the package load path : $msg : $::errorInfo"
         }
         if {![namespace exists ::$name]} {
             error "The ${name}_Provider package does not provide the ::${name}:: namespace so it cannot be a provider."
         }
-        
+
         # Successful load remember the provider:
         
         lappend loadedProviders $name
+        
     }
 
     ##
