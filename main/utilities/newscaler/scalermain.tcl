@@ -331,11 +331,17 @@ proc updatePages {} {
 	if {$bkg eq "ok"} {
 	    $::notebook tab $tabidx -compound text
 	} elseif {$bkg eq "low"} {
-	    $::notebook tab $tabidx -image [::getColorImage green] -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::lowAlarmTabColor] \
+            -compound center
 	} elseif {$bkg eq "high"} {
-	    $::notebook tab $tabidx -image [::getColorImage red] -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::highAlarmTabColor] \
+            -compound center
 	} else {
-	    $::notebook tab $tabidx -image [::getColorImage amber] -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::bothAlarmTabColor] \
+            -compound center
 	}
     }
 
