@@ -157,7 +157,7 @@ snit::type Channel {
     }
     ##
     # mean
-    #   Get the average rage over the elapsed time since the last clear.
+    #   Get the average rate over the elapsed time since the last clear.
     #
     # @return double.
     #
