@@ -78,14 +78,18 @@ namespace eval Utils {
   # @return string of the form "%d-%02d:%02d:%02d"
   #
   proc formatDeltaTime {delta} {
-    set seconds [expr {$delta % 60}]
+    set whole [expr {int($delta)}]
+    set frac  [expr {$delta - $whole}]
+    set delta $whole
+    
+    set seconds [expr {$delta % 60} + $frac]
     set delta   [expr {$delta/60}]
     set minutes [expr {$delta % 60}]
     set delta   [expr {$delta / 60}]
     set hours   [expr {$delta % 24}]
     set days    [expr {$delta / 24}]
   
-    set display [format "%d-%02d:%02d:%02d" $days $hours $minutes $seconds]
+    set display [format "%d-%02d:%02d:%04.2f" $days $hours $minutes $seconds]
     return $display    
   }
   ##
