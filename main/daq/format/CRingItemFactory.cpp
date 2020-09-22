@@ -34,6 +34,7 @@
 #include <string>
 #include <string.h>
 #include <set>
+#include <sstream>
 
 static std::set<uint32_t> knownItemTypes;
 
@@ -131,7 +132,12 @@ CRingItem*
 CRingItemFactory::createRingItem(const void* pItem)
 {
   if (!isKnownItemType(pItem)) {
-    throw std::string("CRingItemFactory::createRingItem - unknown ring item type");
+    std::stringstream s;
+    const RingItem* p = reinterpret_cast<const RingItem*>(pItem);
+    s << "CRingItemFactory::createRingItem - unknown ring item type: "
+      << itemType(p) << std::endl;
+    std::string msg = s.str();
+    throw msg;
   }
   /* Make a 'vanilla' CRing item that we can pass into the other creator */
 
