@@ -261,14 +261,13 @@ snit::type Plotchart::xyplotContainer {
             set isNew 0
         } else {
             set isNew 1
-            set dict [dict create]
         }
-        # Create the data series and fill in the dict using dict replace.
+        # Create the data series and fill in the dict.
         # then store in the plotSeries array:
         #
         
         set data [Plotchart::series %AUTO% -xdata $xcoords -ydata $ycoords]
-        set dict [dict replace $dict name $name color $color data $data]
+        set dict [dict create name $name color $color data $data]
         set plotSeries($name) $dict
     
         # If this is a new series we need to schedule the redraw.
