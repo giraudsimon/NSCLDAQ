@@ -573,6 +573,35 @@ stripconfig <replaceable>option ?...?</replaceable>
 			</para>
 		    </listitem>
 		</varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::lowAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                The color for tabs on pages that are displaying
+                channels that are in low rate alarm.  The
+                default color is green.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::highAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                Color for tabs on pages that are displaying channels that
+                are in high rate alarm.  THe default color is red.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::bothAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                Color for tabs on pages that are displaying channels
+                that are both in high and low rate alarm. The default
+                color is amber.
+               </para>
+            </listitem>
+        </varlistentry>
 		<varlistentry>
             <term>::outputFileDirectory</term>
             <listitem>
