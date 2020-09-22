@@ -370,10 +370,15 @@ snit::type MCFD16RC {
   #
   # @throws error if communication failed
   # @throws error if response from device is not understood
+  # @note in accordance with daqdev/NSCLDAQ#898 we only look at the
+  #       bottom bit of the mode register in case garbage bits are
+  #       present e.g. when BWL0 is selected for display.
+  #
   method GetMode {} {
     set adr [dict get $offsetsMap mode]
     set val [$_proxy Read $adr]
-
+    set val [expr {$val & 1}];    # See daqdev/NSCLDAQ#898 kludgy fix but likely right.
+    
     if {[catch {dict get {0 common 1 individual} $val} res]} {
       set msg "MCFD16RC::GetMode Value returned by module not understood. "
       append msg "Expected 0 or 1 but received $val."
