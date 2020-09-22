@@ -41,6 +41,10 @@ namespace eval ::scalerconfig {
     variable normalColor     white
     variable lowAlarmColor   green
     variable highAlarmColor  red
+    
+    variable lowAlarmTabColor  green
+    variable highAlarmTabColor red
+    variable bothAlarmTabColor amber
 
 }
 
