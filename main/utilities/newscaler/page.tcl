@@ -133,12 +133,12 @@ snit::widgetadaptor pageDisplay {
     #    Updates the display lines from the models.  
     # @return - directive about what to do with the page tab:
     #          * ok - No background.
-    #          * low - GreenBrick background.
-    #          * high - RedBrick background.
-    #          * both - AmberBrick background.
+    #          * low - Display low alarm tab color
+    #          * high - Display high alarm tab color
+    #          * both - Display both alarm tab color.
     #
     method update {} {
-	array set pageTags [list]
+        array set pageTags [list]
         foreach line [lsort -increasing -integer [array names models]] {
             set id    [dict get $models($line) -id]
             set model [dict get $models($line) -model]
@@ -155,28 +155,28 @@ snit::widgetadaptor pageDisplay {
             
             
             set tag [$model alarmState]
-	    set pageTags($tag) 1
+            set pageTags($tag) 1
             
             # Configure the item:
             
             $table item $id -values $values -tags $tag
         }
-	# Figure out how/if to color the tab:
-	
-	if {$alarmState} {
-	    array unset pageTags ok
-	    if {[llength [array names pageTags *]] == 2} {
-		return both
-	    } elseif {[array names pageTags high] eq "high"} {
-		return high
-	    } elseif {[array names pageTags low] eq "low"} {
-		return low
-	    }
-	    return ok
-		
-	} else {
-	    return ok
-	}
+        # Figure out how/if to color the tab:
+        
+        if {$alarmState} {
+            array unset pageTags ok
+            if {[llength [array names pageTags *]] == 2} {
+                return both
+            } elseif {[array names pageTags high] eq "high"} {
+                return high
+            } elseif {[array names pageTags low] eq "low"} {
+                return low
+            }
+            return ok
+            
+        } else {
+            return ok
+        }
     }
     ##
     # alarms
