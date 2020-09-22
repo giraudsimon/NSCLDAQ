@@ -331,11 +331,11 @@ proc updatePages {} {
 	if {$bkg eq "ok"} {
 	    $::notebook tab $tabidx -compound text
 	} elseif {$bkg eq "low"} {
-	    $::notebook tab $tabidx -image GreenBrick -compound center
+	    $::notebook tab $tabidx -image [::getColorImage green] -compound center
 	} elseif {$bkg eq "high"} {
-	    $::notebook tab $tabidx -image RedBrick -compound center
+	    $::notebook tab $tabidx -image [::getColorImage red] -compound center
 	} else {
-	    $::notebook tab $tabidx -image AmberBrick -compound center
+	    $::notebook tab $tabidx -image [::getColorImage amber] -compound center
 	}
     }
 
