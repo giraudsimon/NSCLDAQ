@@ -6,7 +6,6 @@ PACKAGE_FILES=nameMap.tcl channel.tcl scalerconfig.tcl page.tcl \
 TEST_FILES=nameMap.test channel.test channelcmd.test singleModel.test \
 	ratioModel.test stripparam.test stripratio.test emptyModel.test tclTests.tcl
 APP_FILES=ScalerDisplay.tcl.in
-IMAGES=red.gif green.gif amber.gif
 
 DOCS=scalerdisplay_user.xml scalerdisplay_man.xml \
 		 scalerdisplay_user_bookinfo.xml tclring_user.xml
@@ -28,7 +27,7 @@ INSTDIR=@prefix@/TclLibs/newscaler
 GRAPHDIR=@prefix@/share/scalerdisplay
 FIGUREDIR=@prefix@/share/html/figures
 
-nstall-exec-hook:
+install-exec-hook:
 	$(mkinstalldirs) $(INSTDIR) 
 	(cd @srcdir@; $(INSTALL_SCRIPT) $(PACKAGE_FILES) $(INSTDIR))
 	echo pkg_mkIndex -verbose $(INSTDIR) "*.tcl" | @TCLSH_CMD@
@@ -41,7 +40,6 @@ install-data-hook:
 	$(mkinstalldirs) $(FIGUREDIR)
 	$(CHAPTER2BOOK) -s @srcdir@/scalerdisplay_user.xml -b @srcdir@/scalerdisplay_user_bookinfo.xml -o .
 	$(INSTALL_DATA)  $(BOOK) @prefix@/share/pdfs
-	(cd @srcdir@; install $(IMAGES) $(GRAPHDIR))
 	install $(FIGURES) $(FIGUREDIR)
 
 endif
@@ -51,6 +49,6 @@ check-TESTS:
 	@TCLSH_CMD@ @srcdir@/tclTests.tcl
 
 
-EXTRA_DIST=$(PACKAGE_FILES) $(TEST_FILES) $(INTERACTIVE_TESTS) $(APP_FILES) $(IMAGES) \
+EXTRA_DIST=$(PACKAGE_FILES) $(TEST_FILES) $(INTERACTIVE_TESTS) $(APP_FILES)  \
 	$(DOCS) $(FIGURES)
 
