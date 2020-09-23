@@ -450,6 +450,10 @@ else
 	AM_CONDITIONAL([BUILD_USB], [false])
 fi
 
+# Check for libsqlite3:
+
+PKG_CHECK_MODULES([SQLITE3], [sqlite3])
+
 ##
 #  Check for zmq presence:
 #
@@ -552,6 +556,7 @@ AC_CONFIG_FILES([Makefile
     base/tcpip/Makefile
     base/tclutils/Makefile
     base/testutils/Makefile
+    base/sqliteplus/Makefile
     caenfw-common/Makefile
     servers/Makefile
     servers/tclserver/Makefile
