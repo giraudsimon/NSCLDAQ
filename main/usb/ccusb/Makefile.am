@@ -37,7 +37,7 @@ CCUSBReadout_LDADD	= \
 	@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la		\
 	@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la		\
 	@top_builddir@/usb/ccusb/core/libCCUSBCore.la \
-	@top_builddir@/usb/usb1/libUSB1.la   \ 
+	@top_builddir@/usb/usb1/libUSB1.la   \
 	@top_builddir@/servers/portmanager/libPortManager.la \
 	@top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/thread/libdaqthreads.la		\
