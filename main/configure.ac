@@ -594,6 +594,7 @@ AC_CONFIG_FILES([Makefile
     utilities/reglom/Makefile
     utilities/scalerReader/Makefile
     utilities/swtrigger/Makefile
+    utilities/logbook/Makefile
     epics/epicslib/Makefile
     epics/chanlog/Makefile
     epics/controlpush/Makefile
