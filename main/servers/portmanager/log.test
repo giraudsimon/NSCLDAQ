@@ -53,7 +53,7 @@ testCleanup
 
 set here [file dirname [info script]]
 
-source [file join $here Log.tcl]
+source [file join $here ../../base/tclutils Log.tcl]
 package require Log
 
 

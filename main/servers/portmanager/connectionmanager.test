@@ -7,7 +7,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 set here [file dirname [info script]]
 
-source [file join $here Log.tcl]
+source [file join $here ../../base/tclutils Log.tcl]
 source [file join $here PortManager.tcl]
 source [file join $here ConnectionManager.tcl]
 
