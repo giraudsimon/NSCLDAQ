@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
+#include <string.h>
 
 static const char* DBVersion="1.0";
 
@@ -173,6 +174,39 @@ LogBook::create(
     catch(CSqliteException& e) {
         Exception::rethrowSqliteException(e, "Creating database");
     }
+}
+
+/**
+ * constructor
+ *   Open an existing logbook for read.
+ *
+ * @param pFilename - filename containing the logbook.
+ */
+LogBook::LogBook(const char* pFilename) :
+    m_pConnection(nullptr)
+{
+    if (access(pFilename, R_OK | W_OK)) {
+        int e = errno;          // Save the error code
+        std::stringstream msg;
+        msg << "Could not open the database file " << pFilename
+            << ": " << strerror(e);
+        std::string m = msg.str();
+        throw Exception(m);
+    }
+    try {
+        m_pConnection = new CSqlite(pFilename, CSqlite::readwrite);       
+    }
+    catch (CSqliteException& e) {
+        Exception::rethrowSqliteException(e, "Opening database file");
+    }
+    
+}
+/**
+ * destructor just kills off the connection
+ */
+LogBook::~LogBook()
+{
+    delete m_pConnection;
 }
 /////////////////////////////////////////////////////////
 // Private methods
