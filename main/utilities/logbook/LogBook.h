@@ -66,7 +66,10 @@ private:
  public:
     static std::string m_tempdir;
 public:
-    static void create(const char* pFilename, const char* pExperiment, const char* pSpokesperson, const char* purpose);
+    static void create(
+       const char* pFilename, const char* pExperiment,
+       const char* pSpokesperson, const char* purpose
+    );
     
     
     LogBook(const char* pFilename);
@@ -75,6 +78,10 @@ public:
 private:
     static std::string computeTempDir();
     static void   createSchema(CSqlite& connection);
+    static void   initialize(
+       CSqlite& connection,  const char* pExperiment,
+       const char* pSpokesperson, const char* purpose
+    );
     static bool   isLogBook(CSqlite& connection);
    
 };
