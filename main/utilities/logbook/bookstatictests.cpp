@@ -130,6 +130,20 @@ void bookstaticstest::create_2()
     std::string value(reinterpret_cast<const char*>(s.getText(0)));
     EQ(std::string("0400x"), value);
     
+    s.reset();
+    s.bind(1, "spokesperson", -1, SQLITE_STATIC);
+    ++s;
+    ASSERT(!s.atEnd());
+    value = (reinterpret_cast<const char*>(s.getText(0)));
+    EQ(std::string("Ron Fox"), value);
+    
+    s.reset();
+    s.bind(1, "purpose", -1, SQLITE_STATIC);
+    ++s;
+    ASSERT(!s.atEnd());
+    value = (reinterpret_cast<const char*>(s.getText(0)));
+    EQ(std::string("Logbook Test"), value);
+    
 }
 
 void bookstaticstest::create_3()
