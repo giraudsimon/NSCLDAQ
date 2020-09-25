@@ -23,6 +23,7 @@
 #define  __CSQLITESTATEMENT_H
 
 #include <stdint.h>
+#include <string>
 
 
 class CSqlite;
@@ -122,6 +123,9 @@ public:
     int64_t     getInt64(int col);
     const unsigned char* getText(int col);
     int         columnType(int col);
+    std::string  getString(int col) {
+        return std::string(reinterpret_cast<const char*>(getText(col)));
+    }
    
     
     // Miscelaneous:
