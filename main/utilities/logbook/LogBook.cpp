@@ -258,8 +258,8 @@ LogBook::createSchema(CSqlite& db)
         db,
         "CREATE TABLE IF NOT EXISTS person  (                \
             id         INTEGER PRIMARY KEY,                  \
-            lastname   TEXT                                  \
-            firstname  TEXT                                  \
+            lastname   TEXT,                                  \
+            firstname  TEXT,                                  \
             salutation TEXT                                  \
         )"
     );

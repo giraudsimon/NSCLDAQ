@@ -171,7 +171,7 @@ LogBookPerson::create(
     try {
         CSqliteStatement insert(
             db,
-            "INSERT INTO person (lastname, firstname, salutation \
+            "INSERT INTO person (lastname, firstname, salutation) \
                 VALUES(?,?,?)"
         );
         insert.bind(1, lastName, -1, SQLITE_STATIC);
