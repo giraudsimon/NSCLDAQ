@@ -253,6 +253,16 @@ LogBook::createSchema(CSqlite& db)
             value TEXT                                  \
         )"
     );
+    
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS person  (                \
+            id         INTEGER PRIMARY KEY,                  \
+            lastname   TEXT                                  \
+            firstname  TEXT                                  \
+            salutation TEXT                                  \
+        )"
+    );
 }
 
 /**

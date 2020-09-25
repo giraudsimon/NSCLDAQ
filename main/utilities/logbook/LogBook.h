@@ -23,8 +23,11 @@
 #define LOGBOOK_H
 #include <stdexcept>
 #include <string>
+#include <vector>
+
 class CSqlite;
 class CSqliteException;
+class LogBookPerson;
 
 /**
  * @class LogBook
@@ -72,8 +75,14 @@ public:
     );
     
     
+    ////
+    
     LogBook(const char* pFilename);
     virtual ~LogBook();
+
+    void addPerson(const char* lastName, const char* firstName, const char* salutation);
+    LogBookPerson* findPerson(const char* lastName, const char* firtName, const char* salutation);
+    std::vector<LogBookPerson*> listPeople();
     
 private:
     static std::string computeTempDir();
@@ -82,8 +91,6 @@ private:
        CSqlite& connection,  const char* pExperiment,
        const char* pSpokesperson, const char* purpose
     );
-    static bool   isLogBook(CSqlite& connection);
-   
 };
 
 
