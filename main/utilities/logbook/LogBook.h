@@ -79,10 +79,16 @@ public:
     
     LogBook(const char* pFilename);
     virtual ~LogBook();
+private:
+    LogBook(const LogBook& rhs);       // no copy construction.
+    LogBook& operator=(const LogBook& rhs);
 
-    void addPerson(const char* lastName, const char* firstName, const char* salutation);
-    LogBookPerson* findPerson(const char* lastName, const char* firtName, const char* salutation);
+public:
+
+    LogBookPerson* addPerson(const char* lastName, const char* firstName, const char* salutation);
+    std::vector<LogBookPerson>* findPeople(const char* where);
     std::vector<LogBookPerson*> listPeople();
+    LogBookPerson* getPerson(int id);
     
 private:
     static std::string computeTempDir();

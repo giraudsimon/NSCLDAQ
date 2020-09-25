@@ -1,10 +1,10 @@
 lib_LTLIBRARIES=libLogbook.la
 
-libLogbook_la_SOURCES=LogBook.cpp
+libLogbook_la_SOURCES=LogBook.cpp LogBookPerson.cpp
 libLogbook_la_CXXFLAGS=@SQLITE3_CFLAGS@ -I@top_srcdir@/base/sqliteplus
 libLogbook_la_LDFLAGS=@top_builddir@/base/sqliteplus/libSqlite3pp.la @SQLITE3_LIBS@
 
-include_HEADERS=LogBook.h
+include_HEADERS=LogBook.h LogBookPerson.h
 
 
 noinst_PROGRAMS=unittests
