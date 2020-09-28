@@ -258,6 +258,17 @@ LogBook::listPeople()
 {
     return LogBookPerson::list(*m_pConnection);
 }
+/**
+ * getPerson
+ *   Return an existing person by id.
+ * @param id - the primary key.
+ * @return LogBookPerson* - pointer to the logbook person fetched.
+ */
+LogBookPerson*
+LogBook::getPerson(int id)
+{
+    return new LogBookPerson(*m_pConnection, id);
+}
 /////////////////////////////////////////////////////////
 // Private methods
 

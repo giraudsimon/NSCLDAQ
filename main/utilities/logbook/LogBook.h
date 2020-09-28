@@ -92,7 +92,7 @@ private:
 public:
 
     LogBookPerson* addPerson(const char* lastName, const char* firstName, const char* salutation);
-    std::vector<LogBookPerson*> findPeople(const char* where);
+    std::vector<LogBookPerson*> findPeople(const char* where=nullptr);
     std::vector<LogBookPerson*> listPeople();
     LogBookPerson* getPerson(int id);
     
