@@ -62,6 +62,12 @@ public:
         static void rethrowSqliteException(CSqliteException& e, const char* doing);
         static void rethrowSqliteException(CSqliteException& e, std::string doing);
         
+        // API for "Person":
+        
+        LogBookPerson* createPerson(const char* lastName, const char* firstName, const char* salutation);
+        std::vector<LogBookPerson*> findPeople(const char* pWhere=nullptr);
+        std::vector<LogBookPerson*> listPeople();
+        
     };
 private:
     CSqlite* m_pConnection;
@@ -86,7 +92,7 @@ private:
 public:
 
     LogBookPerson* addPerson(const char* lastName, const char* firstName, const char* salutation);
-    std::vector<LogBookPerson>* findPeople(const char* where);
+    std::vector<LogBookPerson*> findPeople(const char* where);
     std::vector<LogBookPerson*> listPeople();
     LogBookPerson* getPerson(int id);
     

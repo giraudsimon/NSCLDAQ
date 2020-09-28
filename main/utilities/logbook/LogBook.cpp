@@ -19,6 +19,7 @@
  *  @brief: Implement the logBook Class.
  */
 #include "LogBook.h"
+#include "LogBookPerson.h"
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
 #include <CSqliteException.h>
@@ -207,6 +208,55 @@ LogBook::LogBook(const char* pFilename) :
 LogBook::~LogBook()
 {
     delete m_pConnection;
+}
+
+//////////////////////////////////////////////////////////
+// API for registered people:
+
+/**
+ * createPerson
+ *    Create a new person
+ *
+ *  @param lastName - person's last name.
+ *  @param firstName - Person's first name.
+ *  @param salutation - Salutation.
+ *  @return - new encapsulated person caller must delete this
+ *            when no longer needed.
+*/
+LogBookPerson*
+LogBook::addPerson(
+    const char* lastName, const char* firstName, const char* salutation
+)
+{
+    return LogBookPerson::create(
+        *m_pConnection,lastName, firstName, salutation
+    );
+}
+/**
+ * findPeople
+ *   Find people that match a where clause. Note that listPeople
+ *   is just this with no where clause.
+ * @param pWhere - the where clause (without the WHERE keyword).
+ *                 This is vulnerable to injection attacks so
+ *                 it should not be exposed directly in web code.
+ *                 If null, no WHERE clause is generated.
+ * @return std::vector<LogBookPerson*> - results
+ * @note the LogBookPerson objects are dynamically allocated and
+ *           must be deleted when the caller no longer needs them.
+ */
+std::vector<LogBookPerson*>
+LogBook::findPeople(const char* pWhere)
+{
+    return LogBookPerson::find(*m_pConnection, pWhere);
+}
+/**
+ * listPeople
+ *   @return std::vector<LogBookPeople*> - all people defined.
+ */
+std::vector<LogBookPerson*>
+LogBook::listPeople()
+{
+    return LogBookPerson::list(*m_pConnection);
 }
 /////////////////////////////////////////////////////////
 // Private methods
