@@ -54,6 +54,7 @@ class bookstaticstest : public CppUnit::TestFixture {
     CPPUNIT_TEST(create_2);
     CPPUNIT_TEST(create_3);
     CPPUNIT_TEST(create_4);
+    CPPUNIT_TEST(create_5);
     CPPUNIT_TEST_SUITE_END();
     
 private:
@@ -83,6 +84,7 @@ protected:
     void create_2();
     void create_3();
     void create_4();
+    void create_5();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(bookstaticstest);
@@ -172,4 +174,23 @@ void bookstaticstest::create_4()
             "SELECT * FROM person"
         )
     );                // Would throw if table does not exist.
+}
+
+void bookstaticstest::create_5()
+{
+    // Shift tables created:
+    
+    LogBook::create(m_dbName.c_str(), "0400x", "Ron Fox", "Logbook Test");
+    CSqlite db(m_dbName.c_str(), CSqlite::readonly);
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        CSqliteStatement::execute(
+            db, "SELECT * FROM shift"
+        );
+    );
+    CPPUNIT_ASSERT_NO_THROW(
+        CSqliteStatement::execute(
+            db, "SELECT * FROM shift_members"
+        )
+    );
 }

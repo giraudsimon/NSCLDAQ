@@ -315,6 +315,8 @@ LogBook::createSchema(CSqlite& db)
         )"
     );
     
+    // Store people.
+    
     CSqliteStatement::execute(
         db,
         "CREATE TABLE IF NOT EXISTS person  (                \
@@ -322,6 +324,23 @@ LogBook::createSchema(CSqlite& db)
             lastname   TEXT,                                  \
             firstname  TEXT,                                  \
             salutation TEXT                                  \
+        )"
+    );
+    
+    // Store shifts:
+    
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS shift (                 \
+            id    INTEGER PRIMARY KEY,                      \
+            name TEXT                                       \
+        )"
+    );
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS shift_members (        \
+            shift_id   INTEGER,                            \
+            person_id  INTEGER                             \
         )"
     );
 }
