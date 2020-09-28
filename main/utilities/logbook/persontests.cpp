@@ -40,11 +40,19 @@ class persontest : public CppUnit::TestFixture {
     CPPUNIT_TEST(create_1);
     CPPUNIT_TEST(create_2);
     CPPUNIT_TEST(create_3);
+    
+    CPPUNIT_TEST(find_1);
+    CPPUNIT_TEST(find_2);
+    CPPUNIT_TEST(find_3);
+    
+    CPPUNIT_TEST(list_1);
+    CPPUNIT_TEST(list_2);
     CPPUNIT_TEST_SUITE_END();
     
 private:
     std::string m_dbName;
     CSqlite*    m_pDb;
+    std::vector<LogBookPerson*> m_matches;
 public:
     void setUp() {
         char name[100];
@@ -57,6 +65,10 @@ public:
         m_pDb = new CSqlite(name, CSqlite::readwrite);
     }
     void tearDown() {
+        for (int i =0; i < m_matches.size(); i++) {
+            delete m_matches[i];
+        }
+        m_matches.clear();
         delete m_pDb;
         unlink(m_dbName.c_str());
     }
@@ -67,6 +79,13 @@ protected:
     void create_1();
     void create_2();
     void create_3();
+    
+    void find_1();
+    void find_2();
+    void find_3();
+    
+    void list_1();
+    void list_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(persontest);
@@ -143,4 +162,62 @@ void persontest::create_3()
     EQ(std::string("Fox"), f.getString(1));
     EQ(std::string("Ron"), f.getString(2));
     EQ(std::string("Mr."), f.getString(3));
+}
+
+void persontest::find_1()
+{
+    // Find when there's someone to find:
+    // no selectivity
+    
+    delete LogBookPerson::create(*m_pDb, "Fox", "Ron", "Mr.");
+    delete LogBookPerson::create(*m_pDb, "Cerizza", "Giordano", "Dr.");
+    
+    m_matches = LogBookPerson::find(*m_pDb);
+    EQ(size_t(2), m_matches.size());
+    EQ(std::string("Fox"), std::string(m_matches[0]->lastName()));
+    EQ(std::string("Cerizza"), std::string(m_matches[1]->lastName()));
+
+}
+void persontest::find_2()
+{
+    // Use selection clause.
+    
+    delete LogBookPerson::create(*m_pDb, "Fox", "Ron", "Mr.");
+    delete LogBookPerson::create(*m_pDb, "Cerizza", "Giordano", "Dr.");
+    
+    m_matches = LogBookPerson::find(*m_pDb, "lastname = 'Fox'");
+    EQ(size_t(1), m_matches.size());
+    EQ(std::string("Ron"), std::string(m_matches[0]->firstName()));
+}
+void persontest::find_3()
+{
+    // No match:
+    
+    delete LogBookPerson::create(*m_pDb, "Fox", "Ron", "Mr.");
+    delete LogBookPerson::create(*m_pDb, "Cerizza", "Giordano", "Dr.");
+    
+    m_matches = LogBookPerson::find(*m_pDb, "lastname = 'Gade'");
+    EQ(size_t(0), m_matches.size());
+}
+
+void persontest::list_1()
+{
+    // List with empty:
+    
+    m_matches = LogBookPerson::list(*m_pDb);
+    EQ(size_t(0), m_matches.size());
+}
+void persontest::list_2()
+{
+    // List with people:
+    
+    delete LogBookPerson::create(*m_pDb, "Fox", "Ron", "Mr.");
+    delete LogBookPerson::create(*m_pDb, "Cerizza", "Giordano", "Dr.");
+    
+    m_matches = LogBookPerson::list(*m_pDb);
+    
+    EQ(size_t(2), m_matches.size());
+    EQ(std::string("Fox"), std::string(m_matches[0]->lastName()));
+    EQ(std::string("Cerizza"), std::string(m_matches[1]->lastName()));
+
 }
