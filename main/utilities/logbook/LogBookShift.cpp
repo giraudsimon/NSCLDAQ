@@ -140,7 +140,7 @@ LogBookShift::addMember(CSqlite& db, LogBookPerson* person)
     m_members.push_back(person);     // Ajust us.
     CSqliteStatement insert(
         db,
-        "INSERT INTO shift_members (shift_id, personid)   \
+        "INSERT INTO shift_members (shift_id, person_id)   \
             VALUES (?,?)"
     );
     insert.bind(1, m_id);

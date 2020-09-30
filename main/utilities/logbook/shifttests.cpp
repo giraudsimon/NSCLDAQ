@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <set>
 
 static const char* nameTemplate="logbook.XXXXXX";
 
@@ -46,6 +47,10 @@ class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST(create_4);
     CPPUNIT_TEST(create_5);
     CPPUNIT_TEST(create_6);
+    CPPUNIT_TEST(create_7);
+    
+    CPPUNIT_TEST(add_1);
+    CPPUNIT_TEST(add_2);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -55,6 +60,10 @@ protected:
     void create_4();
     void create_5();
     void create_6();
+    void create_7();
+    
+    void add_1();
+    void add_2();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -169,3 +178,72 @@ void shifttest::create_6()
     
     delete shift;     // Deletes members (ownership transfer).
 }
+void shifttest::create_7()
+{
+    // members are added to shift_members
+    
+    auto members = m_pLogBook->findPeople("salutation = 'Dr.'");
+    EQ(size_t(4), members.size());
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    
+    CSqliteStatement find(
+        *m_pLogBook->m_pConnection,
+        "SELECT person_id FROM shift_members WHERE shift_id = ?"
+    );
+    find.bind(1, shift->id());
+    std::set<int> dbMembers;        // Person ids in database.
+    while(!((++find).atEnd())) {
+        dbMembers.insert(find.getInt(0));  // Build a set of members.
+    }
+    
+    // Ensure each and every member is in the set:
+    
+    for (int i =0; i < members.size(); i++) {
+        EQ(size_t(1), dbMembers.count(members[i]->id()));
+    }
+}
+void shifttest::add_1()
+{
+    // Add a person to an empty shift - they're added to the vector.
+    
+    auto members = m_pLogBook->findPeople("lastname = 'Fox'");
+    auto shift   = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight"
+    );
+    
+    shift->addMember(*m_pLogBook->m_pConnection, members[0]);
+    
+    EQ(members[0], shift->members()[0]);
+    
+    delete shift;     
+}
+void shifttest::add_2()
+{
+    // Adding a member to the shift adds it to shift_members
+    
+    auto members = m_pLogBook->findPeople("lastname = 'Fox'");
+    auto shift   = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight"
+    );
+    
+    shift->addMember(*m_pLogBook->m_pConnection, members[0]);
+    
+    CSqliteStatement find(
+        *m_pLogBook->m_pConnection,
+        "SELECT person_id FROM shift_members WHERE shift_id = ?"
+    );
+    find.bind(1, shift->id());
+    
+    ++find;
+    ASSERT(!(find.atEnd()));
+    
+    EQ(members[0]->id(), find.getInt(0));
+    
+    delete shift;
+}
+
+
+
