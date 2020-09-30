@@ -230,14 +230,15 @@ LogBookShift::create(
             "INSERT INTO shift (name) VALUES (?)"
         );
         insertRoot.bind(
-            1, reinterpret_cast<const unsigned char*>(name), -1, SQLITE_STATIC
+            1, name, -1, SQLITE_STATIC
         );
         ++insertRoot;
         id = insertRoot.lastInsertId();
         
         CSqliteStatement insertMember(
             db,
-            "INSERT INTO shift_members (shift_id, person_id)"
+            "INSERT INTO shift_members (shift_id, person_id)  \
+                VALUES (?,?)"
         );
         insertMember.bind(1, id);
         for (int i = 0; i < members.size(); i++) {

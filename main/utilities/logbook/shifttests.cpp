@@ -21,9 +21,15 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#include <DebugUtils.h>
+#define private public
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
+#undef private
+
+#include <CSqlite.h>
+#include <CSqliteStatement.h>
 
 #include <string>
 #include <stdlib.h>
@@ -34,9 +40,21 @@ static const char* nameTemplate="logbook.XXXXXX";
 
 class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(shifttest);
-    CPPUNIT_TEST(test_1);
+    CPPUNIT_TEST(create_1);
+    CPPUNIT_TEST(create_2);
+    CPPUNIT_TEST(create_3);
+    CPPUNIT_TEST(create_4);
+    CPPUNIT_TEST(create_5);
+    CPPUNIT_TEST(create_6);
     CPPUNIT_TEST_SUITE_END();
-    
+
+protected:
+    void create_1();
+    void create_2();
+    void create_3();
+    void create_4();
+    void create_5();
+    void create_6();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -67,12 +85,87 @@ public:
         delete m_pLogBook;
         unlink(m_filename.c_str());
     }
-protected:
-    void test_1();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(shifttest);
 
-void shifttest::test_1()
+void shifttest::create_1()
 {
+    // Create empty shift... should have an entry
+    // in shifts for it.
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        delete LogBookShift::create(*(m_pLogBook->m_pConnection), "Midnight");
+    );
+}
+void shifttest::create_2()
+{
+    // Empty of members:
+    
+    auto p = LogBookShift::create(*(m_pLogBook->m_pConnection), "Midnight");
+    ASSERT(p->members().empty());
+    EQ(1, p->id());
+    EQ(std::string("Midnight"), std::string(p->name()));
+    
+    delete p;
+}
+
+void shifttest::create_3()
+{
+    // Duplicate fails:
+    
+    delete LogBookShift::create(*(m_pLogBook->m_pConnection), "Midnight");
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookShift::create(*(m_pLogBook->m_pConnection), "Midnight"),
+        LogBook::Exception
+    );  
+}
+void shifttest::create_4()
+{
+    // Makes entry:
+    
+    delete LogBookShift::create(*(m_pLogBook->m_pConnection), "Midnight");
+    CSqliteStatement find(
+        *(m_pLogBook->m_pConnection),
+        "SELECT id, name FROM shift WHERE name =?"
+    );
+    find.bind(1, "Midnight", -1, SQLITE_STATIC);
+    ++find;
+    ASSERT(!(find.atEnd()));
+    EQ(1, find.getInt(0));
+    EQ(std::string("Midnight"), find.getString(1));
+    
+    ++find;
+    ASSERT(find.atEnd());               // ONly one.
+    
+}
+void shifttest::create_5()
+{
+    // Create with one person:
+    
+    auto members = m_pLogBook->findPeople("lastname = 'Fox'");
+    EQ(size_t(1), members.size());   //Sure we know what we're doing
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    EQ(members, shift->members());
+    
+    delete shift;     // Deletes members (ownership transfer).
+}
+void shifttest::create_6()
+{
+    // Multiple members.
+    
+    auto members = m_pLogBook->findPeople("salutation = 'Dr.'");
+    EQ(size_t(4), members.size());
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    EQ(members, shift->members());
+    
+    delete shift;     // Deletes members (ownership transfer).
 }
