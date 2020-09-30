@@ -9,7 +9,7 @@ include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp excepttests.cpp \
+unittests_SOURCES=TestRunner.cpp logtestutils.hpp excepttests.cpp \
 	bookstatictests.cpp logbooktests.cpp persontests.cpp personapitest.cpp \
 	shifttests.cpp shiftapitest.cpp
 

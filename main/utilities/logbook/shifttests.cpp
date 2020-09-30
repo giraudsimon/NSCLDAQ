@@ -37,26 +37,10 @@
 #include <unistd.h>
 #include <set>
 #include <iostream>
+#include "logtestutils.hpp"
+
 static const char* nameTemplate="logbook.XXXXXX";
 
-static std::ostream& operator<<(std::ostream& s, LogBookPerson& p)
-{
-    s << "ID:    " << p.id() << std::endl;
-    s << "Last:  " << p.lastName() << std::endl;
-    s << "First: " << p.firstName() << std::endl;
-    s << "Salut: " << p.salutation() << std::endl;
-    
-    return s;
-}
-
-static int equals(const LogBookPerson& lhs, const LogBookPerson& rhs)
-{
-    return (
-        (std::string(lhs.lastName()) == std::string(rhs.lastName())) &&
-        (std::string(lhs.firstName()) == std::string(rhs.firstName())) &&
-        (std::string(lhs.salutation()) == std::string(rhs.salutation()))
-    );
-}
 
 class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(shifttest);
