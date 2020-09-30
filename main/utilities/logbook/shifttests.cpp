@@ -36,8 +36,27 @@
 #include <string.h>
 #include <unistd.h>
 #include <set>
-
+#include <iostream>
 static const char* nameTemplate="logbook.XXXXXX";
+
+static std::ostream& operator<<(std::ostream& s, LogBookPerson& p)
+{
+    s << "ID:    " << p.id() << std::endl;
+    s << "Last:  " << p.lastName() << std::endl;
+    s << "First: " << p.firstName() << std::endl;
+    s << "Salut: " << p.salutation() << std::endl;
+    
+    return s;
+}
+
+static int equals(const LogBookPerson& lhs, const LogBookPerson& rhs)
+{
+    return (
+        (std::string(lhs.lastName()) == std::string(rhs.lastName())) &&
+        (std::string(lhs.firstName()) == std::string(rhs.firstName())) &&
+        (std::string(lhs.salutation()) == std::string(rhs.salutation()))
+    );
+}
 
 class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(shifttest);
@@ -55,6 +74,10 @@ class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST(remove_1);
     CPPUNIT_TEST(remove_2);
     CPPUNIT_TEST(remove_3);
+    
+    CPPUNIT_TEST(list_1);
+    CPPUNIT_TEST(list_2);
+    CPPUNIT_TEST(list_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -72,6 +95,10 @@ protected:
     void remove_1();
     void remove_2();
     void remove_3();
+    
+    void list_1();
+    void list_2();
+    void list_3();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -322,4 +349,71 @@ void shifttest::remove_3()
     }
     
     EQ(size_t(0), dbMembers.count(members[0]->id()));
+}
+void shifttest::list_1()
+{
+    // No shifts is an empty list:
+    
+    auto shifts = LogBookShift::list(*m_pLogBook->m_pConnection);
+    EQ(size_t(0), shifts.size());
+}
+void shifttest::list_2()
+{
+    // Ther's a shift and it has the Drs. in it.
+    // We should be able to list it.
+    
+    auto members = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto s = LogBookShift::create(
+        *m_pLogBook->m_pConnection,
+        "Midnight", members
+    );
+    
+    auto shifts = LogBookShift::list(*m_pLogBook->m_pConnection);
+    EQ(size_t(1), shifts.size());
+    EQ(members.size(), shifts[0]->members().size());
+    for (int i =0; i < members.size(); i++) {
+        ASSERT(equals(*members[i], *(shifts[0]->members()[i])));
+    }
+    EQ(std::string("Midnight"), std::string(shifts[0]->name()));
+    EQ(1, shifts[0]->id());
+    
+    delete shifts[0];
+    delete s;
+}
+void shifttest::list_3()
+{
+    // Two shifts. one with me, the other with the Drs.
+    
+    auto drs = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto me  = m_pLogBook->findPeople("salutation = 'Mr.'");
+    
+    auto s1 =  LogBookShift::create(
+        *m_pLogBook->m_pConnection,
+        "Midnight", me
+    );
+    auto s2 =  LogBookShift::create(
+        *m_pLogBook->m_pConnection,
+        "Swing", drs
+    );
+    
+    auto shifts = LogBookShift::list(*m_pLogBook->m_pConnection);
+    
+    EQ(size_t(2), shifts.size());
+    EQ(std::string("Midnight"), std::string(shifts[0]->name()));
+    
+    EQ(me.size(), shifts[0]->members().size());
+    for (int i =0; i < me.size(); i++) {
+        ASSERT(equals(*(me[i]), *(shifts[0]->members()[i])));
+    }
+    
+    EQ(std::string("Swing"), std::string(shifts[1]->name()));
+    EQ(drs.size(), shifts[1]->members().size());
+    for (int i =0; i < drs.size(); i++) {
+        ASSERT(equals(*(drs[i]), *(shifts[1]->members()[i])));
+    }
+    
+    delete shifts[0];
+    delete shifts[1];
+    delete s1;
+    delete s2;
 }

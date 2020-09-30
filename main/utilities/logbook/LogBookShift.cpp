@@ -45,9 +45,9 @@ LogBookShift::LogBookShift(CSqlite& db, int id) :
     CSqliteStatement find(
         db,
         "SELECT name, person_id                  \
-           FROM shift                            \
-           RIGHT JOIN shift_members ON id = shift_id \
-           WHERE ? = id"
+           FROM shift_members                            \
+           LEFT JOIN shift ON id = shift_id \
+           WHERE id = ?"
     );
     find.bind(1, id);
     std::vector<int> personIds;
@@ -279,7 +279,7 @@ LogBookShift::list(CSqlite& db)
     std::vector<LogBookShift*> result;
     
     CSqliteStatement shifts(
-        db, "SELECT id FROM shifts"
+        db, "SELECT id FROM shift"
     );
     while(!(++shifts).atEnd()) {
         int id = shifts.getInt(0);
