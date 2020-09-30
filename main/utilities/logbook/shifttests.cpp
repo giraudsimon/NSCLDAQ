@@ -78,6 +78,9 @@ class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST(list_1);
     CPPUNIT_TEST(list_2);
     CPPUNIT_TEST(list_3);
+    
+    CPPUNIT_TEST(find_1);
+    CPPUNIT_TEST(find_2);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -99,6 +102,10 @@ protected:
     void list_1();
     void list_2();
     void list_3();
+    
+    void find_1();
+    void find_2();
+    
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -416,4 +423,36 @@ void shifttest::list_3()
     delete shifts[1];
     delete s1;
     delete s2;
+}
+void shifttest::find_1()
+{
+    // no match -> nullptr.
+    
+    auto p = LogBookShift::find(*(m_pLogBook->m_pConnection), "Midnight");
+    
+    ASSERT(!p);
+}
+void shifttest::find_2()
+{
+    // found:
+    
+    auto me  = m_pLogBook->findPeople("salutation = 'Mr.'");
+    
+    auto shift =  LogBookShift::create(
+        *m_pLogBook->m_pConnection,
+        "Midnight", me
+    );
+    
+    auto p = LogBookShift::find(*(m_pLogBook->m_pConnection), "Midnight");
+    ASSERT(p);
+    
+    EQ(std::string("Midnight"), std::string(p->name()));
+    auto members = p->members();
+    
+    EQ(me.size(), members.size());
+    for (int i =0; i < me.size(); i++) {
+        ASSERT(equals(*(me[i]), *(members[i])));       
+    }
+    delete p;
+    delete shift;
 }

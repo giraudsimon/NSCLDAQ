@@ -302,7 +302,7 @@ LogBookShift::find(CSqlite& db, const char* name)
     
     CSqliteStatement find(
         db,
-        "SELECT id FROM shifts WHERE name = ?"
+        "SELECT id FROM shift WHERE name = ?"
     );
     find.bind(1, name, -1, SQLITE_STATIC);
     ++find;

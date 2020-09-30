@@ -72,7 +72,7 @@ public:
     );
     static LogBookShift* create(CSqlite& db, const char* shiftName);
     static std::vector<LogBookShift*> list(CSqlite& db);
-    LogBookShift* find(CSqlite& db, const char* name);
+    static LogBookShift* find(CSqlite& db, const char* name);
 };
 
 
