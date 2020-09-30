@@ -20,6 +20,7 @@
  */
 #include "LogBook.h"
 #include "LogBookPerson.h"
+#include "LogBookShift.h"
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
 #include <CSqliteException.h>
@@ -269,6 +270,74 @@ LogBook::getPerson(int id)
 {
     return new LogBookPerson(*m_pConnection, id);
 }
+/////////////////////////////////////////////////////////
+// Shift API
+
+/**
+ * getShift
+ *    Return the shift with the specified primary key value.
+ *  @param id - primary key.
+ *  @return LogBookShift* - dynamically allocated matching shift.
+ *  @throw LogBook::Exception - no such shift.
+ * 
+ */
+LogBookShift*
+LogBook::getShift(int id)
+{
+    return new LogBookShift(*m_pConnection, id);
+}
+/**
+ * createShift
+ *    Create an empty shift (no members) the shift can have
+ *    members added via the addMember object method of the
+ *    resulting shift.
+ * @param name - name of the new shift.
+ * @return LogBookShift* - new shift (dynamically allocated).
+ * @throw LogBook::Exception - if a shift by that name already exists.
+ */
+LogBookShift*
+LogBook::createShift(const char* name)
+{
+    return LogBookShift::create(*m_pConnection, name);
+}
+/**
+ * createShift
+ *    Same as above but:
+ *  @param members - provides shift members.
+ */
+LogBookShift*
+LogBook::createShift(
+    const char* name, const std::vector<LogBookPerson*>& members
+)
+{
+    return LogBookShift::create(*m_pConnection, name, members);
+}
+/**
+ * listShifts
+ *    Returns a list of the shifts.
+ * @return std::vector<LogBookShift*> - each member is dynamically
+ *              allocated and, therefore must be deleted when
+ *              no longer needed.
+ */
+std::vector<LogBookShift*>
+LogBook::listShifts()
+{
+    return LogBookShift::list(*m_pConnection);
+}
+/**
+ * findShift
+ *
+ * @param name - name of the shift to find.
+ * @return LogBookShift*  dynamically allocated shift with the
+ *                        requested name. nullptr if there's no
+ *                        matching shift.
+ */
+LogBookShift*
+LogBook::findShift(const char* name)
+{
+    return LogBookShift::find(*m_pConnection, name);
+}
+
 /////////////////////////////////////////////////////////
 // Private methods
 

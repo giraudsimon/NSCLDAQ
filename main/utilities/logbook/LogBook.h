@@ -28,6 +28,7 @@
 class CSqlite;
 class CSqliteException;
 class LogBookPerson;
+class LogBookShift;
 
 /**
  * @class LogBook
@@ -68,6 +69,8 @@ public:
         std::vector<LogBookPerson*> findPeople(const char* pWhere=nullptr);
         std::vector<LogBookPerson*> listPeople();
         
+        
+        
     };
 private:
     CSqlite* m_pConnection;
@@ -90,11 +93,21 @@ private:
     LogBook& operator=(const LogBook& rhs);
 
 public:
-
+ // Api for person
     LogBookPerson* addPerson(const char* lastName, const char* firstName, const char* salutation);
     std::vector<LogBookPerson*> findPeople(const char* where=nullptr);
     std::vector<LogBookPerson*> listPeople();
     LogBookPerson* getPerson(int id);
+    
+    // Api for shifts:
+    
+    LogBookShift* getShift(int id);
+    LogBookShift* createShift(const char* name);
+    LogBookShift* createShift(
+      const char* name, const std::vector<LogBookPerson*>& members
+    );
+    std::vector<LogBookShift*> listShifts();
+    LogBookShift*   findShift(const char* name);
     
 private:
     static std::string computeTempDir();

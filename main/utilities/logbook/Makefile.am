@@ -11,7 +11,7 @@ noinst_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp excepttests.cpp \
 	bookstatictests.cpp logbooktests.cpp persontests.cpp personapitest.cpp \
-	shifttests.cpp
+	shifttests.cpp shiftapitest.cpp
 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/testutils $(libLogbook_la_CXXFLAGS)
 unittests_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @CPPUNIT_LDFLAGS@
