@@ -51,6 +51,10 @@ class shifttest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(add_1);
     CPPUNIT_TEST(add_2);
+    
+    CPPUNIT_TEST(remove_1);
+    CPPUNIT_TEST(remove_2);
+    CPPUNIT_TEST(remove_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -64,6 +68,10 @@ protected:
     
     void add_1();
     void add_2();
+    
+    void remove_1();
+    void remove_2();
+    void remove_3();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -245,5 +253,73 @@ void shifttest::add_2()
     delete shift;
 }
 
-
-
+void shifttest::remove_1()
+{
+    // Remove if not exists is a throw:
+    
+    auto nonmembers = m_pLogBook->findPeople("lastname='Fox'");
+    auto members    = m_pLogBook->findPeople("salutation = 'Dr.'");
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    // This will leak nonmembers person(s)
+    
+    CPPUNIT_ASSERT_THROW(
+        shift->removeMember(*m_pLogBook->m_pConnection, nonmembers[0]),
+        LogBook::Exception
+    );
+    
+    delete shift;
+}
+void shifttest::remove_2()
+{
+    // Remove of existing member is fine and removes the member
+    // from the member vector:
+    
+    auto members    = m_pLogBook->findPeople("salutation = 'Dr.'");
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        shift->removeMember(*m_pLogBook->m_pConnection, members[0])
+    );
+    
+    auto dbMembers = shift->members();
+    EQ(members.size() - 1, dbMembers.size());
+    
+    for (int i =0; i < dbMembers.size(); i++) {
+        ASSERT(members[0] != dbMembers[i]);
+    }
+}
+void shifttest::remove_3()
+{
+    // ensure remove also gets it out of the shift_members table.
+    
+    // Remove of existing member is fine and removes the member
+    // from the member vector:
+    
+    auto members    = m_pLogBook->findPeople("salutation = 'Dr.'");
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight", members
+    );
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        shift->removeMember(*m_pLogBook->m_pConnection, members[0])
+    );
+    
+    CSqliteStatement find(
+        *m_pLogBook->m_pConnection,
+        "SELECT person_id FROM shift_members WHERE shift_id = ?"
+    );
+    find.bind(1, shift->id());
+    std::set<int> dbMembers;
+    while(!((++find).atEnd())) {
+        dbMembers.insert(find.getInt(0));
+    }
+    
+    EQ(size_t(0), dbMembers.count(members[0]->id()));
+}
