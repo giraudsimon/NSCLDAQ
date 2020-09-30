@@ -10,7 +10,8 @@ include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h
 noinst_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp excepttests.cpp \
-	bookstatictests.cpp logbooktests.cpp persontests.cpp personapitest.cpp
+	bookstatictests.cpp logbooktests.cpp persontests.cpp personapitest.cpp \
+	shifttests.cpp
 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/testutils $(libLogbook_la_CXXFLAGS)
 unittests_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @CPPUNIT_LDFLAGS@
