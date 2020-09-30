@@ -21,7 +21,9 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#define private public
 #include "LogBook.h"
+#undef private
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
 #include "logtestutils.hpp"
@@ -35,10 +37,16 @@
 
 const char* nameTemplate="logbook.XXXXXX";
 
-class aTestSuite : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(aTestSuite);
-    CPPUNIT_TEST(test_1);
+class shiftapitest : public CppUnit::TestFixture {
+    CPPUNIT_TEST_SUITE(shiftapitest);
+    CPPUNIT_TEST(create_1);
+    CPPUNIT_TEST(create_2);
+    CPPUNIT_TEST(create_3);
     CPPUNIT_TEST_SUITE_END();
+protected:
+    void create_1();
+    void create_2();
+    void create_3();
     
 private:
     std::string m_filename;
@@ -70,12 +78,71 @@ public:
         delete m_pLogBook;
         unlink(m_filename.c_str());
     }
-protected:
-    void test_1();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(aTestSuite);
+CPPUNIT_TEST_SUITE_REGISTRATION(shiftapitest);
 
-void aTestSuite::test_1()
+void shiftapitest::create_1()
 {
+    // Create empty shift:
+    
+    LogBookShift* shift = m_pLogBook->createShift("Day");
+    EQ(1, shift->id());
+    EQ(std::string("Day"), std::string(shift->name()));
+    EQ(size_t(0), shift->members().size());
+    
+    delete shift;
+}
+void shiftapitest::create_2()
+{
+    // Shift with a member.
+    
+    auto members = m_pLogBook->findPeople("lastname='Fox'");
+    auto shift   = m_pLogBook->createShift("Day", members);
+    
+    EQ(1, shift->id());
+    EQ(std::string("Day"), std::string(shift->name()));
+    EQ(size_t(1), shift->members().size());
+    
+    ASSERT(equals(*(members[0]), *(shift->members()[0])));
+    
+    delete shift;
+    
+}
+void shiftapitest::create_3()
+{
+    // Entry made it into the database:
+    
+    auto members = m_pLogBook->findPeople("lastname='Fox'");
+    auto shift   = m_pLogBook->createShift("Day", members);
+    
+    // Shift root:
+    
+    CSqliteStatement findShift(
+        *m_pLogBook->m_pConnection,
+        "SELECT name FROM shift WHERE id = ?"
+    );
+    findShift.bind(1, shift->id());
+    ++findShift;
+    ASSERT(!(findShift.atEnd()));
+    EQ(std::string("Day"), findShift.getString(0));
+    
+    ++findShift;
+    ASSERT(findShift.atEnd());   // only one row.
+    
+    // Shift members:
+    
+    CSqliteStatement findMembers(
+        *m_pLogBook->m_pConnection,
+        "SELECT person_id FROM shift_members WHERE shift_id = ?"
+    );
+    findMembers.bind(1, shift->id());
+    ++findMembers;
+    ASSERT(!(findMembers.atEnd()));
+    
+    EQ(members[0]->id(), findMembers.getInt(0));
+    ++findMembers;
+    ASSERT(findMembers.atEnd());
+    
+    delete shift;
 }
