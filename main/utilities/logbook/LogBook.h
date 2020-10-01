@@ -62,15 +62,6 @@ public:
         
         static void rethrowSqliteException(CSqliteException& e, const char* doing);
         static void rethrowSqliteException(CSqliteException& e, std::string doing);
-        
-        // API for "Person":
-        
-        LogBookPerson* createPerson(const char* lastName, const char* firstName, const char* salutation);
-        std::vector<LogBookPerson*> findPeople(const char* pWhere=nullptr);
-        std::vector<LogBookPerson*> listPeople();
-        
-        
-        
     };
 private:
     CSqlite* m_pConnection;
@@ -108,6 +99,8 @@ public:
     );
     std::vector<LogBookShift*> listShifts();
     LogBookShift*   findShift(const char* name);
+    void setCurrentShift(LogBookShift* pShift);
+    LogBookShift* getCurrentShift();
     
 private:
     static std::string computeTempDir();

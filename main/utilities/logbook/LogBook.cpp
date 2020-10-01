@@ -337,7 +337,29 @@ LogBook::findShift(const char* name)
 {
     return LogBookShift::find(*m_pConnection, name);
 }
-
+/**
+ *   setCurrentShift
+ * set the current shift to a specied one.
+ *
+ * @param pShift - pointer to the shift to set a current.
+ */
+void
+LogBook::setCurrentShift(LogBookShift* pShift)
+{
+    pShift->setCurrent(*m_pConnection);
+}
+/**
+ * getCurrentShift
+ *    Return  the current shift (if there is one).
+ *
+ * @return LogBookShift* pointer to the current shift.
+ * @retval nullptr - there's no current shift.
+ */
+LogBookShift*
+LogBook::getCurrentShift()
+{
+    return LogBookShift::getCurrent(*m_pConnection);
+}
 /////////////////////////////////////////////////////////
 // Private methods
 

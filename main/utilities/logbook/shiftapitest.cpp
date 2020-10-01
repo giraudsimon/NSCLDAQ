@@ -51,6 +51,9 @@ class shiftapitest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(find_1);
     CPPUNIT_TEST(find_2);
+    
+    CPPUNIT_TEST(current_1);
+    CPPUNIT_TEST(current_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void create_1();
@@ -65,6 +68,9 @@ protected:
     
     void find_1();
     void find_2();
+    
+    void current_1();
+    void current_2();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -252,7 +258,7 @@ void shiftapitest::find_1()
 }
 void shiftapitest::find_2()
 {
-auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
     auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
     
     auto s1 = m_pLogBook->createShift("shift1", members1);
@@ -265,4 +271,32 @@ auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
     
     delete s1;
     delete s2;    
+}
+
+void shiftapitest::current_1()
+{
+    // No current shift implies a nullptr from get:
+    
+    ASSERT(!(m_pLogBook->getCurrentShift()));
+    
+}
+void shiftapitest::current_2()
+{
+    // Setting a current shift implies we can get it back:
+    
+    auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
+    
+    auto s1 = m_pLogBook->createShift("shift1", members1);
+    auto s2 = m_pLogBook->createShift("shift2", members2);
+    
+    m_pLogBook->setCurrentShift(s2);
+    auto current = m_pLogBook->getCurrentShift();
+    ASSERT(current);
+    EQ(s2->id(), current->id());
+    
+    
+    delete s1;
+    delete s2;
+    delete current;
 }
