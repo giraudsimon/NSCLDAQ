@@ -412,6 +412,16 @@ LogBook::createSchema(CSqlite& db)
             person_id  INTEGER                             \
         )"
     );
+    
+    // Current shift:
+    
+    CSqliteStatement::execute(
+        db, 
+        "CREATE TABLE IF NOT EXISTS current_shift (  \
+            id  INTEGER                              \
+        )"
+    );
+    
 }
 
 /**

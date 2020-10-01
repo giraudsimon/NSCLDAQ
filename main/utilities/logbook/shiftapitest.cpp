@@ -211,8 +211,8 @@ void shiftapitest::list_2()
     auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
     auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
     
-    auto s1 = m_pLogBook->createShift("shfit1", members1);
-    auto s2 = m_pLogBook->createShift("shfit2", members2);
+    auto s1 = m_pLogBook->createShift("shift1", members1);
+    auto s2 = m_pLogBook->createShift("shift2", members2);
     
     std::vector<LogBookShift*> madeShifts;
     madeShifts.push_back(s1);
@@ -241,8 +241,8 @@ void shiftapitest::find_1()
     auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
     auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
     
-    auto s1 = m_pLogBook->createShift("shfit1", members1);
-    auto s2 = m_pLogBook->createShift("shfit2", members2);
+    auto s1 = m_pLogBook->createShift("shift1", members1);
+    auto s2 = m_pLogBook->createShift("shift2", members2);
     
     LogBookShift* p = m_pLogBook->findShift("shift3");
     ASSERT(!p);
