@@ -42,12 +42,29 @@ class shiftapitest : public CppUnit::TestFixture {
     CPPUNIT_TEST(create_1);
     CPPUNIT_TEST(create_2);
     CPPUNIT_TEST(create_3);
+    
+    CPPUNIT_TEST(get_1);
+    CPPUNIT_TEST(get_2);
+    
+    CPPUNIT_TEST(list_1);
+    CPPUNIT_TEST(list_2);
+    
+    CPPUNIT_TEST(find_1);
+    CPPUNIT_TEST(find_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void create_1();
     void create_2();
     void create_3();
     
+    void get_1();
+    void get_2();
+    
+    void list_1();
+    void list_2();
+    
+    void find_1();
+    void find_2();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -145,4 +162,107 @@ void shiftapitest::create_3()
     ASSERT(findMembers.atEnd());
     
     delete shift;
+}
+void shiftapitest::get_1()
+{
+    // Get with no such:
+    
+    CPPUNIT_ASSERT_THROW(
+        m_pLogBook->getShift(1),
+        LogBook::Exception
+    );
+}
+
+void shiftapitest::get_2()
+{
+    // Actually can get a shift if there is one:
+    
+    auto members = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto shift   = m_pLogBook->createShift("Day", members);
+    
+    LogBookShift* found;
+    CPPUNIT_ASSERT_NO_THROW(found = m_pLogBook->getShift(shift->id()));
+    
+    EQ(shift->id(), found->id());
+    EQ(std::string(shift->name()), std::string(found->name()));
+    auto smembers =  shift->members();
+    auto fmembers = found->members();
+    
+    EQ(smembers.size(), fmembers.size());
+    for (int i =0; i < smembers.size(); i++) {
+        ASSERT(equals(*smembers[i], *fmembers[i]));
+    }
+    
+    delete shift;
+    delete found;
+}
+void shiftapitest::list_1()
+{
+    // No shifts to list:
+    
+    auto shifts = m_pLogBook->listShifts();
+    
+    EQ(size_t(0), shifts.size());
+}
+void shiftapitest::list_2()
+{
+    // Make a couple of shifts:
+    
+    auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
+    
+    auto s1 = m_pLogBook->createShift("shfit1", members1);
+    auto s2 = m_pLogBook->createShift("shfit2", members2);
+    
+    std::vector<LogBookShift*> madeShifts;
+    madeShifts.push_back(s1);
+    madeShifts.push_back(s2);
+    
+    auto shifts = m_pLogBook->listShifts();
+    EQ(madeShifts.size(), shifts.size());
+       
+    
+    for (int i = 0; i < madeShifts.size(); i++) {
+        // Given the tests done on the shifts class, this is
+        // probably sufficient:
+        
+        EQ(madeShifts[i]->id(), shifts[i]->id());
+        
+        delete madeShifts[i];
+        delete shifts[i];
+    }
+    
+}
+
+void shiftapitest::find_1()
+{
+    // no matching shift:
+    
+    auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
+    
+    auto s1 = m_pLogBook->createShift("shfit1", members1);
+    auto s2 = m_pLogBook->createShift("shfit2", members2);
+    
+    LogBookShift* p = m_pLogBook->findShift("shift3");
+    ASSERT(!p);
+    
+    delete s1;
+    delete s2;
+}
+void shiftapitest::find_2()
+{
+auto members1 = m_pLogBook->findPeople("salutation = 'Dr.'");
+    auto members2 = m_pLogBook->findPeople("lastname = 'Fox'");
+    
+    auto s1 = m_pLogBook->createShift("shift1", members1);
+    auto s2 = m_pLogBook->createShift("shift2", members2);
+    
+    LogBookShift* p = m_pLogBook->findShift("shift2");
+    ASSERT(p);
+    
+    EQ(s2->id(), p->id());   // Assume shiftests checked the rest.
+    
+    delete s1;
+    delete s2;    
 }
