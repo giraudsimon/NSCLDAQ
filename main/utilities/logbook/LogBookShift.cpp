@@ -42,33 +42,40 @@
 LogBookShift::LogBookShift(CSqlite& db, int id) :
     m_id(id)
 {
-    CSqliteStatement find(
-        db,
-        "SELECT name, person_id                  \
-           FROM shift_members                            \
-           LEFT JOIN shift ON id = shift_id \
-           WHERE id = ?"
-    );
-    find.bind(1, id);
-    std::vector<int> personIds;
-    while(!(++find).atEnd()) {
-        if (find.columnType(0) != CSqliteStatement::null) {
-            m_name = find.getString(0);
-        }
-        personIds.push_back(find.getInt(1));
-    }
-    // If m_name is still empty there's no matching shift:
+    // Find the shift top level record:
     
-    if (m_name.empty()) {
+    CSqliteStatement fshift(
+        db,
+        "SELECT name FROM shift WHERE id = ?"
+    );
+    fshift.bind(1, id);
+    ++fshift;
+    if(fshift.atEnd()) {
         std::stringstream msg;
         msg << "There is no shift with the id: " << id;
         std::string m(msg.str());
         throw LogBook::Exception(m);
     }
-    // Now create the IN clause for our LogBookPerson find:
+    m_name = fshift.getString(0);
     
-    CInFilter filter("id", personIds);
-    m_members = LogBookPerson::find(db, filter.toString().c_str());
+    // Find the members:
+    
+    CSqliteStatement fmembers(
+        db,
+        "SELECT person_id FROM shift_members WHERE shift_id = ?"
+    );
+    fmembers.bind(1, id);
+    
+    std::vector<int> personIds;
+    while(!(++fmembers).atEnd()) {
+        personIds.push_back(fmembers.getInt(0));
+    }
+    
+    // Now create the IN clause for our LogBookPerson find:
+    if (!personIds.empty()) {
+        CInFilter filter("id", personIds);
+        m_members = LogBookPerson::find(db, filter.toString().c_str());
+    }
 }
 /**
  * destructor

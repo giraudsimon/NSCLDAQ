@@ -65,6 +65,8 @@ class shifttest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(find_1);
     CPPUNIT_TEST(find_2);
+    
+    CPPUNIT_TEST(construct_1);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -90,6 +92,7 @@ protected:
     void find_1();
     void find_2();
     
+    void construct_1();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -439,4 +442,24 @@ void shifttest::find_2()
     }
     delete p;
     delete shift;
+}
+
+void shifttest::construct_1()
+{
+    // Create an empty shift -- construct should find it:
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight"
+    );
+    LogBookShift* fshift;
+    CPPUNIT_ASSERT_NO_THROW(
+        fshift = new LogBookShift(*m_pLogBook->m_pConnection, shift->id())
+    );
+    
+    EQ(shift->id(), fshift->id());
+    EQ(std::string(shift->name()), std::string(fshift->name()));
+    EQ(size_t(0), fshift->members().size());
+    
+    delete shift;
+    delete fshift;
 }
