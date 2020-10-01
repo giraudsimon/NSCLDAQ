@@ -64,6 +64,8 @@ public:
     
     void addMember(CSqlite& db, LogBookPerson* person);
     void removeMember(CSqlite& db, LogBookPerson* person);
+    void setCurrent(CSqlite& db);
+    
     
 public:
     static LogBookShift* create(
@@ -73,6 +75,7 @@ public:
     static LogBookShift* create(CSqlite& db, const char* shiftName);
     static std::vector<LogBookShift*> list(CSqlite& db);
     static LogBookShift* find(CSqlite& db, const char* name);
+    static LogBookShift* getCurrent(CSqlite& db);
 };
 
 

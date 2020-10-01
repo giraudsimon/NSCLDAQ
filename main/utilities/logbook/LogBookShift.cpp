@@ -26,6 +26,7 @@
 #include <CSqliteStatement.h>
 #include <CSqliteTransaction.h>
 #include <CSqliteWhere.h>
+#include <CSqliteException.h>
 #include <sstream>
 
 /**
@@ -196,6 +197,42 @@ LogBookShift::removeMember(CSqlite& db, LogBookPerson* person)
     remove.bind(2, id);
     ++remove;   
 }
+/**
+ * setCurrent
+ *   Set this shift to be the current one.
+ *
+ * @param db - Database object reference.
+ */
+void
+LogBookShift::setCurrent(CSqlite& db)
+{
+    CSqliteTransaction t(db);
+    try {
+        CSqliteStatement::execute(
+            db,
+            "DELETE FROM current_shift"
+        );                       // Kill any current shift.
+        CSqliteStatement s(
+            db,
+            "INSERT INTO current_shift (shift_id) VALUES (?)"
+        );
+        s.bind(1, m_id);
+        ++s;
+    }
+    catch(CSqliteException& e) {
+        t.scheduleRollback();
+        LogBook::Exception::rethrowSqliteException(
+            e, "Attempting to set the current shift"
+        );
+    }
+    catch (...) {
+        t.scheduleRollback();
+        throw;
+    }
+    
+    // Commits the changes.
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Static methods:
 
@@ -254,6 +291,10 @@ LogBookShift::create(
             insertMember.reset();
         }
         
+    }
+    catch (CSqliteException& e) {
+        t.scheduleRollback();
+        LogBook::Exception::rethrowSqliteException(e, "Creating a new shift");
     }
     catch (...) {
         t.scheduleRollback();
@@ -315,6 +356,29 @@ LogBookShift::find(CSqlite& db, const char* name)
     ++find;
     if (!find.atEnd()) {
         result = new LogBookShift(db, find.getInt(0));
+    }
+    
+    return result;
+}
+/**
+ * getCurrent
+ *   Gets the current shift.
+ *
+ * @param db - database object reference.
+ * @return LogBookShift*
+ * @retval nullptr - there's no current shift.
+ */
+LogBookShift*
+LogBookShift::getCurrent(CSqlite& db)
+{
+    LogBookShift* result(nullptr);
+    CSqliteStatement c(
+        db,
+        "SELECT shift_id FROM CURRENT_SHIFT"
+    );
+    ++c;
+    if (!c.atEnd()) {
+        result = new LogBookShift(db, c.getInt(0));
     }
     
     return result;

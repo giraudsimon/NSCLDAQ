@@ -418,7 +418,7 @@ LogBook::createSchema(CSqlite& db)
     CSqliteStatement::execute(
         db, 
         "CREATE TABLE IF NOT EXISTS current_shift (  \
-            id  INTEGER                              \
+            shift_id  INTEGER                              \
         )"
     );
     

@@ -67,6 +67,10 @@ class shifttest : public CppUnit::TestFixture {
     CPPUNIT_TEST(find_2);
     
     CPPUNIT_TEST(construct_1);
+    
+    CPPUNIT_TEST(current_1);
+    CPPUNIT_TEST(current_2);
+    CPPUNIT_TEST(current_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -93,6 +97,10 @@ protected:
     void find_2();
     
     void construct_1();
+    
+    void current_1();
+    void current_2();
+    void current_3();
 private:
     std::string m_filename;
     LogBook*    m_pLogBook;
@@ -462,4 +470,48 @@ void shifttest::construct_1()
     
     delete shift;
     delete fshift;
+}
+
+void shifttest::current_1()
+{
+    // Initially there's no current shift:
+    
+    auto shift = LogBookShift::getCurrent(*m_pLogBook->m_pConnection);
+    ASSERT(!shift);
+}
+void shifttest::current_2()
+{
+    // Setting a current shift sets the databaswe:
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight"
+    );
+    shift->setCurrent(*m_pLogBook->m_pConnection);
+    
+    CSqliteStatement find(
+        *m_pLogBook->m_pConnection,
+        "SELECT shift_id FROM current_shift"
+    );
+    ++find;
+    ASSERT(!find.atEnd());
+    EQ(shift->id(), find.getInt(0));
+    
+    delete shift;
+}
+void shifttest::current_3()
+{
+    // setting a shift allows it to be gotten:
+    
+    auto shift = LogBookShift::create(
+        *m_pLogBook->m_pConnection, "Midnight"
+    );
+    shift->setCurrent(*m_pLogBook->m_pConnection);
+    
+    auto current = LogBookShift::getCurrent(*m_pLogBook->m_pConnection);
+    ASSERT(current);
+    EQ(shift->id(), current->id());
+    
+    delete shift;
+    delete current;
+     
 }
