@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <vector>
 
 static const char* DBVersion="1.0";
 
@@ -360,6 +361,36 @@ LogBook::getCurrentShift()
 {
     return LogBookShift::getCurrent(*m_pConnection);
 }
+
+/////////////////////////////////////////////////////////
+// API For Runs:
+
+/**
+ * transitionId
+ *    Given a named transition, this method retunrs
+ *    the id of that transition.
+ * @param db   - database reference.
+ * @param name - Transition name (e.g. BEGIN).
+ * @return int  - Id of the transition.
+ * @throw LogBook::Exception if there is no valid id.
+ */
+int
+LogBook::transitionId(CSqlite& db, const char* name)
+{
+    CSqliteStatement find(
+        db,
+        "SELECT id FROM valid_transitions where type = ?"
+    );
+    find.bind(1, name, -1, SQLITE_STATIC);
+    ++find;
+    if (find.atEnd()) {
+        std::stringstream msg;
+        msg << name << " is not a valid run transition";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    return find.getInt(0);
+}
 /////////////////////////////////////////////////////////
 // Private methods
 
@@ -443,7 +474,50 @@ LogBook::createSchema(CSqlite& db)
             shift_id  INTEGER                              \
         )"
     );
+    // Runs and their state transitions.
     
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS run (             \
+            id   INTEGER PRIMARY KEY,                 \
+            number INTEGER,                           \
+            title TEXT                                \
+        )"
+    );
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS run_transitions ( \
+            id   INTEGER PRIMARY KEY,                  \
+            run_id INTEGER,                            \
+            transition_type INTEGER,                   \
+            time_stamp      INTEGER,                   \
+            shift_id        INTEGER,                   \
+            short_comment   TEXT                      \
+        )"
+    );
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS valid_transitions ( \
+            id      INTEGER PRIMARY KEY,              \
+            type    TEXT                              \
+        )"
+    );
+    stockValidTransitions(db);
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS  valid_state_transitions (\
+            from_id   INTEGER,                                   \
+            to_id     INTEGER                                    \
+        )"
+    );
+    stockStateMachine(db);
+    
+    // Finally the current run, if there is one.
+    
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS current_run (id INTEGER)"
+    );
 }
 
 /**
@@ -492,4 +566,80 @@ LogBook::initialize(
     insert.bind(2, DBVersion, -1, SQLITE_STATIC);
     ++insert;
     
+}
+/**
+ * stockValidTransitions
+ *    Stocks the valid transitions table with the set of
+ *    allowed run state transitions.
+ *
+ *  @param db  reference to the database handle.
+ */
+void
+LogBook::stockValidTransitions(CSqlite& db)
+{
+    const char* transitionNames[] = {
+        "BEGIN", "END", "PAUSE", "RESUME", "EMERGENCY_END",
+        nullptr
+    };
+    CSqliteStatement put(
+        db,
+        "INSERT INTO valid_transitions (type) VALUES(?)"
+    );
+    const char** p = transitionNames;
+    while (*p) {
+        put.reset();
+        put.bind(1, *p, -1, SQLITE_STATIC);
+        ++put;
+        ++p;
+    }
+}
+/**
+ * stockStateMachine
+ *    while the valid_transitions table provides a
+ *    name->id mapping for the valid state transitions, which
+ *    ones are legal in which states defines a state machine that's
+ *    stored in valid_state_transitions.  That table has
+ *    from/to pairs for all valid state transitions.
+ *
+ *    This method stocks that table with the valid transitions.
+ *    that is given the last transition for a run, which
+ *    next transitions are allowed.  Note begin is a bit strange
+ *    as it's entered when the run is created so there are
+ *    no legal transitions that allow a run to be begun, once
+ *    it's already been created.
+ *
+ *    Similarly, once a run has been ended, there are no valid
+ *    transitions (can't restart a run).
+ *    
+ * @param db - References the data base who's valid_state_transitions
+ *             table is being stocked.
+ */
+void
+LogBook::stockStateMachine(CSqlite& db)
+{
+    // From/to transition names:
+    std::vector<std::pair<std::string, std::string>> legal =
+    {
+        {"BEGIN", "END"}, {"BEGIN", "PAUSE"}, {"BEGIN", "EMERGENCY_END"},
+        {"PAUSE", "RESUME"}, {"PAUSE", "END"}, {"PAUSE", "EMERGENCY_END"},
+        {"RESUME", "END"}, {"RESUME", "PAUSE"}, {"RESUME", "EMERGENCY_END"},
+    };
+    
+    CSqliteStatement insert(
+        db,
+        "INSERT INTO valid_state_transitions (from_id, to_id) \
+             VALUES (?,?)"
+    );
+    for (int i = 0; i < legal.size(); i++) {
+        auto from = legal[i].first;
+        auto to    = legal[i].second;
+        
+        int from_id = transitionId(db, from.c_str());
+        int to_id   = transitionId(db, to.c_str());
+        
+        insert.reset();
+        insert.bind(1, from_id);
+        insert.bind(2, to_id);
+        ++insert;
+    }
 }

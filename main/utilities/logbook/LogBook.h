@@ -102,6 +102,9 @@ public:
     void setCurrentShift(LogBookShift* pShift);
     LogBookShift* getCurrentShift();
     
+    // API for runs:
+    
+    static int transitionId(CSqlite& db, const char* name);
 private:
     static std::string computeTempDir();
     static void   createSchema(CSqlite& connection);
@@ -109,6 +112,8 @@ private:
        CSqlite& connection,  const char* pExperiment,
        const char* pSpokesperson, const char* purpose
     );
+    static void stockValidTransitions(CSqlite& db);
+    static void stockStateMachine(CSqlite& db);
 };
 
 
