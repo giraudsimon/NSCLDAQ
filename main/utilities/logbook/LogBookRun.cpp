@@ -43,63 +43,51 @@ LogBookRun::LogBookRun(CSqlite& db, int id)
     // Since there's at least one transition we can use the
     // following single. monster queryto get everything but the shift
     // details (I think).
-    bool matched(false);
+    
     try {
         CSqliteStatement fetchrun(
             db,
-            "SELECT run.id AS run_id, number, title,                              \
-                run_transitions.id AS transition_id, transition_type, time_stamp, \
-                time_stamp, shift_id, short_comment, type                                     \
-            FROM run_transitions                              \
-            LEFT JOIN run ON run_id = transition_id           \
+            "SELECT number, title FROM run WHERE id = ?"
+        );
+        fetchrun.bind(1, id);
+        ++fetchrun;
+        if (fetchrun.atEnd()) {
+            std::stringstream msg;
+            msg << "There is no run with the primary key : " << id;
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
+        m_run.s_Info.s_id = id;
+        m_run.s_Info.s_number = fetchrun.getInt(0);
+        m_run.s_Info.s_title  = fetchrun.getString(1);
+        
+        // Now get all the transitions for this run:
+        
+        CSqliteStatement fetchtrans(
+            db,
+            "SELECT run_transitions.id, transition_type, time_stamp, \
+            shift_id, short_comment, type \
+            FROM run_transitions                                          \
             INNER JOIN valid_transitions ON transition_type = valid_transitions.id \
             WHERE run_id = ?"
         );
-        // Should  give me a record for each transition - and there must
-        // be at least one.  Attached to the first record will be the
-        // run information and the name of the transition will be attached
-        //  to all (I think).
-        // We'll have to get the shift separately from the shift_id
-        // in each shift...that's just a matter of constructing a
-        // LogBookShift:
-        
-        fetchrun.bind(1, id);                  // ID we're looking for
-        while (! (++fetchrun).atEnd()) {
-            matched = true;
-            // if the run_id is not null, we can fetch the RunInfo chunk of this:
-            
-            if (fetchrun.columnType(0) != CSqliteStatement::null) {
-                m_run.s_Info.s_id = fetchrun.getInt(0);
-                m_run.s_Info.s_number = fetchrun.getInt(1);
-                m_run.s_Info.s_title  = fetchrun.getString(2);
-            }
-            // Now we need to construct a Transition struct; fill it in
-            // and add it to the vector of transitions in the run:
-            
+        fetchtrans.bind(1, id);
+        while (!(++fetchtrans).atEnd()) {
             m_run.s_transitions.emplace_back();
             Transition& t(m_run.s_transitions.back());
-            t.s_id = fetchrun.getInt(3);
-            t.s_transition = fetchrun.getInt(4);
-            t.s_transitionName = fetchrun.getString(8);
-            t.s_transitionTime = fetchrun.getInt(5);
-            t.s_transitionComment = fetchrun.getString(7);
-            t.s_onDuty     = new LogBookShift(db, fetchrun.getInt(6));
-            
+            t.s_id = fetchtrans.getInt(0);
+            t.s_transition = fetchtrans.getInt(1);
+            t.s_transitionTime = fetchtrans.getInt(2);
+            t.s_onDuty         = new LogBookShift(db, fetchtrans.getInt(3));
+            t.s_transitionComment = fetchtrans.getString(4);
+            t.s_transitionName    = fetchtrans.getString(5);
         }
+        
     }
     catch (CSqliteException &e) {
         LogBook::Exception::rethrowSqliteException(e, "Constructing a LogBookRun");
     }
-    
-    // If we didn't have any matches to the query above,
-    // we throw:
-    
-    if (!matched) {
-        std::stringstream msg;
-        msg << "There is no run with the primary key : " << id;
-        std::string m(msg.str());
-        throw LogBook::Exception(m);
-    }
+
 }
 /**
  * destructor
@@ -110,4 +98,64 @@ LogBookRun::~LogBookRun()
     for(int i =0; i < m_run.s_transitions.size(); i++) {
         delete m_run.s_transitions[i].s_onDuty;
     }
+}
+/**
+ * runInfo
+ *   Returns the run information:
+ * @return const RunInfo&
+ */
+const LogBookRun::RunInfo&
+LogBookRun::getRunInfo() const
+{
+    return m_run.s_Info;
+}
+/**
+ * isCurrent
+ *   Determines if this is the current run:
+ */
+bool
+LogBookRun::isCurrent(CSqlite& db) const
+{
+    LogBookRun* pCurrent = currentRun(db);
+    //  Note that the edge case that there is nocurrent run means this is not
+    // the current run.
+    
+    bool result = pCurrent && (m_run.s_Info.s_id == pCurrent->m_run.s_Info.s_id);
+    
+    delete pCurrent;
+    return result;
+}
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////
+// static methods:
+
+
+/**
+ * currentRun
+ *    Returns the current run object.
+ * @param db - Database object reference.
+ * @return LogBookRun* - dynamically allocated so delete if done with it.
+ * @retval nullptr     - There is no currently active run.
+ */
+LogBookRun*
+LogBookRun::currentRun(CSqlite& db)
+{
+    LogBookRun* result = nullptr;
+    CSqliteStatement cid(
+        db,
+        "SELECT id FROM current_run"
+    );
+    ++cid;
+    
+    if (!cid.atEnd()) {
+        result  = new LogBookRun(db, cid.getInt(0));
+    }
+    
+    return result;
+    
 }

@@ -26,6 +26,7 @@
 class CSqlite;
 class LogBookShift;
 
+
 /**
  * @class LogBookRun
  *   A logBookRun object encapsulates the entire history
@@ -95,7 +96,7 @@ public:
     void transition(CSqlite& db, const char* type);
     
     //
-    
+    static LogBookRun* currentRun(CSqlite& db);
     static int runId(CSqlite& db, int runNumber);
     static int begin(
         CSqlite& db,  int number,
@@ -120,7 +121,7 @@ public:
     static std::vector<LogBookRun*> list();
     static LogBookRun* find(int runNumber);
     
-    static Run* currentRun(CSqlite& db);
+    
     static bool isLegal(CSqlite& db, int runId, int proposedTransition);
     
     
