@@ -94,8 +94,7 @@ public:
     int    lastTransitionType() const;
     const char* lastTransition() const;
     bool isActive() const;
-    
-    void transition(CSqlite& db, const char* type);
+    void transition(CSqlite& db, const char* type, const char* note);
     
     
     //

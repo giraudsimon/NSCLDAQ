@@ -28,6 +28,7 @@
 #include <CSqliteException.h>
 #include <sstream>
 #include <string>
+#include <time.h>
 
 /**
  * constructor
@@ -218,4 +219,105 @@ LogBookRun::isActive() const
     // DeMorgan's theorem applied:
     
     return (last != std::string("END")) && (last != std::string("EMERGENCY_END"));
+}
+/**
+ * transition
+ *    Add a transition to this run.  Note that in order to support
+ *    post run corrections, we don't require that the run be
+ *    current.
+ * @param db - Reference to database connection.
+ * @param type - Type of transition requested.
+ * @param note - comment to attach to the transition.
+ * @throws LogBook::Exception if the transition is forbidden by the current
+ *               state of the object.
+ */
+void
+LogBookRun::transition(CSqlite& db, const char* type, const char* note)
+{
+    int typeId = LogBook::transitionId(db, type);  // throws if invalid
+    int fromId = lastTransitionType();
+    if (!checkTransition(db, fromId, typeId)) {
+        std::stringstream msg;
+        msg << "Run  " << m_run.s_Info.s_number << " is not allowed to  perform a "
+            << type << " since last transition was " << lastTransition();
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    
+    // Do this in a transaction because, in addition to entering the
+    // transition, we may need to remove this as the current run.
+    
+    CSqliteTransaction t(db);
+    try {
+        CSqliteStatement transition(
+            db,
+            "INSERT INTO run_transitions                       \
+            (run_id, transition_type, time_stamp, shift_id, short_comment) \
+            VALUES (?,?,?,?,?)"
+        );
+        transition.bind(1, m_run.s_Info.s_id);
+        transition.bind(2, typeId);
+        time_t t = time(nullptr);
+        transition.bind(3, (int)(t));
+        auto shift = LogBookShift::getCurrent(db);
+        if (!shift) {
+            throw LogBook::Exception(
+                "Cannot do a state transition because there's no current shift"
+            );
+        }
+        transition.bind(4, shift->id());
+        delete shift;
+        transition.bind(5, note, -1, SQLITE_STATIC);
+        ++transition;
+        
+        // Now if the transition was an END or EMERGENCY_END
+        // and we are current, we need to set that there's no current run.
+        
+        if (
+            ((std::string("END") == type) ||
+            (std::string("EMERGENCY_END") == type)) &&
+            isCurrent(db)
+        ) {
+            CSqliteStatement::execute(db, "DELETE FROM current_run ");
+        }
+    }
+    catch(CSqliteException& e) {
+        t.scheduleRollback();
+        LogBook::Exception::rethrowSqliteException(
+            e, "Attempting a run state transition"
+        );
+        
+    }
+    catch (...) {
+        t.scheduleRollback();
+        throw;
+    }
+    
+}
+
+
+
+/////////////////////////////////////////////////////////////////////
+// Private utilities:
+
+/**
+ * checkTransition
+ *   @param db   - reference to database connection
+ *   @param from - from state
+ *   @param to   - to state.
+ *   @return bool - true if allowed.
+ */
+bool
+LogBookRun::checkTransition(CSqlite& db, int from, int to)
+{
+    CSqliteStatement s(
+        db,
+        "SELECT COUNT(*) FROM valid_state_transitions    \
+         WHERE from_id = ? AND to_id = ?"
+    );
+    s.bind(1, from);
+    s.bind(2, to);
+    ++s;
+    int result = s.getInt(0);
+    return result != 0;
 }
