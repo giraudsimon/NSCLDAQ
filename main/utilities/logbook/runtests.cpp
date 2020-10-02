@@ -23,7 +23,7 @@
 #include "Asserts.h"
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
-
+#include <stdexcept>
 // Open up the guts of the next two objects:
 
 #define private public
@@ -89,6 +89,17 @@ private:
     CPPUNIT_TEST(current_3);
     CPPUNIT_TEST(current_4);
     CPPUNIT_TEST(current_5);
+    
+    CPPUNIT_TEST(gettrans_1);
+    CPPUNIT_TEST(gettrans_2);
+    CPPUNIT_TEST(gettrans_3);
+    
+    CPPUNIT_TEST(last_1);
+    CPPUNIT_TEST(last_2);
+    
+    CPPUNIT_TEST(active_1);
+    CPPUNIT_TEST(active_2);
+    CPPUNIT_TEST(active_3);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -103,6 +114,17 @@ protected:
     void current_3();
     void current_4();
     void current_5();
+    
+    void gettrans_1();
+    void gettrans_2();
+    void gettrans_3();
+    
+    void last_1();
+    void last_2();
+    
+    void active_1();
+    void active_2();
+    void active_3();
 private:
     int makeRun(int run, const char* title, const char* note);
     int addTransition(int runid, const char* type, const char* note);
@@ -313,4 +335,115 @@ void runtest::current_5()
     
     LogBookRun run(*m_db, id);
     ASSERT(!run.isCurrent(*m_db));
+}
+
+void runtest::gettrans_1()
+{
+    // Size is correct: - five transitions:
+    
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "END", "Ending the run now");
+    
+    LogBookRun run (*m_db, id);
+    
+    EQ(size_t(5), run.numTransitions());
+}
+
+void runtest::gettrans_2()
+{
+    // Can get the transitions using the indexing operation:
+    
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "END", "Ending the run now");
+    LogBookRun run (*m_db, id);
+    
+    EQ(std::string("BEGIN"), run[0].s_transitionName);
+    EQ(std::string("PAUSE"), run[1].s_transitionName);
+    EQ(std::string("RESUME"), run[2].s_transitionName);
+    EQ(std::string("PAUSE"), run[3].s_transitionName);
+    EQ(std::string("END"),   run[4].s_transitionName);
+    
+}
+void runtest::gettrans_3()
+{
+    // out of range indexing gives std::range_error
+    
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "END", "Ending the run now");
+    LogBookRun run (*m_db, id);
+    
+    
+    CPPUNIT_ASSERT_THROW(
+        const LogBookRun::Transition& t(run[5]),
+        std::out_of_range
+    );
+}
+
+void runtest::last_1()
+{
+    // Get the last transition id:
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    LogBookRun run(*m_db, id);
+    
+    EQ(LogBook::transitionId(*m_db, "PAUSE"), run.lastTransitionType());
+    
+}
+void runtest::last_2()
+{
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    LogBookRun run(*m_db, id);
+    
+    EQ(std::string("PAUSE"), std::string(run.lastTransition()));
+}
+void runtest::active_1()
+{
+    // active:
+    
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    LogBookRun run(*m_db, id);
+    ASSERT(run.isActive());
+}
+void runtest::active_2()
+{
+    // in active by virtua of normal END
+    
+    int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "END", "Normal end");
+    LogBookRun run(*m_db, id);
+    
+    ASSERT(!run.isActive());
+}
+void runtest::active_3()
+{
+    // Inactive by virtual of an emergency end:
+    
+int id   = makeRun(456, "Testing", "Several transitions:");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "RESUME", "resuming the run now");
+    addTransition(id, "PAUSE", "pausing the run now");
+    addTransition(id, "EMERGENCY_END", "something bad happened");
+    LogBookRun run(*m_db, id);
+    
+    ASSERT(!run.isActive());
 }

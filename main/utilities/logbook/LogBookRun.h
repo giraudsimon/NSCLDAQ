@@ -89,11 +89,14 @@ public:
 
     const RunInfo& getRunInfo() const;
     bool  isCurrent(CSqlite& db) const;
-    Transition operator[](int n) const;
+    const Transition& operator[](int n) const;
     size_t numTransitions() const;
-    int    lastTransitionId() const;
+    int    lastTransitionType() const;
     const char* lastTransition() const;
+    bool isActive() const;
+    
     void transition(CSqlite& db, const char* type);
+    
     
     //
     static LogBookRun* currentRun(CSqlite& db);
@@ -124,6 +127,8 @@ public:
     
     static bool isLegal(CSqlite& db, int runId, int proposedTransition);
     
+private:
+    static bool checkTransition(CSqlite& db, int from, int  to);
     
 };
 

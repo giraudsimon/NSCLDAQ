@@ -69,7 +69,7 @@ LogBookRun::LogBookRun(CSqlite& db, int id)
             shift_id, short_comment, type \
             FROM run_transitions                                          \
             INNER JOIN valid_transitions ON transition_type = valid_transitions.id \
-            WHERE run_id = ?"
+            WHERE run_id = ? ORDER BY run_transitions.id ASC"
         );
         fetchtrans.bind(1, id);
         while (!(++fetchtrans).atEnd()) {
@@ -126,6 +126,29 @@ LogBookRun::isCurrent(CSqlite& db) const
     return result;
 }
 
+/**
+ * numTransitions
+ *   Returns the number of transitions:
+ * @return size_t
+ */
+size_t
+LogBookRun::numTransitions() const
+{
+    return m_run.s_transitions.size();
+}
+/**
+ * operator[]
+ *   Returns one of the transitions.
+ *
+ * @param index - index into the transitions vector to return.
+ * @return const Transition&
+ * @throw std::range_error if index out of range.
+ */
+const LogBookRun::Transition&
+LogBookRun::operator[](int index) const
+{
+    return m_run.s_transitions.at(index);
+}
 
 
 
@@ -158,4 +181,41 @@ LogBookRun::currentRun(CSqlite& db)
     
     return result;
     
+}
+/**
+ *lastTransitionType
+ *  Returns the id of the last (Most recent) transition type.  If you want the
+ *  text name see last Transition.
+ *
+ * @return int
+ */
+int
+LogBookRun::lastTransitionType() const
+{
+    return m_run.s_transitions.back().s_transition;
+}
+/**
+ * lastTransition
+ *   Returns the textual name of the last transition (e.g. BEGIN).
+ *
+ * @return const char*
+ */
+const char*
+LogBookRun::lastTransition() const
+{
+    return m_run.s_transitions.back().s_transitionName.c_str();
+}
+/**
+ * isActive
+ *    -- nnly if the last transition was not "END" or EMERGENCY_END
+ *  @return bool
+ */
+bool
+LogBookRun::isActive() const
+{
+    std::string last=lastTransition();
+    
+    // DeMorgan's theorem applied:
+    
+    return (last != std::string("END")) && (last != std::string("EMERGENCY_END"));
 }
