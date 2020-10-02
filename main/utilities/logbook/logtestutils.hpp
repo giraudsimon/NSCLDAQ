@@ -20,6 +20,24 @@
  */
 #ifndef LOGTESTUTILS_H
 #define LOGTESTUTILS_H
+#include <stdlib.h>
+#include <unistd.h>
+#include <string>
+#include <string.h>
+
+#include "LogBookPerson.h"
+
+static std::string tempFilename(const char* templateName)
+{
+    char name[500];
+    strncpy(name, templateName, sizeof(name));
+    int fd = mkstemp(name);
+    ASSERT(fd >= 0);
+    close(fd);
+    unlink(name);
+    
+    return std::string(name);
+}
 
 static std::ostream& operator<<(std::ostream& s, LogBookPerson& p)
 {

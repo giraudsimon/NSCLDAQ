@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "logtestutils.hpp"
 
 static const char* logbookname = "logbook.XXXXXX";
 
@@ -55,14 +56,10 @@ private:
     std::vector<LogBookPerson*> m_matches;
 public:
     void setUp() {
-        char name[100];
-        strncpy(name, logbookname, sizeof(name));
-        int fd = mkstemp(name);
-        close(fd);
-        unlink(name);
-        m_dbName = name;
-        LogBook::create(name, "0400x", "Ron Fox", "Person tests");
-        m_pDb = new CSqlite(name, CSqlite::readwrite);
+        m_dbName = tempFilename(logbookname);
+        
+        LogBook::create(m_dbName.c_str(), "0400x", "Ron Fox", "Person tests");
+        m_pDb = new CSqlite(m_dbName.c_str(), CSqlite::readwrite);
     }
     void tearDown() {
         for (int i =0; i < m_matches.size(); i++) {

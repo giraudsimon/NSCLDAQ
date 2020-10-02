@@ -28,7 +28,7 @@
 #include <string.h>
 #include <string>
 
-
+#include "logtestutils.hpp"
 
 static const char* logbookname = "logbook.XXXXXX";
 
@@ -50,14 +50,9 @@ std::string m_dbName;
     std::vector<LogBookPerson*> m_matches;
 public:
     void setUp() {
-        char name[100];
-        strncpy(name, logbookname, sizeof(name));
-        int fd = mkstemp(name);
-        close(fd);
-        unlink(name);
-        m_dbName = name;
-        LogBook::create(name, "0400x", "Ron Fox", "Person tests");
-        m_book = new LogBook(name);
+        m_dbName = tempFilename(logbookname);
+        LogBook::create(m_dbName.c_str(), "0400x", "Ron Fox", "Person tests");
+        m_book = new LogBook(m_dbName.c_str());
     }
     void tearDown() {
         for (int i =0; i < m_matches.size(); i++) {

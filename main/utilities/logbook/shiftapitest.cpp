@@ -78,16 +78,10 @@ public:
     // Create a logbook in a temp file with
     // some people in it:
     void setUp() {
-        char filename[100];
-        strncpy(filename, nameTemplate, sizeof(filename));
-        int fd = mkstemp(filename);
-        ASSERT(fd >= 0);
-        close(fd);
-        unlink(filename);
+        m_filename = tempFilename(nameTemplate);
         
-        m_filename = filename;
-        LogBook::create(filename, "0400x", "Ron Fox", "Testing logbook");
-        m_pLogBook = new LogBook(filename);
+        LogBook::create(m_filename.c_str(), "0400x", "Ron Fox", "Testing logbook");
+        m_pLogBook = new LogBook(m_filename.c_str());
         
         // Add people to the logbook.
         

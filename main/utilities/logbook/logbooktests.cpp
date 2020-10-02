@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <string>
+#include "logtestutils.hpp"
 
 static const char* dbTemplate="logbook.XXXXXX";
 
@@ -44,14 +45,8 @@ private:
     std::string m_DbName;
 public:
     void setUp() {
-        char fname[100];
-        strncpy(fname, dbTemplate, sizeof(fname));
-        int fd = mkstemp(fname);
-        ASSERT(fd >= 0);
-        close(fd);            // Just need the name.
-        unlink(fname);
-        m_DbName = fname;
-        LogBook::create(fname, "0400x", "Ron Fox", "Test Logbook");
+        m_DbName = tempFilename(dbTemplate);
+        LogBook::create(m_DbName.c_str(), "0400x", "Ron Fox", "Test Logbook");
     }
     void tearDown() {
         rmdir(LogBook::m_tempdir.c_str());

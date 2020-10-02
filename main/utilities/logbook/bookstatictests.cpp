@@ -30,6 +30,7 @@
 #include <string.h>
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
+#include "logtestutils.hpp"
 
 
 static const char* pFileTemplate="logbook.XXXXXX";
@@ -63,16 +64,8 @@ private:
 public:
     void setUp() {
         rmdir(dirpath().c_str());  // In case logbook has been used.
+        m_dbName = tempFilename(pFileTemplate);
         
-        char database[100];
-        strncpy(database, pFileTemplate, sizeof(database));
-        
-        int fd = mkstemp(database);
-        ASSERT(fd >= 0);
-        close(fd);
-        unlink(database);    // Just really want a name.
-        
-        m_dbName = database;
     }
     void tearDown() {
         unlink(m_dbName.c_str());
