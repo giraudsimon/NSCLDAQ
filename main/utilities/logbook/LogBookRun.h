@@ -104,19 +104,19 @@ public:
         CSqlite& db,  int number,
         const char* title, const char* remark=nullptr
     );
-    static int  end (
+    static void  end (
         CSqlite& db,  int runid,
         const char* remark=nullptr
     );
-    static int  pause (
+    static void  pause (
         CSqlite& db,  int runid,
         const char* remark=nullptr
     );
-    static int  resume (
+    static void  resume (
         CSqlite& db,  int runid,
         const char* remark=nullptr
     );
-    static int  emergency_end (
+    static void  emergency_end (
         CSqlite& db,  int runid,
         const char* remark
     );

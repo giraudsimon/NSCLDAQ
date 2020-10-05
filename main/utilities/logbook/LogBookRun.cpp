@@ -430,6 +430,41 @@ LogBookRun::begin(
     }
     return run_id;                  // Commits the transaction.
 }
+/**
+ * end
+ *    End the specified run. Run must be the current run and it must
+ *    be legal to end the run.  The run will no longer be current after this
+ *    call.
+ * @param db  - database connection reference.
+ * @param runid - Id of the run to end (Primary key; not run number).
+ * @param remark - Remark to associate with the end of the run.
+ *                (optional, defaults to no comment).
+ * @throw LogBook::Exception -run id does not exist.
+ * @throw LogBook::Exception - run is not current.
+ * @throw LogBook::Exception - Run is not in the proper state to end.
+ * 
+ */
+void
+LogBookRun::end(CSqlite& db, int runid, const char* remark)
+{
+    const char* note="";
+    if (remark) note = remark;
+    
+    // Does the run even exist (throws if no such)
+    
+    LogBookRun run(db, runid);
+    if (!run.isCurrent(db)) {
+        std::stringstream  msg;
+        msg << "Attempting to end run number "
+            <<  run.getRunInfo().s_number << " but this run is not current";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    // Now we can just perform the transition on the run:
+    
+    run.transition(db, "END", note);
+       
+}
 
 /////////////////////////////////////////////////////////////////////
 // Private utilities:

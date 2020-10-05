@@ -146,6 +146,14 @@ private:
     CPPUNIT_TEST(begin_2);      // Duplicate run .
     CPPUNIT_TEST(begin_3);      // NO current shift.
     CPPUNIT_TEST(begin_4);      // Check the begin did the right stuff.
+    CPPUNIT_TEST(begin_5);      // THere's a current run.
+    
+    CPPUNIT_TEST(end_1);        // Valid end run.
+    CPPUNIT_TEST(end_2);        // Run does not exist.
+    CPPUNIT_TEST(end_3);        // RUn exists but is not current somehow.
+    CPPUNIT_TEST(end_4);        // NOt valid to end (e.g. already ended).
+    CPPUNIT_TEST(end_5);        // Check the end did the right stuff.
+    
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -210,6 +218,13 @@ protected:
     void begin_2();
     void begin_3();
     void begin_4();
+    void begin_5();
+    
+    void end_1();
+    void end_2();
+    void end_3();
+    void end_4();
+    void end_5();
 private:
     int makeRun(int run, const char* title, const char* note);
     int addTransition(int runid, const char* type, const char* note);
@@ -1079,4 +1094,71 @@ void runtest::begin_4()
     delete shift;
     EQ(shiftId, t.s_onDuty->id());
     
+}
+void runtest::begin_5()
+{
+    // Existing runs must be closed first:
+    
+    LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::begin(*m_db, 124, "This is a title", "This is a note"),
+        LogBook::Exception
+    );
+}
+void runtest::end_1()
+{
+    // Ending the current and running run is valid:
+    
+    int id = LogBookRun::begin(*m_db, 123, "THis is a title", "This is a note");
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookRun::end(*m_db, id, "Ending the run")
+    );
+}
+void runtest::end_2()
+{
+    // ending a nonexistent run throws:
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::end(*m_db, 123, "ENding"),
+        LogBook::Exception
+    );
+}
+void runtest::end_3()
+{
+   // Run exists but is not current:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    makeRun(1234, "ANother run", "Another note");  // Displaces current
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::end(*m_db, id, "Ending the run"),
+        LogBook::Exception
+    );
+
+}
+void runtest::end_4()
+{
+    // Can't run an already ended run:
+    //
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::end(*m_db, id, "Ending the run");
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::end(*m_db, id, "Already ended"),
+        LogBook::Exception
+    );
+}
+void runtest::end_5()
+{
+    // end run does the right things to the run.
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::end(*m_db, id, "Ending the run");
+    LogBookRun run(*m_db, id);                   // Fetches from db.
+    
+    // We don't need an exaustive check because we've already done this for
+    // transaction which end relies on:
+    
+    EQ(size_t(2), run.numTransitions());
+    EQ(std::string("END"), std::string(run.lastTransition()));
 }
