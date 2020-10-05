@@ -491,6 +491,53 @@ LogBookRun::emergency_end(CSqlite& db, int runid, const char* remark)
 {
     doTransition(db, runid, "EMERGENCY_END", remark);
 }
+/**
+ * list
+ *   Lists the runs
+ *
+ *  @param db - database reference.
+ *  @return std::vector<LogBookRun*>  - all runs. Note that the
+ *       pointer point to dynamically allocated runs and must therefore
+ *       have delete applied to them
+ */
+std::vector<LogBookRun*>
+LogBookRun::list(CSqlite& db)
+{
+    std::vector<LogBookRun*> result;
+    
+    CSqliteStatement list(
+        db,
+        "SELECT id FROM run"
+    );
+    while(!(++list).atEnd()) {
+        int id = list.getInt(0);
+        result.push_back(new LogBookRun(db, id));
+    }
+    
+    return result;
+}
+ /**
+  * find
+  *    Returns the log book that matches the run number:
+  *
+  * @param db  - database reference.
+  * @return LogBookRun* - pointer to the found object. Null if not found.
+  */
+ LogBookRun*
+ LogBookRun::find(CSqlite& db, int run)
+ {
+    int id;
+    LogBookRun* result;
+    try {
+        id = runId(db, run);
+        result = new LogBookRun(db, id);
+    }
+    catch (...) {
+        return nullptr;
+    
+    }
+    return result;
+ }
 /////////////////////////////////////////////////////////////////////
 // Private utilities:
 

@@ -120,8 +120,8 @@ public:
         CSqlite& db,  int runid,
         const char* remark
     );
-    static std::vector<LogBookRun*> list();
-    static LogBookRun* find(int runNumber);
+    static std::vector<LogBookRun*> list(CSqlite& db);
+    static LogBookRun* find(CSqlite& db, int runNumber);
     
     
     static bool isLegal(CSqlite& db, int runId, int proposedTransition);

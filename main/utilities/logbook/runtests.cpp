@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-
+#include <set>
 
 class runtest : public CppUnit::TestFixture {
     
@@ -167,6 +167,16 @@ private:
     
     CPPUNIT_TEST(emergencyend_1); // Valid emergency end.
     CPPUNIT_TEST(emergencyend_2); // not current (valid in this case).
+    
+    CPPUNIT_TEST(list_1);      // Nothing to list.
+    CPPUNIT_TEST(list_2);      // one item to list.
+    CPPUNIT_TEST(list_3);      // several items.
+    
+    // note that find depends on runId which is already throroughly tested
+    // so these tests can be cursory.
+    
+    CPPUNIT_TEST(find_1);      // Match found.
+    CPPUNIT_TEST(find_2);      // NO match found.
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -250,6 +260,13 @@ protected:
     void emergencyend_1();
     void emergencyend_2();
     void emergencyend_3();
+    
+    void list_1();
+    void list_2();
+    void list_3();
+    
+    void find_1();
+    void find_2();
 private:
     int makeRun(int run, const char* title, const char* note);
     int addTransition(int runid, const char* type, const char* note);
@@ -1289,4 +1306,64 @@ void runtest::emergencyend_3()
         std::string("Emergency end run"),
         std::string(run[1].s_transitionComment)
     );
+}
+
+void runtest::list_1()
+{
+    // Initially; there are no runs.
+    
+    auto  listing = LogBookRun::list(*m_db);
+    ASSERT(listing.empty());
+}
+void runtest::list_2()
+{
+    // After we create a single run we should see it.
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    auto list = LogBookRun::list(*m_db);
+    EQ(size_t(1), list.size());
+    EQ(id, list[0]->getRunInfo().s_id);
+    delete list[0];
+}
+void runtest::list_3()
+{
+    // After we create several runs we should see them:
+ 
+    std::set<int> createdIds;
+    for (int i =0; i < 10; i++) {
+        int id = LogBookRun::begin(*m_db, i, "A run", "Begin");
+        LogBookRun::end(*m_db, id);
+        createdIds.insert(id);
+    }
+    auto list = LogBookRun::list(*m_db);
+    
+    // Must have the same set of ids:
+    
+    std::set<int> foundIds;
+    for (int i =0; i < list.size(); i++) {
+        int id = list[i]->getRunInfo().s_id;
+        foundIds.insert(id);
+        delete list[i];
+    }
+    
+    ASSERT(createdIds == foundIds);
+}
+void runtest::find_1()
+{
+    // Find a run.l
+    
+    int id = LogBookRun::begin(*m_db, 1, "A RUN", "Begin");
+    LogBookRun* pRun = LogBookRun::find(*m_db, 1);
+    LogBookRun  run(*m_db, id);
+    
+    ASSERT(pRun);
+    EQ(run.getRunInfo().s_id, pRun->getRunInfo().s_id);
+    delete pRun;
+}
+void runtest::find_2()
+{
+    // no match:
+    
+    LogBookRun* pRun = LogBookRun::find(*m_db, 1);
+    ASSERT(!pRun);
 }
