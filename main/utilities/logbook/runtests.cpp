@@ -154,6 +154,19 @@ private:
     CPPUNIT_TEST(end_4);        // NOt valid to end (e.g. already ended).
     CPPUNIT_TEST(end_5);        // Check the end did the right stuff.
     
+    // Do to the factorization - we can reduce the actual number of tests
+    //  to code that can vary.
+    
+    CPPUNIT_TEST(pause_1);     // Valid pause.
+    CPPUNIT_TEST(pause_2);     // Not current.
+    CPPUNIT_TEST(pause_3);     // DId the right stuff.
+    
+    CPPUNIT_TEST(resume_1);    // Valid resume.
+    CPPUNIT_TEST(resume_2);    // Not current.
+    CPPUNIT_TEST(resume_3);    // Did the right stuff.
+    
+    CPPUNIT_TEST(emergencyend_1); // Valid emergency end.
+    CPPUNIT_TEST(emergencyend_2); // not current (valid in this case).
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -225,6 +238,18 @@ protected:
     void end_3();
     void end_4();
     void end_5();
+    
+    void pause_1();
+    void pause_2();
+    void pause_3();
+    
+    void resume_1();
+    void resume_2();
+    void resume_3();
+    
+    void emergencyend_1();
+    void emergencyend_2();
+    void emergencyend_3();
 private:
     int makeRun(int run, const char* title, const char* note);
     int addTransition(int runid, const char* type, const char* note);
@@ -1161,4 +1186,107 @@ void runtest::end_5()
     
     EQ(size_t(2), run.numTransitions());
     EQ(std::string("END"), std::string(run.lastTransition()));
+}
+void runtest::pause_1()
+{
+    // Legal pause:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookRun::pause(*m_db, id, "Pausing the run")
+    );
+}
+void runtest::pause_2()
+{
+    // Not legal if not current:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    makeRun(333, "Another run", "Stealing currency");
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::pause(*m_db, id, "Pausing illegaly"),
+        LogBook::Exception
+    );
+}
+void runtest::pause_3()
+{
+    // Make sure everthing got done right:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::pause(*m_db, id, "Legal run pause");
+    
+    LogBookRun run(*m_db, id);
+    EQ(size_t(2), run.numTransitions());
+    const LogBookRun::Transition& t(run[1]);
+    
+    EQ(std::string("PAUSE"), std::string(run.lastTransition()));
+    EQ(std::string("Legal run pause"), t.s_transitionComment);
+    
+}
+void runtest::resume_1()
+{
+    // Legal resume:
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::pause(*m_db, id, "Legal run pause");
+    
+    CPPUNIT_ASSERT_NO_THROW(LogBookRun::resume(*m_db, id, "Legal resume"));
+}
+void runtest::resume_2()
+{
+    // Can't resume non current run:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::pause(*m_db, id, "Legal run pause");
+    makeRun(333, "Another run", "Stealing currency");
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::resume(*m_db, id, "Not legal - not current"),
+        LogBook::Exception
+    );
+}
+void runtest::resume_3()
+{
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun::pause(*m_db, id, "Legal run pause");
+    LogBookRun::resume(*m_db, id, "Legale resume run");
+    
+    LogBookRun run(*m_db, id);
+    
+    EQ(size_t(3), run.numTransitions());
+    EQ(std::string("RESUME"), std::string(run.lastTransition()));
+    EQ(
+        std::string("Legale resume run"),
+        std::string(run[2].s_transitionComment)
+    );
+}
+void runtest::emergencyend_1()
+{
+    // Legal end of current run.
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookRun::emergency_end(*m_db, id, "Emergency end")
+    );
+}
+void runtest::emergencyend_2()
+{
+    // Non current run can be emergency ended:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    makeRun(333, "Another run", "Stealing currency");
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookRun::emergency_end(*m_db, id, "Emergency end")
+    );
+}
+void runtest::emergencyend_3()
+{
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note"); 
+    LogBookRun::emergency_end(*m_db, id, "Emergency end run");
+    
+    LogBookRun run(*m_db, id);
+    EQ(size_t(2), run.numTransitions());
+    EQ(std::string("EMERGENCY_END"), std::string(run.lastTransition()));
+    EQ(
+        std::string("Emergency end run"),
+        std::string(run[1].s_transitionComment)
+    );
 }

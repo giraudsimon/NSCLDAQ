@@ -132,6 +132,9 @@ private:
         CSqlite& db, int run_id, int shift_id, const char* to, const char* note
     );
     static int currentShiftId(CSqlite& db);
+    static void doTransition(
+        CSqlite& db, int runid, const char* to, const char* remark=nullptr
+    );
     
 };
 

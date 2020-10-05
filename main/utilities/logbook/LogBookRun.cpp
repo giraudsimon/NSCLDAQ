@@ -447,25 +447,50 @@ LogBookRun::begin(
 void
 LogBookRun::end(CSqlite& db, int runid, const char* remark)
 {
-    const char* note="";
-    if (remark) note = remark;
     
-    // Does the run even exist (throws if no such)
+    doTransition(db, runid, "END", remark);
     
-    LogBookRun run(db, runid);
-    if (!run.isCurrent(db)) {
-        std::stringstream  msg;
-        msg << "Attempting to end run number "
-            <<  run.getRunInfo().s_number << " but this run is not current";
-        std::string m(msg.str());
-        throw LogBook::Exception(m);
-    }
-    // Now we can just perform the transition on the run:
-    
-    run.transition(db, "END", note);
        
 }
-
+/**
+ * pause
+ *    Pause a run.  See end; all the same restrictions apply.
+ *
+ * @param db - database connection reference.
+ * @param runid - id (primary key) of the run.
+ * @param remark - the remark defaults to empty.
+ */
+void
+LogBookRun::pause(CSqlite& db, int runid, const char* remark)
+{
+    doTransition(db, runid, "PAUSE", remark);
+       
+}
+/**
+ * resume:
+ *
+ *  @param db   - database.
+ *  @param runid - run id.
+ *  @param remark - comment (if null [default] empty string)
+ */
+void
+LogBookRun::resume(CSqlite& db, int runid, const char* remark)
+{
+    doTransition(db, runid, "RESUME", remark);
+}
+/**
+ * emergency_end
+ *    Do an emergency end operation.
+ * 
+ *  @param db   - database.
+ *  @param runid - run id.
+ *  @param remark - comment (if null [default] empty string)
+ */
+void
+LogBookRun::emergency_end(CSqlite& db, int runid, const char* remark)
+{
+    doTransition(db, runid, "EMERGENCY_END", remark);
+}
 /////////////////////////////////////////////////////////////////////
 // Private utilities:
 
@@ -544,4 +569,42 @@ LogBookRun::currentShiftId(CSqlite& db)
     int shift_id = pCurrent->id();
     delete pCurrent;
     return shift_id;
+}
+
+/*
+ * doTransition
+ *   DO a transition for a run.  See end for more information
+ * @param db  - database.
+ * @param runid - id of the run.
+ * @param to    - transition to attempt.
+ * @param remark - run note, defaults to empty string
+ */
+void
+LogBookRun::doTransition(
+    CSqlite& db, int runid, const char* to, const char* remark
+)
+{
+    const char* note="";
+    if (remark) note = remark;
+    
+    // Does the run even exist (throws if no such)
+    
+    LogBookRun run(db, runid);
+    
+    // If the transition is not an emergency end it's only allowed
+    // for the current run:
+    
+    if (std::string("EMERGENCY_END") != to) {
+        if (!run.isCurrent(db)) {
+            std::stringstream  msg;
+            msg << "Attempting to " << to  << " run number "
+                <<  run.getRunInfo().s_number << " but this run is not current";
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
+    }
+    // Now we can just perform the transition on the run:
+    
+    run.transition(db, to , note);
+       
 }
