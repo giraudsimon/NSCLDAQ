@@ -21,6 +21,7 @@
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
+#include "LogBookRun.h"
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
 #include <CSqliteException.h>
@@ -390,6 +391,116 @@ LogBook::transitionId(CSqlite& db, const char* name)
         throw LogBook::Exception(m);
     }
     return find.getInt(0);
+}
+
+/**
+ *  currentRun
+ * @return The current run.
+ * @retval nullptr - there is no currently active run.
+ */
+LogBookRun*
+LogBook::currentRun()
+{
+    return LogBookRun::currentRun(*m_pConnection);
+}
+/**
+ * runId
+ *   Return the id of a run given its run number.
+ * @param number - the run number to get.
+ * @return int   - run number's id. Failures result in LogBookException.
+ */
+int
+LogBook::runId(int number)
+{
+    return LogBookRun::runId(*m_pConnection, number);
+}
+/**
+ * begin
+ *    Begins a new run in the database.
+ * @param number - the run number.
+ * @param title  - Title to apply to the run.
+ * @param remark - Short plain text remark to associate with the run.
+ * @return LogBookRun*  - Encapsulated run.  This is dynamically genearated
+ *                 so delete must be called to kill it off at the right time.
+ */
+LogBookRun*
+LogBook::begin(int number, const char* title, const char* remark)
+{
+    int id  = LogBookRun::begin(*m_pConnection, number, title, remark);
+    return new LogBookRun(*m_pConnection, id);
+}
+/**
+ * end
+ *   Ends the run.
+ *
+ *  @param pRun - Run to end- must be current.
+ *  @param remark - remark to associate with the end of run.
+ */
+void
+LogBook::end(LogBookRun* pRun, const char* remark)
+{
+    int id = pRun->getRunInfo().s_id;
+    LogBookRun::end(*m_pConnection, id, remark);
+}
+/**
+ * pause
+ *    Pauses the run.
+ * @param pRun - pointer to the run object.
+ * @param remark - pointer to the remark to attach to the end.
+ */
+void
+LogBook::pause(LogBookRun* pRun, const char* remark)
+{
+    int id = pRun->getRunInfo().s_id;
+    LogBookRun::pause(*m_pConnection, id, remark);
+}
+/**
+ * resume
+ *    Resumes a run.
+ *  @param pRun - pointer to the run object to resume.
+ *  @param remark - remark to associate with the resumption.,
+ */
+void
+LogBook::resume(LogBookRun* pRun, const char* remark)
+{
+    int id = pRun->getRunInfo().s_id;
+    LogBookRun::resume(*m_pConnection, id, remark);
+}
+/**
+ * emergencyStop
+ *   Does an emergency stop on the run. This is a transtion
+ *   that can be performed on a run that is not current.
+ *
+ * @param pRun - pointer to the run object.
+ * @param remark - remark to associate with the operation.
+ */
+void
+LogBook::emergencyStop(LogBookRun* pRun, const char* remark)
+{
+    int id = pRun->getRunInfo().s_id;
+    LogBookRun::emergency_end(*m_pConnection, id, remark);
+}
+/**
+ * listRuns
+ *    Returns a list of the run objects.
+ *
+ * @return std::vector<LogBookRun*> - must be deleted when done.
+ */
+std::vector<LogBookRun*>
+LogBook::listRuns()
+{
+    return LogBookRun::list(*m_pConnection);
+}
+/**
+ * findRun
+ *    Finds the run with the selected run number.
+ *  @param number - number of the run to find.
+ *  @return LogBookRun* - pointer to the matching run..null if there's no match.
+ */
+LogBookRun*
+LogBook::findRun(int number)
+{
+    return LogBookRun::find(*m_pConnection, number);
 }
 /////////////////////////////////////////////////////////
 // Private methods
