@@ -128,6 +128,10 @@ public:
     
 private:
     static bool checkTransition(CSqlite& db, int from, int  to);
+    static int  addTransition(
+        CSqlite& db, int run_id, int shift_id, const char* to, const char* note
+    );
+    static int currentShiftId(CSqlite& db);
     
 };
 

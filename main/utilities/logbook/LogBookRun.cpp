@@ -155,34 +155,7 @@ LogBookRun::operator[](int index) const
 
 
 
-///////////////////////////////////////////////////////////////
-// static methods:
 
-
-/**
- * currentRun
- *    Returns the current run object.
- * @param db - Database object reference.
- * @return LogBookRun* - dynamically allocated so delete if done with it.
- * @retval nullptr     - There is no currently active run.
- */
-LogBookRun*
-LogBookRun::currentRun(CSqlite& db)
-{
-    LogBookRun* result = nullptr;
-    CSqliteStatement cid(
-        db,
-        "SELECT id FROM current_run"
-    );
-    ++cid;
-    
-    if (!cid.atEnd()) {
-        result  = new LogBookRun(db, cid.getInt(0));
-    }
-    
-    return result;
-    
-}
 /**
  *lastTransitionType
  *  Returns the id of the last (Most recent) transition type.  If you want the
@@ -257,8 +230,8 @@ LogBookRun::transition(CSqlite& db, const char* type, const char* note)
         );
         transition.bind(1, m_run.s_Info.s_id);
         transition.bind(2, typeId);
-        time_t t = time(nullptr);
-        transition.bind(3, (int)(t));
+        time_t now = time(nullptr);
+        transition.bind(3, (int)(now));
         auto shift = LogBookShift::getCurrent(db);
         if (!shift) {
             throw LogBook::Exception(
@@ -266,9 +239,21 @@ LogBookRun::transition(CSqlite& db, const char* type, const char* note)
             );
         }
         transition.bind(4, shift->id());
-        delete shift;
         transition.bind(5, note, -1, SQLITE_STATIC);
         ++transition;
+        
+        // Add the transition to the object's cache of the transition history.
+        
+        m_run.s_transitions.emplace_back();
+        Transition& t(m_run.s_transitions.back());
+        t.s_id = transition.lastInsertId();
+        t.s_transition = typeId;
+        t.s_transitionName = type;
+        t.s_transitionTime = now;
+        t.s_transitionComment = note;
+        t.s_onDuty = shift;
+        
+        
         
         // Now if the transition was an END or EMERGENCY_END
         // and we are current, we need to set that there's no current run.
@@ -295,7 +280,156 @@ LogBookRun::transition(CSqlite& db, const char* type, const char* note)
     
 }
 
+///////////////////////////////////////////////////////////////
+// static methods:
 
+
+/**
+ * currentRun
+ *    Returns the current run object.
+ * @param db - Database object reference.
+ * @return LogBookRun* - dynamically allocated so delete if done with it.
+ * @retval nullptr     - There is no currently active run.
+ */
+LogBookRun*
+LogBookRun::currentRun(CSqlite& db)
+{
+    LogBookRun* result = nullptr;
+    CSqliteStatement cid(
+        db,
+        "SELECT id FROM current_run"
+    );
+    ++cid;
+    
+    if (!cid.atEnd()) {
+        result  = new LogBookRun(db, cid.getInt(0));
+    }
+    
+    return result;
+    
+}
+/**
+ * runId
+ *    Returns the run id that corresponds to a specific run numgber.
+ * @param db - reference to the database connection object.
+ * @param run - Run Number.
+ * @return int - primary key of the id.
+ * @throw LogBook::Exception - if there is no match
+ * @note As a user may well look up a non-existent run, exceptions thrown by this
+ *       method should be handled.  If what is "No such run nnn" this indicates
+ *       there is no matching run. 
+ */
+int
+LogBookRun::runId(CSqlite& db, int run)
+{
+    CSqliteStatement find(
+        db,
+        "SELECT id FROM run WHERE number = ?"
+    );
+    find.bind(1, run);
+    ++find;
+    if (find.atEnd()) {
+        std::stringstream msg;
+        msg << "No such run " << run;
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    return find.getInt(0);
+}
+/**
+ * begin
+ *   Creates a new run in the 'begin' state.  Returns the id of that run.
+ *
+ * @param db   - references the database connection object.
+ * @param number - run number.
+ * @param title  - run title.
+ * @param remark - remark to use for the run.  If null and empty string
+ *                 is used.
+ * @return id    - Id of the run's primary key (can be used to construct the obj).
+ * @throw LogBook::Exception - if the run already exists.
+ * @throw LogBook::Exception - if there's a failure inserting the run records.
+ * @note   The run is inserted atomically.
+ */
+int
+LogBookRun::begin(
+    CSqlite& db, int number, const char* title, const char* remark
+)
+{
+    const char* note = "";
+    if (remark) note = remark;
+    
+    // Throw if the run already exists:
+    
+    bool exists(true);
+    try {
+        LogBookRun::runId(db, number);
+    }
+    catch (LogBook::Exception& e) {
+        exists = false;
+    }
+    if (exists) {
+        std::stringstream msg;
+        msg << "Attempting to create a run that already exists: " << number;
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    // Throw if there's a current run:
+    
+    auto pRun = currentRun(db);
+    if (pRun) {
+        std::stringstream msg;
+        msg << "There is already an active run: run number: "
+            << pRun->m_run.s_Info.s_number << " title: "
+            << pRun->m_run.s_Info.s_title;
+        std::string m(msg.str());
+        delete pRun;
+        throw LogBook::Exception(m);
+    }
+    
+    // make the run and its initial transition->Begin in a transaction:
+    
+    CSqliteTransaction t(db);
+    int run_id;
+    try {
+        CSqliteStatement insertRoot(
+            db,
+            "INSERT INTO run (number, title) VALUES (?,?)"
+        );
+        insertRoot.bind(1, number);
+        insertRoot.bind(2, title, -1, SQLITE_STATIC);
+        ++insertRoot;
+        
+        run_id = insertRoot.lastInsertId();
+        
+        int shift_id = currentShiftId(db);
+        
+        addTransition(db, run_id, shift_id, "BEGIN", note);
+        
+        // This is now the current run too:
+        
+        CSqliteStatement delcurrent(
+            db,
+            "DELETE FROM current_run"
+        );
+        ++delcurrent;
+        CSqliteStatement inscurrent(
+             db,
+            "INSERT INTO current_run (id) VALUES(?)"
+        );
+        inscurrent.bind(1, run_id);
+        ++inscurrent;
+        return run_id;
+    }
+    catch(CSqliteException& e) {
+        t.scheduleRollback();
+        LogBook::Exception::rethrowSqliteException(e, "Making a new run");
+    }
+    catch(...) {
+        t.scheduleRollback();
+        throw;
+    }
+    return run_id;                  // Commits the transaction.
+}
 
 /////////////////////////////////////////////////////////////////////
 // Private utilities:
@@ -320,4 +454,59 @@ LogBookRun::checkTransition(CSqlite& db, int from, int to)
     ++s;
     int result = s.getInt(0);
     return result != 0;
+}
+/**
+ * addTransition
+ *    Does all the needful stuff to insert a transition record for a run
+ *    The caller must have verified the existence of the run and the
+ *    legality of the tranition.  This method does not create a transaction
+ *    and therefore callers may need to have one running if this is part of
+ *    a larger picture.
+ *
+ *  @param db  - references the database connection object.
+ *  @param run_id - Primary key of the run that's having this transition added.
+ *  @param shift_id - the id of the shift that's logging this transition.
+ *  @param to     - Name of the transition edge.
+ *  @param note  - transition note.
+ *  @return int - the id of the transition (its primary key).
+ */
+int
+LogBookRun::addTransition(
+    CSqlite& db, int run_id, int shift_id,  const char* to, const char* note
+)
+{
+    // Insert the transition record.
+    
+    CSqliteStatement insertTrans(
+        db,
+        "INSERT INTO run_transitions                        \
+        (run_id, transition_type, time_stamp, shift_id, short_comment) \
+        VALUES (?, ?, ?, ?, ?)"
+    );
+    insertTrans.bind(1, run_id);
+    insertTrans.bind(2, LogBook::transitionId(db, to));
+    insertTrans.bind(3, time(nullptr));
+    insertTrans.bind(4, shift_id);
+    insertTrans.bind(5, note, -1, SQLITE_STATIC);
+    ++insertTrans;
+    return insertTrans.lastInsertId();       
+}
+/**
+ * currentShiftId
+ *    Returns the curent shift id or throws if there isn't one.
+ * @param db database connection object.
+ * @return int - shift id.
+ */
+int
+LogBookRun::currentShiftId(CSqlite& db)
+{
+    LogBookShift* pCurrent = LogBookShift::getCurrent(db);
+    if (!pCurrent) {
+        throw LogBook::Exception(
+            "There's no current shift while trying to insert a transition"
+        );
+    }
+    int shift_id = pCurrent->id();
+    delete pCurrent;
+    return shift_id;
 }

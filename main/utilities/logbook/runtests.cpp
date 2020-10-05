@@ -100,6 +100,52 @@ private:
     CPPUNIT_TEST(active_1);
     CPPUNIT_TEST(active_2);
     CPPUNIT_TEST(active_3);
+    
+    CPPUNIT_TEST(transition_1);
+    CPPUNIT_TEST(transition_2);      // Pause run.
+    CPPUNIT_TEST(transition_3);      // valid resume paused run.
+    CPPUNIT_TEST(transition_4);      // valid end paused run.
+    CPPUNIT_TEST(transition_5);      // valid emergency end active.
+    CPPUNIT_TEST(transition_6);      // valid emergency end paused
+    // Resumed runs look like another state type:
+    CPPUNIT_TEST(transition_7);     // Valid end of resumed run.
+    CPPUNIT_TEST(transition_8);     // valid pause of resumed run.
+    CPPUNIT_TEST(transition_9);     // valid emergency end of resumed run.
+    // Invalid transitions - BEGIN 
+    CPPUNIT_TEST(transition_10);    // BEGIN on BEGUN run.
+    CPPUNIT_TEST(transition_11);    // BEGIN Ended run.
+    CPPUNIT_TEST(transition_12);    // BEGIN Paused run.
+    CPPUNIT_TEST(transition_13);    // BEGIN resumed run.
+    CPPUNIT_TEST(transition_14);    // BEGIN Emergency ended run illegal.
+    // Invalid transitions - PAUSE:
+    CPPUNIT_TEST(transition_15);    // PAUSE Of PAUSED run illegal.
+    CPPUNIT_TEST(transition_16);    // Pause of ended run illegal.
+    CPPUNIT_TEST(transition_17);    // Pause of emergency ended run illegal.
+    // Invalid transitions of RESUME:
+    CPPUNIT_TEST(transition_18);    // Resume BEGIN run.
+    CPPUNIT_TEST(transition_19);    // Resume ENDed run.
+    CPPUNIT_TEST(transition_20);    // Resume EMERGENCY_ENDed run.
+    CPPUNIT_TEST(transition_21);    // Resume resumed.
+    // Invalid transitions of END:
+    CPPUNIT_TEST(transition_22);    // Invalid to end an ended run.
+    CPPUNIT_TEST(transition_23);    // Invalid to end an emergency ended run.
+    // Invalid transitions of emergency end
+    CPPUNIT_TEST(transition_24);   // ended.
+    CPPUNIT_TEST(transition_25);   // Emergency ended.
+    CPPUNIT_TEST(transition_26);   // invalid transition name:
+    // Ended runs are no longer current:
+    CPPUNIT_TEST(transition_27);    // normal end.
+    CPPUNIT_TEST(transition_28);    // emergency end.
+    
+    CPPUNIT_TEST(runid_1);       // no runs always throws.
+    CPPUNIT_TEST(runid_2);       // found with only one to chose fromm.
+    CPPUNIT_TEST(runid_3);       // found with several to chose from - got the right one.
+    CPPUNIT_TEST(runid_4);       // Not found with several to chose from.
+    
+    CPPUNIT_TEST(begin_1);      // Valid begin run.
+    CPPUNIT_TEST(begin_2);      // Duplicate run .
+    CPPUNIT_TEST(begin_3);      // NO current shift.
+    CPPUNIT_TEST(begin_4);      // Check the begin did the right stuff.
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -125,6 +171,45 @@ protected:
     void active_1();
     void active_2();
     void active_3();
+    
+    void transition_1();
+    void transition_2();
+    void transition_3();
+    void transition_4();
+    void transition_5();
+    void transition_6();
+    void transition_7();
+    void transition_8();
+    void transition_9();
+    void transition_10();
+    void transition_11();
+    void transition_12();
+    void transition_13();
+    void transition_14();
+    void transition_15();
+    void transition_16();
+    void transition_17();
+    void transition_18();
+    void transition_19();
+    void transition_20();
+    void transition_21();
+    void transition_22();
+    void transition_23();
+    void transition_24();
+    void transition_25();
+    void transition_26();
+    void transition_27();
+    void transition_28();
+    
+    void runid_1();
+    void runid_2();
+    void runid_3();
+    void runid_4();
+    
+    void begin_1();
+    void begin_2();
+    void begin_3();
+    void begin_4();
 private:
     int makeRun(int run, const char* title, const char* note);
     int addTransition(int runid, const char* type, const char* note);
@@ -438,7 +523,7 @@ void runtest::active_3()
 {
     // Inactive by virtual of an emergency end:
     
-int id   = makeRun(456, "Testing", "Several transitions:");
+    int id   = makeRun(456, "Testing", "Several transitions:");
     addTransition(id, "PAUSE", "pausing the run now");
     addTransition(id, "RESUME", "resuming the run now");
     addTransition(id, "PAUSE", "pausing the run now");
@@ -446,4 +531,552 @@ int id   = makeRun(456, "Testing", "Several transitions:");
     LogBookRun run(*m_db, id);
     
     ASSERT(!run.isActive());
+}
+void runtest::transition_1()
+{
+    // Legal trisntion to end a run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "END", "Ending the run")
+    );
+    ASSERT(!run.isActive());           // No database fetch here.
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("END"));
+    
+    
+}
+
+void runtest::transition_2()
+{
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "PAUSE", "Pausing the run")
+    );
+    
+    ASSERT(run.isActive());
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("PAUSE"));
+}
+
+void runtest::transition_3()
+{
+    // Valid end of paused run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "RESUME", "Resuming run");
+    );
+    
+    ASSERT(run.isActive());
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("RESUME"));
+}
+void runtest::transition_4()
+{
+    // Valid end paused run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "END", "Ending paused run");
+    );
+    
+    ASSERT(!run.isActive());
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("END"));
+}
+void runtest::transition_5()
+{
+    // Valid emergency end of running run.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "EMERGENCY_END", "Emergecny end to active run")
+    );
+    
+    ASSERT(!run.isActive());
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("EMERGENCY_END"));
+}
+void runtest::transition_6()
+{
+    // Emergency end paused run.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "EMERGENCY_END", "EMG end to paused run")
+    );
+    
+    ASSERT(!run.isActive());
+    
+    CSqliteStatement fetchlast(
+        *m_db,
+        "SELECT type FROM run_transitions                       \
+            INNER JOIN valid_transitions on transition_type = valid_transitions.id \
+            WHERE run_id = ? ORDER BY run_transitions.id DESC LIMIT 1 \
+        "
+    );
+    fetchlast.bind(1, id);
+    ++fetchlast;
+    ASSERT(!(fetchlast.atEnd()));
+    EQ(fetchlast.getString(0), std::string("EMERGENCY_END"));
+}
+void runtest::transition_7()
+{
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    run.transition(*m_db, "RESUME", "Resumed run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "END", "Ending resumed")
+    );
+    // By now we believe the database and object are getting updated.
+}
+void runtest::transition_8()
+{
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    run.transition(*m_db, "RESUME", "Resumed run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "PAUSE", "Pausing resumed")
+    );
+}
+void runtest::transition_9()
+{
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing run");
+    run.transition(*m_db, "RESUME", "Resumed run");
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        run.transition(*m_db, "EMERGENCY_END", "Emergency ending resumed")
+    );
+}
+
+void runtest::transition_10()
+{
+    // invalid to begin an active run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "BEGIN", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_11()
+{
+    // invalid to begin an ended run.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "End run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "BEGIN", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_12()
+{
+    // Invalid to begin a paused run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "pause run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "BEGIN", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_13()
+{
+    // invalid to begin a resumed run.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "pause run");
+    run.transition(*m_db, "RESUME", "continuing run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "BEGIN", "Illegal"),
+        LogBook::Exception
+    );
+}
+
+void runtest::transition_14()
+{
+    // invalid to begin an emergency ended run.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "ended badly");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "BEGIN", "Illegal"),
+        LogBook::Exception
+    );
+}
+
+void runtest::transition_15()
+{
+    // ILlegal to pause paused run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "pause run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "PAUSE", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_16()
+{
+    // illegal to pause an ended run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "end run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "PAUSE", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_17()
+{
+    // illegal to pause an emergency ended run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "end run");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "PAUSE", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_18()
+{
+    // resume active.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "RESUME", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_19()
+{
+    // Resume resumed.
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "PAUSE", "Pausing");
+    run.transition(*m_db, "RESUME", "Resuming");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "RESUME", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_20()
+{
+    // Resume end'
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "Ending");
+    
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "RESUME", "Illegal"),
+        LogBook::Exception
+    );
+}
+void runtest::transition_21()
+{
+    // resume Emergency end:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "Ending");
+    
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "RESUME", "Illegal"),
+        LogBook::Exception
+    );
+}
+
+void runtest::transition_22()
+{
+    // Invalid to end an ended run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "Ending");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "END", "Illegal"),
+        LogBook::Exception
+    );
+    
+}
+void runtest::transition_23()
+{
+    // Invalid to end an emergency ended run:
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "Ending");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "END", "Illegal"),
+        LogBook::Exception
+    );
+    
+}
+
+void runtest::transition_24()
+{
+    // Invalid to e_end an ended run:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "Ending");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "EMERGENCY_END", "Illegal"),
+        LogBook::Exception
+    );
+    
+}
+void runtest::transition_25()
+{
+    // Invalid to e-end an emergency ended run:
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "Ending");
+    
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "EMERGENCY_END", "Illegal"),
+        LogBook::Exception
+    );
+    
+}
+void runtest::transition_26()
+{
+    // Invalid transition name:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+
+    CPPUNIT_ASSERT_THROW(
+        run.transition(*m_db, "INVALID", "Illegal"),
+        LogBook::Exception
+    );
+}
+
+void runtest::transition_27()
+{
+    // normally ended runs are not current:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "END", "Normal End");
+    
+    ASSERT(!run.isCurrent(*m_db));
+    ASSERT(!LogBookRun::currentRun(*m_db));
+}
+void runtest::transition_28()
+{
+    // abnormally rended runs are not current:
+    
+    int id = makeRun(456, "Testing", "Active -> end");
+    LogBookRun run(*m_db, id);
+    run.transition(*m_db, "EMERGENCY_END", "Normal End");
+    
+    ASSERT(!run.isCurrent(*m_db));
+    ASSERT(!LogBookRun::currentRun(*m_db));
+}
+
+void runtest::runid_1()
+{
+    // NO runs a find always fails:
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::runId(*m_db, 1),
+        LogBook::Exception
+    );
+}
+void runtest::runid_2()
+{
+    // Found with only one choice:
+    
+    int id = makeRun(456, "Testing", "Testing find");
+    int found;
+    CPPUNIT_ASSERT_NO_THROW(
+        found = LogBookRun::runId(*m_db, 456)
+    );
+    EQ(id, found);
+}
+void runtest::runid_3()
+{
+    // found from serveral:
+    
+    int id;
+    makeRun(1, "Testing", "Testing find");
+    makeRun(2, "Testing", "Testing find");
+    id = makeRun(3, "Testing", "This one");
+    makeRun(4, "Testing", "Testing find");
+    makeRun(5, "Testing", "Testing find");
+    
+    int found = LogBookRun::runId(*m_db, 3);
+    EQ(found, id);
+}
+void runtest::runid_4()
+{
+    // Not found amongst several:
+    
+    int id;
+    makeRun(1, "Testing", "Testing find");
+    makeRun(2, "Testing", "Testing find");
+    id = makeRun(3, "Testing", "This one");
+    makeRun(4, "Testing", "Testing find");
+    makeRun(5, "Testing", "Testing find");
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::runId(*m_db, 7),
+        LogBook::Exception
+    );
+}
+void runtest::begin_1()
+{
+    // Valid begin run:
+    
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookRun::begin(*m_db, 1, "This is a title", "This is a note")
+    );
+    
+}
+void runtest::begin_2()
+{
+    // Duplicate run:
+    
+    LogBookRun::begin(*m_db, 1, "This is a title", "This is a note");
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::begin(*m_db, 1, "This is a title", "This is a note"),
+        LogBook::Exception
+    );
+}
+void runtest::begin_3()
+{
+    // No current shift.
+    
+    CSqliteStatement rmcur(
+        *m_db,
+        "DELETE FROM current_shift"
+    );
+    ++rmcur;
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookRun::begin(*m_db, 1, "This is a title", "This is a note"),
+        LogBook::Exception
+    );
+}
+void runtest::begin_4()
+{
+    // The run was properly made:
+    
+    int id = LogBookRun::begin(*m_db, 123, "This is a title", "This is a note");
+    LogBookRun run(*m_db, id);
+    
+    ASSERT(run.isCurrent(*m_db));
+    ASSERT(run.isActive());
+    const LogBookRun::RunInfo& info(run.getRunInfo());
+    EQ(id, info.s_id);
+    EQ(123, info.s_number);
+    EQ(std::string("This is a title"), info.s_title);
+    EQ(size_t(1), run.numTransitions());
+    const LogBookRun::Transition& t(run[0]);
+    EQ(std::string("BEGIN"), t.s_transitionName);
+    EQ(std::string("This is a note"), t.s_transitionComment);
+    
+    auto shift = m_log->getCurrentShift();
+    int shiftId = shift->id();
+    delete shift;
+    EQ(shiftId, t.s_onDuty->id());
+    
 }
