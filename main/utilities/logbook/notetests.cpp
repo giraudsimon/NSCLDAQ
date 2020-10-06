@@ -33,6 +33,10 @@
 #include "CSqliteStatement.h"
 #include "logtestutils.hpp"
 
+#include <time.h>
+#include <stdint.h>
+#include <set>
+
 
 class notetest : public CppUnit::TestFixture {
 private:
@@ -75,16 +79,119 @@ public:
     }
 private:
     CPPUNIT_TEST_SUITE(notetest);
-    CPPUNIT_TEST(test_1);
+    CPPUNIT_TEST(construct_1);
+    CPPUNIT_TEST(construct_2);
+    CPPUNIT_TEST(construct_3);
     CPPUNIT_TEST_SUITE_END();
     
 
 protected:
-    void test_1();
+    void construct_1();
+    void construct_2();
+    void construct_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(notetest);
 
-void notetest::test_1()
+void notetest::construct_1()
 {
+    // Construct if no-such failes:
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookNote(*m_db, 1),
+        LogBook::Exception
+    );
+}
+void notetest::construct_2()
+{
+    // can find/construct a note with no images:
+    
+    CSqliteStatement ins(
+        *m_db,
+        "INSERT INTO note (run_id, note_time, note)    \
+            VALUES (?,?,?)"
+    );
+    ins.bind(1, m_pRun->getRunInfo().s_id);
+    time_t now = time(nullptr);
+    ins.bind(2, int(now));
+    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ++ins;
+    
+    LogBookNote* pNote(nullptr);
+    CPPUNIT_ASSERT_NO_THROW(
+        pNote = new LogBookNote(*m_db, ins.lastInsertId());
+    );
+    
+    // Should be no images and the note  data should be correct:
+    
+    EQ(m_pRun->getRunInfo().s_id, pNote->m_textInfo.s_runId);
+    EQ(now, pNote->m_textInfo.s_noteTime);
+    EQ(std::string("This is the note text"), pNote->m_textInfo.s_contents);
+    EQ(size_t(0), pNote->m_imageInfo.size());
+    
+    
+    delete pNote;
+}
+void notetest::construct_3()
+{
+    // Construct a note with images attached>
+    
+    // Root record.
+    CSqliteStatement ins(
+        *m_db,
+        "INSERT INTO note (run_id, note_time, note)    \
+            VALUES (?,?,?)"
+    );
+    ins.bind(1, m_pRun->getRunInfo().s_id);
+    time_t now = time(nullptr);
+    ins.bind(2, int(now));
+    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ++ins;
+    int id = ins.lastInsertId();          // note id.
+ 
+    uint8_t randomData[100];             // 'image' data.
+    for (int i =0; i < 100; i++) randomData[i] = i;
+    
+    CSqliteStatement img (
+        *m_db,
+        "INSERT INTO note_image                               \
+            (note_id, note_offset, original_filename, image)   \
+            VALUES(?,?,?,?)"
+    );
+    img.bind(1, id);
+    img.bind(2, 10);
+    img.bind(3, "/usr/opt/fox/testing/test.img", -1, SQLITE_STATIC);
+    img.bind(4, (void*)(randomData), sizeof(randomData), SQLITE_STATIC);
+    ++img;    // one image.
+    img.reset();
+    img.bind(2, 100);
+    img.bind(3, "~/images/barney.img", -1, SQLITE_STATIC);
+    ++img;
+    
+    std::set<int> offsets = {10,100};
+    std::set<std::string> names = {"/usr/opt/fox/testing/test.img", "~/images/barney.img"};
+    // Construct the note:
+    
+    LogBookNote note(*m_db, id);
+    
+    // Root record:
+    
+    EQ(id, note.m_textInfo.s_id);
+    EQ(m_pRun->getRunInfo().s_id, note.m_textInfo.s_runId);
+    EQ(now, note.m_textInfo.s_noteTime);
+    EQ(std::string("This is the note text"), note.m_textInfo.s_contents);
+    
+    // For images we'll check the offsets and the image names of the
+    // images as well as that we have two of them.
+    
+    EQ(size_t(2), note.m_imageInfo.size());
+    std::set<int> foundOffsets;
+    std::set<std::string> foundNames;
+    for (int i = 0; i < 2; i++) {
+        foundOffsets.insert(note.m_imageInfo[i].s_noteOffset);
+        foundNames.insert(note.m_imageInfo[i].s_originalFilename);
+        EQ(sizeof(randomData), note.m_imageInfo[i].s_imageLength);
+    }
+    ASSERT(offsets == foundOffsets);
+    ASSERT(names == foundNames);
 }

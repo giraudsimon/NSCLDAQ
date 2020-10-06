@@ -48,7 +48,8 @@ LogBookNote::_NoteImage::_NoteImage() :
  *
  * @param rhs - the object we're copying.
  */
-LogBookNote::_NoteImage::_NoteImage(const _NoteImage& rhs)
+LogBookNote::_NoteImage::_NoteImage(const _NoteImage& rhs) :
+    s_pImageData(0), s_imageLength(0)
 {
     CopyIn(rhs);
 }
@@ -85,6 +86,13 @@ LogBookNote::_NoteImage::CopyIn(const _NoteImage& rhs)
     s_noteOffset       = rhs.s_noteOffset;
     s_originalFilename = rhs.s_originalFilename;
     s_imageLength      = rhs.s_imageLength;
+    free(s_pImageData);
+    s_pImageData = malloc(s_imageLength);
+    if (!s_pImageData) {
+        throw LogBook::Exception(
+            "Copying a NoteImage - unable to malloc image data"
+        );
+    }
     memcpy(s_pImageData, rhs.s_pImageData, s_imageLength);
 }
 ////////////////////////////////////////////////////////////////
@@ -141,7 +149,6 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
                 image.s_imageLength      = find.bytes(6);
                 image.s_pImageData       = malloc(image.s_imageLength);
                 if (!image.s_pImageData) {
-                    freeData();
                     throw LogBook::Exception(
                         "Failed allocating storage for an image in LogbookNote constructor"
                     );
@@ -156,7 +163,6 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
         }
     }
     catch (CSqliteException& e) {
-        freeData();
         LogBook::Exception::rethrowSqliteException(
             e, "Failed to lookupt note"
         );
@@ -165,7 +171,6 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
     // If found is still false, this is an error:
     
     if (!found) {
-        freeData();
         std::stringstream msg;
         msg << "There is no note with the primary key value " << noteId;
         std::string m(msg.str());
@@ -177,9 +182,12 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
  */
 LogBookNote::~LogBookNote()
 {
-    freeData();
+    // Destructors of the images take care of the malloc'd data.
 }
-
+/**
+ * getAssociatedRun
+ *   Return an object encapsulating the run that 
+*/
 ///////////////////////////////////////////////////////////////
 // Static members:
 
@@ -188,15 +196,4 @@ LogBookNote::~LogBookNote()
 /////////////////////////////////////////////////////////////
 // Private members
 
-/*
- * freeData
- *    Frees the image data associated with the object:
- */
 
-void
-LogBookNote::freeData()
-{    
-    for (int i =0; i < m_imageInfo.size(); i++) {
-        free(m_imageInfo[i].s_pImageData);
-    }
-}
