@@ -106,13 +106,13 @@ public:
     // API for runs:
     
     static int transitionId(CSqlite& db, const char* name);
-    LogBookRun* currentRun();
     int         runId(int runNumber);
+    LogBookRun* currentRun();
     LogBookRun* begin(int number, const char* title, const char* remark=nullptr);
-    void        end(LogBookRun* pRun, const char* remark = nullptr);
-    void        pause(LogBookRun* pRun, const char* remark = nullptr);
-    void        resume(LogBookRun* pRun, const char* remark = nullptr);
-    void        emergencyStop(LogBookRun* pRun, const char* remark = nullptr);
+    void        end(LogBookRun*& pRun, const char* remark = nullptr);
+    void        pause(LogBookRun*& pRun, const char* remark = nullptr);
+    void        resume(LogBookRun*& pRun, const char* remark = nullptr);
+    void        emergencyStop(LogBookRun*& pRun, const char* remark = nullptr);
     std::vector<LogBookRun*> listRuns();
     LogBookRun* findRun(int number);
     

@@ -435,36 +435,51 @@ LogBook::begin(int number, const char* title, const char* remark)
  *
  *  @param pRun - Run to end- must be current.
  *  @param remark - remark to associate with the end of run.
+ *  @note - pRun must point to a dynamically allocated object and
+ *          the pointer will be replaced by a new dynamically allocated object
+ *          that reflects the proper final state of the run.
  */
 void
-LogBook::end(LogBookRun* pRun, const char* remark)
+LogBook::end(LogBookRun*& pRun, const char* remark)
 {
     int id = pRun->getRunInfo().s_id;
     LogBookRun::end(*m_pConnection, id, remark);
+    delete pRun;
+    pRun = new LogBookRun(*m_pConnection, id);
 }
 /**
  * pause
  *    Pauses the run.
  * @param pRun - pointer to the run object.
  * @param remark - pointer to the remark to attach to the end.
+ *  @note - pRun must point to a dynamically allocated object and
+ *          the pointer will be replaced by a new dynamically allocated object
+ *          that reflects the proper final state of the run.
  */
 void
-LogBook::pause(LogBookRun* pRun, const char* remark)
+LogBook::pause(LogBookRun*& pRun, const char* remark)
 {
     int id = pRun->getRunInfo().s_id;
     LogBookRun::pause(*m_pConnection, id, remark);
+    delete pRun;
+    pRun = new LogBookRun(*m_pConnection, id);
 }
 /**
  * resume
  *    Resumes a run.
  *  @param pRun - pointer to the run object to resume.
  *  @param remark - remark to associate with the resumption.,
+ *  @note - pRun must point to a dynamically allocated object and
+ *          the pointer will be replaced by a new dynamically allocated object
+ *          that reflects the proper final state of the run.
  */
 void
-LogBook::resume(LogBookRun* pRun, const char* remark)
+LogBook::resume(LogBookRun*& pRun, const char* remark)
 {
     int id = pRun->getRunInfo().s_id;
     LogBookRun::resume(*m_pConnection, id, remark);
+    delete pRun;
+    pRun = new LogBookRun(*m_pConnection, id);
 }
 /**
  * emergencyStop
@@ -473,12 +488,17 @@ LogBook::resume(LogBookRun* pRun, const char* remark)
  *
  * @param pRun - pointer to the run object.
  * @param remark - remark to associate with the operation.
+ *  @note - pRun must point to a dynamically allocated object and
+ *          the pointer will be replaced by a new dynamically allocated object
+ *          that reflects the proper final state of the run.
  */
 void
-LogBook::emergencyStop(LogBookRun* pRun, const char* remark)
+LogBook::emergencyStop(LogBookRun*& pRun, const char* remark)
 {
     int id = pRun->getRunInfo().s_id;
     LogBookRun::emergency_end(*m_pConnection, id, remark);
+    delete pRun;
+    pRun = new LogBookRun(*m_pConnection, id);
 }
 /**
  * listRuns
