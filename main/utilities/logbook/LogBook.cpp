@@ -649,6 +649,49 @@ LogBook::createSchema(CSqlite& db)
         db,
         "CREATE TABLE IF NOT EXISTS current_run (id INTEGER)"
     );
+    /*
+       Tables for notes and images that are in those notes.
+       In the future notes may be come blobs.
+         run_id allows notes to be associated with a run.
+         the note_image table stores images that are associated
+         with notes, and where in the note (character offset) they were
+         inserted.  On formatting into an external format (e.g. HTML),
+         note_offset is used to indicate where in the original text,
+         image inclusion information for the image (presumably extracted from
+         the note_image table) is to be placed.
+      
+         Note that notes themselves are assumed to be in markdown format and
+         it is from that format that other formats are rendered.  The note_offset
+         in the note_image table is going to point to something that looks like:
+         ![Some text provided by the user](/original/image/file/path).
+         
+         What renderes will need to do, in general is used the offset to
+         locate this text. Verify that /original/image/file/path matches
+         the value in original_filename as a sanity check then extract the
+         image to the temporary file directory and replace the stuff in
+         ()'s with the path to the extracted image before converting the
+         markdown to whatever.
+    */
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS note (                 \
+           id INTEGER PRIMARY  KEY,                        \
+           run_id INTEGER,                                 \
+           note_time INTEGER,                              \
+           note   TEXT                                     \
+           )"
+    );
+    CSqliteStatement::execute(
+        db,
+        "CREATE TABLE IF NOT EXISTS note_image (           \
+           id          INTEGER PRIMARY KEY,                \
+           note_id     INTEGER,                            \
+           note_offset INTEGER,                            \
+           original_filename TEXT,                         \
+           image       BLOB                                \
+           )"
+    );
+    
 }
 
 /**
