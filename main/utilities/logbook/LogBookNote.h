@@ -90,7 +90,7 @@ public:
     static std::vector<LogBookNote*> getRunNotes(CSqlite& db, int runId);
     
 private:
-    void CopyInt(const LogBookNote& rhs);
+    void CopyIn(const LogBookNote& rhs);
     void ExportImage(int index);
 };
 
