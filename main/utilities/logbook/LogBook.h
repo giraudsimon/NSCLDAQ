@@ -67,7 +67,7 @@ public:
 private:
     CSqlite* m_pConnection;
     
- public:
+public:
     static std::string m_tempdir;
 public:
     static void create(
