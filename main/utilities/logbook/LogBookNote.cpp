@@ -23,8 +23,14 @@
 #include "LogBook.h"
 
 #include <CSqlite.h>
+#include <CSqliteException.h>
+#include <CSqliteStatement.h>
+#include <CSqliteTransaction.h>
+
 #include <string.h>
 #include <stdlib.h>
+
+#include <sstream>
 
 ////////////////////////////////////////////////////////////////
 // NoteImageCanonicals.
@@ -84,6 +90,96 @@ LogBookNote::_NoteImage::CopyIn(const _NoteImage& rhs)
 ////////////////////////////////////////////////////////////////
 // LogBookNote implementation
 
+/**
+ * constructor
+ *     This constructor constructs the note from the information
+ *     about it in the database.
+ *  @param db  - references the database connection object.
+ *  @param id  - The primary key value of the note.
+ */
+LogBookNote::LogBookNote(CSqlite& db, int noteId)
+{
+    bool found(false);
+    try {
+        CSqliteStatement find(
+            db,
+            "SELECT run_id, note_time, note,                           \
+                    note_image.id AS image_id, note_offset,            \
+                    original_filename, image                           \
+            FROM note                                                  \
+            LEFT JOIN note_image ON note.id = note_id                  \
+            WHERE note.id = ?"
+        );
+        find.bind(1, noteId);
+        
+        // Notes may not have images  in which case the fields
+        // from note_image will be nulls; and we'll only get one
+        // returned record.  Otherwise we'll get one returned record
+        // for each image.
+       
+        while (!(++find).atEnd()) {
+            found = true;
+            m_textInfo.s_id    = noteId;
+            m_textInfo.s_runId = find.getInt(0);
+            m_textInfo.s_noteTime = find.getInt(1);
+            m_textInfo.s_contents = find.getString(2);
+            
+            // We need to be sure we have image data
+            // If so we emplace an image into the s_imageInfo
+            // field of m_Note and fill it in from the data
+            // in the record.  Note that the blob contents are
+            // gotten as a pointer that's valid only until the next
+            // ++find so we need to malloc/copy the data:
+            
+            if (find.columnType(3) != CSqliteStatement::null) {
+                m_imageInfo.emplace_back();
+                NoteImage& image(m_imageInfo.back());
+                image.s_id = find.getInt(3);
+                image.s_noteId = noteId;
+                image.s_noteOffset = find.getInt(4);
+                image.s_originalFilename = find.getString(5);
+                image.s_imageLength      = find.bytes(6);
+                image.s_pImageData       = malloc(image.s_imageLength);
+                if (!image.s_pImageData) {
+                    freeData();
+                    throw LogBook::Exception(
+                        "Failed allocating storage for an image in LogbookNote constructor"
+                    );
+                } else {
+                    memcpy(
+                        image.s_pImageData, find.getBlob(6),
+                        image.s_imageLength
+                    );
+                }
+            }
+            
+        }
+    }
+    catch (CSqliteException& e) {
+        freeData();
+        LogBook::Exception::rethrowSqliteException(
+            e, "Failed to lookupt note"
+        );
+    }
+    
+    // If found is still false, this is an error:
+    
+    if (!found) {
+        freeData();
+        std::stringstream msg;
+        msg << "There is no note with the primary key value " << noteId;
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+}
+/**
+ * destructor
+ */
+LogBookNote::~LogBookNote()
+{
+    freeData();
+}
+
 ///////////////////////////////////////////////////////////////
 // Static members:
 
@@ -91,3 +187,16 @@ LogBookNote::_NoteImage::CopyIn(const _NoteImage& rhs)
 
 /////////////////////////////////////////////////////////////
 // Private members
+
+/*
+ * freeData
+ *    Frees the image data associated with the object:
+ */
+
+void
+LogBookNote::freeData()
+{    
+    for (int i =0; i < m_imageInfo.size(); i++) {
+        free(m_imageInfo[i].s_pImageData);
+    }
+}

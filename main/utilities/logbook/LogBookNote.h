@@ -62,12 +62,10 @@ public:
         _NoteImage& operator=(const _NoteImage& rhs);
         void CopyIn(const _NoteImage& rhs);
     } NoteImage, *pNoteImage;
-    typedef struct _Note {
-        NoteText     s_textInfo;
-        std::vector<pNoteImage> s_imageInfo;
-    } Note, *pNote;
+    
 private:
-    Note      m_Note;
+    NoteText               m_textInfo;
+    std::vector<NoteImage> m_imageInfo;
 public:
     LogBookNote(CSqlite& db, int noteId);
     virtual ~LogBookNote();
@@ -92,6 +90,7 @@ public:
 private:
     void CopyIn(const LogBookNote& rhs);
     void ExportImage(int index);
+    void freeData();
 };
 
 #endif
