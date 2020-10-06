@@ -72,7 +72,7 @@ public:
     LogBookNote(const LogBookNote& rhs);
     LogBookNote& operator=(const LogBookNote& rhs);
     
-    LogBookRun* getAssociatedRun(CSqlite* db) const;
+    LogBookRun* getAssociatedRun(CSqlite& db) const;
     const NoteText& getNoteText() const;
     size_t          imageCount() const;
     const NoteImage& operator[](int n) const;

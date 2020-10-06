@@ -186,8 +186,22 @@ LogBookNote::~LogBookNote()
 }
 /**
  * getAssociatedRun
- *   Return an object encapsulating the run that 
-*/
+ *   Return an object encapsulating the run that this note is on.
+ *   If the run number is null (0) valued. Then  a nullptr is returned.
+ * @param db - database.
+ * @return LogBookRun* - the run -dynamically allocated.
+ * @retval nullptr     - the note is not associated with any run.
+ * @throw LogBook::Exception on other errors.
+ */
+LogBookRun*
+LogBookNote::getAssociatedRun(CSqlite& db) const
+{
+    if (m_textInfo.s_runId == 0) {
+        return nullptr;
+    }
+    return new LogBookRun(db, m_textInfo.s_runId);
+}
+
 ///////////////////////////////////////////////////////////////
 // Static members:
 

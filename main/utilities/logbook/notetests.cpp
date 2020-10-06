@@ -82,6 +82,9 @@ private:
     CPPUNIT_TEST(construct_1);
     CPPUNIT_TEST(construct_2);
     CPPUNIT_TEST(construct_3);
+    
+    CPPUNIT_TEST(assocrun_1);
+    CPPUNIT_TEST(assocrun_2);
     CPPUNIT_TEST_SUITE_END();
     
 
@@ -89,6 +92,9 @@ protected:
     void construct_1();
     void construct_2();
     void construct_3();
+    
+    void assocrun_1();
+    void assocrun_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(notetest);
@@ -194,4 +200,56 @@ void notetest::construct_3()
     }
     ASSERT(offsets == foundOffsets);
     ASSERT(names == foundNames);
+}
+
+void notetest::assocrun_1()
+{
+    // There's an associated run:
+    
+    // Root record.
+    CSqliteStatement ins(
+        *m_db,
+        "INSERT INTO note (run_id, note_time, note)    \
+            VALUES (?,?,?)"
+    );
+    ins.bind(1, m_pRun->getRunInfo().s_id);
+    time_t now = time(nullptr);
+    ins.bind(2, int(now));
+    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ++ins;
+    
+    LogBookNote note(*m_db, ins.lastInsertId());
+    
+    LogBookRun* pRun;
+    CPPUNIT_ASSERT_NO_THROW(
+        pRun = note.getAssociatedRun(*m_db)
+    );
+    ASSERT(pRun);                  // Not null.
+    
+    EQ(123, pRun->getRunInfo().s_number);    // Right run.
+    
+    delete pRun;
+}
+
+void notetest::assocrun_2()
+{
+    // Root record.
+    CSqliteStatement ins(
+        *m_db,
+        "INSERT INTO note (run_id, note_time, note)    \
+            VALUES (?,?,?)"
+    );
+    // ins.bind(1, m_pRun->getRunInfo().s_id);   - Don't bind a run id.
+    time_t now = time(nullptr);
+    ins.bind(2, int(now));
+    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ++ins;
+    
+    LogBookNote note(*m_db, ins.lastInsertId());
+    
+    LogBookRun* pRun(nullptr);
+    CPPUNIT_ASSERT_NO_THROW(
+        pRun = note.getAssociatedRun(*m_db)
+    );
+    ASSERT(!pRun);
 }
