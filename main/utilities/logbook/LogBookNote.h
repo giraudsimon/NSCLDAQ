@@ -62,21 +62,27 @@ public:
         _NoteImage& operator=(const _NoteImage& rhs);
         void CopyIn(const _NoteImage& rhs);
     } NoteImage, *pNoteImage;
-    
+private:
+    // Link information from image link parse:
+    struct LinkInfo {
+        int         s_length;              // Characters in old link.
+        std::string s_text;                // text part of link.
+        std::string s_link;                // link part of link.
+    };
 private:
     NoteText               m_textInfo;
     std::vector<NoteImage> m_imageInfo;
 public:
     LogBookNote(CSqlite& db, int noteId);
     virtual ~LogBookNote();
-    LogBookNote(const LogBookNote& rhs);
-    LogBookNote& operator=(const LogBookNote& rhs);
+    LogBookNote(const LogBookNote& rhs);           // todo
+    LogBookNote& operator=(const LogBookNote& rhs); // todo
     
     LogBookRun* getAssociatedRun(CSqlite& db) const;
     const NoteText& getNoteText() const;
     size_t          imageCount() const;
     const NoteImage& operator[](int n) const;
-    std::string substituteImages(CSqlite& db);
+    std::string substituteImages();
     
     
     static LogBookNote* create(
@@ -88,8 +94,11 @@ public:
     static std::vector<LogBookNote*> getRunNotes(CSqlite& db, int runId);
     
 private:
-    void CopyIn(const LogBookNote& rhs);
-    void ExportImage(int index);
+    void CopyIn(const LogBookNote& rhs);           // todo/**
+    
+    LinkInfo parseLink(const NoteImage& image);
+    std::string exportImage(const NoteImage& image);
+    std::string editLink(const LinkInfo& link, const std::string& filename);
 };
 
 #endif

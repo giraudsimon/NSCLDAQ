@@ -29,8 +29,14 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <libgen.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 #include <sstream>
+#include <map>
+#include <fstream>
 
 ////////////////////////////////////////////////////////////////
 // NoteImageCanonicals.
@@ -201,7 +207,102 @@ LogBookNote::getAssociatedRun(CSqlite& db) const
     }
     return new LogBookRun(db, m_textInfo.s_runId);
 }
-
+/**
+ * getNoteText
+ *   Returns information about the raw note text.
+ * @return const LogBookNote::NoteText& - const reference
+ *        to information about the note text.
+ */
+const LogBookNote::NoteText&
+LogBookNote::getNoteText() const
+{
+    return m_textInfo;
+}
+/**
+ * imageCount
+ *    Returns the number of images associated with the note.
+ *    Information on the images themselves can be retrieved
+ *    using  the indexing operation (operator[]).
+ * @return size_t
+ */
+size_t
+LogBookNote::imageCount() const
+{
+    return m_imageInfo.size();
+}
+/**
+ * operator[]
+ *    Returns a const reference to the image information about
+ *    the indexed image.
+ *
+ * @param int - index.
+ * @return const LogBookNote::NoteIMage&
+ * @note at is used so std::out_of_range will be thrown if
+ *       the index is invalid.
+ */
+const LogBookNote::NoteImage&
+LogBookNote::operator[](int n) const
+{
+    return m_imageInfo.at(n);
+}
+/**
+ * substituteImages
+ *    This is by far the most complex member method in the class;
+ *    - If there are no images, we can just return the note text.
+ *    - If there are images we need to get the images sorted by
+ *      increasing character index in the input file.
+ *    For each image, we copy the text between the previous image's
+ *    link end to the next image.  We then need to parse the link to
+ *    ensure it's correct. We need to extract the image into our temp
+ *    directory with a nice filename and generate, in the output
+ *    new link information that points to that nice filename.
+ *    next skip the link and continue copying.
+ * @return std::string - the markdown of the note text with
+ *                       image links appropriately edited.
+ * @note image files will be written into the temp directory with
+ *       a predicatable name based on the tail of their filename,
+ *       the note id, and the image id.  This is unlikely to collide
+ *       with other images in e.g. other notebooks in case
+ *       we later decide to conditionally copy only if the image
+ *       isn't already cached.
+ */
+std::string
+LogBookNote::substituteImages()
+{
+    // special case where no substitutions are needed:
+    
+    if (imageCount() == 0) {
+        return m_textInfo.s_contents;   // Done.
+    }
+    
+    std::string result;
+    
+    // Cheap sort by creating a map that is indexed by offset
+    // and contains pointers to the NoteImage data for that offset:
+    
+    std::map<int, pNoteImage> images;
+    for (int i =0; i < imageCount(); i++) {
+        images[m_imageInfo[i].s_noteOffset] = &(m_imageInfo[i]);
+    }
+    size_t cursor(0);       // Where we are in the original text.
+    for (auto p =  images.begin(); p != images.end(); p++) {
+        int linkIndex = p->first;
+        NoteImage& image(*(p->second));
+        
+        // Copy from cursor to the link into the output:
+        
+        result += m_textInfo.s_contents.substr(cursor, (linkIndex-cursor));
+        LinkInfo link = parseLink(image);
+        std::string filename = exportImage(image);
+        result += editLink(link, filename);
+        
+        cursor = linkIndex + link.s_length;
+        
+    }
+    result += m_textInfo.s_contents.substr(cursor);  // Any remaining text.
+    
+    return result;
+}
 ///////////////////////////////////////////////////////////////
 // Static members:
 
@@ -211,3 +312,176 @@ LogBookNote::getAssociatedRun(CSqlite& db) const
 // Private members
 
 
+/**
+ * parseLink
+ *   Parses a markdown image link.  These have the form:
+ *
+ *  ![text if not image capable viewer](image path).
+ *
+ *  For example this might look like:
+ *
+ *  ![Here's what the scope showed](/user/fox/Desktop/scope.jpg)
+ *
+ * We do the following:
+ *   -   verify this is an image link (starts with ![).
+ *   -   figure out what the text is in the [] -> s_text
+ *   -   figure out what the text is in the () -> s_link
+ *   -   figure out how long the whole damned thing is -> s_length
+ *
+ * @param image - a notebook image specification.  This applies to
+ *                the string: m_textInfo.s_contents
+ * @return LinkInfo - the parsed link
+ * @throw LogBook::Exception - if the parsing fails in some way.
+ */
+LogBookNote::LinkInfo
+LogBookNote::parseLink(const NoteImage& image)
+{
+    LinkInfo result;
+    
+    // Get the string from the link start -> end:
+    
+    std::string parseme = m_textInfo.s_contents.substr(image.s_noteOffset);
+    if (parseme.substr(0, 2) != "![") {
+        std::stringstream msg;
+        msg << "The text purported to be an image link at: "
+            << m_textInfo.s_contents.substr(image.s_noteOffset, 25)
+            << " is not a valid markdown link";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    result.s_length = 2;      // ![
+    
+    // Find the location of the ] so we can pull the link text out:
+    
+    
+    parseme = parseme.substr(2);
+    auto closeSqloc = parseme.find_first_of("]", 0);
+    if (closeSqloc == std::string::npos) {
+        std::stringstream msg;
+        msg << "Cannot find the ] in the text for the link at "
+            << m_textInfo.s_contents.substr(image.s_noteOffset, 25)
+            << " not a valid markdown link";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    result.s_length += closeSqloc;
+    result.s_text    = parseme.substr(0, closeSqloc);
+    
+    // Next character must be a (
+    
+    parseme = parseme.substr(closeSqloc + 1);
+    if (parseme.substr(0,1) != "(") {
+        std::stringstream msg;
+        msg << "Missing link  in image link at "
+            << m_textInfo.s_contents.substr(image.s_noteOffset, 25)
+            << " don't see the ( after the ]";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    result.s_length++;
+    
+    // Locate the ) as above and pull that into the link field.
+    
+    parseme= parseme.substr(1);       // After the (
+    result.s_length++;
+    int closeParen = parseme.find_first_of(")", 0);
+    if (closeParen == std::string::npos) {
+        std::stringstream msg;
+        msg  << "Can't find the ) in the link text  at"
+            << m_textInfo.s_contents.substr(image.s_noteOffset, 25)
+            << " invalid markdown image link";
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    result.s_link = parseme.substr(0, closeParen);
+    result.s_length += closeParen+1;
+    
+    return result;
+}
+/**
+ * exportImage
+ *    Creates a probably unique filename for the image
+ *    in the temporary directory and writes the image file into that
+ *    directory.   The filename is composed as follows:
+ *
+ *    - extract the basename from the original filename.
+ *    - prepend to that tempdir/noteid_imageid_  where
+ *      noteid is the text "note" followed by the primary key of the note
+ *      and imageid is the text "image" followed by the primary key of the
+ *      image.  Prepending is used to make the file extension/type
+ *      easy to keep.
+ *  @param image - references the image we're going to write.
+ *  @return std::string - the path to the file we wrote.
+ */
+std::string
+LogBookNote::exportImage(const NoteImage& image)
+{
+    // Ensure the directory exists:
+    
+    int stat = mkdir(LogBook::m_tempdir.c_str(), 0755);
+    if (stat && (errno != EEXIST)) {
+        int e = errno;
+        std::stringstream msg;
+        msg << "Unable to create temp file directory " << LogBook::m_tempdir
+            << " : " << strerror(e);
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    
+    //
+    std::string result;          // filename we generate.
+    
+    char originalFile[image.s_originalFilename.size() + 1];   // Hope c++ allows this.
+    strcpy(originalFile, image.s_originalFilename.c_str());
+    char *name = basename(originalFile);
+    // Now build up the full file path into result; assumes a unix pathsep.
+    
+    std::stringstream filename;
+    filename << LogBook::m_tempdir << "/note" << image.s_noteId
+        << "_image" << image.s_id << "_" << name;
+    result = filename.str();
+    
+    // Now open the file; write the data and close the file:
+    
+    try {
+        std::ofstream o(result, std::ios::binary | std::ios::out | std::ios::trunc);
+        o.write(static_cast<const char*>(image.s_pImageData), image.s_imageLength);
+        
+        // Destruction closes the file.
+    }
+    catch (std::exception& e) {
+        std::stringstream msg;
+        msg << "Unable to open/write image temp file : " << result << " : "
+            << e.what();
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    catch (...) {
+        std::stringstream msg;
+        msg << "Unable to open/write image temp file: " << result;
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    
+    return result;
+}
+/**
+ * editLink
+ *    Given old link information and the new image filename
+ *    returns a new markdown link that can be pasted into the
+ *    document to replace the old one.
+ *
+ * @param link - link information from paresLink
+ * @param filename - Filename the image will be stored in.
+ * @return std::string full link.
+ */
+std::string
+LogBookNote::editLink(const LinkInfo& link, const std::string& filename)
+{
+    std::string result;
+    std::stringstream s;
+    s << "![" << link.s_text << "](" << filename << ")";
+    
+    result = s.str();
+    return result;
+}
