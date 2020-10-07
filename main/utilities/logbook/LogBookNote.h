@@ -75,8 +75,8 @@ private:
 public:
     LogBookNote(CSqlite& db, int noteId);
     virtual ~LogBookNote();
-    LogBookNote(const LogBookNote& rhs);           // todo
-    LogBookNote& operator=(const LogBookNote& rhs); // todo
+    LogBookNote(const LogBookNote& rhs);
+    LogBookNote& operator=(const LogBookNote& rhs);
     
     LogBookRun* getAssociatedRun(CSqlite& db) const;
     const NoteText& getNoteText() const;
@@ -94,7 +94,7 @@ public:
     static std::vector<LogBookNote*> getRunNotes(CSqlite& db, int runId);
     
 private:
-    void CopyIn(const LogBookNote& rhs);           // todo/**
+    void CopyIn(const LogBookNote& rhs);         
     
     LinkInfo parseLink(const NoteImage& image);
     std::string exportImage(const NoteImage& image);

@@ -184,6 +184,29 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
     }
 }
 /**
+ * copy construction
+ *
+ * @param rhs - the object we're copy constructing.
+ */
+LogBookNote::LogBookNote(const LogBookNote& rhs)
+{
+    CopyIn(rhs);
+}
+
+/** Assignment
+ *    @param rhs - object we're assigned to.
+ *    @return LogBookNote& (*this)
+ */
+LogBookNote&
+LogBookNote::operator=(const LogBookNote& rhs)
+{
+    if (this != &rhs) {
+        m_imageInfo.clear();
+        CopyIn(rhs);
+    }
+    return *this;
+}
+/**
  * destructor
  */
 LogBookNote::~LogBookNote()
@@ -484,4 +507,16 @@ LogBookNote::editLink(const LinkInfo& link, const std::string& filename)
     
     result = s.str();
     return result;
+}
+
+/**
+ * CopyIn
+ *    Replace the member data of this object with a deep copy
+ *    of the member data of another object.
+ */
+void
+LogBookNote::CopyIn(const LogBookNote& rhs)
+{
+    m_textInfo = rhs.m_textInfo;
+    m_imageInfo = rhs.m_imageInfo;
 }
