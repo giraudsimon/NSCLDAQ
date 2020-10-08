@@ -118,6 +118,12 @@ private:
     
     CPPUNIT_TEST(getall_1);
     CPPUNIT_TEST(getall_2);
+    
+    CPPUNIT_TEST(getrun_1);     // list run thoroughly tested
+    CPPUNIT_TEST(getrun_2);     // much of this so cursory testing.
+    
+    CPPUNIT_TEST(getnonrun_1);
+    CPPUNIT_TEST(getnonrun_2);
     CPPUNIT_TEST_SUITE_END();
     
 
@@ -158,6 +164,12 @@ protected:
     
     void getall_1();
     void getall_2();
+    
+    void getrun_1();
+    void getrun_2();
+    
+    void getnonrun_1();
+    void getnonrun_2();
 };
 
 
@@ -875,5 +887,82 @@ void notetest::getall_2()
     for (int i = 0;  i < 10; i++) {
         EQ(i+1, notes[i]->getNoteText().s_id);
         delete notes[i];        // no longer needed.
+    }
+}
+
+void notetest::getrun_1()
+{
+    // No notes associated with runs. no matches.
+    std::vector<LogBookNote::ImageInfo> images;
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db, static_cast<LogBookRun*>(nullptr),
+            "A note", images
+        );
+    }
+    EQ(size_t(0), LogBookNote::getRunNotes(*m_db, m_pRun->getRunInfo().s_id).size());
+}
+void notetest::getrun_2()
+{
+    // Matches to our runs in mixed env.
+    
+    // Notes but not for the run requested.
+    std::vector<LogBookNote::ImageInfo> images;
+    m_pLogbook->end(m_pRun);             // End the run so we can make another
+    
+    auto run2 =  m_pLogbook->begin(7, "This is a run");
+    
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db, ((i % 2) == 0) ? m_pRun : run2,
+            "This is a note", images
+        );
+    }
+    
+    auto notes = LogBookNote::getRunNotes(*m_db, run2->getRunInfo().s_id);
+    EQ(size_t(5), notes.size());
+    for (int i = 0; i < 5; i++) {
+        EQ(i*2+2, notes[i]->getNoteText().s_id);
+        delete notes[i];
+    }
+     
+    delete run2;
+}
+
+void notetest::getnonrun_1()
+{
+    // no non run notes.
+    
+    // Notes but not for the run requested.
+    std::vector<LogBookNote::ImageInfo> images;
+    m_pLogbook->end(m_pRun);             // End the run so we can make another
+    
+    auto run2 =  m_pLogbook->begin(7, "This is a run");
+    
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db, ((i % 2) == 0) ? m_pRun : run2,
+            "This is a note", images
+        );
+    }
+    
+    EQ(size_t(0), LogBookNote::getNonRunNotes(*m_db).size());
+}
+void notetest::getnonrun_2()
+{
+    // 1/2 of the notes are non run.
+    
+    std::vector<LogBookNote::ImageInfo> images;
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db, ((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr),
+            "This is a note", images
+        );
+    }
+    auto runs = LogBookNote::getNonRunNotes(*m_db);
+    EQ(size_t(5), runs.size());
+    for (int i =0; i < 5; i++) {
+        EQ(i*2+2, runs[i]->getNoteText().s_id);
+        delete runs[i];
     }
 }

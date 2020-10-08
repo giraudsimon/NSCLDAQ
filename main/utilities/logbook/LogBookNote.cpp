@@ -496,7 +496,39 @@ LogBookNote::getAllNotes(CSqlite& db)
     
     return result;
 }
+/**
+ * getRunNotes (static)
+ *    Get the notes associated with a run.
+ *
+ * @param db  - reference to the database connection object.
+ * @param runId - Id (primary key not run number) of the run.
+ * @return std::vector<LogBookRun*> - these pointers point to
+ *            dynamically allocated objects that must be deleted
+ *            when the objects are no longer needed.
+ */
+std::vector<LogBookNote*>
+LogBookNote::getRunNotes(CSqlite& db, int runId)
+{
+    auto ids = listRunNoteIds(db, runId);
+    return idsToNotes(db, ids);
+}
 
+/**
+ * getNonRunNotes
+ *    Same as getRunNotes but gets notes not associated with
+ *    any run
+ * @param db    - reference to the Sqlite3 connection object.
+ * @return std::vector<LogBookRun*> - the notes that are not associated
+ *                 with any run.  Note that these point to dynamically
+ *                 created and, therefore, must be deleted when no
+ *                 longer needed.
+ */
+std::vector<LogBookNote*>
+LogBookNote::getNonRunNotes(CSqlite& db)
+{
+    auto ids = listNonRunNotes(db);
+    return idsToNotes(db, ids);
+}
 /////////////////////////////////////////////////////////////
 // Private members
 
