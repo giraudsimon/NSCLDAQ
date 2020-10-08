@@ -85,15 +85,54 @@ public:
   
     }
 private:
+    // Note most of functionalt testing is at the level of the
+    // LogBookNote class (notetests.cpp) we therefore only need
+    // cursory testing here.
+    
     CPPUNIT_TEST_SUITE(noteapitest);
-    CPPUNIT_TEST(test_1);
+    CPPUNIT_TEST(create_1);
+    CPPUNIT_TEST(create_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
-    void test_1();
+    void create_1();
+    void create_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(noteapitest);
 
-void noteapitest::test_1()
+void noteapitest::create_1()
 {
+    // ensure that images are marhsalled properly:
+    
+    std::vector<std::string> images;
+    images.push_back(m_filename);
+    images.push_back("/etc/group");   // just some file.
+    
+    std::vector<size_t> offsets = {0, 15};
+    
+    LogBookNote* pNote;
+    CPPUNIT_ASSERT_NO_THROW(
+        pNote = m_pLogbook->createNote(
+            "This is a note", images, offsets, m_pRun
+        )
+    );
+    
+    
+    EQ(std::string("This is a note"), pNote->getNoteText().s_contents);
+    EQ(size_t(2), pNote->imageCount());
+    EQ(m_filename, (*pNote)[0].s_originalFilename);
+    EQ(std::string("/etc/group"), (*pNote)[1].s_originalFilename);
+    
+    delete pNote;
+}
+
+void noteapitest::create_2()
+{
+    //note without images:
+    
+    LogBookNote* pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    EQ(std::string("This is a note"), pNote->getNoteText().s_contents);
+    EQ(size_t(0), pNote->imageCount());
+    
+    delete pNote;
 }
