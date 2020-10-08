@@ -22,6 +22,7 @@
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
 #include "LogBookRun.h"
+#include "LogBookNote.h"
 #include <CSqlite.h>
 #include <CSqliteStatement.h>
 #include <CSqliteException.h>
@@ -521,6 +522,93 @@ LogBookRun*
 LogBook::findRun(int number)
 {
     return LogBookRun::find(*m_pConnection, number);
+}
+/////////////////////////////////////////////////////////
+// API for notes.
+
+/**
+ * createNote
+ *    Create a log book note and return a  pointer to it's ecnapsulating
+ *    object.
+ * @param note - note text.
+ * @param imageFiles - vector of paths to image files.
+ * @param imageOffset - vector of image placement offsets in the file.
+ * @param pRun        - Associated run. pointer. Null if there's no
+ *                      run associated with this note.
+ * @return LogBookNote* - pointer to the cvreated object.  This is
+ *                      dynamically created and must be deleted when
+ *                      no longer needed.
+ */
+LogBookNote*
+LogBook::createNote(
+    const char* text, const std::vector<std::string>& imageFiles,
+    const std::vector<size_t>& imageOffsets, LogBookRun* pRun
+)
+{
+    // Marshall the image info vector - silently toss any extra
+    // elements of either array:
+    
+    int nf = imageFiles.size();
+    int no = imageOffsets.size();
+    int n  = nf < no ? nf : no;
+    std::vector<LogBookNote::ImageInfo> images;
+    for (int i = 0; i < n; i++) {
+        images.push_back({imageFiles[i], imageOffsets[i]});
+    }
+    return LogBookNote::create(*m_pConnection,  pRun, text, images);
+}
+/**
+ * createNote - but without any associated images.
+ */
+LogBookNote*
+LogBook::createNote(const char* text, LogBookRun* pRun)
+{
+    std::vector<LogBookNote::ImageInfo> images;
+    return LogBookNote::create(*m_pConnection, pRun, text, images);
+}
+/**
+ * listAllNotes
+ *    Return pointers to all notes.
+ * @return std::vector<LogBookNote*> - these are pointers to dynamically
+ *          allocated objects and therefore must be deleted when done.
+ */
+std::vector<LogBookNote*>
+LogBook::listAllNotes()
+{
+    return LogBookNote::getAllNotes(*m_pConnection);
+}
+/**
+ * listNoteForRunId
+ *    Lists the notes for a run id.
+ *
+ * @return std::vector<LogBookNote*> - these are pointers to dynamically
+ *          allocated objects and therefore must be deleted when done.
+ */
+std::vector<LogBookNote*>
+LogBook::listNotesForRunId(int runId)
+{
+    return LogBookNote::getRunNotes(*m_pConnection, runId);
+}
+/**
+ * same as above but for a run number.
+ */
+std::vector<LogBookNote*>
+LogBook::listNotesForRun(int runNumber)
+{
+    return LogBookNote::getRunNotes(*m_pConnection, runId(runNumber));
+}
+/**
+ * listNonRunNotes
+ *    Lists notes not associated with any run.
+ *
+*
+ * @return std::vector<LogBookNote*> - these are pointers to dynamically
+ *          allocated objects and therefore must be deleted when done.
+ */
+std::vector<LogBookNote*>
+LogBook::listNonRunNotes()
+{
+    return LogBookNote::getNonRunNotes(*m_pConnection);
 }
 /////////////////////////////////////////////////////////
 // Private methods

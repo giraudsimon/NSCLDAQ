@@ -30,6 +30,7 @@ class CSqliteException;
 class LogBookPerson;
 class LogBookShift;
 class LogBookRun;
+class LogBookNote;
 
 /**
  * @class LogBook
@@ -115,6 +116,19 @@ public:
     void        emergencyStop(LogBookRun*& pRun, const char* remark = nullptr);
     std::vector<LogBookRun*> listRuns();
     LogBookRun* findRun(int number);
+    
+    // API for notes:
+    
+    LogBookNote*  createNote(
+        const char* note, const std::vector<std::string>& imageFiles,
+        const std::vector<size_t>& imageOffsets,
+        LogBookRun* pRun = nullptr
+    );
+    LogBookNote* createNote(const char* note, LogBookRun* pRun = nullptr);
+    std::vector<LogBookNote*> listAllNotes();
+    std::vector<LogBookNote*> listNotesForRunId(int runId);
+    std::vector<LogBookNote*> listNotesForRun(int runNumber);
+    std::vector<LogBookNote*> listNonRunNotes();
     
 private:
     static std::string computeTempDir();
