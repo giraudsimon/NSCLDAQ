@@ -405,6 +405,97 @@ LogBookNote::create(
     
     return pResult;
 }
+/**
+ * listRunNoteIds (static)
+ *   Given the primary key of a run (not the run number);
+ *   return a list of note primary keys for the notes that are
+ *   associated with that run.  Subsequently the caller can
+ *   construct notes (given the database connection) associated with
+ *   the run.
+ *
+ * @param db     - reference to the database connection object.
+ * @param runId  - the run id
+ * @return std::vector<int> Possibly empty vector of note ids.
+ */
+std::vector<int>
+LogBookNote::listRunNoteIds(CSqlite& db, int runId)
+{
+    std::vector<int> result;
+    try {
+        CSqliteStatement list(
+            db,
+            "SELECT id FROM note WHERE run_id = ?"
+        );
+        list.bind(1, runId);
+        
+        result = getIds(list);
+        
+    }
+    catch (CSqliteException& e) {
+        LogBook::Exception::rethrowSqliteException(
+            e, "Listing ids of notes for a run"
+        );
+    }
+    return result;
+}
+/**
+ * listNonRunNotes
+ *    Lists notes not associated with a run.
+ *  @param db - database connection object reference.
+ *  @return std::vector<int> - matching note ids.
+ */
+std::vector<int>
+LogBookNote::listNonRunNotes(CSqlite& db)
+{
+    std::vector<int> result;
+    try {
+        CSqliteStatement list(
+            db,
+            "SELECT id FROM note WHERE run_id IS NULL"
+        );
+        result = getIds(list);
+    }
+    catch (CSqliteException& e) {
+        LogBook::Exception::rethrowSqliteException(
+            e, "Listing ids of notes not associated with a run."
+        );
+    }
+    
+    
+    return result;
+}
+/**
+ * getAllNotes (static)
+ *    Returns pointers to all notes whether they belong to a run
+ *    or not.
+ *
+ * @param db -references the database connection object.
+ * @return std::vector<LogBookNote*> - all notes.
+ * @note the pointers point to dynamically allocated objects that
+ *       must be deleted when no longer needed.
+ */
+std::vector<LogBookNote*>
+LogBookNote::getAllNotes(CSqlite& db)
+{
+    std::vector<LogBookNote*> result;
+    
+    try {
+        std::vector<int> ids;
+        CSqliteStatement list(
+            db,
+            "SELECT id FROM note"
+        );
+        ids = getIds(list);
+        result = idsToNotes(db, ids);
+    }
+    catch (CSqliteException& e) {
+        LogBook::Exception::rethrowSqliteException(
+            e, "Getting *all* notes"
+        );
+    }
+    
+    return result;
+}
 
 /////////////////////////////////////////////////////////////
 // Private members
@@ -665,5 +756,42 @@ LogBookNote::readImage(const std::string& filename)
         free(result.second);
         throw;
     }
+    return result;
+}
+/**
+ * getIds (static)
+ *    Given an sqlite statement to fetch ids of notes
+ *    returns them.
+ *  @param stmt - SELECT id FROM notes.... statement.
+ *  @return std::vector<int> the id of matching notes.
+ */
+std::vector<int>
+LogBookNote::getIds(CSqliteStatement& stmt)
+{
+    std::vector<int> result;
+    while(!(++stmt).atEnd()) {
+            result.push_back(stmt.getInt(0));
+    }
+    return result;
+}
+/**
+ * idsToNotes (static)
+ *   Given  a vector of note ids, returns a vector of notes.
+ *   The notes are dynamically created and must be deleted
+ *   by the caller when no longer needed.
+ *
+ * @param db   - referece to the database connection object.
+ * @param ids  - Vector of note ids.
+ * @return std::vector<LogBookNote*>
+ */
+std::vector<LogBookNote*>
+LogBookNote::idsToNotes(CSqlite& db, const std::vector<int>& ids)
+{
+    std::vector<LogBookNote*> result;
+    
+    for (int i = 0; i < ids.size(); i++) {
+        result.push_back(new LogBookNote(db, ids[i]));
+    }
+    
     return result;
 }

@@ -24,6 +24,7 @@
 #include <string>
 #include <time.h>
 class CSqlite;
+class CSqliteStatement;
 class LogBookRun;
 /**
  * LogBookNote is a class that provides support for textual notes
@@ -89,9 +90,13 @@ public:
         CSqlite& db, LogBookRun* run, const char* string,
         const std::vector<ImageInfo>& images
     );
+    
+    
     static std::vector<int> listRunNoteIds(CSqlite& db, int runId);
     static std::vector<int> listNonRunNotes(CSqlite& db);
+    static std::vector<LogBookNote*> getAllNotes(CSqlite& db);
     static std::vector<LogBookNote*> getRunNotes(CSqlite& db, int runId);
+    static std::vector<LogBookNote*> getNonRunNotes(CSqlite& db);
     
 private:
     void CopyIn(const LogBookNote& rhs);         
@@ -100,6 +105,10 @@ private:
     std::string exportImage(const NoteImage& image);
     std::string editLink(const LinkInfo& link, const std::string& filename);
     static std::pair<size_t, void*> readImage(const std::string& filename);
+    static std::vector<int> getIds(CSqliteStatement& stmt);
+    static std::vector<LogBookNote*> idsToNotes(
+        CSqlite& db, const std::vector<int>& ids
+    );
 };
 
 #endif

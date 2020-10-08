@@ -106,6 +106,18 @@ private:
     CPPUNIT_TEST(create_2);       // No associated run.
     CPPUNIT_TEST(create_3);       // With images.
     CPPUNIT_TEST(create_4);      // No such image file.
+    
+    CPPUNIT_TEST(listrun_1);
+    CPPUNIT_TEST(listrun_2);
+    CPPUNIT_TEST(listrun_3);
+    CPPUNIT_TEST(listrun_4);
+    
+    CPPUNIT_TEST(listnonrun_1);
+    CPPUNIT_TEST(listnonrun_2);
+    CPPUNIT_TEST(listnonrun_3);
+    
+    CPPUNIT_TEST(getall_1);
+    CPPUNIT_TEST(getall_2);
     CPPUNIT_TEST_SUITE_END();
     
 
@@ -134,6 +146,18 @@ protected:
     void create_2();
     void create_3();
     void create_4();
+    
+    void listrun_1();
+    void listrun_2();
+    void listrun_3();
+    void listrun_4();
+    
+    void listnonrun_1();
+    void listnonrun_2();
+    void listnonrun_3();
+    
+    void getall_1();
+    void getall_2();
 };
 
 
@@ -707,4 +731,149 @@ void notetest::create_4()
         ),
         LogBook::Exception
     );
+}
+
+void notetest::listrun_1()
+{
+    // No notes gives an empty list.
+    
+    std::vector<int> listing;
+    CPPUNIT_ASSERT_NO_THROW(
+        listing = LogBookNote::listRunNoteIds(*m_db, m_pRun->getRunInfo().s_id)
+    );
+    EQ(size_t(0), listing.size());
+}
+void notetest::listrun_2()
+{
+    // Make a few notes with  runs.
+    
+    
+    std::vector<LogBookNote::ImageInfo> images;
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db,  m_pRun,
+            "This is a note.", images
+        );
+    }
+    
+    auto listing = LogBookNote::listRunNoteIds(
+        *m_db, m_pRun->getRunInfo().s_id
+    );
+    EQ(size_t(10), listing.size());
+    for (int i =0; i < 10; i++) {
+        EQ((i+1), listing[i]);
+    }
+}
+void notetest::listrun_3()
+{
+    // Some notes match.
+    // We'll make some notes without runs
+    std::vector<LogBookNote::ImageInfo> images;
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db,
+            (((i % 2) == 0) ? m_pRun : (static_cast<LogBookRun*>(nullptr))),
+            "This is a note.", images
+        );
+    }
+    
+    auto listing = LogBookNote::listRunNoteIds(
+        *m_db, m_pRun->getRunInfo().s_id
+    );
+    EQ(size_t(5), listing.size());
+    for (int i =0; i < 5; i++) {
+        EQ(i*2+1, listing[i]);
+    }
+}
+void notetest::listrun_4()
+{
+    // Notes but not for the run requested.
+    std::vector<LogBookNote::ImageInfo> images;
+    m_pLogbook->end(m_pRun);             // End the run so we can make another
+    
+    auto run2 =  m_pLogbook->begin(7, "This is a run");
+    
+    for (int i =0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db, ((i % 2) == 0) ? m_pRun : run2,
+            "This is a note", images
+        );
+    }
+    
+    auto listing = LogBookNote::listRunNoteIds(*m_db, run2->getRunInfo().s_id);
+    EQ(size_t(5), listing.size());
+    for (int i = 0; i < 5; i++) {
+        EQ(i*2+2, listing[i]);
+    }
+}
+
+void notetest::listnonrun_1()
+{
+    // No notes so no list:
+    
+    std::vector<int> listing;
+    CPPUNIT_ASSERT_NO_THROW(
+        LogBookNote::listNonRunNotes(*m_db);
+    );
+    EQ(size_t(0), listing.size());
+}
+void notetest::listnonrun_2()
+{
+    // Yeah there are notes, but they all are associated with a run:
+    
+    std::vector<LogBookNote::ImageInfo> images;
+    std::vector<int> listing;
+    for (int i = 0; i < 10; i++) {
+        delete LogBookNote::create(*m_db, m_pRun, "A note", images);
+    }
+    listing = LogBookNote::listNonRunNotes(*m_db);
+    EQ(size_t(0), listing.size());
+}
+void notetest::listnonrun_3()
+{
+    // Half the notes are not associated with a run (the odd half).
+    
+    std::vector<LogBookNote::ImageInfo> images;
+    std::vector<int> listing;
+    for (int i = 0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db,
+            (((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr)),
+            "A note", images
+        );
+    }
+    listing = LogBookNote::listNonRunNotes(*m_db);
+    EQ(size_t(5), listing.size());
+    for (int i =0; i < 5; i++) {
+        EQ(i*2+2, listing[i]);
+    }
+}   
+
+void notetest::getall_1()
+{
+    // there are no notes to get.
+    
+    EQ(size_t(0), LogBookNote::getAllNotes(*m_db).size());
+}
+void notetest::getall_2()
+{
+    // while there are a mix of notes associated and not associated
+    // with runs all are returned.
+    
+    std::vector<LogBookNote::ImageInfo> images;
+
+    for (int i = 0; i < 10; i++) {
+        delete LogBookNote::create(
+            *m_db,
+            (((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr)),
+            "A note", images
+        );
+    }
+    auto notes = LogBookNote::getAllNotes(*m_db);
+    EQ(size_t(10), notes.size());
+    
+    for (int i = 0;  i < 10; i++) {
+        EQ(i+1, notes[i]->getNoteText().s_id);
+        delete notes[i];        // no longer needed.
+    }
 }
