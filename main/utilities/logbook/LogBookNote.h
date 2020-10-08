@@ -99,6 +99,7 @@ private:
     LinkInfo parseLink(const NoteImage& image);
     std::string exportImage(const NoteImage& image);
     std::string editLink(const LinkInfo& link, const std::string& filename);
+    static std::pair<size_t, void*> readImage(const std::string& filename);
 };
 
 #endif

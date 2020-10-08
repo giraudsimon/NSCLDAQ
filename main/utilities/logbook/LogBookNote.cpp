@@ -29,10 +29,12 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <time.h>
 
 #include <sstream>
 #include <map>
@@ -329,7 +331,80 @@ LogBookNote::substituteImages()
 ///////////////////////////////////////////////////////////////
 // Static members:
 
-
+/**
+ * create(static)
+ *    Create a new logbook note:
+ *
+ *  @param db    - references the database connection object
+ *  @param run   - Pointer to run information.  This can be null
+ *                 if the note is not associated with any run.
+ *  @param string - The markdown infested note string.
+ *  @param images - Descriptions of images to associate with the
+ *                  the note.
+ *  @return LogBookNote*  - Pointer to the created note. Note that all
+ *                  insertions are done  in a transaction to make the
+ *                  insertion atomic with respect to database clients.
+ */
+LogBookNote*
+LogBookNote::create(
+    CSqlite& db, LogBookRun* run, const char* string,
+    const std::vector<ImageInfo>& images
+)
+{
+    LogBookNote* pResult(nullptr);
+    CSqliteTransaction t(db);
+    try {
+        // Root record.
+        
+        CSqliteStatement insroot(
+            db,
+            "INSERT INTO note (run_id, note_time, note)      \
+                VALUES(?,?,?)"
+        );
+        // Only bind the run id if there's an associated run:
+        
+        if (run) {
+            insroot.bind(1, run->getRunInfo().s_id);
+        }
+        
+        insroot.bind(2, time_t(nullptr));
+        insroot.bind(3, string, -1, SQLITE_STATIC);
+        ++insroot;
+        int noteId = insroot.lastInsertId();
+        
+        // Now insert an image record for each element of images.
+        
+        CSqliteStatement insimage(
+            db,
+            "INSERT INTO note_image                               \
+                (note_id, note_offset, original_filename, image) \
+            VALUES (?,?,?,?)"
+        );
+        insimage.bind(1, noteId);
+        for (int i =0; i < images.size(); i++) {
+            insimage.bind(2, images[i].s_offset);
+            insimage.bind(3, images[i].s_filename.c_str(), -1, SQLITE_STATIC);
+            auto img = readImage(images[i].s_filename);
+            size_t      isize = img.first;
+            void* pData = img.second;
+            insimage.bind(4, pData, isize, SQLITE_STATIC);
+            ++insimage;
+            free(pData);
+            insimage.reset();
+        }
+        pResult = new LogBookNote(db, noteId);
+    }
+    catch (CSqliteException e) {
+        t.scheduleRollback();
+        LogBook::Exception::rethrowSqliteException(e, "Creating note");
+    }
+    catch (...) {
+        t.scheduleRollback();
+        throw;
+    }
+    
+    return pResult;
+}
 
 /////////////////////////////////////////////////////////////
 // Private members
@@ -468,6 +543,12 @@ LogBookNote::exportImage(const NoteImage& image)
     
     try {
         std::ofstream o(result, std::ios::binary | std::ios::out | std::ios::trunc);
+        if (o.fail()) {
+            std::stringstream msg;
+            msg << "Failed to create image cache file: " << result;
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
         o.write(static_cast<const char*>(image.s_pImageData), image.s_imageLength);
         
         // Destruction closes the file.
@@ -519,4 +600,70 @@ LogBookNote::CopyIn(const LogBookNote& rhs)
 {
     m_textInfo = rhs.m_textInfo;
     m_imageInfo = rhs.m_imageInfo;
+}
+/**
+ * readImage(static)
+ *    Sucks image data from file into dynamic memory.
+ * @param filename = name of the file.
+ * @return std::pair<size_t, void*>  - first is the size, second is a
+ *     pointer to malloc'd data that contains the contents of the file.
+ * @throw LogBook::Exception to report errors.
+ */
+std::pair<size_t, void*>
+LogBookNote::readImage(const std::string& filename)
+{
+    std::pair<size_t, void*> result = {0, nullptr};
+    
+    // Get file information (incidently tests filename existence).
+    // I believe that stat will do all the permission/existence checks
+    // we need.
+    
+    struct stat fileInfo;
+    int status = stat(filename.c_str(), &fileInfo);
+    if (status) {
+        int e = errno;
+        std::stringstream msg;
+        msg << "Unable to read image file " << filename
+            << " creating note : " << strerror(e);
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    size_t nBytes = fileInfo.st_size;
+    result.first  = nBytes;
+    result.second = malloc(nBytes);     // Buffer for the fileblob
+    if (!result.second) {               // allocation failed:
+        int e = errno;
+        std::stringstream msg;
+        msg << "Failed to allocate storage for image file " << filename
+            << " : " << strerror(e);
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    // here on in needs to be in try/catch just to allow the
+    // storage to be freed:
+    try {
+        
+        std::ifstream image(filename.c_str(), std::ios::in | std::ios::binary);
+        if (image.fail())  {
+            std::stringstream msg;
+            msg << " Failed to open image file : " << filename
+                << "while incorporating image into a note";
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
+        
+        image.read(static_cast<char*>(result.second), result.first);
+        if (image.fail()) {
+            std::stringstream msg;
+            msg << "Failed to read image file " << filename
+                << " whlie creating note";
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
+    }
+    catch (...) {
+        free(result.second);
+        throw;
+    }
+    return result;
 }

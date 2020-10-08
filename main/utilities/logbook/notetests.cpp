@@ -101,6 +101,11 @@ private:
     CPPUNIT_TEST(image_2);
     CPPUNIT_TEST(image_3);
     CPPUNIT_TEST(image_4);
+    
+    CPPUNIT_TEST(create_1);
+    CPPUNIT_TEST(create_2);       // No associated run.
+    CPPUNIT_TEST(create_3);       // With images.
+    CPPUNIT_TEST(create_4);      // No such image file.
     CPPUNIT_TEST_SUITE_END();
     
 
@@ -125,6 +130,10 @@ protected:
     void image_3();
     void image_4();
     
+    void create_1();
+    void create_2();
+    void create_3();
+    void create_4();
 };
 
 
@@ -627,4 +636,75 @@ void notetest::image_4()
     std::string sb(s.str());
     std::string is = note.substituteImages();
     EQ(sb, is);
+}
+void notetest::create_1()
+{
+    std::vector<LogBookNote::ImageInfo> images;    // No images for this run:
+    
+    LogBookNote* pNote(nullptr);
+    CPPUNIT_ASSERT_NO_THROW(pNote = LogBookNote::create(
+        *m_db, m_pRun, "This is my note", images
+    ));
+    ASSERT(pNote);
+    
+    auto& text = pNote->getNoteText();
+    EQ(m_pRun->getRunInfo().s_id, text.s_runId);
+    EQ(std::string("This is my note"), text.s_contents);
+    EQ(size_t(0), pNote->imageCount());
+    
+    LogBookRun* pRun = pNote->getAssociatedRun(*m_db);
+    ASSERT(pRun);
+    
+    delete pRun;
+    delete pNote;
+}
+void notetest::create_2()
+{
+    // create without images or associated run:
+    
+    std::vector<LogBookNote::ImageInfo> images;    // No images for this run:
+    
+    LogBookNote* pNote = LogBookNote::create(
+        *m_db, static_cast<LogBookRun*>(nullptr),
+        "This is my note", images
+    );
+    ASSERT(pNote);
+    ASSERT(!pNote->getAssociatedRun(*m_db));
+    
+    delete pNote;
+}
+void notetest::create_3()
+{
+    // For the image file, since there's no checking that this is
+    // a valid image, we'll just use the database because we know
+    // it exists.
+    
+    std::vector<LogBookNote::ImageInfo> images;    // No images for this run:
+    images.push_back({m_filename, 0});
+    
+    LogBookNote* pNote(nullptr);
+    CPPUNIT_ASSERT_NO_THROW( pNote = LogBookNote::create(
+        *m_db, m_pRun, "![this is a link](imagefile.jpg)", images
+    ));
+    
+    EQ(size_t(1), pNote->imageCount());
+    EQ(m_filename, (*pNote)[0].s_originalFilename);
+    EQ(0, (*pNote)[0].s_noteOffset);
+    
+    delete pNote;
+}
+void notetest::create_4()
+{
+    // no such image file throws.
+    
+    std::vector<LogBookNote::ImageInfo> images =
+    { {"/this/file/does/not/exist", 0}};   // Well I hope to hell it doesn't
+    
+    CPPUNIT_ASSERT_THROW(
+        LogBookNote::create(
+            *m_db, m_pRun, "![link text](/this/file/does/not/exist)",
+            images
+        ),
+        LogBook::Exception
+    );
 }
