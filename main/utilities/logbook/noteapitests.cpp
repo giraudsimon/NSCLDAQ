@@ -92,10 +92,16 @@ private:
     CPPUNIT_TEST_SUITE(noteapitest);
     CPPUNIT_TEST(create_1);
     CPPUNIT_TEST(create_2);
+    
+    CPPUNIT_TEST(listall_1);
+    CPPUNIT_TEST(listall_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void create_1();
     void create_2();
+    
+    void listall_1();
+    void listall_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(noteapitest);
@@ -135,4 +141,23 @@ void noteapitest::create_2()
     EQ(size_t(0), pNote->imageCount());
     
     delete pNote;
+}
+
+void noteapitest::listall_1()
+{
+    // nothing to list:
+    
+    EQ(size_t(0), m_pLogbook->listAllNotes().size());
+}
+void noteapitest::listall_2()
+{
+    //make a couple of notes and list all:
+    
+    delete m_pLogbook->createNote("This is a note", m_pRun);
+    delete m_pLogbook->createNote("This is another note");
+    
+    auto notes = m_pLogbook->listAllNotes();
+    EQ(size_t(2), notes.size());
+    EQ(std::string("This is a note"), notes[0]->getNoteText().s_contents);
+    EQ(std::string("This is another note"), notes[1]->getNoteText().s_contents);
 }
