@@ -66,7 +66,7 @@ tests_SOURCES = @srcdir@/TestRunner.cpp \
 
 
 tests_CPPFLAGS = -std=c++11 -g -I@prefix@/include -I@top_srcdir@/base/thread \
-		-I@top_srcdir@/base/usb/usb1 @libusb_1_0_CFLAGS@ \
+		-I@top_srcdir@/usb/usb1 @libusb_1_0_CFLAGS@ \
 		$(CPPUNIT_INCLUDES)
 tests_LDADD = @top_builddir@/base/thread/libdaqthreads.la \
 		$(CPPUNIT_LDFLAGS) \
@@ -99,10 +99,10 @@ UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
 noinst_PROGRAMS = unittests
 unittests_SOURCES = $(UNITTEST_MODULES)
 
-unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES)
+unittests_CPPFLAGS = -I@srcdir@ -I@top_srcdir@/usb/usb1 $(CPPUNIT_INCLUDES)
 unittests_LDADD = $(CPPUNIT_LDFLAGS) \
-								 	@builddir@/libVMUSB.la  \
-									@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
+		@builddir@/libVMUSB.la  \
+		@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
 unittests_LDFLAGS = -Wl,"-rpath=@prefix@/lib"
 
 installcheck-local: unittests
