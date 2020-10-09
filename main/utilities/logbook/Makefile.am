@@ -19,13 +19,13 @@ include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h LogBookRun.h \
 install-exec-hook:
 	$(mkinstalldirs) @prefix@/pythonLibs @prefix@/pythonLibs/nscldaq
 	$(mkinstalldirs) @prefix@/pythonLibs/nscldaq/LogBook
-	$(INSTALL_PROGRAM) @libdir@/libPyLogbook.so @prefix@/pythonLibs/nscldaq/LogBook
-	touch @prefix@/pythonLibs/nscldaq/LogBook/__init__.py
+	$(INSTALL_PROGRAM) @libdir@/libPyLogbook.so @prefix@/pythonLibs/nscldaq/LogBook/LogBook.so
+
 
 
 #----------------------- tests ------------------------------------
 
-noinst_PROGRAMS=unittests
+check_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp logtestutils.hpp excepttests.cpp \
 	bookstatictests.cpp logbooktests.cpp persontests.cpp \
@@ -37,4 +37,9 @@ unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/testutils \
 unittests_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 unittests_DEPENDENCIES=libLogbook.la
 
-TESTS=unittests
+# Suport for python tests:
+
+
+check-TESTS:
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ logbookstatictests.py
+	@builddir@/unittests

@@ -28,9 +28,60 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "LogBook.h"
+
+#include <stdexcept>
 
 static PyObject* logbookExceptionObject(nullptr);
 
+///////////////////////////////////////////////////////////////////////////////
+// Module level code for LogBook:
+
+/**
+ * create
+ *    Create a new logbook.
+ * @param self - module object.
+ * @param args - parameter list.   We require four string like parameters:
+ *              - filename     - Path to the logbook file.
+ *              - experiment   - Experiment designation (e.g. '0400x').
+ *              - spokesperson - Name of the experiment spokesperson (e.g. 'Ron Fox)
+ *              - purpose      - Brief experiment purpose.
+ * @return PyObject* - PyNULL if successful else an exception gets
+ *                raised normally of type LogBook.error
+ */
+PyObject*
+create(PyObject* self, PyObject* args)
+{
+    const char* filename;
+    const char* experiment;
+    const char* spokesperson;
+    const char* purpose;
+    
+    if (!PyArg_ParseTuple(
+        args, "ssss", &filename, &experiment, &spokesperson, &purpose)
+    ) {
+        return NULL;        // ParseTuple raise the exception
+    }
+    try  {
+        LogBook::create(filename, experiment, spokesperson, purpose);
+        Py_RETURN_NONE;
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "LogBook.create threw an unanticipated exception type"
+        );
+    }
+    return NULL;
+    
+    
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Stuff needed to make the module happen.
 
 /**
  * logbookMethodTable
@@ -39,6 +90,8 @@ static PyObject* logbookExceptionObject(nullptr);
  */
 static PyMethodDef logbookMethodTable[] = {
     
+    {"create", create, METH_VARARGS, "Create a new logbook"},
+
     //   End of methods sentinnel
     
     {NULL, NULL, 0, NULL}
@@ -73,6 +126,7 @@ extern "C"
     PyInit_LogBook()
     {
         PyObject* module= PyModule_Create(&logbookModuleTable);
+        
         if (module) {
             // with the module initialized we need to create the exception.
             
