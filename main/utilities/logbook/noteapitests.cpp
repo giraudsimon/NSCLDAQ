@@ -95,6 +95,16 @@ private:
     
     CPPUNIT_TEST(listall_1);
     CPPUNIT_TEST(listall_2);
+    
+    CPPUNIT_TEST(listrun_1);
+    CPPUNIT_TEST(listrun_2);
+    CPPUNIT_TEST(listrun_3);
+    CPPUNIT_TEST(listrun_4);
+    CPPUNIT_TEST(listrun_5);
+    CPPUNIT_TEST(listrun_6);
+    
+    CPPUNIT_TEST(listnonrun_1);
+    CPPUNIT_TEST(listnonrun_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void create_1();
@@ -102,6 +112,16 @@ protected:
     
     void listall_1();
     void listall_2();
+    
+    void listrun_1();
+    void listrun_2();
+    void listrun_3();
+    void listrun_4();
+    void listrun_5();
+    void listrun_6();
+    
+    void listnonrun_1();
+    void listnonrun_2();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(noteapitest);
@@ -160,4 +180,74 @@ void noteapitest::listall_2()
     EQ(size_t(2), notes.size());
     EQ(std::string("This is a note"), notes[0]->getNoteText().s_contents);
     EQ(std::string("This is another note"), notes[1]->getNoteText().s_contents);
+}
+void noteapitest::listrun_1()
+{
+    // NOthing to list associated with our run.. by id.
+    
+    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    EQ(size_t(0), m_pLogbook->listNotesForRunId(m_pRun->getRunInfo().s_id).size());
+}
+void noteapitest::listrun_2()
+{
+    // list when there is a matching note
+    
+    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto notes = m_pLogbook->listNotesForRunId(m_pRun->getRunInfo().s_id);
+    
+    EQ(size_t(1), notes.size());
+    EQ(pNote->getNoteText().s_contents, notes[0]->getNoteText().s_contents);
+    
+    delete notes[0];
+    delete pNote;
+}
+void noteapitest::listrun_3()
+{
+    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    EQ(size_t(0), m_pLogbook->listNotesForRun(m_pRun->getRunInfo().s_number).size());
+}
+void noteapitest::listrun_4()
+{
+    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto notes = m_pLogbook->listNotesForRun(m_pRun->getRunInfo().s_number);
+    
+    EQ(size_t(1), notes.size());
+    EQ(pNote->getNoteText().s_contents, notes[0]->getNoteText().s_contents);
+    
+    delete notes[0];
+    delete pNote;
+}
+void noteapitest::listrun_5()
+{
+    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    EQ(size_t(0), m_pLogbook->listNotesForRun(m_pRun).size());
+}
+void noteapitest::listrun_6()
+{
+    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto notes = m_pLogbook->listNotesForRun(m_pRun);
+    
+    EQ(size_t(1), notes.size());
+    EQ(pNote->getNoteText().s_contents, notes[0]->getNoteText().s_contents);
+    
+    delete notes[0];
+    delete pNote;
+}
+
+void noteapitest::listnonrun_1()
+{
+    delete m_pLogbook->createNote("This is a note", m_pRun);
+    EQ(size_t(0), m_pLogbook->listNonRunNotes().size());
+}
+
+void noteapitest::listnonrun_2()
+{
+    auto pNote = m_pLogbook->createNote("This is a note");
+    auto notes = m_pLogbook->listNonRunNotes();
+    
+    EQ(size_t(1), notes.size());
+    EQ(pNote->getNoteText().s_contents, notes[0]->getNoteText().s_contents);
+    
+    delete notes[0];
+    delete pNote;
 }

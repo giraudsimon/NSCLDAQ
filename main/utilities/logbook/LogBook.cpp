@@ -598,6 +598,15 @@ LogBook::listNotesForRun(int runNumber)
     return LogBookNote::getRunNotes(*m_pConnection, runId(runNumber));
 }
 /**
+ * listNotesForRun
+ *    Same as above but the parameter is a LogBookRun*
+ */
+std::vector<LogBookNote*>
+LogBook::listNotesForRun(const LogBookRun* pRun)
+{
+    return LogBookNote::getRunNotes(*m_pConnection, pRun->getRunInfo().s_id);
+}
+/**
  * listNonRunNotes
  *    Lists notes not associated with any run.
  *
@@ -610,6 +619,7 @@ LogBook::listNonRunNotes()
 {
     return LogBookNote::getNonRunNotes(*m_pConnection);
 }
+
 /////////////////////////////////////////////////////////
 // Private methods
 

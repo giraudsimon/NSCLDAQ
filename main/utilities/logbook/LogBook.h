@@ -128,6 +128,7 @@ public:
     std::vector<LogBookNote*> listAllNotes();
     std::vector<LogBookNote*> listNotesForRunId(int runId);
     std::vector<LogBookNote*> listNotesForRun(int runNumber);
+    std::vector<LogBookNote*> listNotesForRun(const LogBookRun* pRun);
     std::vector<LogBookNote*> listNonRunNotes();
     
 private:
