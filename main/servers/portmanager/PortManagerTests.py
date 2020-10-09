@@ -101,7 +101,7 @@ class PortManagerTests(unittest.TestCase):
     def test_getPort_ok(self):
         pm = PortManager.PortManager('localhost', 30000)
         port = pm.getPort('myport')
-        self.assertTrue(isinstance(port, (int, long)))
+        self.assertTrue(isinstance(port, (int)))
     
     ##
     # test_getPort_remotefail -- This test is not viable in some circumstances

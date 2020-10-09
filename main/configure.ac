@@ -190,9 +190,9 @@ SOVERSION="11:0:0"
 #  Local tests:
 #
 
-# Ensure Python is 2.7 or greater, and the packages/dependencies we need
+# Ensure Python is 3.0  or greater, and the packages/dependencies we need
 
-AM_PATH_PYTHON([2.7], [], [AC_MSG_ERROR([Python 2.7 or higher is needed for NSCLDAQ])])
+AM_PATH_PYTHON([3.0], [], [AC_MSG_ERROR([Python 3.0  or higher is needed for NSCLDAQ])])
 AX_PYQT
 PKG_CHECK_MODULES(PYTHON3, python3)
 
