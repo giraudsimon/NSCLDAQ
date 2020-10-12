@@ -26,13 +26,136 @@
  *  is therefore a compiled module built on to pof the C++ API.
  */
 
+#ifndef PY_SSIZE_T_CLEAN
 #define PY_SSIZE_T_CLEAN
+#endif
+
 #include <Python.h>
 #include "LogBook.h"
 
 #include <stdexcept>
 
+// Exception type we'll be raising:
+
 static PyObject* logbookExceptionObject(nullptr);
+
+// Logbook type extra storage:
+
+typedef struct {
+    PyObject_HEAD
+    LogBook*  m_pBook;
+} PyLogBook;
+
+
+
+///////////////////////////////////////////////////////////////
+// Canonicals for PyLogBook (LogBook.LogBook) class/type.
+
+/**
+ * PyLogBook_new
+ *    Create the object storage for a LogBook.LogBook type instance.
+ *    Note that the m_pBook member will be initialized to nullptr
+ *    so that it can be deleted without penalty in case  the deatailed
+ *    construction fails.
+ * @param type  - Pointer to the PyLogBook type struct.
+ * @param args  - Positional arguments (ignored).
+ * @param kwds  - Keyword arguments (ignored).
+ * @return  PyObject* - pointer to the new object (PyLogBook struct)
+ *                allocated an initialized but not constructed.
+ * @retval NULL if failed.
+ */
+static PyObject*
+PyLogBook_new(PyTypeObject* type, PyObject* args, PyObject* kwargs)
+{
+    // Evidently tp_alloc will incref.
+    
+    PyLogBook* self = reinterpret_cast<PyLogBook*> (type->tp_alloc(type, 0));
+    if (self) {
+        self->m_pBook = nullptr;
+    }
+    return reinterpret_cast<PyObject*>(self);  
+}
+/**
+ * PyLogBook_init
+ *   Actual constructor for a LogBook.LogBook object once storage
+ *   was allocated.
+ *
+ * @param self   - pointer to the PyLogBook object that contains object
+ *                 storage
+ * @param args   - Positional arguments (if no keywords this is the log filename).
+ * @param kwargs - we support "filename" as the filename for the logbookl.
+ * @return status of the attempt, 0 for success, -1 for failure.
+ *         On failure a LogBook.error is raised if construction fails.
+ */
+static int
+PyLogBook_init(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    static const char* kwlist[] = {"filename", NULL};
+    const char* filename(nullptr);
+    
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, "|s", const_cast<char**>(kwlist), &filename)
+    ) {
+        return -1;
+    }
+    try {
+        PyLogBook* pThis = reinterpret_cast<PyLogBook*>(self);
+        pThis->m_pBook = new LogBook(filename);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return -1;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated excpetion type caught in PyLogBook_init"
+        );
+        return -1;
+    }
+    return 0;
+}
+/**
+ * PyLogBook_dealloc
+ *   Destructor for an instance of LogBook.LogBook:
+ *
+ * @param self - pointer to the object to delete.
+ */
+static void
+PyLogBook_dealloc(PyObject* self)
+{
+    PyLogBook* pThis = reinterpret_cast<PyLogBook*>(self);
+    delete pThis->m_pBook;
+    pThis->m_pBook = nullptr;              // For good measure.
+    Py_TYPE(self)->tp_free(self);
+}
+
+///////////////////////////////////////////////////////////////
+// Table for the PyLogBook type (LogBook.LogBook)
+
+static PyMethodDef PyLogBook_methods [] = {   // methods
+
+    // Ending sentinel:
+    
+     {NULL, NULL, 0, NULL}
+};
+
+// Python's Type definition for PyLogBook:
+
+static PyTypeObject PyLogBookType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "LogBook.LogBook",
+    .tp_basicsize = sizeof(PyLogBook),
+    .tp_itemsize = 0,
+    .tp_dealloc = (destructor)PyLogBook_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc  = "Logbook Class",
+    .tp_methods = PyLogBook_methods,  
+    .tp_init = (initproc)PyLogBook_init,
+    .tp_new   = PyLogBook_new
+};
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Module level code for LogBook:
@@ -125,6 +248,14 @@ extern "C"
     PyMODINIT_FUNC
     PyInit_LogBook()
     {
+        // Ready our type:
+        
+        if (PyType_Ready(&PyLogBookType) < 0) {
+            return NULL;
+        }
+        
+        // Initialize our module:
+        
         PyObject* module= PyModule_Create(&logbookModuleTable);
         
         if (module) {
@@ -139,7 +270,15 @@ extern "C"
               Py_DECREF(module);                   // deletes the module.
               return nullptr;
             }
-            
+            Py_INCREF(&PyLogBookType);
+            if (PyModule_AddObject(
+                module, "LogBook", (PyObject*)(&PyLogBookType)
+            ) < 0) {
+                Py_DECREF(&PyLogBookType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
+                return NULL;
+            }
         }
         return module;
     }
