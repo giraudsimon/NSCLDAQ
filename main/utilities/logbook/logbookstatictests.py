@@ -9,7 +9,7 @@ import LogBook.LogBook as LogBook
 
 from test import support
 
-class aTest(unittest.TestCase) :
+class LogBookStatics(unittest.TestCase) :
     def setUp(self) :
         if os.path.isfile('logbook.log') :
            os.unlink('logbook.log') 

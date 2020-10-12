@@ -31,21 +31,49 @@
 #endif
 
 #include <Python.h>
+#include "PyLogbook.h"
+#include "PyLogBookPerson.h"
+
 #include "LogBook.h"
+#include "LogBookPerson.h"
+
 
 #include <stdexcept>
+// forward definitions
+
+LogBook* PyLogBook_getLogBook(PyObject* obj);
 
 // Exception type we'll be raising:
 
-static PyObject* logbookExceptionObject(nullptr);
+PyObject* logbookExceptionObject(nullptr);
 
-// Logbook type extra storage:
+/////////////////////////////////////////////////////////////////
+// Utilities for PyLogBook object instances.
 
-typedef struct {
-    PyObject_HEAD
-    LogBook*  m_pBook;
-} PyLogBook;
+static PyObject*
+newPerson(int id, PyObject* logbook)
+{
+    return PyObject_CallFunction(
+        reinterpret_cast<PyObject*>(&PyPersonType), "IO", id, logbook
+     );
+}
 
+template<class T>
+void freeVector(std::vector<T> v)
+{
+    for (int i =0; i < v.size(); i++) delete v[i];
+}
+
+void freeTuple(PyObject* tuple)
+{
+    int n = PyTuple_Size(tuple);
+    for (int i =0; i < n; i++) {
+        PyObject* pobj = PyTuple_GetItem(tuple, i);
+        Py_XDECREF(pobj);
+    }
+    Py_DECREF(tuple);
+    
+}
 
 
 ///////////////////////////////////////////////////////////////
@@ -129,11 +157,134 @@ PyLogBook_dealloc(PyObject* self)
     pThis->m_pBook = nullptr;              // For good measure.
     Py_TYPE(self)->tp_free(self);
 }
+/////////////////////////////////////////////////////////////////
+// LogBook object methods:
+
+/**
+ * addPerson (add_person)
+ *    Implements the add_person method.
+ *    Creates a new person in the database and returns a LogBook.Person
+ *    object that encapsulates that new person.
+ *
+ *  @param self - Pointer to the PyLogBook struct for this object.
+ *  @param args - positional arguments.
+ *  @param kwargs - Keyword parameters 'lastname', 'firstname', 'salutation'
+ *  @return PyObject* - A newly created LogBook.Person object on success.
+ *  @retval NULL - failed, and an exception is raised.
+ */
+static PyObject*
+addPerson(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    const char* lastname(nullptr);
+    const char* firstname(nullptr);
+    const char* salutation(nullptr);
+    const char* keywords[] = {"lastname", "firstname", "salutation", nullptr};
+    
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, "|sss", const_cast<char**>(keywords),
+        &lastname, &firstname, &salutation
+    )) {
+        return nullptr;
+    }
+    LogBook*   pBook = PyLogBook_getLogBook(self);
+    PyObject* result = nullptr;
+    try {
+        LogBookPerson* person = pBook->addPerson(lastname, firstname, salutation);
+        int id = person->id();
+        delete person;
+        
+        // Now we can wrap this the Python way.
+                
+        result = newPerson(id, self);
+
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated Exception type in LogBook.add_person"
+        );
+       
+    }
+    return result;
+}/**
+  * findPeople
+  *  @param self - pointer to the logbook object storage.
+  *  @param args - Only one argument, a potentially null where clause.
+  *  @return PyObject* Possibly empty n-tuple containing the
+  *               matching person objects.
+  */
+static PyObject*
+findPeople(PyObject* self, PyObject* args)
+{
+    const char* where(nullptr);
+    if (!PyArg_ParseTuple(args, "s", &where)) {
+        return nullptr;
+    }
+    LogBook* book = PyLogBook_getLogBook(self);
+    std::vector<LogBookPerson*> vResult;
+    try {
+        vResult = book->findPeople(where);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated excetpion type in LogBook.findPeople"
+        );
+        return nullptr;
+    }
+    PyObject* result = PyTuple_New(vResult.size());
+    if (!result) {
+        return nullptr;
+    }
+    
+    try {
+        for (int i =0; i < vResult.size(); i++) {
+            PyTuple_SET_ITEM(result, i, newPerson(vResult[i]->id(), self));
+            delete vResult[i];
+            vResult[i] = nullptr;        // Prevent double del on catch
+        }
+    }
+    catch (LogBook::Exception& e) {
+        freeVector(vResult);
+        freeTuple(result);
+        PyErr_SetString(
+            logbookExceptionObject, e.what()
+        );
+        return nullptr;
+    }
+    catch (...) {
+        freeVector(vResult);
+        freeTuple(result);
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated exception in LogBook.findPeople"
+        );
+        return nullptr;
+    }
+    
+    return result;
+}
+
 
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
 static PyMethodDef PyLogBook_methods [] = {   // methods
+    {
+        "add_person", (PyCFunction)addPerson,
+        METH_VARARGS | METH_KEYWORDS, "Add a new person."
+    },
+    {
+        "find_people", findPeople, METH_VARARGS, "Find matching people"
+    },
 
     // Ending sentinel:
     
@@ -155,8 +306,33 @@ static PyTypeObject PyLogBookType = {
     .tp_new   = PyLogBook_new
 };
 
+/////////////////////////////////////////////////////////////////
+// LogBook.LogBook utilities for other type implementations:
 
-
+/**
+ * PyLogBook_ isLogBook
+ *   @param obj - An object.
+ *   @return bool -true if obj is a logbook as determined by PyObject_IsInstance
+ */
+bool
+PyLogBook_isLogBook(PyObject* obj)
+{
+    return PyObject_IsInstance(
+        obj, reinterpret_cast<PyObject*>(&PyLogBookType)
+    ) != 0;
+}
+/**
+ * PyLogBook_getLogBook(PyObject* obj)
+ *
+ *  @param obj - Object that's already been validatated to be a logbook.
+ *  @return LogBook* - Pointer to the encapsulated C++ logbook object.
+ */
+LogBook*
+PyLogBook_getLogBook(PyObject* obj)
+{
+    PyLogBook* pbook = reinterpret_cast<PyLogBook*>(obj);
+    return pbook->m_pBook;
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Module level code for LogBook:
 
@@ -248,9 +424,15 @@ extern "C"
     PyMODINIT_FUNC
     PyInit_LogBook()
     {
-        // Ready our type:
+        // Ready LogBookType.
         
         if (PyType_Ready(&PyLogBookType) < 0) {
+            return NULL;
+        }
+        
+        // Ready  Person type.
+        
+        if (PyType_Ready(&PyPersonType) < 0) {
             return NULL;
         }
         
@@ -270,13 +452,32 @@ extern "C"
               Py_DECREF(module);                   // deletes the module.
               return nullptr;
             }
+            
+            // Add the log book type:
+            
             Py_INCREF(&PyLogBookType);
             if (PyModule_AddObject(
-                module, "LogBook", (PyObject*)(&PyLogBookType)
+                module, "LogBook",
+                reinterpret_cast<PyObject*>(&PyLogBookType)
             ) < 0) {
                 Py_DECREF(&PyLogBookType);
                 Py_XDECREF(logbookExceptionObject);
                 Py_DECREF(module);
+                return NULL;
+            }
+            // Now add the LogBook.Person type:
+            
+            Py_INCREF(&PyPersonType);
+            if (PyModule_AddObject(
+                module, "Person",
+                reinterpret_cast<PyObject*>(&PyPersonType))
+                < 0
+            )  {
+                Py_DECREF(&PyPersonType);
+                Py_DECREF(&PyLogBookType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
+                
                 return NULL;
             }
         }
