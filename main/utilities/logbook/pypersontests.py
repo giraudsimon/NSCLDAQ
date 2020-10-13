@@ -59,8 +59,34 @@ class aTest(unittest.TestCase) :
         self.assertEqual(2, len(r))
         self.assertEqual('Fox', r[0].lastname)
         self.assertEqual('Giordano', r[1].firstname)
-    
+    def test_find4(self, ):
+        p1 = self.logbook.add_person('Fox', 'Ron', 'Mr.')
+        p2 = self.logbook.add_person('Cerizza', 'Giordano', 'Dr.')
+        r = self.logbook.find_people()
+        self.assertEqual(2, len(r))
+        self.assertEqual('Fox', r[0].lastname)
+        self.assertEqual('Giordano', r[1].firstname)
         
+    def test_list1(self, ):
+        r = self.logbook.list_people()
+        self.assertEqual(0, len(r))
+    def test_list2(self, ):
+        p1 = self.logbook.add_person('Fox', 'Ron', 'Mr.')
+        p2 = self.logbook.add_person('Cerizza', 'Giordano', 'Dr.')
+        r = self.logbook.list_people()
+        self.assertEqual(2, len(r))
+        self.assertEqual('Fox', r[0].lastname)
+        self.assertEqual('Giordano', r[1].firstname)
+    
+    def test_get1(self, ):
+        self.assertRaises(LogBook.error, self.logbook.get_person, 1)
+    def test_get2(self, ):
+        p1 = self.logbook.add_person('Fox', 'Ron', 'Mr.')
+        p2 = self.logbook.add_person('Cerizza', 'Giordano', 'Dr.')
+        p = self.logbook.get_person(p1.id)
+        self.assertEqual('Fox', p.lastname)
+    
+       
     
     
     

@@ -221,7 +221,7 @@ static PyObject*
 findPeople(PyObject* self, PyObject* args)
 {
     const char* where(nullptr);
-    if (!PyArg_ParseTuple(args, "s", &where)) {
+    if (!PyArg_ParseTuple(args, "|s", &where)) {
         return nullptr;
     }
     LogBook* book = PyLogBook_getLogBook(self);
@@ -272,8 +272,40 @@ findPeople(PyObject* self, PyObject* args)
     
     return result;
 }
-
-
+/**
+ * listPeople
+ *   Returns a list of all of the people.
+ *
+ *  @param self - Object (logbook) requesting the operation.
+ *  @param args - empty argument list.
+ *  @return PyObject* see findPeople as we really just call that.
+ */
+static PyObject*
+listPeople(PyObject* self, PyObject* args)
+{
+    auto a = PyTuple_New(0);
+    PyObject* result =  findPeople(self, a);
+    Py_DECREF(a);
+    return result;
+}
+/**
+ * getPerson
+ *    Return a LogBook.Person given an id.
+ * @param self - logbook object performing this method.
+ * @param args - Single mandator parameter - the id.
+ * @return PyObject* resulting LogBook.Person object
+ * @retval   nullptr with an exception raised if an error.
+ *           LogBook.error is raised for nonexistent id.
+ */
+static PyObject*
+getPerson(PyObject* self, PyObject* args)
+{
+    int id(0);
+    if (!PyArg_ParseTuple(args, "i", &id)) {
+        return nullptr;
+    }
+    return newPerson(id, self);
+}
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
@@ -285,7 +317,8 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
     {
         "find_people", findPeople, METH_VARARGS, "Find matching people"
     },
-
+    { "list_people", listPeople, METH_NOARGS, "Find all people"},
+    { "get_person", getPerson, METH_VARARGS, "Create person from id"},
     // Ending sentinel:
     
      {NULL, NULL, 0, NULL}
