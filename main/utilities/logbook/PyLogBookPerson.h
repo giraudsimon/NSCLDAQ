@@ -27,6 +27,13 @@
 #endif
 
 #include <Python.h>
+class LogBookPerson;
 
 extern PyTypeObject PyPersonType;
+
+bool PyPerson_isPerson(PyObject* p);
+LogBookPerson* PyPerson_getPerson(PyObject* p);
+int       PyPerson_IterableToVector(
+    std::vector<LogBookPerson*>& result, PyObject* iterable
+);
 #endif

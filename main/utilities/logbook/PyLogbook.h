@@ -29,6 +29,7 @@
 #include "LogBook.h"
 
 class LogBook;
+class LogBookPerson;
 
 // Logbook instance object storage shape.
 
@@ -46,5 +47,13 @@ extern PyObject* logbookExceptionObject;
 
 extern bool PyLogBook_isLogBook(PyObject* pObject);
 LogBook* PyLogBook_getLogBook(PyObject* pObject);
-
+PyObject* PyLogBook_TupleFromPeople(
+    PyObject* book, const std::vector<LogBookPerson*>& people
+);
+void freeTuple(PyObject* tuple);
+template<class T>
+void freeVector(std::vector<T> v)
+{
+    for (int i =0; i < v.size(); i++) delete v[i];
+}
 #endif

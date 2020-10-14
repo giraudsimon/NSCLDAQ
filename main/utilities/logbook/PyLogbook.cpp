@@ -31,14 +31,18 @@
 #endif
 
 #include <Python.h>
+
 #include "PyLogbook.h"
 #include "PyLogBookPerson.h"
+#include "PyLogBookShift.h"
 
 #include "LogBook.h"
 #include "LogBookPerson.h"
+#include "LogBookShift.h"
 
 
 #include <stdexcept>
+#include <memory>
 // forward definitions
 
 LogBook* PyLogBook_getLogBook(PyObject* obj);
@@ -58,11 +62,7 @@ newPerson(int id, PyObject* logbook)
      );
 }
 
-template<class T>
-void freeVector(std::vector<T> v)
-{
-    for (int i =0; i < v.size(); i++) delete v[i];
-}
+
 
 void freeTuple(PyObject* tuple)
 {
@@ -75,6 +75,52 @@ void freeTuple(PyObject* tuple)
     
 }
 
+/**
+ * PyLogBook_TupleFromPeople
+ *    Given a logbook and a vector of LogBookPerson*
+ *    returns a tuple that contains LogBook.Person objects
+ *    that represent those pointers. Once this is done, the pointers
+ *    are no longer needed and the _caller_ can delete them.
+ *
+ *  @param book  - Pointer to the logbook these people live in.
+ *  @param people -References the vector containing the people pointers.
+ *  @returnPyObject* - The new tuple or null if unable to make one
+ *                  in which case an appropriate python exception
+ *                  type will have been raised.
+ */
+PyObject*
+PyLogBook_TupleFromPeople(
+    PyObject* book, const std::vector<LogBookPerson*>& people
+)
+{
+    PyObject* result = PyTuple_New(people.size());
+    if (!result) {
+        
+        return nullptr;
+    }
+    try {
+        for (int i =0; i < people.size(); i++) {
+            PyTuple_SET_ITEM(result, i, newPerson(people[i]->id(), book));
+        }
+    }
+    catch (LogBook::Exception& e) {
+        freeTuple(result);
+        result = nullptr;
+        PyErr_SetString(
+            logbookExceptionObject, e.what()
+        );
+    }
+    catch (...) {
+        freeTuple(result);
+        result = nullptr;
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated exception type in PyLogBook_TupleFromPeople"
+        );
+    }
+    
+    return result;
+}
 
 ///////////////////////////////////////////////////////////////
 // Canonicals for PyLogBook (LogBook.LogBook) class/type.
@@ -160,6 +206,8 @@ PyLogBook_dealloc(PyObject* self)
 /////////////////////////////////////////////////////////////////
 // LogBook object methods:
 
+//                     Person API
+
 /**
  * addPerson (add_person)
  *    Implements the add_person method.
@@ -240,35 +288,8 @@ findPeople(PyObject* self, PyObject* args)
         );
         return nullptr;
     }
-    PyObject* result = PyTuple_New(vResult.size());
-    if (!result) {
-        return nullptr;
-    }
-    
-    try {
-        for (int i =0; i < vResult.size(); i++) {
-            PyTuple_SET_ITEM(result, i, newPerson(vResult[i]->id(), self));
-            delete vResult[i];
-            vResult[i] = nullptr;        // Prevent double del on catch
-        }
-    }
-    catch (LogBook::Exception& e) {
-        freeVector(vResult);
-        freeTuple(result);
-        PyErr_SetString(
-            logbookExceptionObject, e.what()
-        );
-        return nullptr;
-    }
-    catch (...) {
-        freeVector(vResult);
-        freeTuple(result);
-        PyErr_SetString(
-            logbookExceptionObject,
-            "Unanticipated exception in LogBook.findPeople"
-        );
-        return nullptr;
-    }
+    PyObject* result = PyLogBook_TupleFromPeople(self, vResult);
+    freeVector(vResult);
     
     return result;
 }
@@ -306,10 +327,199 @@ getPerson(PyObject* self, PyObject* args)
     }
     return newPerson(id, self);
 }
+//               Shift api:
+
+/**
+ * getShift
+ *   Given a new shift's id, returns it's shift object.
+ *
+ * @param PyObject* self - this logbook.
+ * @param PyObject* args - parameters (shift id)
+ * @return PyObject* Shift object.
+ */
+static PyObject*
+getShift(PyObject* self, PyObject* args)
+{
+    int id;
+    if(!PyArg_ParseTuple(args, "i", &id)) {
+        return nullptr;
+    }
+    // Look up can throw C++:
+   
+    PyObject* result; 
+    try {
+        LogBook* book = PyLogBook_getLogBook(self);
+        LogBookShift* pShift = book->getShift(id);
+        if (!pShift) {
+            throw LogBook::Exception("No such shift");
+        }
+        result = PyShift_newShift(self, pShift);
+        delete pShift;              // No longer needed.
+    }
+    catch (LogBook::Exception & e) {
+    PyErr_SetString(logbookExceptionObject, e.what());
+    result =  nullptr;
+  }
+  catch (...) {
+    PyErr_SetString(
+      logbookExceptionObject,
+      "Unexpected exception type caught in LogBook.get_shift"
+    );
+    result = nullptr;
+  }
+  return result;
+}
+/**
+ * createShift
+ *    Creates a new shift and encapsulates it in a PyLogBookShift
+ *    object.
+ * @param self - LogBook object in which the shift is being created.
+ * @param args - parameters.  A shift name is mandatory
+ *               if the members keyword is supplied it is a list of
+ *               shift members.
+ * @return PyObject*  - pointer to the new shift object.
+ */
+static PyObject*
+createShift(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    const char* name;
+    PyObject*   members;
+    const char* keywords[] = {"name", "members", nullptr};
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, "s|O", const_cast<char**>(keywords),
+        &name, &members
+    )) {
+        return nullptr;
+    }
+    std::vector<LogBookPerson*> memberVec;
+    if (members) {
+        if(PyPerson_IterableToVector(memberVec, members)) {
+            return nullptr;
+        }
+    }
+    LogBook* book = PyLogBook_getLogBook(self);
+    PyObject* result(nullptr);
+    
+    // Unique pointer below ensures that the LogBookShift* gets
+    // deleted even on throws.
+    try {
+        std::unique_ptr<LogBookShift>
+            pShift(book->createShift(name, memberVec));
+        result = PyShift_newShift(self, pShift.get());
+    }
+    catch(LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        result = nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unexpected exception in LogBook.create_shift"
+        );
+        return nullptr;
+    }
+    return result;
+    
+}
+/**
+ * listShifts
+ *    Returns a  tuple containing all of the shifts
+ *    known to the logbook.
+ * @param self - pointer to the PyLogBook object
+ * @param none - Nullptr since this is METH_NOARGS.
+ * @return PyObject* tuple containing newly created PyShift object refs.
+ */
+static PyObject*
+listShifts(PyObject* self, PyObject* none)
+{
+    LogBook* book = PyLogBook_getLogBook(self);
+    try {
+        auto shifts = book->listShifts();
+        return PyShift_TupleFromVector(self, shifts);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated exception type was caught in LogBook.list_shifts"
+        );
+    }
+    
+    return NULL;              // Failed if we got here.
+}
+/**
+ * findShift
+ *   Returns a shift given its name.
+ * @param self - pointer to PyLogBook calling this method.
+ * @param argv - Pointer to the tuple containing the string.
+ * @return PyObject* shift or exception if nosuch.
+ */
+static PyObject*
+findShift(PyObject* self, PyObject* args)
+{
+    const char* name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return nullptr;
+    }
+    try {
+        LogBook* book = PyLogBook_getLogBook(self);
+        std::unique_ptr<LogBookShift> pShift(book->findShift(name));
+        if (!pShift.get()) {
+            throw LogBook::Exception("Shift not found");
+        }
+        return PyShift_newShift(self, pShift.get());
+    }
+    catch (LogBook::Exception & e)
+    {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated exception type throw in LogBook.find_shift"
+        );
+    }
+    
+    return nullptr;
+}
+/**
+ * currentShift
+ *   @param self - this object.
+ *   @return PyObject* the current shift or None if there isn't one.
+ */
+static PyObject*
+currentShift(PyObject* self, PyObject* none)
+{
+    LogBook* book = PyLogBook_getLogBook(self);
+    std::unique_ptr<LogBookShift> shift(book->getCurrentShift());
+    
+    if (shift.get()) {
+        PyObject* result(nullptr);
+        try {
+            result = PyShift_newShift(self, shift.get());
+        }
+        catch (LogBook::Exception& e) {
+            PyErr_SetString(logbookExceptionObject, e.what());
+        }
+        catch (...) {
+            PyErr_SetString(
+                logbookExceptionObject,
+                "Unanticipated exception type cauth in current_shift"
+            );
+        }
+        return result;
+    } 
+    Py_RETURN_NONE;
+
+}
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
 static PyMethodDef PyLogBook_methods [] = {   // methods
+    // People api:
     {
         "add_person", (PyCFunction)addPerson,
         METH_VARARGS | METH_KEYWORDS, "Add a new person."
@@ -319,6 +529,19 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
     },
     { "list_people", listPeople, METH_NOARGS, "Find all people"},
     { "get_person", getPerson, METH_VARARGS, "Create person from id"},
+    
+    // Shift API:
+    
+    {"get_shift", getShift, METH_VARARGS, "Return a new shift given id"},
+    {
+        "create_shift", (PyCFunction)createShift,
+        METH_VARARGS | METH_KEYWORDS,
+        "Create a new shift with or without people"
+    },
+    {"list_shifts", listShifts, METH_NOARGS, "Return a tuple with all shifts"},
+    {"find_shift", findShift, METH_VARARGS, "Find a shift by name"},
+    {"current_shift", currentShift, METH_NOARGS, "Return current shift"},
+    
     // Ending sentinel:
     
      {NULL, NULL, 0, NULL}
@@ -468,6 +691,9 @@ extern "C"
         if (PyType_Ready(&PyPersonType) < 0) {
             return NULL;
         }
+        if (PyType_Ready(&PyLogBookShiftType) < 0) {
+            return NULL;
+        }
         
         // Initialize our module:
         
@@ -511,6 +737,22 @@ extern "C"
                 Py_XDECREF(logbookExceptionObject);
                 Py_DECREF(module);
                 
+                return NULL;
+            }
+            // add log bookshift
+            
+            Py_INCREF(&PyLogBookShiftType);
+            if (PyModule_AddObject(
+                module, "Shift",
+                reinterpret_cast<PyObject*>(&PyLogBookShiftType)
+            )
+                < 0
+            ) {
+                Py_DECREF(&PyLogBookShiftType);
+                Py_DECREF(&PyPersonType);
+                Py_DECREF(&PyLogBookType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
                 return NULL;
             }
         }

@@ -95,6 +95,8 @@ public:
     // Api for shifts:
     
     LogBookShift* getShift(int id);
+    void          addShiftMember(LogBookShift* pShift, LogBookPerson* pPerson);
+    void          removeShiftMember(LogBookShift* pShift, LogBookPerson* pPerson);
     LogBookShift* createShift(const char* name);
     LogBookShift* createShift(
       const char* name, const std::vector<LogBookPerson*>& members

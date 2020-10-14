@@ -290,6 +290,28 @@ LogBook::getShift(int id)
     return new LogBookShift(*m_pConnection, id);
 }
 /**
+ * addShiftMember
+ *    Add a new person to the shift:
+ * @param pShift -the shift to add to.
+ * @param pPerson - the person to add to the shift.
+ */
+void
+LogBook::addShiftMember(LogBookShift* pShift, LogBookPerson* pPerson)
+{
+    pShift->addMember(*m_pConnection, pPerson);
+}
+/**
+ * removeShiftMember
+ *   Remove a member from a shift.
+ * @param pShift -the shift to add to.
+ * @param pPerson - the person to add to the shift.
+ */
+void
+LogBook::removeShiftMember(LogBookShift* pShift, LogBookPerson* pPerson)
+{
+    pShift->removeMember(*m_pConnection, pPerson);
+}
+/**
  * createShift
  *    Create an empty shift (no members) the shift can have
  *    members added via the addMember object method of the

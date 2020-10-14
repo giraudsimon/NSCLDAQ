@@ -20,6 +20,7 @@
  *  
  */
 #include "PyLogbook.h"
+#include "PyLogBookPerson.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
 
@@ -28,6 +29,83 @@ typedef struct {
     PyObject*      m_pBook;
     LogBookPerson* m_pPerson;
 } PyLogBookPerson;
+
+///////////////////////////////////////////////////////////////\
+// Utilities:
+
+/**
+ * PyPerson_isPerson
+ *    Determines if a python object is, in fact a person.
+ * @param p - the object to check
+ */
+bool
+PyPerson_isPerson(PyObject* p)
+{
+  return PyObject_IsInstance(
+        p, reinterpret_cast<PyObject*>(&PyPersonType)
+    ) != 0;
+}
+/**
+ * PyPerson_IterableToVector
+ *   Turns an interable that ostensibly contains PyLogBookPerson
+ *   objects into a vector of pointers to LogBookPerson*
+ *   This vector is made of pointers to the logbook person objects
+ *   in the PyLogBookPerson objects themselves and, therefore
+ *   those pointers should note be deleted by the caller.
+ * @param[out] result - filled in with the vector of people.
+ *                      this will be cleared before being populated
+ *                      and cleared on error.
+ * @param[in] iterable - a Python iterable object whose members must make
+ *                PyPerson_isPerson return true.
+ * @return int
+ * @retval 0            - Success.
+ * @retval -1           - failure with a python exception raised.
+ * @note - if there's a need for the vector to persist long after the
+ *         caller, the caller should incref the iterable so that it
+ *         retains references to the objects it has.
+ */
+int
+PyPerson_IterableToVector(
+  std::vector<LogBookPerson*>& result, PyObject* iterable
+)
+{
+  PyObject* iterator = PyObject_GetIter(iterable);
+  result.clear();
+  if (!iterator) {
+    return -1;                   // Exception already raised.
+  }
+  PyObject* item;
+  while (item = PyIter_Next(iterator)) {
+    if (!PyPerson_isPerson(item)) {
+      result.clear();
+      Py_DECREF(item);
+      Py_DECREF(iterator);
+      PyErr_SetString(
+        logbookExceptionObject,
+        "PyPerson_IterableToVector - an item is not a person"
+      );
+      return -1;            
+    }
+    result.push_back(PyPerson_getPerson(item));
+    Py_DECREF(item);
+  }
+  Py_DECREF(iterator);
+  return 0;
+}
+
+/**
+ * PyPerson_getPerson
+ *   Get the underlying LogBookPerson* from the object
+ * @param p - pointer to the object that has been verified to be
+ *            a LogBook.Person.
+ * @return LogBookPerson*
+ */
+LogBookPerson*
+PyPerson_getPerson(PyObject* p)
+{
+  PyLogBookPerson* pThis = reinterpret_cast<PyLogBookPerson*>(p);
+  return pThis->m_pPerson;
+}
 
 //////////////////////////////////////////////////////////////
 //   Canonicals for PyLogBookPerson (LogBook.Person) class/type.
@@ -97,10 +175,10 @@ PyPerson_init(PyObject* self, PyObject* args, PyObject* kwargs)
     try {
         PyLogBookPerson* pThis = reinterpret_cast<PyLogBookPerson*>(self);
         pThis->m_pBook = pLogBook;
-        Py_INCREF(pLogBook);        // We reference the book.
         
         LogBook* book  = PyLogBook_getLogBook(pLogBook);
         pThis->m_pPerson= book->getPerson(id); // Can throw.
+        Py_INCREF(pLogBook);        // We reference the book.
     }
     catch (LogBook::Exception& e) {
         PyErr_SetString(logbookExceptionObject, e.what());
