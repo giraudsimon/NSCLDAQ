@@ -11,7 +11,8 @@ libPyLogbook_la_DEPENDENCIES=libLogbook.la
 libPyLogbook_la_CXXFLAGS=$(libLogbook_la_CXXFLAGS) @PYTHON3_CFLAGS@
 libPyLogbook_la_LDFLAGS= libLogbook.la $(libLogbook_la_LDFLAGS) @PYTHON3_LIBS@
 libPyLogbook_la_SOURCES=PyLogbook.cpp PyLogbookPerson.cpp PyLogbook.h \
-	PyLogBookPerson.h PyLogBookShift.h PyLogBookShift.cpp
+	PyLogBookPerson.h PyLogBookShift.h PyLogBookShift.cpp	\
+	PyLogBookRun.h
 
 
 include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h LogBookRun.h \
