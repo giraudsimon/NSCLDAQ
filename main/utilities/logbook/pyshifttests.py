@@ -148,14 +148,22 @@ class aTest(unittest.TestCase) :
         shift = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
         self.assertRaises(LogBook.error, shift.remove_member, self.ron)
     
-    
-    
-    
-    
-    
+    def test_current1(self, ):
+        self.assertIsNone(self.logbook.current_shift())
         
+    def test_current2(self, ):
+        shift = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
+        self.assertIsNone(self.logbook.current_shift())
         
-
+    def test_current2(self, ):
+        shift1 = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
+        shift2 = self.logbook.create_shift('non-doctorates', (self.ron, self.ava))
+        
+        shift1.set_current()
+        self.assertEqual(shift1.id, self.logbook.current_shift().id)
+        shift2.set_current()
+        self.assertEqual(shift2.id, self.logbook.current_shift().id)
+        
 if __name__ == '__main__' :
     unittest.main()
     
