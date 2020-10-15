@@ -71,9 +71,11 @@ PyObject*
 PyShift_newShift(PyObject* book, LogBookShift* shift)
 {
   int id = shift->id();
-  return PyObject_CallFunction(
+  PyObject* pyShift =  PyObject_CallFunction(
     reinterpret_cast<PyObject*>(&PyLogBookShiftType), "IO", id, book
   );
+  Py_INCREF(pyShift);
+  return pyShift;
 }
 /**
  * PyShift_TupleFromVector

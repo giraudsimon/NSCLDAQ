@@ -57,9 +57,11 @@ PyObject* logbookExceptionObject(nullptr);
 static PyObject*
 newPerson(int id, PyObject* logbook)
 {
-    return PyObject_CallFunction(
+    PyObject* person = PyObject_CallFunction(
         reinterpret_cast<PyObject*>(&PyPersonType), "IO", id, logbook
      );
+    Py_XINCREF(person);
+    return person;
 }
 
 
@@ -382,8 +384,8 @@ getShift(PyObject* self, PyObject* args)
 static PyObject*
 createShift(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-    const char* name;
-    PyObject*   members;
+    const char* name(nullptr);
+    PyObject*   members(nullptr);
     const char* keywords[] = {"name", "members", nullptr};
     if (!PyArg_ParseTupleAndKeywords(
         args, kwargs, "s|O", const_cast<char**>(keywords),

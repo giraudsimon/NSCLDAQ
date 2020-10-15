@@ -26,7 +26,7 @@ install-exec-hook:
 
 #----------------------- tests ------------------------------------
 
-check_PROGRAMS=unittests
+noinst_PROGRAMS=unittests
 
 unittests_SOURCES=TestRunner.cpp logtestutils.hpp excepttests.cpp \
 	bookstatictests.cpp logbooktests.cpp persontests.cpp \
@@ -44,4 +44,5 @@ unittests_DEPENDENCIES=libLogbook.la
 check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ logbookstatictests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pypersontests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
 	@builddir@/unittests
