@@ -117,6 +117,23 @@ class aTest(unittest.TestCase) :
         found = self.logbook.find_shift('non-doctorates')
         self.assertEqual(shift2.id, found.id)
         self.assertRaises(LogBook.error, self.logbook.find_shift, "Professors")  # miscased.
+    
+    def test_add1(self, ):
+        #  Add member success:
+        
+        shift = self.logbook.create_shift('Initially empty')
+        shift.add_member(self.ron)
+        members = shift.members
+        self.assertEqual(1, len(members))
+        self.assertEqual('Fox', members[0].lastname)
+        
+    def test_add2(self, ):
+        shift = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
+        shift.add_member(self.ron)    # Professors and ron.
+        members = shift.members
+        self.assertEqual(3, len(members))
+        self.assertEqual('Fox', members[2].lastname)
+    
         
     
     
