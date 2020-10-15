@@ -134,7 +134,19 @@ class aTest(unittest.TestCase) :
         self.assertEqual(3, len(members))
         self.assertEqual('Fox', members[2].lastname)
     
+    def test_remove1(self):
+        # remove shift member
+        shift = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
+        shift.remove_member(self.alex)
+        m = shift.members
+        self.assertEqual(1, len(m))
+        self.assertEqual('Liddick', m[0].lastname)
         
+    def test_remove2(self, ):
+        # Fails on member not in shift:
+        
+        shift = self.logbook.create_shift('professors', self.logbook.find_people('salutation = "Prof."'))
+        self.assertRaises(LogBook.error, shift.remove_member, self.ron)
     
     
     
