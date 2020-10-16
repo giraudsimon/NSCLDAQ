@@ -403,7 +403,7 @@ PyRun_init(PyObject* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* pBook;
     int       run;
-    const char* keywords[] = {"logbook", "id", nullptr};
+    const char* keywords[] = {"logbook", "run", nullptr};
     
     if (!PyArg_ParseTupleAndKeywords(
         args, kwargs, "|Oi", const_cast<char**>(keywords),
@@ -650,8 +650,22 @@ end(PyObject* self, PyObject* args)
     }
     pPyLogBookRun pThis = reinterpret_cast<pPyLogBookRun>(self);
     auto pBook = PyLogBook_getLogBook(pThis->m_book);
-    pBook->end(pThis->m_pRun, comment);
     
+    try {
+        pBook->end(pThis->m_pRun, comment);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated Exception was caught in LogBook.run.end()"
+        );
+        return nullptr;
+    }
+    Py_XINCREF(self);
     return reinterpret_cast<PyObject*>(self);
 }
 /**
@@ -667,8 +681,21 @@ pause(PyObject* self, PyObject* args)
     }
     pPyLogBookRun pThis = reinterpret_cast<pPyLogBookRun>(self);
     auto pBook = PyLogBook_getLogBook(pThis->m_book);
-    pBook->pause(pThis->m_pRun, comment);
-    
+    try {
+        pBook->pause(pThis->m_pRun, comment);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated Exception was caught in LogBook.run.pause()"
+        );
+        return nullptr;
+    }
+    Py_XINCREF(self);
     return reinterpret_cast<PyObject*>(self);
 }
 /**
@@ -683,8 +710,21 @@ resume(PyObject* self, PyObject* args)
     }
     pPyLogBookRun pThis = reinterpret_cast<pPyLogBookRun>(self);
     auto pBook = PyLogBook_getLogBook(pThis->m_book);
-    pBook->resume(pThis->m_pRun, comment);
-    
+    try {
+        pBook->resume(pThis->m_pRun, comment);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated Exception was caught in LogBook.run.resume()"
+        );
+        return nullptr;
+    }
+    Py_XINCREF(self);
     return reinterpret_cast<PyObject*>(self);
 }
 /**
@@ -699,8 +739,21 @@ emergencyEnd(PyObject* self, PyObject* args)
     }
     pPyLogBookRun pThis = reinterpret_cast<pPyLogBookRun>(self);
     auto pBook = PyLogBook_getLogBook(pThis->m_book);
-    pBook->emergencyStop(pThis->m_pRun, comment);
-    
+    try {
+        pBook->emergencyStop(pThis->m_pRun, comment);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+        return nullptr;
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated Exception was caught in LogBook.run.emerbency_end()"
+        );
+        return nullptr;
+    }
+    Py_XINCREF(self);
     return reinterpret_cast<PyObject*>(self);
 }
 
@@ -726,7 +779,7 @@ static PyGetSetDef PyRunGetters[] = {
 
 static PyMethodDef PyRun_methods [] = {
     {
-        "transition_count", numTransitions, METH_VARARGS,
+        "transition_count", numTransitions, METH_NOARGS,
         "Number of state transitions"
     },
     {"get_transition", getTransition, METH_VARARGS, "Get a transition"},
