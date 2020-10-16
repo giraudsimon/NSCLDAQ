@@ -74,7 +74,7 @@ PyShift_newShift(PyObject* book, LogBookShift* shift)
   PyObject* pyShift =  PyObject_CallFunction(
     reinterpret_cast<PyObject*>(&PyLogBookShiftType), "IO", id, book
   );
-  Py_INCREF(pyShift);
+  Py_XINCREF(pyShift);
   return pyShift;
 }
 /**
@@ -404,7 +404,7 @@ static PyMethodDef PyLogBookShift_methods[]  = {
 
 
 PyTypeObject PyLogBookShiftType = {
-PyVarObject_HEAD_INIT(NULL, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "LogBook.Shift",
     .tp_basicsize = sizeof(PyLogBookShift),
     .tp_itemsize = 0,

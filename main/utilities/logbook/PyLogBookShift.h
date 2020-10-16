@@ -38,7 +38,7 @@ typedef struct {
 
 extern PyTypeObject PyLogBookShiftType;
 
-PyObject* PyShift_newShift(PyObject* logbook, LogBookShift* shift);
+PyObject* PyShift_newShift(PyObject* book, LogBookShift* shift);
 bool      PyShift_isShift(PyObject* p);
 PyObject* PyShift_TupleFromVector(
     PyObject* book, const std::vector<LogBookShift*>& shifts

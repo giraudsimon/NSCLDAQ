@@ -45,7 +45,8 @@ extern PyTypeObject  PyLogBookRunType;
 
 typedef struct {
     PyObject_HEAD
-    LogBookRun*   m_pRun;
+    PyObject*     m_book;
+    PyObject*     m_pRun;
     int           m_nIndex;
 } PyRunTransition, *pPyRunTransition;
 
@@ -53,8 +54,11 @@ extern PyTypeObject PyRunTransitionType;
 
 // Useful functions:
 
-extern PyRun_isRun(PyObject* pObject);
-LogBookRun* PyRun_GetRun(PyObject* pObject);
-int PyRun_TupleFromVector(PyObject* result, const std::vector<LogBookRun*>& runs);)
+bool PyRun_isRun(PyObject* pObject);
+LogBookRun* PyRun_getRun(PyObject* pObject);
+PyObject* PyRun_newRun(PyObject* logBook, LogBookRun* pRun);
+PyObject* PyRun_TupleFromVector(
+    PyObject* result, PyObject* logbook, const std::vector<LogBookRun*>& runs
+);
 
 #endif

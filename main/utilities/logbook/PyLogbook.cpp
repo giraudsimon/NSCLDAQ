@@ -35,14 +35,19 @@
 #include "PyLogbook.h"
 #include "PyLogBookPerson.h"
 #include "PyLogBookShift.h"
+#include "PyLogBookRun.h"
 
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
+#include "LogBookRun.h"
 
 
 #include <stdexcept>
 #include <memory>
+
+#include <datetime.h>
+
 // forward definitions
 
 LogBook* PyLogBook_getLogBook(PyObject* obj);
@@ -693,9 +698,19 @@ extern "C"
         if (PyType_Ready(&PyPersonType) < 0) {
             return NULL;
         }
+        // Prepare the shift type.
         if (PyType_Ready(&PyLogBookShiftType) < 0) {
             return NULL;
         }
+        // Runs also have a transition type:
+        
+        if (PyType_Ready(&PyRunTransitionType) < 0) {
+            return NULL;
+        }
+        if (PyType_Ready(&PyLogBookRunType) < 0) {
+            return NULL;
+        }
+        
         
         // Initialize our module:
         
@@ -757,7 +772,38 @@ extern "C"
                 Py_DECREF(module);
                 return NULL;
             }
+            // The PyRun complex is two types, the transition and
+            // run itself:
+            Py_INCREF(&PyRunTransitionType);
+            if (PyModule_AddObject(
+                module, "Transition",
+                reinterpret_cast<PyObject*>(&PyRunTransitionType)
+            ) < 0) {
+                Py_DECREF(&PyRunTransitionType);
+                Py_DECREF(&PyLogBookShiftType);
+                Py_DECREF(&PyPersonType);
+                Py_DECREF(&PyLogBookType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
+                return NULL;
+            }
+            Py_INCREF(&PyLogBookRunType);
+            if (PyModule_AddObject(
+                module, "Run",
+                reinterpret_cast<PyObject*>(&PyLogBookRunType)
+            ) < 0) {
+                Py_DECREF(&PyLogBookRunType);
+                Py_DECREF(&PyRunTransitionType);
+                Py_DECREF(&PyLogBookShiftType);
+                Py_DECREF(&PyPersonType);
+                Py_DECREF(&PyLogBookType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
+                return NULL;
+            }
+            
         }
+        PyDateTime_IMPORT;
         return module;
     }
 }                 // Extern C - required for Python interpreter linkage.
