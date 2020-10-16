@@ -58,7 +58,7 @@ bool PyRun_isRun(PyObject* pObject);
 LogBookRun* PyRun_getRun(PyObject* pObject);
 PyObject* PyRun_newRun(PyObject* logBook, LogBookRun* pRun);
 PyObject* PyRun_TupleFromVector(
-    PyObject* result, PyObject* logbook, const std::vector<LogBookRun*>& runs
+    PyObject* logbook, const std::vector<LogBookRun*>& runs
 );
 
 #endif

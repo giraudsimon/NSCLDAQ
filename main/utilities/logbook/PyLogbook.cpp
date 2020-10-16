@@ -522,6 +522,159 @@ currentShift(PyObject* self, PyObject* none)
     Py_RETURN_NONE;
 
 }
+
+/////////////////// Run API ///////////////////////////////////
+
+/**
+ * currentRun
+ *    Return a logbook run object that represents the
+ *    current run -- if there is one.  Otherwise returns None.
+ * @param self - pointer to the logbook.
+ * @param unused - unused arguments.
+ * @return PyObject*
+ */
+static PyObject*
+currentRun(PyObject* self, PyObject* unused)
+{
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    LogBookRun* pResult = pBook->currentRun();
+    
+    if (pResult) {
+        PyObject* result =  PyRun_newRun(self, pResult);
+        delete pResult;
+        return result;
+    } else {
+        Py_RETURN_NONE;             // NO current run.
+    }
+}
+/**
+ * beginRun
+ *    Start a new run; returns the run object.  This can fail
+ *    for a number of reasons failures result in LogBook.error
+ *    being raised for the most part.
+ * @param self - POinter to the logbook object.
+ * @param args - position parameters.
+ * @param kwargs - keyword parameters.  Number and title are mandatory.
+ *                 remark is optional.
+ * @return PyObject* the run object created by this begin run.
+ */
+static PyObject*
+beginRun(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    int run(-1);
+    const char* title(nullptr);
+    const char* remark(nullptr);
+    const char* keywords[] = {"number", "title", "comment", nullptr};
+    
+    if (!PyArg_ParseTupleAndKeywords (
+        args, kwargs, "|iss", const_cast<char**>(keywords),
+        &run, &title, &remark
+    )) {
+        return nullptr;
+    }
+    // We must have the run and title. Remark is optional:
+    
+    if ((run == -1) || (!title)) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "For the LogBook.begin_run method only the comment is optional"
+        );
+        return nullptr;
+    }
+    PyObject* result(nullptr);
+    LogBookRun* pRun(nullptr);
+    try {
+        // See if we can create the new run:
+        
+        LogBook*    pBook = PyLogBook_getLogBook(self);
+        pRun = pBook->begin(run, title, remark);
+        
+        result = PyRun_newRun(self, pRun);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated exception type was caught in LogBook.begin_run"
+        );
+    }
+    delete pRun;
+    return result;
+}
+/**
+ * listRuns
+ *    Return a vector of all the runs that are known  to the
+ *    logbook.
+ * @param self - pointer to our object storage.
+ * @param unused
+ * @return PyObject* tuple of existing runs.
+ */
+static PyObject*
+listRuns(PyObject* self, PyObject* unused)
+{
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookRun*> runs;
+    PyObject* result(nullptr);
+    try {
+        runs      = pBook->listRuns();
+        result    = PyRun_TupleFromVector(self, runs);
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unanticipated Exception type caught in LogBook.list_runs"
+        );
+    }
+    
+    freeVector(runs);
+    return result;
+    
+}
+/**
+ * findRun
+ *   Locates a run by run number and returns an object encapsulating it.
+ * @param self - Logbook object.
+ * @param args - only one argument, the run number to find.
+ * @return PyObject* Encapsualted run or None if not found.
+ */
+static PyObject*
+findRun(PyObject* self, PyObject* args)
+{
+    int number;
+    if(!PyArg_ParseTuple(args, "i", &number)) {
+        return nullptr;
+    }
+    
+    PyObject* result = nullptr;
+    LogBook*  pBook  = PyLogBook_getLogBook(self);
+    LogBookRun* pRun;
+    try {
+        pRun = pBook->findRun(number);
+        if (pRun) {
+            result = PyRun_newRun(self, pRun);    
+        } else {
+            result = Py_None;
+            Py_INCREF(Py_None);
+        }
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "An unanticipated exception type was caught in LogBook.find_run"
+        );
+    }
+    delete pRun;
+    return result;
+}
+
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
@@ -548,6 +701,16 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
     {"list_shifts", listShifts, METH_NOARGS, "Return a tuple with all shifts"},
     {"find_shift", findShift, METH_VARARGS, "Find a shift by name"},
     {"current_shift", currentShift, METH_NOARGS, "Return current shift"},
+    
+    //   Run APi:
+    
+    {"current_run", currentRun, METH_NOARGS, "Return current run object"},
+    {
+        "begin_run", (PyCFunction)beginRun, METH_VARARGS | METH_KEYWORDS,
+        "Start a new run"
+    },
+    {"list_runs", listRuns, METH_NOARGS, "Return all runs"},
+    {"find_run",  findRun, METH_VARARGS, "Find run by run number"},
     
     // Ending sentinel:
     
