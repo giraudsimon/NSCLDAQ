@@ -529,6 +529,79 @@ LogBookNote::getNonRunNotes(CSqlite& db)
     auto ids = listNonRunNotes(db);
     return idsToNotes(db, ids);
 }
+/**
+ * exportImage
+ *    Creates a probably unique filename for the image
+ *    in the temporary directory and writes the image file into that
+ *    directory.   The filename is composed as follows:
+ *
+ *    - extract the basename from the original filename.
+ *    - prepend to that tempdir/noteid_imageid_  where
+ *      noteid is the text "note" followed by the primary key of the note
+ *      and imageid is the text "image" followed by the primary key of the
+ *      image.  Prepending is used to make the file extension/type
+ *      easy to keep.
+ *  @param image - references the image we're going to write.
+ *  @return std::string - the path to the file we wrote.
+ */
+std::string
+LogBookNote::exportImage(const NoteImage& image)
+{
+    // Ensure the directory exists:
+    
+    int stat = mkdir(LogBook::m_tempdir.c_str(), 0755);
+    if (stat && (errno != EEXIST)) {
+        int e = errno;
+        std::stringstream msg;
+        msg << "Unable to create temp file directory " << LogBook::m_tempdir
+            << " : " << strerror(e);
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    
+    //
+    std::string result;          // filename we generate.
+    
+    char originalFile[image.s_originalFilename.size() + 1];   // Hope c++ allows this.
+    strcpy(originalFile, image.s_originalFilename.c_str());
+    char *name = basename(originalFile);
+    // Now build up the full file path into result; assumes a unix pathsep.
+    
+    std::stringstream filename;
+    filename << LogBook::m_tempdir << "/note" << image.s_noteId
+        << "_image" << image.s_id << "_" << name;
+    result = filename.str();
+    
+    // Now open the file; write the data and close the file:
+    
+    try {
+        std::ofstream o(result, std::ios::binary | std::ios::out | std::ios::trunc);
+        if (o.fail()) {
+            std::stringstream msg;
+            msg << "Failed to create image cache file: " << result;
+            std::string m(msg.str());
+            throw LogBook::Exception(m);
+        }
+        o.write(static_cast<const char*>(image.s_pImageData), image.s_imageLength);
+        
+        // Destruction closes the file.
+    }
+    catch (std::exception& e) {
+        std::stringstream msg;
+        msg << "Unable to open/write image temp file : " << result << " : "
+            << e.what();
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    catch (...) {
+        std::stringstream msg;
+        msg << "Unable to open/write image temp file: " << result;
+        std::string m(msg.str());
+        throw LogBook::Exception(m);
+    }
+    
+    return result;
+}
 /////////////////////////////////////////////////////////////
 // Private members
 
@@ -619,79 +692,7 @@ LogBookNote::parseLink(const NoteImage& image)
     
     return result;
 }
-/**
- * exportImage
- *    Creates a probably unique filename for the image
- *    in the temporary directory and writes the image file into that
- *    directory.   The filename is composed as follows:
- *
- *    - extract the basename from the original filename.
- *    - prepend to that tempdir/noteid_imageid_  where
- *      noteid is the text "note" followed by the primary key of the note
- *      and imageid is the text "image" followed by the primary key of the
- *      image.  Prepending is used to make the file extension/type
- *      easy to keep.
- *  @param image - references the image we're going to write.
- *  @return std::string - the path to the file we wrote.
- */
-std::string
-LogBookNote::exportImage(const NoteImage& image)
-{
-    // Ensure the directory exists:
-    
-    int stat = mkdir(LogBook::m_tempdir.c_str(), 0755);
-    if (stat && (errno != EEXIST)) {
-        int e = errno;
-        std::stringstream msg;
-        msg << "Unable to create temp file directory " << LogBook::m_tempdir
-            << " : " << strerror(e);
-        std::string m(msg.str());
-        throw LogBook::Exception(m);
-    }
-    
-    //
-    std::string result;          // filename we generate.
-    
-    char originalFile[image.s_originalFilename.size() + 1];   // Hope c++ allows this.
-    strcpy(originalFile, image.s_originalFilename.c_str());
-    char *name = basename(originalFile);
-    // Now build up the full file path into result; assumes a unix pathsep.
-    
-    std::stringstream filename;
-    filename << LogBook::m_tempdir << "/note" << image.s_noteId
-        << "_image" << image.s_id << "_" << name;
-    result = filename.str();
-    
-    // Now open the file; write the data and close the file:
-    
-    try {
-        std::ofstream o(result, std::ios::binary | std::ios::out | std::ios::trunc);
-        if (o.fail()) {
-            std::stringstream msg;
-            msg << "Failed to create image cache file: " << result;
-            std::string m(msg.str());
-            throw LogBook::Exception(m);
-        }
-        o.write(static_cast<const char*>(image.s_pImageData), image.s_imageLength);
-        
-        // Destruction closes the file.
-    }
-    catch (std::exception& e) {
-        std::stringstream msg;
-        msg << "Unable to open/write image temp file : " << result << " : "
-            << e.what();
-        std::string m(msg.str());
-        throw LogBook::Exception(m);
-    }
-    catch (...) {
-        std::stringstream msg;
-        msg << "Unable to open/write image temp file: " << result;
-        std::string m(msg.str());
-        throw LogBook::Exception(m);
-    }
-    
-    return result;
-}
+
 /**
  * editLink
  *    Given old link information and the new image filename

@@ -97,12 +97,13 @@ public:
     static std::vector<LogBookNote*> getAllNotes(CSqlite& db);
     static std::vector<LogBookNote*> getRunNotes(CSqlite& db, int runId);
     static std::vector<LogBookNote*> getNonRunNotes(CSqlite& db);
+    std::string exportImage(const NoteImage& image);
     
 private:
     void CopyIn(const LogBookNote& rhs);         
     
     LinkInfo parseLink(const NoteImage& image);
-    std::string exportImage(const NoteImage& image);
+    
     std::string editLink(const LinkInfo& link, const std::string& filename);
     static std::pair<size_t, void*> readImage(const std::string& filename);
     static std::vector<int> getIds(CSqliteStatement& stmt);
