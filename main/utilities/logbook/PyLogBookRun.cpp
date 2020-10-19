@@ -276,7 +276,8 @@ get_transitionname(PyObject* self, void* closure)
  * 
  *  @param self - pointer to the RunTranstion object data.
  *  @param closure - unused void pointer.
- *  @return PyObject* DateTime object.
+ *  @return PyObject* integer timestamp that can be passed to a
+ *               datetime.fromtimestamp to get a date time.
  * 
  */
 static PyObject*
@@ -288,10 +289,8 @@ get_transitiontime(PyObject* self, void * closure)
     
     // Make the date-time value and return it:
         
-    PyObject* params = Py_BuildValue("iz", stamp, nullptr);
-    PyObject* result = PyDateTime_FromTimestamp(params);
-    Py_DECREF(params);
-    return result;
+    
+    return PyLong_FromLong(stamp);
 }
 /**
  * get_transitioncomment
@@ -580,7 +579,7 @@ isCurrent(PyObject* self, PyObject* unused)
     // This run is curent if it's  id matches the returned one:
     
     bool bResult =
-        currentRun->getRunInfo().s_id == pThis->m_pRun->getRunInfo().s_id;
+        currentRun && (currentRun->getRunInfo().s_id == pThis->m_pRun->getRunInfo().s_id);
     delete currentRun;
     
     if (bResult) {
