@@ -127,6 +127,7 @@ public:
         LogBookRun* pRun = nullptr
     );
     LogBookNote* createNote(const char* note, LogBookRun* pRun = nullptr);
+    LogBookNote* getNote(int id);
     std::vector<LogBookNote*> listAllNotes();
     std::vector<LogBookNote*> listNotesForRunId(int runId);
     std::vector<LogBookNote*> listNotesForRun(int runNumber);

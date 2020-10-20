@@ -589,6 +589,16 @@ LogBook::createNote(const char* text, LogBookRun* pRun)
     return LogBookNote::create(*m_pConnection, pRun, text, images);
 }
 /**
+ * getNote
+ *   Get a note given its primary  key:
+ * @param id - primary key.
+ */
+LogBookNote*
+LogBook::getNote(int id)
+{
+    return new LogBookNote(*m_pConnection, id);
+}
+/**
  * listAllNotes
  *    Return pointers to all notes.
  * @return std::vector<LogBookNote*> - these are pointers to dynamically
