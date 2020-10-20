@@ -30,7 +30,6 @@
 
 class LogBook;
 class LogBookRun;
-class LogBookNote;
 
 // We have two types:
 
@@ -41,10 +40,16 @@ typedef struct {
     PyObject* m_book;
     PyObject* m_note;
     int       m_imageIndex;
-    std::string m_imageFile;         // Images get exported on reference
+    std::string *m_imageFile;         // Images get exported on reference
 } PyNoteImage, *pPyNoteImage;
 
 extern PyTypeObject PyNoteImageType;
+
+bool PyImage_isImage(PyObject* pObject);
+LogBookNote::NoteImage* PyImage_getImage(PyObject* pObject);
+PyObject* PyImage_create(PyObject* book, PyObject* note, int index);
+
+// Notes themselves.
 
 typedef struct {
     PyObject_HEAD
@@ -54,9 +59,9 @@ typedef struct {
 
 extern PyTypeObject PyNoteType;
 
-bool PyIf
 
 bool PyNote_isNote(PyObject* pObject);
 LogBookNote* PyNote_getNote(PyObject* pObject);
+PyObject* PyNote_create(PyObject* logbook, LogBookNote* pNote);
 
 #endif
