@@ -651,6 +651,20 @@ LogBook::listNonRunNotes()
 {
     return LogBookNote::getNonRunNotes(*m_pConnection);
 }
+/**
+ * getNoteRun
+ *    If the note has an associated run, return a pointer
+ *    to a new'd LogBookRun that represents it. If not,
+ *    return nulptr.
+ *  @param note - references the note to check.
+ *  @return LogBookNote*
+ *  @retval nullptr if there's no associated note.
+ */
+LogBookRun*
+LogBook::getNoteRun(LogBookNote& note)
+{
+    return note.getAssociatedRun(*m_pConnection);
+}
 
 /////////////////////////////////////////////////////////
 // Private methods

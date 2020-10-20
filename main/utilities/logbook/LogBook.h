@@ -133,6 +133,7 @@ public:
     std::vector<LogBookNote*> listNotesForRun(int runNumber);
     std::vector<LogBookNote*> listNotesForRun(const LogBookRun* pRun);
     std::vector<LogBookNote*> listNonRunNotes();
+    LogBookRun* getNoteRun(LogBookNote& note);
     
 private:
     static std::string computeTempDir();

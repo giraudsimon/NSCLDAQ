@@ -136,7 +136,11 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
         while (!(++find).atEnd()) {
             found = true;
             m_textInfo.s_id    = noteId;
-            m_textInfo.s_runId = find.getInt(0);
+            if (find.columnType(0) == CSqliteStatement::null) {
+                m_textInfo.s_runId = 0;
+            } else {
+                m_textInfo.s_runId = find.getInt(0);
+            }
             m_textInfo.s_noteTime = find.getInt(1);
             m_textInfo.s_contents = find.getString(2);
             
