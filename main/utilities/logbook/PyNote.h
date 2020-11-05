@@ -46,7 +46,7 @@ typedef struct {
 extern PyTypeObject PyNoteImageType;
 
 bool PyImage_isImage(PyObject* pObject);
-LogBookNote::NoteImage* PyImage_getImage(PyObject* pObject);
+const LogBookNote::NoteImage* PyImage_getImage(PyObject* pObject);
 PyObject* PyImage_create(PyObject* book, PyObject* note, int index);
 
 // Notes themselves.

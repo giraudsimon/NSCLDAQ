@@ -560,11 +560,101 @@ PyTypeObject PyNoteType = {
 //////////////////////////////////////////////////////////////////
 // Functions exported outside this module.
 
-// bool PyImage_isImage(PyObject* pObject)
-// LogBookNote::NoteImage* PyImage_getImage(PyObject* pObject)
-// PyObject* PyImage_create(PyObject* book, PyObject* note, int index)
+/**
+ * PyImage_isImage
+ *    @param pObject - ostensibly an image type.
+ *    @return bool   - true if pObject is a Notebook.Image.
+ */
+bool
+PyImage_isImage(PyObject* pObject)
+{
+    return PyObject_IsInstance(
+        pObject, reinterpret_cast<PyObject*>(&PyNoteImageType)
+    );
+}
+/**
+ * PyImage_getImage
+ *    Given that pObject is a note image, returns the
+ *    underlying image object.
+ *  @param pObject - an image object. It's the caller's responsibility
+ *         to ensure that's the case else at best we'll return
+ *         bullshit.
+ *  @return LogBookNote::NoteIMage*  - Pointer to the underlying image
+ *        object.
+ */
+const LogBookNote::NoteImage*
+PyImage_getImage(PyObject* pObject)
+{
+    pPyNoteImage pImage = reinterpret_cast<pPyNoteImage>(pObject);
+    pPyNote pNote       = reinterpret_cast<pPyNote>(pImage->m_note);
+    return &(*pNote->m_pNote)[pImage->m_imageIndex];
+}
+/**
+ * PyImage_create
+ *     Create a new PyObject* that is a NoteBook.Image object.
+ *  @param book - the logbook.
+ *  @param note - the note the image is in.
+ *  @param index - the index of the image in the note.
+ *  @return PyObject* - Resulting new object.
+ */
+PyObject*
+PyImage_create(PyObject* book, PyObject* note, int index)
+{
+    PyObject* pResult = PyObject_CallFunction(
+        reinterpret_cast<PyObject*>(&PyNoteImageType),
+        "OOI", book, note, index
+    );
+    Py_XINCREF(pResult);
+    return pResult;
+}
+/**
+ * PyNote_isNote
+ *    @param pObject - an object that may or may  not be a LogBook.Note
+ *    @return bool   - true if pObject is, in fact a LogBook.Note.
+ */
+bool
+PyNote_isNote(PyObject* pObject)
+{
+    return PyObject_IsInstance(
+        pObject, reinterpret_cast<PyObject*>(&PyNoteType)
+    );
+}
+/**
+ * PyNote_GetNote
+ *    Returns the logBookNote object encapsulated by an object
+ *    that's known to be a LogBook.Note.
+ * @param pObject - pointer to an object that's know to be
+ *                  a LogBook.Note.
+ * @return LogBookNote*  - pointer to the underying note. This is
+ *        only valid for the remaining lifetime of pObject.
+ */
+LogBookNote*
+PyNote_getNote(PyObject* pObject)
+{
+    pPyNote pNote = reinterpret_cast<pPyNote>(pObject);
+    return pNote->m_pNote;
+}
+/**
+ * PyNote_create
+ *    Create a new LogBook.Note object.
+ * @param LogBook the Python LogBook object in which the note is
+ *                being created.
+ * @param pNote - a LogBookNote object pointer we want to encapsulate
+ *            in a LogBook.Note python object.  Note that a new
+ *            note object is created that also represents the
+ *            note in pNote so it's not necessary to maintain
+ *            the object pointed to by pNote after we return.
+ *  @return PyObject* pointer to a new LogBook.Note.
+ *  
+ */
 
-
-// bool PyNote_isNote(PyObject* pObject)
-// LogBookNote* PyNote_getNote(PyObject* pObject)
-// PyObject* PyNote_create(PyObject* logbook, LogBookNote* pNote)
+PyObject*
+PyNote_create(PyObject* logbook, LogBookNote* pNote)
+{
+    PyObject* result = PyObject_CallFunction(
+        reinterpret_cast<PyObject*>(&PyNoteType),
+        "OI", logbook, pNote->getNoteText().s_id
+    );
+    Py_XINCREF(result);
+    return result;
+}
