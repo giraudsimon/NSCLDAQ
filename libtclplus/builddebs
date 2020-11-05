@@ -1,4 +1,0 @@
-#!/bin/bash
-autoreconf -i -f
-dpkg-buildpackage -uc -us 
-
