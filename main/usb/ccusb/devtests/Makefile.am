@@ -34,3 +34,5 @@ check-TESTS:
 	./unittests 
 
 EXTRA_DIST=TestRunner.cpp $(TESTS) Asserts.h
+
+check: check-TESTS

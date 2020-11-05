@@ -219,3 +219,4 @@ cmdline.h: options.ggo
 
 
 
+check: check-TESTS

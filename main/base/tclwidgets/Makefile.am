@@ -22,3 +22,6 @@ check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 
 EXTRA_DIST = $(SCRIPT_FILES) ReDistribNotes $(TCLTESTS) $(DOCS)
+
+check: check-TESTS
+

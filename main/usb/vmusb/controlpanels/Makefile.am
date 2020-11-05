@@ -32,3 +32,6 @@ check-TESTS:
 
 EXTRA_DIST= $(APPS) $(PACKAGES) XLM72ScalerGUI.tcl $(TCL_TESTS) mdgg16control.xml \
 	XLM72GateDelayControl.tcl gd16_startup.png xlm72gatedelaycontrol.xml $(IMAGES)
+
+check: check-TESTS
+

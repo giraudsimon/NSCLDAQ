@@ -105,7 +105,7 @@ install-data-local:
 EXTRA_DIST = WienerMDGG16Registers.h
 
 ## UNIT TESTS
-bin_PROGRAMS = unittests
+noinst_PROGRAMS = unittests
 
 unittests_SOURCES = \
 			TestRunner.cpp \
@@ -131,7 +131,8 @@ unittests_LDADD = \
 
 unittests_DEPENDENCIES = \
 			@builddir@/libVMUSBCtlConfig.la 
-		  
-check-TESTS: 
-		./unittests
+
+TESTS=		./unittests
+
+
 

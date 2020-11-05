@@ -54,5 +54,5 @@ install-data-local:
 
 EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks
 
-check-TESTS:
-	@top_srcdir@/dotests $(SUBDIRS)
+#check-TESTS:
+#	@top_srcdir@/dotests $(SUBDIRS)

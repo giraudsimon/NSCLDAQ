@@ -86,3 +86,4 @@ SecretTk_LDFLAGS= $(TCL_LDFLAGS) $(X11LIBS)
 
 
 
+check: check-TESTS

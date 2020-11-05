@@ -39,3 +39,6 @@ check-TESTS : $(UNITTEST_MODULES)
 
 
 EXTRA_DIST = FakeGlobals.h
+
+check: check_TESTS
+

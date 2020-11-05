@@ -150,3 +150,5 @@ libCVMUSBReadoutList_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
 #  Stuff that needs to go int the distro:
 EXTRA_DIST = $(TEST_MODULES) $(UNITTEST_MODULES) @srcdir@/CVMUSB.i @srcdir@/CVMUSBReadoutList.i
+
+check: check-TESTS

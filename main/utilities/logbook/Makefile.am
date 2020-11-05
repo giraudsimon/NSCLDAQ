@@ -48,3 +48,5 @@ check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
 	@builddir@/unittests
+
+check: check-TESTS

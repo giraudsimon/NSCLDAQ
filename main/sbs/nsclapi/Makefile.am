@@ -34,3 +34,6 @@ check-TESTS:
 	./unittests
 
 EXTRA_DIST = sbsVmeApi.xml  Asserts.h
+
+
+check:  check-TESTS

@@ -79,3 +79,4 @@ check-TESTS: cpptest
 	@builddir@/cpptest
 	for f in $(PYTHON_TESTS); do PYTHONPATH=@prefix@/pythonLibs @PYTHON@ $$f; done
 
+check: check-TESTS

@@ -22,3 +22,6 @@ check-TESTS:
 	TCLLIBPATH="@prefix@/TclLibs @prefix@/lib" HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 
 EXTRA_DIST=$(TCLDRIVERS) $(TCLTESTS)
+
+check: check-TESTS
+

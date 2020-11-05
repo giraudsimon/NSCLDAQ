@@ -41,3 +41,6 @@ check-TESTS:
 
 EXTRA_DIST=$(TCLDRIVERS) tclTests.tcl $(TCLTESTS) $(DOCS)
 
+
+check: check-TESTS
+

@@ -41,3 +41,6 @@ EXTRA_DIST = $(PACKAGE_FILES) $(MAINS) $(TESTS) $(FIGURES) expConfig.xml
 
 
 
+
+check: check-TESTS
+

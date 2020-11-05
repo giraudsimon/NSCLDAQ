@@ -34,3 +34,5 @@ check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs HERE=@srcdir@ tcl=@TCLSH_CMD@ @TCLSH_CMD@ @srcdir@/tclTests.tcl
 
 EXTRA_DIST = $(TCLPACKAGES) $(TCLTESTS) $(CXXPACKAGES) testCompile.cpp
+
+check: check-TESTS

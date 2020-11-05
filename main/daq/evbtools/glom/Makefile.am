@@ -43,3 +43,5 @@ unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
 
 check-TESTS:
 	GLOMDIR=@builddir@ ./unittests
+
+check: check-TESTS
