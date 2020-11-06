@@ -47,6 +47,10 @@ check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pypersontests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pynotetests.py
 	@builddir@/unittests
 
 check: check-TESTS
+
+EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
+	pyruntests.py pynotetests.py
