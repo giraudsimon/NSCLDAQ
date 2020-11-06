@@ -36,11 +36,13 @@
 #include "PyLogBookPerson.h"
 #include "PyLogBookShift.h"
 #include "PyLogBookRun.h"
+#include "PyNote.h"
 
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
 #include "LogBookRun.h"
+#include "LogBookNote.h"
 
 
 #include <stdexcept>
@@ -128,7 +130,127 @@ PyLogBook_TupleFromPeople(
     
     return result;
 }
+/**
+ * StringVecFromIterable
+ *    Given a container object that supports iteration, and whose
+ *    contents are strings (unicode objects), returns a
+ *    C++ vector of those strings.
+ *
+ * @param[out] result   -  resulting vector.
+ * @param[in]  iterable - Python object from which to extract the data.
+ * @return bool - true on success, false otherwise.
+ * @note on entry and on failure the vector is cleared.
+ * @note on failure an exception is raised.
+ */
+bool
+StringVecFromIterable(std::vector<std::string>& result, PyObject* iterable)
+{
+    result.clear();
+    PyObject* iterator = PyObject_GetIter(iterable);
+    if (!iterator) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "StringVecFromIterable - supposed iterable does not support iteration"
+        );
+        return false;
+    }
+    PyObject* item;
+    while ((item = PyIter_Next(iterator))) {
+        const char* pText = PyUnicode_AsUTF8(item);
+        if (!pText) {
+            result.clear();
+            Py_DECREF(item);
+            Py_DECREF(iterator);
+            return false;
+        }
+        result.emplace_back(pText);
+        Py_DECREF(item);
+    }
+    Py_DECREF(iterator);
+    return true;
+}
+/**
+ * SizeVecFromIterable
+ *   Given a Python object that is a container of integer like objects
+ *   and produces a vector of size_t values.
+ *
+ * @param[out] result -- the vector produced. Cleared on entry and
+ *                       cleared if there are errors.
+ * @param[in]  items  -- The container python object.
+ * @return bool - true if successful, false otherwise.
+ * @note on failure an exception (LogBook.error) is raised.
+ */
+static bool
+SizeVecFromIterable(std::vector<size_t>& result, PyObject* items)
+{
+    result.clear();
+    PyObject* iterator = PyObject_GetIter(items);
+    if (!iterator) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "SizeVecFromIterable - object must support iteration and does not."
+        );
+        return false;
+    }
+    PyObject* item;
+    while (item = PyIter_Next(iterator)) {
+        size_t n = PyLong_AsSize_t(item);
+        if ((n == static_cast<size_t>(-1)) && PyErr_Occurred()) {
+            result.clear();
+            Py_DECREF(item);
+            Py_DECREF(iterator);
+            return false;             // Exception raised.
+        }
+        result.push_back(n);
+        Py_DECREF(item);
+    }
+    Py_DECREF(iterator);
+    return true;
+}
+/**
+ * NotesVectorToTuple
+ *   Transform a vector of LogBookNote* objects into a
+ *   tuple of Python LogBook.Note objects.
+ *
+ *  @param pyLogBook - Python object that is a log book.
+ *  @param notes     - std::vector<LogBookNote*> to transform.
+ *  @return PyObject* pointer to the tuple created.
+ *  @note If there are errors, the result is nullptr and a
+ *        an exception has been raised (LogBook.error).
+ */  
+static PyObject*
+NotesVectorToTuple(PyObject* pyLogBook, const std::vector<LogBookNote*>& notes)
+{
+    PyObject* result = PyTuple_New(notes.size());
+    if (!result) return nullptr;
 
+    try {
+        for (int i =0; i < notes.size(); i++) {
+            PyObject* pNote = PyNote_create(pyLogBook, notes[i]);
+            if (!pNote) {
+                throw LogBook::Exception("Failed to make a note object");
+            }
+            PyTuple_SET_ITEM(result, i, pNote);
+        }
+    }
+    catch (LogBook::Exception & e) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            e.what()
+        );
+        Py_DECREF(result);
+        result = nullptr;
+    }
+    catch(...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "NotesVectorToTuple caught an unexpected exception"
+        );
+        Py_DECREF(result);
+        result = nullptr;
+    }
+    return result;
+}
 ///////////////////////////////////////////////////////////////
 // Canonicals for PyLogBook (LogBook.LogBook) class/type.
 
@@ -674,7 +796,310 @@ findRun(PyObject* self, PyObject* args)
     delete pRun;
     return result;
 }
+///////////////////////////////////////////////////////////////////
+// Note API:
 
+/**
+ * createNote
+ *    Create a note. This requires note 'text' and has optional parameters
+ *    with the following keywords:
+ *
+ *    - 'images'   - Iterable containing image filenames.
+ *    - 'offsets'  - Iterable containing image offsets.
+ *    - 'run'      - Associated run number.
+ *
+ *    Note that if the 'images' keywords is provided, the 'offsets'
+ *    keyword must also be provided and the two objects must contain
+ *    the same number of elements (although they need not be the
+ *    same iterable type).  'run' is never required.
+ *
+ * @param self    - Pointer to the logbook. object.
+ * @param args    - positional parameters.
+ * @param kwargs  - Args specified by keywords.
+ * @return PyObject* - A new LogBook.Note object.
+ */
+static PyObject*
+createNote(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    const char* pText(nullptr);
+    PyObject*   pImageFiles(nullptr);
+    PyObject*   pImageOffsets(nullptr);
+    PyObject*   pRun(nullptr);
+    
+    const char* keywords[] = {
+      "text", "images", "offsets", "run", nullptr  
+    };
+    
+    // Stuff we marshall from the parameters if present:
+    // 
+    
+    LogBookRun*               pLogBookRun(nullptr);
+    std::vector<std::string>  imageFilenames;
+    std::vector<size_t>       imageOffsets;
+    
+    // Parse the arguments:
+    
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, "|sOOO", const_cast<char**>(keywords),
+        &pText, &pImageFiles, &pImageOffsets, &pRun
+    )) {
+        return nullptr;             // Exception already raised.
+    }
+    // Must have text:
+    
+    if (!pText) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Creating a note requires note txt"
+        );
+        return nullptr;
+    }
+    
+    // Marshall the run if it's present.
+    
+    if (pRun) {
+        if (PyRun_isRun(pRun)) {
+            pLogBookRun = PyRun_getRun(pRun);
+        } else {
+            PyErr_SetString(
+                logbookExceptionObject,
+                "'run' object must be a LogBook.Run but isn't."
+            );
+            return nullptr;
+        }
+    }
+    
+    
+    // Marshall the image filenames and offsets and validate.
+
+    
+    if (!StringVecFromIterable(imageFilenames, pImageFiles)) return nullptr;
+    if (!SizeVecFromIterable(imageOffsets, pImageOffsets)) return nullptr;
+    if (imageFilenames.size() != imageOffsets.size()) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "There must be the same number of image filenames as offsets are nare not"
+        );
+        return nullptr;
+    }
+    
+    
+    // Try to make the note:
+    
+    PyObject* result(nullptr);
+    try {
+        LogBook* pBook = PyLogBook_getLogBook(self);
+        LogBookNote* pNote = pBook->createNote(
+            pText, imageFilenames, imageOffsets, pLogBookRun
+        );
+        result = PyNote_create(self, pNote);
+        delete pNote;                  // No longer needed.
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unexpected exception type caught in create_note"
+        );
+    }
+    
+    // Return the resulting note if it got made:
+    
+    Py_XINCREF(result);              // New ref if successful.
+    return result;
+}
+/**
+ * getNote
+ *    Create a note given an integer id.
+ *
+ * @param self - Pointer to logbook object.
+ * @param args - Positional parameters, only one, the id.
+ * @return PyObject* - The note object; newly created.
+ */
+static PyObject*
+getNote(PyObject* self, PyObject* args)
+{
+    int id;
+    if(!PyArg_ParseTuple(
+        args, "I", &id
+    )) return nullptr;
+    
+    PyObject* result(nullptr);             // Initialized for errors.
+    try {
+       LogBook* pBook = PyLogBook_getLogBook(self);
+       LogBookNote* pNote= pBook->getNote(id);
+       result = PyNote_create(self, pNote);  // Refcount incremented.
+       delete pNote;
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(
+            logbookExceptionObject, e.what()
+        );
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Unexpcected exception type in get_note"
+        );
+    }
+    
+    return result;
+}
+/**
+ * listAllNotes
+ *   Return a tuple containing all of the notes in the logbook.
+ *   
+ * @param self - Pointer to the logbook object.
+ * @param unused - No parameters so this is unused.
+ * @return PyObject* - pointer to a tuple containing all notes.
+ */
+static PyObject*
+listNotes(PyObject* self, PyObject* unused)
+{
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookNote*> notes = pBook->listAllNotes();
+    PyObject* result =  NotesVectorToTuple(self, notes);   
+    freeVector(notes);
+    return result;
+}
+/**
+ * listNotesForRunnum
+ *    Return a tuple containing all the notes in the logbook
+ *    for a run given its run number.
+ * @param self - Pointer to the logbook object.
+ * @param args - Positional args (must have the run number.)
+ * @return PyObject* - pointer to the new tuple object.
+ */
+static PyObject*
+listNotesForRunnum(PyObject* self, PyObject* args)
+{
+    int runNumber;
+    
+    if (!PyArg_ParseTuple(args, "i", &runNumber)) return nullptr;
+    
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookNote*> notes = pBook->listNotesForRun(runNumber);
+    PyObject* result =  NotesVectorToTuple(self, notes);   
+    freeVector(notes);
+    return result;
+}
+/**
+ * listNotesForRunid
+ *    Lists the notes that are associated with a run given its
+ *    primary key (id).
+ * @param self - pointer to the logbook object.
+ * @param args - positional parameters - that's the id.
+ * @return PyObject* Pointer to new tuple result.
+ */
+static PyObject*
+listNotesForRunid(PyObject* self, PyObject* args)
+{
+    int id;
+    if (!PyArg_ParseTuple(args, "i", &id)) return nullptr;
+    
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookNote*> notes = pBook->listNotesForRunId(id);
+    PyObject* result =  NotesVectorToTuple(self, notes);   
+    freeVector(notes);
+    return result;
+}
+/**
+ * getNotesForRun
+ *   Given a run object, returns the notes associated with that
+ *   run.
+ *
+ * @param self - pointer this logbook object.
+ * @param args - Positional parameters that contain the
+ *               run object.
+ * @return PyObject* - pointer to the resulting tuple.
+ */
+static PyObject*
+getNotesForRun(PyObject* self, PyObject* args)
+{
+    PyObject* pRun;
+    if (!PyArg_ParseTuple(args, "O", &pRun)) return nullptr;
+    if (!PyRun_isRun(pRun)) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "list_notes_for_run - The parameter must be a LogBook.Run  object and is not"
+        );
+        return nullptr;
+    }
+    LogBookRun* pNativeRun = PyRun_getRun(pRun);
+    LogBook*    pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookNote*> notes = pBook->listNotesForRun(pNativeRun);
+    PyObject* result = NotesVectorToTuple(self, notes);
+    freeVector(notes);
+    return result;
+}
+/**
+ * getNonrunNotes
+ *   Returns a tuple containing the notes that are not associated with
+ *   any run.
+ * @param self  - pointer to the logbook object.
+ * @param args  - unused pointer to parameters (none allowed).
+ * @return PyObject* - pointer to the tuple created.
+ */
+static PyObject*
+getNonrunNotes(PyObject* self, PyObject* args)
+{
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::vector<LogBookNote*> notes = pBook->listNonRunNotes();
+    PyObject* result = NotesVectorToTuple(self, notes);
+    freeVector(notes);
+    return result;
+}
+/**
+ * getNoteRun
+ *   Return the run object associated with a run or
+ *   None if the run is not associated with a run.
+ *
+ * @param self   - pointer to the logbook object.
+ * @param args   - Note object.
+ * @return PyObject* - see above.
+ */
+static PyObject*
+getNoteRun(PyObject* self, PyObject* args)
+{
+    PyObject* pNoteObj;
+    
+    if (!PyArg_ParseTuple(args, "O", &pNoteObj)) return nullptr;
+    
+    // Require pNoteObj be a note object and extract the
+    // logbook and note native objects.
+    
+    if (!PyNote_isNote(pNoteObj)) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "get_note_run requires a note object"
+        );
+        return nullptr;
+    }
+    LogBook*     pBook = PyLogBook_getLogBook(self);
+    LogBookNote* pNote = PyNote_getNote(pNoteObj);
+    PyObject* result(nullptr);
+    try {
+        LogBookRun* pRun = pBook->getNoteRun(*pNote);
+        if (!pRun) {
+            result = Py_None;                  // Simplifies eventual
+            Py_INCREF(Py_None);                // logic not using Py_RETURN_NONE
+        } else {
+            result = PyRun_newRun(self, pRun); // Does an incref.
+        }
+    }
+    catch (LogBook::Exception& e) {
+        PyErr_SetString(logbookExceptionObject, e.what());
+    }
+    catch (...) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "get_note_run: caught an unexpected exception type"
+        );
+    }
+    return result;
+}
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
@@ -711,6 +1136,35 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
     },
     {"list_runs", listRuns, METH_NOARGS, "Return all runs"},
     {"find_run",  findRun, METH_VARARGS, "Find run by run number"},
+    
+    // Note API:
+    
+    {
+        "create_note", (PyCFunction)createNote, METH_VARARGS | METH_KEYWORDS,
+        "Create a new note"
+    },
+    { "get_note", getNote, METH_VARARGS, "Retrieve note by id"},
+    {"listAllNotes", listNotes, METH_NOARGS, "Make a tuple of all notes"},
+    {
+        "list_notes_for_run_number", listNotesForRunnum, METH_VARARGS,
+        "Make a tuple of all runs for a run number"
+    },
+    {
+        "list_notes_for_run_id", listNotesForRunid, METH_VARARGS,
+        "Make a tuple of all runs for a run id."
+    },
+    {
+        "list_notes_for_run", getNotesForRun, METH_VARARGS,
+        "Make a tuple of all runs for a run object"
+    },
+    {
+        "list_nonrun_notes", getNonrunNotes, METH_NOARGS,
+        "Make tuple of notes not associated with a run"
+    },
+    {
+        "get_note_run", getNoteRun, METH_VARARGS,
+        "Get run associated with a note or None if unassociated"
+    },
     
     // Ending sentinel:
     
@@ -873,6 +1327,8 @@ extern "C"
         if (PyType_Ready(&PyLogBookRunType) < 0) {
             return NULL;
         }
+        if (PyType_Ready(&PyNoteImageType) < 0) return nullptr;
+        if (PyType_Ready(&PyNoteType) < 0) return nullptr;
         
         
         // Initialize our module:
@@ -964,6 +1420,23 @@ extern "C"
                 Py_DECREF(module);
                 return NULL;
             }
+            Py_INCREF(&PyNoteImageType);
+            Py_INCREF(&PyNoteType);
+            if (
+                (PyModule_AddObject(module, "Image", reinterpret_cast<PyObject*>(&PyNoteImageType)) < 0) ||
+                (PyModule_AddObject(module, "Note", reinterpret_cast<PyObject*>(&PyNoteType)) < 0)
+            ) {
+                Py_DECREF(&PyLogBookRunType);
+                Py_DECREF(&PyRunTransitionType);
+                Py_DECREF(&PyLogBookShiftType);
+                Py_DECREF(&PyPersonType);
+                Py_DECREF(&PyLogBookType);
+                Py_DECREF(&PyNoteImageType);
+                Py_DECREF(&PyNoteType);
+                Py_XDECREF(logbookExceptionObject);
+                Py_DECREF(module);
+                return NULL;        
+            } 
             
         }
         PyDateTime_IMPORT;
