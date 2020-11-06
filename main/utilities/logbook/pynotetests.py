@@ -49,8 +49,22 @@ class aTest(unittest.TestCase) :
         del self.logbook
         os.unlink('logbook.log')
         
-    def test_sometest(self) :
-        pass
+    def test_create1(self) :
+        note = self.logbook.create_note("This is some text")
+        self.assertEqual(1, note.id)
+        self.assertEqual('This is some text', note.contents)
+        self.assertIsNone(note.run)
+        self.assertEqual(0, note.image_count())
+        
+    def test_create2(self, ):
+        note = self.logbook.create_note("This is some text", run=self.run1)
+        run  = note.run
+        self.assertEqual(run.number, 1)
+        self.assertEqual(run.title, 'Test run1')
+        
+        
+    
+        
 
 if __name__ == '__main__' :
     unittest.main()

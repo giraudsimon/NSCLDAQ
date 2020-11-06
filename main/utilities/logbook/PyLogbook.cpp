@@ -872,9 +872,12 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
     
     // Marshall the image filenames and offsets and validate.
 
-    
-    if (!StringVecFromIterable(imageFilenames, pImageFiles)) return nullptr;
-    if (!SizeVecFromIterable(imageOffsets, pImageOffsets)) return nullptr;
+    if (pImageFiles) {
+        if (!StringVecFromIterable(imageFilenames, pImageFiles)) return nullptr;
+    }
+    if (pImageOffsets) {
+        if (!SizeVecFromIterable(imageOffsets, pImageOffsets)) return nullptr;
+    }
     if (imageFilenames.size() != imageOffsets.size()) {
         PyErr_SetString(
             logbookExceptionObject,
