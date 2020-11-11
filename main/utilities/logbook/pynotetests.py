@@ -204,6 +204,15 @@ class aTest(unittest.TestCase) :
         self.assertEqual(notes[0].id, note1.id)
         self.assertEqual(notes[1].id, note2.id)
     
+    def test_get_note_run1(self, ):
+        note1 = self.logbook.create_note("This is some text")
+        run =  self.logbook.get_note_run(note1)
+        self.assertIsNone(run)
+        
+    def test_get_note_run2(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        run   = self.logbook.get_note_run(note1)
+    
      
     
     
