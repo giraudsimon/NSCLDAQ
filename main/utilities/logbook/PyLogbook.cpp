@@ -944,7 +944,7 @@ getNote(PyObject* self, PyObject* args)
     catch (...) {
         PyErr_SetString(
             logbookExceptionObject,
-            "Unexpcected exception type in get_note"
+            "Unexpected exception type in get_note"
         );
     }
     
@@ -1147,7 +1147,7 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
         "Create a new note"
     },
     { "get_note", getNote, METH_VARARGS, "Retrieve note by id"},
-    {"listAllNotes", listNotes, METH_NOARGS, "Make a tuple of all notes"},
+    {"list_all_notes", listNotes, METH_NOARGS, "Make a tuple of all notes"},
     {
         "list_notes_for_run_number", listNotesForRunnum, METH_VARARGS,
         "Make a tuple of all runs for a run number"

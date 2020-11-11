@@ -78,6 +78,38 @@ class aTest(unittest.TestCase) :
         sbcontents = '![image text](' + image.exported_file + ') some more text'
         self.assertEqual(final_contents, sbcontents)
     
+    def test_get_note1(self, ):
+        note = self.logbook.create_note("This is some text", run=self.run1)
+        id = note.id + 1            # no such note.
+        self.assertRaises(LogBook.error, self.logbook.get_note, id)
+    
+    def test_get_note2(self, ):
+        note = self.logbook.create_note("This is some text", run=self.run1)
+        id = note.id
+        same_note = self.logbook.get_note(id)
+        self.assertEqual(same_note.contents, note.contents)
+    
+    def test_list_notes1(self, ):
+        notes = self.logbook.list_all_notes()
+        self.assertEqual(len(notes), 0)
+    
+    def test_list_notes2(self, ):
+        note = self.logbook.create_note("This is some text", run=self.run1)
+        notes = self.logbook.list_all_notes()
+        self.assertEqual(len(notes), 1)
+        note1 = notes[0]
+        self.assertEqual(note.id, note1.id)
+    
+    def test_list_notes3(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        note2 = self.logbook.create_note("Second note test", run=self.run2)
+        notes = self.logbook.list_all_notes()
+        self.assertEqual(len(notes), 2)
+        self.assertEqual(notes[0].id, note1.id)
+        self.assertEqual(notes[1].id, note2.id)
+    
+      
+    
 
 if __name__ == '__main__' :
     unittest.main()
