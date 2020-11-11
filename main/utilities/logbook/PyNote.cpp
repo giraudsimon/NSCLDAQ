@@ -488,7 +488,7 @@ PyNote_image(PyObject* self, PyObject* args)
     }
     
     auto pNote = PyNote_getNote(self);
-    if ((index <= 0) || (index >= pNote->imageCount())) {
+    if ((index < 0) || (index >= pNote->imageCount())) {
          PyErr_SetString(
             logbookExceptionObject,
             "Index out of range attempting to fetch an image in LogBook.Note.image method"
