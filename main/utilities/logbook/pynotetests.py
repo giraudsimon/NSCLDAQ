@@ -108,8 +108,31 @@ class aTest(unittest.TestCase) :
         self.assertEqual(notes[0].id, note1.id)
         self.assertEqual(notes[1].id, note2.id)
     
-      
+    def test_list_run_by_run_number1(self, ):
+        note1 = self.logbook.create_note("This is some text")
+        note2 = self.logbook.create_note("this is another note")
+        notes = self.logbook.list_notes_for_run_number(1)
+        self.assertEqual(len(notes), 0)
+        
+    def test_list_run_by_run_number2(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        note2 = self.logbook.create_note("Second note test", run=self.run2)
+        notes = self.logbook.list_notes_for_run_number(2)
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].id, note2.id)
+        notes = self.logbook.list_notes_for_run_number(1)
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].id, note1.id)
+        notes = self.loogbook.list_notes_for_run_number(3)
+        self.assertEqual(len(notes), 0)
     
+    def test_list_run_by_run_number2(self) :
+        note1 = self.logbook.create_note("This is some text", run=self.run2)
+        note2 = self.logbook.create_note("Second note test", run=self.run2)
+        notes = self.logbook.list_notes_for_run_number(2)
+        self.assertEqual(len(notes), 2)
+        self.assertEqual(notes[0].id, note1.id)
+        self.assertEqual(notes[1].id, note2.id)
 
 if __name__ == '__main__' :
     unittest.main()
