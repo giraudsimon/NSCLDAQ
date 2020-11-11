@@ -108,13 +108,13 @@ class aTest(unittest.TestCase) :
         self.assertEqual(notes[0].id, note1.id)
         self.assertEqual(notes[1].id, note2.id)
     
-    def test_list_run_by_run_number1(self, ):
+    def test_list_notes_by_run_number1(self, ):
         note1 = self.logbook.create_note("This is some text")
         note2 = self.logbook.create_note("this is another note")
         notes = self.logbook.list_notes_for_run_number(1)
         self.assertEqual(len(notes), 0)
         
-    def test_list_run_by_run_number2(self, ):
+    def test_list_notes_by_run_number2(self, ):
         note1 = self.logbook.create_note("This is some text", run=self.run1)
         note2 = self.logbook.create_note("Second note test", run=self.run2)
         notes = self.logbook.list_notes_for_run_number(2)
@@ -126,7 +126,7 @@ class aTest(unittest.TestCase) :
         notes = self.loogbook.list_notes_for_run_number(3)
         self.assertEqual(len(notes), 0)
     
-    def test_list_run_by_run_number2(self) :
+    def test_list_notes_by_run_number2(self) :
         note1 = self.logbook.create_note("This is some text", run=self.run2)
         note2 = self.logbook.create_note("Second note test", run=self.run2)
         notes = self.logbook.list_notes_for_run_number(2)
@@ -134,6 +134,31 @@ class aTest(unittest.TestCase) :
         self.assertEqual(notes[0].id, note1.id)
         self.assertEqual(notes[1].id, note2.id)
 
+    def test_list_notes_by_run_id1(self, ):
+        note1 = self.logbook.create_note("This is some text")
+        note2 = self.logbook.create_note("this is another note")
+        notes = self.logbook.list_notes_for_run_id(1)
+        self.assertEqual(len(notes), 0)
+        
+    def test_list_notes_by_run_id2(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        note2 = self.logbook.create_note("Second note test", run=self.run2)
+        notes = self.logbook.list_notes_for_run_id(self.run1.id)
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].id, note1.id)
+        notes = self.logbook.list_notes_for_run_id(self.run2.id)
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].id, note2.id)
+    
+    def test_list_notes_by_run_id3(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        note2 = self.logbook.create_note("Second note test", run=self.run1)
+        notes = self.logbook.list_notes_for_run_id(self.run1.id)
+        self.assertEqual(len(notes), 2)
+        self.assertEqual(notes[0].id, note1.id)
+        self.assertEqual(notes[1].id, note2.id)
+    
+    
 if __name__ == '__main__' :
     unittest.main()
     
