@@ -183,7 +183,28 @@ class aTest(unittest.TestCase) :
         self.assertEqual(notes[1].id, note2.id)
         self.assertEqual(len(self.logbook.list_notes_for_run(self.run2)), 0)
     
+    def test_list_non_run_notes1(self, ):
+        note1 = self.logbook.create_note("This is some text", run=self.run1)
+        note2 = self.logbook.create_note("Second note test", run=self.run1)
+        notes = self.logbook.list_nonrun_notes()
+        self.assertEqual(len(notes), 0)
     
+    def test_list_non_run_notes2(self, ):
+        note1 = self.logbook.create_note("This is some text")
+        note2 = self.logbook.create_note("Second note test", run=self.run1)
+        notes = self.logbook.list_nonrun_notes()
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0].id, note1.id)
+    
+    def test_list_non_run_notes3(self, ):
+        note1 = self.logbook.create_note("This is some text")
+        note2 = self.logbook.create_note("Second note test")
+        notes = self.logbook.list_nonrun_notes()
+        self.assertEqual(len(notes), 2)
+        self.assertEqual(notes[0].id, note1.id)
+        self.assertEqual(notes[1].id, note2.id)
+    
+     
     
     
 if __name__ == '__main__' :
