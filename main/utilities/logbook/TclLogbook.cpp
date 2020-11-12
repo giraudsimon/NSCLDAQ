@@ -26,6 +26,8 @@
 #include <Exception.h>
 #include <sstream>
 
+#include "TclLogBookInstance.h"
+
 /**
  * constructor
  *    Create and register the command as per the caller:
@@ -149,7 +151,9 @@ TclLogbook::open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     std::string filename = objv[2];
     std::string commandName = createObjectName("logbook");
     
-    // TODO - create a logbook instance
+    LogBook* pBook = new LogBook(filename.c_str());
+    
+    new TclLogBookInstance(&interp, commandName.c_str(), pBook);
     
     interp.setResult(commandName);
 }

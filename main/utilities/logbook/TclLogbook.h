@@ -50,6 +50,7 @@ public:
     virtual ~TclLogbook();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+private:
     void create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
