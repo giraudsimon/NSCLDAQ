@@ -20,6 +20,7 @@
  */
 #include <tcl.h>
 #include <TCLInterpreter.h>
+#include "TclLogbook.h"
 
 
 static const char* version="1.0";
@@ -35,9 +36,17 @@ extern "C" {
         status = Tcl_PkgProvide(interp, "logbook", version);
         if (status != TCL_OK) return status;
         
+        // All the commands will fit into the logbook namespace:
+        
+        Tcl_Namespace* pNamespace =
+            Tcl_CreateNamespace(interp, "::logbook", nullptr, nullptr);
+         if (!pNamespace) return TCL_ERROR;
+        
         CTCLInterpreter* pInterp = new CTCLInterpreter(interp);
         
         // Register package commands here.
+        
+        new TclLogbook(pInterp, "::logbook::logbook");
         
         return TCL_OK;
    }

@@ -18,7 +18,7 @@ libPyLogbook_la_SOURCES=PyLogbook.cpp PyLogbookPerson.cpp PyLogbook.h \
 include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h LogBookRun.h \
 	LogBookNote.h
 
-libTclLogbook_la_SOURCES=LogBookPackage.cpp
+libTclLogbook_la_SOURCES=LogBookPackage.cpp TclLogbook.h TclLogbook.cpp
 libTclLogbook_la_CXXFLAGS=$(libLogbook_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@ @TCL_CPPFLAGS@
 libTclLogbook_la_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @LIBTCLPLUS_LDFLAGS@ \
 	@TCL_LDFLAGS@
@@ -56,9 +56,10 @@ check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pynotetests.py
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbook.test
 	@builddir@/unittests
 
 check: check-TESTS
 
 EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
-	pyruntests.py pynotetests.py
+	pyruntests.py pynotetests.py logbook.test
