@@ -1,4 +1,4 @@
-lib_LTLIBRARIES=libLogbook.la libPyLogbook.la
+lib_LTLIBRARIES=libLogbook.la libPyLogbook.la libTclLogbook.la
 
 libLogbook_la_SOURCES=LogBook.cpp LogBookPerson.cpp LogBookShift.cpp \
 	LogBookRun.cpp LogBookNote.cpp
@@ -18,10 +18,19 @@ libPyLogbook_la_SOURCES=PyLogbook.cpp PyLogbookPerson.cpp PyLogbook.h \
 include_HEADERS=LogBook.h LogBookPerson.h LogBookShift.h LogBookRun.h \
 	LogBookNote.h
 
+libTclLogbook_la_SOURCES=LogBookPackage.cpp
+libTclLogbook_la_CXXFLAGS=$(libLogbook_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@ @TCL_CPPFLAGS@
+libTclLogbook_la_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @LIBTCLPLUS_LDFLAGS@ \
+	@TCL_LDFLAGS@
+
 install-exec-hook:
 	$(mkinstalldirs) @prefix@/pythonLibs @prefix@/pythonLibs/nscldaq
 	$(mkinstalldirs) @prefix@/pythonLibs/nscldaq/LogBook
 	$(INSTALL_PROGRAM) @libdir@/libPyLogbook.so @prefix@/pythonLibs/nscldaq/LogBook/LogBook.so
+	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/logbook
+	$(INSTALL_PROGRAM) @libdir@/libTclLogbook.so @prefix@/TclLibs/logbook
+	echo package ifneeded logbook 1.0 [list load [file join \$$dir libTclLogbook.so]] \
+		> @prefix@/TclLibs/logbook/pkgIndex.tcl
 
 
 
@@ -39,7 +48,6 @@ unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/testutils \
 unittests_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 unittests_DEPENDENCIES=libLogbook.la
 
-# Suport for python tests:
 
 
 check-TESTS:
