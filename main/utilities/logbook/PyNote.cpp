@@ -25,6 +25,7 @@
 
 #include "PyLogbook.h"
 #include "PyLogBookRun.h"
+#include "PyLogBookPerson.h"
 
 ///////////////////////////////////////////////////////////////////
 // Canonicals for LogBook.Image.
@@ -451,6 +452,21 @@ PyNote_getContents(PyObject* self, void* closure)
     auto note = PyNote_getNote(self);
     return PyUnicode_FromString(note->getNoteText().s_contents.c_str());
 }
+/**
+ * PyNote_getAuthor
+ *    Return the author as a person object.
+ * @param PyObject* self - pointer to this object.
+ * @param closure - ignored.
+ * @return PyObject* Pointer to the author LogBook.Person object.
+ */
+static PyObject*
+PyNote_getAuthor(PyObject* self, void* closure)
+{
+    auto note = PyNote_getNote(self);
+    int authorId = note->getNoteText().s_authorId;
+    pPyNote pNote = reinterpret_cast<pPyNote>(self);
+    return  PyPerson_newPerson(pNote->m_book, authorId);
+}
 //////////////////////////////////////////////////////////////
 // LogBook.Note object methods:
 
@@ -526,6 +542,7 @@ static PyGetSetDef note_accessors[] = {
    {"run", PyNote_getRun, nullptr, "Associated run", nullptr},
    {"time", PyNote_getTime, nullptr, "Note unix timestamp", nullptr},
    {"contents", PyNote_getContents, nullptr, "Raw note text", nullptr},
+   {"author", PyNote_getAuthor, nullptr, "Note author", nullptr},
    
     
     {nullptr, nullptr, nullptr, nullptr, nullptr}

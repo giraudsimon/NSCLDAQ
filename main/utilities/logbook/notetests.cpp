@@ -47,6 +47,8 @@ private:
     LogBook*    m_pLogbook;
     CSqlite*    m_db;
     LogBookRun* m_pRun;
+    LogBookPerson* m_pRon;
+    LogBookPerson* m_pGiordano;
 
 public:
     void setUp() {
@@ -58,8 +60,8 @@ public:
 
         // Make some people in the logbook:
 
-        delete m_pLogbook->addPerson("Fox", "Ron", "Mr.");
-        delete m_pLogbook->addPerson("Cerizza", "Giordano", "Dr.");
+        m_pRon      = m_pLogbook->addPerson("Fox", "Ron", "Mr.");
+        m_pGiordano =  m_pLogbook->addPerson("Cerizza", "Giordano", "Dr.");
         delete m_pLogbook->addPerson("Liddick", "Sean", "Dr.");
         delete m_pLogbook->addPerson("Hughes", "Megan", "Ms.");
 
@@ -76,6 +78,8 @@ public:
 
     }
     void tearDown() {
+        delete m_pRon;
+        delete m_pGiordano;
         delete m_pRun;
         delete m_pLogbook;
         unlink(m_filename.c_str());
@@ -190,13 +194,14 @@ void notetest::construct_2()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, author_id, note_time, note)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
+    ins.bind(2, m_pRon->id());
     time_t now = time(nullptr);
-    ins.bind(2, int(now));
-    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(3, int(now));
+    ins.bind(4, "This is the note text", -1, SQLITE_STATIC);
     ++ins;
     
     LogBookNote* pNote(nullptr);
@@ -210,6 +215,7 @@ void notetest::construct_2()
     EQ(now, pNote->m_textInfo.s_noteTime);
     EQ(std::string("This is the note text"), pNote->m_textInfo.s_contents);
     EQ(size_t(0), pNote->m_imageInfo.size());
+    EQ(m_pRon->id(), pNote->m_textInfo.s_authorId);
     
     
     delete pNote;
@@ -221,13 +227,14 @@ void notetest::construct_3()
     // Root record.
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, author_id, note_time, note)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
+    ins.bind(2, m_pGiordano->id());
     time_t now = time(nullptr);
-    ins.bind(2, int(now));
-    ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(3, int(now));
+    ins.bind(4, "This is the note text", -1, SQLITE_STATIC);
     ++ins;
     int id = ins.lastInsertId();          // note id.
  
@@ -259,6 +266,7 @@ void notetest::construct_3()
     // Root record:
     
     EQ(id, note.m_textInfo.s_id);
+    EQ(m_pGiordano->id(), note.m_textInfo.s_authorId);
     EQ(m_pRun->getRunInfo().s_id, note.m_textInfo.s_runId);
     EQ(now, note.m_textInfo.s_noteTime);
     EQ(std::string("This is the note text"), note.m_textInfo.s_contents);
@@ -285,13 +293,14 @@ void notetest::assocrun_1()
     // Root record.
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     
     LogBookNote note(*m_db, ins.lastInsertId());
@@ -312,13 +321,14 @@ void notetest::assocrun_2()
     // Root record.
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     // ins.bind(1, m_pRun->getRunInfo().s_id);   - Don't bind a run id.
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pGiordano->id());
     ++ins;
     
     LogBookNote note(*m_db, ins.lastInsertId());
@@ -334,13 +344,14 @@ void notetest::notetext_1()
 {
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     
     LogBookNote note(*m_db, ins.lastInsertId());
@@ -358,13 +369,14 @@ void notetest::imagecount_1()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     
     LogBookNote note(*m_db, ins.lastInsertId());
@@ -377,13 +389,14 @@ void notetest::imagecount_2()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
  
@@ -420,13 +433,14 @@ void notetest::index_1()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
  
@@ -469,13 +483,14 @@ void notetest::index_2()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
  
@@ -512,13 +527,14 @@ void notetest::image_1()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "This is the note text", -1, SQLITE_STATIC);
+    ins.bind(4, m_pRon->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
  
@@ -533,14 +549,15 @@ void notetest::image_2()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "![This is the text](/this/is/the/file.jpg)", -1, SQLITE_STATIC);
+    ins.bind(4, m_pGiordano->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
     
@@ -581,14 +598,15 @@ void notetest::image_3()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     
     ins.bind(1, m_pRun->getRunInfo().s_id);
     time_t now = time(nullptr);
     ins.bind(2, int(now));
     ins.bind(3, "Stuff ![This is the text](/this/is/the/file.jpg)", -1, SQLITE_STATIC);
+    ins.bind(4, m_pGiordano->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
     
@@ -626,8 +644,8 @@ void notetest::image_4()
     
     CSqliteStatement ins(
         *m_db,
-        "INSERT INTO note (run_id, note_time, note)    \
-            VALUES (?,?,?)"
+        "INSERT INTO note (run_id, note_time, note, author_id)    \
+            VALUES (?,?,?,?)"
     );
     
     ins.bind(1, m_pRun->getRunInfo().s_id);
@@ -635,7 +653,8 @@ void notetest::image_4()
     ins.bind(2, int(now));
     ins.bind(3, "Stuff ![This is the text](/this/is/the/file.jpg) more ![More text](/this/file2.jpg) stuff", -1, SQLITE_STATIC);
     //           0123456789012345678901234567890123456789012345678901234567890
-    //                     1         2         3         4         5         6   
+    //                     1         2         3         4         5         6
+    ins.bind(4, m_pGiordano->id());
     ++ins;
     int id = ins.lastInsertId();          // note id.
     
@@ -679,12 +698,13 @@ void notetest::create_1()
     
     LogBookNote* pNote(nullptr);
     CPPUNIT_ASSERT_NO_THROW(pNote = LogBookNote::create(
-        *m_db, m_pRun, "This is my note", images
+        *m_db, m_pRun, "This is my note", m_pRon, images
     ));
     ASSERT(pNote);
     
     auto& text = pNote->getNoteText();
     EQ(m_pRun->getRunInfo().s_id, text.s_runId);
+    EQ(m_pRon->id(), text.s_authorId);
     EQ(std::string("This is my note"), text.s_contents);
     EQ(size_t(0), pNote->imageCount());
     
@@ -702,7 +722,7 @@ void notetest::create_2()
     
     LogBookNote* pNote = LogBookNote::create(
         *m_db, static_cast<LogBookRun*>(nullptr),
-        "This is my note", images
+        "This is my note", m_pGiordano, images
     );
     ASSERT(pNote);
     ASSERT(!pNote->getAssociatedRun(*m_db));
@@ -720,7 +740,7 @@ void notetest::create_3()
     
     LogBookNote* pNote(nullptr);
     CPPUNIT_ASSERT_NO_THROW( pNote = LogBookNote::create(
-        *m_db, m_pRun, "![this is a link](imagefile.jpg)", images
+        *m_db, m_pRun, "![this is a link](imagefile.jpg)", m_pGiordano, images
     ));
     
     EQ(size_t(1), pNote->imageCount());
@@ -739,6 +759,7 @@ void notetest::create_4()
     CPPUNIT_ASSERT_THROW(
         LogBookNote::create(
             *m_db, m_pRun, "![link text](/this/file/does/not/exist)",
+            m_pRon,
             images
         ),
         LogBook::Exception
@@ -764,7 +785,7 @@ void notetest::listrun_2()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db,  m_pRun,
-            "This is a note.", images
+            "This is a note.", m_pGiordano, images
         );
     }
     
@@ -785,7 +806,7 @@ void notetest::listrun_3()
         delete LogBookNote::create(
             *m_db,
             (((i % 2) == 0) ? m_pRun : (static_cast<LogBookRun*>(nullptr))),
-            "This is a note.", images
+            "This is a note.", m_pRon, images
         );
     }
     
@@ -808,7 +829,7 @@ void notetest::listrun_4()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db, ((i % 2) == 0) ? m_pRun : run2,
-            "This is a note", images
+            "This is a note", m_pGiordano, images
         );
     }
     
@@ -836,7 +857,7 @@ void notetest::listnonrun_2()
     std::vector<LogBookNote::ImageInfo> images;
     std::vector<int> listing;
     for (int i = 0; i < 10; i++) {
-        delete LogBookNote::create(*m_db, m_pRun, "A note", images);
+        delete LogBookNote::create(*m_db, m_pRun, "A note", m_pRon, images);
     }
     listing = LogBookNote::listNonRunNotes(*m_db);
     EQ(size_t(0), listing.size());
@@ -851,7 +872,7 @@ void notetest::listnonrun_3()
         delete LogBookNote::create(
             *m_db,
             (((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr)),
-            "A note", images
+            "A note", m_pGiordano, images
         );
     }
     listing = LogBookNote::listNonRunNotes(*m_db);
@@ -878,7 +899,7 @@ void notetest::getall_2()
         delete LogBookNote::create(
             *m_db,
             (((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr)),
-            "A note", images
+            "A note", m_pRon, images
         );
     }
     auto notes = LogBookNote::getAllNotes(*m_db);
@@ -897,7 +918,7 @@ void notetest::getrun_1()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db, static_cast<LogBookRun*>(nullptr),
-            "A note", images
+            "A note", m_pGiordano, images
         );
     }
     EQ(size_t(0), LogBookNote::getRunNotes(*m_db, m_pRun->getRunInfo().s_id).size());
@@ -915,7 +936,7 @@ void notetest::getrun_2()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db, ((i % 2) == 0) ? m_pRun : run2,
-            "This is a note", images
+            "This is a note", m_pRon, images
         );
     }
     
@@ -942,7 +963,7 @@ void notetest::getnonrun_1()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db, ((i % 2) == 0) ? m_pRun : run2,
-            "This is a note", images
+            "This is a note", m_pGiordano, images
         );
     }
     
@@ -956,7 +977,7 @@ void notetest::getnonrun_2()
     for (int i =0; i < 10; i++) {
         delete LogBookNote::create(
             *m_db, ((i % 2) == 0) ? m_pRun : static_cast<LogBookRun*>(nullptr),
-            "This is a note", images
+            "This is a note", m_pRon, images
         );
     }
     auto runs = LogBookNote::getNonRunNotes(*m_db);

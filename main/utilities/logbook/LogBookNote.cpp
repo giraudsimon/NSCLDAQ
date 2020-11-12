@@ -19,6 +19,7 @@
  *  @brief: Impelement the log book note class.
  */
 #include "LogBookNote.h"
+#include "LogBookPerson.h"
 #include "LogBookRun.h"
 #include "LogBook.h"
 
@@ -119,7 +120,7 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
     try {
         CSqliteStatement find(
             db,
-            "SELECT run_id, note_time, note,                           \
+            "SELECT run_id, author_id, note_time, note,                           \
                     note_image.id AS image_id, note_offset,            \
                     original_filename, image                           \
             FROM note                                                  \
@@ -141,8 +142,9 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
             } else {
                 m_textInfo.s_runId = find.getInt(0);
             }
-            m_textInfo.s_noteTime = find.getInt(1);
-            m_textInfo.s_contents = find.getString(2);
+            m_textInfo.s_authorId = find.getInt(1);
+            m_textInfo.s_noteTime = find.getInt(2);
+            m_textInfo.s_contents = find.getString(3);
             
             // We need to be sure we have image data
             // If so we emplace an image into the s_imageInfo
@@ -151,14 +153,14 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
             // gotten as a pointer that's valid only until the next
             // ++find so we need to malloc/copy the data:
             
-            if (find.columnType(3) != CSqliteStatement::null) {
+            if (find.columnType(4) != CSqliteStatement::null) {
                 m_imageInfo.emplace_back();
                 NoteImage& image(m_imageInfo.back());
-                image.s_id = find.getInt(3);
+                image.s_id = find.getInt(4);
                 image.s_noteId = noteId;
-                image.s_noteOffset = find.getInt(4);
-                image.s_originalFilename = find.getString(5);
-                image.s_imageLength      = find.bytes(6);
+                image.s_noteOffset = find.getInt(5);
+                image.s_originalFilename = find.getString(6);
+                image.s_imageLength      = find.bytes(7);
                 image.s_pImageData       = malloc(image.s_imageLength);
                 if (!image.s_pImageData) {
                     throw LogBook::Exception(
@@ -166,7 +168,7 @@ LogBookNote::LogBookNote(CSqlite& db, int noteId)
                     );
                 } else {
                     memcpy(
-                        image.s_pImageData, find.getBlob(6),
+                        image.s_pImageData, find.getBlob(7),
                         image.s_imageLength
                     );
                 }
@@ -343,6 +345,7 @@ LogBookNote::substituteImages()
  *  @param run   - Pointer to run information.  This can be null
  *                 if the note is not associated with any run.
  *  @param string - The markdown infested note string.
+ *  @param pPerson - Pointer to the person object representing the author.
  *  @param images - Descriptions of images to associate with the
  *                  the note.
  *  @return LogBookNote*  - Pointer to the created note. Note that all
@@ -352,6 +355,7 @@ LogBookNote::substituteImages()
 LogBookNote*
 LogBookNote::create(
     CSqlite& db, LogBookRun* run, const char* string,
+    LogBookPerson* pPerson,
     const std::vector<ImageInfo>& images
 )
 {
@@ -362,17 +366,17 @@ LogBookNote::create(
         
         CSqliteStatement insroot(
             db,
-            "INSERT INTO note (run_id, note_time, note)      \
-                VALUES(?,?,?)"
+            "INSERT INTO note (run_id, author_id, note_time, note)      \
+                VALUES(?,?,?,?)"
         );
         // Only bind the run id if there's an associated run:
         
         if (run) {
             insroot.bind(1, run->getRunInfo().s_id);
         }
-        
-        insroot.bind(2, time_t(nullptr));
-        insroot.bind(3, string, -1, SQLITE_STATIC);
+        insroot.bind(2, pPerson->id());
+        insroot.bind(3, time_t(nullptr));
+        insroot.bind(4, string, -1, SQLITE_STATIC);
         ++insroot;
         int noteId = insroot.lastInsertId();
         

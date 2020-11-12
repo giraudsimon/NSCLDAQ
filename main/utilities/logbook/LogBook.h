@@ -122,11 +122,11 @@ public:
     // API for notes:
     
     LogBookNote*  createNote(
-        const char* note, const std::vector<std::string>& imageFiles,
+        LogBookPerson& author, const char* note, const std::vector<std::string>& imageFiles,
         const std::vector<size_t>& imageOffsets,
         LogBookRun* pRun = nullptr
     );
-    LogBookNote* createNote(const char* note, LogBookRun* pRun = nullptr);
+    LogBookNote* createNote(LogBookPerson& author, const char* note, LogBookRun* pRun = nullptr);
     LogBookNote* getNote(int id);
     std::vector<LogBookNote*> listAllNotes();
     std::vector<LogBookNote*> listNotesForRunId(int runId);
@@ -134,6 +134,7 @@ public:
     std::vector<LogBookNote*> listNotesForRun(const LogBookRun* pRun);
     std::vector<LogBookNote*> listNonRunNotes();
     LogBookRun* getNoteRun(LogBookNote& note);
+    LogBookPerson* getNoteAuthor(LogBookNote& note);
     
 private:
     static std::string computeTempDir();

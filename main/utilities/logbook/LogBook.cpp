@@ -552,6 +552,7 @@ LogBook::findRun(int number)
  * createNote
  *    Create a log book note and return a  pointer to it's ecnapsulating
  *    object.
+ * @paran author - The author of the note.
  * @param note - note text.
  * @param imageFiles - vector of paths to image files.
  * @param imageOffset - vector of image placement offsets in the file.
@@ -563,6 +564,7 @@ LogBook::findRun(int number)
  */
 LogBookNote*
 LogBook::createNote(
+    LogBookPerson& author,
     const char* text, const std::vector<std::string>& imageFiles,
     const std::vector<size_t>& imageOffsets, LogBookRun* pRun
 )
@@ -577,16 +579,20 @@ LogBook::createNote(
     for (int i = 0; i < n; i++) {
         images.push_back({imageFiles[i], imageOffsets[i]});
     }
-    return LogBookNote::create(*m_pConnection,  pRun, text, images);
+    return LogBookNote::create(
+        *m_pConnection,  pRun, text, &author, images
+    );
 }
 /**
  * createNote - but without any associated images.
  */
 LogBookNote*
-LogBook::createNote(const char* text, LogBookRun* pRun)
+LogBook::createNote(LogBookPerson& author, const char* text, LogBookRun* pRun)
 {
     std::vector<LogBookNote::ImageInfo> images;
-    return LogBookNote::create(*m_pConnection, pRun, text, images);
+    return LogBookNote::create(
+        *m_pConnection, pRun, text, &author, images
+    );
 }
 /**
  * getNote
@@ -665,7 +671,18 @@ LogBook::getNoteRun(LogBookNote& note)
 {
     return note.getAssociatedRun(*m_pConnection);
 }
-
+/**
+ * getNoteAuthor
+ *   @param note - reference to a note object.
+ *   @return LogBookPerson* newly dynamically created LogBookPerson object
+ *           representing the note's author.
+ */
+LogBookPerson*
+LogBook::getNoteAuthor(LogBookNote& note)
+{
+    auto info = note.getNoteText();
+    return new LogBookPerson(*m_pConnection, info.s_authorId);
+}
 /////////////////////////////////////////////////////////
 // Private methods
 
@@ -821,18 +838,19 @@ LogBook::createSchema(CSqlite& db)
         "CREATE TABLE IF NOT EXISTS note (                 \
            id INTEGER PRIMARY  KEY,                        \
            run_id INTEGER,                                 \
-           note_time INTEGER,                              \
-           note   TEXT                                     \
+           author_id INTEGER NOT NULL,                     \
+           note_time INTEGER NOT NULL,                    \
+           note   TEXT NOT NULL                           \
            )"
     );
     CSqliteStatement::execute(
         db,
         "CREATE TABLE IF NOT EXISTS note_image (           \
            id          INTEGER PRIMARY KEY,                \
-           note_id     INTEGER,                            \
-           note_offset INTEGER,                            \
-           original_filename TEXT,                         \
-           image       BLOB                                \
+           note_id     INTEGER NOT NULL,                   \
+           note_offset INTEGER NOT NULL,                   \
+           original_filename TEXT NOT NULL,                \
+           image       BLOB NOT NULL                      \
            )"
     );
     

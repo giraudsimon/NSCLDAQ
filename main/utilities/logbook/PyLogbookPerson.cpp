@@ -106,6 +106,26 @@ PyPerson_getPerson(PyObject* p)
   PyLogBookPerson* pThis = reinterpret_cast<PyLogBookPerson*>(p);
   return pThis->m_pPerson;
 }
+/**
+ * PyPerson_newPerson
+ *    Create a new LogBook.Person object given the logbook python object
+ *    and the person id.
+ * @param logbook - PyLogBook object pointer.
+ * @param id      - id of the person in the database.
+ * @return PyObject* Created/XINCREF's person object.
+ */
+PyObject*
+PyPerson_newPerson(PyObject* logbook, int id)
+{
+  {
+    PyObject* person = PyObject_CallFunction(
+        reinterpret_cast<PyObject*>(&PyPersonType), "IO", id, logbook
+     );
+    Py_XINCREF(person);
+    return person;
+}
+
+}
 
 //////////////////////////////////////////////////////////////
 //   Canonicals for PyLogBookPerson (LogBook.Person) class/type.

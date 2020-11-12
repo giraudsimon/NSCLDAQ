@@ -26,6 +26,7 @@
 class CSqlite;
 class CSqliteStatement;
 class LogBookRun;
+class LogBookPerson;
 /**
  * LogBookNote is a class that provides support for textual notes
  * in Markdown format.  The notes can have associated images that
@@ -43,6 +44,7 @@ public:
     typedef struct _NoteText {
         int        s_id;
         int        s_runId;     // Associated run.
+        int        s_authorId;
         time_t     s_noteTime;
         std::string s_contents;
     } NoteText, *pNoteText;
@@ -85,12 +87,11 @@ public:
     const NoteImage& operator[](int n) const;
     std::string substituteImages();
     
-    
     static LogBookNote* create(
         CSqlite& db, LogBookRun* run, const char* string,
+        LogBookPerson* pPerson,
         const std::vector<ImageInfo>& images
     );
-    
     
     static std::vector<int> listRunNoteIds(CSqlite& db, int runId);
     static std::vector<int> listNonRunNotes(CSqlite& db);

@@ -51,6 +51,8 @@ private:
     LogBook*    m_pLogbook;
     CSqlite*    m_db;
     LogBookRun* m_pRun;
+    LogBookPerson* m_pRon;
+    LogBookPerson* m_pGiordano;
 
 public:
     void setUp() {
@@ -62,8 +64,8 @@ public:
 
         // Make some people in the logbook:
 
-        delete m_pLogbook->addPerson("Fox", "Ron", "Mr.");
-        delete m_pLogbook->addPerson("Cerizza", "Giordano", "Dr.");
+        m_pRon =  m_pLogbook->addPerson("Fox", "Ron", "Mr.");
+        m_pGiordano =  m_pLogbook->addPerson("Cerizza", "Giordano", "Dr.");
         delete m_pLogbook->addPerson("Liddick", "Sean", "Dr.");
         delete m_pLogbook->addPerson("Hughes", "Megan", "Ms.");
 
@@ -79,6 +81,8 @@ public:
         m_pRun = m_pLogbook->begin(123, "This is the run title", "This is the remark");
     }
     void tearDown() {
+        delete m_pRon;
+        delete m_pGiordano;
         delete m_pRun;
         delete m_pLogbook;
         unlink(m_filename.c_str());
@@ -139,12 +143,13 @@ void noteapitest::create_1()
     LogBookNote* pNote;
     CPPUNIT_ASSERT_NO_THROW(
         pNote = m_pLogbook->createNote(
-            "This is a note", images, offsets, m_pRun
+            *m_pRon, "This is a note", images, offsets, m_pRun
         )
     );
     
     
     EQ(std::string("This is a note"), pNote->getNoteText().s_contents);
+    EQ(m_pRon->id(), pNote->getNoteText().s_authorId);
     EQ(size_t(2), pNote->imageCount());
     EQ(m_filename, (*pNote)[0].s_originalFilename);
     EQ(std::string("/etc/group"), (*pNote)[1].s_originalFilename);
@@ -156,8 +161,9 @@ void noteapitest::create_2()
 {
     //note without images:
     
-    LogBookNote* pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    LogBookNote* pNote = m_pLogbook->createNote(*m_pGiordano, "This is a note", m_pRun);
     EQ(std::string("This is a note"), pNote->getNoteText().s_contents);
+    EQ(m_pGiordano->id(), pNote->getNoteText().s_authorId);
     EQ(size_t(0), pNote->imageCount());
     
     delete pNote;
@@ -173,8 +179,8 @@ void noteapitest::listall_2()
 {
     //make a couple of notes and list all:
     
-    delete m_pLogbook->createNote("This is a note", m_pRun);
-    delete m_pLogbook->createNote("This is another note");
+    delete m_pLogbook->createNote(*m_pRon, "This is a note", m_pRun);
+    delete m_pLogbook->createNote(*m_pGiordano, "This is another note");
     
     auto notes = m_pLogbook->listAllNotes();
     EQ(size_t(2), notes.size());
@@ -185,14 +191,14 @@ void noteapitest::listrun_1()
 {
     // NOthing to list associated with our run.. by id.
     
-    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    delete  m_pLogbook->createNote(*m_pRon, "This is a note"); // no associated run.
     EQ(size_t(0), m_pLogbook->listNotesForRunId(m_pRun->getRunInfo().s_id).size());
 }
 void noteapitest::listrun_2()
 {
     // list when there is a matching note
     
-    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto pNote = m_pLogbook->createNote(*m_pGiordano, "This is a note", m_pRun);
     auto notes = m_pLogbook->listNotesForRunId(m_pRun->getRunInfo().s_id);
     
     EQ(size_t(1), notes.size());
@@ -203,12 +209,12 @@ void noteapitest::listrun_2()
 }
 void noteapitest::listrun_3()
 {
-    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    delete  m_pLogbook->createNote(*m_pRon, "This is a note"); // no associated run.
     EQ(size_t(0), m_pLogbook->listNotesForRun(m_pRun->getRunInfo().s_number).size());
 }
 void noteapitest::listrun_4()
 {
-    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto pNote = m_pLogbook->createNote(*m_pGiordano, "This is a note", m_pRun);
     auto notes = m_pLogbook->listNotesForRun(m_pRun->getRunInfo().s_number);
     
     EQ(size_t(1), notes.size());
@@ -219,12 +225,12 @@ void noteapitest::listrun_4()
 }
 void noteapitest::listrun_5()
 {
-    delete  m_pLogbook->createNote("Thi sis a note"); // no associated run.
+    delete  m_pLogbook->createNote(*m_pRon, "Thi sis a note"); // no associated run.
     EQ(size_t(0), m_pLogbook->listNotesForRun(m_pRun).size());
 }
 void noteapitest::listrun_6()
 {
-    auto pNote = m_pLogbook->createNote("This is a note", m_pRun);
+    auto pNote = m_pLogbook->createNote(*m_pGiordano, "This is a note", m_pRun);
     auto notes = m_pLogbook->listNotesForRun(m_pRun);
     
     EQ(size_t(1), notes.size());
@@ -236,13 +242,13 @@ void noteapitest::listrun_6()
 
 void noteapitest::listnonrun_1()
 {
-    delete m_pLogbook->createNote("This is a note", m_pRun);
+    delete m_pLogbook->createNote(*m_pRon, "This is a note", m_pRun);
     EQ(size_t(0), m_pLogbook->listNonRunNotes().size());
 }
 
 void noteapitest::listnonrun_2()
 {
-    auto pNote = m_pLogbook->createNote("This is a note");
+    auto pNote = m_pLogbook->createNote(*m_pGiordano, "This is a note");
     auto notes = m_pLogbook->listNonRunNotes();
     
     EQ(size_t(1), notes.size());

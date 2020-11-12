@@ -36,4 +36,5 @@ LogBookPerson* PyPerson_getPerson(PyObject* p);
 int       PyPerson_IterableToVector(
     std::vector<LogBookPerson*>& result, PyObject* iterable
 );
+PyObject* PyPerson_newPerson(PyObject* logbook, int personId);
 #endif

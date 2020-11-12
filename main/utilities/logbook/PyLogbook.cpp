@@ -61,15 +61,6 @@ PyObject* logbookExceptionObject(nullptr);
 /////////////////////////////////////////////////////////////////
 // Utilities for PyLogBook object instances.
 
-static PyObject*
-newPerson(int id, PyObject* logbook)
-{
-    PyObject* person = PyObject_CallFunction(
-        reinterpret_cast<PyObject*>(&PyPersonType), "IO", id, logbook
-     );
-    Py_XINCREF(person);
-    return person;
-}
 
 
 
@@ -109,7 +100,7 @@ PyLogBook_TupleFromPeople(
     }
     try {
         for (int i =0; i < people.size(); i++) {
-            PyTuple_SET_ITEM(result, i, newPerson(people[i]->id(), book));
+            PyTuple_SET_ITEM(result, i, PyPerson_newPerson(book, people[i]->id()));
         }
     }
     catch (LogBook::Exception& e) {
@@ -372,7 +363,7 @@ addPerson(PyObject* self, PyObject* args, PyObject* kwargs)
         
         // Now we can wrap this the Python way.
                 
-        result = newPerson(id, self);
+        result = PyPerson_newPerson(self, id);
 
     }
     catch (LogBook::Exception& e) {
@@ -454,7 +445,7 @@ getPerson(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "i", &id)) {
         return nullptr;
     }
-    return newPerson(id, self);
+    return PyPerson_newPerson(self, id);
 }
 //               Shift api:
 
@@ -803,7 +794,7 @@ findRun(PyObject* self, PyObject* args)
  * createNote
  *    Create a note. This requires note 'text' and has optional parameters
  *    with the following keywords:
- *
+ *    - 'author'   - not author.
  *    - 'images'   - Iterable containing image filenames.
  *    - 'offsets'  - Iterable containing image offsets.
  *    - 'run'      - Associated run number.
@@ -822,12 +813,13 @@ static PyObject*
 createNote(PyObject* self, PyObject* args, PyObject* kwargs)
 {
     const char* pText(nullptr);
+    PyObject*   pAuthor(nullptr);
     PyObject*   pImageFiles(nullptr);
     PyObject*   pImageOffsets(nullptr);
     PyObject*   pRun(nullptr);
     
     const char* keywords[] = {
-      "text", "images", "offsets", "run", nullptr  
+      "author", "text", "images", "offsets", "run", nullptr  
     };
     
     // Stuff we marshall from the parameters if present:
@@ -840,10 +832,19 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
     // Parse the arguments:
     
     if (!PyArg_ParseTupleAndKeywords(
-        args, kwargs, "|sOOO", const_cast<char**>(keywords),
-        &pText, &pImageFiles, &pImageOffsets, &pRun
+        args, kwargs, "|OsOOO", const_cast<char**>(keywords),
+        &pAuthor, &pText, &pImageFiles, &pImageOffsets, &pRun
     )) {
         return nullptr;             // Exception already raised.
+    }
+    // Must have an author:
+    
+    if (!pAuthor) {
+        PyErr_SetString(
+            logbookExceptionObject,
+            "Createing a note requires an author"
+        );
+        return nullptr;
     }
     // Must have text:
     
@@ -868,7 +869,15 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
             return nullptr;
         }
     }
+    // The author must be a personb..and get it:
     
+    if (!PyPerson_isPerson(pAuthor)) {
+        PyErr_SetString(
+            logbookExceptionObject, "'author' parameter must be a person object"
+        );
+        return nullptr;
+    }
+    LogBookPerson* pAuthorObject = PyPerson_getPerson(pAuthor);
     
     // Marshall the image filenames and offsets and validate.
 
@@ -883,6 +892,7 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
             logbookExceptionObject,
             "There must be the same number of image filenames as offsets are nare not"
         );
+        
         return nullptr;
     }
     
@@ -893,9 +903,10 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
     try {
         LogBook* pBook = PyLogBook_getLogBook(self);
         LogBookNote* pNote = pBook->createNote(
-            pText, imageFilenames, imageOffsets, pLogBookRun
+            *pAuthorObject, pText, imageFilenames, imageOffsets, pLogBookRun
         );
         result = PyNote_create(self, pNote);
+        
         delete pNote;                  // No longer needed.
     }
     catch (LogBook::Exception& e) {
@@ -907,7 +918,7 @@ createNote(PyObject* self, PyObject* args, PyObject* kwargs)
             "Unexpected exception type caught in create_note"
         );
     }
-    
+
     // Return the resulting note if it got made:
     
     Py_XINCREF(result);              // New ref if successful.
@@ -1168,6 +1179,7 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
         "get_note_run", getNoteRun, METH_VARARGS,
         "Get run associated with a note or None if unassociated"
     },
+    
     
     // Ending sentinel:
     
