@@ -90,6 +90,8 @@ TclLogBookInstance::operator()(
             getPerson(interp, objv);
         } else if (subcommand == "createShift") {
             createShift(interp, objv);
+        } else if (subcommand == "getShift") {
+            getShift(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -290,6 +292,23 @@ TclLogBookInstance::createShift(
     
     interp.setResult(result);
     
+}
+/**
+ * getShift
+ *    Returns a command object that encapsulates the shift whose
+ *    id is provided on the command line.
+ * @param interp  - interpreter running the command.
+ * @param objv    - The command words.
+ */
+void
+TclLogBookInstance::getShift(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logbookinstance> getShift shift-id");
+    int id = objv[2];
+    LogBookShift* pShift = m_logBook->getShift(id);
+    interp.setResult(wrapShift(interp, pShift));
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
