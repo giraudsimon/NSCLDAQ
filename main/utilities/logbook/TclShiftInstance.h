@@ -1,0 +1,51 @@
+/*
+    This software is Copyright by the Board of Trustees of Michigan
+    State University (c) Copyright 2017.
+
+    You may use this software under the terms of the GNU public license
+    (GPL).  The terms of this license are described at:
+
+     http://www.gnu.org/licenses/gpl.txt
+
+     Authors:
+             Ron Fox
+             Giordano Cerriza
+	     NSCL
+	     Michigan State University
+	     East Lansing, MI 48824-1321
+*/
+
+/** @file:  TclShiftInstance.h
+ *  @brief: Define a command wrapped shift.
+ */
+#ifndef TCLSHIFTINSTANCE_H
+#define TCLSHIFTINSTANCE_H
+#include <TCLObjectProcessor.h>
+#include <memory>
+
+class CTCLInterpreter;
+class CTCLObject;
+class LogBookShift;
+
+/**
+ * @class TclShiftInstance
+ *    Wraps a logbook shift in a command ensemble. Subcommands are:
+ *
+ *    - name -- Returns the shift name.
+ *    - id   -- Returns the  id of the shift
+ *    - members - Return shift members wrapped in command instances.
+ */
+class TclShiftInstance : public CTCLObjectProcessor
+{
+private:
+    std::shared_ptr<LogBookShift> m_shift;
+public:
+    TclShiftInstance(
+        CTCLInterpreter& interp, const char* cmd, LogBookShift* pShift
+    );
+    virtual ~TclShiftInstance();
+    
+    int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+};
+
+#endif

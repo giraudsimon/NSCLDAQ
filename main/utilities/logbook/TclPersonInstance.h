@@ -23,7 +23,7 @@
 #define TCLPERSONINSTANCE_H
 #include <TCLObjectProcessor.h>
 #include <memory>
-
+#include <map>
 
 class LogBookPerson;
 
@@ -42,6 +42,7 @@ class TclPersonInstance : public CTCLObjectProcessor
 {
 private:
     std::shared_ptr<LogBookPerson> m_person;
+    static std::map<std::string, TclPersonInstance*> m_personCommands;
 public:
     TclPersonInstance(
         CTCLInterpreter& interp, const char* name, LogBookPerson* pPerson
@@ -49,6 +50,11 @@ public:
     virtual ~TclPersonInstance();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    // getters:
+public:
+    LogBookPerson* getPerson() { return m_person.get(); }
+public:
+    static TclPersonInstance* getCommandObject(const std::string& name);
 };
 
 

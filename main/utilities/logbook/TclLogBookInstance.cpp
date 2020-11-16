@@ -22,6 +22,7 @@
 #include "TclLogBookInstance.h"
 #include "TclLogbook.h"
 #include "TclPersonInstance.h"
+#include "TclShiftInstance.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include <TCLInterpreter.h>
@@ -87,6 +88,8 @@ TclLogBookInstance::operator()(
             listPeople(interp, objv);
         } else if (subcommand == "getPerson" ) {
             getPerson(interp, objv);
+        } else if (subcommand == "createShift") {
+            createShift(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -124,6 +127,7 @@ TclLogBookInstance::operator()(
 ///////////////////////////////////////////////////////////////////////////////
 // Subcommand executor methods.
 
+/////////////////////////// API for people ///////////////////////////////////
 /**
  * addPerson
  *   Adds a new person to the logbook.  See the .h file for the syntax
@@ -235,6 +239,58 @@ TclLogBookInstance::getPerson(
     std::string newCommand = wrapPerson(interp, pPerson);
     interp.setResult(newCommand);
 }
+//////////////////////////// API For shifts ///////////////////////////////////
+
+/**
+ * createShift
+ *     Create a new shift and wrap it in a shift instance command.
+ *     The shift requires one or two additional parameters:
+ *     -  The first, mandatory, parameter is the name of the new shift.
+ *     -  The second, optional, parameter is a list of the names of person
+ *         command instances that are in the shift.
+ *     -  Any person command names are converted to LogBookPerson instance pointers.
+ *     -  The logbook shift is creasted.
+ *     -  It is then wrapped in the shift command.
+ *     -  The name of the shift command is returned as the result.
+ * @param interp - interpreter running the command.
+ * @param objv   - the command words.
+ */
+void
+TclLogBookInstance::createShift(
+    CTCLInterpreter&interp, std::vector<CTCLObject>& objv
+)
+{
+    std::string usage = "Usage: <logbook instance> createShift name ?people?";
+    std::string name;
+    std::vector<LogBookPerson*> people;
+    requireAtLeast(objv, 3, usage.c_str());
+    requireAtMost(objv, 4, usage.c_str());
+    
+    name = std::string(objv[2]);
+    if (objv.size() == 4) {
+        // Marshall the names -> personCommands.
+        // If there's a failure then an exception will get thrown.
+        
+        int peopleCount = objv[3].llength();
+        for (int i =0; i < peopleCount; i++) {
+            CTCLObject o = objv[3].lindex(i);
+            o.Bind(interp);
+            std::string cmdName = std::string(o);
+            people.push_back(
+                (TclPersonInstance::getCommandObject(cmdName))->getPerson()
+            );
+        }
+        
+    }
+    // Create the shift and wrap it:
+    
+    LogBookShift* pShift = m_logBook->createShift(name.c_str(), people);
+    std::string result = wrapShift(interp, pShift);
+    
+    
+    interp.setResult(result);
+    
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
@@ -251,5 +307,19 @@ TclLogBookInstance::wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson)
     std::string newCommand = TclLogbook::createObjectName("person");
     new TclPersonInstance(interp, newCommand.c_str(), pPerson);
     
+    return newCommand;
+}
+/**
+ * wrapShift
+ *    Take a shift object and wrap it in a TclShiftInstance command
+ * @param interp   - interpreter on which the shift command is registered.
+ * @param pShift   - Pointer to the shift to wrap.
+ * @return std::string -name of the shift command.
+ */
+std::string
+TclLogBookInstance::wrapShift(CTCLInterpreter& interp, LogBookShift* pShift)
+{
+    std::string newCommand = TclLogbook::createObjectName("shift");
+    new TclShiftInstance(interp, newCommand.c_str(), pShift);
     return newCommand;
 }

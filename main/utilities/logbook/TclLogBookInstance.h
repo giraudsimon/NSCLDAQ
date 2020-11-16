@@ -25,6 +25,7 @@
 #include <string>
 class LogBook;
 class LogBookPerson;
+class LogBookShift;
 
 /**
  * @class TclLogBookInstance
@@ -50,10 +51,10 @@ class LogBookPerson;
  *
  *   API to access LogBookShift objects:
  *
+ *     - createShift shiftname ?list-of-person-commands-for-people-in-shift
  *     - getShift id
  *     - addShiftMember shiftCommand personCommand
  *     - removeShiftMember shifCommand personCommand
- *     - createShift shiftname ?list-of-person-commands-for-people-in-shift
  *
  *  API to access Runs
  *
@@ -94,8 +95,10 @@ private:
     void findPeople(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void listPeople(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getPerson(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void createShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
+    std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
 };
 
 #endif

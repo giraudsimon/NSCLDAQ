@@ -24,8 +24,9 @@
 #include <TCLObject.h>
 #include <Exception.h>
 #include <stdexcept>
+#include <sstream>
 
-
+std::map<std::string, TclPersonInstance*> TclPersonInstance::m_personCommands;
 /**
  * constructor.
  *   @param interp - interpreter on which the cmd is registered.
@@ -37,12 +38,23 @@ TclPersonInstance::TclPersonInstance(
 ) :
     CTCLObjectProcessor(interp, name, true),
     m_person(pPerson)
-{}
+{
+    // Save a lookup entry for the command.
+    
+    m_personCommands[name] = this;        
+}
 /**
  * destructor
  */
 TclPersonInstance::~TclPersonInstance()
-{}
+{
+    // Destroy a lookup entry for the command.
+    
+    auto mapEntry = m_personCommands.find(getName());
+    if (mapEntry != m_personCommands.end()) {
+        m_personCommands.erase(mapEntry);
+    }
+}
 
 /**
  * operator()
@@ -53,4 +65,23 @@ int TclPersonInstance::operator()(
 )
 {
     return TCL_OK;
+}
+/**
+ * getCommanObject [static]
+ *    Lookup a command object by name.
+ *  @param name - name of the command.
+ *  @return TclPersonInstance* - pointer to the command.
+ *  @throw std::out_of_range - if there's no mathcing entry.
+ */
+TclPersonInstance*
+TclPersonInstance::getCommandObject(const std::string& name)
+{
+    auto p = m_personCommands.find(name);
+    if (p == m_personCommands.end()) {
+        std::stringstream msg;
+        msg << name << " is not an existing person instance command";
+        std::string e = msg.str();
+        throw std::out_of_range(e);
+    }
+    return p->second;
 }
