@@ -93,6 +93,7 @@ private:
     void addPerson(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void findPeople(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void listPeople(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void getPerson(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
 };

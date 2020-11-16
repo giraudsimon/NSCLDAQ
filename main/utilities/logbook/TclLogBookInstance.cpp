@@ -85,6 +85,8 @@ TclLogBookInstance::operator()(
             findPeople(interp, objv);
         } else if (subcommand == "listPeople") {
             listPeople(interp, objv);
+        } else if (subcommand == "getPerson" ) {
+            getPerson(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -214,6 +216,24 @@ TclLogBookInstance::listPeople(
 {
     requireExactly(objv, 2, "Usage: <logbookinstance> listPeople");
     findPeople(interp, objv);
+}
+/**
+ * getPerson
+ *    Retrieve a person object by id (database primary key).
+ *
+ * @param interp - interpreter on which the command is executing.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::getPerson(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logbookinstance> getPerson id");
+    int id(objv[2]);
+    LogBookPerson* pPerson = m_logBook->getPerson(id);
+    std::string newCommand = wrapPerson(interp, pPerson);
+    interp.setResult(newCommand);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
