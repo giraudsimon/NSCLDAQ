@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 class LogBook;
+class LogBookPerson;
 
 /**
  * @class TclLogBookInstance
@@ -90,7 +91,9 @@ public:
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     void addPerson(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
-    
+    void findPeople(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+private:
+    std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
 };
 
 #endif

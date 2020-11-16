@@ -60,7 +60,9 @@ tcltest::test create_1 {Create command requires sufficient params} \
 } -result 1
 
 tcltest::test create_2 {successful creation} \
--setup {} \
+-setup {
+    if {[file exists test.logbook.db]} {file delete test.logbook.db}
+} \
 -cleanup {
     file delete test.logbook.db
 } \
@@ -132,10 +134,11 @@ tcltest::test open_4 {too many parameters} \
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
-    varible numTests
+    variable numTests
     set ::exitCode [expr {$numTests(Failed) > 0}]
 }
 
 
-
+tcltest::cleanupTestHook
 tcltest::cleanupTests
+exit $::exitCode

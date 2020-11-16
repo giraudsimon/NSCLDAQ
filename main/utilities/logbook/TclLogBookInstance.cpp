@@ -21,6 +21,7 @@
 
 #include "TclLogBookInstance.h"
 #include "TclLogbook.h"
+#include "TclPersonInstance.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include <TCLInterpreter.h>
@@ -80,6 +81,8 @@ TclLogBookInstance::operator()(
             delete this;
         } else if (subcommand == "addPerson") {
             addPerson(interp, objv);
+        } else if (subcommand == "findPeople") {
+            findPeople(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -153,9 +156,63 @@ TclLogBookInstance::addPerson(
     
     // Wrap a new TclPersonInstance in the person object.
     
-    std::string newCommand = TclLogbook::createObjectName("person");
-    
-    // TOD: Create TclLogBookPersonIntance....
+    std::string newCommand = wrapPerson(interp, pPerson);
     
     interp.setResult(newCommand);
+}
+/**
+ * findPeople
+ *    Return a (possibly empty) list of commands that wrap people
+ *    in the database that satisfy an optional where clause.
+ *    e.g. <instance> findPeople {lastname = 'Fox'}
+ *    - must be at most three command words.
+ *    - call the logbook::findPeople method.
+ *    - wrap all the results in commands that are inserted into the
+ *      list set as the result.
+ *      
+ *  @param interp - interpreter on which the command is executing.
+ *  @param objv  - The command words.
+ */
+void
+TclLogBookInstance::findPeople(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireAtMost(objv, 3, "Usage: <logbookinstance> findPeople ?where-clause?");
+    const char* whereCstring(nullptr);
+    std::string whereClause;
+    if (objv.size() == 3) {
+        whereClause = std::string(objv[2]);
+        whereCstring = whereClause.c_str();
+    }
+    
+    auto people = m_logBook->findPeople(whereCstring);
+    CTCLObject result;
+    result.Bind(interp);
+    for (int i =0; i < people.size(); i++) {
+        CTCLObject item;
+        item.Bind(interp);
+        std::string wrappedPerson = wrapPerson(interp, people[i]);
+        item = std::string(wrappedPerson);
+        result += item;
+    }
+    interp.setResult(result);
+}
+///////////////////////////////////////////////////////////////////////////////
+// Private utilities:
+
+/**
+ * wrapPerson
+ *    Wrap a LogBookPerson instance in a TclPersonInstance.
+ *  @param interp -interpreter on which to register the command.
+ *  @param pPerson - pointer to the person.
+ *  @return std::string -new command name.
+ */
+std::string
+TclLogBookInstance::wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson)
+{
+    std::string newCommand = TclLogbook::createObjectName("person");
+    new TclPersonInstance(interp, newCommand.c_str(), pPerson);
+    
+    return newCommand;
 }
