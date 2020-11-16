@@ -28,6 +28,12 @@ package require tcltest
 package require logbook
 package require sqlite3
 
+# In case there are hanging files:
+
+if {[file exists test.logbook.db]} {
+    file delete test.logbookk.db
+}
+
 tcltest::test base_command {Check that the command is defined.} \
 -setup {
     

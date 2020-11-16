@@ -22,6 +22,7 @@
 #define TCLLOGBOOKINSTANCE_H
 #include "TCLObjectProcessor.h"
 #include <memory>
+#include <string>
 class LogBook;
 
 /**
@@ -81,11 +82,15 @@ class TclLogBookInstance : public CTCLObjectProcessor
 {
 private:
     std::shared_ptr<LogBook> m_logBook;
+    int                      m_commandIndex;
 public:
     TclLogBookInstance(CTCLInterpreter* pInterp, const char* cmd, LogBook* pBook);
     virtual ~TclLogBookInstance();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+private:
+    void addPerson(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    
 };
 
 #endif

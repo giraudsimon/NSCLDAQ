@@ -59,9 +59,10 @@ check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pynotetests.py
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbook.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbookinstance.test
 	@builddir@/unittests
 
 check: check-TESTS
 
 EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
-	pyruntests.py pynotetests.py logbook.test
+	pyruntests.py pynotetests.py logbook.test logbookinstance.test

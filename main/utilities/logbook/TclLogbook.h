@@ -44,18 +44,20 @@
 class TclLogbook : public CTCLObjectProcessor
 {
 private:
-    int m_instanceCounter;              // Used to make unique object names.
+    static int m_instanceCounter;              // Used to make unique object names.
 public:
     TclLogbook(CTCLInterpreter* pInterp, const char* pCommand);
     virtual ~TclLogbook();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    static std::string createObjectName(const char* prefix);
+    static std::string reconstructCommand(std::vector<CTCLObject>& objv);
 private:
     void create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
 private:
-    std::string createObjectName(const char* prefix);
+    
     std::string usage(std::vector<CTCLObject>& objv, const char* msg);
 };
 

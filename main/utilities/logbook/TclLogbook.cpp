@@ -28,6 +28,7 @@
 
 #include "TclLogBookInstance.h"
 
+int TclLogbook::m_instanceCounter(0);
 /**
  * constructor
  *    Create and register the command as per the caller:
@@ -36,8 +37,7 @@
  *  @param name   - Full path name of the command e.g. logbook::logbook.
  */
 TclLogbook::TclLogbook(CTCLInterpreter* pInterp, const char* pCommand) :
-    CTCLObjectProcessor(*pInterp, pCommand, true),
-    m_instanceCounter(0)
+    CTCLObjectProcessor(*pInterp, pCommand, true)
 {}
 /**
  * destructor
@@ -157,8 +157,8 @@ TclLogbook::open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     
     interp.setResult(commandName);
 }
-///////////////////////////////////////////////////////////////////////////////
-//  private methods.
+////////////////////////////////////////////////////////////////////////////////
+// Static methods:
 
 /**
  * createObjectName
@@ -176,6 +176,29 @@ TclLogbook::createObjectName(const char* prefix)
     return result;
 }
 /**
+ * reconstructCommand
+ *    Given an objv reconstructs the original command - after substitutions
+ *    were performed that is
+ * @param objv - vector of command word objects.
+ * @note  Elements of objv must be bound to an interpreter.
+ * @return std::string - reconstructed command.
+ * @note - there will be a trailing space on the back end of the returned string.
+ */
+std::string
+TclLogbook::reconstructCommand(std::vector<CTCLObject>& objv) {
+    std::string result;
+    for (int i = 0; i < objv.size(); i++) {
+        result += std::string(objv[i]);
+        result += " ";
+    }
+    
+    return result;
+}
+///////////////////////////////////////////////////////////////////////////////
+//  private methods.
+
+
+/**
  * usage
  *    returns a usage like string.
  * @param objv - the command words.
@@ -186,11 +209,8 @@ std::string
 TclLogbook::usage(std::vector<CTCLObject>& objv, const char* msg)
 {
     std::string result("ERROR - commmand: ");
-    for (int i =0; i < objv.size(); i++) {
-        std::string word = objv[i];
-        result += word;
-        result += " ";
-    }
+    result += reconstructCommand(objv);
+    
     result += "\n";
     result += msg;
     
