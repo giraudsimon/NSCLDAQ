@@ -83,6 +83,8 @@ TclLogBookInstance::operator()(
             addPerson(interp, objv);
         } else if (subcommand == "findPeople") {
             findPeople(interp, objv);
+        } else if (subcommand == "listPeople") {
+            listPeople(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -197,6 +199,21 @@ TclLogBookInstance::findPeople(
         result += item;
     }
     interp.setResult(result);
+}
+/**
+ * listPeople
+ *   This is essentially findPeople with an enforced lack of a WHERE clause
+ *
+ * @param interp - intepreter on which we're running.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::listPeople(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <logbookinstance> listPeople");
+    findPeople(interp, objv);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
