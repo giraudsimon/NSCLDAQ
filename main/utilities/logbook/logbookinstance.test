@@ -1,0 +1,472 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   logbookinstance.test
+# @brief  Test logbook instances.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require logbook
+package require sqlite3
+
+# In case there are hanging files:
+
+if {[file exists test.logbook.db]} {
+    file delete test.logbookk.db
+}
+
+#  Commmon setup/cleanup procs.
+
+set LogbookInstance {}
+proc commonSetup {} {
+    if {[file exists test.logbook.db]} {file delete test.logbook.db}
+    logbook::logbook create test.logbook.db 0400x {Ron Fox} {Logbook Tcl Tests}
+    set ::LogbookInstance [logbook::logbook open test.logbook.db]
+}
+proc commonCleanup {} {
+    $::LogbookInstance destroy
+    file delete test.logbook.db
+}
+
+
+tcltest::test cmd_exists {Ensure the command exists properly} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    expr {[info command $::LogbookInstance] ne ""}
+} \
+-result 1
+
+#####################
+
+tcltest::test usage_1 { Need to have a subcommand} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstance}
+} -result 1
+
+tcltest::test usage_2 {garbage subcommand is an error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstancde junky-subcommand}
+} -result 1
+
+#####################
+
+tcltest::test destroy_1 {Destroy makes the command go away} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    file delete test.logbook.db
+} \
+-body {
+    $::LogbookInstance destroy
+    info command $::LogbookInstance
+} -result ""
+
+#########################
+
+
+
+tcltest::test addPerson_1 {Add person insufficient parameter count} \
+-setup {
+    commonSetup
+} -cleanup {
+    commonCleanup
+} -body {
+    catch {$::LogbookInstance addPerson lastname-only}
+} -result 1
+
+tcltest::test addPerson_2 {Add Person too many parameters} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstance addPerson lastname firstname salutation estra}
+} -result 1
+
+
+tcltest::test addPerson_3 {Add person with salutation} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set cmd [$::LogbookInstance addPerson Fox Ron Mr.]
+    set result [expr {[info command $cmd] ne ""}]
+    $cmd destroy    
+    set result
+    
+} -result 1
+
+tcltest::test addPerson_4 {Add Person without salutation} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set cmd [$::LogbookInstance addPerson Fox Ron]
+    set result [expr  {[info command $cmd] ne ""}]
+    $cmd destroy
+    set result
+} -result 1
+
+
+########################################################
+
+tcltest::test findPerson_1 {No people to find} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance findPeople
+} -result [list]
+
+tcltest::test findPerson_2 {two people to find no conditions} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople]
+    
+    llength $people
+} -result 2
+
+tcltest::test find_person_3 {one person due to conditions} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople {lastname = 'Fox'}]
+    llength $people
+} -result 1
+
+tcltest::test find_person_4 {Nobody matches the condition} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople {lastname = 'Fox' AND firstname = 'Giordano'}]
+    llength $people
+} -result 0
+
+##########################################################
+
+tcltest::test listPeople_1 {Nobody to list} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    set people [$::LogbookInstance listPeople]
+    llength $people
+} -result 0
+
+tcltest::test listPeople_2 {two people to list} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance listPeople]
+    llength $people
+} -result 2 
+
+####################################################################
+
+tcltest::test getperson_1 {Not found is an error} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getPerson 1
+} -returnCodes error -result * -match glob
+
+tcltest::test getperson_2 {Found gets a command} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $cmd      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    
+    # Giordano is id  2:
+    
+    set cmd [$::LogbookInstance  getPerson 2]
+    expr {[info command $cmd] ne ""}
+} -result 1
+######################################################################
+
+tcltest::test newshift_1 {Create a new empty shift} \
+-setup { commonSetup } -cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift shift]
+    expr {[info command $shift] ne ""}
+} -result 1
+
+
+tcltest::test newshift_2 {Create a shift with people} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift [list $fox $giordano]]
+    
+    expr {[info command $shift] ne ""}
+} -result 1
+
+tcltest::test newshift_3 {Create a shift but bad person command name} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    
+    set shift [$::LogbookInstance  createShift shift $fox giordano]
+} -returnCodes error  -result * -match glob
+
+
+#########################################################################
+
+tcltest::test getShift_1 {No such shift is an error} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getShift 12
+} -returnCodes error -result * -match glob
+
+tcltest::test getShift_2 {Find a shift properly} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift    destroy
+    $shift1   destroy
+    $sh       destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift [list $fox $giordano]]
+    set shift1 [$::LogbookInstance createShift shift1]
+    
+    set sh [$::LogbookInstance getShift 2]
+    expr {[info command $sh] ne ""}
+} -result 1
+
+#=================================================================
+
+tcltest::test addShiftMember_1 {Bad shift} \
+-setup { commonSetup } \
+-cleanup {
+    $fox destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $LogbookInstance addShiftMember ashift $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test addShiftMember_2 {Bad Person} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift  $fox]
+    $::LogbookInstance addShiftMember giordano;    # Needs to be $giordano
+} -returnCodes error -result * -match glob
+
+tcltest::test addShiftMember_3 {good add} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift  $fox]
+    set modifiedShift [$::LogbookInstance addShiftMember $shift $giordano]
+    expr {$shift == $modifiedShift}
+} -result 1
+
+###########################################################################
+
+tcltest::test removeShiftMember_1 {No such shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember nosuchshift $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_2 {No such person} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance  createShift ashift]
+    $::LogbookInstance removeShiftMember $shift fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_3 {No such person in the shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_4 {Good removal} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $fox   destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $fox]
+    set oldshift [$::LogbookInstance removeShiftMember $shift $fox]
+    
+    expr {$oldshift == $shift}
+    
+} -result 1
+
+###########################################################
+
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode
