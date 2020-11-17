@@ -642,6 +642,73 @@ tcltest::test end_2 {Can't end an ended run} \
     $::LogbookInstance end $run {This run is already ended}
 } -returnCodes error -result * -match glob
     
+#############################################################################
+
+tcltest::test pauseRun_1 {Successful pause} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {This is a pause}]
+    expr {$pause == $run}
+} -result 1
+    
+tcltest::test pauseRun_2 {Can't pause paused run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {This is a pause}]
+    $::LogbookInstance pause $run {This should fail}
+} -returnCodes error -result * -match glob
+
+tcltest::test pauseRun_2 {Can't pause an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set ended [$::LogbookInstance end $run {The run is now ended.}]
+    $::LogbookInstance pause $run {This should fail}
+} -returnCodes error -result * -match glob
+
+tcltest::test pauseRun_3 {Can end a paused Run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {The run is now Paused}]
+    set ended [$::LogbookInstance end $run {The run is now ended}]
+    expr {$ended == $run}
+} -result 1
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

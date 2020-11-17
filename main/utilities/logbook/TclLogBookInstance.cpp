@@ -112,7 +112,8 @@ TclLogBookInstance::operator()(
             beginRun(interp, objv);
         } else if (subcommand == "end") {
             endRun(interp, objv);    
-        
+        } else if (subcommand == "pause") {
+            pauseRun(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -560,7 +561,37 @@ TclLogBookInstance::endRun(
     
     interp.setResult(run);
 }
-
+/**
+ * pauseRun
+ *   Pause the specified run.
+ * @param interp -interpreter running the command.
+ * @param objv   - the command words.
+ */
+void
+TclLogBookInstance::pauseRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    const char* usage = "Usage: <logbookinstance> pause <run-command> ?remark?";
+    requireAtLeast(objv, 3, usage);
+    requireAtMost(objv, 4, usage);
+    
+    std::string run(objv[2]);
+    const char* remark(nullptr);
+    std::string remarkString;
+    if (objv.size() == 4) {
+        remarkString= std::string(objv[3]);
+        remark  = remarkString.c_str();
+    }
+    // Get the run object:
+    
+    TclRunInstance *pInstance = TclRunInstance::getCommandObject(run);
+    LogBookRun* pRun = pInstance->getRun();
+    m_logBook->pause(pRun, remark);
+    
+    pInstance->setRun(pRun);
+    interp.setResult(run);
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
