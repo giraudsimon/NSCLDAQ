@@ -458,6 +458,66 @@ tcltest::test removeShiftMember_4 {Good removal} \
 
 ###########################################################
 
+tcltest::test listShifts_1   {Nothing to list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance listShifts
+} -result [list]
+
+tcltest::test listShifts_2   {One shift to list} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach s $shifts {$s destroy}
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    set shifts [$::LogbookInstance listShifts]
+    llength $shifts
+} -result 1
+
+tcltest::test listShifts_3   {Several shifts to list} \
+-setup {commonSetup} -cleanup {
+    foreach s $madeShifts {$s destroy}
+    foreach s $shifts {$s destroy}
+    commonCleanup
+} \
+-body {
+    set madeShifts [list]
+    for {set i 0} {$i < 10} {incr i} {
+        lappend madeShifts [$::LogbookInstance createShift shift-$i]
+    }
+    set shifts [$::LogbookInstance listShifts]
+    llength $shifts
+} -result 10
+#######################################################################
+
+tcltest::test findShift_1 {No such shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
+
+
+tcltest::test findShift_2 {Find shift }  \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
 
 #----------------------------------------------------
 

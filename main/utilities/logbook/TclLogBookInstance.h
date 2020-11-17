@@ -55,6 +55,10 @@ class LogBookShift;
  *     - getShift id
  *     - addShiftMember shiftCommand personCommand
  *     - removeShiftMember shifCommand personCommand
+ *     - listShifts
+ *     - findShift shiftname
+ *     - setCurrentShift shiftname
+ *     - getCurrenShift
  *
  *  API to access Runs
  *
@@ -99,7 +103,9 @@ private:
     void createShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void addShiftMember(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
-    
+    void removeShiftMember(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void listShifts(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void findShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);

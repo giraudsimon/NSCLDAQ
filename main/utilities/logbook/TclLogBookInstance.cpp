@@ -25,6 +25,7 @@
 #include "TclShiftInstance.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
+#include "LogBookShift.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <Exception.h>
@@ -94,6 +95,12 @@ TclLogBookInstance::operator()(
             getShift(interp, objv);
         } else if (subcommand == "addShiftMember") {
             addShiftMember(interp, objv);
+        } else if (subcommand == "removeShiftMember") {
+            removeShiftMember(interp, objv);
+        } else if (subcommand == "listShifts") {
+            listShifts(interp, objv);
+        } else if (subcommand == "findShift") {
+            findShift(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -201,10 +208,10 @@ TclLogBookInstance::findPeople(
     auto people = m_logBook->findPeople(whereCstring);
     CTCLObject result;
     result.Bind(interp);
-    for (int i =0; i < people.size(); i++) {
+    for (auto p : people) {
         CTCLObject item;
         item.Bind(interp);
-        std::string wrappedPerson = wrapPerson(interp, people[i]);
+        std::string wrappedPerson = wrapPerson(interp, p);
         item = std::string(wrappedPerson);
         result += item;
     }
@@ -325,7 +332,7 @@ TclLogBookInstance::addShiftMember(
 {
     requireExactly(
         objv, 4,
-        "Usage: <interp-instance> addShiftMember shift-command person-command"
+        "Usage: <logbook-instance> addShiftMember shift-command person-command"
     );
     std::string shiftCmd(objv[2]);
     std::string personCmd(objv[3]);
@@ -340,6 +347,86 @@ TclLogBookInstance::addShiftMember(
     m_logBook->addShiftMember(pShift, pPerson);
     
     interp.setResult(shiftCmd);          // To make it look like the LogBook class.
+}
+/**
+ * removeShiftMember
+ *     Remove a member from a shift. The required parameters are a shift
+ *     command and a person command representing the person to remove
+ *     from the shift.
+ * @param interp - interpreter the command is runing under.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::removeShiftMember(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(
+        objv, 4,
+        "Usage: <logbook-instance> removeShiftMember shift-command person-command"
+    );
+    
+    std::string shiftCmd(objv[2]);
+    std::string personCmd(objv[3]);
+    
+    LogBookShift* pShift =
+        (TclShiftInstance::getCommandObject(shiftCmd))->getShift();
+    LogBookPerson* pPerson =
+        (TclPersonInstance::getCommandObject(personCmd))->getPerson();
+    
+    m_logBook->removeShiftMember(pShift, pPerson);
+    
+    interp.setResult(shiftCmd);
+}
+/**
+ * listShifts
+ *    Return a (possibly empty) list of wrapped shifts that list all of the
+ *    shifts in the database.
+ * @param interp - interpreter the command is running under.
+ * @param objv   - vector of command words that make up the command.
+ */
+void
+TclLogBookInstance::listShifts(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <logbook-instance> listShifts");
+    auto rawShifts = m_logBook->listShifts();
+    
+    CTCLObject result;
+    result.Bind(interp);
+    for (auto p : rawShifts) {
+        CTCLObject element;
+        element.Bind(interp);
+        std::string shiftCommand = wrapShift(interp, p);
+        
+        element = std::string(shiftCommand);
+        result += element;
+    }
+    
+    interp.setResult(result);
+}
+/**
+ * findShift
+ *    Return an encapsulated shift given the shift name.
+ *    If {} is returned, then there's no matching shift.
+ * @param interp - interpreter running the command.
+ * @param objv   - Vector of command words.
+ */
+void
+TclLogBookInstance::findShift(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> findShift <shiftname>");
+    std::string shiftName(objv[2]);
+    auto pShift = m_logBook->findShift(shiftName.c_str());
+    std::string result("");
+    if (pShift) {
+        result = wrapShift(interp, pShift);
+    }
+    interp.setResult(result);
+   
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
