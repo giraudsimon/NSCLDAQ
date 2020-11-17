@@ -573,7 +573,41 @@ tcltest::test getCurrent_2 {There is a current shift}  \
     set current [$::LogbookInstance getCurrentShift]
     expr {$current ne ""}
 } -result 1
+##############################################################################
+
+tcltest::test begin_1  {There's no current shift}\
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance begin 1 {This is a title} {This is a remark}
+} -returnCodes error -result * -match glob
+
+tcltest::test begin_2  {Good begin} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift theshift]
+    $::LogbookInstance setCurrentShift theshift
+    set run [$::LogbookInstance begin 1 {This is a title} {This is a remark}]
     
+    expr {[info command $run] ne ""}
+        
+} -result 1
+
+tcltest::test begin_3  {existing current run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift theshift]
+    $::LogbookInstance setCurrentShift theshift
+    set run [$::LogbookInstance begin 1 {This is a title} {This is a remark}]
+    $::LogboogkInstance begin 2 {This is a title} {A run is already active!!}
+} -returnCodes error -result * -match glob
     
 #----------------------------------------------------
 

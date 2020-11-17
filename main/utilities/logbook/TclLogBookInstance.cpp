@@ -23,9 +23,11 @@
 #include "TclLogbook.h"
 #include "TclPersonInstance.h"
 #include "TclShiftInstance.h"
+#include "TclRunInstance.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
+#include "LogBookRun.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <Exception.h>
@@ -105,6 +107,9 @@ TclLogBookInstance::operator()(
             setCurrentShift(interp, objv);
         } else if (subcommand == "getCurrentShift") {
             getCurrentShift(interp, objv);
+        } else if (subcommand == "begin") {
+            
+            beginRun(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -479,6 +484,43 @@ TclLogBookInstance::getCurrentShift(
     }
     interp.setResult(result);
 }
+////////////////////////////////////////////////////////////////////////////////
+// Run API
+
+/**
+ * beginRun
+ *    Begin a new run.  This creates a new run object and a wrapping command
+ *    object. The name of the wrapping command object is returned.
+ * @param interp - interpreter on which the command is running.
+ * @param objv   - the command words.
+ */
+void
+TclLogBookInstance::beginRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    // We need a run number a title and an optional note.
+    
+    const char* Usage =
+     "Usage: <logbook-instance> begin number title ?remark?";
+    requireAtLeast(objv, 4, Usage);
+    requireAtMost(objv, 5, Usage);
+    
+    int run(objv[2]);
+    std::string title(objv[3]);
+    const char* remark(nullptr);
+    std::string remarkString;
+    if (objv.size() == 5) {
+        remarkString = std::string(objv[4]);
+        remark = remarkString.c_str();
+    }
+    // Read to make and wrap the new run object (unless there are objectsions
+    // from the underlying API):
+    
+    LogBookRun* pRun = m_logBook->begin(run, title.c_str(), remark);
+    std::string result = wrapRun(interp, pRun);
+    interp.setResult(result);
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
@@ -509,5 +551,19 @@ TclLogBookInstance::wrapShift(CTCLInterpreter& interp, LogBookShift* pShift)
 {
     std::string newCommand = TclLogbook::createObjectName("shift");
     new TclShiftInstance(interp, newCommand.c_str(), pShift);
+    return newCommand;
+}
+/**
+ * wrapRun
+ *   Wrap a run object in a tcl command ensemble.
+ * @param interp - interpreter the command gets registered on.
+ * @param pRun   - The run object to wrap.
+ * @return std::string - the new command name.
+ */
+std::string
+TclLogBookInstance::wrapRun(CTCLInterpreter& interp, LogBookRun* pRun)
+{
+    std::string newCommand = TclLogbook::createObjectName("run");
+    new TclRunInstance(interp, newCommand.c_str(), pRun);
     return newCommand;
 }

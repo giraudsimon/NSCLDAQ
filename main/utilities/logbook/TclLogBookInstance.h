@@ -26,6 +26,7 @@
 class LogBook;
 class LogBookPerson;
 class LogBookShift;
+class LogBookRun;
 
 /**
  * @class TclLogBookInstance
@@ -63,14 +64,14 @@ class LogBookShift;
  *  API to access Runs
  *
  *     - begin number title ?remark?
- *     - runId  run-command
- *     - currentRun
  *     - end  runCommand ?remark?
  *     - pause runCommand ?remark?
  *     - resume runCommand ?remark?
  *     - emergencyStop runCommand ?remark?
  *     - listRuns
  *     - findRun run_number
+ *     - runId  run-command
+ *     - currentRun
  *
  * API for notes:
  *
@@ -108,9 +109,12 @@ private:
     void findShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void setCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    
+    void beginRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
+    std::string wrapRun(CTCLInterpreter& interp, LogBookRun* pRun);
 };
 
 #endif
