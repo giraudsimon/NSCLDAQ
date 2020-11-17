@@ -519,6 +519,36 @@ tcltest::test findShift_2 {Find shift }  \
 } -returnCodes error -result * -match glob
 
 
+###########################################################################
+
+tcltest::test setCurrent_1 {No such shift} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance setCurrentShift nosuch
+} -returnCodes error -result * -match glob
+
+
+tcltest::test setCurrent_2 {Correct call} \
+-setup {commonSetup} -cleanup {
+    $shift1 destroy
+    $shift2 destroy
+} \
+-body {
+    set shift1 [$::LogbookInstance createShift shift1]
+    set shift2 [$::LogbookInstance createShift shift2]
+    
+    $::LogbookInstance setCurrentShift shift2
+    
+    sqlite3 db test.logbook.db
+    set result [list]
+    db eval {SELECT name FROM current_shift
+        INNER JOIN shift ON shift.id = current_shift.shift_id} {
+        set result $name
+    }
+    db close
+    set result
+} -result shift2
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

@@ -106,6 +106,7 @@ private:
     void removeShiftMember(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void listShifts(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void findShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void setCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
