@@ -62,9 +62,9 @@ class LogBookShift;
  *
  *  API to access Runs
  *
+ *     - begin number title ?remark?
  *     - runId  run-command
  *     - currentRun
- *     - begin number title ?remark?
  *     - end  runCommand ?remark?
  *     - pause runCommand ?remark?
  *     - resume runCommand ?remark?
@@ -107,6 +107,7 @@ private:
     void listShifts(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void findShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void setCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void getCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);

@@ -532,6 +532,7 @@ tcltest::test setCurrent_2 {Correct call} \
 -setup {commonSetup} -cleanup {
     $shift1 destroy
     $shift2 destroy
+    commonCleanup
 } \
 -body {
     set shift1 [$::LogbookInstance createShift shift1]
@@ -548,7 +549,32 @@ tcltest::test setCurrent_2 {Correct call} \
     db close
     set result
 } -result shift2
+#######################################################################
 
+tcltest::test getCurrent_1 {There's no current shift} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getCurrentShift
+} -result ""
+
+tcltest::test getCurrent_2 {There is a current shift}  \
+-setup {commonSetup} -cleanup {
+    $shift1 destroy
+    $shift2 destroy
+    $current destroy
+    commonCleanup
+} \
+-body {
+    set shift1 [$::LogbookInstance createShift shift1]
+    set shift2 [$::LogbookInstance createShift shift2]
+    
+    $::LogbookInstance setCurrentShift shift2
+    
+    set current [$::LogbookInstance getCurrentShift]
+    expr {$current ne ""}
+} -result 1
+    
+    
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

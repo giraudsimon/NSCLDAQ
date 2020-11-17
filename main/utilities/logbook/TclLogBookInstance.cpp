@@ -103,6 +103,8 @@ TclLogBookInstance::operator()(
             findShift(interp, objv);
         } else if (subcommand  == "setCurrentShift") {
             setCurrentShift(interp, objv);
+        } else if (subcommand == "getCurrentShift") {
+            getCurrentShift(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -455,6 +457,27 @@ TclLogBookInstance::setCurrentShift(
         throw std::invalid_argument(e);
     }
     m_logBook->setCurrentShift(pShift);
+}
+/**
+ * getCurrentShift
+ *    Returns the command wrapped current shift.
+ *    This will be an empty string if there is no current shift.
+ * @param interp - interpreter on which the command is running.
+ * @param objv   - Command words.
+ */
+void
+TclLogBookInstance::getCurrentShift(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage : <logbook-instancde> getCurrentShift");
+    
+    auto pShift = m_logBook->getCurrentShift();
+    std::string result;
+    if (pShift) {
+        result = wrapShift(interp, pShift);
+    }
+    interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
