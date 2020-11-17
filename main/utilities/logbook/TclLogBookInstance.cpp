@@ -92,6 +92,8 @@ TclLogBookInstance::operator()(
             createShift(interp, objv);
         } else if (subcommand == "getShift") {
             getShift(interp, objv);
+        } else if (subcommand == "addShiftMember") {
+            addShiftMember(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -309,6 +311,35 @@ TclLogBookInstance::getShift(
     int id = objv[2];
     LogBookShift* pShift = m_logBook->getShift(id);
     interp.setResult(wrapShift(interp, pShift));
+}
+/**
+ * addShiftMember
+ *    Adds a new person to an existing shift that's been wrapped.
+ * @param interp -interpreter the command is running on.
+ * @param objv   - The command words.
+ */
+void
+TclLogBookInstance::addShiftMember(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(
+        objv, 4,
+        "Usage: <interp-instance> addShiftMember shift-command person-command"
+    );
+    std::string shiftCmd(objv[2]);
+    std::string personCmd(objv[3]);
+    
+    // Get the shift and person objects - note that these calls will throw
+    // if there are errors:
+    
+    LogBookShift* pShift =
+        (TclShiftInstance::getCommandObject(shiftCmd))->getShift();
+    LogBookPerson* pPerson =
+        (TclPersonInstance::getCommandObject(personCmd))->getPerson();
+    m_logBook->addShiftMember(pShift, pPerson);
+    
+    interp.setResult(shiftCmd);          // To make it look like the LogBook class.
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:

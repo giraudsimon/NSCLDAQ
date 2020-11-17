@@ -20,6 +20,9 @@
  */
 #include "TclShiftInstance.h"
 #include "LogBookShift.h"
+#include <sstream>
+
+std::map<std::string, TclShiftInstance*> TclShiftInstance::m_shifts;
 
 /**
  * constructor
@@ -32,12 +35,18 @@ TclShiftInstance::TclShiftInstance(
 ) :
     CTCLObjectProcessor(interp, name, true),
     m_shift(pShift)
-{}
+{
+    m_shifts[name] = this;        
+}
 
 /**
  * destructor
  */
-TclShiftInstance::~TclShiftInstance() {}
+TclShiftInstance::~TclShiftInstance()
+{
+    auto p = m_shifts.find(getName());
+    if (p != m_shifts.end()) m_shifts.erase(p);
+}
 
 
 /**
@@ -54,4 +63,26 @@ TclShiftInstance::operator()(
 {
     return TCL_OK;                 // STUB.
     
+}
+///////////////////////////////////////////////////////////////////////////////
+// Static methods
+
+/**
+ * getCommandObject
+ *    Return a pointer to a command object that has the specifiec command name.
+ *  @param name - name of the command - must be a shift command.
+ *  @return TclShiftInstance* - Pointer to the command object.
+ *  @throw std::out_of_range  - No such shift command instance.
+ */
+TclShiftInstance*
+TclShiftInstance::getCommandObject(const std::string& name)
+{
+    auto p = m_shifts.find(name);
+    if (p == m_shifts.end()) {
+        std::stringstream msg;
+        msg << name << " is not an instance command for a shift";
+        std::string e = msg.str();
+        throw std::out_of_range(e);
+    }
+    return p->second;
 }

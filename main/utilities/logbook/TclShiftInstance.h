@@ -22,6 +22,7 @@
 #define TCLSHIFTINSTANCE_H
 #include <TCLObjectProcessor.h>
 #include <memory>
+#include <map>
 
 class CTCLInterpreter;
 class CTCLObject;
@@ -39,6 +40,7 @@ class TclShiftInstance : public CTCLObjectProcessor
 {
 private:
     std::shared_ptr<LogBookShift> m_shift;
+    static std::map<std::string, TclShiftInstance*> m_shifts;
 public:
     TclShiftInstance(
         CTCLInterpreter& interp, const char* cmd, LogBookShift* pShift
@@ -46,6 +48,12 @@ public:
     virtual ~TclShiftInstance();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    
+    //getters:
+public:
+    LogBookShift* getShift() {return m_shift.get();}
+public:
+    static TclShiftInstance* getCommandObject(const std::string& name);
 };
 
 #endif

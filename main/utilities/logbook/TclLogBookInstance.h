@@ -98,6 +98,7 @@ private:
     
     void createShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void addShiftMember(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
