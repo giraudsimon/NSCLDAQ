@@ -111,6 +111,7 @@ private:
     void getCurrentShift(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
     void beginRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void endRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);

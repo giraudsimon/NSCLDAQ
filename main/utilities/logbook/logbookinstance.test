@@ -608,6 +608,39 @@ tcltest::test begin_3  {existing current run} \
     set run [$::LogbookInstance begin 1 {This is a title} {This is a remark}]
     $::LogboogkInstance begin 2 {This is a title} {A run is already active!!}
 } -returnCodes error -result * -match glob
+
+###########################################################################
+
+tcltest::test end_1 {Successful end} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance end $run {End run remark}]
+    expr {$ended == $run}
+} -result 1
+
+
+tcltest::test end_2 {Can't end an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance end $run {End run remark}]
+    $::LogbookInstance end $run {This run is already ended}
+} -returnCodes error -result * -match glob
     
 #----------------------------------------------------
 

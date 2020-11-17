@@ -38,7 +38,7 @@ TclRunInstance::TclRunInstance(
     CTCLInterpreter& interp, const char* name, LogBookRun* pRun
 ) :
     CTCLObjectProcessor(interp, name, true),
-    m_run(pRun)
+    m_pRun(pRun)
 {
     m_instanceRegistry[name] = this;        
 }
@@ -48,6 +48,7 @@ TclRunInstance::TclRunInstance(
  */
 TclRunInstance::~TclRunInstance()
 {
+    delete m_pRun;
     auto p = m_instanceRegistry.find(getName());
     if (p != m_instanceRegistry.end()) {
         m_instanceRegistry.erase(p);

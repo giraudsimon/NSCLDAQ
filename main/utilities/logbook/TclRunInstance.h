@@ -54,7 +54,7 @@ class LogBookRun;
 class TclRunInstance : public CTCLObjectProcessor
 {
 private:
-    std::shared_ptr<LogBookRun>   m_run;
+    LogBookRun*   m_pRun;
     static std::map<std::string, TclRunInstance*> m_instanceRegistry;
 public:
     TclRunInstance(CTCLInterpreter& interp, const char* name, LogBookRun* pRun);
@@ -62,7 +62,8 @@ public:
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
-    LogBookRun* getRun() {return m_run.get();}
+    LogBookRun* getRun() {return m_pRun;}
+    void setRun(LogBookRun* pRun) {m_pRun = pRun;} 
 public:
     static TclRunInstance* getCommandObject(const std::string& name);
 };

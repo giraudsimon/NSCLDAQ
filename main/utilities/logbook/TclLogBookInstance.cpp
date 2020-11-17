@@ -110,6 +110,9 @@ TclLogBookInstance::operator()(
         } else if (subcommand == "begin") {
             
             beginRun(interp, objv);
+        } else if (subcommand == "end") {
+            endRun(interp, objv);    
+        
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -521,6 +524,43 @@ TclLogBookInstance::beginRun(
     std::string result = wrapRun(interp, pRun);
     interp.setResult(result);
 }
+/**
+ * endRun
+ *    Ends an existing run given its command and an optional remark.
+ * @param interp - interpreter running the command.
+ * @param objv   - Command words.
+ */
+void
+TclLogBookInstance::endRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    const char* usage = "Usage: <logbookinstance> end <run-command> ?remark?";
+    requireAtLeast(objv, 3, usage);
+    requireAtMost(objv, 4, usage);
+    
+    std::string run(objv[2]);
+    const char* remark(nullptr);
+    std::string remarkString;
+    if (objv.size() == 4) {
+        remarkString= std::string(objv[3]);
+        remark  = remarkString.c_str();
+    }
+    // Get the run object:
+    
+    TclRunInstance *pInstance = TclRunInstance::getCommandObject(run);
+    LogBookRun* pRun = pInstance->getRun();
+    m_logBook->end(pRun, remark);
+    
+    // THe run object has been replaced; replace the encapsulated object.
+    
+    pInstance->setRun(pRun);
+    
+    // Return the run instance command as well.
+    
+    interp.setResult(run);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
