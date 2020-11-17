@@ -709,6 +709,54 @@ tcltest::test pauseRun_3 {Can end a paused Run} \
     expr {$ended == $run}
 } -result 1
 
+##################################################################
+
+tcltest::test resume_1 {Can't resume an active run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+
+    $::LogbookInstance resume $run {This is a remark that won't work anyway}
+} -returnCodes error -result * -match glob
+
+tcltest::test resume_2 {Can't resume an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {The run is now ended}
+    $::LogbookInstance resume $run {This should fail as well}
+} -returnCodes error -result * -match glob
+
+tcltest::test resume_3 {Can resume a paused run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run {Paused runs can be resumed...}
+    set paused [$::LogbookInstance resume $run {This should work just fine}]
+    expr {$paused == $run}
+} -result 1
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
