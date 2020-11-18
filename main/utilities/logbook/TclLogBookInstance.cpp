@@ -116,6 +116,8 @@ TclLogBookInstance::operator()(
             pauseRun(interp, objv);
         } else if (subcommand == "resume") {
             resumeRun(interp, objv);
+        } else if (subcommand == "emergencyStop") {
+            emergencyEnd(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -622,6 +624,37 @@ TclLogBookInstance::resumeRun(
     TclRunInstance *pInstance = TclRunInstance::getCommandObject(run);
     LogBookRun* pRun = pInstance->getRun();
     m_logBook->resume(pRun, remark);
+    
+    pInstance->setRun(pRun);
+    interp.setResult(run);
+}
+/**
+ * emergencyEnd
+ *    Logs an emergency stop on a run.
+ * @param interp  - interpreter we're running on
+ * @param objv    - command words.
+ */
+void
+TclLogBookInstance::emergencyEnd(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    const char* usage = "Usage: <logbookinstance> emergencyStop <run-command> ?remark?";
+    requireAtLeast(objv, 3, usage);
+    requireAtMost(objv, 4, usage);
+    
+    std::string run(objv[2]);
+    const char* remark(nullptr);
+    std::string remarkString;
+    if (objv.size() == 4) {
+        remarkString= std::string(objv[3]);
+        remark  = remarkString.c_str();
+    }
+    // Get the run object:
+    
+    TclRunInstance *pInstance = TclRunInstance::getCommandObject(run);
+    LogBookRun* pRun = pInstance->getRun();
+    m_logBook->emergencyStop(pRun, remark);
     
     pInstance->setRun(pRun);
     interp.setResult(run);

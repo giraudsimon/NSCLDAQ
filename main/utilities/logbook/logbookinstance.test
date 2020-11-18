@@ -756,6 +756,93 @@ tcltest::test resume_3 {Can resume a paused run} \
     set paused [$::LogbookInstance resume $run {This should work just fine}]
     expr {$paused == $run}
 } -result 1
+###########################################################################
+
+tcltest::test estop_1 {Can emergency stop active runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance emergencyStop $run {Ended to test}]
+    expr {$ended == $run}
+} -result 1
+
+tcltest::test estop_2 {Can emergency stop paused runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run
+    set end [$::LogbookInstance emergencyStop $run ended]
+    expr {$end == $run}
+} -result 1
+
+tcltest::test estop_3 {Can emergency stop resumed runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run
+    $::LogbookInstance resume $run
+    
+    set ended [$::LogbookInstance emergencyStop $run {ended run}]
+    expr {$ended == $run}
+} -result 1
+
+tcltest::test estop_4 {Can *not* emergency stop ended runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {Run can no longer be ended}
+    $::LogbookInstance emergencyStop $run
+} -returnCodes error -result * -match glob
+
+tcltest::test estop_5 {Can *not* emergency stop emergency ended runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance emergencyStop $run {Can no longer be emergency ended}
+    $::LogbookInstance emergencyStop $run
+} -returnCodes error -result * -match glob
+
+tcltest::test estop_6 {Can *not* emergenyc stop a non-existent run} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance emergencyStop george {This should fail too}
+} -returnCodes error -result * -match glob
+
 
 #----------------------------------------------------
 
