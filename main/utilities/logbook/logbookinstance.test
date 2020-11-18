@@ -843,6 +843,57 @@ tcltest::test estop_6 {Can *not* emergenyc stop a non-existent run} \
     $::LogbookInstance emergencyStop george {This should fail too}
 } -returnCodes error -result * -match glob
 
+###########################################################################
+
+tcltest::test listruns_1 {Empty list if there are no runs} \
+-setup {commonSetup} -cleanup {
+    foreach run $runs {$run destroy}
+    commonCleanup
+} \
+-body {
+    set runs [$::LogbookInstance listRuns]
+    llength $runs
+} -result 0
+
+tcltest::test listruns_2 {A single run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    foreach run $r { $run destroy }
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set r [$::LogbookInstance listRuns]
+    llength $r
+} -result 1
+    
+tcltest::test listruns_3 {10 runs}  \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    foreach r $cruns {$r destroy}
+    foreach r $lruns { $r destroy }
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set cruns [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i {This is a title} {This is a remark}]
+        $::LogbookInstance end $r {Ended}
+        lappend cruns $r
+    }
+    set lruns [$::LogbookInstance listRuns]
+    llength $lruns
+} -result 10
+        
+    
 
 #----------------------------------------------------
 

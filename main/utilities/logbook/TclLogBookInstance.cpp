@@ -118,6 +118,8 @@ TclLogBookInstance::operator()(
             resumeRun(interp, objv);
         } else if (subcommand == "emergencyStop") {
             emergencyEnd(interp, objv);
+        } else if (subcommand == "listRuns") {
+            listRuns(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -658,6 +660,34 @@ TclLogBookInstance::emergencyEnd(
     
     pInstance->setRun(pRun);
     interp.setResult(run);
+}
+/**
+ * listRuns
+ *    Return a list (possibily empty) of all of the runs in the run database.
+ *    The runs are returned as encapsulating commands.
+ * @param interp - interpreter running the command.
+ * @param objv   - the command words.
+ */
+void
+TclLogBookInstance::listRuns(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <logbook-instance> listRuns");
+    
+    auto rawRuns = m_logBook->listRuns();
+    CTCLObject result;
+    result.Bind(interp);
+    
+    for(auto run : rawRuns) {
+        CTCLObject item;
+        item.Bind(interp);
+        item = std::string(wrapRun(interp, run));
+        
+        result += item;
+    }
+    
+    interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:

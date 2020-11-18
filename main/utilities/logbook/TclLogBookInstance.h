@@ -115,6 +115,7 @@ private:
     void pauseRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void resumeRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void emergencyEnd(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void listRuns(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
