@@ -892,8 +892,86 @@ tcltest::test listruns_3 {10 runs}  \
     set lruns [$::LogbookInstance listRuns]
     llength $lruns
 } -result 10
-        
+###############################################################################
+
+tcltest::test findrun_1 {No runs to find} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance findRun 1
+} -result ""
+
+tcltest::test findrun_2 {Found the only run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    $found destroy
+    foreach run $r { $run destroy }
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
     
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set found [$::LogbookInstance findRun 1]
+    expr {[info command $found] ne ""}
+} -result 1
+
+tcltest::test findrun_3 {Found a run among several} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach run $runs {$run   destroy}
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set runs [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i "Title for run $i" "remark for run $i"]
+        $::LogbookInstance end $r "Ended run $i"
+        lappend runs $r
+    }
+    set found [$::LogbookInstance findRun 5]
+    expr {[info command $found] ne ""}
+} -result 1
+    
+tcltest::test findrun_4 {Found no run amongst serveral} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach run $runs {$run   destroy}
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set runs [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i "Title for run $i" "remark for run $i"]
+        $::LogbookInstance end $r "Ended run $i"
+        lappend runs $r
+    }
+    $::LogbookInstance findRun 500
+} -result ""
+################################################################################
+
+tcltest::test runid_1 {Get run id from a run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance runId $run
+} -result 1
 
 #----------------------------------------------------
 

@@ -120,6 +120,10 @@ TclLogBookInstance::operator()(
             emergencyEnd(interp, objv);
         } else if (subcommand == "listRuns") {
             listRuns(interp, objv);
+        } else if (subcommand == "findRun") {
+            findRun(interp, objv);
+        } else if (subcommand == "runId") {
+            runId(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -687,6 +691,48 @@ TclLogBookInstance::listRuns(
         result += item;
     }
     
+    interp.setResult(result);
+}
+/**
+ * findRun
+ *   Locate a  run by run  number and wrap it.  If there's no matching run,
+ *   "" is returned.
+ *
+ * @param interp -  interpreter running the command.
+ * @param objv   - The words of the command.
+ * */
+void
+TclLogBookInstance::findRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> findRun <run-number>");
+    int runNumber = objv[2];
+    
+    LogBookRun* pRun = m_logBook->findRun(runNumber);
+    std::string result;
+    if (pRun) {
+        result = wrapRun(interp, pRun);
+    }
+    
+    interp.setResult(result);
+}
+/**
+ * runId
+ *   Return the id (primary key) of a run given it's command.
+ * @param interp - interpreter on which the command is running.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::runId(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> runId <runcommand>");
+    std::string runCommand(objv[2]);
+    
+    LogBookRun* pRun = TclRunInstance::getCommandObject(runCommand)->getRun();
+    CTCLObject result;
+    result.Bind(interp);
+    result = pRun->getRunInfo().s_id;
     interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////
