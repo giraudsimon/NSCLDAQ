@@ -124,6 +124,8 @@ TclLogBookInstance::operator()(
             findRun(interp, objv);
         } else if (subcommand == "runId") {
             runId(interp, objv);
+        } else if (subcommand == "currentRun") {
+            currentRun(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -733,6 +735,29 @@ TclLogBookInstance::runId(CTCLInterpreter& interp, std::vector<CTCLObject>& objv
     CTCLObject result;
     result.Bind(interp);
     result = pRun->getRunInfo().s_id;
+    interp.setResult(result);
+}
+/**
+ *  currentRun
+ *     Returns a command ensemble encapsulated run for the current run.
+ *     "" is returned if there is no current run.  There is a current run
+ *     iff there's a run that is not ended (in progress).  That is the current
+ *     run is established by beginning a run and removed by ending or emergencyStop
+ *     ing it.
+ *  @param interp - interpreter on which the command is executing.
+ *  @param objv   - Command words.
+ */
+void
+TclLogBookInstance::currentRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv , 2, "Usage: <logbook-instance> currentRun");
+    LogBookRun* pRun = m_logBook->currentRun();
+    std::string result;
+    if (pRun) {
+        result = wrapRun(interp, pRun);
+    }
     interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////

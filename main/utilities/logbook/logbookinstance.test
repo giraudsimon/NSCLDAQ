@@ -973,6 +973,43 @@ tcltest::test runid_1 {Get run id from a run} \
     $::LogbookInstance runId $run
 } -result 1
 
+
+#################################################################################
+
+tcltest::test currentRun_1 {There is a current run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    $current destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    # Establish a current run
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set current [$::LogbookInstance currentRun]
+    expr {[info command $current] ne ""}
+} -result 1
+tcltest::test currentRun_2 {there is no current run}  \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+
+    #Establish a current run then end it so it's no longer current:
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {NO longer current}
+    $::LogbookInstance currentRun
+} -result ""
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
