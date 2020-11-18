@@ -128,6 +128,8 @@ TclLogBookInstance::operator()(
             runId(interp, objv);
         } else if (subcommand == "currentRun") {
             currentRun(interp, objv);
+        } else if (subcommand == "createNote") {
+            createNote(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -820,11 +822,12 @@ TclLogBookInstance::createNote(
         runCmd = std::string(objv[4]);
         pRun   = TclRunInstance::getCommandObject(runCmd)->getRun();
         break;
-    case 6:                        // there's image information but no run:
-        imageInfo = getImageInformation(interp, objv [4], objv[5]);
     case 7:                       // image information and run
         runCmd    = std::string(objv[6]);
         pRun     = TclRunInstance::getCommandObject(runCmd)->getRun();
+    case 6:                        // there's image information but no run:
+        imageInfo = getImageInformation(interp, objv [4], objv[5]);
+    
         break;
     default:                        // four parameters already dealt with.
         break;                      // other counts have thrown by now.

@@ -1010,6 +1010,137 @@ tcltest::test currentRun_2 {there is no current run}  \
     $::LogbookInstance currentRun
 } -result ""
 
+###########################################################################
+
+tcltest::test createNote_1 {Author and text only} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {This is some note text}]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_2 {Author text and associated run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {This is some note text}]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_3 {Author text and images} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set note [  \
+        $::LogbookInstance createNote $ron {This is some note text} \
+            [list [info script]] [list 0]
+              ]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_4 {Author text images and associated run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote \
+        $ron {Some note text} [info script] 0 $run
+    ]
+    expr {[info command $ron] ne ""}
+} -result 1
+
+tcltest::test createNote_5 {Author text and invalid run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron {Some text} norun
+} -returnCodes error -result * -match glob
+
+tcltest::test createNote_6 {Author text images and invalid run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron text [info script] 1 invalidRun
+} -returnCodes error -result * -match glob
+
+tcltest::test createNote_7 {Author, text images with a non integer offset} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron text [info script] nogood
+} -returnCodes error -result * -match glob
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
