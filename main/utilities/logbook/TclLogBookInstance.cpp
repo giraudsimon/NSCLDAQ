@@ -24,10 +24,12 @@
 #include "TclPersonInstance.h"
 #include "TclShiftInstance.h"
 #include "TclRunInstance.h"
+#include "TclNoteInstance.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
 #include "LogBookShift.h"
 #include "LogBookRun.h"
+#include "LogBookNote.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <Exception.h>
@@ -761,6 +763,85 @@ TclLogBookInstance::currentRun(
     interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////
+// Notes API
+
+/**
+ * createNote
+ *    Create a new note with optional image lists, and associated run.
+ * @param interp - interpreter runnig the command.
+ * @param objv   - Command words.
+ */ 
+void
+TclLogBookInstance::createNote(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    // Command processing is a bit complicated.  There are
+    // four possible casees:
+    //  *  4 parameters:  author, text no images, no associated run.
+    //  *  5 parameters:  author, text, associated run command.
+    //  *  6 parameters   author, text, image list and image offset list no
+    //                    associated run command.
+    //  * 7 parameter, authore, texst, image list, image offset list, associated run command.
+    //
+    // Furthermore, if there is an associated image list, the length of that
+    // list must be the same as the associated offset list.
+    //
+    const char* usage =
+        "Usage: <logbook-instance> createNote author text ?images imageoffsets? ?run?";
+    requireAtLeast(objv, 4, usage);
+    requireAtMost(objv, 7, usage);
+    // Direct parameters -- sort of.
+    
+    std::string authorCmd;
+    std::string note;
+    std::vector<std::string> imageFiles;
+    std::vector<size_t>      imageOffsets;
+    std::string runCmd;
+    
+    // Parameters we derive:
+    
+    LogBookPerson* pPerson(nullptr);
+    LogBookRun*    pRun(nullptr);
+    std::pair<std::vector<std::string>, std::vector<size_t>> imageInfo;
+    
+    // The author command and note are in 'standard' spots.
+    // Convert the author into a person (could throw).
+    
+    authorCmd = std::string(objv[2]);
+    note      = std::string(objv[3]);
+    pPerson =
+        TclPersonInstance::getCommandObject(authorCmd)->getPerson();
+    
+    // What we do next depends on the command word count as described above:
+    
+    switch (objv.size()) {
+    case 5:                           // There's just an associated run:
+        runCmd = std::string(objv[4]);
+        pRun   = TclRunInstance::getCommandObject(runCmd)->getRun();
+        break;
+    case 6:                        // there's image information but no run:
+        imageInfo = getImageInformation(interp, objv [4], objv[5]);
+    case 7:                       // image information and run
+        runCmd    = std::string(objv[6]);
+        pRun     = TclRunInstance::getCommandObject(runCmd)->getRun();
+        break;
+    default:                        // four parameters already dealt with.
+        break;                      // other counts have thrown by now.
+    }
+    imageFiles   = imageInfo.first;               // could be emtpy.
+    imageOffsets = imageInfo.second;              // already checked for same size.
+    
+    // Create the note and wrap it before returning the new command name:
+    
+    LogBookNote* pNote = m_logBook->createNote(
+        *pPerson, note.c_str(), imageFiles, imageOffsets, pRun
+    );
+    std::string noteCmd = wrapNote(interp, pNote);
+    interp.setResult(noteCmd);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
 /**
@@ -805,4 +886,65 @@ TclLogBookInstance::wrapRun(CTCLInterpreter& interp, LogBookRun* pRun)
     std::string newCommand = TclLogbook::createObjectName("run");
     new TclRunInstance(interp, newCommand.c_str(), pRun);
     return newCommand;
+}
+/**
+ * wrapNote
+ *   Wrap a note object in a new command.
+ * @param interp - interpreter running the commannd that needs wrapping
+ * @param note   - pointer to the note.
+ * @return std::string - new command name.
+ */
+std::string
+TclLogBookInstance::wrapNote(CTCLInterpreter& interp, LogBookNote* pNote)
+{
+    std::string newCommand = TclLogbook::createObjectName("note");
+    new TclNoteInstance(interp, newCommand.c_str(), m_logBook.get(), pNote);
+    return newCommand;
+}
+/**
+ * getImageInformation.
+ *    Given a TclObj reference to the image list and offsets list,
+ *    marshall those into a vector each:
+ *    -  We don't check for the existence of files, that's done by the
+ *       note creation methods.
+ *    -  We don't check that the images and offsets vectors have the same
+ *       length.  That too is done by noe creation.
+ *  @param interp - interpreter on which the command is running.
+ *  @param images - Tcl Object containing a list of images.
+ *  @param offsets - Tcl Object containing a list of image offsets.
+ *  @return std::pair<std::vector<std::string>, std::vector<size_t>>
+ *              - .first is the vector of image names and .second the vector of
+ *                offsets.
+ */
+std::pair<std::vector<std::string>, std::vector<size_t>>
+TclLogBookInstance::getImageInformation(
+    CTCLInterpreter& interp, CTCLObject& images, CTCLObject& offsets
+)
+{
+    std::pair<std::vector<std::string>, std::vector<size_t>> result;
+    std::vector<std::string> filenames;
+    std::vector<size_t>      offsetsV;
+    
+    // Extract the filenames:
+    
+    for (int i = 0; i < images.llength(); i++) {
+        CTCLObject name;
+        name.Bind(interp);
+        name =  images.lindex(i);
+        std::string filename = std::string(name);
+        filenames.push_back(filename);
+    }
+    // Extract the offsets:
+    
+    for (int i = 0; i < offsets.llength(); i++) {
+        CTCLObject off;
+        off.Bind(interp);
+        off =  offsets.lindex(i);
+        int offset = int(off);
+        offsetsV.push_back(offset);
+    }
+    
+    result.first = filenames;
+    result.second = offsetsV;
+    return result;
 }

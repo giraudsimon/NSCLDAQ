@@ -27,6 +27,7 @@ class LogBook;
 class LogBookPerson;
 class LogBookShift;
 class LogBookRun;
+class LogBookNote;
 
 /**
  * @class TclLogBookInstance
@@ -75,7 +76,7 @@ class LogBookRun;
  *
  * API for notes:
  *
- *     - createNote author text image-list offset-list ?runCommand?
+ *     - createNote author text ?image-list offset-list? ?runCommand?
  *     - getNote id
  *     - listAllNotes
  *     - listNotesForRunId id
@@ -119,10 +120,17 @@ private:
     void findRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void runId(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void currentRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    
+    void createNote(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
     std::string wrapRun(CTCLInterpreter& interp, LogBookRun* pRun);
+    std::string wrapNote(CTCLInterpreter& interp, LogBookNote* pNote);
+    std::pair<std::vector<std::string>, std::vector<size_t>>
+        getImageInformation(
+            CTCLInterpreter& interp, CTCLObject& images, CTCLObject& offsets
+        );
 };
 
 #endif

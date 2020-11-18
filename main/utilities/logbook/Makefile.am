@@ -22,7 +22,8 @@ libTclLogbook_la_SOURCES=LogBookPackage.cpp TclLogbook.h TclLogbook.cpp \
 	TclLogBookInstance.h TclLogBookInstance.cpp \
 	TclPersonInstance.h TclPersonInstance.cpp \
 	TclShiftInstance.h TclShiftInstance.cpp	\
-	TclRunInstance.h TclRunInstance.cpp
+	TclRunInstance.h TclRunInstance.cpp  \
+	TclNoteInstance.h TclNoteInstance.cpp
 
 libTclLogbook_la_CXXFLAGS=$(libLogbook_la_CXXFLAGS) @LIBTCLPLUS_CFLAGS@ @TCL_CPPFLAGS@
 libTclLogbook_la_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @LIBTCLPLUS_LDFLAGS@ \
