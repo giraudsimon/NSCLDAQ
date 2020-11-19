@@ -124,6 +124,10 @@ private:
     void createNote(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getNote(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void listAllNotes(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void listNotesForRunId(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void listNotesForRunNumber(
+        CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+    );
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
@@ -133,6 +137,9 @@ private:
         getImageInformation(
             CTCLInterpreter& interp, CTCLObject& images, CTCLObject& offsets
         );
+    void notesVectorToResultList(
+        CTCLInterpreter& interp, const std::vector<LogBookNote*>& pNotes
+    );
 };
 
 #endif

@@ -128,12 +128,17 @@ TclLogBookInstance::operator()(
             runId(interp, objv);
         } else if (subcommand == "currentRun") {
             currentRun(interp, objv);
+            
         } else if (subcommand == "createNote") {
             createNote(interp, objv);
         } else if (subcommand == "getNote") {
             getNote(interp, objv);
         } else if (subcommand == "listAllNotes") {
             listAllNotes(interp, objv);
+        } else if (subcommand == "listNotesForRunId") {
+            listNotesForRunId(interp, objv);
+        } else if (subcommand == "listNotesForRunNumber") {
+            listNotesForRunNumber(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -880,16 +885,55 @@ TclLogBookInstance::listAllNotes(
     requireExactly(objv, 2, "Usage: <logbook-instance> listAllNotes");
     std::vector<LogBookNote*> notes = m_logBook->listAllNotes();
     
-    CTCLObject result;
-    result.Bind(interp);
-    for(auto n : notes) {
-        CTCLObject item;
-        item.Bind(interp);
-        item = std::string(wrapNote(interp, n));
-        
-        result += item;
+    notesVectorToResultList(interp, notes);
+}
+/**
+ * listNotesForRunId
+ *
+ *     Makes a command encapsulated list for all notes for the run identified
+ *     by primary key.
+ *  @param interp -interpreter running the command.
+ *  @param objv   -Command words.
+ */
+void
+TclLogBookInstance::listNotesForRunId(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> listNotesForRunId <id>");
+    
+    int id = (objv[2]);
+    
+    auto notes = m_logBook->listNotesForRunId(id);
+    
+    notesVectorToResultList(interp, notes);
+}
+/**
+ * listNotesForRunNumber
+ *   List all of the notes that were entered for a specific run number.
+ *
+ * @param interp - interpreter running the command.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::listNotesForRunNumber(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(
+        objv, 3, "Usage: <logbook-instance> listNotesForRunNumber <runnum>"
+    );
+    int runNumber(objv[2]);
+    
+    // If this throws, return an empty list because it means the run could
+    // not be found:
+    
+    try {
+        auto notes = m_logBook->listNotesForRun(runNumber);
+        notesVectorToResultList(interp, notes);
+    } catch (...) {
+        interp.setResult("");
     }
-    interp.setResult(result);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
@@ -997,4 +1041,26 @@ TclLogBookInstance::getImageInformation(
     result.first = filenames;
     result.second = offsetsV;
     return result;
+}
+/**
+ * notesVectorToResultList
+ *   Converts a vector of notes into a list of note instance commands
+ *   which are set as the interpreter result.
+ * @param interp - the interpreter whose result is set.
+ * @param notes - vector of note instance pointers.
+ */
+void TclLogBookInstance::notesVectorToResultList(
+    CTCLInterpreter& interp, const std::vector<LogBookNote*>& pNotes
+)
+{
+    CTCLObject result;
+    result.Bind(interp);
+    for(auto n : pNotes) {
+        CTCLObject item;
+        item.Bind(interp);
+        item = std::string(wrapNote(interp, n));
+        
+        result += item;
+    }
+    interp.setResult(result);    
 }

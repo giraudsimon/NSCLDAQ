@@ -1184,6 +1184,7 @@ tcltest::test listallNotes_2 {One note to list} \
 } \
 -cleanup {
     $note destroy
+    $ron destroy
     foreach n $notelist {
         $n destroy
     }
@@ -1225,8 +1226,191 @@ tcltest::test listallNotes_3 {10 notes to list} \
     set notelist [$::LogbookInstance listAllNotes]
     llength $notelist
 } -result 10
+###############################################################################
+
+tcltest::test listNotesForRunId_1 {No notes} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    llength [$::LogbookInstance listNotesForRunId 1]
+} -result 0
+
+tcltest::test listNotesForRunId_2 {Notes but not associated with a run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {this is some note text}]
+    llength [$::LogbookInstance listNotesForRunId 1]
+} -result 0
+
+tcltest::test listNotesForRunId_3 {One run associated note, one not} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set note1 [$::LogbookInstance createNote $ron {This is note text}]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 1 {Some title} {some Remark}]
+    set notes2 [$::LogbookInstance createNote $ron {This note has a run} $run]
+    
+} \
+-cleanup {
+    $ron destroy
+    $note1 destroy
+    $shift destroy
+    $run destroy
+    $notes2 destroy
+    foreach note $listed {
+        $note destroy
+    }
+    commonCleanup
+} \
+-body  {
+    set listed [$::LogbookInstance listNotesForRunId 1]
+    llength $listed
+} -result 1
+
+tcltest::test listNotesForRunId_4 {Mix of run associated notes and not.} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 1 {Some title} {some Remark}]
+    
+    set fullList [list]
+    for {set i 0} {$i < 10} {incr i} {
+        if {($i %2) == 0} {
+            lappend fullList \
+                [$::LogbookInstance createNote $ron "Non run note $i"]
+        } else {
+            lappend fullList \
+                [$::LogbookInstance createNote $ron "Run note $i" $run]
+        }
+    }
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    foreach note $fullList {
+        $note destroy
+    }
+    foreach note $listed {
+        $note destroy
+    }
+    commonCleanup
+} \
+-body {
+    set listed [$::LogbookInstance listNotesForRunId 1]
+    llength $listed
+} -result 5
+    
+##############################################################################
+
+tcltest::test listNotesForRun_1 {No run associated notes} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 2 {Some title} {some Remark}]
+    set note [$::LogbookInstance createNote $ron {Note text}]
+    
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $note destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    llength [$::LogbookInstance listNotesForRunNumber 1];  #no match
+} -result 0
+
+
+tcltest::test listNotesForRun_2 {two notes but only one matches} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 2 {Some title} {some Remark}]
+    set notes [list]
+    lappend notes [$::LogbookInstance createNote $ron {Note text}]
+    lappend notes [$::LogbookInstance createNote $ron {Note text} $run]
+    
+    set found [list]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    foreach note $notes {
+        $note destroy
+    }
+    foreach note $found {
+        $note destroy
+    }
+    commonCleanup 
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRunNumber 2]
+    llength $found
+    
+} -result 1
+    
+tcltest::test listNotesForRun_3 {5 notes for correct run,  5 for incorrect} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set notes [list]
+    set found [list]
+    
+    set run1 [$::LogbookInstance begin 1 {Run 1 title} {run 1 remark}]
+    $::LogbookInstance end $run1
+    set run2 [$::LogbookInstance begin 2 {Run 2 title} {run 2 remark}]
+    
+    set runs [list $run1 $run2]
+    for {set i 0} {$i < 10} {incr i} {
+        set run [lindex $runs [expr {$i % 2}]]
+        lappend notes [$::LogbookInstance createNote $ron {a note} $run]
+    }
         
     
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run1 destroy
+    $run2 destroy
+    foreach note $notes {
+        $note destroy
+    }
+    foreach note $found {
+        $note destroy
+    }
+    commonCleanup
+    
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRunNumber 1]
+    llength $found
+} -result 5
+
+    
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
