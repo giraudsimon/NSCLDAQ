@@ -1543,7 +1543,47 @@ tcltest::test listNonRunNotes_3 {Mix of nonrun and run notes} \
 } -result 5
         
     
+##########################################################################
 
+tcltest::test getNoteRun_1 {Note has no run} \
+-setup {
+    commonSetup
+    set run [$LogbookInstance addPerson Fox Ron Mr.]
+    set note [$LogbookInstance createNote $ron {Some notes text}]
+} \
+-cleanup {
+    $run destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    $LogbookInstance getNoteRun $note
+} -result ""
+
+tcltest::test getNoteRun_2 {Note has a run} \
+-setup {
+    commonSetup
+    
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
+    
+    set shift [$LogbookInstance createShift theshift $ron]
+    $LogbookInstance setCurrentShift theshift
+    
+    set run [$LogbookInstance begin 1 {Some run title} {some remerk}]
+    set note [$LogbookInstance createNote $ron {Some notes text} $run]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    $assocrun destroy
+    commonCleanup
+} \
+-body {
+    set assocrun [$LogbookInstance getNoteRun $note]
+    expr {[info command $assocrun] ne ""}
+} -result 1
 
 #----------------------------------------------------
 
