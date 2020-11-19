@@ -28,6 +28,8 @@ package require tcltest
 package require logbook
 package require sqlite3
 
+# tcltest::verbose {start}
+
 # In case there are hanging files:
 
 if {[file exists test.logbook.db]} {
@@ -263,13 +265,14 @@ tcltest::test getperson_2 {Found gets a command} \
     $giordano destroy
     $fox      destroy
     $cmd      destroy
-    foreach person $people {$person destroy}
+    
     commonCleanup
 } \
 -body {
     
     set fox [$::LogbookInstance addPerson Fox Ron]
     set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+   
     
     # Giordano is id  2:
     

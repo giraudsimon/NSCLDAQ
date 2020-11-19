@@ -58,13 +58,60 @@ TclPersonInstance::~TclPersonInstance()
 
 /**
  * operator()
- *   STUB
+ *   Called to process instance command for a person instance.
+ *   See the header for the list and syntaxes of the subcommands.
+ * @param interp - interpreter running the command.
+ * @param objv   - the command words.
  */
 int TclPersonInstance::operator()(
     CTCLInterpreter& interp, std::vector<CTCLObject>& objv
 )
 {
+    /* Processing is done in a try/catch block to simplify error handling */
+    
+    try {
+        bindAll(interp, objv);
+        requireAtLeast(
+            objv, 2,
+            "Person run instance commands require at least a sub-command"
+        );
+        std::string subcommand(objv[1]);
+        if (subcommand == "destroy")  {
+            delete this;
+        } else  {
+            std::stringstream msg;
+            msg << "'" << subcommand << "' is an invalid subcommand for "
+                << std::string(objv[0]);
+            std::string e = msg.str();
+            throw e;
+        }
+    }
+    catch (std::string& msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+    }
+    catch (const char* msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+        
+    }
+    catch (std::exception& e) {       // Note LogBook::Exception is derived from this
+        interp.setResult(e.what());
+        return TCL_ERROR;
+    }
+    catch (CException& e) {
+        interp.setResult(e.ReasonText());
+        return TCL_ERROR;
+    }
+    catch (...) {
+        interp.setResult(
+            "Unexpected exception type caught in TclLogbookInstance::operator()"
+        );
+        return TCL_ERROR;
+    }
+    
     return TCL_OK;
+    
 }
 /**
  * getCommanObject [static]

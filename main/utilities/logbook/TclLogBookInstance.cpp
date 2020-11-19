@@ -333,8 +333,11 @@ TclLogBookInstance::createShift(
             CTCLObject o = objv[3].lindex(i);
             o.Bind(interp);
             std::string cmdName = std::string(o);
+            LogBookPerson* pPerson =
+                TclPersonInstance::getCommandObject(cmdName)->getPerson();
+            // Need to push a duplicate as remove/destroy deletes:
             people.push_back(
-                (TclPersonInstance::getCommandObject(cmdName))->getPerson()
+                m_logBook->getPerson(pPerson->id())
             );
         }
         
@@ -390,6 +393,10 @@ TclLogBookInstance::addShiftMember(
         (TclShiftInstance::getCommandObject(shiftCmd))->getShift();
     LogBookPerson* pPerson =
         (TclPersonInstance::getCommandObject(personCmd))->getPerson();
+    // need to add a copy of the instance as removing/destroying will
+    // destroy the person
+    
+    pPerson = m_logBook->getPerson(pPerson->id());
     m_logBook->addShiftMember(pShift, pPerson);
     
     interp.setResult(shiftCmd);          // To make it look like the LogBook class.
