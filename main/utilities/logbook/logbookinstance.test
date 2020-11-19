@@ -1167,6 +1167,66 @@ tcltest::test getnote_2 {get nonexistent note} \
     $::LogbookInstance getNote 1
 } -returnCodes error -result * -match glob
 
+#################################################################################
+
+
+tcltest::test listallNotes_1 {No notes to list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    set found [$::LogbookInstance listAllNotes]
+    llength $found
+} -result 0
+
+tcltest::test listallNotes_2 {One note to list} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    $note destroy
+    foreach n $notelist {
+        $n destroy
+    }
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {Some note text}]
+    set notelist [$::LogbookInstance listAllNotes]
+    foreach n $notelist {
+        if {[info command $n] eq ""} {
+            error "List notes did not create commands for all notes"
+        }
+    }
+    llength $notelist
+} -result 1
+
+tcltest::test listallNotes_3 {10 notes to list} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    foreach note $notes {
+        $note destroy    
+    }
+    
+    foreach n $notelist {
+        $n destroy
+    }
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set notes [list]
+    for {set i 0} {$i < 10} {incr i} {
+        lappend notes \
+            [$::LogbookInstance createNote $ron "Note number $i"]
+    }
+    set notelist [$::LogbookInstance listAllNotes]
+    llength $notelist
+} -result 10
+        
+    
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

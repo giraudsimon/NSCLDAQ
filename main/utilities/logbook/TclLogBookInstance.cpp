@@ -132,6 +132,8 @@ TclLogBookInstance::operator()(
             createNote(interp, objv);
         } else if (subcommand == "getNote") {
             getNote(interp, objv);
+        } else if (subcommand == "listAllNotes") {
+            listAllNotes(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -863,7 +865,32 @@ TclLogBookInstance::getNote(
     LogBookNote* pNote = m_logBook->getNote(id);   // Throws if no match.
     interp.setResult(wrapNote(interp, pNote));
 }
-
+/**
+ * listAllNotes
+ *    Returns a (possibly empty) list containing command encapsulations
+ *    of all notes currently in the logbook.
+ * @parma interp - interpreter running the command.
+ * @param objv   - the command words.
+ */
+void
+TclLogBookInstance::listAllNotes(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <logbook-instance> listAllNotes");
+    std::vector<LogBookNote*> notes = m_logBook->listAllNotes();
+    
+    CTCLObject result;
+    result.Bind(interp);
+    for(auto n : notes) {
+        CTCLObject item;
+        item.Bind(interp);
+        item = std::string(wrapNote(interp, n));
+        
+        result += item;
+    }
+    interp.setResult(result);
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
 
