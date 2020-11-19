@@ -122,6 +122,7 @@ private:
     void currentRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
     void createNote(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void getNote(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 private:
     std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);

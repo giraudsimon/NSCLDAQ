@@ -1140,6 +1140,32 @@ tcltest::test createNote_7 {Author, text images with a non integer offset} \
 -body {
     $::LogbookInstance createNote $ron text [info script] nogood
 } -returnCodes error -result * -match glob
+##############################################################################
+
+tcltest::test getnote_1 {Get existing note} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $ron destroy
+    $note destroy
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {Some silly note text}]; # id =1
+    set found [$::LogbookInstance getNote 1]
+    expr {[info command $found] ne ""}  
+} -result 1
+
+
+
+tcltest::test getnote_2 {get nonexistent note} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getNote 1
+} -returnCodes error -result * -match glob
 
 #----------------------------------------------------
 

@@ -130,6 +130,8 @@ TclLogBookInstance::operator()(
             currentRun(interp, objv);
         } else if (subcommand == "createNote") {
             createNote(interp, objv);
+        } else if (subcommand == "getNote") {
+            getNote(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -842,6 +844,24 @@ TclLogBookInstance::createNote(
     );
     std::string noteCmd = wrapNote(interp, pNote);
     interp.setResult(noteCmd);
+}
+/**
+ * getNote
+ *    Given a note id, wraps that note in a command object. Error if there's
+ *    no matching id.
+ * @param interp - interpreter running the command.
+ * @param objv   - Command words.
+ */
+void
+TclLogBookInstance::getNote(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 3, "Usage: <logboook-instance> getNote <noteid>");
+    int id(objv[2]);
+    
+    LogBookNote* pNote = m_logBook->getNote(id);   // Throws if no match.
+    interp.setResult(wrapNote(interp, pNote));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
