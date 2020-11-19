@@ -141,6 +141,8 @@ TclLogBookInstance::operator()(
             listNotesForRunNumber(interp, objv);
         } else if (subcommand == "listNotesForRun") {
             listNotesForRun(interp, objv);
+        } else if (subcommand == "listNonRunNotes") {
+            listNonRunNotes(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -958,6 +960,21 @@ TclLogBookInstance::listNotesForRun(
     LogBookRun* pRun = TclRunInstance::getCommandObject(runCmd)->getRun();
     
     auto notes = m_logBook->listNotesForRunId(pRun->getRunInfo().s_id);
+    notesVectorToResultList(interp, notes);
+}
+/**
+ * listNonRunNotes
+ *    Create a list of the notes that are not associated with any run.
+ *  @param interp - interpreter the command is running on.
+ *  @param objv   - COmmand words.
+ */
+void
+TclLogBookInstance::listNonRunNotes(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv,2, "Usage: <logbook-instance> listNonRunNotes");
+    auto notes = m_logBook->listNonRunNotes();
     notesVectorToResultList(interp, notes);
 }
 ///////////////////////////////////////////////////////////////////////////////
