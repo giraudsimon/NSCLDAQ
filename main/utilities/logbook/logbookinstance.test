@@ -1410,6 +1410,54 @@ tcltest::test listNotesForRun_3 {5 notes for correct run,  5 for incorrect} \
 } -result 5
 
     
+########################################################################
+
+tcltest::test listNotesForRun_1 {List when there are not notes for the run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    # There's a note but it's not associated.
+    
+    set note [$::LogbookInstance createNote $ron {Some note text}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    llength [$::LogbookInstance listNotesForRun $run]
+} -result 0
+
+tcltest::test listNotesForRun_2 {List when there are notes attached to a run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    
+    set note [$::LogbookInstance createNote $ron {Some note text} $run]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRun $run]
+    llength $found
+} -result 1
 
 #----------------------------------------------------
 

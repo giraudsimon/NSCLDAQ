@@ -139,6 +139,8 @@ TclLogBookInstance::operator()(
             listNotesForRunId(interp, objv);
         } else if (subcommand == "listNotesForRunNumber") {
             listNotesForRunNumber(interp, objv);
+        } else if (subcommand == "listNotesForRun") {
+            listNotesForRun(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -934,6 +936,29 @@ TclLogBookInstance::listNotesForRunNumber(
     } catch (...) {
         interp.setResult("");
     }
+}
+/**
+ * listNotesForRun
+ *   Tcl-ish binding  given a run instance command, lists the runs
+ *   associated with it.
+ *
+ * @param interp - interpreer running the command.
+ * @param objv   - Command words.
+ */
+void
+TclLogBookInstance::listNotesForRun(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(
+        objv, 3, "Usage: <logbook-instancea> listNotesForRun <run-instance>"
+    );
+    std::string runCmd(objv[2]);
+    
+    LogBookRun* pRun = TclRunInstance::getCommandObject(runCmd)->getRun();
+    
+    auto notes = m_logBook->listNotesForRunId(pRun->getRunInfo().s_id);
+    notesVectorToResultList(interp, notes);
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
