@@ -145,6 +145,8 @@ TclLogBookInstance::operator()(
             listNonRunNotes(interp, objv);
         } else if (subcommand == "getNoteRun") {
             getNoteRun(interp, objv);
+        } else if (subcommand == "getNoteAuthor") {
+            getNoteAuthor(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -799,7 +801,7 @@ TclLogBookInstance::createNote(
     //  *  5 parameters:  author, text, associated run command.
     //  *  6 parameters   author, text, image list and image offset list no
     //                    associated run command.
-    //  * 7 parameter, authore, texst, image list, image offset list, associated run command.
+    //  * 7 parameter, author, texst, image list, image offset list, associated run command.
     //
     // Furthermore, if there is an associated image list, the length of that
     // list must be the same as the associated offset list.
@@ -1001,6 +1003,28 @@ TclLogBookInstance::getNoteRun(
     } else {
         interp.setResult("");
     }
+}
+/**
+ * getNoteAuthor
+ *    Set the result with a Tcl encapsulated command ensemble that respresents
+ *    the author of a note.
+ *
+ * @param interp - interpreter running this command.
+ * @param objv   - Command line words.
+ */
+void
+TclLogBookInstance::getNoteAuthor(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(
+        objv, 3, "Usage: <logbook-instance> getNoteAuthor <note-instance>"
+    );
+    std::string noteCmd(objv[2]);
+    LogBookNote* pNote = TclNoteInstance::getCommandObject(noteCmd)->getNote();
+    LogBookPerson* pPerson = m_logBook->getNoteAuthor(*pNote);
+    
+    interp.setResult(wrapPerson(interp, pPerson));
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:

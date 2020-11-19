@@ -1584,7 +1584,24 @@ tcltest::test getNoteRun_2 {Note has a run} \
     set assocrun [$LogbookInstance getNoteRun $note]
     expr {[info command $assocrun] ne ""}
 } -result 1
+##################################################################
 
+tcltest::test getNoteAuthor_1 {Get note author} \
+-setup {
+    commonSetup
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
+    set note [$LogbookInstance createNote $ron Txt]
+} \
+-cleanup {
+    $ron destroy
+    $note destroy
+    $author destroy
+    commonCleanup
+} \
+-body {
+    set author [$LogbookInstance getNoteAuthor $note]
+    expr {[info command $author] == $author}
+} -result 1
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
