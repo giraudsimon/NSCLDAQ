@@ -41,7 +41,7 @@ proc commonSetup {} {
     if {[file exists test.logbook.db]} {file delete test.logbook.db}
     logbook::logbook create test.logbook.db 0400x {Ron Fox} {Logbook Tcl Tests}
     set ::LogbookInstance [logbook::logbook open test.logbook.db]
-    set ::Person [$::LogbookInstance createPerson Fox Ron Mr.]
+    set ::Person [$::LogbookInstance addPerson Fox Ron Mr.]
 }
 proc commonCleanup {} {
     $::Person destroy
@@ -50,17 +50,16 @@ proc commonCleanup {} {
 }
 
 
-tcltest::test test_name {purpose of test} \
+tcltest::test lastName {Can fetch lastName} \
 -setup {
-    
+    commonSetup
 } \
 -cleanup {
-    
+   commonCleanup 
 } \
 -body {
-    
-} \
--result {}
+    $Person lastName
+} -result Fox
 
 #----------------------------------------------------
 

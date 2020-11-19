@@ -55,6 +55,9 @@ public:
     LogBookPerson* getPerson() { return m_person.get(); }
 public:
     static TclPersonInstance* getCommandObject(const std::string& name);
+    
+private:
+    void lastName(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 };
 
 

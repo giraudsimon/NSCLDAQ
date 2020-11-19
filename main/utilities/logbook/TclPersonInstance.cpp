@@ -78,6 +78,8 @@ int TclPersonInstance::operator()(
         std::string subcommand(objv[1]);
         if (subcommand == "destroy")  {
             delete this;
+        } else if (subcommand == "lastName") {
+            lastName(interp, objv);
         } else  {
             std::stringstream msg;
             msg << "'" << subcommand << "' is an invalid subcommand for "
@@ -131,4 +133,21 @@ TclPersonInstance::getCommandObject(const std::string& name)
         throw std::out_of_range(e);
     }
     return p->second;
+}
+////////////////////////////////////////////////////////////////////////////////
+// Private subcommand methods
+
+/**
+ * lastName
+ *   Set the result with the person's last name.
+ * @param interp - interpreter executing the command.
+ * @param objv   - command line words.
+ */
+void
+TclPersonInstance::lastName(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <person-instance> lastName");
+    interp.setResult(m_person->lastName());
 }
