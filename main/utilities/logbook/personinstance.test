@@ -61,6 +61,39 @@ tcltest::test lastName {Can fetch lastName} \
     $Person lastName
 } -result Fox
 
+tcltest::test firstName {can fetch firstname} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+   commonCleanup 
+} \
+-body {
+   $Person firstName
+} -result Ron
+
+tcltest::test salutation {can fetch salutation} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+   commonCleanup 
+} \
+-body {
+   $Person salutation
+} -result Mr.
+
+tcltest::test id         {can fetch primary key} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+   commonCleanup 
+} \
+-body {
+   $Person id
+} -result 1
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

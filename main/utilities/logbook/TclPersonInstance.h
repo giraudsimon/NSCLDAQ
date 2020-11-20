@@ -58,6 +58,9 @@ public:
     
 private:
     void lastName(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void firstName(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void salutation(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 };
 
 

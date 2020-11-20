@@ -80,6 +80,12 @@ int TclPersonInstance::operator()(
             delete this;
         } else if (subcommand == "lastName") {
             lastName(interp, objv);
+        } else if (subcommand == "firstName") {
+            firstName(interp, objv);    
+        } else if (subcommand == "salutation") {
+            salutation(interp, objv);
+        } else if (subcommand == "id") {
+            id(interp, objv);
         } else  {
             std::stringstream msg;
             msg << "'" << subcommand << "' is an invalid subcommand for "
@@ -150,4 +156,49 @@ TclPersonInstance::lastName(
 {
     requireExactly(objv, 2, "Usage: <person-instance> lastName");
     interp.setResult(m_person->lastName());
+}
+/**
+ * firstName
+ *    set the result to the person's first name.
+ *  @param interp - interpreter runnig the command
+ *  @param objv   - The command words.
+ */
+void TclPersonInstance::firstName(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <person-instance> firstName");
+    interp.setResult(m_person->firstName());
+}
+/**
+ * salutation
+ *    Set the result to the person's salutation.
+ * @param interp  - interpreter running the command.
+ * @param objv    - the command words.
+ */
+void
+TclPersonInstance::salutation(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "Usage: <person-instance> salutation");
+    interp.setResult(m_person->salutation());
+}
+/**
+ * id
+ *   Returns the person's primary key in the root table describing people
+ *    in the database.
+ * @param interp - interpreter running the command.
+ * @param objv   - the command words.
+ */
+void
+TclPersonInstance::id(
+    CTCLInterpreter& interp, std::vector<CTCLObject>& objv
+)
+{
+    requireExactly(objv, 2, "USage: <person-instance> id");
+    CTCLObject result;
+    result.Bind(interp);
+    result = m_person->id();
+    interp.setResult(result);
 }
