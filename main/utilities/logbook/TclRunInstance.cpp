@@ -23,6 +23,10 @@
 #include <TCLObject.h>
 #include <TCLInterpreter.h>
 #include "LogBookRun.h"
+#include <stdexcept>
+#include <sstream>
+#include <Exception.h>
+
 
 #include <sstream>
 
@@ -67,6 +71,34 @@ TclRunInstance::~TclRunInstance()
 int
 TclRunInstance::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
+    try {
+        bindAll(interp, objv);
+        requireAtLeast(objv, 2, "Usage: <run-instance> <subcommand> ?...?");
+        std::string subcommand(objv[1]);
+    }
+    catch (std::string& msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+    }
+    catch (const char* msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+        
+    }
+    catch (std::exception& e) {       // Note LogBook::Exception is derived from this
+        interp.setResult(e.what());
+        return TCL_ERROR;
+    }
+    catch (CException& e) {
+        interp.setResult(e.ReasonText());
+        return TCL_ERROR;
+    }
+    catch (...) {
+        interp.setResult(
+            "Unexpected exception type caught in TclPersonInstance::operator()"
+        );
+        return TCL_ERROR;
+    }
     return TCL_OK;
 }
 //////////////////////////////////////////////////////////////////////////////

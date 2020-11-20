@@ -113,7 +113,7 @@ int TclPersonInstance::operator()(
     }
     catch (...) {
         interp.setResult(
-            "Unexpected exception type caught in TclLogbookInstance::operator()"
+            "Unexpected exception type caught in TclPersonInstance::operator()"
         );
         return TCL_ERROR;
     }

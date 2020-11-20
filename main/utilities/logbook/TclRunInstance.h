@@ -66,6 +66,12 @@ public:
     void setRun(LogBookRun* pRun) {m_pRun = pRun;} 
 public:
     static TclRunInstance* getCommandObject(const std::string& name);
+private:
+    void id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void title(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void number(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void transitions(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void isActive(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 };
 
 #endif

@@ -101,7 +101,7 @@ TclShiftInstance::operator()(
     }
     catch (...) {
         interp.setResult(
-            "Unexpected exception type caught in TclLogbookInstance::operator()"
+            "Unexpected exception type caught in TclShiftInstance::operator()"
         );
         return TCL_ERROR;
     }
