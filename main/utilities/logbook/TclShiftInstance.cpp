@@ -20,6 +20,14 @@
  */
 #include "TclShiftInstance.h"
 #include "LogBookShift.h"
+#include "LogBookPerson.h"
+#include "LogBook.h"
+#include "TclLogBookInstance.h"
+
+#include <TCLInterpreter.h>
+#include <TCLObject.h>
+#include <Exception.h>
+#include <stdexcept>
 #include <sstream>
 
 std::map<std::string, TclShiftInstance*> TclShiftInstance::m_shifts;
@@ -31,10 +39,12 @@ std::map<std::string, TclShiftInstance*> TclShiftInstance::m_shifts;
  *   @param pShift - Shift being encapsulated.
  */
 TclShiftInstance::TclShiftInstance(
-    CTCLInterpreter& interp, const char* name, LogBookShift* pShift
+    CTCLInterpreter& interp, const char* name, LogBookShift* pShift,
+    LogBook* pLogBook
 ) :
     CTCLObjectProcessor(interp, name, true),
-    m_shift(pShift)
+    m_shift(pShift),
+    m_logBook(pLogBook)
 {
     m_shifts[name] = this;        
 }
@@ -61,9 +71,45 @@ TclShiftInstance::operator()(
     CTCLInterpreter& interp, std::vector<CTCLObject>& objv
 )
 {
-    return TCL_OK;                 // STUB.
+    try {
+        bindAll(interp, objv);
+        requireAtLeast(objv, 2, "Usage: <shift-instance> <subcommand> ...");
+        std::string subcommand(objv[1]);
+        if (subcommand == "name") {
+            name(interp, objv);
+        } else if (subcommand == "members") {
+            members(interp, objv);
+        } else if (subcommand == "id") {
+            id(interp, objv);
+        }
+    }
+     catch (std::string& msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+    }
+    catch (const char* msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+    }
+    catch (std::exception& e) {       // Note LogBook::Exception is derived from this
+        interp.setResult(e.what());
+        return TCL_ERROR;
+    }
+    catch (CException& e) {
+        interp.setResult(e.ReasonText());
+        return TCL_ERROR;
+    }
+    catch (...) {
+        interp.setResult(
+            "Unexpected exception type caught in TclLogbookInstance::operator()"
+        );
+        return TCL_ERROR;
+    }
+
+    return TCL_OK;
     
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Static methods
 
@@ -85,4 +131,63 @@ TclShiftInstance::getCommandObject(const std::string& name)
         throw std::out_of_range(e);
     }
     return p->second;
+}
+///////////////////////////////////////////////////////////////////////////
+// Command processors.
+
+/**
+ * name
+ *    Return the name of the shift as the result.
+ * @param interp -interpreter running the command.
+ * @param objv   - The command words.
+ */
+void
+TclShiftInstance::name(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <shift-instance> name");
+    return interp.setResult(m_shift->name());
+}
+/**
+ * members
+ *    Return Tcl encapsulated members of the shift.  Each member of the result
+ *    list is a person command ensemble.
+ * @param interp  - interpreter running the command.
+ * @param objv    - The command words.
+ */
+void
+TclShiftInstance::members(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <shift-instance> members");
+    auto members = m_shift->members();
+    
+    // Since shift manipulation can destroy its person instances, we need
+    // to make copies of the people on the shift as we wrap them.
+    CTCLObject result;
+    result.Bind(interp);
+    for (auto pMember : members) {
+        CTCLObject item;
+        item.Bind(interp);
+        LogBookPerson* pPerson = m_logBook->getPerson(pMember->id());
+        std::string personCmd = TclLogBookInstance::wrapPerson(interp, pPerson);
+        item = personCmd;
+        result += item;
+    }
+    interp.setResult(result);
+    
+}
+/**
+ *' id
+ *     Return the shift's primary key as the command's result.
+ *  @param interp - interpreter running the command.
+ *  @param objv   - command words.
+ */
+void
+TclShiftInstance::id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <shift-instance> id");
+    int id = m_shift->id();
+    CTCLObject result;
+    result.Bind(interp);
+    result = id;
+    interp.setResult(result);
 }

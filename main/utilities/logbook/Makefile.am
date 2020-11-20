@@ -66,6 +66,7 @@ check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbook.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbookinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ personinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ shiftinstance.test
 	@builddir@/unittests
 
 
@@ -74,5 +75,5 @@ check: check-TESTS
 
 EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	pyruntests.py pynotetests.py logbook.test logbookinstance.test \
-	personinstance.test
+	personinstance.test shiftinstance.test
 

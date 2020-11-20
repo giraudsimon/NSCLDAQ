@@ -27,6 +27,7 @@
 class CTCLInterpreter;
 class CTCLObject;
 class LogBookShift;
+class LogBook;
 
 /**
  * @class TclShiftInstance
@@ -40,10 +41,12 @@ class TclShiftInstance : public CTCLObjectProcessor
 {
 private:
     std::shared_ptr<LogBookShift> m_shift;
+    std::shared_ptr<LogBook>      m_logBook;
     static std::map<std::string, TclShiftInstance*> m_shifts;
 public:
     TclShiftInstance(
-        CTCLInterpreter& interp, const char* cmd, LogBookShift* pShift
+        CTCLInterpreter& interp, const char* cmd, LogBookShift* pShift,
+        LogBook* pLogBook
     );
     virtual ~TclShiftInstance();
     
@@ -54,6 +57,10 @@ public:
     LogBookShift* getShift() {return m_shift.get();}
 public:
     static TclShiftInstance* getCommandObject(const std::string& name);
+private:
+    void name(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void members(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 };
 
 #endif
