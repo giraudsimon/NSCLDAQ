@@ -28,7 +28,7 @@ package require tcltest
 package require logbook
 package require sqlite3
 
-# tcltest::verbose {start}
+#tcltest::verbose {start}
 
 # In case there are hanging files:
 
@@ -1551,7 +1551,7 @@ tcltest::test listNonRunNotes_3 {Mix of nonrun and run notes} \
 tcltest::test getNoteRun_1 {Note has no run} \
 -setup {
     commonSetup
-    set run [$LogbookInstance addPerson Fox Ron Mr.]
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
     set note [$LogbookInstance createNote $ron {Some notes text}]
 } \
 -cleanup {
