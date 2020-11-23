@@ -1090,7 +1090,7 @@ std::string
 TclLogBookInstance::wrapNote(CTCLInterpreter& interp, LogBookNote* pNote)
 {
     std::string newCommand = TclLogbook::createObjectName("note");
-    new TclNoteInstance(interp, newCommand.c_str(), m_logBook.get(), pNote);
+    new TclNoteInstance(interp, newCommand.c_str(), m_logBook, pNote);
     return newCommand;
 }
 /**

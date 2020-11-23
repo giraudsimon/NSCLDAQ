@@ -68,7 +68,8 @@ private:
     
 public:
     TclNoteInstance(
-        CTCLInterpreter& interp, const char* name, LogBook* pBook,
+        CTCLInterpreter& interp, const char* name,
+        std::shared_ptr<LogBook>& pBook,
         LogBookNote* pNote
     );
     virtual ~TclNoteInstance();

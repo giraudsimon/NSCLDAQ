@@ -19,10 +19,11 @@
  *  @brief: Implement the Tcl wrapping of a logbook note.
  */
 #include "TclNoteInstance.h"
-#include "TCLInterpreter.h"
-#include "TCLObject.h"
+#include <TCLInterpreter.h>
+#include <TCLObject.h>
 #include "LogBookNote.h"
 #include "LogBook.h"
+#include <Exception.h>
 #include <stdexcept>
 #include <sstream>
 
@@ -36,7 +37,7 @@ std::map<std::string, TclNoteInstance*> TclNoteInstance::m_instanceMap;
  *    @param pNote  - Pointer to the note object we are encapsulating
  */
 TclNoteInstance::TclNoteInstance(
-    CTCLInterpreter& interp, const char* name, LogBook* pBook,
+    CTCLInterpreter& interp, const char* name, std::shared_ptr<LogBook>& pBook,
         LogBookNote* pNote
 ) :
     CTCLObjectProcessor(interp, name, true),
@@ -67,6 +68,44 @@ TclNoteInstance::~TclNoteInstance()
 int
 TclNoteInstance::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
+    try {
+        bindAll(interp, objv);
+        requireAtLeast(objv, 2, "Usage: <note-instance> <subcommand> ?...?");
+        std::string subcommand = objv[1];
+        
+        if (subcommand == "destroy") {
+            delete this;
+        } else {
+            std::stringstream msg;
+            msg << subcommand << " is not a valid subcommand for a note instance";
+            std::string e(msg.str());
+            throw e;
+        }
+    }
+    catch (std::string& msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+    }
+    catch (const char* msg) {
+        interp.setResult(msg);
+        return TCL_ERROR;
+
+    }
+    catch (std::exception& e) {       // Note LogBook::Exception is derived from this
+        interp.setResult(e.what());
+        return TCL_ERROR;
+    }
+    catch (CException& e) {
+        interp.setResult(e.ReasonText());
+        return TCL_ERROR;
+    }
+    catch (...) {
+        interp.setResult(
+            "Unexpected exception type caught in TclPersonInstance::operator()"
+        );
+        return TCL_ERROR;
+    }
+
     return TCL_OK;
 }
 //////////////////////////////////////////////////////////////////////////////
