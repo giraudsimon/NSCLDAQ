@@ -323,7 +323,7 @@ TclRunInstance::copyShift(CTCLInterpreter& interp, LogBookShift* pShift)
     // This is a bit filthy but gets the job done:
     
     TclLogBookInstance tempInstance(
-        &interp, TclLogbook::createObjectName( "__temp__").c_str(), m_logbook.get()
+        &interp, TclLogbook::createObjectName( "__temp__").c_str(), m_logbook
     );
     return tempInstance.wrapShift(interp, pCopy);
 

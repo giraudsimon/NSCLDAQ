@@ -108,6 +108,7 @@ public:
     
     // API for runs:
     
+    LogBookRun* getRun(int id);
     static int transitionId(CSqlite& db, const char* name);
     int         runId(int runNumber);
     LogBookRun* currentRun();

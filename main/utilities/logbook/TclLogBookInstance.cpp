@@ -53,6 +53,18 @@ TclLogBookInstance::TclLogBookInstance(
         
 }
 /**
+ * constructor
+ *    BUt with the logbook already in a shared ptr:
+ */
+TclLogBookInstance::TclLogBookInstance(
+    CTCLInterpreter* pInterp, const char* cmd, std::shared_ptr<LogBook> book
+) :
+    CTCLObjectProcessor(*pInterp, cmd, true),
+    m_logBook(book)
+{
+        
+}   
+/**
  * destructor
  */
 TclLogBookInstance::~TclLogBookInstance()

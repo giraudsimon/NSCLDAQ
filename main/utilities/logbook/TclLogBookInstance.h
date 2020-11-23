@@ -93,6 +93,9 @@ private:
     int                      m_commandIndex;
 public:
     TclLogBookInstance(CTCLInterpreter* pInterp, const char* cmd, LogBook* pBook);
+    TclLogBookInstance(
+        CTCLInterpreter* pInterp, const char* cmd, std::shared_ptr<LogBook> book
+    );
     virtual ~TclLogBookInstance();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
@@ -136,8 +139,9 @@ private:
 public:
     static std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
-private:
     std::string wrapRun(CTCLInterpreter& interp, LogBookRun* pRun);
+private:
+    
     std::string wrapNote(CTCLInterpreter& interp, LogBookNote* pNote);
     std::pair<std::vector<std::string>, std::vector<size_t>>
         getImageInformation(

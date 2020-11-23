@@ -21,12 +21,14 @@
 #ifndef TCLNOTEINSTANCE_H
 #define TCLNOTEINSTANCE_H
 #include <TCLObjectProcessor.h>
+#include <TCLObject.h>
+
+#include "LogBookNote.h"
 
 #include <map>
 #include <memory>
 
 class LogBook;
-class LogBookNote;
 
 /**
  * @class TclNoteInstnace
@@ -78,7 +80,19 @@ public:
     
     LogBookNote* getNote() {return m_note.get();}
 public:
-    static TclNoteInstance* getCommandObject(const std::string& name); 
+    static TclNoteInstance* getCommandObject(const std::string& name);
+private:
+    void id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void run(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void author(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void timestamp(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void contents(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void images(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void substituteImages(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+private:
+    CTCLObject makeImageDict(
+        CTCLInterpreter& interp, const LogBookNote::NoteImage& image
+    );
 };
 
 #endif

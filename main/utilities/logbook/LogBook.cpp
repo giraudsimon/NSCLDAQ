@@ -390,6 +390,18 @@ LogBook::getCurrentShift()
 // API For Runs:
 
 /**
+ * getRun
+ *   Return a run given its id
+ * @param id - run id
+ * @return LogBookRun* - dynamically allocated.
+ */
+LogBookRun*
+LogBook::getRun(int id)
+{
+    return new LogBookRun(*m_pConnection, id);
+}
+
+/**
  * transitionId
  *    Given a named transition, this method retunrs
  *    the id of that transition.

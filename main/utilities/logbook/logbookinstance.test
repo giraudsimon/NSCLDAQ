@@ -28,7 +28,7 @@ package require tcltest
 package require logbook
 package require sqlite3
 
-tcltest::verbose {start}
+#tcltest::verbose {start}
 
 # In case there are hanging files:
 
