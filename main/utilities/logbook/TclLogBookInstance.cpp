@@ -1062,7 +1062,7 @@ std::string
 TclLogBookInstance::wrapShift(CTCLInterpreter& interp, LogBookShift* pShift)
 {
     std::string newCommand = TclLogbook::createObjectName("shift");
-    new TclShiftInstance(interp, newCommand.c_str(), pShift, m_logBook.get());
+    new TclShiftInstance(interp, newCommand.c_str(), pShift, m_logBook);
     return newCommand;
 }
 /**

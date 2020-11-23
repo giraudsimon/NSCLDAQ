@@ -39,8 +39,9 @@ std::map<std::string, TclShiftInstance*> TclShiftInstance::m_shifts;
  *   @param pShift - Shift being encapsulated.
  */
 TclShiftInstance::TclShiftInstance(
-    CTCLInterpreter& interp, const char* name, LogBookShift* pShift,
-    LogBook* pLogBook
+    CTCLInterpreter& interp, const char* name,
+    LogBookShift* pShift,
+    std::shared_ptr<LogBook>& pLogBook
 ) :
     CTCLObjectProcessor(interp, name, true),
     m_shift(pShift),

@@ -46,7 +46,7 @@ private:
 public:
     TclShiftInstance(
         CTCLInterpreter& interp, const char* cmd, LogBookShift* pShift,
-        LogBook* pLogBook
+        std::shared_ptr<LogBook>& pLogBook
     );
     virtual ~TclShiftInstance();
     
