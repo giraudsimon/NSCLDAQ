@@ -1076,7 +1076,7 @@ std::string
 TclLogBookInstance::wrapRun(CTCLInterpreter& interp, LogBookRun* pRun)
 {
     std::string newCommand = TclLogbook::createObjectName("run");
-    new TclRunInstance(interp, newCommand.c_str(), pRun);
+    new TclRunInstance(interp, newCommand.c_str(), pRun, m_logBook);
     return newCommand;
 }
 /**

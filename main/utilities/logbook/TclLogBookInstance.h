@@ -135,9 +135,8 @@ private:
     
 public:
     static std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
-private:
-    
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);
+private:
     std::string wrapRun(CTCLInterpreter& interp, LogBookRun* pRun);
     std::string wrapNote(CTCLInterpreter& interp, LogBookNote* pNote);
     std::pair<std::vector<std::string>, std::vector<size_t>>

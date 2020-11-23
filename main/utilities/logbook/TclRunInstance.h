@@ -21,13 +21,18 @@
 #ifndef TCLRUNINSTANCE_H
 #define TCLRUNINSTANCE_H
 #include <TCLObjectProcessor.h>
+
 #include <memory>
 #include <map>
 #include <string>
 
-class CTCLObject;
+#include "LogBookRun.h"
+#include <TCLObject.h>
+
 class CTCLInterpreter;
-class LogBookRun;
+class LogBook;
+class LogBookShift;
+
 
 /**
  * @class TclRunInstance
@@ -55,9 +60,13 @@ class TclRunInstance : public CTCLObjectProcessor
 {
 private:
     LogBookRun*   m_pRun;
+    std::shared_ptr<LogBook> m_logbook;
     static std::map<std::string, TclRunInstance*> m_instanceRegistry;
 public:
-    TclRunInstance(CTCLInterpreter& interp, const char* name, LogBookRun* pRun);
+    TclRunInstance(
+        CTCLInterpreter& interp, const char* name, LogBookRun* pRun,
+        std::shared_ptr<LogBook>& book
+    );
     virtual ~TclRunInstance();
     
     int operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
@@ -72,6 +81,11 @@ private:
     void number(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void transitions(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void isActive(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+private:
+    CTCLObject makeTransitionDict(
+        CTCLInterpreter& interp, const LogBookRun::Transition& transition
+    );
+    std::string copyShift(CTCLInterpreter& interp, LogBookShift* shift);
 };
 
 #endif

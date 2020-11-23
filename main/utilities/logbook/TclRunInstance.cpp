@@ -20,13 +20,18 @@
  */
 
 #include "TclRunInstance.h"
+#include "TclLogBookInstance.h"
+#include "TclLogbook.h"
+
 #include <TCLObject.h>
 #include <TCLInterpreter.h>
+
 #include "LogBookRun.h"
+#include "LogBookShift.h"
+#include "LogBook.h"
 #include <stdexcept>
 #include <sstream>
 #include <Exception.h>
-
 
 #include <sstream>
 
@@ -37,12 +42,14 @@ std::map<std::string, TclRunInstance*> TclRunInstance::m_instanceRegistry;
  *    @param interp - intepreter on which the command will be registered.
  *    @param name   - command name.
  *    @param pRun   - run to wrap.
+ *    @param pLogbook - logbook the run lives in.
  */
 TclRunInstance::TclRunInstance(
-    CTCLInterpreter& interp, const char* name, LogBookRun* pRun
+    CTCLInterpreter& interp, const char* name, LogBookRun* pRun, std::shared_ptr<LogBook>& pBook
 ) :
     CTCLObjectProcessor(interp, name, true),
-    m_pRun(pRun)
+    m_pRun(pRun),
+    m_logbook(pBook)
 {
     m_instanceRegistry[name] = this;        
 }
@@ -77,6 +84,16 @@ TclRunInstance::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& obj
         std::string subcommand(objv[1]);
         if (subcommand == "destroy" ) {
             delete this;
+        } else if (subcommand == "id") {
+            id(interp, objv);
+        } else if (subcommand == "title") {
+            title(interp, objv);
+        } else if (subcommand == "number") {
+            number(interp, objv);
+        } else if (subcommand == "transitions") {
+            transitions(interp, objv);
+        } else if (subcommand == "isActive") {
+            isActive(interp, objv);
         } else {
             std::stringstream msg;
             msg << subcommand
@@ -111,6 +128,7 @@ TclRunInstance::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& obj
     }
     return TCL_OK;
 }
+
 //////////////////////////////////////////////////////////////////////////////
 // static methods
 
@@ -133,4 +151,180 @@ TclRunInstance::getCommandObject(const std::string& name)
         throw std::out_of_range(e);
     }
     return p->second;
+}
+////////////////////////////////////////////////////////////////////////////////
+// private command processing methods.
+
+/**
+ * id
+ *     Return the primary key of the root run record as the subcommand result.  This can be used
+ *     to create references back to the run.
+ *  @param interp -interpreter running the command.
+ *  @param objv   - The command words.
+ */
+void
+TclRunInstance::id(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <run-instance id");
+    CTCLObject result;
+    result.Bind(interp);
+    result = m_pRun->getRunInfo().s_id;
+    interp.setResult(result);
+    
+}
+/**
+ * title
+ *     Set the run's title as the command result.
+ *  @param interp -interpreter running the command.
+ *  @param objv   - The command words.
+ */
+void
+TclRunInstance::title(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <run-instance> title");
+    interp.setResult(m_pRun->getRunInfo().s_title);
+}
+/**
+ * number
+ *    Set the run's run number as the command result.
+ *  @param interp -interpreter running the command.
+ *  @param objv   - The command words.
+ */
+void
+TclRunInstance::number(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <run-instance> number");
+    CTCLObject result;
+    result.Bind(interp);
+    result = m_pRun->getRunInfo().s_number;
+    interp.setResult(result);
+}
+/**
+ * isActive
+ *    Returns a boolean that indicates if the run is active.
+ **  @param interp -interpreter running the command.
+ *  @param objv   - The command words.
+ */
+void
+TclRunInstance::isActive(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <run-instance> isActive");
+    CTCLObject result;
+    result.Bind(interp);
+    result = m_pRun->isActive() ? 1 : 0;
+    interp.setResult(result);
+}
+/**
+ * transitions
+ *    Returns a list of transitions in the result.
+ *    Each transition is returne as a dict that's described in the header file.
+ * @param interp - interpreter running the command.
+ * @param objv   - The command words.
+ */
+void
+TclRunInstance::transitions(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, "Usage: <run-instance> transitions");
+    CTCLObject result;
+    result.Bind(interp);
+    size_t n = m_pRun->numTransitions();
+    for (int i =0; i < n; i++) {
+        CTCLObject item = makeTransitionDict(interp, (*m_pRun)[i]);
+        result += item;
+    }
+    
+    interp.setResult(result);
+}
+///////////////////////////////////////////////////////////////////////////////
+// Private utilities.
+
+/**
+ * makeTransitionDict
+ *    Create a dictionary that describes a transition  See the header for the
+ *    key value pairs this has.
+ *
+ * @param interp - interpreter the command is running on.
+ * @param transition - transition struct from the run
+ * @return CTCLObject - Encapsulated dict.
+ */
+CTCLObject
+TclRunInstance::makeTransitionDict(
+    CTCLInterpreter& interp, const LogBookRun::Transition& transition
+)
+{
+    Tcl_Obj* pDict = Tcl_NewDictObj();
+    Tcl_Interp* pInterp = interp.getInterpreter();
+    
+     
+    
+    Tcl_Obj* key;
+    Tcl_Obj* value;
+
+    // id
+    
+    key = Tcl_NewStringObj("id", -1);
+    value = Tcl_NewIntObj(transition.s_id);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
+    Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+    
+    // transition(code)
+    key = Tcl_NewStringObj("transition", -1);
+    value = Tcl_NewIntObj(transition.s_transition);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
+    Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+    
+    // transitionName
+    
+    key = Tcl_NewStringObj("transitionName", -1);
+    value = Tcl_NewStringObj(transition.s_transitionName.c_str(), -1);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
+    Tcl_DecrRefCount(key);  Tcl_DecrRefCount(value);
+    
+    // transitionComment
+    
+    key = Tcl_NewStringObj("transitionComment", -1);
+    value = Tcl_NewStringObj(transition.s_transitionComment.c_str(), -1);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
+    Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+    
+    // shift
+    
+    key = Tcl_NewStringObj("shift", -1);
+    std::string shiftCommand = copyShift(interp, transition.s_onDuty);
+    value = Tcl_NewStringObj(shiftCommand.c_str(), -1);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
+    Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+        
+    CTCLObject result(pDict);
+    result.Bind(interp);
+    return result;
+    
+}
+/**
+ * copyShift
+ *   Given a shift, create a copy of it and wrap that copy.
+ *   Copying is needed because shift command deletion can delete the
+ *   underlying shift pointer which might still be in play in the
+ *   underlying LogBookRun transition.
+ *
+ * @param shift - reference to the shift to copy.
+ * @return std::string - the command name that wraps the new copy of the shift.
+ */
+std::string
+TclRunInstance::copyShift(CTCLInterpreter& interp, LogBookShift* pShift)
+{
+    LogBookShift* pCopy = m_logbook->getShift(pShift->id());
+    
+    // This is a bit filthy but gets the job done:
+    
+    TclLogBookInstance tempInstance(
+        &interp, TclLogbook::createObjectName( "__temp__").c_str(), m_logbook.get()
+    );
+    return tempInstance.wrapShift(interp, pCopy);
+
 }
