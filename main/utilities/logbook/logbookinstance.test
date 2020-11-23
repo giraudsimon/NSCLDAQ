@@ -877,7 +877,6 @@ tcltest::test listruns_2 {A single run} \
 tcltest::test listruns_3 {10 runs}  \
 -setup {commonSetup} -cleanup {
     $shift destroy
-    $run   destroy
     foreach r $cruns {$r destroy}
     foreach r $lruns { $r destroy }
     commonCleanup
@@ -908,7 +907,7 @@ tcltest::test findrun_2 {Found the only run} \
     $shift destroy
     $run   destroy
     $found destroy
-    foreach run $r { $run destroy }
+
     commonCleanup
 } \
 -body {
@@ -1555,7 +1554,7 @@ tcltest::test getNoteRun_1 {Note has no run} \
     set note [$LogbookInstance createNote $ron {Some notes text}]
 } \
 -cleanup {
-    $run destroy
+    $ron destroy
     $note destroy
     commonCleanup
 } \

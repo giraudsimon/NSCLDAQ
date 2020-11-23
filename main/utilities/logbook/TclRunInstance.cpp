@@ -75,6 +75,16 @@ TclRunInstance::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& obj
         bindAll(interp, objv);
         requireAtLeast(objv, 2, "Usage: <run-instance> <subcommand> ?...?");
         std::string subcommand(objv[1]);
+        if (subcommand == "destroy" ) {
+            delete this;
+        } else {
+            std::stringstream msg;
+            msg << subcommand
+                << " is not a valid subcommand of the run instance command "
+                << std::string(objv[0]);
+            std::string e(msg.str());
+            throw e;
+        }
     }
     catch (std::string& msg) {
         interp.setResult(msg);
