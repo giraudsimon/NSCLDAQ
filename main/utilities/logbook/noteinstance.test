@@ -122,6 +122,112 @@ tcltest::test contents {Correct note contents} \
     set note [$logbook createNote $giordano {This is giordano's note}]
     $note contents
 } -result {This is giordano's note}
+
+tcltest::test images_1  {Note has no images} \
+-setup {commonSetup} -cleanup {
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $giordano {Some note text}]
+    llength [$note images]
+} -result 0
+
+tcltest::test images_2.1 {Put a hokey image in the text:1} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {this is note text} \
+              [list hokeyimage.img] [list 5]]
+    llength [$note images]
+} -result 1
+    
+tcltest::test images_2.2 {Put a hokey image in the text:2} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {this is note text} \
+              [list hokeyimage.img] [list 5]]
+    set image [lindex [$note images] 0]
+    dict get $image offset
+} -result 5
+
+tcltest::test images_2.3 {Put a hokey image in the text:3} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {this is note text} \
+              [list hokeyimage.img] [list 5]]
+    set image [lindex [$note images] 0]
+    dict get $image originalFilename
+} -result hokeyimage.img
+
+tcltest::test images_2.4 {Put a hokey image in the text:4} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {this is note text} \
+              [list hokeyimage.img] [list 5]]
+    set image [lindex [$note images] 0]
+    expr {[dict get $image imageLength] == (1+[string length $contents])}
+    
+} -result 1
+
+tcltest::test images_2.5 {Put a hokey image in the text:5} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {this is note text} \
+              [list hokeyimage.img] [list 5]]
+    set image [lindex [$note images] 0]
+    dict get $image imageData
+} -result "this is a hokey image\n"
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

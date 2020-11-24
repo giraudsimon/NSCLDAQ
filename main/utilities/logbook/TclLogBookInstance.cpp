@@ -862,7 +862,7 @@ TclLogBookInstance::createNote(
         runCmd    = std::string(objv[6]);
         pRun     = TclRunInstance::getCommandObject(runCmd)->getRun();
     case 6:                        // there's image information but no run:
-        imageInfo = getImageInformation(interp, objv [4], objv[5]);
+        imageInfo = getImageInformation(interp, objv[4], objv[5]);
     
         break;
     default:                        // four parameters already dealt with.
