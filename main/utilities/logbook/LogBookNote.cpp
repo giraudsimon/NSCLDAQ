@@ -390,7 +390,12 @@ LogBookNote::create(
         );
         insimage.bind(1, noteId);
         for (int i =0; i < images.size(); i++) {
-            insimage.bind(2, images[i].s_offset);
+            
+            // The cast to int is required below because size_t may be
+            // 64 bits and our bind for 64 bit int creates a fixed sized,
+            // null filled blob (placeholder)... is what it is..
+            
+            insimage.bind(2, (int)(images[i].s_offset));
             insimage.bind(3, images[i].s_filename.c_str(), -1, SQLITE_STATIC);
             auto img = readImage(images[i].s_filename);
             size_t      isize = img.first;

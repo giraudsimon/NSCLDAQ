@@ -736,7 +736,7 @@ void notetest::create_3()
     // it exists.
     
     std::vector<LogBookNote::ImageInfo> images;    // No images for this run:
-    images.push_back({m_filename, 0});
+    images.push_back({m_filename, 5});
     
     LogBookNote* pNote(nullptr);
     CPPUNIT_ASSERT_NO_THROW( pNote = LogBookNote::create(
@@ -745,7 +745,7 @@ void notetest::create_3()
     
     EQ(size_t(1), pNote->imageCount());
     EQ(m_filename, (*pNote)[0].s_originalFilename);
-    EQ(0, (*pNote)[0].s_noteOffset);
+    EQ(5, (*pNote)[0].s_noteOffset);
     
     delete pNote;
 }
