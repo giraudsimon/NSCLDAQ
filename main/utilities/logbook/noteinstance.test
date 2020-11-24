@@ -228,6 +228,35 @@ tcltest::test images_2.5 {Put a hokey image in the text:5} \
     dict get $image imageData
 } -result "this is a hokey image\n"
 
+tcltest::test substitute_1 {Substitute images with no images does nothing} \
+-setup {commonSetup} \
+-cleanup {
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $ron {Note Contents}]
+    $note substituteImages
+} -result {Note Contents}
+
+tcltest::test substitue_2 {Substitute images when there's an image} \
+-setup {
+    set contents "this is a hokey image"
+    commonSetup
+    tcltest::makeFile $contents  hokeyimage.img
+
+} \
+-cleanup {
+    $note destroy
+    commonCleanup
+    tcltest::removeFile hokeyimage.img
+} \
+-body {
+    set note [$logbook createNote $ron {t![](hokeyimage.img)his is note text} \
+              [list hokeyimage.img] [list 1]]
+    $note substituteImages
+} -result "t!\[\]($env(HOME)/.nscl-logbook/note1_image1_hokeyimage.img)his is note text"
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
