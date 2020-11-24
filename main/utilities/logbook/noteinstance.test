@@ -84,7 +84,44 @@ tcltest::test run_2 {Run method wit an associated run gives the correct run} \
     $noterun number
 } -result 12
 
+tcltest::test author {Correct author name returned} \
+-setup {commonSetup} \
+-cleanup {
+    $author destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $giordano {This is the note text}]
+    set author [$note author]
+    $author firstName
+} -result Giordano
 
+## Timestamp - we're going to get clock seconds, make the note
+# and only require the note timestamp be within a second of the timestamp we took.
+
+tcltest::test timestamp {correct note creation time} \
+-setup {commonSetup} \
+-cleanup {
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set time [clock seconds]
+    set note [$logbook createNote $ron {Some note text}]
+    set noteTime [$note timestamp]
+    expr {($noteTime - $time) <= 1} ;   # Clock could have ticked since clock seconds
+} -result 1
+
+tcltest::test contents {Correct note contents} \
+-setup {commonSetup} -cleanup {
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $giordano {This is giordano's note}]
+    $note contents
+} -result {This is giordano's note}
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
