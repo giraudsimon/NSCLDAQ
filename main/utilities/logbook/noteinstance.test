@@ -38,7 +38,7 @@ proc commonSetup {} {
     set ::run [$::logbook begin 12 {The run's title} {Begin run remark}]
 }
 
-proc commonClenaup { } {
+proc commonCleanup { } {
     $::run destroy
     $::shift destroy
     $::ron destroy
@@ -48,17 +48,42 @@ proc commonClenaup { } {
 }
 
 
-tcltest::test test_name {purpose of test} \
+tcltest::test id {Get note id.} \
 -setup {
     commonSetup
 } \
 -cleanup {
-    commonClenaup
+    $note destroy
+    commonCleanup
 } \
 -body {
-    
+    set note [$logbook createNote $ron {This is note text}]
+    $note id
 } \
--result {}
+-result 1
+
+tcltest::test run_1 {run method without a run gives empty string} \
+-setup {commonSetup} -cleanup {
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $ron {This is is a note with no run}]
+    $note run
+} -result ""
+
+tcltest::test run_2 {Run method wit an associated run gives the correct run} \
+-setup {commonSetup} -cleanup {
+    $noterun destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    set note [$logbook createNote $ron {This is a note with a run} $run]
+    set noterun [$note run]
+    $noterun number
+} -result 12
+
 
 #----------------------------------------------------
 
