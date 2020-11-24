@@ -21,9 +21,11 @@ exec tclsh "$0" ${1+"$@"}
 
 ##
 # @file  logbookadmin.tcl
-# @brief logbook utility; command line handling.
+# @brief logbook utility package.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
+
+package provide logbookadmin 1.0
 
 # Add the TclLibs directory of the installation to the auto path.
 # - If env(DAQROOT) is defined that's just daqroot TclLibs.
@@ -37,8 +39,27 @@ if {[array names env DAQROOT] eq "DAQROOT"} {
 
 lappend auto_path $tcllibs
 package require logbook
+#----------------------------------------------------------------------------
+# private procs
 
-
+##
+# _makePersonDict
+#   Given a person command, returns the dict that describes that person.
+# @param person - the person to describe.
+# @return dict containing:
+#     - id       - the id of the person.
+#     - lastName - the last name of the person.
+#     - firstName - the first name of the person.
+#     - salutation - the person's salutation.
+#
+proc _makePersonDict {person} {
+    return [dict create   \
+        id [$person id] lastName [$person lastName]                     \
+        firstName [$person firstName]  salutation [$person salutation]   \
+    ]
+}
+#----------------------------------------------------------------------------
+# Public procs.
 
 ##
 # create
@@ -139,12 +160,134 @@ proc listPeople { } {
     set people [$log listPeople]
     set result [list]
     foreach person $people {
-        lappend result [dict create   \
-            id [$person id] lastName [$person lastName]                     \
-            firstName [$person firstName]  salutation [$person salutation]   \
-        ]
+        lappend result [_makePersonDict $person]
         $person destroy
     }
     $log destroy
     return $result
 }
+
+##
+# createShift
+#    Create a shift given its name and the list of ids of people to put in it.
+#    The ids can be gotten by filtering the appropriate people out of the
+#    list returned from listPeople.
+#
+# @param name - name of the shift.
+# @param members - list of person ids.
+# @return none
+#
+proc createShift {name members} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    
+    # Turn the people ids into people commands - on error
+    # Cleanup and then report the error in case there's an upper level catch.
+    
+    set people [list]
+    foreach id $members {
+        set status [catch {$log getPerson $id} result]
+        if {$status} {
+            foreach p $people {destroy $p}
+            $log destroy
+            error $result
+        } else {
+            lappend people $result
+        }
+    }
+    # Create the shift:
+    
+    set status [catch {$log createShift $name $people} result]
+    foreach p $people [$p destroy]
+    $log destroy
+    
+    if {$status} {
+        error $result
+    }  else {
+        $result destroy;       # kill the shift command.
+    }
+}
+##
+# setCurrentShift
+#   Sets a shift to be current
+# @param shiftName - name of the shift to make current.
+#
+proc setCurrentShift {shiftName} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    set status [catch {$log setCurrentShift $shiftName} msg]
+    $log destroy
+    if {$status} {
+        error $msg
+    }
+}
+##
+# listShiftMembers
+#   List the members in the same firm as listPeople
+#   given a shift name.
+#
+# @param shift - name of the shif to list.
+#
+proc listShiftMembers {shift} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    set status [catch {$log getShift $shift} result]
+    set members [list]
+    if {$status == 0} {
+        set people [$result listMembers]
+        foreach person $people {
+            lappend members [_makePersonDict $person]
+            $person destroy
+        }
+        $shift destroy
+        $log destroy
+        return $members
+    } else {
+        #Error:
+        $log destroy
+        error $result
+    }
+}
+
+##
+# listShifts
+#   Lists the names of the shifts.
+
+##
+# currentShift
+#   Provides the name of the current shift or "" if there isn't one.
+#
+
+##
+# beginRun
+#   Begin a new run
+
+##
+# endRun
+#   ends the current run
+
+##
+# pauseRun
+#   Pauses the current run.
+
+##
+# resumeRun
+#    Resumes the current run.
+
+##
+# emergencyEndRun
+#    Does an emergency end of the run.
+
+
+    
+##
+# listRuns
+#    Lists the runs.
+
+##
+# currentRun
+#   Information about the current run.
+
+##
+# findRun
+#   Finds a run by run number and provides its information.
