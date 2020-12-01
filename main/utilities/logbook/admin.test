@@ -28,7 +28,9 @@ package require tcltest
 package require logbookadmin
 
 set here [file dirname [info script]]
-set logbook [file join [file dirname [info script]]  logbook.logbook]
+set logbook [file normalize [file join [file dirname [info script]]  logbook.logbook]]
+
+if {[file exists $logbook]} {file delete $logbook}
 
 tcltest::test create_1 {Create makes a file} \
 -setup {
@@ -41,6 +43,8 @@ tcltest::test create_1 {Create makes a file} \
     file exists $logbook
 } \
 -result 1
+
+# Note this also tests setCurrentLogBook.
 
 tcltest::test create_2 {Creae with select writes ~/.nscl-logbook-current} \
 -setup {
@@ -58,12 +62,252 @@ tcltest::test create_2 {Creae with select writes ~/.nscl-logbook-current} \
     set contents
 } -result $logbook
 
+tcltest::test current_1  {No current logbook so empty string} \
+-body {
+    currentLogBook
+} -result ""
+
+tcltest::test current_2 {Current log book st by creating it} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin Layer} 1
+    
+} \
+-cleanup {
+    file delete $logbook
+    file delete [file join ~ .nscl-logbook-current]
+} \
+-body {
+    currentLogBook
+} -result $logbook
+
+tcltest::test current_or_error_1 {No current logbook} \
+-body {
+    currentLogBookOrError
+} -returnCodes error -result * -match glob
+
+tcltest::test current_or_error_2 {Correct logbook} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin Layer} 1
+    
+} \
+-cleanup {
+    file delete $logbook
+    file delete [file join ~ .nscl-logbook-current]
+} \
+-body {
+    currentLogBookOrError
+} -result $logbook
+
+#----------------------------------------------------------
+
+proc commonSetup {} {
+    createLogBook $::logbook 0400x {Ron Fox} {test admin layer} 1
+}
+proc commonCleanup { } {
+    file delete $::logbook
+    file delete [file join ~ .nscl-logbook-current]
+}
+tcltest::test addperson_1 {Add a person see if there's one person} \
+-setup {commonSetup} \
+-cleanup {
+    foreach person $people {
+        $person destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    addPerson Fox Ron Mr.
+    set l [logbook::logbook open $logbook]
+    set people [$l listPeople]
+    llength $people
+} -result 1
+
+tcltest::test addperson_2 {Add a person and see if there's correct stuff} \
+-setup {commonSetup} \
+-cleanup {
+    foreach person $people {
+        $person destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    addPerson Fox Ron Mr.
+    set l [logbook::logbook open $logbook]
+    set people [$l listPeople]
+    set person [lindex $people 0]
+    list [$person lastName] [$person firstName] [$person salutation]
+
+} -result [list Fox Ron Mr.]
+
+tcltest::test listpeople_1 {No people gives an empty list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    listPeople
+} -result [list]
+
+tcltest::test listpeople_2 {If I create a person I get 1 element} \
+-setup {
+    commonSetup
+    addPerson Fox Ron Mr.
+    
+} \
+-cleanup  {
+    commonCleanup
+} \
+-body {
+    llength [listPeople]
+} -result 1
+
+tcltest::test listpeople_3 {list gives the right stuff} \
+-setup {
+    commonSetup
+    addPerson Fox Ron Mr.
+    
+} \
+-cleanup  {
+    commonCleanup
+} \
+-body {
+    set person [lindex [listPeople] 0]
+    list [dict get $person lastName] [dict get $person firstName] \
+        [dict get $person salutation]
+} -result [list Fox Ron Mr.]
+
+proc commonSetup1 { } {
+    commonSetup
+    
+    # add a few people:
+    
+    addPerson Fox Ron Mr.;           # id 1
+    addPerson Cerizza Giordano Dr.;  # id 2
+    addPerson Liddick Sean Prof.;    # id3 3
+    
+}
+
+tcltest::test create_shift_1 {Creating an empty shift makes on in db.} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list];           # nobody in shift.
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    llength $shifts
+} -result 1
+
+tcltest::test create_shift_2 {Creating an empty shift makes an empty shift} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list];           # nobody in shift.
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set result [list [$shift name] [llength [$shift members]]]
+} -result [list aShift 0]
+
+tcltest::test create_shift_3 {Shift with members - right # members} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    foreach p $members {
+        $p destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list 1 3];    #Sean and I:
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set members [$shift members]
+    llength $members
+} -result 2
+
+tcltest::test create_shift_4 {shift with members get right members} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    foreach p $members {
+        $p destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list 1 3];    #Sean and I:
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set members [$shift members]
+    set result [list]
+    foreach member $members {
+        lappend result [$member lastName]
+    }
+    set result
+} -result [list Fox Liddick]
+
+tcltest::test current_shift_1 {No current shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    currentShift
+} -result ""
+
+tcltest::test current_shift_2 {Can set a current shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    createShift aShift [list 2];    #Giordano.
+    setCurrentShift aShift
+    currentShift
+} -result aShift
+
+tcltest::test list_members_1 {Empty shift has no members} \
+-setup {commonSetup1} -cleanup {commonCleanup}  \
+-body {
+    createShift aShift [list]
+    llength [listShiftMembers aShift]
+} -result 0
+    
+tcltest::test list_members_2 {Right number of members} \
+-setup {commonSetup1} -cleanup {commonCleanup}  \
+-body {
+    createShift aShift [list 1 2 3];    # All of us.
+    llength [listShiftMembers aShift]
+} -result 3
+
+tcltest::test list_members_3 {Right people} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    createShift aShift [list 2 3];   # Giordana/Sean.
+    set members [listShiftMembers aShift]
+    set result [list]
+    foreach member $members {
+        lappend result [dict get $member lastName]
+    }
+    set result
+} -result [list Cerizza Liddick]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
     variable numTests
     set ::exitCode [expr {$numTests(Failed) > 0}]
 }
+
 
 
 tcltest::cleanupTestHook

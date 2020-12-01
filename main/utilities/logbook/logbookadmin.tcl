@@ -116,7 +116,7 @@ proc _makeRunDict {run} {
 # @param purpose  - Experiment purpose.
 # @param select - if true, the new logbook is selected as current.
 #
-proc create {path experiment spokesperson purpose {select 0}} {
+proc createLogBook {path experiment spokesperson purpose {select 0}} {
     logbook::logbook create $path $experiment $spokesperson $purpose
     if {$select} {
         setCurrentLogBook $path
@@ -234,6 +234,7 @@ proc createShift {name members} {
     foreach id $members {
         set status [catch {$log getPerson $id} result]
         if {$status} {
+            puts "Destroying '$people'"
             foreach p $people {destroy $p}
             $log destroy
             error $result
@@ -242,9 +243,9 @@ proc createShift {name members} {
         }
     }
     # Create the shift:
-    
+
     set status [catch {$log createShift $name $people} result]
-    foreach p $people [$p destroy]
+    foreach p $people {$p destroy}
     $log destroy
     
     if {$status} {
@@ -272,20 +273,20 @@ proc setCurrentShift {shiftName} {
 #   List the members in the same firm as listPeople
 #   given a shift name.
 #
-# @param shift - name of the shif to list.
+# @param shift - name of the shift to list.
 #
 proc listShiftMembers {shift} {
     set path [currentLogBookOrError]
     set log [logbook::logbook open $path]
-    set status [catch {$log getShift $shift} result]
+    set status [catch {$log findShift $shift} result]
     set members [list]
     if {$status == 0} {
-        set people [$result listMembers]
+        set people [$result members]
         foreach person $people {
             lappend members [_makePersonDict $person]
             $person destroy
         }
-        $shift destroy
+        $result destroy
         $log destroy
         return $members
     } else {
