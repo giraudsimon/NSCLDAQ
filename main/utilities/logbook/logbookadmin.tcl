@@ -58,6 +58,52 @@ proc _makePersonDict {person} {
         firstName [$person firstName]  salutation [$person salutation]   \
     ]
 }
+
+##
+#  _makeTransitionDict
+#     Given a raw transition dictionary from the transitions subcommand
+#     of a run instance,  maps that to the transitiondict that
+#     _makeRunDict produces.
+#
+# @param d - the inbound dict.
+# @return dict - the resulting dict.
+#
+proc _makeTransitionDict {d} {
+    set result [dict create                                 \
+        transitionName [dict get $d transitionName ]        \
+        transitionTime [dict get $d transitionTime]         \
+        transitionComment [dict get $d transitionComment]   \
+    ]
+    set shift [dict get $d shift]
+    set shiftName [$shift name]
+    $shift destroy
+    dict set result shift $shiftName
+    return $result
+}
+##
+# _makeRunDict
+#   Given a run command, produces the dict that describes it. See
+#   listRuns for documentation of the contents of that dict.
+#
+# @param run - the run command ensemble
+# @return dict - as described above and in the listRuns comment header.
+#
+proc _makeRunDict {run} {
+    set result [dict create                                   \
+        number [$run number] title [$run title]               \
+        isActive [$run isActive]
+    ]
+    set transitions [$run transitions]
+    foreach transition $transitions {
+        set trdict [_makeTransitionDict $transition]
+        set shift [dict get $transition shift]
+        $shift destroy
+        dict lappend result transitions $trdict
+    }
+    return $result
+}
+    
+
 #----------------------------------------------------------------------------
 # Public procs.
 
@@ -252,42 +298,234 @@ proc listShiftMembers {shift} {
 ##
 # listShifts
 #   Lists the names of the shifts.
-
+# @return list - of shift names.
+#
+proc listShifts {} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set status [catch {$log listShifts} result ]
+    $log destroy
+    if {$status} {
+        error $result
+    }
+    set retval [list]
+    foreach shift $result {
+        set shiftName [$shift name]
+        $shift destroy
+        lappend retval $shiftName
+    }
+    return $retval
+}
 ##
 # currentShift
 #   Provides the name of the current shift or "" if there isn't one.
 #
+# @return string -shift name or empty string.
+#
+proc currentShift {} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set shift [$log getCurrentShift]
+    if {$shift ne ""} {
+        set name [$shift name]
+        $shift destroy
+        
+    } else {
+        set name ""
+    }
+    return $name
+}
 
 ##
 # beginRun
 #   Begin a new run
+#
+# @param num - run number.
+# @param title - Title of the run .
+# @param remoark - Remark to be associated with the run.
+# @return none.
+#
+proc beginRun {num title {remark {}}} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set status [catch {$log begin $num $title $remark} result]
+    $log destroy
+    if {$status} {
+        error $result
+    }
+    $result destroy;               # a run instance command.
+}
 
 ##
 # endRun
 #   ends the current run
+# @param remark - remark to be associated with this transition.
+# @return none
+#
+proc endRun {{remark {}}} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set run [$log currentRun]
+    if {$run eq ""} {
+        $log destroy
+        error "There is no active/current run."
+    }
+    set status [catch {$log end $run $remark} result]
+    if {$status} {
+        $log destroy
+        error $result
+    }
+    $log destroy
+    $result destroy ;               # it's the run instance object.
+}
 
 ##
 # pauseRun
 #   Pauses the current run.
+# @param remark - remark to be associated with this transition.
+# @return none
+#
+proc pauseRun {{remark {}}} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set run [$log currentRun]
+    if {$run eq ""} {
+        $log destroy
+        error "There is no active/current run."
+    }
+    set status [catch {$log pause $run $remark} result]
+    if {$status} {
+        $log destroy
+        error $result
+    }
+    $log destroy
+    $result destroy
+}
 
 ##
 # resumeRun
 #    Resumes the current run.
+# @param remark - remark to be associated with the state transition.
+# @return none
+#
+proc resumeRun {{remark {}}} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set run [$log currentRun]
+    if {$run eq ""} {
+        $log destroy
+        error "There is no active/current run."
+    }
+    set status [catch {$log resume $run $remark} result]
+    if {$status} {
+        $log $destroy
+        error $result
+    }
+    $log destroy
+    $result destroy
+}
 
 ##
 # emergencyEndRun
 #    Does an emergency end of the run.
+#
+# @param remark - remark associated with the change in state.
+# @return none
+#
+proc emergencyEndRun {{remark {}}} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set run [$log currentRun]
+    if {$run eq ""} {
+        $log destroy
+        error "There is no active/current run."
+    }
+    set status [catch {$log emergencyStop $run $remark} result]
+    if {$status} {
+        $log $destroy
+        error $result
+    }
+    $log destroy
+    $result destroy
+}
 
 
     
 ##
 # listRuns
 #    Lists the runs.
+# @return a list of dicts.  Each dict describes a run and has the following
+#     key/value pairs:
+#   -  number - the run number.
+#   -  title  - the run title.
+#   -  isActive - (bool) if the run is active/current.
+#   -  transitions - A list of dicts logging the transitions of this run:
+#                    This dict has the following key/values:
+#               *   transitionName - The actual transition type.
+#               *   transitionTime - [clock seconds] when the transition was logged.
+#               *   transitionComment - remark associated with the transition
+#               *   shift - name of the shift on duty when the transition occured.
+# @note _makeRunDict is used to create each run dictionary as this avoids code
+#       duplication with currentRun, findRun etc.
+proc listRuns {} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set result [list]
+    set runs [$log listRuns]
+    foreach run $runs {
+        lappend result [_makeRunDict $run]
+        $run destroy
+    }
+    return $result
+}
 
 ##
 # currentRun
 #   Information about the current run.
+# @return a dict as described in list runs or an empty dict if there is no
+#         current run.
+#
+proc currentRun { } {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set result [dict create]
+    set run [$log currentRun]
+    if {$run ne ""} {
+        set result [_makeRunDict $run]
+        $run destroy
+    }
+    $log destroy
+    return $result
+}
 
 ##
 # findRun
 #   Finds a run by run number and provides its information.
+#
+# @param num - run number.
+# @return dict as described in listRuns or an empty dict if there is no current
+#              run.
+#
+proc findRun {num} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set result [dict create]
+    set run [$log findRun $num]
+    if {$run ne ""} {
+        set result [_makeRunDict $run]
+        $run destroy
+    }
+    $log destroy
+    return $result
+    
+}
