@@ -525,14 +525,195 @@ tcltest::test current_run_4 {The current run has good data in the transition} \
     list $type $comment $shift $stopOk
 } -result {BEGIN {Some silly remark} onShift 1}
 
-tcltest::test end_1     {Ending a run adds a transition}
+tcltest::test end_1     {Ending a run adds a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    llength $transitions
+} -result 2
 
-tcltest::test end_2     {transtion type added is END}
+tcltest::test end_2     {transtion type added is END} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    dict get $t transitionName
+} -result END
+    
 
-tcltest::test end_3     {transition captures remark}
+tcltest::test end_3     {transition captures remark} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    dict get $t transitionComment
+} -result {End run remark}
 
-tcltest::test  end_4    {ending means there's no current Run}
+tcltest::test  end_4    {ending means there's no current Run} \
+\
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    commonCleanup
+    
+} \
+-body {
+    currentRun
+} -result {}
 
+tcltest::test pause_1 {The paused run is still current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    if {$r eq ""} {
+        error "Pause did not leave a current run"
+    }
+    list [dict get $r number] [dict get $r title] [dict get $r isActive]
+} -result [list 1 {Title of the run} 1]
+
+tcltest::test pause_2 {Pause adds a a transition}  \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    llength [dict get $r transitions]
+} -result 2
+
+tcltest::test pause_3 {The transition added has correct stuff} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    set t [lindex [dict get $r transitions] 1]
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [dict get $t shift]
+} -result [list PAUSE {Pause run remark} onShift]
+
+tcltest::test resume_1 {Resumed runs are still current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    dict get $r title
+} -result {Title of the run}
+
+
+tcltest::test resume_2 {Resume adds a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    llength [dict get $r transitions]
+} -result 3
+
+
+tcltest::test resume_3 {Resume transition has correct stuff} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    set transitions [dict get $r transitions]
+    set t [lindex $transitions 2];   # the pause.
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [dict get $t shift]
+} -result [list RESUME {Resume run remark} onShift]
 
 #----------------------------------------------------
 
