@@ -818,6 +818,49 @@ tcltest::test emend_4 {Emergency ended run transitions are right} \
     list [dict get $t transitionName] \
         [dict get $t transitionComment] [$shift name]
 } -result [list EMERGENCY_END {EMERGENCY END run remark} {onShift}]
+
+# For the listRuns and findRun tests we'll consider that
+# we've already exercised the dict creation perfectly well
+# so we can just use it to determine if we've gotten the
+# right runs in the lists.
+
+
+tcltest::test list_runs_1 {No runs is an empty list} \
+-setup {commonSetup2} -cleanup {commonCleanup} \
+-body {
+    listRuns
+} -result [list]
+
+proc commonSetup3 { } {
+    commonSetup2
+    
+    # Make some runs:
+    
+    beginRun 1 {This is run 1}
+    endRun
+    
+    beginRun 2 {This is run 2}
+    endRun
+    
+    beginRun 3 {This is run 3}
+    endRun
+}
+tcltest::test list_runs_2 {Correct number of runs} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    llength [listRuns]
+} -result 3
+
+tcltest::test list_runs_3 {Correct runs are present.} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    set runs [listRuns]
+    foreach run $runs {
+        lappend titles [dict get $run title]
+    }
+    set titles
+    # The -result assumes stuff come sout in PK order.
+} -result [list {This is run 1} {This is run 2} {This is run 3}]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
