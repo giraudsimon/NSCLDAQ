@@ -34,7 +34,7 @@ package provide logbookadmin 1.0
 if {[array names env DAQROOT] eq "DAQROOT"} {
     set tcllibs [file join $env(DAQROOT) TclLibs]
 } else {
-    set tcllibs [file normalize [file join [file dirname info script] .. TclLibs]]
+    set tcllibs [file normalize [file join [file dirname [info script]] .. TclLibs]]
 }
 
 lappend auto_path $tcllibs

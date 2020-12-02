@@ -43,6 +43,7 @@ proc commonCleanup {} {
     $::fox     destroy
     $::cerizza destroy
     $::LogBook destroy
+    file delete test.logbook.db
 }
 
 tcltest::test name_1 {Get the name of the shift correctly.} \

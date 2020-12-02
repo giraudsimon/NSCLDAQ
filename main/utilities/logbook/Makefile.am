@@ -72,7 +72,7 @@ check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ personinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ shiftinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ runinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteinstance.tes
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ admin.test
 	@builddir@/unittests
 
