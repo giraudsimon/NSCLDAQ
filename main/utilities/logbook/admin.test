@@ -618,6 +618,27 @@ tcltest::test  end_4    {ending means there's no current Run} \
     currentRun
 } -result {}
 
+tcltest::test end_5 {Ending means run is not active} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    $run isActive
+} -result 0
+
 tcltest::test pause_1 {The paused run is still current} \
 -setup {
     commonSetup2
@@ -715,6 +736,88 @@ tcltest::test resume_3 {Resume transition has correct stuff} \
         [dict get $t transitionComment] [dict get $t shift]
 } -result [list RESUME {Resume run remark} onShift]
 
+
+tcltest::test emend_1 {Emergency ended runs are not current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+} -result {}
+
+tcltest::test emend_2 {Emergency ended runs are not active} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    $run isActive
+} -result 0
+
+tcltest::test emend_3 {Emergency ended runs get a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    llength [$run transitions]
+} -result 2
+
+tcltest::test emend_4 {Emergency ended run transitions are right} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        set shift [dict get $t shift]
+        $shift destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    set shift [dict get $t shift]
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [$shift name]
+} -result [list EMERGENCY_END {EMERGENCY END run remark} {onShift}]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
