@@ -266,14 +266,13 @@ TclRunInstance::makeTransitionDict(
     value = Tcl_NewIntObj(transition.s_id);
     
     Tcl_DictObjPut(pInterp, pDict, key, value);
-    //Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+
     
     // transition(code)
     key = Tcl_NewStringObj("transition", -1);
     value = Tcl_NewIntObj(transition.s_transition);
     
     Tcl_DictObjPut(pInterp, pDict, key, value);
-    //Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
     
     // transitionName
     
@@ -281,7 +280,7 @@ TclRunInstance::makeTransitionDict(
     value = Tcl_NewStringObj(transition.s_transitionName.c_str(), -1);
     
     Tcl_DictObjPut(pInterp, pDict, key, value);
-    //Tcl_DecrRefCount(key);  Tcl_DecrRefCount(value);
+
     
     // transitionComment
     
@@ -289,7 +288,13 @@ TclRunInstance::makeTransitionDict(
     value = Tcl_NewStringObj(transition.s_transitionComment.c_str(), -1);
     
     Tcl_DictObjPut(pInterp, pDict, key, value);
-    //Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+
+    // transitionTime:
+    
+    key = Tcl_NewStringObj("transitionTime", -1);
+    value = Tcl_NewWideIntObj(transition.s_transitionTime);
+    
+    Tcl_DictObjPut(pInterp, pDict, key, value);
     
     // shift
     
@@ -298,7 +303,7 @@ TclRunInstance::makeTransitionDict(
     value = Tcl_NewStringObj(shiftCommand.c_str(), -1);
     
     Tcl_DictObjPut(pInterp, pDict, key, value);
-    //Tcl_DecrRefCount(key); Tcl_DecrRefCount(value);
+
         
     CTCLObject result(pDict);
     result.Bind(interp);
