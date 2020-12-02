@@ -301,6 +301,239 @@ tcltest::test list_members_3 {Right people} \
     set result
 } -result [list Cerizza Liddick]
 
+tcltest::test list_shifts_1 {No shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    llength [listShifts]
+} -result 0
+
+tcltest::test list_shifts_2 {There are shifts -- right number} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1 2] ;   #Giordano and I
+    createShift shift2 [list 2 3];    #Giordano and Sean.
+    createShift shift3 [list 1 3];    # Sean and I.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [listShifts]
+} -result 3
+
+tcltest::test list_shifts_3 {There are shifts -- right names} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1 2] ;   #Giordano and I
+    createShift shift2 [list 2 3];    #Giordano and Sean.
+    createShift shift3 [list 1 3];    # Sean and I.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    listShifts
+} -result [list shift1 shift2 shift3]
+
+#-----------------------------------------------------------
+# Setup for run tests needs a shift that's current.
+# Note we know the underlying C+++ API enforces the constraints
+# because we've unit-tested that separately
+#
+proc commonSetup2 {} {
+    commonSetup1;      # Makes the people
+    createShift onShift [list 1 2 3];   # Put everyone on shift.
+    setCurrentShift onShift;            # make it current.
+}
+
+tcltest::test begin_1 {Creates a new run} \
+-setup {commonSetup2} \
+-cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    llength $runs
+} -result 1
+
+tcltest::test begin_2 {The run is current} \
+-setup {commonSetup2} \
+-cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set current [$l currentRun]
+    if {$current eq ""} {error "no current run"}
+    expr {[$run id] == [$current id]};    # current run is the same.
+} -result 1
+
+
+tcltest::test begin_3 {the run title is correctly captured} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    $current title
+} -result {Title of the run}
+
+tcltest::test begin_4 {The run number is correctly captured} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    $current number
+} -result 1
+
+tcltest::test begin_5 {The  run has a single transition} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    llength $transitions
+} -result 1
+
+
+tcltest::test begin_7 {the run's transition is begin} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    set t [lindex $transitions 0]
+    dict get $t transitionName
+} -result BEGIN
+
+tcltest::test begin_8 {The run's transition captures the remark} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    set t [lindex $transitions 0]
+    dict get $t transitionComment
+} -result {Some silly remark}
+
+tcltest::test current_run_1 {There's no current run} \
+-setup {commonSetup2} -cleanup {commonCleanup} \
+-body {
+    currentRun
+} -result {}
+
+tcltest::test current_run_2 {After begin that run is current} \
+-setup {
+    commonSetup2
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set title [dict get $runInfo title]
+    set run   [dict get $runInfo number]
+    set active [dict get $runInfo isActive]
+    list $title $run $active
+    
+} -result {{Title of the run} 1 1}
+
+tcltest::test current_run_3 {The current run dict has a transition} \
+-setup {
+    commonSetup2
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set transitions [dict get $runInfo transitions]
+    llength $transitions
+} -result 1
+
+tcltest::test current_run_4 {The current run has good data in the transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set transitions [dict get $runInfo transitions]
+    set begin [lindex $transitions 0]
+    set type [dict get $begin transitionName]
+    set comment [dict get $begin transitionComment]
+    set shift   [dict get $begin shift]
+    set stopOk [expr {([dict get $begin transitionTime] - $startTime) <= 1}]
+    list $type $comment $shift $stopOk
+} -result {BEGIN {Some silly remark} onShift 1}
+
+tcltest::test end_1     {Ending a run adds a transition}
+
+tcltest::test end_2     {transtion type added is END}
+
+tcltest::test end_3     {transition captures remark}
+
+tcltest::test  end_4    {ending means there's no current Run}
+
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
