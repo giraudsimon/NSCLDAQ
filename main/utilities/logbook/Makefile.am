@@ -37,6 +37,7 @@ install-exec-hook:
 	$(INSTALL_PROGRAM) @libdir@/libTclLogbook.so @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/logbookadmin.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_create.tcl @bindir@/lg_create
+	$(INSTALL_PROGRAM) @srcdir@/lg_current.tcl @bindir@/lg_current
 	echo package ifneeded logbook 1.0 [list load [file join \$$dir libTclLogbook.so]] \
 		> @prefix@/TclLibs/logbook/pkgIndex.tcl
 	echo package ifneeded logbookadmin 1.0 [list source [file join \$$dir logbookadmin.tcl]] \
@@ -84,5 +85,6 @@ check: check-TESTS
 EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	pyruntests.py pynotetests.py logbook.test logbookinstance.test \
 	personinstance.test shiftinstance.test runinstance.test \
-	noteinstance.test logbookadmin.tcl admin.test lg_create.tcl
+	noteinstance.test logbookadmin.tcl admin.test lg_create.tcl \
+	lg_current.tcl
 
