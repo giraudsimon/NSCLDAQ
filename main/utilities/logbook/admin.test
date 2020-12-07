@@ -861,6 +861,20 @@ tcltest::test list_runs_3 {Correct runs are present.} \
     set titles
     # The -result assumes stuff come sout in PK order.
 } -result [list {This is run 1} {This is run 2} {This is run 3}]
+
+tcltest::test find_run_1 {no match} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    findRun 4
+} -result [dict create]
+
+
+tcltest::test finhd_run_2 {match} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    set run [findRun 2]
+    dict get $run title
+} -result {This is run 2}
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
