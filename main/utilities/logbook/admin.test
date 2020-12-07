@@ -869,7 +869,7 @@ tcltest::test find_run_1 {no match} \
 } -result [dict create]
 
 
-tcltest::test finhd_run_2 {match} \
+tcltest::test find_run_2 {match} \
 -setup {commonSetup3} -cleanup {commonCleanup} \
 -body {
     set run [findRun 2]
