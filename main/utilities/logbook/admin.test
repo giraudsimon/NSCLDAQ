@@ -335,6 +335,67 @@ tcltest::test list_shifts_3 {There are shifts -- right names} \
     listShifts
 } -result [list shift1 shift2 shift3]
 
+
+## We added two new procs: addMembersToShift,
+# and removeMemberFromShift. here are tests for them.
+
+tcltest::test add_members_1 {Add members with empty list} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list]
+    listShiftMembers shift1
+    
+} -result [list]
+
+tcltest::test add_members_2 {Good add of a single member}  \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 1]
+    listShiftMembers shift1
+} -result [list [dict create                           \
+     id 1 lastName Fox firstName Ron salutation Mr.    \
+]]
+
+
+tcltest::test add_members_3 {Add member for bad shift name} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift2 [list 1]
+} -returnCodes error -result * -match glob
+
+tcltest::test add_members_4 {add no such member} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 10]
+} -result * -match glob -returnCodes error
+
+    
+
+
 #-----------------------------------------------------------
 # Setup for run tests needs a shift that's current.
 # Note we know the underlying C+++ API enforces the constraints

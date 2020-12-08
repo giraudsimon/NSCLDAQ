@@ -255,6 +255,104 @@ proc createShift {name members} {
     }
 }
 ##
+# addMembersToShift
+#     Add members to an existing shift.
+#
+#  @param shiftName - name of the shfit.
+#  @param members   - Ids of the shift members.
+#
+proc addMembersToShift {shiftName members} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set people [list]
+    set shift ""
+    set status [catch {
+        set shift [$log findShift $shiftName]
+        if {$shift eq ""} {
+            error "No such shiftname $shift"
+        }
+        foreach member $members {
+            lappend people [$log getPerson $member]
+        }
+        # The new members may have an intersection with the
+        # current shift members, remove those from the people list
+        # destroything them as we go.  Do this by making a set (list)
+        # containing the ids of all people on shift.
+        
+        set currentMembers [listShiftMembers $shiftName]
+        set currentMids [list]
+        foreach member $currentMembers {
+            lappend currentMids [$member id]
+            $member destroy
+        }
+        #  Destroy those that are in shift already:
+        
+        set destroyedIndices [list]
+        set i 0
+        foreach person $people {
+            if {[$person id] in $currentMids} {
+                $person destroy
+                lappend destroyedIndices $i
+            }
+            incr i
+        }
+        # Remove them from people in reverse order so the ids are good:
+        
+        set destroyedIndices [lreverse $destroyedIndices]
+        foreach i $destroyedIndices {
+            set people [lreplace $people $i $i]
+        }
+        #  So now we add the people to the shift:
+        
+        foreach person $people {
+            $log addShiftMember $shift $person
+            $person destroy
+        }
+        $shift destroy
+        $log destroy
+        
+    } msg]
+    if {$status} {
+        # Clean up any stuff we made before reporting the error:
+        
+        foreach person $people {
+            $person destroy
+        }
+        if {$shift ne ""} {$shift destroy}
+        error "Failed to add members to shift $shift : $msg"
+    }
+    
+}
+##
+# removeMemberFromShift
+#   Removes a member from a shift given their id.
+#
+# @param shiftName - name of the shift.
+# @param member    - Id of the member to remove.
+#
+proc removeMemberFromShift {shiftName member} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    
+    set person ""
+    set shift ""
+    set status [catch {
+        set shift [$log findShift $shiftName]
+        set person [$log getPerson $member]
+        
+        $log removeShiftMember $shift $person
+        $shift  destroy
+        $person destroy
+        $log    destroy
+    } msg]
+    if {$status} {
+        if {$person ne ""} {$person destroy}
+        if {$shift ne ""} {$shift destroy}
+        $log destroy
+    }
+}
+##
 # setCurrentShift
 #   Sets a shift to be current
 # @param shiftName - name of the shift to make current.
