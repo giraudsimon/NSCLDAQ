@@ -35,6 +35,14 @@ package require logbookadmin
 package require report
 package require struct
 
+##
+# Usage:
+#    lg_lspeople
+#  Outputs a report describing the people known to the logbook.
+#
+    
+
+
 if {[currentLogBook] eq ""} {
     puts stderr {There is no current logbook, select one with $DAQBIN/lg_current}
     exit -1
