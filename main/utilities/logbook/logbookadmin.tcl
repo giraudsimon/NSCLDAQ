@@ -283,8 +283,8 @@ proc addMembersToShift {shiftName members} {
         set currentMembers [listShiftMembers $shiftName]
         set currentMids [list]
         foreach member $currentMembers {
-            lappend currentMids [$member id]
-            $member destroy
+            lappend currentMids [dict get $member id]
+
         }
         #  Destroy those that are in shift already:
         
@@ -320,7 +320,7 @@ proc addMembersToShift {shiftName members} {
             $person destroy
         }
         if {$shift ne ""} {$shift destroy}
-        error "Failed to add members to shift $shift : $msg"
+        error "Failed to add members to shift $shift : $msg : $::errorInfo"
     }
     
 }

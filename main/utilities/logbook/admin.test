@@ -393,7 +393,20 @@ tcltest::test add_members_4 {add no such member} \
     addMembersToShift shift1 [list 10]
 } -result * -match glob -returnCodes error
 
-    
+tcltest::test add_members_4 {Adding duplicate does nothing} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 1];    # Try to add 1 again.
+    listShiftMembers shift1
+} -result [list [dict create                           \
+     id 1 lastName Fox firstName Ron salutation Mr.    \
+]]
 
 
 #-----------------------------------------------------------
