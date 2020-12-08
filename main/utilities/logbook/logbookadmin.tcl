@@ -350,6 +350,7 @@ proc removeMemberFromShift {shiftName member} {
         if {$person ne ""} {$person destroy}
         if {$shift ne ""} {$shift destroy}
         $log destroy
+        error $msg
     }
 }
 ##
