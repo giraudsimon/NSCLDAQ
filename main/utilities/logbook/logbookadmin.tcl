@@ -234,7 +234,6 @@ proc createShift {name members} {
     foreach id $members {
         set status [catch {$log getPerson $id} result]
         if {$status} {
-            puts "Destroying '$people'"
             foreach p $people {destroy $p}
             $log destroy
             error $result
