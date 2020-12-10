@@ -62,9 +62,6 @@ exec tclsh "$0" ${1+"$@"}
 #
 #
 
-#TODO: Much factorization: MakeIds and shift creation.
-#      Shift reportage as well.
-#
 
 if {[array names env DAQROOT] eq "DAQROOT"} {
     set tcllibs [file join $env(DAQROOT) TclLibs]
