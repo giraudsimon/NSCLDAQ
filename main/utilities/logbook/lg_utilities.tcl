@@ -128,6 +128,55 @@ proc promptShift { } {
     return $shift
 }
 #----------------------------------------------------------
+# Procs that need Tk:
+
+##
+# makeNewShift
+#   Given a new shift and its proposed members checks that all is good
+#   to create that shift and, if possible attempts to create it:
+#
+# @param parent   - parent over which error messages should be displayed
+# @param shiftName - new shift name
+# @param members   - member dict for the new shift.
+# @return int        - 1 success. 0 failure.
+#
+proc makeNewShift {parent shiftName members} {
+    set shiftName [string trim $shiftName]
+            
+    if {$shiftName eq ""} {
+        tk_messageBox -parent $parent  -title {Specify shift} -type ok -icon error \
+            -message {Please fill in the name of the new shift}
+        return 0
+    } elseif {[shiftExists $shiftName]} {
+        tk_messageBox -parent $parent -title {Duplicate shift} -type ok -icon error \
+            -message [duplicateShiftMessage $shiftName]
+        return 0
+    } else {
+        # Shift is ok...get the members and try to create
+        # the shift.  If successful we're done. If not
+        # report the error and try again (should succeed unless
+        # Some other user yanked a person out from us.
+        # So we'll reconfigure the off/onshift values:
+        
+        set shiftIds [peopleToIds $members]
+        
+        set status [catch {
+            createShift $shiftName $shiftIds
+        } msg]
+        if {$status} {
+            tk_messageBox -parent $parent -title {Shift creation failed} \
+                -type ok -icon error \
+                -message "Could not make shift $shiftName: $msg"
+            return 0
+        } else {
+            set done 1
+        }
+    }
+}
+    
+
+
+#----------------------------------------------------------
 #
 
 ##

@@ -213,41 +213,15 @@ proc edit {shift} {
         set result [.dialog.dialog modal]
         if {$result eq "Ok"} {
             # We need a non-empty shift name:
-            set newshift [string trim [$form cget -shiftname]]
-            
-            if {$newshift eq ""} {
-                tk_messageBox -parent .dialog -title "Need shift name" \
-                    -type ok -icon error \
-                    -message {Please fill in a non-blank shift name}
-            } else {
+            set newshift [$form cget -shiftname]        
+            if {$shift eq $newshift} {
                 
-                if {$shift eq $newshift} {
-                    
-                    # Modify existing shift:
-                    
-                    modifyShift $shift $initialMembers [.dialog.dialog cget -onshift]
-                    set done 1
-                } else {
-                    # Create new shift starting from existing shift.
-                    if {[shiftExists $newshift]} {
-                        tk_messageBox -parent .dialog -title "Duplicate shift" \
-                            -icon error -type ok \
-                            -message [duplicateShiftMessage $newshift]
-                    } else {
-                        set onshift [$form cget -onshift]
-                        set shiftIds [peopleToIds $onshift]
-                        set status [catch {
-                            createShift $newshift $shiftIds    
-                        } msg ]
-                        if {$status} {
-                            tk_messageBox -parent .dialog -title "Shift creation failed"\
-                                -icon error -type ok \
-                                -message "Failed to create shift '$newshift': $msg"
-                        } else {
-                            set done 1
-                        }
-                    }
-                }
+                # Modify existing shift:
+                
+                modifyShift $shift $initialMembers [.dialog.dialog cget -onshift]
+                set done 1
+            } else {
+                set done [makeNewShift .dialog  $newshift [$form cget -onshift]]
             }
             
         } else {

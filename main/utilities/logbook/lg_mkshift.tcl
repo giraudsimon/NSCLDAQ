@@ -90,37 +90,11 @@ proc GUI {} {
             #  Get shift and validate it:
             #   must not be an empty string and must not yet exist:
             #
-            set shiftName [string trim [$form cget -shiftname]]
             
-            if {$shiftName eq ""} {
-                tk_messageBox -parent .dialog -title {Specify shift} -type ok -icon error \
-                    -message {Please fill in the name of the new shift}
-            } elseif {[shiftExists $shiftName]} {
-                tk_messageBox -parent .dialog -title {Duplicate shift} -type ok -icon error \
-                    -message [duplicateShiftMessage $shiftName]
-            } else {
-                # Shift is ok...get the members and try to create
-                # the shift.  If successful we're done. If not
-                # report the error and try again (should succeed unless
-                # Some other user yanked a person out from us.
-                # So we'll reconfigure the off/onshift values:
-                
-                set members [$form cget -onshift]
-                set shiftIds [peopleToIds $members]
-                
-                set status [catch {
-                    createShift $shiftName $shiftIds
-                } msg]
-                if {$status} {
-                    tk_messageBox -parent .dialog -title {Shift creation failed} \
-                        -type ok -icon error \
-                        -message "Could not make shift $shiftName: $msg"
-                    $form configure -offshift [listPeople]
-                    $form configure -onshift [list]
-                } else {
-                    set done 1
-                }
-            }
+            set shiftName [$form cget -shiftname]
+            set members [$form cget -onshift]
+            set done [makeNewShift .dialog $shiftName $members]
+            
         
         } else {
             set done 1
