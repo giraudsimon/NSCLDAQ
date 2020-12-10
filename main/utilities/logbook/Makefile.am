@@ -36,6 +36,7 @@ install-exec-hook:
 	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @libdir@/libTclLogbook.so @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/logbookadmin.tcl @prefix@/TclLibs/logbook
+	$(INSTALL_PROGRAM) @srcdir@/lg_utilities.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/ShiftEditor.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_create.tcl @bindir@/lg_create
 	$(INSTALL_PROGRAM) @srcdir@/lg_current.tcl @bindir@/lg_current
@@ -49,6 +50,8 @@ install-exec-hook:
 	echo package ifneeded logbookadmin 1.0 [list source [file join \$$dir logbookadmin.tcl]] \
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
 	echo package ifneeded ShiftEditor 1.0 [list source [file join \$$dir ShiftEditor.tcl]] \
+		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
+	echo package ifneeded lg_utilities  1.0 [list source [file join \$$dir lg_utilities.tcl]] \
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
 
 
@@ -95,5 +98,5 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	personinstance.test shiftinstance.test runinstance.test \
 	noteinstance.test logbookadmin.tcl admin.test lg_create.tcl \
 	lg_current.tcl lg_ls.tcl lg_addperson.tcl lg_lspeople.tcl \
-	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl
+	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl
 

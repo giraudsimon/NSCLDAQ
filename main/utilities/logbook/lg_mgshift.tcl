@@ -81,66 +81,10 @@ package require Tk
 package require snit
 package require ShiftEditor
 package require DataSourceUI
-package require report
-package require struct
+package require lg_utilities
 
 wm withdraw .
-#--------------------------------------------------------------------
-# Megawidgets:
-#
 
-##
-# @class ItemSelector
-#   Select an item from a list of items.
-# OPTIONS:
-#   -selections  - list of possible selections the user can choose
-# METHODS
-#    get         - get the text of the current selection.
-#
-# @note - this is just a listbox with a scrollbar and single selectmode.
-#         it can be wrapped in a dialogwrapper to turn it into a
-#         prompter.
-#
-snit::widgetadaptor ItemSelector {
-    option -selections -configuremethod populate -cgetmethod getContents
-    
-    constructor args {
-        installhull using ttk::frame
-        
-        listbox $win.list -yscrollcommand [list $win.scroll set] \
-            -selectmode single
-        ttk::scrollbar $win.scroll -orient vertical -command [list $win.list yview]
-        grid $win.list $win.scroll -sticky nsew
-        grid columnconfigure $win 0 -weight 1
-        
-        $self configurelist $args
-    }
-    ##  configuration management:
-    
-    method populate {optname optval} {
-        $win.list delete 0 end
-        foreach value $optval {
-            $win.list insert end $value
-        }
-    }
-    method getContents {optname} {
-        return [$win.list get 0 end]
-    }
-    ##
-    # Return the selected item contents... if nothing is selected ""
-    # is returned.
-    #
-    method get {} {
-        set result ""
-        set selection [$win.list curselection]
-        if {[llength $selection] > 0} {
-            set index [lindex $selection 0]
-            set result [$win.list get $index]
-        }
-        return $result
-    }
-    
-}
 #--------------------------------------------------------------------
 
 proc Usage { } {
@@ -243,41 +187,6 @@ proc modifyShift {shift initial final} {
     }
     addMembersToShift $shift $addIds
          
-}
-##
-# promptShift
-#  Prompt for a shift using an ItemSelector dialog populated with
-#  the shifts.  Cancel results in program exit at this stage.
-#  Ok with no selector is a message for a do-over.
-#
-proc promptShift { } {
-    set shifts [listShifts]
-    toplevel .shiftprompter
-    DialogWrapper .shiftprompter.dialog
-    set formParent [.shiftprompter.dialog controlarea]
-    set form [ItemSelector $formParent.selector -selections $shifts]
-    .shiftprompter.dialog configure -form $form
-    pack .shiftprompter.dialog -fill both -expand 1
-    
-    set done 0
-    set shift ""
-    while {!$done} {
-        set reply [.shiftprompter.dialog modal]
-        if {$reply eq "Ok"} {
-            set shift [$form get]
-            if {$shift eq ""} {
-                tk_messageBox -parent .shiftprompter -title "Choose a shift" \
-                    -type ok -icon error \
-                    -message {You must choose a shift.  If there are none or you don't want to; click cancel instead}
-            } else {
-                set done 1
-            }
-        } else {
-            set done 1
-        }
-    }
-    destroy .shiftprompter
-    return $shift
 }
 ##
 # Edit the personnel on an existing shift.
@@ -387,19 +296,7 @@ proc create {{shift {}}} {
 proc printShift {shift} {
     set members [listShiftMembers $shift];     # So if bad shift we fail early
     puts "------------------- Shift: '$shift' ---------------------------"
-    struct::matrix p
-    p add columns 3
-    p add row [list "Salutation " "First Name " "Last Name "]
-    foreach person $members {
-        p add row [list                                       \
-            [dict get $person salutation] [dict get $person firstName] \
-            [dict get $person lastName]                                \
-        ]
-    }
-    report::report r [p columns]
-    r printmatrix2channel p stdout
-    r destroy
-    p destroy
+    puts [reportPeople $members]
 }
 
 ##

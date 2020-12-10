@@ -32,8 +32,7 @@ if {[array names env DAQROOT] eq "DAQROOT"} {
 lappend auto_path $tcllibs
 
 package require logbookadmin
-package require report
-package require struct
+package require lg_utilities
 
 ##
 # Usage:
@@ -49,22 +48,8 @@ if {[currentLogBook] eq ""} {
 }
 
 set people [listPeople]
-
-# Convert to a matrix for the report:
-
-struct::matrix p
-p add columns 3
-p add row [list Last First Salutation]
-foreach person $people {
-    set row [list \
-        "[dict get $person lastName] " "[dict get $person firstName] "  \
-        [dict get $person salutation] \
-    ]
-    p add row $row
-
-}
-report::report r [p columns]
-r printmatrix2channel p stdout
+set report [reportPeople $people]
+puts $report
 
 exit 0
 
