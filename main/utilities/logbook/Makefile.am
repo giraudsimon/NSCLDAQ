@@ -38,6 +38,8 @@ install-exec-hook:
 	$(INSTALL_PROGRAM) @srcdir@/logbookadmin.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_utilities.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/ShiftEditor.tcl @prefix@/TclLibs/logbook
+	$(INSTALL_PROGRAM) @srcdir@/lg_noteutilities.tcl \
+		@prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_create.tcl @bindir@/lg_create
 	$(INSTALL_PROGRAM) @srcdir@/lg_current.tcl @bindir@/lg_current
 	$(INSTALL_PROGRAM) @srcdir@/lg_ls.tcl @bindir@/lg_ls
@@ -53,6 +55,9 @@ install-exec-hook:
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
 	echo package ifneeded lg_utilities  1.0 [list source [file join \$$dir lg_utilities.tcl]] \
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
+	echo package ifneeded lg_noteutilities  1.0 [list source [file join \$$dir lg_noteutilities.tcl]] \
+		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
+
 
 
 
