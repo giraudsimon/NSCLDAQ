@@ -32,8 +32,8 @@ if {[array names env DAQROOT] eq "DAQROOT"} {
 lappend auto_path $tcllibs
 
 package require logbookadmin
-package require report
-package require struct
+package require lg_utilities
+
 
 ##
 # Usage:
@@ -69,29 +69,6 @@ proc shiftExists {shiftName} {
     set shifts [listShifts]
     return [expr {$shiftName in $shifts}]
 }
-##
-#  reportShiftMembers
-#  Produce a report of the shift members to stderr.
-#
-#   @param shiftname - Name of the shift.
-#   @return report   - A pair consisting of a report and the matrix
-#                      of shift name information.  When  no longer needed
-#                      the destroy method must be called on each of them.
-#   @note - it's the caller's responsibility to ensure the shift actually
-#           exists.
-proc reportShiftMembers {shiftName} {
-    set p [struct::matrix]
-    $p   add columns 3
-    $p   add row [list "salutation " "First Name " "Last Name "]
-    foreach person [listShiftMembers $shiftName] {
-        $p add row [list \
-            "[dict get $person salutation] "  "[dict get $person firstName] " \
-            "[dict get $person lastName] "    \
-        ]
-    }
-    set rep [report::report r[incr ::reportnum] [$p columns]]
-    return [list $rep $p]
-}
 
 ##
 # duplicateShiftMessage
@@ -101,16 +78,10 @@ proc reportShiftMembers {shiftName} {
 #
 proc duplicateShiftMessage {shiftName} {
     # Get the member report string:
-    
-    set reportInfo [reportShiftMembers $shiftName]
-    set report [lindex $reportInfo 0]
-    set matrix [lindex $reportInfo 1]
-    set members [$report printmatrix $matrix]
-    $report destroy
-    $matrix destroy
+
     
     set msg "$shiftName already exists with the following members:\n\n"
-    append msg $members
+    append msg [reportPeople [listShiftMembers $shiftName]]
     append msg "\nUse lg_mgshift to add members to the shift."
     return $msg
 }
