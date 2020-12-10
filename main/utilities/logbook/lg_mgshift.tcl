@@ -81,6 +81,9 @@ package require Tk
 package require snit
 package require ShiftEditor
 package require DataSourceUI
+package require report
+package require struct
+
 wm withdraw .
 #--------------------------------------------------------------------
 # Megawidgets:
@@ -108,7 +111,7 @@ snit::widgetadaptor ItemSelector {
             -selectmode single
         ttk::scrollbar $win.scroll -orient vertical -command [list $win.list yview]
         grid $win.list $win.scroll -sticky nsew
-        grid columnconfigure 0 -weight 1
+        grid columnconfigure $win 0 -weight 1
         
         $self configurelist $args
     }
@@ -167,6 +170,9 @@ proc Usage { } {
     exit -1
     
 }
+#-----------------------------------------------------------------------------
+#  Edit verb.
+
 ##
 # getShiftNonShiftMembers
 #   Determines which people are in or not in a shift:
@@ -251,10 +257,28 @@ proc promptShift { } {
     set formParent [.shiftprompter.dialog controlarea]
     set form [ItemSelector $formParent.selector -selections $shifts]
     .shiftprompter.dialog configure -form $form
+    pack .shiftprompter.dialog -fill both -expand 1
     
-    
+    set done 0
+    set shift ""
+    while {!$done} {
+        set reply [.shiftprompter.dialog modal]
+        if {$reply eq "Ok"} {
+            set shift [$form get]
+            if {$shift eq ""} {
+                tk_messageBox -parent .shiftprompter -title "Choose a shift" \
+                    -type ok -icon error \
+                    -message {You must choose a shift.  If there are none or you don't want to; click cancel instead}
+            } else {
+                set done 1
+            }
+        } else {
+            set done 1
+        }
+    }
+    destroy .shiftprompter
+    return $shift
 }
-
 ##
 # Edit the personnel on an existing shift.
 #  - The shift editor is brought up as a dialog and stocked with the
@@ -267,6 +291,7 @@ proc promptShift { } {
 proc edit {shift} {
     if {$shift eq ""} {
         set shift [promptShift]
+        if {$shift eq ""} return;          # aborted the request.
     }
     set shiftInfo [getShiftNonShiftMembers $shift]
     
@@ -332,13 +357,15 @@ proc edit {shift} {
     }
     destroy .dialog
 }
+#-------------------------------------------------------------------------------
+# Create verb
 
 ##
 # Create a new shift.
 #   - if the shift is not given just call lg_mkshift to create/stock the shift.
 #   - if the shift is given, create it using lg_mkshift and then
 #     edit it.
-proc create {shift} {
+proc create {{shift {}}} {
     if {$shift eq ""} {
         exec [file join $::bindir lg_mkshift]
     } else {
@@ -348,6 +375,108 @@ proc create {shift} {
         }
         edit $shift
     }
+}
+#-----------------------------------------------------------------------------
+# list verb
+
+##
+# printShift
+#    Prints a shift and its members.
+# @param shift - name of the shift to print.
+#
+proc printShift {shift} {
+    set members [listShiftMembers $shift];     # So if bad shift we fail early
+    puts "------------------- Shift: '$shift' ---------------------------"
+    struct::matrix p
+    p add columns 3
+    p add row [list "Salutation " "First Name " "Last Name "]
+    foreach person $members {
+        p add row [list                                       \
+            [dict get $person salutation] [dict get $person firstName] \
+            [dict get $person lastName]                                \
+        ]
+    }
+    report::report r [p columns]
+    r printmatrix2channel p stdout
+    r destroy
+    p destroy
+}
+
+##
+# listShifts
+#   If a shift is supplied, that shift and that shift alone is listed to stdout
+#   if no shift is supplied, all shifts are listed:
+#
+# @param shift - shift to list or empty if none
+#
+proc printShifts {shift} {
+    if {$shift eq ""} {
+        foreach s [lsort [listShifts]] {
+            printShift $s
+        }
+    } else {
+        printShift $shift
+    }
+}
+#-----------------------------------------------------------------------------
+#  No verb selected:
+
+
+##
+# fullGuiEdit
+ #    Called in response to the full Gui's Edit button:
+ #    - If a shift has been selected just edit it.  If not
+ #      pop up a message box indicating a shift must be selected.
+ # @param w ItemSelector widget holding the choice.
+ #
+ proc fullGuiEdit  {w} {
+    set shift [$w get]
+    if {$shift eq ""} {
+        tk_messageBox -parent $w -type ok -icon error -title "Shift needed" \
+            -message {You must select a shift to edit from the list of shifts}
+    } else {
+        edit $shift
+    }
+ }
+
+##
+# fullPrompter
+#   This is the GUI that is used if the user does not specify a verb  on the
+#   command line.
+#   We pop up a list of shifts and three buttons:  New... Edit.. and Done
+#  *   New invokes create
+#  *   Edit, requires the selection of a shift from the
+#      list of shifts and invokes edit with that shift.
+#  *   Done returns.
+#  We handle stalling in this proc via a vwait on fullprompter  which gets
+#  incremented by the done handler so we don't need to use modality for our chunk
+#  of the GUI.
+#
+set fullprompter 0
+proc fullPrompter { } {
+    
+    #  Create the widgets:
+    
+    toplevel .fullgui
+    set f [ttk::frame .fullgui.frame]
+    ItemSelector $f.shifts -selections [listShifts]
+    ttk::button $f.new -text New... -command [list create]
+    ttk::button $f.edit -text Edit... -comman [list fullGuiEdit $f.shifts]
+    ttk::button $f.done -text Done -command [list incr fullprompter]
+    
+    #Lay them out:
+    
+    grid $f.shifts -columnspan 3 -sticky nsew
+    grid $f.new $f.edit $f.done
+    pack $f -fill both -expand 1
+    
+    # In case the user destroys the top level rather than clicking done:
+    
+    bind .fullgui <Destroy> [list incr fullprompter]
+    
+    # Wait for Done:
+        
+    vwait ::fullprompter
 }
 
 #---------------------------------------------------------------
@@ -378,7 +507,7 @@ if {$verb eq ""} {
 } elseif {$verb eq "edit"} {
     edit $shift
 } elseif {$verb eq "list"} {
-    listShifts $shift
+    printShifts $shift;     # listShifts is a admin api call.
 } else {
     puts stderr "Invalid verb '$verb'"
     Usage
