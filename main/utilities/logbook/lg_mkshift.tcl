@@ -59,32 +59,6 @@ proc Usage {} {
     exit -1
 }
 
-##
-# shiftExists
-#    @param shiftName.
-#    @return bool - true if a shift with that name already exists.
-#
-#
-proc shiftExists {shiftName} {
-    set shifts [listShifts]
-    return [expr {$shiftName in $shifts}]
-}
-
-##
-# duplicateShiftMessage
-#    Error message for a shift is a duplicate
-# @param shiftName - name of the shift
-# @return string   - error message.
-#
-proc duplicateShiftMessage {shiftName} {
-    # Get the member report string:
-
-    
-    set msg "$shiftName already exists with the following members:\n\n"
-    append msg [reportPeople [listShiftMembers $shiftName]]
-    append msg "\nUse lg_mgshift to add members to the shift."
-    return $msg
-}
 
 #-------------------------------------------------------------------
 # GUI:
@@ -132,10 +106,8 @@ proc GUI {} {
                 # So we'll reconfigure the off/onshift values:
                 
                 set members [$form cget -onshift]
-                set shiftIds [list]
-                foreach member $members {
-                    lappend shiftIds [dict get $member id]
-                }
+                set shiftIds [peopleToIds $members]
+                
                 set status [catch {
                     createShift $shiftName $shiftIds
                 } msg]

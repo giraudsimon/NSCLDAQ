@@ -26,6 +26,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 package provide lg_utilities 1.0
+package require logbookadmin
 package require report
 package require struct
 
@@ -155,5 +156,41 @@ proc reportPeople {people} {
 }
     
 
+##
+# shiftExists
+#    @param shiftName.
+#    @return bool - true if a shift with that name already exists.
+#
+#
+proc shiftExists {shiftName} {
+    set shifts [listShifts]
+    return [expr {$shiftName in $shifts}]
+}
 
+##
+# duplicateShiftMessage
+#    Error message for a shift is a duplicate
+# @param shiftName - name of the shift
+# @return string   - error message.
+#
+proc duplicateShiftMessage {shiftName} {
+    # Get the member report string:
+
+    
+    set msg "$shiftName already exists with the following members:\n\n"
+    append msg [reportPeople [listShiftMembers $shiftName]]
+    append msg "\nUse lg_mgshift to add members to the shift."
+    return $msg
+}
+##
+# peopleToIds
+#   Turns a list of people dicts into a list of people ids.
+#
+proc peopleToIds {people} {
+    set result [list]
+    foreach person $people {
+        lappend result [dict get $person id]
+    }
+    return $result
+}
 

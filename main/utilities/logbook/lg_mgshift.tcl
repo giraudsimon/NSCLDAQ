@@ -129,10 +129,8 @@ proc Usage { } {
 proc getShiftNonShiftMembers {shift} {
     set members [listShiftMembers $shift]
     set people [listPeople]
-    set memberIdList [list]
-    foreach member $members {
-        lappend memberIdList [dict get $member id]
-    }
+    set memberIdList [peopleToIds $members]
+    
     
     # Now we can separate the wheat from the chaff:
     
@@ -162,14 +160,9 @@ proc modifyShift {shift initial final} {
     # Make lists of ids of initial and final so we can use in/ni
     # to determine membership or non membership
     
-    set initialIds [list]
-    set finalIds   [list]
-    foreach member $initial {
-        lappend initialIds [dict get $member id]
-    }
-    foreach member $final {
-        lappend finalIds [dict get $member id]
-    }
+    set initialIds [peopleToIds $initial]
+    set finalIds   [peopleToIds $final]
+    
     
     #  Now for each initial not in final remove it.
     #  and foreach final not in initial add it:
@@ -236,16 +229,13 @@ proc edit {shift} {
                     set done 1
                 } else {
                     # Create new shift starting from existing shift.
-                    if {$newshift in [listShifts]} {
+                    if {[shiftExists $newshift]} {
                         tk_messageBox -parent .dialog -title "Duplicate shift" \
                             -icon error -type ok \
-                            -message "'$newshift' already exists can't create a duplicate"
+                            -message [duplicateShiftMessage $newshift]
                     } else {
                         set onshift [$form cget -onshift]
-                        set shiftIds [list]
-                        foreach person $onshift {
-                            lappend shiftIds [dict get $person id]
-                        }
+                        set shiftIds [peopleToIds $onshift]
                         set status [catch {
                             createShift $newshift $shiftIds    
                         } msg ]
