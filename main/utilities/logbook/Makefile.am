@@ -92,6 +92,7 @@ check-TESTS:
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ runinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteinstance.test
 	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ admin.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteutil.test
 	@builddir@/unittests
 
 
@@ -103,5 +104,6 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	personinstance.test shiftinstance.test runinstance.test \
 	noteinstance.test logbookadmin.tcl admin.test lg_create.tcl \
 	lg_current.tcl lg_ls.tcl lg_addperson.tcl lg_lspeople.tcl \
-	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl
+	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl \
+	lg_noteutilities.tcl noteutil.test
 

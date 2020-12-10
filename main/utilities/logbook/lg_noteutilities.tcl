@@ -50,12 +50,13 @@ proc _getLinkInfo {text index} {
     set pStart [string first "(" $text $index]
     set pEnd   [string first ")" $text $index]
     
+    
     # Neither are allowed to be -1:
     
     if {($pStart == -1) || ($pEnd == -1)} {
         error "Invalid image link in text near '[string range $text index index+20]...'"
     }
-    set filename [string range $text $pStart+1 $pStart-1]
+    set filename [string range $text $pStart+1 $pEnd-1]
     incr pEnd
     return [list $filename $pEnd]
 }
