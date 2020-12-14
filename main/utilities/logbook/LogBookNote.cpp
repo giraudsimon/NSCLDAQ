@@ -375,7 +375,7 @@ LogBookNote::create(
             insroot.bind(1, run->getRunInfo().s_id);
         }
         insroot.bind(2, pPerson->id());
-        insroot.bind(3, time_t(nullptr));
+        insroot.bind(3, (int)time(nullptr));
         insroot.bind(4, string, -1, SQLITE_STATIC);
         ++insroot;
         int noteId = insroot.lastInsertId();
