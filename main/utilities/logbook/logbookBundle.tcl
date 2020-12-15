@@ -154,6 +154,7 @@ namespace eval ::LogBookBundle {
 #                ... else we're joining in the middle of a run and that we cannot
 #                do.
 proc ::LogBookBundle::attach {state} {
+    puts "Logbook bundle attach $state called."
     currentLogBookOrError;         # Just to make the error.
     if {$state ni [list NotReady Starting Halted]} {
         tk_messageBox -title {Attach too late} -type ok -icon error \
@@ -195,6 +196,7 @@ if {$::LogBookBundle::registered == 0} {
     set stateMachine [RunstateMachineSingleton %AUTO%]
     $stateMachine addCalloutBundle LogBookBundle
     set ::LogBookBundle::registered 1
+    puts "Logbook  bundle registered"
 }
 
     
