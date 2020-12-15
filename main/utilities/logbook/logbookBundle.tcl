@@ -28,6 +28,7 @@ exec tclsh "$0" ${1+"$@"}
 package provide logbookbundle 1.0
 package require logbookadmin
 package require StateManager
+package require RunstateMachine
 package require ReadoutGUIPanel
 package require Tk;               # Ensure we can pop up dialogs of various types.
 
@@ -191,7 +192,7 @@ proc ::LogBookBundle::leave {from to} {
 #  so that we don't wind up forcing accidental transitions.
 #
 if {$::LogBookBundle::registered == 0} {
-    set stateMachine [RunStateMachineSingleton %AUTO%]
+    set stateMachine [RunstateMachineSingleton %AUTO%]
     $stateMachine addCalloutBundle LogBookBundle
     set ::LogBookBundle::registered 1
 }

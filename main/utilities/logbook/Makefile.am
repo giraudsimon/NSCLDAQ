@@ -38,6 +38,7 @@ install-exec-hook:
 	$(INSTALL_PROGRAM) @srcdir@/logbookadmin.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_utilities.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/ShiftEditor.tcl @prefix@/TclLibs/logbook
+	$(INSTALL_PROGRAM) @srcdir@/logbookBundle.tcl @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_noteutilities.tcl \
 		@prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @srcdir@/lg_create.tcl @bindir@/lg_create
@@ -57,6 +58,10 @@ install-exec-hook:
 	echo package ifneeded lg_utilities  1.0 [list source [file join \$$dir lg_utilities.tcl]] \
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
 	echo package ifneeded lg_noteutilities  1.0 [list source [file join \$$dir lg_noteutilities.tcl]] \
+		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
+	echo package ifneeded lg_noteutilities  1.0 [list source [file join \$$dir lg_noteutilities.tcl]] \
+		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
+	echo package ifneeded logbookbundle  1.0 [list source [file join \$$dir logbookBundle.tcl]] \
 		>> @prefix@/TclLibs/logbook/pkgIndex.tcl
 
 
@@ -106,5 +111,5 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	noteinstance.test logbookadmin.tcl admin.test lg_create.tcl \
 	lg_current.tcl lg_ls.tcl lg_addperson.tcl lg_lspeople.tcl \
 	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl \
-	lg_noteutilities.tcl noteutil.test lg_wrnote.tcl 
+	lg_noteutilities.tcl noteutil.test lg_wrnote.tcl logbookBundle.tcl
 

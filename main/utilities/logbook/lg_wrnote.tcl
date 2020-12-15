@@ -28,8 +28,7 @@ exec tclsh "$0" ${1+"$@"}
 if {[array names env DAQROOT] eq "DAQROOT"} {
     set tcllibs [file join $env(DAQROOT) TclLibs]
 } else {
-    set tcllibs [file normalize [file join [file dirname [info script]] .. TclLi
-bs]]
+    set tcllibs [file normalize [file join [file dirname [info script]] .. TclLibs]]
 }
 
 set bindir $env(DAQBIN)
@@ -42,6 +41,7 @@ package require Tk
 package require snit
 package require Iwidgets
 package require DataSourceUI
+
 
 
 ##
