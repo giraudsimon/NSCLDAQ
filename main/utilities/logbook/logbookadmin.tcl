@@ -548,7 +548,7 @@ proc emergencyEndRun {{remark {}}} {
     }
     set status [catch {$log emergencyStop $run $remark} result]
     if {$status} {
-        $log $destroy
+        $log destroy
         error $result
     }
     $log destroy
