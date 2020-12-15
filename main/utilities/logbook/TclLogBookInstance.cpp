@@ -514,7 +514,7 @@ TclLogBookInstance::setCurrentShift(
         std::stringstream msg;
         msg << "setCurrentShift error the shift '" <<  name
             << "' does not exist";
-        std::string e;
+        std::string e = msg.str();
         throw std::invalid_argument(e);
     }
     m_logBook->setCurrentShift(pShift);
