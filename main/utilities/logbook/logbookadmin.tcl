@@ -523,7 +523,7 @@ proc resumeRun {{remark {}}} {
     }
     set status [catch {$log resume $run $remark} result]
     if {$status} {
-        $log $destroy
+        $log destroy
         error $result
     }
     $log destroy
