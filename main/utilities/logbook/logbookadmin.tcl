@@ -402,6 +402,7 @@ proc listShiftMembers {shift} {
 # listShifts
 #   Lists the names of the shifts.
 # @return list - of shift names.
+# @note The list will be sorted in dictionary order.
 #
 proc listShifts {} {
     set path [currentLogBookOrError]
@@ -418,7 +419,7 @@ proc listShifts {} {
         $shift destroy
         lappend retval $shiftName
     }
-    return $retval
+    return [lsort -dictionary $retval]
 }
 ##
 # currentShift
