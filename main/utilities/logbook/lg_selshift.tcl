@@ -46,6 +46,7 @@ lappend auto_path $tcllibs
 package require logbookadmin
 
 
+
 ##
 # GUI
 #   Called if the GUI form has been selected; only then are Tk and Snit
@@ -55,6 +56,7 @@ package require logbookadmin
 proc GUI {} {
     package require Tk
     package require snit
+    package require DataSourceUI
     
     ##
     # @class CurrentShift
@@ -171,6 +173,7 @@ proc GUI {} {
             bind $win.shifts <Double-1>   [mymethod SelectShift]
             
             $self update
+            $self configurelist $args
         }
         #--------------------------------------------------------------------
         # Private methods
@@ -332,9 +335,8 @@ proc GUI {} {
         #    Invoked on a double-click on the shift list box.
         #    the -command script, if defined, is called at the global level.
         #
-        # @param member- the person dict to convert.
         # @return string - the string to put in the listbox to represent the person.
-        method SelectShift {member} {
+        method SelectShift {} {
             set script $options(-command)
             if {$script ne ""} {
                 uplevel #0 $script
@@ -369,8 +371,52 @@ proc GUI {} {
             }
         }
     }
-    ShiftSelector .w
-    pack .w -fill both -expand 1
+    ##
+    # @class ShiftSelectionForm
+    #
+    #   This is a megawidget that consists of:
+    #   -  A CurrentShift widget that shows the current shift and its members.
+    #   -  A ShiftSelector widget that allows shifts to be browsed/selected.
+    #   -  A button labeled "Accept" that selects the currently selected shift
+    #      and applies it.
+    #  @note double clicking on a shift in the ShiftSelector widget selects it.
+    #  @todo - might be kind of cool to have a button to hide the
+    #          shift selection form.
+    #
+    snit::widgetadaptor ShiftSelectionForm {
+        component current
+        component selector
+        
+        constructor args {
+            installhull using ttk::frame
+            
+            install current using CurrentShift $win.current
+            install selector using ShiftSelector $win.selector \
+                -command [mymethod chooseShift]
+            ttk::button $win.apply -text Apply -command [mymethod chooseShift]
+            
+            # Layout the widgets:
+            
+            grid $win.current -sticky wns
+            grid $win.selector -sticky nsew
+            grid $win.apply
+            
+        }
+        ##
+        # chooseShift
+        #   Get the current shift from the selector.  If it's not ""
+        #   set it as the current shift which, in turn, will eventually
+        #   update the current shift component.
+        #
+        method chooseShift {} {
+            set shift [$selector getSelected]
+            if {$shift ne ""} {
+                setCurrentShift $shift
+            }
+        }
+    }
+    ShiftSelectionForm .selectshift
+    pack .selectshift -fill both -expand 1
     
 }
     
