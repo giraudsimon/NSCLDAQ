@@ -108,8 +108,8 @@ namespace eval ::LogBookBundle  {
         #
         if { ($from eq "Halted") && ($to eq "Active")} {
             # Begin run:
-            set number ::ReadoutGUIPanel::getRun
-            set title  ::ReadoutGUIPanel::getTitle
+            set number [::ReadoutGUIPanel::getRun]
+            set title  [::ReadoutGUIPanel::getTitle]
             
             beginRun $number $title {Logged automatically by LogBookBundle}
             
@@ -123,7 +123,7 @@ namespace eval ::LogBookBundle  {
             
             pauseRun {Logged automatically by LogBookBundle}
             
-        } elseif {($from eq "Paused") && ($to eq "Active:")} {
+        } elseif {($from eq "Paused") && ($to eq "Active")} {
             # Resume run:
             
             resumeRun {Logged automatically by LogBookBundle}
@@ -181,7 +181,7 @@ proc ::LogBookBundle::enter {from to} {
 #
 proc ::LogBookBundle::leave {from to} {
     if {[::LogBookBundle::MustLogTransition $from $to]} {
-        LogBookBundleEnsure::ShiftSelected
+        LogBookBundle::ShiftSelected
         
         LogBookBundle::LogTransition $from $to
     }
