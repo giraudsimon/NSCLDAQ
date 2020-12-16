@@ -379,6 +379,10 @@ proc listShiftMembers {shift} {
     set status [catch {$log findShift $shift} result]
     set members [list]
     if {$status == 0} {
+        if {$result eq ""} {
+            error "No such shift $shift"
+            $log destroy
+        }
         set people [$result members]
         foreach person $people {
             lappend members [_makePersonDict $person]
