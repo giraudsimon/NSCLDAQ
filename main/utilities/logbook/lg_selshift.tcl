@@ -34,6 +34,15 @@ exec tclsh "$0" ${1+"$@"}
 #                            and its members.
 #
 
+
+if {[array names env DAQROOT] eq "DAQROOT"} {
+    set tcllibs [file join $env(DAQROOT) TclLibs]
+} else {
+    set tcllibs [file normalize [file join [file dirname [info script]] .. TclLibs]]
+}
+
+lappend auto_path $tcllibs
+
 package require logbookadmin
 
 
@@ -208,7 +217,6 @@ proc GUI {} {
             } else {
                 set currentShift ""
             }
-            puts "Attempt to re-establish selection '$currentShift' ($currentSelection)"
             $win.shifts delete 0 end
             
             # Repopulate the shifts list box and reset the selection if there
@@ -223,7 +231,7 @@ proc GUI {} {
                 }
                 incr index
             }
-            puts "Establish selection index: $selectionIndex"
+
             
             ##
             # Clear the members box and, if there's a current shift get
