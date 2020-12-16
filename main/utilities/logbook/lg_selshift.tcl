@@ -55,7 +55,7 @@ proc GUI {} {
     #      class will automatically reflect that change.
     #
     snit::widgetadaptor CurrentShift {
-
+        variable afterid -1
         constructor args {
             installhull using ttk::frame
             
@@ -81,6 +81,9 @@ proc GUI {} {
             
             $self update 
         }
+        destructor {
+            after cancel $afterid
+        }
         ##
         # Get the current shift, and if there is one and its different
         # than what we display, update:
@@ -101,10 +104,264 @@ proc GUI {} {
                 }
                 $win.members configure -state disabled
             }
-            after 1000 [mymethod update]
+            set afterid [after 1000 [mymethod update]]
         }
     }
-    CurrentShift .w
+    ##
+    # @class ShiftSelector
+    #    Lists the available shifts.  If the user clicks a shift, that
+    #    selects the shift and displays its members in the right hand
+    #    side list box.  Note that every second:
+    #    -  The set of shifts is listed and, if it's changed,
+    #       the selected shift is de-selected and the shifts updated.
+    #    -  If the selected shift has member changes, those will be reflected
+    #       as well by the update operation.
+    #
+    # OPTION
+    #   -command - if defined, this script is called on a double left button
+    # Methods:
+    #    getSelected - Returns the selected shift.  This is "" if no shift is
+    #              current selected from the shifts listbox.
+    #    
+    snit::widgetadaptor ShiftSelector {
+        option -command [list]
+        variable afterid -1
+        
+        # For reasons that are too hard for me to understand,
+        # curselection gives an empty string if the
+        # window doesn't have focus and yet, the selection change
+        # event does not fire.  Therefore we let the selection
+        # change event maintain the current selection in this variable
+                    
+        variable currentSelection ""
+        
+        constructor args {
+            installhull using ttk::frame
+            
+            ttk::label $win.shiftlabel -text Shifts:
+            ttk::label $win.memberlabel -text {Shift members:}
+            
+            listbox $win.shifts -selectmode single \
+                -yscrollcommand [list $win.shiftscroll set] \
+                -exportselection false
+            ttk::scrollbar $win.shiftscroll -command [list $win.shifts yview] \
+                -orient vertical
+            
+            listbox $win.members -state disabled \
+                -yscrollcommand [list $win.memberscroll set]
+            ttk::scrollbar $win.memberscroll -command [list $win.members yview]
+            
+            grid $win.shiftlabel -row 0 -column 0 -columnspan 2 -sticky w
+            grid $win.memberlabel -row 0 -column 2 -columnspan 2 -sticky w
+            
+            grid $win.shifts $win.shiftscroll $win.members $win.memberscroll -sticky nsew
+            
+            ## Event handling
+            
+            bind $win.shifts <<ListboxSelect>> [mymethod ChangeSelection]
+            bind $win.shifts <Double-1>   [mymethod SelectShift]
+            
+            $self update
+        }
+        #--------------------------------------------------------------------
+        # Private methods
+        
+        ##
+        # MembersChanged
+        #   Returns boolean true if the set of people passed in is not a match
+        #   to the set of people in the members list box.  This is determined
+        #   by computing what the member dicts would look like in the list box
+        #   and item by item comparing.
+        #
+        # @param people - list of people dicts.
+        # @return bool  - 1 if that list would populate the members list box
+        #                 differently than it is now
+        #
+        method MembersChanged {people} {
+            set contents [$win.members get 0 end]
+    
+            if {[llength $contents] != [llength $people]} {
+                return 1;  # Obviously since different number.
+            }
+            foreach person $people member $contents {
+                if {[personToListBoxLine $person] != $member} {
+                    return 1
+                }
+            }
+            return 0
+        }
+        ##
+        # fullyRepopulate
+        #   Repopulate the entire form.
+        #   - Get the name of the selected shift if there is one.
+        #   - clear and repopulate the shift listbox.
+        #   - If there's a selected shift and, if necessary, repopulate the
+        #     members box too.
+        #   - If there's a current shift, select it in the list box
+        #
+        # @param shifts - the shifts known to the database.
+        #
+        method fullyRepopulate {shifts} {
+            
+            if {$currentSelection ne ""} {
+                set currentShift [$win.shifts get $currentSelection]
+            } else {
+                set currentShift ""
+            }
+            puts "Attempt to re-establish selection '$currentShift' ($currentSelection)"
+            $win.shifts delete 0 end
+            
+            # Repopulate the shifts list box and reset the selection if there
+            # is one:
+            
+            set selectionIndex -1;             # If no selection
+            set index 0
+            foreach shift $shifts {
+                $win.shifts insert end $shift
+                if {$shift eq $currentShift} {
+                    set selectionIndex $index
+                }
+                incr index
+            }
+            puts "Establish selection index: $selectionIndex"
+            
+            ##
+            # Clear the members box and, if there's a current shift get
+            # its members and populate:
+            
+            
+            if {$selectionIndex != -1} {
+                $win.shifts selection set $selectionIndex
+                set members [listShiftMembers $currentShift]
+                $self repopulateMembers $members
+            } else {
+                $self clearMembers 
+            }
+            
+        }
+        ##
+        # repopulateMembers
+        #   Re-load the members list box with the indiccated people.
+        #
+        # @param shiftMembers - dicts specifying people to load into the box.
+        #
+        method repopulateMembers {shiftMembers} {
+            $self clearMembers
+            $win.members configure -state normal;    # Else we can't modify.
+            foreach member $shiftMembers {
+                set line [personToListBoxLine $member]
+                $win.members insert end $line
+            }
+            $win.members configure -state disabled
+        }
+        ##
+        # clearMembers
+        #    Clear the members list box.
+        # 
+        method clearMembers {} {
+            $win.members configure -state normal
+            $win.members delete 0 end
+            $win.members configure -state disabled
+        }
+        ##
+        # update
+        #    Self scheduled to run :
+        #    If the set of shifts changed;
+        #     - Clear the members listbox.
+        #     - Clear and re-populate the shifts listbox (this should drop the)
+        #       selection.
+        #    If there's a selected shift and the members in it don't match
+        #    what's in the members list box the members list box is repopulated.
+        #    Regardless reschedule ourselves to run in another second.
+        # All of this allows us to keep up-to-date with changes from other
+        # programs (e.g. someone runs the shift editor while we're displaying.
+        #
+        method update {} {
+            ##
+            # Shifts can only be added, not name changed or deleted so:
+            
+            set priorCount [$win.shifts index end];    #existing shift count.
+            set currentShifts [listShifts]
+            if {$priorCount != [llength $currentShifts]} {
+                $self fullyRepopulate $currentShifts
+            } else {
+                # If there's a selected shift, did the members in it change
+                # (shift members can be fully edited - though that's discouraged
+                # once the experiment starts).
+                # Change in selection is handled by ChangeSelection below
+                
+                
+                set selectedShift $currentSelection
+                if {$selectedShift ne ""} {
+                    #  A shift is selected.
+
+                    set shift [$win.shifts get $selectedShift]
+                    set members [listShiftMembers $shift]
+                    if {[$self MembersChanged $members]} {
+                        $self repopulateMembers $members
+                    }
+                }
+            }
+            set afterid [after 1000 [mymethod update]]
+        }
+        ##
+        # ChangeSelection
+        #   Called when the user selects a new shift from the shift box.
+        #   the shift member box gets repopulated.
+        #
+        method ChangeSelection {} {
+            set selection [$win.shifts curselection]
+            set currentSelection $selection
+            if {$selection ne ""} {
+                set members [listShiftMembers [$win.shifts get $selection]]
+                $self repopulateMembers $members
+            } else {
+                $self clearMembers
+            }
+        }
+        ##
+        # SelectShift
+        #    Invoked on a double-click on the shift list box.
+        #    the -command script, if defined, is called at the global level.
+        #
+        # @param member- the person dict to convert.
+        # @return string - the string to put in the listbox to represent the person.
+        method SelectShift {member} {
+            set script $options(-command)
+            if {$script ne ""} {
+                uplevel #0 $script
+            }
+        }
+        #-------------------------------------------------------------------
+        #  Procs:
+        
+        ##
+        #  personToListBoxLine
+        #    Given a person dict constructs the line to stuff into the
+        #    members list box.
+        # @param member - a shift member  person dict.
+        # @return string - what to put in the list box for that person.
+        #
+        proc personToListBoxLine {member} {
+            return "[dict get $member salutation] [dict get $member firstName] [dict get $member lastName]"
+        }
+        #-------------------------------------------------------------------
+        # public methods
+        #
+        
+        ## 
+        # getSelected
+        #   Returns the shift that's currently selected or "" if none is.
+        method getSelected {} {
+            set idx [$win.shifts curselection]
+            if {$idx ne ""} {
+                return [$win.shifts get $idx]
+            } else {
+                return ""
+            }
+        }
+    }
+    ShiftSelector .w
     pack .w -fill both -expand 1
     
 }
