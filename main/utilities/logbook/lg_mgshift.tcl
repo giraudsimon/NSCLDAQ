@@ -226,6 +226,12 @@ proc edit {shift} {
         }
     }
     destroy .dialog
+    
+    # Find the list of shifts and update them:
+    
+    if {[winfo exists .fullgui.frame.shifts]} {
+        .fullgui.frame.shifts configure -selections [listShifts]
+    }
 }
 #-------------------------------------------------------------------------------
 # Create verb
@@ -319,7 +325,7 @@ proc fullPrompter { } {
     set f [ttk::frame .fullgui.frame]
     ItemSelector $f.shifts -selections [listShifts]
     ttk::button $f.new -text New... -command [list create]
-    ttk::button $f.edit -text Edit... -comman [list fullGuiEdit $f.shifts]
+    ttk::button $f.edit -text Edit... -command [list fullGuiEdit $f.shifts]
     ttk::button $f.done -text Done -command [list incr fullprompter]
     
     #Lay them out:
