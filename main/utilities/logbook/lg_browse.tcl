@@ -172,3 +172,117 @@ snit::widgetadaptor PeopleViewer {
         $self _update
     }
 }
+
+##
+# @class ShiftView
+#   This megawidget provides a self maintaining view of the
+#   shifts.  A  shift is shown as a folder containig the people
+#   on the shift.  A context menu  allows you to
+#   - Create a new shift.
+#   - Edit the shift you are on/in.
+#   - Make the shift you are on/in current.
+#
+#  The current shift is also pointed out on the tree.
+#
+#  OPTIONS:
+#    -update - seconds between automatic updates.
+#              automatic updates support seeing changes to the view
+#              in the event some external force changes the database.
+#  @note lg_mgshift is used to actually do shift edits.
+#  @note lg_selsfhit is used to select a current shift.
+snit::widgetadaptor ShiftView {
+    option -update -default 1;                # Default up date rate.
+    
+    variable afterid -1
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::treeview $win.tree -yscrollcommand [list $win.scroll set]
+        ttk::scrollbar $win.scroll -orient vertical \
+            -command [list $win.tree yview]
+        
+        # Configure the tree:
+        
+        $win.tree configure \
+            -columns [list shift lastname firstname salutation] \
+            -displaycolumns #all -selectmode none -show [list tree headings]
+        foreach col [list shift lastname firstname salutation] \
+                title [list Shift "Last Name" "First Name" "Salutation"] {
+            $win.tree heading $col -text $title
+        }
+            
+        
+        # Layout the widgets:
+        
+        grid $win.tree $win.scroll -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        grid columnconfigure $win 1 -weight 0
+        grid rowconfigure    $win 0 -weight 1
+        
+        # Start auto update - that'll do the initial population.
+        
+        $self _automaticUpdate
+        
+        # Set bindings:
+        
+        menu $win.contextmenu -tearoff 0
+        $win.contextmenu add command \
+            -label {Add Shift...} -command [mymethod _newShift]
+        $win.contextmenu add command \
+            -label {Edit...} -command [mymethod _editShift]
+        $win.contextmenu add command \
+            -label {Set Current} -command [mymethod _makeShiftCurrent]
+        
+        bind $win.tree <3> [list $win.contextmenu post %X %Y]
+        bind $win.tree <KeyPress> [list $win.contextmenu unpost]
+        
+        
+    }
+    destructor {
+        after cancel $afterid
+    }
+    ##
+    # _updateShifts
+    #
+    #    _update the set of shifts in the tree view
+    #
+    # @param shifts - the current set of shifts dictionary sort order.
+    # @param shiftElements - the tree elements containing the shifts.
+    #
+    method _updateShifts {shifts shiftElements} {
+        
+    }
+    ##
+    # _update
+    #   Perform a full tree update:
+    #   - If new shifts have been added put them in sorted place.
+    #   - Update the current shift.
+    #   - For each shift, if it's members changed, update the member list.
+    #
+    method _update {} {
+        
+        #  The shift folder list only needs to be updated
+        #  if the number of shifts changed
+        
+        set shifts [lsort -dictionary [listShifts]]
+        set shiftElements [$win.tree children {}];  # They're the top level.
+        if {[llength $shifts] != [llength $shiftElements]} {
+            $self _updateShifts $shifts $shiftElements
+        }
+        
+        
+    }
+    method _automaticUpdate {} {
+        $self _update
+        set afterid [after [expr {$options(-update)*1000}] [mymethod _automaticUpdate]]
+    }
+    method _newShift {} {
+        
+    }
+    method _editShift {} {
+    }
+    method _makeShiftCurrent {} {
+        
+    }
+}
