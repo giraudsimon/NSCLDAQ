@@ -986,6 +986,154 @@ tcltest::test find_run_2 {match} \
     set run [findRun 2]
     dict get $run title
 } -result {This is run 2}
+
+#-----------------------------------------------------------
+#  Note listing API.
+#
+
+tcltest::test getnote_1 {There's no note} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    getNote 1
+} -returnCodes error -result * -match glob
+
+tcltest::test getnote_2 {There's a single note} \
+-setup {
+    commonSetup3
+    
+    #  Make a note
+    
+    set log [logbook::logbook open $logbook]
+    set author [$log getPerson 1]
+    [$log createNote $author {some text}] destroy
+    $author destroy;              # Could do these in cleanup too.
+    $log    destroy
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set note [getNote 1]
+    set result [dict remove $note timestamp]
+} -result [dict create id 1 \
+    author [dict create id 1 lastName Fox firstName Ron salutation Mr.] \
+    ]
+
+proc commonSetup4 {} {
+    commonSetup3
+    set log [logbook::logbook open $::logbook]
+    set author [$log getPerson 1]
+    [$log createNote $author {some text}] destroy
+    
+    set run [$log findRun 1]
+    [$log createNote $author {Some other text} [list] [list] $run] destroy
+    [$log createNote $author "The title line\nMore text follows"] destroy
+    [$log createNote $author "This is a long line with more than 20 characters who's title is truncated"] destroy
+    $run    destroy
+    $author destroy;              # Could do these in cleanup too.
+    $log    destroy
+}
+
+tcltest::test notetext_1 {Get the text of a note.} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    set dict [getNote 2]
+    getNoteText $dict
+} -result {Some other text}
+
+tcltest::test notetitle_1 {Get simple note title with only one line} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 1]
+} -result {some text}
+
+tcltest::test notetitle_2 {Get note title text when there's more than one line} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 3]
+} -result {The title line}
+
+tcltest::test notetitle_3 {Get note title text when it needs truncating} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 4]
+} -result [string range "This is a long line with more than 20 characters who's title is truncated" 0 20]...
+
+tcltest::test listall_1 {list notes when there are none} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    llength [listAllNotes]
+} -result 0
+
+tcltest::test listall_2 {I get the right note count} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listAllNotes]
+} -result 4
+
+proc stripTimestamps {dictlist} {;     #Strip timestamps from list of dicts.
+    set result [list]
+    foreach dict $dictlist {
+        lappend result [dict remove $dict timestamp]
+    }
+    return $result
+}
+tcltest::test listall_3 {The dicts are correct} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    stripTimestamps [listAllNotes]
+} -result [list                                   \
+    [dict create id 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]]  \
+    [dict create id 2 run 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 3 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 4 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+]
+
+tcltest::test listfromrun_1 {List from runs when there are no matches} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNotesForRun 3]
+} -result 0
+
+tcltest::test listfromrun_2 {List from no such run is an error?} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    listNotesForRun 100;             # No such run.
+} -result [list]
+
+tcltest::test listfromrun_3 {List from run 1 is a match} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNotesForRun 1]
+} -result 1
+
+tcltest::test listfromrun_4 {The listing of run 1 is good data} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    lindex [stripTimestamps [listNotesForRun 1]] 0
+} -result [dict create                                    \
+    id 2 run 1 \
+    author [dict create id 1 lastName Fox firstName Ron salutation Mr.] \
+]
+
+tcltest::test listnonrunnotes_1 {No notes to list} \
+-setup {commonSetup3; # NO NOTES} -cleanup {commonCleanup} \
+-body {
+    llength [listNonRunNotes]
+} -result 0
+tcltest::test listnonrunnotes_2 {Correct number listed} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNonRunNotes]
+} -result 3
+tcltest::test listnonrunnotes_3 {correct contents listed.} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    stripTimestamps [listNonRunNotes]
+} -result [list                                                \
+    [dict create id 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 3 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 4 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

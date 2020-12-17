@@ -43,6 +43,66 @@ package require logbook
 # private procs
 
 ##
+# _makeNoteDict
+#  Given a note encapsulated command returns a dict that describes a note.
+#  Note (no pun intended) that the text of the note is
+#  note part of this dict to prevent data explosion.
+#
+# @param notecmd - a note encapsulated command.
+# @return dict that contains
+#     - id -  note id.
+#     - run - If present the note is associated with a run and this is the
+#             run number.
+#     - author - The dict that describes the author person.
+#     - timestamp - [clock seconds] when the note was written
+#
+proc _makeNoteDict {notecmd} {
+    set result [dict create]
+    dict set result id [$notecmd id]
+    set runcmd [$notecmd run]
+    if {$runcmd ne ""} {
+        dict set result run [$runcmd number]
+        $runcmd destroy
+    }
+    dict set result timestamp [$notecmd timestamp]
+    set authorcmd [$notecmd author]
+    dict set result author [_makePersonDict $authorcmd]
+    $authorcmd destroy
+    
+    return $result
+}
+##
+# _noteListToDictList
+#    Takes a list of note commands and turns them into a list of
+#    dicts. The note commands are destroyed in the process.
+#
+# @param notelist - A list of note commands.
+# @return list of dicts.
+#
+proc _noteListToDictList {notelist} {
+    set result [list]
+    foreach note $notelist {
+        lappend result [_makeNoteDict $note]
+        $note destroy
+    }
+    return $result
+}
+##
+# _getNoteContents
+#
+#   Returns text of a note with all image substitutions performed.
+#
+# @param notecmd - the note command.
+# @return string - markdown ready to be converted to whatever format.
+#
+proc _getNoteContents {notecmd} {
+    return [$notecmd substituteImages]
+}
+    
+
+
+
+##
 # _makePersonDict
 #   Given a person command, returns the dict that describes that person.
 # @param person - the person to describe.
@@ -633,3 +693,114 @@ proc findRun {num} {
     return $result
     
 }
+#---------------------------------------------------------------
+#
+#  Note retrieval
+#
+
+##
+# getNote
+#   Given a note id return its dict.
+#
+# @param id
+# @return dict - describing the note or  an error if there's no matching
+#                note.
+proc getNote {id} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    set notecmd ""
+    set status [catch {$log getNote $id} command]
+    $log destroy
+    if {$status == 0} {
+        set result [_makeNoteDict $command]
+        $command destroy
+        return $result
+    } else {
+        error $command
+    }
+}
+
+##
+# getNoteText
+#   Given a note dict, return the markdown ready to render.
+#
+# @param note    - note dict.
+# @return string - note mark up text ready to render.
+# @note This can result in image cache files being dropped into the
+#        logbook image directory (~/.nscl-logbook)
+#
+proc getNoteText {note} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    set notecmd [$log getNote [dict get $note id]]
+    set status [catch {_getNoteContents $notecmd} msg]
+    $notecmd destroy
+    $log destroy
+    if {$status} {
+        error $msg
+    } else {
+        return $msg
+    }
+}
+##
+# getNoteTitle
+#   Notes are assumed to have a title string as their first line.
+#   This returns it:
+# @param note dict - the note dictionary to check.
+# @return string - the first line of text.
+# @note  - It's possible the user let the text widget do line wrapping
+#          and didn't use a heading marker therefore if the
+#          title is longer than 20 characters we'll truncate it to
+#          20 chars and append ...
+#
+proc getNoteTitle {note} {
+    set text [getNoteText $note]
+    set title [lindex [split $text "\n"] 0]
+    if {[string length $title] > 20} {
+        set title [string range $title  0 20]...
+    }
+    return $title
+}
+
+##
+# listAllNotes
+#    Lists all notes whether they are associated with a run or not.
+# @return list of dicts that describe the notes.  To get note text,
+#         you need to use getNoteText on one of the dicts.  This reduces
+#         the data volume.
+#
+proc listAllNotes { } {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    set notes [$log listAllNotes]
+    $log destroy
+    return [_noteListToDictList $notes]
+}
+
+##
+# listNotesForRun
+#   Given a run number, returns a list of all note dicts that
+#   are associated with that run.
+#
+# @param - the run number we care about.
+# @return list of note dicts.
+#
+proc listNotesForRun {num} {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    set notes [$log listNotesForRunNumber $num]
+    return [_noteListToDictList $notes]
+}
+
+##
+# listNonRunNotes
+#    Lists all runs that are not associated with a run.
+# @return list of dicts.
+#
+proc listNonRunNotes { } {
+    set path [currentLogBookOrError]
+    set log  [logbook::logbook open $path]
+    set notes [$log listNonRunNotes]
+    return [_noteListToDictList $notes]
+}
+
