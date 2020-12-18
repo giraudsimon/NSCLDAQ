@@ -53,6 +53,28 @@ package require snit
 
 
 ##
+# lpop
+#   Given a list, remove and return the first element of that list.
+# @param l - list to pop from, treated by reference.
+# @return first element of the list ("" if the list is empty).
+#         l is modified to remove that element.
+# Sample usage:
+#
+#  \verbatim
+#      set l [list a b c d e]
+#      set first [lpop l]
+#
+#      # first is a, and l is [list b c d e].
+#
+proc lpop {l} {
+    upvar $l ls
+    set result [lindex $ls 0]
+    set ls [lrange $ls 1 end]
+    
+    return $result
+}
+
+##
 # @class PeopleViewer
 #    Tree view with the following columns:
 #     lastName, firstName, salutation.
@@ -205,8 +227,8 @@ snit::widgetadaptor ShiftView {
         # Configure the tree:
         
         $win.tree configure \
-            -columns [list shift lastname firstname salutation] \
-            -displaycolumns #all -selectmode none -show [list tree headings]
+            -columns [list shift id lastname firstname salutation] \
+            -displaycolumns [list shift lastname firstname salutation] -selectmode none -show [list tree headings]
         foreach col [list shift lastname firstname salutation] \
                 title [list Shift "Last Name" "First Name" "Salutation"] {
             $win.tree heading $col -text $title
@@ -243,14 +265,97 @@ snit::widgetadaptor ShiftView {
         after cancel $afterid
     }
     ##
+    # _update1ShiftMembers
+    #    Update the members of a single shift:
+    # @param item - the item id of the shfit to update.
+    #
+    method _update1ShiftMembers {item} {
+
+        set children [$win.tree children $item]
+        set currentValueList [list]
+        foreach child $children {
+            set values [$win.tree item $child -values]
+            set values [lrange $values 1 end]
+            lappend currentValueList $values
+        }
+        set shift [lindex [$win.tree item $item -values] 0];  #shift name.
+        set members [listShiftMembers $shift]
+        
+        # turn the current set of members into a list of values that
+        # belong in the elements.  This will then be sorted by lastname
+        # and we'll update the entire set if the length is different.
+        # or any ids differ.  We need to worry about the latter in case this
+        # item has been assigned a different shift.
+        
+        set valueList [list]
+        foreach member $members {
+            lappend valueList [list \
+                [dict get $member id] [dict get $member lastName] \
+                [dict get $member firstName] [dict get $member salutation] \
+            ]
+        }
+        # Sort the resulting list of values by last name:
+        
+        set valueList [lsort -dictionary -index 1 $valueList]
+        
+        # If the lists are not the same, totally restock:
+        
+        if {$valueList ne $currentValueList} {
+            $win.tree delete $children
+            foreach values $valueList {
+                set values [list "" {*}$values];   # Prepend empty shift.
+                $win.tree insert $item end -values $values
+            }
+        }
+    }
+    
+    ##
+    # _updateShiftMembers
+    #   For each shift, if necessary update the members in that shift.
+    #
+    # @param elements -- the item identifiers for each shift.
+    #
+    method _updateShiftMembers {elements} {
+        foreach item $elements {
+            $self _update1ShiftMembers $item
+        }
+    }
     # _updateShifts
     #
     #    _update the set of shifts in the tree view
     #
     # @param shifts - the current set of shifts dictionary sort order.
     # @param shiftElements - the tree elements containing the shifts.
+    # @return updated shift elements
     #
     method _updateShifts {shifts shiftElements} {
+        set idx 0
+        set current [currentShift]
+        ##
+        #  Set the existing elements
+        #
+        foreach element $shiftElements {
+            set shift [lindex $shifts $idx]
+            set values $shift
+            if {$shift eq $current} {
+                lappend $values "" "(current)"
+                puts "Shift $shift is current":
+                puts "$values"
+            }
+            $win.tree item $element -values $values
+            incr idx
+        }
+        # There must be additional elements not done:
+        
+        for {set i $idx} {$idx < [llength $shifts]} {incr idx} {
+            set shift [lindex $shifts $idx]
+            set values $shift
+            if {$shift eq $current} {
+                lappend values "" (current)
+            }
+            lappend shiftElements [$win.tree insert {} end -values $values]
+        }
+        return $shiftElements
         
     }
     ##
@@ -270,6 +375,7 @@ snit::widgetadaptor ShiftView {
         if {[llength $shifts] != [llength $shiftElements]} {
             $self _updateShifts $shifts $shiftElements
         }
+        $self _updateShiftMembers $shiftElements
         
         
     }
