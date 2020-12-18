@@ -29,6 +29,7 @@
 #include <Exception.h>
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 
 std::map<std::string, TclShiftInstance*> TclShiftInstance::m_shifts;
 
@@ -82,6 +83,13 @@ TclShiftInstance::operator()(
             members(interp, objv);
         } else if (subcommand == "id") {
             id(interp, objv);
+        } else if (subcommand == "destroy") {
+            delete this;
+        } else {
+            std::stringstream msg;
+            msg << "Invalid shift subcommand: " << subcommand;
+            std::string m(msg.str());
+            throw m;
         }
     }
      catch (std::string& msg) {
