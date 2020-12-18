@@ -499,6 +499,7 @@ proc currentShift {} {
     } else {
         set name ""
     }
+    $log destroy
     return $name
 }
 
