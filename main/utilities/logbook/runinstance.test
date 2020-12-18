@@ -102,7 +102,7 @@ tcltest::test transition_1 {We start with one transition the begin run : 1} \
 
 tcltest::test transition_2 {We start with one transition the begin run: 2} \
 -setup {commonSetup} -cleanup {
-    $shift destroy
+    $runshift destroy
     foreach person $members {
         $person destroy
     }
@@ -111,8 +111,8 @@ tcltest::test transition_2 {We start with one transition the begin run: 2} \
 -body {
     set t [lindex [$::run transitions] 0]
     
-    set shift [dict get $t shift]
-    set members [$::shift members]
+    set runshift [dict get $t shift]
+    set members [$runshift members]
     llength $members
 } -result 2
 

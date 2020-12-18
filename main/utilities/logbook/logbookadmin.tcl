@@ -156,8 +156,6 @@ proc _makeRunDict {run} {
     set transitions [$run transitions]
     foreach transition $transitions {
         set trdict [_makeTransitionDict $transition]
-        set shift [dict get $transition shift]
-        $shift destroy
         dict lappend result transitions $trdict
     }
     return $result
