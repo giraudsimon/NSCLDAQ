@@ -36,6 +36,7 @@ package require Configuration
 package require Tk
 package require DataSourceUI
 package require snit
+package require dialogwrapper
 
 # Make sure the provider namespace has been established:
 

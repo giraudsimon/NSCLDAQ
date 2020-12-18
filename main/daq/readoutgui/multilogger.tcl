@@ -84,6 +84,7 @@ package require snit
 package require csv
 package require stageareaValidation
 package require DAQParameters
+package require dialogwrapper
 
 # Namespace to hold our variables:
 

@@ -29,7 +29,7 @@ exec tclsh "$0" ${1+"$@"}
 package provide zoomPrompt 1.0
 package require Tk
 package require snit
-package require DataSourceUI
+package require dialogwrapper
 
 ##
 # @class ZoomForm

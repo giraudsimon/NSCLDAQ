@@ -31,6 +31,7 @@ package require rdoCalloutsBundle;     # Auto registers.
 package require ExpFileSystemConfig
 package require Diagnostics
 package require StateManager
+package require dialogwrapper
 
 ##
 # @class ProviderList

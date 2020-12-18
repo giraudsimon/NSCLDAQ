@@ -101,7 +101,7 @@ proc dictGetWithDefault {d key default} {
 #
 proc GuiPrompt {expid spokes purpose} {
     package require Tk
-    package require DataSourceUI
+    package require dialogwrapper
     package require snit
     
     wm withdraw .;            # We only want the dialog to be visible.

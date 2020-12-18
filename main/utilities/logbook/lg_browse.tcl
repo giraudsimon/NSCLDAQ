@@ -44,12 +44,15 @@ lappend auto_path $tcllibs
 
 set bindir $env(DAQBIN)
 set addPerson [file join $bindir lg_addperson]
+set manageShift [file join $bindir lg_mgshift]
+set makeShift [file join $bindir lg_mkshift]
 
 # Helper programs:
 
 package require Tk
 package require logbookadmin
 package require snit
+package require dialogwrapper
 
 
 ##
@@ -383,6 +386,12 @@ snit::widgetadaptor ShiftView {
         $self _update
         set afterid [after [expr {$options(-update)*1000}] [mymethod _automaticUpdate]]
     }
+    ##
+    # newShift
+    #    Get a new shift name from the user via a modal dialog
+    #    Try to create a new shift with that name and
+    #    force an update.
+    #
     method _newShift {} {
         
     }

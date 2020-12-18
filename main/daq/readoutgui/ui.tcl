@@ -21,6 +21,7 @@ package require snit
 package require RunstateMachine
 package require StateManager
 package require DataSourceUI
+package require dialogwrapper
 package require img::png
 
 package provide ui   1.0

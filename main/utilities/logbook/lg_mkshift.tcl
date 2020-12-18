@@ -71,7 +71,7 @@ proc GUI {} {
     package require Tk
     package require snit
     package require ShiftEditor
-    package require DataSourceUI
+    package require dialogwrapper
     wm withdraw .
     
     

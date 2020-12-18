@@ -40,7 +40,7 @@ package require lg_noteutilities
 package require Tk
 package require snit
 package require Iwidgets
-package require DataSourceUI
+package require dialogwrapper
 
 
 

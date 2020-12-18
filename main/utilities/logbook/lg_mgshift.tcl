@@ -77,7 +77,7 @@ package require logbookadmin
 package require Tk
 package require snit
 package require ShiftEditor
-package require DataSourceUI
+package require dialogwrapper
 package require lg_utilities
 
 wm withdraw .

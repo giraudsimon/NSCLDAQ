@@ -43,6 +43,7 @@ package require removetcllibpath
 package require Tk
 package require snit
 package require DataSourceUI;          # for the DialogWrapper base class.
+package require dialogwrapper
 
 #-----------------------------------------------------------------------------
 #  This is the setup UI.

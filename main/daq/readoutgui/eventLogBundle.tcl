@@ -40,6 +40,7 @@ package require portAllocator
 package require DataSourceUI
 package require versionUtils
 package require StateManager
+package require dialogwrapper
 
 
 
