@@ -199,7 +199,7 @@ snit::widgetadaptor PeopleViewer {
         $self _update
     }
 }
-
+#-------------------------------------------------------------------------------
 ##
 # @class ShiftView
 #   This megawidget provides a self maintaining view of the
@@ -233,10 +233,10 @@ snit::widgetadaptor ShiftView {
         # Configure the tree:
         
         $win.tree configure \
-            -columns [list shift id lastname firstname salutation] \
-            -displaycolumns [list shift lastname firstname salutation] -selectmode browse -show [list tree headings]
-        foreach col [list shift lastname firstname salutation] \
-                title [list Shift "Last Name" "First Name" "Salutation"] {
+            -columns [list id lastname firstname salutation] \
+            -displaycolumns [list lastname firstname salutation] -selectmode browse -show [list tree headings]
+        foreach col [list  #0 lastname firstname salutation] \
+                title [list  Shift "Last Name" "First Name" "Salutation"] {
             $win.tree heading $col -text $title
         }
             
@@ -284,7 +284,8 @@ snit::widgetadaptor ShiftView {
             set values [lrange $values 1 end]
             lappend currentValueList $values
         }
-        set shift [lindex [$win.tree item $item -values] 0];  #shift name.
+        set shift [lindex [$win.tree item $item -text ] 0];  #shift name.
+        
         set members [listShiftMembers $shift]
         
         # turn the current set of members into a list of values that
@@ -309,7 +310,6 @@ snit::widgetadaptor ShiftView {
         if {$valueList ne $currentValueList} {
             $win.tree delete $children
             foreach values $valueList {
-                set values [list "" {*}$values];   # Prepend empty shift.
                 $win.tree insert $item end -values $values -tags [list person]
             }
         }
@@ -342,24 +342,25 @@ snit::widgetadaptor ShiftView {
         #
         foreach element $shiftElements {
             set shift [lindex $shifts $idx]
-            set values $shift
+            set values ""
             if {$shift eq $current} {
-                lappend values "" "(current)"      
+                set values  "(current)"      
             }
-            $win.tree item $element -values $values -tags [list shift]
+            $win.tree item $element -text "$shift $values" \
+                  -tags [list shift]
             incr idx
         }
         # There must be additional elements not done:
         
         for {set i $idx} {$idx < [llength $shifts]} {incr idx} {
             set shift [lindex $shifts $idx]
-            set values $shift
+            set values ""
             set current [currentShift]
             if {$shift eq $current} {
-                lappend values "" (current)
+                set values (current)
             }
-            lappend shiftElements [$win.tree insert {} end -values $values \
-                -tags [list shift]
+            lappend shiftElements [$win.tree insert {} end -text "$shift $values" \
+                -values $values -tags [list shift]   \
             ]
                 
         }
@@ -423,8 +424,8 @@ snit::widgetadaptor ShiftView {
             } else {
                 return "";               # Neither a shift nor a person.
             }
-            set shiftName [lindex [$win.tree item $shiftItem -values]  0]
-            return $shiftName
+            set shiftName [$win.tree item $shiftItem -text]
+            return [lindex $shiftName 0]
         } else {
             return ""
         }
@@ -454,3 +455,12 @@ snit::widgetadaptor ShiftView {
         } 
     }
 }
+#------------------------------------------------------------------------------
+##
+# @class NotesView
+#    Provides a view of the notes that are in the logbook.  Notes are
+#    associated with an author (a person) and optionally with a run.
+#    The browser contains a treeview that displays folders for each run
+#    and a final folder with only the 
+    
+
