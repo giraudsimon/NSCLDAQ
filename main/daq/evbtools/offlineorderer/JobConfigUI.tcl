@@ -35,6 +35,7 @@ package require Utils
 
 package require snit
 package require Tk
+package require textprompter
 
 
 
@@ -825,9 +826,11 @@ snit::widget BuildEventsWidget {
 
     set top $win.correlate
     ttk::frame $top
-    ttk::label $top.correlateLbl -text "Correlation window (ticks)"
-    ttk::entry $top.correlateEntry -textvariable [myvar options(-window)]
-    grid $top.correlateLbl $top.correlateEntry -row 1 -sticky new
+    #ttk::label $top.correlateLbl -text "Correlation window (ticks)"
+    #ttk::entry $top.correlateEntry -textvariable [myvar options(-window)]
+    textprompt $top.correlateEntry -text "Correlation window (ticks)" \
+          -textvariable [myvar options(-window)]
+    grid $top.correlateEntry -row 1 -sticky new
     grid rowconfigure    $top 0     -weight 1
     grid columnconfigure $top {0 1} -weight 1
 
@@ -1063,14 +1066,20 @@ snit::widget ConfigurationFrame {
     set top $m_paramFrame
     ttk::frame $top 
 
-    ttk::label $top.nsrcsLbl -text "Number of end runs to expect"
-    ttk::entry $top.nsrcsEntry -textvariable [myvar options(-nsources)] -width 12 
+    #ttk::label $top.nsrcsLbl -text "Number of end runs to expect"
+    #ttk::entry $top.nsrcsEntry -textvariable [myvar options(-nsources)] -width 12 
 
-    ttk::label $top.idsLabel -text "Allowed source ids (e.g. 1, 2, 3)"
-    ttk::entry $top.idsEntry -textvariable [myvar options(-expectedids)] -width 12 \
+    textprompt $top.nsrcsEntry -text "Number of end runs to expect" \
+          -textvariable [myvar options(-nsources)] -width 12 
+    
+    #ttk::label $top.idsLabel -text "Allowed source ids (e.g. 1, 2, 3)"
+    #ttk::entry $top.idsEntry -textvariable [myvar options(-expectedids)] -width 12 \
+    #  -validate focusout -validatecommand [mymethod validateIdList] \
+    #  -invalidcommand [mymethod invalidIdList %s]
+    textprompt $top.idsEntry -text "Allowed source ids (e.g. 1, 2, 3)" \
+      -textvariable [myvar options(-expectedids)] -width 12 \
       -validate focusout -validatecommand [mymethod validateIdList] \
       -invalidcommand [mymethod invalidIdList %s]
-
 
     set analyze $top.analyze
     ttk::frame $analyze
@@ -1088,8 +1097,8 @@ snit::widget ConfigurationFrame {
                                 -command [mymethod onCreate]
     grid $buttons.cancel $buttons.create -sticky e -padx {9 0}
 
-    grid $top.nsrcsLbl $top.nsrcsEntry -sticky nw 
-    grid $top.idsLabel $top.idsEntry -sticky nw 
+    grid $top.nsrcsEntry -sticky nw 
+    grid $top.idsEntry -sticky nw 
     if {$options(-missingwidget) ne ""} {
       $self gridMissingWidget $options(-missingwidget)
     }

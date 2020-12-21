@@ -31,6 +31,7 @@ package require snit
 package require nsclspinbox
 package require NSCLBgerror
 package require EVBUtilities
+package require textprompter
 
 namespace eval ::EVBC {
     
@@ -413,14 +414,17 @@ snit::widgetadaptor ::EVBC::intermedRing {
 	ttk::checkbutton $win.tee -variable [myvar options(-tee)] \
 	    -onvalue 1 -offvalue 0 -text {Tee output to this ring} \
 	    -command [mymethod _onCheckbox]
-	ttk::label    $win.rlabel -text {Ring Name}
-	ttk::entry     $win.ring -textvariable [myvar options(-ring)] \
+    textprompt $win.ring -text {Ring Name} \
+        -textvariable [myvar options(-ring)] \
 	    -state disabled
+	#ttk::label    $win.rlabel -text {Ring Name} 
+	#ttk::entry     $win.ring -textvariable [myvar options(-ring)] \
+	#    -state disabled
 	
 	# Layout:
 
 	grid $win.tee -sticky w -columnspan 2
-	grid $win.rlabel $win.ring -sticky w
+	grid $win.ring -sticky w
 
 	bind $win.ring <FocusOut> [mymethod _onRingChange]
 	bind $win.ring <Return>   [mymethod _onRingChange]
@@ -549,8 +553,9 @@ snit::widgetadaptor ::EVBC::destring {
 
 	ttk::checkbutton $win.record -text {Use for recording} -onvalue 1 -offvalue 0 \
 	    -variable [myvar options(-record)] -command [mymethod _onCommand]
-	ttk::label       $win.ringlabel -text {Output Ring}
-	ttk::entry       $win.ring      -textvariable [myvar options(-ring)]
+    textprompt $win.ring -text {Output Ring} -textvariable [myvar options(-ring)]
+	#ttk::label       $win.ringlabel -text {Output Ring}
+	#ttk::entry       $win.ring      -textvariable [myvar options(-ring)]
 
 	bind $win.ring <Return> [mymethod _onCommand]
 	bind $win.ring <FocusOut> [mymethod _onCommand]
@@ -559,7 +564,7 @@ snit::widgetadaptor ::EVBC::destring {
 
 	
 
-	grid $win.ringlabel $win.ring -sticky w
+	grid $win.ring -sticky w
 	grid $win.record              -sticky w
 
 	#  Process any construction configuration options:

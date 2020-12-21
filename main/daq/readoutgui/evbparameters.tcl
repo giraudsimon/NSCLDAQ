@@ -31,6 +31,7 @@ package provide evbparameters 1.0
 package require Tk
 package require snit
 package require evbui
+package require textprompter
 
 
 
@@ -81,12 +82,14 @@ snit::widgetadaptor GetEvbParameters {
         installhull using ttk::frame
         install glom using ::EVBC::glomparams $win.glom
         install ring using ::EVBC::destring   $win.oring
-        ttk::label $win.idlabel -text "Output Source Id: "
-        ttk::entry $win.id      -textvariable [myvar options(-sourceid)]
+        textprompt $win.id -text "Output Source Id: " \
+            -textvariable [myvar options(-sourceid)]
+        #ttk::label $win.idlabel -text "Output Source Id: "
+        #ttk::entry $win.id      -textvariable [myvar options(-sourceid)]
         
         install ok using ttk::button $win.ok -text Ok
         
-        grid $glom $ring $win.idlabel $win.id
+        grid $glom $ring  $win.id
         grid $win.ok
         
         $self configurelist $args

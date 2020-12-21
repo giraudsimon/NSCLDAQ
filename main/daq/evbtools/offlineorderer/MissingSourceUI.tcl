@@ -27,6 +27,7 @@ package require OfflineEVBInputPipeline
 package require OfflineEVBHoistPipeline
 package require snit
 package require Tk
+package require textprompter
 
 
 ## Overview of the OfflineEVBMissingSourcelineUI package
@@ -131,15 +132,18 @@ snit::widget MissingSourceConfigUIView {
     set top $win.params
     ttk::frame $top 
 
-    ttk::label $top.tstampLabel   -text "Timestamp extraction library"
-    ttk::entry $top.tstampEntry -textvariable [myvar options(-tstamplib)]
+    #ttk::label $top.tstampLabel   -text "Timestamp extraction library"
+    #ttk::entry $top.tstampEntry -textvariable [myvar options(-tstamplib)]
+    textprompt $top.tstampEntry -text "Timestamp extraction library" \
+      -textvariable [myvar options(-tstamplib)]
     ttk::button $top.tstampBrowse -text "Browse..." -command [mymethod _browseTstamp]
-    ttk::label $top.idLabel   -text "Source ID"
-    ttk::entry $top.idEntry -textvariable [myvar options(-id)]
-
-    grid $top.tstampLabel $top.tstampEntry $top.tstampBrowse \
+    #ttk::label $top.idLabel   -text "Source ID"
+    #ttk::entry $top.idEntry -textvariable [myvar options(-id)]
+    textprompt $top.idEntry -text "Source ID" -textvariable [myvar options(-id)]
+    
+    grid $top.tstampEntry $top.tstampBrowse \
                                               -sticky ew
-    grid $top.idLabel     $top.idEntry     x  -sticky ew
+    grid $top.idEntry     x  -sticky ew
 
     set spaceFrame $win.space
     ttk::frame $spaceFrame

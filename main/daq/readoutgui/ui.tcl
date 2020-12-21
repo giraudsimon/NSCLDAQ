@@ -27,6 +27,8 @@ package require img::png
 package provide ui   1.0
 package provide ReadoutGUIPanel 1.0
 package require Utils
+package require textprompter
+
 
 namespace eval ReadoutGUIPanel {
     
@@ -302,18 +304,27 @@ snit::widgetadaptor RunIdentification {
         set widgets   [list]
         
         if {$havetitle} {
-            lappend widgets [ttk::label $win.tlabel -text Title: ]
-            lappend widgets [ttk::entry $win.title -width 60 -validate key -validatecommand [mymethod _LimitTitle %P]]
+            lappend widgets [textprompt $win.title          \
+                -text Title -width 60 -validate key        \
+                -validatecommand [mymethod _LimitTitle %P ] \
+            ]
+            #lappend widgets [ttk::label $win.tlabel -text Title: ]
+            #lappend widgets [ttk::entry $win.title -width 60 -validate key -validatecommand [mymethod _LimitTitle %P]]
             $win.title insert end $options(-title)
         }
         if {$haverun} {
-            lappend widgets [ttk::label $win.rlabel -text {Run Number:} ]
-            lappend widgets [ttk::entry $win.run \
-                -width 6 -validate focusout \
-                -validatecommand [mymethod _validate]]
+            lappend widgets [textprompt $win.run                 \
+                -text {Run Number:} -width 6 -validate focusout \
+                -validatecommand [mymethod _validate]           \
+            ]
+            #lappend widgets [ttk::label $win.rlabel -text {Run Number:} ]
+            #lappend widgets [ttk::entry $win.run \
+            #    -width 6 -validate focusout \
+            #    -validatecommand [mymethod _validate]]
             $win.run insert end $options(-run)
             bind $win.run <Return> [mymethod _validate]
         }
+    
         
         # Grid them in a horizontal strip;
         

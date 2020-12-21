@@ -85,6 +85,7 @@ package require csv
 package require stageareaValidation
 package require DAQParameters
 package require dialogwrapper
+package require textprompter
 
 # Namespace to hold our variables:
 
@@ -378,11 +379,14 @@ snit::widgetadaptor AddLogger {
         
         $self configurelist $args
         
-        ttk::label $win.rlabel -text {Ring URI}
-        ttk::entry $win.ring   -textvariable [myvar options(-ring)]
+        #ttk::label $win.rlabel -text {Ring URI}
+        #ttk::entry $win.ring   -textvariable [myvar options(-ring)]
+        textprompt $win.ring -text {Ring URI} -textvariable [myvar options(-ring)]
         
-        ttk::label  $win.lout   -text {Output directory}
-        ttk::entry  $win.outdir -textvariable [myvar options(-out)]
+        #ttk::label  $win.lout   -text {Output directory}
+        #ttk::entry  $win.outdir -textvariable [myvar options(-out)]
+        textprompt $win.outdir -text {Output directory} \
+            -textvariable [myvar options(-out)]
         ttk::button $win.outbrowse -text Browse... -command [mymethod _browseDir]
         
         ttk::label $win.ltimeout -text {End Run timeout}
@@ -396,8 +400,8 @@ snit::widgetadaptor AddLogger {
         ttk::spinbox $win.sources -from 1 -to 1000 -textvariable [myvar options(-sources)]
         
         
-        grid $win.rlabel $win.ring                   -sticky w
-        grid $win.lout $win.outdir $win.outbrowse    -sticky w
+        grid $win.ring                   -sticky w
+        grid $win.outdir $win.outbrowse    -sticky w
         grid $win.ltimeout $win.timeout              -sticky w
         grid $win.lsources $win.sources              -sticky w
         grid $win.enable                   -column 1 -sticky w

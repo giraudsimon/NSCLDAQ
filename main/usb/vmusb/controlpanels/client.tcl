@@ -23,6 +23,7 @@ package provide usbcontrolclient   1.0
 package require snit
 package require portAllocator
 
+
 #
 #  Snit type to connect with a controls client.
 #  Construction implies connection, construction errors will

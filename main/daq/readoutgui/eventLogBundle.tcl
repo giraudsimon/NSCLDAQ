@@ -41,6 +41,7 @@ package require DataSourceUI
 package require versionUtils
 package require StateManager
 package require dialogwrapper
+package require textprompter
 
 
 
@@ -1165,15 +1166,19 @@ snit::widgetadaptor EventLog::ParameterPrompter {
         
 
         
-        ttk::label  $win.loglabel -text {Event log program}
-        ttk::entry  $win.logger       \
-            -textvariable [myvar options(-logger)] -width 40
+        #ttk::label  $win.loglabel -text {Event log program}
+        #ttk::entry  $win.logger       \
+        #    -textvariable [myvar options(-logger)] -width 40
+        textprompt $win.logger -text {Event log program} \
+          -textvariable [myvar options(-logger)] -width 40
         ttk::button $win.browselogger \
             -text {Browse...} -command [mymethod _browseLogger]
         
-        ttk::label $win.datasourcelabel -text {Data Source Ring URI}
-        ttk::entry $win.datasource    \
-            -textvariable [myvar options(-ring)] -width 40
+        #ttk::label $win.datasourcelabel -text {Data Source Ring URI}
+        #ttk::entry $win.datasource    \
+        #    -textvariable [myvar options(-ring)] -width 40
+        textprompt $win.datasource -text {Data Source Ring URI} \
+            -textvariable [myvar options(-ring)] -width 40 
         ttk::button $win.knownrings    \
             -text {Known Rings...} -command [mymethod _browseRings]
         
@@ -1212,19 +1217,23 @@ NSCLDAQ-11.0 eventlog program or later. "
         ttk::checkbutton $win.usechecksum -text {Compute checksum} \
             -variable [myvar options(-usechecksum)] -onvalue 1 -offvalue 0
 
-        ttk::label $win.stageareaLbl -text {Stagearea path} 
-        ttk::entry $win.stageareaEntry -textvariable [myvar options(-stagearea)] \
-                      -width 40
+        #ttk::label $win.stageareaLbl -text {Stagearea path} 
+        #ttk::entry $win.stageareaEntry -textvariable [myvar options(-stagearea)] \
+        #              
+        textprompt $win.stageareaEntry -text {Stagearea path} \
+              -textvariable [myvar options(-stagearea)] \
+              -width 40
         ttk::button $win.stageareaBrowse -text "Browse..." -command [mymethod _browseStagearea]
 
-        ttk::label $win.prefixLbl -text {Run file prefix} 
-        ttk::entry $win.prefixEntry -textvariable [myvar options(-prefix)] \
-                      -width 40
-
-        grid $win.loglabel $win.logger $win.browselogger -sticky w
-        grid $win.datasourcelabel $win.datasource $win.knownrings -sticky w
-        grid $win.stageareaLbl $win.stageareaEntry $win.stageareaBrowse -sticky w
-        grid $win.prefixLbl $win.prefixEntry -sticky e
+        #ttk::label $win.prefixLbl -text {Run file prefix} 
+        #ttk::entry $win.prefixEntry -textvariable [myvar options(-prefix)] \
+        #              -width 40
+        textprompt $win.prefixEntry -text {Run file prefix} \
+              -textvariable [myvar options(-prefix)] -width 40
+        grid $win.logger $win.browselogger -sticky w
+        grid $win.datasource $win.knownrings -sticky w
+        grid $win.stageareaEntry $win.stageareaBrowse -sticky w
+        grid $win.prefixEntry -sticky e
         grid $win.seglabel    -sticky e
         grid $win.segsize -row 4 -column 1 -sticky w
         grid $win.help -columnspan 3 -sticky ew

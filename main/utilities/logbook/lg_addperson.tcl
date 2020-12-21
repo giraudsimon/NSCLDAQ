@@ -65,6 +65,7 @@ set done 0
 proc GUIPrompt {} {
     package require Tk
     package require snit
+    package require textprompter
     wm withdraw .;                         # Only want our stuff up there.
     
     proc add {widget last first sal} {
@@ -86,26 +87,24 @@ proc GUIPrompt {} {
         constructor args {
             installhull using ttk::frame
             
-            ttk::label $win.lastlabel -text {Last name:}
-            ttk::entry $win.last
+            #ttk::label $win.lastlabel -text {Last name:}
+            #ttk::entry $win.last
+            textprompt $win.last -text {Last name:}
             
-            ttk::label $win.firstlabel -text {First name:}
-            ttk::entry $win.first
+            #ttk::label $win.firstlabel -text {First name:}
+            #ttk::entry $win.first
+            textprompt $win.first  -text {First name:}
             
-            ttk::label $win.sallabel -text {Salutation:}
-            ttk::entry $win.sal
+            #ttk::label $win.sallabel -text {Salutation:}
+            #ttk::entry $win.sal
+            textprompt $win.sal -text {Salutation:}
             
             ttk::button $win.add -text Add -command [mymethod _dispatch -addcommand]
             ttk::button $win.done -text Done -command [mymethod _dispatch -donecommand]
             
-            grid $win.lastlabel -row 0 -column 0 -sticky e
-            grid $win.last      -row 0 -column 1 -sticky w
-            
-            grid $win.firstlabel -row 1 -column 0 -sticky e
-            grid $win.first      -row 1 -column 1 -sticky w
-            
-            grid $win.sallabel   -row 2 -column 0 -sticky e
-            grid $win.sal        -row 2 -column 1 -sticky w
+            grid $win.last      -row 0  -sticky w
+            grid $win.first      -row 1 -sticky w
+            grid $win.sal        -row 2 -sticky w
             
             grid $win.add $win.done
             

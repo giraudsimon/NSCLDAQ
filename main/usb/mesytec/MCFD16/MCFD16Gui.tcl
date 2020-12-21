@@ -27,6 +27,7 @@ package require mcfd16channelnames
 package require ChannelLabel
 package require Utils
 package require tkutils
+package require textprompter
 
 
 ## "Base" type for MCFD16View ################
@@ -1106,12 +1107,14 @@ snit::widget SaveToFileForm {
   ## @brief Assemble the widgets into a unified megawidget
   #
   method BuildGUI {} {
-    ttk::label  $win.pathLbl -text "Output file name"
-    ttk::entry  $win.pathEntry -textvariable [myvar _path] -width 24 
+    #ttk::label  $win.pathLbl -text "Output file name"
+    #ttk::entry  $win.pathEntry -textvariable [myvar _path] -width 24
+    textprompt $win.pathEntry -text "Output file name" \
+      -textvariable [myvar _path] -width 24
     ttk::button $win.browse -text "Browse"  -command [mymethod Browse] -width 8
     ttk::button $win.save -text "Save"  -command [mymethod Save] -width 8
 
-    grid  $win.pathLbl $win.pathEntry $win.browse -sticky ew -padx 4 -pady 4
+    grid  $win.pathEntry -  $win.browse -sticky ew -padx 4 -pady 4
     grid  $win.save - - -sticky ew -padx 4 -pady 4
     grid columnconfigure $win 1 -weight 1
   }

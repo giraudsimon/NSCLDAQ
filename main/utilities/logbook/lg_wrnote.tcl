@@ -41,6 +41,7 @@ package require Tk
 package require snit
 package require Iwidgets
 package require dialogwrapper
+package require textprompter
 
 
 
@@ -56,12 +57,13 @@ snit::widgetadaptor ImageLinkPrompter {
         installhull using ttk::frame
         
         iwidgets::extfileselectionbox $win.file
-        ttk::label                    $win.caplabel -text "Caption"
-        ttk::entry                    $win.caption -width 38
+        #ttk::label                    $win.caplabel -text "Caption"
+        #ttk::entry                    $win.caption -width 38
+        
+        textprompt $win.caption -text "Caption" -width 38
         
         grid $win.file -columnspan 2 -sticky nsew
-        grid $win.caplabel -row 1 -column 0 -sticky e
-        grid $win.caption -row 1 -column 1 -sticky w
+        grid $win.caption -sticky w
         
     }
     ##

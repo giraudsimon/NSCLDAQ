@@ -28,6 +28,7 @@ exec tclsh "$0" ${1+"$@"}
 package provide ShiftEditor 1.0
 package require Tk
 package require snit
+package require textprompter
 
 ##
 # @class ShiftEditor
@@ -76,9 +77,10 @@ snit::widgetadaptor ShiftEditor {
         ttk::button $win.fromshift -text {<-} \
             -command [mymethod movePeople $win.onshift $win.offshift]
         
-        ttk::frame $win.nameframe
-        ttk::label $win.nameframe.namelabel -text {Shift Name: }
-        ttk::entry $win.nameframe.name -textvariable [myvar options(-shiftname)]
+        #ttk::frame $win.nameframe
+        #ttk::label $win.nameframe.namelabel -text {Shift Name: }
+        #ttk::entry $win.nameframe.name -textvariable [myvar options(-shiftname)]
+        textprompt $win.nameframe -text {Shift Name: } -textvariable [myvar options(-shiftname)]
  
         setHeadings $win.offshift
         setHeadings $win.onshift
@@ -92,9 +94,7 @@ snit::widgetadaptor ShiftEditor {
         grid $win.onshift  -column 3 -row 0 -rowspan 2 -sticky nsew
         grid $win.onscroll -column 4 -row 0 -rowspan 2 -sticky nsw
         
-        grid $win.nameframe -row 2 -column  0 -sticky nwew
-        grid $win.nameframe.namelabel -row 0 -column 0 -sticky e
-        grid $win.nameframe.name -row 0 -column 1 -sticky w
+        grid $win.nameframe -row 2 -column  0 -sticky w
         $self configurelist $args
     }
     #----------------------- configuration operations ------------

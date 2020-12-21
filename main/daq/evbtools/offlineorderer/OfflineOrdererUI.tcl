@@ -271,34 +271,34 @@ snit::type OfflineOrdererUIPresenter {
       return -code error $msg 
     }
 
-    puts 0
+    
     # setup the view
     set m_view [OfflineOrdererUIView $options(-widgetname)]
     $m_view setPresenter $self
 
-    puts 0
+    
     # setup the running and configuration frames
     set fr [$m_view getFrameWidget]
     set runProgressPresenter [RunStatusUIPresenter %AUTO% -widgetname $fr.runUI]
 
-    puts 0
+    
     # this uses the singleton adapater for the JobBuilder
     set JobBuilder::widgetName $fr.configUI
     set jobBuilderPresenter [JobBuilder::getInstance] 
 
-    puts 0
+    
     # pass the names of the frames to view so that it knows what to show in
     # various modes.
     $m_view setViewWidgets [dict create run $fr.runUI \
                                         config $fr.configUI ]
-    puts 0
+    
     # create the run processor
     set runProcessor [RunProcessor %AUTO%]
 
-    puts 1
+    
     # connect the RunStatusUI to the RunProcessor as an observer. 
     $runProcessor addRunStatusObserver $runProgressPresenter
-    puts 2
+    
     $runProgressPresenter configure -runprocessor $runProcessor
 
     # set the display mode

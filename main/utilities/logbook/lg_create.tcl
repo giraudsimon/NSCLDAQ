@@ -103,6 +103,7 @@ proc GuiPrompt {expid spokes purpose} {
     package require Tk
     package require dialogwrapper
     package require snit
+    package require textprompter
     
     wm withdraw .;            # We only want the dialog to be visible.
     
@@ -116,12 +117,16 @@ proc GuiPrompt {expid spokes purpose} {
         
         constructor args {
             installhull using ttk::frame
-            ttk::label $win.explabel -text {Experiment: }
-            ttk::entry $win.exp      \
+            #ttk::label $win.explabel -text {Experiment: }
+            #ttk::entry $win.exp      \
+                -textvariable [myvar options(-experiment)]  -width 8
+            textprompt $win.exp -text {Experiment: } \
                 -textvariable [myvar options(-experiment)]  -width 8
             
-            ttk::label $win.spokeslabel -text {Spokesperson: }
-            ttk::entry $win.spokes      \
+            #ttk::label $win.spokeslabel -text {Spokesperson: }
+            #ttk::entry $win.spokes      \
+            #    -textvariable [myvar options(-spokesperson)] -width 32
+            textprompt $win.spokes -text {Spokesperson: } \
                 -textvariable [myvar options(-spokesperson)] -width 32
             
             ttk::label $win.purposelabel -text {Purpose:}
@@ -131,10 +136,9 @@ proc GuiPrompt {expid spokes purpose} {
             
             # Layout the widgets:
             
-            grid $win.explabel -row 0 -column 0 -sticky e
-            grid $win.exp      -row 0 -column 1 -sticky w
-            grid $win.spokeslabel -row 1 -column 0 -sticky e
-            grid $win.spokes   -row 1  -column 1 -sticky w
+            
+            grid $win.exp -sticky w
+            grid $win.spokes -sticky w
             
             grid $win.purposelabel -row 2 -column 0 -sticky w
             grid $win.purpose      -row 3 -column 0 -columnspan 2 -sticky nsew
