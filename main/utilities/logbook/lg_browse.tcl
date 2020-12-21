@@ -46,6 +46,7 @@ set bindir $env(DAQBIN)
 set addPerson [file join $bindir lg_addperson]
 set manageShift [file join $bindir lg_mgshift]
 set makeShift [file join $bindir lg_mkshift]
+set selectShift [file join $bindir lg_selshift]
 
 # Helper programs:
 
@@ -53,6 +54,7 @@ package require Tk
 package require logbookadmin
 package require snit
 package require dialogwrapper
+package require textprompter
 
 
 ##
@@ -219,6 +221,7 @@ snit::widgetadaptor ShiftView {
     option -update -default 1;                # Default up date rate.
     
     variable afterid -1
+    variable lastCurrentShift ""
     
     constructor args {
         installhull using ttk::frame
@@ -231,7 +234,7 @@ snit::widgetadaptor ShiftView {
         
         $win.tree configure \
             -columns [list shift id lastname firstname salutation] \
-            -displaycolumns [list shift lastname firstname salutation] -selectmode none -show [list tree headings]
+            -displaycolumns [list shift lastname firstname salutation] -selectmode browse -show [list tree headings]
         foreach col [list shift lastname firstname salutation] \
                 title [list Shift "Last Name" "First Name" "Salutation"] {
             $win.tree heading $col -text $title
@@ -307,7 +310,7 @@ snit::widgetadaptor ShiftView {
             $win.tree delete $children
             foreach values $valueList {
                 set values [list "" {*}$values];   # Prepend empty shift.
-                $win.tree insert $item end -values $values
+                $win.tree insert $item end -values $values -tags [list person]
             }
         }
     }
@@ -341,11 +344,9 @@ snit::widgetadaptor ShiftView {
             set shift [lindex $shifts $idx]
             set values $shift
             if {$shift eq $current} {
-                lappend $values "" "(current)"
-                puts "Shift $shift is current":
-                puts "$values"
+                lappend values "" "(current)"      
             }
-            $win.tree item $element -values $values
+            $win.tree item $element -values $values -tags [list shift]
             incr idx
         }
         # There must be additional elements not done:
@@ -353,10 +354,14 @@ snit::widgetadaptor ShiftView {
         for {set i $idx} {$idx < [llength $shifts]} {incr idx} {
             set shift [lindex $shifts $idx]
             set values $shift
+            set current [currentShift]
             if {$shift eq $current} {
                 lappend values "" (current)
             }
-            lappend shiftElements [$win.tree insert {} end -values $values]
+            lappend shiftElements [$win.tree insert {} end -values $values \
+                -tags [list shift]
+            ]
+                
         }
         return $shiftElements
         
@@ -375,7 +380,10 @@ snit::widgetadaptor ShiftView {
         
         set shifts [lsort -dictionary [listShifts]]
         set shiftElements [$win.tree children {}];  # They're the top level.
-        if {[llength $shifts] != [llength $shiftElements]} {
+        set current [currentShift]
+        if {([llength $shifts] != [llength $shiftElements]) ||
+            ($current ne $lastCurrentShift)} {
+            set lastCurrentShift $current
             $self _updateShifts $shifts $shiftElements
         }
         $self _updateShiftMembers $shiftElements
@@ -387,17 +395,62 @@ snit::widgetadaptor ShiftView {
         set afterid [after [expr {$options(-update)*1000}] [mymethod _automaticUpdate]]
     }
     ##
-    # newShift
+    # _newShift
     #    Get a new shift name from the user via a modal dialog
     #    Try to create a new shift with that name and
     #    force an update.
     #
     method _newShift {} {
-        
+        set name [textprompt_dialog $win.newshift "Shift" -text "Shift Name: "]
+        if {$name ne ""} {
+            exec $::makeShift $name
+        }
     }
+    ##
+    # _selectedShift
+    #    @return string - the selected shift name or "" if none is selected
+    #
+    method _selectedShift {} {
+        set selected [$win.tree selection]
+        if {[llength $selected] > 0} {
+            set selection [lindex $selected 0] ;           # should be one.
+            set tags [$win.tree item $selection -tags]
+            set shiftItem ""
+            if {"person" in $tags} {
+                set shiftItem [$win.tree parent $selection]
+            } elseif {"shift" in $tags} {
+                set shiftItem $selection
+            } else {
+                return "";               # Neither a shift nor a person.
+            }
+            set shiftName [lindex [$win.tree item $shiftItem -values]  0]
+            return $shiftName
+        } else {
+            return ""
+        }
+    }
+    ##
+    # _editShift
+    #   Figure out the shift that's currently selected and bring up
+    #   $DAQBIN/lg_mgshift to edit that shift.
+    #
+    #   - If there's no selected item just bag it.
+    #   - If the selected item has the tag 'person' we're in a person and have
+    #     to get our parent.
+    #   - If the selected item has the tag 'shift' we're in a shift and can just
+    #     get its name.
+    #   - If the selected item has neither tag again just bag it.
+    #
     method _editShift {} {
+        set shiftName [$self _selectedShift]
+        if {$shiftName ne ""} {
+            exec $::manageShift edit $shiftName
+        }
     }
     method _makeShiftCurrent {} {
-        
+        set shiftName [$self _selectedShift]
+        if {$shiftName ne ""} {
+            exec $::selectShift $shiftName
+        } 
     }
 }
