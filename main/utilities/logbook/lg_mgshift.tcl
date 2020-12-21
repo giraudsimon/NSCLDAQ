@@ -368,10 +368,13 @@ if {$verb eq ""} {
     fullPrompter
 } elseif {$verb eq "create"} {
     create $shift
+    exit 0
 } elseif {$verb eq "edit"} {
     edit $shift
+    exit 0
 } elseif {$verb eq "list"} {
     printShifts $shift;     # listShifts is a admin api call.
+    exit 0
 } else {
     puts stderr "Invalid verb '$verb'"
     Usage
