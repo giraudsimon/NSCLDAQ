@@ -647,6 +647,7 @@ proc listRuns {} {
         lappend result [_makeRunDict $run]
         $run destroy
     }
+    $log destroy
     return $result
 }
 
