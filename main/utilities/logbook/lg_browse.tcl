@@ -42,11 +42,14 @@ if {[array names env DAQROOT] eq "DAQROOT"} {
 }
 lappend auto_path $tcllibs
 
+# Helper programs:
+
 set bindir $env(DAQBIN)
 set addPerson [file join $bindir lg_addperson]
 set manageShift [file join $bindir lg_mgshift]
 set makeShift [file join $bindir lg_mkshift]
 set selectShift [file join $bindir lg_selshift]
+set editNote [file  join $bindir lg_wrnote]
 
 # Helper programs:
 
@@ -601,7 +604,7 @@ snit::widgetadaptor BookView {
                 [dict get $member id] "" \
                 "[dict get $member firstName] [dict get $member lastName]"
             ]
-            $tree insert $tid end -values $values
+            $tree insert $tid end -values $values -tags person
         }
     }
     ##
@@ -663,7 +666,7 @@ snit::widgetadaptor BookView {
         foreach run $newRuns {
             set number [dict get $run number]
             set values [_runValues $run]
-            set container [$tree insert {} end -text $number -value $values]
+            set container [$tree insert {} end -text $number -value $values -tags run]
             set notelist [dict get $runNotes $number]
             $self _updateExistingRun $container $run $notelist
         }
@@ -736,6 +739,28 @@ snit::widgetadaptor BookView {
         
         return ""
     }
+    ##
+    # _getSelectedRun
+    #    Given a selected item, returns the number of the run
+    #    encompassing it if it's inside a run or else returns ""
+    #    if the selection isn't in a run.
+    #    THis is done by looking for the tag "run" in the item and parents.
+    #
+    method _getSelectedRun {} {
+        set selected [$tree selection]
+        if {[llength $selected] == 0} {
+            return ""
+        }
+        set selected [lindex $selected 0]
+        while {$selected ne {}} {
+            if {"run" in [$tree item $selected -tags]} {
+                return [$tree item $selected -text]
+            } else {
+                set selected [$tree parent $selected]
+            }
+        }
+        return ""
+    }
     #-------------------------------------------------------------------
     # Event handling
 
@@ -786,7 +811,12 @@ snit::widgetadaptor BookView {
         }
     }
     method _composeNote {} {
-        
+        set run [$self _getSelectedRun]
+        if {$run ne ""} {
+            exec $::editNote $run &
+        } else {
+            exec $::editNote &
+        }
     }
     
     #-----------------------------------------------------------------------
