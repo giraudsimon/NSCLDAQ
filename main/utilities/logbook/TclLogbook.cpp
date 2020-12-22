@@ -70,8 +70,9 @@ TclLogbook::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
             create(interp, objv);
         } else if (subcommand == "open") {
             open(interp, objv);
-        }
-        else {
+        } else if (subcommand == "tempdir") {
+            tempdir(interp, objv);
+        } else {
             throw usage(objv, "Invalid subcommand");
         }
     }
@@ -157,6 +158,21 @@ TclLogbook::open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
     
     interp.setResult(commandName);
 }
+/**
+ * tempdir
+ *  Sets the result with the name of the logbook temporary directory.
+ *
+ * @param interp -interpreter running the command.
+ * @param obvjv - command line word objects.
+ */
+void
+TclLogbook::tempdir(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 2, usage(objv, "Too many command parameters").c_str());
+    interp.setResult(LogBook::m_tempdir);
+                                
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Static methods:
 
@@ -194,6 +210,7 @@ TclLogbook::reconstructCommand(std::vector<CTCLObject>& objv) {
     
     return result;
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 //  private methods.
 

@@ -32,6 +32,7 @@
  *
  *  -  create filename experiment spokesperson purpose
  *  -  open filename
+ *  -  tempdir
  *
  *  The open command returns a new command in the logbook namespace that is itself
  *  a command ensemble that encapsulates the public object methods of the
@@ -55,6 +56,7 @@ public:
 private:
     void create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void tempdir(CTCLInterpreter& interp, std::vector<CTCLObject>& Objv);
     
 private:
     
