@@ -457,10 +457,390 @@ snit::widgetadaptor ShiftView {
 }
 #------------------------------------------------------------------------------
 ##
-# @class NotesView
-#    Provides a view of the notes that are in the logbook.  Notes are
+# @class BookView
+#    Provides a view of the notes and runs that are in the logbook.  Notes are
 #    associated with an author (a person) and optionally with a run.
 #    The browser contains a treeview that displays folders for each run
-#    and a final folder with only the 
+#    and a final folder with the notes that don't belong to any run.
+#    line under the runs contains one of the following:
+#    *  Note - a note
+#    *  Transition - documenting a transition.
+#    These are sorted chronologically
+#    * Run provide
+#        Run number
+#        Title
+#        Current state.
+#    Transitions provide:
+#    *   The transition time
+#    *   On-duty shift at the time the transition occured.
+#    *   Type of transition.
+#    *   any remark provided for the transition.
+#    *   Below it the names of the people on that shift.
+#    Notes provide:
+#    *  The author
+#    *  The time at which the note was written.
+#    *  The note title (Part of the first lin eo fthe note.)
+#
+#   Double clicking in a note views its html rendition in a browser.
+#   Right-clicking provides the ability to compose a new note.
+#   because of the potential for this megawidget to display a large amount of
+#   information, update rate defaults to every 2 seconds.
+#
+# OPTIONS
+#    -update  - seconds between updates.
+#
+snit::widgetadaptor BookView {
+    component tree
+    variable afterid -1
     
+    option -update -default 2
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        install tree using ttk::treeview $win.tree \
+            -yscrollcommand [list $win.scroll set] \
+            -columns [list id title author state-time remark] \
+            -displaycolumns [list title author state-time remark] \
+            -selectmode browse -show [list tree headings]
+        
+        ttk::scrollbar $win.scroll -orient vertical -command [list $tree yview]
+        
+        foreach col [list #0 title author state-time  remark] \
+            head [list run Title Person/Shift State/Time Remark] {
+            $tree heading $col -text $head
+        }
+        #  The tree always has an element for notes not associated with
+        #  any run.  This will always be first:
+        
+        $tree insert {} end -text None
+            
+        
+        # Layout
+        
+        grid $tree $win.scroll -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        grid columnconfigure $win 1 -weight 0
+        grid rowconfigure    $win 0 -weight 1
+        
+        $self configurelist $args
+        
+        #
+        #  Bindings:
+        #    Wish I could bind <Double-1> to the note tag but that's not
+        #    an event sent to bindings so we'll bind it to the whole shebang
+        #    and just ignore if the item it's on isn't a note.
+        #
+        bind $tree <Double-1> [mymethod _onDoubleLeft]
+        
+        menu $tree.context -tearoff 0
+        $tree.context add command -label "Compose Note..." -command [mymethod _composeNote]
+        bind $tree <3> [list $tree.context post %X %Y]
+        bind $tree <KeyPress> [list $tree.context unpost]
+        
+        # _autoUpdate  will fill the tree with runs and notes and
+        # reschedule.
+        
+        $self _autoUpdate
+    }
+    destructor {
+        after cancel $afterid;       # Don't  leave any hanging afters.
+    }
+    #--------------------------------------------------------------------
+    # Update handling
+    
+    ##
+    # _addNote
+    #   Given a  note and the container it goes in adds it to the end.
+    #
+    # @param parent - parent of the note.
+    # @param note - note dict.
+    #
+    method _addNote {parent note} {
+        set values [_makeNoteValueList $note]
+        $tree insert $parent end -text note -values $values
+    }
+    
+    ##
+    # _updateNonRunNotes
+    #    Updates the list of notes that are in the non run container.
+    #    The assumption is that notes don't change nor do they get deleted.
+    #    added notes, are also, therefore, in chronological order.
+    #    it's also the case that id order is the same as chronological order.
+    # @param parent - parent of the non-run notes.
+    # @param notes  - List of note dicts not associated with any runs.
+    #
+    method _updateNonRunNotes {parent notes} {
+        set existingNotes [$tree children $parent]
+        set newNotes [lrange $notes [llength $existingNotes] end]
+        foreach note $newNotes {
+            $self _addNote $parent $note
+        }
+    }
+    ##
+    # _addTransition
+    #    Add a transition item to a container
+    # @param container - parent
+    # @param transition - Transition item.
+    #
+    method _addTransition {container transition} {
+        set values [_transitionValues $transition]
+        set text [dict get $transition transitionName]
+        set tid [ \
+            $tree insert $container end -text $text -values $values \
+            -tags transition                                        \
+        ]
+        # Fill in the shift members:
+        
+        set shiftMembers [listShiftMembers [dict get $transition shift]]
+        foreach member $shiftMembers {
+            set values [list                                \
+                [dict get $member id] "" \
+                "[dict get $member firstName] [dict get $member lastName]"
+            ]
+            $tree insert $tid end -values $values
+        }
+    }
+    ##
+    # _updateExistingRun
+    #    Given a run that already has a container item, updates its contents.
+    # @param container - the container for the run (folder if you will).
+    # @param run       - Run dict.
+    # @param notes    - (possibly empty) list of notes associated with the run
+    #
+    method _updateExistingRun {container run notes} {
+        set contents [_mergeRunContents [dict get $run transitions] $notes]
+        set existingItems [$tree children $container]
+        set newContents [lrange $contents [llength $existingItems] end]
+        
+        foreach item $newContents {
+            if {[dict get $item type] eq "transition"} {
+                $self _addTransition $container $item
+            } elseif {[dict get $item type] eq "note"} {
+                $self _addNote $container $item
+            } else {
+                puts stderr "BookView::_updateExistingNote unrecognized item type: $type"
+            }
+        }
+    }
+    ##
+    # _updateRuns
+    #    Update the runs in the treeview.  The runs are in chronological
+    #    order rather than run number order.  This ensures that
+    #    as far as adding runs goes, we just need to add them to the end,
+    #    however, each existing run might have new transitions and new
+    #    notes to add.  One of the things we do first is make a chronological
+    #    list of _all_ items that are associated with a run.  This, once more
+    #    allows us to merely add items rather than edit them.
+    #    Each run will have its state updated based on the last transition.
+    #    This is a detailed state (e.g. PAUSED if the run is paused).
+    #
+    # @param runContainers - item ids of runs displayed in the tree.
+    # @param runs - list of run dicts these should correspond to the
+    #               run containers in order.
+    # @param runNotes - dict indexed by run number which contains the
+    #                note dicts for thtat run.
+    #
+    method _updateRuns {runContainers runs runNotes} {
+        
+        set existingRuns [lrange $runs 0 [llength $runContainers]-1]
+        set newRuns      [lrange $runs [llength $runContainers] end]
+        
+        # For the existing notes we don't need to make a new folder.
+        
+        foreach runFolder $runContainers run $existingRuns {
+            set number [dict get $run number]
+            set notelist [dict get $runNotes $number]
+            $self _updateExistingRun $runFolder $run $notelist
+        }
+        # For new notes we do:
+        
+        foreach run $newRuns {
+            set number [dict get $run number]
+            set values [_runValues $run]
+            set container [$tree insert {} end -text $number -value $values]
+            set notelist [dict get $runNotes $number]
+            $self _updateExistingRun $container $run $notelist
+        }
+        
+    }
+    
+    ##
+    # _update
+    #    Does the actual mechanics of updating the tree. This is separate
+    #    from the scheduling to allow us to potentially schedule early.
+    #
+    method _update {} {
+        
+        #  Get the top level things the first one is the non run container.
+        #  the remainder are runs.
+        
+        set toplevels [$tree children {}]
+        set nonRunNoteContainer [lindex $toplevels 0]
+        set runContainers       [lrange $toplevels 1 end]
+        
+        #  Update the non run notes.
+        
+        set notes [listNonRunNotes]
+        $self _updateNonRunNotes $nonRunNoteContainer $notes
+        
+        #  Update the contents of the run containers.
+        #  We need to get the run information and the notes for each run.
+            
+        set runs [listRuns]
+        set runNotes [dict create]
+        foreach run $runs {
+            set runNum [dict get $run number]
+            set noteList [listNotesForRun $runNum]
+            dict set runNotes $runNum $noteList
+        }
+        $self _updateRuns $runContainers $runs $runNotes
+
+    }
+    ##
+    # _autoUpdate
+    #   Do and update and reschedule.
+    #
+    method _autoUpdate {} {
+        set afterid [after [expr {1000*$options(-update)}] [mymethod _autoUpdate]]
+        $self _update
+        
+    }
+    
+    #-------------------------------------------------------------------
+    # Event handling
+    
+    
+    #-----------------------------------------------------------------------
+    # procs
+    
+    ##
+    # _makeNoteValueList
+    #   Given a note dict create the tree entry value list for that note
+    # @param note
+    # @return list - suitable for -values option in the notes item.
+    #
+    proc _makeNoteValueList {note} {
+        set author [dict get $note author]
+        set authorText "[dict get $author firstName]  [dict get $author lastName]"
+        set time [clock format [dict get $note timestamp]]
+        set title [getNoteTitle $note]
+        
+        set values [list                                                    \
+            [dict get $note id] $title $authorText $time                    \
+        ]
+        return $values
+    }
+    ##
+    # _getRunState
+    #   Given a list of run transitions, returns the run state.
+    #   (Defensive programming) if there are no transitions, the run
+    #   state is "Not started'
+    # @param transitions - list of transition dicts.
+    # @return string - run state.
+    #
+    proc _getRunState {transitions} {
+        if {[llength $transitions] == 0} {
+            return "Not started"
+        } else {
+            set lastTransition [lindex $transitions end]
+            set type [dict get $lastTransition transitionName]
+            if {$type in [list BEGIN RESUME]} {
+                return Active
+            } elseif {$type in [list END "EMERGENCY_END"]} {
+                return "Ended"
+            } elseif {$type == "PAUSE"} {
+                return "Paused"
+            } else {
+                return "Unknown: $type"
+            }
+        }
+    }
+    ##
+    # _runValues
+    #   Given a notes dict, creates the run values list.  Depends as well on
+    #   _getRunState to get the run state from the transition list.
+    # @param run - dict for the run.
+    # We produce a list that consist of:
+    #     "title" "" "state" 
+    #
+    proc _runValues {run} {
+        set title [dict get $run title]
+        set state [_getRunState [dict get $run transitions]]
+        return [list $title "" $state]
+    }
+    ##
+    # _compareStamps
+    #   lsort compare operations for dicts that contain timestamp keys.
+    #
+    # @param item1 - first item.
+    # @param item2 - second item.#
+    # @return comparison indicator:
+    # @retval -1   - first item is strictly less than second.
+    # @retval  0   - first item is equal to second.
+    # @retval  1   - first item is greater than second.
+    #
+    proc _compareStamps {item1 item2} {
+        set t1 [dict get $item1 timestamp]
+        set t2 [dict get $item2 timestamp]
+        
+        if {$t1 < $t2} {return -1}
+        if {$t1 == $t2} {return 0}
+        if {$t1 > $t2} {return 1}
+    }
+    ##
+    # _transitionValues
+    #    Turn a transition dict into the things needed for its entry's -value
+    #    element.  This includes:
+    #
+    # @param t - the transition dict.
+    # @return list containing:
+    #    "" Shift-name timestamp remark
+    #
+    proc _transitionValues {t} {
+        set shift [dict get $t shift]
+        set time [clock format [dict get $t transitionTime]]
+        set remark [dict get $t transitionComment]
+        
+        return [list "" "" $shift $time $remark]
+    }
+        
+    
+        
+    
+    ##
+    # _mergeRunContents
+    #    Creates a time ordered merged list of transition and note dicts.
+    #    Each dict also gets a new key: type which is either transition or
+    #    note depending on what it is.  Futhermore, transitions get a key
+    #    timestamp which has the same value as transition time to facilitate
+    #    time sorting.
+    #
+    # @param transitions - likely not empty set of run transition dicts.
+    # @param notes       - possibly empty set of note dicts associated with the run.
+    #
+    proc _mergeRunContents {transitions notes} {
+        set result [list]
+        
+        # Massage the transition dicts and add them to the result list.
+        
+        foreach transition $transitions {
+            set time [dict get $transition transitionTime]
+            dict set transition type transition
+            dict set transition timestamp $time
+            lappend result $transition
+        }
+        
+        # Massage the note dicts and add _them to the result list.
+        
+        foreach note $notes {
+            dict set note type note
+            lappend result $note
+        }
+        # Sort the result by timestamp and returnL
+        
+        set result [lsort -increasing -command _compareStamps $result]
+        return $result
+    }
+}
 
