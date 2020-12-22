@@ -52,9 +52,11 @@ set selectShift [file join $bindir lg_selshift]
 
 package require Tk
 package require logbookadmin
+package require logbook
 package require snit
 package require dialogwrapper
 package require textprompter
+package require Markdown
 
 
 ##
@@ -492,6 +494,7 @@ snit::widgetadaptor ShiftView {
 snit::widgetadaptor BookView {
     component tree
     variable afterid -1
+    variable tmpfileIndex 0
     
     option -update -default 2
     
@@ -558,7 +561,7 @@ snit::widgetadaptor BookView {
     #
     method _addNote {parent note} {
         set values [_makeNoteValueList $note]
-        $tree insert $parent end -text note -values $values
+        $tree insert $parent end -text note -values $values -tags note
     }
     
     ##
@@ -651,6 +654,8 @@ snit::widgetadaptor BookView {
         foreach runFolder $runContainers run $existingRuns {
             set number [dict get $run number]
             set notelist [dict get $runNotes $number]
+            set values [_runValues $run]
+            $tree item $runFolder -values $values;    # in case state changed.
             $self _updateExistingRun $runFolder $run $notelist
         }
         # For new notes we do:
@@ -707,12 +712,103 @@ snit::widgetadaptor BookView {
         
     }
     
+    ##
+    # _getSelectedNote
+    #   If the selected entity is a note (has the note tag) returns its id
+    #   otherwise, returns an empty string.
+    #
+    # @return string (hopefully a note id)
+    #
+    method _getSelectedNote {} {
+        set selected [$tree selection]
+        if {[llength $selected] == 0} {
+            return ""
+        }
+        set selected [lindex $selected 0]
+        set tags [$tree item $selected -tags]
+        if {"note" in $tags} {
+            set values [$tree item $selected -values]
+            return [lindex $values 0]
+        } else {
+            return ""
+        }
+        # Should never get here but:
+        
+        return ""
+    }
     #-------------------------------------------------------------------
     # Event handling
-    
+
+    method _onDoubleLeft {} {
+        set noteId [$self _getSelectedNote]
+        if {$noteId != ""} {
+            set note [getNote $noteId]
+            set text [getNoteText $note]
+            
+            # We prepend the text a little table that contains the author,
+            # data written and, if there's an associated run, the run number.
+            
+            set whenWritten [clock format [dict get $note timestamp]]
+            set authorDict [dict get $note author]
+            set sal [dict get $authorDict salutation]
+            set fn [dict get $authorDict firstName]
+            set ln [dict get $authorDict lastName]
+            set author  "$sal $fn  $ln"
+            
+            append fulltext      "|        |         |\n"
+            append fulltext      "| Author | $author |\n"
+            append fulltext  "| Written | $whenWritten |\n"
+            
+            if {[dict exists $note run]} {
+                set run [dict get $note run]
+                append fulltext "| For Run: | $run | \n"
+                set runInfo [findRun $run]
+                append fulltext "| Title: | [dict get $runInfo title] |\n"
+                set transitions [dict get $runInfo transitions]
+                set start [lindex $transitions 0]
+                set stop [lindex $transitions end]
+                append fulltext "| Started | [clock format [dict get $start transitionTime]] | \n"
+                if {![dict get $runInfo isActive]} {
+                    append fulltext "| Ended | [clock format [dict get $stop transitionTime]] |\n"
+                }
+            }
+            append fulltext $text
+            
+            set html [Markdown::convert $fulltext]
+            
+            set  filename [_makeNoteFilename $noteId]
+            
+            set fd [open $filename w]
+            puts $fd $html
+            close $fd
+            exec xdg-open $filename &
+            
+        }
+    }
+    method _composeNote {} {
+        
+    }
     
     #-----------------------------------------------------------------------
     # procs
+    
+    ##
+    # _makeNoteFilename
+    #    given a note id returns a temp file for the html of a note:
+    #
+    # @param id - note id.
+    #
+    proc _makeNoteFilename {id} {
+        set dir [logbook::logbook tempdir]
+        set pid [pid]
+        set idx [incr tpmfileIndex]
+        set now [clock seconds]
+        set result [file join $dir "note-$id-$now-$pid-$idx.html"]
+        return $result
+        
+    }
+        
+    
     
     ##
     # _makeNoteValueList
@@ -767,7 +863,7 @@ snit::widgetadaptor BookView {
     proc _runValues {run} {
         set title [dict get $run title]
         set state [_getRunState [dict get $run transitions]]
-        return [list $title "" $state]
+        return [list "" $title "" $state]
     }
     ##
     # _compareStamps
@@ -804,10 +900,7 @@ snit::widgetadaptor BookView {
         
         return [list "" "" $shift $time $remark]
     }
-        
-    
-        
-    
+          
     ##
     # _mergeRunContents
     #    Creates a time ordered merged list of transition and note dicts.
