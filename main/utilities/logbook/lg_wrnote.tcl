@@ -416,6 +416,23 @@ grid .n -sticky nsew
 grid .n.action.save .n.action.cancel
 grid .n.action -sticky nswe
 
+# One more thing:
+#   - If a  run is provided on the command line, it' set as current.
+#   - If not and a run is current use that as the associated run.
+#   otherwise, let the user choose if they want to:
+
+set runinfo ""
+if {[llength $argv] > 0} {
+    set run [lindex $argv 0]
+    set runinfo [findRun $run]
+    
+} else {
+    set runinfo [currentRun]
+}
+if {$runinfo ne ""} {
+    .n configure -assocrun $runinfo
+}
+
 set done 0
 while {!$done} {
     vwait action
