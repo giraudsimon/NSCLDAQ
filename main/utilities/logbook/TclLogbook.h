@@ -56,7 +56,7 @@ public:
 private:
     void create(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void open(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
-    void tempdir(CTCLInterpreter& interp, std::vector<CTCLObject>& Objv);
+    void tempdir(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
 private:
     
