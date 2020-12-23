@@ -51,7 +51,9 @@ set makeShift [file join $bindir lg_mkshift]
 set selectShift [file join $bindir lg_selshift]
 set editNote [file  join $bindir lg_wrnote]
 
-# Helper programs:
+#  Modify if your logbook didn't come from NSCL/FRIB
+
+set timezone :America/Detroit
 
 package require Tk
 package require logbookadmin
@@ -773,7 +775,7 @@ snit::widgetadaptor BookView {
             # We prepend the text a little table that contains the author,
             # data written and, if there's an associated run, the run number.
             
-            set whenWritten [clock format [dict get $note timestamp]]
+            set whenWritten [clock format  [dict get $note timestamp] -timezone $::timezone]
             set authorDict [dict get $note author]
             set sal [dict get $authorDict salutation]
             set fn [dict get $authorDict firstName]
@@ -792,9 +794,9 @@ snit::widgetadaptor BookView {
                 set transitions [dict get $runInfo transitions]
                 set start [lindex $transitions 0]
                 set stop [lindex $transitions end]
-                append fulltext "| Started | [clock format [dict get $start transitionTime]] | \n"
+                append fulltext "| Started | [clock format  [dict get $start transitionTime] -timezone $::timezone] | \n"
                 if {![dict get $runInfo isActive]} {
-                    append fulltext "| Ended | [clock format [dict get $stop transitionTime]] |\n"
+                    append fulltext "| Ended | [clock format  [dict get $stop transitionTime] -timezone $::timezone] |\n"
                 }
             }
             append fulltext $text
@@ -849,7 +851,7 @@ snit::widgetadaptor BookView {
     proc _makeNoteValueList {note} {
         set author [dict get $note author]
         set authorText "[dict get $author firstName]  [dict get $author lastName]"
-        set time [clock format [dict get $note timestamp]]
+        set time [clock format  [dict get $note timestamp] -timezone $::timezone]
         set title [getNoteTitle $note]
         
         set values [list                                                    \
@@ -925,7 +927,7 @@ snit::widgetadaptor BookView {
     #
     proc _transitionValues {t} {
         set shift [dict get $t shift]
-        set time [clock format [dict get $t transitionTime]]
+        set time [clock format  [dict get $t transitionTime] -timezone $::timezone]
         set remark [dict get $t transitionComment]
         
         return [list "" "" $shift $time $remark]
