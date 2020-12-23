@@ -47,6 +47,7 @@
 
 #include <stdexcept>
 #include <memory>
+#include <sstream>
 
 #include <datetime.h>
 
@@ -1114,6 +1115,157 @@ getNoteRun(PyObject* self, PyObject* args)
     }
     return result;
 }
+
+
+////////////////////////////////////////////////////////////////////
+// Key value store API.
+//
+
+/**
+ * kvExists
+ *   Determines if a key exists in the key/value store.
+ * @param self  - Pointer to the logbook object storage.
+ * @param args - Positional arguments... Only has the name of the key to check
+ * @return PyObject* - Bool value - true if exists, false if not.
+ */
+static PyObject*
+kvExists(PyObject* self, PyObject* args)
+{
+    const char* key(nullptr);
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    
+    if (!PyArg_ParseTuple(args, "s", &key)) return nullptr;  // Exception already raised.
+    
+    if (pBook->kvExists(key)) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+    // Should not get here so raise an exception that says that:
+    
+    PyErr_SetString(
+        logbookExceptionObject,
+        "kv_exists method - fell through without a defined value"
+    );
+    return nullptr;
+
+}
+/**
+ * kvGet
+ *   Returns the string value of a key in the key value store.
+ *
+ * @param self - pointer to our object storage.
+ * @param args - Positional parameters that are just the keyword.
+ * @return PyObject* - string object that contains the key's value.
+ * @note if the key does not exist, a logbook exception is raised.
+ */
+static PyObject*
+kvGet(PyObject* self, PyObject* args)
+{
+    const char* key;
+    std::string value;
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    
+    if(!PyArg_ParseTuple(args, "s", &key)) return nullptr;  // Exception already raised.
+    
+    try {
+        value = pBook->kvGet(key);
+        return PyUnicode_FromString(value.c_str());
+    }
+    catch (LogBook::Exception& e) {
+        std::stringstream msg;
+        msg << "Unable to  fetch keyword " << key << "'s value: "
+            << e.what();
+        std::string m(msg.str());
+        PyErr_SetString(logbookExceptionObject, m.c_str());
+    }
+    catch (...) {
+        std::stringstream msg;
+        msg << "Fetch of value for key  " << key
+            << " failed with an unexpected exception type caught";
+        std::string m(msg.str());
+        PyErr_SetString(logbookExceptionObject, m.c_str());
+    }
+    return nullptr;        // ONly exceptions fall through
+}
+/**
+ * kvSet
+ *  Sets the value of a key.  If the key already exists in the kv store,
+ *  it is modified (a new one is not created).  If it does not, then a new
+ *  key value pair _is_ created.
+ *
+ * @param self - pointer to my object storage.
+ * @param args - Pointer to position arguments which are key and value in that order.
+ * @return PyObject* - none.
+ */
+static PyObject*
+kvSet(PyObject* self, PyObject* args)
+{
+    const char* key;
+    const char* value;
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std::string m;              // For exceptions
+    
+    if (!PyArg_ParseTuple(args, "ss", &key, &value)) return nullptr;
+        
+    try {
+        pBook->kvSet(key, value);
+        Py_RETURN_NONE;
+    }
+    catch (LogBook::Exception& e) {
+        std::stringstream msg;   // We consider std::stringstream's construction expensive.
+        msg << "Unable to set key " << key << " to " << value
+            << " : " << e.what();
+        m = (msg.str());
+    }
+    catch (...) {
+        std::stringstream msg;
+        msg << "Setting key " << key << " to " << value
+            << " resulted in an unexpected exception type being caught";
+        m = (msg.str());
+    }
+    PyErr_SetString(logbookExceptionObject, m.c_str());
+    
+    return nullptr;               // Only exceptions fall through.
+}
+/**
+ * kvCreate
+ *    Create a new key value pair.  It's an error, and will
+ *    raise an exception if the key already exists.
+ *    
+ *  @param self - pointer to object storage.
+ *  @param args - pointer to the position arguments which are the key and value
+ *  @return PyObject* none on success.
+ */
+static PyObject*
+kvCreate(PyObject* self, PyObject* args)
+{
+    const char* key;
+    const char* value;
+    LogBook* pBook = PyLogBook_getLogBook(self);
+    std:: string m;
+    
+    if (!PyArg_ParseTuple(args, "ss", &key, &value)) return nullptr;
+    
+    try {
+        pBook->kvCreate(key, value);
+        Py_RETURN_NONE;
+    }
+    catch (LogBook::Exception& e) {
+        std::stringstream msg;
+        msg << "Unable to create new key: " << key << " with value: " << value
+            << " : " << e.what();
+        m = msg.str();
+    }
+    catch (...) {
+        std::stringstream msg;
+        msg << "When trying to create a new key: " << key << " with value "
+            << value << " an unanticipated exception was caught";
+        m = msg.str();
+    }
+    PyErr_SetString(logbookExceptionObject, m.c_str());
+    return nullptr;
+}
 ///////////////////////////////////////////////////////////////
 // Table for the PyLogBook type (LogBook.LogBook)
 
@@ -1179,6 +1331,13 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
         "get_note_run", getNoteRun, METH_VARARGS,
         "Get run associated with a note or None if unassociated"
     },
+    
+    // Key value store interface:
+    
+    {"kv_exists", kvExists, METH_VARARGS, "Determine if a key exists"},
+    {"kv_get", kvGet, METH_VARARGS, "Return the value of a key"},
+    {"kv_set", kvSet, METH_VARARGS, "Create or modify a key/value"},
+    {"kv_create", kvCreate, METH_VARARGS, "Create a new key/value pair"},
     
     
     // Ending sentinel:
