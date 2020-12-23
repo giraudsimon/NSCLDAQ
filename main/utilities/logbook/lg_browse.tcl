@@ -983,4 +983,8 @@ BookView     .nb.book
 .nb add .nb.people -text People
 
 pack .nb -fill both -expand 1
+set exp [kvGet experiment]
+set sp  [kvGet spokesperson]
+set purpose [kvGet purpose]
+wm title . "Logbook database: [currentLogBookOrError] ($exp spokesperson: $sp  purpose: $purpose)"
 
