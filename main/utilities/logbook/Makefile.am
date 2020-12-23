@@ -76,7 +76,7 @@ noinst_PROGRAMS=unittests
 unittests_SOURCES=TestRunner.cpp logtestutils.hpp excepttests.cpp \
 	bookstatictests.cpp logbooktests.cpp persontests.cpp \
 	personapitest.cpp shifttests.cpp shiftapitest.cpp runtests.cpp \
-	runapitests.cpp notetests.cpp noteapitests.cpp
+	runapitests.cpp notetests.cpp noteapitests.cpp kvtests.cpp
 
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/testutils \
 	$(libLogbook_la_CXXFLAGS)
@@ -88,6 +88,7 @@ unittests_DEPENDENCIES=libLogbook.la
 
 check-TESTS:
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ logbookstatictests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pykvtests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pypersontests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
 	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
@@ -113,5 +114,5 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	lg_current.tcl lg_ls.tcl lg_addperson.tcl lg_lspeople.tcl \
 	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl \
 	lg_noteutilities.tcl noteutil.test lg_wrnote.tcl logbookBundle.tcl \
-	lg_selshift.tcl
+	lg_selshift.tcl pykvtests.py
 
