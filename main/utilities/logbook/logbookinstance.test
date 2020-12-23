@@ -1604,6 +1604,61 @@ tcltest::test getNoteAuthor_1 {Get note author} \
     set author [$LogbookInstance getNoteAuthor $note]
     expr {[info command $author] == $author}
 } -result 1
+
+#========================================================================
+
+tcltest::test kvexists_1 {Key exists} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvExists experiment
+} -result 1
+tcltest::test kvexists_2 {Key does not exist} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvExists no-such-key
+} -result 0
+
+tcltest::test kvget_1 {Key exists} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvGet experiment
+} -result  0400x
+
+tcltest::test kvget_2 {Key does not exist} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogBookInstance kvGet no-such-key
+} -returnCodes error -result * -match glob
+
+
+tcltest::test kvset_1 {Replacing key value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvSet experiment e17011
+    $LogbookInstance kvGet experiment
+} -result e17011
+tcltest::test kvset_2 {New key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvSet new-key new-value
+    $LogbookInstance kvGet new-key
+} -result new-value
+
+tcltest::test kvcreate_1 {Truly new key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvCreate new-key new-value
+    $LogbookInstance kvGet new-key
+} -result new-value
+    
+tcltest::test kvcreate_2 {Attempt to overwrite existing key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvCreate experiment
+
+} -returnCodes error -result * -match glob
+
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

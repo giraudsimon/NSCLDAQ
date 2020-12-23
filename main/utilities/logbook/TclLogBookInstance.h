@@ -85,6 +85,10 @@ class LogBookNote;
  *     - listNonrunNotes
  *     - getNoteRun note-command
  *     - getNoteAuthor note-command
+ *     - kvExists key
+ *     - kvGet    key
+ *     - kvSet    key value
+ *     - kvCreate key value
  */
 class TclLogBookInstance : public CTCLObjectProcessor
 {
@@ -136,6 +140,10 @@ private:
     void getNoteRun(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     void getNoteAuthor(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
     
+    void kvExists(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void kvGet(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void kvSet(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
+    void kvCreate(CTCLInterpreter& interp, std::vector<CTCLObject>& objv);
 public:
     static std::string wrapPerson(CTCLInterpreter& interp, LogBookPerson* pPerson);
     std::string wrapShift(CTCLInterpreter& interp, LogBookShift* pShift);

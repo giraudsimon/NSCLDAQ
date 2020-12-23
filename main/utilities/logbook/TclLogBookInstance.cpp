@@ -159,6 +159,14 @@ TclLogBookInstance::operator()(
             getNoteRun(interp, objv);
         } else if (subcommand == "getNoteAuthor") {
             getNoteAuthor(interp, objv);
+        } else if (subcommand == "kvExists") {
+            kvExists(interp, objv);
+        } else if (subcommand == "kvGet") {
+            kvGet(interp, objv);
+        } else if (subcommand == "kvSet") {
+            kvSet(interp, objv);
+        } else if (subcommand == "kvCreate") {
+            kvCreate(interp, objv);
         } else {
             std::stringstream msg;
             msg << "Invalid subcommand for " << std::string(objv[0]) << " : "
@@ -1044,6 +1052,68 @@ TclLogBookInstance::getNoteAuthor(
     LogBookPerson* pPerson = m_logBook->getNoteAuthor(*pNote);
     
     interp.setResult(wrapPerson(interp, pPerson));
+}
+///////////////////////////////////////////////////////////////////////////////
+// Key value store API:
+
+/**
+ * kvExists
+ *    Returns a true result if the specified key exists.
+ * @param interp - interpreter reference that running the command.
+ * @param obvj   - Command line parameters.
+ */
+void
+TclLogBookInstance::kvExists(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> kvExists key");
+    std::string key(objv[2]);
+    interp.setResult(m_logBook->kvExists(key.c_str()) ? "1" : "0");
+}
+/**
+ * kvGet
+ *   Returns the value of a key in the key value store.
+ * @param interp - interpreter running the command.
+ * @param objv   - command keyword.
+ */
+void
+TclLogBookInstance::kvGet(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 3, "Usage: <logbook-instance> kvGet key");
+    std::string key(objv[2]);
+    
+    interp.setResult(m_logBook->kvGet(key.c_str()));
+
+}
+/**
+ * kvSet
+ *    Set the value of a key.  If the key exists, it will be given a different
+ *    value. Otherwise a new key is created.
+ * @param interp - interpreter running the command.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::kvSet(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 4, "Usage: <logbook-instance> kvSet key value");
+    std::string key(objv[2]);
+    std::string value(objv[3]);
+    
+    m_logBook->kvSet(key.c_str(), value.c_str());
+}
+/**
+ * kvCreate
+ *    Create a new key value pair -- it's an error to use an existing key.
+ * @param interp - interpreter running the command.
+ * @param objv   - command words.
+ */
+void
+TclLogBookInstance::kvCreate(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
+{
+    requireExactly(objv, 4, "Usage: <logbook-instance> kvCreate key value");
+    std::string key(objv[2]);
+    std::string value(objv[3]);
+    
+    m_logBook->kvCreate(key.c_str(), value.c_str());
 }
 ///////////////////////////////////////////////////////////////////////////////
 // Private utilities:
