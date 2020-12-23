@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <vector>
+#include <memory>
 
 static const char* DBVersion="1.0";
 
@@ -130,6 +131,7 @@ LogBook::Exception::rethrowSqliteException(
 {
     rethrowSqliteException(e, doing.c_str());
 }
+
 /////////////////////////////////////////////////////////
 // Logbook class implementation
 
@@ -694,6 +696,130 @@ LogBook::getNoteAuthor(LogBookNote& note)
 {
     auto info = note.getNoteText();
     return new LogBookPerson(*m_pConnection, info.s_authorId);
+}
+////////////////////////////////////////////////////////////
+// Key value store API
+//
+
+/**
+ * kvExists
+ *    Tests for the existence of a key in the kvstore table.
+ *
+ * @param key - name of the key to check for.
+ * @return bool - true if the key exists false  if not.
+ */
+bool
+LogBook::kvExists(const char* key)
+{
+    try {
+        CSqliteStatement query(
+            *m_pConnection,
+            "SELECT COUNT(*) FROM kvstore WHERE key = ?"
+        );
+        query.bind(1, key, -1, SQLITE_STATIC);
+        ++query;
+        int result = query.getInt(0);
+        return (result != 0);
+    }
+    catch (CSqliteException& e) {
+        Exception::rethrowSqliteException(e, "LogBook::kvExists query");
+    }
+    return false;                // To make the compiler happy.
+}
+/**
+ * kvGet
+ *    Return the value of a key from the kv store.  If the key
+ *    does not exist we throw an LogBook::Exception. See, kvExists.
+ *
+ *  @param key  - the key to retrieve.
+ *  @return std::string -the value of the key (if it exists)
+ */
+std::string
+LogBook::kvGet(const char* key)
+{
+    try {
+        CSqliteStatement query(
+            *m_pConnection,
+            "SELECT value FROM kvstore WHERE key=?"
+        );
+        query.bind(1, key, -1, SQLITE_STATIC);
+        ++query;
+        if (query.atEnd()) {
+            std::stringstream msg;
+            msg << "LogBook::kvGet - no match for key " << key;
+            std::string e(msg.str());
+            throw LogBook::Exception(e);
+        } else {
+            return query.getString(0);
+        }
+    }
+    catch (CSqliteException e) {
+        Exception::rethrowSqliteException(e, "LogBook::kvGet query");
+    }
+    return std::string("");                    // To make compiler happy
+}
+/**
+ * kvSet
+ *    Sets the value of a key value key.  If the key already exists,
+ *    its value is updated.  If the key does not exist it is created.
+ *
+ * @param key   - key to set.
+ * @param value - new value.
+ */
+void
+LogBook::kvSet(const char* key, const char* value)
+{
+    try {
+        std::unique_ptr<CSqliteStatement query;
+        if (kvExists(key)) {
+            // update
+            
+            query.reset(new CSqliteStatement(
+                *m_pConnection,
+                "UPDATE kvstore SET value=? WHERE key = ?"
+            );
+            
+            
+        } else {
+            // create.
+            query.reset(new CSqliteStatement(
+                *m_pConnection,
+                "INSERT INTO kvstore (value, key) VALUES (?,?)"
+        }
+        // query 'points' to the right type of statement that
+        // now just needs to be bound to value/key in that order and
+        // stepped:
+        
+        query->bind(1, value, -1, SQLITE_STATIC);
+        query->bind(2, key, -1, SQLITE_STATIC);
+        ++(query.get());
+        
+    } catch (CSqliteExeption& e) {
+        Exception::rethrowSqliteException(e, "LogBook::kvset");
+    }
+}
+/**
+ * kvCreate
+ *    Like kvSet but the key must not yet exist
+ *  @param  key - key to create.
+ *  @param value - value to give it.
+ */
+void
+LogBook::kvCreate(const char* key, const char* value)
+{
+    if (kvExists(key)) {
+        std::stringstream msg
+        msg << key << " already exists in LogBook::kvCreate";
+        std::string m(msg.str());
+        throw LogBook::Exception (m);
+    }
+    CSqliteStatement query(
+        *m_pConnection,
+        "INSERT INTO kvstore (key, value) VALUES (?,?)"
+    );
+    query.bind(1, key, -1, SQLITE_STATIC);
+    query.bind(2, value, -1, SQLITE_STATIC);
+    ++query;
 }
 /////////////////////////////////////////////////////////
 // Private methods

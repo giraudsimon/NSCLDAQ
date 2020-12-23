@@ -137,6 +137,13 @@ public:
     LogBookRun* getNoteRun(LogBookNote& note);
     LogBookPerson* getNoteAuthor(LogBookNote& note);
     
+    // API for key value store
+    
+    bool kvExists(const char* key);
+    std::string kvGet(const char* key);
+    void kvSet(const char* key, const char* value);
+    void kvCreate(const char* key, const char* value);
+    
 private:
     static std::string computeTempDir();
     static void   createSchema(CSqlite& connection);
