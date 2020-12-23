@@ -770,14 +770,14 @@ void
 LogBook::kvSet(const char* key, const char* value)
 {
     try {
-        std::unique_ptr<CSqliteStatement query;
+        std::unique_ptr<CSqliteStatement> query;
         if (kvExists(key)) {
             // update
             
             query.reset(new CSqliteStatement(
                 *m_pConnection,
                 "UPDATE kvstore SET value=? WHERE key = ?"
-            );
+            ));
             
             
         } else {
@@ -785,6 +785,7 @@ LogBook::kvSet(const char* key, const char* value)
             query.reset(new CSqliteStatement(
                 *m_pConnection,
                 "INSERT INTO kvstore (value, key) VALUES (?,?)"
+            ));
         }
         // query 'points' to the right type of statement that
         // now just needs to be bound to value/key in that order and
@@ -792,9 +793,9 @@ LogBook::kvSet(const char* key, const char* value)
         
         query->bind(1, value, -1, SQLITE_STATIC);
         query->bind(2, key, -1, SQLITE_STATIC);
-        ++(query.get());
+        ++(*(query.get()));
         
-    } catch (CSqliteExeption& e) {
+    } catch (CSqliteException& e) {
         Exception::rethrowSqliteException(e, "LogBook::kvset");
     }
 }
@@ -808,7 +809,7 @@ void
 LogBook::kvCreate(const char* key, const char* value)
 {
     if (kvExists(key)) {
-        std::stringstream msg
+        std::stringstream msg;
         msg << key << " already exists in LogBook::kvCreate";
         std::string m(msg.str());
         throw LogBook::Exception (m);
