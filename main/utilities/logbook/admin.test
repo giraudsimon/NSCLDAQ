@@ -107,6 +107,59 @@ proc commonCleanup { } {
     file delete $::logbook
     file delete [file join ~ .nscl-logbook-current]
 }
+
+tcltest::test kvexists_1 {Key exists} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvExists experiment
+} -result 1
+tcltest::test kvexists_2 {Key does not exist} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvExists no-such-key
+} -result 0
+
+tcltest::test kvget_1 {Get with existing key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvGet experiment
+} -result 0400x
+
+tcltest::test kvget_2 {get with nonexistent key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvGet no-such-key
+} -returnCodes error -result * -match glob
+
+tcltest::test kvset_1 {Set replacing existing key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvSet spokesperson {Sean Liddick}
+    kvGet spokesperson
+} -result {Sean Liddick}
+
+tcltest::test kvset_2 {Set creating new key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvSet Date-Written {December 23, 2020}
+    kvGet Date-Written
+} -result {December 23, 2020}
+
+tcltest::test kvcreate_1 {Create creating new key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvCreate Date-Written {December 23, 2020}
+    kvGet Date-Written
+} -result {December 23, 2020}
+
+tcltest::test kvcreate_2 {Create fails attempting to overwrite existing key} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    kvCreate experiment illegal
+} -returnCodes error -result * -match glob
+
+
+#------------------------------------------------------------------
 tcltest::test addperson_1 {Add a person see if there's one person} \
 -setup {commonSetup} \
 -cleanup {

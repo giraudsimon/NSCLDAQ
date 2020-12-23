@@ -806,3 +806,72 @@ proc listNonRunNotes { } {
     return [_noteListToDictList $notes]
 }
 
+#----------------------------------------------------------------------------
+# Key values store.
+
+##
+# kvExists
+#    True if the requested key exists.
+#
+# @param key - key to check up on
+#
+proc kvExists {key} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    
+    set result [$log kvExists $key]
+    $log destroy
+    return $result
+}
+
+##
+# kvGet
+#   Return the value of a key/value store item
+#
+# @param key - key whose value we'll get
+# @return string
+#
+proc kvGet {key} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    
+    set status [catch {$log kvGet $key} msg]
+    $log destroy
+    if {$status} {
+        error $msg
+    } else {
+        return $msg
+    }
+}
+##
+# kvSet
+#   Set a key's value (creates a new key or overwrites the value of an existing one)
+# @param key
+# @param value
+#
+proc kvSet {key value} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    
+    set status [catch {$log kvSet $key $value} msg]
+    $log destroy
+    if {$status} {
+        error $msg
+    }
+}
+##
+# kvCreate
+#    Create a new key/value pair -- errors if the key already exists.
+# @param key - key
+# @param value - value to associate with the key.
+#
+proc kvCreate {key value} {
+    set path [currentLogBookOrError]
+    set log [logbook::logbook open $path]
+    
+    set status [catch {$log kvCreate $key $value} msg]
+    $log destroy
+    if {$status} {
+        error $msg
+    }
+}
