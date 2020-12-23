@@ -789,6 +789,7 @@ proc listNotesForRun {num} {
     set path [currentLogBookOrError]
     set log  [logbook::logbook open $path]
     set notes [$log listNotesForRunNumber $num]
+    $log destroy
     return [_noteListToDictList $notes]
 }
 
@@ -801,6 +802,7 @@ proc listNonRunNotes { } {
     set path [currentLogBookOrError]
     set log  [logbook::logbook open $path]
     set notes [$log listNonRunNotes]
+    $log destroy
     return [_noteListToDictList $notes]
 }
 
