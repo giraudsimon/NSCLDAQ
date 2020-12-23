@@ -969,3 +969,18 @@ snit::widgetadaptor BookView {
     }
 }
 
+
+################################################################################
+## Entry point, make a tabbed notebook with one browser per page:
+
+ttk::notebook .nb
+PeopleViewer .nb.people
+ShiftView    .nb.shifts
+BookView     .nb.book
+
+.nb add .nb.book -text LogBook
+.nb add .nb.shifts -text Shifts
+.nb add .nb.people -text People
+
+pack .nb -fill both -expand 1
+
