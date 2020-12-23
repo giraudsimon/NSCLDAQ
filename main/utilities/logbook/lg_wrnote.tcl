@@ -491,4 +491,4 @@ while {!$done} {
 
 
 
-destroy .
+catch {destroy .}
