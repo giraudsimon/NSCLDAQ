@@ -826,10 +826,16 @@ snit::widgetadaptor BookView {
     method _selectedToPdf { } {
         set run [$self _getSelectedRun];    # Run number if so.
         set note [$self _getSelectedNote];  # Note if so.
-        
+        set none 0
+        set selected [$tree selection]
+        if {[llength $selected] != 0} {
+            if {[$tree item  [lindex $selected 0] -text] eq "None"} {
+                set none 1
+            }
+        }
         # If we have either we prompt the output filename:
         #
-        if {($run ne "") || ($note ne"")} {
+        if {($run ne "") || ($note ne"") || $none} {
             set filename [_promptPDFfile]
             
             if {$filename ne ""} {
@@ -839,8 +845,17 @@ snit::widgetadaptor BookView {
                 set pdf [open "|pandoc - -o $filename" w]
                 if {$note ne ""} {
                     _noteToFd $note $pdf
-                } else {
+                } elseif {$run ne ""} {
                     _runToFd $run $pdf
+                } elseif {$none} {
+                    set notes [listNonRunNotes]
+                    puts $pdf "\nNotes not associated with any run"
+                    puts $pdf "==================================\n"
+                    foreach note $notes {
+                        set noteid [dict get $note id]
+                        puts $pdf [_noteToFd $noteid $pdf]
+                        puts $pdf "\n\n***\n\n"
+                    }
                 }
                 close $pdf
             }
@@ -948,7 +963,7 @@ snit::widgetadaptor BookView {
     }
     ##
     # _runValues
-    #   Given a notes dict, creates the run values list.  Depends as well on
+    #   Given a run dict, creates the run values list.  Depends as well on
     #   _getRunState to get the run state from the transition list.
     # @param run - dict for the run.
     # We produce a list that consist of:
@@ -1028,6 +1043,77 @@ snit::widgetadaptor BookView {
         
         set result [lsort -increasing -command _compareStamps $result]
         return $result
+    }
+    ##
+    # _runToFd
+    #    Converts a run to markdown suitable to be piped to
+    #    pandoc.  The run consists of a header describing the run.
+    #    It then consists of a series of time orderd events in the run
+    #    these events can be transitions to run state,
+    #    or notes associated with the run.
+    #
+    #  @param num   - the run numbmer to output - we are assured this exists.
+    # @param  fd    - the file descriptor to which to write the note.
+    proc _runToFd  {num fd} {
+        set run [findRun $num]
+        set title [dict get $run title]
+        set transitions [dict get $run transitions]
+        set notes       [listNotesForRun $num]
+        set contents    [_mergeRunContents $transitions $notes]
+        
+        _runHeaderToFd $num $title $fd
+        foreach item $contents {
+            set type [dict get $item type]
+            if {$type eq "transition"} {
+                _transitionToFd $item $fd
+            } elseif {$type eq "note"} {
+                puts $fd "\nNote:"
+                puts $fd "------\n"
+                _noteToFd [dict get $item id] $fd
+            }
+        }
+    }
+    ##
+    # _runHeaderToFd
+    #   Write a run header to a file descriptor:
+    #
+    # @param num  - run number:
+    # @param title - Run Title.
+    # @param fd   - file descriptor to which to write the header
+    #
+    proc _runHeaderToFd {num title fd} {
+        puts $fd "Run number: $num : $title"
+        puts $fd "================="
+    }
+    ##
+    # _transitionToFd
+    #    Writes information about a transition to the fd.
+    #    This consist of header 2 text of the form:
+    #    Run Transition:  transition-type at time-stamp : comment
+    #   Followed by a table of on shift people.
+    #
+    # @param transition   - Transition dict.
+    # @param fd           - Target file descriptor.
+    #
+    proc _transitionToFd {transition fd} {
+        set what [dict get $transition transitionName]
+        set when [clock format \
+            [dict get $transition transitionTime] -timezone $::timezone]
+        set why [dict get $transition transitionComment]
+        puts $fd "Run Transition: $what at $when : $why"
+        puts $fd "------------------------------"
+        puts $fd ""
+        set shiftName [dict get $transition shift]
+        set members [listShiftMembers $shiftName]
+        puts $fd "|  On Shift    |"
+        puts $fd "|---------------|"
+        foreach member $members {
+            set sal [dict get $member salutation]
+            set ln  [dict get $member lastName]
+            set fn  [dict get $member firstName]
+            puts $fd "| $sal $fn $ln |"
+        }
+        puts $fd ""
     }
 }
 

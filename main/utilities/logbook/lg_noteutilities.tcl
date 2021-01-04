@@ -142,8 +142,9 @@ proc makeNoteMarkdown {note} {
     set ln [dict get $authorDict lastName]
     set author  "$sal $fn  $ln"
     
-    append fulltext      "|  Item  | Value   |\n" ; #Pandoc needs table headers
-    append fulltext      "---------|---------|\n"
+    
+    append fulltext      "\n|  Item  | Value   |\n" ; #Pandoc needs table headers
+    append fulltext      "|---------|---------|\n"
     append fulltext      "| Author | $author |\n"
     append fulltext  "| Written | $whenWritten |\n"
     
