@@ -57,7 +57,18 @@ else
 	AM_CONDITIONAL([CAENSUPPORT], [false])
 fi
 
+# Pandoc is needed for printed versions of the logbook:
+
+AC_CHECK_PROG(HAVE_PANDOC, [pandoc], [true], [false])
+if test "$HAVE_PANDOC" ==  "false"
+then
+	AC_MSG_FAILURE([pandoc is required to produce PDF output from the logbook utilities])
+	
+fi
+
 # Documentation
+
+
 
 AC_ARG_ENABLE([docs],
               AS_HELP_STRING([--enable-docs],[Build the documentation]),
