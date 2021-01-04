@@ -119,3 +119,68 @@ proc makeNoteImageList {text} {
     }
     return $result
 }
+##
+# makeNoteMarkdown
+#   Given a note dict:
+#    - Get the full note text from the data base.
+#    - Prepend to it a table describing the note.
+#    - Return that full text to the caller.
+#
+# @param note  - note dict.
+# @return text - The full markdown of the note as it should be rendered.
+#
+proc makeNoteMarkdown {note} {
+    set text [getNoteText $note]
+            
+    # We prepend the text a little table that contains the author,
+    # data written and, if there's an associated run, the run number.
+    
+    set whenWritten [clock format  [dict get $note timestamp] -timezone $::timezone]
+    set authorDict [dict get $note author]
+    set sal [dict get $authorDict salutation]
+    set fn [dict get $authorDict firstName]
+    set ln [dict get $authorDict lastName]
+    set author  "$sal $fn  $ln"
+    
+    append fulltext      "|  Item  | Value   |\n" ; #Pandoc needs table headers
+    append fulltext      "---------|---------|\n"
+    append fulltext      "| Author | $author |\n"
+    append fulltext  "| Written | $whenWritten |\n"
+    
+    if {[dict exists $note run]} {
+        set run [dict get $note run]
+        append fulltext "| For Run: | $run |\n"
+        set runInfo [findRun $run]
+        append fulltext "| Title: | [dict get $runInfo title] |\n"
+        set transitions [dict get $runInfo transitions]
+        set start [lindex $transitions 0]
+        set stop [lindex $transitions end]
+        append fulltext "| Started | [clock format  [dict get $start transitionTime] -timezone $::timezone] |\n"
+        if {![dict get $runInfo isActive]} {
+            append fulltext "| Ended | [clock format  [dict get $stop transitionTime] -timezone $::timezone] |\n"
+        }
+    }
+    append fulltext $text
+    
+    return $fulltext
+}
+##
+# _noteToFd
+#   Create the markdown for a note given its id:
+#   - Get the dict associated with it,
+#   - Use makeNoteMarkdown to create the full markdown.
+#   - write that all to the fd.
+#
+# @param noteid - id of the note to write.
+# @param fd     - File descriptor to which to write the note.
+#
+proc _noteToFd {noteid fd} {
+    set note [getNote $noteid]
+    set text [makeNoteMarkdown $note]
+    puts $fd $text
+}
+
+
+proc _runToFd {runnum fd} {
+    
+}

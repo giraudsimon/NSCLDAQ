@@ -62,6 +62,7 @@ package require snit
 package require dialogwrapper
 package require textprompter
 package require Markdown
+package require lg_noteutilities
 
 
 ##
@@ -543,6 +544,8 @@ snit::widgetadaptor BookView {
         
         menu $tree.context -tearoff 0
         $tree.context add command -label "Compose Note..." -command [mymethod _composeNote]
+        $tree.context add command -label "Make PDF from selected..."     -command [mymethod _selectedToPdf]
+        $tree.context add command -label "Make PDF from whole book..."   -command [mymethod _allToPdf]
         bind $tree <3> [list $tree.context post %X %Y]
         bind $tree <KeyPress> [list $tree.context unpost]
         
@@ -766,40 +769,19 @@ snit::widgetadaptor BookView {
     #-------------------------------------------------------------------
     # Event handling
 
+    
+    ##
+    # _onDoubleLeft
+    #   Handle double left click on a note:
+    #   If the double click was not over a note, just give up.
+    #   If the double click format the markdown for it into a file.
+    #   Point the user's default webbrowser at that file.
+    #
     method _onDoubleLeft {} {
         set noteId [$self _getSelectedNote]
         if {$noteId != ""} {
             set note [getNote $noteId]
-            set text [getNoteText $note]
-            
-            # We prepend the text a little table that contains the author,
-            # data written and, if there's an associated run, the run number.
-            
-            set whenWritten [clock format  [dict get $note timestamp] -timezone $::timezone]
-            set authorDict [dict get $note author]
-            set sal [dict get $authorDict salutation]
-            set fn [dict get $authorDict firstName]
-            set ln [dict get $authorDict lastName]
-            set author  "$sal $fn  $ln"
-            
-            append fulltext      "|        |         |\n"
-            append fulltext      "| Author | $author |\n"
-            append fulltext  "| Written | $whenWritten |\n"
-            
-            if {[dict exists $note run]} {
-                set run [dict get $note run]
-                append fulltext "| For Run: | $run | \n"
-                set runInfo [findRun $run]
-                append fulltext "| Title: | [dict get $runInfo title] |\n"
-                set transitions [dict get $runInfo transitions]
-                set start [lindex $transitions 0]
-                set stop [lindex $transitions end]
-                append fulltext "| Started | [clock format  [dict get $start transitionTime] -timezone $::timezone] | \n"
-                if {![dict get $runInfo isActive]} {
-                    append fulltext "| Ended | [clock format  [dict get $stop transitionTime] -timezone $::timezone] |\n"
-                }
-            }
-            append fulltext $text
+            set fulltext [makeNoteMarkdown $note]
             
             set html [Markdown::convert $fulltext]
             
@@ -812,6 +794,13 @@ snit::widgetadaptor BookView {
             
         }
     }
+    ##
+    # _composeNote
+    #     Bring up the note editor.  If the selection is inside a
+    #     run when this is invoked, the note is initially associated with that run.
+    #     The author can chose to associate the note with no run or another run
+    #     in the composition window.
+    #
     method _composeNote {} {
         set run [$self _getSelectedRun]
         if {$run ne ""} {
@@ -820,9 +809,82 @@ snit::widgetadaptor BookView {
             exec $::editNote &
         }
     }
+    ##
+    # _selectedToPdf
+    #    Converts the selected thing to PDF:
+    #    - If the selection is a note, it and it alone is converted to PDF.
+    #    - If the selection is not a note but in a run, or a run, the entire run
+    #      is converted to PDF.
+    #    - If the selection is the 'None' top level item, all notes not associated
+    #      with any run are converted to PDF.
+    #
+    #  PDF conversion is done via pandoc.  We run the pandoc command as a filter
+    #  and incrementally feed it markdown.  This keeps us from bloating if
+    #  asked to format something really big.
+    #  If nothing is selected, then  nothing is done.
+    #
+    method _selectedToPdf { } {
+        set run [$self _getSelectedRun];    # Run number if so.
+        set note [$self _getSelectedNote];  # Note if so.
+        
+        # If we have either we prompt the output filename:
+        #
+        if {($run ne "") || ($note ne"")} {
+            set filename [_promptPDFfile]
+            
+            if {$filename ne ""} {
+                #  Ok we got this far, there will actually be output:
+                #  open the pandoc filter:
+                
+                set pdf [open "|pandoc - -o $filename" w]
+                if {$note ne ""} {
+                    _noteToFd $note $pdf
+                } else {
+                    _runToFd $run $pdf
+                }
+                close $pdf
+            }
+
+        }
+    }
+    ##
+    #  _allToPdf
+    #     Converts the entire logbook to pdf:
+    #     All runs are formatted
+    #     All notes not associated with any run are then formatted.
+    #
+    # PDF conversion is done via pandoc.  We run the pandoc command as a filter
+    # and incrementally feed it markdown.  THis keeps us from bloating
+    # if asked to format something really big.
+    #
+    method _allToPdf {} {
+        
+    }
     
     #-----------------------------------------------------------------------
     # procs
+    
+    ##
+    # _promptPDFfile
+    #    Prompt for a new PDF filename.  We require that the filename
+    #    end in .pdf as pandoc does.
+    # @return string - the file name selected.
+    # @retval ""     - No legal filename was selected.
+    #
+    proc _promptPDFfile { } {
+        set filename [tk_getSaveFile  -title {PDF file} \
+            -defaultextension .pdf \
+            -filetypes {{{PDF files} .pdf }}
+        ]
+        if {($filename ne "") && ([file extension $filename] ne ".pdf")} {
+            tk_messageBox -title {Not PDF file} -type ok -icon error \
+                -message "$filename does not end in .pdf as required by pandoc"
+            set filename ""
+        }
+        return $filename
+    }
+        
+    
     
     ##
     # _makeNoteFilename
