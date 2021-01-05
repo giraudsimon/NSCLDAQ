@@ -51,9 +51,7 @@ set makeShift [file join $bindir lg_mkshift]
 set selectShift [file join $bindir lg_selshift]
 set editNote [file  join $bindir lg_wrnote]
 
-#  Modify if your logbook didn't come from NSCL/FRIB
 
-set timezone :America/Detroit
 
 package require Tk
 package require logbookadmin
@@ -857,20 +855,7 @@ snit::widgetadaptor BookView {
         if {$filename ne ""} {
             set pdf [open "|pandoc - -o$filename" w]
             
-            puts $pdf "Run Logs:"
-            puts $pdf "==========================="
-            foreach run [listRuns] {
-                _runToFd [dict get $run number] $pdf
-                puts $pdf "\n***\n";      # HR between runs.
-            }
-            puts $pdf "Notes not associated with any run:"
-            puts $pdf "=================================="
-            
-            set notes [listNonRunNotes]
-            foreach note $notes {
-                _noteToFd [dict get $note id] $pdf
-                puts $pdf "\n***\n"
-            }
+            printall $pdf
             
             close $pdf
         }
@@ -878,14 +863,6 @@ snit::widgetadaptor BookView {
     
     #-----------------------------------------------------------------------
     # procs
-    
-    
-        
-    
-    
-    
-        
-    
     
     ##
     # _makeNoteValueList

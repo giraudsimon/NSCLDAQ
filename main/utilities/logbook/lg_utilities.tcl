@@ -36,6 +36,11 @@ package require struct
 
 package require snit
 
+
+#  Modify if your logbook didn't come from NSCL/FRIB
+
+set timezone :America/Detroit
+
 #--------------------------------------------------------------------
 # Megawidgets:
 #
@@ -410,3 +415,19 @@ proc _runToFd  {num fd} {
     }
 }
 
+proc printall {pdf} {
+    puts $pdf "Run Logs:"
+    puts $pdf "==========================="
+    foreach run [listRuns] {
+        _runToFd [dict get $run number] $pdf
+        puts $pdf "\n***\n";      # HR between runs.
+    }
+    puts $pdf "Notes not associated with any run:"
+    puts $pdf "=================================="
+    
+    set notes [listNonRunNotes]
+    foreach note $notes {
+        _noteToFd [dict get $note id] $pdf
+        puts $pdf "\n***\n"
+    }
+}
