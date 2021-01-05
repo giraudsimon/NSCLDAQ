@@ -117,5 +117,5 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	lg_current.tcl lg_ls.tcl lg_addperson.tcl lg_lspeople.tcl \
 	lg_mkshift.tcl ShiftEditor.tcl lg_mgshift.tcl lg_utilities.tcl \
 	lg_noteutilities.tcl noteutil.test lg_wrnote.tcl logbookBundle.tcl \
-	lg_selshift.tcl pykvtests.py lg_browse.tcl lg_kvstore.tcl lg_print.tcl
-
+	lg_selshift.tcl pykvtests.py lg_browse.tcl lg_kvstore.tcl lg_print.tcl \
+	logbookdocs.xml

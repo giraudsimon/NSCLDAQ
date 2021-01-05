@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- chapter utilities -->
+
+<chapter>
+   <title>NSCLDAQ Logbook facility</title>
+   <para>
+    This chapter will describe a new (as of NSCLDAQ-12.0) NSCLDAQ logbook facility.
+    The logbook facility:
+   </para>
+   <itemizedlist>
+    <listitem>
+       <para>
+          Provides for automatic logging of run state transitions as well
+          as documenting the current shift on duty when these happen.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          The creation of arbitrary rich content notes that can either be
+          associated with a run or independent of a run.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+         Provides open interfaces for extension and export by sophisticated
+         users programming in any of C++, Tcl or Python.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          Stores its data in a single sqlite3 database file allowing it to be
+          easily transported to collaborators who  may either browse it or
+          use it as a starting point for documenting the flow and progress of
+          experimental analysis.
+       </para>
+    </listitem>
+   </itemizedlist>
+</chapter>
+
+<!-- /chapter -->
+
+<!-- mangpage 1daq -->
+
+<!-- /manpage -->
+
+<!-- manpage 3daq -->
+
+<!-- /manpage -->
+
+<!-- manpage 5daq -->
+
+<!-- /manpage  -->
+
