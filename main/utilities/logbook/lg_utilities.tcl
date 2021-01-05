@@ -174,10 +174,28 @@ proc makeNewShift {parent shiftName members} {
     }
 }
     
-
+##
+# _promptPDFfile
+#    Prompt for a new PDF filename.  We require that the filename
+#    end in .pdf as pandoc does.
+# @return string - the file name selected.
+# @retval ""     - No legal filename was selected.
+#
+proc _promptPDFfile { } {
+    set filename [tk_getSaveFile  -title {PDF file} \
+        -defaultextension .pdf \
+        -filetypes {{{PDF files} .pdf }}
+    ]
+    if {($filename ne "") && ([file extension $filename] ne ".pdf")} {
+        tk_messageBox -title {Not PDF file} -type ok -icon error \
+            -message "$filename does not end in .pdf as required by pandoc"
+        set filename ""
+    }
+    return $filename
+}
 
 #----------------------------------------------------------
-#
+#  Procs that don't need Tk
 
 ##
 # reportPeople
@@ -241,5 +259,154 @@ proc peopleToIds {people} {
         lappend result [dict get $person id]
     }
     return $result
+}
+##
+# lpop
+#   Given a list, remove and return the first element of that list.
+# @param l - list to pop from, treated by reference.
+# @return first element of the list ("" if the list is empty).
+#         l is modified to remove that element.
+# Sample usage:
+#
+#  \verbatim
+#      set l [list a b c d e]
+#      set first [lpop l]
+#
+#      # first is a, and l is [list b c d e].
+#
+proc lpop {l} {
+    upvar $l ls
+    set result [lindex $ls 0]
+    set ls [lrange $ls 1 end]
+    
+    return $result
+}
+
+##
+# _compareStamps
+#   lsort compare operations for dicts that contain timestamp keys.
+#
+# @param item1 - first item.
+# @param item2 - second item.#
+# @return comparison indicator:
+# @retval -1   - first item is strictly less than second.
+# @retval  0   - first item is equal to second.
+# @retval  1   - first item is greater than second.
+#
+proc _compareStamps {item1 item2} {
+    set t1 [dict get $item1 timestamp]
+    set t2 [dict get $item2 timestamp]
+    
+    if {$t1 < $t2} {return -1}
+    if {$t1 == $t2} {return 0}
+    if {$t1 > $t2} {return 1}
+}
+##
+# _mergeRunContents
+#    Creates a time ordered merged list of transition and note dicts.
+#    Each dict also gets a new key: type which is either transition or
+#    note depending on what it is.  Futhermore, transitions get a key
+#    timestamp which has the same value as transition time to facilitate
+#    time sorting.
+#
+# @param transitions - likely not empty set of run transition dicts.
+# @param notes       - possibly empty set of note dicts associated with the run.
+#
+proc _mergeRunContents {transitions notes} {
+    set result [list]
+    
+    # Massage the transition dicts and add them to the result list.
+    
+    foreach transition $transitions {
+        set time [dict get $transition transitionTime]
+        dict set transition type transition
+        dict set transition timestamp $time
+        lappend result $transition
+    }
+    
+    # Massage the note dicts and add _them to the result list.
+    
+    foreach note $notes {
+        dict set note type note
+        lappend result $note
+    }
+    # Sort the result by timestamp and returnL
+    
+    set result [lsort -increasing -command _compareStamps $result]
+    return $result
+}
+##
+# _runHeaderToFd
+#   Write a run header to a file descriptor:
+#
+# @param num  - run number:
+# @param title - Run Title.
+# @param fd   - file descriptor to which to write the header
+#
+proc _runHeaderToFd {num title fd} {
+    puts $fd "Run number: $num : $title"
+    puts $fd "================="
+}
+##
+# _transitionToFd
+#    Writes information about a transition to the fd.
+#    This consist of header 2 text of the form:
+#    Run Transition:  transition-type at time-stamp : comment
+#   Followed by a table of on shift people.
+#
+# @param transition   - Transition dict.
+# @param fd           - Target file descriptor.
+#
+proc _transitionToFd {transition fd} {
+    set what [dict get $transition transitionName]
+    set when [clock format \
+        [dict get $transition transitionTime] -timezone $::timezone]
+    set why [dict get $transition transitionComment]
+    puts $fd "Run Transition: $what at $when : $why"
+    puts $fd "------------------------------"
+    puts $fd ""
+    set shiftName [dict get $transition shift]
+    set members [listShiftMembers $shiftName]
+    puts $fd "|  On Shift    |"
+    puts $fd "|---------------|"
+    foreach member $members {
+        set sal [dict get $member salutation]
+        set ln  [dict get $member lastName]
+        set fn  [dict get $member firstName]
+        puts $fd "| $sal $fn $ln |"
+    }
+    puts $fd ""
+}
+##
+# _runToFd
+#    Converts a run to markdown suitable to be piped to
+#    pandoc.  The run consists of a header describing the run.
+#    It then consists of a series of time orderd events in the run
+#    these events can be transitions to run state,
+#    or notes associated with the run.
+#
+#  @param num   - the run numbmer to output - we are assured this exists.
+#  @param  fd    - the file descriptor to which to write the note.
+#  @note This proc requires the lg_noteutilities package to provide
+#         _notToFd.
+#
+proc _runToFd  {num fd} {
+    set run [findRun $num]
+    set title [dict get $run title]
+    set transitions [dict get $run transitions]
+    set notes       [listNotesForRun $num]
+    set contents    [_mergeRunContents $transitions $notes]
+    
+    _runHeaderToFd $num $title $fd
+    foreach item $contents {
+        set type [dict get $item type]
+        if {$type eq "transition"} {
+            _transitionToFd $item $fd
+        } elseif {$type eq "note"} {
+            puts $fd "\nNote:"
+            puts $fd "------\n"
+            _noteToFd [dict get $item id] $fd
+        }
+    }
 }
 

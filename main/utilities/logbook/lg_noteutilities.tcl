@@ -182,6 +182,19 @@ proc _noteToFd {noteid fd} {
 }
 
 
-proc _runToFd {runnum fd} {
+
+##
+# _makeNoteFilename
+#    given a note id returns a temp file for the html of a note:
+#
+# @param id - note id.
+#
+proc _makeNoteFilename {id} {
+    set dir [logbook::logbook tempdir]
+    set pid [pid]
+    set idx [incr tpmfileIndex]
+    set now [clock seconds]
+    set result [file join $dir "note-$id-$now-$pid-$idx.html"]
+    return $result
     
 }
