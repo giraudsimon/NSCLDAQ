@@ -873,7 +873,27 @@ snit::widgetadaptor BookView {
     # if asked to format something really big.
     #
     method _allToPdf {} {
-        
+        set filename [_promptPDFfile]
+        if {$filename ne ""} {
+            set pdf [open "|pandoc - -o$filename" w]
+            
+            puts $pdf "Run Logs:"
+            puts $pdf "==========================="
+            foreach run [listRuns] {
+                _runToFd [dict get $run number] $pdf
+                puts $pdf "\n***\n";      # HR between runs.
+            }
+            puts $pdf "Notes not associated with any run:"
+            puts $pdf "=================================="
+            
+            set notes [listNonRunNotes]
+            foreach note $notes {
+                _noteToFd [dict get $note id] $pdf
+                puts $pdf "\n***\n"
+            }
+            
+            close $pdf
+        }
     }
     
     #-----------------------------------------------------------------------
