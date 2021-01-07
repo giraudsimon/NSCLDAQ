@@ -1372,7 +1372,39 @@ Table of contents:
       <section>
             <title><command>lg_print</command></title>
             <para>
-               
+               Sometimes you may want to produce PDF for a logbook, or a part of
+               a logbook without bothering with the browser application.
+               <command>lg_print</command> allows you to do that. The
+               <command>lg_print</command> command can produce PDF for the
+               entire logbook or specified parts of the logbook,  in the order
+               you specify.
+            </para>
+            <para>
+               <command>lg_print</command> requires a PDF filename
+               which must have the extension <literal>.pdf</literal> in order
+               to comply with the pandoc converter needs. The remaining command
+               parameter specify run numbers or the text <literal>none</literal>.
+               For each run number the run is rendered in PDF (as in <command>lg_browse</command>).
+               If <literal>none</literal> is specified the notes not bound to
+               any run are rendered in chronological order.
+            </para>
+            <para>
+               Here are some examples:
+            </para>
+            <example>
+               <title>Using <command>lg_print</command></title>
+               <programlisting>
+                  
+$DAQBIN/lg_print logbook.pdf                    # print the whole logbook.
+$DAQBIN/lg_print logbook.pdf none 1 2 3         # print unassoc notes,  runs 1 2 3
+$DAQBIN/lg_print logbook.pdf none               # Print only unassoc notes.
+$DAQBIN/lg_print logbook.pdf 1 2 3 10           # print runs 1 2 3 10.
+
+               </programlisting>
+            </example>
+            <para>
+               Invoking <command>lg_print</command> with no parameters will
+               output simplified usage help text.
             </para>
          </section>
       </section>
@@ -1380,7 +1412,266 @@ Table of contents:
    <section id='sec.lg_export'>
       <title id='sec.lg_export.title'>Making logbooks available to collaborators</title>
       <para>
+         This chapter will describe how to export a logbook for use outside
+         of the NSCL.  While the logbook is a simple file and can easily
+         be copied anywhere, you also need the logbook software in order to
+         use it.
       </para>
+      <para>
+         This section will describe how to use the NSCL linux containers
+         to install NSCLDAQ so that you can use the logbook facility with
+         minimal hassle.  You will need a linux computer at your home institution
+         that can run the singularityc container system.
+      </para>
+      <para>
+         The remainder of this chapter will:
+      </para>
+      <itemizedlist>
+         <listitem>
+            <para>
+               Describe how to obtain and the NSCL-linux singularity container. 
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to get the NSCLDAQ binary distribution you need 
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to install the container and NSCLDAQ binary installtion
+               tree on your system
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to run the singularity container so that you can
+               use the logbook system.
+            </para>
+         </listitem>
+      </itemizedlist>
+      <section>
+         <title>Obtaining a suitable NSCL-linux container</title>
+         <para>
+            First a bit about what a container image is and what singularity is.
+         </para>
+         <para>
+            Container technology provides a light-weight scheme for executing
+            user land software for one distribution of linux on the run-time
+            environment of another distribution.  For example, At the NSCL,
+            we use and have established reasonable methods for installing our software
+            on Debian systems.  Your institution may run a Red Hat Enterprise
+            Linux base distribution such as CentOS.  The names and availablility
+            of packages needed to support NSCLDAQ may differ.
+         </para>
+         <para>
+            Rather than trying to figure out how to install NSCLDAQ on all Linux
+            distributions, wouldn't it be nice if you could run a simple program
+            and your filesystem containing the Linux userland programs and libraries
+            would be Debian?  This is what singularity container images provide.
+         </para>
+         <para>
+            A singularity container image can be thought of as a part of a filesystem
+            that gets overlaid on top of the running Linux system filesystem
+            while you are running that container.  This allows us to provide
+            you with a Debian environment that you can run on your e.g. CentOS
+            environment.  Because singularity containers only play games with what
+            the filesystem look like, the overhead for running a container is
+            essentially nonexistent once a program starts.
+         </para>
+         <para>
+            What you <emphasis>will</emphasis> need, however is the singularity
+            container run-time environment.  For Debian like systems (e.g.
+            Ubuntu, Kubuntu etc.), this is provided by the <literal>singularity-container</literal>
+            package.  For RHEL based systems <command>yum</command> can be used
+            to install the <literal>singularity</literal> package.  For
+            general installation instructions that can be used to guide you through
+            other linux distributions, see the singularity Admin guide for the
+            appropriate version of singularity at
+            <ulink url='https://sylabs.io/docs/' />.
+         </para>
+         <para>
+            In order to keep our singularity image small, and to avoid re-making
+            it for each NSCLDAQ or SpecTcl update (you can use Singularity to also
+            install SpecTcl), our images only contain the linux packages needed
+            to support our software and we use filesystem binding to keep
+            our container images separate from the actual software installation
+            trees.  This is why you need to get both an image and a corresponding
+            binary installation tree.
+         </para>
+         <para>
+            Our images are installed at the NSCL in <filename>/usr/opt</filename>
+            with names like <filename>nscl-<replaceable>code-word</replaceable>.img</filename>
+            where <replaceable>code-word</replaceable> is the linux distribution
+            code-word.  For example, as I'm writing this, we have two images:
+            <filename>/usr/opt/nscl-jessie.img</filename> which provides
+            a Debian-8 (jessie) environment and
+            <filename>/usr/opt/nscl-buster.img</filename> which  provides
+            a Debian-10 (buster) environment.
+         </para>
+         <para>
+            At NSCL/FRIB your experiment will, in general run in a container.
+            For simplicity, choose the container you used for your experiment,
+            and copy it to your institution.  While 'large', the images are not
+            enormous clocking in at about 2GB for the buster image.
+         </para>
+      </section>
+      <section>
+         <title>Getting the NSCLDAQ binary distribution</title>
+         <para>
+            The simplest way to get this is to run the container you used
+            for your experiment in the same way you ran it during the experiment.
+            When you do, the evironment variable <literal>DAQROOT</literal>
+            will point to the installation tree you'll need to grab.
+         </para>
+         <para>
+            The following creates a <firstterm>tarball</firstterm> of that
+            directory tree in your home directory:
+         </para>
+         <informalexample>
+            <programlisting>
+cd $DAQROOT
+tar czf ~/nscldaq-install.tar.gz .
+            </programlisting>
+         </informalexample>
+         <para>
+            Pull the resulting tarball, <filename>~/nscldaq-install.tar.gz</filename>
+            over to your home institution.  The resulting tarball should be
+            smaller than 200Mbytes.  Also make note of the value of the
+            <literal>DAQROOT</literal>
+            environment variable.  You'll need it later.  
+         </para>
+      </section>
+      <section>
+         <title>Installing your container and NSCLDAQ tree.</title>
+         <para>
+            So you've got a container and a tarball of an NSCLDAQ installation
+            tree.  You need to put the container image somewhere and
+            unroll the <filename>nscldaq-install.tar.gz</filename> tarball
+            somewhere where it's easy to coerce singularity to map that directory
+            tree back to its original position in the directory tree.
+         </para>
+         <para>
+            To do this, I'm going to assume you have some directory somewhere
+            for simplicity, we'll call it <filename>/nscldaqinstall</filename>
+            modify these instructions to match where you actually put this stuff.
+            Note that centralizing this installation will allow anybody with read
+            access to the container and the NSCLDAQ directory tree to use
+            its software.
+         </para>
+         <para>
+            first put your container (for simplicity I'm going to assume you
+            grabbed <filename>nscl-buster.img</filename>) in
+            <filename>/nscldaqinstall/nscl-buster.img</filename>.
+         </para>
+         <para>
+            Next unwrap the tarball as follows (I'm going to assume DAQROOT claimed)
+            it was <filename>/usr/opt/nscldaq/12.0-000</filename>), and that the
+            tarball is now sitting in your home directory.
+         </para>
+         <informalexample>
+            <programlisting>
+mkdir /nscldaqinstall/opt-buster       # in case later you get a second container.
+mkdir -p /nscldaqinstall/opt-buster/nscldaq/12.0-000  # We'll put tuff here.
+(cd /nscldaqinstall/opt-buster; ln nscldaq daq);   # NSCL has this convenience link.
+(cd /nscldaqinstall/opt-buster/nscldaq/12.0-000; tar xzf ~/nscldaq-install.tar.gz)
+
+            </programlisting>
+         </informalexample>
+         <para>
+            Ok, let's review what we've done and why. First we installed
+            our container where we can get it.  Second we produced a directory tree
+            that can be mapped on to /usr/opt in the container that mimics what
+            NSCL does and put the contents of our tarball in the correct part of
+            that directory tree.  If we wanted to haul SpecTcl 5.3-010 over, for example,
+            we'd just need to add <filename>/nscldaq/opt-buster/spectcl/5.3-010</filename>
+            grab a tarball as we did for NSCLDQAQ and unwrap it there.  Similarly
+            if we need additional versions of NSCLDAQ or spectcl we can grab
+            additional tarballs and drop them in appropriate parts of the
+            <filename>/nscldaqinstall/opt-buster</filename> directory tree.
+            We could even grab the installation of root in /usr/opt from NSCL
+            and drop that in (we'd need that for SpecTcl and we might just want
+            it in the container after all).
+         </para>
+      </section>
+      <section>
+         <title>Running the singularity container</title>
+         <para>
+            Now we're ready to get going. We're going to use the
+            <command>singularity</command> command to overlay the
+            filesystem in the container image we grabbed onto our linux userland
+            filesystem and overlay, or in singularity terms <firstterm>bind</firstterm>
+            <filename>/nscldaqinstall/opt-buster</filename> into <filename>/usr/opt</filename>
+            in the container.
+         </para>
+         <para>
+            Here's the singularity command to so so (assuming you grabbed
+            nscl-buster.img):
+         </para>
+         <informalexample>
+            <programlisting>
+singularity shell --bind /nscldaqinstall/opt-buster:/usr/opt \
+   /nscldaqinstall/nscl-buster.img
+            </programlisting>
+         </informalexample>
+         <para>
+            If you do this you should wind up with a shell and prompt that looks like:
+            <literal>Singularity nscl-buster.img:~></literal> indicating you're
+            executing inside the singularity container. Some things to note:
+         </para>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  Your home directory tree is available where it normally is. 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Your current default directory tree at the time you
+                  started singularity is available as your
+                  current default directory 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <filename>/usr/opt/daq</filename>, or
+                  <filename>/usr/opt/nscldaq</filename>
+                  should contain the
+                  NSCLDAQ installation directory tree you pulled over from the
+                  NSCL and you can e.g.
+                  <command>. /usr/opt/daq/12.0-000/daqsetup.bash</command>
+                  to setup  the full set of NSCLDAQ environment variables will
+                  be created. 
+               </para>
+            </listitem>
+   
+         </itemizedlist>
+         <para>
+            When you start a container,  you can specify additional bindings
+            from your host filesystem into your container.  bindports have the
+            form <literal>source[:dest]</literal> where <literal>source</literal>
+            is where the directory tree being bound is located in the host filesystem
+            and the optional <literal>dest</literal> is where that directory tree
+            should appear in the container filesystem.  If the destination
+            is not supplied, the source is bound to the same location it appears
+            in the host.
+         </para>
+         <para>
+            Suppose, for example, you have a directory tree; <filename>/projects</filename>
+            you want to appear as <filename>/projects</filename> you can start
+            the container as:
+         </para>
+         <informalexample>
+            <programlisting>
+singularity shell --bind /nscldaqinstall/opt-buster:/usr/opt,/projects \
+   /nscldaqinstall/nscl-buster.img
+               
+            </programlisting>
+         </informalexample>
+         <para>
+            To make this happen.
+         </para>
+      </section>
    </section>
    <section id='sec.lg_programming'>
       <title id='sec.lg_programming.title'></title>
