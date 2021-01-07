@@ -36,6 +36,1357 @@
        </para>
     </listitem>
    </itemizedlist>
+   <para>
+      The remainder of this chapter will provide tutorial material that describes
+      the logbook facility.  Reference material can bge found in the
+      <literal>1daq</literal>, <literal>3daq</literal>, and <literal>5daq</literal>
+      sections of the manpages. 
+   </para>
+   <para>
+      The tutorial material is organized as follows:
+   </para>
+   <itemizedlist>
+      <listitem>
+         <para>
+            <link linkend='sec.lg_inventory' endterm='sec.lg_inventory.title' />
+            Describes the components of the logbook system and how they all
+           fit together.  The discussion will be brief and is intended to
+            help you locate reference material when you're ready for it.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.lg_setup' endterm='sec.lg_setup.title' />
+           describes the tasks you need to perform to use the NSCL Logbook
+            subsystem in an experiment.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.lg_usage' endterm='sec.lg_usage.title' />
+            Describes how to use the logbook system in an experiment and beyond.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.lg_export' endterm='sec.lg_export.title' />
+            describes what you need to do to export a logbook to another
+            location and how collaborators can use the logbook utility at their
+            remote facility.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.lg_programming' endterm='sec.lg_programming.title' />
+            demonstrates how to use the APIs at various levels to write programs
+            to access the database.  This is oriented towards how to build and
+            run these programs rather than a detailed description of the
+            APIs themselves which are deferred to the reference material.
+         </para>
+      </listitem>
+   </itemizedlist>
+   <section id='sec.lg_inventory'>
+      <title id='sec.lg_inventory.title'>Components of the NSCL logbook system</title>
+      <para>
+         In this section we're going to describe what the logbook facility is
+         it components and how they all fit together.   
+      </para>
+      <para>
+         First, what is a logbook and what does it hold?  Put simply, a logbook
+         is an sqlite3 database file.  Sqlite3 is a file based SQL compliant
+         database which provides ACID access without the need for administrative
+         actions to create and serve out the database.  Sqlite3
+         is described in the web pages in
+         <ulink url='https://www.sqlite.org' />.
+      </para>
+      <para>
+         At the physical level, a logbook is, therefore, just a single file
+         that contains an Sqlite3 database. The database schema (tables
+         and relations between those tables), provide the database with the
+         ability to store:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>People</term>
+            <listitem>
+                <para>
+                  People, are collaborators that work on the experiment.
+                  People may run shifts, participate in the analysis or have
+                  other roles in the experiment.  The reason people are
+                  named and stored in the database is to allow operations
+                  and artefacts stored in the logbook to be attributed to them
+                  either as individuals or groups of individuals.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Shifts</term>
+            <listitem>
+                <para>
+                  A shift is a named container for people.  Shifts are intended to
+                  capture how experiments are run during data taking.
+                  Run state changes in the experiment, which can be automatically
+                  logged, are attributed to the shift that's on-duty at the time
+                  the transition occurs.  
+               </para>
+               <para>
+                  Shifts should be setup at the beginning of an experiment, but
+                  once an experiment starts taking data they should be thought of
+                  as read-only.  If necessary, you can create additional shifts.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Runs</term>
+            <listitem>
+                <para>
+                  A run is a segment of data taking.  Runs have numbers and
+                  titles and state transitions (e.g.they begin and they end).
+                  The logbook facility has the ability to automatically create
+                  runs and log their state transitions.
+               </para>
+                <para>
+                  Run state transitions are logged as having occured during a
+                  shift and the shift is stored along with the transition.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Notes</term>
+            <listitem>
+                <para>
+                  Notes are rich text artifacts that you can enter into the system.
+                  In a paper logbook what we call notes are by fare the most
+                  common entry.  Notes can be associated with a run or
+                  be independent of a run.  Notes have a single author.
+               </para>
+                <para>
+                  Notes are rich text in the sense that they can include
+                  figures/graphics that will be stored in the database and associated
+                  with their note.  When a note is rendered for view, graphics
+                  are rendered inline where they were included.  The
+                  contents of the actual files
+                  containing the graphics are loaded into the database making
+                  the database file all inclusive.
+                </para>
+                <para>
+                  Notes are written using Markdown for formatting.
+                  See <ulink url='http://markdownguide.org' /> for more information
+                  about markdown.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Key Value pairs</term>
+            <listitem>
+                <para>
+                  Key value pairs are just a key that points to a textual value.
+                  One use of them is to document the experiment the database
+                  is a logbook of.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         So now we know what a logbook is and what it can contain, let's look at
+         the components of the system.  Logbook system is built in a layered fashion.
+         The rough layering is shown in the line drawing below.
+      </para>
+      <figure>
+         <title>Logbook component layering.</title>
+         <programlisting>
+            
+            +-------------------+----------------+
+            | ReadoutGUI bundle   cmd utilities  |
+            +-------------------+----------------+
+            |  Python bindings  | Tcl bindings   |
+            +-------------------+----------------+
+            | C++ Logbook API                    |
+            +------------------------------------+
+            |  Sqlite3 API                       |
+            +------------------------------------+
+         </programlisting>
+      </figure>
+      <para>
+         Note that NSCLDAQ expects an installation of <filename>libsqlite3</filename>
+         and its development files to be present.   All other software
+         in the figure above are built and distributed into NSCLDAQ.
+      </para>
+      <para>
+         In most cases you will only need to interact with the top level of this
+         layer diagram.  If you wish to extend access to the database or provide
+         other mechanisms for data entry, you can do that at any of the layers
+         shown down to and inluding the raw Sqlite API.  We recommend, however
+         you program the data base at the highest level of the diagram that provides
+         you with capabilities you need.
+      </para>
+      <para>
+         In addition to the software shown above, and the database file, a
+         hidden directory <filename>~/.nscl-logbook</filename> is used
+         by the system to pull image files from the database as needed and to
+         generate HTML files used for online browsing of the logbook.  The
+         contents of this directory can be  cleaned up without affecting proper
+         operation of the logbook.  Finally the high level software has the concept
+         of a currently selected logbook.  The path to this logbook file is stored
+         in
+         <filename>~/.nscl-logbook-current</filename>.  If you remove this file,
+         You'll need to select the logbook you're operating on using e.g. the
+         <filename>$DAQBIN/lg_current</filename> command utility.
+      </para>
+      <para>
+         The ReadoutGUI bundle is a callback bundle for the ReadoutGUI.  When
+          it is incorporated into the user's <filename>ReadoutCallouts.tcl</filename>
+          file, run transitions will be automatically logged into the currently
+          selected database.
+      </para>
+      <para>
+         Several command utilities are provided.  Reference material for these
+         are provided in the <literal>1daq</literal> man pages.  Here we
+         just gloss over their names what they are and what they do.  All
+         command utilities get installed in $DAQBIN and have names starting
+         with <literal>lg_</literal>.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><command>lg_create</command></term>
+            <listitem>
+                <para>
+                  Used to create a new logbook.  When logbooks are created,
+                  the filename of the new logbook must be supplied and information
+                  about the experiment.  The new logbook can optionally be made
+                  current.
+                  See
+                  <link linkend='daq1.lg_create' endterm='daq1.lg_create.title' />
+                  for more information.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_current</command></term>
+            <listitem>
+                <para>
+                  Selects the current logbook database file.  This is the
+                  logbook that will be operated on by the remaining
+                  <command>lg_*</command> commands and admin level Tcl bindings.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_ls</command></term>
+            <listitem>
+                <para>
+                  Outputs the name of the logbook that is current.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_addperson</command></term>
+            <listitem>
+                <para>
+                  Makes a new person known to the logbook. People are stored
+                  as salutation, last name and first name.  People are used
+                  as authors and are members of shifts.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_lspeople</command></term>
+            <listitem>
+                <para>
+                  Lists the people that have been defined to the database.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_mkshift</command></term>
+            <listitem>
+                <para>
+                  Creates new shifts.  A shift is a collection of people that
+                  are working on a running experiment at the same time.  You
+                  can create as many shifts as you want and compose them any way
+                  you want.  The people that are in shifts must have previously
+                  been added to the log book via <command>lg_addperson</command>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_mgshift</command></term>
+            <listitem>
+                <para>
+                  Provides the capability of managing your shifts.  This
+                  command provides three functions:
+               </para>
+                <itemizedlist>
+                  <listitem>
+                     <para>
+                        The ability to create new shifts and assign people to them. 
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        The ability to edit existing shifts, adding and removing
+                        people from them.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        The  ability to list the shifts and their members.
+                     </para>
+                  </listitem>
+                </itemizedlist>
+                <para>
+                  Note that shifts should be set up prior to starting to run the
+                  experiment.  Once a named shift has been on duty and started/stopped
+                  runs, it must not be modified.  This is because run transition
+                  records in the logbook
+                  don't carry along with them references to the people on shift,
+                  but references to the on-duty shift.
+                </para>
+                <para>
+                  Thus if a shift is edited mid-experiment, the documentation
+                  of the on-duty shift associated with a run state transition will
+                  be correct but the members of that shift will reflect the most
+                  recent editing of the shift.  This can attribute a transition
+                  to the wrong set of people, and that's not desirable.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_selshift</command></term>
+            <listitem>
+                <para>
+                  Selects the on-duty shift.  In order for the logbook callback
+                  bundle to allow run state transitions an on-duty shift must
+                  be selected.  The transition is then attributed to the
+                  members of the on-duty shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_kvstore</command></term>
+            <listitem>
+                <para>
+                  The key-value store (kvstore) is just a set of key/value pairs.
+                  This command allows you, at the level of a command shell, to determine
+                  test for the existence of a key, get the value of a key, set the value
+                  of an existing or new key, or create a new key value pair.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_wrnote</command></term>
+            <listitem>
+                <para>
+                  Provides a composer for notes.  Notes have an author and optionally
+                  are associated with a run.  Notes are rich text items via
+                  markdown format.   Images can be incorporated into notes
+                  using an image selector or by manually inputting
+                  markdown image links.  Image files for a note are sucked
+                  into the database and retrieved as needed when a note is
+                  rendered.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_browse</command></term>
+            <listitem>
+                <para>
+                  Provides a visual logbook browser.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lg_print</command></term>
+            <listitem>
+                <para>
+                  Allows all or part of a logbook to be rendered in PDF,
+                  presumably for later printing.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+   </section>
+   <section id='sec.lg_setup'>
+      <title id='sec.lg_setup.title'>Setting up a logbook for use.</title>
+      <para>
+         This section will go over the tasks you need to perform to setup a
+         logbook for use in an upcoming experiment. We will describe:
+      </para>
+      <itemizedlist>
+         <listitem>
+            <para>
+               How to create a logbook database file and make it current. 
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to add people to your logbook.  People added to a logbook
+               can have items (notes, run transitions) associated with them.
+               You should add everyone who is working on your experiment to your
+               logbook.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to create shifts which indicate which groups of people
+               will be on duty simultaneously during data collection.
+               Run state transitions (e.g. begin run actions) are attributed
+               to the current shift, and by extension the members of that current
+               shift.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               How to setup your ReadoutCallouts.tcl file to automate
+               run state transition logging.
+            </para>
+         </listitem>
+      </itemizedlist>
+   
+      <section>
+         <title>Creating a logbook and making it current.</title>
+         <para>
+            The <command>lg_create</command> command (in <filename>$DAQBIN</filename>),
+            allows you to create a new logbook and optionally make it current.
+            When you create a logbook you must not only provide the filename
+            into which the logbook will be stored, but information about
+            what they logbook is for that will be stored in the key value store
+            of the logbook.  Specifically  you need to provide:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>Experiment-id</term>
+               <listitem>
+                   <para>
+                     The experiment this logbook is used for.  This is normally
+                     an experiment id assigned by the facility in which the
+                     experiment is being performed.  For example
+                     <literal>e17011</literal> is an NSCL/FIRB experiment
+                     approved by the 2017 PAC.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Spokesperson</term>
+               <listitem>
+                   <para>
+                     The name of the experiment's spokesperson or other responsible
+                     person.  This, as with all values in the key value store
+                     is free form text.  The system doesn't care
+                     if, for example, I use <literal>Mr. Ron Fox</literal>,
+                     or <literal>Fox, Ron</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Purpose</term>
+               <listitem>
+                   <para>
+                     Should be a brief statement of the purpose of the logbook.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            The command line for <command>lg_create</command> requires that
+            you provide the filename and, if you want to make the logbook
+            current, the -current flag. All other parameters are
+            graphically prompted if not supplied.  If you issue the
+            <command>lg_create</command> command by itself, its usage
+            will be output.  The example below shows how to create a
+            logbook for an experiment and make it the current logbook.
+         </para>
+         <example>
+            <title>Creating a logbook and making it current</title>
+            <programlisting>
+$DAQBIN/lg_create -filename ~/e17011.logbook -current 1 \
+   -experiment e17011 -spokesperson "Ben Crider" -exp-purpose "Beta decay in 80Ge"
+            </programlisting>
+         </example>
+      </section>
+      <section>
+         <title>Organizing the people on an experiment</title>
+         <para>  
+            It seems obvious to say so but experiments are run by people. During
+            data taking, those people are organized into shifts.  When runs
+            undergo state transitions (start, stop, pause, resume), it's important,
+            not only, to log that this happened, but which shift was on duty
+            at the time.
+         </para>
+         <para>
+            The NSCLDAQ logbook facility provides the following facilities to
+            manage the members of an experiment.
+         </para>
+         <itemizedlist>
+            <listitem>
+               <para>
+                   People can be added to the experiment logbook.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Shifts can be created which contain an arbitrary number
+                  of people that are known to the logbook
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The <firstterm>current shift</firstterm> can be specified.
+                  The current shift is the shift that's on duty and, therefore,
+                  will be associated with data taking state transition log entries.
+               </para>
+            </listitem>
+         </itemizedlist>
+         <para>
+            Shifts should be static once data taking has started.  This is because
+            it is a shift that's associated with a run state transition, not the
+            current members of that shift.   Consider the following case as an example.
+         </para>
+         <para>
+            Suppose I have an experiment with three members, A, B, C. Suppose,
+            I make a shift called S which and add members A and B to it, and make
+            that the current shift.  Now I start a run.  That's associated with
+            shift S. I end the run.  If I then edit shift S to remove person B
+            and add person C, the run I just take, is still associated with
+            shift S and therefore thinks data taking was during a shift that
+            involved person A and C rather than person A, and B -- because shift
+            S was edited out from underneath that run.
+         </para>
+         <para>
+            You can make new shifts at any time.  If shift membership changes
+            during the run, just make a new shift and and add the proper members
+            to it.
+         </para>
+         <section>
+            <title>Adding People.</title>
+            <para>
+               People are added to the currently selected logbook using
+               <command>lg_addperson</command>.  People are defined by a
+               last name, a first name and an optional salutation (e.g. Prof. or Ms.).
+               The examples below add people to the current logbook
+            </para>
+            <example>
+               <title>Using <command>lg_addperson to add people to the logbook</command></title>
+               <programlisting>
+$DAQBIN/lg_addperson Fox Ron  Mr.         # Mr. Ron Fox
+$DAQBIN/lg_addperson Cerizza Giordano Dr. # Dr. Giordano Cerizza
+$DAQBIN/lg_addperson Student Graduate     # Graduate Student (no salutation)
+$DAQBIN/lg_addperson                      # Graphically prompt for person.
+               </programlisting>
+            </example>
+         </section>
+         <section>
+            <title>Using <command>lg_mkshift</command> to create and poopulate shifts</title>
+            <para>
+               The example below shows how to use <command>lg_mkshift</command>
+               both to create and empty shift, that can be edited using
+               the shift manager, <command>lg_mgshift</command> and create
+               a shift stocking it with an initial set of people.
+            </para>
+            <example>
+               <title>Using <command>lg_mkshift</command></title>
+               <programlisting>
+$DAQBIN/lg_mkshift  swing           # Make empty shift named swing.
+$DAQGIN/lg_mkshift                  # Bring up shift editor.
+               </programlisting>
+            </example>
+            <para>
+               The second form of the <command>lg_mkshift</command> command
+               brings up a graphical editor that allows you to create a shift
+               and stock it with people.  This editor is shown in
+               <link linkend="fig.lg_shifteditor" endterm='fig.lg_shifteditor.title' />
+               below.
+            </para>
+            <figure id='fig.lg_shifteditor'>
+                <title id='fig.lg_shifteditor.title'>The shift editor</title>
+                <graphic fileref='shifteditor.jpg' />
+            </figure>
+            <para>
+               In this figure, the left list contains the list of people known
+               to the logbook. You can select one or more of them and click the
+               <guibutton>-&gt;</guibutton> button to add those people to the shift.
+               The list on the right contains the members of the shift you are
+               building to this point. You can remove members from the shift
+               by selecting them and clicking the <guibutton>&lt;-</guibutton>.
+               Finally, the entry at the lower left is where you should enter the
+               shift's name.  Click <guibutton>Ok</guibutton> to attempt to create
+               the shift and <guibutton>Cancel</guibutton> to abandon shift creation.
+            </para>
+            
+         </section>
+         <section>
+            <title>Using <command>lg_mgshift</command> and <command>lg_selshift</command></title>
+            <para>
+               <command>lg_mgshift</command> is a shift management program.  It
+               allows you to create, edit and list members of shift.
+            </para>
+            <para>
+               If you created an empty shift using <command>lg_mkshift</command>,
+               you can use <command>lg_mgshift</command> to stock it with people.
+            </para>
+            <para>
+               Here are examples of <command>lg_mgshift</command> in use.
+            </para>
+            <example>
+               <title>Using <command>lg_mgshift</command> to manage shifts</title>
+               <programlisting>
+$DAQBIN/lg_mgshift create              # Create/edit shift
+$DAQBIN/lg_mgshift create newshift     # Create/edit with newshift as the shiftname.
+$DAQBIN/lg_mgshift edit                # Select a shift from a list of shifts then edit it.
+$DAQBIN/lg_mgshift edit oldshift       # Edits with oldshift as the shiftname.
+$DAQBIN/lg_mgshift list                # Lists all shift and their members.
+$DAQBIN/lg_mgshift list owl            # Lists the members of the owl shift.
+               </programlisting>
+            </example>
+            <para>
+               Note that <command>lg_mgshift</command> makes use of the
+               same shift editor
+               (<link linkend='fig.lg_shifteditor' endterm='fig.lg_shifteditor.title' />)
+               as <command>lg_mkshift</command>.  It is perfectly reasonable to
+               create a shift from an existing shift.  Use the <command>edit</command>
+               subcommand and specify the existing shift.  Change the shift name
+               to the new shift and modify the shift membership.
+            </para>
+            <para>
+               <command>lg_selshift</command> (Select shift) allows you to select
+               the current (on duty shift).  This shift will be associated with
+               any data taking state transitions until the next invocation
+               of <command>lg_selshift</command> changes the current shift.
+            </para>
+            <para>
+               You can invoke this command in one of two ways:
+            </para>
+            <example>
+               <title>Using <command>lg_selshift</command> to select the current shift</title>
+               <programlisting>
+$DAQBIN/lg_selshift owl                # Set the current shif to the owl shift.
+$DAQBIN/lg_selshift                    # Bring up the graphical shift selector.
+               </programlisting>
+            </example>
+            <para>
+               The shift selector is shown in
+               <link linkend='fig.lg_selshift' endterm='fig.lg_selshift.title' />
+               below.
+            </para>
+            <figure id='fig.lg_selshift'>
+                <title id='fig.lg_selshift.title'>The shift selector.</title>
+                <graphic fileref='shiftselector.jpg' />
+            </figure>
+            <para>
+               In the shift selector, the top part of the selector shows the
+               current shift, if any, and a list of its members.
+               The list box at the bottom left contains a list of the shifts
+               that have been defined.  Clicking one will list its members in the
+               list box at the bottom right.
+            </para>
+            <para>
+               When you've selected the shift you want to be current, just
+               click <guibutton>Apply</guibutton> and that shift will be made
+               current and the top of the selector will update.  When the
+               shift you want to make current is current, click the
+               <literal>X</literal> at the top right if you want to exit.
+            </para>
+            <para>
+               It's quite normal to leave the selector up throughout data taking
+               so that shift changes can be easily made without needing to invoke
+               <command>lg_selshfit</command> again.
+            </para>
+         </section>
+      </section>
+   </section>
+   <section id='sec.lg_usage'>
+      <title id='sec.lg_usage.title'>Using the logbook in an experiment</title>
+      <para>
+         Before you start data taking, you should add the logbook subsystem
+         to the readout GUI.  This is done by adding the following line to your
+         <filename>ReadoutCallouts.tcl</filename> file:
+      </para>
+      <example>
+         <title>Enabling automatic recording of run state transitions</title>
+         <programlisting>
+package require logbookbundle
+         </programlisting>
+      </example>
+      <para>
+         Simple as that.   Since the logbook subsystem makes use of the callback
+         bundle facility of the readout GUI, you don't need to add any code
+         to any of your <literal>Onxxx</literal> procs.
+      </para>
+      <para>
+         For all runs with recording enabled, the logbook will log all state
+         transitions associated with a data taking run.  These include Begin runs,
+         End Runs, Pause runs and Resume runs.  Furthermore, when the ReadoutGUI
+         starts and the <literal>logbookbundle</literal> is pulled in, the bundle
+         checks for a run in progress (from the database point of view).  This can
+         happen if the previous run was improperly ended and the ReadoutGUI needed
+         to be restarted.  
+      </para>
+      <para>
+         If there is a currently active run, the logbook will log an
+         <literal>EMERGENCY_END</literal> state transition for that active run.
+         This makes the run inactive and creates a log entry that lets you know,
+         when you review that run later on, it was improperly ended.
+      </para>
+      <para>
+         Since the logbook bundle will immediately access the database,
+         and since it may also need to log a state transition, prior to starting
+         the ReadoutGUi you must:
+      </para>
+      <orderedlist>
+         <listitem>
+            <para>
+               Ensure you've selected the correct current logbook using
+               <command>lg_current</command>.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Set the current shift using
+               <command>lg_selshift</command>
+            </para>
+         </listitem>
+      </orderedlist>
+      <para>
+         If you neglect to do so you will get errors reported by the
+         ReadoutCallouts.tcl.
+      </para>
+      <section>
+         <title>Creating notes</title>
+         <para>
+            If all the logbook could do is manage shifts and log run state transitions
+            it would be pretty worthless.  The notes feature of the logbook
+            is what makes it worthwhile.  In this section we'll learn:
+         </para>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  What a note  is 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  How to create notes 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  How to format notes with rich content (including figures). 
+               </para>
+            </listitem>
+         </itemizedlist>
+         <para>
+            Note that in the next section
+            <link linkend='sec.lg_browsing' endterm='sec.lg_browsing.title' />
+            we'll talk about what we can do to look at the contents of our logbook
+            and how to render it for printing.
+         </para>
+         <section>
+            <title>What is a note?</title>
+            <para>
+               A note is a formatted chunk of text.  My formatted I mean that
+               it can have titles, subtitles, bulleted lists, numbered lists,
+               code samples, referencdes to the web and inline images.  We'll cover
+               formatting notes in
+               <link linkend='sec.lg_mdownprimer' endterm='sec.lg_mdownprimer.title' />
+            </para>
+            <para>
+               All notes are written by someone.  That is, they are associated
+               with one, and exactly one person that is known to the logbook.
+            </para>
+            <para>
+               Notes <emphasis>may</emphasis>, or may not be, associated with
+               a run.  When choosing if a note should be associated with a run,
+               think about wether the content of the note has to do with the
+               run or is a more general statement that spans the course of
+               more than one run.
+            </para>
+            <para>
+               Notes also have a timestamp associated with them that logs when
+               they were created. 
+            </para>
+            <para>
+               While author selection and run association are done manually
+               by the person editing and saving the note, the timestamp is generated
+               automatically when the note is saved.
+            </para>
+            <para>
+               As with most entities in the logbook (other than shift membership),
+               notes are write-once, read-many. As with a paper lab notebook, you're not
+               allowed to modify or delete a note once it's been written.
+            </para>
+         </section>
+         <section>
+            <title>How can I create a note?</title>
+            <para>
+               Notes are created using the note editor.  This can be brought up
+               either inside the browser (see
+               <link linkend='sec.lg_browsing' endterm='sec.lg_browsing.title' />),
+               or via the the <command>lg_wrnote</command> command.
+            </para>
+            <para>
+               You can invoke <command>lg_wrnote</command> in one of two ways:
+            </para>
+            <example>
+               <title>Invoking <command>lg_wrnote</command></title>
+               <programlisting>
+$DAQBIN/lg_wrnote   5            # Note editor initially associated with run 5.
+$DAQBIN/lg_wrnote                # Note editor with no initial run association.
+               </programlisting>
+            </example>
+            <para>
+               Note carefully, in the above, the word <emphasis>initially</emphasis>.
+               The note editor provides a mechanism to set, or for that matter,
+               remove association with a run.
+               <link linkend='fig.lg_noteeditor' endterm='fig.lg_noteeditor.title' />
+               shows what the note editor looks like.
+            </para>
+            <figure id='fig.lg_noteeditor'>
+                <title id='fig.lg_noteeditor.title'>The note editor GUI.</title>
+                <graphic fileref='noteeditor.jpg' />
+            </figure>
+            <para>
+               Current author and run association is shown at the top of the
+               window.  Author association is a pulldown menu activated by the
+               down arrow to the right of it.  Select your name as it's know to the
+               database from the list of authors.  Initially no author is shown
+               as associated with the note.  If you try to save the note without
+               selecting an author an error will be thrown.
+            </para>
+            <para>
+               To the right of the author assocationis the run assocation. In the
+               figure, the note we are composing will be associated with run 5.
+               To change the run assocation, select a run from the list in the list
+               box at the left of the editor window.  For convenience, the first
+               few characters of the title are provided to the right of the
+               run number.  Simply double click the run the note is to be associated
+               with to change the associated run.  If you don't wann a run associated
+               with this note, just double click the empty line at the top of the
+               listbox.
+            </para>
+            <para>
+               The largest area of the  editor is the big frame at the right. Edit
+               the text of your note in this area.  We'll talk a bit more about
+               what you can put there besides ordinary text in
+               <link linkend='sec.lg_mdownprimer' endterm='sec.lg_mdownprimer.title' />.
+            </para>
+            <para>
+               Image references can be manually inserted but, not only is the
+               markdown for that a bit tricky to remember, but you may want
+               to browse for the image file to insert.  If you right click in the
+               editor window a context menu will be posted. The
+               <guimenuitem>Image...</guimenuitem>  menu
+               command will bring up a dialog that allows you to specify the image file
+               (must be an image file or rendering of the note will fail), and a
+               caption for the image:
+            </para>
+            <figure id='fig.lg_imagesel'>
+                <title id='fig.lg_imagesel.title'>The image selector dialog</title>
+                <graphic fileref='imageselector.jpg' />
+            </figure>
+            <para>
+               Use the file browser to select the image file and enter any desired
+               caption in the caption entry at the bottom of the dialog.
+               Click <guibutton>Ok</guibutton>, and the correct image
+               link will be inserted at the cursor position in the editor.
+               Click <guibutton>Cancel</guibutton> to cancel creation of the image
+               link.
+            </para>
+            <para>
+               When the note has been formatted as you want it, click
+               <guibutton>Save</guibutton> to save it to the logbook or
+               <guibutton>Cancel</guibutton> to abandon the note.
+            </para>
+            <para>
+               Note that the images in image links are loaded into the database
+               so it's not necessary to retain the image files in the filesystem
+               after the note has been <emphasis>saved</emphasis>.
+            </para>
+         </section>
+         <section id='sec.lg_mdownprimer'>
+            <title id='sec.lg_mdownprimer.title'>How do I use Markdown to format my notes?</title>
+            <para>
+               This section is a non-exhaustive primer on markdown format.
+               Markdown is a simple, plain text, formatting system. It allows you
+               to easily create rich content. Markdown is used in many wikis,
+               as well as in gitlab and github to support formatted text.
+            </para>
+            <para>
+               The full description of Markdown is beyond the scope of this
+               document.
+               <ulink url='http://https://www.markdownguide.org/' />
+               describes Markdown fully.  We use two markdown processors to
+               render content:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term>Tcllib's <literal>Markdown</literal> package</term>
+                  <listitem>
+                   <para>
+                     This simple package is used to render HTML output which is
+                     then opened in a web-browser.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>pandoc</term>
+                  <listitem>
+                   <para>
+                     This program converts markdown to several formats.  We use
+                     it to convert Markdown to PDF format. Note that pandoc,
+                     generates input for LaTeX which actually produces
+                     the PDF via its processing chain.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+            <para>
+               But I digress. Let's dig into markdown format. First of all,
+               text that begins in column 1 is just rendered, for the most part
+               as is.   Here are some things in column 1, however that
+               can modify this
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term>Headings</term>
+                  <listitem>
+                   <para>
+                     A number of pound symbols <literal>#</literal> specifies
+                     the text on the same line to be a heading one pound is
+                     a top level heading, two a second level heading, and
+                     so on.
+                   </para>
+                   <para>
+                     An alternate syntax for level 1 and two headings:
+                     A line of text with a bunch of <literal>=</literal> underneath it
+                     is a level 1 heading.
+                     A line of text with a bunch of <literal>-</literal> underneath it
+                     is a level 2 heading. 
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Inline formatting (emphasis).</term>
+                  <listitem>
+                      <para>
+                        Text surrounded by pairs of <literal>*</literal>
+                        will be rendered as bold face. For example
+                        <literal>**this is bold face**</literal>.
+                      </para>
+                      <para>
+                        Text surrounded by single <literal>*</literal> will be
+                        rendered as italic.  For examplle
+                        <literal>*this text is italic*</literal>.
+                      </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Lists</term>
+                  <listitem>
+                      <para>
+                        Both bulleted and numbered lists are supported.
+                     </para>
+                     <para>
+                        If a series of lines are each preceded by a number and period
+                        they are rendered like a numbered list for example:
+                     </para>
+                     <literallayout>
+The list starts below:
+
+1. List element 1
+2. List element 2  
+
+And is over here.
+                     </literallayout>
+                     <para>
+                        If a series of lines are ech preceded by a <literal>-</literal> they are
+                        elements of a bulleted list for example:
+                     </para>
+                     <literallayout>
+List starts below
+
+- First bullet
+- second bullet
+
+List ends.
+                     </literallayout>
+                     <para>
+                        Note that many markdown processors require an empty line
+                        before and after lists.
+                     </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Weblinks</term>
+                  <listitem>
+                   <para>
+                     A link to some bit of the web requires both link text and
+                     the actual URL.  These are specified as follows:
+                     <literal>[link text](URL) For example:</literal>
+                   </para>
+                   <literallayout>
+                     
+There's a lot of (information about markdown)[http://google.com/search?q=markdown]
+
+                   </literallayout>
+                   <para>
+                     Will generate link text <literal>information about markdown</literal>
+                     that, when clicked will give google results for <literal>markdown</literal>.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Image links</term>
+                  <listitem>
+                  <para>
+                     I strongly suggest letting the note editor produce these for you,
+                     but for completeness, an image link  has the form:
+                     <literal>![some text](image-file)</literal>
+                     The use of the stuff in <literal>[]</literal> depends on the
+                     output format.  For web this is used as what is called
+                     <firstterm>alt text</firstterm>, that is text that is shown
+                     in browsers that are not capable of displaying images.
+                     Do not count on this text being displayed.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Tables</term>
+                  <listitem>
+                   <para>
+                     The simplest format for a table in markdown uses pipes.
+                     For example, this markdown:
+                   </para>
+                   <literallayout>
+You should put a blank line fore:
+
+| Animal | Species |
+| -------|---------|
+| Wolf   | canis lupus |
+| Cat    | felis domesticus |
+| Golden Hamster | mesocricetus auratus |
+
+and aft.
+
+                   </literallayout>
+                   <para>
+                     Note that the table doesn't have to line up nicely. The
+                     markdown above generates something like:
+                   </para>
+                   <informaltable>
+                     <tgroup cols='2'>
+                        <tbody>
+                           <row>
+                              <entry>Animal</entry><entry>Species</entry>
+                           </row>
+                           <row>
+                              <entry>Wolf</entry><entry>canis lupus</entry>
+                           </row>
+                           <row>
+                              <entry>Cat</entry><entry>felis domesticus</entry>
+                           </row>
+                           <row>
+                              <entry>Golden Hamster</entry><entry>mesocricetus auratus</entry>
+                           </row>
+                        </tbody>
+                     </tgroup>
+                   </informaltable>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Footnotes</term>
+                  <listitem>
+                  <para>
+                     A link to a footnote isof the form
+                     <literal>[^n]</literal> where n is a footnote
+                     number (e.g. <literal>[^1]</literal> for footnote).
+                     The footnote text itself (for footnote 1 e.g.) is
+                     entered as follows:
+                   </para>
+                  <literallayout>
+I would put a blank line fore:
+
+[^1]:  See the NSCL radiation safety  manual for more
+
+And, if appropriate aft.
+                  </literallayout>
+                  <para>
+                     In the web, the footnote text will, most likely, render in position
+                     in the document while LaTeX will determine where it
+                     shows up in PDF rendering.
+                  </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term>Internal document links</term>
+                  <listitem>
+                   <para>
+                     A heading can have an identifier attached to it and links
+                     to that identifier for example:
+                   </para>
+                   <literallayout>
+Table of contents:
+
+...
+[Some Section](#Some-section)
+...
+
+## Some Section {#Some-section
+}
+                   </literallayout>
+                   <para>
+                     Creates a link to a level 2 heading in the document named
+                     <literal>Some Section</literal>.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+            <para>
+               Markdown can do much much more.  I encourage you to play with a toy
+               logbook and browse through
+               <ulink url='https://www.markdownguide.org/basic-syntax/' />
+               for basic syntax supported by all markdown processors and
+               <ulink url='https://www.markdownguide.org/extended-syntax/' />
+               for syntax most markdown processors support.   I have not exhaustively
+               checked which bits of extended markdown are supported by the Tcl
+               <literal>Markdown</literal> package and <literal>pandoc</literal>.
+               Play around and see what you get.
+            </para>
+         </section>
+      </section>
+      <section id='sec.lg_browsing'>
+         <title id='sec.lg_browsing.title'>Browsing and rendering the logbook</title>
+         <para>
+            A logbook you can write in but can't look at is worthless.  This
+            chapter describes the <command>lg_browse</command> command which provides
+            a graphical browser for the logbook. 
+         </para>
+         <para>
+            For now let's just look at the main features of the browser.
+         </para>
+         <figure id='fig.lg_browser'>
+             <title id='fig.lg_browser.title'>Logbook Browser</title>
+             <graphic fileref='lg_browser.jpg' />
+         </figure>
+         <para>
+            In a bit we'll take deeper dives into the user interface.  For now
+            note the tabs at the top of the interface:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>LogBook</literal></term>
+               <listitem>
+                   <para>
+                     Allows you to browse the runs, notes associated with runs
+                     and notes not associated with any run. 
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Shifts</term>
+               <listitem>
+                   <para>
+                     Allow you to view the shifts you have created, as well as
+                     the members of those shifts.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>People</term>
+               <listitem>
+                   <para>
+                     Allows you to brows the people that you've added to the logbook.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <section>
+            <title>People Tab</title>
+            <para>
+               Let's look at the contents of the <literal>People</literal> tab:
+            </para>
+            <figure>
+                <title><command>lg_browse</command> <literal>People</literal></title>
+                <graphic fileref='lg_peopletab.jpg' />
+            </figure>
+            <para>
+               As you can see, this tab provides a list of the people that have
+               been added to the logbook.  If you right click anywhere in the
+               list, you'll bring up a context men. Clicking
+               <guimenuitem>Add...</guimenuitem> on this menu will allow you
+               to specify the first name, last name, and optional salutation
+               of a person to add the logbook.
+            </para>
+         </section>
+         <section>
+            <title>Shifts Tab</title>
+            <para>
+               Let's have a look at the shift tab of the browser:
+            </para>
+            <figure>
+                <title><command>lg_browse</command> <literal>Shifts</literal> tab</title>
+                <graphic fileref='lg_shifttab.jpg' />
+            </figure>
+            <para>
+               As you can see the shifts are listed.  Clicking on a shift opens it
+               up (as has been done for the <literal>day</literal> shift) to
+               list the members of that shift.  If there's a current shift,
+               the word <literal>(current)</literal> is shown by its name.
+            </para>
+            <para>
+               If a shift or one of its members has been selected, right clicking
+               brings up a context menu with the following commands:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term><guimenuitem>Add Shift...</guimenuitem></term>
+                  <listitem>
+                   <para>
+                     Brings up the shift editor so that you can add a new shift
+                     and populate it with members.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><guimenuitem>Edit...</guimenuitem></term>
+                  <listitem>
+                   <para>
+                     Brings up the shift editor with the currently selected
+                     shift loaded into it for editing or for use as a starting
+                     point to create a new shift.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><guimenuitem>Set Current</guimenuitem></term>
+                  <listitem>
+                  <para>
+                     Makes the selected shift the current shift.  That shift
+                     will be associated with run state transitions.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+         </section>
+         <section>
+            <title>LogBook Tab</title>
+            <para>
+               During and after a run, you will probably spend most of your time
+               on the <literal>LogBook</literal> tab. This tab allows
+               you to access all of the runs that have been recorded and notes that
+               have been written.  The figure below shows this tab with some of
+               the items expanded:
+            </para>
+            <figure>
+                <title><command>lg_browse</command> command's <literal>LogBook</literal> tab</title>
+                <graphic fileref='lg_logbooktab.jpg' />
+            </figure>
+            <para>
+               First note that this tab, as with all tabs in the browser periodically
+               updates its contents.  This is done in such a way as to preserve
+               the open items.  Thus changes performed by other programs and other
+               people are reflected dynamically by the browser.
+            </para>
+            <para>
+               At the top of the list of items in this tab, is an entry
+               labeled <literal>None</literal>.  If this is expanded you will
+               see a list of the notes that were created that were not associated
+               with any run.
+            </para>
+            <para>
+               Below that, each numbered entry is a run.  The title for the run
+               is shown on that line as well as the state of that run.  In this
+               example, there are no active runs.  Expanding a run lists all of
+               its transitions, when they occured and the remarks associated with
+               each transition (in this case that they were automatically logged),
+               and name of the active shift when the transition occured. Finally the
+               transition time is aslo shown
+            </para>
+            <para>
+               Each transition can be further expanded.  When that's done the
+               list of people on that shift are listed.
+            </para>
+            <para>
+               Entries are also shown for each note associated with the run.
+               In this case the notes were added after the run ended (perfectly legal),
+               The notes, however are normaly interleaved with the transitions so
+               that everything that was done with a run is listed in
+               chronological order.
+            </para>
+            <para>
+               At any time a single item can be selected.  right clicking brings
+               up a context menu with the following actions:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term><guimenuitem>Compose Note...</guimenuitem></term>
+                  <listitem>
+                  <para>
+                     Allows you to compose a new note.  If the selected item
+                     is in a run (vs. in the <literal>None</literal>) item,
+                     the initially selected associated run in the note editor
+                     will be that run.  If you want to associate the note to
+                     a different run or write a new note not associated with any
+                     run, naturally, you can change this association in note
+                     editor.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><guimenuitem>Make PDF from selected..</guimenuitem></term>
+                  <listitem>
+                   <para>
+                     Creates a PDF file from the selected item.  If a run
+                     or a transition within a a run is selected a PDF of all
+                     of the items (transitions and notes) will be created.
+                     If a note is selected only that selected note will be converted.
+                   </para>
+                   <para>
+                     You will be prompted for the path of the PDF file to be
+                     created.  Due to restrictions in the <command>pandoc</command>
+                     markdown->PDF conversion software this file 
+                     <emphasis>must</emphasis> have a <literal>.pdf</literal>
+                     extension.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><guimenuitem>Make PDF from whole book...</guimenuitem></term>
+                  <listitem>
+                   <para>
+                     Renders the entire logbook as a PDF. You will be prompted
+                     for a PDF filename (extension must be <literal>.pdf</literal>).
+                     The logbook will be rendered in the following order:
+                     First the runs and their contents (transitions and notes)
+                     will be rendered.  Finally, the notes not associated with
+                     any runs will be rendered in chronological order.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+            <para>
+               Finally, double clicking a note will build an HTML rendering of the
+               note and invoke your default web browser to view it.
+            </para>
+
+      </section>
+      <section>
+            <title><command>lg_print</command></title>
+            <para>
+               
+            </para>
+         </section>
+      </section>
+   </section>
+   <section id='sec.lg_export'>
+      <title id='sec.lg_export.title'>Making logbooks available to collaborators</title>
+      <para>
+      </para>
+   </section>
+   <section id='sec.lg_programming'>
+      <title id='sec.lg_programming.title'></title>
+      <para>
+      </para>
+   </section>
 </chapter>
 
 <!-- /chapter -->
@@ -45,6 +1396,14 @@
 <!-- /manpage -->
 
 <!-- manpage 3daq -->
+
+<!-- /manpage -->
+
+<!-- manpage 3tcl -->
+
+<!-- /manpage -->
+
+<!-- manpage 3python -->
 
 <!-- /manpage -->
 
