@@ -30,7 +30,8 @@ libTclLogbook_la_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @LIBTCLPLUS_LDFL
 	@TCL_LDFLAGS@
 
 
-FIGURES=shifteditor.jpg shiftselector.jpg
+FIGURES=shifteditor.jpg shiftselector.jpg noteeditor.jpg imageselector.jpg \
+	lg_browser.jpg lg_peopletab.jpg lg_shifttab.jpg lg_logbooktab.jpg
 
 
 install-exec-hook:
