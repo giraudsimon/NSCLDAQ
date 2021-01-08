@@ -33,11 +33,13 @@ libTclLogbook_la_LDFLAGS=libLogbook.la $(libLogbook_la_LDFLAGS) @LIBTCLPLUS_LDFL
 FIGURES=shifteditor.jpg shiftselector.jpg noteeditor.jpg imageselector.jpg \
 	lg_browser.jpg lg_peopletab.jpg lg_shifttab.jpg lg_logbooktab.jpg
 
+EXAMPLES=kvexample.cpp kvexamplelow.tcl kvexamplehi.tcl kvexample.py
 
 install-exec-hook:
 	$(mkinstalldirs) @prefix@/pythonLibs @prefix@/pythonLibs/nscldaq
 	$(mkinstalldirs) @prefix@/pythonLibs/nscldaq/LogBook
 	$(mkinstalldirs) @prefix/share/html
+	$(mkinstalldirs) @prefix@/share/examples/logbook
 	$(INSTALL_PROGRAM) @libdir@/libPyLogbook.so @prefix@/pythonLibs/nscldaq/LogBook/LogBook.so
 	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/logbook
 	$(INSTALL_PROGRAM) @libdir@/libTclLogbook.so @prefix@/TclLibs/logbook
@@ -61,6 +63,8 @@ install-exec-hook:
 	$(INSTALL_PROGRAM) @srcdir@/lg_print.tcl @bindir@/lg_print
 	for f in $(FIGURES); do $(INSTALL_DATA) @srcdir@/$$f \
 		@prefix@/share/html; done
+	for f in $(EXAMPLES); do $(INSTALL_DATA) @srcdir@/$$f \
+		@prefix@/share/examples/logbook; done
 	echo package ifneeded logbook 1.0 [list load [file join \$$dir libTclLogbook.so]] \
 		> @prefix@/TclLibs/logbook/pkgIndex.tcl
 	echo package ifneeded logbookadmin 1.0 [list source [file join \$$dir logbookadmin.tcl]] \
@@ -128,4 +132,4 @@ EXTRA_DIST=logbookstatictests.py pypersontests.py pyshifttests.py \
 	lg_noteutilities.tcl noteutil.test lg_wrnote.tcl logbookBundle.tcl \
 	lg_selshift.tcl pykvtests.py lg_browse.tcl lg_kvstore.tcl lg_print.tcl \
 	logbookdocs.xml \
-	$(FIGURES)
+	$(FIGURES) $(EXAMPLES)

@@ -268,6 +268,9 @@
                   Selects the current logbook database file.  This is the
                   logbook that will be operated on by the remaining
                   <command>lg_*</command> commands and admin level Tcl bindings.
+                  See
+                  <link linkend='daq1.lg_current' endterm='daq1.lg_current.title' />
+                  for more information.
                </para>
             </listitem>
          </varlistentry>
@@ -276,6 +279,9 @@
             <listitem>
                 <para>
                   Outputs the name of the logbook that is current.
+                  See
+                  <link linkend='daq1.lg_ls' endterm='daq1.lg_ls.title' />
+                  for more information.
                </para>
             </listitem>
          </varlistentry>
@@ -286,6 +292,9 @@
                   Makes a new person known to the logbook. People are stored
                   as salutation, last name and first name.  People are used
                   as authors and are members of shifts.
+                  See
+                  <link linkend='daq1.lg_addperson' endterm='daq1.lg_addperson.title' />
+                  for more information
                </para>
             </listitem>
          </varlistentry>
@@ -294,6 +303,9 @@
             <listitem>
                 <para>
                   Lists the people that have been defined to the database.
+                  See
+                  <link linkend='daq1.lg_lspeople' endterm='daq1.lg_lspeople.title' />
+                  for more information
                </para>
             </listitem>
          </varlistentry>
@@ -306,6 +318,9 @@
                   can create as many shifts as you want and compose them any way
                   you want.  The people that are in shifts must have previously
                   been added to the log book via <command>lg_addperson</command>
+                  See
+                  <link linkend='daq1.lg_mkshift' endterm='daq1.lg_mkshift.title' />
+                  for more information
                </para>
             </listitem>
          </varlistentry>
@@ -349,6 +364,11 @@
                   recent editing of the shift.  This can attribute a transition
                   to the wrong set of people, and that's not desirable.
                 </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_mgshift' endterm='daq1.lg_mgshift.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
          <varlistentry>
@@ -360,6 +380,11 @@
                   be selected.  The transition is then attributed to the
                   members of the on-duty shift.
                </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_selshift' endterm='daq1.lg_selshift.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
          <varlistentry>
@@ -371,6 +396,11 @@
                   test for the existence of a key, get the value of a key, set the value
                   of an existing or new key, or create a new key value pair.
                </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_kvstore' endterm='daq1.lg_kvstore.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
          <varlistentry>
@@ -385,6 +415,11 @@
                   into the database and retrieved as needed when a note is
                   rendered.
                </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_wrnote' endterm='daq1.lg_wrnote.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
          <varlistentry>
@@ -393,6 +428,11 @@
                 <para>
                   Provides a visual logbook browser.
                </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_browse' endterm='daq1.lg_browse.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
          <varlistentry>
@@ -402,6 +442,11 @@
                   Allows all or part of a logbook to be rendered in PDF,
                   presumably for later printing.
                </para>
+                <para>
+                  See
+                  <link linkend='daq1.lg_print' endterm='daq1.lg_print.title' />
+                  for more information
+                </para>
             </listitem>
          </varlistentry>
       </variablelist>
@@ -1676,14 +1721,1140 @@ singularity shell --bind /nscldaqinstall/opt-buster:/usr/opt,/projects \
    <section id='sec.lg_programming'>
       <title id='sec.lg_programming.title'></title>
       <para>
+         This section shows how to program the database via the API in the context
+         of a very simple program.  Our goal is not so much an exhaustive coverage
+         of the API, that's available in the reference pages.
+         The goal is to show how to build and how to run software that
+         makes use of the logbook API.
       </para>
+      <para>
+         In the following sections, we present a simple program that can
+         extract the value of a key in the key value store and output it to
+         stdout. The program will be presented in C++, Tcl and Python along
+         with build instructions.  The source code for these examples are
+         available in <filename>$DAQROOT/share/examples/logbook</filename>
+      </para>
+      <section>
+         <title>Using the logbook API from C++</title>
+         <para>
+            Here's the C++ implementation of our toy program, kvexample.cpp:
+         </para>
+         <example>
+            <title>C++ example using logbook API</title>
+            <programlisting>
+#include &lt;LogBook.h&gt;             <co id='lgcppapi_header' />
+#include &lt;iostream&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdexcept&gt;
+
+int main(int argc, char** argv)
+{
+  if (argc  != 3 ) {                 <co id='lgcppapi_usage' />
+    std::cerr &lt;&lt; "kvexmple logbookdatabase key\n";
+    exit(EXIT_FAILURE);
+  }
+  try {                              <co id='lgcppapi_try' />
+    const char* key = argv[2];
+    LogBook book(argv[1]);            <co id='lgcppapi_construct' />
+    if (book.kvExists(key)) {         <co id='lgcppapi_exists' />
+      std::cout &lt;&lt; key &lt;&lt; " : "
+                &lt;&lt;  book.kvGet(key) <co id='lgcppapi_get' />
+                &lt;&lt; std::endl;
+    } else {
+      std::cerr &lt;&lt; key &lt;&lt; " does not exist\n";
+      exit (EXIT_FAILURE);
+    }
+  } catch (std::exception&amp; e) {    <co id='lgcppapi_catch' />
+    std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
+    exit(EXIT_FAILURE);
+  }
+  exit(EXIT_SUCCESS);
+}
+
+            </programlisting>
+         </example>
+         <para>
+            This program accepts two command line parameters.  The first is a logbook
+            database file.  The concept of a selected logbook is only maintained
+            by the <command>lg_xxxx</command> utilties and Tcl administrative
+            API.  As an exercise for the reader, check for the file
+            <filename>~/.nscl-logbook-current</filename> and read the logbook
+            database filename from there.
+         </para>
+         <para>
+            Let's break this down step by step:
+         </para>
+         <calloutlist>
+            <callout arearefs='lgcppapi_header' >
+                <para>
+                  The <filename>LogBook.h</filename> file contains a definition
+                  of much of the API.  Specifically, it contains the definition of
+                  the <classname>LogBook</classname> class we'll need.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_usage' >
+                <para>
+                  This chunk of code ensures we have a logbook filename and
+                  a key name to lookup.  If not we exit with a message
+                  showing the user how to run the program.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_try' >
+                <para>
+                  Many API functions report errors by throwing a
+                  <classname>LogBook::Exception</classname> object as an
+                  exception.  Therefore the meat of our example is wrapped
+                  in a try/catch block.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_construct' >
+                <para>
+                  The <classname>LogBook</classname> class provides the
+                  top levels of the API to logbooks.  Instances of this
+                  class are constructed on logbook database files. We construct one
+                  here.  Methods of this instance then provide the
+                  interface to the database.  If the file we provide does not
+                  exist, an exception is thrown.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_exists' >
+                <para>
+                  The <classname>LogBook</classname>::<methodname>kvExists</methodname>
+                  method returns <literal>true</literal> if the key passed to it
+                  exists in the key/value store and <literal>false</literal>
+                  if not.  We use this to determine if the key the user has
+                  passed us actually exists.  If not we report an error.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_get' >
+                <para>
+                  If the key does exist we can feth its value using\
+                  <classname>LogBook</classname>::<methodname>kvGet</methodname>,
+                  which returns the value associated with the key from the key value store.
+                  Note that, since this method throws an exception if the key
+                  does not exist, we could have skipped the call to
+                  <methodname>kvExist</methodname> if we were willing to
+                  live with the error message in the exception that throws.
+                </para>
+            </callout>
+            <callout arearefs='lgcppapi_catch' >
+                <para>
+                  The <classname>LogBook::Exception</classname> is derived from
+                  <classname>std::exception</classname>.  Therefore catching
+                  exceptions of that class will also catch errors thrown by the
+                  LogBook API.  This catch block outputs the error message
+                  encapsulated by statndard exception objects and then exits
+                  with an error status.
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            To compile this toy program we need to include compiler options
+            to find the <filename>LogBook.h</filename> header, locate and include
+            the API libraries both at link-time and, since they are shared libraries,
+            at run-time:
+         </para>
+         <example>
+            <title>Compiling the C++ Logbook API example.</title>
+            <programlisting>
+g++ -o kvexample -I$DAQINC -L$DAQLIB -lLogbook kvexample.cpp -Wl,-rpath=$DAQLIB
+            </programlisting>
+         </example>
+         <para>
+            This produces an executable named <literal>kvexample</literal> which
+            can be run directly.  The <literal>-I$DAQINC</literal> adds the
+            NSCLDAQ header directory to the include file search path.  The
+            <literal>-L$DAQLIB</literal> option adds the NSCLDAQ library directory
+            to the link time library search path.  <literal>-lLogbook</literal>
+            specifies that we need the logbook C++ API and
+            the <option>-Wl,-rpath=$DAQLIB</option> part of this command
+            adds the DAQ library directory to the search path for shared libraries
+            at run time.
+         </para>
+      </section>
+      <section>
+         <title>Using the logbook API from Tcl</title>
+         <para>
+            There are two levels of Tcl API.  This section will demonstate both
+            the low level Tcl bindings and discuss why care is when using them.
+            We'll then write the program to use the so-called administrative
+            level bindings which hide a lot of the complexity of the low-level
+            bindings at the cost of some performance and a more restrictive interface.
+         </para>
+         <section>
+            <title>Low Level Tcl bindiings</title>
+            <para>
+               This section describes kvexamplelow.tcl The kvexample program
+               from thep revious section but written with the low level Tcl bindings.
+            </para>
+            <example id='ex.tclapilow'>
+               <title id='ex.tclapilow.title' ><filename>kvexamplelow.tcl</filename> low level Tcl logbook API example</title>
+               <programlisting>
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \  <co id='tclapilow_shell' />
+exec tclsh "$0" ${1+"$@"}
+
+
+##
+#  kvexample for low level bindings.
+#
+lappend auto_path [file join $::env(DAQROOT) TclLibs]    <co id='tclapilow_libpath' />
+package require logbook                                  <co id='tclapilow_require' />
+
+if {[llength $argv] ne 2} {
+    puts stderr "kvexamplelow.tcl filename key"         <co id='tclapilow_usage' />
+    exit -1
+}
+
+set book [lindex $argv 0]
+set key  [lindex $argv 1]
+
+if {[catch {logbook::logbook open $book} instance]} {    <co id='tclapilow_open' />
+    puts stderr "Could not open logbook $book : $instance"
+    exit -1
+}
+
+if {[$instance kvExists $key]} {                        <co id='tclapilow_exist' />
+    puts "$key : [$instance kvGet $key]"                <co id='tclapilow_get' />
+    set status 0
+} else {
+    puts stderr "No such key: $key in $book"
+    set status -1
+}
+
+$instance destroy                                      <co id='tclapilow_destroy' />
+exit $status
+
+               </programlisting>
+            </example>
+            <calloutlist>
+               <callout arearefs='tclapilow_shell' >
+               <para>
+                  If you just set a Tcl script executable but
+                  <command>tclsh</command>  is not considered a valid shell,
+                  you won't be able to execute it.  These three four lines
+                  make this script executable by <literal>sh</literal> and the last
+                  of these four then chains off to the Tcl shell.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_libpath' >
+                <para>
+                  This line adds the NSCLDAQ Tcl package library path to the
+                  set of paths searched by <command>package require</command>.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_require' >
+                   
+                <para>
+                  Incorporates the low level Tcl API package,
+                  <literal>logbook</literal> into the script. This defines
+                  Tcl commands in the <literal>::logbook</literal> namespace.
+                  As we will see the top level command is the
+                  <command>logbook::logbook</command> command ensemble.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_usage' >
+                   <para>
+                     Our script requires two parameters, the logbook filename
+                     and a key in the key value store.  This ensures both are
+                     present.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_open' >
+                   <para>
+                     The <command>logbook::logbook open</command> command creates
+                     a Tcl command ensemble that allows access to the logbook.
+                     On failure the command raises an error.  This use of the
+                     Tcl <command>catch</command> command returns <literal>1</literal>
+                     on error with the error message in the variable
+                     <varname>instance</varname>, or <literal>0</literal>
+                     on success with the value returned from the command
+                     (the name of the commane ensemble created) in
+                     <varname>instance</varname>.
+                </para>
+               <para>
+                  On failure, therefore, this block of code outputs the
+                  error message to stderr and exits with an error status.
+                  On success, the program continues with the logbook
+                  instance command ensemble name in the <varname>instance</varname>
+                  variable.
+               </para>
+               <para>
+                  This use of object instance command ensembles to produce
+                  an object oriented interface to the logbook that closely matches
+                  the C++ API, while convenient, places the burden of object destruction
+                  on the script author, one Tcl scripters are not used to.
+                  It is this burden to explicitly destroy objects when no longer
+                  needed that drove the construction of the administrative, or
+                  high level API which takes care of this for the scripter
+                  at the price of some performance loss (the destruction of
+                  objects that could be recycled for future calls).
+               </para>
+               </callout>
+               <callout arearefs='tclapilow_exist' >
+                   <para>
+                     The subcommands of a logbook instance command ensemble
+                     are, essentially the same as methods for a C++
+                     <classname>LogBook</classname> object.  So the
+                     <command>$instance kvExists</command> command checks to see
+                     if a key exsists in the key value store of the logbook
+                     encapsulated by the command ensemble in the
+                     <varname>instance</varname> variable, returning
+                     boolean
+                     <literal>true</literal> if so and <literal>false</literal>
+                     if not.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_get' >
+                   <para>
+                     Similarly a logbook instance command ensemble's
+                     <command>kvGet</command> subcommand returns the value of a
+                     key.
+                </para>
+               </callout>
+               <callout arearefs='tclapilow_destroy' >
+                   <para>
+                     Having gotten an logbook instance "object" from the
+                     API, we must destroy it.  This is true of all
+                     object instance commands we get from the API.
+                     For example, the logbook instance API subcomand
+                     to list notes will create a list of note command ensembles,
+                     <emphasis>all of which must eventually be manually destroyed</emphasis>.
+                </para>
+                <para>
+                  All instance command ensembles include a <command>destroy</command>
+                  subcommand that destroys the objects they represent.
+                </para>
+               </callout>
+            </calloutlist>
+            <para>
+               Running the script is just a matter of setting up the NSCLDAQ
+               environment variables, setting the script file to executable
+               and running it as you would any other program.
+            </para>
+         </section>
+         <section>
+            <title>Using the high-level or administrative Tcl API</title>
+            <para>
+               As we've seen in the previous section, the low level Tcl API
+               imposes a burden of manual object management.  This can be
+               tricky even for experienced programmers.  It can be downright
+               impossible to get right for most script writers that are not
+               experienced at that issue.
+            </para>
+            <para>
+               The administrative level or high level Tcl API does this 
+               storage management for you by making objects that have only a very short,
+               well defined 
+               lifetime. All objects created during the execution of an API call
+               are destroyed before that call exits or raises an error.
+               This provides a much simpler procedural interface at the cost of
+               excessive object construction/destruction (for example each
+               call will open access to the database and destroy it),
+            </para>
+            <para>
+               It is at this level, that the API provides the concept of a
+               <firstterm>currently selected logbook</firstterm>, that we have
+               seen in previous sections of this chapter.  The script we
+               provide below will operate on the currently selected logbook
+               rather than requiring a logbook on the command line.
+               It will raise an error if there is not a currently selected
+               logbook (any API call that requires a selected logbook will
+               raise that error for us).
+            </para>
+            <para>
+               Let's look at the resulting script:
+            </para>
+            <example>
+               <title><filename>kvexamplehi.tcl</filename> Using the high level Tcl logbook API</title>
+               <programlisting>
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+lappend auto_path [file join $::env(DAQROOT) TclLibs   <co id='tclapihi_prev' />
+    
+package require logbookadmin
+
+if {[llength $argv] != 1} {
+    puts stderr "kvexamplehi.tcl  key"                <co id='tclapihi_1param' />
+    exit -1
+}
+
+set key [lindex $argv 0]
+if {[kvExists $key]} {                               <co id='tclapihi_exists' />
+    puts "$key : [kvGet $key]"                       <co id='tclaphihi_get' />
+} else {
+    puts stderr "There is no key named $key"
+    exit -1
+}
+exit 0
+
+               </programlisting>
+            </example>
+            <calloutlist>
+               <callout arearefs='tclapihi_prev' >
+                   <para>
+                     This code appeared in
+                     <link linkend='ex.tclapilow' endterm='ex.tclapilow.title' />.
+                     We won't explain it again here.  Refer to that example
+                     if you need to understand it.
+                </para>
+               </callout>
+               <callout arearefs='tclapihi_1param' >
+                   <para>
+                     Unlike <link linkend='ex.tclapilow' endterm='ex.tclapilow.title' />,
+                     we refer to the current logbook.  Therefore we only need one
+                     parameter, the key to retrieve.
+                </para>
+               </callout>
+               <callout arearefs='tclapihi_exists' >
+                   <para>
+                     This checks that the key exists.  It does this by creating
+                     a logbook instance for the current logbook, asking if the
+                     key exists and destroying that instance.
+                     In doing this, at the cost of some inefficiency (the logbook instance
+                     could be recycled), resource leaks are prevented at the
+                     level of your script.
+                </para>
+               </callout>
+               <callout arearefs='tclaphihi_get' >
+                   <para>
+                     The <function>kvGet</function> proc returns the value of
+                     a key if it exists.
+                </para>
+               </callout>
+            </calloutlist>
+            <para>
+               As you can see it's much simpler to program against the high level
+               Tcl interface.  If that API does not provide everything you need
+               you can certainly mix high and low level calls.
+            </para>
+         </section>
+      </section>
+      <section>
+         <title>Using the logbook API from Python</title>
+         <para>
+            The Python API provides an object oriented Python interface to the
+            Logbook API.  Unlike the Tcl low level API, Python's object reference
+            counting and garbage collection can, and are, used to do the storage
+            management the Tcl low level API burdens you with.
+         </para>
+         <para>
+            Here is the equivalent program in python.  Since we can't access
+            the current logbook directly (an excersise for the reader is to
+            pull the logbook filename from <filename>~/.nscl-logbook-current</filename>)
+            rather than from the command line.
+         </para>
+         <para>
+            Note that the API is supported for Python 3 not Python 2. You must
+            use that interpreter when running your scripts.
+         </para>
+         <example>
+            <title><filename>kvexample.py</filename> programming the Python logbook API</title>
+            <programlisting>
+import sys                              <co id='lgpyapi_sys' />
+from  LogBook import LogBook            <co id='lgpyapi_import '/>
+
+if len(sys.argv) != 3 :
+    print("kvexample.py logbook key")  <co id='lgpyapi_args' />
+    exit()
+
+bookfile = sys.argv[1]                 <co id='lgpyapi_filename' />
+key      = sys.argv[2]                 <co id='lgpyapi_key' />
+
+book = LogBook.LogBook(bookfile)       <co id='lgpyapi_construct' />
+if book.kv_exists(key) :               <co id='lgpyapi_exists' />
+    print(key + " : " + book.kv_get(key)) <co id='lgpyapi_get' />
+else :
+    print(key + " does not exist")
+
+exit()
+
+            </programlisting>            
+         </example>
+         <calloutlist>
+            <callout arearefs='lgpyapi_sys' >
+                <para>
+                  This package provides access to the raw command line words
+                  via the <varname>sys.argv</varname> array.
+                </para>
+            </callout>
+            <callout arearefs='lgpyapi_import' >
+                <para>
+                  Brings in the LogBook class from the LogBook module.
+                  This class is the top level API class.  It allows us to
+                  create, and access logbooks and their contents.
+                </para>
+            </callout>
+            <callout arearefs='lgpyapi_args' >
+                <para>
+                  The <varname>sys.args</varname> array is exactly the
+                  C++ argv parameter to main.  Its first element is the name
+                  of the script, as fed to <command>Python</command> interpreter.
+                  The following two parameters must be the logbook filename
+                  and key we want to retrieve from it.
+                </para>
+            </callout>
+            <callout arearefs='lgpyapi_filename' >
+                <para>
+                  As described above we fish the logbook filename from the
+                  command arguments.
+                </para>
+            </callout>
+            <callout arearefs='lgpyapi_key' >
+                <para>
+                  As described above, we fish the key to retrieve from the
+                  command arguments.
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            Running this script takes a bit of effort. Here's a sample
+            command line that prints the name of the experiment from the KV
+            store:
+         </para>
+         <example>
+            <title>Running Python scripts that use the logbook API</title>
+            <programlisting>
+               
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3 kvexample.py junk.log experiment
+
+            </programlisting>
+         </example>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  The definition of <literal>PYTHONPATH</literal>  on the
+                  command line tells python to look for importable modules
+                  in the DAQ python module directory tree.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Note the explicit invocation of <command>python3</command>.
+                  Our logbook modules for Python are only available for Python
+                  version 3.   At the time I'm writing this many Linux distributions
+                  install both but make Python version 2 the interpreter
+                  invoked by the <command>python</command> command.
+               </para>
+            </listitem>
+         </itemizedlist>
+      </section>
    </section>
 </chapter>
 
 <!-- /chapter -->
 
-<!-- mangpage 1daq -->
+<!-- manpage 1daq -->
 
+<refentry id="daq1.lg_create">
+   <refmeta>
+      <refentrytitle id="daq1.lg_create.title">lg_create</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_create</refname>
+      <refpurpose>Create a new logbook database.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_create <option>-filename</option> file <optional><option>-current</option> <replaceable>bool</replaceable></optional>
+   <optional><option>-experiment</option> <replaceable>experiment-id</replaceable></optional>
+   <optional><option>-spokesperson</option> <replaceable>experiment-spokesperson</replaceable></optional>
+   <optional><option>-purpose</option> <replaceable>experiment-purpose</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <command>lg_create</command> creates a new logbook database file.
+            The <option>-filename</option> is mandatory and is used to provide
+            the name of a file to create.  It is an error to attempt to create
+            a logbook into an existing file.  The remaining options are
+            optional.  With the exception of <option>-current</option> they
+            provide information about the logbook that will be put in the
+            database's key value store.  
+          </para>
+          <para>
+            <option>-current</option> requires a boolean parameter.  If this
+            parameter is true, after creating the logbook, it is made the current
+            logbook.  Boolean values can be any legal Tcl boolean value.
+          </para>
+          <para>
+            The key value options are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-experiment</option></term>
+               <listitem>
+                   <para>
+                     Provides the experiment ID. This is normally assigned by
+                     the facility at which the experiment is run.  The value
+                     of this option will be stored as the key
+                     <literal>experiment</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-spokesperson</option></term>
+               <listitem>
+                   <para>
+                     Provides the experiment's spokesperson.  This value is stored
+                     in the <literal>spokesperson</literal> key of the database's
+                     key value store.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-purpose</option></term>
+               <listitem>
+                   <para>
+                     Provides a brief description of the purpose of the experiment.
+                     This must be quoted if there are any white-space characters.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            If any of the experiment description parameters are omitted,
+            the <command>lg_create</command> command will switch into GUI
+            mode and display a dialog form that allows you to fill in the
+            remaining parameters.  All of the above parameters are mandatory this
+            facility is just provided to make the command line a bit less
+            unwieldy.
+         </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_current'>
+   <refmeta>
+      <refentrytitle  id='daq1.lg_current.title'>lg_current</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_current</refname>
+      <refpurpose>Set the current logbook database</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_create <optional><replaceable>databasefile</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Sets the current datadatabase for the other
+            <command>lg_*</command> commands and for the Tcl logbook high level
+            interface.  If <parameter>databasefile</parameter> is not provided,
+            the command switches to GUI mode and prompts for it.
+          </para>
+          
+    </refsect1>
+    <refsect1>
+      <title>FILES</title>
+      <variablelist>
+         <varlistentry>
+            <term><filename>~/.nscl-logbook-current</filename></term>
+            <listitem>
+                <para>
+                  The logbook selected is written into this file and this is
+                  then used in subsequente <command>lg_*</command>
+                  commands as the current database file.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_ls'>
+   <refmeta>
+      <refentrytitle  id='daq1.lg_ls.title'>lg_ls</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_ls</refname>
+      <refpurpose>Show current logbook.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_ls
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Lists the name of the current selected logbook database file to
+            stdout or else indicates that none has been selected.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_addperson'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_addperson.title'>lg_addperson</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_addperson</refname>
+      <refpurpose>Add a person to the logbook.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_addperson <optional>
+   <replaceable>lastname firstname</replaceable>
+   <optional><replaceable>salutation</replaceable></optional>
+</optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Since experiments are staffed by people and artifacts in the logbook
+            are associated with people, the people that can create artifacts
+            must be made known to the database. This command adds a person
+            to the database.
+          </para>
+          <para>
+            A person is identified by their <parameter>lastname</parameter>,
+            <parameter>firstname</parameter> and an optional
+            <parameter>salutation</parameter>.
+          </para>
+          <para>
+            If none of these are provided to the command, it switches to GUI
+            mode and pops up a dialog box that allows people to be added to the
+            database.  The dialog provides entries for the three fields that
+            define a person (salutation can be left blank).  The
+            <guibutton>Add</guibutton> button adds the person described and the
+            <guibutton>Done</guibutton> button exits the dialog.
+            Thus GUI Mode allows more than one person to be added in a
+            single invocation of the command.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry >
+   <refmeta>
+      <refentrytitle id='daq1.ls_people.title'>lg_lspeople</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_lspeople</refname>
+      <refpurpose>List the people defined in the logbook.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_lspeople
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a formatted list of the people that are known to the
+            logbook e.g:
+          </para>
+          <informalexample>
+            <programlisting>
+
+$DAQBIN/lg_lspeople a b v
+Salutation First Name Last Name
+Mr         Ron        Fox
+Prof.      Sean       Liddick
+Dr.        Giordano   Cerizza
+           Bryn       Forbes
+Mr.        Tristan    Warmels
+
+            </programlisting>
+          </informalexample>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_mkshift'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_mkshift.title'>lg_mkshift</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_mkshift</refname>
+      <refpurpose>Create a logbook shift</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_mkshift <optional><replaceable>shift-name</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Shifts are collections of people.  Shifs are  intended to capture
+            the concept that when experiment data taking is in progress,
+            data taking time is normally divided in time blocks and each time
+            block is manned by some subset of the people involved in data taking.
+            When data taking state changes occur (e.g. a run starts), that
+            state change is associated with the shift that was on duty at the
+            time.
+          </para>
+          <para>
+            Creates a new shift.  If the <parameter>shift-name</parameter>
+            command parameter is created, an empty shift with that name
+            is created.  If the <parameter>shift-name</parameter> is not
+            provided, <command>lg_mkshift</command> switches to GUI mode
+            and displays a dialog that allows you to both create a shift and
+            stock it with members.  See the tutorial information on the logbook
+            for a description of this dialog and how to use it.
+          </para>
+          <warning>
+            <para>
+               Once data taking has begun, shift membership should not be
+               modified.  This is because state changes are associated with a
+               shift name not with the collection of people that are members
+               of that shift at the time of the state change.  Therefor editing
+               shift members for a shift associated with a state change will
+               also edit the set of people associated with that state change.
+            </para>
+          </warning>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_mgshift'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_mgshift.title'>lg_mgshift</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_mgshift</refname>
+      <refpurpose>Manage shifts and memberships</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_mgshift create <optional><replaceable>shift-name</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+lg_mgshift edit <optional><replaceable>shift-name</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+lg_mgshift list <optional><replaceable>shift-name</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This command provides three operations that allow you  to manage shifts
+            and their membership.  The first, and mandatory, parameter is a verb
+            that indicates the action you want the command to take:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><command>create</command></term>
+               <listitem>
+                   <para>
+                     Creates a shift and brings up the shift editing dialog,
+                     which allows you to populate the shift with people. If the
+                     optional <parameter>shift-name</parameter> is provided,
+                     The shift editing dialog is loaded into the shift name
+                     slot of the dialog.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>edit</command></term>
+               <listitem>
+                   <para>
+                     Edits an existing shift using the shift editor dialog.
+                     If the <parameter>shift-name</parameter> is not specified,
+                     a shift selection dialog allows you to select the shift
+                     to edit from the existing shifts.  The shift edit dialog
+                     will reflect the current shift membership.
+                   </para>
+                   <para>
+                     You can also use this subcommand to create a new shift
+                     from the members of an existing shift. Simply edit the
+                     shift you want to use as a starting point and set a new name
+                     in the shift name box of the editor.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>list</command></term>
+               <listitem>
+                   <para>
+                     Without a <parameter>shift-name</parameter> lists all
+                     shifts and their members. If <parameter>shift-name</parameter>
+                     is provided only the the named shift is listed.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_selshift'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_selshift.title'>lg_selshift</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_selshift</refname>
+      <refpurpose>Select the current shift</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_selshift <optional><replaceable>shift-name</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <command>lg_*</command> family of commands have the concept
+            of a <firstterm>current shift</firstterm> (or on duty shift).
+            All automatically logged state changes attribute the shift to
+            the on-duty shift.  This command provides a mechanism to set the
+            current shift.  If <parameter>shift-name</parameter> is not supplied,
+            a shift selection dialog is displayed. Note that this dialog can
+            remain displayed after the current shift is selected, providing for
+            a permanently visible shift change dialog.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_kvstore'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_kvstore.title'>lg_kvstore</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_kvstore</refname>
+      <refpurpose>Manipulate the key value store.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_kvstore exists <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+lg_kvstore get <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+lg_kvstore set <replaceable>key value</replaceable>            
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+lg_kvstore create <replaceable>key value</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The logbook database provides a generic key value store.  This key
+            value store contains information provided when the database is
+            created but can also be used to associate arbitrary values with keywords.
+            A sort of persistent array with textual indices.  The
+            <command>lg_kvstore</command> command provides a command line
+            utility to manipulate that store.
+          </para>
+          <para>
+            The first, and mandatory parameter is a verb that tells the command
+            what it is supposed to do:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><command>exists</command></term>
+               <listitem>
+                   <para>
+                     Accepts one more parameter, a key.  If the key exists
+                     in the store, the exit status of the command will be 1.
+                     If not it will be 0.  This allows shell scripts to test
+                     for the existence of keys in the store.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>get</command></term>
+               <listitem>
+                   <para>
+                     Accepts one more parameter, a key.  The value of the key
+                     is output to stdout.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>set</command></term>
+               <listitem>
+                   <para>
+                     Requires two parmeters, in order a key and value.
+                     If the key already exists, its value is modified to value.
+                     If the key does not exist, it is created with the
+                     specified value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>create</command></term>
+               <listitem>
+                   <para>
+                     Requires two parameters, in order a key and value.  The
+                     key must not exist in the key value store.  If it does
+                     an error is returned.  If it does not, it is created with
+                     the specified value.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_wrnote'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_wrnote.title'>lg_wrnote</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_wrnote</refname>
+      <refpurpose>Write logbook notes</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_wrnote <optional><replaceable>run-number</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This graphical utility brings up the note editor.  If the
+            <parameter>run-number</parameter> is specified, the note is
+            initially associated with that run. If not the not is initially
+            not associated with a run.  Note that the note editor allows
+            the user to select a run with which to associate the note or
+            to explicitly specify that no run is associated with the note.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_browse'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_browse.title'>lg_browse</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_browse</refname>
+      <refpurpose>Logbook browser</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_browse
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a graphical logbook browser.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_print'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_print.title'>lg_print</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_print</refname>
+      <refpurpose>Convert part or all of the logbook to PDF.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_print <replaceable>pdf-filename</replaceable> <optional><replaceable>item...</replaceable></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Uses the <command>pandoc</command> markup processor to convert
+            part or all of the logbook to a pdf. <parameter>pdf-filename</parameter>,
+            is required by <command>pandoc</command> to have the extension
+            <literal>.pdf</literal>.  If no additional command line parameters are
+            supplied the runs and their associated notes are converted.  If
+            items are provided they can be either run numbers or the literal
+            text <literal>none</literal>.  For each run number on the command
+            line that run, its transitions and associated notes are rendered in
+            chronological order to the output file. If <literal>none</literal>
+            is specified, the notes that are not associated with any run are rendered.
+          </para>
+          <para>
+            The order of the items specifies the order in which they are rendered to
+            pdf. For example:
+          </para>
+          <informalexample>
+            <programlisting>
+$DAQBIN/lg_print logbook.pdf none 1 2 3 10 4
+            </programlisting>
+          </informalexample>
+          <para>
+            Renders first the notes that are not associated with any run followed
+            by the transitions and notes associated with, in order
+            runs 1,2,3,10, and 4.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.lg_lspeople'>
+   <refmeta>
+      <refentrytitle id='daq1.lg_lspeople.title'>lg_lspeople</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_lspeople</refname>
+      <refpurpose>List people that are defined</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+lg_lspeople
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            List the people that have been defined in the database.
+          </para>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3daq -->
