@@ -43,7 +43,7 @@ class CSqlite;
  */
 class LogBookShift
 {
-public:
+private:
     int           m_id;                    // Primary key of a wrapped shift.
     std::string   m_name;                  // Name of the shift.
     std::vector<LogBookPerson*> m_members; // Who's on the shift.
