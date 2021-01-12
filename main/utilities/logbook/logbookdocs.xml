@@ -3006,7 +3006,7 @@ public:
       <title><classname>LogBook::Exception</classname> METHODS</title>
       <para>
          All errors detected by the logbook system are reported by throwing
-         <classname>>LogBook::Exception</classname> exceptions.  This exception
+         <classname>LogBook::Exception</classname> exceptions.  This exception
          is derived from <classname>std::exception</classname>.
          This section describes the methods (most importantly the
          mechanisms for constructing instancde) of this class.
@@ -3184,7 +3184,7 @@ public:
     <refsect1>
       <title><classname>LogBook</classname> METHODS</title>
       <para>
-         The <classname>>LogBook</classname> methods are divided
+         The <classname>LogBook</classname> methods are divided
          into several sub-categories, each dealing with a subset of the
          responsibilities of the logbook subsystem.  This section will
          describe, in turn, the methods that make up each of the
@@ -3878,10 +3878,1053 @@ public:
             </varlistentry>
          </variablelist>
       </refsect2>
+      <refsect2>
+         <title>NOTES methods</title>
+         <para>
+            Notes consist of:
+         </para>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  Metadata that includes an author reference, an authorship time,
+                  and optionally an associated run.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The note text, which is in markdown format. 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  A list of zero or more embedded images and where their
+                  links are in the note text.
+               </para>
+            </listitem>
+         </itemizedlist>
+         <para>
+            The note API is one of the more complext bits of interface in
+            the <classname>LogBook</classname> class.  Note that,
+            as with other parts of the API, a class has been designed to
+            encapsulate notes; <classname>LogBookNote</classname>;
+            which is documented in
+            <link linkend='daq3.logbooknote' endterm='daq3.logbooknote.title' />.
+         </para>
+         <para>
+            API elements that return <classname>LogBookNote*</classname>
+            values or containers are returning pointers to dynamically allocated
+            objects that must be disposed of when no longer needed using
+            <literal>delete</literal>.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBookNote*</type>
+                     <methodname>createNote</methodname>
+                     <methodparam>
+                         <type>LogBookPerson&amp; </type><parameter>author</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const char* </type><parameter>note</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type> const std::vector&lt;std::string&gt;&amp; </type><parameter>imageFiles</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const std::vector&lt;size_t&gt;&amp; </type><parameter>imageOffsets</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>LogBookRun* </type><parameter>pRun </parameter>
+                         <initializer>nullptr</initializer>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Fully creates a note.  The return value is
+                     a pointer to an encapsulation of
+                     the note created.
+                   </para>
+                   <para>
+                     <parameter>author</parameter> is a pointer to an encapsulation
+                     of the person who's written the note.  <parameter>note</parameter>
+                     is a pointer to the note text.  The note is assumed to be
+                     in markdown format. 
+                   </para>
+                   <para>
+                     <parameter>imageFiles</parameter> is a vector of images file
+                     paths that are referenced by image links in the markdown.
+                     These images will be imported into the database.  This information
+                     could be scraped by your application from the note text.
+                     <parameter>imageOffsets</parameter> are the byte offsets
+                     into the note text at which the first character of the
+                     corresponding image link is.  Recall that image links look
+                     like <literal>![somet text](image-path)</literal>.  These
+                     offsets must be the offsets of the <literal>!</literal>.
+                   </para>
+                   <para>
+                     If the note is associated with a run, <parameter>pRun</parameter>
+                     points to the run object that encpapsulates the run.
+                     If not, either omit the parameter or explicitly pass a
+                     <parameter>nullptr</parameter> if your program flow makes that
+                     impossible or contorted.
+                   </para>
+                   <para>
+                     Once  the note is created, any image references you've passed
+                     are no longer needed as the image file contents have been
+                     sucked into the logbook database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBookNote* </type>
+                     <methodname>createNote</methodname>
+                     <methodparam>
+                         <type>LogBookPerson&amp; </type><parameter>author</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const char* </type><parameter>note</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>LogBookRun* </type><parameter>pRun </parameter>
+                         <initializer>nullptr</initializer>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Creates a note with no image links.  See
+                     the prior overload for the parameters we do have.  They are
+                     have the same meaning. In fact, this method just invokes
+                     the previous methos passing empty vectors for the image
+                     files and image file offset vectors.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBookNote* </type>
+                     <methodname>getNote</methodname>
+                     <methodparam>
+                         <type>int </type><parameter>id</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Retrieves an encapsulation fo the note with the
+                     primary key value <parameter>id</parameter>.  The
+                     primary key is a unique integer value assigned to each
+                     note.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>std::vector&lt;LogBookNote*&gt; </type>
+                     <methodname>listAllNotes</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns a vector containing pointers to encapsulations
+                     of all of the notes entered in the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>std::vector&lt;LogBookNote*&gt; </type>
+                     <methodname>listNotesForRunId</methodname>
+                     <methodparam>
+                         <type>int </type><parameter>runId</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the notes that are associated with a run
+                     given its primary key.  That is a value
+                     that was returned from the <methodname>runId</methodname>
+                     method e.g.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>std::vector&lt;LogBookNote*&gt; </type>
+                     <methodname>listNotesForRun</methodname>
+                     <methodparam>
+                         <type>int </type><parameter>runNumber</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the notes associated with a run that has
+                     the run number <parameter>runNumber</parameter>.
+                   </para>
+                </listitem>
+            </varlistentry>        
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>std::vector&lt;LogBookNote*&gt; </type>
+                     <methodname>listNonRunNotes</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the notes that are not associated with any run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBookRun* </type>
+                     <methodname>getNoteRun</methodname>
+                     <methodparam>
+                         <type>LogBookNote&amp; </type><parameter>note</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns a pointer to an encapsulated run object
+                     for the run associated with <parameter>note</parameter>.
+                     If there is no assciated run, <literal>nullptr</literal> is
+                     returned.  Note that the returned value points to a
+                     dynamically allocated object. When no longer needed it
+                     must be disposed using <literal>delete</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBookPerson* </type>
+                     <methodname>getNoteAuthor</methodname>
+                     <methodparam>
+                         <type>LogBookNote&amp;</type><parameter> note</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the encapsulated author of the <parameter>note</parameter>.
+                     This is a pointer to a dynamically allocated object.
+                     When you no longer need the author, you must
+                     use <literal>delete</literal> to dispose of it.
+                   </para>
+                </listitem>
+            </varlistentry>          
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>KEY VALUE STORE api</title>
+         <para>
+            The logbook database includes a key value store.  A key value store
+            is a table of keys and associated values.  They key value store
+            is used to store metatdata about the logbook itself and can be
+            used for simple application specific extension to the database to
+            meet unanticipated use cases.  Key Value will be abbreviated KV below.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>bool </type>
+                     <methodname>kvExists</methodname>
+                     <methodparam>
+                         <type>const char* </type><parameter>key</parameter>
+                     </methodparam>
+                  </methodsynopsis>      
+               </term>
+               <listitem>
+                   <para>
+                     Returns <literal>true</literal> if there's an entry
+                     with the key <parameter>key</parameter> in the KV store.
+                     If not returns <literal>false</literal>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>std::string </type>
+                     <methodname>kvGet</methodname>
+                     <methodparam>
+                         <type>const char* </type><parameter>key</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the value of the <parameter>key</parameter> in the
+                     KV store if the key exists.  If not a
+                     <classname>LogBook::Exception</classname> is thrown.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>void </type>
+                     <methodname>kvSet</methodname>
+                     <methodparam>
+                         <type>const char* </type><parameter>key</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const char* </type><parameter>value</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Sets a new
+                     <parameter>value</parameter>
+                     for the existing <parameter>key</parameter>. If there is
+                     no key <parameter>key</parameter>, a new KV pair are created.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>void </type>
+                     <methodname>kvCreate</methodname>
+                     <methodparam>
+                         <type>const char* </type><parameter>key</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const char* </type><parameter>value</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Creates a new KV entry in the KV store.  The
+                     key will be <parameter>key</parameter> and the
+                     value will be <parameter>value</parameter>.  If
+                     there is already a KV entry for <parameter>key</parameter>,
+                     a <classname>LogBook::Exception</classname> is thrown.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
     </refsect1>
 </refentry>
+<refentry id='daq3.logbookperson'>
+   <refmeta>
+      <refentrytitle id='daq3.logbookperson.title'>LogBookPerson</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBookPerson</refname>
+      <refpurpose>Encapsulate a person registered in a logbook.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+#include &lt;LogBookPerson.h&gt;
 
+class LogBookPerson
+{
 
+public:
+    LogBookPerson(CSqlite&amp; db, int id);  
+    LogBookPerson(const LogBookPerson&amp; rhs);
+public:
+    LogBookPerson&amp; operator=(const LogBookPerson&amp; rhs);
+    int operator==(const LogBookPerson&amp; rhs) const;
+    int operator!=(const LogBookPerson&amp; rhs) const;
+    
+    const char* lastName() const;
+    const char* firstName() const;
+    const char* salutation() const;
+    int         id() const;
+    
+    static LogBookPerson* create(
+        CSqlite&amp; db,
+        const char* lastName, const char* firstName, const char* salutation
+    );
+    static std::vector&lt;LogBookPerson*&gt; find(CSqlite&amp; db, const char* where=nullptr);
+    static std::vector&lt;LogBookPerson*&gt; list(CSqlite&amp; db);
+};
+      </programlisting>
+      <cmdsynopsis>
+         <command>
+... -I$DAQINC -L$DAQLIB -lLogbook -Wl,-rpath=$DAQLIB
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <classname>LogBookPerson</classname> class encapsulates
+            two use cases.  First it provides an encapsulation of a
+            person that has been registered in the logbook.  Second, it hides
+            operations on persons (creation, retrieval etc.) from the
+            <classname>LogBook</classname> API class.
+          </para>
+          <para>
+            As such, the documentation of the public methods in the section
+            that follows (<literal>METHODS</literal>) will indicate methods
+            that are not intended for actual client use but are
+            intended for use by the
+            <classname>LogBook</classname> class.  These methods can also be used
+            in special applications that may need to use the lower levels of the
+            API for unanticipated purposes.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Before describing the full set of methods for
+         <classname>LogBookPerson</classname> just a note that copy construction,
+         equality/inequalty comparison and assignment
+         are fully supported by this class and the methods needed
+         to support that need not be described.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>LogBookPerson</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>id</parameter>
+                  </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  The constructor, while public is not intended for general
+                  use.  It is used to construct an encapsulation of a person
+                  from an Sqlite++ database handle <parameter>db</parameter>
+                  reference
+                  and the primary key of the person.  This is the constructor,
+                  used for
+                  example. by <classname>LogBook::</classname><methodname>getPerson</methodname>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const char* </type>
+                  <methodname>lastName</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the last name of the person whom this object
+                  encapsulates.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const char* </type>
+                  <methodname>firstName</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the first name of the person whom this object
+                  encapsulates
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const char* </type>
+                  <methodname>salutation</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the salution of the person whom this object
+                  encapsulates.  Note that an empty string is used for
+                  a person who does not have a salutation so client code
+                  does not need to worry about this being a
+                  <literal>nullptr</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int</type>
+                  <methodname>id</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the primary key of the person whom this
+                  object encapsulates.  The primary key is a unique
+                  integer that's assigned each person.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookPerson* </type>
+                  <methodname>create</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>lastName</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char*</type><parameter>firsName</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char*</type><parameter>salutation</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use, this method creates a new
+                  person entry in the database.  This is used by e.g.
+                  <classname>LogBook::</classname><methodname>addPerson</methodname>.
+               </para>
+               <para>
+                  <parameter>db</parameter> is a reference to an Sqlite++
+                  database connection object and <parameter>lastName</parameter>,
+                  <parameter>firstName</parameter> and <parameter>salutation</parameter>
+                  provide the data from which the person is created.
+                  Once created, a pointer to a dynamically constructed
+                  encapsulation is returned to the caller.
+               </para>
+               <para>
+                  While the saluation of a person is considered optional,
+                  use a pointer to an empty string if one is not desired.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookPerson*&gt; </type>
+                  <methodname>find</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>where</parameter>
+                      <modifier>nullptr</modifier>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This is not intended for general use.  It is used by
+                  <classname>LogBook::</classname><methodname>findPeople</methodname>.
+                  The method returns a vector 
+                  pointers to dynamically allocated
+                  <classname>LogBookPerson</classname> objects that match the
+                  SQL where clause in <parameter>where</parameter>.  This
+                  claus should omit the keyword <literal>WHERE</literal>.
+                  See
+                  <link linkend='daq5.logbookschema' endterm='daq5.logbookschema.title' />
+                  for the fields that can be used in <parameter>where</parameter>.
+               </para>
+                <para>
+                  If <parameter>where</parameter> is a null pointer, as it is
+                  by default, no filtering is done and the result is functionally
+                  equivalent to that returned by <methodname>list</methodname>
+                  below.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookPerson*&gt;</type>
+                  <methodname> list</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp;</type><parameter> db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of pointers to dynamically allocated
+                  <classname>LogBookPerson</classname> objects that
+                  encapsulate all people that have been registered
+                  in the logbook database.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+<refentry id='daq3.logbookshift'>
+   <refmeta>
+      <refentrytitle id='daq3.logbookshift.title'>LogBookShift</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBookShift</refname>
+      <refpurpose>Encapsulates shifts in logbook databases</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+#include &lt;LogBookShift.h&gt;
+
+class LogBookShift
+{
+public:
+    int                               id() const;
+    const char*                       name() const;
+    const std::vector&lt;LogBookPerson*&gt;&amp; members() const;
+    
+    void addMember(CSqlite&amp; db, LogBookPerson* person);
+    void removeMember(CSqlite&amp; db, LogBookPerson* person);
+    void setCurrent(CSqlite&amp; db);
+
+    static LogBookShift* create(
+        CSqlite&amp; db,
+        const char* shiftName, const std::vector&lt;LogBookPerson*&gt;&amp; people
+    );
+    static LogBookShift* create(CSqlite&amp; db, const char* shiftName);
+    static std::vector&lt;LogBookShift*&gt; list(CSqlite&amp; db);
+    static LogBookShift* find(CSqlite&amp; db, const char* name);
+    static LogBookShift* getCurrent(CSqlite&amp; db);
+};
+
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+... -I$DAQINC -L$DAQLIB -lLogbook -Wl,-rpath=$DAQLIB
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This class encapsulates a shift.  A shift is a collection of people
+            that work on an experiment together during data taking.  Shifts are
+            used to organize work during the highly time critical use of beam-time.
+            At any given time a shift can be on duty or off duty.  At most one
+            shift can be on duty.  The on-duty shift is referred to in this
+            documentation as the <firstterm>current shift</firstterm>.
+          </para>
+          <para>
+            This class includes methods that are not intended for general use
+            but are invoked by <classname>LogBook</classname> methods to hide
+            implementation details from that class.  These methods will be
+            pointed out and are documented in case there's an overlooked use
+            case that crops up where they may be useful at the application level.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int</type>
+                  <methodname>id</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the primary key associated with the shift.
+                  The primary key is a unique integer assigned to each shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const char* </type>
+                  <methodname>name</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the name of the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const std::vector&lt;LogBookPerson*&gt;&amp; </type>
+                  <methodname>members</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the members of the shift.  The result is const reference
+                  to a vector of <classname>LogBookPerson</classname> object.
+                  Since you are getting a reference right into <classname>LogBookShift</classname>
+                  member data you are not allowed to nor should you try to
+                  figure out how to <literal>delete</literal> these objects.
+                  They will be deleted when the <classname>LogBookShift</classname>
+                  object is destroyed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>addMember</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>LogBookPerson*</type><parameter> person</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.  It adds a new
+                  <parameter>person</parameter> to the shift
+                  represented by this object in the database
+                  open on the Sqlite++ connection object <parameter>db</parameter>.
+                  It is used e.g. by
+                  <classname>LogBook::</classname><methodname></methodname>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>removeMember</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>LogBookPerson*</type><parameter> person</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.  It removes the
+                  member <parameter>person</parameter> from the shift represented
+                  by this object in the database open on the Sqlite++ connection
+                  object referenced by <classname>db</classname>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>setCurrent</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use, makes the shift represented by this
+                  object the current shift.  The shift must live in the database
+                  open on the Sqlite++ connection object <classname>db</classname>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookShift* </type>
+                  <methodname>create</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>shiftName</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const std::vector&lt;LogBookPerson*&gt;&amp; </type>
+                      <parameter>people</parameter>
+                  </methodparam>
+               </methodsynopsis>
+               
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use, this method adds the
+                  people in <parameter>people</parameter> to the shift named
+                  <parameter>shiftName</parameter> in the database represented by
+                  the Sqlite++ connection object <parameter>db</parameter>.
+               </para>
+               <para>
+                  The returned value is a pointer to a dynamically allocated
+                  <parameter>LogBookShift</parameter> object which must be
+                  destroyed via <literal>delete</literal> once it is no longer
+                  needed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookShift* </type>
+                  <methodname>create</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char*</type><parameter> shiftName</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use
+                  Creates a new shift named <parameter>shiftName</parameter> with
+                  no members.  The shift is created in the database represented
+                  by the Sqlite++ database connection object <parameter>db</parameter>.
+                  The return value is a pointer to a dynamically created
+                  <classname>LogBookShift</classname> object that encapsulates
+                  that shift.  When that object is no longer needed, you must
+                  destroy it using <literal>delete</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookShift*&gt; </type>
+                  <methodname>list</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.
+                  Returns a vector of pointers to encapsulations of all the
+                  shifts in the database referenced by the Sqlite++
+                  connection object <parameter>db</parameter>.
+                  The objects pointed to are dynamically allocated and must
+                  be destroyed using <literal>delete</literal> when they
+                  are no longer needed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookShift* </type>
+                  <methodname>find</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char*</type><parameter> name</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.  Returns a pointer
+                  to an encapsulation of the shift named <parameter>name</parameter>
+                  in the logbook database referenced by the Sqlite++ database
+                  connection object <parameter>db</parameter>.
+                  If there is no match, <literal>nullptr</literal> is returned
+                  instead.   The result points to a dynamically allocated object.
+                  When your program no longer needs it it should be destroyed
+                  with <literal>delete</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookShift* </type>
+                  <methodname>getCurrent</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp;</type><parameter> db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.
+                  If the logbook database referenced by the Sqlite++ database
+                  connection object has a current shift, a pointer to an encapsulation
+                  of that shift is returned.  If not, a <literal>nullptr</literal>
+                  is returned in stead.  The returned object is dynamic and,
+                  when no longer needed, <literal>delete</literal> must be
+                  used to destroy it.
+               </para>
+            </listitem>
+         </varlistentry>
+    
+      </variablelist>
+    </refsect1>
+</refentry>
+<refentry id='daq3.logbookrun'>
+   <refmeta>
+      <refentrytitle id='daq3.logbookrun.title'>LogBookRun</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBookRun</refname>
+      <refpurpose>Encapsulates runs from logbooks.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+class LogBookRun {
+public:
+    typedef struct _RunInfo {
+        int         s_id;
+        int         s_number;
+        std::string s_title;
+    } RunInfo, *pRunInfo;
+    typedef struct _Transition {
+        int         s_id;
+        int         s_transition;
+        std::string s_transitionName;
+        int         s_transitionTime;
+        std::string s_transitionComment;
+        LogBookShift* s_onDuty;
+    } Transition, *pTransition;
+    typedef struct _Run {
+        RunInfo                 s_Info;
+        std::vector&lt;Transition&gt; s_transitions;
+    } Run, *pRun;
+public:
+    LogBookRun(CSqlite&amp; db, int id);
+    virtual ~LogBookRun(); 
+
+    const RunInfo&amp; getRunInfo() const;
+    bool  isCurrent(CSqlite&amp; db) const;
+    const Transition&amp; operator[](int n) const;
+    size_t numTransitions() const;
+    int    lastTransitionType() const;
+    const char* lastTransition() const;
+    bool isActive() const;
+    void transition(CSqlite&amp; db, const char* type, const char* note);
+    
+    
+    //
+    static LogBookRun* currentRun(CSqlite&amp; db);
+    static int runId(CSqlite&amp; db, int runNumber);
+    static int begin(
+        CSqlite&amp; db,  int number,
+        const char* title, const char* remark=nullptr
+    );
+    static void  end (
+        CSqlite&amp; db,  int runid,
+        const char* remark=nullptr
+    );
+    static void  pause (
+        CSqlite&amp; db,  int runid,
+        const char* remark=nullptr
+    );
+    static void  resume (
+        CSqlite&amp; db,  int runid,
+        const char* remark=nullptr
+    );
+    static void  emergency_end (
+        CSqlite&amp; db,  int runid,
+        const char* remark
+    );
+    static std::vector&lt;LogBookRun*&gt; list(CSqlite&amp; db);
+    static LogBookRun* find(CSqlite&amp; db, int runNumber);
+    
+    
+    static bool isLegal(CSqlite&amp; db, int runId, int proposedTransition);
+    
+    
+};
+         
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+ ... -I$DAQINC -L$DAQLIB -lLogbook -Wl,-rpath=$DAQLIB           
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Data taking is divided into time segments.  Each segment of data
+            taking is called a <firstterm>run</firstterm>.  Runs and their
+            state transitions (e.g. from active to ended) are logged in the
+            logbook database.  This logging can be automated by using the
+            <literal>logbookbundle</literal> package with the Readout GUI.
+          </para>
+          <para>
+            In <link linkend='daq3.logbookshift' endterm='daq3.logbookshift.title' />
+            we learned that shifts are collections of people and that a shift can
+            be set to be the current shift.  When run state transitions are logged,
+            the current shift is associated with that transition.  This allows
+            us to know who was on duty during that segment of data taking.
+          </para>
+          <para>
+            The <classname>LogBookShift</classname> encapsulates one run
+            and its transition history in the logbook database.  We can think
+            of a run as consisting of information about the run;
+            the run number, run title, and a sequence of state transitions that
+            each contain a transition type (e.g. begining the run), the time
+            the transition was logged, the shift that was on-duty
+            and, in the logbook, a short remark
+            associated with the transition
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Some of the methods described in this section are not intended for
+         general use but serve to hide implementation details from the
+         <classname>LogBook</classname> top level API class. Nevertheless, they are
+         documented here in case some unanticipated use case arises that
+         necessitates an application making use of them in a time-scale too urgent
+         to allow the needed capabilities to be put in the top level API.
+      </para>
+    </refsect1>
+    <refect1>
+      <title>DATA TYPES</title>
+      <para>
+         The <classname>LogBookRun</classname> class defines three public
+         data types.  These data types, and their members are described
+         in this section.
+      </para>
+    </refect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3tcl -->
