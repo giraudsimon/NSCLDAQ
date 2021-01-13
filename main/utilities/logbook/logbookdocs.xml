@@ -4827,7 +4827,6 @@ public:
     } Run, *pRun;
 public:
     LogBookRun(CSqlite&amp; db, int id);
-    virtual ~LogBookRun(); 
 
     const RunInfo&amp; getRunInfo() const;
     bool  isCurrent(CSqlite&amp; db) const;
@@ -4914,17 +4913,1344 @@ public:
          documented here in case some unanticipated use case arises that
          necessitates an application making use of them in a time-scale too urgent
          to allow the needed capabilities to be put in the top level API.
+         These methods will be noted as not intended for general use in the
+         documentation below.
       </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>LogBookRun</methodname>
+                <methodparam>
+                    <type>CSqlite&amp; </type><parameter>db</parameter>
+                </methodparam>
+                <methodparam>
+                    <type> int </type><parameter>id</parameter>
+                </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This constructor is not intended for general use.  It is used
+                  by the <classname>LogBook</classname> class to wrap an existing
+                  run in the database referenced by the Sqlite++ database connection
+                  object <parameter>db</parameter> that has the primary
+                  key <parameter>id</parameter>.
+               </para>
+                <para>
+                  All information about the run are fetched from the database
+                  and loaded into the object under construction.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const RunInfo&amp; </type>
+                  <methodname>getRunInfo</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a const reference to a struct within the object that
+                  provides all information about the run.  The
+                  <structname>RunInfo</structname> structure is documented in
+                  <literal>DATA Types</literal> below.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>bool  </type>
+                  <methodname>isCurrent</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use but used to hide implementation
+                  details from  the <classname>LogBook</classname> class
+                  Returns <literal>true</literal> if the object represents
+                  the current run in the logbook database referenced by the
+                  Sqlite++ database connection object <parameter>db</parameter>,
+                  otherwise returns <literal>false</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const Transition&amp; </type>
+                  <methodname>operator[]</methodname>
+                  <methodparam>
+                     <type>int </type>
+                     <parameter>n</parameter>
+                  </methodparam>
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a const reference to a
+                  <structname>Transition</structname> struct that describes
+                  the <parameter>n</parameter>'th transition (the Begin run
+                  transition is number 0).  If <parameter>n</parameter>
+                  is out of range, a <classname>std::out_of_range</classname>
+                  error is thrown.   See <methodname>numTransitions</methodname>
+                  below.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>size_t </type>
+                  <methodname>numTransitions</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the number of transitions the run has undergone.
+                  <methodname>operator[]</methodname> can be used to
+                  retrieve references to each transition.n
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int    </type>
+                  <methodname>lastTransitionType</methodname>
+                  <void />
+                  <modifier> const</modifier>
+               </methodsynopsis>           
+            </term>
+            <listitem>
+                <para>
+                  Returns the integer code associated with the most recent
+                  transition the run underwent.  See
+                  <literal>DATA TYPES</literal> for a definition of the
+                  transition code values.  It may be simpler, instead to
+                  use <methodname>lastTransition</methodname> which returns
+                  a string version of the transition.
+                  Again see <literal>DATA TYPES</literal>.
+               </para>
+                <para>
+                  It is the most recent transition that determines the current
+                  state of the run as understood by the logbook.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const char*</type>
+                  <methodname> lastTransition</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a text string that describes the most recent
+                  transition the run had.  The most recent run state transition
+                  determines the current state of the run.  See
+                  <literal>DATA TYPES</literal> for information about the
+                  possible values this can take.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>bool </type>
+                  <methodname>isActive</methodname>
+                  <void /><modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Examines the last state transition the run has undergone
+                  and returns <literal>true</literal> if that transition
+                  implies the run has not ended (note that <literal>PAUSED</literal>
+                  runs are considered active too).  If not <literal>false</literal>
+                  is returned
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>transition</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>type</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>note</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This is not intended for general use.  It hides the implementation
+                  details of runs and transitions  from the
+                  <classname>LogBook</classname> class.
+                  Attemtps to perform an arbitrary state transition. on
+                  the run stored in the database connected to the
+                  <parameter>db</parameter> Sqlite++ connection object.
+               </para>
+                <para>
+                  The <parameter>type</parameter> parameter is a string
+                  that identifies the type of transition to attempt.
+                  See <literal>DATA TYPES</literal> for a list of legal strings.
+                  <parameter>note</parameter> is a pointer to a character string
+                  that is a remark to associate with the transition.  
+                </para>
+                <para>
+                  Several error conditions are possible which all throw
+                  <classname>LogBook::Exception</classname> exceptions:
+                </para>
+                <itemizedlist>
+                  <listitem>
+                     <para>
+                        The transition name string does not designate a legal
+                        transition name.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        The transition requested is not legal because the
+                        current state of the run forbids it. For example, a
+                        run whose prior transition was <literal>BEGIN</literal>
+                        cannot undertake a <literal>RESUME</literal> transition.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        There is no current shift.  The current shift is associated
+                        with the transition.  If there's no current shift,
+                        no runs can undertake transitions.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        Any error condition detected interacting with the
+                        database.
+                     </para>
+                  </listitem>
+                </itemizedlist>
+                <para>
+                  Note that if the state transition terminates the run
+                  (<literal>END</literal> or <literal>EMERGENCY_END</literal>),
+                  and the run is the current run, the database is told there is
+                  no current run.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookRun* </type>
+                  <methodname>currentRun</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  If the logbook database
+                  referenced by <parameter>db</parameter> has a current
+                  run, it is wrapped in a dynamically created
+                  <classname>LogBookRun</classname> and a pointer to that
+                  object is returned.  If not <literal>nullptr</literal> is
+                  returned.  It is the responsibility of the client to
+                  dispose of the returned object via <literal>delete</literal>
+                  when it is no longer needed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static int runId</type>
+                  <methodname></methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runNumber</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  This method returns
+                  the primary key of the run numbered
+                  <parameter>runNumber</parameter> from the logbook
+                  database referenced by <parameter>db</parameter>.
+                  If there is no run with that number a
+                  <classname>LogBook::Exception</classname> is returned.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static int </type>
+                  <methodname>begin</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type> int </type><parameter>number</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>title</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>remark</parameter>
+                      <initializer>nullptr</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  This method
+                  creates a new run with the provided
+                  <parameter>number</parameter> and <parameter>title</parameter>
+                  in the database referenced by <parameter>db</parameter>
+                  and <parameter>remark</parameter>.
+                  It then uses
+                  <methodname>transition</methodname> to initiate a
+                  <literal>BEGIN</literal> state transition to log the
+                  beginning of that run.  It then makes that
+                  run the current run.  The following errors can be thrown
+                  as <classname>LogBook::Exception</classname> objects:
+               </para>
+                <itemizedlist>
+                  <listitem>
+                     <para>
+                        A run with this run number cannot already exist.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        There cannot already be a current run. 
+                     </para>
+                  </listitem>
+                </itemizedlist>
+               <para>
+                  The return value from this method is the primary key assigned
+                  to the new run by the database when it was created.
+               </para>
+            </listitem>
+
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static void  </type>
+                  <methodname>end</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type> int </type><parameter>runid</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>remark</parameter>
+                      <initializer>nullptr</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This is not intended for general use.
+                  Attempts an end run transition on the run identified
+                  by the primary key <parameter>runid</parameter>
+                  <parameter>db</parameter> is the Sqlite++ database
+                  connection object connnected to the datasbase to be modified.
+                  <parameter>remark</parameter> is the comment to be associated
+                  with the transition.
+               </para>
+                <para>
+                  In addition to any error the <methodname>transition</methodname>
+                  method may throw, an exception is, of course, thrown if
+                  there is no run with the primary key <parameter>runid</parameter>.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static void </type>
+                  <methodname> pause </methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runid</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>remark</parameter>
+                      <initializer>nullptr</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Same as <methodname>end</methodname> but attempts a
+                  <literal>PAUSE</literal> transition to log that the
+                  on-going data taking run has been paused.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static void  </type>
+                  <methodname>resume</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runid</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>remark</parameter>
+                      <initializer>nullptr</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  same as <methodname>end</methodname> however attempts
+                  a <literal>RESUME</literal> transition.  That is a run,
+                  whose data taking is in the paused state due to the most
+                  recent transition being <literal>PAUSE</literal> is marked
+                  as actively taking data again.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static void  </type>
+                  <methodname>emergency_end</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runid</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>remark</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Attemts an <literal>EMERGENCY_END</literal> transition.
+                  This marks a run ended in a way that flags the end was not normal.
+                  The most common use of <literal>EMERGENCY_END</literal> is
+                  data acquisition system failure while a run was active.
+                  When the system starts up, it then detects that there is a currently
+                  active run in the logbook and forces an
+                  <literal>EMERGENCY_END</literal> to ensure there's no active/current
+                  run when the next <literal>BEGIN</literal> is attempted.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookRun*&gt; </type>
+                  <methodname>list</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not for general use.  This method returns a vector of
+                  pointer to <classname>LogBookRun</classname> objects that
+                  encapsulate <emphasis>all</emphasis> runs in the logbook.
+                  The objects pointed to are dynamically instantiated. Once
+                  they are no longer needed, you must <literal>delete</literal>
+                  them all in order to prevent memory/resource leaks.
+               </para>
+                <para>
+                  <parameter>db</parameter> is the Sqlite++ database object
+                  that is connected to the logbook database.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookRun* </type>
+                  <methodname>find</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp;</type><parameter> db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runNumber</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use. Locates the run with in
+                  the database referenced by <parameter>db</parameter> with
+                  the run number <parameter>runNumber</parameter> and
+                  wraps the data associated with it in a
+                  <classname>LogBookRun</classname> object returning a pointer to it.
+                  If there is no match, a <literal>nullptr</literal> is returned
+                  instead. 
+               </para>
+                <para>
+                  Note that the pointer returned points to a dynamically allocated
+                  object.  To prevent memory/resource leaks, when the program
+                  no longer needs that object it should use
+                  <literal>delete</literal> to destroy it.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static bool </type>
+                  <methodname>isLegal</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runId</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>proposedTransition</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  Locates the run in the
+                  database referenced by <parameter>db</parameter> with the
+                  primary key <parameter>runId</parameter> and checks to see
+                  if the current state of that run allows the
+                  <parameter>proposedTransition</parameter> to occur.
+                  If so <literal>true</literal> is returned otherwise
+                  <literal>false</literal>.
+               </para>
+                <para>
+                  This method can throw an
+                  <classname>LogBook::Exception</classname> if, for example,
+                  there is no matching run.
+                </para>
+            </listitem>
+         </varlistentry>
+
+      </variablelist>
     </refsect1>
-    <refect1>
+    <refsect1>
       <title>DATA TYPES</title>
       <para>
          The <classname>LogBookRun</classname> class defines three public
          data types.  These data types, and their members are described
          in this section.
       </para>
-    </refect1>
+   
+    <refsect2>
+      <title><structname>RunInfo</structname></title>
+      <para>
+         This struct provides the run metadata. It consists of the following
+         fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>int</type>  <structfield>s_id</structfield></term>
+            <listitem>
+                <para>
+                  Contains the primary key of the run that is described
+                  by this run metadata.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>int</type> <structfield>s_number</structfield></term>
+            <listitem>
+                <para>
+                  Contains the run number of the run that's described by
+                  this run metadata.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>std::string</type> <structfield>s_title</structfield></term>
+            <listitem>
+                <para>
+                  Contains the title of the run described by this struct instance.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>Transition</title>
+      <para>
+         The <structname>Transition</structname> structure provide information
+         about a single transition the run has undergone. 
+         <classname>LogBookRun</classname> instances contain a sequence of at least
+         one transitions (a <literal>BEGIN</literal> transition is what brings
+         a run into being).  
+      </para>
+      <para>
+         <structname>Transition</structname> structs have the following fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>int</type> <structfield>s_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of the transition in the transition table.
+                  See the <link linkend='daq5.logbookschema' endterm='daq5.logbookschema.title' />
+                  reference page for the full logbook schema.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>int</type> <structfield>s_transition</structfield></term>
+            <listitem>
+                <para>
+                  An integer that describes the transition see
+                  <link linkend='daq5.logbookrun.trantbl' endterm='daq5.logbookrun.trantbl.title' />
+                  for the values this can take.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>std::string</type>  <structfield>s_transitionName</structfield></term>
+            <listitem>
+                <para>
+                  Contains a text string that identifies the transition represented
+                  by this struct. See
+                  <link linkend='daq5.logbookrun.trantbl' endterm='daq5.logbookrun.trantbl.title' />
+                  for information about the values this string can take.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>int</type> <structfield>s_transitionTime</structfield></term>
+            <listitem>
+                <para>
+                  The time(2) at which this transition was logged. 
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>std::string</type> <structfield>s_transitionComment</structfield></term>
+            <listitem>
+                <para>
+                  A remark that can be logged with the transition. This is
+                  interpreted as plain text, however, if markdown is included,
+                  it will be properly rendered by the logbook renderers.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>LogBookShift*</type>  <structfield>s_onDuty</structfield></term>
+            <listitem>
+                <para>
+                  Pointer to a <classname>LogBookShift</classname> object
+                  that encapsulates the shift that was on duty when this
+                  transition was logged. For more on this object type, see
+                  <link linkend='daq3.logbookshift' endterm='daq3.logbookshift.title' />
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <table id='daq5.logbookrun.trantbl'>
+         <title id='daq5.logbookrun.trantbl.title'>State transition values</title>
+         <tgroup cols='3'>
+            <thead>
+               <row>
+                  <entry>s_transition value</entry>
+                  <entry>s_transitionName value</entry>
+                  <entry>Transition type</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>1</entry><entry>BEGIN</entry>
+                  <entry>Begin run. This is always the first transition</entry>
+               </row>
+               <row>
+                  <entry>2</entry><entry>END</entry>
+                  <entry>
+                     End of run.  This or <literal>EMERGENCY_END</literal>
+                     are always the last transition.
+                  </entry>
+               </row>
+               <row>
+                  <entry>3</entry><entry>PAUSE</entry>
+                  <entry>
+                     Pause run. Data taking is temporarly paused.
+                  </entry>
+               </row>
+               <row>
+                  <entry>4</entry><entry>RESUME</entry>
+                  <entry>
+                     Resume run. Indicates a paused run has resumed taking
+                     data.
+                  </entry>
+               </row>
+               <row>
+                  <entry>5</entry><entry>EMERGENCY_END</entry>
+                  <entry>Abnormal end of run.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+    </refsect2>
+    <refsect2>
+      <title>Run</title>
+      <para>
+         This struct contains all of the information about a run fetched from the
+         database:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>RunInfo</type>  <structfield>s_Info</structfield></term>
+            <listitem>
+                <para>
+                  Contains the run metadata
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>std::vector&lt;Transition&gt;</type> <structfield>s_transitions</structfield></term>
+            <listitem>
+                <para>
+                  Contains all of the information about all of the transitions
+                  the run has undergone.  The elements of this arrary are
+                  in chronological order.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect2>
+   </refsect1>
 </refentry>
+
+<refentry id='daq3.logbooknote'>
+   <refmeta>
+      <refentrytitle id='daq3.logbooknote.title'>LogBookNote</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBookNote</refname>
+      <refpurpose>Encapsulate logbook notes.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+#include &lt;LogBookNote.h&gt;
+
+class LogBookNote
+{
+public:
+    typedef struct _NoteText {
+        int        s_id;
+        int        s_runId;     // Associated run.
+        int        s_authorId;
+        time_t     s_noteTime;
+        std::string s_contents;
+    } NoteText, *pNoteText;
+    typedef struct _ImageInfo {
+        std::string s_filename;
+        size_t      s_offset;
+    } ImageInfo, *pImageInfo;
+    typedef struct _NoteImage {
+        int         s_id;
+        int         s_noteId;
+        int         s_noteOffset;
+        std::string s_originalFilename;
+        size_t      s_imageLength;
+        void*       s_pImageData;
+    } NoteImage, *pNoteImage;
+public:
+    LogBookNote(CSqlite&amp; db, int noteId);
+    
+    LogBookRun* getAssociatedRun(CSqlite&amp; db) const;
+    const NoteText&amp; getNoteText() const;
+    size_t          imageCount() const;
+    const NoteImage&amp; operator[](int n) const;
+    std::string substituteImages();
+    
+    static LogBookNote* create(
+        CSqlite&amp; db, LogBookRun* run, const char* string,
+        LogBookPerson* pPerson,
+        const std::vector&lt;ImageInfo&gt;&amp; images
+    );
+    
+    static std::vector&lt;int&gt; listRunNoteIds(CSqlite&amp; db, int runId);
+    static std::vector&lt;int&gt; listNonRunNotes(CSqlite&amp; db);
+    static std::vector&lt;LogBookNote*&gt; getAllNotes(CSqlite&amp; db);
+    static std::vector&lt;LogBookNote*&gt; getRunNotes(CSqlite&amp; db, int runId);
+    static std::vector&lt;LogBookNote*&gt; getNonRunNotes(CSqlite&amp; db);
+    std::string exportImage(const NoteImage&amp; image);
+    
+};
+
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+            
+... -I$DAQINC -L$DAQLIB -lLogbook -Wl,-rpath=$DAQLIB
+
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Instances of <classname>LogBookNote</classname> encapsulate data
+            in the database stored for a single note. Notes are considered to be
+            a soup of rich text in Markdown format
+            (see <ulink url='https://https://www.markdownguide.org/' />).
+            A note has metadata that consists of an author, a timestamp that
+            indicates when it was submitted to the database and optionally
+            a run with which it's associated.
+          </para>
+          <para>
+            As the Markdown syntax supports image file references, and we want
+            our logbook databases to be self-contained, when a note is submitted,
+            it is the authoring software's responsibility to submit the markdown
+            along with a set of image filenames and the byte offset into the
+            note text at which the image file reference begins.
+            (the byte offset of the <literal>!</literal> in e.g.
+            <literal>![some text](/image/file/path.jpg)</literal>).
+          </para>
+          <para>
+            Methods are provided to obtain the note text, re-exporting the images
+            into the logbook temporary directory and fixing up image references
+            so that they work properly.  Image formats are not restricted by
+            this software but only by the software used to view renderings of
+            the markdown code (e.g. the web-browser for HTML renderings or
+            acceptable LaTeX image formats for PDF).
+          </para>
+          <para>
+            It is important to note that this class's rendering is limited to
+            provding fixed-up markdown text. The problem of rendering this
+            markdown into PDF or HTML and viewing it is pushed out onto
+            user level software (e.g. <command>lg_print</command>
+            or <command>lg_browse</command>).  Reasonable well developed Tcl
+            support software has been developed and will be described in
+            pages in the <literal>3tcl</literal> reference section.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Some of the methods described here are provide to hide implementation
+         details from the <classname>LogBook</classname> class and not intended
+         for general use.  These will be pointed out but documented for
+         programmers of the logbook support software and to allow for
+         use cases not-foreseen.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>LogBookNote</methodname>
+                <methodparam>
+                    <type>CSqlite&amp; </type><parameter>db</parameter>
+                </methodparam>
+                <methodparam>
+                    <type>int </type><parameter>noteId</parameter>
+                </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  Locates the note with the
+                  primary key <parameter>noteId</parameter> from the
+                  database indicated by <parameter>db</parameter> and
+                  loads the data associated with that note, wrapping it in a
+                  newly constructed <classname>LogBookNote</classname> instance.
+               </para>
+                <para>
+                  This constructor is intended to hide note implementation details
+                  from the <classname>LogBook</classname> API class.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBookRun* </type>
+                  <methodname>getAssociatedRun</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  If this note in the database <parameter>db</parameter>,
+                  the data associated with that run is wrapped into a new
+                  <classname>LogBookRun</classname> object and a pointer
+                  to that object returned.  As the
+                  <classname>LogBookRun</classname> object is a dynamically
+                  created object, when it is no longer needed your
+                  program must destroy it with <literal>delete</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const NoteText&amp; </type>
+                  <methodname>getNoteText</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a <structname>NoteText</structname> reference
+                  to the data that describe the note.   See
+                  <literal>DATA TYPES</literal> for a description of the
+                  <structname>NoteText</structname> data structure.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>size_t</type>
+                  <methodname>imageCount</methodname>
+                  <void />
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the number of image referenes that are claimed to
+                  be embedded in to the note Markdown text.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>const NoteImage&amp; </type>
+                  <methodname>operator</methodname>
+                  <methodparam>
+                      <type>int </type><parameter>n</parameter>
+                  </methodparam>
+                  <modifier>const</modifier>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns information about the <parameter>n</parameter>'th
+                  image reference in the note text.  The
+                  <structname>NoteImage</structname> data structure
+                  is described in <literal>DATA TYPES</literal>.  If
+                  <parameter>n</parameter> is out of range of the number
+                  of images actually associated with the note text,
+                  a <classname>std::out_of_range</classname> exception is
+                  thrown.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>std::string </type>
+                  <methodname>substituteImages</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Iterates over the images associated with the note.
+                  For each image reference, the image data in the database is
+                  exported into a file in the logbook temporary directory,
+                  the image reference in the logbook text is then fixed up to
+                  properly reference the exported image.  
+               </para>
+                <para>
+                  The return value is the text of the note after all images
+                  have been exported and their references fixed up.
+                  Note that the original text in the database is not modified.
+                </para>
+                <para>
+                  <classname>LogBook::Exception</classname> is thrown if the
+                  byte offset of an image reference does not point to a valid
+                  markdown image reference.  Note that image export does not
+                  imply that the data are necessarily a valid image format.
+                  The code just exports the bytes it has.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static LogBookNote* </type>
+                  <methodname>create</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp;</type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>LogBookRun* </type><parameter>run</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const char* </type><parameter>string</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>LogBookPerson* </type><parameter>pPerson</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const std::vector&lt;ImageInfo&gt;&amp; </type>
+                      <parameter>images</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method is not intended for general use.
+                  It creates a new note in the database indicated by
+                  <parameter>db</parameter>.   <parameter>run</parameter> is
+                  a pointer to a run encapsulation for a run that will be associated
+                  with the note.  If there is no associated run, this should be
+                  a <literal>nullptr</literal>.  <parameter>string</parameter> are
+                  the contents of the note. <parameter>pPerson</parameter>
+                  is a pointer to an encapsulation of the person who is authoring
+                  the note.  <parameter>images</parameter> are a vector
+                  of image files paths and where their references appear in the
+                  <parameter>string</parameter>.  The
+                  <structname>ImageInfo</structname> struct is documented in
+                  <literal>DATA TYPES</literal>
+               </para>
+                <para>
+                  On success a new note has been created and a new
+                  <classname>LogBookNote</classname> wrapped around its data.
+                  A pointer to that note is then returned.   The
+                  <classname>LogBookNote</classname> object is dynamically
+                  created and, therefore, when no longer needed must be
+                  destroyed with <literal>delete</literal>/
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;int&gt; </type>
+                  <methodname>listRunNoteIds</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runId</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.  Given a logbook database;
+                  <parameter>db</parameter> and the primary key of a run
+                  in that database, returns a vector of all of the note ids
+                  associated with that run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;int&gt; </type>
+                  <methodname>listNonRunNotes</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp;</type><parameter> db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not for general use.  Given a logbook database;
+                  <parameter>db</parameter> returns the ids of all notes
+                  that are not associated with any run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookNote*&gt; </type>
+                  <methodname>getAllNotes</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use.
+                  Given a logbook database; <parameter>db</parameter>,
+                  returns a vector of pointers to
+                  <classname>LogBookNote</classname> encapsulations of all notes.
+                  The <classname>LogBookNote</classname> objects are all dynamically
+                  created so when  no longer needed, the program must destroy them
+                  with <literal>delete</literal> to avoid resourcde leaks.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookNote*&gt; </type>
+                  <methodname>getRunNotes</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>runId</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Not intended for general use. Given a
+                  database <classname>db</classname> connection object
+                  and the primary key of a run; <parameter>runId</parameter>,
+                  for each note associated with that run, encapsulates it in
+                  a <classname>LogBookRun</classname> object. A vector containing
+                  pointer to all those objects is then returned.
+                  the objects are dynamically created and must be destroyed
+                  using <literal>delete</literal> when no longer needed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>static std::vector&lt;LogBookNote*&gt; </type>
+                  <methodname>getNonRunNotes</methodname>
+                  <methodparam>
+                      <type>CSqlite&amp; </type><parameter>db</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Given a logbook database; <parameter>db</parameter>,
+                  encapsulates all notes that are not associated with a run
+                  in <classname>LogBookNote</classname> objects and return a
+                  vector of pointers to those objects.
+                  Since the objects are dynamically created and must be destroyed
+                  using <literal>delete</literal> when no longer needed.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>std::string</type>
+                  <methodname>exportImage</methodname>
+                  <methodparam>
+                      <type>const NoteImage&amp; </type><parameter>image</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Given image information, exports the image into a file
+                  in the logbook image diretory and returs a full path to the
+                  image.  This is not intended for general use. Normally it's
+                   used internally as part of
+                   <methodname>substituteImages</methodname>, however it turned
+                   out to be useful by they Python bindings API.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>      
+    </refsect1>
+    <refsect1>
+      <title>DATA TYPES</title>
+      <para>
+         <classname>LogBookNote</classname> exports several data types.
+      </para>
+      <refsect2>
+         <title>NoteText</title>
+         <para>
+            This data type encapsulates the raw note text and metadata.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_id</structfield></term>
+               <listitem>
+                   <para>
+                     The primary key of the note.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_runId</structfield></term>
+               <listitem>
+                   <para>
+                     If there is an associated run, this is it's primary key. If
+                     not, this value is <literal>0</literal> which is an invalid
+                     primary key value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_authoriId</structfield></term>
+               <listitem>
+                   <para>
+                     The primary key of the person who authored the note.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>time_t</type> <structfield>s_noteTime</structfield></term>
+               <listitem>
+                   <para>
+                     The time(2) at which the note was entered in the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>std::string</type> <structfield>s_contents</structfield></term>
+               <listitem>
+                   <para>
+                     The text of the note itself.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>ImageInfo</title>
+         <para>
+            This struct provides information about images referenced in the note text.
+            This struct is used to specify files to capture into the database.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><type>std::string</type> <structfield>s_filename</structfield></term>
+               <listitem>
+                   <para>
+                     The original file path specifying an image that is to be
+                     loaded into the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>size_t</type> <structfield>s_offset</structfield></term>
+               <listitem>
+                   <para>
+                     The byte offset of the <literal>!</literal> that is the
+                     first character of the reference to this image in the
+                     note text.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>NoteImage</title>
+         <para>
+            This struct captures the data stored in the database for images that
+            are captured in the database.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_id</structfield></term>
+               <listitem>
+                   <para>
+                     The primary key of the image in its table.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_noteId</structfield></term>
+               <listitem>
+                   <para>
+                     The primary key of the note that needs this image.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>int</type> <structfield>s_noteOffset</structfield></term>
+               <listitem>
+                   <para>
+                     The offset in the note text at which the link referencing
+                     this note begins.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>std::string</type>s_originalFilename</term>
+               <listitem>
+                   <para>
+                     The original filename of the note.  This is normally
+                     used to help construct the name of the exportefile.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>size_t</type> <structfield>s_imageLength</structfield></term>
+               <listitem>
+                   <para>
+                     Number of bytes of image data.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>void*</type> <structfield>s_pImageData</structfield></term>
+               <listitem>
+                   <para>
+                     Pointer to image data; that is the original contents of
+                     the file.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+
+    </refsect1>
+    <refsect1>
+      <title>FILES</title>
+      <variablelist>
+         <varlistentry>
+            <term><filename>~/.nscl-logbook</filename></term>
+            <listitem>
+                <para>
+                  Directory into which the image files are exported from the
+                  data base by e.g. <methodname>substituteImages</methodname>.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+
 <!-- /manpage -->
 
 <!-- manpage 3tcl -->
