@@ -6254,7 +6254,733 @@ public:
 <!-- /manpage -->
 
 <!-- manpage 3tcl -->
+<refentry id='tcl3.logbook'>
+   <refmeta>
+      <refentrytitle id='tcl3.logbook.title'>logbook</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>logbook</refname>
+      <refpurpose>Access Logbooks from Tcl</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+         
+lappend auto_path [file join $::env(DAQROOT) TclLibs]
+package require logbook
 
+      </programlisting>
+      <cmdsynopsis>
+         <command>
+logbook::logbook create <replaceable>filename experiment spokesperson purpose</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set instance [logbook::logbook open <replaceable>filename</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set logbookTempdir [logbook::logbook tempdir]
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>logbook</literal> package provides access to NSCL
+            logbook databases.  It provides the <command>logbook::logbook</command>
+            command which can create and access databases.  
+          </para>
+          <para>
+            A disadvantage of the <literal>logbook</literal> package is, that while
+            it provides an object oriented interface to the C++ API, it places
+            the burden of resource management directly on the script author.
+            Generally, this is terra incongnita for a Tcl programmer.  If
+            possible We recommend that you use the
+            <link linkend='daq3.logbookadmin' endterm='daq3.logbookadmin.title' />
+            package instead as that procedural interface does storage management
+            for you.
+          </para>
+          <refsect2>
+            <title>SUBCOMMANDS</title>
+            <para>
+               The <literal>logbook</literal> package provides a single command
+               <command>logbook::logbook</command> which is the base command
+               of a command ensemble with three subcommands:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term><command>create <replaceable>filename experiment spokesperson purpose</replaceable></command></term>
+                  <listitem>
+                      <para>
+                        Creates a new logbook database in
+                        <parameter>filename</parameter>.  <parameter>filename</parameter>
+                        must not yet exist.  <parameter>experiment</parameter>
+                        should be the experiment identifier, usually assigned by
+                        the institution that scheduled the experiment,
+                        <parameter>spokesperson</parameter> should be the
+                        person who proposed the experiment, <parameter>purpose</parameter>
+                        should be a brief statement of purpose for the experiment.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><command>open <replaceable>filename</replaceable></command></term>
+                  <listitem>
+                      <para>
+                        Provides access to the logbook database in the file
+                        <parameter>filename</parameter>.  This access is
+                        provided in the form of a <firstterm>logbook instance</firstterm>
+                        command.  This, is a command ensmeble whose subcommands
+                        allow you to manipulate the logbook.  See
+                        <link linkend='tcl3.logbookinstance' endterm='tcl3.logbookinstance.title' />
+                        for more about logbook instances and what you can do with them.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><command>tempdir</command></term>
+                  <listitem>
+                      <para>
+                        Returns a path to the directory the logbook system
+                        uses to hold files it need to create.  If your software
+                        needs to create files that don't require preservation
+                        beyond the lifetime of your script place them here.
+                        The files placed here are normally files for which there
+                        is only a transient need (e.g. rendered markdown which
+                        will then be passed to a browser or image files needed
+                        in the rendering of markdown text).
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+          </refsect2>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.logbookinstance'>
+   <refmeta>
+      <refentrytitle id='tcl3.logbookinstance.title'>logbookinstance</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>logbook instance</refname>
+      <refpurpose>Logbook API instance object.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+lappend auto_path [file join $::env(DAQROOT) TclLibs]
+package require logbook
+
+set instance [logbook::logbook open <replaceable>logbook-file</replaceable>]
+
+...
+      </programlisting>
+      <cmdsynopsis>
+         <command>
+$instance destroy
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set person [$instance addPerson <replaceable>lastname firstname ?salutation?</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set people [$instance findPeople ?where-clause?]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set people [$instance listPeople]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set person [$instance getPerson <replaceable>id</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set shift [$instance createShift <replaceable>shiftname ?people?</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set shift [$instance getShift <replaceable>id</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance addShiftMember <replaceable>shift-instance person-instance</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance removeShiftMember <replaceable>shift-instance person-instance</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set shifts [$instance listShifts]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set shift [$instance findShift <replaceable>shift-name</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instancce setCurrentShift <replaceable>shift-name</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set shift [$instance getCurrentShift]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set run [$instance begin <replaceable>number title ?remark?</replaceable>      
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance end <replaceable>run ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance pause <replaceable>run ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance resume <replaceable>run ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance emergencyStop <replaceable>run ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set runs [$instance listRuns]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set run [$instance findRun <replaceable>run-number</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set id [$instance runId <replaceable>run</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set run [$instance currentRun]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set note [$instance createNote <replaceable>author text ?run?</replaceable>]
+         </command>
+         <command>
+set note [$instance createNote <replaceable>author text images imageoffsets ?run?]</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set note [$instance getNote <replaceable>id</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set notes [$instance listAllNotes]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set notes [$instance listNotesForRunId <replaceable>id</replaceable>]
+         </command>
+         <command>
+set notes [$instance listNotesForRunNumber <replaceable>run-number</replaceable>]
+         </command>
+         <command>
+set notes [$instance listNotesForRun <replaceable>run</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set notes [$instance listNonRunNotes]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set run [$instance getNoteRun <replaceable>note</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set person [$instance getNoteAuthor <replaceable>note</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set flag [$instance kvExists <replaceable>key</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set value [$instance kvGet <replaceable>key</replaceable>]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance kvSet <replaceable>new-or-existing-key value</replaceable>      
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$instance kvCreate <replaceable>new-key value</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            It's not possible for you to directly instantiate a logbook instance
+            object. You obtain one from the <command>logbook::logbook</command>
+            command.  See
+            <link linkend='tcl3.logbook' endterm='tcl3.logbook.title' />.
+            Logbook instances are command ensembles who's subcommand manipulate
+            the logbook database they were connected to by the
+            <command>logbook::logbook open</command> command.
+          </para>
+          <refsect2>
+            <title>SUBCOMMANDS</title>
+           <para>
+              The subcommands of a logbook instance are:
+            </para>
+           <variablelist>
+            <varlistentry>
+               <term>
+                  <command>destroy</command>
+               </term>
+               <listitem>
+                   <para>
+                     All logbook instance commands are dynamically created and
+                     have storage and other resources associated with them.
+                     When a logbook instance is not longer needed this subcommand
+                     should be used to destroy it.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>addPerson <replaceable>lastname firstname ?salutation?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Registers a new person with the logbook data base.
+                     The <parameter>lastname</parameter> and <parameter>firstname</parameter>
+                     define the person as does an optional <parameter>salutation</parameter>
+                     (e.g. Mr., Ms. Dr. Prof. etc.).  The result of this command
+                     is a <firstterm>person instance</firstterm>.
+                   </para>
+                   <para>
+                     Person instances are described in
+                     <link linkend='tcl3.personinstance'
+                           endterm='tcl3.personinstance.title' />.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>findPeople <replaceable>?where-clause?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Returns a list of person instances that match the
+                     conditions in the optional <parameter>where-clause</parameter>.
+                     The <parameter>where-clause</parameter> is an SQL
+                     fragment that can be appended to the <literal>WHERE</literal>
+                     part of the database query that satisfies this command.
+                     See <link linkend='daq5.logbookschema'
+                              endterm='daq5.logbookschema.title' />
+                     for more information about what you might be able to use here.
+                   </para>
+                   <para>
+                     If <parameter>where-clause</parameter> is not supplied,
+                     all people are returned.  This is functionally equivalent
+                     to <command>listPeople</command> below.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>listPeople</command></term>
+               <listitem>
+                   <para>
+                     Equivalent to <command>findPeople</command> with a
+                     where-clause that's always true, this command returns
+                      a list of people instances that encapsulate all people
+                      defined to the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getPerson <replaceable>id</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Given the primary key (<parameter>id</parameter>) of a person
+                     retrieves information about that person from the logbook
+                     database and wraps a person instance around it.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>createShift <replaceable>shiftname ?people?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Creates a new shift <parameter>shiftname</parameter>. If
+                     <parameter>people</parameter> is supplied it must be a list
+                     of person instances.  Each of those people will be added
+                     to the shift.  The return value from this
+                     subcommand is a <firstterm>shift instance</firstterm>.
+                     Shift intances are command ensembles that are described in
+                     <link linkend='tcl3.shiftinstance'
+                           endterm='tcl3.shiftinstance.title' />.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getShift <replaceable>id</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Returns a shift instance for the shift with primary key
+                     <parameter>id</parameter>.  If there is no shift with that
+                     primary key, the command completes with an error signalled.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>addShiftMember <replaceable>shift-instance person-instance</replaceable></term>
+               <listitem>
+                   <para>
+                     Adds a member to the shift with <parameter>shift-instance</parameter>
+                     as its shift instance object command. The person added
+                     has <parameter>person-instance</parameter> as its person
+                     instance object command.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>removeShiftMember <replaceable>shift-instance person-instance</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Removes a member from a shift.  THe parameters are the
+                     same as for <command>addShiftMember</command>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>listShifts</command></term>
+               <listitem>
+                   <para>
+                     Returns a Tcl list whose elements are shift instance object
+                     commands.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>findShift <replaceable>shift-name</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Finds the shift named <parameter>shift-name</parameter>
+                     and wraps it in a shift instance object command.  If
+                     <parameter>shift-name</parameter> does not exist,  an
+                     empty string is returned instea.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>setCurrentShift <replaceable>shift-name</replaceable></term>
+               <listitem>
+                   <para>
+                     Sets the current shift to be the shift named
+                     <parameter>shift-name</parameter>. An error is raised if
+                     <parameter>shift-name</parameter> is not the name of any
+                     shift.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getCurrentShift</command></term>
+               <listitem>
+                   <para>
+                     If a current shift has been established, this returns a
+                     shift instance command that refers to it.  If not,
+                     an empty string is returned. 
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term> begin <replaceable>number title ?remark?</replaceable> </term>
+               <listitem>
+                   <para>
+                     Begins a new run with run number <parameter>number</parameter>
+                     and title <parameter>title</parameter>.  If provided the optional
+                     <parameter>remark</parameter> is a textual remark that his
+                     associated with the run's begin state transition. The return value, on success,
+                     is a run object instance.
+                     See <link linkend='tcl3.runinstance'
+                              endterm='tcl3.runinstance.title' /> for information
+                     about run instance object commands.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>end <replaceable>run ?remark?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Ends the run whose run instance command is
+                     <parameter>run</parameter>.  The optional
+                     <parameter>remark</parameter> is a textual remark that's
+                     associated with the end run operation.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>pause <replaceable>run ?remark?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Pauses the run whose run instance command is
+                     <parameter>run</parameter>.  The optional
+                     <parameter>remark</parameter> is a textual remark that's
+                     associated with the end pause operation.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>resume <replaceable>run ?remark?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Resumes the run whose run instance command is
+                     <parameter>run</parameter>.  The optional
+                     <parameter>remark</parameter> is a textual remark that's
+                     associated with the resume run operation.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>emergencyStop <replaceable>run ?remark?</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Performs an emergency end run on the run
+                     run instance command is
+                     <parameter>run</parameter>.  The optional
+                     <parameter>remark</parameter> is a textual remark that's
+                     associated with the end run operation.
+                   </para>
+                   <para>
+                     An emergency stop, or emergency end as it's also referred to,
+                     flags the end of a run that, due to data acquisition system
+                     failures is not able to end properly.  For all intents and
+                     purposes it is an end run but a different transition code
+                     is used to log that something funny happened to cause the end.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>listRuns</command></term>
+               <listitem>
+                   <para>
+                     Returns a list of all of the runs known to the database
+                     as run instance commands.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>findRun <replaceable>run-number</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Finds the run with the number <parameter>run-number</parameter>
+                     in the database and packages it up in a run instance command
+                     which the command returns.  If there is no matching run,
+                     an empty string is returned.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>runId <replaceable>run</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Given a run instance command, returns the primary key of the
+                     run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>currentRun</command></term>
+               <listitem>
+                   <para>
+                     If there is a current run, a run instance command wrapping
+                     it is returned.  If not an empty string is returned.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>createNote <replaceable>author text ?run?</replaceable></command>
+                     <command>createNote <replaceable>author text images imageoffsets ?run?</replaceable></command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Creates a new note and returns a note instance command.
+                     For information about note instance commands, see
+                     <link linkend='tcl3.noteinstance'
+                           endterm='tcl3.noteinstance.title' />.
+                     While, as you can see there are a couple of forms of this
+                     command the meanings of the parameters across these forms
+                     are the same.  In cases where items are not present, they are
+                     not part of the note being created, for example
+                     the fact that in both command forms <parameter>run</parameter>
+                     is optional means that if it is not provided the note
+                     is not associated with any run.  If <parameter>images</parameter>
+                     and <parameter>imageoffsets</parameter> are not present,
+                     no images are considered to be embedded in the note
+                     text.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getNote <replaceable>id</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Returns a note instance command that wraps the note with
+                     <parameter>id</parameter> as its primary key.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>listAllNotes</command></term>
+               <listitem>
+                   <para>
+                     Returns a list containing run instance commands for all
+                     notes.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+                        listNotesForRunId <replaceable>id</replaceable>
+                     </command>
+                     <command>
+                        listNotesForRunNumber <replaceable>run-number</replaceable>
+                     </command>
+                     <command>
+                        listNotesForRun <replaceable>run</replaceable>
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     All of these subcommands return a list of the notes associated
+                     with a run.  They differ only in how the run is specified.
+                     In <command>listNotesForRunId</command>, <parameter>id</parameter>
+                     specifies the desired run's primary key.  In
+                     <command>listNotesForRunNumber</command>
+                     <parameter>run-number</parameter> is the number of the
+                     desired run. For <command>listNotesForRun</command>,
+                     <parameter>run</parameter> is a run instance command for
+                     the run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>listNonRunNotes</command></term>
+               <listitem>
+                   <para>
+                     Returns a list of run instance command for the notes
+                      in the database that do not have an associated run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getNoteRun <replaceable>note</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Given a note instance command, <parameter>note</parameter>,
+                     if the note is associated with a run, a run instance command
+                     for the associated run is returned.  If there is no associated
+                     run, then an empty string is returned instead.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>getNoteAuthor <replaceable>note</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Give a <parameter>note</parameter> instance command
+                     extracts the author and returns it as a person instance
+                     command.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>kvExists <replaceable>key</replaceable></command></term>
+               <listitem>
+                   <para>
+                     If the database key value store contains an entry for
+                     <parameter>key</parameter> a boolean true is returned,
+                     otherwise a boolean false value is returned.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>kvGet <replaceable>key</replaceable></command></term>
+               <listitem>
+                   <para>
+                     If <parameter>key</parameter> has an entry in the database
+                     key value store, its value is returned.  If not,
+                     an error is raised.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>kvSet <replaceable>new-or-existing-key value</replaceable></command></term>
+               <listitem>
+                   <para>
+                     If <parameter>new-or-existing-key</parameter> exists
+                     in the database, its value is modified to <parameter>value</parameter>.
+                     If <parameter>new-or-existing-key</parameter> does not
+                     exist, a new entry is created with that key and is given the
+                     <parameter>value</parameter> as a value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command><replaceable>new-key value</replaceable></command></term>
+               <listitem>
+                   <para>
+                     Same as <command>kvSet</command>, however the
+                     <parameter>new-key</parameter> must not yet exist in the
+                     key value store.
+                   </para>
+                </listitem>
+            </varlistentry>
+           </variablelist>
+          </refsect2>
+
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3python -->
