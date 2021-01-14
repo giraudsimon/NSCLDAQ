@@ -526,6 +526,7 @@ TclLogBookInstance::setCurrentShift(
         throw std::invalid_argument(e);
     }
     m_logBook->setCurrentShift(pShift);
+    delete pShift;
 }
 /**
  * getCurrentShift
