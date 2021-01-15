@@ -6981,6 +6981,109 @@ $instance kvCreate <replaceable>new-key value</replaceable>
 
     </refsect1>
 </refentry>
+<refentry id='tcl3.personinstance'>
+   <refmeta>
+      <refentrytitle id='tcl3.personinstance.title'>personinstance</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>personinstance</refname>
+      <refpurpose>Encapsulate a logbook person for Tcl scripts</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require logbook
+set logbook [logbook::logbook open <replaceable>logbookfile</replaceable>]
+...
+set person [$logbook getPerson <replaceable>1</replaceable>]
+...
+
+      </programlisting>
+      <cmdsynopsis>
+         <command>
+$person destroy
+         </command>
+         <command>
+set lastName [$person lastName]
+         </command>
+         <command>
+set firstName [$person firstName]
+         </command>
+         <command>
+set salutation [$person salutation]
+         </command>
+         <command>
+set id [$person id]
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides an object oriented encapsulation of the data for a logbook
+            person.  The data are cached in the object rather than fetched
+            on demand from the database.  Since people are  write once objects,
+            in general this is not a problem for scripts.
+          </para>
+          <para>
+            All person instance commands are command ensembles.  See
+            <literal>SUBCOMMANDS</literal> for the subcommands each instance
+            provides.  It is important to note that when a person instance is
+            no longer needed by the script its <literal>destroy</literal>
+            subcommand must be called to avoid memory leaks.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>SUBCOMMANDS</title>
+      <variablelist>
+         <varlistentry>
+            <term><command>destroy</command></term>
+            <listitem>
+                <para>
+                  Destroys the object command. This releases all storage associated
+                  with the command and removes the command from the interpreter.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>lastName</command></term>
+            <listitem>
+                <para>
+                  Returns the last name of the person encapsulated by this
+                  command.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>firstName</command></term>
+            <listitem>
+                <para>
+                  Returns the first name of the person encapsulated by this
+                  command.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><commmand>salutation</commmand></term>
+            <listitem>
+                <para>
+                  Returns the salutation of the person encapsulated by this
+                  command.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>id</command></term>
+            <listitem>
+                <para>
+                  Returns the primary key of the person encapsulated by this
+                  command.  This is a unique integer assigned to each person.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3python -->
