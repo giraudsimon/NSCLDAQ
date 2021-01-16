@@ -29,9 +29,9 @@ class CompassTrigger : public CEventTrigger
 {
 private:
     std::vector<CompassEventSegment*> m_modules;
-    int  m_nextModule;
+    unsigned                          m_nNextModule;
+    void next();                    // module iteration.
 public:
-    CompassTrigger() : m_nextModule(0) {}
     void addModule(CompassEventSegment* module);
     virtual bool operator()();
     

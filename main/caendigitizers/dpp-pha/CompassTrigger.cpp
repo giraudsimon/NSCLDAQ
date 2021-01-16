@@ -35,13 +35,20 @@ bool
 CompassTrigger::operator()()
 {
     for (int i =0; i < m_modules.size(); i++) {
-        
-        int m = m_nextModule;
-        m_nextModule++;
-        m_nextModule = m_nextModule % m_modules.size();
-        
-        if (m_modules[m]->checkTrigger()) return true;
-        
+        next();
+        if (m_modules[m_nNextModule]->checkTrigger()) return true;
     }
     return false;
+}
+
+// Utility methods;
+
+/**
+ * next
+ *   Advances m_nNextModule to the next module (circularly).
+ */
+void
+CompassTrigger::next()
+{
+    m_nNextModule = (++m_nNextModule) % m_modules.size();
 }

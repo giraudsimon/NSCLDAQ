@@ -81,6 +81,22 @@ public:
   double preTriggers;
   int    recordLength;
   std::vector <ChannelCoincidenceSettings> coincidenceSettings;
+  typedef enum _CoincidenceCompassOp {
+	None,PairedAnd,Ch0AndAny,Ch0Veto,TrgInGated,TrgInVeto
+  } OnboardCoincidenceOp;
+
+  typedef enum _TrgOutMode {
+	TRGOUT_MODE_LEVEL0, TRGOUT_MODE_LEVEL1, 
+TRGOUT_MODE_SW_TRG, TRGOUT_MODE_EXT_TRG, 
+TRGOUT_MODE_GLOBAL_OR_TRG, TRGOUT_MODE_RUN, TRGOUT_MODE_DELAYED_RUN, 
+TRGOUT_MODE_SAMPLE_CLK, TRGOUT_MODE_PLL_CLK, TRGOUT_MODE_BUSY, TRGOUT_MODE_PLL_UNLOCK, TRGOUT_MODE_VPROBE, TRGOUT_MODE_SYNCIN
+  } TrgOutMode;
+
+  TrgOutMode trgoutmode;
+  OnboardCoincidenceOp OnboardCoinc;
+  bool isExtTrgEnabled;
+  bool isExtVetoEnabled;
+  double shapTrgWidth;
 
   bool         waveforms;
   bool         dualTrace;
@@ -110,16 +126,15 @@ public:
 
   // With compass:
   
-  
   CAEN_DGTZ_AcqMode_t s_startMode;
-  double              s_timeOffset;    //nanoseconds to subtract from timestamp.
   
   // Decoded channel parameters.
-  
-  bool               m_includeCounters;
+
   std::vector<std::pair<unsigned, CAENPhaChannelParameters*> > m_channelParameters;
   
-  
+  //Additional parameters written in, mostly bools
+
+
 public:
   CAENPhaParameters(pugi::xml_document& m_dom, std::vector<std::pair<unsigned, pugi::xml_document*> >& channelDoms);
   CAENPhaParameters() : m_dom(empty), m_channelDoms(emptyDoms), acqMode(1) {}                // Default constructor
