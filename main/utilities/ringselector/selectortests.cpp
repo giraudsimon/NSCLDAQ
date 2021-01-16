@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <string>
+#include <string.h>
 #include <sys/wait.h>
 #include <CRingBuffer.h>
 #include <time.h>
@@ -110,6 +111,7 @@ static void textItem(CRingBuffer& prod, int fd, bool check = true)
 
   CRingTextItem i(PACKET_TYPES, items);
   i.commitToRing(prod);
+  usleep(1000);
 
   if (check) {
     char buffer[2048];
@@ -119,11 +121,14 @@ static void textItem(CRingBuffer& prod, int fd, bool check = true)
     EQ(PACKET_TYPES, e->s_header.s_type);
     EQ((uint32_t)3,  pb->s_stringCount);
 
-    char* p = pb->s_strings;
+    char* p = &(pb->s_strings[0]);  // For reasons not clear to me this fails otherwise.
+    EQ(strlen("String 1"), strlen(p));
     string s1(p);
     p += s1.size() + 1;
+    EQ(strlen("String 2"), strlen(p));
     string s2(p);
     p += s2.size() +1;
+    EQ(strlen("The last string"), strlen(p));
     string s3(p);
 
     EQ(string("String 1"), s1);
