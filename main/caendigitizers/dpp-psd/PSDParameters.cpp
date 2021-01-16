@@ -67,18 +67,21 @@ PSDParameters::parseConfiguration(pugi::xml_document& doc)
         );
     }
     std::vector<pugi::xml_node> boards = getAllByName(config, "board");
-    
+
     if (boards.size() == 0) {
         throw std::invalid_argument(
             "The compass configuration file has no board configurations."
         );
     }
     for (int i = 0; i < boards.size(); i++) {
-        if (isPsd(boards[i])) {
-            s_boardParams.emplace(s_boardParams.end());
-            PSDBoardParameters& board(s_boardParams.back());
-            configureBoard(boards[i], board);
-        }
+
+        pugi::xml_node dppType =  getNodeByName(boards[i], "dppType");
+	if(getStringContents(dppType)=="DPP_PSD")
+	{
+         s_boardParams.emplace(s_boardParams.end());
+         PSDBoardParameters& board(s_boardParams.back());
+         configureBoard(boards[i], board);
+	}
     }
 }
 /**
@@ -210,10 +213,11 @@ PSDParameters::configureChannel(
     pugi::xml_node chanNumNode =
         getNodeByNameOrThrow(chanNode, "index",  "Missing <index> tag in <channel>");
     unsigned chanNum = getUnsignedContents(chanNumNode);
-    
+
     // Now iterate over the <entry> tags for that node:
     
-    std::vector<pugi::xml_node> entries = getAllByName(chanNode, "entry");
+    std::vector<pugi::xml_node> entries = getAllByName2(chanNode, "entry","values");	//Edit by B.Sudarsan, July 2020
+
     for (int i =0; i < entries.size(); i++) {
         setParameterValue(entries[i], *board, chanNum);
     }
@@ -230,14 +234,20 @@ PSDParameters::configureChannel(
  */
 void
 PSDParameters::setParameterValue(
-    pugi::xml_node& entry, PSDBoardParameters& board, unsigned chan
+    pugi::xml_node& entry, PSDBoardParameters& board, int chan
 )
 {
+
+    
+
     pugi::xml_node keyNode = getNodeByNameOrThrow(entry, "key", "Missing <key> tag in <entry>");
     pugi::xml_node valNode = getNodeByNameOrThrow(entry, "value", "Missing <value> tag in <entry>");
     
+    if(chan != -1)
+	    valNode = entry;
+
+
     std::string key = getStringContents(keyNode);
-    
     // What we actually do depends on the key tag contents, the parameter name.
     
     if (key == "SRV_PARAM_DT_EXT_CLOCK") {
@@ -325,6 +335,8 @@ PSDParameters::setParameterValue(
         board.s_coincidenceTriggerOut = getDoubleValue(valNode);
     } else if (key == "SRV_PARAM_CH_INDYN") {
         std::string dynRange = getValue(valNode);
+	
+
         if (chan == -1) {
             for (int i =0; i < 16; i++) {
                 setChannelDynamicRange(board.s_channelConfig[i], dynRange);
@@ -519,6 +531,10 @@ PSDParameters::setCoincidenceMode(
         board.s_coincidenceMode = PSDBoardParameters::andOneToAll;
     } else if (coincString == "COINC_MODE_ONECHANNEL_VETO") {
         board.s_coincidenceMode = PSDBoardParameters::oneChannelVeto;
+    } else if (coincString == "COINC_MODE_EXT_GATE") {
+        board.s_coincidenceMode = PSDBoardParameters::ExtTrgGate;
+    } else if (coincString == "COINC_MODE_EXT_VETO") {
+        board.s_coincidenceMode = PSDBoardParameters::ExtTrgVeto;
     } else {
         std::string msg("Unrecognized board coincidence mode: ");
         msg += coincString;
@@ -611,7 +627,7 @@ PSDParameters::setChannelCFDSmoothing(
         value = 16;
     }
     
-    if ((value <= 0) || (value > 8)) {
+    if ((value <= 0) || (value > 16)) {
         std::string msg = "Invalid CFD smoothing string: ";
         msg += smooth;
         throw msg;
@@ -793,22 +809,4 @@ PSDParameters::setTriggerOutMode(
         msg += mode;
         throw msg;
     }
-}
-
-/**
- * isPsd
- *    @param board - <board> tag node.
- *    @return bool - true if the board uses  PSD firmware.
- *    @note PSD firmwards have <amcFirmware><major>... of 136.
- */
-bool
-PSDParameters::isPsd(pugi::xml_node& board)
-{
-    pugi::xml_node amcFw = getNodeByNameOrThrow(
-        board, "amcFirmware", "<board> has no amcFirmware tag"
-    );
-    pugi::xml_node major = getNodeByNameOrThrow(
-        amcFw, "major", "<amcFirmware> has no major tag");
-    return (getUnsignedContents(major) == 136);
-    
 }

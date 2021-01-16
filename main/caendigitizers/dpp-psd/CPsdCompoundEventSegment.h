@@ -24,8 +24,10 @@
 #define CPSDCOMPOUNDEVENTSEGMENT_H
 #include <CEventSegment.h>
 #include <vector>
+#include <memory>
 
 class CDPpPsdEventSegment;
+
 
 class CPsdCompoundEventSegment  : public CEventSegment
 {
@@ -43,6 +45,8 @@ public:
     void addModule(CDPpPsdEventSegment* p);
 private:
     CDPpPsdEventSegment* nextToRead();
+
+
     void nextModule();
 };
 
