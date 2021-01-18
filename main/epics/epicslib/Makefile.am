@@ -9,6 +9,8 @@ libEpicslib_la_CXXFLAGS=$(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(EPICS_BIN) $(EPICS_I
 	-I@top_srcdir@/Headers \
         -I@top_srcdir@/base/os
 
-libEpicslib_la_LIBADD= $(EPICS_LDFLAGS) $(THREADLD_FLAGS) @TCL_LDFLAGS@
+
+libEpicslib_la_LIBADD= @top_builddir@/base/os/libdaqshm.la \
+	$(EPICS_LDFLAGS) $(THREADLD_FLAGS) @TCL_LDFLAGS@
 
 endif
