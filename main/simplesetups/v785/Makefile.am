@@ -6,7 +6,7 @@ FIGURES = @srcdir@/figures/ss785_amplified_signal_with_gate.png \
 					@srcdir@/figures/ss785_pulser_output.png
 
 
-CHAPTER2BOOK=@top_srcdir@/docbuild/chapter2book.py
+CHAPTER2BOOK=@PYTHON@ @top_srcdir@/docbuild/chapter2book.py
 
 BOOK = @builddir@/v785setup_autobook.pdf
 

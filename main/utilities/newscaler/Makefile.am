@@ -17,7 +17,7 @@ FIGURES = @srcdir@/figures/ScalerDisplayUserGuide_empty_600.png \
 
 # auto book
 BOOK=scalerdisplay_user_autobook.pdf
-CHAPTER2BOOK = @top_srcdir@/docbuild/chapter2book.py
+CHAPTER2BOOK = @PYTHON@ @top_srcdir@/docbuild/chapter2book.py
 
 INTERACTIVE_TESTS=pagetest.tcl 
 
