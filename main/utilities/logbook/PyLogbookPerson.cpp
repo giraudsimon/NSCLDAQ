@@ -23,6 +23,7 @@
 #include "PyLogBookPerson.h"
 #include "LogBook.h"
 #include "LogBookPerson.h"
+#include <iostream>
 
 typedef struct {
     PyObject_HEAD
@@ -197,8 +198,9 @@ PyPerson_init(PyObject* self, PyObject* args, PyObject* kwargs)
         pThis->m_pBook = pLogBook;
         
         LogBook* book  = PyLogBook_getLogBook(pLogBook);
+        Py_INCREF(pLogBook);
         pThis->m_pPerson= book->getPerson(id); // Can throw.
-        Py_INCREF(pLogBook);        // We reference the book.
+                // We reference the book.
     }
     catch (LogBook::Exception& e) {
         PyErr_SetString(logbookExceptionObject, e.what());
@@ -227,12 +229,14 @@ PyPerson_init(PyObject* self, PyObject* args, PyObject* kwargs)
 static void
 PyPerson_dealloc(PyObject* self)
 {
+  
     PyLogBookPerson* pThis = reinterpret_cast<PyLogBookPerson*>(self);
     Py_XDECREF(pThis->m_pBook);
     delete pThis->m_pPerson;
     pThis->m_pBook   = nullptr;
     pThis->m_pPerson = nullptr;
     Py_TYPE(self)->tp_free(self);
+  
 }
 //////////////////////////////////////////////////////////////////
 //getters:

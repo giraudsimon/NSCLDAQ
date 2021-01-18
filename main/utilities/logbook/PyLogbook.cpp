@@ -378,6 +378,7 @@ addPerson(PyObject* self, PyObject* args, PyObject* kwargs)
         );
        
     }
+    Py_XINCREF(result);
     return result;
 }/**
   * findPeople
@@ -446,7 +447,9 @@ getPerson(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "i", &id)) {
         return nullptr;
     }
-    return PyPerson_newPerson(self, id);
+    PyObject* result =  PyPerson_newPerson(self, id);
+    Py_XINCREF(result);
+    return result;
 }
 //               Shift api:
 
