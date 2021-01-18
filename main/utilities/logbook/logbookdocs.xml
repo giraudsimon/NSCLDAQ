@@ -7003,15 +7003,23 @@ set person [$logbook getPerson <replaceable>1</replaceable>]
          <command>
 $person destroy
          </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
          <command>
 set lastName [$person lastName]
          </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
          <command>
 set firstName [$person firstName]
          </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
          <command>
 set salutation [$person salutation]
          </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
          <command>
 set id [$person id]
          </command>
@@ -7064,7 +7072,7 @@ set id [$person id]
             </listitem>
          </varlistentry>
          <varlistentry>
-            <term><commmand>salutation</commmand></term>
+            <term><command>salutation</command></term>
             <listitem>
                 <para>
                   Returns the salutation of the person encapsulated by this
@@ -7082,6 +7090,299 @@ set id [$person id]
             </listitem>
          </varlistentry>
       </variablelist>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.shiftinstance'>
+   <refmeta>
+      <refentrytitle id='tcl3.shiftinstance.title'>shiftinstance</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>shiftinstance</refname>
+      <refpurpose>Encapsulate a shift for Tcl scripts</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require logbook
+set book [logbook::logbook open <replaceable>mylogbook</replaceable>]
+# e.g.
+set shifts [$book listshifts]
+set shift [lindex $shifts 0]
+foreach s [lrange $shifts 1 end] {
+   $s destroy
+}
+...
+      </programlisting>
+      <cmdsynopsis>
+<command>$shift destroy</command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+<command>set name [$shift name]</command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+<command>set id   [$shift id]</command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+<command>set members [$shift members]</command>
+      </cmdsynopsis>
+      
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Shift instances are command ensembles that are generated
+            by the logbookinstance objects (see
+            <link linkend='tcl3.logbookinstance'
+                  endterm='tcl3.logbookinstance.title' />).
+            Shift instances encapsulate resources and must be destroyed
+            using their <command>destroy</command> subcommand when they
+            are no longer needed (see the <literal>SYNOPSIS</literal> for
+            an example of that.).
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>SUBCOMMANDS</title>
+      <variablelist>
+         <varlistentry>
+            <term><command>destroy</command></term>
+            <listitem>
+                <para>
+                  Destroys the shfit instance.  All resources held by the object
+                  are relesed and the command is removed from the Tcl interpreter
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>name</command></term>
+            <listitem>
+                <para>
+                  Returns the name of the encapsulated shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>id</command></term>
+            <listitem>
+                <para>
+                  Returns the primary key assigned to the encapsulated shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>members</command></term>
+            <listitem>
+                <para>
+                  Returns person instances for all of the members of the
+                  encapsulated shift.  See
+                  <link linkend='tcl3.personinstance'
+                        endterm='tcl3.personinstance.title' /> for information
+                  about person instances
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.runinstance'>
+   <refmeta>
+      <refentrytitle id='tcl3.runinstance.title'>runinstance</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>runinstance</refname>
+      <refpurpose>Encapsulate logbook runs for Tcl scripts</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require logbook
+set book [logbook::logbook open <replaceable>mylogbook</replaceable>]
+set run [$book currentRun]
+if {$run eq ""} {
+   puts stderr "There is no currently active run"
+}
+...
+      </programlisting>
+      <cmdsynopsis>
+         <command>
+set key [$run  id]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set number [$run number]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set title [$run title]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set transitions [$run transitions]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+if {[$run isActive]} {
+   puts "The run is active"
+}
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+$run destroy
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Run instance objects are command ensembles that encapsulate
+            a single run.  Instance objects don't get created directly by your
+            script.  They are returned from some of the API subcommands in
+            logbook instance as shown, for example, in the
+            <literal>SYNOPSIS</literal> section.
+          </para>
+          <para>
+            Run instance objects encapsulate resources and, when no longer
+            needed, those resources must be released using the
+            <command>destroy</command> subcommand.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>
+         SUBCOMMANDS
+      </title>
+      <variablelist>
+         <varlistentry>
+            <term><command>destroy</command></term>
+            <listitem>
+                <para>
+                  Destroys the instance and releases any resources it may have.
+                  The instance command is removed from the interpreter.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>id</command></term>
+            <listitem>
+                <para>
+                  Returns the primary key that was assigned to the encapsulated
+                  run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>number</command></term>
+            <listitem>
+                <para>
+                  Returns the number of the run encapsulated by this object.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>title</command></term>
+            <listitem>
+                <para>
+                  Returns the title of the run encapsulated by this object.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>transitions</command></term>
+            <listitem>
+                <para>
+                  Returns a list of dicts that describes the transitions this
+                  run has undergone.  Each run will have at least one transition
+                  (the begin run is what creates the run).  The
+                  keys and values in these dicts are described in
+                  <literal>TRANSITION DICTS</literal> below.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>isActive</command></term>
+            <listitem>
+                <para>
+                  Returns a boolean that is <literal>true</literal>
+                  if this run is the active run.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <refsect2>
+         <title>TRANSITION DICTS</title>
+         <para>
+            A transition dict is a Tcl dict that describes one transition.
+            The <command>transitions</command> subcommand of the run instance
+            command returns a list of these describing the transition history
+            of the run.
+         </para>
+         <para>
+            Each transition dict contains the following keys:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>id</literal></term>
+               <listitem>
+                   <para>
+                     The primary key value assigned to the transition by the
+                     database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>transition</term>
+               <listitem>
+                   <para>
+                     An integer code that describes the transition.
+                     See the table of values in
+                     <link linkend='daq5.logbookrun.trantbl'
+                           endterm='daq5.logbookrun.trantbl.title' />
+                     in the reference page for <classname>LogBookRun</classname>
+                     for possible values.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>transitionName</literal></term>
+               <listitem>
+                   <para>
+                     Contains a text string that describes the transition.
+                     See the table of values in
+                     <link linkend='daq5.logbookrun.trantbl'
+                           endterm='daq5.logbookrun.trantbl.title' />
+                     in the reference page for <classname>LogBookRun</classname>
+                     for possible values.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>transitionTime</literal></term>
+               <listitem>
+                   <para>
+                     The <command>clock seconds</command> at which the
+                     transition was logged. <command>clock format</command>
+                     can be used to create a human readable date/time string
+                     from this value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>shift</literal></term>
+               <listitem>
+                   <para>
+                     A shift instance that encapulates the shift that was on duty
+                     when the transition was logged. See
+                     <link linkend='tcl3.shiftinstance'
+                           endterm='tcl3.shiftinstance.title' />
+                     for information about shift instances.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
     </refsect1>
 </refentry>
 <!-- /manpage -->
