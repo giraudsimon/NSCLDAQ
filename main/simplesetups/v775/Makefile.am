@@ -3,7 +3,7 @@ FIGURES = @srcdir@/v775ediagram.jpeg @srcdir@/v775ediagram.eps
 FIGSRC  = @srcdir@/v775ediagram.dia
 
 
-CHAPTER2BOOK=@top_srcdir@/docbuild/chapter2book.py
+CHAPTER2BOOK=@PYTHON@ @top_srcdir@/docbuild/chapter2book.py
 
 BOOK = @builddir@/v775setup_autobook.pdf
 

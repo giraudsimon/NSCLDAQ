@@ -203,6 +203,7 @@ SOVERSION="11:0:0"
 
 # Ensure Python is 3.0  or greater, and the packages/dependencies we need
 
+
 AM_PATH_PYTHON([3.0], [], [AC_MSG_ERROR([Python 3.0  or higher is needed for NSCLDAQ])])
 AX_PYQT
 PKG_CHECK_MODULES(PYTHON3, python3)
@@ -490,10 +491,6 @@ AC_CHECK_HEADERS([algorithm zmq.hpp],[], [AC_MSG_ERROR([The zeromq C++ header (z
 AC_LANG_POP
 
 
-##
-# check for presence of Python zmq package
-
-AC_PYTHON_MODULE([zmq])
 
 #----------------------------------------------------------------------------
 
@@ -719,8 +716,12 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-psd/Makefile
     caendigitizers/dpp-psd/skel/Makefile
     caendigitizers/caendump/Makefile
+<<<<<<< HEAD
     ddas/pixieplugin/Makefile
     ddas/pixieplugin/definitions.tcl
+=======
+    caendigitizers/tweaker/Makefile
+>>>>>>> caen
     cookbooks/Makefile
     ])
 

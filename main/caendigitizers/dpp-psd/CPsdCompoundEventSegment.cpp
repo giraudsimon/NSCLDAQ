@@ -22,6 +22,7 @@
 
 #include "CPsdCompoundEventSegment.h"
 #include "CDPpPsdEventSegment.h"
+#include <iostream>
 
 /**
  * construction
@@ -61,6 +62,8 @@ CPsdCompoundEventSegment::initialize()
             m_modules[i]->startAcquisition();
         }
     }
+
+
 }
 /**
  * clear
@@ -95,12 +98,26 @@ CPsdCompoundEventSegment::disable()
 size_t
 CPsdCompoundEventSegment::read(void* pBuffer, size_t maxwords)
 {
-    CDPpPsdEventSegment*  p = nextToRead();
+    /*CDPpPsdEventSegment*  p = nextToRead();
     if (p) {
         return p->read(pBuffer, maxwords);
     } else {
         return 0;
+    }*/
+    size_t nRead=0;
+    size_t nM = m_modules.size();
+    for (int i =0; i < nM; i++) {
+        if (m_modules[m_nextRead]->checkTrigger()) {
+	        nRead = static_cast<size_t>(m_modules[m_nextRead]->read(pBuffer, maxwords));
+		break;
+	}
+
+        m_nextRead = (m_nextRead + 1) % nM;
+//        std::cout << "\n Go here! " << nRead << std::flush;
+
     }
+    return nRead;
+
 }
 /**
  * addModule
@@ -142,7 +159,7 @@ CPsdCompoundEventSegment::nextToRead()
             break;
         }
     }
-    
+
     return pResult;
 }
 /**

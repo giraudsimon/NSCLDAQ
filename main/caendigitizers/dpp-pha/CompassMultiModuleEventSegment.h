@@ -11,9 +11,7 @@
 # @file CompassMultiModuleEventSegment.h
 # @brief An event segment managing several Compass PHA modules.
 # @author Ron Fox (rfoxkendo@gmail.com)
-@note - it appears that for multiple synchronized modules, the one with
-        SRV_PARAM_TRG_SW_ENABLE true is the master board.  It must be
-        initialized last and with some special code.
+
 */
 
 #ifndef COMPASSMULTIMODULESEGMENT_H

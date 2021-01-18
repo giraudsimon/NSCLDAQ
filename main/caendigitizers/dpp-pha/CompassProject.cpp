@@ -32,7 +32,7 @@ CompassProject::CompassProject(const char*name)
    if (!res) {
         throw std::invalid_argument(res.description());
    }
- //  m_channelDefaults.inputRiseTime = .256;   // This seems compass's hard coded ussec value
+  // m_channelDefaults.inputRiseTime = .256;   // This seems compass's hard coded ussec value
    
 }
 /**
@@ -71,6 +71,11 @@ CompassProject::operator()()
     
 
     for (int i = 0; i < boards.size(); i++) {
+
+        pugi::xml_node dppType =  getNodeByName(boards[i], "dppType");
+	if(getStringContents(dppType)=="DPP_PHA"){
+
+
         CAENPhaParameters* board = new CAENPhaParameters();     
 	
         ConnectionParameters connection;
@@ -81,6 +86,7 @@ CompassProject::operator()()
         
         m_boards.push_back(board);
         m_connections.push_back(connection);
+	}
     }
     
 }
@@ -121,7 +127,7 @@ CompassProject::parseBoardChannelConfig(pugi::xml_node board)
         for (int c = 0; c < channels.size(); c++) {
             // There must be an index tag and its value is the
             
-          pugi::xml_node chindex = getNodeByNameOrThrow(channels[c], "index", "Missing <index> tag in <channel>");
+	  pugi::xml_node chindex = getNodeByNameOrThrow(channels[c], "index", "Missing <index> tag in <channel>");
             unsigned channelNumber = getUnsignedContents(chindex);
             
             // must have a <values> tag:
@@ -134,7 +140,7 @@ CompassProject::parseBoardChannelConfig(pugi::xml_node board)
             // Push back now so failure will clean up:
             
             result.push_back(
-              std::pair<unsigned, CAENPhaChannelParameters*>(channelNumber, params));
+	        std::pair<unsigned, CAENPhaChannelParameters*>(channelNumber, params));
             processChannelParams(values, params);
             
             // We have to do some computation since DPP expects usec and some Compass params are % of others:
@@ -221,7 +227,54 @@ CompassProject::processChannelParams(
  *
  *   @param entry - <entry> tag node.
  *   @param params - Pointer to the channel parameters.
- *
+ *(sorted below)
+*	SRV_PARAM_CH_BLINE_DCOFFSET	Baseline	dc	offset	in	%.			
+*	SRV_PARAM_CH_BLINE_NSMEAN	Baseline	restoration	number	of	samples	to	average.	
+*	SRV_PARAM_CH_ENABLED	bool	TRUE	if	the	channel	is	enabled.	
+*	SRV_PARAM_CH_ENERGY_FINE_GAIN	Fine	gain	for	the	channel			
+*	SRV_PARAM_CH_ENERGYCUTENABLE	bool	TRUE	if	energy	cut	is	turned	on.
+*	SRV_PARAM_CH_ENERGYHIGHCUT	Energy	filter	high	level	cutoff.			
+*	SRV_PARAM_CH_ENERGYLOWCUT	Energy	filter	low	level	cutoff	(units)?		
+*	SRV_PARAM_CH_INDYN	Input	dynamic	range					
+*	SRV_PARAM_CH_PEAK_HOLDOFF	Peak	holdoff	(ns).					
+*	SRV_PARAM_CH_PEAK_NS_MEAN	Peak	smoothing	#	samples	(PEAK_NSMEAN_nn	samples)		
+	form	is	BLINE_NSMEAN_nn	where	nn	is	our	guy.	
+*	SRV_PARAM_CH_POLARITY	Channel	input	polarity	either				
+		POLARITY_NEGATIVE							
+		POLARITY_POSITIVE							
+*	SRV_PARAM_CH_PRETRG	nanoseconds(?)of	pretrigger.						
+*	SRV_PARAM_CH_PSDCUTENABLE	boolean	to	turn	on/off	the	PSD	cut.	
+*	SRV_PARAM_CH_PSDHIGHCUT	PSD	filter	high	level	cuttof			
+*	SRV_PARAM_CH_PSDLOWCUT	PSD	filter	low	level	cutoff	(units?)		
+*	SRV_PARAM_CH_PUR_ENABLE	Enable	pile	up	rejection.				
+*	SRV_PARAM_CH_SATURATION_REJECTION_ENABLE	filter	out	saturated	events.				
+*	SRV_PARAM_CH_THRESHOLD	Channel	trigger	threshold	mv???				
+*	SRV_PARAM_CH_TIMECUTENABLE	boolean	enable/disable	time	cut.				
+*	SRV_PARAM_CH_TIMEHIGHCUT	Time	filter	high	cutoff.				
+*	SRV_PARAM_CH_TIMELOWCUT	Time	filter	low	cutoff.				
+*	SRV_PARAM_CH_TRAP_PEAKING	Trapezoid	peaking	time	%	of	TRAP_TFLAT		
+*	SRV_PARAM_CH_TRAP_POLEZERO	Trapezoid	filter	pole	zero	decay	time	ns.	
+*	SRV_PARAM_CH_TRAP_TFLAT	Trapezoid	flattop	tiem	(ns).				
+*	SRV_PARAM_CH_TRAP_TRISE	Trapezoid	rise	time	nanoseconds				
+*	SRV_PARAM_CH_TRG_HOLDOFF	Trigger	holdoff	(ns)					
+*	SRV_PARAM_CH_TTF_DELAY	ttf	delay	ns(?)					
+*	SRV_PARAM_CH_TTF_SMOOTHING	RCCR2	smoothing.	One	of:				
+	*	RCCR2_SMTH_2							
+	*	RCCR2_SMTH_4	Look	up	legal	values			
+	*	RCCR2_SMTH_8	but	just	pull	the	number	off	
+	*	RCCR2_SMTH_16	the	backend.					
+
+Pending:
+
+SRV_PARAM_CH_FAKEEVT_TTROLL_EN
+SRV_PARAM_CH_SELF_TRG_ENABLE
+SRV_PARAM_CH_SPECTRUM_NBINS
+SRV_PARAM_CH_TIME_OFFSET
+
+
+
+
+
  */
 void
 CompassProject::processChannelEntry(pugi::xml_node entry, CAENPhaChannelParameters* param)
@@ -267,17 +320,13 @@ CompassProject::processChannelEntry(pugi::xml_node entry, CAENPhaChannelParamete
     } else if (key == "SRV_PARAM_CH_TRAP_POLEZERO") {
       param->decayTime = getDoubleValue(entry) / 1000.0;   // Expect usec.
     } else if (key == "SRV_PARAM_CH_BLINE_NSMEAN") {
-        param->BLMean = convertBaselineMeanCode(
-            getValue(entry)  
-        );
+        param->BLMean = convertBaselineMeanCode(getValue(entry));
     } else if (key == "SRV_PARAM_CH_PSDCUTENABLE") {
         param->psdCutEnable = getBoolValue(entry);
     } else if (key == "SRV_PARAM_CH_TTF_DELAY") {
-        //param->flattopDelay = getDoubleValue(entry);
-	param->inputRiseTime = getDoubleValue(entry);//getDoubleValue(entry);
+        param->inputRiseTime = getDoubleValue(entry);
     } else if (key == "SRV_PARAM_CH_BLINE_DCOFFSET") {
-        param->dcOffset =
-            convertDCOffset(getDoubleValue(entry));  
+        param->dcOffset = convertDCOffset(getDoubleValue(entry));  
     } else if (key == "SRV_PARAM_CH_TRAP_PEAKING") {
       param->flattopDelay = getDoubleValue(entry);   // % of TRAP_TFLAT so have to figure out later.
     } else if (key == "SW_PARAM_CH_TIMECUTENABLE") { // Compass Software param.
@@ -306,12 +355,69 @@ CompassProject::processChannelEntry(pugi::xml_node entry, CAENPhaChannelParamete
     } else if (key == "SRV_PARAM_CH_PEAK_NSMEAN") {
         param->peakMean = convertPeakMeanCode(getValue(entry));
       // Silently ignored parameters:
-      
-    } else if (key == "SRV_PARAM_COINC_MODE") {
-    } else if (key == "SRV_PARAM_COINC_TRGOUT") {
-    } else if (key == "SRV_PARAM_ACQRUNNING") {
-    } else if (key == "SW_PARAMETER_CH_LABEL"){
-    } else {
+      }
+    else if (key == "SW_PARAMETER_CH_LABEL"){
+	;
+    }
+
+
+    //Extra parameters 
+    else if (key == "SRV_PARAM_CH_FAKEEVT_TTROLL_EN"){
+		param->fakeevt_ttroll_en = getBoolValue(entry);
+    }
+    else if(key == "SRV_PARAM_CH_SELF_TRG_ENABLE"){
+	;
+    }
+    else if(key=="SRV_PARAM_CH_SPECTRUM_NBINS"){
+	;
+    }
+    else if(key=="SRV_PARAM_CH_TIME_OFFSET"){
+	;
+    }
+
+    /*Useless Software params, get rid of them so there aren't errors thrown*/
+    else if(key=="SW_PARAM_CH_SATURATION_REJECTION_ENABLE"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGY_CALIBRATION_P1"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGY_CALIBRATION_P2"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGYHIGHCUT"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_TIMEHIGHCUT"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGY_CALIBRATION_P0"){
+	;
+    }
+    else if(key=="SW_PARAM_CH_PUR_ENABLE"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_TIMELOWCUT"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGYLOWCUT"){
+	;
+    }
+    else if(key=="SW_PARAM_CH_SATURATION_REJECTION_ENABLE"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGY_CALIBRATION_UDM"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_TIMECUTENABLE"){
+	;
+    }
+    else if(key=="SW_PARAMETER_CH_ENERGYCUTENABLE"){
+	;
+    }
+
+
+    else {
         std::cerr << "Unrecognized channel  parameter keyword in compass config file: "
 		  << key << "  ignored\n";
     }
@@ -356,7 +462,6 @@ CompassProject::processBoardParameters(
   m_channelDefaults.digitalGain = 0;             // Gain code for 1 (decimation gain).
   m_channelDefaults.fineGain    = 1.0;           // Default fine gain.
   board.triggerSource= CAENPhaParameters::internal;
-  board.s_timeOffset = 0.0; 
 
     // Load the connection parameters into connection.  Note that
     // if there's no base address, we load a zero...could be USB or CONET
@@ -404,6 +509,8 @@ CompassProject::processBoardParameters(
     
     // Process each parameter entry:
     
+
+    //std::cout << "\nFoo!" <<  paramEntries.size();
     for (int i =0; i < paramEntries.size(); i++) {
         processABoardParameter(paramEntries[i], board);
     }
@@ -417,7 +524,7 @@ CompassProject::processBoardParameters(
  *     Keys we know about:
  *
  *     SRV_PARAM_CH_TIME_OFFSET  - Time offset for zero in synch mode.
- *                                  double precision ns.  Timestamp correction.
+ *                                  double precision ns.
  *     SRV_PARAM_ENERGY          - Boolean I think we ignore this b/c it just
  *                                 tells Compass to appaly an energy calibration.
  *    SRV_PARAM_CH_POLARITY      - Default channel polarity  either
@@ -512,10 +619,23 @@ CompassProject::processBoardParameters(
  *  @param param - an <entry> tag node.  We're interested in key/value nodes
  *                 within that node.
  *  @param board - Reference to a board parameter block.
+
+Pending:
+
+SRV_PARAM_ACQRUNNING
+SRV_PARAM_COINC_MODE
+SRV_PARAM_COINC_TRGOUT
+SRV_PARAM_SW_TRG_AT_START
+SRV_PARAM_TRGOUT_MODE
+
+
+
  */
 void
 CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& board)
 {
+
+
   pugi::xml_node keyNode = getNodeByNameOrThrow(
         param, "key", "Missing <key> tag in global parameters <entry>"
     );
@@ -523,9 +643,9 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
     param = getNodeByNameOrThrow(param, "value", "Missing outer <value> tag in board parameter");    // Value is nested in value.sheesh.
     
     // Figure out how to decode each parameter:
-    
+    //std::cerr << "\n" << key;    
     if (key == "SRV_PARAM_CH_TIME_OFFSET") {   // Time offset for sync (ignored now).
-       board.s_timeOffset = getDoubleValue(param);     
+            
     } else if (key == "SRV_PARAM_ENERGY")   {  // Compass apply energy calibration(?)
         
     } else if (key == "SRV_PARAM_CH_POLARITY") { // Default channel polarity
@@ -541,8 +661,9 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
         m_channelDefaults.polarity = pol; // Default polarity.
         
     } else if (key == "SRV_PARAM_OUT_SELECTION") {   // OUT/Sum output selection(?)
+      board.ioctlmask = computeIoCtlMask(getValue(param)); //Deprecated
         
-                                           // Ignored for now can be: 
+                                           // Can be: 
         /*                                   OUT_PROPAGATION_TRIGGER - propagates the trigger.
         *                                   OUT_PROPAGATION_TEST_0,
         *                                   OUT_PROPAGATION_TEST_1,
@@ -557,9 +678,7 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
       bool val = getBoolValue(param);               // For now ignored.
     
     } else if (key == "SRV_PARAM_CH_TTF_DELAY") {
-      m_channelDefaults.inputRiseTime = static_cast<unsigned>(
-         getDoubleValue(param)
-      );
+      m_channelDefaults.inputRiseTime = static_cast<unsigned>(getDoubleValue(param));
     } else if (key == "SW_PARAMETER_DIFFERENCE_BINCOUNT") {
                                          // Compass software parameter ignored.
     } else if (key == "SW_PARAMETER_DIFFERENCE_BINCOUNT") {
@@ -586,6 +705,8 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
     } else if (key == "SRV_PARAM_START_MODE") {
                                         // Digitizer start mode.
       board.s_startMode = getStartMode(getValue(param));
+      if( getValue(param) == "START_MODE_FIRST_TRG")
+	  board.triggerSource= CAENPhaParameters::internal;
                                          
     } else if (key == "SRV_PARAM_TIMEBOMBDOWNCOUNTER") {
                                         // Unused - timebomb counter(?)
@@ -643,17 +764,17 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
     } else if (key == "SW_PARAMETER_CH_PSDCUTENABLE") {
                                         // Compass sw parameter.
     } else if (key == "SRV_PARAM_EXTRAS") {
-       board.m_includeCounters = getBoolValue(param);
+//        m_channelDefaults.extras_enable = getBoolValue(param);                        // Enable extra recording (always true).  
     } else if (key == "SRV_PARAM_TRG_EXT_OUT_PROPAGATE") {
-                                        // External trigger -> trgout (ignored for now)
+                                       // External trigger -> trgout (ignored for now)
     } else if (key == "SRV_PARAM_RECLEN") { 
                                     // Length of recorded waveform.
       board.recordLength = getDoubleValue(param);
-        
+
     } else if (key == "SRV_PARAM_START_DELAY") {
-      unsigned startDelay = getDoubleValue(param);///8;  // start delay in trigger clocks
-      board.startDelay = startDelay;                     // CAENPha will turn ns to register vals.
-      
+      unsigned startDelay = getDoubleValue(param);  // start delay in ns
+      board.startDelay = startDelay;
+        
     } else if (key == "SRV_PARAM_TRG_EXT_ENABLE" ) {
         bool extTriggerEnable = getBoolValue(param);   // Compute trigger Control
     } else if (key == "SW_PARAMETER_CH_PSDLOWCUT") {
@@ -681,6 +802,10 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
     } else if (key == "SRV_PARAM_CH_OUT_PROPAGATE") {
                                 // ?? ignored for now.
     } else if (key == "SRV_PARAM_IOLEVEL") {
+	if(getValue(param)=="FPIOTYPE_NIM")
+		board.IOLevel = 0;
+	else
+		board.IOLevel = 1;
       // Unused - hard coded to NIM now IIR.
     } else if (key == "SW_PARAMETER_CH_DC_OFFSET_CALIBRATION_P1") {
                                 // Compass param for calibrating DC offsets.
@@ -699,7 +824,7 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
     } else if (key == "SW_PARAMETER_TIME_DISTRIBUTION_CH_T1") {
                                 // Compass tgime distrib calibration param.
     } else if (key == "SW_PARAM_CH_PUR_ENABLE") {     // Need to add support here.
-        bool defaultPUREnable = getBoolValue(param);  // enable pileup rejection
+        m_channelDefaults.defaultPUREnable = getBoolValue(param);  // enable pileup rejection
         
     } else if (key == "SRV_PARAM_EVENTAGGR") {
         unsigned eventAggregation =                  // need to add support here.
@@ -709,20 +834,85 @@ CompassProject::processABoardParameter(pugi::xml_node param, CAENPhaParameters& 
         m_channelDefaults.flattopDelay = defaultTrapPeaking;
         
     } else if (key == "SRV_PARAM_CH_PRETRG") {
-        unsigned defaultPretrig = nsToSamples(getDoubleValue(param));
-        m_channelDefaults.preTrigger = defaultPretrig;
+        //unsigned defaultPretrig = nsToSamples(getDoubleValue(param));
+        m_channelDefaults.preTrigger = getDoubleValue(param);
     } else if (key == "SW_PARAMETER_CH_ENERGYHIGHCUT" ) {
                                     // Compass software parameter for e cut.
     } else if (key == "SRV_PARAM_TRG_SW_OUT_PROPAGATE") {
         bool propagateSwTrigger = getBoolValue(param);   // show sw triggers at TRGO
-    } else if (key == "SRV_PARAM_COINC_MODE") {
-    } else if (key == "SRV_PARAM_COINC_TRGOUT") {
     } else if (key == "SRV_PARAM_ACQRUNNING") {
-    } else if (key == "SW_PARAMETER_CH_LABEL"){
-    } else {
-        std::cerr << "Unrecognized key tag: " << key << " ignored in board/default param processing";
+    } 
+//SRV_PARAM_ACQRUNNING
+//SRV_PARAM_COINC_MODE
+//SRV_PARAM_COINC_TRGOUT
+//SRV_PARAM_SW_TRG_AT_START
+//SRV_PARAM_TRGOUT_MODE
+//New parameters
+    else if (key == "SRV_PARAM_COINC_MODE"){
+        std::string coincString = getValue(param);
+	//std::cout << key << " " << coincString;
+	if(coincString == "COINC_MODE_EXT_GATE")
+	{
+		board.OnboardCoinc = CAENPhaParameters::TrgInGated;
+ 	        board.isExtTrgEnabled = true;
+ 	        board.isExtVetoEnabled = false;
+		std::cout << "\nCoinc. mode : Trg-in Gate" << std::flush;
+	}
+	else if(coincString == "COINC_MODE_EXT_VETO")
+	{
+		board.OnboardCoinc = CAENPhaParameters::TrgInVeto;
+ 	        board.isExtVetoEnabled = true;
+ 	        board.isExtTrgEnabled = false;
+		std::cout << "\nCoinc. mode : Trg-in Veto" << std::flush;
+	}
+	else 
+	{
+		board.OnboardCoinc = CAENPhaParameters::None;
+ 	        board.isExtVetoEnabled = false;
+ 	        board.isExtTrgEnabled = false;
+		std::cout << "\nCoinc. mode : None" << std::flush;		
+	}
+
+    }
+    else if (key == "SRV_PARAM_COINC_TRGOUT"){
+	board.shapTrgWidth = getDoubleValue(param);
+	std::cout << "\nShaped Trigger Width : "  << board.shapTrgWidth;
+    }
+    else if (key == "SRV_PARAM_SW_TRG_AT_START"){
+    }
+    else if (key == "SRV_PARAM_TRGOUT_MODE"){
+	processTrgOutMode(board, getValue(param)); 
+
+    }
+    else if (key == "SW_PARAMETER_CH_LABEL"){
+	;
     }
 
+
+    //Extra parameters 
+    else if (key == "SRV_PARAM_CH_FAKEEVT_TTROLL_EN"){
+		;
+    }
+    else if(key == "SRV_PARAM_CH_SELF_TRG_ENABLE"){
+	;
+    }
+    else if(key=="SRV_PARAM_CH_SPECTRUM_NBINS"){
+	;
+    }
+    else if(key=="SRV_PARAM_CH_TIME_OFFSET"){
+	;
+    }
+
+
+
+
+
+
+     else {
+        std::cerr << "Unrecognized key tag: " << key << " ignored in board/default param processing"<<std::endl;
+    }
+
+ 
 }
 
 /*--------------------------------------------------------------------------
@@ -762,6 +952,7 @@ CompassProject::convertRccr2Smoothing(const std::string& code)
 unsigned
 CompassProject::convertBaselineMeanCode(const std::string& code)
 {
+  if (code == "BLINE_NSMEAN_NONE") return 0;
   if (code == "BLINE_NSMEAN_FIXED") return 0;
   if (code == "BLINE_NSMEAN_16")    return 1;
   if (code == "BLINE_NSMEAN_64")    return 2;
@@ -801,10 +992,16 @@ CompassProject::convertPeakMeanCode(const std::string& code)
 unsigned
 CompassProject::convertDCOffset(double pct)
 {
-    // Assuming this is a signed DC offset percentage:
-    
-   double value = 16383.0*(1-pct/100.0);
+//BAD:
+// Assuming this is a signed DC offset percentage:
+//   double value = 16383.0*(1-pct/100.0);
+//   return static_cast<int>(value);
+
+//unsigned DC offset percentage, NOT signed according to Compass 1.3.0
+//Also, use the DAC full range not the ADC full range. Confusing, yes but this works. 
+   double value = 65535.0*(pct/100.0);
    return static_cast<int>(value);
+
 }
 /**
  * getDynamicRange
@@ -913,4 +1110,91 @@ CompassProject::gainToCode(double value)
   } else {
     throw std::string("Invalid value for FINEGAIN  must be 1, 2, 4, or 8");
   }
+}
+/**
+* computeIoCtlMask
+* Convert the string value of the I/O OUT_SELECTion to a mask of the bits
+* in positions 16-19 of the I/O control register.
+*
+*  @param enumValue - the string value that describes what to do:
+*
+* Valid values are:
+* OUT_PROPAGATION_TRIGGER - propagates the trigger.
+* OUT_PROPAGATION_TEST_0,
+* OUT_PROPAGATION_TEST_1,
+* OUT_PROPAGATION_ACQ_ON - True if data acquisition is on.
+* OUT_PROPAGATION_SAMPLE_CLK - Output the sampling clock.
+* OUT_PROPAGATION_PLL_CLK - Output is the PLL clock input.
+* OUT_PROPAGATION_BUSY - output the digitizer busy.
+* OUT_PROPAGATION_PLL_LOCK - State of the PLL Lock.
+* OUT_PROPAGATION_VPROBE - Output a virtual probe.
+* OUT_PROPAGATION_SYNCIN - Output the sync in pulse.
+*
+*  @return uint32_t  - value to plug into the I/O Control register.
+*/
+uint32_t
+CompassProject::computeIoCtlMask(const std::string& enumValue)
+{
+   uint32_t result;
+   if (enumValue == "OUT_PROPAGATION_TRIGGER") {
+      result = 0;
+   } else if (enumValue == "OUT_PROPAGATION_TEST_0") { // Not certain how
+      result = 0x10000;                                // test map..
+   } else if (enumValue == "OUT_PROPAGATION_TEST_1") { // but hopefully we're
+      result = 0x20000;                                // not in test mode.
+   } else if (enumValue == "OUT_PROPAGATION_ACQ_ON") {
+      result = 0x10000;
+   } else if (enumValue == "OUT_PROPAGATION_SAMPLE_CLK") {
+      result = 0x50000;
+   } else if (enumValue == "OUT_PROPAGATION_PLL_CLK") {
+      result = 0x90000;
+   } else if (enumValue == "OUT_PROPAGATION_BUSY") {
+      result = 0xd0000;
+   } else if (enumValue == "OUT_PROPAGATION_PLL_LOCK") {
+      result = 0xd0000;            // I think these bits depend on fw version.
+   } else if (enumValue == "OUT_PROPAGATION_VPROBE") {
+      result = 0x20000;             // Virtual probe.
+   } else if (enumValue == "OUT_PROPAGATION_SYNCIN") {
+      result = 0x30000;     
+   } else {
+      throw std::string("Unrecognized value for SRV_PARAM_OUT_SELECTION ");
+   }
+   
+   return result;
+}
+
+void CompassProject::processTrgOutMode(CAENPhaParameters & board, const std::string& enumText)
+{
+	
+	if(enumText == "TRGOUT_MODE_LEVEL0"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_LEVEL0;
+	} else 	if(enumText == "TRGOUT_MODE_LEVEL1"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_LEVEL1;
+	}else 	if(enumText == "TRGOUT_MODE_SW_TRG"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_SW_TRG;
+	}else 	if(enumText == "TRGOUT_MODE_EXT_TRG"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_EXT_TRG;
+	}else 	if(enumText == "TRGOUT_MODE_GLOBAL_OR_TRG"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_GLOBAL_OR_TRG;
+	}else 	if(enumText == "TRGOUT_MODE_RUN"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_RUN;
+	}else 	if(enumText == "TRGOUT_MODE_DELAYED_RUN"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_DELAYED_RUN;
+	}else 	if(enumText == "TRGOUT_MODE_SAMPLE_CLK"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_SAMPLE_CLK;
+	}else 	if(enumText == "TRGOUT_MODE_PLL_CLK"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_PLL_CLK;
+	}else 	if(enumText == "TRGOUT_MODE_BUSY"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_BUSY;
+	}else 	if(enumText == "TRGOUT_MODE_PLL_UNLOCK"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_PLL_UNLOCK;
+	}else 	if(enumText == "TRGOUT_MODE_VPROBE"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_VPROBE;
+	}else 	if(enumText == "TRGOUT_MODE_SYNCIN"){
+		board.trgoutmode = CAENPhaParameters::TRGOUT_MODE_SYNCIN;
+	}else {
+      throw std::string("Unrecognized value for SRV_PARAM_TRGOUT_MODE ");
+   }
+   
+
 }

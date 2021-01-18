@@ -105,6 +105,15 @@ public:
   bool psdCutEnable;
   double psdLowCut;
   double psdHighCut;
+ 
+  //New parameters, v1.3.0
+  bool fakeevt_ttroll_en;
+  bool extras_enable;
+  bool defaultPUREnable;
+  
+
+
+
 
 public:
   CAENPhaChannelParameters(pugi::xml_document& doc);

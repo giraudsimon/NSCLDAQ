@@ -32,7 +32,7 @@
  *    For exmample, DPP-PSD and DPP-PHA modules or those modules in conjunction
  *    with some other trigger source.
  */
-class CCompoundTrigger : public  CEventTrigger
+class CCompoundTrigger : public CEventTrigger
 {
 private:
     std::vector<CEventTrigger*> m_triggers;
