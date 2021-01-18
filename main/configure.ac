@@ -716,12 +716,9 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-psd/Makefile
     caendigitizers/dpp-psd/skel/Makefile
     caendigitizers/caendump/Makefile
-<<<<<<< HEAD
+    caendigitizers/tweaker/Makefile
     ddas/pixieplugin/Makefile
     ddas/pixieplugin/definitions.tcl
-=======
-    caendigitizers/tweaker/Makefile
->>>>>>> caen
     cookbooks/Makefile
     ])
 
