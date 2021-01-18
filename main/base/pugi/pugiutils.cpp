@@ -224,3 +224,50 @@ getAllByName(pugi::xml_node parent, const char* name)
   
   return result;
 }
+
+/**
+ * getAllByName2
+ *    Returns a vector of nodes whose names are given by the search string.
+      This function goes one level deeper, and looks for the child within a child given by name.
+      We need this because the XML hierarchy is slightly different between global and per channel parameters
+
+For channels:
+	<channel>
+		<values>
+			<entry>
+				<key>
+				<value>
+For globals:
+	<parameters>
+		<entry>
+			<key>
+			<value>
+				<value>
+
+ *    It is not an error to fail to find any matches.  That just results
+ *    in an empty vector.
+ *
+ *   @param parent  - node that is the parent of the search space.
+ *   @param name    - Name of searched for node.
+ *   @return std::vector<pugi::xml_node>  Vector of the nodes found.
+ */
+
+//Edit by B.Sudarsan, July 2020
+std::vector<pugi::xml_node>
+getAllByName2(pugi::xml_node parent, const char* name, const char* first_child_name )
+{
+  std::string n(name);                 // For compares.
+  std::vector<pugi::xml_node> result;
+  
+  pugi::xml_node child = parent.child(first_child_name).first_child();
+
+  do {
+    if(child.name() == n) {
+      result.push_back(child);
+    }
+    
+    child = child.next_sibling();
+  } while (child.type() != pugi::node_null);
+  
+  return result;
+}
