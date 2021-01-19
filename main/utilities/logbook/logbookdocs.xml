@@ -7385,6 +7385,260 @@ $run destroy
       </refsect2>
     </refsect1>
 </refentry>
+<refentry id='tcl3.noteinstance'>
+   <refmeta>
+      <refentrytitle id='tcl3.noteinstance.title'>noteinstance</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>noteinstance</refname>
+      <refpurpose>Tcl encapsulation of a note</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+package require logbook
+set book [logbook::logbook open <replaceable>logbook-file</replaceable>]
+set notes [$book listAllNotes]
+set note [lindex $notes 0]
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+$note destroy
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set id [$note id]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set run [$note run]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set noteTime [clock seconds [$note timestamp]]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set rawContents [$note contents]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set embeddedImageList [$note images]
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+set renderableMarkdown [$note substituteImages]
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            A note instance is a Tcl command ensemble that provides access to
+            all of the information contained in a note.  In general, as shown,
+            you don't directly create a note ensemble but use one of the
+            subcommands of a logbook instance to generate one or more instances.
+            See
+            <link linkend='tcl3.logbookinstance'
+                  endterm='tlc3.logbookinstance.title' /> for subcommands that
+            can generate notess
+          </para>
+          <para>
+            Each note instance is a unique Tcl interpreter command and encapsulates
+            specific resources.  As such, when no longer necessaryy, a note instance
+            and its resources should be freed using its <literal>destroy</literal>
+            subcommand.
+          </para>
+          <refsect2><title>SUBCOMMANDS</title>
+          <variablelist>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+<replaceable>$note</replaceable> destroy
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     This subcommand destroys the note instance. All resources
+                     owned by the instance are destroyed.  Once the command
+                     returns, the instance command is no longer a valid interpreter
+                     command.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set id [<replaceable>$note</replaceable> id]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the primary key associated with the note instance.
+                     This is a unique integer assigned to a note when it is
+                     created in the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set run [<replaceable>$note</replaceable> run]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     If the note has an associated run, this subcommand returns
+                     that run encapsulated in a run instance.  See
+                     <link linkend='tcl3.runinstance'
+                           endterm='tcl3.runinstacne.title' />
+                     for more on run instances.
+                     If ther eis no associated run, an empty string is returned.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set noteTime [clock seconds [<replaceable>$note</replaceable> timestamp]]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns a clock timestamp at which the note was entered
+                     in the database.  As shown, this timestamp is compatible
+                     input for <command>clock format</command>, which allows
+                     a time string to be produced.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set rawContents [<replaceable>$note</replaceable> contents]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the raw contents of the note. In general; this is
+                     not usable as a source of data for rendering the note unless
+                     the note has no associated images.  See the
+                     <command>substituteImages</command> subcommand if you want
+                     note text as a source for markdown rendering.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set embeddedImageList [<replaceable>$note</replaceable> images]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns a list of dicts. Each dict describes an image that's
+                     sucked into the database to fulfil an image link in the
+                     note.  See <literal>IMAGE DICTS</literal> below for
+                     the contents of these dicts.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <cmdsynopsis>
+                     <command>
+set renderableMarkdown [<replaceable>$note</replaceable> substituteImages]
+                     </command>
+                  </cmdsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns markdown text that can be rendered by a markdown
+                     processor.  This subcommand exports the images that are
+                     are in the database, associated with this note to files.
+                     It then
+                     modifies all image references to point to the exported files.
+                     The result is the modified note text. 
+                   </para>
+                   <para>
+                     If the resulting text is passed to a markdown processor
+                     (e.g. the Tcl <literal>Markdown</literal> package or
+                     the <literal>pandoc</literal> filter), the image links will
+                     be processed properly to either include or reference
+                     the images.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          </refsect2>
+          <refsect2>
+            <title>IMAGE DICTS</title>
+            <para>
+               The <command>images</command> subcommand returns a list of
+               dicts.  Each dict describes a single image that's referenced
+               by the markdown note text and sucked into the database so that
+               the log is fully portable as a single file.  The dicts have the
+               following key/value pairs:
+            </para>
+            <variablelist>
+               <varlistentry>
+                  <term><literal>offset</literal></term>
+                  <listitem>
+                   <para>
+                     The offset into the note text at which the <literal>!</literal>
+                     that leads of an image reference begins.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>originalFilename</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the original file path of the image.  This
+                        can be used to check the integrity of the image
+                        list.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>imageLength</literal></term>
+                  <listitem>
+                      <para>
+                        The number of bytes in the original image data.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>imageData</literal></term>
+                  <listitem>
+                      <para>
+                        Binary object containing the image data.  This can be
+                        written to file to re-create the image file.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+          </refsect2>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3python -->
