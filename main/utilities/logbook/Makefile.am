@@ -102,20 +102,20 @@ unittests_DEPENDENCIES=libLogbook.la
 
 
 check-TESTS:
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ logbookstatictests.py
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pykvtests.py
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pypersontests.py
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyshifttests.py
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pyruntests.py
-	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ pynotetests.py
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbook.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ logbookinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ personinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ shiftinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ runinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteinstance.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ admin.test
-	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ noteutil.test
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/logbookstatictests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/pykvtests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/pypersontests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/pyshifttests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/pyruntests.py
+	PYTHONPATH=@prefix@/pythonLibs/nscldaq @PYTHON@ @srcdir@/pynotetests.py
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/logbook.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/logbookinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/personinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/shiftinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/runinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/noteinstance.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/admin.test
+	TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/noteutil.test
 	@builddir@/unittests
 
 

@@ -70,12 +70,12 @@ class aTest(unittest.TestCase) :
     def test_create3(self, ):
         #  Create with a dummy image.
         note = self.logbook.create_note(self.ron, "![image text](/original/filename.img) some more text", \
-            run=self.run1, images=["pynotetests.py",],  offsets=[0,])
+            run=self.run1, images=["unittests",],  offsets=[0,])
         self.assertEqual(note.image_count(), 1)
         image = note.get_image(0)
         self.assertEqual(image.index, 0)
         self.assertEqual(image.offset, 0)
-        self.assertEqual(image.original_file, 'pynotetests.py')
+        self.assertEqual(image.original_file, 'unittests')
         final_contents = note.substitute_images()
         sbcontents = '![image text](' + image.exported_file + ') some more text'
         self.assertEqual(final_contents, sbcontents)
