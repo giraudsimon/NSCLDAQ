@@ -6299,7 +6299,7 @@ set logbookTempdir [logbook::logbook tempdir]
             the burden of resource management directly on the script author.
             Generally, this is terra incongnita for a Tcl programmer.  If
             possible We recommend that you use the
-            <link linkend='daq3.logbookadmin' endterm='daq3.logbookadmin.title' />
+            <link linkend='tcl3.logbookadmin' endterm='tcl3.logbookadmin.title' />
             package instead as that procedural interface does storage management
             for you.
           </para>
@@ -7446,7 +7446,7 @@ set renderableMarkdown [$note substituteImages]
             subcommands of a logbook instance to generate one or more instances.
             See
             <link linkend='tcl3.logbookinstance'
-                  endterm='tlc3.logbookinstance.title' /> for subcommands that
+                  endterm='tcl3.logbookinstance.title' /> for subcommands that
             can generate notess
           </para>
           <para>
@@ -7503,7 +7503,7 @@ set run [<replaceable>$note</replaceable> run]
                      If the note has an associated run, this subcommand returns
                      that run encapsulated in a run instance.  See
                      <link linkend='tcl3.runinstance'
-                           endterm='tcl3.runinstacne.title' />
+                           endterm='tcl3.runinstance.title' />
                      for more on run instances.
                      If ther eis no associated run, an empty string is returned.
                    </para>
@@ -7637,6 +7637,974 @@ set renderableMarkdown [<replaceable>$note</replaceable> substituteImages]
                </varlistentry>
             </variablelist>
           </refsect2>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.logbookadmin'>
+   <refmeta>
+      <refentrytitle id='tcl3.logbookadmin.title'>logbookadmin</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>logbookadmin</refname>
+      <refpurpose>High level logbook interface</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+package require logbookadmin
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+createLogBook <replaceable>path experiment spokesperson purpose ?select?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+currentLogBook
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+setCurrentLogBook <replaceable>path</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+currentLogBookOrError
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+addPerson <replaceable>lastName firstName ?salutation?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listPeople
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+createShift <replaceable>name members</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+addMembersToShift <replaceable>shiftName members</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+removeMemberFromShift <replaceable>shiftName member</replaceable>      
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+setCurrentShift <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listShiftMembers <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listShifts
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+currentShift
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+beginRun <replaceable>number title ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+endRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+pauseRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+resumeRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+emergencyEndRun ?remark?
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listRuns
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+currentRun
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+findRun <replaceable>number</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+getNote <replaceable>id</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+getNoteText <replaceable>note</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+getNoteTitle ?note?
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listAllNotes
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listNotesForRun <replaceable>number</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+listNonRunNotes
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+kvExists <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+kvGet <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+kvSet <replaceable>key value</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+kvCreate <replaceable>key value</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Using the low level logbook Tcl bindings can be painful because
+            of the need to track the creation of instance commands and to ensure
+            they get destroyed when on longer needed.  At the cost of making
+            many more transient objects than otherwise required, the
+            <literal>logbookadmin</literal> package provides a much easier
+            to use interface to the logbook API.
+          </para>
+          <para>
+            One of the features of <literal>logbookadmin</literal>, is that
+            it adds the concept of a <firstterm>current logbook</firstterm> to
+            the API.  The current logbook is the one that all commands
+            will operate on, other than commands that can modify the
+            current logbook.
+          </para>
+          <para>
+            A feature of the <literal>logbookadmin</literal> API is that rather
+            than returning command ensemble objects for complex objects,
+            instead it returns dicts for them.  See
+            <link linkend='tcl3.logbookadmin.dicts'
+                  endterm='tcl3.logbookadmin.dicts.title'
+                  />
+            for a description of these dicts and their keys.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>COMMANDS</title>
+      <para>
+         The <literal>logbookadmin</literal> interface is procedural. The interface,
+         therefore appears as simple commands.
+      </para>
+      <variablelist>
+      <varlistentry>
+         <term>
+       <cmdsynopsis>
+         <command>
+createLogBook <replaceable>path experiment spokesperson purpose ?select?</replaceable>
+         </command>
+      </cmdsynopsis>     
+         </term>
+         <listitem>
+             <para>
+               Creates a new logbook with the <parameter>experiment</parameter>
+               identifier, <parameter>spokesperson</parameter> and
+               <parameter>purpose</parameter> requested in the new database
+               file named <parameter>path</parameter>.  If <parameter>select</parameter>
+               is provided and evaluates to a boolean true, the logbook
+               is made current and all other operations that don't specify
+               a logbook will operate on this logbook.
+               If not suppled, <parameter>select</parameter> defaults to a
+               boolean false value.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+currentLogBook
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If a current logbook has been established, the path to it is
+               returned. If there is no current logbook,
+               an empty string is returned.  See, however
+               <command>currentLogBookOrError</command> below.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+            <cmdsynopsis>
+         <command>
+setCurrentLogBook <replaceable>path</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Sets the current logbook to be <parameter>path</parameter>.
+               Note that this does not validate the file as a logbook.
+               That's done on the first access.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+    <cmdsynopsis>
+         <command>
+currentLogBookOrError
+         </command>
+      </cmdsynopsis>        
+         </term>
+         <listitem>
+             <para>
+               Returns the path to the current logbook.  If no logbook has been
+               established as current, the command throws an error.
+               This is most commonly used internally as well to obtain
+               the logbook to operate on.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+addPerson <replaceable>lastName firstName ?salutation?</replaceable>
+         </command>
+      </cmdsynopsis>      
+         </term>
+         <listitem>
+             <para>
+               Adds a new person to the current logbook whose
+               last name and first name are <parameter>lastName</parameter>
+               and <parameter>firstName</parameter> respectively.  If
+               the optional <parameter>salutation</parameter> is provided it is
+               the salutation associated with the person.  If not, then
+               the person is associated with a saluation that is an empty string.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listPeople
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a list containing person dictionaries.  Each entry describes
+               one person in the logbook and altogether all people registered
+                in the logbook are returned.  The dicts returned are descriged in
+                <link linkend='tcl3.logbookadmin.dicts'
+                      endterm='tcl3.logbookadmin.dicts.title' />
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+createShift <replaceable>name members</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Creates a new shift.  The shift will be named
+               <parameter>name</parameter> and initially have
+               <parameter>members</parameter> as its members.
+               The <parameter>members</parameter> list is a list of person
+               primary keys (ids). These can be gotten from person dicts.
+               To create an empty shift simply supply
+               <literal>[list]</literal> as the
+               <parameter>members</parameter> parameter to provide an
+               emptylist.
+           </para>
+            <para>
+               Once created, <command>addMembersToShift</command> and
+               <command>removeMemberFromShift</command> can be used to
+               edit the shift membership.   Remember that shifts, not their
+               members are associated with run state changes so the shift
+               members should remain constant once data taking has begun.
+            </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+addMembersToShift <replaceable>shiftName members</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Adds new
+               <parameter>members</parameter>
+               to the shift named <parameter>shiftName</parameter>.
+               The <parameter>members</parameter> parameter is a list of
+               person ids (primary keys).  The id of a person can be gotten
+               from its dict. representation.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+removeMemberFromShift <replaceable>shiftName member</replaceable>      
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Removes the person whose primary key is<parameter>member</parameter>
+               from the shift named <parameter>shiftName</parameter>.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+setCurrentShift <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               The logbook has the concept of a current shift.  This shift is
+               associated with all run state transitions and is intended to
+               describe who is on-duty during a segment of data taking.  This
+               command sets the current shift to the shift named
+               <parameter>shiftName</parameter>.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listShiftMembers <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>      
+         </term>
+         <listitem>
+             <para>
+               Returns person dicts for all of the members of the shift
+               named <parameter>shiftName</parameter>
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listShifts
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a list whose members are the names of all of the shifts
+               defined to the logbook.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+currentShift
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If a current shift has been established, returns the name of
+               that shift.  If there is no current shift, an empty string is
+               returned.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+beginRun <replaceable>number title ?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Creates a new run with  run number and title
+               given by <parameter>number</parameter> and <parameter>title</parameter>
+               respectively and logs a <literal>BEGIN</literal> state transition
+               immediately.   If <parameter>remark</parameter> is provided
+               it is a remark that is associated with the transition.
+               Note that for this to work a current shift must also have been established
+               and there cannot be another run with the same
+               <parameter>number</parameter>.
+           </para>
+           <para>
+            This command also establishes a current run. All future state transitions
+            operate on that run until the run has ended at which point
+            there is no longer a current run and state transitions other than
+            those initiated by <command>beginRun</command> fail.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+endRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Ends the current run by logging an <literal>END</literal>
+               state transition for it and indicating there is no current run.
+               If provided <parameter>remark</parameter> is a textual remark that
+               is associated with the transition.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+pauseRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Pauses the current run by logging a <literal>PAUSE</literal>
+               transition for it.  The current run remains the current run.
+               If provided <parameter>remark</parameter> is a textual comment
+               associated with the transition.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+resumeRun <replaceable>?remark?</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Resumes a paused current run by logging a <literal>RESUME</literal>
+               transition.  <parameter>remark</parameter>
+               if provided is a text comment string that is associated with the
+               transition
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+emergencyEndRun ?remark?
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Ends a run with an <literal>EMERGENCY_END</literal> transition.
+               This differs from an <literal>END</literal> transition only in that
+               it implies the end of the run was not handled normally.  The
+               <parameter>remark</parameter>, if supplied is a text string
+               associated with the transition.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listRuns
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a list.  Each list element is a run dict that describes
+               one run.  All runs known to the logbook (including the current run
+               if any) are represented by elements in the list.
+           </para>
+             <para>
+               For information about the contents of each dict see:
+               <link linkend='tcl3.logbookadmin.dicts'
+                     endterm='tcl3.logbookadmin.dicts.title' />.
+             </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+currentRun
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If there is a current run (sometimes referred to as the active run),
+               returns a run dict that describes that run. If there is no current
+               run an empty dict is returned.  The command
+               <command>dict size</command> applied to that dictionary value
+               will be zero if the dictionary is not empty.  For example:
+           </para>
+            <informalexample>
+               <programlisting>
+set current [currentRun]
+if {[dict size $current] != 0} {
+   puts "There is a current run; number [dict get $current number]" 
+} else {
+   puts "There is not a currently active run."
+}
+               </programlisting>
+            </informalexample>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+       <cmdsynopsis>
+         <command>
+findRun <replaceable>number</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If there is a run in the logbook with run number
+               <parameter>number</parameter> the run dict that describes it
+               is returned.  If not an empty dict is returned.
+               As with <command>currentRun</command>,
+               <command>dict size</command> can be used to determine if the
+               returned value is empty.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+getNote <replaceable>id</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a note dict that describes the note with primary key
+               <parameter>id</parameter>.  The contents of note dicts is described
+                in
+                <link linkend='tcl3.logbookadmin.dicts'
+                      endterm='tcl3.logbookadmin.dicts.title' />.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+getNoteText <replaceable>note</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Given a note dict, returns the markdown text associated with the note
+               whose note dict is <parameter>note</parameter>.
+               This proc exports images associated with the note text and
+               fixe up image references so that they will be handled correctly
+               by markdown renderers.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+getNoteTitle ?note?
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns up to the first 20 characters of the first line of the
+               note text given a note dict <parameter>note</parameter>.
+               This is assumed to be a title string that can give a user some
+               idea of what the note is about.
+               If the first line of the note is over 20 characters long, the
+               first 20 characters followed by the text <literal>...</literal>
+               is returned.
+             </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listAllNotes
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns  list containing the note dicts for all notes in the
+               logbook.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listNotesForRun <replaceable>number</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a list containing the note dicts for all notes associated
+               with the run numbered <parameter>number</parameter>.  It is perfectly
+               acceptable for this list to be empty, if there are no notes
+               associated with the run.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+listNonRunNotes
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a list of dicts for all notes that are not associated with
+               any run.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+kvExists <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Returns a boolean true if the key value store of the current
+               logbook database contains a key with the string value
+               <parameter>key</parameter>
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+kvGet <replaceable>key</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If the key <parameter>key</parameter> exists in the key value store,
+               the value associated with the key is returned.  Otherwise, the
+               command raises an error.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+kvSet <replaceable>key value</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               If there is a key <parameter>key</parameter> in the key value
+               store, the value associated with it is changed to
+               <parameter>value</parameter>.  If not, a new key is created
+               and has a value <parameter>value</parameter>.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>
+      <cmdsynopsis>
+         <command>
+kvCreate <replaceable>key value</replaceable>
+         </command>
+      </cmdsynopsis>
+         </term>
+         <listitem>
+             <para>
+               Creates a new <parameter>key</parameter>, <parameter>value</parameter>
+               pair in the logbook's key value store.  If <parameter>key</parameter>
+               is already defined in the logbook database, an error is raised.
+           </para>
+        </listitem>
+      </varlistentry>
+      </variablelist>      
+    </refsect1>
+    <refsect1 id='tcl3.logbookadmin.dicts'>
+      <title id='tcl3.logbookadmin.dicts.title'>DICTIONARIES</title>
+      <para>
+         Several object types in the logbook database have dict representations.
+         This section describes the key/value pairs in each dict.
+      </para>
+      <formalpara>
+         <title>Person Dict</title>
+         <para>
+            This dict contains key/value pairs that define a person in the logbook:\
+            <variablelist>
+               <varlistentry>
+                  <term><literal>id</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the primary key of the person.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>lastName</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the person's last name.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>firstName</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the person's first name.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>saluation</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the person's salutation.  This string is
+                        empty if there is no saulation associated with the
+                        person.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+         </para>
+      </formalpara>
+      <formalpara>
+         <title>Run dict</title>
+         <para>
+            This dict describes the run metadata and its transitiongs. By nature
+            each run has at least one transition.  The key value pairs are:
+            <variablelist>
+               <varlistentry>
+                  <term><literal>number</literal></term>
+                  <listitem>
+                      <para>
+                        The run's run number.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>title</literal></term>
+                  <listitem>
+                      <para>
+                        The run's title string.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>isActive</literal></term>
+                  <listitem>
+                      <para>
+                        Evaluates to a boolean that is true if the run is active.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>transitions</literal></term>
+                  <listitem>
+                      <para>
+                        list of transition dicts.   Transition dicts
+                        contain the following key/value pairs:
+                        <variablelist>
+                           <varlistentry>
+                              <term><literal>transitionName</literal></term>
+                              <listitem>
+                                  <para>
+                                    The transition type name string e.g.
+                                    <literal>BEGIN</literal> is always the
+                                    first transition in a run.
+                               </para>
+                            </listitem>
+                           </varlistentry>
+                           <varlistentry>
+                              <term><literal>transitionTime</literal></term>
+                              <listitem>
+                                  <para>
+                                    The <command>clock seconds</command> when
+                                    the transition was logged.
+                               </para>
+                            </listitem>
+                           </varlistentry>
+                           <varlistentry>
+                              <term><literal>transitionComment</literal></term>
+                              <listitem>
+                                  <para>
+                                    The remark string associated with this state
+                                    transition.
+                               </para>
+                            </listitem>
+                           </varlistentry>
+                        </variablelist>
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+         </para>
+      </formalpara>
+      <formalpara>
+         <title>Note Dict</title>
+         <para>
+            Contains data associated with a note. Note that in order to make
+            these dicts relatively light-weight, the text and images associated with
+            a note cannot be directly accessed via this dict.  Its
+            key value pairs are:
+            <variablelist>
+               <varlistentry>
+                  <term><literal>id</literal></term>
+                  <listitem>
+                      <para>
+                        The primary key assigned to the note.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>run</literal> (optional)</term>
+                  <listitem>
+                      <para>
+                        If present the contents of this key are the run dict
+                        that describes the run associated with this note.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>timestamp</literal></term>
+                  <listitem>
+                      <para>
+                        The <command>clock seconds</command> at which the
+                        note was loaded into the database.
+                   </para>
+                </listitem>
+               </varlistentry>
+               <varlistentry>
+                  <term><literal>author</literal></term>
+                  <listitem>
+                      <para>
+                        Contains the person dict that describes the note's
+                        author.
+                   </para>
+                </listitem>
+               </varlistentry>
+            </variablelist>
+         </para>
+      </formalpara>
+    </refsect1>
+    <refsect1>
+      <title>FILES</title>
+      <para></para>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.logbookbundle'>
+   <refmeta>
+      <refentrytitle id='tcl3.logbookbundle.title'>logbookbundle</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>logbookbundle</refname>
+      <refpurpose>Automate logging transitions in ReadoutGui</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+package require logbookbundle
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Loading this package in the readout gui (e.g. through
+            <filename>ReadoutCallouts.tcl</filename>) makes the GUI automatically
+            log state transitions when recording is enabled in the current logbook.
+          </para>
     </refsect1>
 </refentry>
 <!-- /manpage -->
