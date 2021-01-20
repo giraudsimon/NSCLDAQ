@@ -26,6 +26,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 package provide lg_utilities 1.0
+package require lg_noteutilities
 package require logbookadmin
 package require report
 package require struct

@@ -8581,7 +8581,24 @@ kvCreate <replaceable>key value</replaceable>
     </refsect1>
     <refsect1>
       <title>FILES</title>
-      <para></para>
+      <variablelist>
+         <varlistentry>
+            <term><filename>~/.nscl-logbook-current</filename></term>
+            <listitem>
+                <para>
+                  Contains the name of the current logbook.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><filename>~/.nscl-logbook</filename></term>
+            <listitem>
+                <para>
+                  Directory into which the image files are exported.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
 </refentry>
 <refentry id='tcl3.logbookbundle'>
@@ -8607,9 +8624,340 @@ package require logbookbundle
           </para>
     </refsect1>
 </refentry>
+<refentry id='tcl3.lg_noteutilities'>
+   <refmeta>
+      <refentrytitle id='tcl3.lg_noteutilities.title'>lg_noteutilities</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_noteutilities</refname>
+      <refpurpose>Utilties for dealing with notes</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+package require lg_noteutilities
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+makeNoteImageList <replaceable>text</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+validateImageFiles <replaceable>images</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+makeNoteMarkdown <replaceable>noteDict</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+_noteToFd <replaceable>id fd</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This package provides some utilities that support high level note
+            processing.  The package was written to support the note composition
+            software, howver it may be used generally as well.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>COMMANDS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+makeNoteImageList <replaceable>text</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Creating a note requries that the images referenced by the
+                  notes be included in the database to support later rendering.
+                  <command>makeNoteImageList</command> takes the raw text of
+                  a note, locates image references and creates a list of pairs,
+                  one for each image reference.  The pairs are the the
+                  byte offset at
+                  which the image reference occurs in the text and the  filename
+                  of the image itself.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+      <cmdsynopsis>
+         <command>
+validateImageFiles <replaceable>images</replaceable>
+         </command>
+      </cmdsynopsis>         
+            </term>
+            <listitem>
+                <para>
+                  Given a list of pairs such as that produced by
+                  <command>makeNoteImageList</command>, ensures that each of
+                  the filenames in the image list exists and is readable.  Returns
+                  a list of strings, where each string is an unreadable image file.
+                  For a note to be imported, all image file references must
+                  point to files that exist and are readable so they can be imported
+                  into the database.
+               </para>
+                <para>
+                  Note that no effort is made to ensure that the files are, in fact,
+                  valid image files. If a reference to an image file is invalid,
+                  the markdown generated will be invalid but some renderers,
+                  such as the PDF renderer may not be able to create output.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+       <cmdsynopsis>
+         <command>
+makeNoteMarkdown <replaceable>noteDict</replaceable>
+         </command>
+      </cmdsynopsis>  
+            </term>
+            <listitem>
+                <para>
+                  When the logbook software generates the note for rendering,
+                  in addition to exporting images and fixing up their references
+                  it prepends a table of metatdata about the note, including
+                  the author's name, when the note wsas written and, if the
+                  note is associated with a run, the run number, title and
+                  when the run started and, if the run ended, when the run
+                  ended.
+               </para>
+                <para>
+                  This command takes a note dict and performs the processing
+                  described above.  The resulting markdown texts
+                  is the return value of this command.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+_noteToFd <replaceable>id fd</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Given a note who's primary key is <parameter>id</parameter>,
+                  and an open file descriptor <parameter>fd</parameter>,
+                  Creates the full markdown text
+                  (what <command>makeNoteMarkdown</command>) creates, and outputs
+                  it to <parameter>fd</parameter>.   This is used internally to
+                  the logbook browser software to e.g. pipe fully formed
+                  markdown to the <command>pandoc</command> markdown processor.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+<refentry id='tcl3.lg_utilities'>
+   <refmeta>
+      <refentrytitle id='tcl3.lg_utilities.title'>lg_utilities</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lg_utilities</refname>
+      <refpurpose>Utilties for Tcl logbook procssessing.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+package require lg_utiltities
+      </synopsis>
+      <cmdsynopsis>
+         <command>
+set ::timezone <replaceable>timezone-string</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+reportPeople <replaceable>people-dict-list</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+shiftExists <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+duplicateShiftMessage <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+peopleToids <replaceable>person-dict-list</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+_runToFd <replaceable>number fd</replaceable>
+         </command>
+      </cmdsynopsis>
+      <cmdsynopsis>
+         <command>
+printall <replaceable>fd</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This package provides utility commands that are used in the
+            <command>lg_xxxx</command> logbook support commands but are also
+            useable by any Tcl script that access the logbook.
+          </para>
+          <para>
+            One note that there is a global variable in this package:
+            <varname>timezone</varname>.  This variable contains the
+            timezone string for the timezone in which the logbook was filled in.
+            It is used in time formatting.  It defaults to
+            <literal>:America/Detroit</literal> which is the timezone for
+            FRIB/NSCL (East Lansing, Michgigan).  Which is eastern time with
+            daylight saving time adjustments.  If your script is processing
+            a logbook created at a different location, you can set this
+            variable to get times formatted for that timezone.  Note as well
+            that future logbook versions may write the timezone string into the
+            logbook's KV store and use that for time formatting.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>COMMANDS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+reportPeople <replaceable>people-dict-list</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a string that reports information about the people
+                  provided in <parameter>people-dict-list</parameter>.  This
+                  argument is a list whose elements are people dicts.
+                  See
+                  <link linkend='tcl3.logbookadmin'
+                        endterm='tcl3.logbookadmin.title' />
+                  for information about people dicts and for commands that
+                  can return them.
+               </para>
+                <para>
+                  The string has the same form as the report output by
+                  <command>$DAQBIN/lg_lspeople</command>.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+shiftExists <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a boolean that evaluates to true if the
+                  <parameter>shiftName</parameter> names a shift that is known
+                  to the logbook.  If not returns a false value. 
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+duplicateShiftMessage <replaceable>shiftName</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Produces a string containing an error message appropriate
+                  to not allowing a duplicate shift to be created. The
+                  message is the same as that produced by
+                  <command>$DAQBIN/lg_mkshift</command> given then name of an
+                  existing shift;  It indicates the shift exists and provides
+                  a report of its members.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+         <cmdsynopsis>
+         <command>
+peopleToids <replaceable>person-dict-list</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Converts a list of person dicts,
+                  <parameter>person-dict-list</parameter>, into a list of the
+                  primary keys of those people. 
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+      <cmdsynopsis>
+         <command>
+      
+_runToFd <replaceable>number fd</replaceable>
+         </command>
+      </cmdsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Creates the standardized markdown for a run numbered
+                  <parameter>number</parameter> and writes it to the file
+                  descriptor <parameter>fd</parameter>.  The output consist of
+                  a header describing the run and then a chronological list of
+                  events that occured in the run.  This list includes
+                  both transitions and notes associated with the run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+      <cmdsynopsis>
+         <command>
+printall <replaceable>fd</replaceable>
+         </command>
+      </cmdsynopsis>   
+            </term>
+            <listitem>
+                <para>
+                  Produces the markdown for the entire logbook writing it to
+                  the file descriptor open on <parameter>fd</parameter>.
+                  First all runs are written using <command>_runToFd</command>,
+                  next all notes not associated with a run are written
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 3python -->
+
+
 
 <!-- /manpage -->
 
