@@ -9777,7 +9777,139 @@ sal   = person.salutation
           </variablelist>
     </refsect1>
 </refentry>
+<refentry id='py3.shift'>
+   <refmeta>
+      <refentrytitle id='py3.shift.title'>LogBook.Shift</refentrytitle>
+      <manvolnum>3python</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBook.Shift</refname>
+      <refpurpose>Encapsulate logbook shifts for python</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3
 
+import LogBook.LogBook as LogBook
+...
+book = LogBook.LogBook(<replaceable>'logbookfile.log'</replaceable>)
+person = book.get_person(1)
+shift = book.find_shift('Owl')
+
+      </synopsis>
+      <programlisting>
+         
+id      = shift.id
+name    = shift.name
+members = shift.members
+
+      </programlisting>
+      <programlisting>
+         
+shift.add_member(person)
+shift.remove_member(person)
+shift.set_current()
+         
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This class provides a wrapping for LogBook shifts.  A shift is a
+            collection of people.   Note that shifts are not directly comparable
+            via <literal>=</literal>.  If, however, their <structfield>id</structfield>
+            attributes are the sam, they wrap the same shift.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>ATTRIBUTES</title>
+      <para>
+         <classname>LogBook.Shift</classname> objects have readonly attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>Integer</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  The primary  key associated with the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>String</type><structfield> name</structfield></term>
+            <listitem>
+                <para>
+                  The name of the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>Tuple of LogBook.Person</type><structfield> members</structfield></term>
+            <listitem>
+                <para>
+                  Tuple of <classname>LogBook.Person</classname> objects that
+                  represent the members of the shift.
+                  <classname>LogBook.Person</classname> is described in
+                  <link linkend='py3.person' endterm='py3.person.title' />
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>None</type>
+                  <methodname>add_member</methodname>
+                  <methodparam>
+                      <type>LogBook.Person</type><parameter>person</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Adds <parameter>person</parameter> to the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>None</type>
+                  <methodname>remove_member</methodname>
+                  <methodparam>
+                      <type>LogBook.Person</type><parameter>person</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Removes <parameter>person</parameter> from the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>None</type>
+                  <methodname>set_current</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Sets the shift to be the current shift. Run state changes
+                  logged after this will be logged as having occured when this
+                  shift was on-duty.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
