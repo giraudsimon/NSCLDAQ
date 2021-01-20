@@ -9910,6 +9910,359 @@ shift.set_current()
       </variablelist>
     </refsect1>
 </refentry>
+<refentry id='py3.run'>
+   <refmeta>
+      <refentrytitle id='py3.run.title'>LogBook.Run</refentrytitle>
+      <manvolnum>3python</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBook.Run</refname>
+      <refname>LogBook.Transition</refname>
+      <refpurpose>Encapsulate runs and their transitions for Python</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3
+
+import LogBook.LogBook as LogBook
+...
+book = LogBook.LogBook(<replaceable>'logbookfile.log'</replaceable>)
+run  = LogBook.find_run(1)
+      </synopsis>
+      <programlisting>
+id     = run.id
+number = run.number
+title  = run.title
+
+      </programlisting>
+      <programlisting>
+n   = run.transition_count()
+tnum = 0
+begin_run = run.get_transition(tnum)
+if run.is_current():
+     #  Run is the current/active run
+     
+last_transitionid = run.last_transitionid()
+last_text         = run.last_transition()
+
+if run.is_active():
+      # Run is still active.
+
+run.end([remark])
+run.pause([remark])
+run.resume([remark])
+run.emergency_end([remark])
+
+      </programlisting>
+      <programlisting>
+
+id             = transition.id
+transitionid   = transition.transition
+transitiontext = transition.transition_name
+timestamp      = transition.time
+comment        = transition.comment
+shift          = transition.shift
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This page describes two classes:
+            <classname>LogBook.Run</classname> which encapsulates a run and
+            the associated <classname>LogBook.Transition</classname> which
+            encapsulates a single run state transition.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>LogBook.Run</title>
+      <para>
+         This section desccribes the <classname>LogBook.Run</classname>
+         class which provides readonly attributes
+         and methods to access and modify runs.
+      </para>
+      <refsect2>
+         <title>Attributes</title>
+         <variablelist>
+            <varlistentry>
+               <term><type>Integer</type><structfield> id</structfield></term>
+               <listitem>
+                   <para>
+                     Contains the run's primary key.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>Integer</type><structfield> number</structfield></term>
+               <listitem>
+                   <para>
+                     Provides the run number.  This differs from the primary key
+                     because some experimenters assign skip run numbers for
+                     organizational purposes.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>String</type><structfield> title</structfield></term>
+               <listitem>
+                   <para>
+                     Provides the run title string.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>METHODS</title>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>Integer</type>
+                     <methodname>transition_count</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the number of transitions the run has undergone.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Transition</type>
+                     <methodname>get_transition</methodname>
+                     <methodparam>
+                         <type>Number</type><parameter>n</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns a <classname>LogBook.Transition</classname>
+                     object that encapsulates transition number
+                     <parameter>n</parameter> numbered from zero.
+                     If <parameter>n</parameter> is out of range
+                     <classname>LogBook.error</classname> is raised.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>Boolean</type>
+                     <methodname>is_current</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns <literal>True</literal> if this object is the
+                     current run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>Boolean</type>
+                     <methodname>is_active</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Given the constraints enforced by the database
+                     API, this is equivalent to <methodname>is_current</methodname>
+                     because the API enforces that there only be one active
+                     run at a time and that it is the current one.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>Integer</type>
+                     <methodname>last_transitionid</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the numerical value that specifies the last
+                     transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>String</type>
+                     <methodname>last_transition</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the transition name string of the last transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Run</type>
+                     <methodname>end</methodname>
+                     <methodparam>
+                        <modifier>optional</modifier>
+                         <type>String</type><parameter>remark</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Logs an end run for the run.  If provided
+                     <parameter>remark</parameter> is a text string that
+                     is logged along with the transition.  The return value of
+                     this method is the run being operated on, this supports
+                     Chaining like
+                   </para>
+                   <informalexample>
+                   <programlisting>
+print(run.end('end run example').title + ' ended just now')
+                   </programlisting>
+                   </informalexample>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Run</type>
+                     <methodname>pause</methodname>
+                     <methodparam>
+                        <modifier>optional</modifier>
+                         <type>String</type><parameter>remark</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Pauses the run. If <parameter>remark</parameter>
+                     is provided it is a text string that's loggeda long
+                     with the pause transition. The return value is the
+                     run itself to support chaining.  See the example in
+                     <methodname>end</methodname>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Run</type>
+                     <methodname>resume</methodname>
+                     <methodparam>
+                        <modifier>optional</modifier>
+                         <type>String</type><parameter>remark</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Logs a pause run with the optional <parameter>remark</parameter>
+                     string. The return value is the run being resumed.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Run</type>
+                     <methodname>emergency_end</methodname>
+                     <methodparam>
+                        <modifier>optional</modifier>
+                         <type>String</type><parameter>remark</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Logs an emergency end of run for the run with the optional
+                     remark string <parameter>remark</parameter>.
+                     The retrun value is the run operated on.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         
+      </refsect2>
+    </refsect1>
+    <refsect1>
+      <title>LogBook.Transition</title>
+      <para>
+         Transitions (<classname>LogBook.Transition</classname> objects)
+         are fetched from a <classname>LogBook.Run</classname>
+         object via the <methodname>get_transition</methodname> method.
+         These have no methods but support the following read-only attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <type>Integer</type> <structfield> id</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Primary key of the transition
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>Integer</type><structfield> transition</structfield></term>
+            <listitem>
+                <para>
+                  Integer code that defines the transition.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>String</type><structfield> transition_name</structfield></term>
+            <listitem>
+                <para>
+                  Human readable string that defines the transition.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>int</type><structfield> time</structfield></term>
+            <listitem>
+                <para>
+                  Timestamp that can be passed to e.g.
+                  <methodname>datetime.fromtimestamp</methodname>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>String</type><structfield> comment</structfield></term>
+            <listitem>
+                <para>
+                  Comment associated with the transition.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>LogBook.Shift</type><structfield> shift</structfield></term>
+            <listitem>
+                <para>
+                  Returns a <classname>LogBook.Shift</classname> object
+                  that wraps the shift that was on-duty at the time the
+                  transition was logged.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->

@@ -313,7 +313,7 @@ get_transitioncomment(PyObject* self, void* closure)
  *    Return the shift object from the transition.
  *  @param self - pointer to the RunTranstion object data.
  *  @param closure - unused void pointer.
- *  @return PyObject* Unicode comment.
+ *  @return PyObject* LogBook.Shift object.
  * 
  */
 static PyObject*
