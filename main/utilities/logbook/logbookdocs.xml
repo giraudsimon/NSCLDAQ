@@ -9701,10 +9701,82 @@ note = book.create_note(author, "This a note for the current run", run=run)
       </simplelist>
     </refsect1>
 </refentry>
+<refentry id='py3.person'>
+   <refmeta>
+      <refentrytitle id='py3.person.title'>LogBook.Person</refentrytitle>
+      <manvolnum>3python</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBook.Person</refname>
+      <refpurpose>Python class encapsulating Log Book people.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3
+
+import LogBook.LogBook as LogBook
+...
+book = LogBook.LogBook(<replaceable>'logbookfile.log'</replaceable>)
+person = book.get_person(1)
+      </synopsis>
+      <programlisting>
+id    = person.id
+last  = person.lastname
+first = person.firstname
+sal   = person.salutation
 
 
-
-
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <classname>LogBook.Person</classname> is a python class that wraps
+            instances of persons in the logbook database
+            <link linkend='py3.logbook' endterm='py3.logbook.title' />
+            provides methods that produce <classname>LogBook.Person</classname>
+            objects, or tuples of them.
+          </para>
+          <para>
+            A <classname>LogBook.Person</classname> object should be thought of
+            as a container with several read-only attributes. These are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><type>Integer</type><structfield> id</structfield></term>
+               <listitem>
+                   <para>
+                     The primary key associated with that person.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>String</type><structfield> lastname</structfield></term>
+               <listitem>
+                   <para>
+                     The last name of the encapsulated person.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>string</type><structfield> firstname</structfield></term>
+               <listitem>
+                   <para>
+                     The given (first) name of the encapsulated person.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>String</type><structfield> salutation</structfield></term>
+               <listitem>
+                   <para>
+                     The salutation for the encapsulated person.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
 
 <!-- /manpage -->
 
