@@ -5537,7 +5537,7 @@ public:
             <listitem>
                 <para>
                   An integer that describes the transition see
-                  <link linkend='daq5.logbookrun.trantbl' endterm='daq5.logbookrun.trantbl.title' />
+                  <link linkend='daq3.logbookrun.trantbl' endterm='daq3.logbookrun.trantbl.title' />
                   for the values this can take.
                </para>
             </listitem>
@@ -5548,7 +5548,7 @@ public:
                 <para>
                   Contains a text string that identifies the transition represented
                   by this struct. See
-                  <link linkend='daq5.logbookrun.trantbl' endterm='daq5.logbookrun.trantbl.title' />
+                  <link linkend='daq3.logbookrun.trantbl' endterm='daq3.logbookrun.trantbl.title' />
                   for information about the values this string can take.
                </para>
             </listitem>
@@ -5583,8 +5583,8 @@ public:
             </listitem>
          </varlistentry>
       </variablelist>
-      <table id='daq5.logbookrun.trantbl'>
-         <title id='daq5.logbookrun.trantbl.title'>State transition values</title>
+      <table id='daq3.logbookrun.trantbl'>
+         <title id='daq3.logbookrun.trantbl.title'>State transition values</title>
          <tgroup cols='3'>
             <thead>
                <row>
@@ -7338,8 +7338,8 @@ $run destroy
                    <para>
                      An integer code that describes the transition.
                      See the table of values in
-                     <link linkend='daq5.logbookrun.trantbl'
-                           endterm='daq5.logbookrun.trantbl.title' />
+                     <link linkend='daq3.logbookrun.trantbl'
+                           endterm='daq3.logbookrun.trantbl.title' />
                      in the reference page for <classname>LogBookRun</classname>
                      for possible values.
                    </para>
@@ -7351,8 +7351,8 @@ $run destroy
                    <para>
                      Contains a text string that describes the transition.
                      See the table of values in
-                     <link linkend='daq5.logbookrun.trantbl'
-                           endterm='daq5.logbookrun.trantbl.title' />
+                     <link linkend='daq3.logbookrun.trantbl'
+                           endterm='daq3.logbookrun.trantbl.title' />
                      in the reference page for <classname>LogBookRun</classname>
                      for possible values.
                    </para>
@@ -8954,8 +8954,755 @@ printall <replaceable>fd</replaceable>
     </refsect1>
 </refentry>
 <!-- /manpage -->
-
 <!-- manpage 3python -->
+
+<refentry id='py3.logbook'>
+   <refmeta>
+      <refentrytitle id='py3.logbook.title'>LogBook</refentrytitle>
+      <manvolnum>3python</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBook</refname>
+      <refpurpose>Python bindings to LogBook Api.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3
+
+import LogBook.LogBook as LogBook         
+      </synopsis>
+      <programlisting>
+try:
+   ...
+except LogBook.error:
+   ...
+   
+      </programlisting>
+      <programlisting>
+         
+LogBook.create(<replaceable>filename, expid, spokesperson, purpose</replaceable>)
+book = LogBook.LogBook(filename)
+
+      </programlisting>
+      <programlisting>
+# People interface      
+
+person = book.add_person(lastname, firstname[, salutation])
+people = book.find_people([whereclause])
+people = book.list_people()
+person = book.get_person(id)
+      </programlisting>
+      <programlisting>
+
+# Shift interface
+
+shift = book.get_shift(id)
+shift = book.create_shift(name[, people])
+shift = book.find_shift(name)
+shift = book.current_shift()
+
+      </programlisting>
+      <programlisting>
+         
+# Run interface
+
+run  = book.current_run()
+runs = book.list_runs()
+run  = book.find_run(number)
+run  = book.begin_run(number, title[, comment])
+
+      </programlisting>
+      <programlisting>
+
+# Note interface:
+
+note = get_note(id)
+notes = list_all_notes();
+notes = list_all_notes_for_run_number(number)
+notes = list_all_notes_for_run_id(id)
+notes = list_all_notes_for_run(run)
+notes = list_nonrun_notes()
+run   = get_note_run(note)
+
+note = create_note(author, text [,images=filenames, offsets=offsets][, run])
+
+      </programlisting>
+      <programlisting>
+# Key Value store interface
+
+if (kv_exists(key)):
+    # It exists
+         ...
+value = kv_get(key)
+kv_set(key, value)
+kv_create(newkey, value)
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This is the top level reference page for the python bindings to the
+            logbook API.  In addition to a static method to create new logbooks,
+            and an exception type (<classname>LogBook.error</classname>),
+            the API allows construction of a <classname>LogBook.Logbook</classname>
+            object on an existing logbook filename.
+            Once constructed, that object
+            provides several API subsections, each of these will be given its
+            own section.
+          </para>
+          <para>
+            Each of the API subsections may produce objects of other types
+            that can be manipulated to gain further detailed information about
+            the logbook or provide additional information to the logbook.
+            These will have their own reference pages (they are called out in the
+            text as well as appearing in <literal>SEE ALSO</literal>)
+          </para>
+          
+    </refsect1>
+    <refsect1>
+      <title>PEOPLE API section</title>
+      <para>
+         This section allows you to create and retrieve people from the logbook.
+         A persin is encapsulated in a <classname>LogBook.Person</classname>
+         object.   This object is described in the reference page:
+         <link linkend='py3.person' endterm='py3.person.title' />.
+      </para>
+      <para>
+         Here are the methods that make up the People API section:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Person</type>
+                  <methodname>add_person</methodname>
+                  <methodparam>
+                      <type>string</type><parameter>lastname</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>string</type><parameter>firstname</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>(optional)</modifier>
+                      <type>string</type><parameter>salutation</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Creates a new logbook person and returns an object that
+                  encapsulates it.  The parameters can be ordered or specified
+                  via keywords whose keys are the parameter names above.
+                  The <parameter>lastname</parameter> and
+                  <parameter>firstname</parameter> parameters are mandatory and
+                  specify the person's last name and first name respectively.
+                  The <parameter>salutation</parameter> parameter is optional.
+                  If supplied a non-empty salutation will be provided for the
+                  person (e.g. <literal>'Mr.'</literal>) If not, on retrieval,
+                  this person will have an empty salutation.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>tuple of LogBook.Person</type>
+                  <methodname>find_people</methodname>
+                  <methodparam>
+                     <modifier>optional</modifier>
+                      <type>string</type><parameter>whereclause</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Finds people that match the optional <parameter>whereclause</parameter>.
+                  The result is a tuple containing <classname>LogBook.Person</classname>
+                  objects that encapsulate people that satisfy the
+                  <parameter>whereclause</parameter>.
+                  <parameter>whereclause</parameter> is optional.  If omitted,
+                  this method is functionally equivalent to
+                  <methodname>list_people</methodname> below.
+                  If provided, <parameter>whereclause</parameter> must be a
+                  valid SQLite3 WHERE clause (without the <literal>WHERE</literal>)
+                  clause that will be used to filter out the matching people.
+               </para>
+               <para>
+                  For more informationa bout the strings that can be used
+                  for <parameter>whereclause</parameter>, refer to the
+                  Sqlite3 reference page for expressions (
+                  <ulink url='https://sqlite.org/syntax/expr.html' />
+                  ).  And the logbook schema for the <literal>person</literal>
+                  table at
+                  <link linkend='daq5.logbookschema' endterm='daq5.logbookschema.title' />
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>tuple of LogBook.Person</type>
+                  <methodname>list_people</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple that contains all people in the logbook.
+                  This is functionally equivalent to not supplying a
+                  <parameter>whereclause</parameter> to
+                  <methodname>find_people</methodname>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Person</type>
+                  <methodname>get_person()</methodname>
+                  <methodparam>
+                      <type>number</type><parameter>id</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the person with the primary key <parameter>id</parameter>.
+                  This parameter must be treatable as an integer.
+               </para>
+            </listitem>
+         </varlistentry>      
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>SHIFT API Section</title>
+      <para>
+         The Shift part of the API manipulates collections of people that
+         can be on-duty while data taking is in progress.  Shifts, returned by
+         this part of the API are encapsulated in <classname>LogBook.Shift</classname>
+         objects.  These are described in the
+         <link linkend='py3.shift' endterm='py3.shift.title' /> reference page.
+      </para>
+      <para>
+         These methods make up the Shift API section:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Shift</type>
+                  <methodname>get_shift</methodname>
+                  <methodparam>
+                      <type>number</type><parameter>id</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a <classname>LogBook.Shift</classname> object that
+                  encapsulates the person with the primary key
+                  <parameter>id</parameter>.  This parameter must be convertible
+                  to an integer.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Shift</type>
+                  <methodname>create_shift</methodname>
+                  <methodparam>
+                      <type>string</type><parameter>name</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>(optional)</modifier>
+                      <type>iterable of LogBook.Person</type><parameter>people</parameter>
+                  </methodparam>
+               </methodsynopsis>
+
+            </term>
+            <listitem>
+               <para>
+                  Creates a shift and optionally stocks it with people.
+                  The <parameter>name</parameter> parameter is mandatory and
+                  is the new name to give to the shift.  Shift names must be
+                  unique.  The optional <parameter>people</parameter>
+                  parameter can be specified either positionally or by keyword
+                  (<literal>people</literal>).  If provided it must be an
+                  iterable Python object whose members are all
+                  <classname>LogBook.Person</classname> people who will initially
+                  be members of the shift.  Note that the
+                  <classname>LogBook.Shift</classname> object that's returned
+                  also provides methods that allow you to manipulate membership.
+               </para>
+               <para>
+                  A caution here that shift membership should not change
+                  once data taking starts.  This is because run state translations
+                  get associated with a shift.  Therefore changing the membership of
+                  a shift will change the logbook database's understanding
+                  of who was on-duty at the time of the shift change.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Shift</type>
+                  <methodname>find_shift</methodname>
+                  <methodparam>
+                      <type>string</type><parameter>name</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a <classname>LogBook.Shift</classname> object that
+                  encapsulates the shift that is named <parameter>name</parameter>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Shift</type>
+                  <methodname>current_shift</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  The logbook has the concept of a <firstterm>current shift</firstterm>.
+                  This has meaning during data taking.  When run transitions
+                  are logged, the current shift is associated with that transition.
+                  This logs who was on duty and responsible for that transition.
+                  If no current shift has been established; <literal>None</literal>
+                  is returned.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>RUN API Section</title>
+      <para>
+         Runs are segments of data taking.  They are encapsulated with
+         <classname>LogBook.Run</classname> objects. For more on those, see
+         <link linkend='py3.run' endterm='py3.run.title' />.
+         This part of the API provides the ability to create new runs, by beginning
+         data taking, and retreive existing runs.  One of the most important
+         bits of metadata associated with a run is its run number. Among recorded
+         runs, this is a unique integer.  
+      </para>
+      <para>
+         One other  key concept in the run API is that, natrually, data taking
+         can only be active in one run at a time.  The logbook API enforces this
+         by refusing to allow a run be created while another run is active.
+         The active run, if there is one is called the
+         <emphasis>current run</emphasis>.
+      </para>
+      <para>
+         Here are the methods that make up the run api:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Run</type>
+                  <methodname>current_run</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the current run if there is one or
+                  <literal>None</literal> if no data taking is in progress
+                  (according to the logbook).
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>tuple of LogBook.Run</type>
+                  <methodname>list_runs</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returs a tuple of <classname>LogBook.Run</classname>
+                  that contains all of the runs in the logbook.  Note that the
+                  current run, if there is one, is included in the tuple.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Run</type>
+                  <methodname>find_run</methodname>
+                  <methodparam>
+                      <type>Number</type><parameter>number</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the <classname>LogBook.Run</classname>
+                  that has the run number <parameter>number</parameter>.
+                  If there is no match, <literal>None</literal> is returned.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Run</type>
+                  <methodname>begin_run </methodname>
+                  <methodparam>
+                      <type>Number</type><parameter>number</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>String</type><parameter>title</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>optional</modifier>
+                      <type>String</type><parameter>comment</parameter>
+                  </methodparam>
+               </methodsynopsis>
+
+            </term>
+            <listitem>
+                <para>
+                  Creates a new run logging a <literal>BEGIN</literal>
+                  transition for it.  The <parameter>number</parameter>
+                  and <parameter>title</parameter> specify the run number
+                  and title respectively and are mandatory.  The
+                  optional parameter <parameter>comment</parameter>
+                  provides a comment that's associated with the begin
+                  state transition.  All parameters can be either positional
+                  or be keyworded with the name of the parameter as the keyword
+                  (e.g. <literal>number=1</literal>).
+               </para>
+            </listitem>
+         </varlistentry>      
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>
+         NOTE API section
+      </title>
+      <para>
+         Notes are documentation about the experiment that can be entered at
+         any time.  Notes can be associated with runs or free standing.  A note
+         has, minimally an author and a time at which it was created.  Notes
+         can be rich text using the Markdown formatting language.
+         See <ulink url='https://https://www.markdownguide.org/' /> for information
+         about Markdown.
+      </para>
+      <para>
+         Markdown supports the inclusion of images via image links.  The logbook
+         database, however is all inclusive.  Therefore, the images that
+         are referred to in notes are pulled into the database where they can be
+         recovered when the note is later rendered.
+      </para>
+      <para>
+         Notes are incapsulated in <classname>LogBook.Note</classname> objects.
+         These objects are described in
+         <link linkend='py3.note' endterm='py3.note.title' />.
+      </para>
+      <para>
+         Here are the methods in the note API
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Note</type>
+                  <methodname>get_note</methodname>
+                  <methodparam>
+                      <type>Number</type><parameter>id</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a <classname>LogBook.Note</classname> that
+                  encapsulates the note that has the primary key
+                  <parameter>id</parameter>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>Tuple of LogBook.Note</type>
+                  <methodname>list_all_notes</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple that contains all of the notes
+                  known to the logbook.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>Tuple of LogBook.Note</type>
+                  <methodname>list_all_notes_for_run_number</methodname>
+                  <methodparam>
+                      <type>Number</type><parameter>number</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple of <classname>LogBook.Note</classname>
+                  objects that represent all of the notes that have been
+                  associated with the run numbered <parameter>number</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>Tuple of LogBook.Note</type>
+                  <methodname>list_all_notes_for_run_id</methodname>
+                  <methodparam>
+                      <type>Number</type><parameter>id</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple of <classname>LogBook.Note</classname>
+                  objects that represent all of the notes that have
+                  been associated with the run whose primary key is
+                  <parameter>id</parameter>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>Tuple of LogBook.Note</type>
+                  <methodname>list_all_notes_for_run</methodname>
+                  <methodparam>
+                      <type>LogBook.Run</type><parameter>run</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple of <classname>LogBook.Note</classname>
+                  objects that represent all of the notes that have
+                  been associated with the <classname>LogBook.Run</classname>
+                  object <parameter>run</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>Tuple of LogBook.Note</type>
+                  <methodname>list_nonrun_notes</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a tuple of <classname>LogBook.Note</classname>
+                  that represent the notes that are not associated with
+                  any run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Run</type>
+                  <methodname>get_note_run</methodname>
+                  <methodparam>
+                      <type>LogBook.Note</type><parameter>note</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  If the <parameter>note</parameter> is associated with a run,
+                  this method returns a <classname>LogBook.Run</classname>
+                  encapsulating that run.  If not, <literal>None</literal>
+                  is returned.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>LogBook.Note</type>
+                  <methodname>create_note</methodname>
+                  <methodparam>
+                      <type>LogBook.Person</type><parameter>author</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>String</type><parameter>text</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>optional</modifier>
+                      <type>Iterable of Strings</type><parameter>images</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>optional</modifier>
+                      <type>Iterable of Numbers</type><parameter>offsets</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <modifier>(optional)</modifier>
+                      <type>LogBook.Run</type><parameter>run</parameter>
+                  </methodparam>
+               </methodsynopsis>
+
+            </term>
+            <listitem>
+                <para>
+                  Creates a new note in the logbook and returns a
+                  <classname>LogBook.Note</classname> that encapsulates it.
+                  Two mandatory parameters; <parameter>author</parameter>
+                  and <parameter>text</parameter> provide the
+                  <classname>LogBook.Person</classname> that is the note author
+                  and note text respectively.  If the markdown in
+                  <parameter>text</parameter> contains image references,
+                  the <parameter>images</parameter> and <parameter>offsets</parameter>
+                  must provide the filenames of those images and byte offsets
+                  into the <parameter>text</parameter> at which the link to each
+                  image occurs.   If the note is associated with a run,
+                  <parameter>run</parameter> is the
+                  <classname>LogBook.Run</classname> that represents the associated
+                  run.  
+               </para>
+               <para>
+                  The parameters can be positional as shown or keywords where
+                  the parameter names above are the keywords you can use e.g.
+               </para>
+               <informalexample>
+                  <programlisting>
+...
+author = book.find_people('lastname = "Fox"')[0]
+run = book.current_run()
+note = book.create_note(author, "This a note for the current run", run=run)
+
+                  </programlisting>
+               </informalexample>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>KEY VALUE STORE API Section</title>
+      <para>
+         The key value store provides the ability to store keyword value pairs that
+         can be retrieved by keyword. Here are the methods that make up this section
+         of the API.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+            <methodsynopsis>
+               <type>Boolean</type>
+               <methodname>kv_exists</methodname>
+               <methodparam>
+                   <type>String</type><parameter>key</parameter>
+               </methodparam>
+            </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns <literal>True</literal> if there is an entry in
+                  the key value store with the key <parameter>key</parameter>.
+                  If not, returns <literal>False</literal>.
+                </para>
+             </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>String</type>
+                  <methodname>kv_get</methodname>
+                  <methodparam>
+                      <type>String</type><parameter>key</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the value of the key <parameter>key</parameter>
+                  from the key value store.  If there is no matching
+                  <parameter>key</parameter>, raises
+                  <classname>LogBook.error</classname>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>None</type>
+                  <methodname>kv_set</methodname>
+                  <methodparam>
+                      <type>String</type><parameter>key</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>String</type><parameter>value</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  If <parameter>key</parameter> exists, its value is
+                  overridden and set to <parameter>value</parameter>.  If
+                  <parameter>key</parameter> does not exist, it is created with
+                  a value of <parameter>value</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>None</type>
+                  <methodname>kv_create</methodname>
+                  <methodparam>
+                      <type>String</type><parameter>newkey</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>String</type><parameter>value</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  If <parameter>newkey</parameter> does not exist it is created
+                  with <parameter>value</parameter> as its value.  If it does
+                  exist, <classname>LogBook.error</classname> is raised.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      
+    </refsect1>
+    <refsect1>
+      <title>SEE ALSO</title>
+      <simplelist>
+         <member><link linkend='py3.person' endterm='py3.person.title' /></member>
+         <member><link linkend='py3.shift' endterm='py3.shift.title' /></member>
+         <member><link linkend='py3.run' endterm='py3.run.title' /></member>
+         <member><link linkend='py3.note' endterm='py3.note.title' /></member>
+      </simplelist>
+    </refsect1>
+</refentry>
+
+
 
 
 
