@@ -10586,6 +10586,708 @@ markdown = note.sustitute_images()
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
-
+<refentry id='daq5.logbookschema'>
+   <refmeta>
+      <refentrytitle id='daq5.logbookschema.title'>Logbook Schema</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Logbook Schema</refname>
+      <refpurpose>Describe schema of logbook databases.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+CREATE TABLE IF NOT EXISTS kvstore (           
+    id   INTEGER PRIMARY KEY,                   
+    key  TEXT,                                  
+    value TEXT                                  
+);    
+CREATE TABLE IF NOT EXISTS person  (                
+    id         INTEGER PRIMARY KEY,                  
+    lastname   TEXT,                                  
+    firstname  TEXT,                                  
+    salutation TEXT                                  
+);
+CREATE TABLE IF NOT EXISTS shift (                 
+    id    INTEGER PRIMARY KEY,                      
+    name TEXT                                       
+);
+CREATE TABLE IF NOT EXISTS shift_members (        
+      shift_id   INTEGER,                            
+      person_id  INTEGER                             
+);
+CREATE TABLE IF NOT EXISTS current_shift (  
+    shift_id  INTEGER                              
+);
+CREATE TABLE IF NOT EXISTS run (             
+    id   INTEGER PRIMARY KEY,                 
+    number INTEGER,                           
+    title TEXT                                
+);
+CREATE TABLE IF NOT EXISTS run_transitions ( 
+    id   INTEGER PRIMARY KEY,                  
+    run_id INTEGER,                            
+    transition_type INTEGER,                   
+    time_stamp      INTEGER,                   
+    shift_id        INTEGER,                   
+    short_comment   TEXT                      
+);
+CREATE TABLE IF NOT EXISTS valid_transitions ( 
+    id      INTEGER PRIMARY KEY,              
+    type    TEXT                              
+);
+CREATE TABLE IF NOT EXISTS  valid_state_transitions (
+    from_id   INTEGER,                                   
+    to_id     INTEGER                                    
+);
+CREATE TABLE IF NOT EXISTS current_run (id INTEGER);
+CREATE TABLE IF NOT EXISTS note (                 
+   id INTEGER PRIMARY  KEY,                        
+   run_id INTEGER,                                 
+   author_id INTEGER NOT NULL,                     
+   note_time INTEGER NOT NULL,                    
+   note   TEXT NOT NULL                           
+);
+CREATE TABLE IF NOT EXISTS note_image (           
+   id          INTEGER PRIMARY KEY,                
+   note_id     INTEGER NOT NULL,                   
+   note_offset INTEGER NOT NULL,                   
+   original_filename TEXT NOT NULL,                
+   image       BLOB NOT NULL                      
+);
+ 
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+         <para>
+            If you are reading this and you are not either an NSCLDAQ programming/maintainer
+            or formulating a where clause for one of the API functions that
+            accepts one, you've come to the wrong place.  Instead you should
+            be looking at the API or language bindings for Python or Tcl.
+            If you program directly to the database, you may not get some
+            of the business logic of the logbook correct.
+         </para>
+          <para>
+            The synpopsis shows the Sqlite3 commands that create the
+            logbook databas schema.  This manpage will describe the contents
+            of the tables and how they interrelate.  The tables fall into the
+            following broad categories of interrelated tables with some relationships
+            carried across these categories:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term>Key value store</term>
+               <listitem>
+                   <para>
+                     The <literal>kvstore</literal> table provides a generic
+                     key value store.  This is initially stocked when the
+                     database is created, however  the APIs in all languages
+                     support manipulation of this store.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Personel</term>
+               <listitem>
+                   <para>
+                     The <literal>person</literal>, <literal>shift</literal>
+                     <literal>shift_members</literal> and <literal>current_shift</literal>
+                     tables provide the twin concepts of people and shifts that
+                     are collections of people that work together during data
+                     taking.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Runs</term>
+               <listitem>
+                   <para>
+                     The <literal>run</literal>, <literal>run_transitions</literal>,
+                     <literal>valid_transitions</literal>,
+                     <literal>valid_state_transitions</literal> and
+                     <literal>current_run</literal> provide support for logging
+                     segments of data taking commonly called runs.
+                     This set of tables crosses over into the Personel set of
+                     tables because each run state transition is documented
+                     to have taken place during a shift.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Notes</term>
+               <listitem>
+                   <para>
+                     The <literal>note</literal>, and
+                     <literal>note_image</literal> tables provide support for
+                     experimenters to log arbitrary rich text artifacts.
+                     These artifacts cross over in to both Personel (notes
+                     are written by an author who is a person on the experiment),
+                     and optinoally Runs (notes can be associated with a run).
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            All tables have an auto incrementing integer primary key called
+            <structfield>id</structfield>.  By convention, foreign keys
+            will have field names that end in <literal>_id</literal>.
+          </para>
+          <para>
+            The remaining sections of this reference will describe the
+            tables for each category.
+          </para>
+          
+    </refsect1>
+    <refsect1>
+      <title>Key value store</title>
+      <para>
+         A key value store simply associates arbitrary text content (a
+         value) with an arbitrary text name by which the value can be
+         retrieved (key).  A single table, <literal>kvstore</literal>
+         provides support for the key value store.  This has the follwing
+         fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> key</structfield></term>
+            <listitem>
+                <para>
+                  The retrieval key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> value</structfield></term>
+            <listitem>
+                <para>
+                  The value associated with the key.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         When a logbook database is created, several key/value pairs are
+         stored:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>experiment</literal></term>
+            <listitem>
+                <para>
+                  The experiment id the log book is for.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>spokesperson</literal></term>
+            <listitem>
+                <para>
+                  The free text name of the spokesperson. Note that the
+                  presence of this key does not imply the spokesperson is a
+                  a logbook person in the Personel sense.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>purpose</literal></term>
+            <listitem>
+                <para>
+                  A brief statement of the purpose of the experiment.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>version</literal></term>
+            <listitem>
+                <para>
+                  The database version.  Currently this has the value
+                  <literal>1.0</literal>. 
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>Personel</title>
+      <para>
+         This subset of data base tables provides definitions of the people
+         that are working on the experiment (<literal>person</literal> table),
+         groups of people that are on-duty concurrently during data taking
+         (<literal>shift</literal> and <literal>shift_members</literal> tables).
+         In addition while the experiment is running ther is a concept of a
+         <literal>current_shift</literal>.  This indicates the shift that is
+         on-duty currently.  The <literal>current_shift</literal> table is used
+         by the API to determine which shift a run state transition should be
+         linked to.
+      </para>
+      <para>
+         Here are the fields in each of these tables:
+      </para>
+      <variablelist>
+         <title>person Table</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> lastname</structfield></term>
+            <listitem>
+                <para>
+                  Surname of the person in a record of the table.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> firstname</structfield></term>
+            <listitem>
+                <para>
+                  Given name of the person in a record of the table.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield>salutation</structfield></term>
+            <listitem>
+                <para>
+                  Salutation by which a person is known (e.g. <literal>Mr.</literal>,
+                  <literal>Ms.</literal> or <literal>Prof.</literal>).
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <variablelist>
+         <title>shift Table</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> name</structfield></term>
+            <listitem>
+                <para>
+                  Name of the shift.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         The <literal>shift_members</literal> table is what is called a
+         <firstterm>join table</firstterm>.  It's purpose is to join records in
+         the <literal>person</literal> table and records in the <literal>shift</literal>
+         table in a many to many relationship.  That is a person can be in many shifts
+         and a shift can have many members.  This table has no primary key,
+         just two foreign keys:
+      </para>
+      <variablelist>
+         <title>shift_members Join Table</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> shift_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of a shift.  This entry will describe
+                  a member of that shift.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> person_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of a person.  The person that has that primary
+                  key is a member of the shift with the primary key
+                  <structfield>shift_id</structfield>.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Finally, the <literal>current_shift</literal> table only ever has zero
+         or one entry.  It has a single field
+         <type>INTEGER</type><structfield> shift_id</structfield>.  If there
+         is an entry, the value of this field is the primary key of a shift.
+         That shift is considered to be the current, or on-duty shift.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>Runs</title>
+      <para>
+         Runs are a segment of data taking.  Runs have information that
+         describes them and state transitions.  State transitions are associated
+         with a shift.  Futhermore, as we will see, Runs can have notes
+         associated with them.
+      </para>
+      <para>
+         The database tables in this section are a bit involved.
+         <literal>run</literal> and <literal>run_transitions</literal>
+         provide tables to record each run and its sequence of transitions.
+         The <literal>valid_transitions</literal> table provides textual names
+         to go along with each transition type and <literal>valid_state_transitions</literal>
+         provides the directed graph of valid transitions for each state
+         (the result of a transition).  Finally, when a run is active (it has
+         been started but not yet ended), <literal>current_run</literal>
+         indicates this. 
+      </para>
+      <para>
+         Under normal circumstances, a run is created and has an initial
+         <literal>BEGIN</literal> transition indicating it has started.
+         There may be other transitions but its final transition, if all goes
+         well is an <literal>END</literal> transition indicating the run ended
+         normally.  Data acquisition system failures can prevent a good
+         <literal>END</literal> from being logged for the current run.
+         A transition called <literal>EMERGENCY_END</literal> is, therefore
+         defined that operates identically to <literal>END</literal> but indicates
+         the run ended improperly.
+      </para>
+      <para>
+         Here are the fields for each of the tables in this section of the
+         database:
+      </para>
+      <variablelist>
+         <title>run Table</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> number</structfield></term>
+            <listitem>
+                <para>
+                  This is a unique number for he run assigned by the experimenters
+                  as opposed to <structfield>id</structfield> which is assigned
+                  by the database itself.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> title</structfield></term>
+            <listitem>
+                <para>
+                  The title of the run.  Again assigned by the experimenters.
+                  This is just some text that describes the run.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <variablelist>
+         <title>run_transitions Table</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> run_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of the entry in <literal>run</literal>
+                  that describes the run for which this is a transition.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> transition_type</structfield></term>
+            <listitem>
+                <para>
+                  Primary key in the <literal>valid_transitions</literal>
+                  table that indicates the state transition this transition logs.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> time_stamp</structfield></term>
+            <listitem>
+                <para>
+                  The  <literal>time_t</literal> at which the run transition
+                  was logged.  This is gotten from <literal>time(2)</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> shift_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of an entry in the <literal>shift</literal>
+                  table that indicates which shift was on-duty when the
+                  transition was logged.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> short_comment</structfield></term>
+            <listitem>
+                <para>
+                  Short textual comment that is associated with the transition.
+                  The API often refers to this as a <firstterm>remark</firstterm>.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         The <literal>valid_transitions</literal> table provides a correspondence
+         between the numeric transitions in <literal>transition.transition_type</literal>
+         and a human readable transition name.  In addition to the 
+         <type>INTEGER</type><structfield> id</structfield> primary key referenced
+         by <literal>transition.transition_type</literal>, this table has
+         a <type>TEXT</type><structfield> type</structfield> field.  When
+         the database is created/initialized this table is stocked with the
+         following values:
+         
+      </para>
+      <table id='daq5.logbookrun.trantbl'>
+         <title id='daq5.logbookrun.trantbl.title'>State transition values</title>
+         <tgroup cols='3'>
+            <thead>
+               <row>
+                  <entry>s_transition value</entry>
+                  <entry>s_transitionName value</entry>
+                  <entry>Transition type</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>1</entry><entry>BEGIN</entry>
+                  <entry>Begin run. This is always the first transition</entry>
+               </row>
+               <row>
+                  <entry>2</entry><entry>END</entry>
+                  <entry>
+                     End of run.  This or <literal>EMERGENCY_END</literal>
+                     are always the last transition.
+                  </entry>
+               </row>
+               <row>
+                  <entry>3</entry><entry>PAUSE</entry>
+                  <entry>
+                     Pause run. Data taking is temporarly paused.
+                  </entry>
+               </row>
+               <row>
+                  <entry>4</entry><entry>RESUME</entry>
+                  <entry>
+                     Resume run. Indicates a paused run has resumed taking
+                     data.
+                  </entry>
+               </row>
+               <row>
+                  <entry>5</entry><entry>EMERGENCY_END</entry>
+                  <entry>Abnormal end of run.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+      <para>
+         Finally, not all transitions are legal.
+         The <literal>valid_state_transitions</literal> table joins
+         entries in <literal>valid_transitions</literal> to the entries
+         the are valid next transitions. It contains:
+         <type>INTEGER</type><structfield> from_id</structfield>, the
+         prior transition and <type>INTEGER</type><structfield> to_id</structfield>,
+         a legal next transition.  This table is also stocked at
+         database initialization time as follows:
+      </para>
+      <table>
+         <title>valid_state_transitions table contents</title>
+         <tgroup cols='3'>
+            <thead>
+               <row>
+                  <entry><literal>from_id</literal></entry>
+                  <entry><literal>to_id</literal></entry>
+                  <entry>Meaning.</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>1</entry>
+                  <entry>2</entry>
+                  <entry>BEGIN -&gt; END</entry>
+               </row>
+               <row>
+                  <entry>1</entry>
+                  <entry>3</entry>
+                  <entry>BEGIN -&gt; PAUSE</entry>
+               </row>
+               <row>
+                  <entry>1</entry>
+                  <entry>5</entry>
+                  <entry>BEGIN -&gt; EMERGENCY_END</entry>
+               </row>
+               <row>
+                  <entry>3</entry>
+                  <entry>4</entry>
+                  <entry>PAUSE -&gt; RESUME</entry>
+               </row>
+               <row>
+                  <entry>3</entry>
+                  <entry>2</entry>
+                  <entry>PAUSE -gt; END</entry>
+               </row>
+               <row>
+                  <entry>3</entry>
+                  <entry>5</entry>
+                  <entry>PAUSE -gt; EMERGENCY_END</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+      <para>
+         Finally, <literal>current_run</literal> has zero or 1 entries.
+         If there is a run that has been begun but not ended
+         (either through <literal>END</literal> or <literal>EMERGENCY_END</literal>)
+         this table's <literal>id</literal> field will contain the primary key
+         of an entry in <literal>run.id</literal>, which is the active run.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>Note tables</title>
+      <para>
+         Notes are items containing arbitrary rich text.  The text is formatted
+         using the <literal>Markdown</literal> formatting language.
+         Markdown supports references to images that are in the filesystem.
+         The notes themselves are in the <literal>note</literal> table.  The
+         <literal>note_image</literal> table will store data in image files
+         that are referenced by notes.
+      </para>
+      <para>
+         Rendering a note requires transforming
+         the text stored in the database or <firstterm>raw text</firstterm> by
+         first exporting the image files it references back out into the
+         file system and then fixing up references to images in the original
+         raw text to properly reference the exported images.  API calls support
+         doing that.
+      </para>
+      <para>
+         Here are the table contents for the tables in this section of the
+         database.
+      </para>
+      <variablelist>
+         <title>note Table contents</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> run_id</structfield></term>
+            <listitem>
+                <para>
+                  If not null, this is the primary key in the
+                  <literal>run</literal> table of the run this note is
+                  associated with.  If this is null, no run associated
+                  with this note.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> author_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of an entry in ther <literal>person</literal>
+                  table that designates the author of this note.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> note_time</structfield></term>
+            <listitem>
+                <para>
+                  time(2) value of when the note was entered in the database
+                  by the API.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>TEXT</type><structfield> note</structfield></term>
+            <listitem>
+                <para>
+                  Raw text of the note.  See the discussion at the beginning
+                  of this section about needing to transform this text
+                  before it can be rendered.  There are API calls to do that.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Here are the fields in the <literal>note_image</literal> table, which
+         contains images that were referenced by the note.
+      </para>
+      <variablelist>
+         <title>note_image table fields.</title>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of the image entry
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> note_id</structfield></term>
+            <listitem>
+                <para>
+                  Primary key of the note in the <literal>note</literal> table
+                  which references this image.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>INTEGER</type><structfield> note_offset</structfield></term>
+            <listitem>
+                <para>
+                  Byte offset into the note raw text at which the image
+                  link to this image begins.  Markdown image links look like
+                  <literal>![some text](/the/file/name)</literal>.  The
+                  value is the offset to the <literal>!</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>TEXT</type><structfield> original_filename</structfield>
+            </term>
+            <listitem>
+                <para>
+                  This is the name of the file prior to it having been loaded
+                   into this table.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>BLOB</type><structfield>image</structfield></term>
+            <listitem>
+                <para>
+                  This is the raw contents of the image.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage  -->
 
