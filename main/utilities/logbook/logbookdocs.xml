@@ -10263,6 +10263,326 @@ print(run.end('end run example').title + ' ended just now')
       </variablelist>
     </refsect1>
 </refentry>
+<refentry id='py3.note'>
+   <refmeta>
+      <refentrytitle id='py3.note.title'>LogBook.Note</refentrytitle>
+      <manvolnum>3python</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LogBook.Note</refname>
+      <refname>LogBook.Image</refname>
+      <refpurpose>Encapsulate notes for python</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+PYTHONPATH=$DAQROOT/pythonLibs/nscldaq python3
+
+import LogBook.LogBook as LogBook
+...
+book  = LogBook.LogBook(<replaceable>'logbookfile.log'</replaceable>)
+note  = book.get_note(1)
+image = note.get_image(0)
+      </synopsis>
+      <programlisting>
+
+image_id    = image.id
+note_id     = image.note_id
+note_no     = image.index
+offset      = image.offset
+original_fn = image.original_file
+exported_fn = image.exported_file
+
+      </programlisting>
+      <programlisting>
+
+note_id     = note.id
+note_run    = note.run
+if note_run is None:
+    print("Note has no associated run")
+timestamp   = note.time
+raw_text    = note.contents
+author      = note.author
+      
+      </programlisting>
+      <programlisting>
+
+nimages  = note.image_count()
+image    = note.get_image(index)
+markdown = note.sustitute_images()
+
+         
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <classname>LogBook.Note</classname> encapsulates a single
+            logbook note.  Related to this class is
+            <classname>LogBook.Image</classname> which encapsulates
+            a single image.  Images can be fetched from a note object
+            using <methodname>get_image</methodname>.
+          </para>
+          <para>
+            Notes are stored in the logbook along with their associated images.
+            The note text is assumed to be in Markdown format.  Image links,
+            however point to image files that may or may not still be in the
+            filesystem.  These images, however, have been pulled into the logbook
+            database.  They can be exported back out into the filesystem and
+            the raw note text image references fixed up to point to these exported
+            images using <methodname>substitute_images</methodname>.
+            Therefore the way to render a note is to first invoke
+            substitute_image on the note to get usable Markdown from the note
+            and then append or prepend any markdown headers or trailers desired
+            (for example, <command>lg_browse</command> and
+            <command>lg_print</command> prepend a table of note metadata), and
+            then pass the resulting text to a mardown processor, such as
+            <literal>Python-Markdown</literal>
+            (<ulink url='https://python-markdown.github.io' />) for html output
+            or <command>pandoc</command> for other output formats such
+            as e.g. PDF.   NSCL Container images include pandoc
+            (<ulink url='https://pandoc.org' /> -- packages exist as well for
+            most Linux variants).
+          </para>
+          <para>
+            The remaining sections  of this reference page will first
+            document the attributes and methods of
+            <classname>LogBook.Note</classname> and then the attributes
+            of <classname>LogBook.Image</classname>, instances of which can
+            be produced by note instances.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>LogBook.Note</title>
+      <para>
+         <classname>LogBook.Note</classname> objects encapsulate a single note
+         from the logbook database.  In general they are not constructed
+         directly but obtaind from method calls to
+         <classname>LogBook.LogBook</classname> instances.  See:
+         <link linkend='py3.logbook' endterm='py3.logbook.title' />
+      </para>
+      <refsect2>
+         <title>Attributes</title>
+         <para>
+            <classname>LogBook.Note</classname> objects have several read-only
+            attributes:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><type>Integer</type><structfield> id</structfield></term>
+               <listitem>
+                   <para>
+                     Returns the primary key of the note.  This is a unique
+                     integer that identifies the note.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>LogBook.Run</type><structfield> run</structfield></term>
+               <listitem>
+                   <para>
+                     If the note is associated with a run, this attribute will
+                     provide a <classname>LogBook.Run</classname> object
+                     encapsulating that run.  <classname>LogBook.Run</classname>
+                     objects are described in
+                     <link linkend='py3.run' endterm='py3.run.title' />.
+                   </para>
+                   <para>
+                     If there is no run associated with this note, the value of
+                     this attribute is
+                     <literal>None</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>Long</type><structfield> time</structfield></term>
+               <listitem>
+                   <para>
+                     Returns the time the note was added to the logbook in
+                     a form usable as input to
+                     <methodname>datetime.fromtimestamp</methodname>.
+                     The time provided is not the time at which note authoring
+                     began,  authoring can take a macroscopic amount of time,
+                     but the time at which the note was added to the logbook database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>String</type><structfield> contents</structfield></term>
+               <listitem>
+                   <para>
+                     Accesses the raw text of the note.  Unless the note has no
+                     associated images, this is not suitable for rendering as
+                     it will contain possibly broken image references.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><type>LogBook.Person</type><structfield> author</structfield></term>
+               <listitem>
+                   <para>
+                     Returns a <classname>LogBook.Person</classname> that
+                     wraps the author of the note.
+                     <classname>LogBook.Person</classname> is described in
+                     <link linkend='py3.person' endterm='py3.person.title' />
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>METHODS</title>
+         <para>
+            <classname>LogBook.Note</classname> defines the following methods:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>Integer</type>
+                     <methodname>image_count</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the number of images that are referenced by the
+                     note.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>LogBook.Image</type>
+                     <methodname>get_image</methodname>
+                     <methodparam>
+                         <type>Integer</type><parameter>index</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Returns the <parameter>index</parameter>'th image
+                     associated with the note as a
+                     <classname>LogBook.Image</classname> object.
+                     If <parameter>index</parameter> is out of range,
+                     a <classname>LogBook.error</classname> exception
+                     is raised.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>String</type>
+                     <methodname>substitute_images</methodname>
+                     <void />
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     This method generates usable markdown from the raw note text
+                     and
+                     referenced images.  It does so by exporting referenced images to the
+                     filesystem and fixing up the markdown links to them
+                     to point at the exported images.  The return value of this
+                     method is the fixed markdown text.  This text is suitable
+                     to be rendered by a markdown processor.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+    </refsect1>
+    <refsect1>
+      <title>LogBook.Image</title>
+      <para>
+         This class encapsulates a single image.  It is not
+         generally constructed directly but via a call to a <classname>LogBook.Note</classname>
+         object's <methodname>get_image</methodname> method.
+         <classname>LogBook.Image</classname> objects have several
+         read-only attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <type>Integer</type><structfield> id</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Provides the primary key of the image.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>Integer</type><structfield> note_id</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Provides the primary key of the note this image is
+                  used in.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>Integer</type><structfield> index</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Provides the note index within the note.  This is the
+                  value that was passed to
+                  a note's <methodname>get_image</methodname> method call.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>Integer</type><structfield> offset</structfield>
+            </term>
+            <listitem>
+                <para>
+                  The byte offset in the note text at which the
+                  markdown link referencing this note begins.  This is the
+                  index of that link's leading <literal>!</literal> character.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>String</type><structfield> orgininal_file</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Provides the image's original file system path.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <type>String</type><structfield>exported_file</structfield>
+            </term>
+            <listitem>
+                <para>
+                  Provides the image's exported filesystem path.  The first
+                  call of this method does the export. Note that this is
+                  because all of the Python image processing packages
+                  I peeked at operate on
+                  files rather than bytes in memory.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      
+    </refsect1>
+    <refsect1>
+      <title>FILES</title>
+      <simplelist>
+         <member><filename>~/.nscl-logbook</filename> - image export directory</member>
+      </simplelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
