@@ -123,12 +123,14 @@ USB::~USB()
 void
 USB::setDebug(int level)
 {
-    int status = libusb_set_option(
+#ifdef LIB_USB_OPTION_LOG_LEVEL
+  int status = libusb_set_option(
         m_pContext, LIBUSB_OPTION_LOG_LEVEL, level
     );
     if (status) {
         throw USBException(status, "Setting libusb-1.0 debug level failed");
     }
+#endif
 }
 /**
  * enumerate
