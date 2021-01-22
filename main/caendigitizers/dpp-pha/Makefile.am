@@ -27,4 +27,4 @@ install-exec-hook:
 	$(INSTALL_DATA) @builddir@/skel/Makefile @prefix@/skeletons/dpp-pha
 
 
-EXTRA_DIST=skel/*.cpp skel/*.h skel/Makefile.in
+EXTRA_DIST=@srcdir@/skel/*.cpp @srcdir@/skel/*.h @srcdir@/skel/Makefile.in
