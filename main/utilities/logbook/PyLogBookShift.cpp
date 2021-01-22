@@ -405,6 +405,7 @@ static PyMethodDef PyLogBookShift_methods[]  = {
 
 PyTypeObject PyLogBookShiftType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /** g++ version 4.9.2 e.g. does not supporte designated initializers 
     .tp_name = "LogBook.Shift",
     .tp_basicsize = sizeof(PyLogBookShift),
     .tp_itemsize = 0,
@@ -415,4 +416,24 @@ PyTypeObject PyLogBookShiftType = {
     .tp_getset  = accessors,
     .tp_init = (initproc)PyShift_init,
     .tp_new  = PyShift_new    
+    */
 };
+
+/**
+ *  This is necessary because earlier versions of g++ do not support
+ *  designated initializers menaing we must actively init the struct prior to use.
+ */
+void
+PyShift_InitType()
+{
+  PyLogBookShiftType.tp_name      = "LogBook.Shift";
+  PyLogBookShiftType.tp_basicsize = sizeof(PyLogBookShiftType);
+  PyLogBookShiftType.tp_itemsize  = 0;
+  PyLogBookShiftType.tp_dealloc   = (destructor)(PyShift_dealloc);
+  PyLogBookShiftType.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyLogBookShiftType.tp_doc       = "Log book shift class - collection of people";
+  PyLogBookShiftType.tp_methods   = PyLogBookShift_methods;
+  PyLogBookShiftType.tp_getset    = accessors;
+  PyLogBookShiftType.tp_init      = (initproc)(PyShift_init);
+  PyLogBookShiftType.tp_new       = PyShift_new;
+}

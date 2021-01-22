@@ -1352,6 +1352,7 @@ static PyMethodDef PyLogBook_methods [] = {   // methods
 
 static PyTypeObject PyLogBookType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /** g++ 4.9.2 does not support designated initializers.
     .tp_name = "LogBook.LogBook",
     .tp_basicsize = sizeof(PyLogBook),
     .tp_itemsize = 0,
@@ -1361,6 +1362,7 @@ static PyTypeObject PyLogBookType = {
     .tp_methods = PyLogBook_methods,  
     .tp_init = (initproc)PyLogBook_init,
     .tp_new   = PyLogBook_new
+    */
 };
 
 /////////////////////////////////////////////////////////////////
@@ -1382,7 +1384,7 @@ PyLogBook_isLogBook(PyObject* obj)
  * PyLogBook_getLogBook(PyObject* obj)
  *
  *  @param obj - Object that's already been validatated to be a logbook.
- *  @return LogBook* - Pointer to the encapsulated C++ logbook object.
+ *  @return LogBook* - Pointer to the encapsulated C++ logbook o
  */
 LogBook*
 PyLogBook_getLogBook(PyObject* obj)
@@ -1481,6 +1483,17 @@ extern "C"
     PyMODINIT_FUNC
     PyInit_LogBook()
     {
+      // This cruft is needed for C++ in Jessie e.g.:
+      PyLogBookType.tp_name = "LogBook.Logbook";
+      PyLogBookType.tp_basicsize = sizeof(PyLogBook);
+      PyLogBookType.tp_itemsize  = 0;
+      PyLogBookType.tp_dealloc   = (destructor)PyLogBook_dealloc;
+      PyLogBookType.tp_flags  = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+      PyLogBookType.tp_doc   = "Logbook Class";
+      PyLogBookType.tp_methods = PyLogBook_methods;
+      PyLogBookType.tp_init    = (initproc)PyLogBook_init;
+      PyLogBookType.tp_new     = PyLogBook_new;
+      
         // Ready LogBookType.
         
         if (PyType_Ready(&PyLogBookType) < 0) {
@@ -1488,19 +1501,24 @@ extern "C"
         }
         
         // Ready  Person type.
-        
+	
+        PyPerson_InitType();
         if (PyType_Ready(&PyPersonType) < 0) {
             return NULL;
         }
         // Prepare the shift type.
+	
+	PyShift_InitType();
         if (PyType_Ready(&PyLogBookShiftType) < 0) {
             return NULL;
         }
         // Runs also have a transition type:
-        
+
+	PyRun_InitType();
         if (PyType_Ready(&PyRunTransitionType) < 0) {
             return NULL;
         }
+	PyNote_InitType();
         if (PyType_Ready(&PyLogBookRunType) < 0) {
             return NULL;
         }

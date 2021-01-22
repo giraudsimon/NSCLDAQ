@@ -349,6 +349,7 @@ static PyGetSetDef PyTransitionGetters[] = {
    
 PyTypeObject PyRunTransitionType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /* Can't do this in g++ 4.9.2 e.g.
     .tp_name = "LogBook.transition",
     .tp_basicsize = sizeof(PyRunTransition),
     .tp_itemsize = 0,
@@ -359,7 +360,22 @@ PyTypeObject PyRunTransitionType = {
     .tp_getset = PyTransitionGetters,
     .tp_init   = (initproc)PyTransition_init,
     .tp_new    = PyTransition_new
+    */
 };
+static void PyTransitionType_Init()
+{
+  PyRunTransitionType.tp_name      = "LogBook.transition";
+  PyRunTransitionType.tp_basicsize = sizeof(PyRunTransition);
+  PyRunTransitionType.tp_itemsize  = 0;
+  PyRunTransitionType.tp_dealloc   = PyTransition_dealloc;
+  PyRunTransitionType.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyRunTransitionType.tp_doc       = "Run state transition";
+  PyRunTransitionType.tp_methods   = nullptr;
+  PyRunTransitionType.tp_getset    = PyTransitionGetters;
+  PyRunTransitionType.tp_init      = (initproc)PyTransition_init;
+  PyRunTransitionType.tp_new       = PyTransition_new;
+							  
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // LogBook.Run canonicals:
@@ -801,6 +817,7 @@ static PyMethodDef PyRun_methods [] = {
 
 PyTypeObject PyLogBookRunType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /* Not allowed in g++ 4.9.2 e.g.
     .tp_name = "LogBook.Run",
     .tp_basicsize = sizeof(PyLogBookRun),
     .tp_itemsize = 0,
@@ -811,4 +828,19 @@ PyTypeObject PyLogBookRunType = {
     .tp_getset  = PyRunGetters,
     .tp_init = (initproc)PyRun_init,
     .tp_new  = PyRun_new    
+    */
 };
+void PyRun_InitType()
+{
+  PyTransitionType_Init();
+  PyLogBookRunType.tp_name = "LogBook.Run";
+  PyLogBookRunType.tp_basicsize = sizeof(PyLogBookRun);
+  PyLogBookRunType.tp_itemsize = 0;
+  PyLogBookRunType.tp_dealloc = (destructor)(PyRun_dealloc);
+  PyLogBookRunType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyLogBookRunType.tp_doc  = "LogBook Run class; data taking run and its transitions";
+  PyLogBookRunType.tp_methods = PyRun_methods;
+  PyLogBookRunType.tp_getset  = PyRunGetters;
+  PyLogBookRunType.tp_init = (initproc)PyRun_init;
+  PyLogBookRunType.tp_new  = PyRun_new;
+}

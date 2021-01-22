@@ -61,4 +61,5 @@ PyObject* PyRun_TupleFromVector(
     PyObject* logbook, const std::vector<LogBookRun*>& runs
 );
 
+void PyRun_InitType();
 #endif

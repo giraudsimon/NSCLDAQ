@@ -45,4 +45,5 @@ PyObject* PyShift_TupleFromVector(
 );
 
 
+void PyShift_InitType();
 #endif

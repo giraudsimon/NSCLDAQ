@@ -280,6 +280,7 @@ static PyGetSetDef accessors[] = {
 
 PyTypeObject PyNoteImageType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /** Can't do this in e.g. g++-v4.9.2
     .tp_name = "LogBook.Image",
     .tp_basicsize = sizeof(PyNoteImage),
     .tp_itemsize = 0,
@@ -290,7 +291,26 @@ PyTypeObject PyNoteImageType = {
     .tp_getset  = accessors,
     .tp_init = (initproc)PyImage_init,
     .tp_new  = PyImage_new  
+    */
 };
+/**
+ *  g++-4.9.2 e.g. requires active initialization as designated member
+ *  initialization is not supported.
+ */
+static void
+PyImage_InitType()
+{
+  PyNoteImageType.tp_name = "LogBook.Image";
+  PyNoteImageType.tp_basicsize = sizeof(PyNoteImage);
+  PyNoteImageType.tp_itemsize = 0;
+  PyNoteImageType.tp_dealloc = (destructor)(PyImage_dealloc);
+  PyNoteImageType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyNoteImageType.tp_doc  = "LogBook Image class - image associated with a note.";
+  PyNoteImageType.tp_methods = nullptr;
+  PyNoteImageType.tp_getset  = accessors;
+  PyNoteImageType.tp_init = (initproc)PyImage_init;
+  PyNoteImageType.tp_new  = PyImage_new;
+}
 ///////////////////////////////////////////////////////////////////////
 // PyNote canonicals:
 
@@ -563,6 +583,7 @@ static PyMethodDef note_methods[] = {
 
 PyTypeObject PyNoteType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /* Not supported in e.g. g++-4.9.2
     .tp_name = "LogBook.Note",
     .tp_basicsize = sizeof(PyNote),
     .tp_itemsize = 0,
@@ -573,7 +594,23 @@ PyTypeObject PyNoteType = {
     .tp_getset  = note_accessors,
     .tp_init = (initproc)PyNote_init,
     .tp_new  = PyNote_new  
+    */
 };
+
+void PyNote_InitType()
+{
+  PyImage_InitType();
+  PyNoteType.tp_name = "LogBook.Note";
+  PyNoteType.tp_basicsize = sizeof(PyNote);
+  PyNoteType.tp_itemsize = 0;
+  PyNoteType.tp_dealloc = (destructor)(PyNote_dealloc);
+  PyNoteType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyNoteType.tp_doc  = "LogBook Note class - user notation";
+  PyNoteType.tp_methods = note_methods;
+  PyNoteType.tp_getset  = note_accessors;
+  PyNoteType.tp_init = (initproc)PyNote_init;
+  PyNoteType.tp_new  = PyNote_new;
+}
 //////////////////////////////////////////////////////////////////
 // Functions exported outside this module.
 

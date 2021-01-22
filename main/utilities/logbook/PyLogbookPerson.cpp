@@ -305,6 +305,7 @@ static PyGetSetDef accessors[] = {
 
 PyTypeObject PyPersonType = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /** g++ 4.9.2 (jessie) does not support designated initializrs
     .tp_name = "LogBook.Person",
     .tp_basicsize = sizeof(PyLogBookPerson),
     .tp_itemsize = 0,
@@ -315,4 +316,22 @@ PyTypeObject PyPersonType = {
     .tp_getset  = accessors,
     .tp_init = (initproc)PyPerson_init,
     .tp_new  = PyPerson_new
+    */
 };
+
+// Initialize the person type.
+// This is needed because g++-4.9.2 does not support designated initializers.
+//
+void PyPerson_InitType()
+{
+  PyPersonType.tp_name      = "LogBook.Person";
+  PyPersonType.tp_basicsize = sizeof(PyLogBookPerson);
+  PyPersonType.tp_itemsize  = 0;
+  PyPersonType.tp_dealloc   = (destructor)(PyPerson_dealloc);
+  PyPersonType.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  PyPersonType.tp_doc       = "LogBook Person Class";
+  PyPersonType.tp_methods   = PyLogBookPerson_methods;
+  PyPersonType.tp_getset    = accessors;
+  PyPersonType.tp_init      = (initproc)(PyPerson_init);
+  PyPersonType.tp_new       = PyPerson_new;
+}

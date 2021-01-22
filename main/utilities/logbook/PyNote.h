@@ -64,4 +64,5 @@ bool PyNote_isNote(PyObject* pObject);
 LogBookNote* PyNote_getNote(PyObject* pObject);
 PyObject* PyNote_create(PyObject* logbook, LogBookNote* pNote);
 
+void PyNote_InitType();
 #endif
