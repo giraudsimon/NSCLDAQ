@@ -229,6 +229,8 @@ AX_GENGETOPT
 
 AX_TCL
 
+
+
 #
 #  The substs below are for compatibility sake 
 #  eventually we should migrate Makefile.am defs to use
@@ -315,6 +317,17 @@ fi
 AC_SUBST(LIBTCLPLUS_CFLAGS)
 AC_SUBST(LIBTCLPLUS_LDFLAGS)
 AC_SUBST(LIBEXCEPTION_LDFLAGS)
+
+#  Configure and install tclhttpd
+#  We use that /usr/lib/tclx.y has tclConfig
+#  and /usr/include/tclx.y     has the headers.
+
+tcl_basename=`basename ${TCLSH}`
+tcl_configdir="/usr/lib/$tcl_basename"
+tcl_incdir="/usr/include/$tcl_basename"
+
+(cd ${srcdir}/tclhttpd3.5.1; ./configure --prefix=${prefix}/share/tclhttpd --enable-gcc --with-tclinclude=$tcl_incdir --with-tcl=$tcl_configdir)
+(cd ${srcdir}/tclhttpd3.5.1; make all install)
 
 
 # Epics

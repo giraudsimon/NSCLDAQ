@@ -9,94 +9,14 @@ configure:790:1: warning: return type defaults to 'int' [-Wimplicit-int]
  ^~~~
 configure:819: checking whether the C compiler (gcc  ) is a cross-compiler
 configure:824: checking whether we are using GNU C
-configure:833: gcc -E conftest.c
 configure:852: checking whether gcc accepts -g
 configure:896: checking for a BSD compatible install
 configure:954: checking whether make sets ${MAKE}
 configure:988: checking for ranlib
 configure:1021: checking for Cygwin environment
-configure:1037: gcc -c -g -O2  conftest.c 1>&5
-configure: In function 'main':
-configure:1031:20: error: '__CYGWIN32__' undeclared (first use in this function); did you mean '__LINE__'?
- #define __CYGWIN__ __CYGWIN32__
-                    ^~~~~~~~~~~~
-configure:1033:8: note: in expansion of macro '__CYGWIN__'
- return __CYGWIN__;
-        ^~~~~~~~~~
-configure:1031:20: note: each undeclared identifier is reported only once for each function it appears in
- #define __CYGWIN__ __CYGWIN32__
-                    ^~~~~~~~~~~~
-configure:1033:8: note: in expansion of macro '__CYGWIN__'
- return __CYGWIN__;
-        ^~~~~~~~~~
-configure: failed program was:
-#line 1026 "configure"
-#include "confdefs.h"
-
-int main() {
-
-#ifndef __CYGWIN__
-#define __CYGWIN__ __CYGWIN32__
-#endif
-return __CYGWIN__;
-; return 0; }
 configure:1059: checking for object suffix
-configure:1065: gcc -c -g -O2  conftest.c 1>&5
 configure:1083: checking for mingw32 environment
-configure:1095: gcc -c -g -O2  conftest.c 1>&5
-configure: In function 'main':
-configure:1091:8: error: '__MINGW32__' undeclared (first use in this function); did you mean '__LINE__'?
- return __MINGW32__;
-        ^~~~~~~~~~~
-        __LINE__
-configure:1091:8: note: each undeclared identifier is reported only once for each function it appears in
-configure: failed program was:
-#line 1088 "configure"
-#include "confdefs.h"
-
-int main() {
-return __MINGW32__;
-; return 0; }
 configure:1114: checking for executable suffix
-configure:1124: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1193: checking for Tcl configuration
 configure:1264: checking for existence of /usr/lib/tcl8.6/tclConfig.sh
 configure:1309: checking for Tcl public headers
-configure:1409: checking for building with threads
-configure:1501: checking how to build libraries
-configure:1557: checking for crypt
-configure:1585: gcc -o conftest -g -O2   conftest.c  1>&5
-/usr/bin/ld: /tmp/ccfjp3QY.o: in function `main':
-/fox/NSCLDAQ/main/tclhttpd3.5.1/configure:1579: undefined reference to `crypt'
-collect2: error: ld returned 1 exit status
-configure: failed program was:
-#line 1562 "configure"
-#include "confdefs.h"
-/* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char crypt(); below.  */
-#include <assert.h>
-/* Override any gcc2 internal prototype to avoid an error.  */
-/* We use char because int might match the return type of a gcc2
-    builtin and then its argument prototype would still apply.  */
-char crypt();
-
-int main() {
-
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined (__stub_crypt) || defined (__stub___crypt)
-choke me
-#else
-crypt();
-#endif
-
-; return 0; }
-configure:1604: checking for crypt in -lcrypt
-configure:1623: gcc -o conftest -g -O2   conftest.c -lcrypt   1>&5
-configure:1656: checking how to run the C preprocessor
-configure:1677: gcc -E  conftest.c >/dev/null 2>conftest.out
-configure:1737: checking for sys/resource.h
-configure:1747: gcc -E  conftest.c >/dev/null 2>conftest.out
-configure:1795: checking for build with symbols
-configure:1937: checking for tclsh
