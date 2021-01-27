@@ -1,10 +1,25 @@
 program_scripts=startServer.tcl mg_mkconfig.tcl
-library_scripts=
+library_scripts=mg_containerpackage.tcl
+test_scripts=container.test
 
-EXTRADIST=$program_scripts $library_scripts
+EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) minimal.img singexists.sh
 
 install-exec-local:
 	for f in $(program_scripts); do $(INSTALL_PROGRAM) @srcdir@/$$f @bindir@/`basename $$f .tcl`; done
 	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/manager
 	for f in $(library_scripts); do $(INSTALL_DATA) @srcdir@/$$f @prefix@/TclLibs/manager; done
+	echo pkg_mkIndex -verbose @prefix@/TclLibs/manager $(library_scripts) \
+	| @TCLSH_CMD@ 
 
+
+check:
+	$(INSTALL_PROGRAM)  @srcdir@/singexists.sh ~
+	if test "`ssh  localhost  ./singexists.sh`" = "yes" ; \
+	then \
+		$(INSTALL_DATA) @srcdir@/minimal.img ~ ;\
+		for script in $(test_scripts); do \
+		DAQBIN=@bindir@ SRCDIR=@srcdir@ TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/$$script; \
+		done; \
+	else \
+		echo No singularity manager tests will not be done; \
+	fi
