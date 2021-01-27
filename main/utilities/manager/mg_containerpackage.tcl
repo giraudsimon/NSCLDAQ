@@ -253,8 +253,8 @@ proc container::activate {db name host} {
     # --bind option.
     
     set userbindings [list]
-    $dbeval {
-        SELECT path, mountpoint FROM bindoint WHERE container_id=$id
+    $db eval {
+        SELECT path, mountpoint FROM bindpoint WHERE container_id=$id
     } bindpoint {
         if {$bindpoint(mountpoint) eq ""} {
             lappend userbindings $bindpoint(path)

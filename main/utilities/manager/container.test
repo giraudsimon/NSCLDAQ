@@ -130,6 +130,101 @@ tcltest::test container_add_5 {Add bind points to both self and different spots}
     }
 } -result [list /tmp "" /scratch /test]
 
+### ::container::remove tests
+
+tcltest::test container_remove_1 {Can remove non-existent container no prob.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+    
+} \
+-body {
+    container::remove db junk
+} -result * -match glob -returnCodes [list ok]
+
+tcltest::test container_remove_2 {Can actually remove containers without bindings} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test [file normalize ~/mininmal.img] "" ""
+    ::container::remove db test
+    db eval {SELECT COUNT(*) FROM container}
+} -result 0
+
+tcltest::test continer_remove_3 {Remove container with bind points.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test [file normalize ~/minimal.img] "" \
+        [list [list /scratch] [list [file normalize ~] /temp]]
+    ::container::remove db test
+    db eval {SELECT COUNT(*) FROM bindpoint}
+} -result 0
+
+### ::container::activate tests.  We know that we have a
+#  container named ~/minimal.img
+#  A file named singexists.sh.
+#  This gives us almost enough muscle to test the whole shooting match
+#  We'll add another file (at some point) to ~ which will set an environment
+#  variable so that we can check on that.
+tcltest::test container_activate_1 {Activate none-xistent container is error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::activate db fluff localhost
+} -result * -match glob -returnCodes error
+
+tcltest::test container_activate_2 {Minimal definition should be able to see it.} \
+-setup {
+    commonSetup
+    container::add db test [file normalize ~/minimal.img] "" ""
+} \
+-cleanup {
+    exec ssh localhost singularity instance stop test
+    commonCleanup
+    
+} \
+-body {
+    set fd [container::activate db test localhost]
+    after 500;               # Wait image start.
+    set result [exec ssh localhost singularity instance list |grep test]
+    set pid [pid $fd]
+    exec kill {*}$pid
+    catch {close $fd}
+    lindex $result 0
+} -result test
+
+tcltest::test container_activate_3 {Activate can run a command} \
+-setup {
+    commonSetup
+    container::add db test [file normalize ~/minimal.img] "" ""
+    set singfd [container::activate db test localhost]
+} \
+-cleanup {
+    exec kill {*}[pid $singfd]
+    catch {close $singfd}
+    exec ssh localhost singularity instance stop test
+    commonCleanup
+} \
+-body {
+    # This tests our system level init script
+    
+    set result [exec ssh localhost singularity run instance://test echo test]
+} -result test
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
