@@ -66,11 +66,11 @@ namespace eval ::container {
     # Making this a separate proc also allows for testing.
     
     proc _setup {} {
-        if {![file isdirectory $tempdir]} {
-            if {[file exists $tempdir]} {
-                file delete $tempdir;      # in case there's an ordinary file.
+        if {![file isdirectory $::container::tempdir]} {
+            if {[file exists $::container::tempdir]} {
+                file delete $::container::tempdir;      # in case there's an ordinary file.
             }
-            file mkdir @tempdir
+            file mkdir $::container::tempdir
         }
     }
     ::container::_setup
@@ -101,10 +101,17 @@ proc ::container::add {db name image init mountpoints} {
     if {[$db eval {SELECT COUNT(*) FROM container WHERE container=$name}] != 0} {
         error "There is already a container with the name $name"
     }
+    set initContents [list]
+    if {[file readable $init] } {
+        set fd [open $init r]
+        set initContents [read $fd]
+        close $fd
+        puts "'$initContents'"
+    }
     $db transaction {
-        $db eval{
+        $db eval {
             INSERT INTO container (container, image_path, init_script)
-                VALUES ($name, $image, $init )
+                VALUES ($name, $image, $initContents )
         }
         set pkey [$db last_insert_rowid];             # Primary key of inserted record.
         
@@ -224,7 +231,7 @@ proc container::activate {db name host} {
     set systemScript [file join $::container::tempdir container_init_$id]
     set fd [open $systemScript w]
     puts $fd "#!/bin/bash"
-    puts $fd {if [ -x /singularity.user ] }
+    puts $fd {if [ -r /singularity.user ] }
     puts $fd {then}
     puts $fd "  source /singularity.user"
     puts $fd {fi}
@@ -236,6 +243,7 @@ proc container::activate {db name host} {
     if {$init ne ""} {
         set userScript [file join $::container::tempdir container_user_$id]
         set fd [open $userScript w]
+        set init [join $init "\n"]
         puts $fd $init
         close $fd
         file attributes $userScript -permissions 0750
@@ -262,7 +270,8 @@ proc container::activate {db name host} {
     #
     #   Start the container in the remote host using ssh.
     
-    set [open "|fd ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
+    set fd [open "|ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
+    return $fd
 }
 ##
 #  ::container::run
