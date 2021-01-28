@@ -268,7 +268,7 @@ export CONTAINER_TEST
     ::container::add db test [file  join $home  minimal.img] $initscript [list]
     set fd [::container::activate db test localhost]
     fconfigure $fd -buffering line
-    after 500
+    after 300
     
 } \
 -cleanup {
@@ -283,6 +283,42 @@ export CONTAINER_TEST
     set result
     
 } -result {working}
+
+###
+#   Tests for ::container::run
+
+tcltest::test container_run_1 {Same as container_activate_5 but using run} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set initscript [file join $home nscldaq_container_activate_5.sh]
+    tcltest::makeFile {
+#!/bin/bash
+CONTAINER_TEST="working"
+export CONTAINER_TEST
+    } $initscript
+    ::container::add db test [file  join $home  minimal.img] $initscript [list]
+    set fd [::container::activate db test localhost]
+    fconfigure $fd -buffering line
+    after 300
+    
+} \
+-cleanup {
+    #exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $initscript
+    commonCleanup
+} \
+-body {
+    set runfd [::container::run test localhost {printenv CONTAINER_TEST}]
+    fconfigure $runfd -buffering line
+    set result [gets $runfd]
+    close $runfd
+    set result
+} -result {working}
+    
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
