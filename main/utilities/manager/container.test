@@ -29,6 +29,7 @@ package require containers
 package require sqlite3
 
 set dbfile "test-config.db"
+set TestImage [file normalize [file join ~ minimal.img ]]
 proc commonSetup {} {
     tcltest::makeFile [list] $::dbfile
     exec [file join $::env(DAQBIN) mg_mkconfig] $::dbfile
@@ -356,8 +357,73 @@ export CONTAINER_TEST
     
 } -result {1 {}} 
     
+###
+#   container::listDefinitions tests.
+
+tcltest::test container_list_1 {List when there are no containers.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result {}
 
 
+tcltest::test container_list_2 {descr} \
+-setup {
+    commonSetup
+    container::add db test [file join ~ minimal.img] "" ""
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result [list [dict create  name test image [file join ~ minimal.img] id 1] ]
+
+tcltest::test container_list_2 {Container has init script -> contents} \
+-setup {
+    commonSetup
+    set testfile [file join [file normalize ~] container_list_2.sh]
+    tcltest::makeFile {
+#!/bin/bash
+echo hi
+} $testfile
+    container::add db testing [file join [file normalize ~] minimal.img] $testfile [list]
+} \
+-cleanup {
+    #tcltest::removeFile $testfile
+} \
+-body {
+    container::listDefinitions db
+} -result [list \
+[dict create \
+    name testing image [file join [file normalize ~] minimal.img]     \
+    init {
+#!/bin/bash
+echo hi
+}  id 1
+]]
+
+tcltest::test container_list_3 {Container with mountpoints} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result [list                                   \
+    [dict create                                  \
+        name test1 image $TestImage              \
+        bindings [list {/a} {/c /d}] id 1         \
+     ]                                            \
+] 
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
@@ -368,4 +434,3 @@ proc tcltest::cleanupTestHook {} {
 
 tcltest::cleanupTestHook
 tcltest::cleanupTests
-exit $::exitCode

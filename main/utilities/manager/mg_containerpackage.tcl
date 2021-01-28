@@ -37,6 +37,7 @@ package require sqlite3
 #   container::activate - Activates a container in a specific remote host.
 #   container::run      - Runs a command in a container
 #   container:deactivate - Deactivates a container in a specified host.
+#   container::list      - Create list of container definitions.
 #
 #  A few notes:
 #     - Activation, Deactivation and running a command in the containers
@@ -295,4 +296,70 @@ proc ::container::run {name host command} {
 #
 proc ::container::deactivate {host name} {
     exec ssh $host singularity instance stop $name
+}
+
+
+##
+# container::list
+#    Retrieves all container definitions.
+#
+# @param db   - Database open on the config file.
+# @return list of dicts - where each dict describes one  container as follows:
+#              id   - Id of container (in container table).
+#              name - Name of the container.
+#              image - Path to container image file in the host filesystem.
+#              init  - Contents of the initialization script if present.
+#                      if no initialization script was provided, this key will
+#                      not be present.
+#              bindings - A list of bind point specifications.  Each bind point
+#                      is a one or two element list.  If a one element list,
+#                      the element specifies a native file system path
+#                      native file system path that will be bound into the
+#                      same file system path in a container instance
+#                      if a two element list, the first element of that list is
+#                      the native file system path and the second the path at
+#                      which that will appear in container instances.
+#
+proc container::listDefinitions {db} {
+    array set containers [list];      # array indexed by id of container defs.
+    db eval {
+        SELECT container.id AS cid, container, image_path, init_script, path, mountpoint
+        FROM container LEFT JOIN bindpoint ON container_id = container.id
+    } record {
+        # Make new root record in the containers array if needed:
+        
+        set id $record(cid)
+        if {[array names containers $id] eq ""} {
+            set containers($id) [dict create           \
+                name $record(container)                \
+                image $record(image_path)              \
+            ]
+            set init $record(init_script);            # Pulls out enclosing {}
+            if {$init ne ""} {
+                dict set containers($id) init $init
+            }
+        }
+        #  If there's a mount point append it.
+        if {$record(path) ne  ""} {
+            if {$record(mountpoint) ne ""} {
+        
+                dict lappend containers($id) bindings [list $record(path) $record(mountpoint)]
+            } else {
+        
+                dict lappend containers($id) bindings [list $record(path)]
+            }
+        }
+        
+    }
+    #  At this point we have all of the data tossed up into an array and we
+    # just need to convert it into a list.
+    
+    set result [list]
+    foreach id [array names containers] {
+        set dict $containers($id)
+        dict set dict id $id
+        lappend result $dict
+    }
+    
+    return $result
 }
