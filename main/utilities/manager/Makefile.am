@@ -1,5 +1,5 @@
 program_scripts=startServer.tcl mg_mkconfig.tcl
-library_scripts=mg_containerpackage.tcl
+library_scripts=mg_containerpackage.tcl mg_containeredit.tcl
 test_scripts=container.test
 
 EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) minimal.img singexists.sh
