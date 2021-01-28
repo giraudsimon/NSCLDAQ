@@ -61,7 +61,7 @@ namespace eval ::container {
     #
     #  Ensures the ~/.daqmanager directory exists:
     #
-    variable tempdir [file join ~ .daqmanager]
+    variable tempdir [file normalize [file join ~ .daqmanager]]
     
     # Making this a separate proc also allows for testing.
     
@@ -106,7 +106,6 @@ proc ::container::add {db name image init mountpoints} {
         set fd [open $init r]
         set initContents [read $fd]
         close $fd
-        puts "'$initContents'"
     }
     $db transaction {
         $db eval {
@@ -243,7 +242,7 @@ proc container::activate {db name host} {
     if {$init ne ""} {
         set userScript [file join $::container::tempdir container_user_$id]
         set fd [open $userScript w]
-        set init [join $init "\n"]
+        set init $init;             # Gets rid of the {} around the data.
         puts $fd $init
         close $fd
         file attributes $userScript -permissions 0750
@@ -269,7 +268,7 @@ proc container::activate {db name host} {
     
     #
     #   Start the container in the remote host using ssh.
-    
+    #puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
     set fd [open "|ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }

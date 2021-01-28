@@ -23,3 +23,4 @@ check:
 	else \
 		echo No singularity manager tests will not be done; \
 	fi
+	$(RM) ~/singexists.sh

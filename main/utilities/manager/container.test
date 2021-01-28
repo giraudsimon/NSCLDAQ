@@ -200,7 +200,7 @@ tcltest::test container_activate_2 {Minimal definition should be able to see it.
 } \
 -body {
     set fd [container::activate db test localhost]
-    after 500;               # Wait image start.
+    after 300;               # Wait image start.
     set result [exec ssh localhost singularity instance list |grep test]
     set pid [pid $fd]
     exec kill {*}$pid
@@ -223,8 +223,66 @@ tcltest::test container_activate_3 {Activate can run a command} \
 -body {
     # This tests our system level init script
     
+    after 300
     set result [exec ssh localhost singularity run instance://test echo test]
 } -result test
+
+tcltest::test container_activate_4 {Activating containers can do bindpoints} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set testscript [file join $home nscldaq_container_activate_4.sh]
+    set mappedscript [file join /testing nscldaq_container_activate_4.sh]
+    tcltest::makeFile {
+#!/bin/bash
+echo hello there
+    } $testscript
+    file attributes $testscript -permissions 0700 
+    ::container::add  db test [file join $home minimal.img] "" [list [list $home /testing]]
+    set fd [::container::activate db test localhost]
+    
+} \
+-cleanup {
+    exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $testscript
+    commonCleanup
+} \
+-body {
+    after 300
+    set result [exec ssh localhost singularity run instance://test $mappedscript]
+    
+} -result {hello there}
+
+tcltest::test container_activate_5 {User init script} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set initscript [file join $home nscldaq_container_activate_5.sh]
+    tcltest::makeFile {
+#!/bin/bash
+CONTAINER_TEST="working"
+export CONTAINER_TEST
+    } $initscript
+    ::container::add db test [file  join $home  minimal.img] $initscript [list]
+    set fd [::container::activate db test localhost]
+    fconfigure $fd -buffering line
+    after 500
+    
+} \
+-cleanup {
+    #exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $initscript
+    commonCleanup
+} \
+-body {
+    set result [exec ssh localhost singularity run instance://test printenv CONTAINER_TEST]
+    set result
+    
+} -result {working}
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
