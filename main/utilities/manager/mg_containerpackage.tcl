@@ -294,5 +294,5 @@ proc ::container::run {name host command} {
 # @param name - container name.
 #
 proc ::container::deactivate {host name} {
-    exec ssh host singularity instance stop $name
+    exec ssh $host singularity instance stop $name
 }
