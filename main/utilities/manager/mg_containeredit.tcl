@@ -202,7 +202,7 @@ snit::widgetadaptor container::Creator {
         grid $win.removebinding -row 3 -column 5 -sticky e
         
         ttk::label $win.initscriptlabel -text {Init Script:}
-        ttk::entry $win.initscript
+        ttk::entry $win.initscript -textvariable [myvar options(-initfile)]
         ttk::button $win.browseinit -text Browse... -command [mymethod _browseInit]
         
         grid $win.initscriptlabel $win.initscript $win.browseinit -padx 3
@@ -214,7 +214,42 @@ snit::widgetadaptor container::Creator {
         grid $actions.ok $actions.cancel -padx 3
         grid $actions -sticky nsew -columnspan 6
         
+        $self configurelist $args
     }
+    #---------------------------------------------------------------------------
+    #  Configuration handlers.
+    
+    ##
+    # _configInitScript
+    #    called to configure the initialization Script. This is done when
+    #    loading an existing configuration.  The existing configuration
+    #    contains, not the name of the init script but its contents.
+    #    These are written to a /tmp file, that filename is loaded into
+    #    -initfile.
+    #  @param name option being configured -initscript
+    #  @param value - value of that option - the script.
+    #
+    method _configInitScript {name value} {
+        set options($name) $value
+        set contents $value;               # Could be wrapped in {}
+        set fd [file tempfile options(-initfile) /tmp/innitscript]
+        puts $fd $contents
+        close $fd
+    }
+    ##
+    # _configDisallow
+    #     Called to indicate it's not allowed to set a specific option
+    #    this is required for options that are -readonly but we don't
+    #    want people to even be able to set them at construction time
+    #   (e.g. -initfile)
+    #
+    # @param name - name of the option
+    # @param value - Value proposed for the option.
+    #
+    method _configDisallow {name value} {
+        error "Configuring option $name is not allowed container::Creator construction"
+    }
+        
     
     
     
