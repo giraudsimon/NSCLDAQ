@@ -31,6 +31,132 @@ package require sqlite3
 package require containers
 
 namespace eval ::container {}
+
+##
+# @class container::BindingsList
+#    List of bindings that can scroll both ways.
+#    This can be used inboth container::Creator and container::Editor
+#    below
+#  The visual presentation is a listox with v and h scrollbars.
+# OPTIONS:
+#   -bindings - Bindings with which to populate the listbox.
+#               This will have the form of the bindings dict key in
+#               a container definition from container::listDefinitions
+#   -selectscript - Script called if the selection changes.  The value of the
+#               current selection is returned.
+#
+#
+snit::widgetadaptor container::BindingsList {
+    component bindings
+    
+    option -bindings -default [list] -configuremethod _update
+    option -selectscript [list]
+    
+    
+    constructor args {
+        installhull using ttk::frame
+        install bindings using listbox $win.list \
+            -yscrollcommand [list $win.vscroll set]   \
+            -xscrollcommand [list $win.hscroll set] -selectmode single
+        ttk::scrollbar $win.vscroll -orient vertical \
+            -command [list $bindings yview]
+        ttk::scrollbar $win.hscroll -orient horizontal \
+            -command [list $bindings xview]
+        
+        bind $bindings <<ListboxSelect>> [mymethod _onSelect]
+        
+        grid $bindings $win.vscroll -sticky news
+        grid $win.hscroll           -sticky ewn
+        
+        $self configurelist $args
+        
+        
+    }
+    #---------------------------------------------------------------------------
+    #  Configuration methods.
+    
+    ##
+    # _update
+    #    Update the list box from a new set of binding definitions.
+    # @param name  - option name (-bindings)
+    # @param value - option values
+    #
+    method _update {name value} {
+        set options($name) $value
+        
+        $bindings delete 0 end
+        
+        foreach binding $value {
+            set text $binding
+            if {[llength $binding] == 2} {
+                set text "[lindex $binding 0] -> [lindex $binding 1]"
+            }
+            $bindings insert end $text
+            
+        }
+        
+    }
+    #--------------------------------------------------------------------------
+    #  Event handling
+    #
+    
+    ##
+    # _onSelect
+    #   A selection was performed. If there is a -selectscript then
+    #   invoke it with the selected binding passed as a parameter.
+    #
+    method _onSelect {} {
+        set index [$bindings curselection]
+        set script $options(-selectscript)
+        if {($index ne "")  && ($script ne "")} {
+            puts "$options(-bindings)"
+            puts [lindex $options(-bindings) $index]
+            set binding [lindex $options(-bindings) $index]
+            puts "uplevel #0 $script [list $binding]"
+            uplevel #0 $script [list $binding]
+        }
+    }
+}
+
+##
+# @class container::Creator
+#    Create a container from an existing definition or from whole cloth.
+#
+#    +--------------------------------------------------+
+#    |  Name: [      ]   Image [         ] [Browse...]  |
+#    |                                                  |
+#    | Bindings                                         |
+#    |   From: [    ] [Browse...]  To: [         ]      |
+#    |   +---------------------------------------+      |
+#    |   |   Bindings list (scrollable)          |      |
+#    |   +---------------------------------------+      |
+#    | InitScript [ filename ]   [Browse...]            |
+#    +--------------------------------------------------+
+#    |  [ Ok ]    [ Cancel ]                            |
+#    +--------------------------------------------------+
+#
+#  @note - If creating from an existing container definition,
+#          if there is an init script it is written to a file in /tmp and
+#          that file is initially populated in the initscript entry.
+#          This is necessary because the contents of the file are pulled in
+#          not a reference to the file itself, in case it lives in a filesystem
+#          that will not be visible to the container.
+#  @note - users must take care, if they run this inside a container
+#          that the From path of a binding is a host binding not
+#          a mapped binding in the container (e.g.
+#         /usr/opt/opt-buster not /usr/opt/).
+#
+#  OPTIONS
+#    -name   - Container name.
+#    -image  - image path.
+#    -bindings - List of bindings (same form as container::listDefinitions gives).
+#    -initscript - contents - current contents of an initscript.
+#    -okscript   - Script to execute on ok.
+#    -cancelscript - Script to execute on cancel.
+#
+#          
+
+
 ##
 # @class container::Editor
 #    Provides an editor for the container part of the database.
@@ -82,13 +208,7 @@ snit::widgetadaptor container::Editor {
         install currentimage using ttk::label $win.current.image \
             -text "Current image:       "
         
-        install currentbindings using listbox $win.current.bindings \
-            -yscrollcommand [list $win.current.bscroll set] \
-            -xscrollcommand [list $win.current.bxscroll set]
-        ttk::scrollbar $win.current.bscroll -orient vertical \
-            -command [list $currentbindings yview]
-        ttk::scrollbar $win.current.bxscroll -orient horizontal \
-            -command [list $currentbindings xview]
+        install currentbindings using container::BindingsList $win.current.bindings 
         
         install initscript using ttk::button $win.current.script \
             -text "Init Script.." -command [mymethod _showCurrentScript] \
@@ -96,12 +216,18 @@ snit::widgetadaptor container::Editor {
         
         
         grid $currentimage -sticky nsew
-        grid $currentbindings $win.current.bscroll -sticky nsew
-        grid $win.current.bxscroll -sticky new
+        grid $currentbindings  -sticky nsew
         grid $initscript
         
         grid $win.current -row 0 -column 2 -sticky nsew
     
+        #  Now the action buttons:
+        
+        set actions [ttk::frame $win.actionarea]
+        ttk::button $actions.new -text New... -command [mymethod _onNew]
+        ttk::button $actions.edit -text Edit... -command [mymethod _onEdit]
+        grid $actions.new $actions.edit
+        grid $actions -sticky ew
         
         # Process options
         
@@ -131,7 +257,7 @@ snit::widgetadaptor container::Editor {
     ##
     # _onSelect
     #   Called when a container name is selected from th elist box.
-    #   we populate the rest of the UI based on which container was
+    #   we populate the rest of the UI based on which  was
     #   selected.
     #
     method _onSelect {} {
@@ -140,17 +266,13 @@ snit::widgetadaptor container::Editor {
         if {$selected ne ""} {
             $currentimage configure -text "Current Image: [dict get $selected image]"
             
-            # List the mount points if there are any:
+            # Update the bindings list component:
             
+            set bindingsList [list]
             if {[dict exists $selected bindings]} {
-                foreach mountpoint [dict get $selected bindings] {
-                    set text $mountpoint
-                    if {[llength $mountpoint] == 2} {
-                        set text "[lindex $mountpoint 0] -> [lindex $mountpoint 1]"
-                    }
-                    $currentbindings insert end $text
-                }
+                set bindingsList [dict get $selected bindings]
             }
+            $currentbindings configure -bindings $bindingsList
             
             #  set the stae of the initscript button accordingly:
             
@@ -233,7 +355,6 @@ snit::widgetadaptor container::Editor {
     #
     method _emptySelected {} {
         $currentimage configure -text "Current Image: "
-        $currentbindings delete  0 end
         $initscript configure -state disabled
     }
 }
@@ -244,7 +365,8 @@ proc container::editorTest {} {
     exec [file join $::env(DAQBIN) mg_mkconfig] containereditortest.db
     sqlite3 db containereditortest.db
     container::add db a thing1 ~/.bashrc a
-    container::add db b thing2 "" [list [list a] [list b /usr/opt/daq/12.0-pre3] [list d]]
+    container::add db b thing2 "" \
+        [list [list a] [list b /usr/opt/daq/12.0-pre3] [list d]]
     container::add db test minimal.img "~/.profile" ""
     
     container::Editor .e -containers [container::listDefinitions db]
