@@ -52,6 +52,8 @@ snit::widgetadaptor container::BindingsList {
     option -bindings -default [list] -configuremethod _update
     option -selectscript [list]
     
+    delegate option * to bindings
+    
     
     constructor args {
         installhull using ttk::frame
@@ -126,10 +128,10 @@ snit::widgetadaptor container::BindingsList {
 #    |  Name: [      ]   Image [         ] [Browse...]  |
 #    |                                                  |
 #    | Bindings                                         |
-#    |   From: [    ] [Browse...]  To: [         ]      |
-#    |   +---------------------------------------+      |
-#    |   |   Bindings list (scrollable)          |      |
-#    |   +---------------------------------------+      |
+#    |   From: [    ] To: [         ][Browse...]   [Add]|
+#    |   +---------------------------------+            |
+#    |   |   Bindings list (scrollable)    |  [Remove]  |
+#    |   +---------------------------------+            |
 #    | InitScript [ filename ]   [Browse...]            |
 #    +--------------------------------------------------+
 #    |  [ Ok ]    [ Cancel ]                            |
@@ -151,11 +153,72 @@ snit::widgetadaptor container::BindingsList {
 #    -image  - image path.
 #    -bindings - List of bindings (same form as container::listDefinitions gives).
 #    -initscript - contents - current contents of an initscript.
+#    -initfile   - Initialization file.
 #    -okscript   - Script to execute on ok.
 #    -cancelscript - Script to execute on cancel.
 #
 #          
-
+snit::widgetadaptor container::Creator {
+    option -name -default  [list]
+    option -image -default [list]
+    option -initscript -default [list] -configuremethod _configInitScript
+    option -initfile -default [list] -readonly 1 -configuremethod _configDisallow
+    option -okscript -default [list]
+    option -cancelscript -default [list]
+    
+    component bindings
+    delegate option -bindings to bindings
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::label $win.namelabel -text Name:
+        ttk::entry $win.name -textvariable [myvar options(-name)]
+        ttk::label $win.imagelabel -text Image:
+        ttk::entry $win.image -textvariable [myvar options(-image)]
+        ttk::button $win.imagebrowse -text Browse... -command [mymethod _browseImage]
+        
+        grid $win.namelabel $win.name $win.imagelabel $win.image $win.imagebrowse \
+            -sticky news -padx 3
+        
+        ttk::label $win.bindingslabel -text Bindings
+        grid $win.bindingslabel -sticky nsw
+        
+        ttk::label $win.fromlabel -text From:
+        ttk::entry $win.from
+        ttk::label $win.tolabel  -text To:
+        ttk::entry $win.to
+        ttk::button $win.tobrowser -text Browse... -command [mymethod _browseTo]
+        ttk::button $win.addbinding -text Add -command [mymethod _addBinding]
+        
+        grid $win.fromlabel $win.from \
+            $win.tolabel $win.to $win.tobrowser \
+            $win.addbinding -sticky nsew -padx 3
+        
+        install bindings using container::BindingsList $win.bindings \
+            -selectscript _onBindingsSelect -width 50
+        ttk::button $win.removebinding -text Remove -state disabled
+        grid $bindings  -row 3 -column 0 -columnspan 5 -sticky nsew
+        grid $win.removebinding -row 3 -column 5 -sticky e
+        
+        ttk::label $win.initscriptlabel -text {Init Script:}
+        ttk::entry $win.initscript
+        ttk::button $win.browseinit -text Browse... -command [mymethod _browseInit]
+        
+        grid $win.initscriptlabel $win.initscript $win.browseinit -padx 3
+        
+        set actions [ttk::frame $win.actionframe -relief groove -borderwidth 4]
+        ttk::button $actions.ok -text Ok -command [mymethod _dispatch -okscript]
+        ttk::button $actions.cancel -text Cancel -command [mymethod _dispatch -cancelscript]
+        
+        grid $actions.ok $actions.cancel -padx 3
+        grid $actions -sticky nsew -columnspan 6
+        
+    }
+    
+    
+    
+}
 
 ##
 # @class container::Editor
@@ -223,11 +286,11 @@ snit::widgetadaptor container::Editor {
     
         #  Now the action buttons:
         
-        set actions [ttk::frame $win.actionarea]
+        set actions [ttk::frame $win.actionarea -relief groove -borderwidth 4]
         ttk::button $actions.new -text New... -command [mymethod _onNew]
         ttk::button $actions.edit -text Edit... -command [mymethod _onEdit]
         grid $actions.new $actions.edit
-        grid $actions -sticky ew
+        grid $actions -sticky ew -columnspan 3
         
         # Process options
         
