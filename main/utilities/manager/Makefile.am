@@ -14,7 +14,7 @@ install-exec-local:
 
 check:
 	$(INSTALL_PROGRAM)  @srcdir@/singexists.sh ~
-	if test "`ssh  localhost  ./singexists.sh`" = "yes" ; \
+	if test "`ssh  localhost  ~/singexists.sh`" = "yes" ; \
 	then \
 		$(INSTALL_DATA) @srcdir@/minimal.img ~ ;\
 		for script in $(test_scripts); do \

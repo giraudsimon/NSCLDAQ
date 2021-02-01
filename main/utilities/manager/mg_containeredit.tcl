@@ -111,10 +111,8 @@ snit::widgetadaptor container::BindingsList {
         set index [$bindings curselection]
         set script $options(-selectscript)
         if {($index ne "")  && ($script ne "")} {
-            puts "$options(-bindings)"
-            puts [lindex $options(-bindings) $index]
             set binding [lindex $options(-bindings) $index]
-            puts "uplevel #0 $script [list $binding]"
+            #puts "uplevel #0 $script [list $binding]"
             uplevel #0 $script [list $binding]
         }
     }
@@ -128,7 +126,7 @@ snit::widgetadaptor container::BindingsList {
 #    |  Name: [      ]   Image [         ] [Browse...]  |
 #    |                                                  |
 #    | Bindings                                         |
-#    |   From: [    ] To: [         ][Browse...]   [Add]|
+#    |   From: [    ] To: [         ][Browse...]   [Add] [Remove]|
 #    |   +---------------------------------+            |
 #    |   |   Bindings list (scrollable)    |  [Remove]  |
 #    |   +---------------------------------+            |
@@ -156,6 +154,7 @@ snit::widgetadaptor container::BindingsList {
 #    -initfile   - Initialization file.
 #    -okscript   - Script to execute on ok.
 #    -cancelscript - Script to execute on cancel.
+#
 #
 #          
 snit::widgetadaptor container::Creator {
@@ -190,13 +189,14 @@ snit::widgetadaptor container::Creator {
         ttk::entry $win.to
         ttk::button $win.tobrowser -text Browse... -command [mymethod _browseTo]
         ttk::button $win.addbinding -text Add -command [mymethod _addBinding]
+        ttk::button $win.rmvbinding -text Remove -command [mymethod _removeBinding]
         
         grid $win.fromlabel $win.from \
             $win.tolabel $win.to $win.tobrowser \
-            $win.addbinding -sticky nsew -padx 3
+            $win.addbinding $win.rmvbinding -sticky nsew -padx 3
         
         install bindings using container::BindingsList $win.bindings \
-            -selectscript _onBindingsSelect -width 50
+            -selectscript [mymethod _onBindingSelect] -width 50
         ttk::button $win.removebinding -text Remove -state disabled
         grid $bindings  -row 3 -column 0 -columnspan 5 -sticky nsew
         grid $win.removebinding -row 3 -column 5 -sticky e
@@ -212,7 +212,7 @@ snit::widgetadaptor container::Creator {
         ttk::button $actions.cancel -text Cancel -command [mymethod _dispatch -cancelscript]
         
         grid $actions.ok $actions.cancel -padx 3
-        grid $actions -sticky nsew -columnspan 6
+        grid $actions -sticky nsew -columnspan 7
         
         $self configurelist $args
     }
@@ -232,7 +232,7 @@ snit::widgetadaptor container::Creator {
     method _configInitScript {name value} {
         set options($name) $value
         set contents $value;               # Could be wrapped in {}
-        set fd [file tempfile options(-initfile) /tmp/innitscript]
+        set fd [file tempfile options(-initfile) /tmp/initscript]
         puts $fd $contents
         close $fd
     }
@@ -249,10 +249,172 @@ snit::widgetadaptor container::Creator {
     method _configDisallow {name value} {
         error "Configuring option $name is not allowed container::Creator construction"
     }
+    #---------------------------------------------------------------------------
+    #  Event handlers.
+    ##
+    # _onBindingSelect
+    #     Called when a user selects a binding in the bindings component.#
+    #     The selected binding gets loaded into the From and if necessary To
+    #     boxes
+    #
+    # @param binding - the binding selected. This is a one or two element list.
+    #                  If one element, only the From was selected.  If two
+    #                  From and two were both selected.
+    # @note we (ab)use the fact that lindex off the end of a list returns an empty
+    #       string
+    #
+    method _onBindingSelect {binding} {
+        $win.from delete 0 end
+        $win.from insert end [lindex $binding 0]
         
-    
-    
-    
+        $win.to delete 0 end
+        $win.to insert end [lindex $binding 1]
+        
+    }
+    ##
+    # _browseInit
+    #    Browses for an initialization file.  If a file is accepted:
+    #    *   It's path is loaded into -initfile and
+    #    *   It's contents loaded into -initscript.
+    #
+    method _browseInit {} {
+        set filename [tk_getOpenFile -parent $win -title "Select init-script" \
+            -defaultextension .sh -filetypes [list                         \
+                [list {Shell scripts} .sh     ]                            \
+                [list {Bash scripts}  .bash   ]                            \
+                [list {All Files}     *       ]                            \
+            ]
+        ]
+        #
+        #  Filename is empty if e.g. cancel was clicked
+        #
+        if {$filename ne ""} {
+            set  options(-initfile) $filename
+            set fd [open $filename r]
+            set options(-initscript) [read $fd]
+            close $fd
+        }
+    }
+    ##
+    # _browseImage
+    #    Browse for a container image file.  If one is selected it is loaded into
+    #    -image.
+    #
+    # @note - This browser can be problematic as the filesystem location
+    #         _must_ be one in the host system while this program itself is often
+    #         run inside a container.  This makes me want to have symlinks from
+    #         from /usr/opt-container-type -> /usr/opt/container even though
+    #         they'll be broken links, they'll provide a 'correct' host
+    #         image 'filename'.
+    #
+    method _browseImage {} {
+        set filename [tk_getOpenFile -parent $win -title "Select container image" \
+            -defaultextension .img                                \
+            -filetypes [list                                     \
+                [list "Image files"  .img]                       \
+                [list "Singularity image files" .simg ]          \
+                [list "All files"    *]                          \
+            ]                                                    \
+        ]
+        if {$filename ne ""} {
+            set options(-image) $filename
+        }
+    }
+    ##
+    # _browseTo
+    #     Browse to find a mountpoint on which  a new binding will be mounted.
+    #     If a directory is chosen, it is loaded into $win.to.  Note this
+    #     directory should be a location in the container filesystem.  It
+    #     is possible this directory will not actually exist and need to be
+    #     typed in by hand.  If so, so be it.
+    #
+    method _browseTo {} {
+        set dirname [tk_chooseDirectory                         \
+            -parent $win -title {Bind to...} -mustexist 0       \
+        ]
+        if {$dirname ne ""} {
+            $win.to delete 0 end
+            $win.to insert end $dirname
+        }
+    }
+    ##
+    # _addBinding
+    #   Adds a new binding.  While the from field must be non-empty and
+    #   (should) refer to a directory in the host filesystem, the to directory
+    #   can be empty indicating the host directory is mounted in the same place
+    #   on the container filesystem.
+    #
+    method _addBinding {} {
+        set from [$win.from get]
+        set to   [$win.to get]
+        if {$from eq ""} {
+            tk_messageBox -icon error -parent $win -type ok  -title "Blank From" \
+                -message "The 'from' field of a binding must not be empty"
+        } else {
+            set binding [list $from]
+            if {$to ne ""} {
+                lappend binding $to
+            }
+            #  Get the current set of bindings and append this one:
+            
+            set b [$bindings cget -bindings]
+            lappend b $binding
+            $bindings configure -bindings $b
+            
+            # Clear out the bindings entries:
+            
+            $win.from delete 0 end
+            $win.to   delete 0 end
+        }
+    }
+    ##
+    # _removeBinding
+    #    Removes the binding definition in from/to.  There are three possibilities:
+    #    1.  There's no From - that's an error.
+    #    2.  There's no match between the from/to and the -bindings, that too is an
+    #        error.
+    #    3. There's a match, the matching element is removed and $bindings
+    #       reconfigured.
+    #
+    method _removeBinding {} {
+        set from [$win.from get]
+        set to   [$win.to get]
+        set b    [$bindings cget -bindings]
+        
+        if {$from eq ""} {
+            tk_messageBox -icon error -parent $win -type ok -title "Blank From" \
+                -message "The 'from' field is empty so there's no binding to remove"
+            
+        } else {
+            set deleteme [list $from]
+            if {$to ne ""} {
+                lappend deleteme $to
+            }
+
+            set found [lsearch -exact $b $deleteme]
+            if {$found == -1} {
+                tk_messageBox -icon error -parent $win -type ok -title "No match" \
+                    -message "There's no matching binding to remove"
+            } else {
+                set b [lreplace $b $found $found]
+                $bindings configure -bindings $b
+            }
+        }
+        
+        
+    }
+    ##
+    # _dispatch
+    #   Called to dispatch a script from either the Ok button or the Cancel button.
+    #
+    # $param name name of the option that holds the script to run.
+    #
+    method _dispatch {name} {
+        set script $options($name)
+        if {$script ne ""} {
+            uplevel #0 $script
+        }
+    }
 }
 
 ##
@@ -429,6 +591,116 @@ snit::widgetadaptor container::Editor {
         
         
         
+    }
+    #-----------------------------------------------------------------
+    # Editing
+    #
+    
+    ##
+    # _onNew
+    #    If $win.containereditor  does not exist,
+    #    bring one up and attach the Ok script to make the new
+    #    container and the cancelscript to just kill the widget.
+    #    We aso bind the destroy event.  While the container widget is alive,
+    #    New... and Edit... are disabled.  This provides us with a
+    #    non-modal editing dialog.
+    #
+    method _onNew {} {
+        if {[winfo exists $win.containereditor]} {
+            return
+        }
+        toplevel $win.containereditor
+        container::Creator $win.containereditor.editor \
+            -okscript [mymethod _acceptContainer -newcommand] -cancelscript [mymethod _cancelEditor]
+        pack $win.containereditor.editor
+        bind $win.containereditor <Destroy> [mymethod _editorKilled %W]
+        
+        $win.actionarea.new  configure -state disable
+        $win.actionarea.edit configure -state disable
+        
+    }
+    ##
+    # _onEdit
+    #    Pretty much same as _onNew except:
+    #    - The editor is loaded with the information from the currently selected
+    #      container (If there isn't one that's an error).
+    #    - The ok method dispatches to -replacecommand
+    #
+    method _onEdit {} {
+        if {[winfo exists $win.containeredit] } {
+            return
+        }
+        set selected [$self _getCurrent]
+        if {$selected eq ""} {
+            return
+        }
+        #  Now we can build the editor user interface:
+        
+        toplevel $win.containereditor
+        container::Creator $win.containereditor.editor \
+            -okscript [mymethod _acceptContainer -replacecommand] \
+            -cancelscript _cancelEditor                           \
+            -name [dict get $selected name] -image [dict get $selected image] \
+            -bindings [dict get $selected bindings]
+        
+        if {[dict exists $selected init]} {
+            $win.containereditor.editor configure \
+                -initscript [dict get $selected init]
+        }
+        pack $win.containereditor.editor
+        bind $win.containereditor <Destroy> [mymethod _editorKilled %W]
+    }
+    
+    ##
+    # _editorKilled
+    #   Processes Destroy events in $inw.containereditor.
+    #   If the toplevel is being destroyed, we can re-enable our new/edit
+    #   buttons.
+    #
+    # @param w - the widget being destroyed.  Note we'll see events for each
+    #            child of the top level, these must be ignored    
+    #
+    method _editorKilled {w} {
+        if {$w eq "$win.containereditor"} {
+            $win.actionarea.new  configure -state normal
+            $win.actionarea.edit configure -state normal
+        }
+    }
+    ##
+    # _cancelEditor
+    #   Bound to container::Creator's cancel button. We really just need to destroy
+    #   the top level widgt.  _editorKilled will take care of the rest:
+    #
+    method _cancelEditor {} {
+        destroy $win.containereditor\
+    }
+    ##
+    # _acceptContainer
+    #   Called when container::Creator 's Ok button was clicked
+    #   - Pull the information out of the editor about the container.
+    #   - Invoke the appropriate script
+    #
+    # 
+    method _acceptContainer {optname} {
+        set script $options($optname)
+        if {$script ne ""} {
+            set name [$win.containereditor.editor  cget -name]
+            set image [$win.containereditor.editor cget -image]
+            set bindings [$win.containereditor.editor cget -bindings]
+            set scriptfile [$win.containereditor.editor cget -initfile]
+            set info [dict create name $name image $image bindings $bindings]
+            if {$scriptfile ne ""} {
+                dict set info scriptfile $scriptfile
+                dict set info init  [$win.containereditor.editor cget -initscript]
+            }
+            # We must do the [list] below as uplevel unravles one level of listiness
+            # (I think) and we want to keep the dict intact (dicts look like lists)
+            #
+            uplevel #0 $script [list $info]
+            
+            
+        }
+        destroy $win.containereditor
     }
     #------------------------------------------------------------------
     #  Utilities
