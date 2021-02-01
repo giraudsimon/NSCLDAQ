@@ -37,7 +37,7 @@ package require sqlite3
 #   container::activate - Activates a container in a specific remote host.
 #   container::run      - Runs a command in a container
 #   container:deactivate - Deactivates a container in a specified host.
-#   container::list      - Create list of container definitions.
+#   container::listDefinitions - Create list of container definitions.
 #
 #  A few notes:
 #     - Activation, Deactivation and running a command in the containers
