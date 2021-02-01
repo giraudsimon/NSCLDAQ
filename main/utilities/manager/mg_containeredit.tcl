@@ -729,7 +729,9 @@ snit::widgetadaptor container::Editor {
     }
 }
 
-
+##
+#  This can be called to test the code.
+#
 proc container::editorTest {} {
     catch [file delete containereditortest.db]
     exec [file join $::env(DAQBIN) mg_mkconfig] containereditortest.db
@@ -745,5 +747,6 @@ proc container::editorTest {} {
     pack .e -fill both -expand 1
     
 }
+
 
 
