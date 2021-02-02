@@ -50,22 +50,7 @@ proc Usage {msg} {
     
     exit -1
 }
-##
-# haveName
-#  Determine if the set of define containers includes one with the given name.
-#
-# @param name - name to look for
-# @param defs - existing container list
-# @return boolean - true if there's a match false if not.
-#
-proc haveName {name defs} {
-    foreach def $defs {
-        if {$name eq "[dict get $def name]"} {
-            return 1
-        }
-    }
-    return 0
-}
+
 #------------------------------------------------------------------------------
 #  Action handlers for editor:
 
@@ -116,8 +101,8 @@ proc createContainer {editor db def} {
 #
 proc replaceContainer {editor db def} {
     set name [dict get $def name]
-    set existing [container::listDefinitions $db]
-    if {[haveName $name $existing]} {
+    
+    if {[container::exists $db $name]} {
         container::remove $db $name
     }
     createContainer $editor $db $def
