@@ -1,4 +1,4 @@
-program_scripts=startServer.tcl mg_mkconfig.tcl
+program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl
 test_scripts=container.test
 

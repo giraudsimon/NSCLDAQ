@@ -635,13 +635,17 @@ snit::widgetadaptor container::Editor {
             return
         }
         #  Now we can build the editor user interface:
+        set bindings [list]
+        if {[dict exists $selected bindings]} {
+            set bindings [dict get $selected bindings]
+        }
         
         toplevel $win.containereditor
         container::Creator $win.containereditor.editor \
             -okscript [mymethod _acceptContainer -replacecommand] \
-            -cancelscript _cancelEditor                           \
+            -cancelscript [mymethod _cancelEditor]                       \
             -name [dict get $selected name] -image [dict get $selected image] \
-            -bindings [dict get $selected bindings]
+            -bindings $bindings
         
         if {[dict exists $selected init]} {
             $win.containereditor.editor configure \
@@ -672,7 +676,7 @@ snit::widgetadaptor container::Editor {
     #   the top level widgt.  _editorKilled will take care of the rest:
     #
     method _cancelEditor {} {
-        destroy $win.containereditor\
+        destroy $win.containereditor
     }
     ##
     # _acceptContainer
