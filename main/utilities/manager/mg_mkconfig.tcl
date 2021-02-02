@@ -112,6 +112,7 @@ proc programs {db} {
     $db eval {
         CREATE TABLE IF NOT EXISTS program (
             id           INTEGER PRIMARY KEY,
+            name         TEXT,      -- Name used to refer to the program.
             path         TEXT,
             type_id      INTEGER, -- FK to program_type
             host         TEXT,
