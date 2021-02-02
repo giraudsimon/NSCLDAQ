@@ -38,6 +38,7 @@ package require sqlite3
 #   container::run      - Runs a command in a container
 #   container:deactivate - Deactivates a container in a specified host.
 #   container::listDefinitions - Create list of container definitions.
+#   container::exists    - Returns true if a container by that name exists.
 #
 #  A few notes:
 #     - Activation, Deactivation and running a command in the containers
@@ -76,6 +77,15 @@ namespace eval ::container {
     }
     ::container::_setup
 }
+##
+# container::exists
+#   @param db - database command.
+#   @param name - container name.
+#   @return boolean - true if the container exists.
+#
+proc container::exists {db name} {
+   return [expr {[$db eval {SELECT COUNT(*) FROM container WHERE container=$name}] != 0}]
+}
 
 ##
 # container::add
@@ -99,7 +109,7 @@ proc ::container::add {db name image init mountpoints} {
     # Duplicate container names are not allowed:
     
     
-    if {[$db eval {SELECT COUNT(*) FROM container WHERE container=$name}] != 0} {
+    if {[container::exists $db $name]} {
         error "There is already a container with the name $name"
     }
     set initContents [list]
@@ -304,6 +314,8 @@ proc ::container::deactivate {host name} {
 #    Retrieves all container definitions.
 #
 # @param db   - Database open on the config file.
+# @param name - Optional name of container.  If supplied only that container
+#               name is returned; otherwise all container defs are returned.
 # @return list of dicts - where each dict describes one  container as follows:
 #              id   - Id of container (in container table).
 #              name - Name of the container.
@@ -320,12 +332,18 @@ proc ::container::deactivate {host name} {
 #                      the native file system path and the second the path at
 #                      which that will appear in container instances.
 #
-proc container::listDefinitions {db} {
+proc container::listDefinitions {db {name {}}} {
     array set containers [list];      # array indexed by id of container defs.
-    db eval {
+    if {$name ne ""} {
+        set where "WHERE name = '$name'"
+    } else {
+        set where "WHERE 1=1"
+    }
+    db eval "
         SELECT container.id AS cid, container, image_path, init_script, path, mountpoint
         FROM container LEFT JOIN bindpoint ON container_id = container.id
-    } record {
+        $where
+    " record {
         # Make new root record in the containers array if needed:
         
         set id $record(cid)
