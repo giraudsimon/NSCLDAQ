@@ -116,6 +116,7 @@ proc programs {db} {
             path         TEXT,
             type_id      INTEGER, -- FK to program_type
             host         TEXT,
+            directory    TEXT,
             container_id INTEGER DEFAULT NULL, -- FK to container
             initscript   TEXT,
             service      TEXT
@@ -137,6 +138,14 @@ proc programs {db} {
             program_id     INTEGER,   -- FK to program.
             parameter      TEXT
         )
+    }
+    $db eval {
+            CREATE TABLE IF NOT EXISTS program_environment (
+                id         INTEGER PRIMARY KEY,
+                program_id INTEGER,
+                name       TEXT,
+                value      TEXT
+            )
     }
 }
 ##
