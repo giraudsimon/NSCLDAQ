@@ -41,23 +41,28 @@ package require sqlite3
 #  program::exists   - The named program has been defined.
 #  program::add      - Adds a new program definition to the database.
 #  program::remove   - Removes a program definition from the database.
-#  program::run       - Runs a program in the database
-#  program::listDefinitions    - List of dicts of program definitions.
 #  program::getdef    - Get program definition by name.
+#  program::listDefinitions    - List of dicts of program definitions.
 #  program::isActive  - Check if a program is active.
 #  program::activeContainers - List the containers we activated.
 #  program::activePrograms - lists of programs that are running.
+#  program::run       - Runs a program in the database
 #  program::kill      - send a SIGINT to a program to try to kill it.
 
 
-namespace eval program {
-    variable activeContainers [list]; # list of container@host active containers.
-    variable acivePrograms [list];    # List of still active programs.
+namespace eval ::program {
+    variable activeContainers [list]; # list of [list container host] active containers.
+    variable activePrograms [list];    # List of still active programs.
     variable fds;                     # Array of file descriptors indexed by
     array set fds [list];             # Program name.
+
+    #  Array indexed by program of output handlers.
+    
+    variable outputHandlers;
+    array set outputHandlers [list]
     
     variable containeredPrograms;        # array indexed by container@host name
-    array set containerdPrograms [list]; # Whose elements are lists of programs
+    array set containeredPrograms [list]; # Whose elements are lists of programs
                                        ; # Running in that container on that host.
                                        
     ::container::_setup;             # Setup the tempdir.
@@ -73,7 +78,7 @@ namespace eval program {
 #   @return int - The id of the program type.
 #   @retval -1  - No match.
 #
-proc program::_typeId {db type} {
+proc ::program::_typeId {db type} {
     #
     #  The assumption is there will be 0 or 1 results:
     #
@@ -94,14 +99,232 @@ proc program::_typeId {db type} {
 # @param key   - Key to fetch.
 # @param default - default value - defaults to empty string
 #
-proc program::_dictgetOrDefault {dict key {default {}}} {
+proc ::program::_dictgetOrDefault {dict key {default {}}} {
     set result $default
     if {[dict exists $dict $key]} {
         set $result [dict get $dict $key]
     }
     return $result
 }
+##
+# _makeProgramCommand
+#   Given the definition of a program, generate the command string to actually
+#   run it. that's of the form path options parameters
+#
+# @param def - program definition dict.
+# @return string - the program invocation string.
+#
+proc _makeProgramCommand {def} {
+    set command [dict get $def path]
+    if {[dict exists $def options]} {
+        foreach option $options {
+            set name [lindex $option 0]
+            set value [lindex $option 1]
+            append $command " " $name " " $value
+        }
+    }
+    if {[dict exists $def parameters]} {
+        foreach param [dict get $def parameters] {
+            append $command " " $param
+        }
+    }
+    return $command
+    
+}
 
+##
+# _writeProgramScript
+#   Writes a script to run a program this script will either be used by
+#   _runBare directly or _runInContainer in a singularity run command
+#   depending on how the program is run.
+#
+# @param fname - Full path of the file in which to write the script.
+# @param def   - Definition.
+#
+# The file is written in the following order:
+#  - init script if any.
+#  - environment variable definitions (if any).
+#  - command with options then parameters in that order.
+#
+proc _writeProgramScript {fname def} {
+    set fd [open $fname w]
+    puts $fd "#!/bin/bash"
+    puts $fd "#   script to run [dict get $def path]@[dict get $def host]\n"
+    
+    # Write any initscript:
+    
+    if {[dict exists $def initscript] } {
+        puts $fd "User supplied initializationscript: \n"
+        puts $fd [dict get $def initscript]
+        puts $fd ""
+    }
+    
+    # Write any environment settings:
+    
+    if {[dict exists $def environment]} {
+        puts $fd "\nUser supplied environment variables: \n"
+        foreach setting [dict get $def environment] {
+            set name [lindex $setting 0]
+            set value [lindex $setting 1]
+            #  Quote the value so it can have embedded white space.
+            puts $fd "$name=\"$value\";export $name"
+        }
+    }
+    puts $fd "\n Invoke user's program\n"
+    puts $fd [_makeProgramCommand $def]
+    
+    close $fd
+    file attributes $fname -permissions u+x;   # make it executable
+}
+
+
+##
+# ::program::_handleContainerInput
+#
+#     Called when input from a container is available.   Note that this is
+#     input from the ssh pipe that started the container iself, not the
+#     container.  Given how containers get started, an EOF on the input
+#     means the container was shut down (e.g. container::deactivate)
+#     That means thate:
+#     * We remove the container from the ::program::activeContainerList
+#     * We remove the array element for the container from
+#       ::program::containeredPrograms.
+#     * We assume the programs themselves will die in their own time
+#       which will result in their book keeping getting run down.
+#
+#
+# @param container - name of container
+# @param host      - host in wich the container is running.
+# @param fd        - file descriptor ready to read.
+#
+proc ::program::handleContainerInput {container host fd} {
+    fconfigure $fd -blocking 0
+    read $fd
+    if {[eof $fd]} {
+        array unset ::program::containeredPrograms ${container}@${host}
+        set index [lsearch \
+            -exact $::program::activeContainers [list $container $host] \
+        ]
+        set ::program::activeContainers   \
+            [lreplace $::program::activeContainers $index $index]
+    }
+}
+
+##
+# ::program::_outputWraper
+#
+#   Called when the fd on which a program is running becomes readable:
+#   - If there's a specified handler for it we call that first. The handler
+#     is expected to leave the fd open -- even if an end file condition is
+#     detected because: see below:
+#   - If there's no handler for the program, we just set the file descriptor
+#     to non blocking and do a read to discard what might be buffered in the fd.
+#   - If after all of this there's an eof condition on the file descriptor we
+#      *  Close the file desriptor
+#      *  Remove the program from activePrograms.
+#      *  Remove the fd from the fds array.
+#      *  Clear out any input handler from the outputHandlers
+#
+#  With respect to our handling of the blocking mode we restore that if we needed
+#  to do the read.  This support a future use case where at some point we may
+#  allow an output handler to be attached to a running program.
+#
+# @param name - program name.
+# @param fd   - File descriptor ready to read.
+#
+proc ::program::_outputWrapper {name fd} {
+    
+    if {[array names  ::program::outputHandlers $name] eq $name} {
+        uplevel #0 $::program::outputHandlers($name) $name $fd
+    } else {
+        set blocking [chan configure $fd -blocking]
+        chan configure $fd -blocking 0
+        read $fd
+        chan configure $fd -blocking $blocking
+    }
+    #  Handle the case of an eof:
+    #
+    if {[eof $fd]} {
+        close $fd
+        array unset ::program::fds $name
+        array unset ::program::outputHandlers $name
+        set index [lsearch -exact $::program::activePrograms $name]
+        set ::program::activePrograms \
+            [lreplace $::program::activePrograms $index $index]
+    }
+}
+##
+# _runBare
+#   Runs a program in the bare host.  By bare host we mean the program is run
+#   without the 'benefit' of a containerized environment.  When this happens,
+#   the program is run on the end of an ssh -t pipeline.  What's actually run
+#   is a shell script that defines any environment variables.  The shell
+#   script name is of the form native_programname_host[clock seconds].
+#   The script is dynamically written so the options/and parameters can be
+#   put on the line. 
+#
+#   The program is registered in activePrograms and the fd open on the pipe
+#   is saved in the fds array indexed by the program name.
+#   If there is an ouptut handler, this is stored in the outputHandlers array.
+#
+#   Note that the output handler is jacketed by our own output handler that
+#   tests for EOF and, if present, shuts down the program after the the
+#   output handler's called if there is an EOF condition on the pipe.
+#
+# @param db   - Database command (I actually don't think we need this)
+# @param def  - Program definition from ::program::getdef
+# @return fd - the file descriptor open on the command's I/Out-errr
+#  
+proc ::process::_runBare {db def} {
+    #
+    # Let's build  a script to run this beast:
+    
+    set name [dict get $def name]
+    set host [dict get $def host]
+    set fname [file join $::container::tempdir \
+            native_${name}_${host}_[clock seconds] \
+    ]
+    ::process::_writeProgramScript $fname $def
+    
+    set fd [open "|ssh -t $host $fname |& cat" w+]
+    
+    
+    return $fd
+}
+##
+# _runInContainer
+#    Runs a program in a container.
+#    - If the container is not running in the specified host, start it.
+#    - Create the command line to ask the container to run.
+#    - Ask the container to run it.
+#
+# @param db   - database command.
+# @param def  - Command definition.
+#
+proc _runInContainer {db def} {
+    set container [dict get $def container_name]
+    set host      [dict get $def host]
+    set name      [dict get $def name]
+
+    set activeContainerValue [list $container $host]
+    if {[lsearch -exact $::process::activeContainers $activeContainerValue] == -1} {
+        set containerFd [container::activate $db $container $host]
+        fileevent $containerFd readable \
+            [list ::program::_handleContainerInput $container $host $containerfd]
+        lappend ::process::activeContainers $activeContainerValue
+    }
+    #  The container is running so we can create our command script and ask the
+    #  container to run it:
+    
+    set fname [file join $::container::tempdir \
+        container_${container}_${name}_{$host}_[clock seconds] \
+    ]
+    ::process::_writeProgramScript $fname $def
+    
+    lappend ::program:containeredPrograms(${container}@${host})  $name
+    
+    return [::container::run $container $host $fname]
+}
 #-------------------------------------------------------------------------------
 ##
 # program::exists
@@ -110,7 +333,7 @@ proc program::_dictgetOrDefault {dict key {default {}}} {
 #   @return bool - true if name exists, false if not.
 #
 #
-proc program::exists {db name} {
+proc ::program::exists {db name} {
     return [expr \
         {[$db eval {SELECT COUNT(*) FROM program WHERE name=$name}] != 0} \
     ]
@@ -150,7 +373,7 @@ proc program::exists {db name} {
 #                                   any container init script or be the  home.
 #
 #      
-proc program::add {db name path type host options} {
+proc ::program::add {db name path type host options} {
     if {[program::exists $db $name]} {
         error "The program $name already has a definition"
     }
@@ -227,10 +450,263 @@ proc program::add {db name path type host options} {
 # @param name - Name of the program to remove.
 # @note It is an error to remove a program that does not exist.
 #
-proc program::remove {db name} {
+proc ::program::remove {db name} {
     if {![::program::exists $db $name]} {
         error "There is no program named $name"
     }
+    # We need to get the id of the program in order to remove all traces of it:
     
+    set id [$db eval {
+        SELECT id from program WHERE name = $name
+    }]
+    if {[length $id] != 1} {
+        error "program $name exists but searching for id gave [llength $id] hits"
+    }
+    # Removal needs to be atomic from multiple tables so:
+    
+    $db transaction {
+        $db eval {
+            DELETE FROM program WHERE id = $id
+        }
+        $db eval {
+            DELETE FROM program_option WHERE program_id = $id
+        }
+        $db eval {
+            DELETE FROM program_parameter WHERE program_id = $id
+        }
+        $db eval {
+            DELETE FROM program_environment WHERE program_id = $id
+        }
+    }
+}
+##
+# program::getdef
+#    Return the definition dict of a program.  See program::listDefinitions
+#
+#  @param db  - database command.
+#  @param name - Name of the command.
+#  @return dict - see program::listDefinitions for the keys in that dict.
+#  @note directory, container_id, container_name, initscript, service
+#        are all optional keys. They are only present if there is data to supply.
+#
+proc ::program::getdef {db name} {
+    
+    #  First let's get the root directory and its type and container names
+    #
+    
+    set result [dict create]
+    
+    db eval {
+        SELECT program.id, program.name, path, type_id, host, directory,
+                container_id, initscript, service,
+                type, container
+        FROM program
+        LEFT JOIN program_type ON type_id = program_type.id
+        LEFT JOIN container ON program.container_id = container.id
+        WHERE program.name = $name
+    } values {
+        #  The mandatory keys:
+        
+        dict set result id $values(program.id) name $values(program.name) \
+            path $values(path) type $values(type) type_id $values(type_id) \
+            host $values(host)
+        # The optional keys are only set if there are no-null values:
+        if {$values(directory) ne ""} {
+            dict set result directory $values(directory)
+        }
+        if {$values(container_id) ne "" } {
+            dict set result container_id $values(container_id) \
+                    container_name  $values(container)
+        }
+        if {$values(initscript) ne ""} {
+            dict set result initscript $values(initscript)
+        }
+        if {$values(service) ne ""} {
+            dict set result service $values(service)
+        }
+    }
+    # If nothing got set in the result, there's no match and we have an
+    # error:
+    
+    if {[llength [dict keys $result]] == 0} {
+        error "There is no such program $name"
+    }
+    set programId [dict get $result id];  # the lookup key for the rest of the stuff.
+    
+    #  The options, parameters and environment keys are mandatory so:
+    
+    dict set result options [list]  environment [list]
+    $db eval  {
+        SELECT option, value FROM program_option WHERE program_id = $programId
+    } values {
+        dict lappend result options [list $values(option) $values(value)]
+    }
+    
+    set parameters [$db eval {
+        SELECT parameter FROM program_parameter WHERE program_id = $programId
+    } ]
+    dict set result parameter $parameters
+    
+    $db eval {
+        SELECT name, value FROM program_environment WHERE program_id = $programId
+    } values {
+        dict lappend environment [list $values(name) $values(value)]
+    }
+    
+    return $result
+}
+    
+
+    
+
+    
+
+##
+# program::listDefinitions
+#    @param db
+#    @return list of dicts.    Each dict descsribes a specific
+#              program and has the following keys:
+#              *   id - Primary key of the program.
+#              *   name  - Program name.
+#              *   path  - Path to program file.
+#              *   type  - Textual type
+#              *   type_id - Id of the program type.
+#              *   host  - Host on which the program should run.
+#              *   directory - Directory that will be cwd when the program runs.
+#              *   container_id - Id of the container in which the program will run.
+#              *   container_name - name of the container in which the program will run.
+#              *   initscript - Script that runs before the program runs.
+#              *   service   - Name of the service the program will register for
+#                              REST communication.
+#              *   options - List of option name and value pairs detailing
+#                            the program options.
+#              *   parameters - List of program parameters.
+#              *   environment - List of environment variable, value pairs.
+#  @note  - in order to factor out the generation of this dict, we
+#           get a list of program names and successifly invoke getdef
+#
+proc ::program::listDefinitions {db} {
+    set names [$db eval {SELECT name FROM program }]
+    
+    set result [list]
+    foreach name $names {
+        lappend result [program::getdef $db $name]
+    }
+    return $result
+}
+    
+
+##
+# program::isActive
+#     Determine if a program is in the list of active programs.
+#
+#  @param name   - Name of the program.
+#
+proc ::program::isActive {name} {
+    return [expr {[lsearch -exact $::program::activePrograms $name] != -1}]
+}
+##
+# program::activeContainers
+#    List the active containers.  Note that we can only know the containers we
+#    started.  The list is returned as a list of pairs whose first element is a
+#    container name and second, the host in which _we_ started that container.
+#
+# @return list - as described above.
+#
+proc ::program::activeContainers {} {
+    return $::program::activeContainers
+}
+##
+# program::activePrograms
+#   Produce a list of active programs.  This list is a simple list of the names
+#   of the programs that are currently known to be running.
+# @return  list - list of active program names.
+#
+proc ::program::activePrograms { } {
+    return $::program::activePrograms
+}
+##
+# program::run
+#   Run a program in its remote host.
+#   - Program must exist.
+#   - Program must not be active.
+#   How the program is run depends on whether or not a container is needed.
+# @param db   - Database command
+# @param name - Program name.
+# @param ?outputHandler? - If present and non-empty a script to handle output from
+#                The program.
+#
+proc ::program::run {db name {outputHandler {}}} {
+    if {[::program::isActive $name]} {
+        error "Name is already active."
+    }
+    set programDef [::program::getdef $name]
+    
+    # How we start a program in or outside of a container is drastically
+    # different so figure out which is which and dispatch accordingly:
+    
+    if {[dict exists $programDef container]} {
+        set fd [::program::_runInContainer $db $programDef]
+    } else {
+        set fd [::program::__runBare $db $programDef]
+    }
+    
+    # Book keeping for all of this
+        
+    lappend activePrograms $name
+    set fds($name) $fd
+    
+    if {$outputHandler ne ""} {
+        set outputHandlers($name) $outputHandler
+    }
+    
+    #  The fd handler is our output wrapper:
+    
+    fileevent $fd readable [list ::program::_outputWrapper $name $fd]
+}
+##
+# ::program::kill
+#    Force a program to exit.  This is actually a bit tricky.  We need to get
+#    the pid of the program from the _remote_ system.  We're going to assume that
+#    the command string for each program is unique within the host it runs.
+#
+#
+#    * Form that command string for the program... call it cmdstring
+#    * do an ssh $host psaxuww | grep $cmdstring | grep $tcl_platform(user) | grep -v grep
+#    * and read the results.  If there are multiple matching lines we just look
+#      at the first.
+#    * The second list element of the first line is the pid, call it pid
+#    * We then ssh localhost kill -9 $pid
+#
+#   All of this will cause whatever file descriptors are open on the program
+#   to be closed and stuff will then rundown quite naturally.
+#
+# @param db    - database command.
+# @param name  - Program name.
+#
+#  @note it is an error to do this to a program that no longer exists.
+#
+proc ::program::kill {db name} {
+    set def [::program::getdef $db $name]
+    set host [dict get $def host]
+    
+    if {[lsearch -exact $::program::activePrograms $name] == -1} {
+        error $name is not a running program.
+    }
+    set command [_makeProgramCommand $def]
+    set programList [exec ssh $host ps axuww | \
+        grep $command | \
+        grep -v grep  | \
+        grep $tcl_platform(user) |& cat];  # the cat means no error if empty .
+    
+    set programList [split $programList "\n"];   #list of lines.
+    if {[llength $programList] == 0} {
+        error "Attempting ps axuww grepping for $command yielded no matches"
+    }
+    set program [lindex $programList 0]
+    set pid     [lindex $program 1];     # the pid in the remote host.
+    catch {exec ssh $host kill -9 $pid }
     
 }
+    
+
