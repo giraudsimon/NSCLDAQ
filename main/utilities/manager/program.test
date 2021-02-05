@@ -103,6 +103,62 @@ tcltest::test add_3 {Test with a container specified.} \
     db eval {SELECT container_id FROM program WHERE name = 'test'}
 } -result 2
 
+tcltest::test add_4 {Invalid container is an error.} \
+-setup {
+    commonSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::add db test $echo Transitory localhost [dict create container test2]
+} -result * -match glob -returnCodes error
+
+
+tcltest::test add_5 {program with options} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create options  [list {--ring junk} {--sourceid 6} ]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT option, value FROM program_option WHERE program_id=$id}
+} -result [list --ring junk --sourceid 6]
+
+tcltest::test add_6 {program with parameters} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create parameters [list a b c]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT parameter FROM program_parameter WHERE program_id=$id}
+} -result [list a b c]
+
+tcltest::test add_7 {program with environment variables} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create environment [list {DAQROOT /usr/opt/daq/12.0pre3} \
+         {IMAGE /ron/fox/minimal.img} {TEDDY Bear}]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT name, value FROM program_environment WHERE program_id = $id}
+} -result [list DAQROOT /usr/opt/daq/12.0pre3 IMAGE /ron/fox/minimal.img \
+        TEDDY Bear ]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

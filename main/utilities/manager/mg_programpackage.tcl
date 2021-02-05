@@ -421,15 +421,16 @@ proc ::program::add {db name path type host options} {
         }
         set pgmid [$db last_insert_rowid]
         
-        set options [::program::_dictGetOrDefault $options options]
-        foreach option $options {
+        set opts [::program::_dictGetOrDefault $options options]
+        foreach option $opts {
             set name [lindex $option 0]
             set value [lindex $option 1]
             $db eval {
-                INSERT INTO program_option (program_id, option, value),
+                INSERT INTO program_option (program_id, option, value)
                 VALUES ($pgmid, $name, $value)
             }
         }
+    
         set parameters [::program::_dictGetOrDefault $options parameters]
         foreach parameter $parameters {
             $db eval {
@@ -440,8 +441,8 @@ proc ::program::add {db name path type host options} {
         
         set env [::program::_dictGetOrDefault $options environment]
         foreach var $env {
-            set name [lindex $env 0]
-            set value [lndex $env 1]
+            set name [lindex $var 0]
+            set value [lindex $var 1]
             $db eval {
                 INSERT INTO program_environment (program_id, name, value)
                 VALUES ($pgmid, $name, $value)
