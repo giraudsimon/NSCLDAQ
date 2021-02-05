@@ -44,6 +44,8 @@ proc commonCleanup {} {
 
 }
 
+#------------------------------------------------------------------------
+# program::add tests
 
 tcltest::test add_1 {Add a base program makes the proper entries.} \
 -setup {
@@ -159,6 +161,47 @@ tcltest::test add_7 {program with environment variables} \
     db eval {SELECT name, value FROM program_environment WHERE program_id = $id}
 } -result [list DAQROOT /usr/opt/daq/12.0pre3 IMAGE /ron/fox/minimal.img \
         TEDDY Bear ]
+
+tcltest::test add_8 {Duplicate add is illegal} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create environment [list {DAQROOT /usr/opt/daq/12.0pre3} \
+         {IMAGE /ron/fox/minimal.img} {TEDDY Bear}]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::add db test $echo Transitory localhost [dict create]
+} -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+# program::exists tests.
+
+tcltest::test exists_1 {Program does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::exists db test
+} -result 0
+
+tcltest::test exists_2 {Program does exist} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::exists db test
+
+} -result 1
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

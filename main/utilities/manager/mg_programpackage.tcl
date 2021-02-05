@@ -373,7 +373,7 @@ proc ::program::exists {db name} {
 #                                   any container init script or be the  home.
 #
 #      
-proc ::program::add {db name path type host options} {
+proc ::program::add {db name path type host {options {}}} {
     if {[program::exists $db $name]} {
         error "The program $name already has a definition"
     }
