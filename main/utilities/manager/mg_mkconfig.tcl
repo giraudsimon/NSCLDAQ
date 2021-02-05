@@ -117,7 +117,7 @@ proc programs {db} {
             type_id      INTEGER, -- FK to program_type
             host         TEXT,
             directory    TEXT,
-            container_id INTEGER DEFAULT NULL, -- FK to container
+            container_id INTEGER, -- FK to container
             initscript   TEXT,
             service      TEXT
         )
@@ -128,7 +128,7 @@ proc programs {db} {
                 id          INTEGER PRIMARY KEY,
                 program_id  INTEGER,  -- FK to program
                 option      TEXT,
-                value       TEXT DEFAULT NULL
+                value       TEXT
             )
     }
     
@@ -210,8 +210,8 @@ proc sequences {db} {
             sequence_id              INTEGER, -- fk to sequence
             step                     REAL,
             program_id               INTEGER, -- fk to program table.
-            predelay                 INTEGER DEFAULT NULL,
-            postdelay                INTEGER DEFAULT NULL
+            predelay                 INTEGER DEFAULT 0,
+            postdelay                INTEGER DEFAULT 0
         )
     }
     
