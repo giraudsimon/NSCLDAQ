@@ -204,6 +204,13 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   timespec t;
   t.tv_sec  = 16;
   t.tv_nsec = 0;
+  const char* scalerenv = getenv("SCALER_SECONDS");
+  if (scalerenv) {
+    int seconds = atoi(scalerenv);
+    if (seconds > 0) {
+      t.tv_sec = seconds;
+    }
+  }
   CTimedTrigger* pTrigger = new CTimedTrigger(t);
   pExperiment->setScalerTrigger(pTrigger);
 
