@@ -202,6 +202,49 @@ tcltest::test exists_2 {Program does exist} \
     program::exists db test
 
 } -result 1
+
+#------------------------------------------------------------------------------
+# program::remove tests.
+
+tcltest::test remove_1 {Nonexistent remove is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::remvoe db test
+} -result * -match glob -returnCodes error
+    
+    
+tcltest::test remove_2 {Remove existing is no error.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    program::remove db test
+} -result * -match glob -returnCodes [list return ok]
+
+tcltest::test remove_3 {Once removed, it's gone.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::remove db test
+    program::exists db test
+} -result 0
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

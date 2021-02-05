@@ -470,7 +470,7 @@ proc ::program::remove {db name} {
     set id [$db eval {
         SELECT id from program WHERE name = $name
     }]
-    if {[length $id] != 1} {
+    if {[llength $id] != 1} {
         error "program $name exists but searching for id gave [llength $id] hits"
     }
     # Removal needs to be atomic from multiple tables so:
