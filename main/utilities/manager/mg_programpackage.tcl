@@ -99,10 +99,10 @@ proc ::program::_typeId {db type} {
 # @param key   - Key to fetch.
 # @param default - default value - defaults to empty string
 #
-proc ::program::_dictgetOrDefault {dict key {default {}}} {
+proc ::program::_dictGetOrDefault {dict key {default {}}} {
     set result $default
     if {[dict exists $dict $key]} {
-        set $result [dict get $dict $key]
+        set result [dict get $dict $key]
     }
     return $result
 }
@@ -275,7 +275,7 @@ proc ::program::_outputWrapper {name fd} {
 # @param def  - Program definition from ::program::getdef
 # @return fd - the file descriptor open on the command's I/Out-errr
 #  
-proc ::process::_runBare {db def} {
+proc ::program::_runBare {db def} {
     #
     # Let's build  a script to run this beast:
     
@@ -284,7 +284,7 @@ proc ::process::_runBare {db def} {
     set fname [file join $::container::tempdir \
             native_${name}_${host}_[clock seconds] \
     ]
-    ::process::_writeProgramScript $fname $def
+    ::program::_writeProgramScript $fname $def
     
     set fd [open "|ssh -t $host $fname |& cat" w+]
     
@@ -307,11 +307,11 @@ proc _runInContainer {db def} {
     set name      [dict get $def name]
 
     set activeContainerValue [list $container $host]
-    if {[lsearch -exact $::process::activeContainers $activeContainerValue] == -1} {
+    if {[lsearch -exact $::program::activeContainers $activeContainerValue] == -1} {
         set containerFd [container::activate $db $container $host]
         fileevent $containerFd readable \
             [list ::program::_handleContainerInput $container $host $containerfd]
-        lappend ::process::activeContainers $activeContainerValue
+        lappend ::program::activeContainers $activeContainerValue
     }
     #  The container is running so we can create our command script and ask the
     #  container to run it:
@@ -319,7 +319,7 @@ proc _runInContainer {db def} {
     set fname [file join $::container::tempdir \
         container_${container}_${name}_{$host}_[clock seconds] \
     ]
-    ::process::_writeProgramScript $fname $def
+    ::program::_writeProgramScript $fname $def
     
     lappend ::program:containeredPrograms(${container}@${host})  $name
     
@@ -347,7 +347,7 @@ proc ::program::exists {db name} {
 #  @param  name  - Name of the new program.
 #  @param  path  - Path to the program. If the program is run in a
 #                  container this path must be its path within the container.
-#  @param  type - Type of program (Transient, Critical or Persistent)
+#  @param  type - Type of program (Transitory, Critical or Persistent)
 #  @param  host  - Host in which the container is run.
 #  @param  options - A dict that contains additional program options:
 #                   *   container - If supplied this is the name of a container
@@ -379,24 +379,33 @@ proc ::program::add {db name path type host options} {
     }
     # Get the type id corresponsing to the program.
     #
-    set typdId [program::_typeId $db $type]
+    set typeId [program::_typeId $db $type]
     if {$typeId == -1} {
         error "$type is not a valid program type."
     }
     #  If there's a container in the options get its id:
     
     set containerId ""
+    
     set cname [::program::_dictGetOrDefault $options container]
     if {$cname ne ""} {
         set def [container::listDefinitions $db $cname]
-        if {$defe eq ""} {
+        if {$def eq ""} {
             error "There is no container named $cname"
         }
+
         set containerId [dict get $def id]
     }
-    set intscript  [::program::_dictGetOrDefault $options initscript]
+    set initscript  [::program::_dictGetOrDefault $options initscript]
+    if {$initscript ne ""} {
+        set fd [open $initscript r]
+        set initscript [read $fd]
+        close $fd
+    }
+    
     set workingDir [::program::_dictGetOrDefault $options directory]
     set service    [::program::_dictGetOrDefault $options service]
+    
     
     #  Now that we have everything we need to do the root record insertion,
     # we start the transaction and get to work shoving crap into the database.
@@ -404,7 +413,8 @@ proc ::program::add {db name path type host options} {
     $db transaction {
         $db eval {
             INSERT INTO program
-                (name, path, type_id, host, directory, container_id, initscript, service)
+                (name, path, type_id, host, directory, container_id,
+                 initscript, service)
                 VALUES ($name, $path, $typeId, $host, $workingDir,
                         $containerId, $initscript, $service
                 )
@@ -412,7 +422,7 @@ proc ::program::add {db name path type host options} {
         set pgmid [$db last_insert_rowid]
         
         set options [::program::_dictGetOrDefault $options options]
-        foreach $option $options {
+        foreach option $options {
             set name [lindex $option 0]
             set value [lindex $option 1]
             $db eval {

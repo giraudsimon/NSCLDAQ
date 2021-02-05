@@ -1,7 +1,7 @@
 program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_programpackage.tcl
-test_scripts=container.test
+test_scripts=container.test program.test
 
 EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) minimal.img singexists.sh
 
@@ -24,4 +24,4 @@ check:
 	else \
 		echo No singularity manager tests will not be done; \
 	fi
-	$(RM) ~/singexists.sh
+
