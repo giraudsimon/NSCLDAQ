@@ -335,7 +335,7 @@ proc ::container::deactivate {host name} {
 proc container::listDefinitions {db {name {}}} {
     array set containers [list];      # array indexed by id of container defs.
     if {$name ne ""} {
-        set where "WHERE name = '$name'"
+        set where "WHERE container = '$name'"
     } else {
         set where "WHERE 1=1"
     }
@@ -378,6 +378,8 @@ proc container::listDefinitions {db {name {}}} {
         dict set dict id $id
         lappend result $dict
     }
-    
+    if {$name ne ""} {
+      set result [lindex $result 0]
+    }
     return $result
 }
