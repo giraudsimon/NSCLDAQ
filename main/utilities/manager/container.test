@@ -20,8 +20,8 @@ exec tclsh "$0" ${1+"$@"}
 
 
 ##
-# @file   <filename>
-# @brief  <Purpose>
+# @file   container.test
+# @brief  Test the container api to the configuration system.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 package require tcltest
