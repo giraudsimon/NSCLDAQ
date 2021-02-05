@@ -129,6 +129,7 @@ set options {
     {buffersize.arg    16384 "Buffer size value for DDAS Readout"}
     {infinity.arg   "off" "on|off - enable/disable infinity clock"}
     {clockmultiplier.arg 1 "Time stamp multiplier for external clock"}
+    {scalerseconds.arg 16 "Time between scaler reads"}
         
 }
 
@@ -168,6 +169,7 @@ set fifoThreshold [dict get $parsed fifothreshold]
 set bufferSize    [dict get $parsed buffersize]
 set infinity    [dict get $parsed infinity]
 set clkmult      [dict get $parsed clockmultiplier]
+set scalerSecs   [dict get $parsed scalerseconds]
 
 if {$infinity} {
     set infstring "INFINITY_CLOCK=1"
@@ -175,7 +177,9 @@ if {$infinity} {
     set infstring ""
 }
 
-set readoutCmd "$infstring FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
+
+
+set readoutCmd "$infstring SCALER_SECONDS=$scalerSecs FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
 
 foreach optMapEntry $ddasOptionMap {
     set opt [lindex $optMapEntry 0]
