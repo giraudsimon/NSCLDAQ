@@ -508,7 +508,8 @@ proc ::program::getdef {db name} {
     set result [dict create]
     
     db eval {
-        SELECT program.id, program.name, path, type_id, host, directory,
+        SELECT program.id AS pgmid, program.name AS pgmname,
+                path, type_id, host, directory,
                 container_id, initscript, service,
                 type, container
         FROM program
@@ -518,16 +519,19 @@ proc ::program::getdef {db name} {
     } values {
         #  The mandatory keys:
         
-        dict set result id $values(program.id) name $values(program.name) \
-            path $values(path) type $values(type) type_id $values(type_id) \
-            host $values(host)
+        dict set result id $values(pgmid)
+        dict set result name $values(pgmname) 
+        dict set result path $values(path)
+        dict set result type $values(type)
+        dict set result  type_id $values(type_id) 
+        dict set result host $values(host)
         # The optional keys are only set if there are no-null values:
         if {$values(directory) ne ""} {
             dict set result directory $values(directory)
         }
         if {$values(container_id) ne "" } {
-            dict set result container_id $values(container_id) \
-                    container_name  $values(container)
+            dict set result container_id $values(container_id) 
+            dict set result container_name  $values(container)
         }
         if {$values(initscript) ne ""} {
             dict set result initscript $values(initscript)
@@ -546,7 +550,8 @@ proc ::program::getdef {db name} {
     
     #  The options, parameters and environment keys are mandatory so:
     
-    dict set result options [list]  environment [list]
+    dict set result options [list]
+    dict set result environment [list]
     $db eval  {
         SELECT option, value FROM program_option WHERE program_id = $programId
     } values {
@@ -556,12 +561,13 @@ proc ::program::getdef {db name} {
     set parameters [$db eval {
         SELECT parameter FROM program_parameter WHERE program_id = $programId
     } ]
-    dict set result parameter $parameters
+    dict set result parameters $parameters
     
     $db eval {
-        SELECT name, value FROM program_environment WHERE program_id = $programId
+        SELECT name, value FROM program_environment
+        WHERE program_id = $programId
     } values {
-        dict lappend environment [list $values(name) $values(value)]
+        dict lappend result environment [list $values(name) $values(value)]
     }
     
     return $result

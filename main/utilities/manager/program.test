@@ -244,7 +244,142 @@ tcltest::test remove_3 {Once removed, it's gone.} \
     program::remove db test
     program::exists db test
 } -result 0
+#-----------------------------------------------------------------------------
+#  getdef tests
 
+tcltest::test getdef_1 {Program does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::getdef db test
+
+} -result * -match glob -returnCodes error
+
+tcltest::test getdef_2 {getdef for minimal definition} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+    program::add db not_me $echo Persistent localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::getdef db test
+} -result [dict create                                                      \
+    id 1 name test path $echo type Transitory type_id 1 host localhost     \
+    options [list] environment [list] parameters [list] 
+]
+
+tcltest::test getdef_3 {Directory specified.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        directory [pwd]                                         \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] directory
+} -result [pwd]
+
+tcltest::test getdef_4 {Initscript gets sucked in and returned.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        initscript [file normalize ~/singexists.sh]             \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set dbcontents [dict get [program::getdef db test] initscript]
+    set fd [open ~/singexists.sh r]
+    set contents [read $fd]
+    close $fd
+    
+    expr {$dbcontents eq $contents}
+} -result 1
+
+tcltest::test getdef_5 {Programd had directory and service specifications} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create          \
+        service TEST_SERVICE directory /ron/fox
+    ]  
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set info [program::getdef db test]
+    list [dict get $info service] [dict get $info directory]
+} -result [list TEST_SERVICE /ron/fox]
+
+tcltest::test getdef_6 {Definition has container information} \
+-setup {
+    commonSetup
+    container::add db a-container [file normalize ~/minimal.img] "" ""
+    program::add db test $echo Transitory localhost [dict create \
+        container a-container \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set info [program::getdef db test]
+    list [dict get $info container_name] [dict get $info container_id]
+} -result [list a-container 1]
+
+tcltest::test getdef_7 {Options present} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        options [list {--id 5} {--ring fox} {--name lost}]     \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] options
+} -result [list {--id 5} {--ring fox} {--name lost}]
+
+tcltest::test getdef_8 {Get def when we have parameters} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        parameters [list a b c d e]
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] parameters
+} -result [list a b c d e]
+
+tcltest::test getdef_9 {Program definition has environment vars.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] environment
+} -result [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
