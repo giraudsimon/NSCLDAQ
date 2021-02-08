@@ -657,7 +657,7 @@ proc ::program::run {db name {outputHandler {}}} {
     if {[::program::isActive $name]} {
         error "Name is already active."
     }
-    set programDef [::program::getdef $name]
+    set programDef [::program::getdef $db $name]
     
     # How we start a program in or outside of a container is drastically
     # different so figure out which is which and dispatch accordingly:
