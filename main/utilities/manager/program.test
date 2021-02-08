@@ -308,7 +308,7 @@ tcltest::test getdef_4 {Initscript gets sucked in and returned.} \
     expr {$dbcontents eq $contents}
 } -result 1
 
-tcltest::test getdef_5 {Programd had directory and service specifications} \
+tcltest::test getdef_5 {Program had directory and service specifications} \
 -setup {
     commonSetup
     program::add db test $echo Transitory localhost [dict create          \
@@ -380,6 +380,77 @@ tcltest::test getdef_9 {Program definition has environment vars.} \
 -body {
     dict get [program::getdef db test] environment
 } -result [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+
+#------------------------------------------------------------------------------
+# listDefinition tests
+
+tcltest::test listDefs_1 {No definitions means and empty list} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    program::listDefinitions db
+} -result [list]
+
+tcltest::test listDefs_2 {Get the right sized list:} \
+-setup {
+    commonSetup
+     program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory locahost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [program::listDefinitions db]
+} -result 2
+
+
+tcltest::test listDefs_3 {First program definition is correct} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lindex [program::listDefinitions db] 0
+} -result [dict create                                                \
+    id 1 name test1 path $echo type Transitory type_id 1 host localhost \
+    options [list] environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} \
+                                {a b}]                                        \
+    parameters [list]                                                        \
+]
+
+tcltest::test listDefs_4 {Second program definition is correct} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lindex [program::listDefinitions db] 1
+} -result [dict create                                                    \
+    id 2 name test2 path $echo type Transitory type_id 1 host localhost \
+    options [list] environment [list] parameters [list]                  \
+]
+
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
