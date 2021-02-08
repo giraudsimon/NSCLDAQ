@@ -585,12 +585,21 @@ tcltest::test run_5 {Can we dispatch to reader?} \
     }
 } \
 -cleanup {
+    after cancel $id1
+    after cancel $id2
     commonCleanup
 } \
 -body {
     program::run db test1 run_5_inputHandler
-    after 400 [list incr waitover]
-    vwait waitover
+
+    #  These two afters are essentially timeouts the
+    #  completion of the program.  They allow us to run without delays for
+    #  the program spinning up that may fail.
+    
+    set id1 [after 1000 [list lappend outputLines Failed]]
+    set id2 [after 1100 [list lappend outputLines failed]]
+    vwait outputLines
+    vwait outputLines
     
     set outputLines
 } -result [list [list test1 "Hello world"] [list test1 ""]]
