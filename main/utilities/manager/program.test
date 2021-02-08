@@ -553,6 +553,47 @@ tcltest::test run_3 {Running a bare program makes it active..} \
     vwait waitover;                                 # Cleanup here.
     list $active $activePrograms
 } -result [list 1 [list test1]]
+
+tcltest::test run_4 {Ensure there's cleanup after the program exists (explicitly} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test1]
+    set output [read $fd]
+    after 200 [list incr waitover]
+    vwait waitover
+    
+    ## By now we're cleaned up:
+    
+    list [::program::isActive test1] [::program::activePrograms]
+} -result [list 0 [list]]
+
+tcltest::test run_5 {Can we dispatch to reader?} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+    set outputLines [list]
+    proc run_5_inputHandler {name fd} {
+        lappend ::outputLines [list $name [gets $fd]]
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::run db test1 run_5_inputHandler
+    after 400 [list incr waitover]
+    vwait waitover
+    
+    set outputLines
+} -result [list [list test1 "Hello world"] [list test1 ""]]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

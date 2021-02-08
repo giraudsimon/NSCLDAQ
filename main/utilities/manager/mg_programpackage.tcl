@@ -234,13 +234,12 @@ proc ::program::handleContainerInput {container host fd} {
 # @param fd   - File descriptor ready to read.
 #
 proc ::program::_outputWrapper {name fd} {
-    
     if {[array names  ::program::outputHandlers $name] eq $name} {
         uplevel #0 $::program::outputHandlers($name) $name $fd
     } else {
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        read $fd
+        gets $fd
         chan configure $fd -blocking $blocking
     }
     #  Handle the case of an eof:
@@ -680,6 +679,7 @@ proc ::program::run {db name {outputHandler {}}} {
     set fds($name) $fd
     
     if {$outputHandler ne ""} {
+
         set ::program::outputHandlers($name) $outputHandler
     }
     
