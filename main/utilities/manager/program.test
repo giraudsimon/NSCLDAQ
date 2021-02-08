@@ -530,6 +530,29 @@ tcltest::test run_2 {Containerless program runs properly.} \
     vwait waitover
     set output
 } -result "Hello world\n"
+
+#  Note this implicitly tests one bit of the post exit cleanup...that's why
+#  we call the program test1 and not test...so if test didn't get cleaned out
+#  of the book-keeping variables we'll learn that.
+#
+tcltest::test run_3 {Running a bare program makes it active..} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test1]
+    set output [read $fd]
+    set active [program::isActive test1];           #sb true
+    set activePrograms [program::activePrograms];   #sb [list test1]
+    after 200 [list incr waitover]
+    vwait waitover;                                 # Cleanup here.
+    list $active $activePrograms
+} -result [list 1 [list test1]]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

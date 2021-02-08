@@ -301,8 +301,8 @@ proc ::program::_runBare {db def} {
 #
 # @param db   - database command.
 # @param def  - Command definition.
-#
-proc _runInContainer {db def} {
+# @return fd  - file descriptor open on the program running in the container
+proc ::program::_runInContainer {db def} {
     set container [dict get $def container_name]
     set host      [dict get $def host]
     set name      [dict get $def name]
@@ -676,11 +676,11 @@ proc ::program::run {db name {outputHandler {}}} {
     
     # Book keeping for all of this
         
-    lappend activePrograms $name
+    lappend ::program::activePrograms $name
     set fds($name) $fd
     
     if {$outputHandler ne ""} {
-        set outputHandlers($name) $outputHandler
+        set ::program::outputHandlers($name) $outputHandler
     }
     
     #  The fd handler is our output wrapper:
