@@ -500,7 +500,36 @@ tcltest::test noneactive_4 {Active program list is empty} \
 -body {
     program::activePrograms
 } -result [list]
+#------------------------------------------------------------------------------
+#  program::run tests
 
+tcltest::test run_1 {Error to run a command program that does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::run db test
+} -result * -match glob -returnCodes error
+
+tcltest::test run_2 {Containerless program runs properly.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test]
+    set output [read $fd]
+    after 200 [list incr waitover]
+    vwait waitover
+    set output
+} -result "Hello world\n"
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

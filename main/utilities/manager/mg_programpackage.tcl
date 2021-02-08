@@ -114,18 +114,19 @@ proc ::program::_dictGetOrDefault {dict key {default {}}} {
 # @param def - program definition dict.
 # @return string - the program invocation string.
 #
-proc _makeProgramCommand {def} {
+proc ::program::_makeProgramCommand {def} {
     set command [dict get $def path]
     if {[dict exists $def options]} {
-        foreach option $options {
+        foreach option [dict get $def options] {
             set name [lindex $option 0]
             set value [lindex $option 1]
-            append $command " " $name " " $value
+            append command " " $name " " 
         }
     }
+
     if {[dict exists $def parameters]} {
         foreach param [dict get $def parameters] {
-            append $command " " $param
+            append command " " $param
         }
     }
     return $command
@@ -146,7 +147,7 @@ proc _makeProgramCommand {def} {
 #  - environment variable definitions (if any).
 #  - command with options then parameters in that order.
 #
-proc _writeProgramScript {fname def} {
+proc ::program::_writeProgramScript {fname def} {
     set fd [open $fname w]
     puts $fd "#!/bin/bash"
     puts $fd "#   script to run [dict get $def path]@[dict get $def host]\n"
@@ -154,7 +155,7 @@ proc _writeProgramScript {fname def} {
     # Write any initscript:
     
     if {[dict exists $def initscript] } {
-        puts $fd "User supplied initializationscript: \n"
+        puts $fd "#User supplied initializationscript: \n"
         puts $fd [dict get $def initscript]
         puts $fd ""
     }
@@ -162,7 +163,7 @@ proc _writeProgramScript {fname def} {
     # Write any environment settings:
     
     if {[dict exists $def environment]} {
-        puts $fd "\nUser supplied environment variables: \n"
+        puts $fd "\n#User supplied environment variables: \n"
         foreach setting [dict get $def environment] {
             set name [lindex $setting 0]
             set value [lindex $setting 1]
@@ -170,7 +171,7 @@ proc _writeProgramScript {fname def} {
             puts $fd "$name=\"$value\";export $name"
         }
     }
-    puts $fd "\n Invoke user's program\n"
+    puts $fd "\n# Invoke user's program\n"
     puts $fd [_makeProgramCommand $def]
     
     close $fd
@@ -245,7 +246,7 @@ proc ::program::_outputWrapper {name fd} {
     #  Handle the case of an eof:
     #
     if {[eof $fd]} {
-        close $fd
+        catch {close $fd}
         array unset ::program::fds $name
         array unset ::program::outputHandlers $name
         set index [lsearch -exact $::program::activePrograms $name]
@@ -286,7 +287,7 @@ proc ::program::_runBare {db def} {
     ]
     ::program::_writeProgramScript $fname $def
     
-    set fd [open "|ssh -t $host $fname |& cat" w+]
+    set fd [open "|ssh $host $fname |& cat" w+]
     
     
     return $fd
@@ -312,6 +313,10 @@ proc _runInContainer {db def} {
         fileevent $containerFd readable \
             [list ::program::_handleContainerInput $container $host $containerfd]
         lappend ::program::activeContainers $activeContainerValue
+        
+        #  Delay to let the container become active:
+            
+        after 300;                   #From the contaier tests.
     }
     #  The container is running so we can create our command script and ask the
     #  container to run it:
@@ -652,7 +657,8 @@ proc ::program::activePrograms { } {
 # @param name - Program name.
 # @param ?outputHandler? - If present and non-empty a script to handle output from
 #                The program.
-#
+# @return fd  - File descriptor that was open for program I/O.
+#               This helps us in testing.
 proc ::program::run {db name {outputHandler {}}} {
     if {[::program::isActive $name]} {
         error "Name is already active."
@@ -665,7 +671,7 @@ proc ::program::run {db name {outputHandler {}}} {
     if {[dict exists $programDef container]} {
         set fd [::program::_runInContainer $db $programDef]
     } else {
-        set fd [::program::__runBare $db $programDef]
+        set fd [::program::_runBare $db $programDef]
     }
     
     # Book keeping for all of this
@@ -680,6 +686,7 @@ proc ::program::run {db name {outputHandler {}}} {
     #  The fd handler is our output wrapper:
     
     fileevent $fd readable [list ::program::_outputWrapper $name $fd]
+    return $fd
 }
 ##
 # ::program::kill
