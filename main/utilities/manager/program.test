@@ -603,6 +603,29 @@ tcltest::test run_5 {Can we dispatch to reader?} \
     
     set outputLines
 } -result [list [list test1 "Hello world"] [list test1 ""]]
+
+
+### These run tests try to run in containers... including nonexistent containers.
+#
+
+tcltest::test run_6 {Run with nonexistent container is an error.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+    # Yank the container out from underneath the program:
+    
+    container::remove db minimal
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::run db test
+} -result * -match glob -returnCodes error
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

@@ -667,7 +667,7 @@ proc ::program::run {db name {outputHandler {}}} {
     # How we start a program in or outside of a container is drastically
     # different so figure out which is which and dispatch accordingly:
     
-    if {[dict exists $programDef container]} {
+    if {[dict exists $programDef container_name]} {
         set fd [::program::_runInContainer $db $programDef]
     } else {
         set fd [::program::_runBare $db $programDef]
@@ -679,7 +679,6 @@ proc ::program::run {db name {outputHandler {}}} {
     set fds($name) $fd
     
     if {$outputHandler ne ""} {
-
         set ::program::outputHandlers($name) $outputHandler
     }
     
