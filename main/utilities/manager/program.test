@@ -449,7 +449,57 @@ tcltest::test listDefs_4 {Second program definition is correct} \
     id 2 name test2 path $echo type Transitory type_id 1 host localhost \
     options [list] environment [list] parameters [list]                  \
 ]
+#------------------------------------------------------------------------------
+# The various things that are active should indicate nothing is active
+#  if no program has been run.
+#
+tcltest::test nonactive_1 {Defined program is inactive} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::isActive test1
+} -result 0
 
+tcltest::test noneactive_2 {It's ok to ask about a program that does not exist} \
+-setup {
+    
+} \
+-cleanup {
+    
+} \
+-body {
+    program::isActive test
+} -result 0
+
+tcltest::test noneactive_3 {No activce containers} \
+-setup {
+
+} \
+-cleanup {
+
+} \
+-body {
+    program::activeContainers
+} -result [list]
+
+tcltest::test noneactive_4 {Active program list is empty} \
+-setup {
+
+} \
+-cleanup {
+    
+} \
+-body {
+    program::activePrograms
+} -result [list]
 
 #----------------------------------------------------
 
