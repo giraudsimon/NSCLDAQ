@@ -715,7 +715,7 @@ tcltest::test run_10 {Can also establish an input handler with containerized pro
     }
 } \
 -cleanup {
-    ::container::deactivate locahost minimal
+    ::container::deactivate localhost minimal
     commonCleanup
     after cancel $id1
     after cancel $id2
