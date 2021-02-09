@@ -68,6 +68,17 @@ namespace eval ::program {
     ::container::_setup;             # Setup the tempdir.
 }
 #-------------------------------------------------------------------------------
+#  For testing:
+
+proc ::program::_reinit { } {
+    set ::program::activeContainers [list]
+    set ::program::activePrograms   [list]
+    array unset ::program::fds *
+    array unset ::program::outputHandlers *
+    array unset ::program::containeredPrograms *
+    
+}
+#-------------------------------------------------------------------------------
 #  Utilities:
 #
 
@@ -198,7 +209,7 @@ proc ::program::_writeProgramScript {fname def} {
 # @param host      - host in wich the container is running.
 # @param fd        - file descriptor ready to read.
 #
-proc ::program::handleContainerInput {container host fd} {
+proc ::program::_handleContainerInput {container host fd} {
     fconfigure $fd -blocking 0
     read $fd
     if {[eof $fd]} {
@@ -208,6 +219,7 @@ proc ::program::handleContainerInput {container host fd} {
         ]
         set ::program::activeContainers   \
             [lreplace $::program::activeContainers $index $index]
+        close $fd
     }
 }
 
@@ -305,17 +317,18 @@ proc ::program::_runInContainer {db def} {
     set container [dict get $def container_name]
     set host      [dict get $def host]
     set name      [dict get $def name]
-
+    
     set activeContainerValue [list $container $host]
     if {[lsearch -exact $::program::activeContainers $activeContainerValue] == -1} {
-        set containerFd [container::activate $db $container $host]
-        fileevent $containerFd readable \
+    
+        set containerfd [container::activate $db $container $host]
+        fileevent $containerfd readable \
             [list ::program::_handleContainerInput $container $host $containerfd]
         lappend ::program::activeContainers $activeContainerValue
-        
+    
         #  Delay to let the container become active:
             
-        after 300;                   #From the contaier tests.
+        after 400;                   #From the contaier tests.
     }
     #  The container is running so we can create our command script and ask the
     #  container to run it:

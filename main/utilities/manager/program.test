@@ -626,6 +626,111 @@ tcltest::test run_6 {Run with nonexistent container is an error.} \
     program::run db test
 } -result * -match glob -returnCodes error
 
+tcltest::test run_7 {Run with good container} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test]
+    set input [read $fd]
+    after 200 incr waitover
+    vwait waitover
+    set input
+} -result "Hello world\n"
+
+tcltest::test run_8 {Running in container marks all of that.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test]
+    set isactive [::program::isActive test]
+    set containers [::program::activeContainers]
+    set activ  [::program::activePrograms]
+    
+    read $fd
+    after 200 incr waitover
+    vwait waitover
+    list $isactive $containers $activ
+    
+} -result [list 1 [list [list minimal localhost]] [list test]]
+
+tcltest::test run_9 {Ensure the program is cleaned up.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover;              # For the container to stop.
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test ]
+    read $fd
+    after 200 incr waitover
+    vwait waitover
+    
+    set isactive [::program::isActive test]
+    set containers [::program::activeContainers];   #Note the container persists.
+    set active  [::program::activePrograms]
+
+    list $isactive $containers $active
+} -result  [list 0 [list [list minimal localhost]] [list]]
+
+tcltest::test run_10 {Can also establish an input handler with containerized programs} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+    set inputlines [list]
+    proc run_10_inputHandler {name fd} {
+        lappend ::inputlines [list $name [gets $fd]]
+    }
+} \
+-cleanup {
+    ::container::deactivate locahost minimal
+    commonCleanup
+    after cancel $id1
+    after cancel $id2
+    after 200 incr waitover;              # For the container to stop.
+    vwait waitover
+} \
+-body {
+    ::program::run db test run_10_inputHandler
+    set id1 [after 1000 lappend inputlines ""]
+    set id2 [after 1100 lappend inputlines ""]
+    vwait inputlines
+    vwait inputlines
+    set inputlines
+} -result [list [list test "Hello world"] [list test ""]]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
