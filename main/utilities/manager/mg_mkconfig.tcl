@@ -179,7 +179,10 @@ proc sequences {db} {
     $db eval {
         CREATE TABLE IF NOT EXISTS sequence (
             id                INTEGER PRIMARY KEY,
-            name              TEXT
+            name              TEXT,
+            transition_id     INTEGER -- FK to transition triggering seq.
+                
+            
         )
     }
     
