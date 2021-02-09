@@ -731,6 +731,74 @@ tcltest::test run_10 {Can also establish an input handler with containerized pro
     set inputlines
 } -result [list [list test "Hello world"] [list test ""]]
 
+#-------------------------------------------------------------------------------
+#  Kill tests
+
+tcltest::test kill_1 {Error if the program isn't even defined.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::kill db test
+} -result * -match glob -returnCodes error
+
+tcltest::test kill_2 {Error if the progrm is defined but not running:} \
+-setup {
+    commonSetup
+    ::program::add db test /bin/sleep Transitory localhost [dict create  \
+        parameters [list 12h]                                            \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::kill test
+} -result * -match glob -returnCodes error
+
+
+tcltest::test kill_3 {Kill actually works.} \
+-setup {
+    commonSetup
+    ::program::add db killtest /bin/sleep Transitory localhost [dict create  \
+        parameters [list 12h]                                            \
+    ]
+    # Our input handler is our detector for actual program exit
+    
+    set exitstatus 0
+    proc kill_3_inputHandler {name fd} {
+        
+        if {[eof $fd]} {
+        
+            set ::exitstatus 1
+        } else {
+        
+            gets $fd;              # Toss the input
+            # The read may have given the EOF condition too:
+            
+            if {[eof $fd]} {
+        
+                set ::exitstatus 1
+            }
+        }
+    }
+} \
+-cleanup {
+    after cancel $afterid
+    commonCleanup
+} \
+-body {
+    program::run db killtest kill_3_inputHandler
+    after 250;                 # Let the program start.
+    program::kill db killtest
+    set afterid [after 1500 set exitstatus 2]
+    vwait exitstatus
+    
+    set exitstatus
+} -result 1
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

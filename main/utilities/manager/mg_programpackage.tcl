@@ -247,6 +247,7 @@ proc ::program::_handleContainerInput {container host fd} {
 #
 proc ::program::_outputWrapper {name fd} {
     if {[array names  ::program::outputHandlers $name] eq $name} {
+    
         uplevel #0 $::program::outputHandlers($name) $name $fd
     } else {
         set blocking [chan configure $fd -blocking]
@@ -257,6 +258,7 @@ proc ::program::_outputWrapper {name fd} {
     #  Handle the case of an eof:
     #
     if {[eof $fd]} {
+
         catch {close $fd}
         array unset ::program::fds $name
         array unset ::program::outputHandlers $name
@@ -727,13 +729,13 @@ proc ::program::kill {db name} {
     set host [dict get $def host]
     
     if {[lsearch -exact $::program::activePrograms $name] == -1} {
-        error $name is not a running program.
+        error "$name is not a running program."
     }
     set command [_makeProgramCommand $def]
+    
     set programList [exec ssh $host ps axuww | \
-        grep $command | \
-        grep -v grep  | \
-        grep $tcl_platform(user) |& cat];  # the cat means no error if empty .
+        grep "$command" | grep -v grep | grep $::tcl_platform(user) \
+         ];
     
     set programList [split $programList "\n"];   #list of lines.
     if {[llength $programList] == 0} {
