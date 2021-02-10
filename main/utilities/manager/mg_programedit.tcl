@@ -43,7 +43,8 @@ package require programs;           # If nothing else defines the ::program:: NS
 #
 #  +---------------------------------------------------------------------+
 #  | Name: [name] Image [image] [browse...]  container [      ] [Browse] |
-#  | options    parameters    env           Host [host]                   |
+#  | WOrking dir [name] [Browse...]
+#  | options    parameters    env           Host [host]                  |
 #  | |slist|   |slist    |   | slist  |                                  |
 #  | +-----+   +---------+   +--------+                                  |
 #  | [name]    [value]        [name]                                     |
@@ -60,6 +61,7 @@ package require programs;           # If nothing else defines the ::program:: NS
 #               if the user does not select a container or the name of
 #               a selected container
 #   -host   - Host in which the program is to be run.
+#   -directory - default directory.
 #   -options - List of option value pairs.
 #   -parameters - List of parameter values.
 #   -environment - list of name value environment variable pairs.
@@ -74,8 +76,10 @@ snit::widgetadaptor program::View {
     option -container
     option -browsecontainers
     option -host
-    option -parameters
-    option -environment
+    option -directory
+    option -options     -cgetmethod _getOptions -configuremethod _setOptions
+    option -parameters  -cgetmethod _getParameters -configuremethod _setParameters
+    option -environment -cgetmethod _getEnvironment -configuremethod _setEnvironment
     
     # Components for program options
     
@@ -101,7 +105,7 @@ snit::widgetadaptor program::View {
         ttk::label $base.namelabel -text Name:
         ttk::entry $base.name -textvariable [myvar options(-name)]
         
-        ttk::label $base.imagelabel -text Image:
+        ttk::label $base.imagelabel -text "Program file:"
         ttk::entry $base.image      -textvariable [myvar options(-image)]
         ttk::button $base.imbrowse  -text "Browse..." \
             -command [mymethod _browseImage]
@@ -114,11 +118,16 @@ snit::widgetadaptor program::View {
         ttk::button $base.contbrowse -text "Browse..."  \
             -command [mymethod _browseContainer]
         
+        ttk::label $base.wdlabel -text "Working Directory"
+        ttk::entry $base.wd -textvariable [myvar options(-directory)]
+        ttk::button $base.browsewd -text Browse... -command [mymethod _browsewd]
+        
         grid $base.namelabel $base.name \
             $base.imagelabel $base.image $base.imbrowse -padx 3 -sticky nswe
         grid $base.hostlabel $base.host \
             $base.containerlabel $base.container $base.contbrowse \
                 -padx 3  -sticky nsew
+        grid $base.wdlabel $base.wd $base.browsewd -padx 3 -sticky nsew
         grid $base -sticky nswe -columnspan 6
         
         
@@ -200,8 +209,84 @@ snit::widgetadaptor program::View {
         grid $lists -row 1 -column 0 -columnspan 6 -sticky nsew
         
         
+        #  Add selection events to the list boxes that
+        # load the value into the entries and remove the from the list:
         
+        bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
+        bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
+        bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
         
+        $self configurelist $args
     }
+    #------------------------------------------------------------------------
+    #  Option handlers.
+    
+    ##
+    # _getOptions
+    #   Retrieve program options from the list box.  The options are stored inthe
+    #   list box as option=value  What we return is a list of {option value} pairs
+    #   or, if there is no value, just {option}
+    #
+    # @param optname - name of the option which will always be -options.
+    #
+    method _getOptions {optname} {
+        set rawValues [$optionslist get 0 end]
+        set result [list]
+        foreach value $rawValues {
+            set valueList [split $value =]
+            set name [lindex $valueList 0]
+            set value [lindex $valueList 1]
+            if {$value ne ""} {
+                lappend result [list $name $value]
+            } else {
+                lappend result [list $name]
+            }
+        }
+        
+        return $result
+    }
+    ##
+    # _setOptions
+    #   Sets the options in the list box from a new configuration of -options.
+    #   The configured value is a list of option value pairs, or option if there is
+    #   no value for the option.
+    #
+    # @param optname - name of the option.
+    # @param value   - proposed new value.
+    #
+    method _setOptions {optname value} {
+        $optionslist delete 0 end;             # Empty out current values.
+        set items [list];                      # We'll build a list of optname=value
+        foreach entry $value {
+            if {[llength $entry] == 2} {
+                lappend items [lindex $entry 0]=[lindex $entry 1]
+            } else {
+                lappend items [lindex $entry 0]
+            }
+        }
+        $optionslist insert end {*}$items
+    }
+    
+    #------------------------------------------------------------------------
+    #  Event handlers.
+    
+    ##
+    # _browseImage
+    #   Browse for the program image file.  Note that if the program is run
+    #   containerized, this program image must be in the filesystem of the
+    #   activated container.  This can cause confusion...especially when selecting
+    #   e.g. NSCLDAQ programs.
+    #
+    method _browseImage {} {
+        set filepath [tk_getOpenFile -title {Choose program file} -parent $win \
+            -filetypes [list [list {All files } *]]
+        ]
+        if {$filepath ne ""} {
+            set options(-image) $filepath
+        }
+    }
+        
+    
+    
 }
 
