@@ -267,6 +267,27 @@ snit::widgetadaptor program::View {
         $optionslist insert end {*}$items
     }
     
+    ##
+    # _getParameters
+    #   Retrieve the -parameters option values from the list of parameters.
+    #
+    # @param optname - name of the option being cgotten (-parameters)
+    #
+    method _getParameters {optname} {
+        return [$parameterlist get 0 end]
+    }
+    ##
+    # _setParameters
+    #    process the configure -parameters operation.  The parameters passed
+    #    in are loaded into the listgbox.
+    #
+    # @param optname - option name (-parameters).
+    # @param value   - list of parameters.
+    #
+    method _setParameters {optname value} {
+        $parameterlist delete 0 end
+        $parameterlist insert end {*}$value
+    }
     #------------------------------------------------------------------------
     #  Event handlers.
     
