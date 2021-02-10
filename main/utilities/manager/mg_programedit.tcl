@@ -288,6 +288,40 @@ snit::widgetadaptor program::View {
         $parameterlist delete 0 end
         $parameterlist insert end {*}$value
     }
+    
+    ##
+    # _getEnvironment
+    #   process cget -environment  - environment variable s are stored in the
+    #   list box as name=value.
+    #   We return a list of name value pairs.  We assume that every environment
+    #   variable has a value...even if it's just an empty string.
+    # @param optname - name of the option (-environment).
+    #
+    method _getEnvironment {optname} {
+        set rawItems [$envlist get 0 end]
+        set result [list]
+        foreach item $rawItems {
+            set itemList [split $item =]
+            lappend result [list [lindex $itemList 0] [lindex $itemList 1]]
+        }
+        return $result
+    }
+    ##
+    # _setEnvironment
+    #    Process configure -environment  - convert list of name/value pairs into
+    #    name=value strings and store the result in the list box.
+    #
+    # @param optname  - option name (-environment)
+    # @param value    - proposed option value.
+    #
+    method _setEnvironment {optname value} {
+        $envlist delete 0 end
+        set list [list]
+        foreach item $value {
+            lappend list [lindex $item 0]=[lindex $item 1]
+        }
+        $envlist insert end {*}$list
+    }
     #------------------------------------------------------------------------
     #  Event handlers.
     
