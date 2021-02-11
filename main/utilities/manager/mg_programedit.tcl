@@ -340,8 +340,36 @@ snit::widgetadaptor program::View {
             set options(-image) $filepath
         }
     }
-        
-    
+    ##
+    # _browseContainer
+    #   Called when the Browse.. button was clicked to select a container.
+    #   Containers are an orthogonal functionality to this UI and we don't want
+    #   the user interface to be concerned with the available containers.
+    #   Therefore, it's up to the user to establish a script using the
+    #   -browsecontainers options.
+    #   * If this script has been established we call it and it's supposed to return
+    #     the name of the container the user selected. Or an empty string
+    #     if no container was selected.  If a non-empty string is returned,
+    #     it is loaded into options(-container).  Otherwise that's left alone.
+    #   * If no script has been established, we pop up a message box letting
+    #     the user know that browsing is not available.
+    #
+    # @todo - in the future add a handler to the -browsecontainers configuration
+    #         which simply disables the Browse button if there is no script.
+    #         and enables it when there is one.
+    #
+    method _browseContainer {} {
+        set script $options(-browsecontainers)
+        if {$script ne ""} {
+            set result [uplevel #0 $script]
+            if {$result ne ""} {
+                set options(-container) $result
+            }
+        } else {
+            tk_messageBox -type ok -icon info -parent $win -title "Browsing unavailable" \
+                -message {Container browsing is not available at this time}    
+        }
+    }
     
 }
 
