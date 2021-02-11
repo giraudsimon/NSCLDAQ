@@ -213,7 +213,7 @@ snit::widgetadaptor program::View {
         # load the value into the entries and remove the from the list:
         
         bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
-        #bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
+        bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
         #bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
         
         $self configurelist $args
@@ -453,6 +453,9 @@ snit::widgetadaptor program::View {
                 $parameterlist delete $sel
             }
         }
+        # Regardless when done, clear the selection:
+        
+        $parameterlist selection clear 0 end
     }
     ##
     # _newEnv
@@ -485,6 +488,30 @@ snit::widgetadaptor program::View {
             $optionvalue insert end [lindex $item 1]
             
             $optionslist delete $index
+        }
+    }
+    ##
+    # _selectParameter
+    #   A bit of juggling is needed here to ensure that we can retain the
+    #   order of things if all that's being done is an edit:
+    #   1. Get the selected item and load it into the parameter entry.
+    #   2. Delete the parameter entry.
+    #   3. Set the selection to:
+    #      a)  The new item at that index if the selected item was not the last
+    #      b)   Empty if the selection was the last.
+    #
+    method _selectParameter {} {
+        set index [$parameterlist curselection]
+        if {$index ne ""} {
+            $parametervalue delete 0 end
+            $parametervalue insert end [$parameterlist get $index]
+            
+            $parameterlist delete $index
+            if {$index < [$parameterlist size]} {
+                $parameterlist selection set $index
+            } else {
+                $parameterlist selection clear 0 end
+            }
         }
     }
     
