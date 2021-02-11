@@ -212,9 +212,9 @@ snit::widgetadaptor program::View {
         #  Add selection events to the list boxes that
         # load the value into the entries and remove the from the list:
         
-        bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
-        bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
-        bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
+        #bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
+        #bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
+        #bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
         
         $self configurelist $args
     }
@@ -401,7 +401,39 @@ snit::widgetadaptor program::View {
             $optionslist insert end $name
         }
     }
-        
+    ##
+    # _newParam
+    #   Adds a new parameter to the list of parameters in the listbox.
+    #   Since parameters are often positional, there's a bit of a quandary
+    #   about how to do thins.  Here's my solution and I'm sticking with it;
+    #   *  If there's a selection, the new parameter is inserted just prior
+    #      to that selected item.
+    #   *  If there's no selection the new parameter is inserted at the
+    #      end of the list.
+    #   * After insertion, the selection is immediately cancelled.
+    #   * An empty parameter deletes any selected parameter or does nothing
+    #     if there is no selection
+    # @todo - maybe add a Delete button that's active when there's a selection
+    #         and not when there isn't so deletion isn't so clunky and error
+    #         prone.
+    #
+    method _newParam {}  {
+        set value [$parametervalue get]
+        if {[string trim $value] ne ""} {
+            # insertion:
+            set sel [$parameterlist curselection]
+            if {$sel eq ""} {
+                set sel end
+            }
+            $parameterlist insert $sel $value
+        } else {
+            # Potentially delete:
+            set sel [$parameterlist curselection]
+            if {$sel ne ""} {
+                $parameterlist delete $sel
+            }
+        }
+    }
     
     
 }
