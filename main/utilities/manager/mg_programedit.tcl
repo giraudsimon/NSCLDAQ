@@ -537,3 +537,113 @@ snit::widgetadaptor program::View {
     }
 }
 
+##
+# @class  program::SelectProgram
+#
+#    This widget provides a list of programs.  A selection can be made from
+#    these programs and a script fired off when that happens.
+#
+#   The visual looks like this:
+#
+#   +----------------------------------+
+#   | +-----------------------------+  |
+#   | | List of programs            |  |
+#   | +-----------------------------+  |
+#   +----------------------------------+
+#
+#  The list is a treeview with the following columns:
+#  *   Program name
+#  *   Program image
+#  *   Program host
+#  *   Container name (if specified empty column if not).
+#
+#  In addition, a hidden column:  definition contains the full program
+#  definition dict.
+#
+#  Options:
+#     -programs  - List of programs from e.g. ::program::listDefinitions
+#     -command   - Script called when an entry is selected.  The script
+#                  is passed the definition over which was clicked.
+#
+snit::widgetadaptor program::SelectProgram {
+    option -programs -configuremethod  _fillListbox
+    option -command [list]
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::treeview $win.list -yscrollcommand [list $win.sb set] \
+            -columns [list name image host container definition]  \
+            -displaycolumns [list name image host container]      \
+            -show headings -selectmode extended
+        $win.list heading name  -text "Name"
+        $win.list heading image -text "Program file"
+        $win.list heading host  -text "Host"
+        $win.list heading container -text "Container"
+        
+        ttk::scrollbar $win.sb -orient vertical -command [$win.list yview]
+        
+        grid $win.list $win.sb -sticky nsew
+        
+        $self configurelist $args
+        
+        #  Bind the Double-1 event to the program tag such that the -command
+        #  will be invoked.
+        
+        $win.list tag bind program <Double-1> [mymethod _dispatchCommand]
+    }
+    #-------------------------------------------------------------------------
+    #  Configuration management
+    
+    ##
+    #  _fillListBox
+    #    Called on to process configure -programs
+    #    First clears the tree and then loads it with the program definitions
+    #    in its value
+    #
+    # @param optname - option (always -programs)
+    # @param values  - Proposed value.
+    method _fillListbox {optname value} {
+    
+        set items [$win.list children {}]
+        $win.list delete $items
+      
+        foreach item $value {
+            set name [dict get $item name]
+            set image [dict get $item path]
+            set host  [dict get $item host]
+            set container ""
+            if {[dict exists $item container_name]} {
+                set container [dict get $item container_name]
+            }
+
+            $win.list insert {} end -values [list $name $image $host $container $item] \
+                -tags program
+        }
+        
+        set options($optname) $value
+    }
+    #--------------------------------------------------------------------------
+    # Event handling.
+    
+    ##
+    # _dispatchCommand
+    #     Method called when an item is double clicked.
+    #
+    method _dispatchCommand {} {
+        set script $options(-command)
+        set selection [$win.list selection]
+        if {($script ne "") && ($selection ne "")} {
+            # Get the definition:
+            
+            set items [$win.list item $selection -values]
+            set def [lindex $items end]
+            
+            uplevel $script [list $def]
+            
+            $win.list selection remove $selection
+        }
+    }
+    
+}
+
