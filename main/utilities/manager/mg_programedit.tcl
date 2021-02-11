@@ -214,7 +214,7 @@ snit::widgetadaptor program::View {
         
         bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
         bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
-        #bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
+        bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
         
         $self configurelist $args
     }
@@ -467,6 +467,31 @@ snit::widgetadaptor program::View {
     }
     
     ##
+    # _selectNameValue
+    #    Common code between selecting an option or an environment variable
+    #    The only differences are the widgets in use:
+    #
+    # @param listbox - listbox widget with the selection.
+    # @param namew   - Name entry widget.
+    # @param valuew  - Value entry widget.
+    #
+    method _selectNameValue {listbox namew valuew} {
+        set index [$listbox curselection]
+        if {$index ne "" } {
+            set item [$listbox get $index]
+            set item [split $item =];     # Split the item into name value
+            
+            $namew delete 0 end
+            $namew insert  end [lindex $item 0]
+            
+            $valuew delete 0 end
+            $valuew insert end [lindex $item 1]
+            
+            $listbox delete $index
+        }
+    }
+    
+    ##
     # _selectOption
     #   Option values are not postional so this bit of code
     #   1. Decodes the selection and loads it into the optionname and optionvalue
@@ -476,19 +501,8 @@ snit::widgetadaptor program::View {
     #  on changes in selection which includes removing all items from a selection)
     #
     method _selectOption  {} {
-        set index [$optionslist curselection]
-        if {$index ne "" } {
-            set item [$optionslist get $index]
-            set item [split $item =];     # Split the item into name value
-            
-            $optionname delete 0 end
-            $optionname insert  end [lindex $item 0]
-            
-            $optionvalue delete 0 end
-            $optionvalue insert end [lindex $item 1]
-            
-            $optionslist delete $index
-        }
+        $self _selectNameValue $optionslist $optionname $optionvalue
+        
     }
     ##
     # _selectParameter
@@ -514,6 +528,12 @@ snit::widgetadaptor program::View {
             }
         }
     }
-    
+    ##
+    # _selectEnvVar
+    #    Process a selection of an environment variable.
+    #
+    method _selectEnvVar {} {
+        $self _selectNameValue $envlist $envname $envvalue
+    }
 }
 
