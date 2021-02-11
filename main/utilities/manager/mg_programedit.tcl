@@ -386,6 +386,32 @@ snit::widgetadaptor program::View {
         }
     }
     ##
+    # _newNameValue
+    #   Accepts a new name/value from entry widgets and appends them to the
+    #   list widget.  This is common code for _newOption and _newEnv both of which
+    #   result in name=value strings.
+    #
+    # @param namew   - Name entry widget.
+    # @param valuew  - Value entry widget.
+    # @param listw   - Listbox widget.
+    # @param valueRequired - true if both a name and a value are required.
+    #
+    method _newNameValue {namew valuew listw {valueRequired 0}} {
+        set name [$namew get]
+        set value [$valuew get]
+        if {[string trim $name ] eq ""} {
+            return;        # Must at least have a name.
+        }
+        if {$valueRequired && ([string trim $value] eq "")} {
+            return
+        }
+        if {[string trim $value ] ne ""} {
+            $listw insert end "$name=$value"
+        } else {
+            $listw insert end $name
+        }
+    }
+    ##
     # _newOption
     #    Takes the values of the option name and option value entries, constructs
     #    a new option string (either --option=value or --option if the value is
@@ -393,13 +419,7 @@ snit::widgetadaptor program::View {
     #
     #
     method _newOption {} {
-        set name [$optionname get]
-        set value [$optionvalue get]
-        if {[string trim $value] ne ""} {
-            $optionslist insert end "$name=$value"
-        } else {
-            $optionslist insert end $name
-        }
+        $self _newNameValue $optionname $optionvalue $optionslist
     }
     ##
     # _newParam
@@ -434,7 +454,14 @@ snit::widgetadaptor program::View {
             }
         }
     }
-    
+    ##
+    # _newEnv
+    #   Accept a new environment variable.
+    #   JUst call _newNameValue:
+    #
+    method _newEnv {} {
+        $self _newNameValue $envname $envvalue $envlist 1
+    }
     
 }
 
