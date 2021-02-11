@@ -212,7 +212,7 @@ snit::widgetadaptor program::View {
         #  Add selection events to the list boxes that
         # load the value into the entries and remove the from the list:
         
-        #bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
+        bind $optionslist <<ListboxSelect>> [mymethod _selectOption]
         #bind $parameterlist <<ListboxSelect>> [mymethod _selectParameter]
         #bind $envlist <<ListboxSelect>> [mymethod _selectEnvVar]
         
@@ -461,6 +461,31 @@ snit::widgetadaptor program::View {
     #
     method _newEnv {} {
         $self _newNameValue $envname $envvalue $envlist 1
+    }
+    
+    ##
+    # _selectOption
+    #   Option values are not postional so this bit of code
+    #   1. Decodes the selection and loads it into the optionname and optionvalue
+    #     entries.
+    #   2. Deletes the selected entry.
+    #  Naturally if there is no selection (I believe this event/method fires
+    #  on changes in selection which includes removing all items from a selection)
+    #
+    method _selectOption  {} {
+        set index [$optionslist curselection]
+        if {$index ne "" } {
+            set item [$optionslist get $index]
+            set item [split $item =];     # Split the item into name value
+            
+            $optionname delete 0 end
+            $optionname insert  end [lindex $item 0]
+            
+            $optionvalue delete 0 end
+            $optionvalue insert end [lindex $item 1]
+            
+            $optionslist delete $index
+        }
     }
     
 }
