@@ -120,7 +120,7 @@ snit::widgetadaptor program::View {
         
         ttk::label $base.wdlabel -text "Working Directory"
         ttk::entry $base.wd -textvariable [myvar options(-directory)]
-        ttk::button $base.browsewd -text Browse... -command [mymethod _browsewd]
+        ttk::button $base.browsewd -text Browse... -command [mymethod _browseWd]
         
         grid $base.namelabel $base.name \
             $base.imagelabel $base.image $base.imbrowse -padx 3 -sticky nswe
@@ -370,6 +370,39 @@ snit::widgetadaptor program::View {
                 -message {Container browsing is not available at this time}    
         }
     }
+    ##
+    # _browseWd
+    #   Browse for the working directory  in which the program runs.
+    #   Note this is somewhat problematic as if the program is running in a container,
+    #   the wd must be in the filesystem of the active container. This can be
+    #   ameliorated by:
+    #   * Either defining the program while running the container and/or
+    #   * Where possible making the bindings  map to the same target as their source
+    #
+    method _browseWd {} {
+        set dir [tk_chooseDirectory -parent . -title {Choose working dir}]
+        if {$dir ne ""} {
+            set options(-directory) $dir
+        }
+    }
+    ##
+    # _newOption
+    #    Takes the values of the option name and option value entries, constructs
+    #    a new option string (either --option=value or --option if the value is
+    #    an empty string) and appends it to the list box.
+    #
+    #
+    method _newOption {} {
+        set name [$optionname get]
+        set value [$optionvalue get]
+        if {[string trim $value] ne ""} {
+            $optionslist insert end "$name=$value"
+        } else {
+            $optionslist insert end $name
+        }
+    }
+        
+    
     
 }
 

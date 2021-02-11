@@ -182,6 +182,12 @@ proc ::program::_writeProgramScript {fname def} {
             puts $fd "$name=\"$value\";export $name"
         }
     }
+    # If there's a working directory set it:
+    
+    if {[dict exists $def directory]} {
+        puts $fd "cd [dict get $def directory]"
+    }
+    
     puts $fd "\n# Invoke user's program\n"
     puts $fd [_makeProgramCommand $def]
     
