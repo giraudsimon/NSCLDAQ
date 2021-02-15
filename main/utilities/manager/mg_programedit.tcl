@@ -647,6 +647,12 @@ snit::widgetadaptor program::SelectProgram {
         set script $options(-command)
         set selection [$win.list selection]
         if {($script ne "") && ($selection ne "")} {
+            
+            # Clear the selection now because the script can change
+            # The contents of the tree:
+            
+            $win.list selection remove $selection
+            
             # Get the definition:
             
             set items [$win.list item $selection -values]
@@ -654,7 +660,7 @@ snit::widgetadaptor program::SelectProgram {
             
             uplevel $script [list $def]
             
-            $win.list selection remove $selection
+            
         }
     }
     
