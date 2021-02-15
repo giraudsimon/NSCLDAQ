@@ -734,6 +734,93 @@ snit::widgetadaptor container::Editor {
 }
 
 ##
+# @class container::listbox
+#    Provides a list of containers given their definitions.  This is actually
+#    a ttk::treeview with the name and image as columns.
+#    double clicking an item fires off a command.
+#
+# OPTIONS:
+#   -containers - container definitions from e.g. container::listDefinitions.
+#   -command    - Command invoked on a container double click
+#
+snit::widgetadaptor container::listbox {
+    option -containers -configuremethod _loadTree
+    option -command -default [list]
+    
+    constructor {args} {
+        installhull using ttk::frame
+        ttk::treeview $win.list -yscrollcommand [list $win.sb set] \
+            -columns [list name image definition]            \
+            -displaycolumns [list name image]  -show headings \
+            -selectmode extended
+        $win.list heading name -text Name
+        $win.list heading image -text Image
+        bind $win.list  <<TreeviewSelect>> [mymethod _dispatchCommand]
+        
+        ttk::scrollbar $win.sb -orient vertical -command [list $win.list yview]
+        
+        grid $win.list $win.sb -sticky nsew
+        
+        $self configurelist $args
+    }
+    #-------------------------------------------------------------------------
+    #  Configuration handling:
+    
+    ##
+    # _loadTree
+    #    Called when the -containers option is configured:
+    #    - Empty the tree.
+    #    - Fill it with new stuff.
+    #    - set options(-containers) to the list so cget works.
+    #
+    # @param name - option name being set.
+    # @param value - Proposed new value.
+    #
+    method _loadTree {name value} {
+        set options($name) $value
+        
+        set items [$win.list children {}]    
+        $win.list delete $items
+        
+        foreach container $value {
+            set name [dict get $container name]
+            set image [dict get $container image]
+            $win.list insert {} end -values [list $name $image $container] \
+                -tags [list container]
+        }
+    }
+    #------------------------------------------------------------------------
+    # Event handling.
+    
+    ##
+    # _dispatchCommand
+    #    Called on a double click in a container in the list.
+    #    If there is a -command script:
+    #    *  If there is a selection:
+    #       - Get the definition of the selection.
+    #       - Remove the selection.
+    #       - Invoke the -command script with the definition as a parameter.
+    #    * If there is no selection:
+    #       - Invoke the command with an empty list as a parameter.
+    #
+    method _dispatchCommand {} {
+        set script $options(-command)
+        if {$script ne ""} {
+            set selection [$win.list selection]
+            if {$selection ne ""} {
+    
+                set values [$win.list item $selection -values]
+                set def [lindex $values end]
+            } else {
+                set def [list]
+            }
+            uplevel #0 $script [list $def]
+        }
+        
+    }
+
+}
+##
 #  This can be called to test the code.
 #
 proc container::editorTest {} {
