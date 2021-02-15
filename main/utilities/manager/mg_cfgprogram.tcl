@@ -32,10 +32,74 @@ package require sqlite3
 package require programedit
 package require programs
 package require dialogwrapper
+package require containers
+package require containeredit
+package require snit
 
 #-----------------------------------------------------------------------------
-# Global variables
+# Special purpose widgets:
 
+##
+# ContainerSelector
+#   Form to select a container.  We are mostly just a container::listbox that
+#   processes the -command option of the list box to store the most recent
+#   selection
+#
+# OPTIONS:
+#   -containers - container definitions to chose from.
+# METHODS:
+#    currSelection - return the dict of the currently selected container
+#                    (selection established by Double-1),
+#
+snit::widgetadaptor ContainerSelector {
+    component containerlist
+    delegate option -containers to containerlist
+    
+    variable selection [dict create]
+    
+    constructor args {
+        installhull using ttk::frame
+        install containerlist using container::listbox $win.list \
+            -command [mymethod _onSelect]
+        ttk::label $win.label -text [list]
+        
+        grid $containerlist -sticky nsew
+        grid $win.label     -sticky w
+        
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # Event handling.
+    
+    ##
+    # _onSelect
+    #   Handles the double clicks that  indicate a new container has
+    #   been selected.
+    #
+    # @param selected - either a dict defining the selected container or
+    #                  empty if unselection was done:
+    #
+    #   
+    method _onSelect {selected} {
+        set selection $selected
+        set name ""
+        if {$selected ne ""} {
+            set name [dict get $selected name]
+        }
+        $win.label configure -text $name
+    }
+    #--------------------------------------------------------------------------
+    #  Public methods
+    
+    ##
+    # currSelection
+    #    Returns the current selectiondict (could be empty if there is none.)
+    # @return dict.
+    #
+    method currSelection {} {
+        return $selection
+    }
+}
 
 #-----------------------------------------------------------------------------
 # Utility procs.
@@ -56,11 +120,50 @@ proc Usage {msg} {
     puts stderr "  database path"
     exit -1
 }
+##
+# _selectContainer
+#    Reacts to the Browse... button for the containers entry in the program
+#    editor.
+#    1.  Save the grab state so that we can restore it after all of this.
+#    2.  Create a dialogwrapper with a ContainerSelector as it's form
+#        configured with the current list of container definitions.
+#    3.  Accept the definition
+#    4.  Restore the original grab.
+#    5.  Return the name of the selected container.
+#
+# @param db - database to use to query container defs.
+#
+proc _selectContainer {db } {
+    set priorGrab [grab current]
+    toplevel .cselecttop
+    set dialog [DialogWrapper .cselecttop.dialog]
+    set c      [$dialog controlarea]
+    set form [ContainerSelector $c.form                 \
+        -containers [container::listDefinitions $db]   \
+    ]
+    $dialog configure -form $form
+    pack $dialog -fill both -expand 1
+    set containerName ""
+    set result [$dialog modal]
+    if {$result eq "Ok"} {
+        set selectedContainer [$form currSelection]
+        if {$selectedContainer ne ""} {
+            set containerName [dict get $selectedContainer name]
+        }
+    }
+    
+    grab set $priorGrab
+    destroy .cselecttop
+    return $containerName
+}
+    
+
 
 ##
 # _makeDialog
 #
 #    Create the dialog toplevel that contains a program::View as the form.
+# @param db - Database - needs to be passed in to the container browser widget.
 # @return - 3 element list containing in order:
 #           *  The top level we created.
 #           *  The dialogwrapper megawidget.
@@ -68,11 +171,13 @@ proc Usage {msg} {
 # @note - the dialog is not yet modal so the caller will need to set it to
 #         be modal to accept user input.
 #
-proc _makeDialog { } {
+proc _makeDialog { db} {
     toplevel .t
     set dlg [DialogWrapper .t.wrapper]
     set c [$dlg controlarea]
-    set form [program::View $c.form]
+    set form [program::View $c.form \
+        -browsecontainers [list _selectContainer $db]    \
+    ]
     $dlg configure -form $form
     pack $dlg -fill both -expand 1
     
@@ -152,7 +257,7 @@ proc _makeNewProgram {db form} {
 # @param db - database command.
 #
 proc _newDefinition {db} {
-    set widgets [_makeDialog]
+    set widgets [_makeDialog $db]
     set toplevel [lindex $widgets 0]
     set dialog   [lindex $widgets 1]
     set form     [lindex $widgets 2]
@@ -187,7 +292,7 @@ proc _newDefinition {db} {
 # @param def - The definition dict to load into the dialog
 #
 proc _editDefinition {db def} {
-    set widgets [_makeDialog]
+    set widgets [_makeDialog $db]
     set toplevel [lindex $widgets 0]
     set dialog   [lindex $widgets 1]
     set form     [lindex $widgets 2]
