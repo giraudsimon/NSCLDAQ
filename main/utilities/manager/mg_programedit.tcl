@@ -62,6 +62,7 @@ package require programs;           # If nothing else defines the ::program:: NS
 #               a selected container
 #   -host   - Host in which the program is to be run.
 #   -directory - default directory.
+#   -type      - program type (Critical, )
 #   -options - List of option value pairs.
 #   -parameters - List of parameter values.
 #   -environment - list of name value environment variable pairs.
@@ -76,6 +77,7 @@ snit::widgetadaptor program::View {
     option -container
     option -browsecontainers
     option -host
+    option -type Transitory
     option -directory
     option -options     -cgetmethod _getOptions -configuremethod _setOptions
     option -parameters  -cgetmethod _getParameters -configuremethod _setParameters
@@ -121,6 +123,16 @@ snit::widgetadaptor program::View {
         ttk::label $base.wdlabel -text "Working Directory"
         ttk::entry $base.wd -textvariable [myvar options(-directory)]
         ttk::button $base.browsewd -text Browse... -command [mymethod _browseWd]
+
+        set typeframe [ttk::labelframe $base.type -text Type:]
+        ttk::radiobutton $typeframe.critical -text Critical -value Critical \
+            -variable [myvar options(-type)]
+        ttk::radiobutton $typeframe.persistent -text Persistent -value Persistent \
+            -variable [myvar options(-type)]
+        ttk::radiobutton $typeframe.transient -text Transitory -value Transitory \
+            -variable [myvar options(-type)]
+        grid $typeframe.critical $typeframe.persistent $typeframe.transient
+        
         
         grid $base.namelabel $base.name \
             $base.imagelabel $base.image $base.imbrowse -padx 3 -sticky nswe
@@ -128,6 +140,7 @@ snit::widgetadaptor program::View {
             $base.containerlabel $base.container $base.contbrowse \
                 -padx 3  -sticky nsew
         grid $base.wdlabel $base.wd $base.browsewd -padx 3 -sticky nsew
+        grid $typeframe -row 2 -column 3 -columnspan 2 -rowspan 2
         grid $base -sticky nswe -columnspan 6
         
         
