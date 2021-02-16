@@ -203,10 +203,10 @@ proc sequences {db} {
     }
     $db eval {
         CREATE TABLE IF NOT EXISTS last_transition (
-            seq_id          INTEGER,    -- FK to sequence,
             state           INTEGER     -- FK to transition_name
         )
     }
+    
     $db eval {
         CREATE TABLE IF NOT EXISTS step (
             id                       INTEGER PRIMARY KEY,
@@ -237,34 +237,25 @@ proc sequences {db} {
             INSERT INTO sequence (name) VALUES ('run_state')
         }
     }
-    # Stock the legal_transition table for every sequence that does not
-    # have a transition diagram. We relate the legal transitions back to the
-    # sequence in case someone later wants to implement a different state machine
-    # for some other sequence.
-    #  Stock the last_transition table for every sequence that does not have a
-    #  last_transition there.
-    #
-    set seqids [$db eval {SELECT id FROM sequence}];   #All sequence ids.
-    foreach seq $seqids {
-        if {[$db eval {SELECT COUNT(*) FROM legal_transition WHERE sequence_id=$seq}] == 0} {
-            foreach from [array names legalTransition] {
-                set fromId [stateId $db $from]
-                foreach to $legalTransition($from) {
-                    set toId [stateId $db $to]
-                    $db eval {INSERT INTO legal_transition
-                        (sequence_id, from_id, to_id)
-                        VALUES ($seq, $fromId, $toId)
-                    }
+    # Stock the legal_transition
+    if {[$db eval {SELECT COUNT(*) FROM legal_transition}] == 0} {
+        foreach from [array names legalTransition] {
+            set fromId [stateId $db $from]
+            foreach to $legalTransition($from) {
+                set toId [stateId $db $to]
+                $db eval {INSERT INTO legal_transition
+                    ( from_id, to_id)
+                    VALUES ($fromId, $toId)
                 }
             }
         }
-        if {[$db eval {SELECT COUNT(*) FROM last_transition WHERE seq_id = $seq}] == 0} {
-            set sid [stateId $db SHUTDOWN]
-            $db eval {
-                INSERT INTO last_transition (seq_id, state) VALUES ($seq, $sid)
-            }
+    }
+    if {[$db eval {SELECT COUNT(*) FROM last_transition }] == 0} {
+        set sid [stateId $db SHUTDOWN]
+        $db eval {
+            INSERT INTO last_transition (state) VALUES ($sid)
         }
-    }  
+    }
 }
 
 #  Event logging database:
