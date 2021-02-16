@@ -196,7 +196,7 @@ proc sequences {db} {
     
     $db eval {
         CREATE TABLE IF NOT EXISTS legal_transition (
-            sequence_id     INTEGER,   -- FK into sequence
+            id              INTEGER PRIMARY KEY,
             from_id         INTEGER,   -- FK in to transition_name
             to_id           INTEGER    -- Also FK into transition_name
         )
