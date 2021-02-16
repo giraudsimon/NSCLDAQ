@@ -471,4 +471,106 @@ proc ::sequence::reachable {db name} {
 # ::listStates
 #    @param db  - database command.
 #    @return list of strings - the list of defined states.
-
+#
+proc ::sequence::listStates {db} {
+    return [$db eval {
+        SELECT name FROM transition_name
+    }]
+}
+##
+# ::sequence::listLegalNextStates
+#    Given the current state, return the names of the states that
+#    are legal next states.
+# @param db  - database command.
+# @return  list of strings - the valid next state strings.
+#
+proc ::sequence::listLegalNextStates {db} {
+   # What is our current state:
+   
+   set currentId [$db eval {SELECT state FROM last_transition}]
+   
+   return [$db eval {
+        SELECT name FROM transition_name
+        INNER JOIN legal_transition ON to_id = transition_name.id
+        WHERE WHERE from_id = $currentId
+    }]
+   
+}
+##
+# ::sequence::isLegalTransition
+#   @param db   - database command.
+#   @param next - Proposed next state.
+#   @return bool- True if valid.
+#
+proc ::sequence::isLegalTransition {db next} {
+    set legal [::sequence::listLegalNextStates $db]
+    return [expr {$next in $legbal}]
+}
+##
+# ::sequence::listSequences
+#     List the set of sequences.
+# @param db  - database command.
+# @return list of dicts - Each element of the list describes one sequence
+#             and contains the following keys:
+#            *  id   - Sequence primary key.
+#            *  name - Name of the sequence.
+#            *  transition_name - Name of the transition that fires the sequence.
+#            *  transition_id    - Id of the transition that fires off the sequence.
+#
+proc ::sequence::listSequences {db} {
+    set result [list]
+    
+    $db eval {
+        SELECT sequence.id AS id, sequence.name AS name,
+        transition_name.id AS trid, transition_name.name AS trname
+        FROM sequence
+        INNER JOIN transition_name ON transition_name.id = sequence.transition_id
+    } values {
+        set element [dict create                                         \
+            id   $values(id)                                             \
+            name $values(name)                                           \
+            transition_name $values(trname)                              \
+            transition _id  $values(trid)                                \
+        ]
+        lappend result $element
+    }
+    
+    return $result
+}
+##
+# ::sequence::listSteps
+#     List the steps in a sequence.
+#  @param db  - database command.
+#  @param name - name of a sequence.
+#  @return list of dicts - Each dict describes a single sequence. step
+#          and has the following keys:
+#          *   step   - Real step number (the list will be sorted by these)
+#          *   program_name - Name of the program in the step.
+#          *   program_id   - id of the program in the step.
+#          *   predelay     - Seconds delay prior to the step.
+#          *   postdelay    - Seconds delay after the step
+#
+proc ::sequence::listSteps {db name} {
+    set seqid [::sequence::_getSeqId $db $name]
+    
+    set result [list]
+    
+    $db eval {
+        SELECT step, program_id, predelay, postdelay, program.name AS prname
+        FROM step
+        INNER JOIN program on program.id = step.program_id
+        WHERE step.sequence_id = $seqid
+        ORDER by step ASC
+    } values {
+        set item [dict create                                        \
+            step         $values(step)                               \
+            program_name $values(prname)                             \
+            program_id   $values(program_id)                         \
+            predelay     $values(predelay)                           \
+            postdelay    $values(postdelay)                          \
+        ]
+        lappend result $item
+    }
+    
+    return $result
+}
