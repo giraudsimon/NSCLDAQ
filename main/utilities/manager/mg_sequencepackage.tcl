@@ -176,7 +176,7 @@ proc ::sequence::_getProgId {db program} {
     if {![::program::exists $db $program]} {
         error  "There is no program named $program"
     }
-    return [dict get [::program::getdef $db $pgogram ] id]    
+    return [dict get [::program::getdef $db $program ] id]    
 }
 ##
 # ::sequence::_stepAfter
@@ -324,9 +324,9 @@ proc ::sequence::add {db name transition} {
 # @return REAL    - Step number.
 #
 proc ::sequence::addStep {db seqName program {predelay 0} {postdelay 0}} {
-    set seqId [::sequence:_getSeqId $db $seqName]
+    set seqId [::sequence::_getSeqId $db $seqName]
     set progId [::sequence::_getProgId $db $program]
-    set step   [::program::_nextStep $db $seqId]
+    set step   [::sequence::_nextStep $db $seqId]
     ::sequence::_insertStep $db $seqId $step $progId $predelay $postdelay
     
     return $step
