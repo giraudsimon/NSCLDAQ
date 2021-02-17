@@ -98,7 +98,7 @@ namespace eval sequence {
 # @return boolean - true if the state/transition exists.
 #
 proc ::sequence::_stateExists {db name} {
-    set number [db eval {
+    set number [$db eval {
         SELECT COUNT(*) FROM transition_name WHERE name = $name
     }]
     return [expr {$number != 0}]
@@ -190,11 +190,13 @@ proc ::sequence::_getProgId {db program} {
 # @param seqId - Id of the sequence.
 # @param after - Step after which to insert.
 # @return real - the new step number.
-proc ::sequence::_stepAfter {db sequId after} {
+proc ::sequence::_stepAfter {db seqId after} {
+
     set steps [$db eval {
-        SELECT step FROM step WHERE sequence_id = $seqId AND step <= $after
+        SELECT step FROM step WHERE sequence_id = $seqId AND step >= $after
         LIMIT 2
     }]
+
     # After does not exist if the number of steps is 0 or
     # the first step returned is not $step
     
@@ -208,7 +210,7 @@ proc ::sequence::_stepAfter {db sequId after} {
     # If there's only one step in the result after is last:
     
     if {[llength $steps] == 1} {
-        set result [expr {$after + $::sequence::step_intervael}]
+        set result [expr {$after + $::sequence::step_interval}]
     } else {
         set next [lindex $steps 1];   # Limit ensures there are only 2:
         set result [expr {($first + $next)/2.0 }]
@@ -363,10 +365,11 @@ proc ::sequence::rmvStep {db name step} {
 # @return Real - the step number assigned to this step.
 #
 proc ::sequence::insertStep {db seqName program after {predelay 0} {postdelay 0}} {
+
     set seqId [::sequence::_getSeqId $db $seqName]
     set progId [::sequence::_getProgId $db $program]
     set step   [::sequence::_stepAfter $db $seqId $after]
-    ::sequence::insertStep $db $seqId $step $progId $predelay $postdelay
+    ::sequence::_insertStep $db $seqId $step $progId $predelay $postdelay
     
     return $step
 }
