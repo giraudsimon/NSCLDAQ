@@ -527,6 +527,40 @@ tcltest::test insertstep_5 {No such program.} \
     sequence::insertStep db seq echoplex $step1
 } -result * -match glob -returnCodes error
 
+#-------------------------------------------------------------------------------
+# sequence::prependStep tests.
+
+tcltest::test prepend_1 {If there are no steps this is the first.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::prependStep db seq ls
+} -result $::sequence::step_interval
+
+tcltest::test <test_name> {descr} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::prependStep db seq ls
+} -result [expr {$::sequence::step_interval/2.0}]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

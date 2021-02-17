@@ -218,6 +218,30 @@ proc ::sequence::_stepAfter {db seqId after} {
     return $result
 }
 ##
+# ::sequence::_firstStep
+#   Determine the step number to assign a pre-pended (new first) step.
+#   If there is no first step yet, we just use the step interval value.
+#   If there is already a first step, we half it's value to assign the new
+#   step number.
+#
+#  @param db   - database command.
+#  @param id   - Sequence id
+#  @return Real - first step.
+#
+proc ::sequence::_firstStep {db id} {
+    set currentFirst [$db eval {
+        SELECT step FROM step WHERE sequence_id = $id
+        ORDER BY step ASC LIMIT 1
+    }]
+    set result $::sequence::step_interval
+    if {[llength $currentFirst] == 1} {
+        set result [expr {$currentFirst / 2.0}]
+    }
+    return $result
+}
+    
+
+##
 # ::sequence::_insertStep
 #   SQlite code to insert a new step in the database:
 # @param db - database command.
@@ -387,7 +411,7 @@ proc ::sequence::insertStep {db seqName program after {predelay 0} {postdelay 0}
 proc ::sequence::prependStep {db seqName program {predelay 0} {postdelay 0}} {
     set seqId [::sequence::_getSeqId $db $seqName]
     set progId [::sequence::_getProgId $db $program]
-    set step   [::sequencde::_firstStep $db $seqId]
+    set step   [::sequence::_firstStep $db $seqId]
     ::sequence::_insertStep $db $seqId $step $progId $predelay $postdelay
     
     return $step
