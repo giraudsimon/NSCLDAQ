@@ -25,7 +25,7 @@ exec tclsh "$0" ${1+"$@"}
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 
-package provide mg_sequencepackage 1.0
+package provide sequence 1.0
 package require programs;           # Because sequence steps are programs.
 package require containers
 package require sqlite3
@@ -83,7 +83,6 @@ package require sqlite3
     
 namespace eval sequence {
     ::container::_setup
-    set  tempdir $::container::tempdir
     
     variable step_interval 10.0
 }
