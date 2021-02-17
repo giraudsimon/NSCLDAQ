@@ -308,7 +308,7 @@ proc ::sequence::add {db name transition} {
         error "There is already a sequence '$name' defined."
     }
     $db eval {
-        INSERT INTO sequence (name, transitionid)
+        INSERT INTO sequence (name, transition_id)
         VALUES($name, $trId)
     }
 }

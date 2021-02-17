@@ -140,6 +140,79 @@ tcltest::test newtransition_4 {Duplicate transition definitions illegal/detected
     sequence::newTransition db state1 state2;               # Duplicate illegal
 } -result * -match glob -returnCodes error
 
+#-------------------------------------------------------------------------------
+#  sequence::add tests
+
+tcltest::test add_1 {Successful creation of an empty transition.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add db seq1 state1
+    
+    set stateId [db eval {
+        SELECT id FROM transition_name WHERE name = 'state1'
+    }]
+    db eval {
+        SELECT COUNT(*) FROM sequence
+        WHERE name='seq1' and transition_id=$stateId
+    }
+    
+} -result 1
+
+tcltest::test add_2 {2 sequences triggered on the same transition is OK} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    sequence::add db seq1 state1
+    sequence::add db seq2 state1
+    
+    set stateId [db eval {
+        SELECT id FROM transition_name WHERE name ='state1'
+    }]
+    db eval {
+        SELECT COUNT(*) FROM sequence
+        WHERE name IN ('seq1', 'seq2') AND transition_id=$stateId
+    }
+} -result 2
+
+tcltest::test add_3 {Duplicate sequence name is not allowed.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add db seq1 state1
+    sequence::add db seq1 state2;          # Duplicate name not allowed.
+} -result * -match glob -returnCodes error
+
+tcltest::test add_4 {Nonexisting triggering state is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add seq1 state1
+} -result * -match glob -returnCodes error
+
+
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
