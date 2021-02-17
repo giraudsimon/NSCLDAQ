@@ -341,7 +341,7 @@ proc ::sequence::addStep {db seqName program {predelay 0} {postdelay 0}} {
 # @note The step number must exist.
 #
 proc ::sequence::rmvStep {db name step} {
-    set seqId [::sequence::_getSeqId $deb $name]
+    set seqId [::sequence::_getSeqId $db $name]
     $db eval {
         DELETE FROM step WHERE sequence_id = $seqId AND step = $step
     }

@@ -211,6 +211,115 @@ tcltest::test add_4 {Nonexisting triggering state is an error.} \
     sequence::add seq1 state1
 } -result * -match glob -returnCodes error
 
+#------------------------------------------------------------------------------
+# addStep tests.
+
+tcltest::test addstep_1 {Add a single step to a sequence - gives right step num.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set number [::sequence::addStep db seq echo]
+    
+} -result $::sequence::step_interval
+
+tcltest::test addstep_2 {Step data is added correctly.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set stepno [::sequence::addStep db seq echo]
+    set pgmId [dict get [::program::getdef db echo] id]
+    set seqid [::sequence::_getSeqId db seq]
+    
+    db eval {
+        SELECT COUNT(*) FROM step
+        WHERE sequence_id = $seqid AND step = $stepno AND program_id = $pgmId
+              AND predelay = 0 AND postdelay = 0
+    }
+} -result 1
+
+tcltest::test addstep_3 {Step can have non zero delays} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set stepno [::sequence::addStep db seq echo 1 2]
+    set pgmId [dict get [::program::getdef db echo] id]
+    set seqid [::sequence::_getSeqId db seq]
+    
+    db eval {
+        SELECT COUNT(*) FROM step
+        WHERE sequence_id = $seqid AND step = $stepno AND program_id = $pgmId
+            AND predelay = 1 AND postdelay  = 2
+    }
+} -result 1
+
+tcltest::test addstep_4 {Can add two steps:} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set step1 [::sequence::addStep db seq echo]
+    set step2 [::sequence::addStep db seq ls]
+    list $step1 $step2
+} -result [list $::sequence::step_interval [expr {$::sequence::step_interval*2}]]
+
+tcltest::test addstep_5 {Sequence must exist or it's an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    # sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    # program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::addStep db seq echo
+} -result * -match glob -returnCodes error
+
+tcltest::test addstep_6 {Program must exist or it's an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    # program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body { 
+    ::sequence::addStep deb seq ls0
+} -result * -match glob -returnCodes error
+
 
 
 #----------------------------------------------------
