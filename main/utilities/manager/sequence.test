@@ -433,6 +433,100 @@ tcltest::test rmvstep_5 {NO such sequence is also an error} \
     sequence::rmvStep db sequence $step1
 } -result * -match glob -returnCodes error
 
+
+#------------------------------------------------------------------------------
+# Tests for sequence::insertStep
+
+tcltest::test insertstep_1 {Insert after single makes a final step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set step [sequence::insertStep db seq ls $step1]
+    
+} -result [expr {$::sequence::step_interval * 2}]
+
+tcltest::test insertstep_2 {Insert between two steps} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+    
+} \
+-body {
+    set newStep [sequence::insertStep db seq ls $step1]
+} -result [expr {($::sequence::step_interval * 3.0)/2.0}]
+
+
+tcltest::test insertstep_3 {No such step to insert after.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db seq ls \
+        [expr {$step1+($::sequence::step_interval/2.0)}]
+} -result * -match glob -returnCodes error
+
+tcltest::test insertstep_4 {No such sequence to insert into.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db sequence ls $step1
+} -result * -match glob -returnCodes error
+
+tcltest::test insertstep_5 {No such program.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db seq echoplex $step1
+} -result * -match glob -returnCodes error
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
