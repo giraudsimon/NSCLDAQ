@@ -320,7 +320,118 @@ tcltest::test addstep_6 {Program must exist or it's an error.} \
     ::sequence::addStep deb seq ls0
 } -result * -match glob -returnCodes error
 
+#------------------------------------------------------------------------------
+#  Tests of rmvStep - removing existing steps.
+#
+tcltest::test rmvstep_1 {Removing the only step leaves none.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    set stepNum [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvStep db seq $stepNum
+    set seqid [::sequence::_getSeqId db seq]
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $seqid
+    }
+    
+} -result 0
 
+tcltest::test rmvstep_2 {Test selectivity of rmv when there's more than one step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db seq $step1
+    
+    set seqid [::sequence::_getSeqId db seq]
+    set remainingStep [db eval {
+        SELECT step FROM step WHERE sequence_id = $seqid
+    }]
+    
+    expr {$remainingStep == $step2}
+    
+    
+} -result 1
+
+tcltest::test rvsstep_3 {More selectivity of testing.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db seq $step2
+    
+    set seqid [::sequence::_getSeqId db seq]
+    set remaining [db eval {
+        SELECT step FROM step WHERE sequence_id = $seqid
+        ORDER BY step ASC
+    }]
+    
+    list [expr {$step1 == [lindex $remaining 0]}] \
+        [expr {$step3 == [lindex $remaining 1]}]
+} -result [list 1 1]
+
+tcltest::test rmvstep_4 {Removing nonexistent step is an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set nosuchStep [expr {($step1 + $step2)/2}]
+    ::sequence::rmvStep seq $nosuchStep
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvstep_5 {NO such sequence is also an error} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db sequence $step1
+} -result * -match glob -returnCodes error
 
 #----------------------------------------------------
 
