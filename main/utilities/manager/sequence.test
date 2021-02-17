@@ -26,6 +26,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 package require tcltest
 package require sequence
+package require programs
 package require sqlite3
 
 variable dbFile
@@ -45,8 +46,10 @@ proc commonCleanup { } {
     }
 }
 
-
-tcltest::test add_1 {Successful add} \
+#-----------------------------------------------------------------------------
+#  newState Tests.
+#
+tcltest::test newstate_1 {Successful add} \
 -setup {
     commonSetup
 } \
@@ -59,7 +62,7 @@ tcltest::test add_1 {Successful add} \
 } \
 -result 1
 
-tcltest::test add_2 {Duplicate add is an error.} \
+tcltest::test newstate_2 {Duplicate add is an error.} \
 -setup {
     commonSetup
     sequence::newState db test
@@ -69,6 +72,72 @@ tcltest::test add_2 {Duplicate add is an error.} \
 } \
 -body {
     sequence::newState db test
+} -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+#  newTransition tests
+
+tcltest::test newtransition_1 {Successful new transition} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+    
+    #  Get the ids of state1 and state2 and require that we have a legal
+    #  transition with that from and to:
+    
+    set id1 [db eval {SELECT id FROM transition_name WHERE name = 'state1'}]
+    set id2 [db eval {SELECT id FROM transition_name WHERE name = 'state2'}]
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE from_id=$id1 AND to_id=$id2
+    }
+    
+} -result 1
+
+tcltest::test newTransition_2 {to state does not exist.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+tcltest::test newTransition_3 {from state does not exist.} \
+-setup {
+    commonSetup
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+
+tcltest::test newtransition_4 {Duplicate transition definitions illegal/detected} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newTransition db state1 state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2;               # Duplicate illegal
 } -result * -match glob -returnCodes error
 
 #----------------------------------------------------

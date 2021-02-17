@@ -231,6 +231,20 @@ proc ::sequence::_insertStep {db seqId step progId predelay postdelay} {
         VALUES ($seqId, $step, $progId, $predelay, $postdelay)
     }
 }
+##
+# sequence::_transitionExists
+#   @param db  - database command.
+#   @param fromid - Id of from state.
+#   @param toid   -id of to state.
+#   @return bool - true if this transition already exists.
+#
+proc sequence::_transitionExists {db fromid toid} {
+    set count [db eval {
+        SELECT COUNT(*) from legal_transition
+        WHERE from_id=$fromid AND to_id=$toid
+    }]
+    return [expr {$count > 0}]
+}
 #-------------------------------------------------------------------------------
 #  Public API:
 
