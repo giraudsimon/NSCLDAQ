@@ -470,6 +470,8 @@ proc ::sequence::rmvState {db name} {
 #  @param to    - Name of to state.
 #  @note Nothing is done to determine if the to state is no longer reachable.
 #        The user can determine this afterwards via ::sequence::reachable.
+#  @note Nor is anything done to determine there actually _is_ a transition as
+#        specified by the parameters.
 #
 #
 proc ::sequence::rmvTransition {db from to} {
@@ -477,7 +479,7 @@ proc ::sequence::rmvTransition {db from to} {
     set toId   [::sequence::_stateId $db $to]
     
     $db eval {
-        DELETE FROM legal_transitions WHERE from_id = $fromId AND to_id = $toId
+        DELETE FROM legal_transition WHERE from_id = $fromId AND to_id = $toId
     }
 }
 ##
