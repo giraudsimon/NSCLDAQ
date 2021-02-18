@@ -534,7 +534,7 @@ proc ::sequence::listLegalNextStates {db} {
    return [$db eval {
         SELECT name FROM transition_name
         INNER JOIN legal_transition ON to_id = transition_name.id
-        WHERE WHERE from_id = $currentId
+        WHERE from_id = $currentId
     }]
    
 }
