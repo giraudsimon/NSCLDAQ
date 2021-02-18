@@ -790,7 +790,52 @@ tcltest::test rmvsequence_3 {Error to remove a sequence that does not exist.} \
     commonCleanup
 } \
 -body {
-    ::Sequence::rmvSequence db seq1
+    ::sequence::rmvSequence db seq1
+} -result * -match glob -returnCodes error
+
+#----------------------------------------------------------------------------
+#  ::sequence::reachable tests
+
+
+tcltest::test reachable_1 {Unreachable state has 0 return value.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state1
+} -result 0
+
+tcltest::test reachable_2 {Correct number of froms when reachable.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state1 state3
+    ::sequence::newTransition db state2 state3
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state3
+} -result 2
+
+tcltest::test reachable_3 {error if the state does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state1
 } -result * -match glob -returnCodes error
 
 #----------------------------------------------------
