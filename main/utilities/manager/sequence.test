@@ -1100,6 +1100,17 @@ tcltest::test liststeps_3 {Sequence with more than one step.} \
     [expr {$::sequence::step_interval*2}]                           \
     [expr {$::sequence::step_interval*3}]                           \
 ]
+
+tcltest::test liststeps_4 {No such sequence is an error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listSteps seq
+} -result * -match glob -returnCodes error
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
