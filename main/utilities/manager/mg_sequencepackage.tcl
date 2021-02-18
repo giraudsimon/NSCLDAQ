@@ -568,11 +568,12 @@ proc ::sequence::listSequences {db} {
         FROM sequence
         INNER JOIN transition_name ON transition_name.id = sequence.transition_id
     } values {
+
         set element [dict create                                         \
             id   $values(id)                                             \
             name $values(name)                                           \
             transition_name $values(trname)                              \
-            transition _id  $values(trid)                                \
+            transition_id  $values(trid)                                \
         ]
         lappend result $element
     }
@@ -604,6 +605,7 @@ proc ::sequence::listSteps {db name} {
         WHERE step.sequence_id = $seqid
         ORDER by step ASC
     } values {
+        parray $values
         set item [dict create                                        \
             step         $values(step)                               \
             program_name $values(prname)                             \

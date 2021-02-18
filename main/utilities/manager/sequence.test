@@ -992,6 +992,46 @@ tcltest::test <test_name> {descr} \
     sequence::isLegalTransition db state2
 } -result 0
 
+#-------------------------------------------------------------------------------
+#  ::sequence::listSequences
+
+
+tcltest::test listsequences_1 {There are initially no sequences} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::listSequences db
+} -result [list]
+
+tcltest::test listsequences_2 {All names/transition names are right} \
+-setup {
+commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::add db seq1 state1
+    sequence::add db seq2 state2
+    sequence::add db seq3 state3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set rawDicts [sequence::listSequences db]
+    set result [list]
+    foreach item $rawDicts {
+        set name [dict get $item name]
+        set tr   [dict get $item transition_name]
+        lappend result [list $name $tr]
+    }
+    lsort -index 0 $result  
+} -result [lsort -index 0 [list {seq1 state1} {seq2 state2} {seq3 state3}]]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
