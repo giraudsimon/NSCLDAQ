@@ -605,7 +605,7 @@ proc ::sequence::listSteps {db name} {
         WHERE step.sequence_id = $seqid
         ORDER by step ASC
     } values {
-        parray $values
+
         set item [dict create                                        \
             step         $values(step)                               \
             program_name $values(prname)                             \

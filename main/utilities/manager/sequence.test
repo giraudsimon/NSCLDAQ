@@ -1009,7 +1009,7 @@ tcltest::test listsequences_1 {There are initially no sequences} \
 
 tcltest::test listsequences_2 {All names/transition names are right} \
 -setup {
-commonSetup
+    commonSetup
     sequence::newState db state1
     sequence::newState db state2
     sequence::newState db state3
@@ -1032,6 +1032,74 @@ commonSetup
     lsort -index 0 $result  
 } -result [lsort -index 0 [list {seq1 state1} {seq2 state2} {seq3 state3}]]
 
+#-------------------------------------------------------------------------------
+# sequence::listSteps tests.
+
+tcltest::test liststeps_1 {Sequence with no steps gives an empty list.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listSteps db seq
+} -result [list]
+
+tcltest::test liststeps_2 {Sequence with a step lists the step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    sequence::addStep db seq echo 1 2
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set result [::sequence::listSteps db seq]
+    set result [lindex $result 0]
+    list                                                                \
+        [dict get $result step]                                         \
+        [dict get $result program_name]                                 \
+        [dict get $result predelay]                                     \
+        [dict get $result postdelay]
+} -result [list $::sequence::step_interval echo 1 2]
+
+tcltest::test liststeps_3 {Sequence with more than one step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    sequence::addStep db seq echo 1 2
+    sequence::addStep db seq ls
+    sequence::addStep db seq echo
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set raw [::sequence::listSteps db seq]
+    set steps [list]
+    foreach step $raw {
+        lappend steps [dict get $step step]
+    }
+    set steps
+} -result [list $::sequence::step_interval                         \
+    [expr {$::sequence::step_interval*2}]                           \
+    [expr {$::sequence::step_interval*3}]                           \
+]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
