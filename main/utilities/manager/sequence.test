@@ -545,7 +545,7 @@ tcltest::test prepend_1 {If there are no steps this is the first.} \
     sequence::prependStep db seq ls
 } -result $::sequence::step_interval
 
-tcltest::test <test_name> {descr} \
+tcltest::test prepend_2 {descr} \
 -setup {
     commonSetup
     sequence::newState db state1
@@ -560,6 +560,125 @@ tcltest::test <test_name> {descr} \
 -body {
     sequence::prependStep db seq ls
 } -result [expr {$::sequence::step_interval/2.0}]
+
+#------------------------------------------------------------------------------
+#  rmvState tests - remove a state removes everything associated with it.
+#
+
+tcltest::test rmvstate_1 {No such state} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvState db nosuchstate
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvstate_2 {Only the state exists.} \
+-setup {
+    commonSetup
+    ::sequence::newState db mystate
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvState db mystate
+    db eval {
+        SELECT COUNT(*) FROM transition_name WHERE name  = 'mystate'
+    }
+} -result 0
+
+tcltest::test rmvstate_3 {Removing a state removes transitions to it.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state2 state1
+    ::sequence::newTransition db state3 state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id1 [::sequence::_stateId db state1];    # For later.
+    
+    ::sequence::rmvState db state1
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE to_id = $id1
+    }
+} -result 0
+
+tcltest::test rmvstate_4 {Removing a state removes transitions from it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state1 state2
+    ::sequence::newTransition db state1 state3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_stateId db state1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE from_id = $id1
+    }
+} -result 0
+
+tcltest::test rmvstate_5 {Removing a state removes sequences that trigger on it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    ::sequence::add db seq2 state1
+    ::sequence::add db seq3 state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_stateId db state1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM sequence WHERE transition_id = $id
+    }
+} -result 0
+
+tcltest::test rmvstate_6 {Removing a state removes sequence steps of seqs triggered by it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    ::sequence::addStep db seq1 echo
+    ::sequence::addStep db seq1 ls
+    ::sequence::addStep db seq1 echo
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set seqid [::sequence::_getSeqId db seq1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $seqid
+    }
+} -result 0
 
 #----------------------------------------------------
 
