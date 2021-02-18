@@ -679,7 +679,67 @@ tcltest::test rmvstate_6 {Removing a state removes sequence steps of seqs trigge
         SELECT COUNT(*) FROM step WHERE sequence_id = $seqid
     }
 } -result 0
+#------------------------------------------------------------------------
+#
+tcltest::test rmvtransition_1 {Remove works when from/to states are defined} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newTransition db state1 state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fromId [::sequence::_stateId db state1]
+    set toId   [::sequence::_stateId db state2]
+    
+    ::sequence::rmvTransition db state1 state2
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition
+        WHERE from_id = $fromId AND to_id = $toId
+    }    
+} -result 0
 
+tcltest::test rmvtransition_2 {Not an error if there's not a transition:} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvTransition db state1 state2
+    set a 0
+} -result 0
+
+tcltest::test rmvtransition_3 {To state does not exist -> error.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvtransition_4 {From state does not exist -> error.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvTransition db state2 state1
+} -result * -match glob -returnCodes error
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
