@@ -546,7 +546,7 @@ proc ::sequence::listLegalNextStates {db} {
 #
 proc ::sequence::isLegalTransition {db next} {
     set legal [::sequence::listLegalNextStates $db]
-    return [expr {$next in $legbal}]
+    return [expr {$next in $legal}]
 }
 ##
 # ::sequence::listSequences

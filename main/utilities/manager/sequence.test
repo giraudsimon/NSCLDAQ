@@ -947,7 +947,50 @@ tcltest::test legalnextstates_3 {Multiple next states} \
     lsort $result
 } -result [lsort [list state1 state3]]
 
+#-------------------------------------------------------------------------------
+#  ::sequence::isLegalTranstion tests.
 
+tcltest::test isLegalTransition_1 {transition is legal:} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state2]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::isLegalTransition db state3
+} -result 1
+
+tcltest::test <test_name> {descr} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state1]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::isLegalTransition db state2
+} -result 0
 
 #----------------------------------------------------
 
