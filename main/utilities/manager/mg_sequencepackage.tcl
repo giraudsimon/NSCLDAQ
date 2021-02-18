@@ -493,7 +493,7 @@ proc ::sequence::rmvSequence {db name} {
     set id [::sequence::_getSeqId $db $name]
     $db transaction {
         $db eval {DELETE FROM sequence WHERE id = $id}
-        $db Eeval {DELET FROM step WHERE sequence_id = $id}
+        $db eval {DELETE FROM step WHERE sequence_id = $id}
     };                         # commit.
 }
 ##
@@ -510,7 +510,7 @@ proc ::sequence::reachable {db name} {
     return $result
 }
 ##
-# ::listStates
+# ::sequence::listStates
 #    @param db  - database command.
 #    @return list of strings - the list of defined states.
 #
