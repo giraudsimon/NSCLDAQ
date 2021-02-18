@@ -872,6 +872,83 @@ tcltest::test liststates_2 {Have states to list} \
     set result [::sequence::listStates db]
     set result [lsort $result]
 } -result [lsort [list state1 state2 state3]]
+
+#---------------------------------------------------------------------------
+#  sequence::listLegalNextStates
+
+#  Note that these will involve a bit of jiggerypokery so that we
+#  confine it to the toy state diagrams we create.  Specifically, we'll need
+#  to set the current state in a dirty way.
+#
+tcltest::test legalnextstates_1 {No legal next states (bad news but these are tests)} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state3]
+    
+    db eval {
+        UPDATE last_transition SET state = $id 
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listLegalNextStates db
+} -result [list]
+
+tcltest::test legalnextstates_2 {One legal next state} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state1]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::listLegalNextStates db
+} -result [list state3]
+
+tcltest::test legalnextstates_3 {Multiple next states} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state2]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set result [::sequence::listLegalNextStates db]
+    lsort $result
+} -result [lsort [list state1 state3]]
+
+
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
