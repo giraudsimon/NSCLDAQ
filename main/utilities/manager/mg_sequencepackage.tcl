@@ -429,7 +429,7 @@ proc ::sequence::prependStep {db seqName program {predelay 0} {postdelay 0}} {
 # @param name - Name of the state to remove.
 #
 proc ::sequence::rmvState {db name} {
-    set stateId [::sequence::stateId $name];   # Fires an error if nonexistent.
+    set stateId [::sequence::_stateId $db $name];   # Fires an error if nonexistent.
     
     $db transaction {
         # Get the sequences that depend on this state:
