@@ -740,6 +740,59 @@ tcltest::test rmvtransition_4 {From state does not exist -> error.} \
 -body {
     ::sequence::rmvTransition db state2 state1
 } -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+# rmvSequence tests.
+
+tcltest::test rmvsequence_1 {Remove a sequence with no steps.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvSequence db seq
+    db eval {SELECT COUNT(*) FROM sequence WHERE name = 'seq'}
+} -result 0
+
+tcltest::test rmvsequecne_2 {Removing a sequence removes its steps} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    ::sequence::addStep db seq1 echo
+    ::sequence::addStep db seq1 ls
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_getSeqId db seq1]
+    ::sequence::rmvSequence db seq1
+    
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $id
+    }
+} -result 0
+
+tcltest::test rmvsequence_3 {Error to remove a sequence that does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::Sequence::rmvSequence db seq1
+} -result * -match glob -returnCodes error
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
