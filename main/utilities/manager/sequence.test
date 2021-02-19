@@ -1111,6 +1111,127 @@ tcltest::test liststeps_4 {No such sequence is an error} \
 -body {
     ::sequence::listSteps seq
 } -result * -match glob -returnCodes error
+
+
+#-------------------------------------------------------------------------------
+#  ::sequence::addMonitor tests
+#
+proc monCleanup { } {
+    commonCleanup
+    array unset ::sequence::StepMonitors *;   # W/o pattern the variable disappears.
+}
+
+tcltest::test addmonitor_1 {Can add a monitor and it's there.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    set result [::sequence::addMonitor db seq $step2 test]
+    set idx [::sequence::_monitorIndex [::sequence::_getSeqId db seq] $step2]
+    list $result $::sequence::StepMonitors($idx)
+} -result [list "" test]
+
+tcltest::test addmonitor_2 {If there's already a monitor we get it back} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    set result [::sequence::addMonitor db seq $step2 test]
+    set result [::sequence::addMonitor db seq $step2 junk]
+} -result test
+
+tcltest::test addmonitor_3 {Can delete a monitor.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq $step2 test]
+    ::sequence::addMonitor db seq $step2
+    
+    
+    
+    array names ::sequence::StepMonitors  \
+        [::sequence::_monitorIndex [::sequence::_getSeqId db seq] $step2]
+} -result {}
+
+tcltest::test addmonitor_4 {No such sequence fails.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq1 $step2 test
+
+} -result * -match glob -returnCodes error
+
+tcltest::test addmonitor_5 {No Such step error} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq [expr {$step3 + $::sequence::step_interval}] test
+
+} -result * -match glob -returnCodes error
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
