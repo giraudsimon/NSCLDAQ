@@ -80,11 +80,29 @@ package require sqlite3
 #                             ::sequence::transition this entry supports testing too).
 # ::sequence::addMonitor - Adds a monitor for a program.
 #
-    
+#  What is a monitor:
+#    A monitor is a command ensemble with the following subcommands:
+#
+#    onOutput - invoked when the program the step is attached to has output
+#               The name of the program and fd are presented (in order) as
+#               parameters.
+#    onExit   - invoked when the program the step is attached to exits (as
+#               determined by an EOF in the fd).  These are passed:
+#               the program description dict; and Step dict.
+#
+#  Monitors get attached to step in a squence. They can be attached
+#  before the sequence fires up.
+#  Note that this package wraps its own hands around each program so that if
+#  critical ones exit the system can be shutdown and if a Persistent on shuts down
+#  that can be 
+#      
 namespace eval sequence {
     ::container::_setup
     
     variable step_interval 10.0
+    
+    variable StepMonitors
+    array set StepMonitors [list]
 }
 #-------------------------------------------------------------------------------
 #  Utiltities not intended to be used by package clients.
@@ -271,6 +289,18 @@ proc sequence::_transitionExists {db fromid toid} {
     }]
     return [expr {$count > 0}]
 }
+##
+# ::sequence::_monitorIndex
+#    Construct an index used to insert a monitor in the step monitor array.
+#
+# @param seqId - sequenceId.
+# @param step  - Step number.
+# @return string - index for that combination.
+#
+proc ::sequence::_monitorIndex {seqId step} {
+    return $seqId:$step
+}
+
 #-------------------------------------------------------------------------------
 #  Public API:
 
@@ -617,4 +647,42 @@ proc ::sequence::listSteps {db name} {
     }
     
     return $result
+}
+##
+# ::sequence::addMonitor
+#   Adds a command ensemble monitor to the program that runs in a step
+#   of a sequence:
+#
+# @param db - database
+# @param seq - Sequence name.
+# @param step - Step number  (Real).
+# @param monitor - Monitor command ensemble-- if empty cancels any monitor.
+# @return string -prior monitor if any (empty string  if none)
+# @note Step monitors are held in arrays locally.  They are not stored in the
+#       database and therefore must be refreshed each time an application using
+#       this facility starts.
+#
+proc ::sequence::addMonitor {db seq step {monitor {}}} {
+    set seqId [::sequence::_getSeqId $db $seq]
+    
+    # Ensure there is a step in that sequence:
+    
+    set haveStep [$db eval {
+        SELECT COUNT(*) from step WHERE step=$step AND sequence_id = $seqId
+    }]
+    if {!$haveStep} {
+        error "$seq does not have a step numbered '$step'"
+    }
+    set monitorIndex [::sequence::_monitorIndex $seqId $step]
+    set prior [list]
+    if {[array names ::sequence::StepMonitors $monitorIndex] ne ""} {
+        set prior $::sequence::StepMonitors($monitorIndex)
+    }
+    if {$monitor eq ""} {
+        array unset ::sequence::StepMonitors $monitorIndex
+    } else {
+        set ::sequence::StepMonitors($monitorIndex) $monitor
+    }
+    
+    return $prior
 }
