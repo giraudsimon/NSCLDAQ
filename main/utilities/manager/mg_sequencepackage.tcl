@@ -29,6 +29,7 @@ package provide sequence 1.0
 package require programs;           # Because sequence steps are programs.
 package require containers
 package require sqlite3
+package require snit
 
 ##
 # This package provides an API for state transitions and associated sequences.
@@ -84,11 +85,11 @@ package require sqlite3
 #    A monitor is a command ensemble with the following subcommands:
 #
 #    onOutput - invoked when the program the step is attached to has output
-#               The name of the program and fd are presented (in order) as
-#               parameters.
+#               The database, name of the program and fd are presented (in order)
+#                as parameters.
 #    onExit   - invoked when the program the step is attached to exits (as
 #               determined by an EOF in the fd).  These are passed:
-#               the program description dict; and Step dict.
+#               the program description dict and file descriptor
 #
 #  Monitors get attached to step in a squence. They can be attached
 #  before the sequence fires up.
@@ -103,9 +104,413 @@ namespace eval sequence {
     
     variable StepMonitors
     array set StepMonitors [list]
+    
+    variable currentTransitionManager [list];    # Current transition manager if any.
 }
+#------------------------------------------------------------------------------
+#  Snit classes:
+
+##
+# @class sequence::SequenceRunner
+#
+#   These objects are responsible for running sequences.  They execute steps and
+#   delays from inside an external event loop.  Without that loop the sequence
+#   will, in fact, stall.
+#
+# OPTIONS:
+#    -database   - The database command - must be valid the entire duration of
+#                  the sequence.
+#    -name       - Name of the sequence.
+#    -steps      - Steps in the sequence (readonly).
+#    -endcommand - Command to execute when the sequence completes.
+#                  This command recieves the object command, a reason 
+#                  for completion that is one of:
+#                  *  NORMAL - normal completion.
+#                  *  ABORT  - The sequence aborted.
+#                  and finally, if ABORT was the reason a human readable reason
+#                  for the abort.
+# METHODS:
+#    currentStep - return index of current step error if inactive.
+#    isActive
+#    start     - Start sequencde execution.
+#    abort     - External request to abort sequence execution.
+#
+snit::type sequence::SequenceRunner {
+    option -database -default [list]
+    option -name     -default [list]
+    option -steps    -default [list] -readonly 1
+    option -endcommand -default [list]
+    
+    variable currentStep 0;      # index into steps of current step.
+    variable active      0;      # True if we've been started.
+    variable afterid    -1;      # Current after id.
+    variable sequenceId  -1;     # Information about the sequence.
+    
+    constructor args {
+        $self configurelist $args
+        
+        #  We need non-null steps a database command and a name:
+        
+        if {[length $options(-steps)] == 0} {
+            error "sequence::SequenceRunner constructed with a step-less sequence"
+        }
+        if {$options(-database) eq ""} {
+            error "sequence::SequenceRunner constructed with empty database command"
+        }
+        if {$options(-name) eq ""} {
+            error "sequence::SequenceRunner constructed with blank sequence name"
+        }
+        set sequenceId [::sequence::_getSeqId $options(-database) $options(-name)]
+        
+    }
+    destructor {
+        catch {;                   # as recommended by snitfaq.
+            if {[$self isActive]} {
+                $self abort
+            }
+        }
+    }
+    
+    #---------------------------------------------------------------------------
+    #  public methods:
+    
+    ##
+    # isActive
+    #   @return Boolean - true (1) if the sequence is actively executing.
+    #
+    method isActive {} {
+        return $active
+    }
+    ##
+    # currentStep
+    #   Returns the index into -steps that is currently executing.
+    # @return integer
+    # @note if the sequence is not active an error is raised.
+    #
+    method currentStep {} {
+        if {![self $isActive]} {
+            error "sequence::SequenceRunner::currentStep $options(-name) is inactive"
+        }
+    }
+    ##
+    # start
+    #    Starts execution of the sequencde.
+    #    If the sequence is active, this is an error
+    # @note - the assumption is that there is an event loop to dispatch the
+    #    after completions.
+    #
+    method start {} {
+        if {[$self isActive]} {
+            error "sequence::SequenceRunner::start - $options(-name) is already active."
+        }
+        set currentStep 0
+        set active      1
+        set afterid     [after 0 {$self _preDelay}];   #schedule from the event loop.
+    }
+    ##
+    # abort
+    #    Abort the sequence. An error is thrown if the sequence is not active.
+    #
+    # @param reason - optional - reason for the abort.
+    method abort {{reason {Programattically aborted}}} {
+        if {![$self isActive]} {
+            error "sequence::SequenceRunner::abort - $options(-name) is not active"
+        }
+        after cancel $afterid
+        set afterid -1
+        
+        $self _dispatchEnd ABORT $reason
+    }
+    #--------------------------------------------------------------------------
+    # non-public methods:
+
+    #  The methods below reflect that progression of step states:
+    #  *  _preDelay is called to initiate the pre-run delay that may be defined by
+    #     the step.
+    #  *  _runProgram initiates the program and schedules _postDelay
+    #  *  _postDelay schedules _stepDone to run after any post delay in the step.
+    #  *  _stepDelay detects the end of the sequence and depending on that:
+    #    - Either starts the next step by incrementing currentStep and scheduleing
+    #      _preDelay or
+    #    - sets active to 0 and executes any -endcommand.
+    #
+    # @note that the only method that can fail is _runProgram which
+    #       if program::run fails will abort the sequence by invoking abort.
+    #
+    
+    ##
+    # _preDelay
+    #    Schedule the program to run after the preDelay value.
+    #
+    method _preDelay {} {
+        set step [lindex $options(-steps) $currentStep]
+        set waitSecs [dict get $step predelay]
+        set afterid [after [expr {$waitSecs * 1000} $self _runProgram]]
+        
+    }
+    ##
+    # Start the step program and then immediately schedule the post delay
+    #
+    method _runProgram {} {
+        set step [lindex $options(-steps) $currentStep]
+        set programName [dict get $step program_name]
+        set status [catch {
+            ::program::run  $programName [list   \
+                ::sequence::_outputHandler $options(-database) [::sequence_monitorIndex $seq $currentStep]
+        } msg]
+        if {$status} {
+            $self _abort "Unable to start program $programName : $msg"
+        }
+        
+        # Now that the program is up and running schedule the post delay:
+        
+        set afterid [after 0 $self _postDelay]
+    }
+    ##
+    #  Pause sequence execution the length of any post run delay specified by the
+    #  current step.
+    #
+    method _postDelay {} {
+        set step [lindex $options(-steps) $currentStep]
+        set waitSecs [dict get $step postDelay]
+        set afterid [after [expr {$waitSecs * 1000}] $self _stepDone]
+    }
+    method _stepDone {} {
+        incr currentStep
+        if {$currentStep < [llength $options(-steps)]} {
+            # More steps
+            
+            set afterid [after 0 $self _preDelay]
+            
+        } else {
+            # Done.
+            
+            set active 0
+            $self _dispatchEnd OK
+        }
+    }
+    
+    ##
+    # _dispatchEnd
+    #    Dispatch any end script
+    #
+    # @param why - why the  sequence ended.
+    # @param reason - Reason for abort
+    #
+    method _dispatchEnd {why {reason{}} } {
+        set userscript $options(-endcommand)
+        if {$userscript ne ""} {
+            uplevel #0 $userscript $why "$reason"
+        }
+    }
+}
+##
+# @class sequence::TransitionManager
+#    Class that manages state transitions.
+#    The assumption is that an event loop is running in the idle parts of the
+#    application.  This allows scheduling of the sequence elements.
+#
+# OPTIONS
+#   -database - the database command (read only)
+#   -type     - Transition type.     (read only)
+#   -endscript - Optional called when the transition completes.  See
+#                ::sequence::transition to get the call sequence of this script.
+# METHODS
+#     start   - Start the transition.
+#     abort   - abort the transition.
+#     isActive - True if active.
+#     currentSequence - name of current sequence.
+#
+snit::type sequence::TransitionManager {
+    option -database -default [list] -readonly 1
+    option -type     -default [list] -readonly 1
+    option -endscript -default [list]
+    
+    variable Sequences [list];    # List of sequences to execute in the transition.
+    variable SequenceIndex 0;     # Which sequence we're executing.
+    variable active        0;     # Nonzero when active.
+    
+    variable CurrentSequence [list];  # Current SequenceRunner object.
+    
+    ##
+    # constructor
+    #    After processing options, make sure we have a database and transition name
+    #    - list all sequences
+    #    - Add those who are for our transition into Sequences
+    # @note an explicit 'start' method call is required to begin executing
+    #       the transition.
+    #
+    # @param args - arguments passed to the constructor - these are just options.
+    #
+    constructor args {
+        $self configurelist $args
+        
+        # Ensure we have the required configuration options.
+        
+        if {$options(-database) eq "" } {
+            error "sequence::TransitionManager - Necessary -database option was not supplied"
+        }
+        if {$options(-type) eq "" } {
+            error "sequence::TransitionManager - necessary -type option was not supplied"
+        }
+        # Fetch the list of sequences and filter them out into
+        # Sequences (we only need the names):
+        
+        set allSequences [::sequence::listSequences $options(-database)]
+        foreach seq $allSequences {
+            if {[dict get $seq transition_name] eq $options(-type)} {
+                lappend Sequences [dict get $seq name]
+            }
+        }
+    }
+    #--------------------------------------------------------------------------
+    # Public methods.
+    
+    ##
+    # start
+    #   Start executing the transition.  This means that
+    #   - We set active 1
+    #   - We set the sequenceIndex -> 0
+    #   - We start sequence execution.
+    #
+    method start {} {
+        if {$active} {
+            error "Transition to $options(-type) is already active."
+        }
+        set active 1
+        set SequenceIndex 0
+        $self _executeSequence
+    }
+    ##
+    # abort
+    #   Abort the execution of the transition:
+    #   - We must be active.
+    #   - We need to abort the sequence that's current.
+    #   - We need to let any end handler script know we've aborted.
+    #
+    method abort {} {
+        if {!$active} {
+            error "Attempting to abort $options(-type) transition which is not active"
+        }
+        $CurrentSequence abort
+        $CurrentSequence destroy
+        
+        set active 0
+        set SequenceIndex 0
+    }
+    ##
+    # isActive
+    # @return bool - true if we are active.
+    #
+    method isActive {} {
+        return $active
+    }
+    ##
+    # currentSequence
+    #  @return string name of current sequence
+    #  @note an error is raised if we are not active.
+    #
+    method currentSequence {} {
+        if {!$active} {
+            error "Cannot get current sequence on inactiv $options(-type) transition"
+        }
+        return [lindex $Sequence $CurrentSequence]
+    }
+    #--------------------------------------------------------------------------
+    # Private utilities.
+        
+    ##
+    # _executeSequence
+    #   Executes the current sequence:
+    #   - Fetches the sequence steps.
+    #   - Creates a sequence::SequenceRunner object to run the sequence
+    #     with _sequenceEnded as its endcommand.
+    #   - Starts the sequence going.
+    #
+    # @note the assumption is that ultimately we will return to an event loop.
+    #
+    method _executeSequence {} {
+        set seqName [lindex $Sequences $SequenceIndex]
+        set steps \
+            [::sequence::listSteps $options(-database) $seqName]
+        set CurrentSequence [sequence::SequenceRunner %AUTO%        \
+            $options(-database) -name $seqName -steps $steps        \
+            -endcommand [mymethod _sequenceCompleted]]
+        $CurrentSequence start
+    }
+    ##
+    # _sequenceCompleted
+    #    Called when a sequence completes.
+    #    - If the sequence completed properly, we just Go to the next
+    #      sequence if there is one else complete the
+    #      transition normally.
+    #    - If the sequence aborted, we complete the transition with an abort
+    #      status _unless_ the type is SHUTDOWN in which case we treat it as
+    #      a normal completion.
+    #
+    # @param seq - the sequence runner.
+    # @param reason - completion status.
+    # @param failureReason - Reason for ABORT if $reason = ABORT.
+    #
+    method _sequenceCompleted {seq reason failureReason} {
+        
+    }
+    
+    
+}
+
 #-------------------------------------------------------------------------------
 #  Utiltities not intended to be used by package clients.
+
+##
+# ::sequence::_outputHandler
+#    Handle program output from a program.
+#  - If there is an output handler pass data on to it.
+#  - If EOF, and the program is critical, force as SHUTDOWN transition.
+#
+# @param db    - database command.
+# @param monitorIndex - index into ::sequence::StepMonitors of any user level
+#                monitor.
+# @param program - Name of the program that is providing output.
+# @param fd      - File descriptor that is readable that will give program output.
+#
+proc ::sequence::_outputHandler {db monitorIndex program fd} {
+    
+    #   If there is a user program monitor let it handle the input.
+    
+    if {[array names ::sequence::StepMonitor $monitorIndex] eq $monitorIndex} {
+        set monitor $::sequenceStepMonitor($monitorIndex)
+        $monitor onOutput $db $program $fd
+    } else {
+        set blocking [chan configure $fd -blocking]
+        chan configure $fd -blocking 0
+        get $fd
+        chan configure $fd -blocking $blocking
+    }
+    
+    #  If we're at an EOF on input:
+    #  1. Call any monitor onExit object
+    #  2. If the exiting program is critical, force a shutdown.
+    #  3. Let the caller close stuff etc. as ::program::_outputWrapper does take
+    #      care of details like that.
+    #  
+    
+    if {[eof $fd]} {
+        set programInfo [::program::getdef $db $program ]
+        
+        if {[array names ::sequence::StepMonitor $monitorIndex] eq $monitorIndex} {
+            set monitor $::sequence::StepMonitor($monitorIndex)
+            $monitor onExit $db $programInfo $fd
+        }
+        if {[dict get $programInfo type] eq "Critical"} {
+            ::sequence::transition $db SHUTDOWN;    # Critical so shutdown everything.
+        }
+    }
+}
+    
+
+    
+
     
 ##
 # ::sequence::_stateExists
@@ -685,4 +1090,103 @@ proc ::sequence::addMonitor {db seq step {monitor {}}} {
     }
     
     return $prior
+}
+##
+# ::sequence::runSequence
+#    Runs a sequence.  Note the steps in a sequence are run via the event
+#    loop so that I/O from early program steps is available as the sequence
+#    runs and a critical program exit can, cause a sequence abort and
+#    SHUTDOWN transition.
+#
+# @param db    - data base command - must be valid the entire duration of the
+#                sequence execution (or shutdown execution if that happens).
+# @param name  - Name of the sequence to run
+# @param endProc - if provided will be called when the sequence either completes
+#                or aborts.
+#                See the SequenceRunner snit::type for more information about how
+#                this is called.
+# @return sequence::SequenceRunner  object command running the sequence.
+# @retval ""  - if the sequence is empty (has no steps).
+proc ::sequence::runSequence {db name {endproc {}}} {
+    # Get sequence information then create and start a sequence runner:
+    
+    set result "";                          # Retval if no steps.
+    set seqSteps [::sequence::listSteps $db $name];    # Fails if invalid seq.
+    if {[llength $seqSteps] > 0} {
+        set result [::sequence::SequenceRunner %AUTO \
+            -database $db -name $name -steps $seqSeps -endcommand $endproc]
+        $result start
+    }
+    return $result
+}    
+##
+# ::sequence::transition
+#     Run a transition.  Transitions are run semi-asynchronously (from the
+#     event loop).  A few corner cases:
+#     - With one exception, only one transition can be started - that is it is
+#       an error to call this method when a transition has not yet completed.
+#     - A SHUTDOWN transition can always be started and will interrupt any executing
+#       transition; aborting it BUT:
+#     - Any attempt to start a SHUTDOWN transition when one is already in progress
+#       is ignored.  This is because as shutdowns  happen, programs that are
+#       critical will be stopped and stopping them will trigger an attempt
+#       to start another SHUTDOWN.
+#     - SHUTDOWN transitions are special in that:
+#       *  They do have sequences but those sequences can only contain
+#          transient programs (e.g. to cleanly stop stuff).
+#       *  After all steps in all SHUTDOWN sequences are run;
+#          the program package is asked to stop all running programs.
+#          bringing the system to a complete stop.
+#    Hopefully those rules are not too confusing.  Transitions are managed
+#    by a pair of snit::type objects; Ordinary transitions (not SHUTDOWN) are
+#    handeled by a ::sequence::TransitionManager object while SHUTDOWN transitions
+#    are handled by a ::sequence::ShutdownManager object since they operate somewhat
+#    differently; see above.
+#
+#   @param db           - database command.
+#   @param transition   - Name of transition.
+#   @param endscript    - Optional script called when transition completes.
+#   @note The endscript is called with the following parameters:
+#       -   The database command.
+#       -   The transition manager object.
+#       -   A status which can be either OK, ABORTED or FAILED indicating how
+#           the transition ended. Note that SHUTDOWN does not admit to failures.
+#
+#
+proc ::sequence::transition {db transition {endscript{}}} {
+    
+    #  If there's a shutdown in progress ignore it. Any other transition in
+    #  progress is an error:
+    
+    if {$::sequence::currentTransitionManager ne ""} {
+        set currentType [$::sequence::currentTransitionManager cget -transition]
+        if {($transition eq "SHUTDOWN") && ($currentType eq "SHUTDOWN") } {
+                return 
+        }
+        error "A transition of type $currentType is still in progress."
+    }
+    #  If this is a shutdown and there's a current transition;
+    #  abort it now:
+    #
+    if {$::sequence::currentTransitionManager ne ""} {
+        $::sequence::currentTransitionManager abort;
+        $::sequence::currentTransitionManager destroy
+        set $::sequence::currentTransitionManager [list]
+    }
+    #  Now create and start the correct transition type:
+    
+    if {$transition eq "SHUTDOWN"} {
+        set ::sequence::currentTransitionManager [                            \
+            sequence::ShutdownManager %AUTO% -database db                     \
+                -endscript $endscript                                         \
+        ]
+    } else {
+        set ::sequence::currentTransitionMonitor [                            \
+            ::sequence::TransitionManager $AUTO% -database db -type $transition \
+                -endscript $endscript
+        ]   
+    }
+    #  Start the transition and let the event loop do the rest:
+    
+    $::sequence::currentTransitionMonitor start
 }
