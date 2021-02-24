@@ -397,6 +397,7 @@ snit::type sequence::TransitionManager {
         
         set active 0
         set SequenceIndex 0
+        $self _completeTransition ABORTED
     }
     ##
     # isActive
@@ -451,16 +452,88 @@ snit::type sequence::TransitionManager {
     # @param seq - the sequence runner.
     # @param reason - completion status.
     # @param failureReason - Reason for ABORT if $reason = ABORT.
+    # @note  If the transition completes (success or failure), we call
+    #        ::sequence::_TransitionComplete to execute transition complete business
+    #        logic.  That proc gets the failure code... note that
+    #        ::sequence::currentTransitionManager already holds our transition.
     #
     method _sequenceCompleted {seq reason failureReason} {
+        $CurrentSequence destroy;      # clean up - don't need it anymore.
         
+        if {$reason eq "ABORT"} {
+            if {$options(-type) ne "SHUTDOWN"} {
+                $self _completeTransition FAILED
+            }
+        }
+        #  If we're here the sequence either completed properly or we're shutting
+        #  down and we need to keep on keeping on.
+        
+        incr SequenceIndex
+        if {$SequenceIndex < [llength $Squences]} {
+            $self _executeSequence;          # next sequence.
+        } else {
+            # done!
+            
+            $self _completeTransition OK
+        }
     }
-    
+    ##
+    # _completeTransition
+    #   - Call any user end transition script.
+    #   - Invoke ::sequence::_TransitionComplete to do all the mandatory
+    #     'business logic'.
+    #
+    # @param how - how the transition completed. (OK, ABORTED, SHUTDOWN)
+    #
+    method _completeTransition {how} {
+        # Run any user end transition script.
+        
+        set userscript $options(-endscsript)
+        if {$userscript ne ""} {
+            lappend endscript $options(-db) $self $how
+            uplevel #0 $endscript
+        }
+        #  Business logic method:
+        
+        ::sequence::_TransitionComplete $how
+    }
     
 }
 
 #-------------------------------------------------------------------------------
 #  Utiltities not intended to be used by package clients.
+
+##
+# ::sequence::_TransitionComplete
+#    Called to complete a state transition. Not in order:
+#    - Log the new state (on success)
+#    - Start a shutdown transition (on failure).
+#    - Destroy the transition
+#    - set the value of ::sequence::currentTransitionManager appropriately.
+# @param how - how the transition completed.
+#       We hope for OK.
+#
+proc ::sequence::_TransitionComplete {how} {
+    set db [$::sequence::currentTransitionManager cget -database]
+    set transition [$::sequence::currentTransitionManager cget -type]
+    $::sequence::currentTransitionManager destroy
+    set $::sequence::currentTransitionManager [list]
+
+    # If a failure (SHUTDOWN can't fail) then start a SHUTDOWN transition.
+    
+    if {$how ne "OK"} {
+        ::sequence::transition $db SHUTDOWN
+    } else {
+        # Update the database to the new state:
+        
+        set newStateId [$db eval {
+            SELECT id FROM transition_name WHERE name = $transition
+        }]
+        $db eval {
+            UPDATE last_transition SET state = $newStateId
+        }
+    }
+}
 
 ##
 # ::sequence::_outputHandler
@@ -1170,9 +1243,15 @@ proc ::sequence::transition {db transition {endscript{}}} {
     #
     if {$::sequence::currentTransitionManager ne ""} {
         $::sequence::currentTransitionManager abort;
-        $::sequence::currentTransitionManager destroy
-        set $::sequence::currentTransitionManager [list]
+        
     }
+    
+    #  Require the transition be legal.
+    
+    if {![::sequence::isLegalTransition $db $transition]} {
+        error "Invalid transition request"
+    }
+    
     #  Now create and start the correct transition type:
     
     if {$transition eq "SHUTDOWN"} {
