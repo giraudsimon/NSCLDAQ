@@ -99,6 +99,19 @@ tcltest::test addmonitor_2 {Add monitor creates a new monitor array element:} \
     set ::sequence::StepMonitors($monitorIndex)
 } -result junk
 
+tcltest::test addmonitor_3 {Adding a monitor returns any prior one.} \
+-setup {
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo  0 0]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::addMonitor db testing $step junk
+    set result [::sequence::addMonitor db testing $step trash]
+} -result junk
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
