@@ -32,9 +32,9 @@ package require snit
 
 variable dbfile
 variable dbfd
-proc commonSetup{ } {
+proc commonSetup { } {
     set ::dbfd [file tempfile ::dbfile]
-    exec [file join $::evn(DAQBIN) mg_mkconfig] $::dbfile
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbfile
     sqlite3 db $::dbfile
     
     # Make some programs to use in sequences.
@@ -42,11 +42,11 @@ proc commonSetup{ } {
     ::program::add db echo /bin/echo Transitory localhost [dict create \
         parameters [list Hello world]                                   \
     ]
-    ::program::add db criticalEcho /bin/echo Critical localhost [dict create
-        parmaeters [list Hello from critical]                       \
+    ::program::add db criticalEcho /bin/echo Critical localhost [dict create \
+        parameters [list Hello from critical]                       \
     ]
     ::program::add db list /bin/ls Transitory localhost [dict create directory ~]
-    ::program::add db failure /this/does/not/exist Transitory localhost
+    ::program::add db failure /this/does/not/exist Transitory localhost [dict create]
     
 }
 
@@ -60,24 +60,44 @@ proc commonCleanup {} {
     array unset ::sequence::StepMonitors *
     if {$::sequence::currentTransitionManager ne ""} {
         $::sequence::currentTransitionManager destroy
-        set ::Sequence::currentTransitionManager [list]
+        set ::sequence::currentTransitionManager [list]
     }
 }
 
 #-------------------------------------------------------------------------------
 #  Monitor tests.
 
-tcltest::test test_name {purpose of test} \
+tcltest::test addmonitor_1 {Add a monitor when  there's none returns empty.} \
 -setup {
-    
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo 0 0]
 } \
 -cleanup {
-    
+    commonCleanup
 } \
 -body {
     
+    set retval [::sequence::addMonitor db testing $step junk]
+    
 } \
 -result {}
+
+tcltest::test addmonitor_2 {Add monitor creates a new monitor array element:} \
+-setup {
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo  0 0]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::addMonitor db testing $step junk
+    set seqid [::sequence::_getSeqId db testing]
+    set monitorIndex [::sequence::_monitorIndex $seqid $step]
+    set ::sequence::StepMonitors($monitorIndex)
+} -result junk
 
 #----------------------------------------------------
 
