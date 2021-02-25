@@ -1243,7 +1243,8 @@ proc ::sequence::transition {db transition {endscript{}}} {
     #
     if {$::sequence::currentTransitionManager ne ""} {
         $::sequence::currentTransitionManager abort;
-        
+        $::sequence::currentTransitionManager destroy
+        set ::sequence::currentTransitionManager [list]
     }
     
     #  Require the transition be legal.

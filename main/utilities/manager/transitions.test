@@ -1,0 +1,92 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   transitions.test
+# @brief  Test the actual transition parts of the sequence package.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require sequence
+package require programs
+package require sqlite3
+package require snit
+
+variable dbfile
+variable dbfd
+proc commonSetup{ } {
+    set ::dbfd [file tempfile ::dbfile]
+    exec [file join $::evn(DAQBIN) mg_mkconfig] $::dbfile
+    sqlite3 db $::dbfile
+    
+    # Make some programs to use in sequences.
+        
+    ::program::add db echo /bin/echo Transitory localhost [dict create \
+        parameters [list Hello world]                                   \
+    ]
+    ::program::add db criticalEcho /bin/echo Critical localhost [dict create
+        parmaeters [list Hello from critical]                       \
+    ]
+    ::program::add db list /bin/ls Transitory localhost [dict create directory ~]
+    ::program::add db failure /this/does/not/exist Transitory localhost
+    
+}
+
+proc commonCleanup {} {
+    close $::dbfd
+    db close
+    if {[file exists $::dbfile]} {
+        file delete $::dbfile
+    }
+    
+    array unset ::sequence::StepMonitors *
+    if {$::sequence::currentTransitionManager ne ""} {
+        $::sequence::currentTransitionManager destroy
+        set ::Sequence::currentTransitionManager [list]
+    }
+}
+
+#-------------------------------------------------------------------------------
+#  Monitor tests.
+
+tcltest::test test_name {purpose of test} \
+-setup {
+    
+} \
+-cleanup {
+    
+} \
+-body {
+    
+} \
+-result {}
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode
