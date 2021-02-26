@@ -225,6 +225,17 @@ tcltest::test runseq_4 {Multi-step sequence.} \
     set o2 [$mon2 getOutput]
     list $o1 $o2
 } -result [list [list "Hello world" ""] [list "Hello from critical" ""]]
+
+tcltest::test runseq_5 {Bad sequence.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::runSequence db testing
+} -result * -match glob -returnCodes error
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
