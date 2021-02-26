@@ -112,6 +112,26 @@ tcltest::test addmonitor_3 {Adding a monitor returns any prior one.} \
     ::sequence::addMonitor db testing $step junk
     set result [::sequence::addMonitor db testing $step trash]
 } -result junk
+
+#-----------------------------------------------------------------------------
+#  runSequence tests.
+
+tcltest::test runseq_1 {Run an empty sequence - should be successful.} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    proc testing_ended {runner status {text {}}} {
+        set ::completion $status
+        $runner destroy
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::runSequence db testing testing_ended
+    set completion;                  # Immediate completion without event loop
+} -result OK
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

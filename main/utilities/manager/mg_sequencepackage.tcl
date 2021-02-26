@@ -151,9 +151,6 @@ snit::type sequence::SequenceRunner {
         
         #  We need non-null steps a database command and a name:
         
-        if {[length $options(-steps)] == 0} {
-            error "sequence::SequenceRunner constructed with a step-less sequence"
-        }
         if {$options(-database) eq ""} {
             error "sequence::SequenceRunner constructed with empty database command"
         }
@@ -164,6 +161,7 @@ snit::type sequence::SequenceRunner {
         
     }
     destructor {
+        puts "Destructor"
         catch {;                   # as recommended by snitfaq.
             if {[$self isActive]} {
                 $self abort
@@ -203,9 +201,19 @@ snit::type sequence::SequenceRunner {
         if {[$self isActive]} {
             error "sequence::SequenceRunner::start - $options(-name) is already active."
         }
-        set currentStep 0
-        set active      1
-        set afterid     [after 0 {$self _preDelay}];   #schedule from the event loop.
+        
+        # Special case - if there are no sequence steps, we're already done:
+        
+        puts "Starting $options(-name)"
+        if {[llength $options(-steps)] == 0} {
+            puts "Empty so dispatching to end"
+            $self _dispatchEnd OK
+        } else {
+            set currentStep 0
+            set active      1
+            set afterid     [after 0 {$self _preDelay}];   #schedule from the event loop.    
+        }
+        
     }
     ##
     # abort
@@ -297,10 +305,10 @@ snit::type sequence::SequenceRunner {
     # @param why - why the  sequence ended.
     # @param reason - Reason for abort
     #
-    method _dispatchEnd {why {reason{}} } {
+    method _dispatchEnd {why {reason {}} } {
         set userscript $options(-endcommand)
         if {$userscript ne ""} {
-            uplevel #0 $userscript $why "$reason"
+            uplevel #0 [list $userscript $self $why $reason]
         }
     }
 }
@@ -1179,17 +1187,15 @@ proc ::sequence::addMonitor {db seq step {monitor {}}} {
 #                See the SequenceRunner snit::type for more information about how
 #                this is called.
 # @return sequence::SequenceRunner  object command running the sequence.
-# @retval ""  - if the sequence is empty (has no steps).
+#
 proc ::sequence::runSequence {db name {endproc {}}} {
     # Get sequence information then create and start a sequence runner:
-    
+    puts "Run Sequence"
     set result "";                          # Retval if no steps.
     set seqSteps [::sequence::listSteps $db $name];    # Fails if invalid seq.
-    if {[llength $seqSteps] > 0} {
-        set result [::sequence::SequenceRunner %AUTO \
-            -database $db -name $name -steps $seqSeps -endcommand $endproc]
-        $result start
-    }
+    set result [::sequence::SequenceRunner %AUTO \
+        -database $db -name $name -steps $seqSteps -endcommand $endproc]
+    $result start
     return $result
 }    
 ##
