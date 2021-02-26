@@ -562,7 +562,7 @@ proc ::sequence::_TransitionComplete {how} {
 #
 proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #   If there is a user program monitor let it handle the input.
-    parray ::sequence::StepMonitors
+    
     if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
         set monitor $::sequence::StepMonitors($monitorIndex)
         uplevel #0 [list $monitor onOutput $db $program $fd]
@@ -585,7 +585,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
         
         if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
             set monitor $::sequence::StepMonitors($monitorIndex)
-            uplevel #0 [$monitor onExit $db $programInfo $fd]
+            uplevel #0 [list $monitor onExit $db $programInfo $fd]
         }
         if {[dict get $programInfo type] eq "Critical"} {
             ::sequence::transition $db SHUTDOWN;    # Critical so shutdown everything.
@@ -1192,7 +1192,7 @@ proc ::sequence::runSequence {db name {endproc {}}} {
 
     set result "";                          # Retval if no steps.
     set seqSteps [::sequence::listSteps $db $name];    # Fails if invalid seq.
-    set result [::sequence::SequenceRunner %AUTO \
+    set result [::sequence::SequenceRunner %AUTO% \
         -database $db -name $name -steps $seqSteps -endcommand $endproc]
     $result start
     return $result

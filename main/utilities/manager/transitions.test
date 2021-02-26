@@ -167,7 +167,7 @@ tcltest::test runseq_3 {Sequence with Monitor on the single step} \
             lappend ::output [gets $fd]
             
         }
-        method onExit {db programInfo $fd} {
+        method onExit {db programInfo fd} {
             set ::exited [dict get $programInfo name]
         }
     }
@@ -177,13 +177,54 @@ tcltest::test runseq_3 {Sequence with Monitor on the single step} \
 -cleanup {
     commonCleanup
     $mymon destroy
+    $sequence destroy
 } \
 -body {
-    ::sequence::runSequence db testing
+    set sequence [::sequence::runSequence db testing]
     vwait output
     vwait exited
     list $output $exited
 } -result [list [list "Hello world" ""] echo]
+
+tcltest::test runseq_4 {Multi-step sequence.} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    set step1 [::sequence::addStep db testing echo 1 2]
+    set step2 [::sequence::addStep db testing criticalEcho 0 0 ]
+    set exited 0
+    snit::type runseq4Monitor {
+        variable output
+        method onOutput {db program fd} {
+            lappend output [gets $fd]
+        }
+        method onExit {db programinfo fd} {
+            incr ::exited
+        }
+        method getOutput {} {return $output}
+    }
+    set mon1 [runseq4Monitor %AUTO%]
+    set mon2 [runseq4Monitor %AUTO%]
+    
+    sequence::addMonitor db testing $step1 $mon1
+    sequence::addMonitor db testing $step2 $mon2
+    
+} \
+-cleanup {
+    commonCleanup
+    $mon1 destroy
+    $mon2 destroy
+    $sequence destroy
+} \
+-body {
+    set sequence [::sequence::runSequence db testing]
+    vwait ::exited
+    vwait ::exited
+    
+    set o1 [$mon1 getOutput]
+    set o2 [$mon2 getOutput]
+    list $o1 $o2
+} -result [list [list "Hello world" ""] [list "Hello from critical" ""]]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
