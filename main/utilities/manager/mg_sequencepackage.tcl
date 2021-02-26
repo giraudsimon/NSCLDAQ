@@ -161,7 +161,6 @@ snit::type sequence::SequenceRunner {
         
     }
     destructor {
-        puts "Destructor"
         catch {;                   # as recommended by snitfaq.
             if {[$self isActive]} {
                 $self abort
@@ -204,14 +203,14 @@ snit::type sequence::SequenceRunner {
         
         # Special case - if there are no sequence steps, we're already done:
         
-        puts "Starting $options(-name)"
+        
         if {[llength $options(-steps)] == 0} {
-            puts "Empty so dispatching to end"
+        
             $self _dispatchEnd OK
         } else {
             set currentStep 0
             set active      1
-            set afterid     [after 0 {$self _preDelay}];   #schedule from the event loop.    
+            set afterid     [after 0 [mymethod _preDelay]];   #schedule from the event loop.    
         }
         
     }
@@ -220,12 +219,13 @@ snit::type sequence::SequenceRunner {
     #    Abort the sequence. An error is thrown if the sequence is not active.
     #
     # @param reason - optional - reason for the abort.
-    method abort {{reason {Programattically aborted}}} {
+    method abort {{reason {Programatically aborted}}} {
         if {![$self isActive]} {
             error "sequence::SequenceRunner::abort - $options(-name) is not active"
         }
         after cancel $afterid
         set afterid -1
+        set active 0
         
         $self _dispatchEnd ABORT $reason
     }
@@ -253,7 +253,7 @@ snit::type sequence::SequenceRunner {
     method _preDelay {} {
         set step [lindex $options(-steps) $currentStep]
         set waitSecs [dict get $step predelay]
-        set afterid [after [expr {$waitSecs * 1000} $self _runProgram]]
+        set afterid [after [expr {$waitSecs * 1000}] [mymethod _runProgram]]
         
     }
     ##
@@ -261,18 +261,20 @@ snit::type sequence::SequenceRunner {
     #
     method _runProgram {} {
         set step [lindex $options(-steps) $currentStep]
+        set seq $options(-name)
         set programName [dict get $step program_name]
         set status [catch {
-            ::program::run  $programName [list   \
-                ::sequence::_outputHandler $options(-database) [::sequence_monitorIndex $seq $currentStep]
+            ::program::run $options(-database)  $programName [list   \
+                ::sequence::_outputHandler $options(-database) [::sequence::_monitorIndex $seq $currentStep] \
+            ]
         } msg]
         if {$status} {
-            $self _abort "Unable to start program $programName : $msg"
+            $self abort "Unable to start program $programName : $msg"
         }
         
         # Now that the program is up and running schedule the post delay:
         
-        set afterid [after 0 $self _postDelay]
+        set afterid [after 0 [mymethod _postDelay]]
     }
     ##
     #  Pause sequence execution the length of any post run delay specified by the
@@ -280,15 +282,15 @@ snit::type sequence::SequenceRunner {
     #
     method _postDelay {} {
         set step [lindex $options(-steps) $currentStep]
-        set waitSecs [dict get $step postDelay]
-        set afterid [after [expr {$waitSecs * 1000}] $self _stepDone]
+        set waitSecs [dict get $step postdelay]
+        set afterid [after [expr {$waitSecs * 1000}] [mymethod _stepDone]]
     }
     method _stepDone {} {
         incr currentStep
         if {$currentStep < [llength $options(-steps)]} {
             # More steps
             
-            set afterid [after 0 $self _preDelay]
+            set afterid [after 0 [mymethod _preDelay]]
             
         } else {
             # Done.
@@ -565,7 +567,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     } else {
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        get $fd
+        gets $fd
         chan configure $fd -blocking $blocking
     }
     
@@ -1190,7 +1192,7 @@ proc ::sequence::addMonitor {db seq step {monitor {}}} {
 #
 proc ::sequence::runSequence {db name {endproc {}}} {
     # Get sequence information then create and start a sequence runner:
-    puts "Run Sequence"
+
     set result "";                          # Retval if no steps.
     set seqSteps [::sequence::listSteps $db $name];    # Fails if invalid seq.
     set result [::sequence::SequenceRunner %AUTO \

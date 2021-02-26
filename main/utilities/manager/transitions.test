@@ -132,6 +132,29 @@ tcltest::test runseq_1 {Run an empty sequence - should be successful.} \
     ::sequence::runSequence db testing testing_ended
     set completion;                  # Immediate completion without event loop
 } -result OK
+
+tcltest::test runseq_2 {Run an sequence with a single transient step} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    ::sequence::addStep db testing echo 0 0
+    proc testing_ended {runner status {text {}}} {
+        set ::completion $status
+        $runner destroy
+        if {$status ne "OK"} {
+            puts "Step failed: $text"
+        }
+    }
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    ::sequence::runSequence db testing testing_ended
+    vwait completion
+    set completion
+} -result OK
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
