@@ -261,11 +261,14 @@ snit::type sequence::SequenceRunner {
     #
     method _runProgram {} {
         set step [lindex $options(-steps) $currentStep]
+        set stepNum [dict get $step step]
         set seq $options(-name)
+        set seqid [::sequence::_getSeqId $options(-database) $seq]
         set programName [dict get $step program_name]
         set status [catch {
             ::program::run $options(-database)  $programName [list   \
-                ::sequence::_outputHandler $options(-database) [::sequence::_monitorIndex $seq $currentStep] \
+                ::sequence::_outputHandler $options(-database) \
+                    [::sequence::_monitorIndex $seqid $stepNum] \
             ]
         } msg]
         if {$status} {
@@ -558,12 +561,11 @@ proc ::sequence::_TransitionComplete {how} {
 # @param fd      - File descriptor that is readable that will give program output.
 #
 proc ::sequence::_outputHandler {db monitorIndex program fd} {
-    
     #   If there is a user program monitor let it handle the input.
-    
-    if {[array names ::sequence::StepMonitor $monitorIndex] eq $monitorIndex} {
-        set monitor $::sequenceStepMonitor($monitorIndex)
-        $monitor onOutput $db $program $fd
+    parray ::sequence::StepMonitors
+    if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
+        set monitor $::sequence::StepMonitors($monitorIndex)
+        uplevel #0 [list $monitor onOutput $db $program $fd]
     } else {
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
@@ -581,9 +583,9 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     if {[eof $fd]} {
         set programInfo [::program::getdef $db $program ]
         
-        if {[array names ::sequence::StepMonitor $monitorIndex] eq $monitorIndex} {
-            set monitor $::sequence::StepMonitor($monitorIndex)
-            $monitor onExit $db $programInfo $fd
+        if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
+            set monitor $::sequence::StepMonitors($monitorIndex)
+            uplevel #0 [$monitor onExit $db $programInfo $fd]
         }
         if {[dict get $programInfo type] eq "Critical"} {
             ::sequence::transition $db SHUTDOWN;    # Critical so shutdown everything.

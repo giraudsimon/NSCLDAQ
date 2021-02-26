@@ -155,6 +155,35 @@ tcltest::test runseq_2 {Run an sequence with a single transient step} \
     vwait completion
     set completion
 } -result OK
+
+tcltest::test runseq_3 {Sequence with Monitor on the single step} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    set output ""
+    set step [::sequence::addStep db testing echo 1 2]
+    snit::type runseq3Monitor {
+        method onOutput {db program fd} {
+            lappend ::output [gets $fd]
+            
+        }
+        method onExit {db programInfo $fd} {
+            set ::exited [dict get $programInfo name]
+        }
+    }
+    set mymon [runseq3Monitor %AUTO%]
+    ::sequence::addMonitor db testing $step $mymon
+} \
+-cleanup {
+    commonCleanup
+    $mymon destroy
+} \
+-body {
+    ::sequence::runSequence db testing
+    vwait output
+    vwait exited
+    list $output $exited
+} -result [list [list "Hello world" ""] echo]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
