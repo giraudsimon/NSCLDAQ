@@ -591,12 +591,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
             ::sequence::transition $db SHUTDOWN;    # Critical so shutdown everything.
         }
     }
-}
-    
-
-    
-
-    
+}  
 ##
 # ::sequence::_stateExists
 #   Returns true if a state name already exists.

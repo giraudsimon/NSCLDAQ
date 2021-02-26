@@ -253,7 +253,6 @@ proc ::program::_handleContainerInput {container host fd} {
 #
 proc ::program::_outputWrapper {name fd} {
     if {[array names  ::program::outputHandlers $name] eq $name} {
-        puts "Calling $::program::outputHandlers($name) $name $fd"
         uplevel #0 $::program::outputHandlers($name) $name $fd
     } else {
         set blocking [chan configure $fd -blocking]
