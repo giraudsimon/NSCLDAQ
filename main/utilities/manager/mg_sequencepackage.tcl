@@ -592,6 +592,7 @@ proc ::sequence::_TransitionComplete {how} {
 proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #   If there is a user program monitor let it handle the input.
     
+    
     if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
         set monitor $::sequence::StepMonitors($monitorIndex)
         uplevel #0 [list $monitor onOutput $db $program $fd]

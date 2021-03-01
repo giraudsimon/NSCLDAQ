@@ -276,7 +276,6 @@ tcltest::test transition_3 {SHUTDOWN->BOOT with an empty sequence.} \
     ::sequence::add db Boot BOOT
     set endstatus ""
     proc tend_3 {db obj status} {
-        puts tend3
         set ::endstatus $status
     }
 } \
@@ -285,10 +284,44 @@ tcltest::test transition_3 {SHUTDOWN->BOOT with an empty sequence.} \
 } \
 -body {
     ::sequence::transition db BOOT tend_3
-    puts vwait
     vwait endstatus
     set endstatus
 } -result OK
+
+tcltest::test transition_4 {SHUTDOWN->BOOT with a sequence with a step.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set step [::sequence::addStep db Boot echo 0 1];   # Post delay allows output.
+    set output [list]
+    set echodone [list]
+    snit::type mont_1 {
+        method onOutput {db name fd} {
+            set o [gets $fd]
+            lappend ::output $o
+        }
+        method onExit {db program fd} {
+            set ::echodone 1
+        }
+    }
+    set t4mon [mont_1 %AUTO%]
+    ::sequence::addMonitor db Boot $step $t4mon
+    
+    set t4end ""
+    proc t4done {db obj status} {
+        set ::t4end $status
+    }
+    
+} \
+-cleanup {
+    $t4mon destroy
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT t4done
+    vwait t4end
+    set output
+} -result [list "Hello world" ""]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
