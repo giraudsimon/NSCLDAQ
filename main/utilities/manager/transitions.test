@@ -362,6 +362,76 @@ tcltest::test transition_5 {SHUTDOWN->BOOT with a sequence that has more than on
     vwait t5end
     list $output(echo) $output(echo2) $t5end
 } -result [list [list "Hello world" ""] [list "This is echo" ""] OK]
+
+tcltest::test transition_6 {SHUTDOWN->BOOT with two sequences.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot1 BOOT
+    ::sequence::add db Boot2 BOOT
+    set step1 [::sequence::addStep db Boot1 echo 0 1]
+    set step2 [::sequence::addStep db Boot2 echo2 0 1]
+    
+    catch {array unset output *}
+    array set output [list]
+    set smon [mont_5 %AUTO%]
+    ::sequence::addMonitor db Boot1 $step1 $smon
+    ::sequence::addMonitor db Boot2 $step2 $smon
+    
+    set t6end ""
+    proc t6done {db obj status} {
+        set ::t6end $status
+    }
+} \
+-cleanup {
+    $smon destroy
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT t6done
+    vwait t6end
+    list $output(echo) $output(echo2) $t6end
+} -result [list [list "Hello world" ""] [list "This is echo" ""] OK]
+
+tcltest::test transition_7 {SHUTDOWN -> BEGIN Is an illegal transition.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BEGIN
+} -result * -match glob -returnCodes error
+
+tcltest::test transition_8 {Transition when in progress is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BEGIN
+    ::sequence::transition db BEGIN
+} -result * -match glob -returnCodes error
+
+tcltest::test transition_9 {SHUTDOWN is always ok.} \
+-setup {
+    commonSetup
+    set done 0
+    proc t9done {db object status} {
+        set ::done $status
+    }
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    ::sequence::transition db BOOT
+    ::sequence::transition db SHUTDOWN t9done
+    
+} -result -1
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

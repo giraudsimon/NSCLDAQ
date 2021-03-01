@@ -556,6 +556,9 @@ snit::type ::sequence::ShutdownManager {
 #       We hope for OK.
 #
 proc ::sequence::_TransitionComplete {how} {
+    if {$::sequence::currentTransitionManager eq ""} {
+        return;             # Was aborted in some way.
+    }
     set db [$::sequence::currentTransitionManager cget -database]
     set transition [$::sequence::currentTransitionManager cget -type]
     $::sequence::currentTransitionManager destroy
@@ -1280,19 +1283,21 @@ proc ::sequence::transition {db transition {endscript {}}} {
     #  progress is an error:
     
     if {$::sequence::currentTransitionManager ne ""} {
-        set currentType [$::sequence::currentTransitionManager cget -transition]
+        set currentType [$::sequence::currentTransitionManager cget -type]
         if {($transition eq "SHUTDOWN") && ($currentType eq "SHUTDOWN") } {
             
             return  -1
         }
-        error "A transition of type $currentType is still in progress."
+        if {$transition ne "SHUTDOWN"} {
+            error "A transition of type $currentType is still in progress."
+        }
     }
     #  If this is a shutdown and there's a current transition;
     #  abort it now:
     #
     if {$::sequence::currentTransitionManager ne ""} {
-        $::sequence::currentTransitionManager abort;
-        $::sequence::currentTransitionManager destroy
+        catch {$::sequence::currentTransitionManager abort;}
+        catch {$::sequence::currentTransitionManage destroy}
         set ::sequence::currentTransitionManager [list]
     }
     
