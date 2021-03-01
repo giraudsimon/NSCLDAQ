@@ -70,7 +70,8 @@ package require snit
 #
 # ::sequenace::reachable    - Determines if a state is reachable in the transition
 #                            diagram.
-#
+# ::sequence::listReachableStates - List states one can reach from a Specified state.
+# ::sequence::listLegalFromStates - Lists states that can transition to a specific state.
 # ::sequence::listStates    - Lists the set of known states.
 # ::sequence::listLegalNextStates - Given the current state lists legal next states
 # ::sequence::isLegalTransition - Determines if a proposed state transition is legal.
@@ -1057,6 +1058,42 @@ proc ::sequence::reachable {db name} {
     }]
     return $result
 }
+##
+# ::sequence::listReachableStates
+#    List states that can be reached from a specific state.
+#
+# @param db   - database command.
+# @param state- Initial state from which we list the reacable ones.
+# @return list of strings - possible from states.
+#
+proc ::sequence::listReachableStates {db state} {
+    $db eval {
+        SELECT name FROM transition_name
+        WHERE id IN (
+            SELECT to_id FROM legal_transition
+            INNER JOIN transition_name ON from_id = id
+            WHERE name = $state
+        )
+    }
+}
+##
+# ::sequence::listLegalFromStates
+#   List the states that can be precursors to a specific state.
+# @param db  -  database command.
+# @param state - State we want the precursors for.
+# @return list of strings - state names that can transition to the state.
+#
+proc ::sequence::listLegalFromStates {db state} {
+    $db eval {
+        SELECT name FROM transition_name
+        WHERE id IN (
+            SELECT from_id FROM legal_transition
+            INNER JOIN transition_name ON to_id = id
+            WHERE name = $state
+        )
+    }    
+}
+
 ##
 # ::sequence::listStates
 #    @param db  - database command.
