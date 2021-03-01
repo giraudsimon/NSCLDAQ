@@ -42,6 +42,8 @@ proc commonSetup { } {
     ::program::add db echo /bin/echo Transitory localhost [dict create \
         parameters [list Hello world]                                   \
     ]
+    ::program::add db echo2 /bin/echo Transitory localhost [dict create \
+        parameters [list This is echo]]
     ::program::add db criticalEcho /bin/echo Critical localhost [dict create \
         parameters [list Hello from critical]                       \
     ]
@@ -293,6 +295,7 @@ tcltest::test transition_4 {SHUTDOWN->BOOT with a sequence with a step.} \
     commonSetup
     ::sequence::add db Boot BOOT
     set step [::sequence::addStep db Boot echo 0 1];   # Post delay allows output.
+    catch {unset output}
     set output [list]
     set echodone [list]
     snit::type mont_1 {
@@ -322,6 +325,43 @@ tcltest::test transition_4 {SHUTDOWN->BOOT with a sequence with a step.} \
     vwait t4end
     set output
 } -result [list "Hello world" ""]
+
+tcltest::test transition_5 {SHUTDOWN->BOOT with a sequence that has more than one step.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set step1 [::sequence::addStep db Boot echo 0 1]
+    set step2 [::sequence::addStep db Boot echo2 0 1]
+    
+    catch {unset output}
+    array set output [list]
+    
+    snit::type mont_5 {
+        method onOutput {db name fd} {
+            lappend ::output($name) [gets $fd]
+        }
+        method onExit {db program fd} {}
+    }
+    set smon [mont_5 %AUTO%]
+    ::sequence::addMonitor db Boot $step1 $smon
+    ::sequence::addMonitor db Boot $step2 $smon
+    
+    set t5end ""
+    proc t5done {db obj status} {
+        set ::t5end $status
+    }
+} \
+-cleanup {
+    $smon destroy
+    commonCleanup
+
+} \
+-body {
+    ::sequence::transition db BOOT t5done
+    
+    vwait t5end
+    list $output(echo) $output(echo2) $t5end
+} -result [list [list "Hello world" ""] [list "This is echo" ""] OK]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
