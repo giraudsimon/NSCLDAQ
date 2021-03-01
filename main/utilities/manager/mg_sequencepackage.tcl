@@ -391,9 +391,17 @@ snit::type sequence::TransitionManager {
         if {$active} {
             error "Transition to $options(-type) is already active."
         }
-        set active 1
-        set SequenceIndex 0
-        $self _executeSequence
+        if {[llength $Sequences] == 0} {
+            #  This after ensures that if someone runs an evnt loop that
+            #  depends on e.g. a completion routine to notify done, that
+            #  this works.
+            
+            after 0 [mymethod _completeTransition OK]
+        } else  {
+            set active 1
+            set SequenceIndex 0
+            $self _executeSequence
+        }
     }
     ##
     # abort
@@ -502,10 +510,10 @@ snit::type sequence::TransitionManager {
     method _completeTransition {how} {
         # Run any user end transition script.
         
-        set userscript $options(-endscsript)
+        set userscript $options(-endscript)
         if {$userscript ne ""} {
-            lappend endscript $options(-db) $self $how
-            uplevel #0 $endscript
+            lappend userscript $options(-database) $self $how
+            uplevel #0 $userscript
         }
         #  Business logic method:
         
@@ -513,6 +521,25 @@ snit::type sequence::TransitionManager {
     }
     
 }
+
+##
+# @class ShutdownManager
+#    Special transition manager for shutting the system down.
+#
+snit::type ::sequence::ShutdownManager {
+    component manager;       # Transition manager.
+    
+    #  I'm less certain now that there's really a difference
+    #  Since TransitionManager has scads of special SHUTDOWN transition cases.
+    
+    delegate option * to manager
+    delegate method * to manager
+    constructor args {
+        install manager using ::sequence::TransitionManager %AUTO% $args
+    }
+}
+    
+
 
 #-------------------------------------------------------------------------------
 #  Utiltities not intended to be used by package clients.
@@ -531,7 +558,7 @@ proc ::sequence::_TransitionComplete {how} {
     set db [$::sequence::currentTransitionManager cget -database]
     set transition [$::sequence::currentTransitionManager cget -type]
     $::sequence::currentTransitionManager destroy
-    set $::sequence::currentTransitionManager [list]
+    set ::sequence::currentTransitionManager [list]
 
     # If a failure (SHUTDOWN can't fail) then start a SHUTDOWN transition.
     
@@ -1288,14 +1315,14 @@ proc ::sequence::transition {db transition {endscript {}}} {
                 -endscript $endscript                                         \
         ]
     } else {
-        set ::sequence::currentTransitionMonitor [                            \
-            ::sequence::TransitionManager $AUTO% -database db -type $transition \
+        set ::sequence::currentTransitionManager [                            \
+            ::sequence::TransitionManager %AUTO% -database db -type $transition \
                 -endscript $endscript
         ]   
     }
     #  Start the transition and let the event loop do the rest:
     
-    $::sequence::currentTransitionMonitor start
+    $::sequence::currentTransitionManager start
     
     return 0
 }

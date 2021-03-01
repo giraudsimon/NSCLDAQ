@@ -251,6 +251,23 @@ tcltest::test transition_1 {Transition SHUTDOWN->SHUTDOWN} \
     sequence::transition db SHUTDOWN
 } -result -1
 
+tcltest::test transition_2 {Transition SHUTDOWN->BOOT with no sequences.} \
+-setup {
+    commonSetup
+    set endstatus ""
+    proc transition_1 {db obj status} {
+        set ::endstatus $status
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::transition db BOOT transition_1
+    puts vwait
+    vwait endstatus
+    set endstatus
+} -result OK
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
