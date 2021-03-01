@@ -74,6 +74,7 @@ package require snit
 # ::sequence::listStates    - Lists the set of known states.
 # ::sequence::listLegalNextStates - Given the current state lists legal next states
 # ::sequence::isLegalTransition - Determines if a proposed state transition is legal.
+# ::sequence::currentState   - Return current state name.
 # ::sequence::listSequences - Lists the known sequences.
 # ::sequence::listSteps     - List steps in a sequence.
 # ::sequence::transition    - Perform  a transition
@@ -1064,6 +1065,18 @@ proc ::sequence::isLegalTransition {db next} {
     return [expr {$next in $legal}]
 }
 ##
+# ::sequenceCurrentState
+#    Return current state name.
+# @param db - database command.
+# @return string - name of current transition.
+#
+proc ::sequence::currentState {db} {
+    db eval {
+        SELECT name FROM transition_name
+        INNER JOIN last_transition ON state = id
+    }
+}
+##
 # ::sequence::listSequences
 #     List the set of sequences.
 # @param db  - database command.
@@ -1230,8 +1243,9 @@ proc ::sequence::runSequence {db name {endproc {}}} {
 #       -   A status which can be either OK, ABORTED or FAILED indicating how
 #           the transition ended. Note that SHUTDOWN does not admit to failures.
 #
-#
-proc ::sequence::transition {db transition {endscript{}}} {
+#   @return int - 0 if the transition was started -1 if the transition was
+#                   redundant (e.g. SHUTDOWn when state was SHUTDOWN.)
+proc ::sequence::transition {db transition {endscript {}}} {
     
     #  If there's a shutdown in progress ignore it. Any other transition in
     #  progress is an error:
@@ -1239,7 +1253,8 @@ proc ::sequence::transition {db transition {endscript{}}} {
     if {$::sequence::currentTransitionManager ne ""} {
         set currentType [$::sequence::currentTransitionManager cget -transition]
         if {($transition eq "SHUTDOWN") && ($currentType eq "SHUTDOWN") } {
-                return 
+            
+            return  -1
         }
         error "A transition of type $currentType is still in progress."
     }
@@ -1261,6 +1276,13 @@ proc ::sequence::transition {db transition {endscript{}}} {
     #  Now create and start the correct transition type:
     
     if {$transition eq "SHUTDOWN"} {
+        #  If the current state is SHUTDOWN don't do anything:
+        
+        if {[::sequence::currentState $db] eq "SHUTDOWN"} {
+            return -1
+        }
+        
+        
         set ::sequence::currentTransitionManager [                            \
             sequence::ShutdownManager %AUTO% -database db                     \
                 -endscript $endscript                                         \
@@ -1274,4 +1296,6 @@ proc ::sequence::transition {db transition {endscript{}}} {
     #  Start the transition and let the event loop do the rest:
     
     $::sequence::currentTransitionMonitor start
+    
+    return 0
 }

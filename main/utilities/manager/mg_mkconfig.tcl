@@ -170,10 +170,11 @@ proc sequences {db} {
     #
     array set legalTransition [list                                   \
         BOOT [list SHUTDOWN HWINIT]                                   \
-        SHUTDOWN BOOT                                                 \
+        SHUTDOWN [list SHUTDOWN BOOT]                                 \
         HWINIT [list SHUTDOWN BEGIN]                                  \
         BEGIN  [list SHUTDOWN END]                                    \
         END    [list SHUTDOWN BEGIN HWINIT]                           \
+
     ]
     
     $db eval {

@@ -236,6 +236,21 @@ tcltest::test runseq_5 {Bad sequence.} \
 -body {
     sequence::runSequence db testing
 } -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+#  Tests of transitions.
+
+tcltest::test transition_1 {Transition SHUTDOWN->SHUTDOWN} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::transition db SHUTDOWN
+} -result -1
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
