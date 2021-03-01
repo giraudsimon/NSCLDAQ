@@ -120,6 +120,7 @@ tcltest::test runseq_1 {Run an empty sequence - should be successful.} \
 -setup {
     commonSetup
     ::sequence::add db testing SHUTDOWN
+    set completion ""
     proc testing_ended {runner status {text {}}} {
         set ::completion $status
         $runner destroy
@@ -130,6 +131,7 @@ tcltest::test runseq_1 {Run an empty sequence - should be successful.} \
 } \
 -body {
     ::sequence::runSequence db testing testing_ended
+    vwait completion
     set completion;                  # Immediate completion without event loop
 } -result OK
 
@@ -264,6 +266,25 @@ tcltest::test transition_2 {Transition SHUTDOWN->BOOT with no sequences.} \
 } \
 -body {
     sequence::transition db BOOT transition_1
+    vwait endstatus
+    set endstatus
+} -result OK
+
+tcltest::test transition_3 {SHUTDOWN->BOOT with an empty sequence.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set endstatus ""
+    proc tend_3 {db obj status} {
+        puts tend3
+        set ::endstatus $status
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT tend_3
     puts vwait
     vwait endstatus
     set endstatus

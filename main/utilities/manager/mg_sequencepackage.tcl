@@ -207,7 +207,7 @@ snit::type sequence::SequenceRunner {
         
         if {[llength $options(-steps)] == 0} {
         
-            $self _dispatchEnd OK
+           after 0 [mymethod _dispatchEnd OK]
         } else {
             set currentStep 0
             set active      1
@@ -314,7 +314,8 @@ snit::type sequence::SequenceRunner {
     method _dispatchEnd {why {reason {}} } {
         set userscript $options(-endcommand)
         if {$userscript ne ""} {
-            uplevel #0 [list $userscript $self $why $reason]
+            lappend userscript $self $why $reason
+            uplevel #0 $userscript
         }
     }
 }
@@ -456,8 +457,8 @@ snit::type sequence::TransitionManager {
         set seqName [lindex $Sequences $SequenceIndex]
         set steps \
             [::sequence::listSteps $options(-database) $seqName]
-        set CurrentSequence [sequence::SequenceRunner %AUTO%        \
-            $options(-database) -name $seqName -steps $steps        \
+        set CurrentSequence [sequence::SequenceRunner %AUTO%                  \
+            -database $options(-database) -name $seqName -steps $steps        \
             -endcommand [mymethod _sequenceCompleted]]
         $CurrentSequence start
     }
@@ -491,7 +492,7 @@ snit::type sequence::TransitionManager {
         #  down and we need to keep on keeping on.
         
         incr SequenceIndex
-        if {$SequenceIndex < [llength $Squences]} {
+        if {$SequenceIndex < [llength $Sequences]} {
             $self _executeSequence;          # next sequence.
         } else {
             # done!
