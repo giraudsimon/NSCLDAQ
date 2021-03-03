@@ -393,7 +393,28 @@ proc addPrecursor {db current proposed existing} {
     ::sequence::newTransition $db $proposed $current
     return 1
 }
-
+##
+# addState
+#   Called when the user asks to add a new state.  This is ok as long
+#   as the state does not yet exist.  If the state is not in the list
+#   of existing states, it's added to the database and allowed.
+#
+# @param db       - database command.
+# @param proposed - proposed new state.
+# @param existing - existing states.
+# @return bool - true if the new state is allowed.
+#
+proc addState {db proposed existing} {
+    if {$proposed in $existing} {
+        tk_messageBox -parent . -title "Already exists" -icon error -type ok \
+            -message "$proposed is already a state.  "  
+        return 0
+    }
+    
+    ::sequence::newState $db $proposed
+    return 1
+    
+}
 #-------------------------------------------------------------------------------
 # Entry point.
 
@@ -418,7 +439,8 @@ set currentStates [::sequence::listStates db]
 
 ttk::frame .workarea
 StateEditor .workarea.editor -states $currentStates \
-    -selectcommand _selectState -precursorvalidate [list addPrecursor db]
+    -selectcommand _selectState -precursorvalidate [list addPrecursor db] \
+    -statevalidate [list addState db]
 grid .workarea.editor -sticky nsew
 ttk::frame .actions
 ttk::button .actions.exit -text Exit -command _exit
