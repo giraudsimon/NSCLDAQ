@@ -279,8 +279,8 @@ snit::widgetadaptor StateEditor {
             set script $options(-successorvalidate)
             if {$script ne ""} {
                 set state [$states get [lindex $selstate 0]]
-                set successors [$successors get 0 end]
-                lappend script $state $proposed $successors
+                set existingSuccessors [$successors get 0 end]
+                lappend script $state $proposed $existingSuccessors
                 set valid [uplevel #0 $script]
             }
             
@@ -415,6 +415,35 @@ proc addState {db proposed existing} {
     return 1
     
 }
+##
+# addSuccessor
+#    Called when the user asks to add a successor state to the selecdted state.
+#    This is ok as long as the proposed successor is a known state and
+#    is not already a  successor state.
+#
+# @param db         - The database command.
+# @param state      - Selected state.
+# @param proposed   - The proposed new successor.
+# @param successors - Current successor states to $state.
+# @return boolean   - true if we approve of adding the successor.
+#
+proc addSuccessor {db state proposed successors} {
+    if {$proposed in $successors} {
+        tk_messageBox -parent . -title "Already successor" -icon info \
+            -type ok -message "$proposed is already a successor to $state"
+        return 0
+    }
+    # Must be a valid state:
+    
+    set states [::sequence::listStates $db]
+    if {$proposed ni $states} {
+        tk_messageBox -parent . -title "No such state " -icon error \
+            -type ok -message "$proposed is not a known state."
+        return 0
+    }
+    ::sequence::newTransition $db $state $proposed
+    return 1
+}
 #-------------------------------------------------------------------------------
 # Entry point.
 
@@ -440,7 +469,7 @@ set currentStates [::sequence::listStates db]
 ttk::frame .workarea
 StateEditor .workarea.editor -states $currentStates \
     -selectcommand _selectState -precursorvalidate [list addPrecursor db] \
-    -statevalidate [list addState db]
+    -statevalidate [list addState db] -successorvalidate [list addSuccessor db]
 grid .workarea.editor -sticky nsew
 ttk::frame .actions
 ttk::button .actions.exit -text Exit -command _exit
