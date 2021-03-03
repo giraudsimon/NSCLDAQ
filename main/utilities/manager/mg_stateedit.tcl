@@ -249,8 +249,8 @@ snit::widgetadaptor StateEditor {
             set script $options(-precursorvalidate)
             if {$script ne ""} {
                 set state [$states get [lindex $selstate 0]]
-                set precusrors [$precorsors get 0 end]
-                lappend $script $state $proposed $precursors
+                set existingPrior [$precursors get 0 end]
+                lappend script $state $proposed $existingPrior
                 set valid [uplevel #0 $script]
             }
             
@@ -280,7 +280,7 @@ snit::widgetadaptor StateEditor {
             if {$script ne ""} {
                 set state [$states get [lindex $selstate 0]]
                 set successors [$successors get 0 end]
-                lappend $script $state $proposed $successors
+                lappend script $state $proposed $successors
                 set valid [uplevel #0 $script]
             }
             
@@ -317,3 +317,112 @@ snit::widgetadaptor StateEditor {
         }
     } 
 }
+#-------------------------------------------------------------------------------
+# Utility procs
+
+
+
+##
+# Usage
+#   Describes the program usage on stderr and exits.
+# @param msg - error message to precede the usage info
+#
+proc Usage {msg} {
+    puts stderr $msg
+    puts stderr "Usage:"
+    puts stderr {   $DAQBIN/mg_statedit configuration-file}
+    puts stderr " Edits the run state machine to support special needs"
+    puts stderr "Where:"
+    puts stderr "   configuration-file - is an experiment configuration file database"
+    exit -1
+}
+##
+# _exit
+#   Prompt for confirmation and if so, exit.
+#
+proc _exit { } {
+    set reply [tk_messageBox -parent . -title {Really exit?} -icon question \
+        -type yesno -message {Are you sure you want to exit?} ]
+    if {$reply eq "yes"} {
+        exit 0
+    }
+}
+##
+# _selectState
+#    Called when a state is selected.  We return a two element list.
+#    The first element of the list is the set of valid precursor states.
+#    the second element of the list is the set of valid successor states.
+# @param state - new selected state.
+# @return list of lists  - see above.
+#
+proc _selectState {state} {
+   set successors [::sequence::listReachableStates db $state]
+   set precursors [::sequence::listLegalFromStates db $state]
+   
+   return [list $precursors $successors]
+}
+
+##
+#  addPrecursor
+#    Called when a new precursor is recommended.
+#    - If the precursor is not an existing state yell -> false
+#    - If the precursor is already a a precursor yell -> false.
+#    - Add the valid precursor to the database.
+#    - Return true allowing the precursor to be added to the database.
+#
+# @param db        - database command.
+# @param current   - Current state.
+# @param proposed  - Proposed, new precursor.
+# @param existing  - Existing precursor states.
+# @return bool     - true if the state is acceptable.
+proc addPrecursor {db current proposed existing} {
+    set allowedStates [::sequence::listStates $db]
+    if {$proposed ni $allowedStates} {
+        tk_messageBox -parent . -title "Invalid state" -type ok -icon error \
+            -message "$proposed is not yet a defined state"
+        return 0
+    }
+    if {$proposed in $existing} {
+        tk_messageBox -parent . -title "Existing state" -type ok -icon info \
+            -message "$proposed is already a precursor for $current"
+        return 0
+    }
+    
+    ## The state is allowed add it
+    
+    ::sequence::newTransition $db $proposed $current
+    return 1
+}
+
+#-------------------------------------------------------------------------------
+# Entry point.
+
+if {[llength $argv] != 1} {
+    Usage "Incorrect number of command line parameters"
+}
+
+
+set status [catch {sqlite3 db [lindex $argv 0]} msg]
+if {$status} {
+    Usage $msg
+}
+
+#  The database command is now db and we can continue.
+
+#  In order to build our state editor we need to know the current set of states.
+#
+set currentStates [::sequence::listStates db]
+
+#  Now setup the user interface.
+#  This is a StateEditor widget with an Exit button at the bottom:
+
+ttk::frame .workarea
+StateEditor .workarea.editor -states $currentStates \
+    -selectcommand _selectState -precursorvalidate [list addPrecursor db]
+grid .workarea.editor -sticky nsew
+ttk::frame .actions
+ttk::button .actions.exit -text Exit -command _exit
+grid  .actions.exit -sticky w
+grid .workarea -sticky nsew
+grid .actions  -sticky nsew
+
