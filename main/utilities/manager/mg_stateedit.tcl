@@ -76,6 +76,9 @@ package require sqlite3
 #                         Called with proposed new successor state as a
 #                         parameter, return true if it's ok.
 #    -statevalidate  - script to validate
+#    -deletestatecommand - Command to handle state deletion.
+#    -deletetransitioncommand - Command to handle transition deletion.
+#
 #
 # METHODS
 #    getSelection - returns the selected statename in the middle list box.
@@ -92,6 +95,10 @@ snit::widgetadaptor StateEditor {
     option -precursorvalidate -default [list]
     option -successorvalidate -default [list]
     option -statevalidate -default [list]
+    option -deletestatecommand -default [list]
+    option -deletetransitioncommand -default [list]
+    
+    variable lastSelected ""
     
     constructor args {
         installhull using ttk::frame
@@ -100,9 +107,10 @@ snit::widgetadaptor StateEditor {
         
         ttk::label $win.ptitle -text "Precursor states"
         install precursors using listbox $win.precursors \
-            -selectmode none -yscrollcommand [list $win.pscroll set]
+            -selectmode single -yscrollcommand [list $win.pscroll set]
         ttk::scrollbar $win.pscroll -command [list $precursors yview] \
             -orient vertical
+        ttk::button $win.delpre -text "-" -command [mymethod _deletePrecursor]
         ttk::entry $win.pentry
         ttk::button $win.padd -text + -command [mymethod _addPrecursor]  -width 1
         
@@ -113,6 +121,7 @@ snit::widgetadaptor StateEditor {
             -selectmode single -yscrollcommand [list $win.sscroll set]
         ttk::scrollbar $win.sscroll -command [list $states yview] \
             -orient vertical
+        ttk::button $win.delstate -text "-" -command [mymethod _deleteState]
         ttk::entry $win.sentry
         ttk::button $win.sadd -text + -command [mymethod _addState]  -width 1
         
@@ -120,9 +129,10 @@ snit::widgetadaptor StateEditor {
         
         ttk::label $win.suctitle -text "Successor states"
         install successors using listbox $win.successors \
-            -selectmode none -yscrollcommand [list $win.sucscroll set]
+            -selectmode single -yscrollcommand [list $win.sucscroll set]
         ttk::scrollbar $win.sucscroll -orient vertical \
             -command [list $successors  yview]
+        ttk::button $win.delsuc -text "-" -command [mymethod _deleteSuccessor]
         ttk::entry $win.sucentry
         ttk::button $win.sucadd -text + -command [mymethod _addSuccessor] -width 1
         
@@ -133,6 +143,10 @@ snit::widgetadaptor StateEditor {
         grid $win.suctitle -row 0 -column 4 -columnspan 2 -sticky w
         
         grid $precursors $win.pscroll $states $win.sscroll $successors $win.sucscroll -sticky nsw
+        
+        grid $win.delpre -row 2 -column 0
+        grid $win.delstate -row 2 -column 2
+        grid $win.delsuc -row 2 -column 4
         
         grid $win.pentry $win.padd $win.sentry $win.sadd $win.sucentry $win.sucadd
         
@@ -190,7 +204,7 @@ snit::widgetadaptor StateEditor {
         return [$successors get 0 end]
     }
     #-------------------------------------------------------------------------
-    # Event processing.
+    # Event processing.lastSelected
 
     ##
     # _onStateSelect
@@ -207,14 +221,15 @@ snit::widgetadaptor StateEditor {
         #
         #  Empty the predecessor/successor listboxes:
         #
-        $precursors delete 0 end
-        $successors delete 0 end
         
         #  Figure out the new state -- if there is one
         
         set selected [$states curselection]
         if {[llength $selected] > 0} {
-            set newState [$states get [lindex $selected 0]]
+            $precursors delete 0 end
+            $successors delete 0 end
+            set lastSelected [lindex $selected 0]
+            set newState [$states get $lastSelected]
             set script $options(-selectcommand)
             if {$script ne ""} {
                 lappend script $newState
@@ -225,6 +240,10 @@ snit::widgetadaptor StateEditor {
                 $precursors insert end {*}$pre
                 $successors insert end {*}$post
             }
+        } else {
+           # Re-assert prior selection
+           
+           $states selection set $lastSelected
         }
     }
     ##
@@ -315,7 +334,37 @@ snit::widgetadaptor StateEditor {
         if {$valid} {
             $states insert end $proposed
         }
-    } 
+    }
+    ##
+    # _deleteState
+    #   Called when the - button below the state list is clicked.  This
+    #   calls user code to delete the selected state and removes it from the
+    #   listbox.  The result is that no state is selected and
+    #   The predecessor and successor listboxes get emptied.
+    #
+    #  The user -deletestatecommand script is called with the state to be
+    #  deleted as a parameter.
+    #
+    method _deleteState {} {
+        puts "_deleteState selected: $lastSelected"
+        if {$lastSelected ne ""} {
+            puts "Processing."
+            set state [$states get $lastSelected]
+            set index $lastSelected
+            set lastSElected ""
+            $states selection clear 0 end
+            $precursors delete 0 end
+            $successors delete 0 end
+            
+            set script $options(-deletestatecommand)
+            if {$script ne ""} {
+                lappend script $state
+                puts "calling $script"
+                uplevel #0 $script
+            }
+            $states delete $index
+        }
+    }
 }
 #-------------------------------------------------------------------------------
 # Utility procs
@@ -444,6 +493,34 @@ proc addSuccessor {db state proposed successors} {
     ::sequence::newTransition $db $state $proposed
     return 1
 }
+##
+# deleteState
+#   Called to delete a state.
+# @param db     - Database command.
+# @param state  - State to delete.
+# @note all transitions to/from the state are deleted.
+#
+proc deleteState {db state} {
+    puts "Delete $state"
+    set tostates [::sequence::listReachableStates $db $state]
+    set fromstates [::sequence::listLegalFromStates $db state]
+    
+    
+    # Delete transitions into or out of:
+    
+    foreach dest $tostates {
+        puts "Delete $state -> $dest"
+        ::sequence::rmvTransition $db $state $dest
+    }
+    foreach src $fromstates {
+        puts "Delete $src -> $state"
+        ::sequence::rmvTransition $db $src $state
+    }
+
+    
+    
+    ::sequence::rmvState $db $state
+}
 #-------------------------------------------------------------------------------
 # Entry point.
 
@@ -469,7 +546,8 @@ set currentStates [::sequence::listStates db]
 ttk::frame .workarea
 StateEditor .workarea.editor -states $currentStates \
     -selectcommand _selectState -precursorvalidate [list addPrecursor db] \
-    -statevalidate [list addState db] -successorvalidate [list addSuccessor db]
+    -statevalidate [list addState db] -successorvalidate [list addSuccessor db] \
+    -deletestatecommand [list deleteState db]
 grid .workarea.editor -sticky nsew
 ttk::frame .actions
 ttk::button .actions.exit -text Exit -command _exit
