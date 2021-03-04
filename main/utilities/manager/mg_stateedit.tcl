@@ -99,6 +99,8 @@ snit::widgetadaptor StateEditor {
     option -deletetransitioncommand -default [list]
     
     variable lastSelected ""
+    variable lastSelectedPrecursor ""
+    variable lastSelectedSuccessor ""
     
     constructor args {
         installhull using ttk::frame
@@ -153,6 +155,10 @@ snit::widgetadaptor StateEditor {
         #  Configure the selection on the state widget:
         
         bind $states <<ListboxSelect>> [mymethod _onStateSelect]
+        bind $precursors <<ListboxSelect>> \
+            [mymethod _saveSelection $precursors lastSelectedPrecursor]
+        bind $successors <<ListboxSelect>> \
+            [mymethod _saveSelection $successors lastSelectedSuccessor]
         
         $self configurelist $args
         
@@ -204,8 +210,23 @@ snit::widgetadaptor StateEditor {
         return [$successors get 0 end]
     }
     #-------------------------------------------------------------------------
-    # Event processing.lastSelected
+    # Event processing
 
+    ##
+    # _saveSelection
+    #   If the specified listbox has a selection its index is saved
+    #   in the specified variable name.
+    #
+    # @param box    - list box widget that had the selection event.
+    # @param varname- Name of the variable in which to save the selection index.
+    #
+    method _saveSelection {box varname} {
+        set selected [$box curselection]
+        if {$selected ne ""} {
+            set [myvar $varname]  $selected
+        }
+    }
+    
     ##
     # _onStateSelect
     #   Called when a new state is selected in the states listbox.
@@ -218,6 +239,7 @@ snit::widgetadaptor StateEditor {
     #       into that list box.
     #
     method _onStateSelect {} {
+
         #
         #  Empty the predecessor/successor listboxes:
         #
@@ -231,6 +253,8 @@ snit::widgetadaptor StateEditor {
             set lastSelected [lindex $selected 0]
             set newState [$states get $lastSelected]
             set script $options(-selectcommand)
+            set lastSelectedPrecursor ""
+            set lastSelectedSuccessor ""
             if {$script ne ""} {
                 lappend script $newState
                 set prepost [uplevel #0 $script]
@@ -346,9 +370,9 @@ snit::widgetadaptor StateEditor {
     #  deleted as a parameter.
     #
     method _deleteState {} {
-        puts "_deleteState selected: $lastSelected"
+
         if {$lastSelected ne ""} {
-            puts "Processing."
+            
             set state [$states get $lastSelected]
             set index $lastSelected
             set lastSElected ""
@@ -359,10 +383,61 @@ snit::widgetadaptor StateEditor {
             set script $options(-deletestatecommand)
             if {$script ne ""} {
                 lappend script $state
-                puts "calling $script"
                 uplevel #0 $script
             }
             $states delete $index
+        }
+    }
+    ##
+    # _deletePrecursor
+    #    Deletes a precursor state from the selected state (if there is one).
+    #
+    #    - Determine the selected precursor,
+    #    - Determine the selected state.
+    #    - If there's a -deletetransitioncommand - invoke it with precursor
+    #      and state as parameters.
+    #    - Remove the selected state from the precursors list.
+    #
+    method _deletePrecursor {} {
+        if {$lastSelected ne "" } {
+            set state [$states get $lastSelected]
+            if {$lastSelectedPrecursor ne ""} {
+                set precursorState [$precursors get $lastSelectedPrecursor]
+                $self _deleteTransition $precursorState $state
+                $precursors delete  $lastSelectedPrecursor
+                set lastSelectedPrecursor ""
+            }
+        }
+    }
+    ##
+    # _deleteSuccessor
+    #   About the same as _deletePrecursor but:
+    #   - The first state is the selected state.
+    #   - The second state is the selected successor state.
+    #
+    method _deleteSuccessor {} {
+        if {$lastSelected ne ""}  {
+            set state [$states get $lastSelected]
+            if {$lastSelectedSuccessor ne "" } {
+                set successorState [$successors get $lastSelectedSuccessor]
+                $self _deleteTransition $state $successorState
+                $successors delete $lastSelectedSuccessor
+                set lastSelectedSuccessor ""
+            }
+        }
+    }
+    ##
+    # _deleteTransition
+    #    Call user script to delete a transition:
+    #  @param from  - from state
+    #  @param to    - to state.
+    #
+    method _deleteTransition {from to} {
+
+        set script $options(-deletetransitioncommand)
+        if {$script ne ""} {
+            lappend script $from $to
+            uplevel #0 $script
         }
     }
 }
@@ -547,7 +622,8 @@ ttk::frame .workarea
 StateEditor .workarea.editor -states $currentStates \
     -selectcommand _selectState -precursorvalidate [list addPrecursor db] \
     -statevalidate [list addState db] -successorvalidate [list addSuccessor db] \
-    -deletestatecommand [list deleteState db]
+    -deletestatecommand [list deleteState db] \
+    -deletetransitioncommand [list ::sequence::rmvTransition db]
 grid .workarea.editor -sticky nsew
 ttk::frame .actions
 ttk::button .actions.exit -text Exit -command _exit
