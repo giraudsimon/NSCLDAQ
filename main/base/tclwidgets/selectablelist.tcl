@@ -103,7 +103,7 @@ snit::widgetadaptor SelectableList {
 }
 
 ##
-# @class ItemSelector
+# @class SelectorList
 #
 #  Provides a selectable list encpasulated so the commands just get
 #  The list of the selected items rather than their indices.
