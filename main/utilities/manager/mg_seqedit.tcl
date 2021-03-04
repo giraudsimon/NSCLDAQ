@@ -33,8 +33,11 @@ package require programs
 package require Tk
 package require snit
 package require selectablelist
+package require dialogwrapper
 package require sqlite3
 
+#------------------------------------------------------------------------------
+# Megawidgets:
 
 #------------------------------------------------------------------------------
 #  Utility procs:
@@ -86,6 +89,16 @@ proc _newSequence {db newwid trigwid seqwid} {
     
     ::sequence::add $db $newName $trigName
     $seqwid insert end $newName
+}
+##
+# _sequenceSelected
+#   Reponds to a double click on a sequence.  We will bring up a sequence
+#   editing dialog and, once that's filled in, update the sequence appropriately.
+#
+# @param - seqName -name of the sequence that must be edited.
+#
+proc _sequenceSelected {seqName} {
+    puts "Would edit $seqName"
 }
 
 #------------------------------------------------------------------
