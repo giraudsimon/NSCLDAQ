@@ -102,5 +102,42 @@ snit::widgetadaptor SelectableList {
     }
 }
 
+##
+# @class ItemSelector
+#
+#  Provides a selectable list encpasulated so the commands just get
+#  The list of the selected items rather than their indices.
+#
+# OPTIONS
+#   -command - script called on double click with list of items selected.
+#
+snit::widgetadaptor SelectorList {
+    option -command [list]
+    delegate option * to hull
+    delegate method * to hull
+    
+    constructor args {
+        installhull using SelectableList
+        $hull configure -command [mymethod _dispatcher %W %S]
+        $self configurelist $args
+    }
+    ###
+    # _dispatcher
+    #    @param widget - the widget
+    #    @param sel    - selection index list.
+    #
+    method _dispatcher {widget sel} {
+        set script $options(-command)
+        if {$script ne ""} {
+            set selections [list]
+            foreach index $sel {
+                lappend selections [$widget get $index]
+            }
+            lappend script $selections
+            uplevel #0 $script
+        }
+    }
+}
+
     
 
