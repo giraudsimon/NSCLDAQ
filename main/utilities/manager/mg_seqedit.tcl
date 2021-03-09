@@ -483,6 +483,82 @@ proc _deleteStep {} {
     }
 }
 ##
+# _moveUp
+#   If the step on which the context menu posted was not the first,
+#   move it up one position in the step list.  This requires recomputing the
+#   step number, of course.  We're going to reduce the step definition dict to
+#   the set of things actually needed to define the step to the sequence::addStep#
+#   proc.
+#
+# @note we use menuX, menuY and seqEditor variables.
+#
+proc _moveUp {} {
+    variable menuX
+    variable menuY
+    variable seqEditor
+    
+    #  Which one was picked:
+    
+    set selectedStep [$seqEditor itemAt $menuX $menuY]
+    if {$selectedStep ne ""} {
+        set selectedNum [dict get $selectedStep step]
+        set existingSteps [$seqEditor cget -steps]
+        
+        set stepIndex [_locateStep $selectedNum $existingSteps]
+        if {$stepIndex > 0} {
+            #  Otherwise can't move up.
+            
+            # Get information about the step - we need to recompute the step number
+            # and put it where it belongs.
+            
+            set program [dict get $selectedStep program_name]
+            set pre     [dict get $selectedStep predelay]
+            set post    [dict get $selectedStep postdelay]
+            
+            # Two cases - this becomes the new first step or not.
+            
+            if {$stepIndex == 1} {
+                # Will be new first.
+                
+                set existingSteps [lreplace $existingSteps $stepIndex $stepIndex]
+                set firstNum  [dict get [lindex $existingSteps 0] step]
+                set stepnum   [expr {$firstNum/2.0}]
+                set existingSteps [linsert $existingSteps 0 [dict create     \
+                        step         $stepnum                                \
+                        program_name $program                                \
+                        predelay     $pre                                    \
+                        postdelay    $post                                   \
+                    ] \
+                ]
+                
+                
+            } else {
+                # Won't be new first.
+                
+                set existingSteps [lreplace $existingSteps $stepIndex $stepIndex]
+                
+                # We're between stepIndex-1 and stepIndex -2
+                
+                set subsequent [dict get [lindex $existingSteps $stepIndex-1] step]
+                set prior      [dict get [lindex $existingSteps $stepIndex-2] step]
+                set newStepno [expr {($prior + $subsequent)/2.0}]
+                
+                set existingSteps [linsert $existingSteps $stepIndex-1 \
+                    [dict create                                      \
+                        step          $newStepno                      \
+                        program_name  $program                        \
+                        predelay      $pre                            \
+                        postdelay     $post                           \
+                    ]                                                 \
+                ]
+                
+            }
+        }
+        $seqEditor configure -steps $existingSteps
+    }
+}
+
+##
 # _postContextMenu
 #   Posts a context menu:
 #
