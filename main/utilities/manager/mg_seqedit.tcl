@@ -51,6 +51,9 @@ package require sqlite3
 #   tree      - Returns the tree widget.  Note that 'overuse' of this may
 #               indicate a need to add options or methods to the
 #               megawidget.
+#   itemAt    - useful for context menu handlers.. given window coordinates,
+#               Returns the dict for the step taht matches or
+#   
 #              
 # @note
 #    This is just a treeview.  The visible columns are:
@@ -227,6 +230,25 @@ snit::widgetadaptor sequence::StepLister {
     method tree {} {
         return $list
     }
+    ##
+    # itemAt
+    #   Given a widget x/y returns the dict that describes the element at that
+    #   position.
+    #
+    # @param x   - x position.
+    # @param y   - y position.
+    # @return dict - Dict of the element at x/y
+    # @retval    - empty dict - if there's no element under x/y.
+    #
+    method itemAt {x y} {
+        set element [$list identify item $x $y]
+        if {$element eq ""} {
+            return [dict create]
+        } else {
+            set data [$list item $element -values]
+            return [lindex $data end]
+        }
+    }   
 }
 
 
@@ -287,6 +309,8 @@ proc _newSequence {db newwid trigwid seqwid} {
 variable currentSequence ""
 variable selectedStep "";               # Dict of selected seq or empty.
 variable seqEditor "";                  # Sequence listbox widget.
+variable menuX     0;                   # Where the context menu posted in 
+variable menuY     0;                   # listbox window coordinates.
 
 ##
 # _selectStep
@@ -438,7 +462,49 @@ proc _createNewStepUI {frame db} {
     
     
 }
+##
+# _deleteStep
+#    Delete the step on which the context menu posted.
+#
+# @note uses menuX, menuY to figure out which that was:
+#
+proc _deleteStep {} {
+    variable seqEditor
+    variable menuX
+    variable menuY
+    
+    set step [$seqEditor itemAt $menuX $menuY]
+    if {$step ne ""} {
+        set stepNo [dict get $step step]
+        set stepList [$seqEditor cget -steps]
+        set stepIndex [_locateStep $stepNo $stepList]
+        set stepList [lreplace $stepList $stepIndex $stepIndex]
+        $seqEditor configure -steps $stepList
+    }
+}
+##
+# _postContextMenu
+#   Posts a context menu:
+#
+# @param menu - the menu to post.
+# @param rootX - The root window X position at which to post.
+# @param rootY - The root window Y position at which to post.
+# @param widX  - The widget X position at which to post.
+# @param widY  - The widget Y position at which to post.
+#
+# @note widX, widY are just saved in menuX and menuY to establish which
+#                  or what this context is about.
+#
+proc _postContextMenu {menu rootX rootY widX widY} {
+    variable menuX
+    variable menuY
+    
+    set menuX $widX
+    set menuY $widY
+    
+    $menu post $rootX $rootY
 
+}
 ##
 # _sequenceSelected
 #   Reponds to a double click on a sequence.  We will bring up a sequence
@@ -479,6 +545,17 @@ proc _sequenceSelected {db seqName} {
         grid $actions        -sticky nsew
         
         set currentSequence $seqName
+        
+        #  We want to post a context menu that allows steps to be
+        #  deleted, moved up or down... if the right button is clicked on
+        #  any item.
+        
+        menu .seqeditor.context -tearoff 0 
+        .seqeditor.context add command -label Delete -command [list _deleteStep]
+        .seqeditor.context add command -label {Move Up} -command [list _moveUp]
+        .seqeditor.context add command -label {Move Down} -command [list _moveDown]
+        
+        $seqEditor bind <Button-3> [list _postContextMenu .seqeditor.context %X %Y %x %y]
     }
     
 }
