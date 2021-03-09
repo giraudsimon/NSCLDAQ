@@ -86,6 +86,7 @@ snit::widgetadaptor sequence::StepLister {
         #  Support the -command option by binding to the select event:
         
         bind $list <<TreeviewSelect>> [mymethod _onSelect]
+        bind $list <Double-Button-1>        [mymethod _unselect]
         
         ttk::scrollbar $win.vscroll -command [list $list yview] -orient vertical
         
@@ -169,6 +170,17 @@ snit::widgetadaptor sequence::StepLister {
         }
     }
     
+    ##
+    # _unselect
+    #   Control-mouse-1 will remove any existing selection.
+    #
+    method _unselect {} {
+        set selection [$list selection]
+        if {[llength $selection] != 0} {
+            $list selection remove $selection
+        }
+    
+    }
     #---------------------------------------------------------------------------
     # Public methods
     
