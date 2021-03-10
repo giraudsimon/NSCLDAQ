@@ -557,6 +557,87 @@ proc _moveUp {} {
         $seqEditor configure -steps $existingSteps
     }
 }
+##
+# _moveDown
+#    Moves the item the menu posted on down one slot.
+# @note we use menuX, menuY and seqEditor variables.
+#
+proc _moveDown { } {
+    variable menuX
+    variable menuY
+    variable seqEditor
+    
+    # which one was picked:
+    
+    set selectedStep [$seqEditor itemAt $menuX $menuY]
+    if {$selectedStep ne ""} {
+        set selectedNum [dict get $selectedStep step]
+        set existingSteps [$seqEditor cget -steps]
+        
+        # We can't move it down if its already last:
+        
+        set selectedIndex [_locateStep $selectedNum $existingSteps]
+        set lastIndex [expr {[llength $existingSteps] -1}]
+        if {$selectedIndex <  $lastIndex} {
+            
+            #  Pick out the information about the step we're moving
+            
+            set program [dict get $selectedStep program_name]
+            set pre     [dict get $selectedStep predelay]
+            set post    [dict get $selectedStep postdelay]
+            
+            if {($selectedIndex + 1) == $lastIndex} {
+                # We're going to become the last step.
+                
+                set lastStep [dict get [lindex $existingSteps end] step]
+                set newStep  [expr {$lastStep + $::sequence::step_interval}]
+                
+                # Remove the step and put it last:
+                
+                set existingSteps [lreplace \
+                    $existingSteps $selectedIndex $selectedIndex \
+                ]
+                
+                lappend existingSteps  [dict create \
+                    step         $newStep           \
+                    program_name $program           \
+                    predelay     $pre               \
+                    postdelay    $post              \
+                ]]
+                
+                
+            } else {
+                # We won't become the last step.  The new step will be between
+                # once we remove the step from the existing steps, the
+                # step will get dropped between the selectedIndex and selectedIndex+1
+                #
+                
+                set existingSteps [lreplace \
+                    $existingSteps $selectedIndex $selectedIndex \
+                ]
+                set priorStepno [dict get \
+                    [lindex $existingSteps $selectedIndex] step \
+                ]
+                set nextStepno [dict get \
+                    [lindex $existingSteps $selectedIndex+1] step \
+                ]
+                set newStep [expr {($priorStepno + $nextStepno)/2.0}]
+                set existingSteps [linsert $existingSteps $selectedIndex+1 \
+                    [dict create                     \
+                        step         $newStep        \
+                        program_name $program        \
+                        predelay     $pre            \
+                        postdelay    $post           \
+                    ]                                \
+                ]
+                
+            }
+        
+            
+            $seqEditor configure -steps $existingSteps
+        }
+    }
+}
 
 ##
 # _postContextMenu
