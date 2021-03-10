@@ -229,6 +229,70 @@ commonSetup
 -body {
     ::eventloggers::disableLogger db [incr id]
 } -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+#  Global enable/disable tests
+
+tcltest::test gblenable_1 {Enable turns it on from off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT state FROM recording
+    }
+} -result 1
+
+tcltest::test gblenable_2 {Enable keeps it on if it's on.} \
+-setup {
+    commonSetup
+    eventloggers::enable db
+    eventloggers::enable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 1
+
+tcltest::test gbldisable_1 {Global disable turns it off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db ;       # We demonstrated it's on now
+    eventloggers::disable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 0
+
+tcltest::test gbldisable_2 {Global disable keeps it off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db ;       # We demonstrated it's on now
+    eventloggers::disable db;       # It's off now.
+    eventloggers::disable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 0
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
