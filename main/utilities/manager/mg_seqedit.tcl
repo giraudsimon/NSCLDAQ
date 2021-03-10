@@ -663,6 +663,42 @@ proc _postContextMenu {menu rootX rootY widX widY} {
 
 }
 ##
+# _saveSequence
+#   Save the sequence in the sequence editor.
+#   -  Remove all current steps from the sequence.
+#   -  Add in the steps in the widget.
+#   -  Destroy the widget's top level.
+#
+# @param db      - database command.
+# @param seqName - name of the sequence we're editing
+# @param steps   - Widget containing the current steps.
+# @note The step numbers will be re-assigned by the sequence package when we
+#       re-build the sequence.
+#
+proc _saveSequence {db seqName steps} {
+
+    # Kill off the old steps.
+
+    set oldSteps [::sequence::listSteps $db $seqName]
+    foreach s $oldSteps {
+        set stepno [dict get $s step]
+        ::sequence::rmvStep $db $seqName $stepno
+    }
+    #  Generate the steps in the widget:
+    
+    set newSteps [$steps cget -steps]
+    foreach s $newSteps {
+        set program [dict get $s program_name]
+        set pre     [dict get $s predelay]
+        set post    [dict get $s postdelay]
+        
+        ::sequence::addStep $db $seqName $program $pre $post
+    }
+    #  Now destroy the editor window.
+    
+    destroy [winfo toplevel $steps]
+}
+##
 # _sequenceSelected
 #   Reponds to a double click on a sequence.  We will bring up a sequence
 #   editing dialog and, once that's filled in, update the sequence appropriately.
@@ -693,7 +729,8 @@ proc _sequenceSelected {db seqName} {
         
         
         set actions [ttk::frame .seqeditor.actions]
-        ttk::button $actions.save -text Save
+        ttk::button $actions.save -text Save \
+            -command [list _saveSequence $db $seqName .seqeditor.list]
         ttk::button $actions.cancel -text Cancel -command [list destroy .seqeditor]
         
         grid $actions.save $actions.cancel -sticky w
