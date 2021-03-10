@@ -176,15 +176,15 @@ proc eventloggers::add {db daqrootdir ring host destination options} {
 #
 proc eventloggers::enableLogger {db id} {
     ::eventloggers::_requireId $db $id
-    ::eventLoggers::_setEnableFlag $db $id 1
+    ::eventloggers::_setEnableFlag $db $id 1
     
 }
 ##
-# eventloggers::disableLoggers
+# eventloggers::disableLogger
 # @param db   - database command.
 # @param id   - id of logger.
 #
-proc ::eventloggers::disableLoggers {db id} {
+proc ::eventloggers::disableLogger {db id} {
     ::eventloggers::_requireId $db $id
     ::eventloggers::_setEnableFlag $db $id 0
 }

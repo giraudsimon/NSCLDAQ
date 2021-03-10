@@ -130,6 +130,105 @@ tcltest::test add_5 {Can't use same destination 2x.} \
         ~/stagearea [dict create]
 } -result * -match glob -returnCodes error
 
+#------------------------------------------------------------------------------
+# Enable/disable logger tests
+
+tcltest::test enable_1 {IF not enabled becomes so.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 0]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 1
+
+tcltest::test enable_2 {Remains enabled if enabled.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 1
+
+tcltest::test enable_3 {Bad id is an error} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger $db [expr {$id + 1}]
+} -result * -match glob -returnCodes error
+
+tcltest::test disable_1 {Disable a logger sets enabled => 0} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 0
+
+tcltest::test disable_2 {If disabled it stays so.} \
+-setup {
+commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 0]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 0
+
+tcltest::test disable_3 {Invalid id is an error.} \
+-setup {
+commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db [incr id]
+} -result * -match glob -returnCodes error
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
