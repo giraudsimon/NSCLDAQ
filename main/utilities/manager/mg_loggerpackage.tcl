@@ -118,7 +118,7 @@ proc eventloggers::_setEnableFlag {db id state} {
 proc eventloggers::add {db daqrootdir ring host destination options} {
     # We cannot support duplicate destinations:
     
-    if {[$db eval {SELECT COUNT(*) FROM logger WHERE destiniation = $destiniation}]} {
+    if {[$db eval {SELECT COUNT(*) FROM logger WHERE destination = $destination}]} {
         error "There's already a logger putting data in $destination"
     }
     # Process the options
@@ -129,9 +129,11 @@ proc eventloggers::add {db daqrootdir ring host destination options} {
     if {[dict exists $options container]} {
         set containerName [dict get $options container]
         if {[::container::exists $db $containerName]} {
-            set container [dict get [lindex \
-                [::container::listDefinitions $db $containerName] 0] id]
+            set container [dict get \
+                [::container::listDefinitions $db $containerName] id]
             
+        } else {
+            error "$containerName is not the name of an existing container definition."
         }
     }
     # Is  critical?
@@ -160,7 +162,7 @@ proc eventloggers::add {db daqrootdir ring host destination options} {
     $db eval {
         INSERT INTO logger
         (daqroot, ring, host, partial, destination, critical, enabled, container_id)
-        VALUES ($$daqrootdir, $ring, $host, $partial, $destination, $isCritical,
+        VALUES ($daqrootdir, $ring, $host, $partial, $destination, $isCritical,
                 $enabled, $container)
     }
     return [$db last_insert_rowid]
