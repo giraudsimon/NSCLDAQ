@@ -218,7 +218,7 @@ commonSetup
 
 tcltest::test disable_3 {Invalid id is an error.} \
 -setup {
-commonSetup
+    commonSetup
     set id [::eventloggers::add db \
         /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
         [dict create enabled 1]]
@@ -292,6 +292,41 @@ db eval {
         SELECT state FROM recording
     }
 } -result 0
+
+#------------------------------------------------------------------------------
+#  eventloggers::delete tests.
+
+
+tcltest::test delete_1 {Deletes an existing one} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventloggers::delete db $id
+    db eval {
+        SELECT COUNT(*) FROM logger
+    }
+} -result 0
+
+tcltest::test delete_2 {Delete but does not exist.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventloggers::delete db [incr id]
+} -result * -match glob -returnCodes error
 
 #----------------------------------------------------
 
