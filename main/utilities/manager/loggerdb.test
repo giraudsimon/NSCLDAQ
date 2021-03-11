@@ -328,6 +328,87 @@ tcltest::test delete_2 {Delete but does not exist.} \
     eventloggers::delete db [incr id]
 } -result * -match glob -returnCodes error
 
+
+#-----------------------------------------------------------------------------
+# eventloggers::listLoggers tests.
+
+tcltest::test list_1 {Initially I get an empty list.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::listLoggers db
+} -result [list]
+    
+tcltest::test list_2 {Single item but no container.} \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [::eventloggers::listLoggers db]
+} -result 1
+
+tcltest::test list_3 {Correct values } \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set descr [lindex [::eventloggers::listLoggers db] 0]
+    list                                                        \
+        [dict get $descr daqroot] [dict get $descr ring]        \
+        [dict get $descr host]                                  \
+        [dict get $descr partial] [dict get $descr destination] \
+        [dict get $descr critical] [dict get $descr enabled]    \
+        [dict get $descr container] [dict get $descr container_id]
+} -result [list    \
+    /usr/opt/daq/12.0-000 tcp://localhost/ring  genesis 0 ~/stagearea 1 1 "" -1 \
+]
+
+tcltest::test list_4 {Join with container gets the container name?} \
+-setup {
+    commonSetup
+    ::container::add db AContainer ~/minimal.img "" ""
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create container AContainer]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set descr [lindex [eventloggers::listLoggers db] 0]
+    dict get $descr container
+} -result AContainer
+
+tcltest::test list_5 {descr} \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring_b genesis \
+        ~/stagearea/b [dict create partial 1]
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring_lendo genesis \
+        ~/stagearea/lendo [dict create partial 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [eventloggers::listLoggers db]
+} -result 3
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

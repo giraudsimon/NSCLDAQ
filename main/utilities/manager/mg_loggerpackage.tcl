@@ -47,13 +47,13 @@ namespace eval eventloggers {
 #
 # The API consists of the following entries:
 #
-# eventloggers::add    - Add a new eventlogger.
-# eventloggers::enableLogger - Sets the enable flag for an event logger.
+# eventloggers::add      - Add a new eventlogger.
+# eventloggers::enableLogger  - Sets the enable flag for an event logger.
 # eventloggers::disableLogger - Clears the disable flag of a  single logger.
 # eventloggers::enable   - Enable recording.
 # eventloggers::disable  - Disable recording.
-# eventloggers::delete - Remove an event loggers.
-# eventloggers::list    - List the defined event loggers
+# eventloggers::delete   - Remove an event loggers.
+# eventloggers::listLoggers - List the defined event loggers
 # eventloggers::isEnabled - determines if event logging is enabled.
 # eventloggers::startRun  - Call this before taking data to run all the
 #                           loggers.
@@ -223,7 +223,7 @@ proc eventloggers::delete {db id} {
     }
 }
 ##
-# eventloggers::list
+# eventloggers::listLoggers
 #
 # @param db - database command.
 # @return list of dicts.  Each dict describes one logger with the following keys:
@@ -240,25 +240,28 @@ proc eventloggers::delete {db id} {
 #                   if there is none.
 #     - container_id - id of the container or -1 if there is none.
 #
+# @note Found out the painful way that calling this list will mask unless fully
+#      qualified the ::list command from inside our body.
 #
-proc ::eventloggers::list {db} {
+proc ::eventloggers::listLoggers {db} {
     set result [list]
     $db eval {
         SELECT logger.id, daqroot, ring, host, partial, destination, critical,
-            enabled, container_id, container.container
+            enabled, container_id, container.container FROM logger
         LEFT JOIN container on container.id = logger.container_id
     }  values {
+    
         lappend result [dict create                                         \
-            id         $values(logger.id)       \
+            id         $values(id)       \
             daqroot    $values(daqroot)         \
             ring       $values(ring)            \
             host       $values(host)            \
             partial    $values(partial)         \
-            destination $values(destiniation)   \
+            destination $values(destination)   \
             critical    $values(critical)       \
             enabled     $values(enabled)        \
-            container   $values(container.container) \
-            container_id $alues(container_id)   \
+            container   $values(container) \
+            container_id $values(container_id)   \
         ]
     }
     return $result
