@@ -32,6 +32,7 @@ package require Tk
 package require snit
 package require eventloggers
 package require containers
+package require sqlite3
 
 
 #------------------------------------------------------------------------------
@@ -109,3 +110,212 @@ snit::widgetadaptor LoggerEntry {
         
     }
 }
+##
+# @class LoggerList
+#    Lists the set of loggers that have been defined.
+#
+# OPTIONS
+#   -loggers - list of logger definition dicts.
+#   -ondouble - Script to call when a logger is double-clicked.
+#
+#   This displays as a treeview with the hidden, liast, column "definition"
+#   that contains enough of the definition dict of a logger to reconstruct it
+#   in the database.
+#
+snit::widgetadaptor LoggerList {
+    component tree
+    
+    option -loggers   -default [list] \
+        -configuremethod _cfgLoggers -cgetmethod _cgetLoggers
+    option -ondouble [list]
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        install tree using ttk::treeview $win.tree \
+            -yscrollcommand [list $win.ysb set]    \
+            -columns [list   \
+                daqroot ring host container destination enabled critical partial \
+                definition] \
+            -show headings -displaycolumns [list                                 \
+                daqroot ring host container destination enabled critical partial]           \
+            -selectmode browse
+        foreach col [list daqroot ring host container destination enabled critical partial] \
+            heading [list Root "Ring URI" Host "Container" Destination "E" "C" "P"] {
+            $tree heading $col -text $heading
+        }
+        foreach col [list enabled critical partial] {
+            $tree column $col -width 20
+        }
+        
+        ttk::scrollbar $win.ysb -command [list $tree yview]
+        
+        grid $win.tree $win.ysb -sticky nsew
+            
+        bind $tree <Double-1> [mymethod _onDoubleClick]
+        
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    #  Configuration handling.
+    
+    ##
+    # _cfgLoggers
+    #   Configures a new set of loggers.
+    #   - Clears the tree.
+    #   - Adds each logger to the tree view
+    #
+    # @param optname - the option name (-loggers - ignored).
+    # @param value   - list of logger definition dicts e.g. from
+    #                 ::eventloggers::listLoggers
+    # @note Since we have a cget method we don't need to store the results in
+    #       options($optname).  We'll fish them programmatically from the
+    #       tree.
+    # @note We don't care about the id nor container_id keys in the dict.
+    #
+    method _cfgLoggers {optname value} {
+        
+        #  Clear the tree:
+        
+        set items [$tree children {}]
+        $tree delete $items
+        
+        # Now populate it:
+        
+        foreach item $value {
+            #  The enabled, critical and partial item get turned into X and blank
+            
+            set enabled  [_Xmark $item enabled]
+            set critical [_Xmark $item critical]
+            set partial  [_Xmark $item partial]
+            
+            $tree insert {} end -values [list                               \
+                [dict get $item daqroot]  [dict get $item ring]             \
+                [dict get $item host]     [dict get $item container]        \
+                [dict get $item destination]                                \
+                $enabled $critical $partial $item                           \
+            ]
+        }
+        
+        
+    }
+    ##
+    # _cgetLoggers
+    #   Returns the list of dicts from -loggers. This is done by building up a list
+    #   of the values of the definition hidden column (column # 8 from 0)
+    #
+    # @param optname - -loggers - ignored.
+    # @return list of dicts  see above.
+    #
+    method _cgetLoggers {optname} {
+        set result [list]
+        set items [$tree children {}]
+        foreach item $itesm {
+            lappend $result [lindex [$tree item $item -values] 8]
+        }
+        
+        return $list
+    }
+    #--------------------------------------------------------------------------
+    #  Event handling methods.
+    
+    ##
+    # _onDoubleClick
+    #
+    #    Called in response to a double-click in the tree.
+    #    If an item is selected, and the -ondouble script is defined,
+    #    it is called with the definition of the item selected.
+    #
+    method _onDoubleClick {} {
+        set selection [$tree selection]
+        set script $options(-ondouble)
+        if {($selection ne "") && ($script ne "")} {
+            set def [lindex [$tree item $selection -values] 8]
+            lappend $script $def
+            uplevel #0 $script
+        }
+    }
+    
+    #---------------------------------------------------------------------------
+    # Private procs:
+    
+    ##
+    # _Xmark
+    #   Given a dict takes a key value, interprets it as a bool and returns
+    #   an appropriate indicator
+    #
+    # @param value - the dict.
+    # @param key   - the key in the dict.
+    # @return string - indicator X if true and " " if not.
+    #
+    proc _Xmark {value key} {
+        if {[dict get $value $key]} {
+            set result X
+        } else {
+            set result " "
+        }
+        return $result
+    }
+}
+
+#----------------------------------------------------------------------------
+#  Unbound utility procs:
+
+##
+# usage
+#    Describes the usage of the command to stderr and then exits.
+#
+# @param msg - message that prepends the usage.
+#
+proc usage {msg} {
+    puts stderr $msg
+    puts stderr "Usage:"
+    puts stderr "    \$DAQBIN/mg_loggeredit configuration-database"
+    puts stderr "Where:"
+    puts stderr "   configuration-database - is the configuration database file"
+    puts stderr "\nConfigures the set of event loggers that will run\n"
+    
+    exit -1
+     
+}
+#-----------------------------------------------------------------------------
+#
+#  Entry point:
+
+if {[llength $argv] != 1} {
+    usage {Incorrect command line parameter count}
+}
+
+set fname [lindex $argv 0]
+if  {![file writable $fname]} {
+    usage "$fname must exist and must be writable."
+}
+
+##
+# Build the user interface:
+#  At the top a logger list.
+#  At the middle a logger entry with Add and Delete buttons.
+#  At the bottom a Save/Quit button pair.
+#
+
+sqlite db $fname
+set loggers [::eventloggers::listLoggers db]
+LoggerList .loggers -loggers $loggers
+
+ttk::frame .entry
+LoggerEntry .entry.loggers
+ttk::button .entry.add -text Add
+ttk::button .entry.delete -text Delete
+
+grid .entry.loggers -row 0 -column 0 -rowspan 2
+grid .entry.add -row 0 -column 1
+grid .entry.delete -row 1 -column 1
+
+ttk::frame .action
+ttk::button  .action.save -text Save
+ttk::button  .action.quit -text Quit
+grid .action.save .action.quit
+
+grid .loggers -sticky nsew
+grid .entry   -sticky nsew
+grid .action  -sticky nsew
