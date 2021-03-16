@@ -438,6 +438,57 @@ proc _addLogger {e loggers} {
     lappend loggerList $newItem
     $loggers configure -loggers $loggerList
 }
+##
+# _saveLoggers
+#
+#  Save a single logger given its descriptive dict.
+#
+# @param db  - database command.
+# @param logger - dict describing the logger
+# @note The part of the dict that describes the container, and the flags
+#       "just happens" to be what eventloggers::add needs for its options parameter
+#
+proc _saveLogger {db logger} {
+    # We have to adjust if the container is <None>
+    
+    set c [dict get $logger container]
+    if {($c eq "<None>") || ($c eq "")} {
+        set logger [dict remove $logger container]    
+    }
+    
+    eventloggers::add $db                                                    \
+        [dict get $logger daqroot] [dict get $logger ring]                   \
+        [dict get $logger host]    [dict get $logger destination]            \
+        $logger
+}
+    
+
+##
+# _saveLoggers
+#   Save the loggers.  This is done with a bit of brute force:
+#   - All loggers known are removed.
+#   - All of the loggers in the logger list are added.
+#
+# @param db      - database command.
+# @param loggers - Loggers list widget.
+#
+proc _saveLoggers {db loggers} {
+    
+    #  Kill off the existing loggers.
+    
+    set ls [::eventloggers::listLoggers $db]
+    foreach logger $ls {
+        set id [dict get $logger id]
+        ::eventloggers::delete $db $id
+    }
+    
+    # Add back the new loggers, one at a atime.
+    
+    set newLoggers [$loggers cget -loggers]
+    foreach logger $newLoggers {
+        _saveLogger $db $logger
+    }
+}
 #-----------------------------------------------------------------------------
 #
 #  Entry point:
@@ -460,12 +511,12 @@ if  {![file writable $fname]} {
 
 sqlite db $fname
 set loggers [::eventloggers::listLoggers db]
-LoggerList .loggers -loggers $loggers
+LoggerList .loggers -loggers $loggers 
 
 ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
 ttk::button .entry.add -text Add -command [list _addLogger  $Entry .loggers]
-ttk::button .entry.delete -text Delete
+ttk::button .entry.delete -text Delete  
 ttk::button .entry.clear  -text Clear -command [list $Entry clear]
 
 grid .entry.loggers -row 0 -column 0 -rowspan 2
@@ -475,8 +526,8 @@ grid .entry.delete -row 1 -column 2
 
 
 ttk::frame .action
-ttk::button  .action.save -text Save
-ttk::button  .action.quit -text Quit
+ttk::button  .action.save -text Save -command [list _saveLoggers db .loggers]
+ttk::button  .action.quit -text Quit -command exit
 grid .action.save .action.quit
 
 grid .loggers -sticky nsew
