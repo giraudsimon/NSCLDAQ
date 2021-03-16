@@ -395,20 +395,19 @@ proc _needNonBlank {field} {
         -message $fullMessage
 }
 ##
-# _addLogger
-#    Adds the logger described in the LoggerEntry passed in.
+# _entryToDict
+#    Reads the contents of a LoggerEntry widget and creates a dict that
+#    corresponds to what you would get from evenloggers::listLoggers
+#   (without id and container_id).
 #
-# @param e - a LoggerEntry widget that contains the definition to load.
-# @param loggers -the event logger list widget.
-# @note A container of <None> means there's no container.
-# @note We require all elements be fillled in.
+# @param e   - The entry.
+# @return dict - note that empty items will still be present but have "" values.
 #
-proc _addLogger {e loggers} {
+proc _entryToDict {e} {
     set root [$e cget -daqrootdir]
     set ring [$e cget -ring]
     set dest [$e cget -destination]
     set host [$e cget -host]
-    
     set cont [$e cget -container]
     if {$cont ne "<None>"} {
         set container $cont    
@@ -419,16 +418,38 @@ proc _addLogger {e loggers} {
     set part [$e cget -partial]
     set en [$e cget -enabled]
     
-    if {$root eq ""} {
+    set newItem [dict create                                                \
+        daqroot $root ring $ring host $host partial $part                   \
+        destination $dest critical $crit enabled $en container $container   \
+    ]
+    return $newItem
+}
+##
+# _addLogger
+#    Adds the logger described in the LoggerEntry passed in.
+#
+# @param e - a LoggerEntry widget that contains the definition to load.
+# @param loggers -the event logger list widget.
+# @note A container of <None> means there's no container.
+# @note We require all elements be fillled in.
+#
+proc _addLogger {e loggers} {
+    
+    set newItem [_entryToDict $e]
+    
+    if {[dict get $newItem daqroot] eq ""} {
         _needNonBlank "DAQ root"
         return
     }
-    if {$ring eq ""} {
+    if {[dict get $newItem ring]  eq ""} {
         _needNonBlank "Ring URI" 
         return
     }
-    if {$dest eq ""} {
+    if {[dict get $newItem destination] eq ""} {
         _needNonBlank "Destination"
+    }
+    if {[dict get $newItem host] eq ""} {
+        _needNonBlank "Host"
     }
     #  Create the dict describing the logger and lappend it to the existing
     #  loggers in the UI - wew don't save anything to the database:
@@ -495,6 +516,44 @@ proc _saveLoggers {db loggers} {
     }
 }
 ##
+# _sameLogger
+#  @param l1
+#  @param l2
+#  @return boolean - true if l1 is functionally the same logger as l2.
+#
+proc _sameLogger {l1 l2} {
+    if {[dict get $l1 daqroot] != [dict get $l2 daqroot]} {return 0}
+    if {[dict get $l1 ring]    != [dict get $l2 ring]}    {return 0}
+    if {[dict get $l1 host]    != [dict get $l2 host]}    {return 0}
+    if {[dict get $l1 partial] != [dict get $l2 partial]} {return 0}
+    if {[dict get $l1 destination] != [dict get $l2 destination]} {return 0}
+    if {[dict get $l1 critical] != [dict get $l2 critical]} {return 0}
+    if {[dict get $l1 enabled] != [dict get $l2 enabled]} {return 0}
+    if {[dict get $l1 container] != [dict get $l2 container]} {return 0}
+        
+    return 1
+}
+##
+# _findLogger
+#   Locate a logger definition in the list of loggers in a LoggerList.
+#   It's tempting to do an lsearch however that can fail due to differences
+#   in dict key order as well as additional keys.
+# @param loggers  - list of loggers to search
+# @param needle   - logger we're searching for.
+# @return integer - index at which needle is found
+# @retval -1      - No match.
+#
+proc _findLogger {loggers needle} {
+    set result 0
+    foreach l $loggers {
+        if {[_sameLogger $l $needle]} {
+            return $result
+        }
+        incr result
+    }
+    return -1
+}
+##
 # _selectItem
 #    Called in response to a double click in the logger list:
 #    - Clear the entry
@@ -507,7 +566,7 @@ proc _saveLoggers {db loggers} {
 proc _selectItem {e l} {
     $e clear
     $e configure -daqrootdir [dict get $l daqroot]  \
-        -hots [dict get $l host]                    \
+        -host [dict get $l host]                    \
         -ring [dict get $l ring]                    \
         -destination [dict get $l destination]      \
         -container [dict get $l container]          \
@@ -516,6 +575,25 @@ proc _selectItem {e l} {
         -enabled  [dict get $l enabled]
     set ::edting 1;                  # Add now edits.
 }
+##
+# _deleteLogger
+#   Called when the delet button is clicked.
+#   Turn the entry into a dict and look for a match amongst the ones in the
+#   list.  If there's a match, remove that one and reconfigure the list
+#   accordingly.
+# @param e - the entry widget.
+# @param l - the list widget.
+#
+proc _deleteLogger {e l} {
+    set current [_entryToDict $e]
+    set existing [$l cget -loggers]
+    set idx  [_findLogger $existing $current]
+    if {$idx != -1}  {
+        set existing [lreplace $existing $idx $idx]
+        $l configure -loggers $existing
+    }
+}
+
 #-----------------------------------------------------------------------------
 #
 #  Entry point:
@@ -546,7 +624,8 @@ LoggerList .loggers -loggers $loggers -ondouble [list _selectItem .entry.loggers
 ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
 ttk::button .entry.add -text Add -command [list _addLogger  $Entry .loggers]
-ttk::button .entry.delete -text Delete  
+ttk::button .entry.delete -text Delete  \
+    -command [list _deleteLogger .entry.loggers .loggers]
 ttk::button .entry.clear  -text Clear -command [list $Entry clear]
 
 grid .entry.loggers -row 0 -column 0 -rowspan 2
