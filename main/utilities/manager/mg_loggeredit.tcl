@@ -55,6 +55,9 @@ package require sqlite3
 #
 #    -containers - the allowed containers.
 #
+# METHDOS
+#   clear - return the UI to the default state.
+#
 # APPEARANCE:
 #
 #   +----------------------------------------------+
@@ -102,7 +105,6 @@ snit::widgetadaptor LoggerEntry {
         ttk::label $win.containerlbl -text Container
         ttk::combobox $win.container -values [list <None>] \
             -textvariable [myvar options(-container)]
-        $win.container set <None>
         
         ttk::label $win.hostlabel -text Host
         ttk::entry $win.host      -textvariable [myvar options(-host)]
@@ -118,8 +120,27 @@ snit::widgetadaptor LoggerEntry {
             -variable [myvar options(-enabled)] -onvalue 1 -offvalue 0
         
         grid $win.critical $win.partial $win.enabled
-        
+        $self clear
         $self configurelist $args
+        
+    }
+    #--------------------------------------------------------------------------
+    # Public methods
+    
+    ##
+    # clear
+    #    Return the UI to its default state.
+    #
+    method clear {} {
+        set options(-daqrootdir) ""
+        set options(-ring) ""
+        set options(-host) ""
+        set options(-destination) ""
+        $self configure -container <None>
+        set options(-partial)
+        set options(-critical) 1
+        set options(-partial) 0
+        set options(-enabled) 1
         
     }
     #----------------------------------------------------------------------------
@@ -445,10 +466,13 @@ ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
 ttk::button .entry.add -text Add -command [list _addLogger  $Entry .loggers]
 ttk::button .entry.delete -text Delete
+ttk::button .entry.clear  -text Clear -command [list $Entry clear]
 
 grid .entry.loggers -row 0 -column 0 -rowspan 2
 grid .entry.add -row 0 -column 1
-grid .entry.delete -row 1 -column 1
+grid .entry.clear -row 1 -column 1
+grid .entry.delete -row 1 -column 2
+
 
 ttk::frame .action
 ttk::button  .action.save -text Save
