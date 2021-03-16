@@ -154,6 +154,9 @@ snit::widgetadaptor LoggerEntry {
     # @param value   -new container name.
     #
     method _cfgContainer {optname value} {
+        if {$value eq ""} {
+            set value "<None>"
+        }
         $win.container set $value
     }
     ##
@@ -332,7 +335,7 @@ snit::widgetadaptor LoggerList {
         set script $options(-ondouble)
         if {($selection ne "") && ($script ne "")} {
             set def [lindex [$tree item $selection -values] 8]
-            lappend $script $def
+            lappend script $def
             uplevel #0 $script
         }
     }
@@ -437,6 +440,8 @@ proc _addLogger {e loggers} {
     set loggerList [$loggers cget -loggers]
     lappend loggerList $newItem
     $loggers configure -loggers $loggerList
+    $e clear
+    set ::editing 0;               # If we were editing.
 }
 ##
 # _saveLoggers
@@ -489,9 +494,34 @@ proc _saveLoggers {db loggers} {
         _saveLogger $db $logger
     }
 }
+##
+# _selectItem
+#    Called in response to a double click in the logger list:
+#    - Clear the entry
+#    - load the entry with the value of the selected logger.
+#    - set the editing flag so that an 'add' will modify instead.
+#
+# @param e    - loggere entry widget we'll load.
+# @param l    - Dict that describes the logger (passed by the widget).
+#
+proc _selectItem {e l} {
+    $e clear
+    $e configure -daqrootdir [dict get $l daqroot]  \
+        -hots [dict get $l host]                    \
+        -ring [dict get $l ring]                    \
+        -destination [dict get $l destination]      \
+        -container [dict get $l container]          \
+        -critical [dict get $l critical]            \
+        -partial  [dict get $l partial]             \
+        -enabled  [dict get $l enabled]
+    set ::edting 1;                  # Add now edits.
+}
 #-----------------------------------------------------------------------------
 #
 #  Entry point:
+
+variable editing 0
+
 
 if {[llength $argv] != 1} {
     usage {Incorrect command line parameter count}
@@ -511,7 +541,7 @@ if  {![file writable $fname]} {
 
 sqlite db $fname
 set loggers [::eventloggers::listLoggers db]
-LoggerList .loggers -loggers $loggers 
+LoggerList .loggers -loggers $loggers -ondouble [list _selectItem .entry.loggers]
 
 ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
