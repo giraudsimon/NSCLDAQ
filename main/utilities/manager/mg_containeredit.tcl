@@ -57,7 +57,7 @@ snit::widgetadaptor container::BindingsList {
     
     constructor args {
         installhull using ttk::frame
-        install bindings using listbox $win.list \
+        install bindings using ::listbox $win.list \
             -yscrollcommand [list $win.vscroll set]   \
             -xscrollcommand [list $win.hscroll set] -selectmode single
         ttk::scrollbar $win.vscroll -orient vertical \
@@ -451,7 +451,7 @@ snit::widgetadaptor container::Editor {
         
         # Container list.
         
-        install containerNames using listbox $win.names -selectmode single \
+        install containerNames using ::listbox $win.names -selectmode single \
             -yscrollcommand [list $win.cscroll set]
         bind $containerNames <<ListboxSelect>> [mymethod _onSelect] 
         ttk::scrollbar $win.cscroll -orient vertical \

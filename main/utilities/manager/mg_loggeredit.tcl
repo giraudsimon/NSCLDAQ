@@ -59,35 +59,45 @@ package require sqlite3
 #
 #   +----------------------------------------------+
 #   | [rootdir] [browse] [destination] [browse]    |
-#   | [container] [host]                           |
+#   | [ring] [container] [host]                    |
 #   | [] critical [] partial [] enabled            |
 #   +----------------------------------------------+
 #
+
 snit::widgetadaptor LoggerEntry {
     option -daqrootdir
     option -ring
     option -host
     option -destination
-    option -container -cgetmethod _getContainer -configuremethod _cfgContainer
+    option -container -cgetmethod _cgetContainer -configuremethod _cfgContainer
     option -critical -default 1
     option -partial -default 0
     option -enabled -default 1
     option -containers -default [list] \
-        -configuremethod _cfgContainers -cgetmethod _cgetContainers
+        -configuremethod _cfgContainers
+    
+    variable lastRoot 
+    variable lastDest $::env(HOME);         # Good starting point.
     
     constructor args {
+        set lastRoot [file normalize [file join [file dirname [info script]] ..]]
         installhull using ttk::frame
         
         ttk::label $win.rootlbl -text "DAQROOT"
         ttk::entry $win.root    -textvariable [myvar options(-daqrootdir)]
-        ttk::button $win.rootbrowse -text Browse... -command [mymethod _browseRoot]
+        ttk::button $win.rootbrowse -text Browse... \
+            -command [mymethod _browseRoot]
         
         ttk::label $win.destlabel   -text "Destination"
         ttk::entry $win.destination -textvariable [myvar options(-destination)]
-        ttk::button $win.destbrowse -text Browse... -command  [mymethod _browseDest]
+        ttk::button $win.destbrowse -text Browse...  \
+            -command  [mymethod _browseDest]
         
         grid $win.rootlbl $win.root $win.rootbrowse \
              $win.destlabel $win.destination $win.destbrowse
+        
+        ttk::label $win.ringlabel -text {Ring URI}
+        ttk::entry $win.ring      -textvariable [myvar options(-ring)]
         
         ttk::label $win.containerlbl -text Container
         ttk::combobox $win.container -values [list <None>] \
@@ -97,7 +107,8 @@ snit::widgetadaptor LoggerEntry {
         ttk::label $win.hostlabel -text Host
         ttk::entry $win.host      -textvariable [myvar options(-host)]
         
-        grid $win.containerlbl $win.container $win.hostlabel $win.host
+        grid $win.ringlabel $win.ring \
+            $win.containerlbl $win.container $win.hostlabel $win.host
         
         ttk::checkbutton $win.critical -text Critical \
             -variable [myvar options(-critical)] -onvalue 1 -offvalue 0
@@ -108,6 +119,75 @@ snit::widgetadaptor LoggerEntry {
         
         grid $win.critical $win.partial $win.enabled
         
+        $self configurelist $args
+        
+    }
+    #----------------------------------------------------------------------------
+    # Configuration management.
+    
+    ##
+    # _cfgContainer
+    #   Set the container value
+    #
+    # @param optname -name of the option.
+    # @param value   -new container name.
+    #
+    method _cfgContainer {optname value} {
+        $win.container set $value
+    }
+    ##
+    # _cgetContainer
+    #    Returns the current container value.
+    # @param optname -name of the option.
+    # @return string
+    #
+    method _cgetContainer {optname} {
+        return [$win.container get]
+    }
+    
+    ##
+    # _cfgContainers
+    #   Given a set of container definitions - sets the list of containers
+    #
+    # @param optname  option name.
+    # @param value    list of container dict definitions.
+    #
+    method  _cfgContainers {optname value} {
+        # Create the list:
+        
+        set containerList <None>
+        foreach c $value {
+            lappend containerList [dict get $c name]
+        }
+        $win.container configure -values $containerList
+        set options(-optname) $value
+    }
+    #--------------------------------------------------------------------------
+    # Event handling.
+    
+    ##
+    # _browseRoot
+    #    Browse for a DAQROOT directory to use for the logger being edited.
+    #
+    method _browseRoot {} {
+        set directory [tk_chooseDirectory -initialdir $lastRoot -parent $win \
+            -title {DAQROOT} ]
+        if {$directory ne ""} {
+            set options(-daqrootdir) $directory
+            set lastRoot $directory
+        }
+    }
+    ##
+    # _browseDest
+    #   Browse for a destination directory.
+    #
+    method _browseDest {} {
+        set directory [tk_chooseDirectory -initialdir $lastDest -parent $win \
+            -title {Destination} ]
+        if {$directory ne "" } {
+            set options(-destination) $directory
+            set lastDest $directory
+        }
     }
 }
 ##
@@ -210,11 +290,11 @@ snit::widgetadaptor LoggerList {
     method _cgetLoggers {optname} {
         set result [list]
         set items [$tree children {}]
-        foreach item $itesm {
-            lappend $result [lindex [$tree item $item -values] 8]
+        foreach item $items {
+            lappend result [lindex [$tree item $item -values] 8]
         }
-        
-        return $list
+
+        return $result
     }
     #--------------------------------------------------------------------------
     #  Event handling methods.
@@ -278,6 +358,65 @@ proc usage {msg} {
     exit -1
      
 }
+##
+# _needNonBlank
+#    Called to pop up an error that an entry field was left blank that should not
+#    have been.
+#
+# @param field -name of field.
+#
+proc _needNonBlank {field} {
+    set fullMessage "The field '$field' cannot be empty"
+    tk_messageBox -parent . -title "Blank field" -icon error -type ok \
+        -message $fullMessage
+}
+##
+# _addLogger
+#    Adds the logger described in the LoggerEntry passed in.
+#
+# @param e - a LoggerEntry widget that contains the definition to load.
+# @param loggers -the event logger list widget.
+# @note A container of <None> means there's no container.
+# @note We require all elements be fillled in.
+#
+proc _addLogger {e loggers} {
+    set root [$e cget -daqrootdir]
+    set ring [$e cget -ring]
+    set dest [$e cget -destination]
+    set host [$e cget -host]
+    
+    set cont [$e cget -container]
+    if {$cont ne "<None>"} {
+        set container $cont    
+    } else  {
+        set container ""
+    }
+    set crit [$e cget -critical]
+    set part [$e cget -partial]
+    set en [$e cget -enabled]
+    
+    if {$root eq ""} {
+        _needNonBlank "DAQ root"
+        return
+    }
+    if {$ring eq ""} {
+        _needNonBlank "Ring URI" 
+        return
+    }
+    if {$dest eq ""} {
+        _needNonBlank "Destination"
+    }
+    #  Create the dict describing the logger and lappend it to the existing
+    #  loggers in the UI - wew don't save anything to the database:
+    
+    set newItem [dict create                                                \
+        daqroot $root ring $ring host $host partial $part                   \
+        destination $dest critical $crit enabled $en container $container   \
+    ]
+    set loggerList [$loggers cget -loggers]
+    lappend loggerList $newItem
+    $loggers configure -loggers $loggerList
+}
 #-----------------------------------------------------------------------------
 #
 #  Entry point:
@@ -303,8 +442,8 @@ set loggers [::eventloggers::listLoggers db]
 LoggerList .loggers -loggers $loggers
 
 ttk::frame .entry
-LoggerEntry .entry.loggers
-ttk::button .entry.add -text Add
+set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
+ttk::button .entry.add -text Add -command [list _addLogger  $Entry .loggers]
 ttk::button .entry.delete -text Delete
 
 grid .entry.loggers -row 0 -column 0 -rowspan 2

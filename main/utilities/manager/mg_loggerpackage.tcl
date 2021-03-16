@@ -210,7 +210,7 @@ proc eventloggers::disable {db} {
     }
 }
 ##
-# eventloggers::delete
+# eventloggers
 #   Remove an event logger.
 #
 # @param db - database command.
