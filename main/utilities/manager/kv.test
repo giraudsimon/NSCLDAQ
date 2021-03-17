@@ -85,6 +85,62 @@ tcltest::test create_3 {Double create is a fail.} \
 -body {
     kvstore::create db Key Value
 } -result * -match glob -returnCodes error
+#-------------------------------------------------------------------------------
+# Tests for modify:
+
+tcltest::test modify_1 {Modification of an existing key changes value.} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::modify db Key "New Value"
+    db eval {
+        SELECT value FROM kvstore WHERE keyname = 'Key'
+    }
+} -result [list "New Value"]
+
+tcltest::test modify_2 {Cannot modify a nonexistent key} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::modify db Key "New Value"
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# Tests of kvstore::get
+#
+
+tcltest::test get_1 {Getting the value of a key gets correct value} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::get db Key
+
+} -result Value
+
+tcltest::test get_2 {Get non-existent key is error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::get db Key
+} -result * -match glob -returnCodes error
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

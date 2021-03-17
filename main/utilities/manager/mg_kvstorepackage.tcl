@@ -37,6 +37,8 @@ namespace eval kvstore {
 #  kvstore::modify    - Modify the value of a key - key _must_ exist.
 #  kvstore::remove    - Delete a key/value pair -key must exist.
 #  kvstore::get       - Return the value of a key.
+#  kvstore::listKeys  - List the keys in the store.
+#  kvstore::listAll   - List the key/value pairs.
 
 #-----------------------------------------------------------------------------
 # Private utilities
@@ -108,5 +110,22 @@ proc kvstore::remove {db key} {
         }
     } else {
         error "The key $key does not exist and therefore cannot be removed"
+    }
+}
+##
+# kvstore::get
+#   Return the value of a key from the store.  The key must exist.
+#
+# @param db     - The database command.
+# @param key    - The key to lookup.
+# @return string- The value associated with the key.
+#
+proc kvstore::get {db key} {
+    if {[::kvstore::_exists $db $key]} {
+        return [$db eval {
+            SELECT value FROM kvstore WHERE keyname = $key
+        }]
+    } else {
+        error "Can't get the values of $key because it does not exist"
     }
 }
