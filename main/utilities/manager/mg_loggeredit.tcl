@@ -454,15 +454,22 @@ proc _addLogger {e loggers} {
     #  Create the dict describing the logger and lappend it to the existing
     #  loggers in the UI - wew don't save anything to the database:
     
-    set newItem [dict create                                                \
-        daqroot $root ring $ring host $host partial $part                   \
-        destination $dest critical $crit enabled $en container $container   \
-    ]
+    
     set loggerList [$loggers cget -loggers]
-    lappend loggerList $newItem
+    
+    # Wat we do with the value depends:
+    # If editing >= 0 we're doing a modification otherwise an addition.
+    
+    if {$::editing >= 0} {
+        set loggerList [lreplace $loggerList $::editing $::editing $newItem]
+    } else {
+        # Adding a new item.
+        
+        lappend loggerList $newItem
+    }
     $loggers configure -loggers $loggerList
-    $e clear
-    set ::editing 0;               # If we were editing.
+    
+    set ::editing -1;               # If we were editing.
 }
 ##
 # _saveLoggers
@@ -561,9 +568,10 @@ proc _findLogger {loggers needle} {
 #    - set the editing flag so that an 'add' will modify instead.
 #
 # @param e    - loggere entry widget we'll load.
+# @param lw   - the list widget.
 # @param l    - Dict that describes the logger (passed by the widget).
 #
-proc _selectItem {e l} {
+proc _selectItem {e lw l} {
     $e clear
     $e configure -daqrootdir [dict get $l daqroot]  \
         -host [dict get $l host]                    \
@@ -573,7 +581,11 @@ proc _selectItem {e l} {
         -critical [dict get $l critical]            \
         -partial  [dict get $l partial]             \
         -enabled  [dict get $l enabled]
-    set ::edting 1;                  # Add now edits.
+   
+   #  Set ::editing to the index of the selected logger:
+    
+    set allLoggers [$lw cget -loggers]
+    set ::editing [_findLogger $allLoggers $l]
 }
 ##
 # _deleteLogger
@@ -598,7 +610,7 @@ proc _deleteLogger {e l} {
 #
 #  Entry point:
 
-variable editing 0
+variable editIndex -1
 
 
 if {[llength $argv] != 1} {
@@ -619,7 +631,7 @@ if  {![file writable $fname]} {
 
 sqlite db $fname
 set loggers [::eventloggers::listLoggers db]
-LoggerList .loggers -loggers $loggers -ondouble [list _selectItem .entry.loggers]
+LoggerList .loggers -loggers $loggers -ondouble [list _selectItem .entry.loggers .loggers]
 
 ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
