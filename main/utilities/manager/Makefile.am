@@ -6,7 +6,7 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_loggerpackage.tcl mg_kvstorepackage.tcl
 
 test_scripts=container.test program.test sequence.test transitions.test \
-	loggerdb.test
+	loggerdb.test kv.test
 
 EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) minimal.img singexists.sh
 

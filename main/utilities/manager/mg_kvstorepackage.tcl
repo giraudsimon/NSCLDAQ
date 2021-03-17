@@ -48,7 +48,7 @@ namespace eval kvstore {
 # @param key  - Key to check for.
 # @return boolean - true if key exists in the kvstore.
 #
-proc ::kevstore::_exists {db key} {
+proc ::kvstore::_exists {db key} {
     #
     #  The query will return 1 or 0 since we don't allow duplicates.
     #  
@@ -69,7 +69,7 @@ proc ::kevstore::_exists {db key} {
 # @param value - Value to associate with that key.
 #
 proc kvstore::create {db key value} {
-    if {![::kvstore:: _exists $db $key]} {
+    if {![::kvstore::_exists $db $key]} {
         $db eval {
             INSERT INTO kvstore (keyname, value) VALUES ($key, $value)
         }
