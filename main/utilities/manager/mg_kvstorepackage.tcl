@@ -129,3 +129,15 @@ proc kvstore::get {db key} {
         error "Can't get the values of $key because it does not exist"
     }
 }
+##
+# kvstore::listKeys
+#    Return the list of keys that are in the database.
+#
+# @param db   - The database.
+# @return list of strings - the keys in the database.
+#
+proc kvstore::listKeys {db} {
+    db eval {
+        SELECT keyname FROM kvstore
+    }
+}

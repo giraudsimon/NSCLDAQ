@@ -141,6 +141,61 @@ tcltest::test get_2 {Get non-existent key is error} \
 -body {
     kvstore::get db Key
 } -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# Tests of kvstore::listKeys
+
+tcltest::test listkeys_1 {Initially empty.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list]
+
+tcltest::test listkeys_2 {List a single one} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db 
+} -result [list Key1]
+
+tcltest::test listkeys_3 {List a few keys} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 value
+    kvstore::create db Key2 value
+    kvstore::create db Key3 value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list Key1 Key2 Key3]
+
+tcltest::test listkeys_4 {List keys with white space.} \
+-setup {
+    commonSetup
+    kvstore::create db "Key 1" value
+    kvstore::create db "Key 2" value
+    kvstore::create db "Key 3" value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list "Key 1" "Key 2" "Key 3"]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
