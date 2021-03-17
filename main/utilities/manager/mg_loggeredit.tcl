@@ -507,19 +507,22 @@ proc _saveLogger {db logger} {
 #
 proc _saveLoggers {db loggers} {
     
-    #  Kill off the existing loggers.
-    
-    set ls [::eventloggers::listLoggers $db]
-    foreach logger $ls {
-        set id [dict get $logger id]
-        ::eventloggers::delete $db $id
-    }
-    
-    # Add back the new loggers, one at a atime.
-    
-    set newLoggers [$loggers cget -loggers]
-    foreach logger $newLoggers {
-        _saveLogger $db $logger
+    # Let's do this in a transaction to make it all or nothing.
+    db transaction {
+        #  Kill off the existing loggers.
+        
+        set ls [::eventloggers::listLoggers $db]
+        foreach logger $ls {
+            set id [dict get $logger id]
+            ::eventloggers::delete $db $id
+        }
+        
+        # Add back the new loggers, one at a atime.
+        
+        set newLoggers [$loggers cget -loggers]
+        foreach logger $newLoggers {
+            _saveLogger $db $logger
+        }
     }
 }
 ##
@@ -635,7 +638,7 @@ LoggerList .loggers -loggers $loggers -ondouble [list _selectItem .entry.loggers
 
 ttk::frame .entry
 set Entry [LoggerEntry .entry.loggers  -containers [::container::listDefinitions db]]
-ttk::button .entry.add -text Add -command [list _addLogger  $Entry .loggers]
+ttk::button .entry.add -text Add/Modify -command [list _addLogger  $Entry .loggers]
 ttk::button .entry.delete -text Delete  \
     -command [list _deleteLogger .entry.loggers .loggers]
 ttk::button .entry.clear  -text Clear -command [list $Entry clear]
