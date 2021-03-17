@@ -196,6 +196,63 @@ tcltest::test listkeys_4 {List keys with white space.} \
     kvstore::listKeys db
 } -result [list "Key 1" "Key 2" "Key 3"]
 
+#------------------------------------------------------------------------------
+# Tests of kvstore::listAll
+
+tcltest::test listall_1 {Initially  there's nothing} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create]
+
+tcltest::test listall_2 {Single item.} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create Key Value]
+
+tcltest::test listAll_3 {Several items - no fancies.} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 value1
+    kvstore::create db Key2 value2
+    kvstore::create db Key3 value3
+    kvstore::create db Key4 value4
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create Key1 value1 Key2 value2 Key3 value3 Key4 value4]
+
+tcltest::test listall_4 {Funky keywords and values.} \
+-setup {
+    commonSetup
+    kvstore::create db "Key 1" "value 1"
+    kvstore::create db "Key 2" "value 2"
+    kvstore::create db "Key 3" "value 3"
+    kvstore::create db "Key 4" "value 4"
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create "Key 1" "value 1" "Key 2" "value 2" "Key 3" "value 3" \
+           "Key 4"  "value 4"]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

@@ -141,3 +141,21 @@ proc kvstore::listKeys {db} {
         SELECT keyname FROM kvstore
     }
 }
+##
+# kvstore::listAll
+#   Return the list of keys/value pairs as a  giant dict:
+#
+# @param db
+# return dict - keys of the dict are the kvstore keys and values are their values.
+#
+proc kvstore::listAll {db} {
+    set result [dict create]
+    
+    db eval {
+        SELECT keyname, value FROM kvstore
+    } kv {
+        dict set result $kv(keyname) $kv(value)
+    }
+    
+    return $result
+}
