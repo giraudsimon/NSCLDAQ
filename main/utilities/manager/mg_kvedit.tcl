@@ -80,6 +80,29 @@ snit::widgetadaptor KvList {
         $self configurelist $args
         
     }
+    #-------------------------------------------------------------------------
+    # Public methods
+    
+    ##
+    # add
+    #    Add a new entry.  Note that the key must not yet be in the tree or
+    #    an error will be thrown.
+    #
+    # @param key   - new key.
+    # @param value - New value
+    #
+    method add {key value} {
+        set existing [$self _findKey $key]
+        if {$existing eq ""} {
+            $tree insert {} end -values [list $key $value]
+        } else {
+            error "There's already a keyword $key in editor."
+        }
+    }
+    
+    # delete
+    
+    # modify
     
     #--------------------------------------------------------------------------
     # Configuation management
@@ -142,6 +165,29 @@ snit::widgetadaptor KvList {
             uplevel #0 $script
         }
     }
+    #-------------------------------------------------------------------------
+    # Private utilities.
+    
+    ##
+    # _findKey
+    #    Find the entry with the specified key:
+    #
+    # @param key
+    # @return entry id.
+    # @retval "" If there's no match.
+    #
+    method _findKey {key} {
+        set children [$tree children {} ]
+        foreach item $children {
+            set values [$tree item $item -values]
+            if {$key eq [lindex $values 0]} {
+                return $item
+            }
+        }
+        # No match
+        
+        return ""
+    }
 }
 
 ##
@@ -165,6 +211,8 @@ snit::widgetadaptor KvEntry {
         ttk::entry $win.value -textvariable [myvar options(-value)]
         
         grid $win.lkey $win.key $win.lvalue $win.value -sticky nsew
+        
+        $self configurelist $args
     }
 }
     
