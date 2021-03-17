@@ -143,4 +143,30 @@ snit::widgetadaptor KvList {
         }
     }
 }
+
+##
+# @class KvEntry
+#    Provides a widget that can be used to enter a keyword/value pair:
+#
+# OPTIONS:
+#   -key  - the keyword.
+#   -value - THe value.
+#
+snit::widgetadaptor KvEntry {
+    option -key
+    option -value
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::label $win.lkey -text "Key:"
+        ttk::entry $win.key -textvariable [myvar options(-key)]
+        ttk::label $win.lvalue -text "Value:"
+        ttk::entry $win.value -textvariable [myvar options(-value)]
+        
+        grid $win.lkey $win.key $win.lvalue $win.value -sticky nsew
+    }
+}
+    
+
     
