@@ -27,10 +27,86 @@ exec tclsh "$0" ${1+"$@"}
 package provide kvstore 1.0
 package require sqlite3
 
+
+namespace eval kvstore {
+}
 ##
 # The public API consists of the following procs:
 #
 #  kvstore::create    - Create a new key/value - key must not exist.
 #  kvstore::modify    - Modify the value of a key - key _must_ exist.
 #  kvstore::remove    - Delete a key/value pair -key must exist.
+#  kvstore::get       - Return the value of a key.
 
+#-----------------------------------------------------------------------------
+# Private utilities
+
+##
+# ::kvstore::_exists
+#
+# @param db   - database command.
+# @param key  - Key to check for.
+# @return boolean - true if key exists in the kvstore.
+#
+proc ::kevstore::_exists {db key} {
+    #
+    #  The query will return 1 or 0 since we don't allow duplicates.
+    #  
+    return [db eval {
+        SELECT COUNT(*) FROM kvstore WHERE keyname = $key
+    }]
+}
+
+#------------------------------------------------------------------------------
+# Public entries
+
+##
+# kvstore::create
+#   Create a new key/value pair - the key must not already exist.
+#
+# @param db   - database command.
+# @param key   - New key.
+# @param value - Value to associate with that key.
+#
+proc kvstore::create {db key value} {
+    if {![::kvstore:: _exists $db $key]} {
+        $db eval {
+            INSERT INTO kvstore (keyname, value) VALUES ($key, $value)
+        }
+    } else {
+        error "The key $key is already defined."
+    }
+}
+##
+# kvstore::modify
+#   Modify the value of an existing key.  The key must exist.
+# 
+# @param db    - the database command.
+# @param key   - THe key to modify.
+# @param value - the new value to assign to the key.
+#
+proc kvstore::modify {db key value} {
+    if {[::kvstore::_exists $db $key]} {
+        $db eval {
+            UPDATE kvstore SET value=$value WHERE keyname = $key
+        }
+    } else {
+        error "The key $key is not defined and cannot be modified."
+    }
+}
+##
+# kvstore::remove
+#   Remove a key from the key value store.  The key must exist.
+#
+# @param db  - the database command.
+# @param key - The key to remove.
+#
+proc kvstore::remove {db key} {
+    if {[::kvstore::_exists $db $key]} {
+        $db eval {
+            DELETE FROM kvstore WHERE keyname=$key
+        }
+    } else {
+        error "The key $key does not exist and therefore cannot be removed"
+    }
+}
