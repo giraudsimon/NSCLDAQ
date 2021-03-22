@@ -29,6 +29,7 @@
 #include <new>
 #include <stdexcept>
 #include <iostream>
+
 /**
  * constructor
  *    @param fanin - client of the fanout transport.
@@ -91,9 +92,24 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
             
             if (pH->s_type == PHYSICS_EVENT) {
                 std::vector<BodySegment> segs =  editItem(pH);
-                outputSegments.insert(
-                    outputSegments.end(), segs.begin(), segs.end()
-                );
+                
+                // An empty result means something bad enough
+                // happened we need to kill off the event.
+                
+                if (segs.size() == 0) {
+                    // To finish getting the event retracted we need
+                    // to remove the timestamp we've already put in the
+                    // output segments - the last item:
+                    
+                    outputSegments.pop_back();    // timestamp -- not dynamic.
+                    
+                } else {
+                    outputSegments.insert(
+                        outputSegments.end(), segs.begin(), segs.end()
+                    );                    
+                }
+                
+
             } else {
                 // pass non physics type along:
                 
