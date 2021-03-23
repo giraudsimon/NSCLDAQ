@@ -31,6 +31,10 @@ package require kvstore
 package require sqlite3
 package require Tk
 package require snit
+#-------------------------------------------------------------------------------
+# Global storage:
+variable list
+variable entry
 
 #-------------------------------------------------------------------------------
 # Megawidgets.
@@ -314,12 +318,45 @@ proc _Delete {} {
             -message "There is no key named '$key'  to delete."
     }
 }
-
+##
+# Save
+#   Saves all of the items in the list.  This is a bit complex as we have
+#   to determine which keys were deleted, which modified and which are new.
+#
+# @param db - the database command.
+#
+proc _Save {db } {
+    variable list
+    
+    set kvpairs [$list cget -kvpairs];    # items in the list.
+    set existingKeys [kvstore::listKeys $db]
+    set listKeys [dict keys $kvpairs]
+    
+    #  Delete existingKeys that are not in listKeys:
+    
+    foreach key $existingKeys {
+        if {$key ni $listKeys} {
+            kvstore::remove $db $key
+        }
+    }
+    #  Now go through kvpairs... if the key exists do a modify otherwise
+    #  add:
+    
+    dict for {key value} $kvpairs {
+        if {$key in $existingKeys} {
+            set verb kvstore::modify
+        } else {
+            set verb kvstore::create
+        }
+        $verb $db $key $value
+    }
+        
+    
+    
+}
 #------------------------------------------------------------------------------
 # Entry
 #
-variable list
-variable entry
 
 
 if {[llength $argv] != 1} {
@@ -353,7 +390,7 @@ grid .input.update .input.delete -sticky w
 grid .input -sticky nsew
 
 ttk::frame .action
-ttk::button .action.save -text Save -command [list _Save]
+ttk::button .action.save -text Save -command [list _Save db]
 grid .action.save -sticky w
 grid .action -sticky nsew
 
