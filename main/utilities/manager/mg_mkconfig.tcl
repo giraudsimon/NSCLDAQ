@@ -301,6 +301,39 @@ proc kvstore {db} {
     }
 }
 
+##
+# usersandroles
+#    Tables of users, roles and role membership.
+#
+# @param db - database.
+#
+proc usersandroles {db} {
+    
+    # User names.
+    
+    $db eval {
+        CREATE TABLE IF NOT EXISTS users (
+            id        INTEGER PRIMARY KEY,
+            username  TEXT
+        )
+    }
+    #  Role names
+    
+    $db eval {
+        CREATE TABLE IF NOT EXISTS roles (
+            id       INTEGER PRIMARY KEY,
+            role     TEXT
+        )
+    }
+    #  Join table between the users and the roles they have.
+    
+    $db eval {
+        CREATE TABLE IF NOT EXISTS user_roles (
+            user_id    INTEGER,
+            role_id    INTEGER
+        )
+    }
+}
 
 #-------------------------------------------------------------------------------
 # Entry point
@@ -313,7 +346,7 @@ if {[llength $argv] != 1} {
 set dbname [lindex $argv 0]
 sqlite3 db $dbname -create 1
 
-foreach schema [list containers programs sequences event_log kvstore] {
+foreach schema [list containers programs sequences event_log kvstore usersandroles] {
     $schema db
 }
 
