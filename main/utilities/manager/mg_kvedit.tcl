@@ -279,7 +279,41 @@ proc Usage {msg} {
 ##
 # _Update
 #    Updates the list of key value pairs with what's in the key value entry.
-#    This means that 
+#    This means that if the key already exists it is modified otherwise it's
+#    inserted.
+#
+proc _Update { } {
+    variable list;           # the list widget.
+    variable entry;          # the entry widget.
+    
+    # Unpack the stuff in the entry:
+    
+    set key   [$entry cget -key]
+    set value [$entry cget -value]
+    
+    if {[$list exists $key]} {
+        set method modify
+    } else {
+        set method add
+    }
+    $list $method $key $value
+}
+##
+# _Delete
+#   Delete the item that's in the entry from the list -- if it exists.
+#
+proc _Delete {} {
+    variable list
+    variable entry
+    
+    set key [$entry cget -key]
+    if {[$list exists $key]} {
+        $list delete $key
+    } else {
+        tk_messageBox -title "No such key" -icon error -type ok \
+            -message "There is no key named '$key'  to delete."
+    }
+}
 
 #------------------------------------------------------------------------------
 # Entry
