@@ -29,6 +29,7 @@
 #include <new>
 #include <stdexcept>
 #include <iostream>
+
 /**
  * constructor
  *    @param fanin - client of the fanout transport.
@@ -91,9 +92,24 @@ CBuiltRingItemEditor::process(void* pData, size_t nBytes)
             
             if (pH->s_type == PHYSICS_EVENT) {
                 std::vector<BodySegment> segs =  editItem(pH);
-                outputSegments.insert(
-                    outputSegments.end(), segs.begin(), segs.end()
-                );
+                
+                // An empty result means something bad enough
+                // happened we need to kill off the event.
+                
+                if (segs.size() == 0) {
+                    // To finish getting the event retracted we need
+                    // to remove the timestamp we've already put in the
+                    // output segments - the last item:
+                    
+                    outputSegments.pop_back();    // timestamp -- not dynamic.
+                    
+                } else {
+                    outputSegments.insert(
+                        outputSegments.end(), segs.begin(), segs.end()
+                    );                    
+                }
+                
+
             } else {
                 // pass non physics type along:
                 
@@ -200,11 +216,11 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
     // event body as seen by the event builder.
     
     pRingItem pRItem = reinterpret_cast<pRingItem>(pItem);
-    if (pRItem->s_body.u_noBodyHeader.s_mbz == 0) {
+    if (!hasBodyHeader(pRItem)) {
         throw std::invalid_argument("Physics ring item is missing a body header!");
     }
     
-    uint32_t* pbhdr = reinterpret_cast<uint32_t*>(&(pRItem->s_body.u_hasBodyHeader));
+    uint32_t* pbhdr = static_cast<uint32_t*>(bodyHeader(pRItem));
     uint32_t  bodyHeaderSize = *pbhdr;
 
     
@@ -261,7 +277,7 @@ CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
         //    whines and aborts this ring item:
         
         pRingItem pfragRingItem = reinterpret_cast<pRingItem>(pfRitemHdr);
-        uint32_t   fBodyHeaderSize = pfragRingItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+        uint32_t   fBodyHeaderSize = *(static_cast<uint32_t*>(bodyHeader(pfragRingItem)));
         
         // nbytes includes the ring item header and fragment header that precede
         // the body header:
