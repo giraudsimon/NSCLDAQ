@@ -100,9 +100,38 @@ snit::widgetadaptor KvList {
         }
     }
     
+    ##
     # delete
+    #   Remove an existing entry
+    #
+    # @param key - the key to remove.
+    #
+    method delete {key} {
+        set existing [$self _findKey $key]
+        if {$existing ne ""} {
+            $tree delete $existing
+        } else {
+            error "There is no key '$key' to delete from the list."
+        }
+    }
     
+    ##
     # modify
+    #   Change the value of an existing key.
+    #
+    # @param key  - existing key.
+    # @param newValue - the new value it should have.
+    #
+    method modify {key newValue} {
+        set existing [$self _findKey $key]
+        if {$existing ne ""} {
+            $tree item $existing -values [list $key $newValue]
+        } else {
+            error "There is no key '$key' whose value can be modified to '$newValue'"
+        }
+    }
+        
+    
     
     #--------------------------------------------------------------------------
     # Configuation management
