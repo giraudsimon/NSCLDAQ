@@ -257,6 +257,72 @@ snit::widgetadaptor KvEntry {
         $self configurelist $args
     }
 }
-    
+#------------------------------------------------------------------------------
+#  Utility procs.
 
+##
+# Usage
+#  Output an error message, program usage and exit with an error.
+#
+# @param msg - the error messgae.
+#
+proc Usage {msg} {
+    puts stderr $msg
+    puts stderr "Usage:"
+    puts stderr "   \$DAQBIN/mg_kvedit configuration-database"
+    puts stderr "Edits the key value store in an experiment configuration"
+    puts stderr "Where:"
+    puts stderr "   configuration-database - is the experiment database configuration."
+    puts stderr "                            to use."
+    exit -1
+}
+##
+# _Update
+#    Updates the list of key value pairs with what's in the key value entry.
+#    This means that 
+
+#------------------------------------------------------------------------------
+# Entry
+#
+variable list
+variable entry
+
+
+if {[llength $argv] != 1} {
+    Usage {Incorrect command line parameter count}
+}
+sqlite3 db [lindex $argv 0]
+
+##
+# Build the user interface.
+#
+# +--------------------------------+
+# |  KV list                       |
+# +--------------------------------+
+# | Kv entry       | [Update]      |
+# +--------------------------------+
+# |  [Save]                        |
+# +--------------------------------+
+
+ttk::frame .list
+set list [KvList .list.list -kvpairs [kvstore::listAll db] \
+    -selectcommand [list _loadEntry]]
+grid $list -sticky nsew
+grid .list -sticky nsew
+
+ttk::frame .input -relief groove -borderwidth 3
+set entry [KvEntry .input.entry]
+ttk::button .input.update -text Update -command [list _Update]
+ttk::button .input.delete -text Delete -command [list _Delete]
+grid $entry -columnspan 2 -sticky nsew
+grid .input.update .input.delete -sticky w
+grid .input -sticky nsew
+
+ttk::frame .action
+ttk::button .action.save -text Save -command [list _Save]
+grid .action.save -sticky w
+grid .action -sticky nsew
+
+
+          
     
