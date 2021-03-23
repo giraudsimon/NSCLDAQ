@@ -350,10 +350,25 @@ proc _Save {db } {
         }
         $verb $db $key $value
     }
-        
-    
-    
 }
+##
+# _loadEntry
+#    Load the selection into the entry box.
+#
+# @param item - dict that reflects the selected item.
+#
+proc _loadEntry {item} {
+    variable entry
+    if {$item eq ""} {
+        return
+    }
+    set key   [dict keys $item]
+    set value [dict get $item $key]
+    
+    $entry configure -key $key
+    $entry configure -value $value
+}
+
 #------------------------------------------------------------------------------
 # Entry
 #
