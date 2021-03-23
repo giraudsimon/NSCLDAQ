@@ -315,6 +315,11 @@ proc EVBC::start args {
     puts $EVBC::pipefd "start $::EVBC::appNameSuffix"
     ::flush $EVBC::pipefd
     
+    # Construct and set the GUI title:
+    
+    set title "Event builder -> [$options cget -destring]@$::env(HOST)"
+    puts $EVBC::pipefd "wm title . {$title}"
+    
     # If any parameters have been set push those out now:
     
     foreach param [list window XoffThreshold XonThreshold] {
