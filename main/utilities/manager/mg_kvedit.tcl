@@ -130,7 +130,20 @@ snit::widgetadaptor KvList {
             error "There is no key '$key' whose value can be modified to '$newValue'"
         }
     }
-        
+    ##
+    # exists
+    #  Determine if a key exists in the list:
+    #
+    # @param key - the key to check for
+    # @return bool - true if it does.
+    #
+    method exists {key} {
+        if {[$self _findKey $key] ne ""} {
+            return 1
+        } else {
+            return 0
+        }
+    }
     
     
     #--------------------------------------------------------------------------
