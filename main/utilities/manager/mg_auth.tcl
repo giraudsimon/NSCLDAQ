@@ -157,4 +157,83 @@ proc ::auth::grant {db user role} {
 # @param user  - name of the user.
 # @param role  - Role to revoke.
 #
-
+proc ::auth::revoke {db user role} {
+    if {![::auth::_userExists $db $user]} {
+        error "There is no user '$user' from which roles can be revoked"
+    }
+    if {![::auth::_existingRole $db $role]} {
+        error "There is no such role '$role' that can be revoked."
+    }
+    #  See if the user has been granted that role:
+    
+    set hasRole [$db  eval {
+        SELECT COUNT(*) FROM user_roles
+        INNER JOIN users ON users.id = user_roles.user_id
+        INNER JOIN roles ON roles.id = user_roles.role_id
+        WHERE username = $user AND role = $role
+    }]
+    if {$hasRole} {
+        #
+        #  This is a tricky bit of SQL.  Subqueries allow a single statement
+        #  to do the delete; Specifically we make use of the fact there will only be
+        #  a single element in each of the IN  subqueries as users and roles are
+        #  unique.
+        #
+        $db eval {
+            DELETE FROM user_roles
+            WHERE user_id IN (
+                SELECT users.id FROM users WHERE username = $user
+            ) AND role_id IN (
+                SELECT roles.id FROM roles WHERE role = $role
+            )
+        }
+    } else {
+        error "$user has never been granted $role"
+    }
+}
+##
+# ::auth::users
+#    Return a lis tof the users.
+#
+# @param db - database command
+# @return list of textual items - each item a username.
+#
+proc ::auth::users {db} {
+    return [$db eval {
+        SELECT username FROM usres
+    }]
+}
+##
+#  ::auth::listRoles
+#     Lists all role names.
+#
+# @param db
+# @return list of role names.
+#
+proc ::auth::listRoles {db} {
+    return [$db eval {
+        SELECT role FROM roles
+    }]
+}
+##
+# ::auth::listAll
+#
+#  Lists the users and the roles they hold.
+#
+# @param db - database command.
+# @return dict - the keys are usernames the values are lists of roles held
+#                by that user.
+#
+proc ::auth::listaAll {db} {
+    set result [dict create]
+    
+    $db eval {
+        SELECT userame, role FROM user_roles
+        INNER JOIN users ON users.id = user_roles.user_id
+        INNER JOIN roles ON roles.id = user_roles.role_id
+    } userrole {
+        dict lappend result $userrole(username) $userrole(role)
+    }
+    
+    $return list
+}
