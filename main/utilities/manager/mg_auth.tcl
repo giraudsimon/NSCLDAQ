@@ -100,11 +100,11 @@ proc ::auth::adduser {db name} {
 #
 proc ::auth::rmuser {db user} {
     if {![::auth::_userExists $db $user]} {
-        error "$user is not an existing user and therefore annot be removed"
+        error "$user is not an existing user and therefore cannot be removed"
     }
     
     $db eval {
-        DELETE FROM users WHERE usrname = $user
+        DELETE FROM users WHERE username = $user
     }
 }
 ##

@@ -45,7 +45,8 @@ proc commonCleanup { } {
     file delete $::dbFile
 
 }
-
+################################################################################
+#  auth::adduser tests.
 tcltest::test add_1 {Add makes entry in db .} \
 -setup {
     commonSetup
@@ -101,6 +102,58 @@ tcltest::test add_4 {Adding a duplicate user is an error.} \
 -body {
     auth::adduser db fox
 } -result {There is already a user named: fox} -returnCodes error
+
+###############################################################################
+# auth::rmuser   tests
+
+tcltest::test rmuser_1 {Remove nonexistent user is an error} \
+-setup {
+    commonSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db fox
+} -result {fox is not an existing user and therefore cannot be removed} \
+    -returnCodes error
+
+tcltest::test rmuser_2 {rmuser removes one row.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+    auth::adduser db cerizza
+    auth::adduser db liddick
+    auth::adduser db chester
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set prior [db eval {SELECT COUNT(*) FROM users}]
+    auth::rmuser db liddick
+    set now [db eval {SELECT COUNT(*) FROM users}]
+    expr {$prior - $now}
+} -result 1
+
+tcltest::test rmuser_3 {Remove a user removes the correct user.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+    auth::adduser db cerizza
+    auth::adduser db liddick
+    auth::adduser db chester
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db cerizza
+    db eval {
+        SELECT username FROM users ORDER BY username ASC
+    }
+} -result [lsort -increasing [list fox liddick chester]]
 
 #----------------------------------------------------
 
