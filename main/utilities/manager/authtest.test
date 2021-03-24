@@ -155,6 +155,60 @@ tcltest::test rmuser_3 {Remove a user removes the correct user.} \
     }
 } -result [lsort -increasing [list fox liddick chester]]
 
+###############################################################################
+# auth::addrole tests
+
+tcltest::test addrole_1 {Adding a role adds a table entry.} \
+-setup {
+    commonSetup
+    ::auth::addrole db a_role
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT COUNT(*) FROM roles}
+} -result 1
+
+tcltest::test addrole_2 {Adding a role adds the right table entry.} \
+-setup {
+    commonSetup
+    ::auth::addrole db  a_role
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT role FROM roles}
+} -result [list a_role]
+
+tcltest::test addrole_3 {Can add more than one role} \
+-setup {
+    commonSetup
+    ::auth::addrole db arole
+    ::auth::addrole db SomeRole
+    ::auth::addrole db thisRole
+    ::auth::addrole db LastRoleEver
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT role FROM roles ORDER by role ASC}
+} -result [lsort -increasing [list arole SomeRole thisRole LastRoleEver]]
+
+tcltest::test addrole_4 {Duplicate role names are not allowed} \
+-setup {
+    commonSetup
+    ::auth::addrole db arole
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::addrole db arole
+} -result {The role arole already exists} -returnCodes error
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
