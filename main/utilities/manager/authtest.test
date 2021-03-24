@@ -209,6 +209,59 @@ tcltest::test addrole_4 {Duplicate role names are not allowed} \
     ::auth::addrole db arole
 } -result {The role arole already exists} -returnCodes error
 
+################################################################################
+# ::auth::rmrole tests
+
+tcltest::test rmrole_1 {Removing a nonexistent role is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db test
+} -result {There is no role named 'test' to remove} -returnCodes error
+
+tcltest::test rmrole_2 {Removing a role decreases the number of roles by one:} \
+-setup {
+    commonSetup
+    ::auth::addrole db role1
+    ::auth::addrole db role2
+    ::auth::addrole db role3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set before [db eval {SELECT COUNT(*) FROM roles}]
+    ::auth::rmrole db role2
+    set after [db eval {SELECT COUNT(*) FROM roles}]
+    expr {$before - $after}
+} -result 1
+
+tcltest::test rmrole_3 {Correct role is removed} \
+-setup {
+    commonSetup
+    ::auth::addrole db role1
+    ::auth::addrole db role2
+    ::auth::addrole db role3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db role2
+    db eval {SELECT role FROM roles ORDER by role ASC}
+} -result [lsort -increasing [list role1 role3]]
+
+#  Note we can't test rmrole's ability to remove existing grants until
+#  we've actually tested ::auth::grant...so that test will be one of the
+#  grant tests in stead of an rm role test -- so :
+
+################################################################################
+# ::auth::grant tests.
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

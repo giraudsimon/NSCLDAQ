@@ -124,6 +124,35 @@ proc ::auth::addrole {db role} {
     
 }
 ##
+# ::auth::rmrole
+#    Remove a role.   This implies a revocation of the role from all holders.
+#
+# @param db    - database command.
+# @param role  - Role to remove (must exist).
+#
+proc ::auth::rmrole {db role} {
+    if {[::auth::_existingRole $db $role]} {
+        # Make the revocation and removal atomic:
+        
+        $db transaction {
+            # revoke everywhere:
+            
+            $db eval {
+                DELETE FROM user_roles WHERE role_id IN (
+                    SELECT id FROM roles WHERE role = $role
+                )
+            }
+            # Destroy the role itself.
+            
+            $db eval {
+                DELETE from roles WHERE role = $role
+            }
+        }
+    } else {
+        error "There is no role named '$role' to remove"
+    }
+}
+##
 # ::auth::grant
 #   Grant a user a role.
 #
