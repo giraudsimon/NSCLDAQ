@@ -162,7 +162,7 @@ proc ::auth::rmrole {db role} {
 #
 proc ::auth::grant {db user role} {
     if {![::auth::_userExists $db $user]} {
-        error "Cannot grant $role to nonexsitent user $user"
+        error "Cannot grant $role to nonexistent user $user"
     }
     if {![::auth::_existingRole $db $role]} {
         error "Cannot grant nonexistent role: $role to user $user"

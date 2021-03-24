@@ -262,6 +262,153 @@ tcltest::test rmrole_3 {Correct role is removed} \
 ################################################################################
 # ::auth::grant tests.
 
+# Do the common setup and then make some users and some roles.
+
+proc grantSetup { } {
+    commonSetup
+    
+    auth::adduser db fox
+    auth::adduser db chester
+    auth::adduser db liddick
+    auth::adduser db cerizza
+    
+    auth::addrole db manager
+    auth::addrole db administrator
+    auth::addrole db operator
+    auth::addrole db analyzer
+}
+
+tcltest::test grant_1 {Can grant a role and that adds to user_roles} \
+-setup {
+    grantSetup
+    
+    ::auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT COUNT(*) FROM user_roles}
+} -result 1
+
+tcltest::test grant_2 {Granting a role adds correct entry to join table.} \
+-setup {
+    grantSetup
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE user_id IN (
+            SELECT id FROM users WHERE username = 'fox') AND
+            role_id IN (SELECT id FROM roles WHERE role = 'administrator')
+        
+    }
+} -result 1
+
+tcltest::test grant_3 {Several grants can be done -- same role different users} \
+-setup {
+    grantSetup
+    
+    auth::grant db fox manager
+    auth::grant db chester manager
+    auth::grant db liddick manager
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE role_id IN (
+            SELECT id FROM roles WHERE role = 'manager'
+        )
+    }
+} -result 3
+
+tcltest::test grant_4 {Multiple grants several roles to same person} \
+-setup {
+    grantSetup
+    
+    ::auth::grant db fox manager
+    ::auth::grant db fox administrator
+    ::auth::grant db fox operator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE user_id IN (
+            SELECT id FROM users WHERE username='fox'
+        )
+    }
+} -result 3
+
+tcltest::test grant_5 {Invalid user is an error.} \
+-setup {
+    grantSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::grant db george administrator
+} -result {Cannot grant administrator to nonexistent user george}  \
+    -returnCodes error
+
+tcltest::test grant_6 {Invalid role is an error too} \
+-setup {
+    grantSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::grant db fox bad_role
+} -result {Cannot grant nonexistent role: bad_role to user fox} \
+    -returnCodes error
+
+tcltest::test rmrole_4 {Removing a role revokes grants too.} \
+-setup {
+    grantSetup
+    ::auth::grant db fox manager
+    ::auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db manager
+    
+    # Should only be on entry left in the user_roles table:
+    
+    db eval {
+        SELECT COUNT(*) FROM user_roles
+    }
+} -result 1
+
+tcltest::test rmrole_5 {The correct grants remain.} \
+-setup {
+    grantSetup
+    auth::grant db fox manager
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db manager
+    
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE role_id IN (
+            SELECT id FROM roles WHERE role = 'administrator'
+        )
+    }
+} -result 1
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
