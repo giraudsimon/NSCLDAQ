@@ -543,6 +543,52 @@ tcltest::test listRoles_2 {Existing roles are properly listed} \
 -body {
     lsort -increasing [auth::listRoles db]
 } -result [lsort -increasing [list manager administrator operator analyzer]]
+
+##############################################################################
+# auth::listAll tests.
+
+tcltest::test listall_1 {Initially there's nothing to list.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::listAll db
+} -result [dict create]
+
+##
+#  This normalizes dicts returned from ::auth::listAll:
+#  Given a dict that comes from that proc returns one that:
+#  is sorted by key (increasing) and has roles sorted increasing as well.
+#
+# @param d  - dict from ::auth::listAll.
+# @return dict - see above.
+#
+proc sortDict  {d} {
+    set result [dict create]
+    foreach key [lsort -increasing [dict keys $d]] {
+        dict set result $key [lsort -increasing [dict get $d $key]]    
+    }
+    
+    return $result
+}
+
+tcltest::test listall_2 {Now we have users with roles (except liddick).} \
+-setup {
+    revokeSetup ;     # Note difference from prior test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set rawResult [::auth::listAll db]
+    set result [sortDict $rawResult]
+} -result [sortDict [dict create                                     \
+    liddick [list] fox [list manager administrator]                  \
+    chester [list operator] cerizza [list analyzer]                  \
+]]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

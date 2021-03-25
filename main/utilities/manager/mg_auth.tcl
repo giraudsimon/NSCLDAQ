@@ -253,16 +253,31 @@ proc ::auth::listRoles {db} {
 # @return dict - the keys are usernames the values are lists of roles held
 #                by that user.
 #
-proc ::auth::listaAll {db} {
+proc ::auth::listAll {db} {
     set result [dict create]
     
     $db eval {
-        SELECT userame, role FROM user_roles
+        SELECT username, role FROM user_roles
         INNER JOIN users ON users.id = user_roles.user_id
         INNER JOIN roles ON roles.id = user_roles.role_id
     } userrole {
         dict lappend result $userrole(username) $userrole(role)
     }
+    #  This has gotten all people that have roles...but there can be people
+    #  that don't have roles... This adds an empty list to the dict for each of those.
     
-    $return list
+    set usersWithRoles [dict keys $result]
+    set allUsers [::auth::users $db]
+    
+    foreach user $allUsers {
+        if {$user ni $usersWithRoles} {
+            dict set result $user [list];        
+        }
+    }
+        
+    
+        
+    
+    
+    return $result
 }
