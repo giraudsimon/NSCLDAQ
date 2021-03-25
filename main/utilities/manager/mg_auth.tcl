@@ -229,7 +229,7 @@ proc ::auth::revoke {db user role} {
 #
 proc ::auth::users {db} {
     return [$db eval {
-        SELECT username FROM usres
+        SELECT username FROM users
     }]
 }
 ##
