@@ -103,8 +103,19 @@ proc ::auth::rmuser {db user} {
         error "$user is not an existing user and therefore cannot be removed"
     }
     
-    $db eval {
-        DELETE FROM users WHERE username = $user
+    # We also need to get rid of grants to this user.. A transaction makes this
+    # neatly amtomic
+    
+    $db transaction {
+        $db eval {
+            DELETE FROM user_roles WHERE user_id IN (
+                select id FROM users WHERE username = $user
+            )
+        }
+        $db eval {
+            DELETE FROM users WHERE username = $user
+        }
+        
     }
 }
 ##

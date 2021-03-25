@@ -409,6 +409,22 @@ tcltest::test rmrole_5 {The correct grants remain.} \
     }
 } -result 1
 
+tcltest::test rmuser_4 {Removing a user removes all grants to it from the user_roles tbl} \
+-setup {
+    grantSetup
+    auth::grant db fox manager
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db fox
+    db eval {
+        SELECT COUNT(*) FROM user_roles
+    }
+} -result 0
+
 ###############################################################################
 #  auth::revoke tests
 
