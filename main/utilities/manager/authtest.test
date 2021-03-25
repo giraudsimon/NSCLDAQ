@@ -517,7 +517,32 @@ tcltest::test users_2 {LIst users properly} \
 -body {
     lsort -increasing [auth::users db]
 } -result [lsort -increasing [list fox chester liddick cerizza]]
+
+#############################################################################
+# auth::listRoles tests
+#
+
+tcltest::test listRoles_1 {Initially, no roles} \
+-setup {
+    commonSetup;     #Note difference from next test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::listRoles db
+} -result [list]
     
+tcltest::test listRoles_2 {Existing roles are properly listed} \
+-setup {
+    grantSetup;     # Note difference from prior test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lsort -increasing [auth::listRoles db]
+} -result [lsort -increasing [list manager administrator operator analyzer]]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
