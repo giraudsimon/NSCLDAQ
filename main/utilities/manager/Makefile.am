@@ -1,6 +1,6 @@
 program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl \
 	mg_cfgprogram.tcl mg_stateedit.tcl mg_seqedit.tcl mg_loggeredit.tcl \
-	mg_kvedit.tcl
+	mg_kvedit.tcl mg_authedit.tcl
 
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_programpackage.tcl mg_programedit.tcl mg_sequencepackage.tcl  \
