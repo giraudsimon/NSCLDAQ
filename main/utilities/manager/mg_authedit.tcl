@@ -51,6 +51,7 @@ package require sqlite3
 #
 # METHODS:
 #    addUser   - Add a new user to the tree.
+#    rmUser    - Remove a user.
 #    grant     - Grant a role to a user.
 #    revoke    - Revoke a role from a user.
 #
@@ -189,6 +190,23 @@ snit::widgetadaptor UsersAndRoles {
         dict set current $username [list]
         $self configure -data $current;   # resorts the users.
     }
+    ##
+    # rmUser
+    #   Remove a user from the list of users (naturally any children
+    #   are also removed).
+    #
+    # @param username  - user to remove.
+    #
+    method rmUser {username} {
+        set current [$self cget -data]
+        if {$username in $current} {
+            dict remove current $username
+            $self configure -data $current
+        } else {
+            tk_messageBox -parent $win -type ok -icon error \
+                -message "There is no user named $username"
+        }
+    }
 }
 #-------------------------------------------------------------------
 # Global data
@@ -205,6 +223,13 @@ variable userlist       "";           #  The UsersAndRoles list.
 variable newuser        "";           #  New user entry box.
 variable newrole        "";            # New role entry box.
 
+variable usercontext    "";            # Stores user context  menu.
+variable rolecontext    "";          # Storees role context menu.
+
+#  Store stuff handed to our context menu posters:
+
+variable user          "";           # User in user and role contexts
+variable role          "";           # Role in role contexts.
 
 #-------------------------------------------------------------------
 #   Utility procs.
@@ -240,6 +265,43 @@ proc _addUser {e} {
     set newUser [$e get]
     $::userlist addUser $newUser
 }
+##
+# _addRole
+#   Adds a new role to the list of possible roles.  Note that since
+#   this role is not yet granted to anyone all this does it add it to
+#   the ::existingRoles list.
+#
+# @param e - the entry in which the name of the new role is held.
+# @note it is an error to try to add a role that's already in the list.
+#
+proc _addRole {e} {
+    set newRole [$e get]
+    if {$newRole in $::existingRoles} {
+        tk_messageBox -parent $::newrole -type ok -icon error \
+            -message "$newRole is already a defined role."   
+    } else {
+        lappend ::existingRoles $newRole
+    }
+}
+##
+# _postUserContext
+#    Posts the user context menu after first saving the name of the user
+#    the context menu is being posted for.
+#
+# @param username - name of user over which the pointer is when the menu
+#               is posted.
+#
+proc _postUserContext {username} {
+    set ::user $username
+    set x [winfo pointerx $::userlist]
+    set y [winfo pointery $::userlist]
+    
+    $::usercontext post $x $y
+    focus $::usercontext
+    
+}
+
+
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -279,7 +341,8 @@ set fullInfo      [::auth::listAll db]
 #
 
 
-set userlist [UsersAndRoles .listing -data $fullInfo]
+set userlist [UsersAndRoles .listing -data $fullInfo \
+    -onuserb3 [list _postUserContext]]
 
 ttk::labelframe .newuserframe -text "Add user"
 ttk::label .newuserframe.label -text "Username: "
@@ -289,7 +352,7 @@ ttk::button .newuserframe.add -text Add -command [list _addUser $newuser]
 ttk::labelframe .newroleframe -text "Add role"
 ttk::label .newroleframe.label -text Role:
 set newrole [ttk::entry .newroleframe.newrole]
-ttk::button .newroleframe.add -text Add
+ttk::button .newroleframe.add -text Add -command [list _addRole $newrole]
 
 ttk::frame .action
 ttk::button .action.save -text Save
@@ -306,6 +369,15 @@ grid .newroleframe -sticky nsew
 grid .action.save -sticky w
 grid .action  -sticky nsew
 
+##
+#  The following are context menus
+# posted on right clikcs in the UsersAndRoles widget:
+
+set usercontext [menu .usercontext -tearoff 0]
+.usercontext add command -label {Remove user...}
+.usercontext add separator
+.usercontext add command -label {Grant role(s)...}
+.usercontext add command -label {Revoke role(s)...}
 
 
 
