@@ -33,6 +33,8 @@ package require auth
 package require snit
 package require selectablelist 
 package require dialogwrapper
+package require sqlite3
+
 
 #-----------------------------------------------------------------------------
 #  Widgets
@@ -169,6 +171,22 @@ snit::widgetadaptor UsersAndRoles {
     }
 }
 #-------------------------------------------------------------------
+# Global data
+#
+#
+#  The roles must be maintained because it's possible for a role to exist
+#  but not be granted to anybody.  The people will all be in the
+#  UsersAndRoles widget, however, even if they have never
+#  been granted any roles.
+#  
+#
+variable existingRoles  [list];       # All known roles.
+variable userlist       "";           #  The UsersAndRoles list.
+variable newuser        "";           #  New user entry box.
+variable newrole        "";            # New role entry box.
+
+
+#-------------------------------------------------------------------
 #   Utility procs.
 #
 
@@ -198,6 +216,65 @@ proc _usage {msg} {
 if {[llength $argv] != 1} {
     _usage {Incorrect number of command line arguments}
 }
+
+sqlite3 db [lindex $argv 0]
+set existingRoles [::auth::listRoles db]
+set fullInfo      [::auth::listAll db]
+
+
+#   Create the user interface.  It'll look like this:
+#
+#   +-----------------------------------------------+
+#   |  +--------------------------------------+     |
+#   |  |  UsersAndRoles widget                |     |
+#   |  +--------------------------------------+     |
+#   +---- add user ---------------------------------|
+#   |  New user: [               ]  [Add]           |
+#   +----- add role --------------------------------|
+#   | New role:  [               ] [Add]            |
+#   +-----------------------------------------------+
+#   |  [Save]                                       |
+#   +-----------------------------------------------+
+#
+#  Right clicking on a user pops up a context menu that allows the
+#  user to be:
+#    *  Removed
+#    *  Have role granted.
+#    *  Have a role revoked.
+#
+#  Right clicking on a role gratned to a user allows:
+#    *  That role to be revoked.
+#    *  A new role to be granted.
+#
+
+
+set userlist [UsersAndRoles .listing -data $fullInfo]
+
+ttk::labelframe .newuserframe -text "Add user"
+ttk::label .newuserframe.label -text "Username: "
+set newuser [ttk::entry .newuserframe.newuser]
+ttk::button .newuserframe.add -text Add
+
+ttk::labelframe .newroleframe -text "Add role"
+ttk::label .newroleframe.label -text Role:
+set newrole [ttk::entry .newroleframe.newrole]
+ttk::button .newroleframe.add -text Add
+
+ttk::frame .action
+ttk::button .action.save -text Save
+
+
+grid $userlist -sticky nsew
+
+grid .newuserframe.label $newuser .newuserframe.add -sticky w
+grid .newuserframe -sticky nsew
+
+grid .newroleframe.label $newrole .newroleframe.add -sticky w
+grid .newroleframe -sticky nsew
+
+grid .action.save -sticky w
+grid .action  -sticky nsew
+
 
 
 
