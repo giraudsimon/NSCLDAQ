@@ -82,6 +82,7 @@ snit::widgetadaptor UsersAndRoles {
         $tree tag add role [list]
         
         $tree tag bind user <Button-3> [mymethod _dispatchUserMb3 %x %y]
+        $tree tag bind role <Button-3> [mymethod _dispatchRoleMb3 %x %y]
         
         $self configurelist $args
     }
@@ -131,7 +132,7 @@ snit::widgetadaptor UsersAndRoles {
     # Event handling
     
     ##
-    # _dispatchRoleMb3
+    # _dispatchUserMb3
     #    Dispatches a context menu callback on a right click on a user.
     #
     # @param x,y - window coordinates of the click.
@@ -145,10 +146,62 @@ snit::widgetadaptor UsersAndRoles {
             uplevel #0 $userScript
         }
     }
+    ##
+    # _dispatchRoleMb3
+    #    Dispatch a mb3 click on a role line.  We pull together
+    #    the role and user it's been granted to and pass that to any
+    #    -ongrantb3 script.
+    #
+    # @param x,y  - window coordinates of the click.
+    #
+    method _dispatchRoleMb3 {x y} {
+        set userScript $options(-ongrantb3)
+        
+        if {$userScript ne ""} {
+            set roleId [$tree identify item $x $y]
+            set userId [$tree parent $roleId]
+            
+            set username [$tree item $userId -text]
+            set rolename [$tree item $roleId -values]
+            lappend userScript $username $rolename
+            uplevel #0 $userScript
+        }
+    }
 }
-    
+#-------------------------------------------------------------------
+#   Utility procs.
+#
 
-    
+##
+# _usage
+#    Outputs an error message to stderr, then usage text and
+#    finally exits with an error status return code.
+#
+# @param msg - the user message to output.
+#
+proc _usage {msg} {
+    puts stderr $msg
+    puts stderr "\Usage:\n"
+    puts stderr "  \$DAQBIN/mg_authedit  configuration-database\n"
+    puts stderr "Editor to define users and roles and to grant "
+    puts stderr "Roles to users."
+    puts stderr "\nWhere:"
+    puts stderr "     configuration-database is the sqlite3 database"
+    puts stderr "     file containing the experiment configuration"
+    exit -1
+}
+
+#-------------------------------------------------------------------
+#  Entry point:
+
+
+if {[llength $argv] != 1} {
+    _usage {Incorrect number of command line arguments}
+}
+
+
+
+
 
     
 
