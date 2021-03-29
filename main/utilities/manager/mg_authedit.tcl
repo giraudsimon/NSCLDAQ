@@ -169,6 +169,26 @@ snit::widgetadaptor UsersAndRoles {
             uplevel #0 $userScript
         }
     }
+    #------------------------------------------------------------------
+    # Public methods:
+    
+    ##
+    # addUser
+    #   Add a user to the set. We'll do this using cget and configure
+    #   so that users remain sorted.
+    #
+    # @param username - new user.
+    # @note username must not already exist.
+    #
+    method addUser {username} {
+        set current [$self cget -data]
+        if {[dict exists $current $username]} {
+            tk_messageBox -parent $win -icon error -type ok \
+                -message "$username is an existing user in the list"           
+        }
+        dict set current $username [list]
+        $self configure -data $current;   # resorts the users.
+    }
 }
 #-------------------------------------------------------------------
 # Global data
@@ -208,7 +228,18 @@ proc _usage {msg} {
     puts stderr "     file containing the experiment configuration"
     exit -1
 }
-
+##
+# _addUser
+#   Adds the user in the new user entry to the set of users in the
+#   listing widget.
+#
+# @param e - entry widget.
+# @note userlist containse the user/roles listbox.
+#
+proc _addUser {e} {
+    set newUser [$e get]
+    $::userlist addUser $newUser
+}
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -253,7 +284,7 @@ set userlist [UsersAndRoles .listing -data $fullInfo]
 ttk::labelframe .newuserframe -text "Add user"
 ttk::label .newuserframe.label -text "Username: "
 set newuser [ttk::entry .newuserframe.newuser]
-ttk::button .newuserframe.add -text Add
+ttk::button .newuserframe.add -text Add -command [list _addUser $newuser]
 
 ttk::labelframe .newroleframe -text "Add role"
 ttk::label .newroleframe.label -text Role:
