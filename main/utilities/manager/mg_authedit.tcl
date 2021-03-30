@@ -441,6 +441,11 @@ proc _promptRoles {roles} {
 #
 proc _grant { } {
     set grantableRoles [_grantableRoles $::user]
+    if {[llength $grantableRoles] == 0} {
+        tk_messageBox -parent $::userlist -title "All granted" -icon info -type ok \
+            -message "There are no roles that have not already been granted to $::user"
+        return
+    }
     set roles [_promptRoles $grantableRoles]
     foreach role $roles {
         $::userlist grant $::user $role;    
@@ -480,6 +485,17 @@ proc _postRoleContext {user role} {
     
     $::rolecontext post  [winfo pointerx $::userlist] [winfo pointery $::userlist]
     focus $::rolecontext
+}
+##
+# _revokeRole
+#     Hooked to the role context Revoke menu.
+#
+#  -  ::user -has the user
+#  -  ::role -has the role
+#  -  ::userlist has the list of users.
+#
+proc _revokeRole { } {
+    $::userlist revoke $::user $::role
 }
 #-------------------------------------------------------------------
 #  Entry point:
@@ -562,8 +578,8 @@ set usercontext [menu .usercontext -tearoff 0]
 #  Role context menu:
 
 set rolecontext [menu .rolecontext -tearoff 0]
-.rolecontext add command -label {Revoke}
-.rolecontext add command -label {Grant role(s)...}
+.rolecontext add command -label {Revoke} -command [list _revokeRole]
+.rolecontext add command -label {Grant role(s)...} -command _grant
 
 
 
