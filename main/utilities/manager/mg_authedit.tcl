@@ -185,6 +185,7 @@ snit::widgetadaptor UsersAndRoles {
         set current [$self cget -data]
         if {[dict exists $current $username]} {
             tk_messageBox -parent $win -icon error -type ok \
+                -title "Existing user" \
                 -message "$username is an existing user in the list"           
         }
         dict set current $username [list]
@@ -200,10 +201,11 @@ snit::widgetadaptor UsersAndRoles {
     method rmUser {username} {
         set current [$self cget -data]
         if {$username in $current} {
-            dict remove current $username
+            set current [dict remove $current $username]
             $self configure -data $current
         } else {
             tk_messageBox -parent $win -type ok -icon error \
+                -title "No user" \
                 -message "There is no user named $username"
         }
     }
@@ -300,7 +302,17 @@ proc _postUserContext {username} {
     focus $::usercontext
     
 }
-
+##
+# _rmvUser
+#   Remove the current user (handles the user context menu entry for
+#   remove...)
+#
+proc _rmvUser { } {
+    if {[tk_messageBox -parent $::userlist -icon question -type yesno \
+         -title "Really?" -message "Really delete $::user?"] eq "yes"} {
+        $::userlist rmUser $::user
+    }
+}
 
 #-------------------------------------------------------------------
 #  Entry point:
@@ -374,7 +386,7 @@ grid .action  -sticky nsew
 # posted on right clikcs in the UsersAndRoles widget:
 
 set usercontext [menu .usercontext -tearoff 0]
-.usercontext add command -label {Remove user...}
+.usercontext add command -label {Remove user...} -command _rmvUser
 .usercontext add separator
 .usercontext add command -label {Grant role(s)...}
 .usercontext add command -label {Revoke role(s)...}
