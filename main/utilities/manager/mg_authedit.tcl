@@ -462,7 +462,15 @@ proc _revoke { } {
     if {$::user ni [dict keys $current]} {
         error "$::user is not a user in the userlist somehow"
     }
-    set revocations [_promptRoles [dict get $current $::user]]
+    
+    set currentRoles [dict get $current $::user]
+    if {[llength $currentRoles] == 0} {
+        tk_messageBox -parent $::userlist -title "None granted" -icon info \
+            -type ok \
+            -message "$::user has no roles to revoke."
+        return
+    }
+    set revocations [_promptRoles $currentRoles]
     foreach role $revocations {
         $::userlist revoke $::user $role
     }
