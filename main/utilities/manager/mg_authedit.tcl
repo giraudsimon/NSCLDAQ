@@ -104,10 +104,10 @@ snit::widgetadaptor UsersAndRoles {
         
         # We'll alphabetize both the keys (users) and the roles.
         
-        foreach user [lsort -increasing [dict keys $value]] {
+        foreach user [lsort -increasing -dictionary [dict keys $value]] {
             set userId [$tree insert {} end -text $user -tags user]
             set roles [dict get $value $user]
-            foreach role [lsort -increasing $roles] {
+            foreach role [lsort -dictionary -increasing $roles] {
                 $tree insert $userId  end -values [list $role] -tags role
             }
         }        
@@ -200,13 +200,42 @@ snit::widgetadaptor UsersAndRoles {
     #
     method rmUser {username} {
         set current [$self cget -data]
-        if {$username in $current} {
+        if {$username in [dict keys $current]} {
             set current [dict remove $current $username]
             $self configure -data $current
         } else {
             tk_messageBox -parent $win -type ok -icon error \
                 -title "No user" \
                 -message "There is no user named $username"
+        }
+    }
+    ##
+    # grant
+    #    Grant a new role to a user:
+    #     -   The user must exist.
+    #     -   We take the caller's word on the existence of the role as there
+    #         may be roles not yet granted to anybody.
+    #     -   The user must not already have that role granted.
+    #
+    # @param user   - User to grant role to.
+    # @param role   - Role to grant to the user.
+    #
+    method grant {user role} {
+        set current [$self cget -data]
+        if {$user ni [dict keys $current]} {
+            tk_messageBox -parent $win -type ok -icon error -title "No user" \
+                -message "There is no user named $user"
+            return
+        } else {
+            if {$role in [dict get $current $user]} {
+                tk_messageBox parent $win -type ok -icon error -title "Duplicate role" \
+                    -message "$user has already been gratned $role"
+                return
+            }
+            # Grant the role:
+            
+            dict lappend current $user $role
+            $self configure -data $current
         }
     }
 }
@@ -314,6 +343,78 @@ proc _rmvUser { } {
     }
 }
 
+##
+# _grantableRoles
+#   Given a user determines the roles that can be granted to that user.
+#
+# @param user -  name of the user.
+# @note       - we use the $::userlist to figure out what the user has.
+# @note       - we user $::existingRoles to get the exhaustive set of roles.
+# @return list - List of role names that the user does not have.
+#
+proc _grantableRoles {user} {
+    set current [$::userlist cget -data]
+    if {$user ni [dict keys $current]} {
+        error "$user is not a valid user."
+    }
+    set grantedRoles [dict get $current $user];    # Roles already granted.
+    set grantableRoles [list]
+    foreach role $::existingRoles {
+        if {$role ni $grantedRoles} {
+            lappend grantableRoles $role
+        }
+    }
+    
+    return $grantableRoles
+}
+
+##
+# _PromptRoles
+#    Produce a listbox dialog that has the roles a user currently is not
+#    granted.
+#
+# @return list of strings - emptyy if Ok not used.
+#
+proc _promptRoles {} {
+    set grantableRoles [_grantableRoles $::user];   # roles for listbox.
+    if {[llength $grantableRoles] == 0} {
+        tk_messageBox -parent $::userlist -title {NoneLeft} -icon info -type ok \
+            -message "$::user has already been granted all defined roles"    
+        return
+    }
+    toplevel .roleprompt
+    set dlg [DialogWrapper .roleprompt.dialog]
+    set parent [$dlg controlarea]
+    set form [ScrollableList $parent.roles -selectmode extended]
+    foreach role [lsort -increasing -dictionary $grantableRoles] {
+        $form insert end $role
+    }
+    $dlg configure -form $form
+    pack $dlg -fill both -expand 1
+    set choice [$dlg modal]
+    if {$choice eq "Ok"} {
+        set selectedIndices [$form curselection]
+        foreach index $selectedIndices {
+            set roleName [$form get $index]
+            $::userlist grant $::user $roleName
+        }
+    }
+    destroy .roleprompt
+}
+
+##
+# _grant
+#  Let the user select roles to grant to the user.
+#  $::user is the user who will be granted.  We'll have the user choose
+#  from a listbox that contains the roles in ::existingRoles that are not
+#  held by the user.
+#
+proc _grant { } {
+    set roles [_promptRoles]
+    foreach grant $roles {
+        $::userlist grant $::user $role;    
+    }
+}
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -388,7 +489,7 @@ grid .action  -sticky nsew
 set usercontext [menu .usercontext -tearoff 0]
 .usercontext add command -label {Remove user...} -command _rmvUser
 .usercontext add separator
-.usercontext add command -label {Grant role(s)...}
+.usercontext add command -label {Grant role(s)...} -command _grant
 .usercontext add command -label {Revoke role(s)...}
 
 
