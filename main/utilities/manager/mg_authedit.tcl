@@ -463,7 +463,24 @@ proc _revoke { } {
     }
 }
     
-
+###
+# _postRoleContext
+#   Post the role context menu.
+#   - the user and roles are saved in global data.
+#   - The pointer position is retreived and
+#   - $::role is posted at that position.
+#    - the menu is given keyboard focus so <Esc> will unpost it.
+#
+# @param user - the user involved.
+# @param role - The role over which the user is placed.
+#
+proc _postRoleContext {user role} {
+    set ::user $user
+    set ::role $role
+    
+    $::rolecontext post  [winfo pointerx $::userlist] [winfo pointery $::userlist]
+    focus $::rolecontext
+}
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -504,7 +521,7 @@ set fullInfo      [::auth::listAll db]
 
 
 set userlist [UsersAndRoles .listing -data $fullInfo \
-    -onuserb3 [list _postUserContext]]
+    -onuserb3 [list _postUserContext] -ongrantb3 [list _postRoleContext]]
 
 ttk::labelframe .newuserframe -text "Add user"
 ttk::label .newuserframe.label -text "Username: "
@@ -541,7 +558,12 @@ set usercontext [menu .usercontext -tearoff 0]
 .usercontext add command -label {Grant role(s)...} -command _grant
 .usercontext add command -label {Revoke role(s)...} -command _revoke
 
+##
+#  Role context menu:
 
+set rolecontext [menu .rolecontext -tearoff 0]
+.rolecontext add command -label {Revoke}
+.rolecontext add command -label {Grant role(s)...}
 
 
 
