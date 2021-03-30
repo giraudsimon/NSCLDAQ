@@ -39,7 +39,6 @@ namespace eval ::auth {
 #  ::auth::revoke    - Revoke a role from a user.
 #  ::auth::users     - List the users.
 #  ::auth::roles     - List the roles
-#  ::auth::userRoles - List the roles granted to a specific user.
 #  ::auth::listAll   - List the users and the roles they've been granted.
 #
 #------------------------------------------------------------------------------
