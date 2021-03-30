@@ -228,8 +228,8 @@ snit::widgetadaptor UsersAndRoles {
             return
         } else {
             if {$role in [dict get $current $user]} {
-                tk_messageBox parent $win -type ok -icon error -title "Duplicate role" \
-                    -message "$user has already been gratned $role"
+                tk_messageBox -parent $win -type ok -icon error -title "Duplicate role" \
+                    -message "$user has already been granted $role"
                 return
             }
             # Grant the role:
@@ -237,6 +237,37 @@ snit::widgetadaptor UsersAndRoles {
             dict lappend current $user $role
             $self configure -data $current
         }
+    }
+    ##
+    # revoke
+    #    Revoke a role from a user:
+    #    -   User must exist.
+    #    -   User must have been granted the role.
+    #
+    # @param user - name of the user to modify.
+    # @param role - Role to remove.
+    #
+    method revoke {user role} {
+        set current [$self cget -data]
+        if {$user ni [dict keys $current]} {
+            tk_messageBox -parent $win -title "No user" -icon error -type ok \
+               -message "There is no such user $user"
+            return
+        }
+        set currentGrants [dict get $current $user]
+        if {$role ni $currentGrants} {
+            tk_messageBox -parent $win -title "Not granted" -icon error -type ok \
+               -message "$user has not been granted $role"
+            return
+        }
+        set which [lsearch -exact $currentGrants $role]
+        if {$which == -1} {
+            error "Search of role in current user failed"
+        }
+        set currentGrants [lreplace $currentGrants $which $which];  #revoke
+        dict set current $user $currentGrants;  # Replace existing grants.
+        
+        $self configure -data $current
     }
 }
 #-------------------------------------------------------------------
@@ -370,37 +401,36 @@ proc _grantableRoles {user} {
 
 ##
 # _PromptRoles
-#    Produce a listbox dialog that has the roles a user currently is not
-#    granted.
+#    Produce a listbox prompts from among some set of roles.
 #
+# @param roles - roles to prompt among
 # @return list of strings - emptyy if Ok not used.
 #
-proc _promptRoles {} {
-    set grantableRoles [_grantableRoles $::user];   # roles for listbox.
-    if {[llength $grantableRoles] == 0} {
-        tk_messageBox -parent $::userlist -title {NoneLeft} -icon info -type ok \
-            -message "$::user has already been granted all defined roles"    
-        return
-    }
+proc _promptRoles {roles} {
+    
+    
     toplevel .roleprompt
     set dlg [DialogWrapper .roleprompt.dialog]
     set parent [$dlg controlarea]
     set form [ScrollableList $parent.roles -selectmode extended]
-    foreach role [lsort -increasing -dictionary $grantableRoles] {
+    foreach role [lsort -increasing -dictionary $roles] {
         $form insert end $role
     }
     $dlg configure -form $form
     pack $dlg -fill both -expand 1
     set choice [$dlg modal]
+    set result [list]
     if {$choice eq "Ok"} {
         set selectedIndices [$form curselection]
         foreach index $selectedIndices {
             set roleName [$form get $index]
-            $::userlist grant $::user $roleName
+            lappend result $roleName
         }
     }
     destroy .roleprompt
+    return $result
 }
+
 
 ##
 # _grant
@@ -410,11 +440,30 @@ proc _promptRoles {} {
 #  held by the user.
 #
 proc _grant { } {
-    set roles [_promptRoles]
-    foreach grant $roles {
+    set grantableRoles [_grantableRoles $::user]
+    set roles [_promptRoles $grantableRoles]
+    foreach role $roles {
         $::userlist grant $::user $role;    
     }
 }
+##
+# _revoke
+#   Let the user select a role to revoke from the selected user.
+#
+# @note the user in question is in ::user.
+#
+proc _revoke { } {
+    set current [$::userlist cget -data]
+    if {$::user ni [dict keys $current]} {
+        error "$::user is not a user in the userlist somehow"
+    }
+    set revocations [_promptRoles [dict get $current $::user]]
+    foreach role $revocations {
+        $::userlist revoke $::user $role
+    }
+}
+    
+
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -490,7 +539,7 @@ set usercontext [menu .usercontext -tearoff 0]
 .usercontext add command -label {Remove user...} -command _rmvUser
 .usercontext add separator
 .usercontext add command -label {Grant role(s)...} -command _grant
-.usercontext add command -label {Revoke role(s)...}
+.usercontext add command -label {Revoke role(s)...} -command _revoke
 
 
 
