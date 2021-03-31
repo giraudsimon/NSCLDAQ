@@ -604,6 +604,54 @@ proc _Save {db} {
     }
     
 }
+##
+# _removeRolesFromList
+#    Given a list of roles to remove, removes those roles from a list of roles
+#   passed in.  Roles not in the target list are ignored.
+#
+# @param delete   - Roles to delete.
+# @param existing - List of roles to delete them from.
+# @return the modified list.
+#
+proc _removeRolesFromList {delete existing} {
+    set result [list]
+    foreach role $existing {
+        if {$role ni $delete} {
+            lappend result $role
+        }
+    }
+    return $result
+}
+    
+
+##
+# _deleteRoles
+#   Prompts for list of roles to delete.
+#   Note that the roles must also be deleted from users they've been granted
+#   to.
+#
+proc _deleteRoles {} {
+    set deletedRoles [_promptRoles $::existingRoles]
+    
+    # Get rid of them from the existing roles list.
+    
+    set ::existingRoles [_removeRolesFromList $deletedRoles $::existingRoles]
+
+    # Get rid of grants:
+     
+    set editorData [$::userlist cget -data]
+    set editorData [dict map {user grants} $editorData {
+        puts "Removing '$deletedRoles' from $grants in $user"
+        set results [_removeRolesFromList $deletedRoles $grants]
+        puts "Resulting in $results"
+        set results;             # result of script.
+    }]
+    
+    
+    $::userlist configure -data $editorData
+}
+    
+
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -657,6 +705,7 @@ ttk::labelframe .newroleframe -text "Add role"
 ttk::label .newroleframe.label -text Role:
 set newrole [ttk::entry .newroleframe.newrole]
 ttk::button .newroleframe.add -text Add -command [list _addRole $newrole]
+ttk::button .newroleframe.delete -text Delete... -command [list _deleteRoles]
 
 ttk::frame .action
 ttk::button .action.save -text Save -command [list _Save db]
@@ -668,6 +717,7 @@ grid .newuserframe.label $newuser .newuserframe.add -sticky w
 grid .newuserframe -sticky nsew
 
 grid .newroleframe.label $newrole .newroleframe.add -sticky w
+grid .newroleframe.delete
 grid .newroleframe -sticky nsew
 
 grid .action.save -sticky w
