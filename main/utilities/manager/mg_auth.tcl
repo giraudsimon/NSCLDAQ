@@ -284,10 +284,5 @@ proc ::auth::listAll {db} {
             dict set result $user [list];        
         }
     }
-        
-    
-        
-    
-    
     return $result
 }
