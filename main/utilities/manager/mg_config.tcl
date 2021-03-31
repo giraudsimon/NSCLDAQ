@@ -93,7 +93,24 @@ proc _createDb { } {
     exec $::ConfigurationCreator $dbFilename
     return $dbFilename
 }
-
+##
+# _Launch
+#   Launch one of the specific editor programs.
+#
+# @param w  - widget containing the program lists.
+# @param f  - filename to edit.
+#
+proc _Launch {w f} {
+    # Figure out the name of the program that's selected:
+    
+    set idx [$w curselection]
+    if {$idx ne ""} {
+        set key [$w get $idx]
+        set program [dict get $::ApplicationMenu $key]
+        exec $program $f
+    }
+    
+}
 #------------------------------------------------------------------------------
 # Entry point
 
@@ -109,16 +126,21 @@ if {[llength $argv] == 0} {
 } elseif {[llength $argv] != 1} {
     _Usage {Incorrect number of command line parameters}
     
+} else {
+    set dbFile [lindex $argv 0]
 }
-set dbFlie [lindex $argv 0]
 
-listbox .l
+listbox .l -selectmode single
 dict for {name value} $ApplicationMenu {
     .l insert end $name
 }
 ttk::button .exit -text Exit -command [list exit 0]
 pack .l .exit -fill both -expand 1
 
+bind .l <Double-1> [list _Launch .l $dbFile]
+
+
+    
     
 
 
