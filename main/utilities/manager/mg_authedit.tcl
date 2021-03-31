@@ -505,6 +505,105 @@ proc _postRoleContext {user role} {
 proc _revokeRole { } {
     $::userlist revoke $::user $::role
 }
+##
+# _reconcileRoles
+#    Given a user and the roles they have in the editor and database,
+#    Removes from the database roles that were revoked in the editor and
+#    grants new roles.
+#
+# @param db    - database command.
+# @param user  - Name of the user
+# @param editRoles - roles the user has in the editor.
+# @param dbRoles - Roles they have in the database.
+#
+proc _reconcileRoles {db user editRoles dbRoles} {
+    # Revoke the roles they no longer have:
+    
+    foreach role $dbRoles {
+        if {$role ni $editRoles} {
+            ::auth::revoke $db $user $role
+        }
+    }
+    # Grant roles they now have:
+    
+    foreach role $editRoles {
+        if {$role ni $dbRoles} {
+            ::auth::grant $db $user $role
+        }
+    }
+}
+##
+# _Save
+#    Save the current configuration.
+#    - Remove current roles that are not in ::existingRoles
+#    - Add ::existingRoles that are not in current roles.
+#    - Remove users that no longer exist.
+#    - Add users that came into being.
+#    - For each user revoke roles they no longer have and grant new roles.
+#
+# @param db   - database command.
+proc _Save {db} {
+    set currentRoles [::auth::listRoles $db]
+    
+    # Remove deleted roles.
+    
+    foreach role $currentRoles {
+        if {$role ni $::existingRoles} {
+            ::auth::rmrole $db $role
+        }
+    }
+    #  Add new roles
+    
+    foreach role $::existingRoles {
+        if {$role ni $currentRoles} {
+            ::auth::addrole $db $role
+        }
+    }
+    #   Now add/remove users as needed:
+    
+    set userInfo [::auth::listAll $db]
+    set editInfo [$::userlist cget -data]
+    
+    set existingUsers [dict keys $userInfo]
+    set editUsers     [dict keys $editInfo]
+    
+    foreach user $existingUsers {
+        if {$user ni $editUsers} {
+            ::auth::rmuser $db $user;      # Removed
+        }
+    }
+    foreach user $editUsers {
+        if {$user ni $existingUsers} {
+            auth::adduser $db $user;      # Added.
+        }
+    }
+    #  Now we get to the roles.
+    #  -  If a user doesn't exist in the existingUsers all of his/her roles
+    #     get added.
+    #  -  If a user does exist we need to do something pretty similar
+    #     to what we just did with role names and usernames:
+    #     *  Revoke roles they no longer hold
+    #     *  grant new roles they do have.
+    #
+    foreach user $editUsers {
+        set editRoles [dict get $editInfo $user]
+        if {$user ni $existingUsers} {
+            # New user - grant all roles.
+            
+            foreach role $editRoles {
+                ::auth::grant $db $user $role
+            }
+            
+        } else {
+            # existing user reconcile roles:
+            
+            set existingRoles [dict get $userInfo $user]
+            _reconcileRoles $db $user $editRoles $existingRoles
+            
+        }
+    }
+    
+}
 #-------------------------------------------------------------------
 #  Entry point:
 
@@ -543,6 +642,8 @@ set fullInfo      [::auth::listAll db]
 #    *  A new role to be granted.
 #
 
+# TODO: Must have a way to remove a role!!!
+
 
 set userlist [UsersAndRoles .listing -data $fullInfo \
     -onuserb3 [list _postUserContext] -ongrantb3 [list _postRoleContext]]
@@ -558,7 +659,7 @@ set newrole [ttk::entry .newroleframe.newrole]
 ttk::button .newroleframe.add -text Add -command [list _addRole $newrole]
 
 ttk::frame .action
-ttk::button .action.save -text Save
+ttk::button .action.save -text Save -command [list _Save db]
 
 
 grid $userlist -sticky nsew
@@ -574,7 +675,7 @@ grid .action  -sticky nsew
 
 ##
 #  The following are context menus
-# posted on right clikcs in the UsersAndRoles widget:
+# posted on right clicks in the UsersAndRoles widget:
 
 set usercontext [menu .usercontext -tearoff 0]
 .usercontext add command -label {Remove user...} -command _rmvUser
