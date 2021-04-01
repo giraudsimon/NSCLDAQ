@@ -13,6 +13,8 @@ function set_env() {
     export DAQLIB=$DAQROOT/lib
     export DAQINC=$DAQROOT/include
     export PYTHONPATH=$DAQROOT/pythonLibs:$PYTHONPATH
+    export DAQTCLLIBS=@prefix@/TclLibs
+    export DAQSHARE=@prefix@/share
 }
 
 if test "$1" = "-h"
