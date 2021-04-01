@@ -2,6 +2,8 @@ program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl \
 	mg_cfgprogram.tcl mg_stateedit.tcl mg_seqedit.tcl mg_loggeredit.tcl \
 	mg_kvedit.tcl mg_authedit.tcl mg_config.tcl
 
+server_scripts=mg_statusserver.tcl
+
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_programpackage.tcl mg_programedit.tcl mg_sequencepackage.tcl  \
 	mg_loggerpackage.tcl mg_kvstorepackage.tcl  mg_auth.tcl
@@ -9,14 +11,20 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 test_scripts=container.test program.test sequence.test transitions.test \
 	loggerdb.test kv.test authtest.test
 
-EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) minimal.img singexists.sh
+EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) \
+	$(server_scripts)
+	minimal.img singexists.sh
 
 install-exec-local:
 	for f in $(program_scripts); do $(INSTALL_PROGRAM) @srcdir@/$$f @bindir@/`basename $$f .tcl`; done
 	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/manager
 	for f in $(library_scripts); do $(INSTALL_DATA) @srcdir@/$$f @prefix@/TclLibs/manager; done
 	echo pkg_mkIndex -verbose @prefix@/TclLibs/manager $(library_scripts) \
-	| @TCLSH_CMD@ 
+	| @TCLSH_CMD@
+	$(mkinstalldirs) @prefix@/TclLibs @prefix@/TclLibs/manager_server
+	for f in $(server_scripts); do \
+		$(INSTALL_DATA) @srcdir@/$$f @prefix@/TclLibs/manager_server; \
+	done
 
 
 check:
