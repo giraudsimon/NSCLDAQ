@@ -34,6 +34,11 @@ package require sequence
 Url_PrefixInstall /State [list stateHandler]
 
 
+proc _TransitionEnded {db mgr how} {
+    
+    set ::Done $how
+}
+
 ##
 # stateHandler
 #   Handles domain requests in the /State domain.
@@ -63,6 +68,8 @@ proc stateHandler {sock suffix} {
     } elseif {$suffix eq "/allowed"} {
         sqlite3 db $::dbFile
         set next [::sequence::listLegalNextStates db]
+        db close
+        
         set resultStrings [list]
         foreach state $next {
             lappend resultStrings [json::write string $state]
@@ -72,6 +79,53 @@ proc stateHandler {sock suffix} {
             message [json::write string ""]                            \
             states [json::write array {*}$resultStrings]                  \
         ]
+    } elseif {$suffix eq "/transition"} {
+        upvar #0 Httpd$sock data
+        
+        
+        if {$data(proto) ne "POST"} {
+            Doc_Error $sock ".../transition must be invoked via a POST method"
+            return;                          # In case Doc_Error returns.
+        } else {
+            
+            set postdata [Url_DecodeQuery $data(query)]
+            
+            if {(![dict exists $postdata user]) || (![dict exists $postdata state])} {
+                Doc_Error $sock "Both 'user' and 'state' are necessary POST parameters with ../transition"
+                return
+            }
+            set user [dict get $postdata user]
+            set state [dict get $postdata state]
+            
+            # TODO: Check that user has the role they claim to have:
+            
+            #  Try to set the new state:
+            
+            sqlite3 db $::dbFile
+            set status [catch \
+                {::sequence::transition db $state [list _TransitionEnded]} msg]
+            if {$status} {
+                # Failed:
+                
+                db close
+                Httpd_ReturnData $sock application/json [json::write object    \
+                    status [json::write string ERROR]                          \
+                    message [json::write string "$msg"]
+                ]
+            } else {
+                # Success
+                vwait ::Done
+                
+                set newstate [::sequence::currentState db]
+                db close
+                Httpd_ReturnData $sock application/json [json::write object \
+                    status [json::write string OK]                          \
+                    state  [json::write string $newstate]                   \
+                    completed [json::write string $::Done]
+                ]
+            }
+            
+        }
     } else {
         Httpd_ReturnData $sock application/json [json::write object    \
             status [json::write string ERROR]                          \

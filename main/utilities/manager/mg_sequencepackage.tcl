@@ -390,16 +390,19 @@ snit::type sequence::TransitionManager {
     #   - We start sequence execution.
     #
     method start {} {
+    
         if {$active} {
             error "Transition to $options(-type) is already active."
         }
         if {[llength $Sequences] == 0} {
+    
             #  This after ensures that if someone runs an evnt loop that
             #  depends on e.g. a completion routine to notify done, that
             #  this works.
             
             after 0 [mymethod _completeTransition OK]
         } else  {
+        
             set active 1
             set SequenceIndex 0
             $self _executeSequence
@@ -486,7 +489,7 @@ snit::type sequence::TransitionManager {
         
         if {$reason eq "ABORT"} {
             if {$options(-type) ne "SHUTDOWN"} {
-                $self _completeTransition FAILED
+                $self _completeTransition "FAILED - $failureReason"
             }
         }
         #  If we're here the sequence either completed properly or we're shutting
@@ -510,6 +513,7 @@ snit::type sequence::TransitionManager {
     # @param how - how the transition completed. (OK, ABORTED, SHUTDOWN)
     #
     method _completeTransition {how} {
+        
         # Run any user end transition script.
         
         set userscript $options(-endscript)
@@ -537,7 +541,8 @@ snit::type ::sequence::ShutdownManager {
     delegate option * to manager
     delegate method * to manager
     constructor args {
-        install manager using ::sequence::TransitionManager %AUTO% $args
+        install manager using ::sequence::TransitionManager %AUTO% \
+            -type SHUTDOWN {*}$args
     }
 }
     
