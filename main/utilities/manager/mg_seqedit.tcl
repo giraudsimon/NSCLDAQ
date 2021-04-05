@@ -269,8 +269,65 @@ proc Usage {msg} {
     puts stderr "   configuration-database is the experiment configuration."
     exit -1
 }
+##
+# _getTrigger
+#    @param db   - database  command.
+#    @param name - Sequence name.
+#    @return string- Name of the sequence's trigger.
+#    @note in the unlikely event there's no match, an empty string is returned.
+#
+proc _getTrigger {db name} {
+    set sequences [::sequence::listSequences $db]
+    foreach seq $sequences {
+        set seqname [dict get $seq name]
+        set trigger [dict get $seq transition_name]
+        if {$seqname eq $name} {
+            return $trigger
+        }
+    }
+    return ""
+}
+##
+# _populateSequenceList
+#    -  Clear the list of sequences.
+#    -  Loes them with the current set.
+#
+# @param db    - database command.
+# @param widget - the widget.
+#
+proc _populateSequenceList {db widget} {
+    set sequences [::sequence::listSequences $db]
+    $widget delete 0 end
+    
+    foreach s $sequences {
+        $widget insert end [dict get $s name]
+    }
+}
 
-
+##
+# _deleteSequence
+#    Gives the user the option to completey delete the sequence:
+#    If approved:
+#    - The sequence is deleted from the database.
+#    - The squence editor top leve lis destroyed.
+#    - The .sequences list of sequences is repopulated.
+#
+#  @param db    - database access command.
+#  @param name  - Sequence name.
+#  @param seqeditor - sequenceeditor top level widget
+#
+proc _deleteSequence {db name seqeditor} {
+    set reply [tk_messageBox -parent $seqeditor -type yesno -icon question  \
+        -title "Delete $name" \
+        -message "Really delete sequence '$name'?  This action cannot be undone."
+    ]
+    if {$reply eq "yes"} {
+        ::sequence::rmvSequence $db $name
+        destroy $seqeditor
+        _populateSequenceList $db .sequences
+    }
+}
+    
 #_newSequence
 #   Adds a new sequence (named by the contents of .new) to the list of
 #   sequences.
@@ -723,20 +780,27 @@ proc _sequenceSelected {db seqName} {
             -steps [::sequence::listSteps $db $seqName]  \
             -command [list _selectStep] \
         ]
+        set triggerName [_getTrigger $db $seqName]
+        ttk::frame .seqeditor.info
+        ttk::label .seqeditor.info.info -text "Trigger: $triggerName"
+        grid .seqeditor.info.info -sticky w
         
         set newstep [ttk::labelframe .seqeditor.newstep -text {Define step}]
         _createNewStepUI $newstep $db
         
         
         set actions [ttk::frame .seqeditor.actions]
+        ttk::button $actions.delete -text Delete...  \
+            -command [list _deleteSequence $db $seqName .seqeditor]
         ttk::button $actions.save -text Save \
             -command [list _saveSequence $db $seqName .seqeditor.list]
         ttk::button $actions.cancel -text Cancel -command [list destroy .seqeditor]
         
-        grid $actions.save $actions.cancel -sticky w
+        grid $actions.save $actions.delete $actions.cancel -sticky w
         grid .seqeditor.list -sticky nsew
         grid $newstep        -sticky nsew
         grid $actions        -sticky nsew
+        grid .seqeditor.info -sticky nsew
         
         set currentSequence $seqName
         
@@ -745,7 +809,8 @@ proc _sequenceSelected {db seqName} {
         #  any item.
         
         menu .seqeditor.context -tearoff 0 
-        .seqeditor.context add command -label Delete -command [list _deleteStep]
+        .seqeditor.context add command -label Delete  \
+            -command [list _deleteStep]
         .seqeditor.context add command -label {Move Up} -command [list _moveUp]
         .seqeditor.context add command -label {Move Down} -command [list _moveDown]
         
@@ -762,13 +827,9 @@ if {[llength $argv] != 1} {
 }
 
 sqlite3 db $argv
-set sequences [::sequence::listSequences db]
 
 SelectorList .sequences -selectmode single -command [list _sequenceSelected db]
-
-foreach s $sequences {
-    .sequences insert end [dict get $s name]
-}
+_populateSequenceList db .sequences
 
 ttk::frame .actions
 
