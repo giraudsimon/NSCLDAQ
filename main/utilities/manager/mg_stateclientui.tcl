@@ -85,6 +85,7 @@ snit::widgetadaptor StateWidget {
     #
     method _cfgNext {optval val} {
         $win.selector configure -values $val
+        
         set options($optval) $val
     }
     
@@ -106,7 +107,47 @@ snit::widgetadaptor StateWidget {
             lappend script $req
             uplevel #0 $script
         }
+        $win.selector set ""
     }
     
 }
+
+
+#----------------------------------------------------------------------
+#  The code below is intended to show how you can use the widget above
+#  in conjunction with the stateclient package to get a live UI that
+#  manages and displays state -- more than one can run simultaneously.
+#
+# @param user - user that runs the manager.
+# @param host - host the manager is running in
+proc test {user host} {
+    lappend auto_path $::env(DAQTCLLIBS)
+    package require stateclient
+    
+    set ::api [StateClient %AUTO% -user $user -host $host]
+    
+    #
+    #  Called when the UI wants a transition
+    #
+    proc handleTransition {newstate} {
+        set newstate [$::api transition $newstate]
+        .ui configure -current $newstate -next [$::api nextStates]    
+    }
+    #
+    #  refreshes state/next states every time interval:
+    #
+    proc updateUI {ms} {
+        .ui configure -current [$::api currentState] -next [$::api nextStates]
+        after $ms updateUI $ms
+    }
+    
+    # The rest is trivial:
+    
+    StateWidget .ui -command handleTransition
+    updateUI 1000
+    pack .ui
+}
+    
+    
+
     
