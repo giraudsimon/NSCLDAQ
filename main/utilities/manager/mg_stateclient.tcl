@@ -28,7 +28,6 @@ package provide stateclient 1.0
 
 lappend auto_path $::env(DAQTCLLIBS)
 package require clientutils
-package require portAllocator
 package require snit
 package require http
 
