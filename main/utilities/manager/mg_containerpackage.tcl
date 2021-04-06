@@ -310,7 +310,7 @@ proc ::container::deactivate {host name} {
 
 
 ##
-# container::list
+# container::listDefinitions
 #    Retrieves all container definitions.
 #
 # @param db   - Database open on the config file.
