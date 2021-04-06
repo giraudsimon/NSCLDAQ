@@ -29,6 +29,7 @@ lappend auto_path $::env(DAQTCLLIBS)
 package require json::write
 package require sqlite3
 package require sequence
+
 # Register a handler for the /Status domain:
 
 Url_PrefixInstall /State [list stateHandler]
@@ -80,15 +81,15 @@ proc stateHandler {sock suffix} {
             states [json::write array {*}$resultStrings]                  \
         ]
     } elseif {$suffix eq "/transition"} {
-        upvar #0 Httpd$sock data
         
         
-        if {$data(proto) ne "POST"} {
+        
+        if {[GetRequestType $sock] ne "POST"} {
             Doc_Error $sock ".../transition must be invoked via a POST method"
             return;                          # In case Doc_Error returns.
         } else {
             
-            set postdata [Url_DecodeQuery $data(query)]
+            set postdata [GetPostedData $sock]
             
             if {(![dict exists $postdata user]) || (![dict exists $postdata state])} {
                 Doc_Error $sock "Both 'user' and 'state' are necessary POST parameters with ../transition"
