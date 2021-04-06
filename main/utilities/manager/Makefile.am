@@ -7,7 +7,8 @@ server_scripts=mg_statusserver.tcl mg_serverutils.tcl
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_programpackage.tcl mg_programedit.tcl mg_sequencepackage.tcl  \
 	mg_loggerpackage.tcl mg_kvstorepackage.tcl  mg_auth.tcl \
-	mg_stateclient.tcl
+	mg_stateclient.tcl mg_stateclientui.tcl
+
 
 test_scripts=container.test program.test sequence.test transitions.test \
 	loggerdb.test kv.test authtest.test
