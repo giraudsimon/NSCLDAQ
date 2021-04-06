@@ -27,14 +27,12 @@ exec tclsh "$0" ${1+"$@"}
 package provide stateclient 1.0
 
 lappend auto_path $::env(DAQTCLLIBS)
+package require clientutils
 package require portAllocator
-package require http
 package require snit
-package require json
 
 namespace eval stateclient {
-    variable SERVICE DAQManager
-    variable client $::tcl_platform(user)
+    
     variable base   "State";          # URI base.
     variable state  "status";         # subdomain with status.
     variable next   "allowed";        # subdomain with allowed next states.
@@ -49,16 +47,7 @@ namespace eval stateclient {
 # @return integer - port number or error if there's no server on that host.
 
 proc _getServerPort {host user} {
-    set manager [portAllocator create %AUTO% -hostname $host]
-    set port [$manager findServer $stateclient::SERVICE $user]
-    $manager destroy
-    
-    # findServer returns "" if there's no matching server.
-    
-    if {$port eq ""} {
-        error "There is no manager server run by $user on $host"
-    }
-    return $port;
+    return [clientutils::getServerPort $host $user]
 }
 
 ##
@@ -104,30 +93,7 @@ snit::type StateClient {
     # @note we clean up the token.
     #
     method _checkResult {token} {
-        http::wait $token
-        
-        #  Check for protocol level errors:
-            
-        
-        
-        set status [http::ncode $token]
-        if {$status != 200}  {
-            set message [http::error $token]
-            error "Unexpected httpd status: $status : $message"
-        }
-        
-        # Get and decode the JSON:
-        
-        set json [http::data $token]
-        http::cleanup $token
-        set jsondict [json::json2dict $json]
-        
-        if {[dict get $jsondict status] ne "OK"} {
-            error "Manager refused state request: [dict get $jsondict message]"
-        }
-        # All good:
-
-        return $jsondict    
+        clientutils::checkResult $token
     }
     
     
@@ -195,7 +161,7 @@ snit::type StateClient {
         # We need to pass query data in a post so:
         
         set postData [http::formatQuery  \
-            user $stateclient::client state $nextState
+            user $clientutils::client state $nextState
         ]
         set token [http::geturl $uri -query $postData]; #-query forces POST
         
