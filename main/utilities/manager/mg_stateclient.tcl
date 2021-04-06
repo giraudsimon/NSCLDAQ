@@ -179,4 +179,29 @@ snit::type StateClient {
         
         return [dict get $jsondict states]
     }
+    ##
+    # transition
+    #   Request a state transition.
+    # @param nextState - requested next state.
+    # @return actual next state (it's possible failures will result
+    #               in a shutdown).
+    #
+    method transition {nextState} {
+        set port [_getServerPort $options(-host) $options(-user)]
+        
+        set baseuri http://$options(-host):$port
+        set uri "$baseuri/$stateclient::base/$stateclient::transition"
+        
+        # We need to pass query data in a post so:
+        
+        set postData [http::formatQuery  \
+            user $stateclient::client state $nextState
+        ]
+        set token [http::geturl $uri -query $postData]; #-query forces POST
+        
+        set jsondict [$self _checkResult $token]
+        return [dict get $jsondict state]
+        
+    }
+    
 }
