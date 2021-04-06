@@ -85,6 +85,53 @@ snit::type StateClient {
     constructor args {
         $self configurelist $args
     }
+    #------------------------------------------------------------------
+    #  private methods.
+    
+    ##
+    #  _checkResult
+    #   Given an http token
+    #   - wait on completion.
+    #   - Ensure the numeric status code is 200 (OK).
+    #   - parse the data as JSON.
+    #   - Ensure the status field of the JSON is 'OK'
+    #
+    # @param token  - http token for the request.
+    # @return dict - on success, the JSON dict.
+    # 
+    # @note we don't perform the request as we don't know a-priori the
+    #       request method or any query (POST) data:
+    # @note we clean up the token.
+    #
+    method _checkResult {token} {
+        http::wait $token
+        
+        #  Check for protocol level errors:
+            
+        
+        
+        set status [http::ncode $token]
+        if {$status != 200}  {
+            set message [http::error $token]
+            error "Unexpected httpd status: $status : $message"
+        }
+        
+        # Get and decode the JSON:
+        
+        set json [http::data $token]
+        http::cleanup $token
+        set jsondict [json::json2dict $json]
+        
+        if {[dict get $jsondict status] ne "OK"} {
+            error "Manager refused state request: [dict get $jsondict message]"
+        }
+        # All good:
+
+        return $jsondict    
+    }
+    
+    
+    
     
     #-------------------------------------------------------------------
     # Public methods.
@@ -109,30 +156,27 @@ snit::type StateClient {
         # Perform the request synchronously:
         
         set token [http::geturl $uri]
-        http::wait $token
-        
-        #  Check for protocol level errors:
-            
-        
-        
-        set status [http::ncode $token]
-        if {$status != 200}  {
-            set message [http::error $token]
-            error "Unexpected httpd status: $status : $message"
-        }
-        
-        # Get and decode the JSON:
-        
-        set json [http::data $token]
-        http::cleanup $token
-        set jsondict [json::json2dict $json]
-        
-        if {[dict get $jsondict status] ne "OK"} {
-            error "Manager refused state request: [dict get $jsondict message]"
-        }
-        # All good:
+        set jsondict [$self _checkResult $token]
         
         return [dict get $jsondict state]
         
+    }
+    ##
+    # nextStates
+    #    Figures out the allowed next states:
+    #
+    # @return list - elements of the list are allowed next states.
+    #
+    method nextStates {} {
+        set port [_getServerPort $options(-host) $options(-user)]
+        
+        # Construct the URI:
+        set baseuri http://$options(-host):$port
+        set uri "$baseuri/$stateclient::base/$stateclient::next"
+        
+        set token [http::geturl $uri]
+        set jsondict [$self _checkResult $token]
+        
+        return [dict get $jsondict states]
     }
 }
