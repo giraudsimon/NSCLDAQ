@@ -25,6 +25,7 @@ exec tclsh "$0" ${1+"$@"}
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 package provide clientutils 1.0
+package require portAllocator
 package require http
 package require json
 
