@@ -117,6 +117,57 @@ snit::widgetadaptor ContainerStatusList {
         
         
     }
+    ##
+    # _addOptionActivation
+    #
+    #  Searches the option list for the named container and
+    #  lappends an activation record to it.
+    #
+    # @param name   - container name.
+    # @param host   - Host the container has been activated on.
+    # @note it is an error 'name' does not exist.
+    #
+    method _addOptionActivation {name host} {
+        set containers $options(-containers)
+        set index 0
+        foreach container $containers {
+            if {[dict get $container name] eq $name} {
+                dict lappend container activations $host
+                lset containers $index $container
+                set options(-containers) $containers
+                return 
+            }
+            incr index
+        }
+        error "The -containers option has no match to $name"
+    }
+    
+    ##
+    # _addTreeActivation
+    #
+    #    Searchs the tree for matching named container and adds
+    #    an activation record to it.
+    #
+    # @param name - name of the container.
+    # @param host - Host of new activation.
+    # @note it is an error if does not exist.
+    #
+    method _addTreeActivation {name host} {
+        foreach child [$tree children {}] {
+            if {[$tree item $child -text] eq $name} {
+                foreach subtree [$tree children $child] {
+                    if {[$tree item $subtree -text] eq "activations"} {
+                        $tree insert $subtree end \
+                            -values [list "" "" $host] -tags activation    
+                    }
+                }
+                
+                return
+            }
+        }
+        error "The tree does not have a container named $name"
+    }
+    
     
     #------------------------------------------------------------------------
     #  Configuration handling
@@ -142,8 +193,26 @@ snit::widgetadaptor ContainerStatusList {
         
         set options($optname) $optval
     }
-    
+    #----------------------------------------------------------------------
     #  Public methods
+    
+    ##
+    # addActivation
+    #    adds an activation to an existing container
+    #
+    # @param name   - Name of the container
+    # @param host   - Host to add to the activations.
+    # @note nothing is done to detect/reject duplicates.
+    # @note it is an error to specify a nonexisting container name.
+    # @note The corresponding item in the -container option list is
+    #       modified. while the tree is modified in place so that
+    #       nothing prematurely closes.
+    #
+    method addActivation {name host} {
+        $self _addOptionActivation $name $host
+        $self _addTreeActivation $name $host
+    }
+     
 }
     
 
