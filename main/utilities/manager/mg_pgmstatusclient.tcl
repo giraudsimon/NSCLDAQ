@@ -47,12 +47,59 @@ namespace eval programstatusclient {
 #  OPTIONS:
 #     -host   - host on which the server is running
 #     -user   - user that started the server.
-#
-snit::method ProgramClient {
+# METHODS
+#   status   - returns status of program and containers.
+snit::type ProgramClient {
     option -host
     option -user
     
     constructor {args} {
         $self configurelist $args
     }
+    #--------------------------------------------------------------------
+    # Public methods.
+    
+    ##
+    # status
+    #   @return dict  The dict has the following keys:
+    #   *  containers  - contains a list of dicts describing the
+    #                    containers.
+    #   *  programs    - contains a list of dicts descsribing the
+    #                    programs.
+    #
+    #  Each container dict has the following keys (per the design docs with
+    #  the JSON translated to  a dict):
+    #     *   name   - Name of the container definition.
+    #     *   image  - Container image file path.
+    #     *   bindings - list of bindings specifications.#
+    #                   each binding is given in a format suitable for
+    #                   use in the --bind option of singularity subcommands.
+    #     *   activations - list of hostss in which the container has
+    #                  been activated.
+    #
+    #  Each program dict hast he following keys (per the design docs with
+    #  JSON translated to a dict):
+    #     *   name   - name of the program.
+    #     *   path   - path to the program image file.
+    #     *   type   - program type (textual).
+    #     *   host   - host in which the program runs.
+    #     *   container - if nonempty string, the container in which the
+    #                  program should be run.
+    #     *   active - boolean that is true if the program is currently active.
+    #
+    method status {} {
+        # Construct the full URL:
+        set port [::clientutils::getServerPort $options(-host) $options(-user)]
+        set baseurl http://$options(-host):$port
+        set uri "$baseurl/$::programstatusclient::base/$::programstatusclient::status"
+        
+        # Perform the request synchronously:
+        
+        set token [http::geturl $uri]
+        set jsondict [::clientutils::checkResult $token]
+
+        return $jsondict        
+    }
+
+    
 }
