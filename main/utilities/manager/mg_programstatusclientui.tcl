@@ -56,6 +56,11 @@ package require snit
 #   addActivation - Adds an activation to a container.
 #   removeActivation - Removes an activation from a container.
 #
+#  The relative paucity of methods is because the things that are most likely
+#  to vary dynamically are the activations of a container and we want to
+#  be able to update those without the user seeing the entire tree close as it
+#  would if we re-generated the tree from scratch.
+#
 snit::widgetadaptor ContainerStatusList {
     option -containers -default [list] -configuremethod _cfgContainers
     component tree
@@ -113,9 +118,39 @@ snit::widgetadaptor ContainerStatusList {
         set activations [$tree insert $toplevel end -text activations -tags activationcontainer]
         foreach host [dict get $item activations] {
             $tree insert $activations end -values [list "" "" $host] -tags activation
+        }  
+    }
+    ##
+    # _findContainer
+    #    Find the entry that corresponds to the named container.
+    #
+    #  @param name - name of the container.
+    #  @return entry - entry id of the container top level.
+    #  @note it's an error for there not to be a match.
+    #
+    method _findContainer {name} {
+        foreach item [$tree children {}] {
+            if {[$tree item $item -text] eq $name} {
+                return $item
+            }
         }
-        
-        
+        error "No such container: $name"
+    }
+    ##
+    # _findActiviations
+    #    Find the subelement of a container that holds the activations.
+    #
+    # @param c  - container item (e.g. from _findContainer).
+    # @return entry - activations entry.
+    # @note it's an error for there not to be an activation entry.
+    #
+    method _findActivations {c} {
+        foreach sub [$tree children $c] {
+            if {[$tree item $sub -text] eq "activations"} {
+                return $sub
+            }
+        }
+        error "The container [$tree item $c -text] does not have an activations subtree"
     }
     ##
     # _addOptionActivation
@@ -153,20 +188,67 @@ snit::widgetadaptor ContainerStatusList {
     # @note it is an error if does not exist.
     #
     method _addTreeActivation {name host} {
-        foreach child [$tree children {}] {
-            if {[$tree item $child -text] eq $name} {
-                foreach subtree [$tree children $child] {
-                    if {[$tree item $subtree -text] eq "activations"} {
-                        $tree insert $subtree end \
-                            -values [list "" "" $host] -tags activation    
-                    }
+        set child [$self _findContainer $name]
+        set subtree [$self _findActivations $child]
+        $tree insert $subtree end  -values [list "" "" $host] -tags activation    
+        return
+    }
+    
+    ##
+    # _removeOptionActivation
+    #   Removes an activation entry from the options.
+    #
+    # @param name   - name of the container.
+    # @param host   - host in which it's being deactivated.
+    # @note name must be an existing container active on host.
+    #
+    method _removeOptionActivation {name host} {
+        set containers $options(-containers)
+        set index 0
+        foreach container $containers {
+            if {[dict get $container name] eq $name} {
+                set activations [dict get $container activations]
+                
+                set which [lsearch -exact $activations $host]
+                if {$which == -1} {
+                    error '$name is no active on $host
                 }
+                
+                set activations [lreplace $activations $which $which]
+                dict set container activations $activations
+                lset containers $index $container
+                
+                set options(-containers) $containers
                 
                 return
             }
+            incr index
         }
-        error "The tree does not have a container named $name"
+        error "There is no container named $name in -containers"
     }
+    ##
+    # _removeTreeActivation
+    #   Removes an activation entry from a container in the tree.
+    #
+    # @param name - container name.
+    # @param host - host in which it's being deactivated.
+    #
+    method _removeTreeActivation {name host} {
+        set child [$self _findContainer $name]
+        set sub   [$self _findActivations $child]
+    
+        foreach a [$tree children $sub] {
+            set h [lindex [$tree item $a -values] 2]
+            if {$h eq $host} {
+                $tree delete $a
+                return
+            }
+        }
+        #  No activation:
+        
+        error "Tree has no activation on $host of $name"
+
+}
     
     
     #------------------------------------------------------------------------
@@ -211,6 +293,22 @@ snit::widgetadaptor ContainerStatusList {
     method addActivation {name host} {
         $self _addOptionActivation $name $host
         $self _addTreeActivation $name $host
+    }
+    ##
+    # removeActivation
+    #
+    #     Removes activation from an existing container.
+    #
+    # @param name   - Name of the container.
+    # @param host   - Host on which that container is no longer active.
+    # @note nonexistent containers and nonexistent active hosts in the
+    #       container activation list are errors.
+    # @note as with addActivation, the -containers option value is updated
+    #       to be accurate.
+    #
+    method removeActivation {name host} {
+        $self _removeOptionActivation $name $host
+        $self _removeTreeActivation $name $host
     }
      
 }
