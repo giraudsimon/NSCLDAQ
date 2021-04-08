@@ -26,8 +26,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 package provide pgmstatusclientui 1.0
-lappend auto_path $::env(DAQTCLLIBS)
-package require programstatusclient
+
 package require Tk
 package require snit
 
@@ -313,5 +312,76 @@ snit::widgetadaptor ContainerStatusList {
      
 }
     
+##
+# @class ProgramStatusList
+#    Provides a status display widget suitable for programs.
+#    this is just a flat list in a ttk::treeview containing the following
+#    columns:
+#
+#     -  name   - name of the program.
+#     -  path   - filesystem path to the program.
+#     -  host   - host on which the program runs.
+#     -  container - if the program runs in a container the container's name.
+#     -  active  -  X if the container is active.
+#
+# OPTIONS:
+#   -programs - list of program dicts as from ProgramClient
+snit::widgetadaptor ProgramStatusList {
+    option -programs -default -list -configuremethod _cfgPrograms
+    component tree
+    constructor {args} {
+        installhull using ttk::frame
+        
+        set columns [list name path host container active]
+        set headings [list Name {Image Path} Host {Container Name} Active]
+        
+        install tree using ttk::treeview $win.tree \
+            -columns [list name path host container active] \
+            -displaycolumns $columns -show headings         \
+            -yscrollcommand [list $win.ysb set]
+        foreach col $columns head $headings {
+            $tree heading $col -text $head
+        }
+        
+        ttk::scrollbar $win.ysb -orient vertical -command [list $tree yview]
+        
+        grid $tree $win.ysb -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        grid columnconfigure $win 1 -weight 0
+        
+        $self configurelist $args
+        
+    }
+    #-------------------------------------------------------------------------
+    # Configuration handling.
+    
+    ##
+    # _cfgPrograms
+    #    Called when -programs is configured to repopulate the
+    #    tree.
+    #    Since the tree is flat, there's no harm in a complete repopulation.
+    #
+    # @param optname - name of the option being set -programs.
+    # @param value   - list of program status dicts
+    #
+    method _cfgPrograms {optname value} {
+        
+        $tree delete [$tree children {}];                # clears the tree.
+        
+        foreach program $value {
+            set status [dict get $program active]
+            set statusIndicator [expr {($status)? "X" : " "}]
+            $tree insert {} end -values  [list                    \
+                [dict get $program name]                          \
+                [dict get $program path]                          \
+                [dict get $program host]                          \
+                [dict get $program container]                     \
+                $statusIndicator
+            ]
+        }
+        
+        set options($optname) $value;            # Makes cget work.
+    }
+}
 
 
