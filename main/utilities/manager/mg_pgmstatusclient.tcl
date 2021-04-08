@@ -26,7 +26,9 @@ exec tclsh "$0" ${1+"$@"}
 #
 package provide programstatusclient 1.0
 
-lappend auto_path $::env(DAQTCLLIBS)
+if {[array names ::env DAQTCLLIBS] ne ""} {
+    lappend auto_path $::env(DAQTCLLIBS)
+}
 package require http
 package require snit
 package require clientutils
