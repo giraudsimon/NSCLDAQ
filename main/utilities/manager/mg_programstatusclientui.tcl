@@ -383,5 +383,62 @@ snit::widgetadaptor ProgramStatusList {
         set options($optname) $value;            # Makes cget work.
     }
 }
+##
+#
+#  test
+#    Excercises the UI and client API.
+#
+# @param user - user that runs the server.
+# @param host - Host the server is running on.
+proc test {user host} {
+    lappend auto_path $::env(DAQTCLLIBS)
+    package require programstatusclient
+    
+    proc updateContainers {w defs} {
+        
+        #  If the size of the definition list changed just re-configure.
+        
+        set current [$w cget -containers]
+        if {[llength $current] != [llength $defs]} {
+            $w configure -containers $defs
+            return
+        }
+        
+        
+        
+    }
+    
+    proc updateUi {ms} {
+        
+        set info [client status]
+        set programs [dict get $info programs]
+        set containers [dict get $info containers]
+        
+        # Programs just configure:
+        
+        .n.p configure -programs $programs
+        
+        #  Containers are tricky enough (with the ability to add/remove
+        #  activations they're worth another proc
+        
+        updateContainers .n.c $containers
+        
+        after $ms updateUi $ms
+    }
+    
+    set ::client  [ProgramClient %AUTO% -user $user -host $host]
+    
+    ttk::notebook .n
+    ProgramStatusList .n.p
+    ContainerStatusList .n.c
+    .n add .n.p -text Programs
+    .n add .n.c -text Containers    
+    pack .n -expand 1 -fill both
+    
+    ProgramClient client -user $user -host $host
+    
+    updateUi 1000
+    
+}
 
 
