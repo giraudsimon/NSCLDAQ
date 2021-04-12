@@ -137,7 +137,7 @@ proc kvstore::get {db key} {
 # @return list of strings - the keys in the database.
 #
 proc kvstore::listKeys {db} {
-    db eval {
+    $db eval {
         SELECT keyname FROM kvstore
     }
 }
@@ -151,7 +151,7 @@ proc kvstore::listKeys {db} {
 proc kvstore::listAll {db} {
     set result [dict create]
     
-    db eval {
+    $db eval {
         SELECT keyname, value FROM kvstore
     } kv {
         dict set result $kv(keyname) $kv(value)
