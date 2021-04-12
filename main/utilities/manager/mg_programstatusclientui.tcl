@@ -391,23 +391,143 @@ snit::widgetadaptor ProgramStatusList {
 # @param user - user that runs the server.
 # @param host - Host the server is running on.
 proc test {user host} {
-    lappend auto_path $::env(DAQTCLLIBS)
+    lappend ::auto_path $::env(DAQTCLLIBS)
     package require programstatusclient
     
+    
+    
+    ##
+    # definitionsChanged
+    #    Determine if the change in container definitions make it
+    #    worth just refreshing the whole display:
+    #    -  Number of containers differ.
+    #    -  Change in container names.
+    #    -  Change in definitions of like named containers other than
+    #       activations which can be independently updated.
+    #
+    # @param old     - existing definitions.
+    # @param new     - New definitions.
+    # @return bool   - True if the best thing is to just reconfigure the whole
+    #                  thing.
+    #
+    proc definitionsChanged {old new} {
+        if {[llength $old] != [llength $new]} {
+            return 1
+        }
+        # Load new into an array indexed by names:
+        
+        array set hash [list]
+        foreach item $new {
+            set hash([dict get $item name]) $item
+        }
+        set newNames [array names hash]
+        foreach item $old {
+            if {[dict get $item name] ni $newNames} {
+                return 1;       # at least one name change.
+            }
+            set newItem $hash([dict get $item name])
+            if {[dict get $item image] ne [dict get $newItem image]} {
+                return 1;          # Image changed
+            }
+            set oldBindings [lsort [dict get $item bindings]]
+            set newBindings [lsort [dict get $newItem bindings]]
+            if {$oldBindings ne $newBindings} {
+                return 1;         # Bindings changed.
+            }
+        }
+        
+        return 0;                # Subtle changes at best.
+    }
+    ##
+    # activationsChanged
+    #    Determine if activations for a container need to be updated.
+    #    This is the case if the sorted set of hosts in each activation
+    #    are not identical.
+    #
+    # @param old     - prior definition
+    # @param new     - New definitions.
+    # @return bool   - true if activations changed.
+    #
+    #
+    proc activationsChanged {old new} {
+        set oldAct [dict get $old activations]
+        set newAct [dict get $new activations]
+     
+        if {[llength $oldAct] != [llength $newAct]} {
+            return 1;                  # not even same length.
+        }
+        
+        set oldAct [lsort $oldAct]
+        set newAct [lsort $newAct]
+        return [expr {$oldAct ne $newAct}]
+    }
+    ##
+    # updateActivations
+    #   Update the activations on a container.
+    #
+    # @param w   - the widget.
+    # @param old - the activations in the ui
+    # @param new - Activations currently know about.
+    #
+    proc updateActivations {w old new} {
+        set name [dict get $old name];
+        set oldacts [dict get $old activations]
+        set newacts [dict get $new activations]
+        
+        #  Remove the ones that are gone:
+        
+        foreach act $oldacts {
+            if {$act ni $newacts} {
+                $w removeActivation $name $act
+            }
+        }
+        # Add in the new ones:
+        
+        foreach act $newacts {
+            if {$act ni $oldacts} {
+                $w addActivation $name $act
+            }
+        }
+    }
+    ##
+    # updateContainers
+    #    update the containers tab:
+    #  @param w - the container widget.
+    #  @param defs - current container definitions
+    #
     proc updateContainers {w defs} {
-        
-        #  If the size of the definition list changed just re-configure.
-        
         set current [$w cget -containers]
-        if {[llength $current] != [llength $defs]} {
+        
+        # IF any definitions (not activation lists) changed, just re-configure
+        
+        if {[definitionsChanged $current $defs]} {
             $w configure -containers $defs
             return
         }
-        
-        
-        
+        # Only activations changed:
+        #  - Toss then current defs into an array indexed by name.
+        #  - For each item in the current list, if activations changed,
+        #    then update those.
+        #
+        array set hash [list]
+        foreach def $defs {
+            set hash([dict get $def name]) $def
+        }
+        #  We know there are array elements matching each current item because
+        #  otherwise we would have reconfigured.
+            
+        foreach item $current {
+            set def $hash([dict get $item name])
+            if {[activationsChanged $item $def]}  {
+                updateActivations $w $item $def
+            }
+        }
     }
-    
+    ##
+    # updateUi
+    #   Self re-scheduling proc that updates the UI display.
+    # @param ms - number of ms between updates.
+    #
     proc updateUi {ms} {
         
         set info [client status]
