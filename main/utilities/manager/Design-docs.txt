@@ -360,7 +360,7 @@ Key value store is in /KVStore and has the following subdomains:
 *   value - (GET) return the value of a specific variable as:
     name, value object.
 *   listnames - (GET) returns names - array of variable names.
-*   list     - (GET) returns arra of name, value objects
+*   list     - (GET) returns array; 'variables' of name, value objects
 *   set   - (POST)  post parameters; user, name, value.
 *           returns name, value (updated).
 
