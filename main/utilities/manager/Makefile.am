@@ -10,7 +10,7 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_loggerpackage.tcl mg_kvstorepackage.tcl  mg_auth.tcl \
 	mg_stateclient.tcl mg_stateclientui.tcl mg_clientutils.tcl \
 	mg_pgmstatusclient.tcl mg_programstatusclientui.tcl \
-	mg_kvclient.tcl
+	mg_kvclient.tcl mg_kvwidgets.tcl
 
 
 test_scripts=container.test program.test sequence.test transitions.test \
