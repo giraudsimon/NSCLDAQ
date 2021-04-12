@@ -24,7 +24,7 @@ exec tclsh "$0" ${1+"$@"}
 # @brief Utilities used by the manager server.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
-
+package require json::write
 
 #  Note that since _all_ file sin the tclhttpdserver
 #  directory get source in, we don't need to make this a formal package:
@@ -43,7 +43,7 @@ proc GetRequestType {sock} {
 }
 ##
 # GetPostedtData
-#   Returns POST data
+#   Returns POST/GET-query data
 #
 # @param sock - sock passed in to the request handler.
 # @return list that can shimmer to a dict - [list pname value ...]
@@ -51,4 +51,32 @@ proc GetRequestType {sock} {
 proc GetPostedData {sock} {
     upvar #0 Httpd$sock data
     return [Url_DecodeQuery $data(query)]
+}
+
+##
+# ErrorReturn
+#    Return an error on the request:
+#
+# @param sock   - socket of the request.
+# @param message - message part of returned object.
+#
+proc ErrorReturn {sock message} {
+    Httpd_ReturnData $sock application/json [json::write object \
+        status [json::write string ERROR]
+        message [json::write string $message]
+    ]
+}
+##
+# MakeStringList
+#    Given a list of strings returns them as a list of JSON encoded strings.
+#
+# @param  strings
+# @return list
+#
+proc MakeStringList {strings} {
+    set result [list]
+    foreach string $strings {
+        lappend result  [json::write string $string]
+    }
+    return $result
 }

@@ -109,7 +109,7 @@ proc _listActivations {name} {
         set cname [lindex $activation 0]
         set host [lindex $activation 1]
         if {$name eq $cname} {
-            lappend result $host
+            lappend result [json::write string $host]
         }
     }
     
@@ -164,9 +164,6 @@ proc programHandler {sock suffix} {
             programs   [json::write array {*}$programs]                 \
         ]
     } else {
-        Httpd_ReturnData $sock application/json [json::write object      \
-            status [json::write string ERROR]                            \
-            message [json::write string "$suffix subcommand not implemented"] \
-        ]
+        ErrorReturn $sock "$suffix subcommand not implemented"
     }
 }

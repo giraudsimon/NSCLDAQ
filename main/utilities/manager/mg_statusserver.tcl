@@ -109,10 +109,7 @@ proc stateHandler {sock suffix} {
                 # Failed:
                 
                 db close
-                Httpd_ReturnData $sock application/json [json::write object    \
-                    status [json::write string ERROR]                          \
-                    message [json::write string "$msg"]
-                ]
+                ErrorReturn $sock $msg
             } else {
                 # Success
                 vwait ::Done
@@ -128,10 +125,7 @@ proc stateHandler {sock suffix} {
             
         }
     } else {
-        Httpd_ReturnData $sock application/json [json::write object    \
-            status [json::write string ERROR]                          \
-            message [json::write string "$suffix subcommand not implemented"] \
-        ]
+        ErrorReturn $sock "$suffix subcommand not implemented"
     }
 }
 set dbFile $::env(DAQ_EXPCONFIG)
