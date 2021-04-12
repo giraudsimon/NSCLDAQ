@@ -62,8 +62,8 @@ proc GetPostedData {sock} {
 #
 proc ErrorReturn {sock message} {
     Httpd_ReturnData $sock application/json [json::write object \
-        status [json::write string ERROR]
-        message [json::write string $message]
+        status [json::write string ERROR]                       \
+        message [json::write string $message]                   \
     ]
 }
 ##

@@ -77,7 +77,7 @@ proc kvHandler {sock suffix} {
             if {[kvstore::_exists db $name]} {
                 set value [::kvstore::get db $name]
                 db close
-                Http_ReturnData $sock [json::write object                    \
+                Httpd_ReturnData $sock application/json  [json::write object                    \
                     status [json::write string OK]                           \
                     message [json::write string ""]                          \
                     name   [json::write string $name]                        \
@@ -85,26 +85,26 @@ proc kvHandler {sock suffix} {
                 ]
             } else {
                 db close
-                Doc_Error $sock "No such variable $name"
+                ErrorReturn $sock "No such variable $name"
             }
         } else {
-            Doc_Error $sock "/value requires a 'name' query parameter"
+            ErrorReturn $sock "/value requires a 'name' query parameter"
         }
     } elseif {$suffix eq "/listnames"} {
         sqlite3 db $::dbFile
         set names [MakeStringList [kvstore::listKeys db]]
         db close
-        Http_ReturnData $sock json::write object                          \
+        Httpd_ReturnData $sock application/json [json::write object                          \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             names   [json::write array {*}$names]                         \
-        
+        ]
     } elseif {$suffix eq "/list"} {
         sqlite3 db $::dbFile
         set info [::kvstore::listAll db]
         db close
         set result [_varsToObjectArray $info]
-        Http_ReturnData $sock [json::write object                         \
+        Httpd_ReturnData $sock application/json [json::write object                         \
             status [json::write string OK]                               \
             message [json::write string ""]                              \
             variables $result                                            \
@@ -125,7 +125,7 @@ proc kvHandler {sock suffix} {
                 ErrorReturn $sock "/set - no such variable $name"
             } else {
                 kvstore::modify db $name $value
-                Httpd_ReturnData $sock [json::write object                  \
+                Httpd_ReturnData $sock application/json  [json::write object                  \
                     status [json::write string OK]                          \
                     message [json::write string ""]                         \
                     name    [json::write string $name]                      \
