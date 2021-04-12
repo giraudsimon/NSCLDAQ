@@ -26,6 +26,8 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 
+package provide kvclient 1.0
+
 if {[array names ::env DAQTCLLIBS] ne ""} {
     lappend auto_path $::env(DAQTCLLIBS)
 }
