@@ -30,7 +30,7 @@ foreach d [list \
     }
 }
 }
-Config [file join [Config home] ../htdocs]
+Config docRoot [file join [Config home] ../htdocs]
 
 # library - the name of the file system directory containing
 # custom code you want to graft into TclHttpd.
