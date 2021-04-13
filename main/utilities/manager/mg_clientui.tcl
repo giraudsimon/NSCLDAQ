@@ -116,3 +116,35 @@ snit::widgetadaptor KvUI {
         }
     }
 }
+
+#------------------------------------------------------------------------------
+#  Test/demo code.
+
+##
+# @param user - user running the manager server.
+# @param host - the host that server is running under.
+#
+proc test {user host} {
+    package require kvclient
+    KvClient c -user $user -host $host;  # Normally use %AUTO% and assign the result
+    
+    proc updateUI {w client ms} {
+        $w configure -data [$client list]
+        
+        after $ms updateUI $w $client $ms
+    }
+    proc setValue {client name value} {
+        
+        # Technically we should catch errors to deal with the possibility
+        # some external force is removing this variable from the database
+        # if that happens, this will throw an error.  Note that we can't
+        # check/set as the deletion can happen in the time window between
+        # check and set.  So [catch] is the only real alternative.
+        #
+        $client setValue $name $value
+    }
+    
+    KvUI .ui -command [list setValue c]
+    pack .ui
+    updateUI .ui c 1000
+}
