@@ -59,6 +59,19 @@ struct gengetopt_args_info;
 */
 class CExperiment // (final).
 {
+public:
+	// public data structurs:
+	
+	typedef struct _Counters {
+		size_t s_triggers;
+		size_t s_acceptedTriggers;
+		size_t s_bytes;
+	} Counters;
+	typedef struct _Statistics {
+		Counters s_cumulative;
+		Counters s_perRun;
+	} Statistics;
+	
   // local data:
 
 private:
@@ -85,6 +98,8 @@ private:
   bool                    m_fWantZeroCopy;  // Want zero copy ring items.
   bool                    m_fNeedVmeLock;
 	CElapsedTime            m_runTime;
+	
+	Statistics             m_statistics;
 
   // Canonicals:
 
@@ -137,6 +152,7 @@ public:
   void syncEndRun(bool pause);
   void haveMore() { m_fHavemore = true; }
   void setZeroCopy(bool state) {m_fWantZeroCopy = state;}
+	const Statistics& getStatistics() const {return m_statistics; } 
 private:
   void readScalers();
 	void readEvent(CRingItem& item);
@@ -145,7 +161,7 @@ private:
   static int HandleTriggerLoopError(Tcl_Event* evPtr, int flags);
   static CTCLObject createCommand(
     CTCLInterpreter* pInterp, const char* verb, std::string parameter);
-
+	void clearCounters(Counters& c);
 };
 
 #endif
