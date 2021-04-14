@@ -950,7 +950,7 @@ CExperiment::readEvent(CRingItem& item)
     
     m_statistics.s_perRun.s_acceptedTriggers++;
     
-    size_t nBytes = nWords*sizeof(uint16_t);
+    size_t nBytes = (nWords+2)*sizeof(uint16_t);
     m_statistics.s_cumulative.s_bytes += nBytes;
     m_statistics.s_perRun.s_bytes     += nBytes;
     

@@ -33,6 +33,7 @@
 #include <TCLInterpreter.h>
 #include <CRingBuffer.h>
 #include <TCLApplication.h>
+#include "CStatisticsCommand.h"
 
 #include <netdb.h>
 #include <stdlib.h>
@@ -285,6 +286,7 @@ void
 CReadoutMain::addCommands()
 {
   CTCLInterpreter& interp(*getInterpreter());
+  new CStatisticsCommand(&interp, "statistics", m_pExperiment); // lives forever.
   addCommands(&interp);		// Trampoline to user's commands.
 }
 
