@@ -39,6 +39,7 @@ unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
 unique_ptr<CMonvarCommand>    CSystemControl::m_pMonVar;
+unique_ptr<CStatisticsCommand> CSystemControl::m_pStats;
 
 
 // The entry point
