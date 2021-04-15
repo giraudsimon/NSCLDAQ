@@ -146,7 +146,7 @@ private:
 public:
 
   virtual void run();		/* Adapt between nextgen and spectrodaq threading model. */
-	const Statistics& getStistics() const{ return m_statistics; }
+	const Statistics& getStatistics() const{ return m_statistics; }
 
   // Thread operations are all non-public in fact.. don't want to call them4
   // from outside this class.. only from within the thread.. This includes the
