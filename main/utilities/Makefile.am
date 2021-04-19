@@ -22,7 +22,8 @@ SUBDIRS = 				common	\
 					scalersum reglom  \
 					swtrigger \
 					logbook \
-					manager
+					manager \
+					readoutREST
 
 # scalerdisplay - removed in favor of newscaler
 

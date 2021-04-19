@@ -620,6 +620,7 @@ AC_CONFIG_FILES([Makefile
     utilities/swtrigger/Makefile
     utilities/logbook/Makefile
     utilities/manager/Makefile
+    utilities/readoutREST/Makefile
     epics/epicslib/Makefile
     epics/chanlog/Makefile
     epics/controlpush/Makefile
