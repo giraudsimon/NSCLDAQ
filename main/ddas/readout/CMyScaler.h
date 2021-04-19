@@ -19,6 +19,15 @@ using namespace std;
 
 class CMyScaler : public CScaler
 {
+public:
+   typedef struct _Counters {
+     size_t s_nTriggers;
+     size_t s_nAcceptedTriggers;
+   } Counters;
+   typedef struct _Statistics {
+      Counters s_cumulative;
+      Counters s_perRun;
+   } Statistics;
  private:
   unsigned short numModules;
   unsigned short crateID;
@@ -27,7 +36,7 @@ class CMyScaler : public CScaler
   double PreviousCountsLive[16];
 
   vector<uint32_t> scalers;
-
+  Statistics m_Statistics;
  public:
   CMyScaler(unsigned short moduleNr, unsigned short crateid); // Constructor
   ~CMyScaler();
@@ -36,6 +45,11 @@ class CMyScaler : public CScaler
   virtual void clear();
   virtual void disable();
   virtual unsigned int size() {return 32;};
+  
+  //
+  const Statistics& getStatistics() const { return m_Statistics;}
+private:
+  void clearCounters(Counters& c);
 };
 
 #endif

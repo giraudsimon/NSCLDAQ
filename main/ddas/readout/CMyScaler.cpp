@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <string.h>
 
 #include "pixie16app_export.h"
 #include "pixie16sys_export.h"
@@ -31,7 +32,9 @@ CMyScaler::CMyScaler(unsigned short moduleNr, unsigned short crateid)
   }
 
   crateID = crateid;
-
+  clearCounters(m_Statistics.s_cumulative);
+  clearCounters(m_Statistics.s_perRun);
+  
   //  const char config[20]="cfgPixie16.txt";
 
   /* Scalers need to know crateID */
@@ -70,7 +73,7 @@ void CMyScaler::initialize()
     PreviousCounts[a] = 0;
     PreviousCountsLive[a] = 0;
   }
-
+  clearCounters(m_Statistics.s_perRun);    // New run.
 }
 
 void CMyScaler::disable(){
@@ -99,7 +102,9 @@ vector<uint32_t> CMyScaler::read()
      read of the scalers -- NSCL scaler buffers just expect
      the # events since the last read.  However, Pixie16 statistics
      cannot be cleared, so we need to do some math */
-
+  
+  // Input Counts are the triggers and Output Counts the accepted triggers.
+  
   double ICR[16] = {0};
   double OCR[16] = {0};
   double LiveTime[16] = {0};
@@ -168,6 +173,20 @@ vector<uint32_t> CMyScaler::read()
   scalers.clear(); //SNL added for new readout
   scalers.insert(scalers.end(), OutputScalerData, OutputScalerData+33);
   
+  //  Figure out the statistics by summing over the OutputScalerData (it's
+  // incremental so we can just add it all in).
+  
+  int chb(1);
+  for (int i =0; i < 16; i++) {
+    m_Statistics.s_cumulative.s_nTriggers += OutputScalerData[chb];
+    m_Statistics.s_perRun.s_nTriggers     += OutputScalerData[chb];
+    
+    m_Statistics.s_cumulative.s_nAcceptedTriggers += OutputScalerData[chb+1];
+    m_Statistics.s_perRun.s_nAcceptedTriggers     += OutputScalerData[chb+1];
+    
+    chb += 2;
+  }
+  
   return scalers;
 
   }
@@ -182,4 +201,15 @@ void CMyScaler::clear()
 
   // Clear? Don't think we need this with Pixie16 -- can't clear!
 
+}
+
+/**
+ * clearCounters
+ *    Clears statistics information.
+ *
+ *    @param c - reference to a counters struct.
+ */
+void CMyScaler::clearCounters(Counters& c)
+{
+  memset(&c, 0, sizeof(Counters));
 }

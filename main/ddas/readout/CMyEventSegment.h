@@ -54,6 +54,10 @@ private:
     
     std::vector<DDASReadout::ModuleReader*> m_readers;
     
+    // Statistics:
+    
+    size_t m_nCumulativeBytes;
+    size_t m_nBytesPerRun;
     
 public:
     CMyEventSegment(CMyTrigger *trig, CExperiment& exp);
@@ -72,7 +76,9 @@ public:
     void synchronize();            //!< Clock synchronization.
     void boot(DAQ::DDAS::SystemBooter::BootType = DAQ::DDAS::SystemBooter::FullBoot);                   //!< load fimrware and start boards.
 
-
+    std::pair<size_t, size_t>getStatistics() {
+        return std::pair<size_t, size_t>(m_nCumulativeBytes, m_nBytesPerRun);
+    }
     
 };
 #endif
