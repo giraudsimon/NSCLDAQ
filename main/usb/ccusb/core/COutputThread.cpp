@@ -87,7 +87,8 @@ COutputThread::COutputThread(const char* pRing, CSystemControl& sysControl) :
   m_pBeginRunCallback(nullptr),
   m_systemControl(sysControl)
 {
-  
+  clearCounters(m_statistics.s_cumulative);
+  clearCounters(m_statistics.s_perRun);
 }
 /*!
   Destruction is a no-op at this time.
@@ -292,6 +293,7 @@ COutputThread::startRun(DataBuffer& buffer)
 
   m_runTime.start();
   m_lastScalerTime = 0.0;
+  clearCounters(m_statistics.s_perRun);    // Zero per run transfer statistics.
   
   m_nOutputBufferSize = Globals::bufferSize;
 
@@ -589,15 +591,27 @@ COutputThread::event(void* pData)
     
     CRingItem* pEvent;
     
+    size_t nBytes = m_nWordsInBuffer*sizeof(uint16_t);
+    
+    // Count the statistics.  Note we can't reject triggers so both trigger
+    // counters unconditionally increment.
+    
+    m_statistics.s_cumulative.s_triggers++;
+    m_statistics.s_cumulative.s_triggersAccepted++;
+    m_statistics.s_cumulative.s_bytes += nBytes;
+    
+    m_statistics.s_perRun.s_triggers++;
+    m_statistics.s_perRun.s_triggersAccepted++;
+    m_statistics.s_perRun.s_bytes += nBytes;
     
     if (m_pEvtTimestampExtractor) {
         pEvent = new CRingItem(
             PHYSICS_EVENT, m_pEvtTimestampExtractor(m_pBuffer), Globals::sourceId,
-            0, m_nWordsInBuffer*sizeof(uint16_t) + 100
+            0, nBytes + 100
         );
     } else {
         pEvent = new CRingItem(
-            PHYSICS_EVENT, m_nWordsInBuffer*sizeof(uint16_t) + 100
+            PHYSICS_EVENT, nBytes + 100
         ); // +100 really needed?
     }
     CRingItem& event(*pEvent);
@@ -778,4 +792,13 @@ void COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
   item.commitToRing(*m_pRing);
 
 
+}
+/**
+ * clearCounters
+ *     Clears a set of statistics counters.
+ * @param c - references the counters to clear.
+ */
+void
+COutputThread::clearCounters(Counters& c) {
+  memset(&c, 0, sizeof(Counters));
 }

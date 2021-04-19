@@ -333,7 +333,9 @@ void
 CTheApplication::startOutputThread(std::string ring)
 {
   COutputThread* router = new COutputThread(ring.c_str(), m_sysControl);
+  m_pOutputThread = router;
   router->start();
+  
 
 }
 

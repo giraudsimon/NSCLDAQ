@@ -82,6 +82,19 @@ class CSystemControl;
 
 class COutputThread  : public CSynchronizedThread
 {
+  // Class public types:
+public:
+  typedef struct _Counters {
+          size_t s_triggers;
+          size_t s_triggersAccepted;
+          size_t s_bytes;
+  } Counters;
+  typedef struct _Statistics {
+          Counters s_cumulative;
+          Counters s_perRun;
+  } Statistics;
+
+private:
   // Class private types
   
   typedef uint64_t (*TimestampExtractor)(void*);
@@ -118,6 +131,8 @@ private:
   double        m_lastScalerTime;
   CElapsedTime  m_runTime;
   
+  Statistics    m_statistics;
+  
   // Constuctors and other canonicals.
 
 public:
@@ -129,7 +144,7 @@ private:
   int operator==(const COutputThread& rhs) const;
   int operator!=(const COutputThread& rhs) const;
 public:
-
+  const Statistics& getStatistics() const { return m_statistics;}
   // Thread operations are all non-public in fact.. don't want to call them
   // from outside this class.. only from within the thread.. This includes the
   // thread entry point.
@@ -163,7 +178,7 @@ private:
   uint8_t* newOutputBuffer();
   void outputTriggerCount(uint32_t runOffset);
   void emitStateChange(uint32_t type, uint32_t barrier);
-
+  void clearCounters(Counters& c);
 };
 
 #endif

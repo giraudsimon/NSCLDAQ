@@ -28,6 +28,7 @@ class CTCLInterpreter;
 struct Tcl_Interp;
 struct Tcl_Event;
 
+class COutputThread;
 
 /*!
    This class is  the thread that is the main application startup thread.
@@ -57,6 +58,8 @@ private:
   std::string          m_logFile;
   unsigned             m_logLevel;
   bool                 m_quickstartEnabled;
+  
+  COutputThread*       m_pOutputThread;
 public:
   // Canonicals
 
@@ -82,6 +85,7 @@ public:
   void logProgress(const char* msg);             // trace.
 
   bool quickstartEnabled() const { return m_quickstartEnabled;}
+  COutputThread* getOutputThread() {return  m_pOutputThread;}
   // Segments of operation.
 private:
   void startOutputThread(std::string pRing);
