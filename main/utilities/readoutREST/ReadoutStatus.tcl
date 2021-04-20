@@ -111,7 +111,7 @@ proc _statObj {stats} {
 #                 came in.
 # @param suffix - URL Suffix (e.g. "/state")
 #
-proc StautsHandler {sock suffix} {
+proc StatusHandler {sock suffix} {
     if {$suffix eq "/state"} {
         Http_ReturnData $sock application/json [json::write object        \
             status [json::write string OK]                                \
