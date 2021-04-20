@@ -17,7 +17,8 @@ libCCUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
 				CGetCommand.cpp  \
 				CSetCommand.cpp  \
 				CUpdateCommand.cpp \
-				CStatisticsCommand.cpp
+				CStatisticsCommand.cpp \
+				CRunStateCommand.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
 			CControlQueues.h \
@@ -38,7 +39,8 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 			CSetCommand.h  \
 			CUpdateCommand.h  \
 			Events.h	\
-			CStatisticsCommand.h
+			CStatisticsCommand.h \
+			CRunStateCommand.h
 
 libCCUSBCore_la_CPPFLAGS = \
 		  @THREADCXX_FLAGS@ \

@@ -11,6 +11,7 @@
 #include <Globals.h>
 #include <Events.h>
 #include "CStatisticsCommand.h"
+#include "CRunStateCommand.h"
 
 #include <TCLLiveEventLoop.h>
 #include <TCLInterpreter.h>
@@ -37,6 +38,7 @@ unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
 unique_ptr<CStatisticsCommand>      CSystemControl::m_pStats;
+unique_ptr<CRunStateCommand> CSystemControl::m_pRunState;
 
 // The entry point
 void CSystemControl::run(int argc, char** argv) 
@@ -70,6 +72,7 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   m_pInit.reset(new CInit(*Globals::pMainInterpreter));
   m_pExit.reset(new CExit(*Globals::pMainInterpreter));
   m_pStats.reset(new CStatisticsCommand(*Globals::pMainInterpreter, "statistics"));
+  m_pRunState.reset(new CRunStateCommand(*Globals::pMainInterpreter, "runstate"));
   
   // Look for readoutRC.tcl in the config directory.  If it exists, run it.
 
