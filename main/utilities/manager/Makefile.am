@@ -2,7 +2,7 @@ program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl \
 	mg_cfgprogram.tcl mg_stateedit.tcl mg_seqedit.tcl mg_loggeredit.tcl \
 	mg_kvedit.tcl mg_authedit.tcl mg_config.tcl mg_startManager.tcl
 
-server_scripts=mg_statusserver.tcl mg_serverutils.tcl mg_programserver.tcl \
+server_scripts=mg_statusserver.tcl  mg_programserver.tcl \
 	mg_kvserver.tcl
 
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
@@ -10,7 +10,7 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_loggerpackage.tcl mg_kvstorepackage.tcl  mg_auth.tcl \
 	mg_stateclient.tcl mg_stateclientui.tcl mg_clientutils.tcl \
 	mg_pgmstatusclient.tcl mg_programstatusclientui.tcl \
-	mg_kvclient.tcl mg_kvwidgets.tcl mg_clientui.tcl
+	mg_kvclient.tcl mg_kvwidgets.tcl mg_clientui.tcl mg_serverutils.tcl
 
 
 test_scripts=container.test program.test sequence.test transitions.test \

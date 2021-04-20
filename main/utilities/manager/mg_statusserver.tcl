@@ -29,6 +29,7 @@ lappend auto_path $::env(DAQTCLLIBS)
 package require json::write
 package require sqlite3
 package require sequence
+package require restutils
 
 # Register a handler for the /Status domain:
 

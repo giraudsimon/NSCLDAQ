@@ -24,10 +24,13 @@ exec tclsh "$0" ${1+"$@"}
 # @brief Utilities used by the manager server.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
-package require json::write
 
-#  Note that since _all_ file sin the tclhttpdserver
-#  directory get source in, we don't need to make this a formal package:
+# We make this a formal package because it has useful utilities all rest
+# server may use.
+
+package provide restutils 1.0
+
+package require json::write
 
 
 ##

@@ -25,6 +25,7 @@ exec tclsh "$0" ${1+"$@"}
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 lappend auto_path $::env(DAQTCLLIBS)
+package require restutils
 package require  json::write
 package require  sqlite3
 package require  programs
