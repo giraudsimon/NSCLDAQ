@@ -58,7 +58,7 @@ proc SetParameter {socket suffix} {
                 set value [dict get $params value]
                 if {$name eq "title"} {
                     set ::title $value;      # All types allowed.
-                    Http_ReturnData $socket application/json [json::write object \
+                    Httpd_ReturnData $socket application/json [json::write object \
                         status [json::write string OK]                          \
                         message [json::write string ""]                         \
                     ]
@@ -67,7 +67,7 @@ proc SetParameter {socket suffix} {
                     
                     if {[string is integer -strict $value]} {
                         set ::run $value
-                        Http_ReturnData $socket application/json [json::write object  \
+                        Httpd_ReturnData $socket application/json [json::write object  \
                             status [json::write string OK]                       \
                             message [json::write string ""]                      \
                         ]

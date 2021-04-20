@@ -113,19 +113,19 @@ proc _statObj {stats} {
 #
 proc StatusHandler {sock suffix} {
     if {$suffix eq "/state"} {
-        Http_ReturnData $sock application/json [json::write object        \
+        Httpd_ReturnData $sock application/json [json::write object        \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             state  [json::write string [runstate]]                        \
         ]
     } elseif {$suffix eq "/title"} {
-        Http_ReturnData $sock application/json [json::write object        \
+        Httpd_ReturnData $sock application/json [json::write object        \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             title   [json::write string [_getTitle]]                      \
         ]
     } elseif {$suffix eq "/runnumber"} {
-        Http_ReturnData $sock application/json [json::write object        \
+        Httpd_ReturnData $sock application/json [json::write object        \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             run  [_getRunNumber]                                          \
@@ -134,7 +134,7 @@ proc StatusHandler {sock suffix} {
         set stats [statistics]
         set cum [_statObj [lindex $stats 0]];   #key/value pairs
         set per [_statObj [lindex $stats 1]]
-        Http_ReturnData $sock application/json [json::write object        \
+        Httpd_ReturnData $sock application/json [json::write object        \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             cumulative [json::write object {*}$cum]                       \
