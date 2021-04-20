@@ -1,5 +1,5 @@
 program_scripts=
-server_scripts=ReadoutControl.tcl ReadoutStatus.tcl
+server_scripts=ReadoutControl.tcl ReadoutStatus.tcl ReadoutParameters.tcl
 library_scripts=
 test_scripts=
 
