@@ -34,6 +34,8 @@
 #include <CRingBuffer.h>
 #include <TCLApplication.h>
 #include "CStatisticsCommand.h"
+#include "CRunStateCommand.h"
+#include "RunState.h"
 
 #include <netdb.h>
 #include <stdlib.h>
@@ -286,13 +288,14 @@ void
 CReadoutMain::addCommands()
 {
   CTCLInterpreter& interp(*getInterpreter());
-  new CStatisticsCommand(&interp, "statistics", m_pExperiment); // lives forever.
   addCommands(&interp);		// Trampoline to user's commands.
 }
 
 
 void 
 CReadoutMain::addCommands(CTCLInterpreter* pInterp) {
+  new CStatisticsCommand(pInterp, "statistics", m_pExperiment); // lives forever.
+  new CRunStateCommand(*pInterp, "runstate", RunState::getInstance());
   CRunControlPackage::getInstance(*pInterp);
   CVariableBuffers* pVarbufs = new CVariableBuffers(*pInterp);
 
