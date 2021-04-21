@@ -83,7 +83,7 @@ proc _transition {op} {
     } elseif {$op eq "END"} {
         end
     } elseif {$op eq "SHUTDOWN"} {
-        exit 
+        after 500 exit;        # Ensures we get our response out to the client. 
     }
 }
 

@@ -95,6 +95,20 @@ snit::type ReadoutRESTClient {
         ]
         return http://$options(-host):${port}${service}${suffix}
     }
+    ##
+    # _transition
+    #   Attempt a transition.
+    #  @param transitonName
+    #  @result string newState on success.
+    #
+    method _transition {transitionName} {
+        set url [$self _createURL /control]
+        set params [::http::formatQuery operation $transitionName]
+        set token [::http::geturl $url -query $params]
+        
+        set resultDict [::clientutils::checkResult $token]
+        return [dict get $resultDict newstate]
+    }
     #--------------------------------------------------------------------
     #  Public methods.
     #
@@ -104,12 +118,36 @@ snit::type ReadoutRESTClient {
     # @return new state
     #
     method begin {} {
-        set url [$self _createURL /control]
-        set params [::http::formatQuery operation BEGIN]
-        set token [::http::geturl $url -query $params]
-        
-        set resultDict [::clientutils::checkResult $token]
-        return [dict get $resultDict newstate]
+        return [$self _transition BEGIN]
     }
+    ##
+    # end
+    #   Attempt to end an active run.
+    #
+    # @return new state.
+    #
+    method end {} {
+        return [$self _transition END]
+    }
+    ##
+    # init
+    #   Request an init operation
+    #
+    # @return new state.
+    #
+    method init {} {
+        return [$self _transition INIT]
+    
+    }
+    ##
+    # shutdown
+    #   Ask for a shutdown.
+    #
+    method shutdown {} {
+        return [$self _transition SHUTDOWN]
+    }
+        
+    
+    
     
 }
