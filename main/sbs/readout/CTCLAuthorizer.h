@@ -97,19 +97,19 @@ public:
 
   virtual   int operator() (CTCLInterpreter& rInterp,
 			    std::vector<CTCLObject>& objv)    ;
-  Bool_t AddHost (const std::string& HostOrIp)    ;
-  Bool_t RemoveHost (const std::string& NameOrIP)    ;
+  TCLPLUS::Bool_t AddHost (const std::string& HostOrIp)    ;
+  TCLPLUS::Bool_t RemoveHost (const std::string& NameOrIP)    ;
   std::string ListHosts ()    ;
-  Bool_t Authenticate (const std::string& rNameOrIp)    ;
+  TCLPLUS::Bool_t Authenticate (const std::string& rNameOrIp)    ;
 
 protected:
 
-  Bool_t  HostToIp(std::string& rName);
-  Int_t   GetIndex (const std::string& rHostOrIp)   ;
-  Bool_t ConvertHost(const std::string& rInName, 
+  TCLPLUS::Bool_t  HostToIp(std::string& rName);
+  TCLPLUS::Int_t   GetIndex (const std::string& rHostOrIp)   ;
+  TCLPLUS::Bool_t ConvertHost(const std::string& rInName, 
 	                 std::string& rOutname, std::string& rCanonicalIP)   ;
 
-  Int_t   Usage(CTCLInterpreter& rInterp);
+  TCLPLUS::Int_t   Usage(CTCLInterpreter& rInterp);
   std::pair<std::vector<std::string>, std::vector<std::string>> getAuthInfo();
 
 };

@@ -62,8 +62,8 @@ CTCLAuthorizer::CTCLAuthorizer(CTCLInterpreter* pInterp) :
   CTCLObjectProcessor(*pInterp, "serverauth"),
   m_pInterpreter(pInterp)
 {
-  m_pHostNames = new CTCLVariable(m_pInterpreter, NameVariable, kfFALSE);
-  m_pHostIps   = new CTCLVariable(m_pInterpreter, IPVariable, kfFALSE);
+  m_pHostNames = new CTCLVariable(m_pInterpreter, NameVariable, TCLPLUS::kfFALSE);
+  m_pHostIps   = new CTCLVariable(m_pInterpreter, IPVariable, TCLPLUS::kfFALSE);
 
   // If those variables are not yet defined, make them empty strings:
 
@@ -154,7 +154,7 @@ int CTCLAuthorizer::operator()(CTCLInterpreter& rInterp,
 //     AddHost(const string& HostOrIp)
 //  Operation Type: 
 //     
-Bool_t CTCLAuthorizer::AddHost( const std::string& HostOrIp)  
+TCLPLUS::Bool_t CTCLAuthorizer::AddHost( const std::string& HostOrIp)  
 {
   // Adds a specified host to the access lists.
   // The parameter is first analyzed as a host name.
@@ -169,12 +169,12 @@ Bool_t CTCLAuthorizer::AddHost( const std::string& HostOrIp)
 
   if(GetIndex(HostOrIp) >= 0) {	// Duplicate...
     getInterpreter()->setResult("Duplicate host or ip address");
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   std::string hostname, hostip;
   if(!ConvertHost(HostOrIp, hostname, hostip)) {
     getInterpreter()->setResult("Invalid host or IP address");
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   // Append the hostname and hostip to the list:
   //
@@ -198,7 +198,7 @@ Bool_t CTCLAuthorizer::AddHost( const std::string& HostOrIp)
   m_pHostNames->Set(HostList.Merge(hosts), TCL_LEAVE_ERR_MSG |TCL_GLOBAL_ONLY);
   m_pHostIps->Set(IpList.Merge(ips), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
   
-  return kfTRUE;
+  return TCLPLUS::kfTRUE;
   
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -207,7 +207,7 @@ Bool_t CTCLAuthorizer::AddHost( const std::string& HostOrIp)
 //     RemoveHost(const string& NameOrIP)
 //  Operation Type: 
 //     
-Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)  
+TCLPLUS::Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)  
 {
   // An attempt is made to locate the host in 
   // the name list.  If it is found it and the 
@@ -219,10 +219,10 @@ Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)
   // removed.
   //
   
-  Int_t idx = GetIndex(NameOrIp);
+  TCLPLUS::Int_t idx = GetIndex(NameOrIp);
   if(idx < 0) {			// Not in the table:
     getInterpreter()->setResult("Host or IP address is not in the authorization list");
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   
   auto authInfo = getAuthInfo();
@@ -246,7 +246,7 @@ Bool_t CTCLAuthorizer::RemoveHost(const std::string& NameOrIp)
   m_pHostNames->Set(HostList.Merge(hostnames),
 		    TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
 
-  return kfTRUE;
+  return TCLPLUS::kfTRUE;
   
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ std::string CTCLAuthorizer::ListHosts()
 //     Authenticate(const string& rNameOrIp)
 //  Operation Type: 
 //     
-Bool_t CTCLAuthorizer::Authenticate(const std::string& rNameOrIp)  
+TCLPLUS::Bool_t CTCLAuthorizer::Authenticate(const std::string& rNameOrIp)  
 {
   // The parameter is converted to canonical ip form
   // and searched for in the ip list.
@@ -307,7 +307,7 @@ Bool_t CTCLAuthorizer::Authenticate(const std::string& rNameOrIp)
 //     HostToIp(string& rName)
 //  Operation Type: 
 //     
-Bool_t CTCLAuthorizer::HostToIp(std::string& rName)  
+TCLPLUS::Bool_t CTCLAuthorizer::HostToIp(std::string& rName)  
 {
   // Converts a string to IP address in 'canonical dotted' form
   // Cannonical dotted form is:  %03d.%03d.%03d.%03d
@@ -343,7 +343,7 @@ Bool_t CTCLAuthorizer::HostToIp(std::string& rName)
 
   std::string R(Result);
   rName = R;
-  return kfTRUE;
+  return TCLPLUS::kfTRUE;
 
 }
 
@@ -353,7 +353,7 @@ Bool_t CTCLAuthorizer::HostToIp(std::string& rName)
 //     GetIndex(const string& rHostOrIp)
 //  Operation Type: 
 //     
-Int_t CTCLAuthorizer::GetIndex(const std::string& rHostOrIp)  
+TCLPLUS::Int_t CTCLAuthorizer::GetIndex(const std::string& rHostOrIp)  
 {
   // Returns the index of the entry corresponding
   // to an input IP name or Address or -1 if no match.
@@ -377,12 +377,12 @@ Int_t CTCLAuthorizer::GetIndex(const std::string& rHostOrIp)
 ///////////////////////////////////////////////////////////////////////
 //
 // Function:
-//   Bool_t ConvertHost(const string& rInName, 
+//   TCLPLUS::Bool_t ConvertHost(const string& rInName, 
 //		        string& rOutname, string& rCanonicalIP)
 // Operation type:
 //   Utility:
 //
-Bool_t 
+TCLPLUS::Bool_t 
 CTCLAuthorizer::ConvertHost(const std::string& rInName, 
 							std::string& rOutname, 
 							std::string& rCanonicalIP)
@@ -392,11 +392,11 @@ CTCLAuthorizer::ConvertHost(const std::string& rInName,
 
   std::string myname(rInName);
   rCanonicalIP = rInName;
-  if(!HostToIp(rCanonicalIP)) return kfFALSE;
+  if(!HostToIp(rCanonicalIP)) return TCLPLUS::kfFALSE;
 
   struct hostent* pEntry = gethostbyname(myname.c_str());
   rOutname = pEntry ? myname : std::string(">unresolved<");
-  return kfTRUE;
+  return TCLPLUS::kfTRUE;
 }
 /////////////////////////////////////////////////////////////////////
 //
