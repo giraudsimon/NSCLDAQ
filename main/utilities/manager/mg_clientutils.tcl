@@ -40,11 +40,16 @@ namespace eval clientutils {
 #
 # @param host  - Host on which the server is believed to be running.
 # @param user  - username of the person that started the server.
+# @param service - optional service name - defaults to the DAQManager
+#                service if omitted.
 # @return integer - port number or error if there's no server on that host.
 
-proc ::clientutils::getServerPort {host user} {
+proc ::clientutils::getServerPort {host user {service {}}} {
+    if {$service eq ""} {
+        set service $::clientutils::SERVICE
+    }
     set manager [portAllocator create %AUTO% -hostname $host]
-    set port [$manager findServer $clientutils::SERVICE $user]
+    set port [$manager findServer $service $user]
     $manager destroy
     
     # findServer returns "" if there's no matching server.
