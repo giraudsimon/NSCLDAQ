@@ -55,7 +55,7 @@ proc ::clientutils::getServerPort {host user {service {}}} {
     # findServer returns "" if there's no matching server.
     
     if {$port eq ""} {
-        error "There is no manager server run by $user on $host"
+        error "There is no server for the '$service' service run by $user on $host "
     }
     return $port;
 }
