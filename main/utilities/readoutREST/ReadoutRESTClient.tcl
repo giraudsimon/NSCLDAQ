@@ -28,6 +28,7 @@ exec tclsh "$0" ${1+"$@"}
 if {[array names ::env DAQTCLLIBS] eq "DAQTCLLIBS"} {
     lappend auto_path $::env(DAQTCLLIBS)
 }
+package provide ReadoutRESTClient 1.0
 package require snit
 package require clientutils
 package require http

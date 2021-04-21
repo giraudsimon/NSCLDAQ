@@ -1,6 +1,6 @@
 program_scripts=
 server_scripts=ReadoutControl.tcl ReadoutStatus.tcl ReadoutParameters.tcl
-library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl
+library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl ReadoutRESTUI.tcl
 test_scripts=
 
 LIBRARY_DIR=@prefix@/TclLibs/readoutREST
