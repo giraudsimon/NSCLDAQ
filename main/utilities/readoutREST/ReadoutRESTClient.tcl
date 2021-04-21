@@ -109,6 +109,19 @@ snit::type ReadoutRESTClient {
         set resultDict [::clientutils::checkResult $token]
         return [dict get $resultDict newstate]
     }
+    ##
+    # _getStatusItem
+    #
+    # @param sub - the subdomain of /status.
+    # @return dict - the response dict.
+    #
+    method _getStatusItem {sub} {
+        set url [$self _createURL $::ReadoutRESTClient::status $sub]
+        set token [http::geturl $url]
+        
+        set resultDict [::clientutils::checkResult $token]
+        return $resultDict
+    }
     #--------------------------------------------------------------------
     #  Public methods.
     #
@@ -152,10 +165,8 @@ snit::type ReadoutRESTClient {
     #
     
     method getState {} {
-        set url [$self _createURL $::ReadoutRESTClient::status /state]
-        set token [http::geturl $url]
         
-        set resultDict [::clientutils::checkResult $token]
+        set resultDict [$self _getStatusItem /state]
         return [dict get $resultDict state]
     }
     ##
@@ -163,13 +174,20 @@ snit::type ReadoutRESTClient {
     #   Return the run title.
     #
     method getTitle {} {
-        set url [$self _createURL $::ReadoutRESTClient::status /title]
         
-        set token [http::geturl $url]
-        set resultDict [::clientutils::checkResult $token]
+        set resultDict [$self _getStatusItem /title]
         
         return [dict get $resultDict title]
     }
-    
+    ##
+    # getRunNumber
+    #
+    # @return integer - the current run number.
+    #
+    method getRunNumber {} {
+        set resultDict [$self _getStatusItem /runnumber]
+        
+        return [dict get $resultDict run]
+    }
     
 }
