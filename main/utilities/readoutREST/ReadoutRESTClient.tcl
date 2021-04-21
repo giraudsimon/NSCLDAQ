@@ -146,8 +146,18 @@ snit::type ReadoutRESTClient {
     method shutdown {} {
         return [$self _transition SHUTDOWN]
     }
-        
+    ##
+    # getState
+    #  @return string - Readout current state.
+    #
     
+    method getState {} {
+        set url [$self _createURL $::ReadoutRESTClient::status /state]
+        set token [http::geturl $url]
+        
+        set resultDict [::clientutils::checkResult $token]
+        return [dict get $resultDict state]
+    }
     
     
 }
