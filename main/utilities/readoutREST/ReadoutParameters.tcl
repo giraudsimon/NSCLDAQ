@@ -46,11 +46,11 @@ Url_PrefixInstall /setparam SetParameter
 #        carry the parameter name and value.
 #
 proc SetParameter {socket suffix} {
-    if {[GetRequestType] eq "POST"}  {
+    if {[GetRequestType $socket] eq "POST"}  {
         if {[runstate] ne "idle"} {
             ErrorReturn $socket "Run parameters can only be set in the idle state"
         } else {
-            set params [GetPostedData]
+            set params [GetPostedData $socket]
             if {(![dict exists $params name]) || (![dict exists $params value])} {
                 ErrorReturn $socket "/settparam requires both 'name' and 'value' parameters"
             } else {

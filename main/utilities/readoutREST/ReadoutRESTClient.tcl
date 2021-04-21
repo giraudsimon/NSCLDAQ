@@ -39,7 +39,7 @@ namespace eval ReadoutRESTClient {
     
     variable control /control
     variable status  /status
-    variable parameters /parameters
+    variable parameters /setparam
 }
 
 ##
@@ -122,6 +122,20 @@ snit::type ReadoutRESTClient {
         set resultDict [::clientutils::checkResult $token]
         return $resultDict
     }
+    ##
+    # _setParameter
+    #   Sets a readout REST parameter.
+    # @param what - name of the parameter.
+    # @param value - new value for the parameter
+    #
+    method _setParameter {what value} {
+        set url [$self _createURL $::ReadoutRESTClient::parameters]
+        set params [::http::formatQuery name $what value $value]
+        set token [::http::geturl $url -query $params]
+        ::clientutils::checkResult $token;     # NO return values.
+    }
+        
+    
     #--------------------------------------------------------------------
     #  Public methods.
     #
@@ -188,6 +202,40 @@ snit::type ReadoutRESTClient {
         set resultDict [$self _getStatusItem /runnumber]
         
         return [dict get $resultDict run]
+    }
+    ##
+    # getStatistics
+    #  @return dict keys:
+    #     - cumulative - cumulative statistics.
+    #     - perRun     - most recent or active run statistics.
+    #   Each statistics entry has the following keys:
+    #     - triggers - number of triggers.
+    #     - acceptedTriggers - number of accepted triggers.
+    #     - bytes    - number of bytes worth of event body.
+    #
+    method getStatistics {} {
+        set resultDict [$self _getStatusItem /statistics]
+     
+        return [dict remove $resultDict status message]    
+    }
+    ##
+    # setTitle
+    #    Sets the run title
+    # @param newTitle - the new title.
+    # @note - If the state is not 'idle' this will report an error!
+    #
+    method setTitle {newTitle} {
+        $self _setParameter title $newTitle
+    }
+    ##
+    # setRunNumber
+    #   Set a new run number.
+    #
+    # @param newRun - the new run number.
+    # @note if the state is not idle this will report an error.
+    #
+    method setRunNumber {newRun} {
+        $self _setParameter run $newRun
     }
     
 }
