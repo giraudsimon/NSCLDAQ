@@ -85,7 +85,7 @@ proc clientutils::checkResult {token} {
     
     set status [http::ncode $token]
     if {$status != 200}  {
-        set message [http::error $token]
+        set message "[http::error $token] [http::data $token]"
         error "Unexpected httpd status: $status : $message"
     }
     

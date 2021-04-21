@@ -112,26 +112,26 @@ proc ControlOperation {socket tail} {
         if {[GetRequestType $socket] eq "POST"} {
             set info [GetPostedData $socket]
             if {![dict exists $info operation]} {
-                ErrorReturn $sock "Control requires an 'operations' query parameter"
+                ErrorReturn $socket "Control requires an 'operations' query parameter"
             } else {
                 set op [dict get $info operation]
                 set currentState [runstate]
                 if {[_validTransition $op $currentState]} {
                     _transition $op
                     set newState [runstate]
-                    Httpd_ReturnData $sock application/json [json::write object \
+                    Httpd_ReturnData $socket application/json [json::write object \
                         status [json::write string OK]                          \
                         message [json::write string ""]                         \
                         newstate [json::write string $newState]                 \
                     ]
                 } else {
-                    ErrorReturn $sock "It is not valid to '$op' when the state is '$currentState'"
+                    ErrorReturn $socket "It is not valid to '$op' when the state is '$currentState'"
                 }
             }
         } else {
-            ErrorReturn $sock "Control operations must use a POST method"
+            ErrorReturn $socket "Control operations must use a POST method"
         }
     } else {
-        ErrorReturn $sock "'$tail' is not an implemented subcommand"
+        ErrorReturn $socket "'$tail' is not an implemented subcommand"
     }
 }
