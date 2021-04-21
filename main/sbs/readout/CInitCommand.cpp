@@ -72,8 +72,8 @@ CInitCommand::operator()(CTCLInterpreter&    interp,
   CTCLObjectPackage*   pPack       = getPackage();
   CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
 
-  interp.setResult("Init no implemented");
-  return TCL_ERROR;
+  interp.setResult("Init not implemented");
+  return TCL_OK;
   
 }
 /*!
