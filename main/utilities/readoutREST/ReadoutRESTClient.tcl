@@ -158,6 +158,18 @@ snit::type ReadoutRESTClient {
         set resultDict [::clientutils::checkResult $token]
         return [dict get $resultDict state]
     }
+    ##
+    # getTitle
+    #   Return the run title.
+    #
+    method getTitle {} {
+        set url [$self _createURL $::ReadoutRESTClient::status /title]
+        
+        set token [http::geturl $url]
+        set resultDict [::clientutils::checkResult $token]
+        
+        return [dict get $resultDict title]
+    }
     
     
 }
