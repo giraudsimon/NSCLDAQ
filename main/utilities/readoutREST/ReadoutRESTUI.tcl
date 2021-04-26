@@ -39,6 +39,7 @@ package require snit
 #
 snit::widgetadaptor  ReadoutStatistics {
     option -data -configuremethod _cfgData
+    delegate option * to hull
     
     ##
     # Construct the widgets in a ttk::frame hull and lay them out.
@@ -109,26 +110,45 @@ snit::widgetadaptor  ReadoutStatistics {
 #
 snit::widgetadaptor ReadoutParameters {
      option -title
-     option -run -configuremethod _cfgRun -cgetmethod _cgetRun
+     option -run -default 0
+     option -nexttitle
+     option -nextrun      -configuremethod _cfgRun
      option -titlecommand -default [list]
      option -runcommand   -default [list]
+     option -state -default normal -configuremethod _cfgState
+     
+     delegate option * to hull
      
      constructor {args} {
         installhull using ttk::frame
         
-        ttk::label $win.tlabel -text {Title: }
-        ttk::entry $win.title -textvariable [myvar options(-title)] -width 72
+        ttk::frame $win.title
         
-        ttk::label $win.rlabel -text {Run: }
-        ttk::spinbox $win.run -from 0 -to 1000000 -command [mymethod _onSetRun]
+        ttk::label $win.title.ctlabel -text {Current Title: }
+        ttk::label $win.title.ctitle -textvariable [myvar options(-title)]
+        ttk::label $win.title.tlabel -text {Next Title: }
+        ttk::entry $win.title.title -textvariable [myvar options(-nexttitle)] -width 72
         
-        grid $win.tlabel $win.title -padx 3 -sticky w
-        grid $win.rlabel $win.run   -padx 3 -sticky w
+        ttk::frame $win.run
+        
+        ttk::label $win.run.crlabel -text {Current Run: }
+        ttk::label $win.run.crun    -textvariable [myvar options(-run)]
+        ttk::label $win.run.rlabel -text {Next Run: }
+        ttk::spinbox $win.run.run -from 0 -to 1000000 -command [mymethod _onSetRun] \
+            -textvariable [myvar options(-nextrun)]
+        $win.run.run set 0
+        
+        grid $win.title.ctlabel $win.title.ctitle -padx 3 -sticky w
+        grid $win.title.tlabel $win.title.title -padx 3 -sticky w
+        grid $win.run.crlabel $win.run.crun $win.run.rlabel $win.run.run   \
+            -padx 3 -sticky w
+        grid $win.title -sticky w
+        grid $win.run -sticky w
         
         #  Bindings:
         
-        bind $win.title <Return> [mymethod _onSetTitle]
-        bind $win.run   <Return> [mymethod _onSetRun]
+        bind $win.title.title <Return> [mymethod _onSetTitle]
+        bind $win.run.run   <Return> [mymethod _onSetRun]
         
         $self configurelist $args
         
@@ -150,17 +170,26 @@ snit::widgetadaptor ReadoutParameters {
         if {$value < 0} {
             error "Run number must be a positive integer but was: '$value'"
         }
-        $win.run set $value
+        $win.run.run set $value
      }
      ##
-     # _cgetRun
-     #   Retrieve the run number.
+     # _cfgState
+     #   Configures the widget state:
+     # @param optname - option name.
+     # @param value   - Must be one of 'normal' or 'disabled'
      #
-     # @param optname -  option  name.
-     # @return string - value in the run number spinbox.
-     #
-     method _cgetRun {optname} {
-        return $win.run get
+     method _cfgState {optname value} {
+        if {$value eq "normal"} {
+            $win.title.title configure -state normal
+            $win.run.run  configure -state normal
+        } elseif {$value eq "disabled"} {
+            $win.title.title configure -state disabled
+            $win.run.run  configure -state disabled
+        } else {
+            error "'$value' is a valid state. Must be 'normal' or 'disabled'"
+        }
+        
+        set options($optname $value)
      }
      
      #------------------------------------------------------------------
@@ -192,7 +221,7 @@ snit::widgetadaptor ReadoutParameters {
      #  - Dispatch to the -runcommand script.
      #
      method _onSetRun {} {
-        set value [$win.run get]
+        set value [$win.run.run get]
         if {(![string is integer -strict $value]) || ($value < 0)} {
             tk_messageBox -title {Bad run} -icon error -type ok \
                 -message "'$value' must be a positive integer to be a valid run number"
@@ -206,7 +235,7 @@ snit::widgetadaptor ReadoutParameters {
      #    invoke the -titlecommand script with the title as a value.
      #
      method _onSetTitle {} {
-        $self _dispatch -titlecommand $options(-title)
+        $self _dispatch -titlecommand $options(-nexttitle)
      }
 }
 ##
@@ -220,6 +249,7 @@ snit::widgetadaptor ReadoutParameters {
 snit::widgetadaptor ReadoutState {
     option -state -configuremethod _cfgState
     option -command [list]
+    delegate option * to hull
     
     constructor {args} {
         installhull using ttk::frame
@@ -277,8 +307,184 @@ snit::widgetadaptor ReadoutState {
     }
     #----------------------------------------------------------------------
     # Event handling
+    #
     
+    ##
+    # _dispatch
+    #    Generic dispatch of the -command once the new state has been determined.
+    #
+    # @param change - the change desired. e.g. begin end init shutdown.
+    # @note The script, if any, is in options(-command)
+    method _dispatch {change} {
+        set script $options(-command)
+        if {$script ne ""} {
+            lappend script $change
+            uplevel #0 $script
+        }
+    }
+    ##
+    # _onBeginEnd
+    #   Dispatches depending on the state of the Begin/End button.
+    #
+    method _onBeginEnd {} {
+        set text [$win.beginend cget -text]
+        if {$text eq "Begin"} {
+            $self _dispatch begin
+        } elseif {$text eq "End" }  {
+            $self _dispatch end
+        } else {
+            error "Begin/end button text is '$test' and that's no a legal value"
+        }
+    }
+    ##
+    # _onInit
+    #   Reacts to the init button
+    method _onInit {} {
+        $self _dispatch init
+    }
+    ##
+    # _onShutdown
+    #   Reacts to the shutdown button.
+    #
+    method _onShutdown {} {
+        $self _dispatch shutdown
+    }
+}
 
+##
+# @class ReadoutUI
+#    Combines the classes above to create an integrated UI:
+#
+#  +----------------------------------------------+
+#  | Parameters UI                                |
+#  +--------------------+-------------------------+
+#  | statistics         |  control/state          |
+#  +--------------------+-------------------------+
+#
+# OPTIONS
+#   See component classes that's all there are.
+#
+snit::widgetadaptor ReadoutUI {
+    component parameters
+    component statistics
+    component control
+    
+    delegate option -statistics to statistics as -data
+    
+    delegate option -title        to parameters
+    delegate option -nexttitle     to parameters
+    delegate option -run          to parameters
+    delegate option -nextrun       to parameters
+    delegate option -titlecommand to parameters 
+    delegate option -runcommand   to parameters
+    delegate option -state        to parameters
+    
+    delegate option -currentstate to control as -state
+    delegate option -statecommand to control as -command
+    
+    ##
+    #  The constructor assembles the hull and components and
+    #  the components do the rest.
+    #
+    constructor {args} {
+        installhull using ttk::frame
+        install parameters using ReadoutParameters $win.params \
+            -borderwidth 4 -relief groove
+        install statistics using ReadoutStatistics $win.stats \
+            -borderwidth 4 -relief groove
+        install control    using ReadoutState      $win.state \
+            -borderwidth 4 -relief groove
         
+        grid $parameters -columnspan 2 -sticky nsew
+        grid $statistics $control -sticky nsew
+        $self configurelist $args
+    }
+    
+    
+}
+#-------------------------------------------------------------------------------
+#
+#  Test code.  Requires a running serving Readout.
+#
+# @param host - host in which readout is running.
+# @param user - user the readout is running under.
+# @param service - service advertised - defaults to ReadoutREST
+proc test {host user {service ReadoutREST}} {
+    package require ReadoutRESTClient
+    ReadoutRESTClient readout -host $host -user $user
+    set ::afterid -1
+    ##
+    # updateUI
+    #   Maintain the readonly state of the user interface.
+    # @param interval - ms between updates.
+    # @param w        - widget to maintain
+    # @param c        - client command.
+    #
+    proc updateUI {interval w c} {
+        set stats [$c getStatistics]
+        set currentTitle [$c getTitle]
+        set currentRun   [$c getRunNumber]
+        set state        [$c getState]
+        
+        if {$state eq "active"} {
+            $w configure -state disabled
+        } else {
+            $w configure -state normal
+        }
+        
+        
+        $w configure -title \
+            $currentTitle -run $currentRun -currentstate $state -statistics $stats
+        
+        set ::afterid [after $interval updateUI $interval $w $c]
+    }
+    ##
+    # _newRunNumber
+    #    Called when a new run number must be set.
+    #
+    # @param c   - Readout client command.
+    # @param rno - new run number.
+    #
+    proc _newRunNumber {c rno} {
+    
+        $c setRunNumber $rno
+    }
+    ##
+    # _newTitle
+    #    Called to set a new title value
+    #
+    # @param c  - readout client command.
+    # @param t  - New title value.
+    #
+    proc _newTitle {c t} {
+        
+        $c setTitle $t
+    }
+    ##
+    # _changeState
+    #    Set the readout state.
+    #
+    # @param c - client command.
+    # @param s - New state.
+    #
+    proc _changeState {c s} {
+        $c $s
+        if {$s eq "shutdown"} {
+            after cancel $::afterid
+            tk_messageBox -parent . -title "Exiting --" -icon info -type ok \
+                -message  {Shutting down Readout -- also shutting down test ui}
+            exit
+        }
+    }
+    
+    ReadoutUI .ui \
+        -runcommand [list _newRunNumber readout] \
+        -titlecommand [list _newTitle readout]   \
+        -statecommand [list _changeState readout]        \
+        -nextrun [readout getRunNumber] -nexttitle [readout getTitle]
+    
+    pack .ui -fill both -expand 1
+    
+    set ::afterid [updateUI 1000 .ui readout]
     
 }
