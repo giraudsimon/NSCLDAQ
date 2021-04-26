@@ -1,4 +1,4 @@
-program_scripts=
+program_scripts=rdo_control.tcl
 server_scripts=ReadoutControl.tcl ReadoutStatus.tcl ReadoutParameters.tcl
 library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl ReadoutRESTUI.tcl
 test_scripts=
