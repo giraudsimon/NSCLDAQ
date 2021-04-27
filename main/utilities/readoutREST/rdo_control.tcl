@@ -52,6 +52,7 @@ package require struct
 #    - setTitle title words - set a new title.
 #    - getRun   - Get the run number (to stdout).
 #    - getTitle - Get title (to stdout)
+#    - getState - Get state of Readout.
 #    - getStatistics - formats statistics nicely to stdout.
 #
 
@@ -237,6 +238,22 @@ proc getTitle {host user args} {
     c destroy
 }
 ##
+# getState
+#    Return the readout state.
+#
+# @param host - host Readout runs in.
+# @param user - User running Readout.
+# @param args - empty command tail
+#
+proc getState {host user args} {
+    if {[llength $args] != 0} {
+        usage "getState must not have any additional command parameters"
+    }
+    ReadoutRESTClient c -host $host -user $user
+    puts [c getState]
+    c destroy
+}
+##
 # getStatistics
 #   Produces  a statistics report to stdout.
 #
@@ -251,7 +268,23 @@ proc getStatistics {host user args} {
     ReadoutRESTClient c -host $host -user $user
     set stats  [c getStatistics]
     c destroy
-    puts $stats;           # For now.
+    
+    struct::matrix s
+    s add columns 4
+    s add row [list "" "Triggers " "Accepted Triggers " Bytes]
+    foreach stat [list perRun cumulative] {
+        set statistic [dict get $stats $stat]
+        s add row [list                                    \
+            "$stat " "[dict get $statistic triggers] "     \
+            "[dict get $statistic acceptedTriggers] "      \
+            [dict get $statistic bytes]                    \
+        ]
+    }
+    report::report r [s columns]
+    puts [r printmatrix s]
+    r destroy
+    s destroy
+    
 }
 
 #------------------------------------------------------------------------------
@@ -266,7 +299,7 @@ set subcommand [lindex $argv 2]
 set tail [lrange $argv 3 end];   # command tail.
 
 if {$subcommand in
-    [list begin end init shutdown incRun setRun setTitle getRun getTitle getStatistics]} {
+    [list begin end init shutdown incRun setRun setTitle getRun getTitle getState getStatistics]} {
     $subcommand $host $user {*}$tail
 } else {
     usage "Invalid subcommand: '$subcommand'"
