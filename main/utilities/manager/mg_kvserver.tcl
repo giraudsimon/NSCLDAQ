@@ -71,13 +71,13 @@ proc _varsToObjectArray {info} {
 proc kvHandler {sock suffix} {
     if {$suffix eq "/value"} {
         set queryData [GetPostedData $sock]
-        sqlite3 db $::dbFile
+        
         if {[dict exists $queryData name]} {
             set name [dict get $queryData name]
-            sqlite3 db $::dbFile
+        
             if {[kvstore::_exists db $name]} {
                 set value [::kvstore::get db $name]
-                db close
+        
                 Httpd_ReturnData $sock application/json  [json::write object                    \
                     status [json::write string OK]                           \
                     message [json::write string ""]                          \
@@ -85,25 +85,25 @@ proc kvHandler {sock suffix} {
                     value  [json::write string $value]                       \
                 ]
             } else {
-                db close
+        
                 ErrorReturn $sock "No such variable $name"
             }
         } else {
             ErrorReturn $sock "/value requires a 'name' query parameter"
         }
     } elseif {$suffix eq "/listnames"} {
-        sqlite3 db $::dbFile
+        
         set names [MakeStringList [kvstore::listKeys db]]
-        db close
+        
         Httpd_ReturnData $sock application/json [json::write object                          \
             status [json::write string OK]                                \
             message [json::write string ""]                               \
             names   [json::write array {*}$names]                         \
         ]
     } elseif {$suffix eq "/list"} {
-        sqlite3 db $::dbFile
+        
         set info [::kvstore::listAll db]
-        db close
+        
         set result [_varsToObjectArray $info]
         Httpd_ReturnData $sock application/json [json::write object                         \
             status [json::write string OK]                               \
@@ -121,7 +121,7 @@ proc kvHandler {sock suffix} {
                 }
             set name [dict get $postData name]
             set value [dict get $postData value]
-            sqlite3 db $::dbFile
+        
             if {![kvstore::_exists db $name]} {
                 ErrorReturn $sock "/set - no such variable $name"
             } else {
@@ -133,7 +133,7 @@ proc kvHandler {sock suffix} {
                     value  [json::write string [kvstore::get db $name]]     \
                 ]
             }
-            db close
+    
         } else {
             ErrorReturn $sock "/set requires a POST method"
         }

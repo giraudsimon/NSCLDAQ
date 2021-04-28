@@ -66,7 +66,7 @@ if {![file writable $::env($DBFILEVAR)]} {
 #  If this user already has a manager running  don't let another one start:
 
 set pm [portAllocator %AUTO%]
-set port [$pm findServer $pm]
+set port [$pm findServer $SERVICE]
 $pm destroy
 if {$port ne ""} {
     _usage "This user is already running a DAQ manager in this host"

@@ -154,10 +154,10 @@ proc _makeContainersArray {db} {
 #
 proc programHandler {sock suffix} {
     if {$suffix eq "/status"} {
-        sqlite3 db $::dbFile
+        
         set programs [_makeProgramsArray db]
         set containers [_makeContainersArray db]
-        db close
+        
         Httpd_ReturnData $sock application/json [json::write object     \
             status [json::write string OK]                              \
             message [json::write string ""]                             \

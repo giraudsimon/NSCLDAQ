@@ -601,14 +601,17 @@ proc ::sequence::_TransitionComplete {how} {
 proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #   If there is a user program monitor let it handle the input.
     
+    program::_log "Sequence output handler $program : $db"
     
     if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
         set monitor $::sequence::StepMonitors($monitorIndex)
+        program::_log "Has a step monitor $monitor"
         uplevel #0 [list $monitor onOutput $db $program $fd]
     } else {
+        program::_log "No step monitor"
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        gets $fd
+        program::_log "Read: [gets $fd]"
         chan configure $fd -blocking $blocking
     }
     
@@ -619,17 +622,27 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #      care of details like that.
     #  
     
+    program::_log "Checking EOF on file descriptor in sequence output handler."
     if {[eof $fd]} {
+        ::program::_log "Sequence output handler sees EOF."
         set programInfo [::program::getdef $db $program ]
+        ::program::_log "Info: $programInfo"
         
         if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
+            ::program::_log "Step monitor program end"
             set monitor $::sequence::StepMonitors($monitorIndex)
             uplevel #0 [list $monitor onExit $db $programInfo $fd]
+            ::program::_log "Returned"
         }
         if {[dict get $programInfo type] eq "Critical"} {
-            ::sequence::transition $db SHUTDOWN;    # Critical so shutdown everything.
+            ::program::_log "Critical program exited"
+            # Note that this could be us shutting down so we'll catch this:
+            catch {::sequence::transition $db SHUTDOWN} ;    # Critical so shutdown everything.
         }
+
+        ::program::_log "Finishing seq manager EOF handling"
     }
+    ::program::_log "Returning from sequence output handler"
 }  
 ##
 # ::sequence::_stateExists

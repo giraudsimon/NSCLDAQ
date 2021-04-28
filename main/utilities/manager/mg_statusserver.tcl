@@ -40,6 +40,9 @@ proc _TransitionEnded {db mgr how} {
     
     set ::Done $how
 }
+set tty [open info.log w]
+fconfigure $tty -buffering line
+
 
 ##
 # stateHandler
@@ -58,9 +61,9 @@ proc stateHandler {sock suffix} {
     json::write align    1
     
     if {$suffix eq "/status"} {
-        sqlite3 db $::dbFile
+        
         set state [::sequence::currentState db]
-        db close
+        
         
         Httpd_ReturnData $sock application/json [json::write object   \
             status [json::write string OK]                            \
@@ -68,9 +71,9 @@ proc stateHandler {sock suffix} {
             state   [json::write string $state]                       \
         ]
     } elseif {$suffix eq "/allowed"} {
-        sqlite3 db $::dbFile
+        
         set next [::sequence::listLegalNextStates db]
-        db close
+        
         
         set resultStrings [list]
         foreach state $next {
@@ -103,20 +106,20 @@ proc stateHandler {sock suffix} {
             
             #  Try to set the new state:
             
-            sqlite3 db $::dbFile
+            
             set status [catch \
                 {::sequence::transition db $state [list _TransitionEnded]} msg]
             if {$status} {
                 # Failed:
                 
-                db close
+                
                 ErrorReturn $sock $msg
             } else {
                 # Success
                 vwait ::Done
                 
                 set newstate [::sequence::currentState db]
-                db close
+                
                 Httpd_ReturnData $sock application/json [json::write object \
                     status [json::write string OK]                          \
                     state  [json::write string $newstate]                   \
@@ -130,3 +133,4 @@ proc stateHandler {sock suffix} {
     }
 }
 set dbFile $::env(DAQ_EXPCONFIG)
+sqlite3 db $dbFile

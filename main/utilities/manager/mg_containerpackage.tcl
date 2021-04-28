@@ -216,7 +216,8 @@ proc container::activate {db name host} {
     #  there's at most one:
     
     set rootInfo [$db eval {
-        SELECT id, container, image_path, init_script FROM container
+        SELECT id, container, image_path, init_script FROM container WHERE
+          container = $name
     }]
     if {[llength $rootInfo] == 0} {
         error "There is no container named $name in the database."
@@ -279,7 +280,7 @@ proc container::activate {db name host} {
     
     #
     #   Start the container in the remote host using ssh.
-    #puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
+    puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
     set fd [open "|ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }
