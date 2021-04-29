@@ -230,8 +230,9 @@ proc ::program::_handleContainerInput {container host fd} {
         close $fd
     }
 }
+set debugOutput 1
 proc ::program::_log text {
-    if {[info globals ::tty] ne ""} {
+    if {([info globals ::tty] ne "") && $::debugOutput} {
         puts $::tty $text
         flush $::tty
     }
