@@ -1,6 +1,7 @@
 program_scripts=rdo_control.tcl rdo_titleFromKv.tcl
 server_scripts=ReadoutControl.tcl ReadoutStatus.tcl ReadoutParameters.tcl
-library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl ReadoutRESTUI.tcl
+library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl ReadoutRESTUI.tcl \
+	rdo_utils.tcl
 test_scripts=
 
 LIBRARY_DIR=@prefix@/TclLibs/readoutREST

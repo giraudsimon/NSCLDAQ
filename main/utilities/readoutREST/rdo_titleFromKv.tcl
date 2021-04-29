@@ -31,7 +31,7 @@ if {[array names env DAQTCLLIBS] ne ""} {
     lappend auto_path $::env(DAQTCLLIBS)
 }
 package require kvclient
-package require programstatusclient
+package require rdoutils
 package require ReadoutRESTClient
 #------------------------------------------------------------------------------
 #  Utility functions.
@@ -67,29 +67,7 @@ set host [lindex $argv 0]
 set user [lindex $argv 1]
 set program [lindex $argv 2]
 
-# Does the program exist and is it running?  If so we need its host:
-
-ProgramClient p -host $host -user $user
-set pgmInfo [p status]
-p destroy
-set programs [dict get $pgmInfo programs]
-
-set programInfo [dict create]
-foreach p $programs {
-    if {[dict get $p name] eq $program} {
-        set programInfo $p
-        break
-    }
-}
-if {$programInfo eq [dict create]} {
-    error "There is no program '$program' defined."
-}
-if {![dict get $programInfo active] } {
-    error "Program '$program' is not active."
-}
-
-
-set programHost [dict get $programInfo host];   #Where we send title request to.
+set programHost [getProgramHost $host $user $program];   #Where we send title request to.
 
 #  Get the value of the title key value item:
 
