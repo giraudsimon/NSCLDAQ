@@ -99,7 +99,7 @@ snit::widgetadaptor ReadoutStateTable {
     #
     method add {name host {state -} {active -}} {
         set index $name@$host
-        if {[array names ids $index] eq ""} {
+        if {![$self exists $name $host]} {
             set element \
                 [$win.table insert {} end -values [list $name $host $state $active]]
             set ids($index) $element
@@ -117,7 +117,7 @@ snit::widgetadaptor ReadoutStateTable {
     #
     method delete {name host} {
         set index $name@$host
-        if {[array names ids $index] ne ""} {
+        if {[$self exists $name $host]} {
             $win.table delete $ids($index)
             array unset ids $index
         } else {
@@ -137,8 +137,56 @@ snit::widgetadaptor ReadoutStateTable {
         set index $name@$host
         return [expr {[array names ids $index] ne ""}]
     }
-    
+    ##
+    # list
+    #   Lists the contents of the table.  The table contents are list of
+    #   dicts...See below.
+    # @return list of dicts  - Each dict represents one line of the table and
+    #              contains the following key/value pairs:
+    #              name  - program name.
+    #              host  - host the program runs in.
+    #              state - State of the program.
+    #              active- Boolean true if the program is active according
+    #                      to the table.
+    # @note that state can be '-' indicating it's not been actually set.
+    #       if that's the case with active, active is assumed to be false.
+    # @note that the list should not be assumed to be correct as the underlying
+    #       model can change at any time.  It's just the list as of the
+    #       last time this view was updated.
+    #
+    method list {} {
+        set result [list]
+        foreach index [array names ids] {
+            set data [$win.table item $ids($index) -values]
+            set name [lindex $data 0]
+            set host [lindex $data 1]
+            set state [lindex $data 2]
+            set active [expr {[lindex $data 3] eq "X"}]
+            lappend result [dict create                                     \
+                name $name host $host state $state active $active           \
+            ]
+        }
         
-    
+        return $result
+    }
+    ##
+    # setActive
+    #    Sets the activity state of a program.
+    #
+    # @param name   - program name.
+    # @param host   - host the program runs on.
+    # @param active - boolean flag with new value of the active state of name@host
+    #
+    method setActive {name host active} {
+        set index $name@$host
+        if {[$self exists $name $host]}  {
+            set entry $ids($index)
+            set data [$win.table item $entry -values]
+            set active [expr {$active ? "X" : ""}]
+            $win.table item $entry -values [lreplace $data 3 3 $active]
+        } else {
+            error "$index does not exist"
+        }
+    }
 }
     
