@@ -124,6 +124,19 @@ snit::widgetadaptor ReadoutStateTable {
             error "$index is not in the table."
         }
     }
+    ##
+    # exists
+    #   Determines if a name/host combination is in the table.
+    #   The assumption is that the ids array is properly maintained.
+    #
+    # @param name - name of the program.
+    # @param host - host it runs in.
+    # @return boolean - true if name@host is in the table.
+    #
+    method exists {name host} {
+        set index $name@$host
+        return [expr {[array names ids $index] ne ""}]
+    }
     
         
     
