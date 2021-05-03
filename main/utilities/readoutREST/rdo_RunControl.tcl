@@ -213,7 +213,7 @@ snit::widgetadaptor ReadoutStateTable {
     }
 }
 ##
-# @class ReadoutManagerControl
+# @class controls
 #    Widget to control more than one Readout.  Consists of
 #    - ParametersUI  (from ReadoutRESTUI)
 #    - Control/State (from ReadouttRESTUI)
@@ -261,7 +261,7 @@ snit::widgetadaptor ReadoutManagerControl {
     delegate option -nextrun      to parameters
     delegate option -titlecommand to parameters
     delegate option -runcommand   to parameters
-    delegate option -parmeterstate to parameters as -state
+    delegate option -parameterstate to parameters as -state
     
     # Delegated to ReadoutState:
     
@@ -328,6 +328,128 @@ snit::widgetadaptor ReadoutManagerControl {
     #---------------------------------------------------------------------------
     # Event handling.
     
+    ##
+    # _dispatch
+    #   Dispatch a script.
+    #
+    # @param opt - option holding the script.
+    #
+    method _dispatch {opt} {
+        set script $options($opt)
+        if {$script ne ""} {
+            uplevel #0 $script
+        }
+    }
+    
+    ##
+    # _dispatchBoot
+    #  Dispacth the boot button's script:
+    #
+    method _dispatchBoot {} {
+        $self _dispatch -bootcommand
+    }
+    
+    ##
+    # _dispatchShutdown
+    #
+    # Dispatch the shutdown button's script.#
+    method _dispatchShutdown {} {
+        $self _dispatch -shutdowncommand
+    }
+}
+##
+# @class RunControlGUI
+#   This is the view for the run control.  It consists of a top part that is a
+#    ReadoutManagerControl and a bottom part that is a ttk::notebook.
+#    The notebook has one page that is a ReadoutStateTable and then one page
+#    for each readout program that contains a ReadoutStatistics entry for
+#    each program.
+# OPTIONS:
+#   All ReadoutManagerControl options - delegated to that component.
+# Methods:
+#   All ReadoutStateTable methods delegate to that component.
+#   updateStatistics - updates statistics page for a specific program/node
+#                   if necessary generating a new page for that program/node.
+#
+snit::widgetadaptor RunControlGUI {
+    component controls
+    component notebook
+    component summary
+    
+    ## ReadoutManagerControls options:
+    
+    delegate option -state to controls
+    delegate option -readoutstate to controls
+    delegate option -bootcommand to controls
+    delegate option -shutdowncommand to controls
+    delegate option -title to controls
+    delegate option -nexttitle to controls
+    delegate option -run  to controls
+    delegate option -nextrun to controls
+    delegate option -runcommand to controls
+    delegate option -parameterstate to controls
+    
+    # Summary methods:
+    
+    delegate method add to summary
+    delegate method delete to summary
+    delegate method exists to summary
+    delegate method list to summary
+    delegate method setActive to summary
+    delegate method setState to summary
+    
+    # Manages assigning, keeping track of and 
+    
+    variable statsIndex 0;     # USed to generate index commands.
+    variable statsWidgets -array [list];   # Widgets indexed by program@host
+    
+    
+    
+    ## Constructor
+    
+    constructor {args} {
+        installhull using ttk::frame
+        
+        install controls using ReadoutManagerControl $win.controls
+        install notebook using ttk::notebook $win.notebook
+        install summary using ReadoutStateTable $notebook.summary
+        $notebook add $summary -text summary
+        
+        grid $controls -sticky nsew
+        grid $notebook -sticky nsew
+        
+        
+        
+        $self configurelist $args
+    }
+    
+    #--------------------------------------------------------------------------
+    #  Public methods.
+    
+    ##
+    # updateStatistics
+    #    - If necessary a new statistics tab/widget is created.
+    #    - The statistics are then passed to that widget to be displayed.
+    #
+    # @param program - name of the program.
+    # @param host    - Host the program runs in.
+    # @param stats   - Statistics dict of the program@host.
+    #
+    method updateStatistics {program host stats} {
+        set index $program@$host
+        if {[array names statsWidgets $index] eq ""} {
+            #
+            #   Need to make a new tab:
+            #
+            set widget  $notebook.stats[incr statsIndex]
+            ReadoutStatistics $widget
+            $notebook add $widget -text $index
+            set statsWidgets($index) $widget
+        } else {
+            set widget $statsWidgets($index)
+        }
+        $widget configure -data $stats
+    } 
 }
 
 
@@ -353,4 +475,7 @@ proc usage {msg} {
     exit -1
     
 }
+
+#------------------------------------------------------------------------------
+#  Entry
     
