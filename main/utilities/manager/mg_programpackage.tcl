@@ -230,7 +230,13 @@ proc ::program::_handleContainerInput {container host fd} {
         close $fd
     }
 }
-set debugOutput 1
+##
+# Handy debugging hook enable output by setting debugOutput to 1.
+# output will be logged to the file open on ::tty if there is one.
+# so to debug, something in the system must do a set ::tty [open ... w]
+# and ::debugOutput must be true.
+#
+set debugOutput 0
 proc ::program::_log text {
     if {([info globals ::tty] ne "") && $::debugOutput} {
         puts $::tty $text
