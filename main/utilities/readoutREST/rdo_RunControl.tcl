@@ -50,7 +50,8 @@ package require Tk
 #    none
 # METHODS
 #    add    - Adds a name/host
-#    delete - Remove a name/host
+#    delete - Remove a name/host\
+#    exists - Query the existence of a program.
 #    list   - Return the contents of the table as  a list of dicts.
 #    setActive - Set active flag of a name/host.
 #    setState  - Set the runstate of a name/host.
@@ -107,6 +108,23 @@ snit::widgetadaptor ReadoutStateTable {
         }
         
     }
+    ##
+    # delete
+    #    Removes a name/host combination from the table.
+    #
+    # @param name - name of the program.
+    # @param host - host in which it runs.
+    #
+    method delete {name host} {
+        set index $name@$host
+        if {[array names ids $index] ne ""} {
+            $win.table delete $ids($index)
+            array unset ids $index
+        } else {
+            error "$index is not in the table."
+        }
+    }
+    
         
     
 }
