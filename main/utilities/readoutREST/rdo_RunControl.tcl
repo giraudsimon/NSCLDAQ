@@ -188,5 +188,24 @@ snit::widgetadaptor ReadoutStateTable {
             error "$index does not exist"
         }
     }
+    ##
+    # setState
+    #   Sets a program's state field.
+    #
+    # @param name - name of the program.
+    # @param host - host of the program.
+    # @param state - String to put in the state field.
+    #
+    method setState {name host state} {
+        set index $name@$host
+        if {[$self exists $name $host]} {
+            set data [$win.table item $ids($index) -values]
+            $win.table item $ids($index) -value [                        \
+                lreplace $data 2 2 $state                                \
+            ]
+        } else {
+            error "$index does not exist."
+        }
+    }
 }
     
