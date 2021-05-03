@@ -1,4 +1,5 @@
-program_scripts=rdo_control.tcl rdo_titleFromKv.tcl rdo_runFromKv.tcl
+program_scripts=rdo_control.tcl rdo_titleFromKv.tcl rdo_runFromKv.tcl \
+	rdo_RunControl.tcl
 server_scripts=ReadoutControl.tcl ReadoutStatus.tcl ReadoutParameters.tcl
 library_scripts=ReadoutREST.tcl ReadoutRESTClient.tcl ReadoutRESTUI.tcl \
 	rdo_utils.tcl
