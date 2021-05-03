@@ -104,6 +104,8 @@ snit::widgetadaptor  ReadoutStatistics {
 # OPTIONS:
 #   -title     - Run title.
 #   -run       - Run number.
+#   -nexttitle - Next used title - passed to -titlecommand.
+#   -nextrun   - Next used run - passed to -runcommand.
 #   -titlecommand -called when Return is hit in the title field.
 #   -runcommand- Called whn Return is hit in the run number spinbox.
 #               or the increment/decrement buttons are clicked.
@@ -281,9 +283,12 @@ snit::widgetadaptor ReadoutState {
     #
     # @param optname - option name
     # @param value   - value.
+    # @note  The pseudo state 'inconsistent' can be set to indicate
+    #        that, if we are managing several Readouts they are not all in the
+    #        same state.
     #
     method _cfgState {optname value} {
-        if {$value in [list idle active paused]} {
+        if {$value in [list idle active paused inconsistent]} {
             set options($optname) $value ;     # cget now works.
             
             if {$value eq "idle"} {
@@ -298,6 +303,9 @@ snit::widgetadaptor ReadoutState {
                 
             } elseif {$value eq "paused"} {
                 $win.beginend configure -text End -state disabled
+                $win.init     configure -state disabled
+            } elseif {$value eq "inconsistent"} {
+                $win.beginend configure -state disabled
                 $win.init     configure -state disabled
             }
             

@@ -25,6 +25,10 @@ exec tclsh "$0" ${1+"$@"}
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 
+if {[array names ::env DAQTCLLIBS] ne ""} {
+    lappend auto_path $::env(DAQTCLLIBS)
+}
+
 package require ReadoutRESTUI;           # Widgets we'll use.
 package require programstatusclient;     # To query programs from manager.
 package require stateclient;             # To query/control manager state.
@@ -207,5 +211,146 @@ snit::widgetadaptor ReadoutStateTable {
             error "$index does not exist."
         }
     }
+}
+##
+# @class ReadoutManagerControl
+#    Widget to control more than one Readout.  Consists of
+#    - ParametersUI  (from ReadoutRESTUI)
+#    - Control/State (from ReadouttRESTUI)
+#    - Boot/Shutdown control section of the manager itself.
+#  Note this is a view, it relies on controller and model logic.
+#  Model comes from the manager and the various readout programs.
+#
+# OPTIONS:
+#   -state -  manager state.
+#   -readoutstate - List of states from the readouts.
+#   -bootcommand  - command to call when we should boot.
+#   -shutdowncommand - command to call when we should shutdown.
+#
+#  Delegated to ReadoutParameters subwidget
+#
+#   -title        - Current title.
+#   -nexttitle    - Next title (being entered).
+#   -titlecommand - Called when title should be changed.
+#   -run          - Current run number value.
+#   -nextrun      - Next run number (being entered).
+#   -runcommand   - Command called when run number should be changed.
+#   -parameterstate -> -state in ReadoutParameters subwidget.
+#
+#    Delegated to ReadoutState
+#
+#    -statecommand  - Called when state change button has been clicked.
+#                     (-> -command.)
+#
+snit::widgetadaptor ReadoutManagerControl {
+    component parameters
+    component control
+    
+    # 'native' options:
+    
+    option -state -default *Unknown*
+    option -readoutstate -configuremethod _cfgRdoState 
+    option -bootcommand [list]
+    option -shutdowncommand [list]
+    
+    # Options delegated ton the parameters widget:
+    
+    delegate option -title        to parameters
+    delegate option -nexttitle    to parameters
+    delegate option -run          to parameters
+    delegate option -nextrun      to parameters
+    delegate option -titlecommand to parameters
+    delegate option -runcommand   to parameters
+    delegate option -parmeterstate to parameters as -state
+    
+    # Delegated to ReadoutState:
+    
+    delegate option -statecommand  to control as -command
+    
+    ## constructor
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        # Generate the components.
+        
+        install parameters using ReadoutParameters $win.pars
+        install control    using ReadoutState      $win.control
+        
+        #  Generate widgets that control/reflect the state machine in the manager
+        
+        ttk::labelframe $win.manager -borderwidth 3 -relief groove -text "Manager"
+        ttk::label $win.manager.statelabel -text "State: "
+        ttk::label $win.manager.state -textvariable [myvar options(-state)]
+        ttk::button $win.manager.boot -text Boot -command _dispatchBoot
+        ttk::button $win.manager.shutdown -text Shutdown -command _dispatchShutdown
+        
+        grid $win.manager.statelabel $win.manager.state -sticky w
+        grid $win.manager.boot $win.manager.shutdown    -sticky w -padx 3
+        
+        grid $parameters -columnspan 3
+        grid $win.manager $control
+        
+        $self configurelist $args
+        
+        
+    }
+    
+    #--------------------------------------------------------------------------
+    #  Configuration management.
+    
+    ##
+    # _cfgRdoState
+    #    Called when -readoutstate is configured.  We're handed a list of
+    #    states, one for each reaodut program being controlled.  If all the
+    #    states are the same, we use that state as the resulting state.
+    #    if not, we use the state 'inconsistent'
+    #
+    #    Regardless, options(-readoutstate) is updated so cget is trivial.
+    #
+    # @param optname - name of the option being configured (-readoutstate).
+    # @param value   - new value.
+    #
+    method _cfgRdoState {optname value} {
+        set state [lindex $value 0]
+        foreach s [lrange $value 1 end] {
+            if {$s ne $state} {
+                set state inconsistent
+                break
+            }
+        }
+        set options($optname) $state
+        $control configure -state $state
+    }
+        
+    
+    
+    #---------------------------------------------------------------------------
+    # Event handling.
+    
+}
+
+
+#------------------------------------------------------------------------------
+#  Utility procs:
+
+##
+# usage
+#   Output an error message and program usage.
+#
+# @param msg - the error message.
+#
+proc usage {msg} {
+    puts stderr $msg
+    puts stderr "Usage:"
+    puts stderr "   \$DAQBIN/rdo_RunControl host user program..."
+    puts stderr "Provides a graphical interface to control run state"
+    puts stderr "Where:"
+    puts stderr "   host  - is the host running the program manager"
+    puts stderr "   user  - is the user the program manager is running under"
+    puts stderr "   program... is a list of program names that are readouts."
+    
+    exit -1
+    
 }
     
