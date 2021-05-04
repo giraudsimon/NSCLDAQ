@@ -30,11 +30,14 @@ if {[array names ::env DAQTCLLIBS] ne ""} {
 }
 
 package require ReadoutRESTUI;           # Widgets we'll use.
+package require ReadoutRESTClient;       # To get readout states.
 package require programstatusclient;     # To query programs from manager.
 package require stateclient;             # To query/control manager state.
 package require kvclient;                # Title and run# are in kv store.
 package require Tk
 
+#-------------------------------------------------------------------------------
+#   User interface megawidgets.
 
 ##
 # @class ReadoutStateTable
@@ -248,7 +251,7 @@ snit::widgetadaptor ReadoutManagerControl {
     
     # 'native' options:
     
-    option -state -default *Unknown*
+    option -state -default *Unknown* -configuremethod _cfgState
     option -readoutstate -configuremethod _cfgRdoState 
     option -bootcommand [list]
     option -shutdowncommand [list]
@@ -282,8 +285,10 @@ snit::widgetadaptor ReadoutManagerControl {
         ttk::labelframe $win.manager -borderwidth 3 -relief groove -text "Manager"
         ttk::label $win.manager.statelabel -text "State: "
         ttk::label $win.manager.state -textvariable [myvar options(-state)]
-        ttk::button $win.manager.boot -text Boot -command _dispatchBoot
-        ttk::button $win.manager.shutdown -text Shutdown -command _dispatchShutdown
+        ttk::button $win.manager.boot -text Boot -command _dispatchBoot \
+            -state disabled
+        ttk::button $win.manager.shutdown -text Shutdown -command _dispatchShutdown \
+            -state disabled
         
         grid $win.manager.statelabel $win.manager.state -sticky w
         grid $win.manager.boot $win.manager.shutdown    -sticky w -padx 3
@@ -298,6 +303,25 @@ snit::widgetadaptor ReadoutManagerControl {
     
     #--------------------------------------------------------------------------
     #  Configuration management.
+    
+    ##
+    # _cfgState
+    #   Handle the -state option configuration:
+    #      If the state is SHUTDOWN - Boot is enabled and  Shutdown not.
+    #      otherwise Shutdowns is enabled and Boot is not.
+    #
+    # @param optname - name of the option being modified.
+    # @param value   - new value.
+    method _cfgState {optname value} {
+        set options($optname) value;     # This updates the state label.
+        if {$value eq "SHUTDOWN"} {
+            $win.manager.shutdown configure -state disabled
+            $win.manager.boot     configure -state normal
+        } else {
+            $win.manager.shutdown configure -state normal
+            $win.manager.boot     configure -state disabled
+        }
+    }
     
     ##
     # _cfgRdoState
@@ -450,6 +474,140 @@ snit::widgetadaptor RunControlGUI {
         }
         $widget configure -data $stats
     } 
+}
+#------------------------------------------------------------------------------
+# Controller classes.
+#
+
+##
+# @class SystemStateTracker
+#    This class interacts with a manager (model) to maintain the state
+#    of the system in a view that supports a -state option.
+#    Note that so we don't have a plethora of after's in the event qeueu
+#    update is externally called at whatever rate or demand required by the
+#    larger application:
+#
+#  OPTIONS
+#    -view    - Widget with a -state option that we'll maintain.
+#    -model   - StateClient object that can interact with the manager.
+#  METHODS
+#    update   - Fetches the state from the model (if possible) and
+#               updates the view.
+#
+snit::type SystemStateTracker {
+    option -view
+    option -model
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    
+    #--------------------------------------------------------------------------
+    # public methods.
+    #
+    
+    ##
+    # update
+    #    Attempts to update the view from the model
+    #    - currentState is called in the model.
+    #    - The returned value is passed into the view.
+    #
+    # @return integer - 0 on success and 1 if currentState failed.
+    #
+    method update {} {
+        set model $options(-model)
+        set view  $options(-view)
+        
+        if {[catch {$model currentState} state]} {
+            return 1;                       # state fetch failed.
+        } else {
+            $view configure -state $state
+        }
+    }
+}
+##
+# @class MultiReadoutStateTracker
+#    Controller that maintains the readout state for multiple Readout models.
+#
+# OPTIONS:
+#    -view - an object that acepts the -readoutstate option.
+#    -models - List of ReadoutRESTClient objects that we'll get our
+#              data from.
+# METHODS:
+#    update - Updates the view from the models.
+#
+snit::type MultiReadoutStateTracker {
+    option -view
+    option -models
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    
+    #--------------------------------------------------------------------------
+    # Public methods.
+    
+    ##
+    # update
+    #    Attempts to fetch the run state from the models we have.
+    #    If any model cannot give us a state (e.g. the Readout is not running)
+    #    We'll put in the pseudo state 'inconsistent'  This will mean the
+    #    view will represent the state as inconsistent because:
+    #    - Either all Readouts are done which results in inconsistent state
+    #      due to unanimous consent.
+    #    - Some Readouts are down which will cause state disagreement
+    #      resulting in a display of inconsistent as the state.
+    #
+    #
+    method update {} {
+        set statelist [list]
+        foreach model $options(-models) {
+            if {[catch {$model getState} state]} {
+                lappend statelist inconsistent
+            } else {
+                lappend statelist $state
+            }
+        }
+        $options(-view) configure -readoutstate $statelist
+    }
+        
+    
+}
+##
+# @class MultiReadoutStatisticsTracker
+#    Controller that maintains statistics in a view with multiple readout
+#    programs.
+# OPTIONS:
+#    -view  - A view object that must support the updateStatistics method.
+#    -models - list of ReadoutRESTCLient model objects from which the statistics
+#              are fetched.
+#    -programs - List of program names - corresponding to the models.
+# METHODS:
+#   udpate  - update the view from the models.
+snit::type MultiReadoutStatisticsTracker {
+    option -view
+    option -models
+    option -programs
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # public methods
+    
+    ##
+    # update
+    #    Update the view object from the models.  Note that if a model
+    #    errors out (e.g. the Readout isn't running) we ignore that error
+    #    at this time.
+    #
+    method update {} {
+        foreach model $options(-models) name $options(-programs) {
+            if {![catch {$model getStatistics} stats]} {
+                $options(-view) updateStatistics $name [$model cget -host] $stats
+            }
+        }
+    }
 }
 
 
