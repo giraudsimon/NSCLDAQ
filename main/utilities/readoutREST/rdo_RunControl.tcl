@@ -408,10 +408,12 @@ snit::widgetadaptor RunControlGUI {
     delegate option -shutdowncommand to controls
     delegate option -title to controls
     delegate option -nexttitle to controls
+    delegate option -titlecommand to controls
     delegate option -run  to controls
     delegate option -nextrun to controls
     delegate option -runcommand to controls
     delegate option -parameterstate to controls
+    delegate option -statecommand to controls
     
     # Summary methods:
     
@@ -427,8 +429,7 @@ snit::widgetadaptor RunControlGUI {
     variable statsIndex 0;     # USed to generate index commands.
     variable statsWidgets -array [list];   # Widgets indexed by program@host
     
-    
-    
+
     ## Constructor
     
     constructor {args} {
@@ -607,6 +608,43 @@ snit::type MultiReadoutStatisticsTracker {
                 $options(-view) updateStatistics $name [$model cget -host] $stats
             }
         }
+    }
+}
+##
+# @class ReadoutParameterTracker
+#
+#  Manages updates from the title and run key value store items and
+#  the uneditable parmaters of a readout.
+#
+# OPTIONS
+#   -view   - View that must support the -title, -run options.
+#   -model  - Model which must support a getValue method to retrieve a
+#             key value store item.
+#
+snit::type ReadoutParameterTracker {
+    option -view
+    option -model
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # Public methods.
+    
+    ##
+    # update
+    #   Updates the view from the model.  Note that if the
+    #   model fails (e.g. the manager isn't running we don't update).
+    #
+    # @return integer - 0 success 1 failure in update.
+    #
+    method update {} {
+        return [catch {
+            set model $options(-model)
+            set view  $options(-view)
+            $view configure -title [$model getValue title]
+            $view configure -run   [$model getValue run]
+        }]
     }
 }
 
