@@ -93,7 +93,7 @@ snit::type KvClient {
         
         set token [http::geturl $url]
         set result [clientutils::checkResult $token]
-        return [dict get $result value]
+        return [lindex [dict get $result value] 0]
     }
     ##
     # setValue
