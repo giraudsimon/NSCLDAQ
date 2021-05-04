@@ -107,6 +107,7 @@ snit::widgetadaptor ReadoutStateTable {
     method add {name host {state -} {active -}} {
         set index $name@$host
         if {![$self exists $name $host]} {
+            set active [expr {$active ? "X" : ""}]
             set element \
                 [$win.table insert {} end -values [list $name $host $state $active]]
             set ids($index) $element
@@ -647,7 +648,195 @@ snit::type ReadoutParameterTracker {
         }]
     }
 }
+##
+# @class SummaryTracker
+#    Updates the readout summary view from the program states and models we
+#    dynamically generate for those programs.
+#
+# OPTIONS:
+#    -view   - an object that supports add, delete, setActive and setState
+#             methods in the same calling convention that ReadoutStateTable does.
+#    -model  - an object with a status method that returns lists of dicts that
+#              are like the ones a ProgramClient object returns.
+#    -readouts - List of program names for programs that are Readouts which also
+#              must run their REST interface plugin as we'll be fetching their states.
+#
+# METHODS:
+#    update   - Updates the view from data gotten from the model.
+#
+snit::type SummaryTracker {
+    option -view
+    option -model
+    option -readouts
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # Utility methods
+    
+    ##
+    # _filterReadouts
+    #   Given the list o dicts containing program states, filters out those
+    #   that are not readouts, returning only those that are.
+    #   A readout program just needs to match a name in options(-readouts).
+    #
+    # @param states - list of program status dicts.
+    # @return list of program status dicts - the name of each program in the
+    #                 returned list is gauranteed to be in options(-readouts)
+    #
+    method _filterReadouts {states} {
+        set result [list]
+        foreach status $states {
+            if {[dict get $status name] in $options(-readouts)} {
+                lappend result $status
+            }
+        }
+        return $result
+    }
+    ##
+    # _getReadoutState
+    #   Get the state of the readout running in the specified host/user pair
+    #
+    # @param host  - host running the program.
+    # @param user  - user running the program.
+    # @return string - state name.
+    # @retval *unresponsive* indicates we could not fetch the state from the
+    #                REST server.
+    #
+    method _getReadoutState {host user} {
+        set client [ReadoutRESTClient %AUTO% -user $user -host $host]
+        if {[catch {$client getState} state]} {
+            set state *unresponsive*;    # Deal with e.g. exit after state get.
+        }
+        $client destroy
+        return $state
+    }
+    ##
+    # _updateReadoutStatus
+    #   Updates the status of a program:
+    #   - Generate a ReadoutRESTClient and, if possible, fetch the state.
+    #   - If the program already exists, just update the state and status.
+    #   - If the program does not exist add it.
+    #
+    # @param program - dict describing the program.
+    #
+    method _updateReadoutStatus {program} {
+        set host [dict get $program host]
+        set name [dict get $program name]
+        set active [dict get $program active]
+        
+        set user [$options(-model) cget -user]
+        
+        if {$active} {
+            set state [$self _getReadoutState $host $user]
+        } else {
+            set state *unresponsive*
+        }
+        
+        set view $options(-view)
+        
+        if {[$view exists $name $host]} {
+            $view setActive $name $host $active
+            $view setState  $name $host $state
+        } else {
+            $view add $name $host $state $active
+        }
+        
+    }
+    ##
+    # _markDeleted
+    #   If a program is not in the list of status items it gets marked deleted
+    #   Locate any program in the listed names and remove it.
+    #
+    # @param name - program name.
+    #
+    method _markDeleted {name} {
+        set model $options(-view)
+        set programs [$model list]
+        foreach program $programs {
+            if {[dict get $program name] eq $name} {
+                $model delete [dict get $program name] [dict get $program host]
+                break;     # Presumably there's only one.
+            }
+        }
+    }
+    ##
+    # _deleteMovedHosts
+    #    If any programs have moved to a new host, delete the old entry for
+    #   them.  It's up to some other bit of code to make the new one.
+    #
+    # @param names  - Names of programs.
+    # @param nodes  - Nodes in which each program is running.
+    #
+    method _deleteMovedHosts {names nodes} {
+        set view $options(-view)
+        
+        # Note we query the model each time as the outer loop can change the
+        #  list iterated over in the inner loop.
+        
+        foreach name $names node $nodes {
+            foreach existing [$view list] {
+                set oldName [dict get $existing name]
+                set oldHost [dict get $existing host]
+                puts "$name@$node : $oldName@$oldHost"
+                if {($name eq $oldName) && ($node ne $oldHost)} {
+                    $view delete $oldName $oldHost
+                    break;                 #Presumably only one match is allowed.
+                }
+            }
+        }
+    }
 
+    #--------------------------------------------------------------------------
+    # Public methods
+    
+    ##
+    # update
+    #   This is actually quite complex considering some of the edge cases:
+    #    - The manager does not respond to 'status' no update can occur.
+    #    - Some programs have been removed from the manager (vs. the -readouts
+    #      list); Those get marked with a state *deleted* and inactive.
+    #    - Some program supposedly active does not respond to its state request
+    #      That gets marked as '*unresponsive*'
+    #    - If a program moves to a different host, we'll make a new one and
+    #      delete the old one.
+    #
+    # @return integer - 0 success -1 failure  because status didn't work.
+    #                   all other problems are caught and handled.
+    #
+    method update {} {
+        catch {
+            set view $options(-view)
+            set programStates [dict get [$options(-model) status] programs]
+            set programStates [$self _filterReadouts $programStates]
+            
+            set existingReadouts [list]
+            set readoutHosts     [list]
+            foreach program $programStates {
+                lappend existingReadouts [dict get $program name]
+                lappend readoutHosts     [dict get $program host]
+                $self _updateReadoutStatus $program
+            }
+            #  Mark the programs that disappeared:
+            
+            foreach program $options(-readouts) {
+                if {$program ni $existingReadouts} {
+                    $self _markDeleted $program
+                }
+            }
+            #  If hosts changed delete the old ones:
+            
+            $self _deleteMovedHosts $existingReadouts $readoutHosts
+            
+        }
+    }
+}
+    
+
+    
+
+#    This is a bit complex bec
 
 #------------------------------------------------------------------------------
 #  Utility procs:
