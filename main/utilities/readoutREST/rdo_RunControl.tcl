@@ -959,6 +959,7 @@ snit::type RunControlActionHandler {
     #  - init -> HWINIT
     #  - begin -> BEGIN
     #  - end   -> END
+    #  - shutdown -> manager shutdown
     #
     # @param what - the transition in Readout(s) being attempted.
     #
@@ -970,6 +971,8 @@ snit::type RunControlActionHandler {
             $model transition BEGIN
         } elseif {$what eq "end"} {
             $model transition END
+        } elseif {$what eq "shutdown" } {
+            $self _onShutdown
         }
         #  For now ignore all others in the sake of expandability.
         
