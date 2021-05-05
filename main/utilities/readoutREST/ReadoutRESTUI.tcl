@@ -120,7 +120,7 @@ snit::widgetadaptor ReadoutParameters {
      option -state -default normal -configuremethod _cfgState
      
      variable lastTitle ""
-     variable lastRun   -1
+     
      
      delegate option * to hull
      

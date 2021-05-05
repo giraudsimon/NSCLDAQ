@@ -323,6 +323,7 @@ snit::widgetadaptor ReadoutManagerControl {
             $win.manager.shutdown configure -state normal
             $win.manager.boot     configure -state disabled
         }
+        
     }
     
     ##
@@ -347,6 +348,14 @@ snit::widgetadaptor ReadoutManagerControl {
         }
         if {$state eq ""} {
             set state inconsistent;               # If there's no values.
+        }
+        #
+        #  Turn off the parameters if the run is active.
+        #
+        if {$state eq "active"} {
+            $self configure -parameterstate disabled
+        } else {
+            $self configure -parameterstate normal
         }
         set options($optname) $state
         $control configure -state $state
