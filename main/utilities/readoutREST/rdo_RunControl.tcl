@@ -344,6 +344,9 @@ snit::widgetadaptor ReadoutManagerControl {
                 break
             }
         }
+        if {$state eq ""} {
+            set state inconsistent;               # If there's no values.
+        }
         set options($optname) $state
         $control configure -state $state
     }
@@ -779,7 +782,6 @@ snit::type SummaryTracker {
             foreach existing [$view list] {
                 set oldName [dict get $existing name]
                 set oldHost [dict get $existing host]
-                puts "$name@$node : $oldName@$oldHost"
                 if {($name eq $oldName) && ($node ne $oldHost)} {
                     $view delete $oldName $oldHost
                     break;                 #Presumably only one match is allowed.
@@ -884,7 +886,7 @@ snit::type RunControlActionHandler {
             $oldview configure -runcommand ""
             $oldview configure -statecommand ""
         }
-        if {$view ne ""} {
+        if {$value ne ""} {
             $value configure -bootcommand     [mymethod _onBoot]
             $value configure -shutdowncommand [mymethod _onShutdown]
             $value configure -titlecommand    [mymethod _onTitle]
@@ -929,7 +931,7 @@ snit::type RunControlActionHandler {
     # @param run - value of the new run number.
     #
     method _onRun {run} {
-        if {(![string is integer -strict $run]) || ($run < 0} {
+        if {(![string is integer -strict $run]) || ($run < 0)} {
             error "Run numbers must be integers >= 0"
         }
         $options(-kvmodel) setValue run $run
@@ -1034,7 +1036,7 @@ snit::type RunController {
         }
         foreach option [list -statemodel -kvmodel -programmodel] {
             set obj $options($option)
-            puts "$option: $obj"
+    
             if {$obj ne ""} {
                 $obj destroy
             }
@@ -1054,12 +1056,28 @@ snit::type RunController {
     # @return bool
     #
     method _canUpdate {} {
-        foreach option [list -view -statemodel -programodel -kvmodel] {
+        foreach option [list -view -statemodel -programmodel -kvmodel] {
             if {$options($option) eq ""} {
                 return 0
             }
         }
         return 1
+    }
+    ##
+    # _findProgramHost (proc )
+    #  Locate the host that a program lives on.
+    #
+    # @param program - program name.
+    # @param programs - Program status definitions.
+    # @return string  - note empty string if no match.
+    #
+    proc _findProgramHost {program programs} {
+        foreach p $programs {
+            if {[dict get $p name] eq $program} {
+                return [dict get $p host]
+            }
+        }
+        return ""
     }
     ##
     # _createReadoutModels
@@ -1072,7 +1090,7 @@ snit::type RunController {
                 set status [$options(-programmodel) status]
                 set programs [dict get $status programs]
                 foreach program $options(-readouts) {
-                    set host [_findProgramHost $programs]
+                    set host [_findProgramHost $program $programs]
                     if {$host eq ""} {
                         # No match can't make all models so bail.
                         
@@ -1113,10 +1131,12 @@ snit::type RunController {
         # In with the new
         
         $self _createReadoutModels;    # Empty lists possibly.
+       
         if {[llength $readoutModels] == [llength $options(-readouts)]} {
             $multiReadoutStatisticsTracker configure \
                 -models $readoutModels -programs $options(-readouts)
             $multiReadoutStateTracker configure -models $readoutModels
+            $summaryTracker configure -readouts $options(-readouts)
         }
         
         
@@ -1181,7 +1201,8 @@ snit::type RunController {
     method _cfgKvModel {optname value} {
         set options($optname) $value
         
-        $readoutParametersTracker configure -model $value
+        $readoutParameterTracker configure -model $value
+        $actionHandler configure -kvmodel $value
     }
     ##
     # _cfgReadouts
@@ -1193,9 +1214,10 @@ snit::type RunController {
     # @param value   - New value (list of program names).
     #
     method _cfgReadouts {optname value} {
-        set options ($optname) $value
+        set options($optname) $value
         
         $self _computeReadoutModels ;   # Does the heavy lifting.
+    
     }
         
     
