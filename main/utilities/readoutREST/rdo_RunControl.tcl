@@ -286,9 +286,10 @@ snit::widgetadaptor ReadoutManagerControl {
         ttk::labelframe $win.manager -borderwidth 3 -relief groove -text "Manager"
         ttk::label $win.manager.statelabel -text "State: "
         ttk::label $win.manager.state -textvariable [myvar options(-state)]
-        ttk::button $win.manager.boot -text Boot -command _dispatchBoot \
+        ttk::button $win.manager.boot -text Boot -command [mymethod _dispatchBoot] \
             -state disabled
-        ttk::button $win.manager.shutdown -text Shutdown -command _dispatchShutdown \
+        ttk::button $win.manager.shutdown -text Shutdown \
+            -command [mymethod _dispatchShutdown] \
             -state disabled
         
         grid $win.manager.statelabel $win.manager.state -sticky w
@@ -629,6 +630,9 @@ snit::type ReadoutParameterTracker {
     option -view
     option -model
     
+    variable lastRun -1
+    variable lastTitle ""
+    
     constructor {args} {
         $self configurelist $args
     }
@@ -646,8 +650,20 @@ snit::type ReadoutParameterTracker {
         return [catch {
             set model $options(-model)
             set view  $options(-view)
-            $view configure -title [$model getValue title]
-            $view configure -run   [$model getValue run]
+            set title [$model getValue title]
+            set run   [$model getValue run]
+            
+            if {$title ne $lastTitle} {
+                $view configure -title $title
+                $view configure -nexttitle $title
+                set lastTitle $title
+            }
+            
+            if {$run != $lastRun} {
+                $view configure -run $run
+                $view configure -nextrun $run
+                set lastRun $run
+            }
         }]
     }
 }
