@@ -27,7 +27,7 @@
 #
 
 package provide EventBuilder 1.0
-package require Tk
+#package require Tk
 package require snit
 package require EVB::ConnectionManager
 package require portAllocator
