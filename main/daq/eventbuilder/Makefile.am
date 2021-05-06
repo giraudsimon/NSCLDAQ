@@ -105,7 +105,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	connectionList.tcl  barriers.tcl GUI.tcl inputStatistics.tcl \
 	late.tcl outputStatistics.tcl utility.tcl latePopup.tcl \
-	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl
+	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl EVBStatisticsManager.tcl
 
 
 TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl  EVBStateCallouts.tcl \
