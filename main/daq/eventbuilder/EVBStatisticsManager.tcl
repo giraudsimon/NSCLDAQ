@@ -39,7 +39,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 #
 
-package provide EVBStatistics
+package provide EVBStatistics 1.0
 package require ring
 
 
@@ -357,10 +357,11 @@ proc EVBStatistics::getIncompleteBarrierDetails { } {
 proc EVBStatistics::getDataLate {} {
     set stats $EVBStatistics::dataLateStatistics
     set result [dict create                                     \
-        count [lindex $stats 0] worstDt [lindex $stats 1]       \
+        count [EVBStatistics::_dlindex $stats 0]                \
+        worstDt [EVBStatistics::_dlindex $stats 1]              \
         details [list]
     ]
-    foreach d [lindex $stats 2] {
+    foreach d [EVBStatistics::_dlindex $stats 2 [list] {
         dict lappend result details [dict create                   \
             id  [lindex $d 0]                                      \
             count [lindex $d 1]                                    \
@@ -370,6 +371,22 @@ proc EVBStatistics::getDataLate {} {
     
     return $result
 }
+##
+# EVBStatistics::getOutOfOrderStatistics
+#
+#   @return dict containing:
+#      - summary    - Dict containing:
+#             *  count - number of out of order fragments.
+#             *  prior - For most recent error prior timestamp.
+#             *  offending - for most recent failure the bad timestamp ( < prior).
+#      - bySource   - list of dicts. Each dict is like the summary but has
+#                   an additional id key that is the id fo the source being
+#                   described.
+#
+proc EVBStatistics::getOutOfOrderStatistics { } {
+    
+}
+
 
 ###
 #   Prerequisite call:
