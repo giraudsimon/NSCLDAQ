@@ -105,8 +105,10 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	connectionList.tcl  barriers.tcl GUI.tcl inputStatistics.tcl \
 	late.tcl outputStatistics.tcl utility.tcl latePopup.tcl \
-	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl EVBStatisticsManager.tcl
+	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl \
+	EVBStatisticsManager.tcl EVBREST.tcl
 
+TCL_REST_SERVER=
 
 TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl  EVBStateCallouts.tcl \
 			 ringSourceMgr.tcl endrunmon.tcl
@@ -119,25 +121,30 @@ EXTRA_DIST=eventbuilder_user.xml protocol.xml api.xml orderer.xml frag2ring.xml 
 	$(TCL_TEST_FILES) options.ggo \
         $(TCL_EVB_PACKAGE_FILES)       \
 	$(FRAMEWORK_SOURCEFILES) \
+	$(TCL_REST_SERVER) \
 	Makefile_Skeleton.in startOrderer.in red.gif
 
 
 SKELDIR=@prefix@/skeletons/eventbuilder
 
 install-exec-hook:
-	$(mkinstalldirs) $(prefix)/TclLibs/EventBuilder
-	for f in $(TCL_PACKAGE_FILES); do @INSTALL_SCRIPT@ @srcdir@/$$f $(prefix)/TclLibs/EventBuilder; done
+	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder
+	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder/REST
+	for f in $(TCL_REST_SERVER); do \
+		@INSTALL_SCRIPT@ @srcdir/$$f @prefix@/TclLibs/EventBuilder/REST \
+	; done
+	for f in $(TCL_PACKAGE_FILES); do @INSTALL_SCRIPT@ @srcdir@/$$f @prefix@/TclLibs/EventBuilder; done
 	$(INSTALL_DATA) @srcdir@/red.gif @prefix@/TclLibs/EventBuilder
-	rm -f $(prefix)/TclLibs/EventBuilder/libEventBuilder.so
-	$(LN_S) @libdir@/libEventBuilder.so $(prefix)/TclLibs/EventBuilder/libEventBuilder.so
-	echo "pkg_mkIndex -verbose $(prefix)/TclLibs/EventBuilder *.tcl *.so" |@TCLSH_CMD@ 
+	rm -f @prefix@/TclLibs/EventBuilder/libEventBuilder.so
+	$(LN_S) @libdir@/libEventBuilder.so @prefix@/TclLibs/EventBuilder/libEventBuilder.so
+	echo "pkg_mkIndex -verbose @prefix@/TclLibs/EventBuilder *.tcl *.so" |@TCLSH_CMD@ 
 	$(mkinstalldirs) $(SKELDIR)
 	for f in $(FRAMEWORK_SKELETON); do $(INSTALL_DATA) @srcdir@/$$f $(SKELDIR); done
 	$(INSTALL_SCRIPT) @builddir@/Makefile_Skeleton $(SKELDIR)/Makefile
 	$(INSTALL_SCRIPT) @builddir@/startOrderer @prefix@/bin
 	$(mkinstalldirs) @prefix@/TclLibs/EVBCallouts
 	for f in $(TCL_EVB_PACKAGE_FILES); do $(INSTALL_SCRIPT) @srcdir@/$$f @prefix@/TclLibs/EVBCallouts; done
-	echo "pkg_mkIndex -verbose $(prefix)/TclLibs/EVBCallouts *.tcl evbRdoCallouts.tcl *.so" |@TCLSH_CMD@ 
+	echo "pkg_mkIndex -verbose @prefix@/TclLibs/EVBCallouts *.tcl evbRdoCallouts.tcl *.so" |@TCLSH_CMD@ 
 
 
 
