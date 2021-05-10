@@ -159,6 +159,24 @@ proc EVBStatistics::_topBarrierCounters {stats} {
         heterogeneous [EVBStatistics::_dlindex $stats 2]      \
     ]
 }
+##
+# EVBStatistics::_ooStatsDict
+#    Make an out of order statistics dict from a list consisting of
+#    total counts, prior timestamp, offending timestmp.
+# 
+# @param raw   - Raw statistics.
+# @return dict - containing:
+#                -   count - number of out of order events.
+#                -   prior - Most recent good timestamp.
+#                -   offending - most recent offending timestamp.
+#
+proc EVBStatistics::_ooStatsdict {raw} {
+    return [dict create                                         \
+        count [EVBStatistics::_dlindex $raw 0]                  \
+        prior [EVBStatistics::_dlindex $raw 1]                  \
+        offending [EVBStatistics::_dlindex $raw 2]              \
+    ]
+}
 #------------------------------------------------------------------------------
 # Public procs:
 #
@@ -361,7 +379,7 @@ proc EVBStatistics::getDataLate {} {
         worstDt [EVBStatistics::_dlindex $stats 1]              \
         details [list]
     ]
-    foreach d [EVBStatistics::_dlindex $stats 2 [list] {
+    foreach d [EVBStatistics::_dlindex $stats 2 ] {
         dict lappend result details [dict create                   \
             id  [lindex $d 0]                                      \
             count [lindex $d 1]                                    \
@@ -384,9 +402,53 @@ proc EVBStatistics::getDataLate {} {
 #                   described.
 #
 proc EVBStatistics::getOutOfOrderStatistics { } {
+    set result \
+        [EVBStatistics::_ooStatsDict \
+            [EVBStatistics::_dlindex $EVBStatistics::ooStatistics 0]]
+    set details [lindex $EVBStatistics::ooStatitiscs 1]
+    set bysource [list]
+    foreach s $details {
+        set detail [EVBStatistics::_ooStatsDict [lrange $s 1 end]]
+        dict set detail id [lindex $s 0]
+        lappend bysource $detail
+    }
+    dict set result bySource $bySource
     
+    return $result
 }
-
+##
+# EVBStatistics::getConnectionList
+#
+#    Return information about the connections established by the data sources
+#    to the orderer.
+#
+# @return list of dicts. Each dict describes a single connection and has the
+#         following keys:
+#         -   host  - Client's host.
+#         -   description - description of the connection.
+#         -   State string
+#         -   idle  - boolean true if the connection has not sent data in a while.
+#
+proc EVBStatistics::getConnectionList {} {
+    set result [list]
+    
+    foreach c $EVBStatistics::connection {
+        set idle [expr {[lindex $c 3] eq "yes"}]
+        lappend result [dict create                         \
+            host [lindex $c 0] description [lindex $c 1]    \
+            state [lindex $c 2]  idle $idle                 \
+        ]
+    }
+    
+    return $result
+}
+##
+# EVBStatistics::isFlowControlled
+#   @return - bool - true if the system has flow control asserted.
+#
+proc EVBStatistics::isFlowControlled { } {
+    return $EVB::flowControlled
+}
 
 ###
 #   Prerequisite call:
