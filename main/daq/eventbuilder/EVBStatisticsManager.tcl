@@ -83,7 +83,7 @@ proc EVBStatistics::_xon { } {
 # EVBStatistics::_xoff
 #   Callback when flow control is turned on.
 #
-proc EVB::Statistics::_xoff { } {
+proc EVBStatistics::_xoff { } {
     set ::EVBStatistics::flowControlled 1
 }
     
@@ -91,7 +91,7 @@ proc EVB::Statistics::_xoff { } {
 
 ##
 # EVBStatistics::_refresh
-#    This is the proc in the package.  It is called by EVB::Statistics::Start
+#    This is the proc in the package.  It is called by EVBStatistics::Start
 #    which, in turn gets the ball rolling maintaining the statistics data.
 #    _refresh uses after to self reschedule so called once, it never needs to
 #    be called again.
@@ -110,13 +110,13 @@ proc EVBStatistics::_refresh {rate} {
     set EVBStatistics::barrierStatistics [EVB::barrierstats]
     set EVBStatistics::dataLateStatistics [EVB::dlatestats]
     set EVBStatistics::ooStatistics [EVB::getoostats]
-    set EVB::Statistics::connection [EVB::getConnections]
+    set EVBStatistics::connections [EVB::getConnections]
     
     if {[info globals OutputRing] ne ""} {
-        set EVB::Statistics::ringStatistics [ringbuffer usage $::OutputRing]
+        set EVBStatistics::ringStatistics [ringbuffer usage $::OutputRing]
     }
     
-    after $rate EVB::Statistics::_refresh $rate;    # Reschedule.
+    after $rate EVBStatistics::_refresh $rate;    # Reschedule.
 }
 
 ###
@@ -170,7 +170,7 @@ proc EVBStatistics::_topBarrierCounters {stats} {
 #                -   prior - Most recent good timestamp.
 #                -   offending - most recent offending timestamp.
 #
-proc EVBStatistics::_ooStatsdict {raw} {
+proc EVBStatistics::_ooStatsDict {raw} {
     return [dict create                                         \
         count [EVBStatistics::_dlindex $raw 0]                  \
         prior [EVBStatistics::_dlindex $raw 1]                  \
@@ -302,8 +302,8 @@ proc EVBStatistics::getBarrierStatistics { } {
 proc EVBStatistics::getCompleteBarrierDetails { } {
     set complete \
         [EVBStatistics::_dlindex $EVBStatistics::barrierStatistics 0 [list]]
-    set byTypeInfo [lindex $complete 3 [list]]
-    set bySrcInfo  [lindex $complete 4 [list]]
+    set byTypeInfo [EVBStatistics::_dlindex $complete 3 [list]]
+    set bySrcInfo  [EVBStatistics::_dlindex $complete 4 [list]]
     
     
     set result [dict create byType [list] bySource [list]]
@@ -372,7 +372,7 @@ proc EVBStatistics::getIncompleteBarrierDetails { } {
 #                       * count - Numberof data lates from this source.
 #                       * worstDt - worst case time difference from this source.
 #
-proc EVBStatistics::getDataLate {} {
+proc EVBStatistics::getDataLateStatistics {} {
     set stats $EVBStatistics::dataLateStatistics
     set result [dict create                                     \
         count [EVBStatistics::_dlindex $stats 0]                \
@@ -405,14 +405,14 @@ proc EVBStatistics::getOutOfOrderStatistics { } {
     set result \
         [EVBStatistics::_ooStatsDict \
             [EVBStatistics::_dlindex $EVBStatistics::ooStatistics 0]]
-    set details [lindex $EVBStatistics::ooStatitiscs 1]
+    set details [lindex $EVBStatistics::ooStatistics 1]
     set bysource [list]
     foreach s $details {
         set detail [EVBStatistics::_ooStatsDict [lrange $s 1 end]]
         dict set detail id [lindex $s 0]
         lappend bysource $detail
     }
-    dict set result bySource $bySource
+    dict set result bySource $bysource
     
     return $result
 }
@@ -432,7 +432,7 @@ proc EVBStatistics::getOutOfOrderStatistics { } {
 proc EVBStatistics::getConnectionList {} {
     set result [list]
     
-    foreach c $EVBStatistics::connection {
+    foreach c $EVBStatistics::connections {
         set idle [expr {[lindex $c 3] eq "yes"}]
         lappend result [dict create                         \
             host [lindex $c 0] description [lindex $c 1]    \
@@ -447,7 +447,7 @@ proc EVBStatistics::getConnectionList {} {
 #   @return - bool - true if the system has flow control asserted.
 #
 proc EVBStatistics::isFlowControlled { } {
-    return $EVB::flowControlled
+    return $EVBStatistics::flowControlled
 }
 
 ###
@@ -470,6 +470,10 @@ proc EVBStatistics::isFlowControlled { } {
 #   Note that this variable is only read once in this implementation.
 #
 proc EVBStatistics::Start { } {
+    # Set the Xon/Xoff callbacks:
+    
+    EVB::onflow add EVBStatistics::_xon EVBStatistics::_xoff
+    
     # Figure out the update rate:
     
     if {[info globals StatisticsRefreshRate] ne ""} {
@@ -478,6 +482,6 @@ proc EVBStatistics::Start { } {
         set refreshRate 1000
     }
     
-    EVB::Statistics::_refresh $refreshRate
+    EVBStatistics::_refresh $refreshRate
 }
     
