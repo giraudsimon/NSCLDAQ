@@ -66,6 +66,8 @@ $allocator destroy
 
 #  Start the server:
 
+puts "Starting server with library in $restLibraryDir"
+
 startHttpdServer $port "" $restLibraryDir
 
 #  At some point the caller needs to enter the event loop e.g. with

@@ -108,7 +108,7 @@ TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl \
 	EVBStatisticsManager.tcl EVBREST.tcl
 
-TCL_REST_SERVER=
+TCL_REST_SERVER=EVBStatisticsREST.tcl
 
 TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl  EVBStateCallouts.tcl \
 			 ringSourceMgr.tcl endrunmon.tcl
@@ -131,7 +131,7 @@ install-exec-hook:
 	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder
 	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder/REST
 	for f in $(TCL_REST_SERVER); do \
-		@INSTALL_SCRIPT@ @srcdir/$$f @prefix@/TclLibs/EventBuilder/REST \
+		@INSTALL_SCRIPT@ @srcdir@/$$f @prefix@/TclLibs/EventBuilder/REST \
 	; done
 	for f in $(TCL_PACKAGE_FILES); do @INSTALL_SCRIPT@ @srcdir@/$$f @prefix@/TclLibs/EventBuilder; done
 	$(INSTALL_DATA) @srcdir@/red.gif @prefix@/TclLibs/EventBuilder
