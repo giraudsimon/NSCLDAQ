@@ -244,7 +244,36 @@ proc formatIncompleteBarrierDetails {data} {
         bysource [json::write array {*}$srcList]               \
     ]
 }
-
+##
+# formatDataLateStatistics
+#    @param data - data from EVBStatistics::getDataLateStatistics
+#    @return JSON object containing, in addition to status and message:
+#       - count - number of data late fragments.
+#       - worst - Worst case dt.
+#       - details - array of JSON Objects that contain:
+#             * id   - source id.
+#             * count - number of occurences.
+#             * worst  - Worst timestamp dt.
+#
+proc formatDataLateStatistics {data} {
+    # Make the details list:
+    
+    set detailsList [list]
+    foreach d [dict get $data details] {
+        lappend detailsList [json::write object             \
+            id  [dict get $d id]                            \
+            count [dict get $d count]                       \
+            worst [dict get $d worstDt]                     \
+        ]
+    }
+    return [json::write object                              \
+        status [json::write string OK]                      \
+        message [json::write string ""]                     \
+        count  [dict get $data count]                       \
+        worst  [dict get $data worstDt]                     \
+        details [json::write array {*}$detailsList]         \
+     ]
+}
 #-----------------------------------------------------------------------------
 # REST handler proc.
 
@@ -287,6 +316,11 @@ proc StatisticsHandler  {sock suffix} {
         set data [EVBStatistics::getIncompleteBarrierDetails]
         Httpd_ReturnData $sock application/json \
             [formatIncompleteBarrierDetails $data]
+    } elseif {$suffix eq "/datalatestatistics"} {
+        set data [EVBStatistics::getDataLateStatistics]
+        Httpd_ReturnData $sock application/json \
+            [formatDataLateStatistics $data]
+
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
     }
