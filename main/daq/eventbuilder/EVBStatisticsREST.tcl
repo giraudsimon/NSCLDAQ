@@ -117,6 +117,98 @@ proc formatOutputStatistics {data} {
         perqueue [json::write array {*}$qList]                        \
     ]
 }
+##
+# _formatBarrierType
+#    Formats one of the dicts from EVBStatistics::getBarrierStatistics
+#
+# @param data - dict from that call.
+#
+proc _formatBarrierType {data} {
+    return [json::write object                                  \
+        barriers [dict get $data barriers]                      \
+        homogeneous [dict get $data homogeneous]                \
+        heterogeneous [dict get $data heterogeneous]            \
+    ]
+}
+##
+# formatBarrierStats
+#    Format the reply for EVBStatistics::getBarrierStatistics
+#    In addition to the normal stuff, barrier statistics have the following
+#    attributes:
+#     complete - complete barrier statistics which are an object see below.
+#     incomplete - incomplete barrier statistics, which are an object,
+#                  below.
+#     Each of the objects above has the attributes:
+#       - barriers - number of barriers of that type.
+#       - homgeneious - numberof homogeneous barriers.
+#       - heterogeneous - number of heterogenous barriers.
+#
+# @param stats - the statistics.
+#
+proc formatBarrierStats {stats} {
+    set complete [_formatBarrierType [dict get $stats complete]]
+    set incomplete [_formatBarrierType [dict get $stats incomplete]]
+    
+    return [json::write object                        \
+        status [json::write string OK]                \
+        message [json::write string ""]               \
+        complete $complete incomplete $incomplete    \
+    ]
+                    
+}
+##
+# formatCompleteBarrierDetails
+#    Return the JSON object for complete barrier details.
+# @param data - data from EVBStatistics::getCompleteBarrierDetails.
+# @return JSON encoded object with status, data, bytype and bysource
+#         attributes.  bytype contains information by barrier type and is
+#         an array containing object with the fields:
+#         type  - a barrier type id.
+#         count - number of occurences of that type.
+#         bysource is an array of dicts containing:
+#         -   id -  - source/queue id.
+#         -   count - number of barrier fragments from that source.
+#         -   details an array of objects containing:
+#             * type - barrier type.
+#             * count - number of barrier types of that type emeitted.
+#
+proc formatCompleteBarrierDetails {data} {
+    # We need the  by Type array:
+    
+    set typeList [list]
+    foreach t [dict get $data byType] {
+        lappend typeList [json::write object                  \
+            type [dict get $t type]                           \
+            count [dict get $t count]                         \
+        ]
+    }
+    set byType [json::write array {*}$typeList]
+    
+    #  We need the bySource array which, in turn include details:
+    
+    set srcList [list]
+    foreach s [dict get $data bySource] {
+        set details [list]
+        foreach d [dict get $s details] {
+            lappend details [json::write object                   \
+                type [dict get $d type] count [dict get $d count] \
+            ]
+        }
+        lappend srcList [json::write object                      \
+            id [dict get $d id]                       \
+            count [dict get $id count]                \
+            details [json::write array {*}$details]
+        ]
+    }
+    set bySource [json::write array {*}$srcList]
+    
+    return [json::write object                         \
+        bytype $byType                                \
+        bySource $bySource                            \
+    ]
+}
+    
+
 #-----------------------------------------------------------------------------
 # REST handler proc.
 
@@ -148,6 +240,13 @@ proc StatisticsHandler  {sock suffix} {
     } elseif {$suffix eq "/outputstats"} {
         set data [EVBStatistics::getOutputStatistics]
         Httpd_ReturnData $sock application/json [formatOutputStatistics $data]
+    } elseif {$suffix eq "/barrierstats"} {
+        set data [EVBStatistics::getBarrierStatistics]
+        Httpd_ReturnData $sock application/json [formatBarrierStats $data]
+    } elseif {$suffix eq "/completebarrierdetails"} {
+        set data [EVBStatistics::getCompleteBarrierDetails]
+        Httpd_ReturnData $sock application/json \
+            [formatCompleteBarrierDetails $data]
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
     }
