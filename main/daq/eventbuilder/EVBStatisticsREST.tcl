@@ -203,11 +203,47 @@ proc formatCompleteBarrierDetails {data} {
     set bySource [json::write array {*}$srcList]
     
     return [json::write object                         \
+        status [json::write string OK]                \
+        message [json::write string ""]               \
         bytype $byType                                \
         bySource $bySource                            \
     ]
 }
+##
+# formatIncompleteBarrierDetails
+#   @param data - data from EVBStatistics::getIncompleteBarrierDetails
+#   @return JSON object containing the usual status, message fields as well as:
+#   - histogram - an array of objects containing number and count
+#          which are the count of times 'number' sources were missing.
+#   - bysource - an array of objects containing id (source id) and count
+#           - number of times that source was missing.
+#
+proc formatIncompleteBarrierDetails {data} {
+    # Histogram objects:
     
+    set histoList [list]
+    foreach h [dict get $data histogram] {
+        lappend histoList  [json::write object               \
+            number [dict get $h number]                       \
+            count  [dict get $h count]
+        ]
+    }
+    # Source objectsl
+    
+    set srcList [list]
+    foreach s [dict get $data bySource] {
+        lappend srcList [json::write object                   \
+            id [dict get $s id] count [dict get $s count]     \
+        ]
+    }
+    
+    return [json::write object                                 \
+        status [json::write string OK]                         \
+        message [json::write string ""]                        \
+        histogram [json::write array {*}$histoList]            \
+        bysource [json::write array {*}$srcList]               \
+    ]
+}
 
 #-----------------------------------------------------------------------------
 # REST handler proc.
@@ -247,6 +283,10 @@ proc StatisticsHandler  {sock suffix} {
         set data [EVBStatistics::getCompleteBarrierDetails]
         Httpd_ReturnData $sock application/json \
             [formatCompleteBarrierDetails $data]
+    } elseif {$suffix eq "/incompletebarrierdetails"} {
+        set data [EVBStatistics::getIncompleteBarrierDetails]
+        Httpd_ReturnData $sock application/json \
+            [formatIncompleteBarrierDetails $data]
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
     }
