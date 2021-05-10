@@ -402,9 +402,9 @@ proc EVBStatistics::getDataLateStatistics {} {
 #                   described.
 #
 proc EVBStatistics::getOutOfOrderStatistics { } {
-    set result \
+    set result [dict create summary \
         [EVBStatistics::_ooStatsDict \
-            [EVBStatistics::_dlindex $EVBStatistics::ooStatistics 0]]
+            [EVBStatistics::_dlindex $EVBStatistics::ooStatistics 0]]]
     set details [lindex $EVBStatistics::ooStatistics 1]
     set bysource [list]
     foreach s $details {

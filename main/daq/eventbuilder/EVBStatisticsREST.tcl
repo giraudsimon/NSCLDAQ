@@ -274,6 +274,45 @@ proc formatDataLateStatistics {data} {
         details [json::write array {*}$detailsList]         \
      ]
 }
+##
+# formatOOStatistics
+#    Formats out of order statistics.
+#
+# @param data from EVBStatistics::getOutOfOrderStatistics.;
+# @return JSON object with usual status and message fields as well as:
+#     - summary - object containing:
+#          * count - number of out of order statistics.
+#          * prior - Prior timestamp of most recent offender.
+#          * offending - most recent failure timestamp.
+#     - bysource - array of objects containing:
+#           * id    - Source id.
+#           * count - Number of offending fragments.
+#           * prior - Prior timestamp of most recent offender.
+#           * offending - Timestamp of offending fragments.
+#
+proc formatOOStatistics {data} {
+    # By source list
+    
+    set bySourceList [list]
+    foreach s [dict get $data bySource] {
+        lappend bySourceList [json::write object          \
+            id    [dict get $s id]                        \
+            count [dict get $s count]                     \
+            prior [dict get $s prior ]                    \
+            offending [dict get $s offending]             \
+        ]
+    }
+    return [json::write object                                  \
+        status [json::write string OK]                          \
+        message [json::write string ""]                         \
+        summary [json::write object                             \
+            count [dict get $data summary count]                \
+            prior [dict get $data summary prior]                \
+            offending [dict get $data summary offending]        \
+        ]                                                       \
+        bysource [json::write array {*}$bySourceList]      \
+    ]
+}
 #-----------------------------------------------------------------------------
 # REST handler proc.
 
@@ -320,6 +359,9 @@ proc StatisticsHandler  {sock suffix} {
         set data [EVBStatistics::getDataLateStatistics]
         Httpd_ReturnData $sock application/json \
             [formatDataLateStatistics $data]
+    } elseif {$suffix eq "/oostatistics"} {
+        set data [EVBStatistics::getOutOfOrderStatistics]
+        Httpd_ReturnData $sock application/json [formatOOStatistics $data]
 
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
