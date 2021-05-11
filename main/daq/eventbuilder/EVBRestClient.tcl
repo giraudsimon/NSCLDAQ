@@ -50,6 +50,16 @@ package require http
 #              to EVBRestClient::service.
 # METHODS:
 #   inputstats - get input statistics.
+#   queuestats - Get the queue statistics.
+#   outputstats- Get the output statistics.
+#   barrierstats- Get barrier statistics.
+#   completebarrierdetails - Get detailed statistics on completed barriers.
+#   incompletebarrierdetails - get detailed statistics of incomplete barriers.
+#   datalatesstatistics - Get data late statistics.
+#   oostatistics  - Get out of order fragment statistics.
+#   connections   - Get connection list.
+#   flowcontrol   - Get flow control state.
+#
 snit::type EVBRestClient {
     #--------------------------------------------------------------------------
     #   Class level data.
@@ -114,6 +124,30 @@ snit::type EVBRestClient {
     method inputstats {} {
         return [$self _performGet inputstats]
     }
+    ##
+    # queuestats
+    #    Return the queue statistics.
+    # @return dict that contains:
+    #      queues - a list of dicts, one per orderer queue that contains:
+    #               *   id   - queue id.
+    #               *   depth- Number of fragments queued in the queue.
+    #               *   oldest - Timestamp of the oldest (front) element of the
+    #                            queue.
+    #               *   bytes - Bytes queued in the queue.
+    #               *   dequeued - Total number of bytes dequeued from the queue.
+    #               *   totalqueued - Total number of bytes ever queued in queue
+    #
+    method queuestats {} {
+        return [$self _performGet queue]
+    }
+    method outputstats {} {}
+    method barrierstats {} {}
+    method completebarrierdetails {} {}
+    method incompletebarrierdetails {} {}
+    method datalatesstatistics {} {}
+    method oostatistics {} {}
+    method connections {} {}
+    method flowcontrol {} {}
 }
 
     
