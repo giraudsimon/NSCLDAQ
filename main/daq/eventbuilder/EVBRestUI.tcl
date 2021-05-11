@@ -86,3 +86,83 @@ snit::widgetadaptor InputStatsView {
         set options($optname) $value
     }
 }
+##
+# @class QueueStatsView
+#     Provides a queue statistics view.  This is primarily a treeview
+#     with one line per source id that has a heading/column for each
+#     dict key in the statistics.
+#
+# OPTIONS
+#   -queuestats - Queue statistics that comes from the e.g.
+#                 EVBRestClient::queuestats
+#
+# @note the assumption is that source ids, never vanish.
+#
+snit::widgetadaptor QueueStatsView {
+    option -queuestats -configuremethod _cfgQueueStats
+    
+    #  Array indexed by source id that contains the treeview
+    #  source item ids.
+    #
+    variable SourceItems -array [list]
+    
+    #
+    
+    constructor {args} {
+        installhull using ttk::frame
+        
+        set columns [list id depth oldest bytes dequeued queued]
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns $columns -show headings -selectmode none
+        ttk::scrollbar $win.vscroll -command [list $win.tree yview] \
+            -orient vertical
+        
+        foreach h [list Id Depth Oldest Bytes Dequeued Queued] c $columns {
+            $win.tree heading $c -text $h
+        }
+        
+        grid $win.tree $win.vscroll -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        
+        
+        $self configurelist $args
+    }
+    #--------------------------------------------------------------------------
+    #   _cfgQueueStats
+    #   Called when -queuestats is configured to update the view.
+    #
+    # @param optname - name of the option being configured.
+    # @param value   - value which is a list of dicts as might come from
+    #                  EVBRestClient::inputstats
+    #
+    method _cfgQueueStats {optname value} {
+        foreach queue $value {
+            
+            # Extract the stuff from the dict:
+            
+            set id [dict get $queue id]
+            set depth [dict get $queue depth]
+            set oldest [dict get $queue oldest]
+            set bytes [dict get $queue bytes]
+            set dq    [dict get $queue dequeued]
+            set tq    [dict get $queue totalqueued]
+            
+            # Get the entry id (if necessary, making one):
+            
+            if {[array names SourceItems $id] ne ""} {
+                set entry $SourceItems($id)
+            } else {
+                set entry [$win.tree insert {} end]
+                set SourceItems($id) $entry
+            }
+            
+            # Set the values:
+            
+            $win.tree item $entry -values [list $id $depth $oldest $bytes $dq $tq]
+        }
+        
+        set options($optname) $value
+    }
+}
+    
+
