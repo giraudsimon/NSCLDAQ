@@ -313,6 +313,36 @@ proc formatOOStatistics {data} {
         bysource [json::write array {*}$bySourceList]      \
     ]
 }
+##
+# formatConnectionList
+#
+# @param data - connection lis of dicts from EVBStatistics::getConnectionList
+# @return JSON object with the usual status and message fields and connections
+#         which is an array of objects that have the following fields:
+#         host - name of the host connected.
+#         description - description string passed at connection negotiation time.
+#         state - Connection state string.
+#         idle  - boolean that's nonzero if the connection has been idle longer
+#                 than the idle timeout.
+proc formatConnectionList {data} {
+    
+    # build the list needed b the connections field:
+    
+    set connectionList [list]
+    foreach c $data {
+        lappend connectionList [json::write object                          \
+            host [json::write string [dict get $c host]]                    \
+            description [json::write string [dict get $c description]]      \
+            state [json::write string [dict get $c state]]                  \
+            idle  [dict get $c idle]                                        \
+        ]
+    }
+    return [json::write object                                             \
+        status [json::write string OK]                                     \
+        message [json::write string ""]                                    \
+        connections [json::write array {*}$connectionList]                \
+    ]
+}
 #-----------------------------------------------------------------------------
 # REST handler proc.
 
@@ -362,7 +392,16 @@ proc StatisticsHandler  {sock suffix} {
     } elseif {$suffix eq "/oostatistics"} {
         set data [EVBStatistics::getOutOfOrderStatistics]
         Httpd_ReturnData $sock application/json [formatOOStatistics $data]
-
+    } elseif {$suffix eq "/connections"} {
+        set data [EVBStatistics::getConnectionList]
+        Httpd_ReturnData $sock application/json [formatConnectionList $data]
+    } elseif {$suffix eq "/flowcontrol"} {
+        set flow [EVBStatistics::isFlowControlled]
+        Httpd_ReturnData $sock application/json [json::write object         \
+            status [json::write string OK]                                  \
+            message [json::write string ""]                                 \
+            state $flow                                                     \
+        ]
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
     }
