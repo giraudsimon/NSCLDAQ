@@ -140,9 +140,54 @@ snit::type EVBRestClient {
     method queuestats {} {
         return [$self _performGet queue]
     }
-    method outputstats {} {}
-    method barrierstats {} {}
-    method completebarrierdetails {} {}
+    ##
+    # outputstats
+    #   Get the output statistics.
+    #
+    # @return dict containing:
+    #     - fragments - total number of output fragments.
+    #     - perqueue  - array of dicts, one per queue element containing:
+    #       *  id   - Source id in the queue.
+    #       *  fragments - Number of fragments output by the queue.
+    #    
+    method outputstats {} {
+        return [$self _performGet outputstats]
+    }
+    ##
+    # barrierstats
+    #    Get top level barrier statistics counters.  See also
+    #    completebarrierdetails and incompletebarrierdetails
+    #
+    # @return dict containing:
+    #      -  complete - list of descriptions of complete barriers.
+    #      -  incomplete list of descriptions of incomplete barreiers.
+    #    Each barrier description is a dict containing:
+    #         *  barriers - number of barriers of that type
+    #         *  homogeneous - Number of homogeneous barriers.
+    #         *  heterogeneous - Number of heterogeneous barriers..#
+    #
+    #
+    method barrierstats {} {
+        return [$self  _performGet barrierstats]
+    }
+    ##
+    # completebarrierdetails
+    #    Provide details about the complete barriers.
+    #
+    # @return dict - containing:
+    #         -  bytype   - barrier types statistics, contains a list of dicts
+    #                       with keys type  and count (barrier type and number
+    #                       of times it occured).
+    #         - bysource  - An array of dicts each with:
+    #                     * id   - source id.
+    #                     *  count - Number of barrier frags from source.
+    #                     *  details - an array of dicts containng:
+    #                        .  type - barrier type.
+    #                        .  count - numberof times that barrier type was
+    #                                   emitted from that source.
+    method completebarrierdetails {} {
+        return [$self _performGet completebarrierdetails]
+    }
     method incompletebarrierdetails {} {}
     method datalatesstatistics {} {}
     method oostatistics {} {}
