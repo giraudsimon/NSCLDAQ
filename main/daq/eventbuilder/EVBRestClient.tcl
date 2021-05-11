@@ -216,9 +216,46 @@ snit::type EVBRestClient {
     method datalatestatistics {} {
         return [$self _performGet datalatestatistics]
     }
-    method oostatistics {} {}
-    method connections {} {}
-    method flowcontrol {} {}
+    ##
+    # oostatistics
+    #   Fetch the out of order statistics:
+    #
+    # @return dict containing:
+    #   *   summary subdict with summary information:
+    #      -   count  - number of out of order statistics.
+    #      -   prior  - Timestamp of fragment prior to the most recent offender
+    #      -   offending - Timestamp of the most recent offender.
+    #  *  bysource - list of dicts giving per source out of order information:
+    #      -  id  - sourceid.
+    #      -  count - number of offending fragments.
+    #      -   prior  - Timestamp of fragment prior to the most recent offender
+    #      -   offending - Timestamp of the most recent offender.
+    #
+    method oostatistics {} {
+        return [$self _performGet oostatistics]
+    }
+    ##
+    # connections
+    #    Provides information about the data sources currently connected to the
+    #    orderer.
+    #
+    # @return list of dicts each dict describing a connection has the following
+    #         keys:
+    #         -   host   - host the connection comes from.
+    #         -   description - descriptive text associated with the connection.
+    #         -   state - connection state string.
+    #         -   idle - boolean indicating if connection is idle.
+    #
+    method connections {} {
+        return [$self _performGet connections]
+    }
+    ##
+    # flowcontrol
+    #    @return int which is nonzero if flow control is asserted
+    method flowcontrol {} {
+        set data [$self _performGet flowcontrol]
+        return [dict get $data state]
+    }
 }
 
     
