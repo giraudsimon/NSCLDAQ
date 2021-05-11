@@ -55,7 +55,7 @@ package require http
 #   barrierstats- Get barrier statistics.
 #   completebarrierdetails - Get detailed statistics on completed barriers.
 #   incompletebarrierdetails - get detailed statistics of incomplete barriers.
-#   datalatesstatistics - Get data late statistics.
+#   datalatestatistics - Get data late statistics.
 #   oostatistics  - Get out of order fragment statistics.
 #   connections   - Get connection list.
 #   flowcontrol   - Get flow control state.
@@ -188,8 +188,34 @@ snit::type EVBRestClient {
     method completebarrierdetails {} {
         return [$self _performGet completebarrierdetails]
     }
-    method incompletebarrierdetails {} {}
-    method datalatesstatistics {} {}
+    ##
+    # incompletebarrierdetails
+    #
+    # @return dict containing two keyes:
+    #    * histogram - a list of dicts,each with keys number and count which
+    #                  represent the counts that a specific number of sources was
+    #                  missing from a barrier.
+    #    *  bysource - a list of dicts containing the keys id and count where each
+    #                  element of the list counts the number of times a specific
+    #                  source id was missing from an incomplete barrier. 
+    method incompletebarrierdetails {} {
+        return [$self _performGet incompletebarrierdetails]
+    }
+    ##
+    # datalatestatistics
+    #   Give data late statistics
+    #
+    # @return dict containing:
+    #       - count -number of data late fragments.
+    #       - worst -Worst case dt from last not late fragment.
+    #       - details - a list of dicts giving per source detail:
+    #          *   id - source id.
+    #          *   count - number of data lates.
+    #          *   worst - Worst case dt.
+    #
+    method datalatestatistics {} {
+        return [$self _performGet datalatestatistics]
+    }
     method oostatistics {} {}
     method connections {} {}
     method flowcontrol {} {}
