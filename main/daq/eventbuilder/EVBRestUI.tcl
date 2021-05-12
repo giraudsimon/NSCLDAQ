@@ -563,4 +563,101 @@ snit::widgetadaptor IncompleteBarrierView {
     }
     
 }
+##
+# @class DataLateView
+#   Provides a view of data late statistics.  This consists of a tree view
+#   with the following  top levels:
+#    - Totals - total count and worst case timestamp.
+#    -  One item for each source id that has the source id label and
+#        count/worst case columns as well.
+# OPTIONS
+#   -datalatestatistics - Dict from e.g. EVBRestClient::datalatestatistics.
+#
+snit::widgetadaptor DataLateView {
+    option -datalatestatistics -configuremethod _cfgDataLateStatistics
+    
+    variable totalItemId;                 # Totals item id.
+    variable sourceItems -array [list];   # Indexed by sourceid (tree element ids)
+    
+    ##
+    # constructor:
+    #    -  Use a ttk::frame as a hull.
+    #    -  make the treeview and vertical scrollbar with count and worst
+    #       columns and lay them out.
+    #    - Add a Totals item to the tree.
+    #    - Configure any options.
+    #
+    constructor {args} {
+        installhull using ttk::frame
+        
+        #  Create the tree view, scroll bar and lay them out.
+    
+        set columns [list count worst]
+        set titles [list "Count" "Worst dt"]
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns $columns -displaycolumns $columns -show [list tree headings] \
+            -selectmode none
+        foreach c $columns h $titles {
+            $win.tree heading $c -text $h
+        }
+        ttk::scrollbar $win.vscroll -command [list $win.tree yview]   \
+            -orient vertical
+        
+        grid $win.tree $win.vscroll
+        grid columnconfigure $win 0 -weight 1
+        
+        #  Create the totals line.
+        
+        set totalItemId [$win.tree insert {} end -text Totals -values [list 0 0]]
+        
+        # Configure any options
+        
+        $self configurelist $args
+    }
+    #-----------------------------------------------------------------------
+    #  Configuration management.
+    
+    ##
+    # _cfgDataLateStatistics
+    #   New statistics - results in a display update.
+    #
+    # @param optname - Name of the option being updated.
+    # @param value   - New value.
+    #
+    method _cfgDataLateStatistics {optname value} {
+        set tCount [dict get $value count]
+        set tWorst [dict get $value worst]
+        $win.tree item $totalItemId -values [list $tCount $tWorst]
+        
+        # Update/add new source id lines
+        
+        set sids [list]
+        foreach item [dict get $value details] {
+            set sid [dict get $item id]
+            set count [dict get $item count]
+            set worst [dict get $item worst]
+            lappend sids $sid
+            
+            if {[array names sourceItems $sid] eq ""} {
+                set sourceItems($sid) [$win.tree insert {} end -text $sid]
+            }
+            $win.tree item $sourceItems($sid) -values [list $count $worst]
+        }
+        
+        # delete any removed source ids.
+        
+        foreach id [array names sourceItems] {
+            if {$id ni $sids} {
+                $win.tree delete $sourceItems($id)
+                array unset sourceItems $id
+            }
+        }
+        
+        # Update the option value.
+        
+        set options($optname) $value
+    }
+}
+    
+
 
