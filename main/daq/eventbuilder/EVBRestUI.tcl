@@ -164,5 +164,253 @@ snit::widgetadaptor QueueStatsView {
         set options($optname) $value
     }
 }
+##
+# @class BarrierStatsView
+#    Provides a view for the barrier statistics overview.  This is two lines of
+#    labels.  The first label for complete barriers, the second for
+#    incomplete barriers.  Each line includes barrier counts, and number of
+#    homogeneous/heterogeneous barriers.
+#
+# OPTIONS
+#    -barrierstats  -  A dict that comes from  e.g. EVBRestClient::barrierstats.
+#
+snit::widgetadaptor BarrierStatsView {
+    option -barrierstats -configuremethod _cfgBarrierStats
     
+    constructor args {
+        installhull using ttk::frame
+        
+        ttk::label $win.htype -text Type
+        ttk::label $win.hcounts -text "Counts"
+        ttk::label $win.homogeneous -text "Homogeneous"
+        ttk::label $win.heterogeneous -text "Heterogeneous"
+        
+        ttk::label $win.lcomplete -text "Complete"
+        ttk::label $win.ccounts   -text 0
+        ttk::label $win.cho       -text 0
+        ttk::label $win.che       -text 0
+        
+        ttk::label $win.lincomplete -text "Incomplete"
+        ttk::label $win.icounts   -text 0
+        ttk::label $win.iho       -text 0
+        ttk::label $win.ihe       -text 0
+        
+        
+        grid $win.htype $win.hcounts $win.homogeneous $win.heterogeneous \
+            -sticky w -padx 3
+        grid $win.lcomplete $win.ccounts $win.cho $win.che \
+            -sticky w -padx 3
+        grid $win.lincomplete $win.icounts $win.iho $win.ihe \
+            -sticky w -padx 3
+        
+        $self configurlist $args
+    }
+    
+    #---------------------------------------------------------------------------
+    #  Configuration  management
+    
+    ##
+    # _cfgBarrierStats
+    #    Accept new barrier statistics.
+    #
+    # @param optname - name of the option being configured.
+    # @param value   - new value.
+    #
+    method _cfgBarrierStats {optname value} {
+        
+        # Complete
+        
+        set complete   [dict get $value complete]
+        set incomplete [dict get $value incomplete]
+        
+        foreach key [list barriers homogeneous heterogeneous]  \
+            c [list ccounts cho che]                          \
+            i [list icounts iho ihe] {
+            
+            $win.$c configure -text [dict get $complete $key]
+            $win.$i configure -text [dict get $incomplete $key]
+        }
+        
+        set options($optname) $value
+    }
+}
+##
+# @class CompleteBarrierView
+#    Provides a view of the complete barrier statistics.
+#    This consists of a treeview with a pair of top levels:
+#    Type and By Source By source has subelements for each source id.
+#    The columns are:
+#    -   Type - Barrier type.
+#    -   Count- Number of times.
+#
+# OPTIONS
+#   -completebarrierdetails - the dict which was gotten from
+#                              EVBRestClient::completebarrierdetails.
+#
+snit::widgetadaptor CompleteBarrierView {
+    option -completebarrierdetails -configuremethod _cfgCompleteBarrierDetails
+    
+    #  These variables keep track of element ids so we can update existing ones
+    #  in place which can be done without collapsing the entire tree and without
+    #  searching the tree.
+    
+    variable byType;                    # Tree item for Type top level of tree.
+    variable typeEntries -array [list]; # Indexed by barrier type.
+    variable bySource;                  # Tree item for by source
+    variable sourceIds -array [list];   # Indexed by sid source id elements.
+    variable sourceTypes -array [list]; # Indexed by sid.type details entries.
+        
+    ##
+    # constructor -
+    #   - Install the hull as a ttk::Frame
+    #   - Create the treeview and a vertical scrollbar.
+    #   - Create the top levels (byType and bySource) and record their ids
+    #     in the appropriate variables.
+    #   - process options if supplied (to e.g. create an initial view).
+    #
+    constructor {args} {
+        installhull using ttk::frame
+        
+        # Create the widgets.
+        
+        set cols [list type count]
+        set headings [list Type Count]
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns $cols -displaycolumns $cols -show [list tree headings]
+        
+        ttk::scrollbar $win.vscroll -orient vertical \
+            -command [list $win.tree yview]
+        
+        grid $win.tree $win.vscroll -sticky  nsew
+        grid columnconfigure $win 0 -weight 1
+        
+        # Add the tree toplevel items.
+        
+        foreach c $cols h $headings {
+            $win.tree heading  $c -text $h
+        }
+        set byType [$win.tree insert {} end -text {By Type}]
+        set bySource [$win.tree insert {} end -text {By Source}]
+        
+        #  Process any initial statistics:
+        
+        $self configurelist $args
+        
+    }
+    #---------------------------------------------------------------------
+    #  Private utilities
+    
+    ##
+    # _updateTypeStatistics
+    #   Update the By Type statistics.
+    # @param stats - bytype statistics from the -completebarrierdetails option.
+    #
+    method _updateTypeStatistics {stats} {
+        # For each type, if a line corresponding to the type does not exist,
+        # create it.  Update the counts on that line
+        
+        set types [list]
+        foreach item $stats {
+            set type [dict get $item type]
+            set count [dict get $item count]
+            lappend types $type
+            
+            if {[array names typeEntries $type] eq ""} {
+                # Make one
+
+                set  typeEntries($type) [$win.tree insert $byType end]
+            }
+            # Set the values:
+            
+            set entry $typeEntries($type)
+            $win.tree item $entry -values [list $type $count]
+        }
+        # For each existing item if a type does not exist kill it off:
+        
+        foreach item [array names typeEntries] {
+            if {$item ni $types} {
+                $win.tree delete $typeEntries($item)
+                array unset typeEntries $item
+            }
+        }
+            
+        
+    }
+    
+    ##
+    # _updateSourceStatistics
+    #    Update by source id statistics.
+    # @param stats -bysource statistics from the -completebarrierdetails option.
+    # @note - while we eliminate sources that disappear we don't take the trouble
+    #         to eliminate disappearing types within a source.
+    #
+    method _updateSourceStatistics {stats} {
+        set idlist [list]
+        foreach stat $stats {
+            set id [dict get $stat id]
+            set count [dict get $stat count]
+            set details [dict get $stat details]
+            lappend idlist $id
+            
+            # If there's no id element make one:
+            
+            if {[array names sourceIds $id] eq ""} {
+                set sourceIds($id) [$win.tree insert $bySource end -text $id]
+            }
+            set identry $sourceIds($id)
+            $win.tree item $identry -values [list "" $count]
+            
+            #  Now the types in each source id:
+            
+            foreach typestat $details {
+                set type [dict get $typestat type]
+                set count [dict get $typestat count]
+                set index $id.$type
+                
+                # IF necessasry make one:
+                
+                if {[array names sourceTypes $index] eq ""} {
+                    set sourceTypes($index) [$win.tree insert $identry end ]
+                }
+                set tentry $sourceTypes($index)
+                $win.tree item $tentry -values [list $type $count]
+            }
+            # Eliminate disappearing source ids:
+            
+
+        }       
+            
+        puts " array : list [array names sourceIds] :  $idlist"
+        foreach id [array names sourceIds] {
+            if {$id ni $idlist} {
+                puts "Elminating $id"
+                $win.tree delete $sourceIds($id)
+                array unset sourceIds $id
+                array unset sourceTypes $id.*
+            }
+        }
+    }
+    #---------------------------------------------------------------------
+    #  Configuration handling.
+    
+    ##
+    # _cfgCompleteBarrierDetails
+    #   Process a statistics update.
+    #
+    # @param optname - option being configured.
+    # @param value   - new statistics values.
+    #
+    method _cfgCompleteBarrierDetails {optname value} {
+        set byTypeInfo [dict get $value bytype]
+        set bySourceInfo [dict get $value bysource]
+        
+        $self _updateTypeStatistics $byTypeInfo
+        $self _updateSourceStatistics $bySourceInfo
+        
+        set options($optname) $value
+    }
+}
+    
+
+
 
