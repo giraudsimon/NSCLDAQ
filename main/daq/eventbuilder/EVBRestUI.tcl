@@ -276,7 +276,8 @@ snit::widgetadaptor CompleteBarrierView {
         set cols [list type count]
         set headings [list Type Count]
         ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
-            -columns $cols -displaycolumns $cols -show [list tree headings]
+            -columns $cols -displaycolumns $cols -show [list tree headings] \
+            -selectmode none
         
         ttk::scrollbar $win.vscroll -orient vertical \
             -command [list $win.tree yview]
@@ -390,6 +391,8 @@ snit::widgetadaptor CompleteBarrierView {
             }
         }
     }
+    
+    # 
     #---------------------------------------------------------------------
     #  Configuration handling.
     
@@ -411,6 +414,153 @@ snit::widgetadaptor CompleteBarrierView {
     }
 }
     
-
-
+##
+# @class IncompleteBarrierView
+#
+#  Provides a view of incomplete barrier statistics. The widget is a treeview
+#  with top levels:
+#  -  Number Missing - showing the number of times a specific number of sources
+#                was missing from an incomplete barrier and
+#  -  BySource   - Showing the sources missing and how often.
+#
+#  The only column is 'Count' which shows the number of counts for some event.
+#
+#  Under Occurences are elements showing the number of missing sources and
+#  the count column in each is the number of times that number of sources was
+#  missing.
+#
+#  Under BySource are source ids where counts is the number of times that
+#  source id was missing.
+#
+# OPTION
+#   -incompletedetails - a dict from e.g.
+#        EVBRestClient::incompletebarrierdetails
+#
+snit::widgetadaptor IncompleteBarrierView {
+    option -incompletedetails -configuremethod _cfgIncompleteDetails
+    
+    variable byMissing;       # holds id of "Number Missing" top level
+    variable byMissingItems -array [list]; # indexed by missing count 
+    variable bySourceId;     # Holds top level for by source.
+    variable bySourceItems -array [list];  #Indexed by source id.
+    
+    ##
+    # Constructor:
+    #   - installs a ttk::frame as the hull.
+    #   - Creates the tree view and its vertical scroll bar and lays them out.
+    #   - Creates the top level items and saves their ids.
+    #   - Configures in case -incompletedetails was supplied at construction time.
+    #
+    constructor {args} {
+        installhull using ttk::frame
+        
+        #  Create the treeview and its scroll bar and lay them out
+        
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns count -displaycolumns count -show [list tree headings] \
+            -selectmode none
+        $win.tree heading count -text "Count"
+        
+        ttk::scrollbar $win.vscroll -orient vertical \
+            -command [list $win.tree yview]
+        grid $win.tree $win.vscroll
+        grid columnconfigure $win.tree 0 -weight 1
+        
+        #  Create the two top level items:
+        
+        set byMissing  [$win.tree insert {} end -text "By # Missing"]
+        set bySourceId [$win.tree insert {} end -text "By Source id"]
+        
+        #  Configure if needed:
+        
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------
+    # Private utilities:
+    
+    ##
+    # _updateMissing
+    #    Update the missing source data.  These are the entries subordinate
+    #    to $byMissing.  There will be  one for each number of sources missing from
+    #    barriers with a count of the number of times that number of sources
+    #    was missing.
+    # @param data list of dicts with number and count keys.
+    #
+    #
+    method _updateMissing {data} {
+        set missingList [list]
+        foreach item $data {
+            set num [dict get $item number]
+            set count [dict get $item count]
+            lappend missingList $num
+            
+            # Figure out the treeview element to set a count for on.
+            
+            if {[array names byMissingItems $num] eq ""} {
+                # Make a new subordinate entry:
+                
+                set byMissingItems($num) \
+                    [$win.tree insert $byMissing end -text $num]
+            }
+            $win.tree item $byMissingItems($num) -values [list $count]
+        }
+        # Expunge entries that disappered:
+        
+        foreach index [array names byMissingItems] {
+            if {$index ni $missingList} {
+                $win.tree delete $byMissingItems($index)
+                array unset byMissingItems $index
+            }
+        }
+    }
+    ##
+    # _updateBySource
+    #     Update the by source id part of the tree.
+    # @param data - list of dicts with keys id (sourceid) and count.
+    #
+    method _updateBySource {data} {
+        set sourceList [list]
+        foreach item $data {
+            set source [dict get $item id]
+            set count [dict get $item count]
+            lappend sourceList $source
+            
+            if {[array names bySourceItems $source] eq ""} {
+                set bySourceItems($source) \
+                    [$win.tree insert $bySourceId end -text $source]
+            }
+            $win.tree item $bySourceItems($source) -values [list $count]
+        }
+        #  Kill sids no longer here.
+        
+        foreach sid [array names bySourceItems] {
+            if {$sid ni $sourceList} {
+                $win.tree delete $bySourceItems($sid)
+                array unset bySourceItems $sid
+            }
+        }
+    }
+    
+    #--------------------------------------------------------------------
+    # Configuration management.
+    #
+    
+    ##
+    # _cfgIncompleteDetails
+    #   Configure the -incompletedetails option.
+    #
+    # @param optname - Name of option being configured
+    # @param value   - New proposed value.
+    #
+    method _cfgIncompleteDetails {optname value} {
+        set missing [dict get $value histogram]
+        set source  [dict get $value bysource]
+        
+        $self _updateMissing $missing
+        $self _updateBySource $source
+        
+        set options($optname) $value
+    }
+    
+}
 
