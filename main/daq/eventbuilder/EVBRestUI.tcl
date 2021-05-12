@@ -21,7 +21,7 @@ exec tclsh "$0" ${1+"$@"}
 
 ##
 # @file EVBRestUI.tcl
-# @brief Provide User interface components and integrated test of EVB statistics
+# @brief Provide User interface components to display EVB statistics
 # @author Ron Fox <fox@nscl.msu.edu>
 #
 
@@ -658,6 +658,107 @@ snit::widgetadaptor DataLateView {
         set options($optname) $value
     }
 }
+##
+# @class OutOfOrderView
+#    
+#   Provides a view of out of order statistics.  This is organized
+#   in a manner similar to the data late stats. Top levels are summary
+#   and items for each id.   The columns are count, prior and offending.
+#   Note that we will format all timestamps in hexadecimal with 64 bits
+#   (leading zeros).
+# OPTIONS
+#   -oostatistics  - statistics information from e.g. EVBRestClient::ooStatistics
+snit::widgetadaptor OutOfOrderView {
+    option -oostatistics -configuremethod _cfgOOStatistics
+    
+    variable SummaryItem;             # Summary treeview entry.
+    variable SourceItems -array [list]; # Per source items.
+    
+    
+    ##
+    # constructor
+    #  - install ttk::frame as hull.
+    #  - Install/layout treeview and v scrollbar.
+    #  - Add the summary top level.
+    #  - Configure any options.
+    #
+    constructor {args} {
+        installhull using ttk::frame
+        
+        #  Build the GUIs
+
+        set columns [list count prior offending]
+        set headings [list "Count" "Last Good TS" "Offending TS"]
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns $columns -displaycolumns $columns -show [list tree headings] \
+            -selectmode none
+        foreach c $columns h headings {
+            $win.tree heading $c -text $h
+        }
+        
+        ttk::scrollbar $win.vscroll -command [list $win.tree set] \
+            -orient vertical
+        
+        grid $win.tree $win.vscroll -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        
+        
+        #  Add summary top level.
+        
+        set SummaryItem [$win.tree insert {} end -text "Summary"]
+        
+        # configure options
+
+        $self configurelist $args
+    }
+    #------------------------------------------------------------------------
+    #  Configuration management.
+    
+    ##
+    # _cfgOOStatistics
+    #     Refresht the display from new data.
+    #
+    # @param optname - option name
+    # @param value   - option value
+    #
+    method _cfgOOStatistics {optname value} {
+        set summary [dict get $value summary]
+        set counts [dict get $summary count]
+        set prior  [format %016x [dict get $summary prior]]
+        set bad    [format %016x [dict get $summary offending]]
+        $win.tree item $SummaryItem -value [list $counts $prior $bad]
+        
+        # Add update ids.
+        
+        set idList [list]
+        foreach item [dict get $value bysource] {
+            set id [dict get $item id]
+            set counts [dict get $item count]
+            set prior [format %016x [dict get $item prior]]
+            set bad  [format %016x [dict get $item offending]]
+            lappend idList $id
+            
+            if {[array names SourceItems $id] eq ""} {
+                set SourceItems($id) [$win.tree insert {} end -text $id]
+            }
+            $win.tree item $SourceItems($id) -values [list $counts $prior $bad]
+        }
+        
+        # Kill off ids that disappered - that can happen if e.g. the orderer
+        # restarted between updates.
+        
+        foreach index [array names SourceItems] {
+            if {$index ni $idList} {
+                $win.tree delete $SourceItems($index)
+                array unset SourceItems $index
+            }
+        }
+        
+        set options($optname) $value
+    }
+}
+    
+
     
 
 
