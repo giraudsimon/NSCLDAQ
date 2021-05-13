@@ -128,3 +128,26 @@ snit::type EVBCompleteBarrierController {
             -completebarrierdetails [$options(-model) completebarrierdetails]
     }
 }
+##
+# @class EVBIncompleteBarrierController
+#   Mediates between an EVBRestClient model and an IncompleteBarrierView
+#   presentation.
+#
+# OPTIONS
+#   -model
+#   -view
+# METHODS
+#   update
+#
+snit::type EVBIncompleteBarrierController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure \
+            -incompletedetails [$options(-model) incompletebarrierdetails]
+    }
+}
