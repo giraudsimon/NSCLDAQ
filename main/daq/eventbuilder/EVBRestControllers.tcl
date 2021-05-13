@@ -175,3 +175,23 @@ snit::type EVBDataLateController {
             -datalatestatistics [$options(-model) datalatestatistics]
     }
 }
+##
+# @class EVBOutOfOrderController
+#    Mediates between an EVBRestClient model and an OutOfOrderView presentation.
+# OPTIONS
+#   -model
+#   -view
+# METHODS
+#   update
+#
+snit::type EVBOutOfOrderController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure -oostatistics [$options(-model) oostatistics]
+    }
+}
