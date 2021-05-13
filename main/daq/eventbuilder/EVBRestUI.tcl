@@ -382,10 +382,10 @@ snit::widgetadaptor CompleteBarrierView {
 
         }       
             
-        puts " array : list [array names sourceIds] :  $idlist"
+        
         foreach id [array names sourceIds] {
             if {$id ni $idlist} {
-                puts "Elminating $id"
+        
                 $win.tree delete $sourceIds($id)
                 array unset sourceIds $id
                 array unset sourceTypes $id.*
@@ -406,7 +406,7 @@ snit::widgetadaptor CompleteBarrierView {
     #
     method _cfgCompleteBarrierDetails {optname value} {
         set byTypeInfo [dict get $value bytype]
-        set bySourceInfo [dict get $value bysource]
+        set bySourceInfo [dict get $value bySource]
         
         $self _updateTypeStatistics $byTypeInfo
         $self _updateSourceStatistics $bySourceInfo

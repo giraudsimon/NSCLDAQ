@@ -105,3 +105,26 @@ snit::type EVBBarrierStatsController {
         $options(-view) configure -barrierstats [$options(-model) barrierstats]
     }
 }
+##
+# @class EVBCompleteBarrierController
+#   Controller to mediate between an EVBRestClient object as a model and
+#   a CompletBarrierView view.
+#
+# OPTIONS
+#   -model
+#   -view
+# METHODS
+#   update
+#
+snit::type EVBCompleteBarrierController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure \
+            -completebarrierdetails [$options(-model) completebarrierdetails]
+    }
+}
