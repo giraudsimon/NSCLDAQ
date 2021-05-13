@@ -849,6 +849,45 @@ snit::widgetadaptor ConnectionView {
     }
 }
     
+##
+# @class FlowControlView
+#    Very simple view for flow control state.
+#
+# OPTIONS:
+#   -flowcontrol -boolean that's true if flow control is asserted and false otherwise.
+#
+snit::widgetadaptor FlowControlView {
+    option -flowcontrol -configuremethod _cfgFlowControl
+    
+    constructor {args} {
+        installhull using ttk::frame
+        ttk::label $win.label -text "Flow Control: "
+        ttk::label $win.state -text "-unknown-"
+        
+        grid $win.label $win.state -sticky nsew
+    }
+    #-------------------------------------------------------------------------
+    #  Configuration management.
+    
+    ##
+    # _cfgFlowControl
+    #    Update the $win.state with meaningful text given a new boolean value for
+    #    the flow control
+    #
+    # @param optname - name of the option being configured.
+    # @param value   - new value.
+    #
+    method _cfgFlowControl {optname value} {
+        if {$value} {
+            $win.state configure -text "active"
+        } else {
+            $win.state configure -text "  off  "
+        }
+        
+        set options($optname) $value
+    }
+}
+
 
 
     
