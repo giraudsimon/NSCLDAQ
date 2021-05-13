@@ -107,7 +107,7 @@ TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	late.tcl outputStatistics.tcl utility.tcl latePopup.tcl \
 	DuplicateTimestamp.tcl OutOfOrderUI.tcl evbui.tcl \
 	EVBStatisticsManager.tcl EVBREST.tcl EVBRestClient.tcl \
-	EVBRestUI.tcl
+	EVBRestUI.tcl EVBRestControllers.tcl
 
 TCL_REST_SERVER=EVBStatisticsREST.tcl
 
