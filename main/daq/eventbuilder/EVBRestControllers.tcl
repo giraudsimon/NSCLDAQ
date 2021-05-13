@@ -82,3 +82,26 @@ snit::type EVBQueueStatsController {
         $options(-view) configure -queuestats [$options(-model) queuestats]
     }
 }
+##
+# @class EVBBarrierStatsController
+#
+#   Controller to mediate between an EVBRestClient object as a model and
+#   a BarrierStatsView view.
+#
+# OPTIONS
+#   -model   - EVBRestClient object.
+#   -view    - BarrierStatsView objecdt.
+# METHODS
+#   update - updates the model from the view.
+#
+snit::type EVBBarrierStatsController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure -barrierstats [$options(-model) barrierstats]
+    }
+}

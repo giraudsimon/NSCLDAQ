@@ -204,7 +204,7 @@ snit::widgetadaptor BarrierStatsView {
         grid $win.lincomplete $win.icounts $win.iho $win.ihe \
             -sticky w -padx 3
         
-        $self configurlist $args
+        $self configurelist $args
     }
     
     #---------------------------------------------------------------------------
