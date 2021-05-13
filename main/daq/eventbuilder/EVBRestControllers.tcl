@@ -60,3 +60,25 @@ snit::type EVBInputStatsController {
         $options(-view) configure -inputstats [$options(-model) inputstats]
     }
 }
+##
+# @class EVBQueueStatsController
+#
+#  Bridges between an EVBRestClient object and a QueueStatsView object.
+#
+# OPTIONS
+#   -model  - EVBRestClient object.
+#   -view   - QueueStatsView object.
+# METHODS:
+#   update - updates the view from the model.
+#
+snit::type EVBQueueStatsController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure -queuestats [$options(-model) queuestats]
+    }
+}

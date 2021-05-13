@@ -136,7 +136,8 @@ snit::widgetadaptor QueueStatsView {
     #                  EVBRestClient::inputstats
     #
     method _cfgQueueStats {optname value} {
-        foreach queue $value {
+        set data [dict get $value queues]
+        foreach queue $data {
             
             # Extract the stuff from the dict:
             
