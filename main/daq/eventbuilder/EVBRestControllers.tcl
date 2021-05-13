@@ -151,3 +151,27 @@ snit::type EVBIncompleteBarrierController {
             -incompletedetails [$options(-model) incompletebarrierdetails]
     }
 }
+##
+# @class EVBDataLateController
+#    Mediates between an EVBRestClient model and a DataLateView presentation
+#    of that data.
+#
+# OPTIONS
+#   -model
+#   -view
+# METHODS
+#    update
+#
+snit::type EVBDataLateController {
+    option -model
+    option -view
+    
+    constructor args {
+        $self configurelist $args
+    
+    }
+    method update {} {
+        $options(-view) configure \
+            -datalatestatistics [$options(-model) datalatestatistics]
+    }
+}
