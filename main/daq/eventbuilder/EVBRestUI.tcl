@@ -757,7 +757,99 @@ snit::widgetadaptor OutOfOrderView {
         set options($optname) $value
     }
 }
+##
+# @class ConnectionView
+#    Provides a megawidget that displays connection status.
+#    This is a treeview used as a table with columns:
+#    -   host - host a connection comes from.
+#    -   description - textual description of the data source.
+#    -   state - Connection state string.
+#    -   idle  - if connection hasn't been contributing data.
+#
+# OPTIONS:
+#   - -connections - connection from e.g. EVBRestClient::connections.
+#
+snit::widgetadaptor ConnectionView {
+    option -connections -configuremethod _cfgConnections
+     
+     # note that each time we must refresh the whole table as we don't have
+     # any good thing to hang this on (e.g. sources can have several ids).
+     
+     constructor {args} {
+        installhull using ttk::frame
+        
+        set columns [list host description state idle]
+        set headings [list Host "Connection Description"  State "Is Idle?"]
+        ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
+            -columns $columns -displaycolumns $columns -show headings \
+            -selectmode none
+        foreach c $columns h $headings {
+            $win.tree heading $c -text $h
+        }
+        
+        ttk::scrollbar $win.vscroll -command [list $win.tree yview] \
+            -orient vertical
+        
+        grid $win.tree $win.vscroll -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        
+        $self configurelist $args
+     }
+    #------------------------------------------------------------------------
+    # Private utilities:
     
+    ##
+    # _clear
+    #   Clear all the lines from the display.#
+    #
+    method _clear {} {
+        foreach item [$win.tree children {}] {
+            $win.tree delete $item
+        }
+    }
+    ##
+    # _addConnection
+    #    Adds a connection to the display.
+    #
+    # @param connection - a dict containing the connection information.
+    #
+    method _addConnection {connection} {
+        set host [dict get $connection host]
+        set desc [dict get $connection description]
+        set state [dict get $connection state]
+        set idle [dict get $connection idle]
+        if {$idle} {
+            set idle idle
+        } else {
+            set idle ""
+        }
+        
+        $win.tree insert {} end -values [list $host $desc $state $idle]
+        
+    }
+    
+    #------------------------------------------------------------------------
+    # Configuration management
+    
+    ##
+    # _cfgConnections
+    #    Called to refresh the display due to a new set of connections.
+    #
+    # @param optname - option being configured.
+    # @param value   - new value - this is a list of dicts of the form
+    #                  returned by EVBRestClient::connections.
+    #
+    method _cfgConnections {optname value} {
+        $self _clear
+        foreach connection $value {
+            $self _addConnection $connection
+        }
+        
+        set options($optname) $value
+    }
+}
+    
+
 
     
 
