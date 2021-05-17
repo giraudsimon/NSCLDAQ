@@ -79,7 +79,7 @@ proc _update {controllers {interval 2000}} {
     foreach controller $controllers {
         $controller update
     }
-    after $interval _update $controllers $interval
+    after $interval _update [list $controllers] $interval
 }
 
 ##
@@ -100,7 +100,12 @@ proc _buildGUI {model} {
     ttk::notebook .notebook
     ttk::frame    .bottom
     
-    # STock the notebook.
+    # Stock the notebook.
+    
+    InputStatsView .notebook.inputs
+    .notebook add .notebook.inputs -text {Input Stats}
+    lappend result \
+        [EVBInputStatsController %AUTO% -model $model -view .notebook.inputs]
     
     # Stock the bottom frame:
     
@@ -114,7 +119,7 @@ proc _buildGUI {model} {
     grid .bottom.connections -sticky nsew
     grid .bottom.flow -sticky nsw
     
-    grid .notebook
+    grid .notebook -sticky nsew
     grid .bottom -sticky nsew
     
     
