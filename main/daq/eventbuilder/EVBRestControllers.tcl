@@ -195,3 +195,26 @@ snit::type EVBOutOfOrderController {
         $options(-view) configure -oostatistics [$options(-model) oostatistics]
     }
 }
+##
+# @class EVBConnectionController
+#  Mediates between an EVBRestClient model and a ConnectionView presentation
+#
+# OPTIONS
+#   -model
+#   -view
+# METHODS
+#   update
+#
+snit::type EVBConnectionController {
+    option -model
+    option -view
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    
+    method update {} {
+        $options(-view) configure \
+            -connections [dict get [$options(-model) connections] connections]
+    }
+}
