@@ -35,6 +35,19 @@ package require restutils
 package require json::write
 package require EVBStatistics
 
+set EVBDebug 0
+
+if $EVBDebug {
+
+set log [open evb.log w]
+proc _log {text} {
+    puts $::log $text
+    flush $::log
+}
+} else {
+    proc _log {text} {
+    }
+}
 #-----------------------------------------------------------------------------
 #  Formatting utility procs.
 
@@ -393,8 +406,10 @@ proc StatisticsHandler  {sock suffix} {
         set data [EVBStatistics::getOutOfOrderStatistics]
         Httpd_ReturnData $sock application/json [formatOOStatistics $data]
     } elseif {$suffix eq "/connections"} {
+        catch {
         set data [EVBStatistics::getConnectionList]
-        Httpd_ReturnData $sock application/json [formatConnectionList $data]
+        Httpd_ReturnData $sock application/json [formatConnectionList $data]} msg
+        _log "$msg \n $::errorInfo "
     } elseif {$suffix eq "/flowcontrol"} {
         set flow [EVBStatistics::isFlowControlled]
         Httpd_ReturnData $sock application/json [json::write object         \
