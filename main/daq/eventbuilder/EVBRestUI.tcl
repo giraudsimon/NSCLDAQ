@@ -285,6 +285,7 @@ snit::widgetadaptor CompleteBarrierView {
         
         grid $win.tree $win.vscroll -sticky  nsew
         grid columnconfigure $win 0 -weight 1
+
         
         # Add the tree toplevel items.
         
@@ -464,7 +465,7 @@ snit::widgetadaptor IncompleteBarrierView {
         
         ttk::scrollbar $win.vscroll -orient vertical \
             -command [list $win.tree yview]
-        grid $win.tree $win.vscroll
+        grid $win.tree $win.vscroll -sticky nsew
         grid columnconfigure $win.tree 0 -weight 1
         
         #  Create the two top level items:
@@ -604,7 +605,7 @@ snit::widgetadaptor DataLateView {
         ttk::scrollbar $win.vscroll -command [list $win.tree yview]   \
             -orient vertical
         
-        grid $win.tree $win.vscroll
+        grid $win.tree $win.vscroll -sticky nsew
         grid columnconfigure $win 0 -weight 1
         
         #  Create the totals line.
