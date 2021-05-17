@@ -239,7 +239,8 @@ snit::type EVBRestClient {
     #    Provides information about the data sources currently connected to the
     #    orderer.
     #
-    # @return list of dicts each dict describing a connection has the following
+    # @return Dict containing a key 'connections that is a
+    #         list of dicts each dict describing a connection has the following
     #         keys:
     #         -   host   - host the connection comes from.
     #         -   description - descriptive text associated with the connection.
