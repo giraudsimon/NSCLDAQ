@@ -107,6 +107,11 @@ proc _buildGUI {model} {
     lappend result \
         [EVBInputStatsController %AUTO% -model $model -view .notebook.inputs]
     
+    QueueStatsView .notebook.queue
+    .notebook add .notebook.queue -text {Queue Stats}
+    lappend result \
+        [EVBQueueStatsController %AUTO% -model $model -view .notebook.queue]
+    
     # Stock the bottom frame:
     
     ConnectionView .bottom.connections
@@ -116,8 +121,8 @@ proc _buildGUI {model} {
     FlowControlView .bottom.flow
     lappend result [EVBFlowController %AUTO% -model $model -view .bottom.flow]
     
-    grid .bottom.connections -sticky nsew
-    grid .bottom.flow -sticky nsw
+    grid .bottom.connections .bottom.flow -sticky nsew
+    
     
     grid .notebook -sticky nsew
     grid .bottom -sticky nsew
