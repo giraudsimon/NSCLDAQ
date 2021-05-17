@@ -101,6 +101,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 	@LIBTCLPLUS_LDFLAGS@ 
 
 
+TCL_PROGFILES=EVBMonitor.tcl
 
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	connectionList.tcl  barriers.tcl GUI.tcl inputStatistics.tcl \
@@ -118,6 +119,7 @@ TCL_TEST_FILES=tclTests.tcl cbmanagerTests.test cmanagerCallbacks.test ringsourc
 
 
 EXTRA_DIST=eventbuilder_user.xml protocol.xml api.xml orderer.xml frag2ring.xml Asserts.h \
+	$(TCL_PROGFILES) \
 	$(TCL_PACKAGE_FILES) \
 	$(TCL_TEST_FILES) options.ggo \
         $(TCL_EVB_PACKAGE_FILES)       \
@@ -129,8 +131,12 @@ EXTRA_DIST=eventbuilder_user.xml protocol.xml api.xml orderer.xml frag2ring.xml 
 SKELDIR=@prefix@/skeletons/eventbuilder
 
 install-exec-hook:
+	$(mkinstalldirs) @bindir@
 	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder
 	$(mkinstalldirs) @prefix@/TclLibs/EventBuilder/REST
+	for f in $(TCL_PROGFILES); do \
+		@INSTALL_PROGRAM@ @srcdir@/$$f @bindir@/`basename $$f .tcl` \
+	; done
 	for f in $(TCL_REST_SERVER); do \
 		@INSTALL_SCRIPT@ @srcdir@/$$f @prefix@/TclLibs/EventBuilder/REST \
 	; done
