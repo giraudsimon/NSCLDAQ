@@ -218,3 +218,25 @@ snit::type EVBConnectionController {
             -connections [dict get [$options(-model) connections] connections]
     }
 }
+
+##
+# @class EVBFlowController
+#    Mediate between an EVBRestClient model and a FlowControlVew presentation.
+#
+# OPTIONS
+#    -model
+#    -view
+# METHODS
+#    update
+#
+snit::type EVBFlowController {
+    option -model
+    option -view
+    
+    constructor {args} {
+        $self configurelist $args
+    }
+    method update {} {
+        $options(-view) configure -flowcontrol [$options(-model) flowcontrol]
+    }
+}
