@@ -101,16 +101,22 @@ proc _buildGUI {model} {
     ttk::frame    .bottom
     
     # Stock the notebook.
+
+    set w 0    
+    foreach view [list InputStatsView QueueStatsView BarrierStatsView \
+                  CompleteBarrierView IncompleteBarrierView DataLateView \
+                  OutOfOrderView] \
+        controller [list EVBInputStatsController EVBQueueStatsController EVBBarrierStatsController \
+                    EVBCompleteBarrierController EVBIncompleteBarrierController \
+                    EVBDataLateController  EVBOutOfOrderController] \
+        tab [list "Input Stats" "Queue Stats" "Barrier Stats" "Complete Barriers" \
+             "Incomplete Barriers" "Data Late" "Out of order"] {
+        # puts "$view : $controller : $tab"
+        set wid [$view .notebook.p[incr w]]
+        .notebook add $wid -text $tab
+        lappend result [$controller %AUTO% -model $model -view $wid]
+    }
     
-    InputStatsView .notebook.inputs
-    .notebook add .notebook.inputs -text {Input Stats}
-    lappend result \
-        [EVBInputStatsController %AUTO% -model $model -view .notebook.inputs]
-    
-    QueueStatsView .notebook.queue
-    .notebook add .notebook.queue -text {Queue Stats}
-    lappend result \
-        [EVBQueueStatsController %AUTO% -model $model -view .notebook.queue]
     
     # Stock the bottom frame:
     
