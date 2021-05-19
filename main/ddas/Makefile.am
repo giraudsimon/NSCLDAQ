@@ -1,4 +1,4 @@
-SUBDIRS=readout readout-extclock sorter readoutdriver
+SUBDIRS=readout readout-extclock sorter readoutdriver pixieplugin
 
 
 

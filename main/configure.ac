@@ -694,6 +694,7 @@ AC_CONFIG_FILES([Makefile
     ddas/readout-extclock/Makefile
     ddas/sorter/Makefile
     ddas/readoutdriver/Makefile
+    ddas/pixieplugin/Makefile
     caendigitizers/Makefile
     caendigitizers/dpp-pha/Makefile
     caendigitizers/dpp-pha/skel/Makefile
