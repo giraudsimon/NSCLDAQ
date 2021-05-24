@@ -660,7 +660,7 @@ proc _moveDown { } {
                     program_name $program           \
                     predelay     $pre               \
                     postdelay    $post              \
-                ]]
+                ]
                 
                 
             } else {
