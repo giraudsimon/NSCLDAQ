@@ -601,14 +601,11 @@ proc ::sequence::_TransitionComplete {how} {
 proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #   If there is a user program monitor let it handle the input.
     
-    program::_log "Sequence output handler $program : $db"
     
     if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
         set monitor $::sequence::StepMonitors($monitorIndex)
-        program::_log "Has a step monitor $monitor"
         uplevel #0 [list $monitor onOutput $db $program $fd]
     } else {
-        program::_log "No step monitor"
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
         program::_log "Read: [gets $fd]"
@@ -629,10 +626,8 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
         ::program::_log "Info: $programInfo"
         
         if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
-            ::program::_log "Step monitor program end"
             set monitor $::sequence::StepMonitors($monitorIndex)
             uplevel #0 [list $monitor onExit $db $programInfo $fd]
-            ::program::_log "Returned"
         }
         if {[dict get $programInfo type] eq "Critical"} {
             ::program::_log "Critical program exited"
@@ -640,9 +635,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
             catch {::sequence::transition $db SHUTDOWN} ;    # Critical so shutdown everything.
         }
 
-        ::program::_log "Finishing seq manager EOF handling"
     }
-    ::program::_log "Returning from sequence output handler"
 }  
 ##
 # ::sequence::_stateExists
@@ -1359,7 +1352,7 @@ proc ::sequence::transition {db transition {endscript {}}} {
     #  Require the transition be legal.
     
     if {![::sequence::isLegalTransition $db $transition]} {
-        error "Invalid transition request"
+        error "Invalid transition request: [::sequence::currentState $db] to $transition"
     }
     
     #  Now create and start the correct transition type:
