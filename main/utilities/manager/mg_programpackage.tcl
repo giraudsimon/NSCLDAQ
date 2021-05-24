@@ -166,7 +166,7 @@ proc ::program::_makeProgramCommand {def} {
 #  - command with options then parameters in that order.
 #
 proc ::program::_writeProgramScript {fname def} {
-    ::program::_log "Writing program script for $def"
+
     set fd [open $fname w]
     puts $fd "#!/bin/bash"
     puts $fd "#   script to run [dict get $def path]@[dict get $def host]\n"
@@ -276,14 +276,14 @@ proc ::program::_outputWrapper {name fd} {
     ::program::_log "Input from $name"
     
     if {[array names  ::program::outputHandlers $name] eq $name} {
-        ::program::_log "There's an output handler: $::program::outputHandlers($name)"
+        
         uplevel #0 $::program::outputHandlers($name) $name $fd
-        ::program::_log "Back from $::program::outputHandlers($name)"
+        
     } else {
-        ::program::_log "NO output handler flushing input myself"
+        
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        ::program::_log [gets $fd]
+        ::program::_log "Got: [gets $fd]"
         chan configure $fd -blocking $blocking
     }
     #  Handle the case of an eof:
@@ -294,18 +294,15 @@ proc ::program::_outputWrapper {name fd} {
         
         catch {
         catch {close $fd}
-        ::program::_log "Fd closed"
-        array unset ::program::fds $name
-        ::program::_log "fd array unset element $name"
+        
+        array unset ::program::fds $name        
         array unset ::program::outputHandlers $name
-        ::program::_log "fd array unset output handlers"
         set index [lsearch -exact $::program::activePrograms $name]
-        ::program::_log "Before removing $name: $::program::activePrograms $index"
         set ::program::activePrograms \
             [lreplace $::program::activePrograms $index $index]
-        ::program::_log "After: $::program::activePrograms"
+        
         } msg
-        ::program::_log "After $name exit processing: $msg $::errorInfo"
+
     }
 }
 ##
