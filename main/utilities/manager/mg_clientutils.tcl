@@ -90,11 +90,15 @@ proc clientutils::checkResult {token} {
     }
     
     # Get and decode the JSON:
-    
-    set json [http::data $token]
-    http::cleanup $token
-    set jsondict [json::json2dict $json]
-    
+
+    set parseOk [catch {
+        set json [http::data $token]
+        http::cleanup $token
+        set jsondict [json::json2dict $json]
+    } msg] 
+    if {$parseOk} {
+        error "JSON Parse of: \n $json \nFailed:  $msg $::errorInfo"
+	}	 
     if {[dict get $jsondict status] ne "OK"} {
         error "Manager refused state request: [dict get $jsondict message]"
     }
