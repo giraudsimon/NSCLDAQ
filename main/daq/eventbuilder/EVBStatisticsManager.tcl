@@ -229,7 +229,7 @@ proc EVBStatistics::getQueueStatistics {} {
         lappend result [dict create                                         \
             id [lindex $q 0] depth [lindex $q 1] oldest [lindex $q 2]       \
             bytes [lindex $q 3] dequeued [lindex $q 4]                      \
-            totalqueues [lindex $q 5]                                       \
+            totalqueued [lindex $q 5]                                       \
         ]
     }
     

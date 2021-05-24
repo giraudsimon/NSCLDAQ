@@ -94,7 +94,7 @@ proc formatQStatistics {data} {
             oldest [dict get $q oldest]                         \
             bytes [dict get $q bytes]                           \
             dequeued [dict get $q dequeued]                     \
-            totalqueued [dict get $q totalqueuded]              \
+            totalqueued [dict get $q totalqueued]              \
         ]
         
     }
