@@ -594,7 +594,7 @@ snit::widgetadaptor program::SelectProgram {
         $win.list heading host  -text "Host"
         $win.list heading container -text "Container"
         
-        ttk::scrollbar $win.sb -orient vertical -command [$win.list yview]
+        ttk::scrollbar $win.sb -orient vertical -command [list $win.list yview]
         
         grid $win.list $win.sb -sticky nsew
         
@@ -629,7 +629,7 @@ snit::widgetadaptor program::SelectProgram {
             if {[dict exists $item container_name]} {
                 set container [dict get $item container_name]
             }
-
+    
             $win.list insert {} end -values [list $name $image $host $container $item] \
                 -tags program
         }
