@@ -113,7 +113,7 @@ proc stateHandler {sock suffix} {
                 # Failed:
                 
                 
-                ErrorReturn $sock $msg
+                ErrorReturn $sock "$msg : $::errorInfo "
             } else {
                 # Success
                 vwait ::Done
