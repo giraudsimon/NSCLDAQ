@@ -131,7 +131,13 @@ proc ::program::_makeProgramCommand {def} {
         foreach option [dict get $def options] {
             set name [lindex $option 0]
             set value [lindex $option 1]
-            append command " " $name=$value " " 
+            if {$value ne ""} {
+                append command " " $name " " $value " ";   # Acceptable for in long options with gengetopt.
+                    
+                
+            } else {
+                append command " " $name " "  ;   # Just a flag, no value.
+            }
         }
     }
 
@@ -236,7 +242,7 @@ proc ::program::_handleContainerInput {container host fd} {
 # so to debug, something in the system must do a set ::tty [open ... w]
 # and ::debugOutput must be true.
 #
-set debugOutput 0
+set debugOutput 1
 proc ::program::_log text {
     if {([info globals ::tty] ne "") && $::debugOutput} {
         puts $::tty $text
