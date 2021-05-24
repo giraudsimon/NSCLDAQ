@@ -320,11 +320,12 @@ proc EVBStatistics::getCompleteBarrierDetails { } {
     
     foreach s $bySrcInfo {
         set id [lindex $s 0]
-        set count [lindex $s 1]
-        set frags [lindex $s 2]
+        set count 0
+        set frags [lindex $s 1]
         set fraglist [list]
         foreach f $frags {
             lappend fraglist [dict create type [lindex $f 0] count [lindex $f 1]]
+            incr count [lindex $f 1]
         }
         dict lappend result bySource [dict create \
            id $id count $count details $fraglist 

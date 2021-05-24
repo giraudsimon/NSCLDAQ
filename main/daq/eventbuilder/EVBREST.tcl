@@ -66,7 +66,7 @@ $allocator destroy
 
 #  Start the server:
 
-puts "Starting server with library in $restLibraryDir"
+puts stderr "Starting server with library in $restLibraryDir"
 
 startHttpdServer $port "" $restLibraryDir
 

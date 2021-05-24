@@ -35,7 +35,7 @@ package require restutils
 package require json::write
 package require EVBStatistics
 
-set EVBDebug 0
+set EVBDebug 1
 
 if $EVBDebug {
 
@@ -208,8 +208,8 @@ proc formatCompleteBarrierDetails {data} {
             ]
         }
         lappend srcList [json::write object                      \
-            id [dict get $d id]                       \
-            count [dict get $id count]                \
+            id [dict get $s id]                       \
+            count [dict get $s count]                \
             details [json::write array {*}$details]
         ]
     }

@@ -91,7 +91,7 @@ set command [list exec [file join $::env(DAQSHARE) tclhttpd bin httpd.tcl] \
 if {$docrootarg ne ""} {
     lappend command -docRoot $docrootarg
 }
-puts "Running '$command'"
+puts stderr  "Running '$command'"
 {*}$command
 
 
