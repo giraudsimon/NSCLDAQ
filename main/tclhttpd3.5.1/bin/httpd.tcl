@@ -202,7 +202,7 @@ if {[string length $Config(library)]} {
 if {$Config(debug)} {
     puts stderr "auto_path:\n[join $auto_path \n]"
     if {[catch {package require httpd::stdin}]} {
-	puts "No command loop available"
+	puts stderr  "No command loop available"
 	set Config(debug) 0
     }
 }
