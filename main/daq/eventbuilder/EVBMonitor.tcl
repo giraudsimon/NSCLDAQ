@@ -76,11 +76,16 @@ proc usage {msg} {
 #                      2000 which provides a 2 second update interval.
 #
 proc _update {controllers {interval 2000}} {
-    set updateOk [catch {
+    set updateFail [catch {
         foreach controller $controllers {
             $controller update
         }
     } msg];                # TODO - maybe count failures?
+    if {$updateFail} {
+        .bottom.updatestat configure -text "Update failed" -foreground red
+    } else {
+        .bottom.updatestat configure -text "Updated" -foreground black
+    }
     after $interval _update [list $controllers] $interval
 }
 
@@ -128,8 +133,11 @@ proc _buildGUI {model} {
     
     FlowControlView .bottom.flow
     lappend result [EVBFlowController %AUTO% -model $model -view .bottom.flow]
+    ttk::label .bottom.updatestat -text ok -foreground black
     
-    grid .bottom.connections .bottom.flow -sticky nsew
+    grid .bottom.connections -row 0 -column 0 -rowspan 2 -sticky nsew
+    grid .bottom.flow        -row 0 -column 1 -sticky w
+    grid .bottom.updatestat  -row 1 -column 1 -sticky w
     
     
     grid .notebook -sticky nsew
