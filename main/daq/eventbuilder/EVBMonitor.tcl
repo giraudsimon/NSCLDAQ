@@ -76,9 +76,11 @@ proc usage {msg} {
 #                      2000 which provides a 2 second update interval.
 #
 proc _update {controllers {interval 2000}} {
-    foreach controller $controllers {
-        $controller update
-    }
+    set updateOk [catch {
+        foreach controller $controllers {
+            $controller update
+        }
+    } msg];                # TODO - maybe count failures?
     after $interval _update [list $controllers] $interval
 }
 

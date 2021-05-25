@@ -694,7 +694,7 @@ snit::widgetadaptor OutOfOrderView {
         ttk::treeview $win.tree -yscrollcommand [list $win.vscroll set] \
             -columns $columns -displaycolumns $columns -show [list tree headings] \
             -selectmode none
-        foreach c $columns h headings {
+        foreach c $columns h $headings {
             $win.tree heading $c -text $h
         }
         
