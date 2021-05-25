@@ -315,9 +315,10 @@ snit::widgetadaptor ReadoutManagerControl {
     # @param optname - name of the option being modified.
     # @param value   - new value.
     method _cfgState {optname value} {
-        set options($optname) value;     # This updates the state label.
+        
+        set options($optname) $value;     # This updates the state label.
         if {$value eq "SHUTDOWN"} {
-            $win.manager.shutdown configure -state disabled
+            $win.manager.shutdown configure -state normal
             $win.manager.boot     configure -state normal
         } else {
             $win.manager.shutdown configure -state normal
@@ -530,12 +531,15 @@ snit::type SystemStateTracker {
     # @return integer - 0 on success and 1 if currentState failed.
     #
     method update {} {
+        
         set model $options(-model)
         set view  $options(-view)
         
         if {[catch {$model currentState} state]} {
+            
             return 1;                       # state fetch failed.
         } else {
+            
             $view configure -state $state
         }
     }
@@ -931,6 +935,7 @@ snit::type RunControlActionHandler {
     #    Called to boot the manager.
     #
     method _onBoot {} {
+        
         $options(-statemodel) transition BOOT
     }
     ##
@@ -1037,6 +1042,7 @@ snit::type RunController {
     variable readoutModels [list]
     
     constructor {args} {
+        
         install actionHandler using RunControlActionHandler %AUTO%
         install summaryTracker using SummaryTracker %AUTO%
         install readoutParameterTracker using ReadoutParameterTracker %AUTO%
@@ -1052,7 +1058,9 @@ snit::type RunController {
         ]
         
         $self configurelist $args
+        
         $self _update
+        
     }
     destructor {
         after cancel $afterid
@@ -1260,7 +1268,9 @@ snit::type RunController {
     #  updateList. Regardless, reschedule.
     #
     method _update {} {
+    
         if {[$self _canUpdate]} {
+            
             foreach object $updateList {
                 $object update
             }
