@@ -76,14 +76,14 @@ namespace eval EVBStatistics {
 # EVBStatistics::_xon
 #    Callback for when flow control is turned off.
 #
-proc EVBStatistics::_xon { } {
+proc EVBStatistics::_xon {args } {
     set ::EVBStatistics::flowControlled 0
 }
 ##
 # EVBStatistics::_xoff
 #   Callback when flow control is turned on.
 #
-proc EVBStatistics::_xoff { } {
+proc EVBStatistics::_xoff {args } {
     set ::EVBStatistics::flowControlled 1
 }
     
