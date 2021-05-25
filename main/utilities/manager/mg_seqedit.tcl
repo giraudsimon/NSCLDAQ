@@ -434,12 +434,15 @@ proc _addStep {frame} {
     #  package and widget are the step, program_name predelay and postdelay
     
     set existingSteps [$seqEditor cget -steps]
+
     if {$selectedStep eq ""} {
+    
         if {[llength $existingSteps] == 0} {
             # New only step
             
             set newStepno $::sequence::step_interval
         } else {
+            
             # New last step amongst others.
             set newStepno [dict get [lindex $existingSteps end] step ]
             set newStepno [expr {$newStepno + $::sequence::step_interval}]
@@ -529,6 +532,7 @@ proc _deleteStep {} {
     variable seqEditor
     variable menuX
     variable menuY
+    variable selectedStep
     
     set step [$seqEditor itemAt $menuX $menuY]
     if {$step ne ""} {
@@ -538,6 +542,8 @@ proc _deleteStep {} {
         set stepList [lreplace $stepList $stepIndex $stepIndex]
         $seqEditor configure -steps $stepList
     }
+    set selectedStep ""
+    
 }
 ##
 # _moveUp
@@ -844,6 +850,7 @@ grid .sequences -sticky nsew
 grid .actions.newlabel .actions.new .actions.trglabel .actions.trigger -sticky w -padx 3
 grid .actions.addnew -sticky w
 grid .actions -sticky nswe
+
 
 
 
