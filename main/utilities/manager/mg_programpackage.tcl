@@ -83,6 +83,25 @@ proc ::program::_reinit { } {
 #
 
 ##
+# program::_filterGrep
+#   Removes items from a list that contain the string 'grep'  This is used
+#   in ps axuww|grep results in case the transient grep commands also appears
+#   in the list as it will contain the string searched for.
+#
+# @param input - a list of strings.
+# @return list - a possibily empty list of strings that don't contain "grep"
+#
+proc program::_filterGrep {input} {
+    set result [list]
+    foreach line $input {
+        if {[string first grep $line] == -1} {
+            lappend result $line
+        }
+    }
+    return $result
+}
+
+##
 # program::_typeId
 #   @param db   - database command.
 #   @param type - Program type string.
@@ -132,11 +151,11 @@ proc ::program::_makeProgramCommand {def} {
             set name [lindex $option 0]
             set value [lindex $option 1]
             if {$value ne ""} {
-                append command " " $name " " $value " ";   # Acceptable for in long options with gengetopt.
+                append command  " " $name " " $value;   # Acceptable for in long options with gengetopt.
                     
                 
             } else {
-                append command " " $name " "  ;   # Just a flag, no value.
+                append command " " $name  ;   # Just a flag, no value.
             }
         }
     }
@@ -772,15 +791,17 @@ proc ::program::kill {db name} {
     set command [_makeProgramCommand $def]
     
     set programList [exec ssh $host ps axuww | \
-        grep "$command" | grep -v grep | grep $::tcl_platform(user) \
+        grep "$command" | grep $::tcl_platform(user) \
          ];
-    
     set programList [split $programList "\n"];   #list of lines.
+    set programList [::program::_filterGrep $programList]
     if {[llength $programList] == 0} {
+        $::program::_log "NO process match for $name"
         error "Attempting ps axuww grepping for $command yielded no matches"
     }
     set program [lindex $programList 0]
     set pid     [lindex $program 1];     # the pid in the remote host.
+    ::program::_log "Killing $name - assuming it's $pid"
     catch {exec ssh $host kill -9 $pid }
     
 }
