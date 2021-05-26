@@ -59,6 +59,7 @@ package require http
 #   oostatistics  - Get out of order fragment statistics.
 #   connections   - Get connection list.
 #   flowcontrol   - Get flow control state.
+#   shutdown      - Shutdown the server (event builder).
 #
 snit::type EVBRestClient {
     #--------------------------------------------------------------------------
@@ -106,6 +107,21 @@ snit::type EVBRestClient {
         set uri http://$options(-host):$port/$statistics/$subdomain
         
         set token [http::geturl $uri]
+        return [clientutils::checkResult $token]
+    }
+    ##
+    # _peroformPut
+    #    Perform a PUT operations with the REST server.
+    #
+    #  @param subdomain  - suffix that defines the operation.
+    #  @param args       - Post parameter-key value pairs.
+    #
+    method _performPost {subdomain args} {
+        set port [clientutils::getServerPort \
+            $options(-host) $options(-user) $options(-service) \
+        ]
+        set uri http://$options(-host):$port/$statistics/$subdomain
+        set token [http::geturl $uri -query [http::formatQuery {*}$args]]
         return [clientutils::checkResult $token]
     }
     #--------------------------------------------------------------------------
@@ -257,6 +273,20 @@ snit::type EVBRestClient {
         set data [$self _performGet flowcontrol]
         return [dict get $data state]
     }
+    ##
+    # shutdown
+    #   Shutdown the event builder
+    # @param delay (optional) - Presently this is ignored but in the future
+    #           _may_ be implemented to be the shutdown delay.  Default value
+    #           is 2 which is the current number of seconds delay between
+    #           shutdown request and actual shutdown.
+    # @return - none.
+    #
+    method shutdown {{delay 2}} {
+        set data [$self _performPost shutdown delay $delay]
+        return ""
+    }
+    
 }
 
     

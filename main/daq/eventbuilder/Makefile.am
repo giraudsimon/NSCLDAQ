@@ -101,7 +101,7 @@ libEventBuilderClient_la_LIBADD = @top_builddir@/base/tcpip/libTcp.la \
 	@LIBTCLPLUS_LDFLAGS@ 
 
 
-TCL_PROGFILES=EVBMonitor.tcl
+TCL_PROGFILES=EVBMonitor.tcl EVBShutdown.tcl
 
 TCL_PACKAGE_FILES=ConnectionManager.tcl callbackManager.tcl eventOrderer.tcl \
 	connectionList.tcl  barriers.tcl GUI.tcl inputStatistics.tcl \

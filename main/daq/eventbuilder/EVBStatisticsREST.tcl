@@ -417,6 +417,21 @@ proc StatisticsHandler  {sock suffix} {
             message [json::write string ""]                                 \
             state $flow                                                     \
         ]
+    } elseif {$suffix eq "/shutdown"} {
+        #  Shutdown must be a post operation    
+        if {[GetRequestType $sock] eq "POST"} {
+            Httpd_ReturnData $sock application/json [json::write object  \
+                status [json::write string OK]                           \
+                message [json::write string ""]                          \
+            ]
+            #  Do the shutdown as an after in order to allow the return message
+            #  to be sent to the requestor:
+            
+            after 2000 exit;                      # Shutdown event builder in 2 seconds.
+            
+        } else {
+            ErrorReturn $sock "'$suffix' requires a POST  operation"
+        }
     } else {
         ErrorReturn $sock "'$suffix' is not a supported/implemented operation"
     }
