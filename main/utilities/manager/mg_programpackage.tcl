@@ -165,7 +165,6 @@ proc ::program::_makeProgramCommand {def} {
             append command " " $param
         }
     }
-    ::program::_log "Program command: $command"
     return $command
     
 }
@@ -292,7 +291,6 @@ proc ::program::_log text {
 # @param fd   - File descriptor ready to read.
 #
 proc ::program::_outputWrapper {name fd} {
-    ::program::_log "Input from $name"
     
     if {[array names  ::program::outputHandlers $name] eq $name} {
         
@@ -302,12 +300,10 @@ proc ::program::_outputWrapper {name fd} {
         
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        ::program::_log "Got: [gets $fd]"
         chan configure $fd -blocking $blocking
     }
     #  Handle the case of an eof:
     #
-    ::program::_log "Checking for [eof $fd]"
     if {[eof $fd]} {
         ::program::_log "$name exited"
         
@@ -810,7 +806,6 @@ proc ::program::kill {db name} {
     }
     set program [lindex $programList 0]
     set pid     [lindex $program 1];     # the pid in the remote host.
-    ::program::_log "Killing $name - assuming it's $pid"
     catch {exec ssh $host kill -9 $pid }
     
 }
