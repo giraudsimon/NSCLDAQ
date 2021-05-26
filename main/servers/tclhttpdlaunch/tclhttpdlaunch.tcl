@@ -75,6 +75,8 @@ set allocator [portAllocator %AUTO%]
 set port [$allocator allocatePort $service]
 $allocator destroy
 
+set env(SERVICE_NAME) $service;   # So app can see it.
+
 set portarg $port
 set libarg [lindex $argv 1];    
     

@@ -280,7 +280,7 @@ proc container::activate {db name host} {
     
     #
     #   Start the container in the remote host using ssh.
-    puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
+    # puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
     set fd [open "|ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }

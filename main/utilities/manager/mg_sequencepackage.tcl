@@ -30,6 +30,7 @@ package require programs;           # Because sequence steps are programs.
 package require containers
 package require sqlite3
 package require snit
+package require portAllocator
 
 ##
 # This package provides an API for state transitions and associated sequences.
@@ -98,7 +99,16 @@ package require snit
 #  Note that this package wraps its own hands around each program so that if
 #  critical ones exit the system can be shutdown and if a Persistent on shuts down
 #  that can be 
-#      
+#
+
+## This BS is needed by pkg_mkIndex which throws up on references to
+#  undefined globals referenced at global level.
+
+if {[array names ::env SERVICE_NAME] eq ""} {
+    set ::env(SERVICE_NAME) dummy
+    set ::errorInfo dummy
+}
+
 namespace eval sequence {
     ::container::_setup
     
@@ -108,7 +118,77 @@ namespace eval sequence {
     array set StepMonitors [list]
     
     variable currentTransitionManager [list];    # Current transition manager if any.
+    variable outputListener;                     # Socket with output listener.
+    variable outputClients;                      # list of sockets of output clients.
+    variable outputServiceName $::env(SERVICE_NAME)-outputMonitor ; # Name of port manager serice.
 }
+
+
+
+#---------------------------------------------------------------------
+#  Output service setup/handling
+proc ::sequence::_startOutputService {} {
+    set pm [portAllocator %AUTO%]
+    set port [$pm findServer $::sequence::outputServiceName]
+    if {$port ne ""} {
+        error "Output service '$::sequence::outputServiceName' already in use."
+    }
+    set ::sequence::outputListener [$pm allocatePort $::sequence::outputServiceName]
+    
+    $pm destroy
+    
+    socket -server \
+        ::sequence::acceptConnection $::sequence::outputListener
+    
+}
+
+##
+# ::sequence::acceptConnection
+#     Called when a client has connected to the output listener service.
+#     all we need do is add the socket to the outputClients list.  The
+#     output handlers will do the rest by forwading all program output
+#     to the list of current clients.  Similarly if a client disconnnects,
+#     the output handlers detect that and remove that client fromt he list.
+#
+# @param socket - socket fd open on the connected client.
+# @param host   - host from which the connection was made (ip address).
+# @param port   - The port connected.
+#
+proc ::sequence::acceptConnection {socket host port} {
+    lappend ::sequence::outputClients $socket
+    fconfigure $socket -buffering line
+}
+
+
+
+##
+# ::sequence::_relayOutput
+#    Relay output from programs to the clients in ::sequence::outputClients
+#    If a puts on one of those sockets fails it is removed from the list
+#    of client sockets and closed.
+#
+# @param text - text to relay.
+#
+proc ::sequence::_relayOutput {text} {
+    program::_log "Relaying $text to $::sequence::outputClients"
+    foreach socket $::sequence::outputClients {
+        set status [catch {
+            puts $socket $text
+            flush $socket
+        }]
+        if {$status} {
+            catch {close $socket}
+            set index [lsearch -exact $::sequence::outputClients $socket]
+            set ::sequence::outuptClients \
+                [lreplace $::sequence::outputClients $index $index]
+        }
+    }
+    program::_log "Clients are: $::sequence::outputClients"
+}
+catch {::sequence::_startOutputService};    # Again for pkg_mkIndex.
+    
+
+
 #------------------------------------------------------------------------------
 #  Snit classes:
 
@@ -626,7 +706,10 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     } else {
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        program::_log "$program: [gets $fd]"
+        set text "$program: [gets $fd]"
+        program::_log $text
+        catch  {::sequence::_relayOutput $text} msg
+        program::_log "Relay : $msg"
         chan configure $fd -blocking $blocking
     }
     
@@ -639,6 +722,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     
     if {[eof $fd]} {
         ::program::_log "Sequence output handler sees EOF."
+        
         set programInfo [::program::getdef $db $program ]
         
         if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
@@ -646,9 +730,12 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
             uplevel #0 [list $monitor onExit $db $programInfo $fd]
         }
         if {[dict get $programInfo type] eq "Critical"} {
+            ::sequence::_relayOutput "$program: - critical program exited"
             ::program::_log "Critical program exited"
             # Note that this could be us shutting down so we'll catch this:
             catch {::sequence::transition $db SHUTDOWN} ;    # Critical so shutdown everything.
+        } else {
+            ::sequence::_relayOutput "$program: - exited (non critical)"
         }
 
     }
