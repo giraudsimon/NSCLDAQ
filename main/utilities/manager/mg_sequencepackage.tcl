@@ -576,19 +576,18 @@ proc ::sequence::_TransitionComplete {how} {
     if {$how ne "OK"} {
         ::sequence::transition $db SHUTDOWN
     } else {
-        ::program::_log "Transition '$transition' successfully completing."
+        
         # If this was a shutdown transition, we need to get the list of
         # all running programs and initiate kills on them.
         
         if {$transition eq "SHUTDOWN"} {
-            ::program::_log "Transition was a shutdown."
+        
             foreach active [::program::activePrograms ] {
-                ::program::_log "Requesting kill of $active"
                 catch {::program::kill $db $active};   # in case it's died since.
             }
             
         }
-        ::program::_log "Requested Kills of active programs"
+
         # Update the database to the new state:
         
         set newStateId [$db eval {
@@ -597,13 +596,10 @@ proc ::sequence::_TransitionComplete {how} {
         $db eval {
             UPDATE last_transition SET state = $newStateId
         }
-        ::program::_log "Database state updated to $newStateId ($transition)"
+
         #  Wait for i/o indicating program exit:
         
-        ::program::_log "Waiting a bit... may recurse."
-        after 5000 incr ::iowait
-        vwait ::iowait
-        ::program::_log "Wait done"
+        
         
     }
 }
@@ -630,7 +626,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     } else {
         set blocking [chan configure $fd -blocking]
         chan configure $fd -blocking 0
-        program::_log "Read: [gets $fd]"
+        program::_log "$program: [gets $fd]"
         chan configure $fd -blocking $blocking
     }
     
@@ -641,11 +637,9 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #      care of details like that.
     #  
     
-    program::_log "Checking EOF on file descriptor in sequence output handler."
     if {[eof $fd]} {
         ::program::_log "Sequence output handler sees EOF."
         set programInfo [::program::getdef $db $program ]
-        ::program::_log "Info: $programInfo"
         
         if {[array names ::sequence::StepMonitors $monitorIndex] eq $monitorIndex} {
             set monitor $::sequence::StepMonitors($monitorIndex)

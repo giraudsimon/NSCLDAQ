@@ -790,6 +790,15 @@ proc ::program::kill {db name} {
     }
     set command [_makeProgramCommand $def]
     
+    # DANGER!! you might think the elimination of grep itself from the
+    #         output set could be done by piping grep -v grep in the
+    #         pipeline below, however if there are no matches, (e.g. the
+    #        program exited prior to the check), the grep -v won't have any
+    #        matches and grep -v will exit with status 1.  That will cause
+    #        exec to throw an error (child process exited abnormally).
+    #       The scheme below gives a better error message if that's the case
+    #       as well as a potential log useful in troubleshooting.
+    #
     set programList [exec ssh $host ps axuww | \
         grep "$command" | grep $::tcl_platform(user) \
          ];
