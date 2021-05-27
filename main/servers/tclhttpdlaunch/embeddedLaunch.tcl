@@ -44,6 +44,7 @@ proc startHttpdServer {port docs extensions} {
     Config https_port ""
     Config ipaddr ""
     Config https_ipaddr ""
+    Config Auth {}
     Config AuthDefaultFile ~/tclhttpd.default
     
     Config docRoot $docs

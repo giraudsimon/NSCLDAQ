@@ -24,7 +24,7 @@ exec tclsh "$0" ${1+"$@"}
 # @brief  Controller like object for ManagerOutputModel and OutputWindow.
 # @author Ron Fox <fox@nscl.msu.edu>
 #
-package provide ManageOutputController 1.0
+package provide ManagerOutputController 1.0
 package require snit
 
 ##
@@ -42,7 +42,6 @@ package require snit
 snit::type ManagerOutputController {
     option -model -configuremethod _cfgModel
     option -view
-    option -connectionabandoned -default [list]
     
     constructor args {
         $self configurelist $args
