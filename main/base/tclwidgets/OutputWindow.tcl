@@ -31,7 +31,7 @@ exec tclsh "$0" ${1+"$@"}
 
 package provide OutputWindow 1.0
 package require Tk
-pakcage require snit
+package require snit
 
 snit::macro getDefaultLogging {} {
     return  [dict create \
