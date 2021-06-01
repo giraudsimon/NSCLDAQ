@@ -67,16 +67,110 @@ tcltest::test add_1 {Default add.} \
     }
     set result
   
-  #             \
-             \
-              \  
 } \
 -result [list [dict create                                            \
         id 1 root /usr/opt/daq/12.0-pre3 ring tcp://genesis/test \
         host localhost partial 0 dest /user/fox/stagearea critical 1 \
         enabled 1 container "" \
 ]]
+  
+tcltest::test add_2 {add with partial, critical, host and enabled overridden.} \
+-setup {
+    commonSetup
 
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventlog::add db /usr/opt/daq/12.0-pre3  \
+      tcp://genesis/test /user/fox/stagearea  \
+      [dict create host genesis partial 1 critical 0 enabled 0]
+    
+    set result [list]
+    db eval {
+        SELECT host,partial,critical,enabled
+        FROM logger
+    } stuff {
+        lappend result [dict create                                   \
+            host $stuff(host) partial $stuff(partial) critical $stuff(critical) \
+            enabled $stuff(enabled)
+        ]
+    }
+    set result
+} -result [list [dict create                                               \
+    host genesis partial 1 critical 0 enabled 0                             \
+]]
+
+tcltest::test add_3 {Set a container.} \
+-setup {
+  commonSetup
+  container::add db testing [file normalize ~/minimal.img] [list] [list]
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+  tcp://genesis/test /user/fox/stagearea \
+  [dict create container testing]
+  
+  set result [list]
+  
+  db eval {
+    SELECT container_id FROM logger
+  } data {
+    lappend result [dict create container $data(container_id)]
+  }
+  
+  set result
+} -result [list [dict create container 1]]
+
+
+tcltest::test addfail_1 {Destination already exists.} \
+-setup {
+  commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+    tcp://genesis/test /user/fox/stagearea
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+    tcp://genesis/fox /user/fox/stagearea
+} -returnCodes [list error] -result \
+"There is already a logger defined that has either 'tcp://genesis/fox' as a source  or '/user/fox/stagearea' as a destination"
+
+tcltest::test addfail_2 {Duplicate source.} \
+-setup {
+commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+    tcp://genesis/test /user/fox/stagearea
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::add db /usr/opt/daq/12.9-pre3 \
+    tcp://genesis/test /user/fox/junk
+
+} -returnCodes [list error] \
+-result "There is already a logger defined that has either 'tcp://genesis/test' as a source  or '/user/fox/junk' as a destination"
+
+tcltest::test addfail_3 {No such container.} \
+-setup {
+  commonSetup
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+    tcp://genesis/test /user/fox/stagearea \
+    [dict create container does_not-exist]
+} -returnCodes [list error]  \
+-result "There is no container named 'does_not-exist'"
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

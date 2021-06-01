@@ -55,9 +55,12 @@ namespace eval eventlog {
 # @param default - Value to return if the dict does not have the key.
 #
 proc ::eventlog::_getOption {dict key default} {
+    
     if {[dict exists $dict $key]} {
+    
         return [dict get $dict $key]
     } else {
+    
         return $default
     }
 }
@@ -153,6 +156,7 @@ proc ::eventlog::add {db root source destination {options {}}} {
     
     ::eventlog::_ensureNotDuplicate $db $destination $source
     set container [::eventlog::_getContainerId $db $container]
+ 
  
     $db eval {
         INSERT INTO logger
