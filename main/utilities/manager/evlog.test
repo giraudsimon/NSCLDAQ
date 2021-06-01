@@ -1,0 +1,90 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   evlog.test
+# @brief  Test database configuration package of the event logger.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require eventloggers
+package require containers
+package require sqlite3
+
+variable dbFile
+variable dbFd
+
+proc commonSetup {} {
+     set ::dbFd [file tempfile ::dbFile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbFile
+    sqlite3 db $::dbFile   
+}
+proc commonCleanup {} {
+    close $::dbFd
+    db close
+    file delete $::dbFile
+}
+
+tcltest::test add_1 {Default add.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/test /user/fox/stagearea
+    
+    set result [list]
+    db eval {
+        SELECT id,daqroot,ring,host,partial,destination,critical,enabled,container_id
+        FROM logger
+    } stuff {
+        lappend result [dict create                                   \
+            id $stuff(id)  root $stuff(daqroot)     ring $stuff(ring)  \
+            host $stuff(host) partial $stuff(partial) dest $stuff(destination) \
+            critical $stuff(critical) enabled $stuff(enabled)  \
+            container $stuff(container_id)  \
+        ]
+    }
+    set result
+  
+  #             \
+             \
+              \  
+} \
+-result [list [dict create                                            \
+        id 1 root /usr/opt/daq/12.0-pre3 ring tcp://genesis/test \
+        host localhost partial 0 dest /user/fox/stagearea critical 1 \
+        enabled 1 container "" \
+]]
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode
