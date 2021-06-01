@@ -45,6 +45,50 @@ fconfigure $tty -buffering line
 
 
 ##
+# _PrepareManagerShutdown
+#   - Called for /shtudown suffix.
+#     *   Require POST
+#     *   Require username.
+#     *   If not shutdown, make stransition to shutdown state.
+#     *   Return a status OK and no message field.
+#     *   Schedule an exit in one second to ensure the
+#         returned value has been sent.
+#
+# @param sock - the socket that defines the state of the connection.
+#
+proc _PrepareManagerShutdown {sock} {
+    #  Require post or error.
+    
+    if {[GetRequestType $sock] ne "POST"} {
+        Doc_Error $sock ".../shutdown must be invoked via a POST method"
+        return;
+    }
+    # Require the user was supplied:
+    
+    set postdata [GetPostedData $sock]
+    if {![dict exists $postdata user]} {
+        Doc_Error $sock ".../shutdown requires an invoking user be sent"
+        return
+    }
+    #   If the current state is not already SHUTDOWN do a synchronous
+    #   shutdown to cleanup all programs;
+    
+    if {[::sequence::currentState db] ne "SHUTDOWN"} {
+        ::sequence::transition db SHUTDOWN [list _TransitionEnded]
+        vwait ::Done
+    }
+    
+    ##  Return the success and schedule exit to hapen in one second.
+    
+    Httpd_ReturnData $sock application/json [json::write object   \
+        status [json::write string OK]                            \
+        message [json::write string ""]                           \
+    ]
+    after 1000 exit
+}
+
+
+##
 # stateHandler
 #   Handles domain requests in the /State domain.
 #
@@ -128,6 +172,10 @@ proc stateHandler {sock suffix} {
             }
             
         }
+    } elseif {$suffix eq "/shutdown"} {;             # Shutdown the manager:
+        _PrepareManagerShutdown $sock;             # Make ready to shutdown.
+        
+        
     } else {
         ErrorReturn $sock "$suffix subcommand not implemented"
     }

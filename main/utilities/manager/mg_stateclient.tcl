@@ -39,6 +39,7 @@ namespace eval stateclient {
     variable state  "status";         # subdomain with status.
     variable next   "allowed";        # subdomain with allowed next states.
     variable transition "transition"; # Transition request subdomain
+    variable forceExit "shutdown";    # Kill off the menager.
 }
 ##
 # _getServerPort
@@ -64,6 +65,7 @@ proc _getServerPort {host user} {
 #   currentState  - Returns the current state.
 #   nextStates    - Returns the legal next states.
 #   transition    - Perform a state transition.
+#   kill          - Shutdown the system and kill the server.
 #
 # @note Each requests resolves the port the manager is running on.
 #       this makes objects resilient with respect to manager stops/restarts.
@@ -170,6 +172,22 @@ snit::type StateClient {
         set jsondict [$self _checkResult $token]
         return [dict get $jsondict state]
         
+    }
+    ##
+    # kill
+    #    If necessary SHUTDOWN and then schedule the manager to exit.
+    #
+    method kill {} {
+        set port [_getServerPort $options(-host) $options(-user)]
+        set baseuri http://$options(-host):$port
+        set uri $baseuri/$stateclient::base/$stateclient::forceExit
+        
+        set postData [http::formatQuery       \
+            user $clientutils::client         \
+        ]
+        set token [http::geturl $uri -query $postData]
+        
+        $self _checkResult $token
     }
     
 }
