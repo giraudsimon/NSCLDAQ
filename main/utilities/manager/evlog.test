@@ -42,7 +42,7 @@ proc commonCleanup {} {
     db close
     file delete $::dbFile
 }
-
+############################### Add tests #####################################
 tcltest::test add_1 {Default add.} \
 -setup {
     commonSetup
@@ -171,6 +171,80 @@ tcltest::test addfail_3 {No such container.} \
     [dict create container does_not-exist]
 } -returnCodes [list error]  \
 -result "There is no container named 'does_not-exist'"
+######################################### list tests ########################
+tcltest::test list_1 {Nothing to list} \
+-setup {
+  commonSetup
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::listLoggers db
+
+} -result [list]
+
+tcltest::test list_2 {List of one item without a container.} \
+-setup {
+  commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/test \
+    /user/fox/stagearea [dict create host genesis partial 1 critical 0 enabled 0]
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::listLoggers db
+} -result [list [dict create                                             \
+    id 1 daqroot /usr/opt/daq/12.0-pre3 ring tcp://genesis/test          \
+    host genesis partial 1 destination /user/fox/stagearea critical 0    \
+    enabled 0 container "" container_id ""                               \
+]]
+
+tcltest::test list_3 {List one item with a container} \
+-setup {
+  commonSetup
+  container::add db testing [file normalize ~/minimal.img] [list] [list]
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/test \
+    /user/fox/stagearea [dict create container testing host genesis]
+  
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::listLoggers db
+} -result [list [dict create                                                 \
+    id 1 daqroot /usr/opt/daq/12.0-pre3 ring tcp://genesis/test       \
+    host genesis partial 0 destination /user/fox/stagearea critical 1 \
+    enabled 1 container testing container_id 1                          \
+]]
+
+
+tcltest::test list_4 {More than one logger.} \
+-setup {
+  commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/fox \
+    /user/fox/raw [dict create host genesis]
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://charlie/built \
+    /user/fox/built [dict create host charlie]
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::listLoggers db
+} -result [list                                                               \
+    [dict create id 1 daqroot /usr/opt/daq/12.0-pre3 ring tcp://genesis/fox  \
+      host genesis partial 0 destination /user/fox/raw critical 1 enabled 1 \
+      container "" container_id ""
+    ] [dict create                                                           \
+       id 2 daqroot /usr/opt/daq/12.0-pre3 ring tcp://charlie/built          \
+       host charlie partial 0 destination /user/fox/built critical 1 enabled 1 \
+       container "" container_id ""                         \
+    ]                                                        \
+]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

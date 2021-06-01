@@ -31,7 +31,7 @@ package require sqlite3
 # We export the following procs:
 #
 # eventlog::add          - Add a new logger to the list.
-# eventlog::list         - List defintions of all loggers.
+# eventlog::listLoggers  - List defintions of all loggers.
 # eventlog::rm           - Remove a logger from the list.
 # eventlog::enable       - Enable an individual logger.
 # eventlog::enableAll    - Enable all loggers.
@@ -171,7 +171,7 @@ proc ::eventlog::add {db root source destination {options {}}} {
     return [$db last_insert_rowid]
 }
 ##
-# ::eventlog::list
+# ::eventlog::listLoggers
 #    Return a list containing the definitions of all event loggers.
 #
 # @param db  - database command.
@@ -189,22 +189,24 @@ proc ::eventlog::add {db root source destination {options {}}} {
 #        - container_id - Id of the container.
 # @note - we use knowledge of the container schema.
 #
-proc ::eventlog::list {db} {
+proc ::eventlog::listLoggers {db} {
     set result [list]
     $db eval {
         SELECT logger.id AS loggerid, daqroot, ring, host, partial, destination,
-               critical enabled, container_id, container.name As container_name
+               critical, enabled, container_id, container.container AS container_name
         FROM logger
-        INNER JOIN container ON container_id = container.id
+        LEFT JOIN container ON container_id = container.id
     } values {
+        
         lappend result [dict create                                         \
-            id $values($loggerid)      daqroot $values(daqroot)             \
-            ring $values(ring)         host $value(host)                    \
+            id $values(loggerid)      daqroot $values(daqroot)             \
+            ring $values(ring)         host $values(host)                    \
             partial $values(partial)   destination $values(destination)     \
-            critical $vales(critical)  enabled $values(enabled)             \
+            critical $values(critical)  enabled $values(enabled)             \
             container $values(container_name)                               \
             container_id $values(container_id)                              \
         ]
+        
     }
     
     
