@@ -125,7 +125,19 @@ tcltest::test add_3 {Set a container.} \
   
   set result
 } -result [list [dict create container 1]]
-
+tcltest::test add_4 {Ensure we get the id back.} \
+-setup {
+  commonSetup
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::add db /usr/opt/daq/12.0-pre3 \
+  tcp://genesis/test /user/fox/stagearea \
+  [dict create host genesis]
+  
+} -result 1
 
 tcltest::test addfail_1 {Destination already exists.} \
 -setup {
@@ -244,6 +256,54 @@ tcltest::test list_4 {More than one logger.} \
        container "" container_id ""                         \
     ]                                                        \
 ]
+########################### rm tests #########################################
+
+tcltest::test rm_1 {Remove ok.} \
+-setup {
+  commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/fox \
+    /user/fox/raw [dict create host genesis]
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://charlie/built \
+    /user/fox/built [dict create host charlie]
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::rm db 1
+  llength [eventlog::listLoggers db]
+} -result 1
+
+tcltest::test rm_2 {The right one remains.} \
+-setup {
+  commonSetup
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://genesis/fox \
+    /user/fox/raw [dict create host genesis]
+  eventlog::add db /usr/opt/daq/12.0-pre3 tcp://charlie/built \
+    /user/fox/built [dict create host charlie]
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::rm db 1
+  eventlog::listLoggers db
+} -result [list [dict create                                                \
+      id 2 daqroot /usr/opt/daq/12.0-pre3 ring tcp://charlie/built          \
+       host charlie partial 0 destination /user/fox/built critical 1 enabled 1 \
+       container "" container_id ""  \
+]]
+
+tcltest::test rmfail_1  {No such item.} \
+-setup {
+  commonSetup
+} \
+-cleanup {
+  commonCleanup
+} \
+-body {
+  eventlog::rm db 1
+} -returnCodes [list error] -result "There is no event logger with the id '1'"
 
 #----------------------------------------------------
 
