@@ -121,6 +121,7 @@ namespace eval sequence {
     variable outputListener;                     # Socket with output listener.
     variable outputClients;                      # list of sockets of output clients.
     variable outputServiceName $::env(SERVICE_NAME)-outputMonitor ; # Name of port manager serice.
+    variable exitCounter;                        # Used in transient program wait.
 }
 
 
@@ -355,6 +356,14 @@ snit::type sequence::SequenceRunner {
         } msg]
         if {$status} {
             $self abort "Unable to start program $programName : $msg"
+        }
+        #  If the program is a transient wait for the output handler
+        #  to indicate it's done:
+        #      
+        if {[::sequence::_isTransient $options(-database) $programName]} {
+            vwait ::sequence::exitCounter;     # Wait in event loop on exit.
+                
+            
         }
         
         # Now that the program is up and running schedule the post delay:
@@ -632,6 +641,19 @@ snit::type ::sequence::ShutdownManager {
 #-------------------------------------------------------------------------------
 #  Utiltities not intended to be used by package clients.
 
+
+##
+# ::sequence::_isTransient
+#
+# @param db   - database handle/command.
+# @param program - Name of a program.
+# @return bool - true if the program type is transient.
+#
+proc ::sequence::_isTransient {db program} {
+    set type [dict get [::program::getdef $db $program] type]
+    return [expr {$type eq "Transitory"}]
+}
+
 ##
 # ::sequence::_TransitionComplete
 #    Called to complete a state transition. Not in order:
@@ -737,8 +759,13 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
         } else {
             ::sequence::_relayOutput "$program: - exited (non critical)"
         }
-
+        # This increment finishes the vwait on program execution if it's
+        # a transient program:
+        if {[::sequence::_isTransient $db $program]} {
+            incr ::sequence::exitCounter
+        }
     }
+    
 }  
 ##
 # ::sequence::_stateExists
