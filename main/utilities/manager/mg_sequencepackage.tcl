@@ -119,7 +119,7 @@ namespace eval sequence {
     
     variable currentTransitionManager [list];    # Current transition manager if any.
     variable outputListener;                     # Socket with output listener.
-    variable outputClients;                      # list of sockets of output clients.
+    variable outputClients [list];                      # list of sockets of output clients.
     variable outputServiceName $::env(SERVICE_NAME)-outputMonitor ; # Name of port manager serice.
     variable exitCounter;                        # Used in transient program wait.
 }

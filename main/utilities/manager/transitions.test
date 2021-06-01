@@ -168,10 +168,13 @@ tcltest::test runseq_3 {Sequence with Monitor on the single step} \
     set step [::sequence::addStep db testing echo 1 2]
     snit::type runseq3Monitor {
         method onOutput {db program fd} {
+            
             lappend ::output [gets $fd]
+            
             
         }
         method onExit {db programInfo fd} {
+            
             set ::exited [dict get $programInfo name]
         }
     }
@@ -185,8 +188,9 @@ tcltest::test runseq_3 {Sequence with Monitor on the single step} \
 } \
 -body {
     set sequence [::sequence::runSequence db testing]
-    vwait output
+    
     vwait exited
+    
     list $output $exited
 } -result [list [list "Hello world" ""] echo]
 
