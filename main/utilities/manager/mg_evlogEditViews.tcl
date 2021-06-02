@@ -270,47 +270,147 @@ snit::widgetadaptor evlogEditLogger {
     } 
 }
 
-    
-
-
-    
-
-    
-
-
-
 ##
-# @class evlogEditView
-#    View used to edit the event loggers.  Supports:
-#    - Adding new loggers,
-#    - Removing old loggers.
-#    - Modifying existing loggers.
-# Normally this is intended to be used with a controller and model that
-# handle the user interface requests and manage the data provided by the
-# eventlog package.
+# @class evlogListView
+#    Provides a view for listing event loggers and performing actions
+#    on them.
 #
-# OPTIONS:
-#    *  -data       - list of dicts that describe the loggers in the view.
-#    *  -containers - List of known container names.
-#    *  -addcommand - Script called to provide any default values to the
-#                     new logger entry part of the presentation.
-#    *  -delcommand - Script called when the user requests the deletion of
-#                     an item.
-#    *  -changecommand - Script called when the users requests the modification
-#                      of an item.
-#    *  -savecommand - Script called when the user wants to save edits in the
-#                      editor section.
-#    *  -savelabel   - Label on the save button.
+# OPTIONS
+#    -data - List of event log definitions such as you might get from
+#            e.g. eventlog::listLoggers.  Note that the id and container_id
+#            are ignored and also not needed.
+#    -contextmenu - context menu definition.  This consists of
+#             text elements that are put in a context menu.
+#    -command - Script executed when a context menu entry is selected.
+#             The script receives the menu command text and definition of the
+#             item the menu was invoked on.
 # METHODS:
-#    loadEditor   - Loads the editor section with values.
-#    getEditor    - Retrieves the values of the editor section.
-#    setStatus    - Sets the status line.
-#
+#    highlight - Renders the specified item in reverse video coloring.
+#    unhighlight - Removes the highlight from the a specified item.
+#    unhighlightall - removes the highlight from all items.
 # PRESENTATION:
-#    There are two sections of the display;  A treeview displays the current
-#    set of loggers.
-#    Below the treeview is:
-#    -   An editor that allows entry or modification of a logger.
-#    -   A save  button that invokes the -savecommand script.
-#    -   A status line that indicates if we are adding or modifying an editor.
+#    The data are presented as a tree with the following columns:
+#    *  DAQRoot - the DAQ installation version used.
+#    *  source  - URL of the ring buffer data is taken from.
+#    *  host    - The Host on which the logger runs.
+#    *  destination - the destination in whichthe data are logged.
+#    * container- Name of the container (or blank if none) in which the
+#                  logger run.s
+#    *  partial - X if the logger is partial
+#    *  critical- X if the logger is critical
+#    *  enabled - X if the logger is enabled.
 #
+snit::widgetadaptor evlogListView {
+    option -data -default [list] -configuremethod _cfgData
+    option -contextmenu -default [list] -configuremethod _cfgMenu
+    option -command -default [list]
+    
+    variable contextMenu "";       # If not empty the context menu.
+    
+    constructor args {
+        installhull using ttk::treeview
+        
+        set columns [list root source host destination container partial critical embedded]
+        set titles   [list DAQRoot source host destination container P C E]
+        
+        ttk::treeview $win.t -yscrollcommand [list $win.vsb set]    \
+            -columns $columns -show headings -selectmode none
+        
+        foreach c $columns h $titles {
+            $win.t heading $c -text $h
+            if {[string length $h] == 1} {
+                $win.t column $c -width 15 -stretch 0
+            }
+        }
+        
+        ttk::scrollbar $win.vsb -command [list $win.t yview] -orient vertical
+        
+        #  Make an item tag and bind the button-3 event to post any 
+        #  context menu:
+        
+        $win.t tag add item [list];         # All items.
+        $win.t tag bind item <ButtonPress-3> [mymethod _postContextMenu]
+        $win.t tag add highlighted [list];  # Highlighted items.
+        
+        grid $win.t $win.vsb -sticky nsew
+        grid columnconfigure $win 0 -weight 1
+        grid columnconfigure $win 1 -weight 0
+        
+        $self configurelist $args
+    }
+    #----------------------------------------------------------------------
+    #  Utility methods/procs
+    #
+    
+    ##
+    # _boolValue
+    #   Takes a dict and a key and returns "" if the value is boolean false and
+    #   X otherwise.
+    #
+    # @param d   - dictionary value.
+    # @param k   - Key name.
+    # @return string - "" or "X"
+    proc _boolValue {d k} {
+        set value [dict get $d $k]
+        if {$value} {
+            return "X"
+        } else {
+            return ""
+        }
+    }
+    
+    ##
+    # _addLogger
+    #   Adds a single logger to the end of the list of loggers.
+    #  The logger is tagged with the item ta so that it's got the right click
+    #  bound to it.
+    #
+    # @param logger  - The dict containing the logger definition.
+    #
+    method _addLogger {logger} {
+        set values [list                                             \
+            [dict get $logger daqroot]   [dict get $logger host]     \
+            [dict get $logger destination] [dict get $logger container] \
+        ]
+        lappend values [_boolValue $logger partial]
+        lappend values [_boolValue $logger critical]
+        lappend values [_boolValue $logger enabled]
+        
+        $win.t insert {} end -values $values -tags [list item]
+    }
+    
+    #----------------------------------------------------------------------
+    # Configuration handling
+    #
+    
+    ##
+    # _cfgData
+    #   Stock the treeview with the data in the list.
+    # @param optname - name of the option being modified.
+    # @param value   - new value.
+    #
+    method _cfgData {optname value} {
+        $win.t delete [$win.t children {}]
+        foreach logger $value {
+            $self _addLogger $logger
+        }
+        
+        set options($optname) $value
+    }
+    ##
+    # _cfgMenu
+    #   Configure the menu contents.. This just involves destroying
+    #   and emptying out the contextMenu string so that the next
+    #   posting will regenerate the menu:
+    #
+    # @param optname - name of the option being modified.
+    # @param value   - new value.
+    #
+    method _cfgMenu {optname value } {
+        set options($optname) $value
+        destroy $contextMenu
+        set contextMenu ""
+    }
+    
+}   
+#------------------------------------------------------------------------.l 
