@@ -178,7 +178,18 @@ snit::widgetadaptor evlogEditLogger {
             _setEntry $entry $result
         }
     }
-            
+    ##
+    # _dispatchCommand
+    #   Dispatch to the user's script.  The user's script will have the
+    #   widget name appended to it
+    #
+    method _dispatchCommand {} {
+        set script $options(-command)
+        if {$script ne ""} {
+            lappend script $win
+            uplevel #0 $script
+        }
+    }
     #------------------------------------------------------------------------
     # Public methods.
     
@@ -256,10 +267,7 @@ snit::widgetadaptor evlogEditLogger {
         } else {
             $win.cont current $index
         }
-    }
-        
-    
-    
+    } 
 }
 
     
