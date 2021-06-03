@@ -339,6 +339,56 @@ snit::widgetadaptor evlogListView {
         $self configurelist $args
     }
     #----------------------------------------------------------------------
+    # Public methods:
+    #
+    
+    ##
+    # highlight
+    #   Given the definition of a logger highlights that element.
+    #   -   Attempts to highlight nonexistent defs are silently ignored.
+    #   -   Any existing highlights remain highlighted.
+    #   -   This is done by adding the element to the selection and tagging it
+    #       with the highlight tag (so that unhighlight's search space is smaller).
+    #
+    # @param def - definition to highlight.
+    #
+    method highlight {def} {
+        foreach entry [$win.t children {}] {
+            set itemdef [_valuesToDict [$win.t item $entry -values]]
+            if {[_loggerEq $def $itemdef]} {
+                $win.t selection add $entry
+                $win.t tag add highlight $entry
+                break;                # Assume there can be only one.
+            }
+        }
+    }
+    ##
+    # unhighlight
+    #    Remove the highlight from a logger.
+    #
+    # @param def  - logger definition
+    #
+    method unhighlight {def} {
+        foreach entry [$win.t tag has highlight] {
+            set itemdef [_valuesToDict [$win.t item $entry -values]]
+            if {[_loggerEq $def $itemdef]} {
+                $win.t selection remove $entry
+                $win.t tag remove highlight $entry
+                break;      # There can be only one match.
+            }
+        }
+    }
+    ##
+    # unhighlightall
+    #    Remove the highlight from all elements.
+    #
+    method unhighlightall {} {
+        set items [$win.t tag has highlight]
+        $win.t selection remove $items
+        $win.t tag remove highlight $items
+    }
+    
+    #----------------------------------------------------------------------
     #  Utility methods/procs
     #
     
@@ -373,6 +423,47 @@ snit::widgetadaptor evlogListView {
             return 0
         }
     }
+    ##
+    # _valuesToDict
+    #   Turn the values list into a dict that defines the
+    #   logger.
+    # @param data   - Data from the -values e.g. from a list.
+    # @return dict definining the logger.
+    #
+    proc _valuesToDict {data} {
+        set def [dict create                                          \
+                daqroot [lindex $data 0]      ring [lindex $data 1] \
+                host [lindex $data 2]     \
+                destination [lindex $data 3]    container [lindex $data 4] \
+                partial [_textToBool [lindex $data 5]]                     \
+                critical [_textToBool [lindex $data 6]]                     \
+                enabled [_textToBool [lindex $data 7]]                     \
+             ]
+        return $def
+    }
+    ##
+    # _loggerEq
+    #    @param l1 - dict defining one longger.
+    #    @param l2 - dict defining a second logger.
+    #    @return bool - true if the two loggers are functionally identical
+    #                by functionally identical we mean that only the values of
+    #                'the keys that matter' are the same.
+    #
+    proc _loggerEq {l1 l2} {
+        return [expr {
+            ([dict get $l1 daqroot] eq [dict get $l2 daqroot])       &&
+            ([dict get $l1 ring]  eq [dict get $l2 ring])            &&
+            ([dict get $l1 host] eq [dict get $l2 host])            &&
+            ([dict get $l1 destination] eq [dict get $l2 destination]) &&
+            ([dict get $l1 container] eq [dict get $l2 container])    &&
+            ([dict get $l1 partial] == [dict get $l2 partial])        &&
+            ([dict get $l1 critical] == [dict get $l2 critical])      &&
+            ([dict get $l1 enabled] == [dict get $l2 enabled])
+        }]
+    }
+        
+    
+    
     
     ##
     # _addLogger
@@ -489,16 +580,21 @@ snit::widgetadaptor evlogListView {
         if {$command ne ""} {
             set el [$win.t identify item $x $y]
             set data [$win.t item $el -values]
-            set def [dict create                                          \
-                daqroot [lindex $data 0]      ring [lindex $data 1] \
-                host [lindex $data 2]     \
-                destination [lindex $data 3]    container [lindex $data 4] \
-                partial [_textToBool [lindex $data 5]]                     \
-                critical [_textToBool [lindex $data 6]]                     \
-                enabled [_textToBool [lindex $data 7]]                     \
-             ]
+            set def [_valuesToDict $data]
             lappend command $item $def
             uplevel #0 $command
         }
     }
-}   
+}
+##
+# @class evlogEditorView
+#    The view of a full event logger editor.
+#
+#  OPTIONS:
+#     *  -data  - the current event log definition data from e.g
+#          eventlog::listLoggers
+#     *  -savecommand - the command to execute when it's time to save
+#          the current set of definitions.
+#
+    
+
