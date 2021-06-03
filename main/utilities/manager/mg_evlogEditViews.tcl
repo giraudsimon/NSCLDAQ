@@ -329,7 +329,7 @@ snit::widgetadaptor evlogListView {
         #  context menu:
         
         $win.t tag add item [list];         # All items.
-        $win.t tag bind item <ButtonPress-3> [mymethod _postContextMenu]
+        $win.t tag bind item <ButtonPress-3> [mymethod _postContextMenu %X %Y %x %y]
         $win.t tag add highlighted [list];  # Highlighted items.
         
         grid $win.t $win.vsb -sticky nsew
@@ -352,10 +352,25 @@ snit::widgetadaptor evlogListView {
     # @return string - "" or "X"
     proc _boolValue {d k} {
         set value [dict get $d $k]
+        
         if {$value} {
             return "X"
         } else {
-            return ""
+            return " "
+        }
+    }
+    ##
+    # _textToBool
+    #    Takes a text value and turns it into a bool
+    #
+    # @param value
+    # @return bool
+    #
+    proc _textToBool {value} {
+        if {$value eq "X"} {
+            return 1
+        } else {
+            return 0
         }
     }
     
@@ -368,8 +383,10 @@ snit::widgetadaptor evlogListView {
     # @param logger  - The dict containing the logger definition.
     #
     method _addLogger {logger} {
+        
         set values [list                                             \
-            [dict get $logger daqroot]   [dict get $logger host]     \
+            [dict get $logger daqroot]  [dict get $logger ring]      \
+            [dict get $logger host]     \
             [dict get $logger destination] [dict get $logger container] \
         ]
         lappend values [_boolValue $logger partial]
@@ -377,6 +394,29 @@ snit::widgetadaptor evlogListView {
         lappend values [_boolValue $logger enabled]
         
         $win.t insert {} end -values $values -tags [list item]
+    }
+    ##
+    # _createContextMenuIfNecessary
+    #    If the conextMenu variable is an empty string and
+    #    options(-contextmenu) is a nonempty list, create the new context
+    #    menu.  The elements of the option(-contextmenu) list are labels for
+    #    command entries in that menu and all commands route to _dispatchCommand.
+    #    which will dispatch to the user's -command script.
+    #
+    # @param x - window coordinates of pointer.
+    # @param y - window coordinates of pointer.
+    # @note the window coordinates are passed to the menu action method so that
+    #       the element the context menu was created under can be retrieved and passed
+    #       to the user's script.
+    #
+    method _createContextMenuIfNecessary {x y} {
+        if {($contextMenu eq "") && ([llength $options(-contextmenu)] > 0) } {
+            set contextMenu [menu $win.context -tearoff 0]
+            foreach item $options(-contextmenu) {
+                $contextMenu add command \
+                    -label $item -command [mymethod _dispatchMenuItem $item $x $y]
+            }
+        }
     }
     
     #----------------------------------------------------------------------
@@ -412,5 +452,53 @@ snit::widgetadaptor evlogListView {
         set contextMenu ""
     }
     
+    #-----------------------------------------------------------------------
+    # Event handling.
+    #
+    
+    ##
+    # _postContextMenu
+    #    If there's an existing context menu post it at the cursor position.
+    #    If there isn't a context menu, generate it and post it.
+    #
+    # @param x  - Root window x coordinate of pointer.
+    # @param y  - Root window y coordinate of pointer.
+    # @param wx - Window coordinates of pointer.
+    # @param wy - Window coordinates of pointer.'
+    #
+    #
+    method _postContextMenu {x y wx wy} {
+        $self _createContextMenuIfNecessary $wx $wy
+        if {$contextMenu ne ""} {
+            $contextMenu post $x $y
+        }
+    }
+    ##
+    # _dispatchMenuItem
+    #     Called when a context menu item is clicked. If the user has a
+    #     -command script the menu item label is lappended to it along with the
+    #     dict describing the item the pointer was over when the context menu
+    #     was posted and the script is called at global level.
+    #
+    # @param item  - the text of the label of the menu item clicked.k
+    # @param x     - X window Position of the item the menu was posted on.
+    # @param y     - Y Window position of the item the menu was posted on.
+    #
+    method _dispatchMenuItem {item x y} {
+        set command $options(-command)
+        if {$command ne ""} {
+            set el [$win.t identify item $x $y]
+            set data [$win.t item $el -values]
+            set def [dict create                                          \
+                daqroot [lindex $data 0]      ring [lindex $data 1] \
+                host [lindex $data 2]     \
+                destination [lindex $data 3]    container [lindex $data 4] \
+                partial [_textToBool [lindex $data 5]]                     \
+                critical [_textToBool [lindex $data 6]]                     \
+                enabled [_textToBool [lindex $data 7]]                     \
+             ]
+            lappend command $item $def
+            uplevel #0 $command
+        }
+    }
 }   
-#------------------------------------------------------------------------.l 
