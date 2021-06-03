@@ -270,7 +270,7 @@ snit::widgetadaptor evlogEditLogger {
     #
     method get {} {
         return [dict create                                          \
-            root [$win.root get]         ring [$win.source get]      \
+            daqroot [$win.root get]         ring [$win.source get]      \
             host [$win.host get]         partial $partial            \
             destination [$win.dest get]  critical $critical          \
             enabled $enabled             container [$win.cont get]  \
@@ -663,21 +663,68 @@ snit::widgetadaptor evlogEditorView {
             -command [mymethod _onContextMenu]
         install editor using evlogEditLogger $win.edit  \
             -command [mymethod _onEditSaved] \
-            -savelabel $editorSaveLabels($mode)
+            -savelabel $editorSaveLabels($mode) -containers [list ""]
         set actions [ttk::frame $win.actions -relief groove -borderwidth 3]
         ttk::button $actions.save -text Save -command [mymethod _onSave]
         ttk::button $actions.cancel -text Cancel -command [mymethod _onCancel]
         
         grid $loggerList  -sticky nsew
         grid $editor -sticky nsew
-        grid $actions.save $actions.cancel -sticky w
+        grid $actions.save $actions.cancel -sticky w -padx 5
         grid $actions -sticky nsew
+        
+        $editor load $defaultEditorValue
         
         $self configurelist $args
     }
     #---------------------------------------------------------------------------
     #   Private utilities:
     #
+    ##
+    # _checkDef
+    #   Ensure there are no blank items in a def that must have no blank items.
+    # @param def - logger definition.
+    #
+    proc _checkDef {def} {
+        
+        if {
+            ([dict get $def daqroot]   eq "")                   ||
+            ([dict get $def ring] eq "")                         ||
+            ([dict get $def host] eq "")                       ||
+            ([dict get $def destination] eq "")        
+        } {
+            error "Some items in the editor are blank that must not be."
+        }
+    }
+    
+    ##
+    # _replaceItem
+    #   Replace a definition in a list with another definitions.
+    #
+    # @param defs  - list of definitions to operate on.
+    # @param editing - Item to replace.
+    # @param newDef - What to replace it with.
+    # @return list of dicts -modified list.
+    # @note if there's no match the new item is appended to the list of defintions.
+    #
+    proc _replaceItem {defs editing newdef} {
+        set index 0
+        set replaced 0
+        foreach item $defs {
+            if {[::evLogEditViews::loggerEq $item $editing]} {
+                set defs [lreplace $defs $index $index $newdef]
+                set replaced 1
+                break
+            } else {
+                incr index
+            }
+        }
+        if {!$replaced} {
+            lappend defs $newdef
+        }
+        
+        return $defs
+    }
     
     ##
     # _startNewItem
@@ -754,5 +801,37 @@ snit::widgetadaptor evlogEditorView {
             error "BUGBUG - Context menu returned an illegal menu entry '$item'"
         }
     }
+    ##
+    # _onEditSaved
+    #    Called in response to the save button clicked in the editor.
+    #    -  Pull the definition from the editor.
+    #    -  If the mode is create append it to the current data.
+    #    -  If the mode is edit locate the item being edited.  If found,
+    #       replace it with new data.
+    #    - Regardless:
+    #      - unhighlight all list entries.
+    #      - Set the mode to create.
+    #      - Set the button label appropriately
+    #      - load the default.
+    #
+    # @param ed - Editor widget.
+    #
+    method _onEditSaved {ed} {
+        set newDef [$ed get]
+        _checkDef $newDef;       # Make sure we have all the chunks.
+        set defs [$loggerList cget -data]
+        if {$mode eq "create"} {
+            lappend defs $newDef
+            $loggerList configure -data  $defs
+        } elseif {$mode eq "edit"} {
+            set defs [_replaceItem $defs $editing $newDef]
+            $loggerList configure -data $defs
+        } else {
+            error "Invalid mode: '$mode'"
+        }
+        
+        set mode create
+        $ed load $defaultEditorValue
+        $ed configure -savelabel $editorSaveLabels($mode)
+    }
 }
-
