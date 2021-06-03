@@ -28,6 +28,29 @@ package provide evLogEditViews  1.0
 package require Tk
 package require snit
 
+namespace eval evLogEditViews {
+    ##
+    # loggerEq
+    #    @param l1 - dict defining one longger.
+    #    @param l2 - dict defining a second logger.
+    #    @return bool - true if the two loggers are functionally identical
+    #                by functionally identical we mean that only the values of
+    #                'the keys that matter' are the same.
+    #
+    proc loggerEq {l1 l2} {
+        return [expr {
+            ([dict get $l1 daqroot] eq [dict get $l2 daqroot])       &&
+            ([dict get $l1 ring]  eq [dict get $l2 ring])            &&
+            ([dict get $l1 host] eq [dict get $l2 host])            &&
+            ([dict get $l1 destination] eq [dict get $l2 destination]) &&
+            ([dict get $l1 container] eq [dict get $l2 container])    &&
+            ([dict get $l1 partial] == [dict get $l2 partial])        &&
+            ([dict get $l1 critical] == [dict get $l2 critical])      &&
+            ([dict get $l1 enabled] == [dict get $l2 enabled])
+        }]
+    }
+}
+
 
 ##
 # @class evLogEditLogger
@@ -123,7 +146,8 @@ snit::widgetadaptor evlogEditLogger {
         
     }
     #--------------------------------------------------------------------------
-    # Procs:
+    # Private utilities
+    
     #   _setEntry
     #      Set the contents of an entry.
     # @param entry - an entry widget spec.
@@ -133,6 +157,8 @@ snit::widgetadaptor evlogEditLogger {
         $entry delete 0 end
         $entry insert end $value
     }
+    
+    
     #---------------------------------------------------------------------------
     #  Configuration management
     
@@ -149,8 +175,6 @@ snit::widgetadaptor evlogEditLogger {
         $win.cont configure -values $value
         set options($optname) $value
     }
-    
-    
     
     
     #-------------------------------------------------------------------------
@@ -204,7 +228,7 @@ snit::widgetadaptor evlogEditLogger {
         #  This unloading of raw values from the dict ensures that if the dict
         # is improperly formatted the editor is not corrupted:
         
-        set root [dict get $logger root]
+        set root [dict get $logger daqroot]
         set ring [dict get $logger ring]
         set host [dict get $logger host]
         set ispartial [dict get $logger partial]
@@ -450,16 +474,7 @@ snit::widgetadaptor evlogListView {
     #                'the keys that matter' are the same.
     #
     proc _loggerEq {l1 l2} {
-        return [expr {
-            ([dict get $l1 daqroot] eq [dict get $l2 daqroot])       &&
-            ([dict get $l1 ring]  eq [dict get $l2 ring])            &&
-            ([dict get $l1 host] eq [dict get $l2 host])            &&
-            ([dict get $l1 destination] eq [dict get $l2 destination]) &&
-            ([dict get $l1 container] eq [dict get $l2 container])    &&
-            ([dict get $l1 partial] == [dict get $l2 partial])        &&
-            ([dict get $l1 critical] == [dict get $l2 critical])      &&
-            ([dict get $l1 enabled] == [dict get $l2 enabled])
-        }]
+        return [evLogEditViews::loggerEq $l1 $l2]
     }
         
     
@@ -595,6 +610,149 @@ snit::widgetadaptor evlogListView {
 #          eventlog::listLoggers
 #     *  -savecommand - the command to execute when it's time to save
 #          the current set of definitions.
+#     *  -cancelcommand - the command to ex
+#     *  -containers - list of legal containers.
 #
+# PRESENTATION:
+#   The top part is a list of the event loggers defined by -data.
+#   The bottom part is an editor that allows eventlog definitions to be
+#   added or changed.
+#   At the very bottom are "Save" and "Cancel" buttons.
+#   A context menu on the logger list provides the ability to start a new definition,
+#   initiate an edit of an existing item or delete an existing item.
+#
+snit::widgetadaptor evlogEditorView {
     
+    option -savecommand
+    option -cancelcommand
+    
+    component loggerList
+    component editor
+    
+    delegate option -data to loggerList
+    delegate option -containers to editor
+    
+    
+    # The use of the editor is modal.  It can either edit an existing
+    # item or create a new one.  The mode keeps track of what to do
+    # when the save button is clicked and has the values "create" or "edit"
+    # It also determines the label that will be given to the editor's save
+    # button.  "Create" or "Modify.
+    #
+    
+    variable mode create
+    variable editorSaveLabels -array [list      \
+        create  Create         edit  Modify      \
+    ]
+    variable editing ""
+    
+    typevariable defaultEditorValue [dict create      \
+        daqroot   [file normalize $::env(DAQROOT)]      \
+        host      [exec hostname]                     \
+        ring      ""                                 \
+        destination ""                                \
+        container   ""                               \
+        partial  0 critical 1 enabled 1              \
+    ]
+    
+    constructor {args} {
+        installhull using ttk::frame
+        
+        install loggerList using evlogListView  $win.list    \
+            -contextmenu [list New Edit Delete]    \
+            -command [mymethod _onContextMenu]
+        install editor using evlogEditLogger $win.edit  \
+            -command [mymethod _onEditSaved] \
+            -savelabel $editorSaveLabels($mode)
+        set actions [ttk::frame $win.actions -relief groove -borderwidth 3]
+        ttk::button $actions.save -text Save -command [mymethod _onSave]
+        ttk::button $actions.cancel -text Cancel -command [mymethod _onCancel]
+        
+        grid $loggerList  -sticky nsew
+        grid $editor -sticky nsew
+        grid $actions.save $actions.cancel -sticky w
+        grid $actions -sticky nsew
+        
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    #   Private utilities:
+    #
+    
+    ##
+    # _startNewItem
+    #    Begin editing a new item:
+    #    - set the edit to a default value,
+    #    - set the mode to edit.
+    #    - Set the editor save button accordingly.
+    #    - unhighlight all list entries.
+    #
+    method _startNewItem {} {
+            $editor load $defaultEditorValue
+            set mode edit
+            $editor configure -savelabel $editorSaveLabels($mode)
+            $loggerList unhighlightall
+    }
+    ##
+    # _startEdit
+    #    Begin editing an existing definition.
+    #    - highlight the entry being edited.
+    #    - set mode and editor button label appropriately.
+    #    - load the editor with the definition.
+    # @param def  - starting point of edit.
+    #
+    method _startEdit {def} {
+        set editing $def
+        $editor load $def
+        set mode edit
+        $editor configure -savelabel $editorSaveLabels($mode)
+        $loggerList unhighlightall
+        $loggerList highlight $def
+    }
+    ##
+    # _deleteItem
+    #    Delete an item (if we can find it)
+    #    - Find the item to delete in our data.
+    #    - Remove it.
+    #    - unhighlight everything.
+    #    - reset -data.
+    #
+    # @param def - definition of the item to delete.
+    # @note the editor is left alone as is the editing mode.  This has implications
+    #       on the save operation.
+    #
+    method _deleteItem {def} {
+        set newdefs [list]
+        foreach item [$loggerList cget -data] {
+            if {![::evLogEditViews::loggerEq $def $item]} {
+                lappend newdefs $item
+            }
+        }
+        $loggerList configure -data $newdefs;    #also gets rid of all highlights etc.
+    }
+    
+    
+    #--------------------------------------------------------------------------
+    #  Event handling.
+    
+    ##
+    # _onContextMenu
+    #   Called when a context menu entry has been clicked.
+    #   We use the name of the menu entry to dispatch to the specific handler.
+    #
+    #  @param item  text on the itme.
+    #  @param def   definition under the pointer when the menu was posted
+    #
+    method _onContextMenu {item def} {
+        if {$item eq "New"} {
+            $self _startNewItem 
+        } elseif {$item eq "Edit"} {
+            $self _startEdit $def
+        } elseif {$item eq "Delete"} {
+            $self _deleteItem $def
+        } else {
+            error "BUGBUG - Context menu returned an illegal menu entry '$item'"
+        }
+    }
+}
 
