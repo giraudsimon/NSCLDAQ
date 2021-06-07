@@ -666,7 +666,8 @@ snit::widgetadaptor evlogEditorView {
             -savelabel $editorSaveLabels($mode) -containers [list ""]
         set actions [ttk::frame $win.actions -relief groove -borderwidth 3]
         ttk::button $actions.save -text Save -command [mymethod _onSave]
-        ttk::button $actions.cancel -text Cancel -command [mymethod _onCancel]
+        ttk::button $actions.cancel -text Cancel \
+            -command [mymethod _onCancel]
         
         grid $loggerList  -sticky nsew
         grid $editor -sticky nsew
@@ -833,5 +834,34 @@ snit::widgetadaptor evlogEditorView {
         set mode create
         $ed load $defaultEditorValue
         $ed configure -savelabel $editorSaveLabels($mode)
+    }
+    ##
+    # _onSave
+    #   The botton Save button is clicked.   THe client's -savecommand
+    #   is called with the data from the listing as a parameter.
+    #
+    #  *  If the -savecommand value is empty, this event is ignroed.
+    #  *  The script is called at global level.
+    #
+    method _onSave {} {
+        set script $options(-savecommand)
+        if {$script ne ""} {
+            lappend script [$loggerList cget -data]
+            uplevel #0 $script
+        }
+    }
+    ##
+    # _onCancel
+    #    Script called when the cancel button is clicked. Normally,
+    #    the caller would reload the initial data in this case.
+    #
+    #   *  If the -savecommand is empty this event is ignored.
+    #   *  The script is run at the global level.
+    #
+    method _onCancel {} {
+        set script $options(-cancelcommand)
+        if {$script ne ""} {
+            uplevel #0 $script
+        }
     }
 }
