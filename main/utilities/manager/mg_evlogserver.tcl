@@ -69,6 +69,39 @@ proc _findLogger {db dest} {
     
     return $result
 }
+##
+# _requireLoggerPost
+#   Require a logger and post operation.
+#
+# @param sock - socket on which the user is requesting.
+# @return id of the specified logger
+# @retval -1 if there's a problem.  In that case the error message has
+#            already been sent to the client.
+#
+proc _requireLoggerPost  {sock} {
+    if {[GetRequestType $sock] ne  "POST"} {
+        ErrorReturn $sock "logger 'enable' operations require  a POST method"
+        return -1
+    }
+    set info [GetPostedData $sock]
+    if {![dict exists $info logger]} {
+        ErrorReturn $sock "logger 'enable' operations require a 'logger' parameter"
+        return -1
+    }
+    if {![dict exists $info user]} {
+        ErrorReturn $sock "logger 'enable operations require a 'user' parameter"
+        return -1
+    }
+    # Get the id of the logger to enable:
+    
+    set dest [dict get $info logger]
+    set id [_findLogger db $dest]
+    if {$id < 0} {
+        ErrorReturn $sock "There is no logger with a dest. '$dest'"
+    }
+    return $id
+    
+}
 
 ##
 # _enableLogger
@@ -80,32 +113,40 @@ proc _findLogger {db dest} {
 #   - Parameters must have:  user   - Who is requesting the action.
 # @param sock - socket information
 proc _enableLogger {sock} {
-    if {[GetRequestType $sock] ne  "POST"} {
-        ErrorReturn $sock "logger 'enable' operations require  a POST method"
+    set id [_requireLoggerPost $sock]
+    if {$id > 0} {
+        ::eventloggers::enableLogger db $id
+        
+        
+        Httpd_ReturnData $sock application/json [json::write object   \
+            status [json::write string OK]                            \
+            message [json::write string ""]                           \
+        ]
     }
-    set info [GetPostedData $sock]
-    if {![dict exists $info logger]} {
-        ErrorReturn $sock "logger 'enable' operations require a 'logger' parameter"
-    }
-    if {![dict exists $info user]} {
-        ErrorReturn $sock "logger 'enable operations require a 'user' parameter"
-    }
-    # Get the id of the logger to enable:
-    
-    set dest [dict get $info logger]
-    set id [_findLogger db $dest]
-    if {$id < 0} {
-        ErrorReturn $sock "There is no logger with a dest. '$dest'"
-    }
-    ::eventloggers::enableLogger db $id
-    
-    
-    Httpd_ReturnData $sock application/json [json::write object   \
-        status [json::write string OK]                            \
-        message [json::write string ""]                           \
-    ]
  }
-
+##
+# _disableLogger
+#    Disables a logger.
+#
+# @param sock - the socket on which data will be returned to the caller.
+#
+# @note the request:
+#    - Must use the POST method.
+#    - Must have a logger post field that contains the destination of the logger.
+#    - Must have a user field that contains the name of the user initiaiting
+#      the operation.
+#
+proc _disableLogger {sock} {
+    set id [_requireLoggerPost $sock]
+    if {$id > 0} {
+        ::eventloggers::disableLogger db $id
+        
+        Httpd_ReturnData $sock application/json [json::write object   \
+            status [json::write string OK]                            \
+            message [json::write string ""]                           \
+        ]
+    }
+}
 
 #-----------------------------------------------------------------------------
 #  Handler for  /Loggers domain.  We have the following
@@ -133,7 +174,7 @@ proc loggerHandler {sock suffix} {
     if {$suffix eq "/enable"} {
         _enableLogger $sock
     } elseif {$suffix eq "/disable"} {
-        ErrorReturn $sock "$suffix not implemented"
+        _disableLogger $sock
     } elseif {$suffix eq "/list"} {
         ErrorReturn $sock "$suffix not implemented"
     } elseif {$suffix eq "/start"} {
