@@ -115,7 +115,7 @@ proc _requireLoggerPost  {sock} {
 proc _enableLogger {sock} {
     set id [_requireLoggerPost $sock]
     if {$id > 0} {
-        ::eventloggers::enableLogger db $id
+        ::eventlog::enable db $id
         
         
         Httpd_ReturnData $sock application/json [json::write object   \
@@ -139,7 +139,7 @@ proc _enableLogger {sock} {
 proc _disableLogger {sock} {
     set id [_requireLoggerPost $sock]
     if {$id > 0} {
-        ::eventloggers::disableLogger db $id
+        ::eventlog::disable db $id
         
         Httpd_ReturnData $sock application/json [json::write object   \
             status [json::write string OK]                            \
@@ -147,6 +147,55 @@ proc _disableLogger {sock} {
         ]
     }
 }
+##
+# _makeInfoObject
+#   Given a definition of a logger from e.g. evnlog::listLoggers
+#   Returns a JSON encoding of that dict.
+#
+# @param l   - the logger we're encoding.
+# @return JSON encoded object representing l
+#
+proc _makeInfoObject {l} {
+    json::write object                                     \
+        id        [dict get $l id]                         \
+        daqroot [json::write string [dict get $l daqroot]] \
+        ring    [json::write string [dict get $l ring]]    \
+        host    [json::write string [dict get $l host]]    \
+        partial [dict get $l partial]                      \
+        destination [json::write string [dict get $l destination]] \
+        critical [dict get $l critical]                    \
+        enabled  [dict get $l enabled]                     \
+        container [json::write string [dict get $l container]] 
+        
+    
+}
+##
+# _listLoggers
+#    List the loggers that have been defined in the database.
+#    This insulates the caller from needing to know, or have access to the
+#    database file the logger is running from. Any body returning method can
+#    be used for service.  The result, in addition to the normal
+#    status and message bits and pieces as a loggers attribute that is a
+#    JSON array of objects that contain the logger definitions.  Each
+#    logger defintion is a JSON object with attributes named after the dict
+#    keys in the logger definition with associated values.
+#
+# @param sock - socket in communication with the client.
+#
+proc _listLoggers {sock} {
+    set info [eventlog::listLoggers db]
+    set result [list]
+    foreach item $info {
+        lappend result [_makeInfoObject $item]
+    }
+    Httpd_ReturnData $sock application/json [json::write object   \
+        status [json::write string OK]                            \
+        message [json::write string ""]                           \
+        loggers [json::write array {*}$result]
+    ]
+}
+    
+
 
 #-----------------------------------------------------------------------------
 #  Handler for  /Loggers domain.  We have the following
@@ -176,7 +225,7 @@ proc loggerHandler {sock suffix} {
     } elseif {$suffix eq "/disable"} {
         _disableLogger $sock
     } elseif {$suffix eq "/list"} {
-        ErrorReturn $sock "$suffix not implemented"
+        _listLoggers $sock
     } elseif {$suffix eq "/start"} {
         ErrorReturn $sock "$suffix not implemented"
     } elseif {$suffix eq "/stop"} {

@@ -34,7 +34,12 @@ package require sqlite3
 # eventlog::listLoggers  - List defintions of all loggers.
 # eventlog::rm           - Remove a logger from the list.
 # eventlog::enable       - Enable an individual logger.
-# eventlog::enableAll    - Enable all loggers.
+# eventlog::enableAll    - Enable all logger s.
+# eventlog::disable      - Disable a logger.
+# eventlog::disableAll   - Disable all logging
+# eventlog::enableRecording - Turn on logging.
+# eventlog::disableRecording - Turn off logging.
+# eventlog::isRecording  - Return state of recording flag.
 #
 
 
@@ -226,11 +231,81 @@ proc ::eventlog::rm {db id} {
         error "There is no event logger with the id '$id'"
     }
 }
+##
+# eventlog::enable
+#   Enable a logger given its id.
+#
+# @param db - database command.
+# @param id - id of logger to enable.
+#
+proc eventlog::enable {db id} {
+    $db eval {
+        UPDATE logger SET enabled = 1 WHERE id = $id
+    }
+    if {[$db changes] == 0} {
+        error "There is no event logger with the id '$id'"
+    }
+}
+##
+# eventlog::disable
+#  Same as above but disables:
 
-    
+proc eventlog::disable {db id} {
+    $db eval {
+        UPDATE logger SET enabled = 0 WHERE id = $id
+    }
+    if {[$db changes] == 0} {
+        error "There is no event logger with the id '$id'"
+    }
+}
+##
+# eventlog::enableAll
+#   Turn on event logging in all loggers.
+#
+# @param db - database command.
+#
+proc eventlog::enableAll {db} {
+    $db eval {
+        UPDATE logger set enabled = 1
+    }
+}
+##
+# eventlog::disableAll
+#    same as above but the loggers are all disabled.
 
+proc eventlog::disableAll {db} {
+    $db eval {
+        UPDATE logger set enabled = 0
+    }
+}
 
-    
+##
+# eventlog::enableRecording
+#   Turn on recording next run.
+#
+# @param db -  database command.
+#
+proc eventlog::enableRecording {db} {
+    $db eval {
+        UPDATE recording SET state = 1
+    }
+}
+##
+# eventlog::disableRecording
+#   Same as above but recording is turned off.
 
-
-    
+proc ::eventlog::disableRecording {db} {
+    $db eval {
+        UPDATE recording SET state = 0
+    }
+}
+##
+# eventlog::isRecording
+#   Return the recording state flag.
+# @param db - database command.
+#
+proc eventlog::isRecording {db} {
+    db eval {
+        SELECT state FROM recording LIMIT 1
+    }
+}

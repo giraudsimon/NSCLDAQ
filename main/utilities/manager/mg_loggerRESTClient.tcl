@@ -36,8 +36,9 @@ package require http
 
 namespace eval LoggerClient {
     variable base /Loggers
-    variable enable /enable
+    variable enable  /enable
     variable disable /disable
+    variable list    /list
 }
 
 
@@ -52,6 +53,8 @@ namespace eval LoggerClient {
 #
 # METHODS:
 #    enablelogger  - Enable a logger by destination.
+#    disableLogger  - Disable a logger by dest.
+#    listLoggers     - List the loggers.
 #
 snit::type LoggerRestClient {
     option -host
@@ -123,6 +126,12 @@ snit::type LoggerRestClient {
         set url [$self _makeUrl $::LoggerClient::disable]
         return [$self _post $url logger $dest]
     }
-    
+    ##
+    # listLoggers
+    #
+    method listLoggers {} {
+        set url [$self _makeUrl $::LoggerClient::list]
+        return [$self _get $url]
+    }
 }
     
