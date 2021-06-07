@@ -44,6 +44,7 @@ set ApplicationMenu [dict create                                 \
     "State Machine"     [file join $daqbin mg_stateedit]        \
     "Sequence Definition" [file join $daqbin mg_seqedit]        \
     "Key Value store"   [file join $daqbin mg_kvedit]           \
+    "Event logging"     [file join $daqbin mg_cfgEvlog]        \
 ]
 
 set ConfigurationCreator [file join $daqbin mg_mkconfig]
