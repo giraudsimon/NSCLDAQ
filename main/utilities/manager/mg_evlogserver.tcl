@@ -33,19 +33,91 @@ package require sqlite3
 package require containers
 package require sequence;   #We may force shutdown.
 package require programs
+package require eventloggers
 
 
 Url_PrefixInstall /Loggers [list loggerHandler]
 
+##
+# Note that event loggers don't have names.  However, each logger has a
+# unique destination.  We therefore identify a logger by its destination path.
+#  E.g. an event logger that logs data to /user/fox/stagearea will be
+#  identified by /user/fox/stagearea when referring to it.
+#
 
+#------------------------------------------------------------------------------
+#  Utilties:
+
+##
+# _findLogger
+#   Given a logger destination returns the id of the logger or -1 if there
+#   is no match.
+#
+# @param db - database command.
+# @param dest - logger destination to find.
+#
+proc _findLogger {db dest} {
+    set loggers [::eventlog::listLoggers $db]
+    set result -1
+    
+    foreach logger $loggers {
+        if {$dest eq [dict get $logger destination]} {
+            set result [dict get $logger id]
+            break
+        }
+    }
+    
+    return $result
+}
+
+##
+# _enableLogger
+#   Turns on a specific logger.  Note that turning on a logger that's
+#   already enabled is a no-op.
+#
+#   - method must be POST.
+#   - Parameters must have:  logger - destination of the logger.
+#   - Parameters must have:  user   - Who is requesting the action.
+# @param sock - socket information
+proc _enableLogger {sock} {
+    if {[GetRequestType $sock] ne  "POST"} {
+        ErrorReturn $sock "logger 'enable' operations require  a POST method"
+    }
+    set info [GetPostedData $sock]
+    if {![dict exists $info logger]} {
+        ErrorReturn $sock "logger 'enable' operations require a 'logger' parameter"
+    }
+    if {![dict exists $info user]} {
+        ErrorReturn $sock "logger 'enable operations require a 'user' parameter"
+    }
+    # Get the id of the logger to enable:
+    
+    set dest [dict get $info logger]
+    set id [_findLogger db $dest]
+    if {$id < 0} {
+        ErrorReturn $sock "There is no logger with a dest. '$dest'"
+    }
+    ::eventloggers::enableLogger db $id
+    
+    
+    Httpd_ReturnData $sock application/json [json::write object   \
+        status [json::write string OK]                            \
+        message [json::write string ""]                           \
+    ]
+ }
 
 
 #-----------------------------------------------------------------------------
 #  Handler for  /Loggers domain.  We have the following
+
+##
+# loggerHandler
 #  subdomains:
 #    *   enable   - enable a logger by destination.
 #    *   disable  - disable a logger by destination.
 #    *   list     - List the known loggers.
+#    *   record   - Set state of recording flag.
+#    *   recordingstate - get state of recording flag.
 #    *   start    - Start all loggers.
 #    *   stop     - Stop all loggers.
 #    *   status   - Show the status of all loggers.
@@ -59,7 +131,7 @@ Url_PrefixInstall /Loggers [list loggerHandler]
 #  HOWEVER, note that all replies have the minimal 
 proc loggerHandler {sock suffix} {
     if {$suffix eq "/enable"} {
-        ErrorReturn $sock "$suffix not implemented"
+        _enableLogger $sock
     } elseif {$suffix eq "/disable"} {
         ErrorReturn $sock "$suffix not implemented"
     } elseif {$suffix eq "/list"} {
