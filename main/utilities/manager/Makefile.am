@@ -4,7 +4,7 @@ program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl \
 	mg_kvget.tcl mg_monitorOutput.tcl mg_shutdown.tcl mg_cfgEvlog.tcl
 
 server_scripts=mg_statusserver.tcl  mg_programserver.tcl \
-	mg_kvserver.tcl
+	mg_kvserver.tcl mg_evlogserver.tcl
 
 library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_programpackage.tcl mg_programedit.tcl mg_sequencepackage.tcl  \
