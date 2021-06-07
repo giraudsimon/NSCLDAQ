@@ -99,7 +99,7 @@ snit::type evlogEditModel {
     #
     method listContainers {} {
         set containers [::container::listDefinitions $options(-database)]
-        set result [list]
+        set result [list ""];       # no container is always legal
         foreach item $containers {
             lappend result [dict get $item name]
         }

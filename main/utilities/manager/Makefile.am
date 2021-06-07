@@ -13,7 +13,7 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_pgmstatusclient.tcl mg_programstatusclientui.tcl \
 	mg_kvclient.tcl mg_kvwidgets.tcl mg_clientui.tcl mg_serverutils.tcl \
 	mg_OutputModel.tcl mg_OutputController.tcl mg_evlogpackage.tcl \
-	mg_evlogEditViews.tcl mg_evlogEditModel.tcl
+	mg_evlogEditViews.tcl mg_evlogEditModel.tcl mg_evlogEditController.tcl
 
 
 test_scripts=container.test program.test sequence.test transitions.test \
