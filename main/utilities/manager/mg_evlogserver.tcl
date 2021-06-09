@@ -70,6 +70,24 @@ proc _findLogger {db dest} {
     return $result
 }
 ##
+# _isPost
+#    Require this is a post.  POST operations also must have the user.
+# @param sock  - socket on which we're talking with the client.
+# @return bool - true if successful.
+#
+proc _isPost {sock} {
+    if {[GetRequestType $sock] ne  "POST"} {
+        ErrorReturn $sock "This operation require  a POST method"
+        return 0
+    }
+    set info [GetPostedData $sock]
+    if {![dict exists $info user]} {
+        ErrorReturn $sock "logger POST operations require a 'user' parameter"
+        return 0
+    }
+    return 1
+}
+##
 # _requireLoggerPost
 #   Require a logger and post operation.
 #
@@ -79,19 +97,16 @@ proc _findLogger {db dest} {
 #            already been sent to the client.
 #
 proc _requireLoggerPost  {sock} {
-    if {[GetRequestType $sock] ne  "POST"} {
-        ErrorReturn $sock "logger 'enable' operations require  a POST method"
+    if {![_isPost $sock]} {
         return -1
     }
+    
     set info [GetPostedData $sock]
     if {![dict exists $info logger]} {
         ErrorReturn $sock "logger 'enable' operations require a 'logger' parameter"
         return -1
     }
-    if {![dict exists $info user]} {
-        ErrorReturn $sock "logger 'enable operations require a 'user' parameter"
-        return -1
-    }
+    
     # Get the id of the logger to enable:
     
     set dest [dict get $info logger]
@@ -194,8 +209,57 @@ proc _listLoggers {sock} {
         loggers [json::write array {*}$result]
     ]
 }
-    
-
+##
+#   _setRecording
+#      Set the state of recording on or off.
+#       - Must be a POST.
+#       - Must have user parameter
+#       - Must have 'state' parameter that is an integer 0 or 1.
+#       It's perfectly legal to set the state to what it already is.
+#
+# @param sock   - socket communicating with the client.
+#
+proc _setRecording {sock} {
+    if {![_isPost $sock]} {
+         return
+    }
+    set info [GetPostedData $sock]
+    if {![dict exists $info state]} {
+         ErrorReturn $sock "/record operation must have a 'state' parameter"
+         return
+    }
+    set state [dict get $info state]
+    if {![string is integer -strict $state]} {
+         ErrorReturn $sock "/record 'state' parameter must be an integer"
+         return
+    }
+    if {$state == 1} {
+        ::eventlog::enableRecording db 
+    } elseif {$state == 0} {
+        ::eventlog::disableRecording db
+    } else {
+         ErrorReturn $sock "/record 'state' parameter must be 0|1 not $state"
+         return
+    }
+    Httpd_ReturnData $sock application/json [json::write object         \
+        status [json::write string OK] message [json::write string ""]  \
+    ]
+}
+##
+# _isRecording
+#    Returns to the client JSON with the usual status and message
+#    attributes along with state - a boolean that represents the
+#    recording state.
+#
+# @param sock   - Socket used to communicate with the client.
+#
+proc _isRecording {sock} {
+    set state [eventlog::isRecording db]
+    Httpd_ReturnData $sock application/json [json::write object      \
+        status [json::write string OK] message [json::write string ""] \
+        state $state                                                  \
+    ]
+}
 
 #-----------------------------------------------------------------------------
 #  Handler for  /Loggers domain.  We have the following
@@ -207,7 +271,7 @@ proc _listLoggers {sock} {
 #    *   disable  - disable a logger by destination.
 #    *   list     - List the known loggers.
 #    *   record   - Set state of recording flag.
-#    *   recordingstate - get state of recording flag.
+#    *   isrecording - get state of recording flag.
 #    *   start    - Start all loggers.
 #    *   stop     - Stop all loggers.
 #    *   status   - Show the status of all loggers.
@@ -226,6 +290,10 @@ proc loggerHandler {sock suffix} {
         _disableLogger $sock
     } elseif {$suffix eq "/list"} {
         _listLoggers $sock
+    } elseif {$suffix eq "/record"} {
+        _setRecording $sock
+    } elseif {$suffix eq "/isrecording"} {
+        _isRecording $sock
     } elseif {$suffix eq "/start"} {
         ErrorReturn $sock "$suffix not implemented"
     } elseif {$suffix eq "/stop"} {

@@ -39,6 +39,8 @@ namespace eval LoggerClient {
     variable enable  /enable
     variable disable /disable
     variable list    /list
+    variable record  /record
+    variable isRecording /isrecording
 }
 
 
@@ -55,6 +57,8 @@ namespace eval LoggerClient {
 #    enablelogger  - Enable a logger by destination.
 #    disableLogger  - Disable a logger by dest.
 #    listLoggers     - List the loggers.
+#    record          - Set recording state.
+#    isRecording     - Get recording state.
 #
 snit::type LoggerRestClient {
     option -host
@@ -133,5 +137,26 @@ snit::type LoggerRestClient {
         set url [$self _makeUrl $::LoggerClient::list]
         return [$self _get $url]
     }
+    ##
+    # record
+    #    set recording state
+    #
+    # @param state - boolean on/off ; new state value.
+    #
+    method record {state} {
+        set uri [$self _makeUrl $::LoggerClient::record]
+        return [$self _post $uri state $state]
+    }
+    ##
+    # isRecording
+    #   @return the recording sttae.
+    #
+    method isRecording {} {
+        set uri [$self _makeUrl $::LoggerClient::isRecording]
+        set json [$self _get $uri]
+        return [dict get $json state]
+    }
+        
+    
 }
     
