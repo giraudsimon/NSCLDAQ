@@ -100,6 +100,7 @@ listToOutPacket(uint16_t ta, const std::vector<T>& list)
     
     if (sizeof(T) == sizeof(uint32_t)) {     // VMUSB
         result.push_back(listwords+1);
+	result.push_back(0);
     } else {                                 // CCUSB
         result.push_back(listwords);  
     }
@@ -220,7 +221,8 @@ XXUSBUtil::enumerateVendorAndProduct(
             std::string serial = pDevice->getSerial();
             result.push_back({serial, pDevice});
         }
-        delete allDevices[i];
+	delete allDevices[i];
+
     }
     
     return result;
