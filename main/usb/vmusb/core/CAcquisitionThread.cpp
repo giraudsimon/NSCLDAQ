@@ -520,7 +520,13 @@ CAcquisitionThread::startDaq()
       pStack->Initialize(*m_pVme);    // INitialize daq hardware associated with the stack.
       pApp->logProgress("stack initialized");
 
+
       pStack->loadStack(*m_pVme);     // Load into VM-USB
+      // Libusb seems to need a delay before anabling the stack..
+
+      usleep(1000*1000);
+      sleep(4);
+      
       pApp->logProgress("stack loaded");
       pStack->enableStack(*m_pVme);   // Enable the trigger logic for the stack.
       pApp->logProgress("stack enabled");
