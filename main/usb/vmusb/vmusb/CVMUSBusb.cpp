@@ -550,7 +550,7 @@ CVMUSBusb::openVMUsb()
     
     // Resetting the device causes the usb device to lose its enumeration.
     // It must be found again and then reopened.
-#ift 0
+#if 0
     m_pHandle->reset();
     m_pHandle = findBySerial(m_serial.c_str());
     if (!m_pHandle) {
