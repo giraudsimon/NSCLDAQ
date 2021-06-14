@@ -43,7 +43,7 @@ CDDASStatisticsCommand::CDDASStatisticsCommand(
     CTCLInterpreter& interp, const char* command, CMyEventSegment* pSeg,
     std::vector<CMyScaler*>& scalers
 ) :
-    CTCLObjectProcessor(interp, command, TCLPLUS::kfTRUE),
+    CTCLObjectProcessor(interp, command, true),
     m_pEventSegment(pSeg), m_Scalers(scalers)
 {}
 
