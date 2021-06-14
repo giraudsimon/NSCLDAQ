@@ -515,7 +515,7 @@ XXUSBUtil::CCUSB::loadList(
     int transferred;
     int status = pDevice->bulkTransfer(
         writeEndpoint(),
-        reinterpret_cast<unsigned char*>(outList.data()), list.size()*sizeof(uint16_t),
+        reinterpret_cast<unsigned char*>(outList.data()), outList.size()*sizeof(uint16_t),
         transferred, 0
     );
     if (status < 0) {

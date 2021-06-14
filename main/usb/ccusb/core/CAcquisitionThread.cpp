@@ -482,8 +482,11 @@ CAcquisitionThread::startDaq()
       pStack->Initialize(*m_pCamac);    // INitialize daq hardware associated with the stack.
       pApp->logProgress("Stack initialized");
       pStack->loadStack(*m_pCamac);     // Load into CC-USB .. The stack knows if it is event or scaler
+      sleep(1);
+
       pApp->logProgress("Stack loaded");
       pStack->enableStack(*m_pCamac);   // Enable the trigger logic for the stack.
+      std::cerr << " Enabled\n";
       pApp->logProgress("Stack enabled");
     }
   } else {
