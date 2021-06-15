@@ -26,7 +26,9 @@ exec tclsh "$0" ${1+"$@"}
 #
 package provide eventloggers 1.0
 package require sqlite3
-
+package require programs;      # For program initiation procs.
+package require sequence;      # For output relay from programs.
+package require containers;    # For embedded containerized systems.
 ##
 # We export the following procs:
 #
@@ -41,11 +43,19 @@ package require sqlite3
 # eventlog::disableRecording - Turn off logging.
 # eventlog::isRecording  - Return state of recording flag.
 #
+# eventlog::start        - conditionally start all enabled event loggers.
+# eventlog::stop         - hard kill all running event loggers.
+#
 
 
 #  Create the namespace in which the procs live.
 
 namespace eval eventlog {
+    #
+    #   List of running loggers - each element is a logger definition dict.
+    #
+    variable runningLoggers [list]
+    
     
 }
 #------------------------------------------------------------------------------
@@ -307,5 +317,202 @@ proc ::eventlog::disableRecording {db} {
 proc eventlog::isRecording {db} {
     db eval {
         SELECT state FROM recording LIMIT 1
+    }
+}
+#-------------------------------------------------------------------------
+#  This set of bits and pieces are used to manage the running
+#  event loggers.
+#
+# Private procs:
+
+##
+# ::eventlog::_registerLogger
+#    Add a logger to the list of active loggers:
+#
+# @param def - logger definitions
+# @param fd  - file descriptor on which logger output can be read (ignored).
+#
+proc ::eventlog::_registerLogger {def fd} {
+    lappend ::eventlog::runningLoggers $def
+}
+##
+# ::eventlog::_unregisterLogger
+#    Called when a logger exits.
+#    - Remove it from the list of loggers.
+#    - If the logger was critical, force a transition to SHUTDOWN
+#
+# @param db  - database verb.
+# @param def - logger definition.
+#
+proc ::eventlog::_unregisterLogger {db def} {
+    set index [lsearch -exact $::eventlog::runningLoggers $def]
+    if {$index ne -1} {
+        set ::eventlog::runningLoggers \
+            [lreplace $::eventlog::runningLoggers $index $index]
+        $::sequence::transition $db SHUTDOWN
+    }
+}
+
+##
+# ::eventlog::_handleOutput
+#     Really we just relay this to the ouptut clients.
+#    Handles output from an event logger:
+#     @param def - logger definition.
+#     @param db  - Database command.
+#     @param fd  - File descriptor that can be read.
+#
+proc ::eventlog::_handleOutput {def $db fd} {
+    if {[eof $fd] } {
+        close $fd
+        ::eventlog::_unregisterLogger $db $def
+    } else {
+        set line [gets $fd]
+        set host [dict get $def host]
+        set dest [dict get $def destination]
+        ::sequence::_relayOutput "Event logger in $host -> $destination: $line"
+    }
+}
+
+##
+# ::eventlog::_writeLoggerScript
+#    Write a script that starts the logger - this will run either in or out
+#    of a container depending on the mode of the logger.  The script is neutral
+#    to the continerness.
+# @param def    - Logger definition.
+# @return string -name of the filename written.
+# @note the script is written in the $::container::tempdir directory and has a
+#       name of the form: eventlog_dest_host_[clock seconds]  where dest is the
+#       is the destination directory with / mapped to -
+#
+proc eventlog::_writeLoggerScript {def} {
+    set host [dict get $def host]
+    set rawdest [dict get $def destination]
+    set root   [dict get $def daqroot]
+    set ring   [dict get $def ring]
+    set partial [dict get $def partial]
+    
+    set fnamedest [string map [list / -] $rawdest]
+    set fname [file join $::container::tempdir eventlog_$fnamedest_$host_[clock seconds]]
+    set fd [open $fname w]
+    
+    puts $fd "#!/bin/bash"
+    puts $fd ". $root/daqsetup.tcl"
+    puts $fd "RECORD_DEST=$rawdest"
+    puts $fd "RECORD_SRC=$ring"
+    puts $fd "PARTIAL=$partial"
+    puts $fd
+    puts $fd [file join $root bin eventlog_wrapper]
+    
+    close $fd
+    file attributes $fnme -permissions 0744
+    return $fname
+}
+##
+# ::eventlog::_instalLogger
+#     Install the fd handler and register a logger.
+#
+# @param def - the logger definition.
+# @param fd  - fd open on the output pipe.
+#
+proc ::eventlog::_installLogger {def fd} {
+    fconfigure $fd -buffering line
+    fileevent $fd readable [list ::eventlog::_handleOutput $def $db $fd]
+    ::eventlog::_registerLogger $def $fd    
+}
+##
+# ::eventlog::_runBare
+#    Runs an event logger in the native system (with no container).
+#    - write the script
+#    - use an ssh pipe to run it in the specified system.
+#
+# @param db  - database command.
+# @param def - definition.
+#
+proc ::eventlog::_runBare {db def} {
+    set scriptPath [::eventlog::_writeLoggerScript $def]
+    set host [dict get $def host]
+    
+    set fd [open "|ssh $host $scriptPath |& cat" w+]
+    ::eventlog::_installLogger $def $fd
+}
+
+##
+# ::eventlog::_runContainerized
+#    Run a logger containerized.  Much like running a program containerized
+#    - Figure out the host and container and, if necessary, start the persistent
+#      container in the remote system.
+#    - A script is written to run the appropriate event log container in the
+#      container.
+#    - The script is fired off in the container with stdout/stderr captured
+#      here via filehandlers both to relay input and to detect logger exits.
+#
+# @param db    - Database command.
+# @param def   - logger definition. See listLoggers for a desription of this
+#                dict, however at the time this comment is being written the
+#                definition contains the following keys:
+#        - id      - Id of the logger (Primary key).
+#        - daqroot - DAQ Root directory of the logger.
+#        - ring    - URI of the data source ring buffer.
+#        - host    - Name/IP address of the host in which the logger runs.
+#        - partial - Boolean indicating if  the logger is a partial logger.
+#        - destination - Destination directory to which events are logged.
+#        - critical - Boolean that's true if the logger is critical.
+#        - enabled  - True if the logger is currenly enabled.
+#        - container- Name of the container.
+#        - container_id - Id of the container.
+#
+proc ::eventlog::_runContainerized {db def} {
+    set container [dict get $def container]
+    set host      [dict get $def host]
+    if {[list $container $host] ni [::proram::activeContainers]} {
+        :::program::_activateContainer $db $container $host
+    }
+    set scriptPath [::eventlog::_writeLoggerScript $def]
+    set fd [::container::run $container $host $scriptPath]
+    
+    ::eventlog::_installLogger $def $fd
+}
+
+
+##
+# ::eventlog::_startLogger
+#   Starts a single logger.  How this is done depends on whether or not the
+#   logger runs in a container or not.
+#
+# @param db   - database object command.
+# @param def  - Logger definition dict.  See listLoggers for a description of the
+#               dict.
+#
+proc ::eventlog::_startLogger   {db def} {
+    set containerName  [dict get $def container]
+    if {$containerName eq ""} {
+        ::eventlog::_runBare $db $def
+    } else {
+        ::eventlog::_runContainerized $db $def
+    }
+}
+
+#---------------------------------------------------------------------
+# public:
+#
+
+
+##
+# eventlog::start
+#    Conditionally starts all of the event loggers.
+#    By conditionally, we mean that an event logger is only started if:
+#    - Global recording is enabled.
+#    - The event logger itself is enabled.
+#
+# @param db - database object command.
+#
+proc eventlog::start {db} {
+    if {[eventlog::isRecording $db]} {
+        set loggers [::eventlog::listLoggers $db]
+        foreach l $loggers {
+            if {[dict get $l enabled]} {
+                ::eventlog::_startLogger $db $l
+            }
+        }
     }
 }

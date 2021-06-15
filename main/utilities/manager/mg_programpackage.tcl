@@ -359,6 +359,27 @@ proc ::program::_runBare {db def} {
     return $fd
 }
 ##
+# _activateContainer
+#
+#   Start a container that's known not to be running.
+#   whie internatl, this is a stable interface that can be invoked from other
+#   manager modules.
+#
+# @param db        - database verb
+# @param container - name of container.
+# @param host      - host in which the contaiuner must be run.
+#
+proc ::program::_activateContainer {db container host} {
+    set containerfd [container::activate $db $container $host]
+    fileevent $containerfd readable \
+        [list ::program::_handleContainerInput $container $host $containerfd]
+    lappend ::program::activeContainers $activeContainerValue
+
+    #  Delay to let the container become active:
+        
+    after 400;                   #From the contaier tests.
+}
+##
 # _runInContainer
 #    Runs a program in a container.
 #    - If the container is not running in the specified host, start it.
@@ -375,15 +396,7 @@ proc ::program::_runInContainer {db def} {
     
     set activeContainerValue [list $container $host]
     if {[lsearch -exact $::program::activeContainers $activeContainerValue] == -1} {
-    
-        set containerfd [container::activate $db $container $host]
-        fileevent $containerfd readable \
-            [list ::program::_handleContainerInput $container $host $containerfd]
-        lappend ::program::activeContainers $activeContainerValue
-    
-        #  Delay to let the container become active:
-            
-        after 400;                   #From the contaier tests.
+        ::program::_activateContainer $db $container $host
     }
     #  The container is running so we can create our command script and ask the
     #  container to run it:
