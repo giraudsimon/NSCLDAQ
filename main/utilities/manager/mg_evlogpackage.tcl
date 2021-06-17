@@ -29,6 +29,7 @@ package require sqlite3
 package require programs;      # For program initiation procs.
 package require sequence;      # For output relay from programs.
 package require containers;    # For embedded containerized systems.
+package require kvstore;       # Key value store access.
 ##
 # We export the following procs:
 #
@@ -397,9 +398,10 @@ proc eventlog::_writeLoggerScript {def} {
     
     puts $fd "#!/bin/bash"
     puts $fd ". $root/daqsetup.tcl"
-    puts $fd "RECORD_DEST=$rawdest"
-    puts $fd "RECORD_SRC=$ring"
-    puts $fd "PARTIAL=$partial"
+    puts $fd "export RECORD_DEST=$rawdest"
+    puts $fd "export RECORD_SRC=$ring"
+    puts $fd "export RECORD_PARTIAL=$partial"
+    puts $fd "export RUN_NUMBER=[kvstore::get run]"
     puts $fd
     puts $fd [file join $root bin eventlog_wrapper]
     
