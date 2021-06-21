@@ -79,13 +79,13 @@ set afterId     -1
     set command [file join $::daqbin eventlog]
     set prefix [clock format  [clock seconds] -format {%Y%b%d-%H%M%S-}]
     append command  \
-       " --source=$src --path=$dest --segmentsize=$::$SEGMENT_SIZE" \
+       " --source=$src --path=$dest --segmentsize=$::SEGMENT_SIZE" \
        " --oneshot --prefix=$prefix"
     
     # For this we can do a synchronous exec -- with ouput and error
     # relayed to our stdout:
     
-    exec $command >&@ stdout 
+    exec {*}$command >&@ stdout 
  }
  
 #------------------------------------------------------------------------
@@ -164,7 +164,7 @@ proc _finalizeRun {run} {
       (cd $current; tar czf - --dereference .) | \
       (cd $complete tar --warning=no-timestamp xzpf .) } msg]
     if {$status} {
-        puts "Failed to copy metadata for $run : $msg"
+        puts "Failed to copy metadata for $run : '$msg'"
     }
 }
     
@@ -219,7 +219,7 @@ proc _fullyLog {source destination run} {
       " --source=$source --path=$destdir --segmentsize=$::SEGMENT_SIZE " \
       " --oneshot"
    
-   set fd [open "|$command 2>@1 | cat"]
+   set fd [open "| {*}$command 2>@1 | cat"]
    fconfigure $fd -buffering line
    fileevent $fd readable [list _eventlogInput $fd $run]
    _monitorFiles $destdir
