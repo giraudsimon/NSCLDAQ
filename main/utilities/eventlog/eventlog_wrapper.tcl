@@ -99,8 +99,9 @@ set afterId     -1
 # @param dest - destination top level directory.
 #
 proc _makeTree {dest} {
-    file mkdir experiment complete
-    file mkdir experiment/current
+    file mkdir [file join $dest complete]
+    file mkdir [file join $dest experiment current]
+    
 }
 ##
 # _cleanExistingFiles
@@ -126,17 +127,19 @@ proc _cleanExistingFiles {dest} {
 #       id of the reschdule.
 #
 proc _monitorFiles {evdir} {
-    set existing [glob -nocomplain [file join $evdir run_*.evt]]
-    set current [file join $::destination current]
+ 
+    set existing [glob -nocomplain [file join $evdir run-*.evt]]
+    set current [file join $::destination experiment current]
+   
     foreach file $existing {
         set name [file tail $file]
         set linkname [file join $current $name]
         if {![file exists $linkname]} {
-            file link -symbolic $linkname $file
+            file link -symbolic $linkname $file 
         }
     }
     
-    set ::afterId [list _monitorFiles $evdir]
+    set ::afterId [after 1000  _monitorFiles $evdir]
 }
 ##
 # _finalizeRun
@@ -148,7 +151,7 @@ proc _monitorFiles {evdir} {
 proc _finalizeRun {run} {
     set complete [file join $::destination complete]
     set current  [file join $::destination experiment current]
-    set events   [file join $::destiniation experiment $run]
+    set events   [file join $::destination experiment run$run]
     
     ##
     #  Take care of the event file links - protect against no links.
@@ -160,11 +163,15 @@ proc _finalizeRun {run} {
     }
     # Everythying else must be copied via tar xzfH
     
-    set status [catch {exec sh -c \
-      (cd $current; tar czf - --dereference .) | \
-      (cd $complete tar --warning=no-timestamp xzpf .) } msg]
-    if {$status} {
-        puts "Failed to copy metadata for $run : '$msg'"
+    # If there's anything left in current it needs to be tarred ovr to the
+    # run directory.
+    set files [glob -nocomplain [file join $current *]]
+    if {[llength $files] > 0} {
+      set status [catch {exec sh -c \
+        "(cd $current; tar czf - --dereference . ) | (cd $events; tar  xzpf - --warning=no-timestamp )" } msg]
+      if {$status} {
+          puts stderr "Failed to copy metadata for run $run : '$msg'"
+      }
     }
 }
     
@@ -213,13 +220,14 @@ proc _eventlogInput {fd run} {
 proc _fullyLog {source destination run} {
    #  Figure out the eventlog command:
    
-   set destdir [file join $destination experiment $run]
+   set destdir [file join $destination experiment run$run]
+   file mkdir $destdir
    set command [file join $::daqbin  eventlog]
-   append command
+   append command \
       " --source=$source --path=$destdir --segmentsize=$::SEGMENT_SIZE " \
       " --oneshot"
    
-   set fd [open "| {*}$command 2>@1 | cat"]
+   set fd [open "| $command |& cat "]
    fconfigure $fd -buffering line
    fileevent $fd readable [list _eventlogInput $fd $run]
    _monitorFiles $destdir
@@ -244,5 +252,5 @@ if {!$partial} {
 if {$partial} {
     _multilog $source $destination 
 } else {
-    _fullylog $source $destination $run
+    _fullyLog $source $destination $runNumber
 }
