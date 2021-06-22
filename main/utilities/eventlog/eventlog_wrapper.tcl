@@ -173,6 +173,18 @@ proc _finalizeRun {run} {
           puts stderr "Failed to copy metadata for run $run : '$msg'"
       }
     }
+    #
+    #  Now close down write permissions on files in the events directory
+    #  and on the directory itself, effectively protecting the data:
+    #  Unlike the ReadoutGUI version we don't diddle permissions on the owning
+    # directories (e.g. destination, destination/experiment etc.)
+    #
+    #  This is all done most simply with an exec of chmod because
+    #  the run directory by now is possibly a tree depending on how the
+    #  associated metadata is organized by the user.
+    #
+    exec chmod -R a-w $events
+  
 }
     
 
