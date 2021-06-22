@@ -159,13 +159,14 @@ proc _finalizeRun {run} {
     #
     set links [glob -nocomplain [file join $current run-*.evt]]
     if {[llength $links] > 0} {
-        file copy {*}$links $complete
+        file copy -force {*}$links $complete
         file delete {*}$links
     }
     # Everythying else must be copied via tar xzfH
     
     # If there's anything left in current it needs to be tarred ovr to the
     # run directory.
+    exec chmod a+w $events
     set files [glob -nocomplain [file join $current *]]
     if {[llength $files] > 0} {
       set status [catch {exec sh -c \
@@ -205,7 +206,7 @@ proc _finalizeRun {run} {
 # @param run  - The run number.
 proc _eventlogInput {fd run} {
     if {[eof $fd]} {
-        close $fd
+        catch {close $fd}
         _finalizeRun $run
         after cancel $::afterId
         incr ::done
