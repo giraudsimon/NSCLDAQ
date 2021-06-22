@@ -362,7 +362,7 @@ proc ::program::_runBare {db def} {
 # _activateContainer
 #
 #   Start a container that's known not to be running.
-#   whie internatl, this is a stable interface that can be invoked from other
+#   while internal, this is a stable interface that can be invoked from other
 #   manager modules.
 #
 # @param db        - database verb
@@ -370,6 +370,7 @@ proc ::program::_runBare {db def} {
 # @param host      - host in which the contaiuner must be run.
 #
 proc ::program::_activateContainer {db container host} {
+    set activeContainerValue [list $container $host]
     set containerfd [container::activate $db $container $host]
     fileevent $containerfd readable \
         [list ::program::_handleContainerInput $container $host $containerfd]

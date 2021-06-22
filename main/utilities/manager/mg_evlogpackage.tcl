@@ -350,7 +350,14 @@ proc ::eventlog::_unregisterLogger {db def} {
     if {$index ne -1} {
         set ::eventlog::runningLoggers \
             [lreplace $::eventlog::runningLoggers $index $index]
-        $::sequence::transition $db SHUTDOWN
+        
+    }
+    if {[dict get $def critical]} {
+        set host [dict get $def host]
+        set dest [dict get $def destination]
+        ::sequence::_relayOutput "Critical logger in $host -> $dest exited."
+        ::sequence::_relayOutput "Forcing SHUTDOWN transition."
+        ::sequence::transition $db SHUTDOWN
     }
 }
 
@@ -362,15 +369,22 @@ proc ::eventlog::_unregisterLogger {db def} {
 #     @param db  - Database command.
 #     @param fd  - File descriptor that can be read.
 #
-proc ::eventlog::_handleOutput {def $db fd} {
+proc ::eventlog::_handleOutput {def db fd} {
+    
+    set host [dict get $def host]
+    set dest [dict get $def destination]
+    set status [catch {
     if {[eof $fd] } {
+        ::eventlog::Log "Event logger in $host -> $dest exited."
         close $fd
         ::eventlog::_unregisterLogger $db $def
     } else {
-        set line [gets $fd]
-        set host [dict get $def host]
-        set dest [dict get $def destination]
-        ::sequence::_relayOutput "Event logger in $host -> $destination: $line"
+        set line [gets $fd]    
+        ::eventlog::Log "Event logger in $host -> $dest :  $line"
+    }
+    } msg]
+    if {$status} {
+        eventlog::Log "Error $msg $::errorInfo"
     }
 }
 
@@ -379,13 +393,14 @@ proc ::eventlog::_handleOutput {def $db fd} {
 #    Write a script that starts the logger - this will run either in or out
 #    of a container depending on the mode of the logger.  The script is neutral
 #    to the continerness.
+# @param db     - database verb.
 # @param def    - Logger definition.
 # @return string -name of the filename written.
 # @note the script is written in the $::container::tempdir directory and has a
 #       name of the form: eventlog_dest_host_[clock seconds]  where dest is the
 #       is the destination directory with / mapped to -
 #
-proc eventlog::_writeLoggerScript {def} {
+proc eventlog::_writeLoggerScript {db def} {
     set host [dict get $def host]
     set rawdest [dict get $def destination]
     set root   [dict get $def daqroot]
@@ -393,20 +408,20 @@ proc eventlog::_writeLoggerScript {def} {
     set partial [dict get $def partial]
     
     set fnamedest [string map [list / -] $rawdest]
-    set fname [file join $::container::tempdir eventlog_$fnamedest_$host_[clock seconds]]
+    set fname [file join $::container::tempdir eventlog_${fnamedest}_${host}_[clock seconds]]
     set fd [open $fname w]
     
     puts $fd "#!/bin/bash"
-    puts $fd ". $root/daqsetup.tcl"
+    puts $fd ". $root/daqsetup.bash"
     puts $fd "export RECORD_DEST=$rawdest"
     puts $fd "export RECORD_SRC=$ring"
     puts $fd "export RECORD_PARTIAL=$partial"
-    puts $fd "export RUN_NUMBER=[kvstore::get run]"
+    puts $fd "export RUN_NUMBER=[kvstore::get $db run]"
     puts $fd
     puts $fd [file join $root bin eventlog_wrapper]
     
     close $fd
-    file attributes $fnme -permissions 0744
+    file attributes $fname -permissions 0744
     return $fname
 }
 ##
@@ -414,9 +429,10 @@ proc eventlog::_writeLoggerScript {def} {
 #     Install the fd handler and register a logger.
 #
 # @param def - the logger definition.
+# @param db  - Database verb.
 # @param fd  - fd open on the output pipe.
 #
-proc ::eventlog::_installLogger {def fd} {
+proc ::eventlog::_installLogger {def db fd} {
     fconfigure $fd -buffering line
     fileevent $fd readable [list ::eventlog::_handleOutput $def $db $fd]
     ::eventlog::_registerLogger $def $fd    
@@ -431,11 +447,11 @@ proc ::eventlog::_installLogger {def fd} {
 # @param def - definition.
 #
 proc ::eventlog::_runBare {db def} {
-    set scriptPath [::eventlog::_writeLoggerScript $def]
+    set scriptPath [::eventlog::_writeLoggerScript $db $def]
     set host [dict get $def host]
     
     set fd [open "|ssh $host $scriptPath |& cat" w+]
-    ::eventlog::_installLogger $def $fd
+    ::eventlog::_installLogger $def $db  $fd
 }
 
 ##
@@ -466,13 +482,13 @@ proc ::eventlog::_runBare {db def} {
 proc ::eventlog::_runContainerized {db def} {
     set container [dict get $def container]
     set host      [dict get $def host]
-    if {[list $container $host] ni [::proram::activeContainers]} {
+    if {[list $container $host] ni [::program::activeContainers]} {
         :::program::_activateContainer $db $container $host
     }
-    set scriptPath [::eventlog::_writeLoggerScript $def]
+    set scriptPath [::eventlog::_writeLoggerScript $db $def]
     set fd [::container::run $container $host $scriptPath]
     
-    ::eventlog::_installLogger $def $fd
+    ::eventlog::_installLogger $def $db $fd
 }
 
 
@@ -509,6 +525,7 @@ proc ::eventlog::_startLogger   {db def} {
 # @param db - database object command.
 #
 proc eventlog::start {db} {
+    
     if {[eventlog::isRecording $db]} {
         set loggers [::eventlog::listLoggers $db]
         foreach l $loggers {
@@ -517,4 +534,13 @@ proc eventlog::start {db} {
             }
         }
     }
+}
+##
+# eventlog::Log
+#    Send a message to all clients monitoring the manager's output relay.
+#
+# @param msg - the message to send.
+#
+proc ::eventlog::Log {msg} {
+    ::sequence::_relayOutput $msg
 }

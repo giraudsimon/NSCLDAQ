@@ -260,6 +260,33 @@ proc _isRecording {sock} {
         state $state                                                  \
     ]
 }
+##
+# _startAllLoggers
+#    Requests that the appropriate set of loggers start.
+#    Note that this may do nothing (e.g. if recording is disabled).
+#
+# @param sock - socket connected to the client.
+#
+proc _startAllLoggers {sock} {
+    #  Must be a POST method:
+    
+    if {![_isPost $sock]} {
+         return;
+    }
+    
+    #  Request all the loggers start:
+    
+    set status [catch {::eventlog::start db} msg]
+    if {$status} {
+        ErrorReturn $sock "Failed to start event loggers: $msg : $::errorInfo"
+        
+    } else {
+        Httpd_ReturnData $sock application/json [json::write object        \
+            status [json::write string OK] message [json::write string ""] \
+        ]
+    }
+    
+}
 
 #-----------------------------------------------------------------------------
 #  Handler for  /Loggers domain.  We have the following
@@ -295,7 +322,7 @@ proc loggerHandler {sock suffix} {
     } elseif {$suffix eq "/isrecording"} {
         _isRecording $sock
     } elseif {$suffix eq "/start"} {
-        ErrorReturn $sock "$suffix not implemented"
+        _startAllLoggers $sock
     } elseif {$suffix eq "/stop"} {
         ErrorReturn $sock "$suffix not implemented"
     } elseif {$suffix eq "/status"} {

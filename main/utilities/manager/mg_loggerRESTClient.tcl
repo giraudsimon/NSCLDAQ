@@ -41,6 +41,7 @@ namespace eval LoggerClient {
     variable list    /list
     variable record  /record
     variable isRecording /isrecording
+    variable startLoggers /start
 }
 
 
@@ -156,7 +157,14 @@ snit::type LoggerRestClient {
         set json [$self _get $uri]
         return [dict get $json state]
     }
-        
+    ##
+    # start
+    #    Starts all the loggers:
+    # @return - the json or an error if this fails.
+    method start {} {
+        set uri [$self _makeUrl $::LoggerClient::startLoggers]
+        return [$self _post $uri]
+    }
     
 }
     
