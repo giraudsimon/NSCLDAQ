@@ -397,6 +397,126 @@ snit::widgetadaptor ReadoutManagerControl {
     }
 }
 ##
+# @class RecordingGUI
+#    View for event recording status/control.  This is a checkbox.
+#    it is usually paired with a run control controller which manages the updates.
+#
+snit::widgetadaptor RecordingGUI {
+    option -recording  -default 0
+    option -command -default [list]
+    
+    delegate option -state to button
+    
+    component button
+    
+    constructor {args} {
+        installhull using ttk::frame
+        install button using \
+            ttk::checkbutton $win.state -onvalue 1 -offvalue 0 \
+            -variable [myvar options(-recording)] -text Recording \
+            -command [mymethod _dispatch]
+        pack $win.state -fill both -expand 1
+    }
+    ##
+    # _dispatch
+    #   Dispatch the user's command with the state of the checkbutton as
+    #  a parameter.
+    method _dispatch {} {
+        set command $options(-command)
+        if {$command ne ""} {
+            lappend command $options(-state)
+            uplevel #0 $command
+        }
+    }
+
+}
+##
+# @class RecordingController
+#    Interacts with the outside world to handle managing the recording state.
+#  OPTIONS:
+#    -view   - The RecordingGUI we're managing
+#    -kvmodel  - kvstore client.
+#    -statemodel - Sequencer/state model.
+#  METHODS:
+#     update - Update the state of the UI.
+#  ACTIONS:
+#     - Checkbutton changes control the recording state.
+#     - State changes can have effect:
+#       *  To BEGIN - deactivates the button.
+#       *  out of BEGIN - if recording is active, increments the run from
+#          what is was when BEGIN occured (this works with multiple clients I think).
+#
+#
+snit::type RecordingController {
+    option -view       -readonly 1
+    option -kvmodel    -readonly 1
+    option -statemodel -readonly 1
+    option -recordingmodel -readonly 1
+    
+    variable LastState *unknown*
+    variable LastRun   0
+    
+    constructor args {
+        $self configurelist $args
+        
+        $options(-view) configure -command [mymethod _onButton]
+        
+        # update will update the GUI and variables properly.
+        
+        $self update
+    }
+    
+    #-------------------------------------------------------------
+    # Public methods
+    
+    ##
+    # update
+    #   Should be periodically called to refresh both the internal state
+    #   the kvmodel and the view.
+    #
+    method update {} {
+        
+        # Handle state changes:
+        
+        set state [$options(-statemodel) currentState]
+        set recording [$options(-view) cget -recording]
+        
+        # Transitioning into BEGIN?
+        
+        if {($LastState ne "BEGIN") && ($state eq "BEGIN")} {
+            set LastRun [$options(-kvmodel) getValue run]
+            $options(-view) configure -state disabled
+        } elseif {($LastState eq "BEGIN" ) && ($state ne "BEGIN")} {
+            # Transition out of active.
+            
+            if {$recording} {
+                incr LastRun
+                $options(-kvmodel) setValue run $LastRun
+                $options(-view) configure -state normal
+            }
+        }
+    
+        set LastState $state
+        
+        # Update the checkbutton
+        
+        $options(-view) configure -recording $recording
+        
+    }
+    #------------------------------------------------------------------
+    # Event Handling
+    
+    ##
+    # _onButton
+    #    Called when the requested state of the checkbutton changes.
+    #
+    method _onButton {state} {
+        $options(-recordingmodel) record $state
+    }
+}
+    
+
+##
 # @class RunControlGUI
 #   This is the view for the run control.  It consists of a top part that is a
 #    ReadoutManagerControl and a bottom part that is a ttk::notebook.
@@ -414,6 +534,7 @@ snit::widgetadaptor RunControlGUI {
     component controls
     component notebook
     component summary
+    component recording
     
     ## ReadoutManagerControls options:
     
@@ -451,12 +572,13 @@ snit::widgetadaptor RunControlGUI {
         installhull using ttk::frame
         
         install controls using ReadoutManagerControl $win.controls
+        install recording using RecordingGUI $win.recording
         install notebook using ttk::notebook $win.notebook
         install summary using ReadoutStateTable $notebook.summary
         $notebook add $summary -text summary
         
-        grid $controls -sticky nsew
-        grid $notebook -sticky nsew
+        grid $controls $recording -sticky nsew
+        grid $notebook -sticky nsew -columnspan 2
         
         
         
@@ -465,6 +587,14 @@ snit::widgetadaptor RunControlGUI {
     
     #--------------------------------------------------------------------------
     #  Public methods.
+    
+    ##
+    # getRecording
+    #    Retrieve the recording widget
+    #
+    method getRecording {} {
+        return $recording
+    }
     
     ##
     # updateStatistics
