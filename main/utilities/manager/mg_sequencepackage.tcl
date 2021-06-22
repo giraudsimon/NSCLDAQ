@@ -83,6 +83,7 @@ package require portAllocator
 # ::sequence::runSequence   - Runs a sequence (normally done by
 #                             ::sequence::transition this entry supports testing too).
 # ::sequence::addMonitor - Adds a monitor for a program.
+# ::sequence::getCurrentTransition - return active transition manager.
 #
 #  What is a monitor:
 #    A monitor is a command ensemble with the following subcommands:
@@ -1475,7 +1476,7 @@ proc ::sequence::transition {db transition {endscript {}}} {
     #
     if {$::sequence::currentTransitionManager ne ""} {
         catch {$::sequence::currentTransitionManager abort;}
-        catch {$::sequence::currentTransitionManage destroy}
+        catch {$::sequence::currentTransitionManager destroy}
         set ::sequence::currentTransitionManager [list]
     }
     
@@ -1510,4 +1511,14 @@ proc ::sequence::transition {db transition {endscript {}}} {
     $::sequence::currentTransitionManager start
     
     return 0
+}
+##
+# ::sequence::getCurrentTransition
+#   Returns the current transition manager.
+#
+# @return sequence::TransitionManager object command ensemble name
+# @retval [list]    - No transition is in progress.
+#
+proc ::sequence::getCurrentTransition { } {
+    return $::sequence::currentTransitionManager
 }

@@ -337,6 +337,31 @@ proc ::eventlog::_registerLogger {def fd} {
     lappend ::eventlog::runningLoggers $def
 }
 ##
+# ::eventlog::_exitForbidden
+#    Determine if the exit of a critical event logger is a bad thing:
+#
+# It's bad for one to exit if:
+#   - The state is BEGIN and there's not a current transition to
+#     any other state (event log exited with run in progress)
+#   - The current transition is BEGIN (event log exited as it started up)
+#
+# @param db   - database handle
+# @return bool - true if the event loggers should not really be exiting.
+#
+proc ::eventlog::_exitForbidden {db} {
+    set transition [::sequence::getCurrentTransition]
+    set state       [::sequence::currentState $db]
+    
+    if {($state eq "BEGIN") && ($transition eq "")} {
+        return 1
+    }
+    if {($transition ne "") && ([$transition cget -type] eq "BEGIN")} {
+        return 1
+    }
+    return 0
+}
+
+##
 # ::eventlog::_unregisterLogger
 #    Called when a logger exits.
 #    - Remove it from the list of loggers.
@@ -352,7 +377,10 @@ proc ::eventlog::_unregisterLogger {db def} {
             [lreplace $::eventlog::runningLoggers $index $index]
         
     }
-    if {[dict get $def critical]} {
+    # Since all event loggers are transitory,
+    # we need to know if it's actually ok that one exited.
+    
+    if {[dict get $def critical] && [::eventlog::_exitForbidden $db]} {
         set host [dict get $def host]
         set dest [dict get $def destination]
         ::sequence::_relayOutput "Critical logger in $host -> $dest exited."
