@@ -60,6 +60,7 @@ namespace eval LoggerClient {
 #    listLoggers     - List the loggers.
 #    record          - Set recording state.
 #    isRecording     - Get recording state.
+#    start           - Start all loggers that should start.
 #
 snit::type LoggerRestClient {
     option -host
