@@ -78,6 +78,7 @@ set afterId     -1
  proc _multilog {src dest} {
     set command [file join $::daqbin eventlog]
     set prefix [clock format  [clock seconds] -format {%Y%b%d-%H%M%S-}]
+    append prefix run
     append command  \
        " --source=$src --path=$dest --segmentsize=$::SEGMENT_SIZE" \
        " --oneshot --prefix=$prefix"
