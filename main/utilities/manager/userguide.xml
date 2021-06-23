@@ -25,14 +25,801 @@
         remainder of the presentation.
        </para>
     </listitem>
-
+    <listitem>
+       <para>
+          <link linkend='sec.mgr.config' endterm='sec.mgr.config.title' />
+          Describes the objects the DAQ manager controls and how to configure
+          them.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          <link linkend='sec.mgr.running' endterm='sec.mgr.running.title' />
+          Describes how to run the manager and how to run an experiment using
+          the manager.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          <link linkend='sec.mgr.readout' endterm='sec.mgr.readout.title' />
+          Describes what you need to do to prepare your NSCLDAQ Readout programs
+          to run under control of the manager.  Reference material describes
+          the REST protocol non NSCLDAQ Readout programs must implement to
+          participate in experiments run by the manager.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          <link linkend='sec.mgr.eventbuilder' endterm='sec.mgr.eventbuilder.title' />
+          Describes how to use the NSCLDAQ event builder with the manager.
+       </para>
+    </listitem>
    </itemizedlist>
   <section id='sec.mgr.intro'>
       <title id='sec.mgr.intro.title'>Introduction</title>
       <para>
+        The NSCLDAQ experiment manager, or <firstterm>manager</firstterm> as
+        we'll call it in the remainder of this document, is a persistent server
+        that can manage the persistent software in an experiment.  Below,
+        the term <firstterm>advertised</firstterm>, in the context of network
+        services means that these services are registered with the
+        NSCLDAQ port manager.
+      </para>
+      <para>
+        The manager uses a configuration database, stored in an SQLite3 database
+        file to drive its actions.  It provides an advertised REST interface
+        that allows local or remote clients to interact with it at run time.
+        It also provides an advertised port which allows clients to monitor
+        the output and error streams of programs run by the manager.
+      </para>
+      <para>
+        The use of ports advertised with the port manager allows the manager
+        to be identified by clients by supplying the host in which the manager
+        is running and the user that started it.
+      </para>
+      <para>
+        In an experiment that uses the manager, the life cycle of its use looks
+        a bit like this:
+      </para>
+      <itemizedlist>
+        <listitem>
+           <para>
+              Create and populate a configuration database that describes the
+              entities the manager will control.  Several GUI based tools are
+              provided to support this process, and a well defined API exists
+              to support the creation of additional tools.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+               As the experiment begins, select a system in which the manager
+               is run and start it up.  The only information you have to pass
+               to the manager is the location of its configuration database.
+               The manager will run for the
+               duration of the experiment.  Command line tools support starting
+               the experiment and shutting it down.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Use GUI clients to interact with the manager during the run.
+              Typically these clients will include ouput monitors, and run
+              control panels, as well as optional event builder statistics monitors
+           </para>
+           <para>
+            The clients are written to allow more than one instance of each
+            control panel to run at any time allowing the experiment to be
+            controlled from e.g. within the vaults for setup and testing and
+            out in the counting areas when running with beam.
+           </para>
+        </listitem>
+      </itemizedlist>
+      <para>
+        Note that the manager has been written to understand singularity containers
+        and to start them as needed to run persistent software within containers.
+        More about that in
+        <link linkend='sec.mgr.config' endterm='sec.mgr.config.title' />.
       </para>
    </section>
+  <section id='sec.mgr.config'>
+     <title id='sec.mgr.config.title'>Managed Objects and Configuration</title>
+     <para>
+      This section describes the objects the manager understands and the
+      tools available to configure the manager.
+     </para>
+     <para>
+      The remainder of this section describes:
+     </para>
+     <itemizedlist>
+      <listitem>
+         <para>
+            How to create an initial, empty configuration database file. 
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Singularity container definitions and how to add them to the
+            configuration database.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Program definitions and how to add and edit them in the configuration
+            database.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Sequences, how to add them and specify their triggers as well as
+            how to configure the steps in a sequence.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Event loggers, the types of event loggers supported and how to
+            add them to the experiment configuration.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            The key value store and how to add/modify values to it. 
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            User and roles and how to configure them.
+         </para>
+      </listitem>
+     </itemizedlist>
+     <section>
+        <title>Creating a New Configuration Database.</title>
+        <para>
+          The manager relies on an SQLite3 database file for its configuration.
+          SQLite3 database files contain, in addition to data, schema definitions
+          that describe the structure of the database and relationships between
+          database tables.  Furthermore, Some tables are populated with an initial
+          set of values.
+        </para>
+        <para>
+          The
+          <link linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />
+          command creates manager configuration database files with the correct
+          schema and an initial set of data.  
+        </para>
+        <para>
+          The <command>mk_config</command> command can be run on an existing
+          database.  It will not ovewrite existing data.   In the event future
+          manager configuration databases use a different schema, this program
+          will also support converting an existing database to one acceptable
+          to the newer NSCLDAQ version.
+        </para>
+     </section>
+     <section>
+        <title>Singularity Containers and the Manager</title>
+        <para>
+          At the FRIB there are conflicts between wanting to keep systems up to
+          date while maintaining a stable environment on which the DAQ system
+          can run.   We're helped by the fact that we have kept kernel mode
+          code to a bare minimum.  This makes NSCLDAQ, for the most part,
+          dependent only on the user mode libraries and utilities.
+        </para>
+        <para>
+          Singularity containers provide a convenient technology that encapsulates
+          the user mode run-time of a version of Linux in a single file (a
+          container image) and the ability to swap out the chunks of the native
+          file system that contain user mode libraries and utilities with the
+          environment captured by the container image.
+        </para>
+        <para>
+          The DAQ manager can launch applications either in a native environment
+          or in a containerized environment chosen by the user.  In practice,
+          the NSCLDAQ team has provided suitable container images and has also
+          made these container images and associated <filename>/usr/opt</filename>
+          directory tree tarballs available at <ulink url='https://sf.net' />
+          in the nscldaq project.
+        </para>
+        <para>
+          The <command>$DAQBIN/mg_cfgcontainers</command> utility allows you to
+          define and name containers and the bindings they have with the
+          native filesystem.  You can also launch this program by double clicking
+          <literal>Containers</literal> from the list of configuration utilities
+          displayed by <command>$DAQBIN/mg_config</command>.  Bot of these
+          programs require a single argument, the path of the configuration database
+          file.
+          For reference information about these programs see:
+          <link linkend='daq1.mg_cfgcontainers' endterm='daq1.mg_cfgcontainers.title' />
+          and
+          <link linkend='daq1.mg_config' endterm='daq1.mg_config.title' />.
+        </para>
+        <para>
+            The top level window of this program is a list of container names on the
+            left side and a list of filesystem bindings on the right. Clicking
+            a container name populates the bindings list box with the bindings
+            for the seleted container.  
+          </para>
+          <para>
+            Clicking the <guibutton>Init Script..</guibutton> button displays the
+            initialization script for the container.  The initialization script is
+            a script that is run prior to running every program in the container.
+            It allows you to perform common environment setup operations (e.g.
+            sourcing the correct <filename>daqconfig.bash</filename> file).
+            The <emphasis>contents</emphasis> of the configuration file are
+            stored in the database so that the initialization script is stable
+            under edits to the original file.
+          </para>
+          <para>
+            The <guibutton>New...</guibutton> and <guibutton>Edit...</guibutton>
+            bring up a dialog that allows you to define a container.  The
+            only difference between the two buttons is that <guibutton>Edit...</guibutton>
+            pre-populates the dialog with the definition of the selected container.
+            You can use this dialog to set the container image file, add/remove
+            bindings, set the container name, and pull in the contents of
+            an initialization script.
+          </para>
+          <para>
+             When the <guibutton>Ok</guibutton> button is clicked, the definition
+             is saved.  If <guibutton>Cancel</guibutton> is clicked, the
+             definition is discarded.  
+          </para>
+          <para>
+            When the dialog is brought up with
+             <guibutton>Edit...</guibutton> <guibutton>Cancel</guibutton> retains
+             the old definition.  Furthermore if <guibutton>Ok</guibutton> is clicked
+             but you change the name of the container, a new container defintion
+             is created using that name.  This allows you to create a new
+             container definition beginning with the definition of an existing
+             container as a starting point.
+          </para>
+          <para>
+            When the dialog is brought up with the <guibutton>New...</guibutton>,
+            <guibutton>Cancel</guibutton> makes no changes to the database,
+            <guibutton>Ok</guibutton> saves the new container definition.
+            Take care not to duplicate the name of an existing container.
+          </para>
+          <para>
+            Note that the <guibutton>Ok</guibutton> button directly modifies
+            the database.  This is why there is no <guibutton>Save</guibutton>
+            button on the main window.
+          </para>
+     </section>
+     <section>
+        <title>Program Definitions</title>
+        <para>
+          Programs are the entities that make up the bulk of the persistent
+          part of an NSCLDAQ experiment.  Programs can be run <firstterm>bare</firstterm>
+          or <firstterm>containerized</firstterm>.   A program consists of
+          the following elements:
+        </para>
+        <variablelist>
+          <varlistentry>
+             <term>Name</term>
+             <listitem>
+                 <para>
+                  A unique name that identifies the program.  This name is referred
+                  to when inserting the program into the steps of a sequence
+                  (don't worry too much about what that means until you've
+                  read about sequences).
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Program File</term>
+             <listitem>
+                 <para>
+                  This is the thing that's actually run.  Note that if the
+                  program is run containerized, this file path must be expressed
+                  in the filesystem seen from within the container, not the
+                  host filesystem.  Furthermore, a consequence of this is that
+                  only files visible within the container can successfully launch.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Host</term>
+             <listitem>
+                 <para>
+                  The name of a system in which the program will be run.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Container</term>
+             <listitem>
+                 <para>
+                  If non-empty, this is the name of a container in which the
+                  program will be run.  The manager will take care of launching
+                  that container in the required host when the program is run,
+                  and then arrange for the program to be run inside that containerized
+                  environment.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Working Directory</term>
+             <listitem>
+                 <para>
+                  The working directory in which the program runs. Once more,
+                  if the program is containerized, this must be expressed in terms
+                  of the filesystem as it's seen within the container.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Type</term>
+             <listitem>
+                 <para>
+                  There are three program types:
+                  <literal>Transitory</literal> programs are launched, and
+                  are expected to exit, having performed their task.  An example
+                  of a transitory program might be programs that set the run number
+                  for a Readout program as part of a sequence that's triggered
+                  on a <literal>BEGIN</literal> transition.
+                  
+               </para>
+              <para>
+                  <literal>Persistent</literal> programs are programs that are
+                  intended to run continuously but won't make data taking fail
+                  if they exit.  For example, while a persistent SpecTcl is not
+                  expected to fail, an error in the user specific code may cause
+                  it to fail.  However halting data taking is not required if
+                  that happens.
+              </para>
+              <para>
+                <literal>Critical</literal> programs are persistent programs that
+                are essential
+                to data taking.  For example a Readout program.  If a critical
+                program exits, the manager forces the system to <literal>SHUTDOWN</literal>
+                until corrective action can be taken.
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Options</term>
+             <listitem>
+                 <para>
+                  These are  program options that are supplied to the program
+                  on the command line.  These normally have values (but are
+                  not required to have them).  For example an NSCLDAQ Readout
+                  program may require the <option>--ring</option> option to specify
+                  the name of the ringbuffer into which it will put its data.
+               </para>
+              <para>
+                Any number of program options can be specified.
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Parameters</term>
+             <listitem>
+                 <para>
+                  These are just command line parameters.  For example, the
+                  program that can feed a Readout the run number needs to know
+                  the host and user running the manager and the name of the Readout
+                  program.  These are fed as command line parameters.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Environment</term>
+             <listitem>
+                 <para>
+                  These are environment variables the program may require.
+                  Note that for containerized programs, consider definiting these
+                   in the container's initialization file if they are common
+                   across many programs.
+               </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para>
+          The <command>mg_cfgprogram</command> utility allows you to create new
+          program definitions and edit existing ones.  There is no support for
+          deleting a program definitions, but unused program definitions are
+          harmless.
+          Reference information about <command>mg_cfgprogram</command> is
+          available at
+          <link linkend='daq1.mg_cfgprogram' endterm='daq1.mg_cfgprogram.title' />
+        </para>
+        <para>
+            The main window of this editor is a table listing the programs that are
+            currently defined.  The program name, program file, host and container
+            of all defined programs are shown in this table.  If the Container
+            column is empty for a program it is run natively in the specified host.
+            Note, as you might expect, for containerized applications, the
+            program file is the path to the program as it appears in the container
+            file system.  Not the host filesystem.
+          </para>
+          <para>
+            CLicking the <guibutton>New..</guibutton> button or double clicking
+            on a program in the table, brings up an editor window.  The only
+            difference between the two methods to bring up this window are that
+            double clicking a program will load that program into the editor
+            window.
+          </para>
+          <para>
+            For the most part the editor window is straightforward, the Name
+            of the program must be a unique name.  The program file
+            <guibutton>Browse...</guibutton> button allows you to browse for
+            the program file.  This browses in the filesystem in effect at the
+            time the editor is being run.  If, for example, you are running the
+            editor natively but the program will be containerized,
+            you may need to modify the final path selected by hand to match
+            what the container sees.  The Container <guibutton>Browse...</guibutton>
+            buttons allows you to select from the list of defined containers in
+            which the program can run.
+          </para>
+          <para>
+            A <literal>Type</literal> radio button group allows you to specify
+            the program type.
+          </para>
+          <para>
+            The <literal>Program Options</literal> listbox shows the options
+            that are defined for the program.  To add a new option,
+            enter the option namme (e.g. <literal>--ring</literal>) and
+            option value (e.g. <literal>fox</literal>) in the Name and Value
+            entry text boxes and click the <guibutton>New</guibutton> button.
+            To remove an option  click it in the list, this also supports
+            editing the option as the name/value pair are loaded into the
+            corresponding entries where they can be edited and recreated.
+            This bit of mechanics is the same for all of the editor elements
+            described below.
+          </para>
+          <para>
+            Similarly, the <literal>Program Parameters</literal> listbox
+            shows parameters that are passed to the program.  You can think of
+            parameters as options with no value.  However, the program parameters
+            are passed to the program <emphasis>after</emphasis> the program's
+            options.   Create a new parameter by entering its value and clicking
+            the <guibutton>New</guibutton> button below it.  Delete or edit
+            by clicking it in the list.  Note that often parameters are positional
+            and you must take care of that when editing.
+          </para>
+          <para>
+            The <literal>Program Environment</literal> define environment
+            variables that will be defined when the program executes.
+            Editing these is identical to editing <literal>Program Options:</literal>
+          </para>
+          <para>
+            Clicking <guibutton>OK</guibutton> saves the definition in the database
+            and refreshes the list of programs in the main window.
+            Clicking <guibutton>Cancel</guibutton> closes the editor window
+            without making any changes
+          </para>
+          
+     </section>
+     <section>
+        <title>States, Sequences, Sequence Triggers, and Steps</title>
+        <para>
+        </para>
+     </section>
+     <section>
+        <title>Event Logging and the Manager</title>
+        <para>
+        </para>
+     </section>
+     <section>
+        <title>The Key Value Store</title>
+        <para>
+        </para>
+     </section>
+     <section>
+        <title>User and Roles</title>
+        <para>
+        </para>
+     </section>
+  </section>
+  <section id='sec.mgr.running'>
+     <title id='sec.mgr.running.title'>Running an Experiment With The Manager</title>
+     <para>
+     </para>
+  </section>
+  <section id='sec.mgr.readout'>
+     <title id='sec.mgr.readout.title'>Running Readout Software With the Manager</title>
+     <para>
+     </para>
+  </section>
+  <section id='sec.mgr.eventbuilder'>
+     <title id='sec.mgr.eventbuilder.title'>Using the NSCLDAQ Event Builder With the Manager</title>
+     <para>
+     </para>
+  </section>
 </chapter>
 <!-- /chapter -->
 
+<!-- manpage 1daq -->
+<refentry id='daq1.mg_mkconfig'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_mkconfig.title'>mg_mkconfig</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_mkconfig</refname>
+      <refpurpose>Create NSCLDAQ Manager ConfigurationDatabase</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+        <command>
+$DAQBIN/mg_mkconfig <replaceable>config-file</replaceable>
+        </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Creates an NSCLDAQ manager configuration database file into the named
+            <filename>config-file</filename>.  The command creates all of the
+            tables, indices and other schema elements required by the manager
+            as well stocking initial values into the database tables.
+          </para>
+          <para>
+            It is safe to run the command on an existing database and, if the
+            schema change, that is the recommended way to convert an older
+            database file to more recent version. 
+          </para>
+          <para>
+            Iit is also safe to run the command on an existing database file that
+            does not have a conflicting schema providing support to extend configuration
+            databases to contain experiment metadata the manager is blind to.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <informalexample>
+        <programlisting>
+$DAQBIN/mg_mkconfig e2022-config.db
+        </programlisting>
+      </informalexample>
+      <para>
+        Creates a manager configuration database file into
+        <filename>e2022-config.db</filename> in the current workingdirectory.
+      </para>
+    </refsect1>
+</refentry>
+<refentry id='daq1.mg_config'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_config.title'>mg_config</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_config</refname>
+      <refpurpose>Launcher for all manager configuration editors.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+        <command>
+$DAQBIN/mg_config <replaceable>configuration-file</replaceable>
+        </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Launches program that can, in turn, launch the configuration
+            GUI tools for the NSCLDAQ manager subsystem.  The user interface
+            consists primarily of a listbox. Double clicking an entry in the
+            list launches the corresponding configuration utility:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  <literal>Users and Roles</literal>  launches the
+                  configuration editor for the authorization subsystem.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>Containers</literal>  launches the configuration
+                  editor for container definitions
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>Programs</literal> launches the program configuration
+                  editor.
+               </para> 
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>Event logging</literal>  launches the event log editor.
+                  Event loggers are a special type of program given their
+                  need to be transient but potentially critical.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>State Machine</literal> launches a state machine editor.
+                  In most applications you will not need this editor, as the
+                  database is pre-populated with the state machine appropriate
+                  for NSCLDAQ.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>Sequence Definition</literal>  launches the sequence
+                  editor that provides the capability to create sequences
+                  that are triggered by state transitions and the steps performed
+                  by those sequences.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <literal>Key Value store</literal>  launches an editor that
+                  allows you to create and delete keys in the key value store
+                  as well as to modify the values of existing keys.  Be very
+                  careful when deleting keys as steps in sequences may depend
+                  on the values of some of those keys.  For example the
+                  <literal>run</literal> and <literal>title</literal> keys
+                  are typically used to set the run number and title for
+                  Readout programs that are NSCLDAQ compatible.
+               </para>
+            </listitem>
+          </itemizedlist>
+    </refsect1>
+</refentry>
 
+<refentry id='daq1.mg_cfgcontainers'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_cfgcontainers.title'>mg_cfgcontainers</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_cfgcontainers</refname>
+      <refpurpose>Configure the containers known to the NSCLDAQ manager</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_cfgcontainers <replaceable>config-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Graphical user interface to configure container definitions for
+            the NSCLDAQ manager subsystem.
+            <filename>config-file</filename> is the path to the configuration
+            database file.
+          </para>
+          <para>
+            The top level window of this program is a list of container names on the
+            left side and a list of filesystem bindings on the right. Clicking
+            a container name populates the bindings list box with the bindings
+            for the seleted container.  
+          </para>
+          <para>
+            Clicking the <guibutton>Init Script..</guibutton> button displays the
+            initialization script for the container.  The initialization script is
+            a script that is run prior to running every program in the container.
+            It allows you to perform common environment setup operations (e.g.
+            sourcing the correct <filename>daqconfig.bash</filename> file).
+            The <emphasis>contents</emphasis> of the configuration file are
+            stored in the database so that the initialization script is stable
+            under edits to the original file.
+          </para>
+          <para>
+            The <guibutton>New...</guibutton> and <guibutton>Edit...</guibutton>
+            bring up a dialog that allows you to define a container.  The
+            only difference between the two buttons is that <guibutton>Edit...</guibutton>
+            pre-populates the dialog with the definition of the selected container.
+            You can use this dialog to set the container image file, add/remove
+            bindings, set the container name, and pull in the contents of
+            an initialization script.
+          </para>
+          <para>
+             When the <guibutton>Ok</guibutton> button is clicked, the definition
+             is saved.  If <guibutton>Cancel</guibutton> is clicked, the
+             definition is discarded.  
+          </para>
+          <para>
+            When the dialog is brought up with
+             <guibutton>Edit...</guibutton> <guibutton>Cancel</guibutton> retains
+             the old definition.  Furthermore if <guibutton>Ok</guibutton> is clicked
+             but you change the name of the container, a new container defintion
+             is created using that name.  This allows you to create a new
+             container definition beginning with the definition of an existing
+             container as a starting point.
+          </para>
+          <para>
+            When the dialog is brought up with the <guibutton>New...</guibutton>,
+            <guibutton>Cancel</guibutton> makes no changes to the database,
+            <guibutton>Ok</guibutton> saves the new container definition.
+            Take care not to duplicate the name of an existing container.
+          </para>
+          <para>
+            Note that the <guibutton>Ok</guibutton> button directly modifies
+            the database.  This is why there is no <guibutton>Save</guibutton>
+            button on the main window.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.mg_cfgprogram'>
+   <refmeta>
+      <refentrytitle  id='daq1.mg_cfgprogram.title'>mg_cfgprogram</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_cfgprogram</refname>
+      <refpurpose>Configure manager program definitions</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_cfgprogram <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <command>mg_cfgprogram</command> is a utility that supports editing
+            DAQ manager program definitions.
+            The <filename>configuration-file</filename> command line parameter
+            is the path of the configuration database file that will be edited.
+          </para>
+          <para>
+            The main window of this editor is a table listing the programs that are
+            currently defined.  The program name, program file, host and container
+            of all defined programs are shown in this table.  If the Container
+            column is empty for a program it is run natively in the specified host.
+            Note, as you might expect, for containerized applications, the
+            program file is the path to the program as it appears in the container
+            file system.  Not the host filesystem.
+          </para>
+          <para>
+            CLicking the <guibutton>New..</guibutton> button or double clicking
+            on a program in the table, brings up an editor window.  The only
+            difference between the two methods to bring up this window are that
+            double clicking a program will load that program into the editor
+            window.
+          </para>
+          <para>
+            For the most part the editor window is straightforward, the Name
+            of the program must be a unique name.  The program file
+            <guibutton>Browse...</guibutton> button allows you to browse for
+            the program file.  This browses in the filesystem in effect at the
+            time the editor is being run.  If, for example, you are running the
+            editor natively but the program will be containerized,
+            you may need to modify the final path selected by hand to match
+            what the container sees.  The Container <guibutton>Browse...</guibutton>
+            buttons allows you to select from the list of defined containers in
+            which the program can run.
+          </para>
+          <para>
+            A <literal>Type</literal> radio button group allows you to specify
+            the program type.
+          </para>
+          <para>
+            The <literal>Program Options</literal> listbox shows the options
+            that are defined for the program.  To add a new option,
+            enter the option namme (e.g. <literal>--ring</literal>) and
+            option value (e.g. <literal>fox</literal>) in the Name and Value
+            entry text boxes and click the <guibutton>New</guibutton> button.
+            To remove an option  click it in the list, this also supports
+            editing the option as the name/value pair are loaded into the
+            corresponding entries where they can be edited and recreated.
+            This bit of mechanics is the same for all of the editor elements
+            described below.
+          </para>
+          <para>
+            Similarly, the <literal>Program Parameters</literal> listbox
+            shows parameters that are passed to the program.  You can think of
+            parameters as options with no value.  However, the program parameters
+            are passed to the program <emphasis>after</emphasis> the program's
+            options.   Create a new parameter by entering its value and clicking
+            the <guibutton>New</guibutton> button below it.  Delete or edit
+            by clicking it in the list.  Note that often parameters are positional
+            and you must take care of that when editing.
+          </para>
+          <para>
+            The <literal>Program Environment</literal> define environment
+            variables that will be defined when the program executes.
+            Editing these is identical to editing <literal>Program Options:</literal>
+          </para>
+          <para>
+            Clicking <guibutton>OK</guibutton> saves the definition in the database
+            and refreshes the list of programs in the main window.
+            Clicking <guibutton>Cancel</guibutton> closes the editor window
+            without making any changes
+          </para>
+    </refsect1>
+</refentry>
+<!-- /manpage -->
