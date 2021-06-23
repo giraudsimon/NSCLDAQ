@@ -488,8 +488,70 @@
           
      </section>
      <section>
-        <title>States, Sequences, Sequence Triggers, and Steps</title>
+        <title>State Machine, Sequences, Sequence Triggers, and Steps</title>
         <para>
+          The NSCLDAQ manager implements a state machine.  That is the manager is
+          always in a well defined state or transitioning to another state that
+          is reachable in the <firstterm>state diagram</firstterm> defined in its
+          configuration databases.    A default state diagram is initially loaded
+          into the configuration database when it is created and, while it can
+          be edited it's normally a reasonable state diagram for NSCLDAQ.
+        </para>
+        <para>
+          The configuration data base can specify that <firstterm>sequences</firstterm>
+          are associated with state transitions.  A sequence is an ordered list
+          of programs that are run to perform the tasks needed by the
+          transition. Sequences run one at a time, in the order they were
+          defined.  We'll describe the tool for editing sequences later in this
+          section.
+        </para>
+        <para>
+          A sequence consists of steps.  Each step specifies a program (defined
+           in the configuration database), and optional pre and post delays.
+           Steps are started in the order specified in the sequence definition.
+           If a step runs a transient program, the sequence will wait until that
+           program exits before performing the next step.  This allows ordering
+           to be ensured for sequential operations.
+        </para>
+        <para>
+          Although normally you do not need to modify the states and allowed
+          transitions loaded into the manager, the program
+          <command>mg_stateedit</command>
+          (Reference pages in
+          <link linkend='daq1.mg_stateedit' endterm='daq1.mg_stateedit.title' />)
+          provides the ability to define an arbitrary state machine.
+          In this implementation, however, there are a few constraints you must
+          observe when modifying the states and their allowed transitions:
+        </para>
+        <orderdlist>
+          <listitem>
+             <para>
+                A <literal>SHUTDOWN</literal>  state must be defined.  It will
+                be the initial system state.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                To support failure actions, all states you define must be allowed
+                to transition to the <literal>SHUTDOWN</literal> state.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                If you intend to use the Run control control panel, you must
+                define a state named <literal>BEGIN</literal> and it must
+                represent a state where data taking is active.  You must also
+                define a state named <literal>END</literal> and it must represent
+                a state in which the system is up and running but data taking
+                is not active.  You also <emphasis>should</emphasis> define a state
+                named <literal>HWINIT</literal> and that should represent a state
+                in which any one time initialization of the data taking hardware
+                has completed.
+             </para>
+          </listitem>
+        </orderdlist>
+        <para>
+          
         </para>
      </section>
      <section>
