@@ -299,6 +299,24 @@ proc kvstore {db} {
             value     TEXT
         )
     }
+    #  Create mandatory keys if they don't already exist:
+    
+    set n [$db eval {
+        SELECT COUNT(*) FROM kvstore WHERE keyname='run'
+    }]
+    if {$n == 0} {
+        $db eval {
+            INSERT INTO kvstore (keyname, value) VALUES ('title', 'Set a new title')
+        }
+    }
+    set n [$db eval {
+        SELECT COUNT(*) FROM kvstore WHERE keyname='run'
+    }]
+    if {$n == 0} {
+        $db eval {
+            INSERT INTO kvstore (keyname, value) VALUES ('run', '0')
+        }
+    }
 }
 
 ##
