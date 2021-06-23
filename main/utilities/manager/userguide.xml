@@ -1,0 +1,38 @@
+
+<!-- chapter user-guide -->
+<chapter>
+   <title>NSCLDAQ Manager subsystem (new in 12.0)</title>
+   <para>
+    As the FRIB begins operating, security concerns are moving the laboratory
+    away from employing a single experiment account from which an experiment is
+    run.  Instead, with the NSCLDAQ manager subystem, the persistent software
+    in an experiment can be run by a single account but controlled by
+    users logged in to
+    accounts.
+   </para>
+   <para>
+    This chapter provides a description of this facility and how to use it.
+    The chapter references man pages and reference information where appropriate.
+   </para>
+   <para>
+    The sections in the chapter are organized as follows:
+   </para>
+   <itemizedlist>
+    <listitem>
+       <para>
+        <link linkend='sec.mgr.intro' endterm='sec.mgr.intro.title' />
+        Provides introductory information that's useful for understanding the
+        remainder of the presentation.
+       </para>
+    </listitem>
+
+   </itemizedlist>
+  <section id='sec.mgr.intro'>
+      <title id='sec.mgr.intro.title'>Introduction</title>
+      <para>
+      </para>
+   </section>
+</chapter>
+<!-- /chapter -->
+
+

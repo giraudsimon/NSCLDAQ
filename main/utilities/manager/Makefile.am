@@ -17,12 +17,14 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_evlogEditViews.tcl mg_evlogEditModel.tcl mg_evlogEditController.tcl \
 	mg_loggerRESTClient.tcl
 
+docs=userguide.xml
+
 
 test_scripts=container.test program.test sequence.test transitions.test \
 	loggerdb.test kv.test authtest.test evlog.test
 
 EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) \
-	$(server_scripts)
+	$(server_scripts) $(docs)
 	minimal.img singexists.sh
 
 install-exec-local:
