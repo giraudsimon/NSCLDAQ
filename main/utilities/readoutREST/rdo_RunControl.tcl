@@ -31,6 +31,7 @@ if {[array names ::env DAQTCLLIBS] ne ""} {
 
 package require ReadoutRESTUI;           # Widgets we'll use.
 package require ReadoutRESTClient;       # To get readout states.
+package require loggerrestclient;        # Event log REST domains
 package require programstatusclient;     # To query programs from manager.
 package require stateclient;             # To query/control manager state.
 package require kvclient;                # Title and run# are in kv store.
@@ -424,7 +425,7 @@ snit::widgetadaptor RecordingGUI {
     method _dispatch {} {
         set command $options(-command)
         if {$command ne ""} {
-            lappend command $options(-state)
+            lappend command $options(-recording)
             uplevel #0 $command
         }
     }
@@ -479,7 +480,7 @@ snit::type RecordingController {
         # Handle state changes:
         
         set state [$options(-statemodel) currentState]
-        set recording [$options(-view) cget -recording]
+        set recording [$options(-recordingmodel) isRecording]
         
         # Transitioning into BEGIN?
         
@@ -489,10 +490,11 @@ snit::type RecordingController {
         } elseif {($LastState eq "BEGIN" ) && ($state ne "BEGIN")} {
             # Transition out of active.
             
+             $options(-view) configure -state normal
             if {$recording} {
                 incr LastRun
                 $options(-kvmodel) setValue run $LastRun
-                $options(-view) configure -state normal
+               
             }
         }
     
@@ -1131,6 +1133,7 @@ snit::type RunControlActionHandler {
 #    -statemodel   - A StateClient model.
 #    -programmodel - A manager program status model.
 #    -kvmodel      - Manager key value store model.
+#    -recordingcontroller - Controller for event recording.
 #    -readouts     - A list of readout program names.
 #    -refresh      - Refresh rate of the display in miliseconds.
 #
@@ -1156,6 +1159,7 @@ snit::type RunController {
     option -statemodel -configuremethod _cfgStateModel
     option -programmodel -configuremethod _cfgProgramModel
     option -kvmodel    -configuremethod _cfgKvModel
+    option -recordingcontroller -default ""
     option -readouts   -configuremethod _cfgReadouts
     option -refresh  -default 1000;       # Default to 1 second update rate.
     
@@ -1405,6 +1409,9 @@ snit::type RunController {
                 $object update
             }
         }
+        if {$options(-recordingcontroller) ne ""} {
+            $options(-recordingcontroller) update
+        }
         after $options(-refresh) $self _update
     }
 }
@@ -1456,12 +1463,17 @@ pack .gui -fill both -expand 1
 StateClient state -host $mgrhost -user $mgruser
 ProgramClient programs -host $mgrhost -user $mgruser
 KvClient    kv -host $mgrhost -user $mgruser
+LoggerRestClient logger -host $mgrhost -user $mgruser
 
-# Make the controller
+
+# Make the controllers
+
+RecordingController logcontrol -view [.gui getRecording] \
+    -kvmodel kv -statemodel state -recordingmodel logger
 
 RunController controller \
     -view .gui -statemodel state -programmodel programs -kvmodel kv  \
-    -readouts $programs
+    -readouts $programs -recordingcontroller logcontrol
 
 # Sit back and let the event loop handle the rest:
 
