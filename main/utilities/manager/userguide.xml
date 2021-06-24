@@ -898,6 +898,59 @@
      <section>
         <title>The Key Value Store</title>
         <para>
+          The manager configuration database file provides a key value store.
+          You can think of this as an associative array of strings indexed by other strings.
+          At present, there are two predefined keys.  You may create others as
+          needed by your experiment:
+        </para>
+        <variablelist>
+          <varlistentry>
+             <term><literal>title</literal></term>
+             <listitem>
+                 <para>
+                  This is used to set run titles in compatible
+                  Readout programs.  It contains the desired title for the
+                  next run.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term><literal>run</literal></term>
+             <listitem>
+                 <para>
+                  Is used to set the run number in compatible Readout programs.
+                  It contains the desired run number for the next run.
+               </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para>
+          The <command>mg_kvedit</command> command allows you to create, new keys,
+          modify the values of existing keys and delete keys.  Be careful not
+          to delete the keys described above.  Reference documentation for
+          <command>mg_kvedit</command> is available at
+          <link linkend='daq1.mg_kvedit' endterm='daq1.mg_kvedit.title' />
+        </para>
+        <para>
+          The editor provides a window that, at the top, contains a table
+          of key/value pairs.  At the bottom is an editing region that provides
+          entries for a key and a value. Selecting (by clicking) a key value
+          pair in the table loads the key and its value into the editor fields where
+          either or both may be modified.  
+        </para>
+        <para>
+          Clicking the <guibutton>Update</guibutton> button updates the table.
+          If the key is an existing  key its value will be modified.  If it is
+          a new key, a new key/value pair will be created. 
+        </para>
+        <para>
+          Clicking on the <guibutton>Delete</guibutton> button removes a key
+          and its value from the table.
+        </para>
+        <para>
+          Note that none of the edits described above affect the database.
+          The <guibutton>Save</guibutton> button writes all changes to the
+          database key value table.
         </para>
      </section>
      <section>
@@ -1697,6 +1750,80 @@ destination +
       </para>
     </refsect1>
     
+</refentry>
+
+
+<refentry id='daq1.mg_kvedit'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_kvedit.title'>mg_kvedit</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_kvedit</refname>
+      <refpurpose>Edit the DAQ Manager Key/Value Store</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_kvedit <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <command>mg_kvedit</command> provies a graphical editor for
+            the contents of the key value store.  In the command invokation,
+            <replaceable>configuration-file</replaceable> is the manager
+            database configuration file.  
+          </para>
+          <para>
+            The key value store associates arbitrary keys with arbitrary values.
+            It can be used by applications to store metadata required by their
+            applications.  It is also used by standard components of the
+            managed DAQ system.  These components define the following keys:
+          </para>
+          <variablelist>
+          <varlistentry>
+             <term><literal>title</literal></term>
+             <listitem>
+                 <para>
+                  This is used to set run titles in compatible
+                  Readout programs.  It contains the desired title for the
+                  next run.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term><literal>run</literal></term>
+             <listitem>
+                 <para>
+                  Is used to set the run number in compatible Readout programs.
+                  It contains the desired run number for the next run.
+               </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para>
+          The editor provides a window that, at the top, contains a table
+          of key/value pairs.  At the bottom is an editing region that provides
+          entries for a key and a value. Selecting (by clicking) a key value
+          pair in the table loads the key and its value into the editor fields where
+          either or both may be modified.  
+        </para>
+        <para>
+          Clicking the <guibutton>Update</guibutton> button updates the table.
+          If the key is an existing  key its value will be modified.  If it is
+          a new key, a new key/value pair will be created. 
+        </para>
+        <para>
+          Clicking on the <guibutton>Delete</guibutton> button removes a key
+          and its value from the table.
+        </para>
+        <para>
+          Note that none of the edits described above affect the database.
+          The <guibutton>Save</guibutton> button writes all changes to the
+          database key value table.
+        </para>
+    </refsect1>
 </refentry>
 
 <!-- /manpage -->
