@@ -523,7 +523,7 @@
           In this implementation, however, there are a few constraints you must
           observe when modifying the states and their allowed transitions:
         </para>
-        <orderdlist>
+        <orderedlist>
           <listitem>
              <para>
                 A <literal>SHUTDOWN</literal>  state must be defined.  It will
@@ -549,15 +549,351 @@
                 has completed.
              </para>
           </listitem>
-        </orderdlist>
+        </orderedlist>
         <para>
-          
-        </para>
+            Before describing the <command>mg_stateedit</command> user
+            interface; some terminology.  The states
+            the state machine can transition to from any givnen state
+            are called <firstterm>Successor States</firstterm>.  The states
+            from which a state can transition to are called
+            <firstterm>Precursor States</firstterm>.
+            The process of defining a state machine is that of defining the
+            states and, for each state defining its successor states.  In some
+            cases, it's also convenient to define a state's precursor states.
+            The <command>mg_stateedit</command> command allows for both.
+          </para>
+          <para>
+            The window resented by <command>mg_stateedit</command> is primarily
+            composed of three list boxes.  The center list box lists the defined
+            states selecting (single clicking) a state in the States list box
+            populates the left listbox with that state's precursor states and
+            the right list box with that state's successor states.
+          </para>
+          <para>
+            Below each list box is a <guibutton>-</guibutton> button. Clicking that
+            button when a state is selected in any list box removes that state
+            from that listbox:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Clicking that button below the middle listbox removes that state's
+                  definitions (cleaning up all transitions to that state from
+                  precursor states and all transitions to successor states as well).
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Clicking that button below the left listbox removes that state
+                  from the precursor states of the selected state in the middle
+                  listbox. This removes the allowed transition from the precursor
+                  state to the selected state.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Similarly, clicking that button below the right list box removes
+                  that state from the successor states of the selected state in
+                  the middle listbox.  This removes the allowed transition from
+                  the selected state to that successor state.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Below the <guibutton>-</guibutton> buttons below each listbox are
+            text entry widgets and a <guibutton>+</guibutton> button.
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  To add a new state, type a unique state name  in the middle
+                  entry and click its <guibutton>+</guibutton> button.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  To add a new precursor state  to the selected state,
+                  type the name of an existing state in the left listbox and
+                  click its <guibutton>+</guibutton> button.  The state
+                  must be defined or an error will be displayed.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  To add a new successor state to the selected state,
+                  type the name of an existing state in the right listbox
+                  and click its <guibutton>+</guibutton> button.  Once more the
+                  state must already be defined or an error will be displayed.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Note that all changes change the underlying database immediately.
+          </para>
+          <para>
+            The state transitions of the manager trigger the execution of
+            sequences that are associated with the successor state being
+            transitioned to.  These sequences can be defined and edited using
+            the sequence editor <command>mg_seqedit</command>.  Reference
+            material for that program is located in
+            <link linkend='daq1.mg_seqedit' endterm='daq1.mg_seqedit.title' />.
+          </para>
+          <para>
+            Sequences are bound to or <firstterm>triggered by</firstterm> states.
+            When a transition is performed into
+            a state, the sequences triggered by those states are run.  The
+            sequences are run one at a time in the order in which they were defined.
+          </para>
+          <para>
+            The GUI for <command>mg_seqedit</command> consists of a listbox
+            that displays the sequences that have been defined.  An entry and
+            drop down list provide the ability to define new sequences.
+            
+          </para>
+          <para>
+            To create a new sequence, ype in a new unique sequence name in the
+            text entry box, and select its trigger state
+            from the drop down. Clicking <guibutton>Add</guibutton> adds the
+            new sequence to the list of defined sequences.
+          </para>
+          <para>
+            Sequences are edited by double-clicking them in the listbox.  This
+            is also how a new sequence is assigned steps.  Double clicking
+            a sequence pops up the sequence step editor window.
+          </para>
+          <para>
+            Each step has a step number, which determines its order in the sequence.
+            The step numbers are floating point numbers ensuring new steps can
+            always be inserted between existing steps. Steps also have a program
+            that is run and optional delays before and after the step
+          </para>
+          <para>
+            To add a new step, select the program from the pulldown menu
+            near the bottom of the window, optionally set non zero pre and post
+            delay values and click <guibutton>Add</guibutton>  by default
+            new steps are added at the end.  If a step is selected (single click it),
+            when a new step is added, the step is inserteed above that step.
+          </para>
+          <para>
+            A context menu is brought up by right clicking any step.  The menu
+            allows yout to delete the step, move it up in the order or move it
+            down. 
+          </para>
+          <para>
+            At the very bottom of the page are three action buttons:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guibutton>Save</guibutton></term>
+               <listitem>
+                   <para>
+                    Saves the updated (or new) sequence steps.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guibutton>Delete...</guibutton></term>
+               <listitem>
+                   <para>
+                    Prompts for confirmation and then deletes the sequence
+                    if you confirm.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guibutton>Cancel</guibutton></term>
+               <listitem>
+                   <para>
+                    Makes no changes.  The existing sequence is unmodified and
+                    the new sequence is not saved.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
      </section>
      <section>
         <title>Event Logging and the Manager</title>
         <para>
+          Under the ReadoutGUI, experiments have a primary event logger and,
+          by using the multilogger package, a set of simple loggers that
+          just logged event data into a directory.  The primary logger
+          Managed a directory tree that provided both run and experiment views
+          of the data as well as the capability of associating arbitrary metadata
+          with each run, in the form of a user selected set of files and
+          directory sub-trees.
         </para>
+        <para>
+          At the heart of all of this was a common utility called
+          <command>eventlog</command> which just writes event data from
+          a ring to a file.  Event logging in the manager allows you to
+          define an arbitrary set of <firstterm>complete</firstterm> and
+          <firstterm>partial</firstterm> loggers.  The best way to think
+          of these are that complete loggers maintain the same directory tree
+          as the ReadoutGUI's primary event logger while partial loggers
+          are like the loggers managed by the multilogger package.
+        </para>
+        <para>
+          While you can create any number of either type  of event logger,
+          it's important to consider the complete bandwidth requirements of doing
+          so throughout the system.  While using several event loggers provide
+          valuable offline debugging information during production running the
+          best throughput is obtained by only using a single event logger.
+          Thus the event log subsystem allows loggers to be disabled at any time.
+        </para>
+        <para>
+          Another important point of the manager's event log facility is that
+          loggers can also be marked as <emphasis>critical</emphasis>. Critical
+          loggers are considered to be necessary if the experiment is to work.
+          If a critical logger exits during data taking for any reason, the
+          manager will force a state transition to SHUTDOWN.
+        </para>
+        <para>
+          The <command>mg_cfgEvlog</command> utility allows you to create, edit
+          and delete event log definitions.  Reference material for this
+          utility is at
+          <link linkend='daq1.mg_cfgevlog' endterm='daq1.mg_cfgevlog.title' />
+        </para>
+        <para>
+            The event log editor GUI consists of a table of current event
+            log definitions, a definition section below the table and two
+            action buttons <guibutton>Save</guibutton> and <guibutton>Cancel</guibutton>
+            Changes are not immediately saved to the database.  WHen you are
+            satisfied with the definitions you see in the eventlog list,
+            click <guibutton>Save</guibutton> to save those definitions oe
+            <guibutton>Cancel</guibutton> if you don't want this work saved.
+            <guibutton>Cancdel</guibutton> will simply reload the table with the
+            event log definitions in the database.
+          </para>
+          <para>
+            Items in the list of loggers have a context menu that can be posted by
+            right clicking them.
+            The context menu has the following commands:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>New</literal></term>
+               <listitem>
+                   <para>
+                    Resets the event log editor form to its defaults.  The
+                    action button in the form will be labeled <guibutton>Create</guibutton>
+                    indicating that clicking it creates a new event logger definition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Edit</literal></term>
+               <listitem>
+                   <para>
+                    Loads the definition into the definition form and relabels its
+                    action button <guibutton>Modify</guibutton> indiciating that
+                    clicking it will modify the definition being edited.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Delete</literal></term>
+               <listitem>
+                   <para>
+                    Deletes the definition under the pointer.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The Eventlog editor form contains the following elements:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>DAQRoot</literal></term>
+               <listitem>
+                   <para>
+                    The NSCLDAQ installation directory root. This is loaded with the
+                    directory root for the DAQ version from which the editor
+                    was run.  It can be edited if there are special needs but,
+                    in general, should not be earlier than 12.0-pre3.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Source</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited to be the URI of the ring buffer that will
+                    be logged to disk.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Dest.</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited or browsed to the directory in which
+                    data will be logged.  For partial loggers all data will
+                    be logged into this directory.  For Complete loggers,
+                    this is the top level of the directory tree maintained by
+                    the logger.  See <literal>COMPLETE LOGGERS</literal>.
+                   </para>
+                   <para>
+                    Note that if the event logger is containerized, this path must
+                    be a valid path within the active container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Host:</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited to the DNS name of the computer in which the
+                    event logger will run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Container</literal></term>
+               <listitem>
+                   <para>
+                    Pulldown menu that allows you to select a container in which
+                    the event logger runs.  Note that if this is empty, the logger
+                    will run native.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Partial</literal></term>
+               <listitem>
+                   <para>
+                    If checked, the logger will be a partial logger otherwise
+                    it will be complete.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Critical</literal></term>
+               <listitem>
+                   <para>
+                    If checked the logger is a critical component of the DAQ system
+                    and unexpected exits will <literal>SHUTDOWN</literal> the
+                    intire system.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Enabled</literal></term>
+               <listitem>
+                   <para>
+                    If checked the logger is enabled.  If not it will not record
+                    data even if the global recording is enabled.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            Finally the edit form has an action button that is labeled
+            <guibutton>Modify</guibutton> if clicking it will replace the definition
+            that you initially loaded into the form using the <literal>Edit</literal>
+             context menu or <guibutton>Create</guibutton> if it will create a
+             new definition.
+          </para>
      </section>
      <section>
         <title>The Key Value Store</title>
@@ -884,4 +1220,483 @@ $DAQBIN/mg_cfgprogram <replaceable>configuration-file</replaceable>
           </para>
     </refsect1>
 </refentry>
+ 
+<refentry id='daq1.mg_stateedit'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_stateedit.title'>mg_stateedit</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_stateedit</refname>
+      <refpurpose>Edit DAQ Manager state machine</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_stateedit <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            <command>mg_stateedit</command> provides a graphical editor for the
+            DAQ manager state machine.   When invoking the command a single
+            command line parameters is required, the path of the configuration
+            database file.
+          </para>
+          <para>
+             A state machine consists of a set of
+            defined states and their legal successor states.
+            The process of the state machine changing state from
+            one state to another is called a <firstterm>transition</firstterm>.
+            In the DAQ manager, these transitions can trigger the execution of
+            sequences, which must succeed for the transition to succeed.
+            
+          </para>
+          <para>
+            Before describing the interface, some terminology.  The states
+            the state machine can transition to from any givnen state
+            are called <firstterm>Successor States</firstterm>.  The states
+            from which a state can transition to are called
+            <firstterm>Precursor States</firstterm>.
+            The process of defining a state machine is that of defining the
+            states and, for each state defining its successor states.  In some
+            cases, it's also convenient to define a state's precursor states.
+            The <command>mg_stateedit</command> command allows for both.
+          </para>
+          <para>
+            The window resented by <command>mg_stateedit</command> is primarily
+            composed of three list boxes.  The center list box lists the defined
+            states selecting (single clicking) a state in the States list box
+            populates the left listbox with that state's precursor states and
+            the right list box with that state's successor states.
+          </para>
+          <para>
+            Below each list box is a <guibutton>-</guibutton> button. Clicking that
+            button when a state is selected in any list box removes that state
+            from that listbox:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Clicking that button below the middle listbox removes that state's
+                  definitions (cleaning up all transitions to that state from
+                  precursor states and all transitions to successor states as well).
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Clicking that button below the left listbox removes that state
+                  from the precursor states of the selected state in the middle
+                  listbox. This removes the allowed transition from the precursor
+                  state to the selected state.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Similarly, clicking that button below the right list box removes
+                  that state from the successor states of the selected state in
+                  the middle listbox.  This removes the allowed transition from
+                  the selected state to that successor state.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Below the <guibutton>-</guibutton> buttons below each listbox are
+            text entry widgets and a <guibutton>+</guibutton> button.
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  To add a new state, type a unique state name  in the middle
+                  entry and click its <guibutton>+</guibutton> button.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  To add a new precursor state  to the selected state,
+                  type the name of an existing state in the left listbox and
+                  click its <guibutton>+</guibutton> button.  The state
+                  must be defined or an error will be displayed.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  To add a new successor state to the selected state,
+                  type the name of an existing state in the right listbox
+                  and click its <guibutton>+</guibutton> button.  Once more the
+                  state must already be defined or an error will be displayed.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Note that all changes change the underlying database immediately.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.mg_seqedit'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_seqedit.title'>mg_seqedit</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_seqedit</refname>
+      <refpurpose>Edit DAQ manager sequences</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_seqedit <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>  
+            The command <command>mg_seqedit</command> allows you to define
+            and edit sequences of program executions that are run by
+            the manager during state transitions.  Sequences are composed of
+            steps.  Each step results in running a defined program.  Transitory
+            programs are run synchronously while other program types are run
+            in the background.
+          </para>
+          <para>
+            Sequences are bound to or <firstterm>triggered by</firstterm> states.
+            When a transition is performed into
+            a state, the sequences triggered by those states are run.  The
+            sequences are run one at a time in the order in which they were defined.
+          </para>
+          <para>
+            The GUI for <command>mg_seqedit</command> consists of a listbox
+            that displays the sequences that have been defined.  An entry and
+            drop down list provide the ability to define new sequences.
+            
+          </para>
+          <para>
+            To create a new sequence, ype in a new unique sequence name in the
+            text entry box, and select its trigger state
+            from the drop down. Clicking <guibutton>Add</guibutton> adds the
+            new sequence to the list of defined sequences.
+          </para>
+          <para>
+            Sequences are edited by double-clicking them in the listbox.  This
+            is also how a new sequence is assigned steps.  Double clicking
+            a sequence pops up the sequence step editor window.
+          </para>
+          <para>
+            Each step has a step number, which determines its order in the sequence.
+            The step numbers are floating point numbers ensuring new steps can
+            always be inserted between existing steps. Steps also have a program
+            that is run and optional delays before and after the step
+          </para>
+          <para>
+            To add a new step, select the program from the pulldown menu
+            near the bottom of the window, optionally set non zero pre and post
+            delay values and click <guibutton>Add</guibutton>  by default
+            new steps are added at the end.  If a step is selected (single click it),
+            when a new step is added, the step is inserteed above that step.
+          </para>
+          <para>
+            A context menu is brought up by right clicking any step.  The menu
+            allows yout to delete the step, move it up in the order or move it
+            down. 
+          </para>
+          <para>
+            At the very bottom of the page are three action buttons:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guibutton>Save</guibutton></term>
+               <listitem>
+                   <para>
+                    Saves the updated (or new) sequence steps.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guibutton>Delete...</guibutton></term>
+               <listitem>
+                   <para>
+                    Prompts for confirmation and then deletes the sequence
+                    if you confirm.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guibutton>Cancel</guibutton></term>
+               <listitem>
+                   <para>
+                    Makes no changes.  The existing sequence is unmodified and
+                    the new sequence is not saved.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+ 
+<refentry id='daq1.mg_cfgevlog'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_cfgevlog.title'>mg_cfgEvlog</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_cfgEvlog</refname>
+      <refpurpose>Configure DAQ manager event logging.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_cfgEvlog <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <command>mg_cfgEvlog</command> command provides a utility that
+            supports configuring the event loggers defined in a
+            DAQ manager configuration database.  
+          </para>
+          <para>
+            Before we begin describing how to use <command>mg_cfgEvlog</command>,
+            It's important to define some terms:
+          </para>
+          <glosslist>
+            <glossentry>
+              <glossterm>Enabled Logger</glossterm>
+              <glossdef><para>
+                An enabled logger will log data to its destination if logging is
+                globally enabled in the logger.
+              </para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Critical Logger</glossterm>
+              <glossdef><para>
+                A critical logger is one who's failure will shutdown the data
+                acquisition system.
+              </para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Partial Logger</glossterm>
+              <glossdef><para>
+                Partial loggers do no directory management and, therefore,
+                simplly log timestamped run files in the destination directory.
+                These operate identicall to loggers run in the
+                ReadoutGUI multilogger package.
+              </para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Full Logger</glossterm>
+              <glossdef><para>
+                These are loggers that are not partial loggers.  See
+                <literal>COMPLETE LOGGERS</literal> below for more information.
+              </para></glossdef>
+            </glossentry>
+          </glosslist>
+          <para>
+            The event log editor GUI consists of a table of current event
+            log definitions, a definition section below the table and two
+            action buttons <guibutton>Save</guibutton> and <guibutton>Cancel</guibutton>
+            Changes are not immediately saved to the database.  WHen you are
+            satisfied with the definitions you see in the eventlog list,
+            click <guibutton>Save</guibutton> to save those definitions oe
+            <guibutton>Cancel</guibutton> if you don't want this work saved.
+            <guibutton>Cancdel</guibutton> will simply reload the table with the
+            event log definitions in the database.
+          </para>
+          <para>
+            Items in the list of loggers have a context menu that can be posted by
+            right clicking them.
+            The context menu has the following commands:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>New</literal></term>
+               <listitem>
+                   <para>
+                    Resets the event log editor form to its defaults.  The
+                    action button in the form will be labeled <guibutton>Create</guibutton>
+                    indicating that clicking it creates a new event logger definition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Edit</literal></term>
+               <listitem>
+                   <para>
+                    Loads the definition into the definition form and relabels its
+                    action button <guibutton>Modify</guibutton> indiciating that
+                    clicking it will modify the definition being edited.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Delete</literal></term>
+               <listitem>
+                   <para>
+                    Deletes the definition under the pointer.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The Eventlog editor form contains the following elements:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>DAQRoot</literal></term>
+               <listitem>
+                   <para>
+                    The NSCLDAQ installation directory root. This is loaded with the
+                    directory root for the DAQ version from which the editor
+                    was run.  It can be edited if there are special needs but,
+                    in general, should not be earlier than 12.0-pre3.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Source</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited to be the URI of the ring buffer that will
+                    be logged to disk.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Dest.</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited or browsed to the directory in which
+                    data will be logged.  For partial loggers all data will
+                    be logged into this directory.  For Complete loggers,
+                    this is the top level of the directory tree maintained by
+                    the logger.  See <literal>COMPLETE LOGGERS</literal>.
+                   </para>
+                   <para>
+                    Note that if the event logger is containerized, this path must
+                    be a valid path within the active container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Host:</literal></term>
+               <listitem>
+                   <para>
+                    Should be edited to the DNS name of the computer in which the
+                    event logger will run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Container</literal></term>
+               <listitem>
+                   <para>
+                    Pulldown menu that allows you to select a container in which
+                    the event logger runs.  Note that if this is empty, the logger
+                    will run native.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Partial</literal></term>
+               <listitem>
+                   <para>
+                    If checked, the logger will be a partial logger otherwise
+                    it will be complete.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Critical</literal></term>
+               <listitem>
+                   <para>
+                    If checked the logger is a critical component of the DAQ system
+                    and unexpected exits will <literal>SHUTDOWN</literal> the
+                    intire system.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Enabled</literal></term>
+               <listitem>
+                   <para>
+                    If checked the logger is enabled.  If not it will not record
+                    data even if the global recording is enabled.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            Finally the edit form has an action button that is labeled
+            <guibutton>Modify</guibutton> if clicking it will replace the definition
+            that you initially loaded into the form using the <literal>Edit</literal>
+             context menu or <guibutton>Create</guibutton> if it will create a
+             new definition.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>COMPLETE LOGGERS</title>
+      <para>
+        A complete logger produces the same directory tree as the ReadoutGui's
+        primary event log.  The destination specified for the logger is the
+        top of a directory tree that looks like this:
+      </para>
+      <informalfigure>
+        <programlisting>
+destination +
+            +----> experiment+
+            |                +---> current
+            |                +---> run1
+            |                +---> run2
+          ...             ...
+            +----> complete
+    
+        </programlisting>
+      </informalfigure>
+      <para>
+        The experiment subdirectory has run subdirectories for each recorded run
+        and one for the run currently being recorded.  While event recording is
+        in progress, the current subdirectory has links to the event file segments
+        in the associated run.
+      </para>
+      <para>
+        When event recording for a run is complete, several actions are taken:
+      </para>
+      <itemizedlist>
+        <listitem>
+           <para>
+              The link(s) to the event file(s) are moved to the complete
+              directory.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              All other files inthe current directory are copied into the
+              run directory recursively.  Furthermore, links are derefrenced rather than
+              copied.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              Permissions are set on the run directory and its contents to
+              ensure that accidental deletion of the files it contains are
+              harder.
+           </para>
+        </listitem>
+      </itemizedlist>
+      <para>
+        The way to think of all of this is that the complete directory
+        offers a view of the entire experiment.  All event files are accessible
+        by following the links in that directory.
+      </para>
+      <para>
+        The experiment/current directory provides a view of the run in progress.
+        Its links and metadata describe the run in progress and data taken for it.
+      </para>
+      <para>
+        The experiment/run* directories provide per run views where each event file
+        is packaged with metadata associated with that run.
+      </para>
+    </refsect1>
+    
+</refentry>
+
 <!-- /manpage -->
