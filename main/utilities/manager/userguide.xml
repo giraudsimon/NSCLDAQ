@@ -1175,7 +1175,172 @@
   <section id='sec.mgr.running'>
      <title id='sec.mgr.running.title'>Running an Experiment With The Manager</title>
      <para>
+      This section will describe how to run an experiment with the manager.
+      Subsequent sections:
+      <link linkend='sec.mgr.readout' endterm='sec.mgr.readout.title' /> and
+      <link linkend='sec.mgr.eventbuilder' endterm='sec.mgr.eventbuilder.title' />
+      will describe how to configure Readout programs and the event builder for
+      use within the manager framework.
      </para>
+     <para>
+      This section will describe the set of user interfaces that are available
+      for use to shift operators while running the experiment.  Note that the
+      client/server nature of the manager and these interfaces means that you
+      can instantiate any number of these in the set of physical locations that
+      are convenient.  You can also exit any of these user interfaces without
+      affecting the run state.  For example, you can start a run in one location,
+      kill off the run control panel, bring it up in another location and see
+      that the run is continuing to acquire data, and then end the run from that
+      second panel.
+     </para>
+     <para>
+      All control panels we describe display state information.  Since the
+      state information is gotten via polling, it will be consistent from
+      panel to panel.
+     </para>
+     <para>
+      The remainder of this section will describe the following contro panel:
+     </para>
+     <itemizedlist>
+      <listitem>
+         <para>
+            <link linkend='sec.mgr.output' endterm='sec.mgr.output.title' />
+            describes a control panel that monitors the output of all programs
+            run by the manager.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.mgr.runcontrol' endterm='sec.mgr.runcontrol.title' />
+            describes the control panel you can use to control runs. 
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.mgr.eventbuilderstats' endterm='sec.mgr.eventbuilderstats.title' />
+            provides the statistics of a single event builder.
+         </para>
+  
+      </listitem>
+      
+     </itemizedlist>
+     <para>
+        Note that these control panels communicate with the manager and make use
+        of the REST server interfaces in the Readout programs and the event builder
+        to gather statistics information.  The
+        sections
+        <link linkend='sec.mgr.readout' endterm='sec.mgr.readout.title' />
+        and <link linkend='sec.mgr.eventbuilder' endterm='sec.mgr.eventbuilder.title' />
+        will describe how to run these under the manager so that they have this
+        REST server interface enabled, as well as what to put in state transition
+        sequences to run these programs under the manager.
+      </para>
+     <section id='sec.mgr.output'>
+        <title id='sec.mgr.output.title'>The Output Monitor</title>
+        <para>
+          The DAQ manager server routinely runs program as it executes state transition
+          sequences.  Some of these programs are transient an others persistent
+          (critical programs are a subset of persistent programs).  
+        </para>
+        <para>
+          When it
+          runs a program, the DAQ manager arranges for the stdout and stderr
+          output file descriptors to be directed at pipes that it can read.
+          In addition to its REST server the manager provides a
+          service named <literal>DAQManager-outputMonitor</literal>.
+          The manager relays all output it receives from all programs that
+          are currently running to clients of this service.  The data
+          sent there are exactly the data recieved from programs.
+        </para>
+        <para>
+          The <command>mg_monitorOutput</command> program, described in
+          <link linkend='daq1.mg_monitorOutput' endterm='daq1.mg_monitorOutput.title' />
+          provides a simple monitor of the output/error streams relayed by the
+          manager.
+        </para>
+        
+          <para>
+            If the manager exits, or otherwise drops its connection to
+            <command>mg_monitorOutput</command>, the program attempts to retry
+            for some period of time and, if not successful, allows the user
+            to retry once they are sure the manager is up and running or to exit
+            if they are certain it won't be up in a reasonable time.
+          </para>
+          <para>
+            The user interface consists of a menubar with a
+            <guimenu>Settings</guimenu> menu. Below the menubar is a large
+            text widget with a vertical scroll bar.  Output are appended to the
+            end of the text in this text widget, as they are received from the
+            manager.  A limited history of output is maintained and the scrollbar
+            can be used to examine older output.  Below the output display
+            is a status line that indicates whether or not the program is
+            connected to the manager.
+          </para>
+          <para>
+            The <guimenu>Settings</guimenu> menu provides commands that
+            allow you to modify the settings of the output menu as well
+            as the connection retry settings.  Let's look at the menu
+            choices in this menu.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><menuchoice><guimenu>Settings</guimenu><guimenuitem>OutputSettings...</guimenuitem></menuchoice></term>
+               <listitem>
+                   <para>
+                    Provides a dialog that allows you to set the characterisics
+                    of the output window.  The dialog provides a spinbox
+                    that allows you to set the number of lines that are retained.
+                    The checkbox labeled <literal>Show debugging otuput</literal>
+                    is not used and is ignored a this time.
+                   </para>
+                   <para>
+                    Set the history to the desired number of lines and then click
+                    <guibutton>Ok</guibutton> to make the change or
+                    <guibutton>Cancel</guibutton> to remove the dialog\
+                    without making any changes.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><menuchoice><guimenu>Settings</guimenu><guimenuitem>Connection Settings...</guimenuitem></menuchoice></term>
+               <listitem>
+                   <para>
+                    This brings up a dialog that describes what the program will
+                    do when it loses connection with the manager.
+                    If the connection is lost the program will attempt to
+                    restablish its connection for a specified number of
+                    <firstterm>retries</firstterm> at a specified
+                    <firstterm>retry interval</firstterm>.
+                    Once the retry count is exceeded, the program will prompt
+                    for what to do next.
+                   </para>
+                   <para>
+                    The menu selection pops up a dialog that allows you to
+                    set both of these parameters.
+                    The <literal>Retries before giving up</literal> spin box
+                    sets the number of retries.  The
+                    <literal>Time in secs between retries</literal> spin box
+                    allows you to set the retry  interval  in seconds.
+                   </para>
+                   <para>
+                    To accept the new paramters click <guibutton>OK</guibutton>
+                    to reject them, click <guibutton>Cancel</guibutton>.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          
+     </section>
+     <section id='sec.mgr.runcontrol'>
+        <title id='sec.mgr.runcontrol.title'>The Run Control Panel</title>
+        <para>
+        </para>
+     </section>
+     <section id='sec.mgr.eventbuilderstats'>
+        <title id='sec.mgr.eventbuilderstats.title'>Event Builder Statistics Panel.</title>
+        <para>
+        </para>
+     </section>
   </section>
   <section id='sec.mgr.readout'>
      <title id='sec.mgr.readout.title'>Running Readout Software With the Manager</title>
@@ -2199,6 +2364,107 @@ $DAQBIN/mg_authedit <replaceable>configuration-file</replaceable>
             will remain.  Clicking the <guibutton>Cancel</guibutton> button
             makes no changes.
           </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.mg_monitorOutput'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_monitorOutput.title'>mg_monitorOutput</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_monitorOutput</refname>
+      <refpurpose>Monitor the Output from Managed Programs.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+        <command>
+$DAQBIN/mg_monitorOutput <replaceable>host user</replaceable>
+        </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <command>mg_monitorOutput</command> program provides a display
+            of the output that comes from programs run under that DAQ manager.
+            THe parameters <replaceable>host</replaceable> and
+            <replaceable>user</replaceable> are, respectively, the host on
+            which the manager is running and the user that started the manager.
+            These two parameters allow the program to locate the service advertised
+            by the manager.
+          </para>
+          <para>
+            If the manager exits, or otherwise drops its connection to
+            <command>mg_monitorOutput</command>, the program attempts to retry
+            for some period of time and, if not successful, allows the user
+            to retry once they are sure the manager is up and running or to exit
+            if they are certain it won't be up in a reasonable time.
+          </para>
+          <para>
+            The user interface consists of a menubar with a
+            <guimenu>Settings</guimenu> menu. Below the menubar is a large
+            text widget with a vertical scroll bar.  Output are appended to the
+            end of the text in this text widget, as they are received from the
+            manager.  A limited history of output is maintained and the scrollbar
+            can be used to examine older output.  Below the output display
+            is a status line that indicates whether or not the program is
+            connected to the manager.
+          </para>
+          <para>
+            The <guimenu>Settings</guimenu> menu provides commands that
+            allow you to modify the settings of the output menu as well
+            as the connection retry settings.  Let's look at the menu
+            choices in this menu.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><menuchoice><guimenu>Settings</guimenu><guimenuitem>OutputSettings...</guimenuitem></menuchoice></term>
+               <listitem>
+                   <para>
+                    Provides a dialog that allows you to set the characterisics
+                    of the output window.  The dialog provides a spinbox
+                    that allows you to set the number of lines that are retained.
+                    The checkbox labeled <literal>Show debugging otuput</literal>
+                    is not used and is ignored a this time.
+                   </para>
+                   <para>
+                    Set the history to the desired number of lines and then click
+                    <guibutton>Ok</guibutton> to make the change or
+                    <guibutton>Cancel</guibutton> to remove the dialog\
+                    without making any changes.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><menuchoice><guimenu>Settings</guimenu><guimenuitem>Connection Settings...</guimenuitem></menuchoice></term>
+               <listitem>
+                   <para>
+                    This brings up a dialog that describes what the program will
+                    do when it loses connection with the manager.
+                    If the connection is lost the program will attempt to
+                    restablish its connection for a specified number of
+                    <firstterm>retries</firstterm> at a specified
+                    <firstterm>retry interval</firstterm>.
+                    Once the retry count is exceeded, the program will prompt
+                    for what to do next.
+                   </para>
+                   <para>
+                    The menu selection pops up a dialog that allows you to
+                    set both of these parameters.
+                    The <literal>Retries before giving up</literal> spin box
+                    sets the number of retries.  The
+                    <literal>Time in secs between retries</literal> spin box
+                    allows you to set the retry  interval  in seconds.
+                   </para>
+                   <para>
+                    To accept the new paramters click <guibutton>OK</guibutton>
+                    to reject them, click <guibutton>Cancel</guibutton>.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          
     </refsect1>
 </refentry>
 <!-- /manpage -->
