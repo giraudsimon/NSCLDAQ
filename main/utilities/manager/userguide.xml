@@ -956,7 +956,220 @@
      <section>
         <title>User and Roles</title>
         <para>
+          Note with NSCLDAQ-12.0, usrs and roles are not enforced by the manager.
+          In later versions of the software, as we gain experience in its use,
+          we will define a set of roles each with limited capabilities within the
+          system.  The users in an experiment will be assigned roles and the
+          interactions they can successfully perform will depend on the set of roles
+          they hold.
+      </para>  
+        <para>
+          The experiment configuration database does, however, already provide
+          schema and configuration tools for defining the set of users for an
+          experiment, the roles the system understands and granting and revoking
+          roles to/from those users.  The program that supports configuring users
+          and roles is <command>mg_authedit</command>.
+          Reference information for <command>mg_authedit</command> can be found in
+          <link linkend='daq1.mg_authedit' endterm='daq1.mg_authedit.title' />
         </para>
+        <para>
+          The important concepts to understand when configuring the authentication
+          system are:
+        </para>
+        <variablelist>
+          <varlistentry>
+             <term>Authentication</term>
+             <listitem>
+                 <para>
+                  Authentication is the act of logging into the system.  It requires
+                  that you provide a valid user name and some secret information
+                  that only you know (usually a password).  Two factor authentication
+                  requires that you also provide some information that is time varying
+                  and usually maintained by some third party.
+               </para>
+                 <para>
+                  Authentication, establishes your identity to the computer system.
+                  Nothing more.  Normally your identity is in the form of some
+                  username and the associated groups that username belongs to.
+                 </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Authorization</term>
+             <listitem>
+                 <para>
+                  Authorization allows access to some set of resources to a
+                  authenticated user.  For example, file system permissions
+                  allow and disallow specific users or groups of users types
+                  of access to files or groups of files (directory permissions).
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>User</term>
+             <listitem>
+                 <para>
+                  A user is an identity that can be authenticated. NSCLDAQ
+                  users are simply computer system users.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>Role</term>
+             <listitem>
+                 <para>
+                  A role can be granted (or revoked) to a user of the
+                  NSCLDAQ manager and will, when  implemented, authorize the user
+                  the ability to perform specific types of operations in the experiment.
+                  When a user has been granted a role, they are said to
+                  <firstterm>hold</firstterm> that role.
+               </para>
+                 <para>
+                  For example,
+                  We may have a "Shift operator" role which allows holder to
+                  start and stop runs or to set the run title or run number.
+                  The fact that we have not actually figured out the appropriate
+                  set of roles is why we also have not yet implemented
+                  role basd permissions in the manager as of NSCLDAQ-12.0
+                 </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para>
+            The user interface of <command>mg_authedit</command> consists of
+            the following sections:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  At the top is a tree view.  The top level items are users
+                  that have been defined to the expermiment.  Second level
+                  items (accessed by left clicking on the wedge icon to the left
+                  of a user's name) are the roles held by that user.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Below the treeview is a section that allows you to add new users.
+                  This is a frame with the lable <literal>Add user</literal>
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Below the <literal>Add user</literal>  frame is a frame of
+                  widgets that allows you to add and delete roles.  This frame
+                  is labelled <literal>Add role</literal>.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  At the bottom  of the user interface is a button labeled
+                  <guibutton>Save</guibutton>.   All changes to the users and
+                  roles and the roles granted to specific users are held within
+                  the user interface until the <guibutton>Save</guibutton> button
+                  is clicked.  
+               </para>
+               <para>
+                To exit without saving updated roles and users, simply
+                delete the window (on most window managers this means clicking)
+                an <literal>X</literal> at the right top of the window banner.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            The treeview supports context menus both on user and roles they've
+            been granted.
+            Right clicking on a user brings up a context menu with the
+            following commands:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guimenuitem>Remove user...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Prompts for confirmation and, if given, removes the user
+                    and, of course.  This operation cleans up  properly, that is
+                    first the user's roles are revoked and then the user
+                    him/herself is removed from the list of authorized users.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Grant Roles...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Pops up a list box populated with all of the roles the
+                    user does <emphasis>not</emphasis> have.  The list box
+                    supports multiple selection.  Select the rols you want to
+                    grant and click the <guibutton>Ok</guibutton> button.
+                    The <guibutton>Cancel</guibutton> button makes no changes
+                    to the granted roles.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Revoke role(s)...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Pops up a list box populated with the roles that have been
+                    granted to the user.  Multiple selections are allowed.
+                    Select the role(s) you wish to revoke from the user and
+                    click <guibutton>Ok</guibutton> to revoke them.  The
+                    <guibutton>Cancel</guibutton> button makes no changes
+                    to the granted roles.
+                   </para>
+                </listitem>
+            </varlistentry>
+            
+          </variablelist>
+          <para>
+            The context menu for a role can be accessed by right clicking on the
+            role.  It contains the following menu commands.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guimenuitem>Revoke</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Revokes that role, and that role only, from the associated
+                    user.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Grant role(s)...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    As with the user context menu, allows you to grant additional
+                    roles to the user that holds this role.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The <literal>Add user</literal> frame allows you to add users to the
+            list of authorized users. Simply type the username of the new
+            authorized user and click the <guibutton>Add</guibutton> button
+            to the right of the text entry.  If the user you type in is already
+            in the authorized list, an error dialog will pop up to inform you
+            of that.
+          </para>
+          <para>
+            The <literal>Add role</literal> frame allows you to add and delete
+            roles.  To add a role, simply type the new role name and click the
+            <guibutton>add</guibutton> button. As with adding users,
+            an error message will pop up if you type in an existing role name.
+            
+          </para>
+          <para>
+            To delete a role, simply click the <guibutton>Delete...</guibutton>
+            button.  A list box will pop up populated with the names of all of the
+            roles that have been defined.   Select thew role(s) to remove and click
+            <guibutton>Ok</guibutton> to remove them.  Roles will be revoked from
+            all that hold them before being deleted so no dangling role references
+            will remain.  Clicking the <guibutton>Cancel</guibutton> button
+            makes no changes.
+          </para>
      </section>
   </section>
   <section id='sec.mgr.running'>
@@ -1826,4 +2039,166 @@ $DAQBIN/mg_kvedit <replaceable>configuration-file</replaceable>
     </refsect1>
 </refentry>
 
+<refentry id='daq1.mg_authedit'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_authedit.title'>mg_authedit</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_authedit</refname>
+      <refpurpose>Edit NSCLDAQ manager authorization database.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_authedit <replaceable>configuration-file</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <command>mg_authedit</command> command allows you to edit the
+            authorization configuration of the experiment.  Auhorization provide
+            access to functionality of the NSCLDAQ manager to specific users
+            (login usernames).  Note that in NSCLDAQ 12.0, authorization is not
+            enforced.  We anticipate that in the future as we come to understand
+            the roles in an experiment better, we can layer these protections into
+            the manager.
+          </para>
+          <para>
+            The user interface of <command>mg_authedit</command> consists of
+            the following sections:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  At the top is a tree view.  The top level items are users
+                  that have been defined to the expermiment.  Second level
+                  items (accessed by left clicking on the wedge icon to the left
+                  of a user's name) are the roles held by that user.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Below the treeview is a section that allows you to add new users.
+                  This is a frame with the lable <literal>Add user</literal>
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Below the <literal>Add user</literal>  frame is a frame of
+                  widgets that allows you to add and delete roles.  This frame
+                  is labelled <literal>Add role</literal>.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  At the bottom  of the user interface is a button labeled
+                  <guibutton>Save</guibutton>.   All changes to the users and
+                  roles and the roles granted to specific users are held within
+                  the user interface until the <guibutton>Save</guibutton> button
+                  is clicked.  
+               </para>
+               <para>
+                To exit without saving updated roles and users, simply
+                delete the window (on most window managers this means clicking)
+                an <literal>X</literal> at the right top of the window banner.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            The treeview supports context menus both on user and roles they've
+            been granted.
+            Right clicking on a user brings up a context menu with the
+            following commands:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guimenuitem>Remove user...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Prompts for confirmation and, if given, removes the user
+                    and, of course.  This operation cleans up  properly, that is
+                    first the user's roles are revoked and then the user
+                    him/herself is removed from the list of authorized users.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Grant Roles...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Pops up a list box populated with all of the roles the
+                    user does <emphasis>not</emphasis> have.  The list box
+                    supports multiple selection.  Select the rols you want to
+                    grant and click the <guibutton>Ok</guibutton> button.
+                    The <guibutton>Cancel</guibutton> button makes no changes
+                    to the granted roles.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Revoke role(s)...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Pops up a list box populated with the roles that have been
+                    granted to the user.  Multiple selections are allowed.
+                    Select the role(s) you wish to revoke from the user and
+                    click <guibutton>Ok</guibutton> to revoke them.  The
+                    <guibutton>Cancel</guibutton> button makes no changes
+                    to the granted roles.
+                   </para>
+                </listitem>
+            </varlistentry>
+            
+          </variablelist>
+          <para>
+            The context menu for a role can be accessed by right clicking on the
+            role.  It contains the following menu commands.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><guimenuitem>Revoke</guimenuitem></term>
+               <listitem>
+                   <para>
+                    Revokes that role, and that role only, from the associated
+                    user.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><guimenuitem>Grant role(s)...</guimenuitem></term>
+               <listitem>
+                   <para>
+                    As with the user context menu, allows you to grant additional
+                    roles to the user that holds this role.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The <literal>Add user</literal> frame allows you to add users to the
+            list of authorized users. Simply type the username of the new
+            authorized user and click the <guibutton>Add</guibutton> button
+            to the right of the text entry.  If the user you type in is already
+            in the authorized list, an error dialog will pop up to inform you
+            of that.
+          </para>
+          <para>
+            The <literal>Add role</literal> frame allows you to add and delete
+            roles.  To add a role, simply type the new role name and click the
+            <guibutton>add</guibutton> button. As with adding users,
+            an error message will pop up if you type in an existing role name.
+            
+          </para>
+          <para>
+            To delete a role, simply click the <guibutton>Delete...</guibutton>
+            button.  A list box will pop up populated with the names of all of the
+            roles that have been defined.   Select thew role(s) to remove and click
+            <guibutton>Ok</guibutton> to remove them.  Roles will be revoked from
+            all that hold them before being deleted so no dangling role references
+            will remain.  Clicking the <guibutton>Cancel</guibutton> button
+            makes no changes.
+          </para>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
