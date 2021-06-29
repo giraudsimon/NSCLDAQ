@@ -1334,6 +1334,20 @@
      <section id='sec.mgr.runcontrol'>
         <title id='sec.mgr.runcontrol.title'>The Run Control Panel</title>
         <para>
+          The run control panel application, <command>mg_RunControl</command>
+          provides a control panel that can manage state transitions, run
+          metadata, event logging and can monitor trigger statistics from
+          compatible readout programs.
+        </para>
+        <para>
+          Full reference information for this program is in
+          <link linkend='daq1.rdo_RunControl' endterm='daq1.rdo_RunControl.title' />
+          Note that unlike many of the manager control panels, in additionto
+          needing the host on which the manager is running and the name of the
+          user running it, this control panel must also be given the list of
+          programs that run Readout REST interfaces.  This is used to maintain
+          a status display of those programs as well as trigger statistics
+          for each readout.
         </para>
      </section>
      <section id='sec.mgr.eventbuilderstats'>
@@ -2465,6 +2479,28 @@ $DAQBIN/mg_monitorOutput <replaceable>host user</replaceable>
             </varlistentry>
           </variablelist>
           
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.rdo_RunControl'>
+   <refmeta>
+      <refentrytitle id='daq1.rdo_RunControl.title'>rdo_RunControl</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>rdo_RunControl</refname>
+      <refpurpose>DAQ Manager Run Control Panel.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/rdo_RunControl <replaceable>host user readout-program-name...</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            
+          </para>
     </refsect1>
 </refentry>
 <!-- /manpage -->
