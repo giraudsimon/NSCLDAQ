@@ -1349,11 +1349,287 @@
           a status display of those programs as well as trigger statistics
           for each readout.
         </para>
+        <para>
+            The user interface is divided into roughly three sections.
+            The top section provides the capability to monitor and modify run
+            metadata.  This metadata inlcudes the current and next title as well
+            as the current and next run.
+          </para>
+          <para>
+            The middle section provides controls and status information
+            to control state transitions in the manager and to monitor
+            the aggregate state of the Readout programs.  This consists of
+            three blocks of controls.  The left block supports booting and
+            shutting down the experiment as well as monitoring the manager state.
+          </para>
+          <para>
+            All state information is polled from the appropriate data source,
+            therefore, if more than one control panel is run, all will show
+            consistent state information regardless of which of thos panels
+            changed system state.  For example if the user running one control panel
+            changes the title, all other control panels will reflect that change
+            after their next poll for status.  Status polling is approximately once
+            per second.
+          </para>
+          <para>
+            The middle block provides run control when the system is booted.
+            It  always allows the system to be shutdown.  If the system can
+            start a run a <guibutton>Begin</guibutton> button is present to do that.
+            If the system is actively taking data an <guibutton>End</guibutton>
+            button allows data taking to be halted.  A booted/idle system
+            can also request that readout programs, that support this,
+            re-initialize their hardware via the <guibutton>Initialize</guibutton>
+            button.
+          </para>
+          <para>
+            The <literal>State</literal> shown in this section is an aggregate
+            state from all specified readouts.  If all Readouts report the same
+            state, this state is reflected here.  If Readouts show differing states,
+            the text <literal>inconsistent</literal> is displayed.  This can
+            happen normally during state transitions as the Readouts asynchronously
+            change state.
+          </para>
+          <para>
+            Finally at the right hand side of the run controls section a
+            checkbox labeled <literal>Recording</literal>, when checked informs
+            the manager that eventloggers should be started when the run starts,
+            recording data for that run.
+          </para>
+          <para>
+            The bottom section of the user interface show the status of all of the
+            readout programs described on the command line.  Note that if you miss
+            one, it will still participate in run transitions if sequences are
+            appropriately defined, as it is the sequences executed by the manager
+            that are actually responsible for starting data taking in readout programs.
+          </para>
+          <para>
+            The bottom section is a tabbed notebook. A single tab labeled
+            <literal>summary</literal> provides a table of all of the readout
+            programs specified on the command line.  Columns of the table provide
+            the name of the program, the host  in which it runs, whether or not
+            the program is responding to REST requests and the whether or not
+            the manager thinks the program is running.
+          </para>
+          <para>
+            Once the Readout programs start and become responsive to REST requests
+            for the first time, additional tabs are created for them.  Each additional
+            tab provides trigger statistics for one of the Readout programs.  The
+            labels on these tabs will be of the form <replaceable>name@host</replaceable>
+            where <replaceable>name</replaceable> is the program name and
+            <replaceable>host</replaceable> is the host in which it runs.
+          </para>
+          <para>
+            The statistics tabs will dynamically show the number of triggers,
+            accepted triggers, and approximate bytes of data generated (event body
+            sizes).  Both cumulative statistics (across all runs), and Statistics
+            for the current run will be shown.  These statistics will update
+            approximately every second.
+          </para>
      </section>
      <section id='sec.mgr.eventbuilderstats'>
         <title id='sec.mgr.eventbuilderstats.title'>Event Builder Statistics Panel.</title>
         <para>
+          When you use the manager with the event builder, it too will have
+          a REST interface.  <link linkend='sec.mgr.eventbuilder' endterm='sec.mgr.eventbuilder.title' />
+          describes how to set this up.  The <command>EVBMonitor</command> command
+          provides a status panel that  dynamically displays the status and
+          statistics for an event builder.  You can point any number of these
+          status panels at an event builder.  At this point in time,
+          each status panel can only display the status from one event builder.
         </para>
+        <para>
+          <link linkend='daq1.evbmonitor' endterm='daq1.evbmonitor.title' />
+          provides reference information that describes the <command>EVBMonitor</command>
+          program.  The remainder of this section will describe what it displays.
+        </para>
+        <para>
+            Let's look at the user interface provided by the event builder monitor.
+            The UI is divided into roughly three sections.  The top section is
+            a tabbed notebook.  Each tab selects a different set of statistics
+            exported by the event builder (more properly the orderer).
+            The bottom left is a table listing the connected data sources.
+            To the right of that is a status block.
+          </para>
+          <para>
+            The tabbed notebook has the following tabs:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>Input Stats</literal></term>
+               <listitem>
+                   <para>
+                    This page shows the input statistics of the event builder
+                    and contains three counters.  The oldest timestamp
+                    queued at any time.  The newest timestamp seen and the
+                    number of queued fragments.  Note that when the number
+                    of queued fragments drops to zero, the system does not
+                    clear the Oldest timestamp counter.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Queue Stats</literal></term>
+               <listitem>
+                   <para>
+                    Provides a table of the queue statistics.  Each line
+                    represents the statistics of a single input queue.
+                    The <literal>Id</literal> of the queue is the source id
+                    associated with the event fragments that will be routed
+                    to that queue.  
+                   </para>
+                   <para>
+                    The <literal>Depth</literal>, <literal>Oldest</literal>
+                    and <literal>Bytes</literal> are respectively, the number
+                    of fragments queued in that queue, the timestamp of the
+                    oldest fragment in the queue (fragment at the front of the
+                    queue), and the number of bytes in the queue.
+                   </para>
+                   <para>
+                    Finally the <literal>Dequeued</literal> and <literal>Queued</literal>
+                    columns are the number of data bytes that have been dequeued
+                    from the queue and queued to the queue respectively.  If the
+                    depth is <literal>0</literal>, these two items should be equal.
+                    In no case should <literal>Dequeued</literal> be greater than
+                    <literal>Queued</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Barrier Stats</literal></term>
+               <listitem>
+                   <para>
+                    This tab shows the top level barrier statistics.  Ideally,
+                    when used with NSCLDAQ, all barriers will be complete and
+                    homogeneous.  The complete barrier statistics are the first
+                    row and contain, from left to right, the number of compete
+                    barriers, the number of homogeneous barriers and the
+                    number of heterogeneous barriers.  A heterogeneous barrier
+                    is one where all queues received a barrier fragment within
+                    the required barrier timeout, but there was more than one
+                    barrier type.  
+                   </para>
+                   <para>
+                    The second line provides the same information but for incomplete barriers.
+                    An incomplete barrier is one where not all queues received
+                    barrier fragments within the barrier timeout from the first
+                    barrier received.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Complete Barriers</literal></term>
+               <listitem>
+                   <para>
+                    Drills down into more details about the complete barriers
+                    seen.  Note that a complete barrier <emphasis>could</emphasis>
+                    be heterogenous.  The statistics in this page help to
+                    untangle that case.
+                   </para>
+                   <para>
+                    The display is a tree view.  There are two top level
+                    elements of the tree; <literal>By Type</literal> that,
+                    when expanded shows the number of each type of barrier
+                    fragment that participated in a complete barrier, and
+                    <literal>By Source</literal> which provides information
+                    about the barriers received from each source.
+                   </para>
+                   <para>
+                    The <literal>By Source</literal> top level, when expanded,
+                    has another level for each data source id. When expanded,
+                    that provides a list of the number of barriers of each
+                    type that were contributed to complete barriers from that
+                    source.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Incomplete Barriers</literal></term>
+               <listitem>
+                   <para>
+                    This tab provides information about barriers that were
+                    incomplete.  A barrier synchronization is incomplete if barrier
+                    fragments were not received on all queues within the barrier
+                    timeout of the first barrier fragment making its way to the
+                    front of a queue.
+                   </para>
+                   <para>
+                    This page is a tree view with two top levels.
+                    The <literal>By # Missing</literal> when expanded,
+                    shows the a count of the number of times a specific number
+                    of fragments is missing.  For example, if a single data
+                    source did not contribute a barrier once in the only incomplete
+                    barrier seen, a subelement labeled <literal>1</literal> (one missing
+                    fragment) will be added and the <literal>Count</literal>
+                    column for it will display <literal>1</literal> (one time).
+                   </para>
+                   <para>
+                    <literal>By Source id</literal> will have sub-entries for
+                    each data source that failed barrier syncrhonization. THe
+                    <literal>Count</literal> column will be the number of times
+                    that source id did not make the barrier timeout.  In
+                    the previous example, suppose the missing data source was
+                    id 5.  This event will add a sub-entry labled 5 (the
+                    id of the data source that missed the timeout) and
+                    with a count of <literal>1</literal> (Missed it once).
+                   </para>
+                   <para>
+                    Note that if a data source is slow getting its barriers in,
+                    you'll see pairs of incomplete barriers, one for when all but
+                    the slow source was present, and one for when the slow source
+                    finally contributed its barrier fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Data Late</literal></term>
+               <listitem>
+                   <para>
+                    Provides the number of data late cases.  This increments
+                    every time a fragment arrives but fragments with a later
+                    timestamp have already been emitted. This display
+                    is a table whose top line is the total number of times this
+                    was detected and whose subsequent lines are the number of times
+                    this was detected in fragments from specific data sources.  The
+                    right most column shows the worst timestamp difference.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Out Of Order</literal></term>
+               <listitem>
+                   <para>
+                    Summarizes the out of order timestamps.  An out of order
+                    event is logged when a data source queue emits a fragment that
+                    is older than the most recently emitted fragment.  This is
+                    often coupled with a data late event.
+                   </para>
+                   <para>
+                    The top row summarizes all data lates over all sources.  The
+                    subsequent lines show data sources with non-zero data late
+                    events.  The <literal>Count</literal> column is the number
+                    of data late events seen. The <literal>Last Good TS</literal>
+                    column show the timestamp of the fragment dequeued prior to
+                    the one that was out of order and <literal>Offending TS</literal>
+                    shows the timestamp from the fragment that was determined
+                    to be out of order.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The connection list at the bottom left is a table of the
+            connected data sources.  Each line provides the IP address in which the
+            source is running, the connection description string of the source,
+            the state of the source and the idle status.
+          </para>
+          <para>
+            Finally, the status display shows if the Event builder has
+            asserted flow control and if the UI is successfully updating.
+            If the Event builder is not responding to update requests,
+            a read <literal>Update failed</literal> will be displayed until
+            updates work again.  This is normal if, for example, the data acquisition
+            system is shutdown.
+          </para>
      </section>
   </section>
   <section id='sec.mgr.readout'>
@@ -2499,7 +2775,322 @@ $DAQBIN/rdo_RunControl <replaceable>host user readout-program-name...</replaceab
     <refsect1>
              <title>DESCRIPTION</title>
           <para>
-            
+            Provides a DAQ Manager run control panel.  The program parameter,
+            <replaceable>host</replaceable> is the host in which the DAQ manager
+            is running.  <replaceable>user</replaceable> is the user name
+            of the user that started the manager.  In addition to these, a
+            sequence of
+            <replaceable>readout-program-name</replaceable> parameters must
+            be provided which are the names of the programs that are readouts
+            which implement the ReadoutREST protocol.  If there are non
+            standard (e.g. Non NSCLDAQ) Readout programs which don't have
+            a ReadoutREST controlling front end, these should be omitted
+            from the list.
+          </para>
+          <para>
+            The user interface is divided into roughly three sections.
+            The top section provides the capability to monitor and modify run
+            metadata.  This metadata inlcudes the current and next title as well
+            as the current and next run.
+          </para>
+          <para>
+            The middle section provides controls and status information
+            to control state transitions in the manager and to monitor
+            the aggregate state of the Readout programs.  This consists of
+            three blocks of controls.  The left block supports booting and
+            shutting down the experiment as well as monitoring the manager state.
+          </para>
+          <para>
+            All state information is polled from the appropriate data source,
+            therefore, if more than one control panel is run, all will show
+            consistent state information regardless of which of thos panels
+            changed system state.  For example if the user running one control panel
+            changes the title, all other control panels will reflect that change
+            after their next poll for status.  Status polling is approximately once
+            per second.
+          </para>
+          <para>
+            The middle block provides run control when the system is booted.
+            It  always allows the system to be shutdown.  If the system can
+            start a run a <guibutton>Begin</guibutton> button is present to do that.
+            If the system is actively taking data an <guibutton>End</guibutton>
+            button allows data taking to be halted.  A booted/idle system
+            can also request that readout programs, that support this,
+            re-initialize their hardware via the <guibutton>Initialize</guibutton>
+            button.
+          </para>
+          <para>
+            The <literal>State</literal> shown in this section is an aggregate
+            state from all specified readouts.  If all Readouts report the same
+            state, this state is reflected here.  If Readouts show differing states,
+            the text <literal>inconsistent</literal> is displayed.  This can
+            happen normally during state transitions as the Readouts asynchronously
+            change state.
+          </para>
+          <para>
+            Finally at the right hand side of the run controls section a
+            checkbox labeled <literal>Recording</literal>, when checked informs
+            the manager that eventloggers should be started when the run starts,
+            recording data for that run.
+          </para>
+          <para>
+            The bottom section of the user interface show the status of all of the
+            readout programs described on the command line.  Note that if you miss
+            one, it will still participate in run transitions if sequences are
+            appropriately defined, as it is the sequences executed by the manager
+            that are actually responsible for starting data taking in readout programs.
+          </para>
+          <para>
+            The bottom section is a tabbed notebook. A single tab labeled
+            <literal>summary</literal> provides a table of all of the readout
+            programs specified on the command line.  Columns of the table provide
+            the name of the program, the host  in which it runs, whether or not
+            the program is responding to REST requests and the whether or not
+            the manager thinks the program is running.
+          </para>
+          <para>
+            Once the Readout programs start and become responsive to REST requests
+            for the first time, additional tabs are created for them.  Each additional
+            tab provides trigger statistics for one of the Readout programs.  The
+            labels on these tabs will be of the form <replaceable>name@host</replaceable>
+            where <replaceable>name</replaceable> is the program name and
+            <replaceable>host</replaceable> is the host in which it runs.
+          </para>
+          <para>
+            The statistics tabs will dynamically show the number of triggers,
+            accepted triggers, and approximate bytes of data generated (event body
+            sizes).  Both cumulative statistics (across all runs), and Statistics
+            for the current run will be shown.  These statistics will update
+            approximately every second.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.evbmonitor'>
+   <refmeta>
+      <refentrytitle id='daq1.evbmonitor.title'>EVBMonitor</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBMonitor</refname>
+      <refpurpose>Monitor Event Builder Statistics via REST Interface.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/EVBMonitor <replaceable>host user <optional>service</optional></replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <command>EVBMonitor</command> command provides statistics monitoring
+            for an event builder when it's run with its REST interface plugin
+            enabled.  This is normally the case when an event builder is run under
+            the control of the DAQ manager subsystem.  When this is true, the
+            event builder does not have access to a controlling desktop and
+            therefore cannot display its normal statistics user interface.
+          </para>
+          <para>
+            The command line parameter <replaceable>host</replaceable>
+            is the system in which <emphasis>the event builder is running</emphasis>.
+            Depending on the programs that encapsulate the event builder in the
+            manager's sequences, this may not be the same as the host in which
+            the manager itself runs.  <replaceable>user</replaceable> is the
+            user running the manager as all programs run by the manager will be
+             run under that user's account.  Finally the optional
+             <replaceable>service</replaceable> parameter provides the service
+             name of the REST interface advertised by the event builder if it is
+             not the default service (<literal>ORDERER_REST</literal>).  This
+             may be needed if there are several event builders and more than one of
+             them runs in a single host.
+          </para>
+          <para>
+            Let's look at the user interface provided by the event builder monitor.
+            The UI is divided into roughly three sections.  The top section is
+            a tabbed notebook.  Each tab selects a different set of statistics
+            exported by the event builder (more properly the orderer).
+            The bottom left is a table listing the connected data sources.
+            To the right of that is a status block.
+          </para>
+          <para>
+            The tabbed notebook has the following tabs:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>Input Stats</literal></term>
+               <listitem>
+                   <para>
+                    This page shows the input statistics of the event builder
+                    and contains three counters.  The oldest timestamp
+                    queued at any time.  The newest timestamp seen and the
+                    number of queued fragments.  Note that when the number
+                    of queued fragments drops to zero, the system does not
+                    clear the Oldest timestamp counter.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Queue Stats</literal></term>
+               <listitem>
+                   <para>
+                    Provides a table of the queue statistics.  Each line
+                    represents the statistics of a single input queue.
+                    The <literal>Id</literal> of the queue is the source id
+                    associated with the event fragments that will be routed
+                    to that queue.  
+                   </para>
+                   <para>
+                    The <literal>Depth</literal>, <literal>Oldest</literal>
+                    and <literal>Bytes</literal> are respectively, the number
+                    of fragments queued in that queue, the timestamp of the
+                    oldest fragment in the queue (fragment at the front of the
+                    queue), and the number of bytes in the queue.
+                   </para>
+                   <para>
+                    Finally the <literal>Dequeued</literal> and <literal>Queued</literal>
+                    columns are the number of data bytes that have been dequeued
+                    from the queue and queued to the queue respectively.  If the
+                    depth is <literal>0</literal>, these two items should be equal.
+                    In no case should <literal>Dequeued</literal> be greater than
+                    <literal>Queued</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Barrier Stats</literal></term>
+               <listitem>
+                   <para>
+                    This tab shows the top level barrier statistics.  Ideally,
+                    when used with NSCLDAQ, all barriers will be complete and
+                    homogeneous.  The complete barrier statistics are the first
+                    row and contain, from left to right, the number of compete
+                    barriers, the number of homogeneous barriers and the
+                    number of heterogeneous barriers.  A heterogeneous barrier
+                    is one where all queues received a barrier fragment within
+                    the required barrier timeout, but there was more than one
+                    barrier type.  
+                   </para>
+                   <para>
+                    The second line provides the same information but for incomplete barriers.
+                    An incomplete barrier is one where not all queues received
+                    barrier fragments within the barrier timeout from the first
+                    barrier received.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Complete Barriers</literal></term>
+               <listitem>
+                   <para>
+                    Drills down into more details about the complete barriers
+                    seen.  Note that a complete barrier <emphasis>could</emphasis>
+                    be heterogenous.  The statistics in this page help to
+                    untangle that case.
+                   </para>
+                   <para>
+                    The display is a tree view.  There are two top level
+                    elements of the tree; <literal>By Type</literal> that,
+                    when expanded shows the number of each type of barrier
+                    fragment that participated in a complete barrier, and
+                    <literal>By Source</literal> which provides information
+                    about the barriers received from each source.
+                   </para>
+                   <para>
+                    The <literal>By Source</literal> top level, when expanded,
+                    has another level for each data source id. When expanded,
+                    that provides a list of the number of barriers of each
+                    type that were contributed to complete barriers from that
+                    source.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Incomplete Barriers</literal></term>
+               <listitem>
+                   <para>
+                    This tab provides information about barriers that were
+                    incomplete.  A barrier synchronization is incomplete if barrier
+                    fragments were not received on all queues within the barrier
+                    timeout of the first barrier fragment making its way to the
+                    front of a queue.
+                   </para>
+                   <para>
+                    This page is a tree view with two top levels.
+                    The <literal>By # Missing</literal> when expanded,
+                    shows the a count of the number of times a specific number
+                    of fragments is missing.  For example, if a single data
+                    source did not contribute a barrier once in the only incomplete
+                    barrier seen, a subelement labeled <literal>1</literal> (one missing
+                    fragment) will be added and the <literal>Count</literal>
+                    column for it will display <literal>1</literal> (one time).
+                   </para>
+                   <para>
+                    <literal>By Source id</literal> will have sub-entries for
+                    each data source that failed barrier syncrhonization. THe
+                    <literal>Count</literal> column will be the number of times
+                    that source id did not make the barrier timeout.  In
+                    the previous example, suppose the missing data source was
+                    id 5.  This event will add a sub-entry labled 5 (the
+                    id of the data source that missed the timeout) and
+                    with a count of <literal>1</literal> (Missed it once).
+                   </para>
+                   <para>
+                    Note that if a data source is slow getting its barriers in,
+                    you'll see pairs of incomplete barriers, one for when all but
+                    the slow source was present, and one for when the slow source
+                    finally contributed its barrier fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Data Late</literal></term>
+               <listitem>
+                   <para>
+                    Provides the number of data late cases.  This increments
+                    every time a fragment arrives but fragments with a later
+                    timestamp have already been emitted. This display
+                    is a table whose top line is the total number of times this
+                    was detected and whose subsequent lines are the number of times
+                    this was detected in fragments from specific data sources.  The
+                    right most column shows the worst timestamp difference.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Out Of Order</literal></term>
+               <listitem>
+                   <para>
+                    Summarizes the out of order timestamps.  An out of order
+                    event is logged when a data source queue emits a fragment that
+                    is older than the most recently emitted fragment.  This is
+                    often coupled with a data late event.
+                   </para>
+                   <para>
+                    The top row summarizes all data lates over all sources.  The
+                    subsequent lines show data sources with non-zero data late
+                    events.  The <literal>Count</literal> column is the number
+                    of data late events seen. The <literal>Last Good TS</literal>
+                    column show the timestamp of the fragment dequeued prior to
+                    the one that was out of order and <literal>Offending TS</literal>
+                    shows the timestamp from the fragment that was determined
+                    to be out of order.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The connection list at the bottom left is a table of the
+            connected data sources.  Each line provides the IP address in which the
+            source is running, the connection description string of the source,
+            the state of the source and the idle status.
+          </para>
+          <para>
+            Finally, the status display shows if the Event builder has
+            asserted flow control and if the UI is successfully updating.
+            If the Event builder is not responding to update requests,
+            a read <literal>Update failed</literal> will be displayed until
+            updates work again.  This is normal if, for example, the data acquisition
+            system is shutdown.
           </para>
     </refsect1>
 </refentry>
