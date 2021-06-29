@@ -352,6 +352,7 @@ proc container::listDefinitions {db {name {}}} {
             set containers($id) [dict create           \
                 name $record(container)                \
                 image $record(image_path)              \
+               bindings [list]                         \
             ]
             set init $record(init_script);            # Pulls out enclosing {}
             if {$init ne ""} {

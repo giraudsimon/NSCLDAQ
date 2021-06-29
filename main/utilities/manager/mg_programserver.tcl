@@ -130,7 +130,7 @@ proc _makeContainersArray {db} {
     foreach def $defs {
         set name [dict get $def name]
         set image [dict get $def image]
-       set bindings [_transformBindings [dict get $def bindings]]
+        set bindings [_transformBindings [dict get $def bindings]]
         set activations [_listActivations $name]
         
         lappend result [json::write object                          \

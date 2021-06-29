@@ -886,6 +886,7 @@ snit::type SummaryTracker {
     # @param program - dict describing the program.
     #
     method _updateReadoutStatus {program} {
+
         set host [dict get $program host]
         set name [dict get $program name]
         set active [dict get $program active]
@@ -1192,7 +1193,6 @@ snit::type RunController {
         ]
         
         $self configurelist $args
-        
         $self _update
         
     }
@@ -1255,7 +1255,7 @@ snit::type RunController {
     #     readoutModels (assumed to be empty)
     # 
     method _createReadoutModels {} {
-        catch {;                        # In case the manager is dead...
+       set status [ catch {;                        # In case the manager is dead...
             if {$options(-programmodel) ne ""} {
                 set status [$options(-programmodel) status]
                 set programs [dict get $status programs]
@@ -1272,9 +1272,12 @@ snit::type RunController {
                     }
                 }
             }
-        }
+        } msg]
         # If we get through this all successfully, there will be as many models as
         # programs.
+        if {$status} {
+            puts "$msg $::errorInfo"
+        }
     }
     ##
     # _computeReadoutModels
@@ -1301,7 +1304,6 @@ snit::type RunController {
         # In with the new
         
         $self _createReadoutModels;    # Empty lists possibly.
-       
         if {[llength $readoutModels] == [llength $options(-readouts)]} {
             $multiReadoutStatisticsTracker configure \
                 -models $readoutModels -programs $options(-readouts)
@@ -1452,6 +1454,7 @@ if {[llength $argv] < 3} {
 set mgrhost [lindex $argv 0]
 set mgruser [lindex $argv 1]
 set programs [lrange $argv 2 end]
+
 
 # Make the view.   That's easy:
 
