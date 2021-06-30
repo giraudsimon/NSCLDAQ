@@ -1207,8 +1207,8 @@ EVBC::configure <replaceable>option value ...</replaceable>
 
       </refentry>
 
+<!-- /manpage -->
 
-<!-- /manpage     -->
 <!-- manpage 1daq -->
 
 <refentry id='daq1.glom'>
@@ -1218,7 +1218,7 @@ EVBC::configure <replaceable>option value ...</replaceable>
    </refmeta>
    <refnamediv>
       <refname>glom</refname>
-      <refpurpose>Glue Ordere Fragments Into Events</refpurpose>
+      <refpurpose>Glue Ordered Fragments Into Events</refpurpose>
     </refnamediv>
     <refsynopsisdiv>
         <cmdsynopsis>
@@ -1306,7 +1306,8 @@ $DAQBIN/glom <option>option....</option>
             </varlistentry>
           </variablelist>
     </refsect1>
-</refentry>
+  </refentry>
+
       <refentry id="daq1-evbclientfw-run">
         <refentryinfo>
             <author>
