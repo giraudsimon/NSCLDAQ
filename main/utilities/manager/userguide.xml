@@ -219,11 +219,22 @@
           in the nscldaq project.
         </para>
         <para>
+          Note that regardless of whether or not the application is launched
+          native or containerized, an SSH Pipe is used to launch the application.
+          You must therefore set up your <filename>~/.ssh/authorized_keys</filename>
+          file to allow SSH to connect to the hosts you are running programs in
+          without the need to specify a passowrd interactively.  At the
+          FRIB, all DAQ systems share common home directory trees so this  is
+          fairly simple.  The process well documented on the web if you search
+          for e.g. <literal>ssh without password</literal>.  Since the
+          web is volatile we will not provide specific links here.
+        </para>
+        <para>
           The <command>$DAQBIN/mg_cfgcontainers</command> utility allows you to
           define and name containers and the bindings they have with the
           native filesystem.  You can also launch this program by double clicking
           <literal>Containers</literal> from the list of configuration utilities
-          displayed by <command>$DAQBIN/mg_config</command>.  Bot of these
+          displayed by <command>$DAQBIN/mg_config</command>.  Both of these
           programs require a single argument, the path of the configuration database
           file.
           For reference information about these programs see:
@@ -1635,11 +1646,746 @@
   <section id='sec.mgr.readout'>
      <title id='sec.mgr.readout.title'>Running Readout Software With the Manager</title>
      <para>
+      Running Readout programs under the DAQ manager requires the following:
      </para>
+     <itemizedlist>
+      <listitem>
+         <para>
+            Incorporating the REST control and status server into the Readout. 
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Providing a sequence entry to the manager on BEGIN that starts
+            up the Readout.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Providing sequence entries to the manager on BEGIN, HWINIT and END
+            that properly start the run, request a hadware initialization and
+            end the run.
+         </para>
+      </listitem>
+     </itemizedlist>
+     <para>
+      Note that the current, initial version of the management utilities, do not
+      support multiple Readouts in a single host, the mechanics are there but
+      what is not there is the ability to specify REST Service names to the
+      controlling utilities and control panels for each Readout.  We anticipate
+      a later release of 12.x will provide this support.
+     </para>
+     <para>
+      The remainder of this section will describe:
+     </para>
+     <itemizedlist>
+      <listitem>
+         <para>
+            <link linkend='sec.mgr.bootreadout' endterm='sec.mgr.bootreadout.title' />
+            describes how to setup Readout to run the REST plugin as a manager program and
+            add it to
+            a sequence attached to the BOOT transition.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            <link linkend='sec.mgr.readoutctl' endterm='sec.mgr.readoutctl.title' />
+            describes the utilities that are available to control NSCLDAQ Readout
+            programs that run the Readout REST server and how to use them in
+            sequences attached to HWINIT, BEGIN, END and SHUTDOWN  to control
+            the Readout program(s) that have been started at BOOT.
+         </para>
+      </listitem>
+     </itemizedlist>
+     <para>
+        If your experiment runs more than one Readout you'll need to repeat the
+        instructions in the following section, once for each Readout and
+        most likely run the event builder as described in
+        <link linkend='sec.mgr.eventbuilder' endterm='sec.mgr.eventbuilder.title' />
+     </para>
+     <section id='sec.mgr.bootreadout'>
+        <title id='sec.mgr.bootreadout.title'>Starting Readout with REST at BOOT</title>
+        <para>
+          Starting Readout with a REST interface within the manager requires:
+        </para>
+        <orderedlist>
+          <listitem>
+             <para>
+                Creating an initscript that is run by Readout as it starts
+                to start the REST server.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Specifying the Readout as a program to the manager. 
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Adding the Readout program to a sequence that's triggered
+                by a BOOT transition.  We'll show how to create that sequence
+                if it does not yet exist.  Note that any number of sequences
+                can be triggered by a manager state transition.
+             </para>
+          </listitem>
+        </orderedlist>
+        <formalpara>
+          <title>The Readout initscript.</title>
+          <para>
+            Readouts in the NSCLDAQ support initialization scripts.  These
+            are Tcl scripts whose path is specified by the
+            <option>--init-script</option> command line option.
+            To start the REST server in Readout the following initscript
+            is required:
+          </para>
+        </formalpara>
+        <example>
+          <title>Readout initscript to Start a REST server</title>
+          <programlisting>
+#
+#  To override the default service name add a line like:
+#
+#   set ServiceName MyReadoutRESTService
+package require ReadoutREST
+close stdin
+          </programlisting>
+        </example>
+        <para>
+          The <command>package require</command> command starts the REST server.
+          The default service name <literal>ReadoutREST</literal> is used
+          unless this is overridden by defining the Tcl variable
+          <varname>ServiceName</varname> or the environment variable
+          <literal>SERVICE_NAME</literal> to be the desired service name.
+        </para>
+        <para>
+          Once the REST service starts up, we close stdin so that we can
+          continue to run if an endfile is detected on stdin.
+        </para>
+        <formalpara>
+          <title>Specifying a Readout Program to the Manager.</title>
+          <para>
+            The program editor <link linkend='daq1.mg_cfgprogram' endterm='daq1.mg_cfgprogram.title' />
+            or the experiment configuration editor
+            (<link linkend='daq1.mg_config' endterm='daq1.mg_config.title' />)
+            should be used to specify a Readout program to the editor:
+            <orderedlist>
+              <listitem>
+                 <para>
+                    Click the <guibutton>New...</guibutton>  button to bring
+                    up the program editor to create a new program.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                     Fill in the top part of the definition:
+                     Choose a unique name you will use to refer to this program
+                     when buiding sequences.  If appropriate, select the container
+                     in which the program will run.  Set for <literal>Program file:</literal>
+                     the executable program or script that runs your Readout.
+                     Note that if you are running within a container, this must
+                     refer to a path within the container file system.  Set
+                     the host in which the program will run and the working
+                     directory in which it will run.  Mark the program as
+                     <literal>Critical</literal>
+                 </para>
+                 <para>
+                  Note that when running within a container, it can be useful
+                  to define your container so that it has an initialization
+                  script that sources the appropriate daqsetup.bash file.  If you
+                  do that, since when running a program the manager writes a shell
+                  script to run it, you can do environment name substitutions, e.g.
+                  the program can be specified as <filename>$DAQBIN/DDASReadout</filename>.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    Specify the program options you need for Readout by adding
+                    them to the left list box.  At the very least you need
+                    to specify <option>--inits-cript</option> to have a value
+                    that is the path of your initialization script (within the
+                    containerized filesystem if running containerized).
+                    Depending on your data flow and if you are doing event building
+                    you may also need to specify <option>--ring</option> and
+                    <option>--sourceid</option>. 
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                     Fill in the program environment.  At the very least, you'll
+                     need to define <literal>TCLLIBPATH</literal> to point to the NSCLDAQ Tcl
+                     package library directory tree
+                     so that the <literal>ReadoutREST</literal> package
+                     can be found.  If the <filename>daqsetup.bash</filename> has
+                     been sourced, you can specify the value of that environment
+                     variable to be <literal>$DAQTCLLIBS</literal>
+                 </para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </formalpara>
+        <formalpara>
+          <title>Starting your Readout From a Boot Sequencde</title>
+          <para>
+            In general, you will want to start your Readout program from a sequence
+            that's triggered by the BOOT transition.  This will start your readout
+            program as you tell the manager to bring up your data acquisition
+            system.  Use
+            <link linkend='daq1.mg_seqedit' endterm='daq1.mg_seqedit.title' />
+            (or start it from
+            <link linkend='daq1.mg_config' endterm='daq1.mg_config.title' />)
+            to do this.  If no sequence has been specified to trigger on Boot,
+            you need to create one by typing a unique sequence name
+            (I suggest <literal>BOOT)</literal>) in the <literal>New Sequence:</literal>
+            entry box and selecting <literal>BOOT</literal> from the
+            <literal>Trigger state:</literal> drop down.  Then
+            click <guibutton>Add</guibutton> to add it to the list of sequences.
+            Once you have done this:
+            <orderedlist>
+              <listitem>
+                 <para>
+                    Double click the sequence triggered on boot to bring up
+                    the sequence editor.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    In the <literal>Define step</literal>  frame choose your
+                    readout program from the <literal>Program name</literal>
+                    drop down list.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    Click <guibutton>Add</guibutton> to add the program
+                    to the end of list of actions performed by this sequence.
+                    In general, you won't need either a pre or post delay so you
+                    can leave these defaulted to zero.
+                 </para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </formalpara>
+     </section>
+     <section id='sec.mgr.readoutctl'>
+        <title id='sec.mgr.readoutctl.title'>Controlling Readout From the Manager</title>
+        <para>
+          In the previous section we saw how to add a Readout program to the
+          manager and arrange for it to start when the DAQ system boots.
+          In this section we'll describe how to ensure that the manager
+        </para>
+        <orderedlist>
+          <listitem>
+             <para>
+                Starts any event loggers you've defined when a run begins. 
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Sets the run metadata (title, run number) in all readout
+                programs when the run begins.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Tells the readout programs to begin taking data when a run begins
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Tells the Readout programs to stop taking data when a run ends. 
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Provides support for hardware initialization if needed for eeach
+                readout.
+             </para>
+          </listitem>
+        </orderedlist>
+        <para>
+          Note that for some complex data acquisition systems you will need
+          to think about the order in which each Readout starts/stops taking data and
+          may need to also think about how to arrange for timestamp synchronization.
+        </para>
+        <para>
+          The manager provides a number of utilities to help you build sequences
+          that control data taking.  These are:
+        </para>
+        <variablelist>
+          <varlistentry>
+             <term><link linkend='daq1.mg_startloggers' endterm='daq1.mg_startloggers.title' /></term>
+             <listitem>
+                 <para>
+                  This program starts all event loggers you have defined
+                  for your experiment.  All loggers run for the duration of a single
+                  run.  The loggers will only start if global event recording
+                  is enabled and each logger will then only start if it is enabled.
+               </para>
+               <para>
+                Normally event logger must be started in a <literal>BEGIN</literal>
+                sequence before any of the readouts are allowed to take data.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>
+              <link linkend='daq1.rdo_runFromKv' endterm='daq1.rdo_runFromKv.title' />
+             </term>
+             <listitem>
+                 <para>
+                  Asks a single readout program to set its run number to the
+                  value of the <literal>run</literal> variable in the key
+                  value store.  This should be done in each Readout program
+                  prior to starting data taking so that they all have
+                  consistent run numbers that match the value of
+                  that variable.  This variable is maintained by the
+                  Run control panel.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>
+              <link linkend='daq1.rdo_titleFromKv' endterm='daq1.rdo_titleFromKv.title' />
+             </term>
+             <listitem>
+                 <para>
+                  Asks a single readout program to set it stitle to the value of
+                  the <literal>title</literal> key in the key value store.  This
+                  should be done in each Readout program prior to starting a run
+                  so that they all have the same title.  This should be
+                  done in the sequence prior to starting data taking.
+                  This variable is maintained by the Run control panel.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term>
+              <link linkend='daq1.rdo_control' endterm='daq1.rdo_control.title' />
+             </term>
+             <listitem>
+                 <para>
+                  Performs some operation on a single Readout program.
+                  We're going to use the <literal>init</literal>,
+                  <literal>begin</literal>,  <literal>end</literal> and
+                  <literal>shutdown</literal> subcommands.
+               </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para>
+          The remainder of this section will show:
+        </para>
+        <itemizedlist>
+          <listitem>
+             <para>
+                What to put in a sequence triggered on
+                <literal>SHUTDOWN</literal>to stop
+                your Readouts.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                What to put in a sequence triggered on
+                <literal>BEGIN</literal>to start taking
+                data.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                What to put in a sequence triggered on
+                <literal>HWINIT</literal> to ask the Readouts to intialize
+                their hardware.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                What to put in a sequence tirggered on
+                <literal>END</literal> to end data taking in your Readouts.
+             </para>
+          </listitem>
+        </itemizedlist>
+        <para>
+          To cut down on explanatory text, we're going to assume:
+        </para>
+        <itemizedlist>
+          <listitem>
+             <para>
+                The manager is running in a system called <literal>daqcompute1</literal>
+                and was or will be started by <literal>fox</literal>.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                There's only one readout and its run in a system called
+                <literal>spdaq99</literal> and its program name is <literal>readout99</literal>
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                Following the instructions in the previous section, we've already
+                set up a <literal>BOOT</literal> sequence that starts our
+                Readout when the system is booted.
+             </para>
+          </listitem>
+          <listitem>
+             <para>
+                We're running containerized in a container named
+                <literal>BUSTER</literal> and the initscript of that
+                container sources an appropriate <filename>daqsetup.bash</filename>
+                so all of the DAQ Environment variables are availalble.
+             </para>
+          </listitem>
+        </itemizedlist>
+        <formalpara>
+          <title><literal>SHUTDOWN</literal> sequence</title>
+          <para>
+            We need to create a program that shuts down our <literal>readout99</literal>
+            Readout program and put it in a sequence that is triggered by the
+            <literal>SHUTDOWN</literal> transition:
+            <orderedlist>
+              <listitem>
+                 <para>
+                    Use the program editor
+                    <link linkend='daq1.mg_cfgprogram' endterm='daq1.mg_cfgprogram.title' />
+                    to create a new program named
+                    <literal>shutdown99</literal> let's run it in <literal>daqcompute1</literal>,
+                    although it could run anywhere.  Specify the <literal>buster</literal>
+                    container, any working directory and the program file will be
+                    <literal>$DAQBIN/rdo_control</literal>.  The program should be
+                    marked 
+                 </para>
+                 <para>
+                  Parameters must be in order: <literal>spdaq99</literal> (the
+                  system readout99 runs in), <literal>fox</literal> and
+                  <literal>shutdown</literal>.
+                 </para>
+                 <para>
+                  Save this program definition by clicking <guibutton>Ok</guibutton>.
+                  This creates a nw program, <literal>shutdown99</literal>
+                  that will ask the readout program in <literal>spdaq99</literal>
+                  run by <literal>fox</literal> to exit.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                     Use the sequence editor,
+                     <link linkend='daq1.mg_seqedit' endterm='daq1.mg_seqedit.title' />
+                     to, if necessary  create a sequence triggered on the
+                     <literal>SHUTDOWN</literal> transition.  Double click on that
+                     sequence to edit its steps.
+                 </para>
+                 <para>
+                  Add a step that runs the <literal>shutdown99</literal> program
+                   you just created to the sequence.
+                 </para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </formalpara>
+        <formalpara>
+          <title>Telling the Manager to Begin a Run in readout99</title>
+          <para>
+            We need to create programs to set the run number, Set the title and
+            begin the run:
+            <orderedlist>
+              <listitem>
+                 <para>
+                     In the program editor, create a new program name it
+                     <literal>setrun99</literal> it will run in
+                     <literal>daqcomput1</literal>, under the <literal>buster</literal>
+                     container and will execute
+                     <literal>$DAQBIN/rdo_runFromKv</literal>.  This program
+                     should be marked transitory.  It's parameters should, in order,
+                     be: <literal>spdaq99</literal>, <literal>fox</literal>,
+                     <literal>readout99</literal>
+                 </para>
+                 <para>
+                  You can choose any existing directory for the working
+                  directory.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    Similarly create a new program <literal>settitle99</literal>
+                    everthing should be the same as the previous step, however,
+                    the program file will be <literal>$DAQBIN/rdo_titleFromKv</literal>
+                    this program should also be transitory.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                     Finally add a new program named <literal>begin99</literal>
+                     Only the program file and parameters will be different
+                     from the programs above:  For the program  file
+                     use <literal>$DAQBIN/rdo_control</literal>, for
+                     the parameters use, in order:
+                     <literal>spdaq99</literal>, <literal>fox</literal> and
+                     <literal>begin</literal>.
+                 </para>
+                 <para>
+                  This creates a program that requests that our readout running
+                  in spdaq99 begin a run.
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    Finally, using the sequence editor; if necessary, create a sequence
+                    that is triggered by the <literal>BEGIN</literal>
+                    transition add, in order, the <literal>setrun99</literal>,
+                    <literal>settitle99</literal> and <literal>begin99</literal>
+                    programs you created in the steps above.  These sequence steps
+                    will set the run number and title from the values in the
+                    key value store and then start the run in the Readout
+                    program.
+                 </para>
+              </listitem>
+            </orderedlist>            
+          </para>
+        </formalpara>
+        <formalpara>
+          <title>Handling <literal>HWINIT</literal> Transitions</title>
+          <para>
+            When an <literal>HWINIT</literal> transition is performed, we want
+            to tell <literal>readout99</literal> to initialize its hardware,
+            if it supports doing that:
+            <orderedlist>
+              <listitem>
+                 <para>
+                    Create a new program <literal>hwinit99</literal>.  It should
+                    run in the <literal>buster</literal> container, be marked
+                    transitory and run in <literal>daqcompute1</literal>.
+                    The progam file should be <literal>$DAQBIN/rdo_control</literal>.
+                    The parameters should be, in order,
+                    <literal>spdaq99</literal>, <literal>fox</literal> and
+                    <literal>init</literal>
+                 </para>
+              </listitem>
+              <listitem>
+                 <para>
+                    Using the sequence editor, if necessary add a sequence that is
+                    triggered by the <literal>HWINIT</literal> transition.
+                    Add <literal>hwinit99</literal> to that sequence.
+                 </para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </formalpara>
+        <formalpara>
+          <title><literal>END</literal> Transitions and Stopping Data Taking</title>
+          <para>
+            To end the run when the manager undertakes a <literal>END</literal>
+            transition:
+            <orderedlist>
+              <listitem>
+                 <para>
+                    Create a new program with the program editor
+                    named <literal>end99</literal>.  The program file should
+                    be <literal>$DAQBIN/rdo_control</literal>, the container
+                    <literal>buster</literal>, the host <literal>daqcompute1</literal>.
+                    The program should be marked transitory and its parameters,
+                    in order must be
+                    <literal>spdaq99</literal>, <literal>fox</literal> and
+                    <literal>end</literal>
+                 </para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </formalpara>
+     </section>
   </section>
   <section id='sec.mgr.eventbuilder'>
      <title id='sec.mgr.eventbuilder.title'>Using the NSCLDAQ Event Builder With the Manager</title>
      <para>
+      This section describes how to run the NSCLDAQ event builder from the
+      NSCLDAQ manager.  Unlike the ReadoutGUI, where the event builder was often
+      run in one-shot mode, we suggest running the Event builder in persitent
+      mode under the manager.
+     </para>
+     <para>
+      This requires:
+     </para>
+     <orderedlist>
+      <listitem>
+         <para>
+            You create a program to start the event builder with its
+            REST statistics plugin
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            You create program definitions for each data source. 
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            You add these programs to a sequence that's executed by the
+            <literal>BOOT</literal> transition
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Create a program to shutdown the event builder (the sources
+            will shutdown when their network peer exits).
+         </para>
+      </listitem>
+      <listitem>
+         <para>
+            Add the shutdown program to a sequence that's executed
+            by the <literal>SHUTDOWN</literal> transition.
+         </para>
+      </listitem>
+     </orderedlist>
+     <para>
+      In the remainder of this section we will show how to execute the steps
+      above.
+     </para>
+     <formalpara>
+      <title>Create a Program To Start The Event Builder.</title>
+      <para>
+        In fact, the event builder is a pipeline of programs.  An Orderer which
+        accepts fragments from data sources and outputs them totally time ordered
+        to stdout, <command>glom</command> which glues together fragments into
+        events and sends those events to its stdout, and finally
+        <command>stdintoring</command> which drops the ring items 
+        <command>glom</command> built to a ringbuffer for distribution.
+      </para>
+     </formalpara>
+     <para>
+      You will need to build a script that starts up this pipeline and define
+      it as a program to the manager.  The following sample script does that
+      building events with a timestamp window of <literal>250</literal>
+      ticks and dropping events into the ringbuffer <literal>fox_evb</literal>.
+     </para>
+     <example>
+      <title>An Event Builder Start Script</title>
+      <programlisting>
+#!/bin/bash
+
+
+TCLLIBPATH=$DAQTCLLIBS $DAQBIN/EVBRest  \
+  | $DAQBIN/glom --dt 250  \
+  | $DAQBIN/stdintoring fox_evb
+
+      </programlisting>
+     </example>
+     <para>
+      This script assumes the appropriate  <filename>daqsetup.bash</filename>
+      script has been sourced.   The first stage of the pipeline runs
+      the <link linkend='daq1.EVBRest' endterm='daq1.EVBRest.title' />
+      program which runs the orderer stage with a REST interface plugin.
+      The second stage of the pipeline run the <command>glom</command> program
+      described in
+      <link linkend='daq1.glom' endterm='daq1.glom.title' />.
+      The <option>--dt</option><literal> 250</literal> option sets the
+      build window to 250 timestamp ticks.  The final pipline stage takes the
+      output of glom and puts the ring items it produced into the ring named
+      <literal>fox_evb</literal>.
+     </para>
+     <para>
+      Use <link linkend='daq1.mg_cfgprogram' endterm='daq1.mg_cfgprogram.title' />
+      to create a program that runs this script.  Be sure to chmod the
+      script so that it is executable by whomever will run the manager.
+      In the remaining discussion, we'll assume this program was given the name
+      <literal>startevb</literal>.
+     </para>
+     <para>
+      Specify the name of the program as <literal>startevb</literal>, specify
+      the name of the script you created for the filename.  Specify appropriate
+      container, working directory and host values.  Generally, event builders
+      should be marked as <literal>Critical</literal> programs.  
+     </para>
+     <para>
+      You should not normally require any options, parameters or environhment
+      variables.   These will be provided in your script.
+     </para>
+     <formalpara>
+      <title>Making a Program to Start a Data Source</title>
+      <para>
+        This discussion assumes that the data comes from
+        <literal>tcp://spdaq99/fox</literal>.  We also assume the source ids
+        are the default value of <literal>0</literal>.  Finally we assume that
+        the program will run in an evironment with an appropriate
+        <filename>daqsetup.bash</filename> sourced in.
+      </para>
+     </formalpara>
+     <para>
+      In the program editor set the name to e.g. <literal>source99</literal>
+      Set the host to the name of the host in which you want the source to run.
+      Choose an appropriate container definition if appropriate.  Chose
+      any working directory and mark the progrfam as Critical.
+     </para>
+     <para>
+      The following options should be specified:
+     </para>
+     <variablelist>
+      <varlistentry>
+         <term><option>--evbhost</option></term>
+         <listitem>
+             <para>
+              Host in which the event builder pipeline will run.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--evbname</option></term>
+         <listitem>
+             <para>
+              Set this to the name of the user running the manager.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--info</option></term>
+         <listitem>
+             <para>
+              Set this to a descriptive string. E.g:
+              <literal>"spdaq99\ data"</literal>
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term>--ids</term>
+         <listitem>
+             <para>
+              There should be one of these for each source id the source will
+              emit.  The value should be the value of one of those ids.
+              Note that most NSCLDAQ Readout programs only emit a single source id.
+              A notable exception being the CAEN Digitizer readouts which emit
+              a source id per digitizer.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--ring</option></term>
+         <listitem>
+             <para>
+              The URI from which the data comes.  In our example the value is
+              <literal>tcp://spdaq99/fox</literal>
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--expectbodyheaders</option></term>
+         <listitem>
+             <para>
+              No value required.  This indicates the data come from an 11.0
+              NSCLDAQ or later.
+           </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--oneshot</option><literal>=0</literal></term>
+         <listitem>
+             <para>
+              Indicates the data source should not exit after an end of run
+              condition.
+           </para>
+        </listitem>
+      </varlistentry>
+     </variablelist>
+     <para>
+      For more information; see
+      <link linkend='daq1.ringfragsource' endterm='daq1.ringfragsource.title' />
      </para>
   </section>
 </chapter>
@@ -3091,6 +3837,412 @@ $DAQBIN/EVBMonitor <replaceable>host user <optional>service</optional></replacea
             a read <literal>Update failed</literal> will be displayed until
             updates work again.  This is normal if, for example, the data acquisition
             system is shutdown.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.mg_startloggers'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_startloggers.title'>mg_startloggers</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_startloggers</refname>
+      <refpurpose>Start Event Managed Event Loggers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis><command>
+$DAQBIN/mg_startloggers <replaceable>manger-host manager-user</replaceable>
+      </command></cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Requests that the manager run by the user <replaceable>manager-user</replaceable>
+            in the system <replaceable>manager-host</replaceable> start all
+            appropriate event loggers.  The manager will only start event loggers
+            if the global recording state is on.  Individual loggers will
+            only be started if they are enabled.
+          </para>
+          <para>
+            Each started logger will log exactly one run and then exit.
+            Therefore loggers should be started early in a
+            sequence that is triggered by <literal>BEGIN</literal> transitions.
+          </para>
+          <para>
+            Output from loggers is relayed to the output monitor where
+            <link linkend='daq1.mg_monitorOutput' endterm='daq1.mg_monitorOutput.title' />
+            will display it if run.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.rdo_runFromKv'>
+   <refmeta>
+      <refentrytitle id='daq1.rdo_runFromKv.title'>rdo_runFromKv</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>rdo_runFromKv</refname>
+      <refpurpose>Set Run Number from Key Value STore</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+        <command>
+$DAQBIN/rdo_runFromKv <replaceable>mgr_host mgr_user readout-name</replaceable>
+        </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            By convention the experiment run number is maintained in the
+            value of the
+            <literal>run</literal> key of an experiment's key value store.
+            This program:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Fetches the program definition for the
+                  <replaceable>readout-name</replaceable> program from the
+                  manager running in <replaceable>mgr_host</replaceable> started by
+                  the user <replaceable>mgr_user</replaceable>.  The assumption
+                  is that this is a readout program that has the
+                  ReadoutREST plugin running.
+               </para>
+               <para>
+                The program definition describes the host in which this
+                Readout is running and its username will be the same as
+                <replaceable>mgr_user</replaceable>.  The REST service is
+                assumed to be running on the default service name.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Fetches the value of the <literal>run</literal>  key from
+                  the same manager.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Requests that the specified Readout program set its run number
+                  to the value of the <literal>run</literal> key fetched from
+                  the key value store.
+               </para>
+            </listitem>
+          </itemizedlist>
+    </refsect1>
+    <refsect1>
+      <title>TO DO</title>
+      <para>
+        It is the use of the default REST service name in this and other
+        programs that restrict us to a single Readout program per host/user
+        pair.  This restriction should be removed at some point by allowing
+        users to specify the REST service used by programs and using that
+        to select the actual service name.
+      </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.rdo_titleFromKv'>
+   <refmeta>
+      <refentrytitle id='daq1.rdo_titleFromKv.title'>rdo_titleFromKv</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>rdo_titleFromKv</refname>
+      <refpurpose>Set Readout Title From the KV 'title' Value.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/rdo_titleFromKv <replaceable>mgr_host mgr_user readout_program</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            By convention the experiment title is maintained in the value of the
+            <literal>title</literal> key of an experiment's key value store.
+            This program:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Fetches the program definition for the
+                  <replaceable>readout_program</replaceable> program from the
+                  manager running in <replaceable>mgr_host</replaceable> started by
+                  the user <replaceable>mgr_user</replaceable>.  The assumption
+                  is that this is a readout program that has the
+                  ReadoutREST plugin running.
+               </para>
+               <para>
+                The program definition describes the host in which this
+                Readout is running and its username will be the same as
+                <replaceable>mgr_user</replaceable>.  The REST service is
+                assumed to be running on the default service name.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Fetches the value of the <literal>title</literal>  key from
+                  the same manager.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Requests that the specified Readout program set its title
+                  to the value of the <literal>title</literal> key fetched from
+                  the key value store.
+               </para>
+            </listitem>
+          </itemizedlist>
+    </refsect1>
+    <refsect1>
+      <title>TO DO</title>
+      <para>
+        It is the use of the default REST service name in this and other
+        programs that restrict us to a single Readout program per host/user
+        pair.  This restriction should be removed at some point by allowing
+        users to specify the REST service used by programs and using that
+        to select the actual service name.
+      </para>
+    </refsect1>
+</refentry>
+<refentry id='daq1.rdo_control'>
+   <refmeta>
+      <refentrytitle id='daq1.rdo_control.title'>rdo_control</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>rdo_control</refname>
+      <refpurpose>Control a Readout via ReadoutREST</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/rdo_rest <replaceable>rdo_host rdo_user subcommand </replaceable>  <optional><replaceable>parameter...</replaceable></optional>     
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Performs an operation defined by <replaceable>subcommand</replaceable>
+            on the REST interface of a readout program running in
+            <replaceable>rdo_host</replaceable>, run by  <replaceable>rdo_user</replaceable>.
+            Note that in general, <replaceable>rdo_user</replaceable> is going to
+            be the same as the user that started the DAQ manager if this
+            readout program was started by that manager.
+          </para>
+          <para>
+            Some set of subcommands require additional parameters as shown
+            in the <literal>SYNOPSIS</literal>.  These parameters will be
+            described below.
+          </para>
+          <para>
+            The subcommands currently supported are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>begin</literal></term>
+               <listitem>
+                   <para>
+                    Begin data taking.  This requires no additional parameters.
+                    Note that for this to succeed, the Readout must be in a state
+                    where it's legal to begin a run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>end</literal></term>
+               <listitem>
+                   <para>
+                    Ends data taking.  This requires no additional parameters.
+                    For this to succeeed, the Readout must be in a state where
+                    it is legal to end a run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>init</literal></term>
+               <listitem>
+                   <para>
+                    Initializes the hardware controlled by the Readout.
+                    This requires no additional parameters.
+                   </para>
+                   <para>
+                    Note that some NSCLDAQ Readout programs do not support this.
+                    If that is the case, they return a success status from the
+                    REST request and just don't act on the request.
+                    This operation requires no additional command parameters.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>shutdown</literal></term>
+               <listitem>
+                   <para>
+                    Calls on the program to exit.  In practice, Readout should
+                    first return a success or failure status before
+                    exiting or scheduling an exit for a later time soon in the
+                    future. This operation requires no additional command parameters.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>incRun</literal></term>
+               <listitem>
+                   <para>
+                    Adds 1 to the current run number.  Note that the run number
+                    is only looked at at the beginning of the run.  This operation
+                    requires no additional command parameters.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>setRun</literal> <replaceable>n</replaceable></term>
+               <listitem>
+                   <para>
+                    Sets the run number to the specified value.  An additional
+                    parameter that must be a counting number is required on the command
+                    line.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>setTitle</literal> <replaceable>word1...</replaceable></term>
+               <listitem>
+                   <para>
+                    Sets the title to a specific value. The command accepts an
+                    arbitrary number of additional command words.  These
+                    are space separated and become the title.   Quotation
+                    marks can be used to apply additional or different spacing.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>getRun</literal></term>
+               <listitem>
+                   <para>
+                    This operation requires no additional command parameters.
+                    It outputs the current run number to stdout.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>getTitle</literal></term>
+               <listitem>
+                   <para>
+                    This operation requires no additional command parameters.
+                    It outputs the current title to stdout.  Note that the
+                    result is not quoted.  e.g. <literal>This is a title</literal>
+                    rather than <literal>"This is a title"</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>getStatistics</literal></term>
+               <listitem>
+                   <para>
+                    Outputs the Readout's trigger statistics in a human readable
+                    table.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <example>
+        <title>Using rdo_control To Begin A Run</title>
+        <programlisting>
+<userinput>$DAQBIN/rdo_control localhost fox begin</userinput>
+        </programlisting>
+      </example>
+      <para>
+        In this case the Readout program is in the host the user
+        <literal>fox</literal> is typing this
+        command in.
+      </para>
+      <example>
+        <title>Using rdo_control To Set A Title</title>
+        <programlisting>
+<userinput>$DAQBIN/rdo_control localhost fox setTitle This is my new title</userinput>
+<userinput>$DAQBIN/rdo_control localhost fox setTItle "This title    has   " extra spaces</userinput>
+        </programlisting>
+      </example>
+      <para>
+        The example shows that titles with simple spaceing, that won't invoke
+        shell substitutions, can just be provided as a bunch of words on the
+        command line.   If special spacing is required, or shell substitution
+        needs to be ignored,
+        one or more title words can be quoted.
+      </para>
+      <example>
+        <title>Using rdo_control To Get Trigger Statistics</title>
+        <programlisting>
+<userinput>$DAQBIN/rdo_control locahost fox getStatistics</userinput>
+<computeroutput>
+           Triggers Accepted Triggers Bytes
+perRun     0.0      0.0               0.0
+cumulative 0.0      0.0               0.0
+  
+</computeroutput>
+        </programlisting>
+        <para>
+          Note that the trigger statistics are given in a human readable table.
+          To get computer readable statistics, a direct REST request can be made
+          by your program and the resulting JSON processed.
+        </para>
+      </example>
+    </refsect1>
+    <refsect1>
+      <title>TO DO</title>
+      <para>
+        It is the use of the default REST service name in this and other
+        programs that restrict us to a single Readout program per host/user
+        pair.  This restriction should be removed at some point by allowing
+        users to specify the REST service used by programs and using that
+        to select the actual service name.
+      </para>
+      <para>
+        It shoulid be possible to also have a utility that accepts as parameters
+        the manager host, manager user and Readout program name to specify the
+        Readout to use.  This is more consistent with the other
+        <command>rdo_*</command> and will work in the event a Readout is migrated
+        to a different host due to e.g. hardware failure.
+      </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.EVBRest'>
+   <refmeta>
+      <refentrytitle id='daq1.EVBRest.title'>EVBRest</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRest</refname>
+      <refpurpose>Run Event Builder Orderer With REST Interface</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+<optional>SERVICE_NAME=</optional><replaceable>svc</replaceable> $DAQBIN/EVBRest
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Starts the event builder orderer stage with its REST server.  The REST
+            server supports controlling the orderer and obtainig statistics
+            from this stage.  If the <literal>SERVICE_NAME</literal> environment
+            variable is defined, this will be used in place of the default
+            service name.  See the <literal>5daq</literal> section of the
+            manual for more information about the REST protocol.
           </para>
     </refsect1>
 </refentry>
