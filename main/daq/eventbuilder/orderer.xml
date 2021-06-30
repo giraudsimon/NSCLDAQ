@@ -1210,6 +1210,103 @@ EVBC::configure <replaceable>option value ...</replaceable>
 
 <!-- /manpage     -->
 <!-- manpage 1daq -->
+
+<refentry id='daq1.glom'>
+   <refmeta>
+      <refentrytitle id='daq1.glom.title'>glom</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>glom</refname>
+      <refpurpose>Glue Ordere Fragments Into Events</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/glom <option>option....</option>
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Accepts event orderer fragments on stdin and outputs ring itens
+            consisting of events on stdout.  Non event data are relayed,
+            re-tagged with glom's source id.  Event data are subject to being
+            built in accordance with the value of the <option>--dt</option>
+            option.
+          </para>
+          <para>
+            Options, besides the standard <option>--help</option>
+            and <option>--version</option> are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>--dt</option>=<replaceable>ticks</replaceable></term>
+               <listitem>
+                   <para>
+                    Specifies the coincidence window of timestamps in which
+                    events will be built.  This is expressed in units of timestamp
+                    ticks.   The event builder will take a first fragment and
+                    then combine all following fragments within this interval
+                    from that timestamp into an event.
+                   </para>
+                   <para>
+                    This option is mandatory and, therefore has no default value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nobuild</option></term>
+               <listitem>
+                   <para>
+                    If present, event building is not done.  Each physics fragment
+                    is output as a separate ring item. This can be useful in debuggin.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--timestamp-policy</option>=<replaceable>policy</replaceable></term>
+               <listitem>
+                   <para>
+                    Selects the timestamp policy for built events.  This value determines
+                    how the timestamp of output events is constructed.
+                    The allowed values are <literal>earliest</literal> which
+                    uses the timestamp of the first fragment,
+                    <literal>latest</literal> which uses the value of the timestamp
+                    in the last fragment and <literal>average</literal> which uses
+                    the average value of all timestamps in the event.
+                   </para>
+                   <para>
+                    Defaults to <literal>earliest</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--sourceid</option>=<replaceable>id</replaceable></term>
+               <listitem>
+                   <para>
+                    Sets the source id of the output events.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--maxfragments</option>=<replaceable>frags</replaceable></term>
+               <listitem>
+                   <para>
+                    Defines the maximum number of fragments that can be built into
+                    an event.  This is useful when for any reason (e.g. frozen clock or
+                    initialization), a large number of fragments have the same
+                    timestamp.  Specifying this prevents the program from building up
+                    an event consisting of an unbounded number of fragments, which
+                    can cause virtual memory exhaustion and failure of glom.
+                    The default value is <literal>1000</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
       <refentry id="daq1-evbclientfw-run">
         <refentryinfo>
             <author>
