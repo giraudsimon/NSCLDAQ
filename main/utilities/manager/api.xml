@@ -77,8 +77,10 @@ tclsh
         </programlisting>
       </example>
       <para>
-        Note that the method showne appends the $DAQTCLLIBS environment variable
-        value to any existing directorys in the TCLLIBPATH.  This environment
+        Note that the method shown appends the
+        <literal>DAQTCLLIBS</literal> environment variable
+        value to any existing directorys in the
+        <literal>TCLLIBPATH</literal>.  This environment
         variable is a space separated list of directories (valid Tcl list)  that
         are top levels of directories searched for packages.
       </para>
@@ -160,7 +162,8 @@ lappend ::auto_path $::env(DAQTCLLIBS)
             to manipulate the definitions of containers and to start
             and stop persistent containers defined in a configuration database.
             A common parameter to many of the exported procs is an sqlite3 database
-            command.  The example below shows what you need to create
+            command.  The example below shows what you need to
+            do to create
             this command.
          </para>
          <example id='ex.sqlite3cmd'>
@@ -189,6 +192,274 @@ sqlite3 db mydbfile.db
             of the package along with examples.  Reference material on the
             package can be found at:
             <link linkend='tcl3.containers' endterm='tcl3.containers.title' />.
+         </para>
+         <para>
+            Containers are represented to have the following attributes:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>name</term>
+               <listitem>
+                   <para>
+                    Each container definition has a unqique name. This
+                    name is used to identify the container definition
+                    throughout the API>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>image</term>
+               <listitem>
+                   <para>
+                    Each container has an image fie.  This is a singularity
+                    image that, when activated produces a containerized
+                    environment within which programs can run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>initialization script</term>
+               <listitem>
+                   <para>
+                    Each container definition can have an initialization
+                    script.  This is a shell script that is run prior
+                    to running any program in the container.  One common
+                    use for this script is to source an appropriate
+                    <filename>daqsetup.bash</filename> into the shell that
+                    runs programs in the container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>mount points</term>
+               <listitem>
+                   <para>
+                    Each conatainer definition has a possibly empty list of
+                    mount points.  A mount point is a host file or directory
+                    and where it should appear inthe containerized environment.
+                    The term for these in singularity's documentation are
+                    <firstterm>bindpoints</firstterm>.
+                   </para>
+                   <para>
+                    The singularity configuration provides a set of default
+                    mount points that meet most needs, however some mount points
+                    depend on the container.  For example a containerized
+                    environment for Debian 10 will probably need a directory tree
+                    of the NSCL software compiled for that software while
+                    one for Debian 8 will need a different directory tree.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+         <para>
+            Containers can be created, removed, listed, tested for, activated,
+            and deactivated.  A program can be run in an activated container.
+         </para>
+         <para>
+            Here's an example of a typical container creation we might have
+            at the FRIB.  We want a container that will run the image
+            <filename>/user/opt/buster.img</filename> and, for each program
+            run in it will have the environment variables set up for
+            NSCLDAQ-12.0.   This will require an  initialization script (to
+            set up those variables) and the following code:
+         </para>
+         <example>
+            <title>Creating a container definition for buster</title>
+            <programlisting>
+#---------------- Contents of ~/daq12.0.sh   --------------- 
+#!/bin/bash
+                                      <co id='ex.mgr.mkcont.init' />
+. /usr/opt/daq/12.0/daqsetup.bash
+#------------------------------------------------------------
+#------------------------ contents of mkcontainr.tcl -----------
+
+lappend auto_path $env(DAQTCLLIBS)  <co id='ex.mgr.mkcont.auto_path' />
+
+package require sqlite3             <co id='ex.mgr.mkcont.requires' />
+package require containers
+
+sqlite3 db myconfig.db              <co id='ex.mgr.mkcont.opendb' />
+
+   <co id='ex.mgr.mkcont.add' />
+container::add db buster /usr/opt/buster.img ~/daq12.0.sh \
+    [list [list /usr/opt/opt-buster /usr/opt]]
+    
+db close                         <co id='ex.mgr.mkcont.closedb' />
+            </programlisting>
+         </example>
+         <para>
+            Let's pick this apart.
+         </para>
+         <calloutlist>
+            <callout arearefs='ex.mgr.mkcont.init' >
+                <para>
+                    The contents of this initialization file will be pulled
+                    into the datbase and run prior to each program run in
+                    an activated container.
+                </para>
+                <para>
+                    Note, as we shall see later, the path used for
+                    <filename>daqsetup.bash</filename>, is therefore where this
+                    file will appear in the activated  container.
+                </para>
+            </callout>
+            <callout arearefs='ex.mgr.mkcont.auto_path' >
+                <para>
+                    As we've seen, this is one way to pull the libraries in
+                    NSCLDAQ into the Tcl library package search path.  This
+                    line assumes that prior to running this program
+                    <filename>daqsetup.bash</filename> for NSCLDAQ 12.0 or
+                    later has been sourced.
+                </para>
+            </callout>
+            <callout arearefs='ex.mgr.mkcont.requires' >
+                <para>
+                    Pulls in the packages we need. We need the
+                    <literal>sqlite3</literal> package because we're going to have
+                    to create a command connected to our configuration database.
+                    We need the <literal>containers</literal> package because
+                    that's the package we'll be exercising.
+                </para>
+            </callout>
+            <callout arearefs='ex.mgr.mkcont.opendb' >
+                <para>
+                    Creates a new command <command>db</command> which is connected
+                    to the SQLite3 database file <filename>myconfig.db</filename>.
+                    This file should have been made with
+                    <link linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />
+                </para>
+            </callout>
+            <callout arearefs='ex.mgr.mkcont.add' >
+                <para>
+                    This command adds the container definition to the database
+                    connected to <command>db</command>.  The remaining parameters
+                    are the name, image, initialization script and bindings.
+                </para>
+                <para>
+                    The binding we create will make the host directory tree
+                    <filename>/usr/opt/opt-buster</filename> visible in the
+                    activated containers as <filename>/usr/opt</filename>.
+                </para>
+                <para>
+                    This matches our FRIB convention of storing built NSCLDAQ
+                    software for a specific container type in
+                    <filename>/usr/opt/opt-containertype</filename> which, for
+                    proper use should appear at
+                    <filename>/usr/opt</filename>.
+                </para>
+            </callout>
+            <callout arearefs='ex.mgr.mkcont.closedb' >
+                <para>
+                    Closes the SQLite3 connection to <filename>myconfig.cb</filename>.
+                    This also undefined the command <command>db</command>
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            Defining a container does nothing more than that.  To use the containerized
+            environment it defines, you must activate the container and subsequently
+            run programs in that container.  You can then shutdown a container
+            by deactivating it.  The example below makes a ringbuffer in the
+            system <literal>spdaq99</literal> named <literal>fox</literal>.
+            We override the default ring buffer data size and create a 16Mbyte
+            ringbuffers.
+         </para>
+         <example>
+            <title>Using <literal>containers</literal> To Make a RingBuffer.</title>
+            <programlisting>
+lappend auto_path $env(DAQTCLLIBS)  
+
+package require sqlite3             
+package require containers
+
+sqlite3 db myconfig.db
+
+set containerFd [container::activate db buster spdaq99]  <co id='ex.usecont.activate' />
+
+set programFd   [container::run buster spdaq99 \        <co id='ex.usecont.run' />
+     {$DAQBIN/ringbuffer create fox --datasize=16m}]
+puts [gets $programFd]                                  <co id='ex.usecont.relay'/>
+close $programFd
+
+container::deactivate spdaq99 buseter               <co id='ex.usecont.deactivate' />
+close $containerfd                                  <co id='ex.usecont.closecfd' />
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.usecont.activate' >
+                <para>
+                    This command creates a persistent instance of the container
+                    named <literal>buster</literal> on the host
+                    <literal>spdaq99</literal>.  Before running a program
+                    in a container it must be activated in the host(s) in which
+                    we want to use it.
+                </para>
+                <para>
+                    The variable <varname>programFd</varname> is a file descriptor
+                    that receives output and error from the SSH command used
+                    to activate the container.  
+                </para>
+            </callout>
+            <callout arearefs='ex.usecont.run' >
+                <para>
+                    Runs the the NSCLDAQ program <command>ringbuffer</command>
+                    to create a ringbuffer with the data size set to
+                    <literal>16m</literal>, or 16 Megabytes.  A few things
+                    to note: First we quoted the command in {}'s so that Tcl
+                    would not interpret <literal>$DAQBIN</literal> as an attempt
+                    to substitute for the <emphasis>Tcl</emphasis> variable
+                    <varname>DAQBIN</varname>. Second because in our container
+                    definition, we've arranged for <filename>daqsetup.bash</filename>
+                    to be run the environment variable <varname>DAQBIN</varname>
+                    is defined.  Finally, because the container package writes a
+                    script to run the program, the string <literal>$DAQBIN</literal>
+                    will get properly substituted.
+                </para>
+            </callout>
+            <callout arearefs='ex.usecont.relay' >
+                <para>
+                    The <command>ringbuffer</command> command is transitory,
+                    therefore we can capture its output simply in this way.
+                    For a more long-lived program we might need to use fileevents
+                    and the event loop to capture the output/error messages over
+                    time.
+                </para>
+                <para>
+                    Having captured and output the ringbuffer output/error
+                    messages, we close the file descriptor.
+                </para>
+            </callout>
+            <callout arearefs='ex.usecont.deactivate' >
+                <para>
+                    Done with the container, we deactivate it.
+                </para>
+            </callout>
+            <callout arearefs='ex.usecont.closecfd' >
+                <para>
+                    In this simple example, we don't care about any output/error
+                    messages from the container activation.  In fact, monitoring
+                    the output from container activations is a bit complex,
+                    and beyond the scope of this documentation.  The source
+                    code for the <literal>programs</literal> package includes
+                    code that does that.
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            Note that the package's ideas about which containers are active
+            depend on internal data rather than any system information.  Therefore
+            If you activate a container in one program and then run
+            a program in it in another, you may fail.
+         </para>
+         <para>
+            Note also that activating a container and running programs in it,
+            depends on being able to run the <command>ssh</command> command.
+            It is therefore important that your
+            <filename>~/.ssh/authorized_keys</filename> file has a public key
+            for your ssh identity.  See the results of google searches for
+            <literal>SSH without password</literal> for information about how
+            to set this up.
          </para>
       </section>
       <section id='sec.manager.programs'>
