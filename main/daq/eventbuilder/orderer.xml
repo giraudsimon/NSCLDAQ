@@ -1211,6 +1211,75 @@ EVBC::configure <replaceable>option value ...</replaceable>
 
 <!-- manpage 1daq -->
 
+<refentry id='daq1.EVBShutdown'>
+   <refmeta>
+      <refentrytitle id='daq1.EVBShutdown.title'>EVBShutdown</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBShutdown</refname>
+      <refpurpose>Stop Orderer Started with EVBRest</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/EVBShutdown <replaceable>host user</replaceable> <optional><replaceable>delay</replaceable><optional><replaceable>service</replaceable></optional></optional> 
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Requests that an event orderer started via
+            <link linkend='daq1.EVBRest' endterm='daq1.EVBRest.title' />
+            exit.  <replaceable>host</replaceable> and
+            <replaceable>user</replaceable> are the only required parameters.
+            They are the host the orderer is running in and the user that is
+            running it.  The optional <replaceable>delay</replaceable>
+            parameter will be implemented in the future to provide a settable
+            shutdown delay.  Currently a fixed delay of 2 seconds is used.
+            The optionals <replaceable>service</replaceable> parameter allows
+             you to specify a service name for the REST server different than
+             the default.
+          </para>
+          <para>
+            Note that since all elements of the event builder pipeline after
+            Orderer have reads always active, the resulting end of file on
+            the pipes will shutdown the remainder of the pipeline as well.
+            This is normally what is desired.
+          </para>
+    </refsect1>
+</refentry> 
+
+<refentry id='daq1.EVBRest'>
+   <refmeta>
+      <refentrytitle id='daq1.EVBRest.title'>EVBRest</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRest</refname>
+      <refpurpose>Run Event Builder Orderer With REST Interface</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+<optional>SERVICE_NAME=</optional><replaceable>svc</replaceable> $DAQBIN/EVBRest
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Starts the event builder orderer stage with its REST server.  The REST
+            server supports controlling the orderer and obtainig statistics
+            from this stage.  If the <literal>SERVICE_NAME</literal> environment
+            variable is defined, this will be used in place of the default
+            service name.  See the <literal>5daq</literal> section of the
+            manual for more information about the REST protocol.
+          </para>
+    </refsect1>
+</refentry>
+
 <refentry id='daq1.glom'>
    <refmeta>
       <refentrytitle id='daq1.glom.title'>glom</refentrytitle>
