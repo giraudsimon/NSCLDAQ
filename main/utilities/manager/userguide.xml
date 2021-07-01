@@ -2402,6 +2402,36 @@ TCLLIBPATH=$DAQTCLLIBS $DAQBIN/EVBRest  \
         tries to look up the service.
       </para>
      </formalpara>
+     <formalpara>
+      <title>Making a Program to Shutdown The Event Builder</title>
+      <para>
+        The <link linkend='daq1.EVBShutdown' endterm='daq1.EVBShutdown.title' />
+        utility shuts down an event builder that is running a REST interface.
+        Use <link linkend='daq1.mg_cfgprogram' endterm='daq1.mg_cfgprogram.title' />
+        to add a program.  Name it <literal>evbshutdown</literal>, run the
+        prgram file <literal>$DAQBIN/EVBShutdown</literal>.  Set the host,
+        working directory and container appropriately.
+      </para>
+     </formalpara>
+     <para>
+      The program parameters should be, in order, the host in which the
+      event builder pipeline is running and the user running it.  This is
+      the host you specified the <literal>startevb</literal> program to run in.
+      The user should be the user that will run the daq manager.
+     </para>
+     <para>
+      Note that shutting down the event builder pipeline will, eventually
+      shutdown the data sources as they lose connection to the event builder.
+     </para>
+     <formalpara>
+      <title>Adding the Event Builder Shutdown to a SHUTDOWN Sequence </title>
+      <para>
+        Using <link linkend='daq1.mg_seqedit' endterm='daq1.mg_seqedit.title' />
+        if necessary, add a squence triggered on the <literal>SHUTDOWN</literal>
+        transition.  Edit that sequence and add the
+        <literal>evbshutdown</literal> program to that sequence.
+      </para>
+     </formalpara>
   </section>
 </chapter>
 <!-- /chapter -->
