@@ -47,7 +47,147 @@
    <section id='sec.manager.dbapi'>
       <title id='sec.manager.dbapi.title'>Manager Configuration Database API</title>
       <para>
+        This section will provide documenation for Tcl packages that provide direct
+        access to the experiment configuration database used by the manager.
+        In actual fact, these packages also contain the manager server, minus
+        its REST interface packages.
       </para>
+      <para>
+        The  Tcl packages described in this section are available in the
+        NSCLDAQ Tcl library tree. This is defined by the $DAQTCLLIBS environment
+        variable when you source in <filename>daqsetup.bash</filename> from
+        NSCLDAQ 12.0 and later.  You can add this directory to your path
+        by either adding it to the TCLLIBPATH environment variable when running
+        tclsh or explicitly including it in <varname>auto_path</varname>
+        prior to sourcing your packages.  The next pair of examples illustrate
+        both options.
+      </para>
+      <example>
+        <title>Setting the TCLLIBPATH environment variable for tclsh</title>
+        <programlisting>
+# On the Tcl command line:
+
+TCLLIBPATH="$TCLLIBPATH $DAQTCLLIBS" tclsh
+
+# Or via a persistent environment variable:
+
+TCLLIBPATH="$TCLLIBPATH $DAQTCLLIBS"
+export TCLLIBPATH
+tclsh
+        </programlisting>
+      </example>
+      <para>
+        Note that the method showne appends the $DAQTCLLIBS environment variable
+        value to any existing directorys in the TCLLIBPATH.  This environment
+        variable is a space separated list of directories (valid Tcl list)  that
+        are top levels of directories searched for packages.
+      </para>
+      <example>
+        <title>Adding DAQTCLLIBS to auto_path</title>
+        <programlisting>
+lappend ::auto_path $::env(DAQTCLLIBS)
+        </programlisting>
+      </example>
+      <para>
+        This code snippet takes advantage of the fact that environment
+        variables in Tcl are stored in a global array named <varname>env</varname>
+        whose indices are variable names and values the values.  Using ::
+        in front of these variable names forces them to be evaluated in the
+        global scope allowing this code snippet to work even in the body of a
+        <command>proc</command>.
+      </para>
+      <para>
+        The database API packages are described in subsections listed below:
+      </para>
+      <itemizedlist>
+        <listitem>
+           <para>
+              The <link linkend='sec.manager.containers' endterm='sec.manager.containers.title' />
+              section describes a package that allows the manipulation of
+              container definitions as well as the ability to start a
+              persistent container
+              as defined by the database in an arbitrary node that can access
+              the container image and user's home directory tree.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+               The <link linkend='sec.manager.programs' endterm='sec.manager.programs.title' />
+               section describes a package that suports the definition of programs
+               in the database and can manipulate them as well.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The <link linkend='sec.manager.sequence' endterm='sec.manager.sequence.title' />
+              section describes a package that supports manipulation of the
+              state machine and sequences attached to state transitions.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The <link linkend='sec.manager.kvstore' endterm='sec.manager.kvstore.title' />
+              section describes a package that can manipulate the key value store.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The <link linkend='sec.manager.auth' endterm='sec.manager.auth.title' />
+              section describes support for an authorization database.
+           </para>
+        </listitem>
+        <listitem>
+           <para>
+              The <link linkend='sec.manager.eventloggers'
+              endterm='sec.manager.eventloggers.title' />
+              section describes a package that supports the definition of
+              event loggers.
+           </para>
+        </listitem>
+      </itemizedlist>
+      
+      <section id='sec.manager.containers'>
+         <title id='sec.manager.containers.title'>
+            The <literal>containers</literal> package.
+         </title>
+         <para>
+         </para>
+      </section>
+      <section id='sec.manager.programs'>
+         <title id='sec.manager.programs.title'>
+            The <literal>programs</literal> package
+         </title>
+         <para>
+         </para>
+      </section>
+      <section id='sec.manager.sequence'>
+         <title id='sec.manager.sequence.title'>
+            The <command>sequence</command> package
+         </title>
+         <para>
+         </para>
+      </section>
+      <section id='sec.manager.kvstore'>
+         <title id='sec.manager.kvstore.title'>
+            The <literal>kvstore</literal> package
+         </title>
+         <para>
+         </para>
+      </section>
+      <section id='sec.manager.auth'>
+         <title id='sec.manager.auth.title'>
+            The <literal>auth</literal> package.
+         </title>
+         <para>
+         </para>
+      </section>
+      <section id='sec.manager.eventloggers'>
+         <title id='sec.manager.eventloggers.title'>
+            The <literal>eventloggers</literal> package
+         </title>
+         <para>
+         </para>
+      </section>
    </section>
    <section id='sec.manager.clientapi'>
       <title id='sec.manager.clientapi.title'>Manager REST client API.</title>
