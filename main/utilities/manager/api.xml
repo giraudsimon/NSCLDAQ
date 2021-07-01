@@ -145,12 +145,50 @@ lappend ::auto_path $::env(DAQTCLLIBS)
            </para>
         </listitem>
       </itemizedlist>
-      
+      <para>
+        Note that configuration databases are SQLite3 database files.
+        Thus a pre-requisite for all of these packages is the
+        <literal>sqlite3</literal> package.  More details will be provided
+        in the sections below.
+      </para>
       <section id='sec.manager.containers'>
          <title id='sec.manager.containers.title'>
             The <literal>containers</literal> package.
          </title>
          <para>
+            The <literal>containers</literal> package is provided
+            to manipulate the definitions of containers and to start
+            and stop persistent containers defined in a configuration database.
+            A common parameter to many of the exported procs is an sqlite3 database
+            command.  The example below shows what you need to create
+            this command.
+         </para>
+         <example id='ex.sqlite3cmd'>
+            <title id='ex.sqlite3cmd.title'>Creating an SQLite3 database command</title>
+            <programlisting>
+package require sqlite3
+...
+
+sqlite3 db mydbfile.db
+            </programlisting>            
+         </example>
+         <para>
+            This code snippet pulls in the <literal>sqlite3</literal> Tcl
+            package and later uses the <command>sqlite3</command> command
+            to associate the command <command>db</command> with the
+            database file <filename>mydbfile.db</filename>. The
+            <command>sqlite3</command> command, by default will create
+            a new database file, however since the database must have
+            a specific schema before it can be used by this package you
+            should not rely on this capability but use
+            <link  linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />
+            to create configuration databases instead.
+         </para>
+         <para>
+            The remainder of this section will briefly describe the capability
+            of the package along with examples.  Reference material on the
+            package can be found at:
+            <link linkend='tcl3.containers' endterm='tcl3.containers.title' />.
          </para>
       </section>
       <section id='sec.manager.programs'>
@@ -205,4 +243,352 @@ lappend ::auto_path $::env(DAQTCLLIBS)
 
 <!-- manpage 3tcl -->
 
+
+<refentry id='tcl3.containers'>
+   <refmeta>
+      <refentrytitle id='tcl3.containers.title'>containers</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>containers</refname>
+      <refpurpose>DAQ Manager Containers Database Package.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require containers
+
+container::exists db name
+container::add    db name image initfile mountpoints
+container::remove db name
+set fd [container::activate db name host]
+set fd [container::run name host command]
+container::deactivate host name
+set dictlist [container::listDefinitions db ?name?]
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This package provides an API for the database schema that
+            defines containers to the manager.  It is used by the manager
+            code itself.  The API is roughly divided into database manipulations
+            and procs that allow containers to be activated and applications
+            run in those containers.
+          </para>
+          <para>
+            The API makes use of singularity's ability to create persistent
+            containers.  A persistent container is a container image process
+            that also provides a new Linux namespace.  These containers have
+            a script that can be run with parameters passed from the command
+            line.  This provides the possibility of running programs within
+            those persistent containers.
+          </para>
+          <para>
+            Container definitions avhe the following attributes:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term>name</term>
+               <listitem>
+                   <para>
+                    Each container definition has a unqique name. This
+                    name is used to identify the container definition
+                    throughout the API>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>image</term>
+               <listitem>
+                   <para>
+                    Each container has an image fie.  This is a singularity
+                    image that, when activated produces a containerized
+                    environment within which programs can run.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>initialization script</term>
+               <listitem>
+                   <para>
+                    Each container definition can have an initialization
+                    script.  This is a shell script that is run prior
+                    to running any program in the container.  One common
+                    use for this script is to source an appropriate
+                    <filename>daqsetup.bash</filename> into the shell that
+                    runs programs in the container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>mount points</term>
+               <listitem>
+                   <para>
+                    Each conatainer definition has a possibly empty list of
+                    mount points.  A mount point is a host file or directory
+                    and where it should appear inthe containerized environment.
+                    The term for these in singularity's documentation are
+                    <firstterm>bindpoints</firstterm>.
+                   </para>
+                   <para>
+                    The singularity configuration provides a set of default
+                    mount points that meet most needs, however some mount points
+                    depend on the container.  For example a containerized
+                    environment for Debian 10 will probably need a directory tree
+                    of the NSCL software compiled for that software while
+                    one for Debian 8 will need a different directory tree.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>EXPORTED ENTRY POINTS</title>
+        <para>
+            For all entry points with a <parameter>db</parameter> parameter,
+            this parameter should be an SQLite3 command that is connected to the
+            configuration database you wish to manipulate.
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term>
+                <command>container::exists <replaceable>db name</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Returns a boolean value that is true if the container
+                    <parameter>name</parameter> has been defined in the
+                    configuration database whose SQLite3 database command
+                    is <replaceable>db</replaceable>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>container::add <replaceable>db name image initfile mountpoints</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Adds a new container definition. The name of the new container
+                    will be <parameter>name</parameter>, the container image is
+                    given by the filename path in <parameter>image</parameter>.
+                    The path must be valid in the host system(s) in which the
+                    container will be activated.
+                   </para>
+                   <para>
+                    If the <parameter>initfile</parameter> parameter is a non-empty
+                    string it is the path to the initialization script to be
+                    run prior to each program run in an activation of this container.
+                    The path must be valid in the <emphasis>host</emphasis>
+                    filesystem.  The <emphasis>contents</emphasis> of this
+                    file at the time the container is added is sucked into the
+                    database.  If you modify this file and want the modifications
+                    to be reflected you must recreate the container definition.
+                   </para>
+                   <para>
+                    The <parameter>mountpoints</parameter> parameter is a
+                    list of desired mount points.  Each mount point is
+                    a one or two element sublist.  If one element, the element
+                    is a filesystem point in the native filesystem that's mounted
+                    to the same position in the container (e.g. equivalent to
+                    <literal>--bind point</literal>
+                   ).  If a two element list, the first element is the
+                    native file system point to bind and the second is where to bind
+                    it in the container (e.g.
+                    <literal>--bind point:where</literal>).
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>container::remove <replaceable>db name</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Removes the definition of the container <parameter>name</parameter>
+                    from the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>
+                    container::activate <replaceable>db name host</replaceable>
+                </command>
+               </term>
+               <listitem>
+                   <para>
+                    Activates the container <parameter>name</parameter> in
+                    the system with the DNS name <parameter>host</parameter>.
+                    This proc, if successful, returns a Tcl file descriptor.
+                   </para>
+                   <para>
+                    The container is activated using <command>ssh</command> the
+                    user's public key must, therefore be in the
+                    <filename>~/.ssh/authorized_keys</filename> file.  The
+                    file descriptor returned is the output/error end of the
+                    pipeline used to run ssh and therefore can capture the
+                    messages and errors this ssh command output.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>container::run <replaceable>name host command</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Runs the <parameter>command</parameter> in the container
+                    instance of <parameter>name</parameter> that must already
+                    have been activated in a system with the DNS name
+                    <parameter>host</parameter>.  
+                   </para>
+                   <para>
+                    On success, a file descriptor connected to the output/error
+                    of the program.  This allows you to capture messages and
+                    
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>container::deactivate <replaceable>host name</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Deactivates the container <parameter>name</parameter> in the
+                    system <parameter>host</parameter>.  The container must already
+                    have been activated.  Deactivating a container will also kill
+                    any programs that are running in that container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                <command>container::listDefinitions <replaceable>db ?name?</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                    Returns a list of dicts that describe the containers that
+                    have been defined.  If the optional <parameter>name</parameter>
+                    parameter is provided, the list will be filtered to only
+                    include that container <emphasis>but is still a list</emphasis>.
+                    If no containers are defined or <parameter>name</parameter>
+                    is provided but there is no container named
+                    <parameter>name</parameter>, the result is an empty list.
+                   </para>
+                   <para>
+                    Each elementof the list is a dict which describes one container
+                    definition.  THe dict contains the following key/values:
+                   </para>
+                   <variablelist>
+                    <varlistentry>
+                       <term><literal>id</literal></term>
+                       <listitem>
+                           <para>
+                            This is the primary key of the root record
+                            for the container description in the database.
+                            For the most part it does not help your code to
+                            know this value but it is provided for internal use.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>name</literal></term>
+                       <listitem>
+                           <para>
+                            Name of the container described by this dict.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>image</literal></term>
+                       <listitem>
+                           <para>
+                            The file path (in the host filesystem) of
+                            the container image that will be run when this
+                            container is activated in a host.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>init</literal></term>
+                       <listitem>
+                           <para>
+                            The <emphasis>contents</emphasis> of the
+                            initialization script.   If no initialization
+                            script was provided, this key will not be
+                            present.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>bindings</literal></term>
+                       <listitem>
+                           <para>
+                            A list of one or two element sublists describing
+                            the mountpoints.  The first element (element 0)
+                            of each list is a host file or directory.  If there
+                            is no second element, this file or directory will
+                            appear in the same place in the container as it does
+                             in the host filesystem.  If there is a second element,
+                             it describes where the file or directory will
+                             appear in the container filesystem.
+                           </para>
+                           <para>
+                            This second form is needed to provide for e.g.
+                            mapping <filename>/usr/opt/opt-buster</filename>
+                            in the host filesystem to <filename>/usr/opt</filename>
+                            in the container, as is usually done at the FRIB.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                   </variablelist>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>
+            FILES
+        </title>
+        <para>
+            Container activation and their associated initialization
+            scripts require that the package write shell scripts. These
+            are stored in a hidden directory <filename>~/.daqmanager</filename>.
+            The path to this directory is stored in the variable
+            <varname>::container::tempdir</varname>. 
+        </para>
+        <para>
+            Two sorts of scripts are stored there:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><filename>container_init_nn</filename></term>
+               <listitem>
+                   <para>
+                    Where nn is an integer is the script needed by
+                    singluarity to run programs inside the activated,
+                    persistent container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><filename>container_user_nn</filename></term>
+               <listitem>
+                   <para>
+                    Where again nn is an integer is an initialization
+                    script provided for the user run prior to running any
+                    program within the activated container.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            Note these scripts are a property of the container not of
+            an activation of the container in a host.  That is all
+            activations of a container will share the same scripts.
+        </para>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
