@@ -1215,6 +1215,13 @@
      <itemizedlist>
       <listitem>
          <para>
+            <link linkend='sec.mgr.startstop' endterm='sec.mgr.startstop.title' />
+            will describe how to start and stop the DAQ manager which is at the
+            heart of this subsystem.
+         </para>
+      </listitem>
+      <listitem>
+         <para>
             <link linkend='sec.mgr.output' endterm='sec.mgr.output.title' />
             describes a control panel that monitors the output of all programs
             run by the manager.
@@ -1246,6 +1253,53 @@
         REST server interface enabled, as well as what to put in state transition
         sequences to run these programs under the manager.
       </para>
+     <section id='sec.mgr.startstop'>
+        <title id='sec.mgr.startstop.title'>Starting and Stopping the Manager</title>
+        <para>
+          Before any of the utilities described in the remaining sections can be
+          used the experiment manager server must have been started.  Furhtermore,
+          at the end of the experiment the manager should be shutdown to cleanup
+          all of the programs it is managing in remote systems.  This
+          section describes the utilities that perform these two tasks.
+        </para>
+        <para>
+          The program
+          <link linkend='daq1.mgr_startManager' endterm='daq1.mgr_startManager.title' />
+          starts the manager in the system in which you are running.  This program
+          only requires a single command line parameter; the configuration database
+          file path.  
+        </para>
+        <para>
+          The manager is fully a  background process and will continue to run,
+          barring failures, until you explicitly stop it.  To communicate with it,
+          in general, you'll need to know the DNS hostname of the system
+           in which you started it and the name of the user that started it.
+           In general experiments will be run by a collection of users. Before
+           starting, agree on which of those will start the manager.
+        </para>
+        <para>
+          There's really nothing to stop anybody with access to the configuration
+          file from starting the manager.   As long as everybody knows who started
+           the current instance of the manager and uses that username when
+           interacting with it.
+        </para>
+        <para>
+          Shutting down the server, like most operations, requires knowing the
+          host the server is running in and the user that started the server.
+          The
+          <link linkend='daq1.mg_shutdown' endterm='daq1.mg_shutdown.title' />
+          utility shuts down a DAQ manager server.  Note that this utility will,
+          if necessary force a <literal>SHUTDOWN</literal> transition which,
+          if the sequence(s) attached to that transition are properly written
+          will stop all of the programs run by the system.
+        </para>
+        <para>
+          If you shutdown the server when data taking is in progress,
+          it's likely that you're going to have some cleanup work to do with
+          the event loggers and the data they're writing as they won't see
+          proper end of run records.
+        </para>
+     </section>
      <section id='sec.mgr.output'>
         <title id='sec.mgr.output.title'>The Output Monitor</title>
         <para>
@@ -4262,6 +4316,122 @@ cumulative 0.0      0.0               0.0
       </para>
     </refsect1>
 </refentry>
+ 
+<refentry id='daq1.mgr_startManager'>
+   <refmeta>
+      <refentrytitle id='daq1.mgr_startManager.title'>mg_startManager</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_startManager</refname>
+      <refpurpose>Start the DAQ Manager</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/mg_startManager <replaceable>configuration-database</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Starts the experiment manager server with the configuration
+            provided in the database whose path is
+            <replaceable>configuration-database</replaceable>.  The
+            manager will continue to run until explicitly stopped with
+            <link linkend='daq1.mg_shutdown' endterm='daq1.mg_shutdown.title'>
+              mg_shutdown
+            </link>
+          </para>
+    </refsect1>
+</refentry>
+ 
 
+<refentry id='daq1.mg_shutdown'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_shutdown.title'>mg_shutdown</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_shutdown</refname>
+      <refpurpose>Shutdown the DAQ manager.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/mg_shutdown <replaceable>host user</replaceable>      
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Tries to shut down the DAQ manager that's runing in the system
+            <replaceable>host</replaceable> started by <replaceable>user</replaceable>.
+            By "tries to shutdown" we mean that the program attempts to ask the
+            manager to shutdown via its REST server interface.  As long as that
+            interface is working there's a good chance this shutdown will succeed.
+          </para>
+          <para>
+            The shutdown process consists of invoking a
+            <literal>SHUTDOWN</literal> transition,
+            if the state is not already <literal>SHUTDOWN</literal>.
+            Once that transition has completed, the server exits.
+          </para>
+    </refsect1>
+</refentry>
 
+<refentry id='daq1.mg_kvget'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_kvget.title'>mg_kvget</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_kvget</refname>
+      <refpurpose>Get the value of a manager KV store key.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/mg_kvget <replaceable>host user key</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The manager key value store is a set of definable keys and associated
+            values.  <command>mg_kvget</command> returns the value of a
+            specific key by interacting with a manager server.  Some keys
+            (e.g. <literal>title</literal>) have specific meaning.  If it helps
+            your experiment, however, you are welcome to define your own keys
+            and use either this or the REST API to obtain the values of those
+            keys at run-time.
+          </para>
+          <para>
+            The <replaceable>host</replaceable> and <replaceable>user</replaceable>
+            parameters select the server by host and the user that started it
+            while <replaceable>key</replaceable> selects the key to obtain.
+          </para>
+          <para>
+            On success, the value of the key is output to <literal>stdout</literal>
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+        The exmample below outputs the value of the title key from the server
+        running in <literal>daqcompute1</literal> by the user <literal>fox</literal>
+        when the value of that key is <literal>Some new title</literal>.
+      </para>
+      <example>
+        <title>Getting the Title Key From the KVSTORE</title>
+        <programlisting>
+<userinput>$DAQBIN/mg_kvget daqcompute1 fox title</userinput>
+<computeroutput>Some new title</computeroutput>
+        </programlisting>
+      </example>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
