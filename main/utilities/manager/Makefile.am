@@ -17,7 +17,7 @@ library_scripts=mg_containerpackage.tcl mg_containeredit.tcl \
 	mg_evlogEditViews.tcl mg_evlogEditModel.tcl mg_evlogEditController.tcl \
 	mg_loggerRESTClient.tcl
 
-docs=userguide.xml
+docs=userguide.xml api.xml
 
 
 test_scripts=container.test program.test sequence.test transitions.test \

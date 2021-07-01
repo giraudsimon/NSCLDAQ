@@ -1,0 +1,68 @@
+<!-- chapter libraries -->
+
+<chapter>
+   <title>DAQ Manager APIs</title>
+   <para>
+    The DAQ Manager has extensive APIs for database, server REST access.
+    Also provided are a set of user interface libraries that provide canned views
+    which can either be coupled with standard model/controller APIs to build
+    user interfaces, or coupled with application specific model/controller
+    code to produce custom written GUIs.
+   </para>
+   <para>
+    At present these APIs only supply Tcl bindings.  As time goes on, it is
+    likely that additional bindings will be written and documented here
+    and in the reference pages.
+   </para>
+   <para>
+    The organization of this chapter is as follows:
+   </para>
+   <itemizedlist>
+    <listitem>
+       <para>
+           <link linkend='sec.manager.dbapi' endterm='sec.manager.dbapi.title' />
+           documents the components of the DAQ manager configuration database API.
+           This API not only supports database manipulation but includes
+           code used by the manager.  
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          <link linkend='sec.manager.clientapi' endterm='sec.manager.clientapi.title' />
+          documents the components of the manager REST client API.  This API
+          allows you to create custom code to interact witht he manager.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          <link linkend='sec.manager.guiapi' endterm='sec.manager.guiapi.title' /> 
+       </para>
+    </listitem>
+   </itemizedlist>
+   <para>
+      Each of these sections will list and describe the packages provided
+      in each category and provide copious references to man pages that
+      provide detailed descriptions of their public interfaces.
+   </para>
+   <section id='sec.manager.dbapi'>
+      <title id='sec.manager.dbapi.title'>Manager Configuration Database API</title>
+      <para>
+      </para>
+   </section>
+   <section id='sec.manager.clientapi'>
+      <title id='sec.manager.clientapi.title'>Manager REST client API.</title>
+      <para>
+      </para>
+   </section>
+   <section id='sec.manager.guiapi'>
+      <title id='sec.manager.guiapi.title'>Manager User Interface API</title>
+      <para>
+      </para>
+   </section>
+</chapter>
+
+<!-- /chapter -->
+
+<!-- manpage 3tcl -->
+
+<!-- /manpage -->
