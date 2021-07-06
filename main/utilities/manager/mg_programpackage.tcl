@@ -658,11 +658,6 @@ proc ::program::getdef {db name} {
     
     return $result
 }
-    
-
-    
-
-    
 
 ##
 # program::listDefinitions

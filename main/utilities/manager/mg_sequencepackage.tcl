@@ -1522,3 +1522,15 @@ proc ::sequence::transition {db transition {endscript {}}} {
 proc ::sequence::getCurrentTransition { } {
     return $::sequence::currentTransitionManager
 }
+
+#
+# ::sequence::relayOutput
+#    Relay output from programs to the clients in ::sequence::outputClients
+#    If a puts on one of those sockets fails it is removed from the list
+#    of client sockets and closed.
+#
+# @param text - text to relay.
+#
+proc ::sequence::relayOutput {text} {
+    ::sequence::_relayOutput $text
+}

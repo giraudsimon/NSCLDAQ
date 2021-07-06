@@ -383,8 +383,8 @@ proc ::eventlog::_unregisterLogger {db def} {
     if {[dict get $def critical] && [::eventlog::_exitForbidden $db]} {
         set host [dict get $def host]
         set dest [dict get $def destination]
-        ::sequence::_relayOutput "Critical logger in $host -> $dest exited."
-        ::sequence::_relayOutput "Forcing SHUTDOWN transition."
+        ::sequence::relayOutput "Critical logger in $host -> $dest exited."
+        ::sequence::relayOutput "Forcing SHUTDOWN transition."
         ::sequence::transition $db SHUTDOWN
     }
 }
@@ -570,5 +570,5 @@ proc eventlog::start {db} {
 # @param msg - the message to send.
 #
 proc ::eventlog::Log {msg} {
-    ::sequence::_relayOutput $msg
+    ::sequence::relayOutput $msg
 }
