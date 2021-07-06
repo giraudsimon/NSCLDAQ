@@ -467,6 +467,509 @@ close $containerfd                                  <co id='ex.usecont.closecfd'
             The <literal>programs</literal> package
          </title>
          <para>
+            The <literal>programs</literal> package provides support for
+            making and manipulating program definitions, for running and killing
+            programs in hosts (either in or without containers), and for
+            capturing program output.  The package, if needed, activates containers
+            using the <literal>containers</literal> package we just described
+            to run programs within a containerized environment.
+         </para>
+         <para>
+            Reference material on the <literal>programs</literal>
+            package can be found at:
+            <link linkend='tcl3.programs' endterm='tcl3.programs.title' />
+         </para>
+         <para>
+            A program is defined by the following mandatory data:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>id</term>
+               <listitem>
+                   <para>
+                     An integer that is unique across all programs.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>name</literal></term>
+               <listitem>
+                   <para>
+                     This name is used to identify the program primarily to
+                     people.  The <literal>name</literal> must be unique
+                     among all programs.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>path</literal></term>
+               <listitem>
+                   <para>
+                     The filesystem path to an executable entity. Executable
+                     entities can be binary program sor they can be scripts.
+                   </para>
+                   <para>
+                     If the program runs containerized the executable entity
+                     must be locatable within the containerized environment.
+                     This means that if the path to the script is incomplete,
+                     the <literal>PATH</literal> variable in the container
+                     must be able to locate the program.  Alternatively,
+                     if the path to the program is complete, but the image of the
+                     filesystem within the container is different that in the host,
+                     the path within the container must be used.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>type</literal></term>
+               <listitem>
+                   <para>
+                     The type of the program.  Programs can be
+                     <literal>Transitory</literal>, which means it is expected
+                     they will exit.  There are also two types of persistent
+                     programs (programs that are not expected to exit):
+                     <literal>Critical</literal> programs are required for
+                     the data acquisition system to function properly.  If a
+                     <literal>Critical</literal> program exits, the DAQ
+                     manager forces the DAQ system to shutdown.
+                     <literal>Persistent</literal> programs are not expected to
+                     exit but, if they do, data taking can continue.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>host</literal></term>
+               <listitem>
+                   <para>
+                     The DNS name of the host in which the program will be run.
+                     You should specify exactly the name of the host in which to
+                     run the program and not use <literal>localhost</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            Several optional bits of data can be associated with a program and
+            define the environment in which the program runs.  Not all of these
+            items are used at this implementation of the system.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>container</literal></term>
+               <listitem>
+                   <para>
+                     The name of a container in which the program will
+                     run.  This container must be defined in the
+                     <literal>containers</literal> package.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>initscript</literal></term>
+               <listitem>
+                   <para>
+                     An initialization script run prior to running the program.
+                     This is not yet used.  The contents of this script are
+                     pulled into the database.  Thus changes to the
+                     initialization script (once it's implemented) will
+                     not bee seen until the program is re-defined.
+                   </para>
+                   <para>
+                     By not used, I mean that the GUI systems to edit program
+                     definitions don't provide a mechanism for providing this
+                     script.  At program activation time, any initialization
+                     script provided is used.
+                   </para>
+                   <para>
+                     Since the contents of the script are sucked into the
+                     database, it's important to provide the path to the
+                     script at the time the program is defined.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>service</literal></term>
+               <listitem>
+                   <para>
+                     Not currently used.  If the program provides a REST service,
+                     its name should be provided here.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>environment</literal></term>
+               <listitem>
+                   <para>
+                     A list of environment name, value pairs which will be
+                     put into the program's environment before it is started.
+                   </para>
+                   <para>
+                     For example, when a Tcl script is the program, you
+                     may need to supply a <literal>TCLLIBPATH=$DAQTCLLIBS</literal>
+                     environment definition
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>directory</literal></term>
+               <listitem>
+                   <para>
+                     The working directory in which the program will be started.
+                     If not provided, you should make no assumptions about
+                     the working directory the program will be run in.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            These bits of optional data are used to construct the
+            command used to run the program.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>options</literal></term>
+               <listitem>
+                   <para>
+                     These are the program options and optionally values
+                     needed by those options.  For example, for a Readout,
+                     an option might
+                     be <option>--ring</option> with a value like
+                     <option>fox</option>.  It is legal for options not to have
+                     a value (for example <option>--oneshot</option>).
+                   </para>
+                   <para>
+                     Options are considered to be unordered.
+                  </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>parameters</literal></term>
+               <listitem>
+                   <para>
+                     Parameters are placed on the command line following
+                     all options.  They are considered to be a list of ordered
+                     values.  An example of program parameters might be
+                     the name of the host in which the manager is running.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            Note that since many of these items are used to construct a
+            script to run the command environment substitutions are supported
+            e.g. if daqsetup has been run in the context in which the program
+            was run <literal>$DAQBIN</literal> can be used to specify the
+            path to an NSCLDAQ program.
+         </para>
+         <para>
+            Let's look at some of the operations you can perform on
+            programs.  We're going to assume that there's a container defined
+            named <literal>buster</literal> whose initialization script
+            runs <literal>daqsetup.bash</literal>.
+         </para>
+         <formalpara>
+            <title>Adding a Program</title>
+            <para>
+               To add a program running <literal>VMUSBReadout</literal>in
+               <literal>spdaq99</literal>, for example we might do the following:
+            </para>
+         </formalpara>
+         <example>
+            <title>Adding a New Program Definition</title>
+            <programlisting>
+lappend auto_path $env(DAQTCLLIBS)    <co id='ex.addpgm.autopath' />
+package require sqlite3               <co id='ex.addpgm.requires' />
+package require programs
+
+sqlite3 db myconfig.db                <co id='ex.addpgm.open' />
+
+program::add db readcrate1 \$DAQBIN/VMUSBReadout Critical spdaq99 \
+     [dict create                                                  \
+        container buster                                           \
+        options [list {--daqconfig ~/spdaq99/daqconfig.tcl}        \ <co id='ex.addpgm.add' />
+           {--ctlconfig /dev/null} {--ring=crate1} {--sourceid 99} \
+           {--initscript ~/spdaq99/startrest.tcl}                   \
+        ]                                                          \
+        environment {TCLLIBPATH $DAQTCLLIBS}                       \
+        service     ReadoutREST                                    \
+     ]
+
+db close
+
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.addpgm.autopath' >
+                <para>
+                  Adds the NSCLDAQ Tcl library path to the
+                  <varname>auto_path</varname> so that the
+                  <literal>programs</literal> package can be found.
+                </para>
+            </callout>
+            <callout arearefs='ex.addpgm.requires' >
+                <para>
+                  Pulls in the packages this simple example needs.
+                  The <literal>sqlite3</literal> package is needed to
+                  create a connection to the configuration database.
+                  The <literal>programs</literal> package is needed
+                  to add a program definition.
+                </para>
+            </callout>
+            <callout arearefs='ex.addpgm.open' >
+                <para>
+                  Almost all of the programs package procs require
+                  an sqlite3 database connection parameter to tell them
+                  which database to operate on.  This line opens a
+                  database creating the command ensemble
+                  <command>db</command>.  
+                </para>
+                <para>
+                  Note that while this command
+                  will create a database if does not exist, the resulting
+                  database will not have any table definitions.
+                  To create an experiment configuration database
+                  file, you should instead use the NSCLDAQ
+                  <link linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />
+                  command.
+                </para>
+            </callout>
+            <callout arearefs='ex.addpgm.add' >
+                <para>
+                  There's a lot going on in this command so let's take it a
+                  bit at a time.  The <command>program::add</command> command
+                  creates a new program definition.  The first parameter it takes
+                  is an SQLite3 datbase connection.  This connection must
+                  connect to a database that was created with
+                  <link linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />
+                </para>
+                <para>
+                  The next two parameters are the name and program path
+                  respectively.  The name must be unique over all
+                  programs or else an error will be thrown.  The
+                  program path must be valid within the environment
+                  in which the program will be run.  Note the use of the
+                  backslash character to prevent variable substitution in
+                  specifying that the <command>VMUSBReadout</command>
+                  command lives in the NSCDAQ binaries directory.
+                </para>
+                <para>
+                  The program type is <literal>Critical</literal> since
+                  it is a readout and likely the experiment cannot run
+                  without it.
+                </para>
+                <para>
+                  The program will run in the host <literal>spdaq99</literal>
+                </para>
+                <para>
+                  The optional data are specified as a dict.  The
+                  key of the dict specifies the data provided and the
+                  value the data itself.  The <literal>container</literal>
+                  key specifies the program will be started containerized
+                  and will run in the <literal>buster</literal> container.
+                </para>
+                <para>
+                  The <literal>options</literal> key specifies a list of
+                  option/value pairs passed to the program when it is run.
+                  Each option is a one or two element sublist containing,
+                  inorder, the
+                  option name and value.  If an option does not require a name,
+                  it must be specified with a single element sublist.
+                  The option/value pairs in this example should be familiar
+                  to users of <command>VMUSBReadout</command>, with the
+                  possible exception of <option>--initscript</option> which
+                  supplies a TCL script sourced by the program's Tcl interpreter
+                  to start the REST server component.
+                </para>
+                <para>
+                  The <literal>environment</literal> key provides environment
+                  variables.  In this case we ensure that the DAQ Tcl libraries
+                  are in the library search path.  This will be needed by
+                  <filename>~/spdaq99/startrest.tcl</filename>.
+                </para>
+                <para>
+                  While not yet used, we set the servicename used by the
+                  REST interface so that when this is used by the system,
+                  we don't need any changes.
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            The contents of the <filename>~/spdaq99/startrest.tcl</filename>
+            script are simple:
+         </para>
+         <example>
+            <title>Initialization Script to start Readout REST servers</title>
+            <programlisting>
+package require ReadoutREST
+close stdin
+            </programlisting>
+         </example>
+         <formalpara>
+            <title>Listing Program Definitions</title>
+            <para>
+               There are two entries for getting program definitions
+               <command>getdef</command> returns a dict that describes
+               a program definition when given a database handle and the
+               name of a program.  <command>listDefinitions</command>
+               returns a list of those dicts, one for each program definition.
+            </para>
+         </formalpara>
+         <para>
+            The example below lists the name of each program, where it
+            runs and the image it runs.  See
+            <link linkend='tcl3.programs' endterm='tcl3.programs.title' />
+            for a full description of the dict used to describe program definitions.
+         </para>
+         <example>
+            <title>Listing Program Definitions</title>
+            <programlisting>
+lappend auto_path $env(DAQTCLLIBS)
+package require sqlite3
+pacakge require programs
+
+sqlite3 db myconfig.db
+
+set inf [program::listDefinitions db]
+foreach p $inf {
+   set name [dict get $p name]
+   set host [dict get $p host]
+   set path [dict get $p path]
+   puts "$name runs $path in $host"
+}
+            </programlisting>
+         </example>
+         <para>
+            This example should be relatively self explanatory
+            <command>listDefinitions</command> only requires a database
+            command ensemble connected to a properly formatted database.
+         </para>
+         <formalpara>
+            <title>Running a Program</title>
+            <para>
+               Once a program has been defined it can be run.   When you
+               run a program, if it has a container specified, the package
+               will first activate the container.  Regardless it will
+               write a script to run the program.  The program itself,
+               is run over an ssh pipe and the file descriptor for that
+               pipe's output and stderr  is returned to the caller.
+            </para>
+         </formalpara>
+         <para>
+            <command>program::run</command> establishes an output
+            handler for the pipe.  Optionally the caller can supply
+            an output handler as well.  Regardless, it's important,
+            for those output handlers, that at some point an event loop
+            is entered to allow those file handlers to be dispatched.
+         </para>
+         <para>
+            In the example below, we run two programs:  <literal>readcrate1</literal>
+            and <literal>unimportant</literal>.  We'll catch and output the
+            output/error of readcrate1 and let the default handler take care
+            of unimportant.
+         </para>
+         <para>
+            When readcrate1 exits (detected by an eof on the pipe), we'll
+            exit as well. 
+         </para>
+         <example>
+            <title>Starting Programs in the <literal>programs</literal> Package</title>
+            <programlisting>
+lappend auto_path $env(DAQTCLLIBS)
+package require sqlite3
+package require programs
+
+sqlite3 db myconfig.db
+
+set done 0
+proc ReadCrate1OutputHandler {name fd} {                <co id='program.run.handler' />
+   if {![eof $fd]} {
+      puts "$name: [gets $fd]"
+   } else {
+      incr ::done
+   }
+}
+
+program::run db readcrate1 ReadCrateOutputHandler      <co id='program.run.run' />
+set fd [program::run db unimportant]
+
+vwait done                                             <co id='program.run.evloop' />
+
+if {[program::isActive unimportant]} {
+   program::kill db unimportant                       <co id='program.run.kill' />
+   catch [close $fd]
+}
+
+db close
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='program.run.handler' >
+                <para>
+                  This will be the output handler for the <literal>readcrate1</literal>
+                  program.   This will be called with two parameters.  The
+                  first is the name of the program, the second is the file descriptor
+                  connected to the pipe.
+               </para>
+                <para>
+                  If the file descriptor has not been closed by the program,
+                  a line is read and output preceded by the name of the program.
+                  If an end file is detected, we increment the <varname>done</varname>
+                  variable.  More about this later.
+                </para>
+                <para>
+                  Note that we don't close the file descriptor.  The program
+                  API wraps our output handler in its own output handler.
+                  That output handler wrapper will take care of closing the
+                  file descriptor.
+                </para>
+            </callout>
+            <callout arearefs='program.run.run' >
+                <para>
+                  These two lines run the two programs.  <literal>readcrate1</literal>
+                  is given an output handler while <literal>unimportant</literal>
+                  just gets the output handler wrapper (which throws away
+                  any output).  We capture the file descriptor of
+                  <literal>unimportant</literal> because, as we'll see later
+                  we may need to close it.
+                </para>
+            </callout>
+            <callout arearefs='program.run.evloop' >
+                <para>
+                  Enters the event loop until the <varname>done</varname>
+                  global variable is modified.  As we've seen, this will
+                  be modified when <literal>readcrate1</literal> exits
+                  (or at least closes its output and error pipe).
+                  Entering the event loop allows Tcl to dispatch the output
+                  handlers attached to file descriptors
+                  (see the Tcl documentation of <command>fileevent</command>).
+                </para>
+            </callout>
+            <callout arearefs='program.run.kill' >
+                <para>
+                  The <command>isActive</command> command determines if a
+                  program is still active.  If <literal>unimportant</literal>
+                  is still running we ask the package to kill it and
+                  then close the file descriptor open on its pipe.
+                </para>
+                <para>
+                  It's a good idea to wrap <command>close</command> file
+                  file descriptors open on pipelines  in a
+                  <command>catch</command>.  This is because anything that
+                  looks like a failure of the process connected to the pipe
+                  will result in an error from the <command>close</command>
+                  command.  This includes not only a non zero exit status
+                  but any output on the program's stderr as well.
+                </para>
+            </callout>
+         </calloutlist>
+         <para>
+            A note about <literal>program::kill</literal>.  This operates
+            by locating the program image in the remote system and using
+            ssh to issue a <command>kill</command> command.  Sadly, there are
+            cases where this is unsufficient and I don't know how to help that.
+            Specifically, if the image is a script that runs a program,
+            even though the script gets killed, the program my continue to run.
          </para>
       </section>
       <section id='sec.manager.sequence'>
@@ -474,7 +977,65 @@ close $containerfd                                  <co id='ex.usecont.closecfd'
             The <command>sequence</command> package
          </title>
          <para>
+            The <literal>sequence</literal> package provides support for
+            two concepts within the manager:
          </para>
+         <orderedlist>
+            <listitem>
+               <para>
+                  The manager implements a state machine.  While there is
+                  a default state machine loaded into the manager it is
+                  possible to define any state machine as long as its initial
+                  state is called <literal>SHUTDOWN</literal> and
+                  any state can transition to <literal>SHUTDOWN</literal>
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The manager associates sequences to transitions into
+                  a specific state.  A sequence is a list of programs
+                  (see previous section) that are run to properly transition
+                  to that state.
+               </para>
+            </listitem>
+         </orderedlist>
+         <para>
+            The remainder of this section will describe:
+         </para>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  What a state machine is, and the default state machine
+                  that's implemented when a configuration database is
+                  created.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Parts of the <literal>sequence</literal> package that
+                  can be used to create other state machines than the
+                  default state machine.  Note that in most cases it is not
+                  necessary to create a custom state machine.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Sequences and the API section of the sequence
+                  package that manage sequences.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Transitions and the parts of the API that manage them.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Miscellaneous parts of the AP:I that don't neatly fit into
+                  any of these categories.
+               </para>
+            </listitem>
+         </itemizedlist>
       </section>
       <section id='sec.manager.kvstore'>
          <title id='sec.manager.kvstore.title'>
@@ -857,9 +1418,550 @@ set dictlist [container::listDefinitions db ?name?]
         </variablelist>
         <para>
             Note these scripts are a property of the container not of
-            an activation of the container in a host.  That is all
-            activations of a container will share the same scripts.
+            an activation of the container in a host.  That is all container
+            activations use the same script filename although the current
+            implementation writes the script each time it's needed to allow
+            for changes in a container's definition between activations.
         </para>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.programs'>
+   <refmeta>
+      <refentrytitle id='tcl3.programs.title'>programs</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>programs</refname>
+      <refpurpose>API For the DAQ Manager Program Database</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require programs
+
+program::exists db name
+program::add    db name path type host options
+program::remove db name
+set def [program::getdef db name]
+set defs [program::listDefinitions db]
+if {[program::isActive name]} {...}
+set namesAndHosts [::program::activeContainers]
+set names [::program::activePrograms]
+set fd [::program::run db name ?outputHandler?]
+::program::kill db name
+
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+      <title>DESCRIPTION</title>
+         <para>
+           This package provides access to the program definition part of
+           the experiment database.  It also provides procs that allow
+           programs to be run and stopped.  See
+           <literal>EXPORTED ENTRY POINTS</literal> below for details.
+         </para>
+         <para>
+           A program is defined by the following mandatory data:
+        </para>
+        <variablelist>
+           <varlistentry>
+              <term>id</term>
+              <listitem>
+                  <para>
+                    An integer that is unique across all programs.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>name</literal></term>
+              <listitem>
+                  <para>
+                    This name is used to identify the program primarily to
+                    people.  The <literal>name</literal> must be unique
+                    among all programs.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>path</literal></term>
+              <listitem>
+                  <para>
+                    The filesystem path to an executable entity. Executable
+                    entities can be binary program sor they can be scripts.
+                  </para>
+                  <para>
+                    If the program runs containerized the executable entity
+                    must be locatable within the containerized environment.
+                    This means that if the path to the script is incomplete,
+                    the <literal>PATH</literal> variable in the container
+                    must be able to locate the program.  Alternatively,
+                    if the path to the program is complete, but the image of the
+                    filesystem within the container is different that in the host,
+                    the path within the container must be used.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>type</literal></term>
+              <listitem>
+                  <para>
+                    The type of the program.  Programs can be
+                    <literal>Transitory</literal>, which means it is expected
+                    they will exit.  There are also two types of persistent
+                    programs (programs that are not expected to exit):
+                    <literal>Critical</literal> programs are required for
+                    the data acquisition system to function properly.  If a
+                    <literal>Critical</literal> program exits, the DAQ
+                    manager forces the DAQ system to shutdown.
+                    <literal>Persistent</literal> programs are not expected to
+                    exit but, if they do, data taking can continue.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>host</literal></term>
+              <listitem>
+                  <para>
+                    The DNS name of the host in which the program will be run.
+                    You should specify exactly the name of the host in which to
+                    run the program and not use <literal>localhost</literal>.
+                  </para>
+               </listitem>
+           </varlistentry>
+        </variablelist>
+        <para>
+           Several optional bits of data can be associated with a program and
+           define the environment in which the program runs.  Not all of these
+           items are used at this implementation of the system.
+        </para>
+        <variablelist>
+           <varlistentry>
+              <term><literal>container</literal></term>
+              <listitem>
+                  <para>
+                    The name of a container in which the program will
+                    run.  This container must be defined in the
+                    <literal>containers</literal> package.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>initscript</literal></term>
+              <listitem>
+                  <para>
+                    An initialization script run prior to running the program.
+                    This is not yet used.  The contents of this script are
+                    pulled into the database.  Thus changes to the
+                    initialization script (once it's implemented) will
+                    not bee seen until the program is re-defined.
+                  </para>
+                  <para>
+                    By not used, I mean that the GUI systems to edit program
+                    definitions don't provide a mechanism for providing this
+                    script.  At program activation time, any initialization
+                    script provided is used.
+                  </para>
+                  <para>
+                    Since the contents of the script are sucked into the
+                    database, it's important to provide the path to the
+                    script at the time the program is defined.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>service</literal></term>
+              <listitem>
+                  <para>
+                    Not currently used.  If the program provides a REST service,
+                    its name should be provided here.
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>environment</literal></term>
+              <listitem>
+                  <para>
+                    A list of environment name, value pairs which will be
+                    put into the program's environment before it is started.
+                  </para>
+                  <para>
+                    For example, when a Tcl script is the program, you
+                    may need to supply a <literal>TCLLIBPATH=$DAQTCLLIBS</literal>
+                    environment definition
+                  </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>directory</literal></term>
+              <listitem>
+                  <para>
+                    The working directory in which the program will be started.
+                    If not provided, you should make no assumptions about
+                    the working directory the program will be run in.
+                  </para>
+               </listitem>
+           </varlistentry>
+        </variablelist>
+        <para>
+           These bits of optional data are used to construct the
+           command used to run the program.
+        </para>
+        <variablelist>
+           <varlistentry>
+              <term><literal>options</literal></term>
+              <listitem>
+                  <para>
+                    These are the program options and optionally values
+                    needed by those options.  For example, for a Readout,
+                    an option might
+                    be <option>--ring</option> with a value like
+                    <option>fox</option>.  It is legal for options not to have
+                    a value (for example <option>--oneshot</option>).
+                  </para>
+                  <para>
+                    Options are considered to be unordered.
+                 </para>
+               </listitem>
+           </varlistentry>
+           <varlistentry>
+              <term><literal>parameters</literal></term>
+              <listitem>
+                  <para>
+                    Parameters are placed on the command line following
+                    all options.  They are considered to be a list of ordered
+                    values.  An example of program parameters might be
+                    the name of the host in which the manager is running.
+                  </para>
+               </listitem>
+           </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXPORTED ENTRY POINTS</title>
+      <para>
+         All of the exported entries are in the
+         <literal>::program</literal> namespace.  If you are browsing the
+         source code of the package. Note that any proc name beginning with
+         a <literal>_</literal> is internal and not gauranteed to be stable
+         over time.  
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><command>program::exists</command> <replaceable>db name</replaceable></term>
+            <listitem>
+                <para>
+                  Determines if the named program; <parameter>name</parameter>
+                  has been defined in the database whose SQLite3 connection
+                  is <parameter>db</parameter>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>program::add</command> <replaceable>db name path type host ?options?</replaceable>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new program definition in the SQLite3 experiment
+                  configuration database pointed to by <parameter>db</parameter>
+               </para>
+                <para>
+                  <parameter>name</parameter> is the name that will be given
+                  to the new program.  The name must be unique across all
+                  program definitions in the database.  If a program with
+                  that name already exists, an error will be thrown.
+                </para>
+                <para>
+                  <parameter>path</parameter> is the path to the thing
+                  (executable program or script) that will be run when
+                  <parameter>name</parameter> is run.  Note that if the
+                  program is containerized, this path must be correct within
+                  the container rather than the host system.
+                </para>
+                <para>
+                  <parameter>type</parameter> is the program type.  This is
+                  one of <literal>Transitory</literal>, <literal>Critical</literal>
+                  or <literal>Persistent</literal>.  Transitory programs
+                  are expected to exit, normally relatively quickly.  Critical programs
+                  are required for the DAQ system to run.  If a critical
+                  program exits, the manager shuts down the DAQ system.
+                  Persistent programs are also intended to not exit, however
+                  the DAQ system can continue to run without them. 
+                </para>
+                <para>
+                  <parameter>host</parameter> is the DNS name of the system
+                  in which the program will be run.
+                </para>
+                <para>
+                  The <parameter>options</parameter> optional parameter is
+                  provided to supply additional  information describing
+                  the environment and manner in which the program
+                  will be run.  It consists of a dict that whose keys
+                  are parameter names and values for those parameters.
+                </para>
+                <para>
+                  None of the keys are mandatory.  The keys are:
+                </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>container</literal></term>
+                     <listitem>
+                         <para>
+                           If supplied, this must be the name of a container
+                           that is already defined via the
+                           <link linkend='tcl3.containers' endterm='tcl3.containers.title' />
+                           package.    If supplied, the program, when run,
+                           will be run in the container environment specified
+                           by that container definition.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>initscript</literal></term>
+                     <listitem>
+                         <para>
+                           Initialization script.  This should be the path to
+                           a valid shell script in the context in which the
+                           <command>program::add</command> command is run.
+                           The contents of this file, at the time
+                           <command>program::add</command> is called will
+                           be stored in the database and, when the program
+                           is run, will be run prior to executing the program.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>service</literal></term>
+                     <listitem>
+                         <para>
+                           This is not yet used.  If your program publishes
+                           a service with the NSCLDAQ port manager, the
+                           name of this service should be placed here.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>options</literal></term>
+                     <listitem>
+                         <para>
+                           The value of this key is a list of program command
+                           line options.  If an option is a two element list,
+                           the first is considered to be the option name and
+                           the second a value associated with the option.
+                       </para>
+                       <para>
+                           name value pairs become command line options
+                           of the form <literal>name=value</literal>.
+                       </para>
+                       <para>
+                        The order in which options are specified is not
+                        considered to be important, however, they are written
+                        on the command line in the same order as provided here.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>parameters</literal></term>
+                     <listitem>
+                         <para>
+                           The value of this is a list of values that will
+                           be provided as program command line parameters in the
+                           order in which they are given here.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term>environment</term>
+                     <listitem>
+                         <para>
+                           The value of this is a list of name value pairs
+                           that will become environment variables available
+                           to the program.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>directory</literal></term>
+                     <listitem>
+                         <para>
+                           Sets a current working directory for the program.
+                           Note if the program is containerized, this must
+                           be expressed in terms of the containerized file
+                           system.  If this is not specified, no assumptions
+                           should be made about the working directory
+                           in which the program is run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+                <para>
+                  Note that when the program is run, a script is generated to run
+                  the program.  As such, any shell substitutions can be
+                  specified for any of the values used to start a program.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>program::remove</command> <replaceable>db name</replaceable></term>
+            <listitem>
+                <para>
+                  Removes the program named <parameter>name</parameter> from
+                  the database whose connection command is <parameter>db</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>><command>program::getdef</command> <replaceable>db name</replaceable></term>
+            <listitem>
+                <para>
+                  Returns a dict that describes the program
+                  <parameter>name</parameter> in the database
+                  <parameter>db</parameter>.  The dict will have the
+                  following keys and values:
+               </para>
+               <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal></term>
+                     <listitem>
+                         <para>
+                           A unique integer that identifies the program.
+                           In database terminology, this is the primary key of
+                           the root record of the program definition.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>name</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the program
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>path</literal></term>
+                     <listitem>
+                         <para>
+                           Path to the program or script that will be run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>type</literal></term>
+                     <listitem>
+                         <para>
+                           Type of the program  in text form. This will
+                           be one of <literal>Transitory</literal>,
+                           <literal>Persistent</literal> or
+                           <literal>Critical</literal>.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>type_id</literal></term>
+                     <listitem>
+                         <para>
+                           Integer value that's related to the
+                           <literal>type</literal>.   In fact the
+                           legal types are in a database table, and this value
+                           is the primary key for the type described in
+                           <literal>type</literal>.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>host</literal></term>
+                     <listitem>
+                         <para>
+                           The DNS name of the host in which the program
+                           will be run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>directory</literal></term>
+                     <listitem>
+                         <para>
+                            Present only if a working directory was specified for the
+                            program.  The value will be the value of that
+                            directory.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container_name, container_id</literal></term>
+                     <listitem>
+                         <para>
+                           If present, the program is to be run containerized.
+                           The <literal>container_name</literal> value
+                           is the name of the container in which to run
+                           the program. The <literal>container_id</literal>
+                           value is the primary key of the container's root
+                           record.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>initscript</literal></term>
+                     <listitem>
+                         <para>
+                           If an initialization script was specified, this
+                           will be the contents of that script file at the
+                           time the program was defined with
+                           <command>program::add</command>
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>service</literal></term>
+                     <listitem>
+                         <para>
+                           If present a service name was provided and
+                           the value is the name provided.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>options</literal></term>
+                     <listitem>
+                         <para>
+                           List of two element lists where the first
+                           element of each sublist is a program option name
+                           and the second element its value.  If the option
+                           has no value, the second element is an empty string.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>parameters</literal></term>
+                     <listitem>
+                         <para>
+                           List of parameters that will be added to the
+                           program command line.  These are considered
+                           to be ordered.  That is they are added to the
+                           command line after the options and in the same
+                           order as this list.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>environment</literal></term>
+                     <listitem>
+                         <para>
+                           A list of two item sublists that define additions
+                           to the environment variables that will be added
+                           to the environment prior to running the program.
+                           The first element of each sublist is the name of
+                           an environment variable and the second is the
+                           value of that variable.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+               </variablelist>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
 </refentry>
 <!-- /manpage -->
