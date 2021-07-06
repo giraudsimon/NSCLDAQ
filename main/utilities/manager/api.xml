@@ -1000,6 +1000,10 @@ db close
             </listitem>
          </orderedlist>
          <para>
+            Reference information on the sequence package is at
+            <link linkend='tcl3.sequence' endterm='tcl3.sequence.title' />
+         </para>
+         <para>
             The remainder of this section will describe:
          </para>
          <itemizedlist>
@@ -1007,7 +1011,8 @@ db close
                <para>
                   What a state machine is, and the default state machine
                   that's implemented when a configuration database is
-                  created.
+                  created.  This is described in
+                  <link linkend='sec.sequence.statemachine' endterm='sec.sequence.statemachine.title' />
                </para>
             </listitem>
             <listitem>
@@ -1016,26 +1021,202 @@ db close
                   can be used to create other state machines than the
                   default state machine.  Note that in most cases it is not
                   necessary to create a custom state machine.
+                  This is described in
+                  <link linkend='sec.sequence.stateapi' endterm='sec.sequence.stateapi.title' />
                </para>
             </listitem>
             <listitem>
                <para>
-                  Sequences and the API section of the sequence
+                  <link linkend='sec.sequence.seqapi' endterm='sec.sequence.seqapi.title' />
+                  sequences and the API section of the sequence
                   package that manage sequences.
                </para>
             </listitem>
             <listitem>
                <para>
-                  Transitions and the parts of the API that manage them.
+                  <link linkend='sec.sequence.transition'
+                        endterm='sec.sequence.transition.title' />
+                  describes transitions and the parts of the API that manage them.
                </para>
             </listitem>
             <listitem>
                <para>
-                  Miscellaneous parts of the AP:I that don't neatly fit into
+                  <link linkend='sec.sequence.misc'
+                        endterm='sec.sequence.misc.title' />
+                  describes miscellaneous parts of the API that don't neatly fit into
                   any of these categories.
                </para>
             </listitem>
          </itemizedlist>
+         <section id='sec.sequence.statemachine'>
+            <title id='sec.sequence.statemachine.title'>
+            State Machines, and the Default State Machine
+            </title>
+            <para>
+               This section describes, in a general way, what a state machine
+               is and the default state machine that is loaded into the
+               database by
+               <link linkend='daq1.mg_mkconfig' endterm='daq1.mg_mkconfig.title' />.
+            </para>
+            <para>
+               A state machine is a system that can live in any of a set of named
+               <firstterm>states</firstterm>.  State machines define, as well,
+               the legal transitions to successor states given the system is in
+               a specific state.
+            </para>
+            <para>
+               State machines have at most two special states.  The
+               <firstterm>initial state</firstterm> defines the state
+               the system is in when it is initially instantiated.
+               A system may also have a
+               <firstterm>final state</firstterm>.  The final state is one
+               that has no legal successors.  If a state machine
+               enters the final state it has completed execution.
+            </para>
+            <para>
+               The table below describes the default state machine
+               as the set of state names and their legal successor states.
+               The initial state is also described.
+            </para>
+            <table>
+               <title>Default Manager State Machine</title>
+               <tgroup cols='2' align='left' rowsep='1' >
+                  <colspec colname='state' />
+                  <colspec colname='successors' />
+                  <thead>
+                     <row>
+                        <entry align='center'>State</entry>
+                        <entry align='center'>Successors</entry>
+                     </row>
+                  </thead>
+                  <tbody>
+                     <row>
+                        <entry>SHUTDOWN (initial)</entry>
+                        <entry>BOOT, SHUTDOWN</entry>
+                     </row>
+                     <row>
+                        <entry>BOOT</entry>
+                        <entry>SHUTDOWN, HWINIT, BEGIN</entry>
+                     </row>
+                     <row>
+                        <entry>HWINIT</entry>
+                        <entry>SHUTDOWN, BEGIN</entry>
+                     </row>
+                     <row>
+                        <entry>BEGIN</entry>
+                        <entry>SHUTDOWN, END</entry>
+                     </row>
+                     <row>
+                        <entry>END</entry>
+                        <entry>SHUTDOWN, HWINIT, BEGIN</entry>
+                     </row>
+                  </tbody>
+               </tgroup>
+            </table>
+            <para>
+               This state machine has no final state.
+            </para>
+         </section>
+         <section id='sec.sequence.stateapi'>
+            <title id='sec.sequence.stateapi.title'>
+               The State machine API
+            </title>
+            <para>
+               The state machine API allows you to configure an arbitrary
+               state machine.  The requirement that the manager has
+               for statemachines is simply that there's an initial state
+               named <literal>SHUTDOWN</literal> and that this state is directly
+               reachable from any other state.  Note that various other GUI's
+               such as <link linkend='daq1.rdo_RunControl' endterm='daq1.rdo_RunControl.title' />
+               have additional requirements.
+            </para>
+            <para>
+               The three procs that support modifying the state machine are
+               <command>newState</command> which creates a new state.
+               <command>newTransition</command> which defines a new transition
+               and <command>rmvState</command> which removes a state and
+               all transitions to/from it as well as all sequences it triggers.
+               See <link linkend='sec.sequence.seqapi' endterm='sec.sequence.seqapi.title' />
+               for more on sequences and triggers.
+            </para>
+            <para>
+               In the example below we extend the state machine to support
+               a <literal>PAUSED</literal> state.  The paused state can be
+               reached from  the existing <literal>BEGIN</literal> state and
+               can reach <literal>BEGIN</literal>, <literal>END</literal>
+               and, of course <literal>SHUTDOWN</literal>.
+            </para>
+            <example>
+               <title>Adding a PAUSED State</title>
+               <programlisting>
+lappend auto_path $env(DAQTCLLIBS)
+package require sqlite3
+package require sequence                       <co id='ex.seq.boilerplate' />
+
+sqlite3 db myconfig.db
+
+sequence::newState db PAUSED                 <co id='ex.seq.addstate' />
+sequence::newTransition db BEGIN PAUSED
+sequence::newTransition db PAUSED END        <co id='ex.seq.addtransitions' />
+sequence::newTransition db PAUSED BEGIN
+sequence::newTransition db PAUSED SHUTDOWN
+
+db close
+
+               </programlisting>
+            </example>
+            <calloutlist>
+               <callout arearefs='ex.seq.boilerplate' >
+                   <para>
+                     By now this should be familiar.  Extend the library
+                     search path and require the packages we need before
+                     opening the database.
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.addstate' >
+                   <para>
+                     Adds a new state named <parameter>PAUSED</parameter>
+                     to the state machine.  At this point there are no
+                     states that can transition into <literal>PAUSED</literal>
+                     and <literal>PAUSED</literal> cannot transition to any
+                     successor state.
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.addtransitions' >
+                   <para>
+                     This chunk of code adds the transitions required to make
+                     <literal>PAUSED</literal> functional.  Each call, in
+                     addition to the database command, requires a
+                     <firstterm>predecessor</firstterm> state and a
+                     <firstterm>successor state</firstterm>.  These two states
+                     define a transition.  In the first call, for example;
+                     we are saying that <literal>PAUSED</literal> can be reached
+                     from <literal>BEGIN</literal>.
+                </para>
+               </callout>
+            </calloutlist>
+         </section>
+         <section id='sec.sequence.seqapi'>
+            <title id='sec.sequence.seqapi.title'>
+               The Sequence API
+            </title>
+            <para>
+            </para>
+         </section>
+         <section id='sec.sequence.transition'>
+            <title id='sec.sequence.transition.title'>
+               The Transition API
+            </title>
+            <para>
+            </para>
+         </section>
+         <section id='sec.sequence.misc'>
+            <title id='sec.sequence.misc.title'>
+               Miscellaneous API Entries.
+            </title>
+            <para>
+            </para>
+         </section>
       </section>
       <section id='sec.manager.kvstore'>
          <title id='sec.manager.kvstore.title'>
@@ -1962,6 +2143,28 @@ set fd [::program::run db name ?outputHandler?]
             </listitem>
          </varlistentry>
       </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.sequence'>
+   <refmeta>
+      <refentrytitle id='tcl3.sequence.title'>sequence</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>sequence</refname>
+      <refpurpose>States, Sequence, Transitions API</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+         
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            
+          </para>
     </refsect1>
 </refentry>
 <!-- /manpage -->
