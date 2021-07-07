@@ -1195,20 +1195,209 @@ db close
                 </para>
                </callout>
             </calloutlist>
+            <para>
+               Using the <command>rmvState</command> operation it's possible
+               to make a completely new state machine by removing all states in
+               the existing state machine and starting from scrach.
+            </para>
          </section>
          <section id='sec.sequence.seqapi'>
             <title id='sec.sequence.seqapi.title'>
                The Sequence API
             </title>
             <para>
+               States and transitions by themselves do nothing.  The power
+               of this package is the ability to add sequences of actions to
+               transitions into a state.  In this version (NSCLDAQ 12.0), the
+               actions that can be added are simply running programs that have
+               been defined using e.g. the <literal>programs</literal>
+               API.
             </para>
+            <para>
+               A sequence is a series of ordered steps.  Each step runs a program
+               with an optional pre and post delay.  Sequences are
+               <firstterm>triggered</firstterm> by the entry into a specific
+               state.  Any number of sequences can be defined and a transition
+               into a state can trigger as many sequences as desired.
+            </para>
+            <para>
+               Each sequence step runs a program that was defined using
+               the <literal>programs</literal> API.  Recall that there are
+               three types of programs; Transitory, Persistent and Critical.
+               Transitory programs are expected to exit quickly while Persistent
+               and Critical programs are expected to endure indefinitely.
+            </para>
+            <para>
+               Therefore, when a Transitory program runs, the step stalls
+               until that program exits.   Persistent and Critical
+               programs, however, are simply started.  If a Critical program
+               exit is detected, the tate machine initiates a transition to the
+               SHUTDOWN state.
+            </para>
+            <para>
+               Supose we want to start the readout1 and readout2 the event builder
+               (eventbuilder) and data sources for readout1 and readout2 (feed1 and
+               feed2)
+               on a transition to BOOT.  These programs have already
+               been defined in the database.  The following  code snippet
+               performs this task:
+            </para>
+            <example>
+               <title>Defining A Boot Sequence</title>
+               <programlisting>
+lappend auto_path $env(DAQTCLLIBS)
+package require sequence
+package require sqlite3
+
+sqlite3 db myconfig.db
+
+sequence::add db InitiateDataFlow BOOT  <co id='ex.seq.makeseq' />
+
+::sequence::addStep db InitiateDataFlow readout1
+::sequence::addStep db InitiateDataFlow readout2    <co id='ex.seq.addsteps' />
+::sequence::addStep db InitiateDataFlow eventbuilder 0 2 <co id='ex.seq.delay' />
+::sequence::addStep db InitiateDataFlow feeder1
+::sequence::addStep db InitiateDataFlow feeder2
+
+db close
+               </programlisting>
+            </example>
+            <calloutlist>
+               <callout arearefs='ex.seq.makeseq' >
+                <para>
+                  This creates a new sequence named
+                  <literal>InitiateDataFlow</literal> and
+                  triggers it on transitions to the <literal>BOOT</literal>
+                  state.  Note that at present, the database and software only
+                  support a sequence being triggered on a single state.
+                  That is a sequence cannot be created to trigger both by
+                  transitions to <literal>BOOT</literal> and
+                  <literal>HWINIT</literal>.
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.addsteps' >
+               <para>
+                  This block of code adds the five steps we need to the
+                  sequence.  <literal>addStep</literal> adds a new step to the
+                  end of a sequence.  Other API elements provide the ability
+                  to edit sequences. 
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.delay' >
+                   <para>
+                     We add a post delay of 2 seconds to the step that runs
+                     the <literal>eventbuilder</literal> program  as it may
+                     need time to start up and become ready to accept connections
+                     from its feeder programs.
+                </para>
+               </callout>
+            </calloutlist>
          </section>
          <section id='sec.sequence.transition'>
             <title id='sec.sequence.transition.title'>
                The Transition API
             </title>
             <para>
+               Transitions are the act of placing the system in a new state that
+               can be legally reached from the current state.
+               Doing so requires that all sequences triggered on the new
+               state run successfully.
             </para>
+            <para>
+               There are several API members that allow you to determine the
+               current state, the legal transtions from that state, to
+               test if a transition is legal and, most importantly, to
+               initiate a transition.
+            </para>
+            <para>
+               Transitions require scheduling and this requires the event
+               loop.  Thus normally, you initiate a transition and enter
+               the event loop at least until the transition completes.
+            </para>
+            <para>
+               Note that if a sequence triggered by the transition runs
+               either Persistent or Critical programs, capturing output
+               from those programs is also done via the event loop.
+               Thus users of this package that drive the state machine through
+               transitions must be sure to enter the event loop in
+               a manner that makes the system responsive to events.
+            </para>
+            <para>
+               The example below tests to see if we are in SHUTDOWN state
+               and, if so, initiates a transition to BOOT the system.
+            </para>
+            <example>
+               <title>Booting the System.</title>
+               <programlisting>
+lappend auto_path $env(DAQTCLLIBS)
+package require sqlite3
+package require sequence
+
+sqlite3 db myconfig.db
+
+set status ""
+
+proc completion {db manager completionStatus} {   <co id='ex.seq.trans.completion' />
+   set ::status $completionStatus
+}
+
+if {[::sequence::currentState db] eq "SHUTDOWN"} {  <co id='ex.seq.trans.check' />
+    ::sequence::transition db BOOT completion       <co id='ex.seq.trans.boot' />
+    vwait status                                    <co id='ex.seq.trans.vwait' />
+    puts "Transition to BOOT completed in $status
+} else {
+    puts "Not in SHUTDOWN state."
+}
+db close
+
+               </programlisting>
+            </example>
+            <calloutlist>
+               <callout arearefs='ex.seq.trans.completion' >
+               <para>
+                  The sequence package allows you to synchronize with the
+                  completion of transitions via endscripts.  These is
+                  code invoked when a transition finishes, no matter how
+                  it completes.  endscripts are invoked with three
+                  additional command parameters:  The database command,
+                  The name of the command that represents a transition manager
+                  that's shephearding the system through the transition and
+                  the status of the completion (which is one of
+                  <literal>OK</literal>, <literal>ABORTED</literal>
+                  or <literal>FAILED</literal>).
+                </para>
+               <para>
+                  See the reference page for more information about the
+                  Transition manager and its public methods.
+               </para>
+               </callout>
+               <callout arearefs='ex.seq.trans.check' >
+                   <para>
+                     Gets the system's current state. Note that the state
+                     is maintained in the database so it's possible for an
+                     application to exit and for the state to be maintained.
+                     Note that the manager, in practice forces a
+                     <literal>SHUTDOWN</literal>, if necessary before
+                     exiting.
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.trans.boot' >
+                   <para>
+                     Initiates the shutdown. Note that <literal>completion</literal>
+                     is specified as the end script for this transition.
+                </para>
+               </callout>
+               <callout arearefs='ex.seq.trans.vwait' >
+                   <para>
+                     The <command>vwait</command> command enters the event
+                     loop until the <literal>completion</literal> proc is
+                     invoked after the transition completed.  That proc sets
+                     the <varname>status</varname> global variable with the status
+                     of the transition which ends the vwait and makes the
+                     completion status available.
+                </para>
+               </callout>
+            </calloutlist>
          </section>
          <section id='sec.sequence.misc'>
             <title id='sec.sequence.misc.title'>
