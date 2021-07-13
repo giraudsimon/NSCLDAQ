@@ -1459,7 +1459,9 @@ if {$manager ne ""} {
        if {[dict get $seq transition_name] eq $t} {
          set steps [::sequence::listSteps $db $name]  <co id='ex.seq.misc.lstep' />
          foreach step $steps {
-            set aMonitor [MyMonitor %AUTO% -step $stepno] <co id='ex.seq.misc.monitor' />
+            set aMonitor [MyMonitor %AUTO% \     <co id='ex.seq.misc.monitor' />
+              -database $db -sequence $seq -step $stepno \
+            ]                          
             set stepno [dict get $step step]
             ::sequence::addMonitor $db $name $stepno $aMonitor <co id='ex.seq.misc.addmon' />
          }
@@ -1470,7 +1472,9 @@ if {$manager ne ""} {
                            <co id='ex.seq.misc.omonitor' />
 snit::type MyMonitor {
    option -step
-   MyMonitor args { $self configurelist $args}
+   option -database
+   option -sequence
+   constructor args { $self configurelist $args}
    
    method onOutput  {db program fd} {  <co id='ex.seq.misc.onout' />
       set line [gets $fd]
@@ -1479,6 +1483,8 @@ snit::type MyMonitor {
    }
    method onExit {program fd} {     <co id='ex.seq.misc.onexit' />
       ::sequence::relayOutput "[dict get $program name] exited!!"
+      ::sequence::addMonitor $options(-database) $options(-sequence) \
+         $options(-step) ""
       after 0 [mymethod destroy]
    }
 }
@@ -1491,55 +1497,141 @@ snit::type MyMonitor {
                fragment not an complete program.   The elipses show where
                additional code would be needed.
             </para>
-            <callout arearefs='ex.seq.misc.snit' >
-                <para>
-                  In this example we're going to add an
-                  <firstterm>output monitor</firstterm> to steps in t
-                  sequences.  Output monitors are command ensembles (a base
-                  command with subcommand following).  Snit is a package
-                  that supports object oriented program. Snit types
-                  are like classes and an instance of a snit type
-                  is represented by a command ensemble.
-                </para>
-                <para>
-                  We're going to use snit types to define our output
-                  monitors.  There are other options like namespace ensembles,
-                  TclOO and Incremental Tcl (in fact SNIT is a
-                  recursive acronym that stands for
-                  SNIT Is Not Incremental Tcl).
-                </para>
-                <para>
-                  The key point, as we'll see is that in order to
-                  make an output monitor, you need to have
-                  a command ensemble that accepts the two subcommand
-                  <command>onOutput</command> and
-                  <command>onExit</command>.
-                </para>
-            </callout>
-            <callout arearefs='ex.seq.misc.getmgr' >
-                <para>
-                  <command>::sequence::getCurrentTransition</command>
-                  returns a command ensemble that implements what
-                  is called a transition manager for the transition
-                  that's currently running.  If no transition
-                  is actively running, the return value is an
-                  empty string.
-                </para>
-            </callout>
-            <callout arearefs='ex.seq.misc.lseq' >
-                <para>
-                  <comand>::sequence::listSequences</comand>
-                  takes the database connection command and returns
-                  a list of dicts that describe the sequences
-                  that have been defined.  For the sake of this
-                  example, we only care that the <literal>transition_name</literal>
-                  key in that dict provides the name of the state
-                  whose attempted entry triggers the sequence,
-                  and that <literal>name</literal> provides the name
-                  of the sequence.
-                </para>
-            </callout>
-            
+            <calloutlist>
+               <callout arearefs='ex.seq.misc.snit' >
+                   <para>
+                     In this example we're going to add an
+                     <firstterm>output monitor</firstterm> to steps in t
+                     sequences.  Output monitors are command ensembles (a base
+                     command with subcommand following).  Snit is a package
+                     that supports object oriented program. Snit types
+                     are like classes and an instance of a snit type
+                     is represented by a command ensemble.
+                   </para>
+                   <para>
+                     We're going to use snit types to define our output
+                     monitors.  There are other options like namespace ensembles,
+                     TclOO and Incremental Tcl (in fact SNIT is a
+                     recursive acronym that stands for
+                     SNIT Is Not Incremental Tcl).
+                   </para>
+                   <para>
+                     The key point, as we'll see is that in order to
+                     make an output monitor, you need to have
+                     a command ensemble that accepts the two subcommand
+                     <command>onOutput</command> and
+                     <command>onExit</command>.
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.getmgr' >
+                   <para>
+                     <command>::sequence::getCurrentTransition</command>
+                     returns a command ensemble that implements what
+                     is called a transition manager for the transition
+                     that's currently running.  If no transition
+                     is actively running, the return value is an
+                     empty string.
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.lseq' >
+                   <para>
+                     <command>::sequence::listSequences</command>
+                     takes the database connection command and returns
+                     a list of dicts that describe the sequences
+                     that have been defined.  For the sake of this
+                     example, we only care that the <literal>transition_name</literal>
+                     key in that dict provides the name of the state
+                     whose attempted entry triggers the sequence,
+                     and that <literal>name</literal> provides the name
+                     of the sequence.
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.lstep' >
+                   <para>
+                     For every sequence that's triggered by the current
+                     transition manager, we list that sequence's steps
+                     using <command>::sequence::listSteps</command>
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.monitor' >
+                   <para>
+                     For each setp we create a monitor instance.  That is
+                     a new command ensemble that will monitor output
+                     from the program in that step.  The construction of
+                     the snit type (see below) returns the name of the
+                     command ensemble.  Instantiating a new snit::type
+                     with the <literal>%AUTO%</literal> keyword gets snit
+                     to create a new command base name that is unique
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.addmon' >
+                   <para>
+                     This associates the monitor with the step.  Note that the
+                     return value from <command>::sequence::addMonitor</command>
+                     is any prior monitor.  
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.omonitor' >
+                   <para>
+                     This section of code defines a new snit type.  Snit types
+                     are like classes in that the define a template for
+                     producing new command ensembles that are encapsulated
+                     with data.  
+                   </para>
+                   <para>
+                     Since snit is also used as a megawidget framework.
+                     in addition to encapsulating
+                     <command>variable</command>s, a snit type can
+                     define options.  Options are like the options in a
+                     Tk widget.  They can be supplied at construction time or
+                     built in methods <command>configure</command>
+                     and <command>cget</command> set or query options.
+                     Options appear to method code like an array named
+                     <varname>options</varname> indexed by the option name.
+                   </para>
+                   <para>
+                     Finally a snit type <command>method</command> defines a
+                     subcommand of the instance command ensembles.
+                     </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.onout' >
+                   <para>
+                     When output is available from the program, the sequence API
+                     invokes the output monitor's <command>onOutput</command>
+                     subcommand.  It passes the database command, the program
+                     definition dict and the file descriptor open on the output
+                     of the program run in the step being monitored.
+                   </para>
+               </callout>
+               <callout arearefs='seq.misc.orelay' >
+                   <para>
+                     The <command>::sequence::relayOutput</command> command
+                     sends its argument to all processes connected to its output
+                     relay server.
+                   </para>
+               </callout>
+               <callout arearefs='ex.seq.misc.onexit' >
+                   <para>
+                     The <command>onExit</command> subcommand of the output monitor
+                     command ensemble is invoked if an end file condition is
+                     detected on the file descriptor connected to the step
+                     program's output.  The framework passes the program definition
+                     dict and the file descriptor which, while still open, can no longer be read.
+                     The caller will close that file descriptor
+                   </para>
+                   <para>
+                     This sample implementation simply informs clients of the
+                     output relay server, removes itself as a monitor (by passing
+                     an empty command to <command>::sequence::addMonitor</command>).
+                     Finally it schedules itself for destruction.  This is done
+                     from the event loop to prevent potential awkward problems with
+                     the object being destroyed while one of its method is still
+                     being executed.  While I have successfully done
+                     <command>$self destroy</command> in similar situations, it's always
+                     left me fealing uneasy.
+                   </para>
+               </callout>
+            </calloutlist>
          </section>
       </section>
       <section id='sec.manager.kvstore'>
@@ -2481,14 +2573,104 @@ set fd [::program::run db name ?outputHandler?]
     </refnamediv>
     <refsynopsisdiv>
       <programlisting>
-         
+package require sequence
+
+sequence::newState db state-name
+sequence::newTransition db from to
+sequence::add db sequence-name
+set stepno [sequence::addStep db seqname program predelay postdelay]
+sequence::rmvstep db name stepno
+set stepno [sequence::insertStep db seqname program priorstepno predelay postdelay]
+set stepno [sequence::prependStep db seqname program predlay postdelay]
+sequence::rmvState db state-name
+sequence::rmvSequence db name
+sequence::reachable db state-name
+sequence::listReachableStates db state-name
+sequence::listLegalFromStates db state-name
+sequence::listStates db
+sequence::listLegalNextStates db
+sequence::isLegalTransition db next
+sequence::currentState db
+sequence::listSequences db
+sequence::listSteps db sequence-name
+sequence::addMonitor db sequence stepno monitor-base-command
+sequence::runSequence db name ?endproc?
+sequence::transition db transition ?endscript?
+sequence::getCurrentTransition
+sequence::relayOutput text
+
+
       </programlisting>
     </refsynopsisdiv>
     <refsect1>
              <title>DESCRIPTION</title>
           <para>
-            
+            This package provides several facilities:
           </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                   The capability to define or modify a state machine.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The ability to describe sequences of programs that will be run
+                  as a result of state transitions in the state machine.  The programs
+                  come in two major flavors; transient and persistent.  Sequence
+                  steps that run a transient program stall until that program exits.
+                  Sequence stesps that run persistent programs start the program
+                  and continue on.  Persistent programs can, furthermore be
+                  declared to be critical.  If a critical program exists, a
+                  transition to the special, <literal>SHUTDOWN</literal>
+                  stage is forced.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The ability to introspect the state machine and sequences. 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The ability to perform state transitions. State transitions,
+                  as well as many other package features depend on an event loop.
+                  Since this package is normally run from within the mananager
+                  which, itself is a customized TclHTTPD sever, that server
+                  normally provides the event loop.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  A server that supports the ability to relay output to programs
+                  that are connected to it via a TCP/IP socket stream.
+               </para>
+            </listitem>
+          </itemizedlist>
+    </refsect1>
+    <refsect1>
+      <title>EXPORTED ENTRY POINTS</title>
+      <para>
+         
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>TRANSITION MANAGER OBJECTS</title>
+      <para>
+         
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>OUTPUT MONITOR OBJECTS</title>
+      <para>
+         
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>OUTPUT RELAY SERVER</title>
+      <para>
+         
+      </para>
     </refsect1>
 </refentry>
 <!-- /manpage -->
