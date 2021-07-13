@@ -1404,7 +1404,142 @@ db close
                Miscellaneous API Entries.
             </title>
             <para>
+               Several miscellaneous API interfaces allow you to gain information
+               about the system.   It is possible, for example, for
+               applications to:
             </para>
+            <itemizedlist>
+               <listitem>
+                  <para>
+                     Get information about the currently active state
+                     transition.
+                  </para>
+               </listitem>
+               <listitem>
+                  <para>
+                     Capture the output of specific sequence steps. 
+                  </para>
+               </listitem>
+               <listitem>
+                  <para>
+                     Send text to the output server so that it is
+                     relayed to all output clients.
+                  </para>
+               </listitem>
+            </itemizedlist>
+            <para>
+               Note, again, that transitions and output handling
+               are triggered by the event loop and thaty therefore
+               the program in which these are used must enter the event
+               loop  in a timely manner.  
+            </para>
+            <para>
+               The fragment below will determine which, if any transitionis
+               currently in progress, and attach an output monitor to
+               each step of the sequences that are triggered by that
+               transition.  This makes use of the services of
+               a TransitionManager object that is documented fully in the
+               reference material.
+            </para>
+            <example>
+               <title>Using Miscellaneous Sequence Facilities</title>
+               <programlisting>
+...
+package require sequence
+package require snit       <co id='ex.seq.misc.snit' />
+...
+
+set manager [::sequence::getCurrentTransition]   <co id='ex.seq.misc.getmgr' />
+if {$manager ne ""} {
+   set db [$manager cget -database]
+   set t  [$manager cget -type]
+   set allSequences [::sequence::listSequences $db]   <co id='ex.seq.misc.lseq' />
+   foreach seq $allSequences {
+      set name [dict get $seq transition_name]
+       if {[dict get $seq transition_name] eq $t} {
+         set steps [::sequence::listSteps $db $name]  <co id='ex.seq.misc.lstep' />
+         foreach step $steps {
+            set aMonitor [MyMonitor %AUTO% -step $stepno] <co id='ex.seq.misc.monitor' />
+            set stepno [dict get $step step]
+            ::sequence::addMonitor $db $name $stepno $aMonitor <co id='ex.seq.misc.addmon' />
+         }
+       }
+   }
+   
+}
+                           <co id='ex.seq.misc.omonitor' />
+snit::type MyMonitor {
+   option -step
+   MyMonitor args { $self configurelist $args}
+   
+   method onOutput  {db program fd} {  <co id='ex.seq.misc.onout' />
+      set line [gets $fd]
+      set name [dict get $program name]
+      ::sequence::relayOutput "Step $options(-step); $name: $line" <co id='seq.misc.orelay' />
+   }
+   method onExit {program fd} {     <co id='ex.seq.misc.onexit' />
+      ::sequence::relayOutput "[dict get $program name] exited!!"
+      after 0 [mymethod destroy]
+   }
+}
+                  
+... # More code that eventually enters the event loop.
+               </programlisting>
+            </example>
+            <para>
+               It's important to emphasize that this code is a program
+               fragment not an complete program.   The elipses show where
+               additional code would be needed.
+            </para>
+            <callout arearefs='ex.seq.misc.snit' >
+                <para>
+                  In this example we're going to add an
+                  <firstterm>output monitor</firstterm> to steps in t
+                  sequences.  Output monitors are command ensembles (a base
+                  command with subcommand following).  Snit is a package
+                  that supports object oriented program. Snit types
+                  are like classes and an instance of a snit type
+                  is represented by a command ensemble.
+                </para>
+                <para>
+                  We're going to use snit types to define our output
+                  monitors.  There are other options like namespace ensembles,
+                  TclOO and Incremental Tcl (in fact SNIT is a
+                  recursive acronym that stands for
+                  SNIT Is Not Incremental Tcl).
+                </para>
+                <para>
+                  The key point, as we'll see is that in order to
+                  make an output monitor, you need to have
+                  a command ensemble that accepts the two subcommand
+                  <command>onOutput</command> and
+                  <command>onExit</command>.
+                </para>
+            </callout>
+            <callout arearefs='ex.seq.misc.getmgr' >
+                <para>
+                  <command>::sequence::getCurrentTransition</command>
+                  returns a command ensemble that implements what
+                  is called a transition manager for the transition
+                  that's currently running.  If no transition
+                  is actively running, the return value is an
+                  empty string.
+                </para>
+            </callout>
+            <callout arearefs='ex.seq.misc.lseq' >
+                <para>
+                  <comand>::sequence::listSequences</comand>
+                  takes the database connection command and returns
+                  a list of dicts that describe the sequences
+                  that have been defined.  For the sake of this
+                  example, we only care that the <literal>transition_name</literal>
+                  key in that dict provides the name of the state
+                  whose attempted entry triggers the sequence,
+                  and that <literal>name</literal> provides the name
+                  of the sequence.
+                </para>
+            </callout>
+            
          </section>
       </section>
       <section id='sec.manager.kvstore'>
