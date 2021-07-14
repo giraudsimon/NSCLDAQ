@@ -530,7 +530,7 @@ snit::type sequence::TransitionManager {
     #
     method currentSequence {} {
         if {!$active} {
-            error "Cannot get current sequence on inactiv $options(-type) transition"
+            error "Cannot get current sequence on inactive $options(-type) transition"
         }
         return [lindex $Sequence $CurrentSequence]
     }

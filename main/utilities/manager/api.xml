@@ -2577,11 +2577,11 @@ package require sequence
 
 sequence::newState db state-name
 sequence::newTransition db from to
-sequence::add db sequence-name
+sequence::add db sequence-name trigger
 set stepno [sequence::addStep db seqname program predelay postdelay]
 sequence::rmvstep db name stepno
 set stepno [sequence::insertStep db seqname program priorstepno predelay postdelay]
-set stepno [sequence::prependStep db seqname program predlay postdelay]
+set stepno [sequence::prependStep db seqname program predelay postdelay]
 sequence::rmvState db state-name
 sequence::rmvSequence db name
 sequence::reachable db state-name
@@ -2651,14 +2651,606 @@ sequence::relayOutput text
     <refsect1>
       <title>EXPORTED ENTRY POINTS</title>
       <para>
-         
-      </para>
+         In the entry points below the formal arguments named
+         <parameter>db</parameter> are always an sqlite3 database connection
+         command that designates the database that will be operated on.
+      </para>   
+      <variablelist>
+         <varlistentry>
+            <term>
+               <command>sequence::newState <replaceable>db state-name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Defines a new state in the state machine.  The new
+                  state definition is stored in the configuration database
+                  connecected to the sqlite3 command
+                  <parameter>db</parameter>.  The new state will be named by the
+                  <parameter>new-state</parameter> parameter.  The new state
+                  name must be unique.
+                </para>
+                <para>
+                  Note that unless transitions into this state are defined,
+                  the state remains an orphan in the state diagram, in the sense
+                  that it cannot be reached via state transition operations.
+                  See <command>::sequence::newTransition</command> below.
+                </para>
+             </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::newTransition <replaceable>db from to</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Defines a new state transition in the database
+                  connected to <parameter>db</parameter>.  The transtion
+                  is defined between the named states <parameter>from</parameter>
+                  as a precursor and <parameter>to</parameter> as a successor.
+                </para>
+                <para>
+                  Both the <parameter>from</parameter> and
+                  <parameter>to</parameter> states must already be defined.
+                </para>
+             </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::add <replaceable>db sequence-name trigger</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Defines a new sequence in the database connected to
+                  <parameter>db</parameter>.  The sequence will be named
+                  <parameter>sequence-name</parameter> which must not
+                  yet be the name of a sequence.  The
+                  steps in the sequence will be triggered by a transition
+                  into the state named by the <parameter>trigger</parameter>.
+                </para>
+                <para>
+                  Initially the sequence is empty and will do nothing if
+                  triggered.  <command>sequence::addStep</command>
+                  and other sequence step editing commands are used to
+                  define the steps in a sequence and their order.
+                </para>
+             </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::addStep <replaceable>db seqname program ?predelay? ?postdelay?</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new step to the end of the sequence
+                  <parameter>seqname</parameter>.  The step will run
+                  the program  named <parameter>progname</parameter>. The optional
+                  <parameter>predelay</parameter> and <parameter>postdelay</parameter>
+                  parameters are a delay in seconds before and after executing
+                  the step.  These default to <literal>0</literal> if not
+                  specified.
+               </para>
+                <para>
+                  The return value of this command is the step number that was
+                  assigned to the step.  Step numbers are real numbers and are used
+                  to ensure steps are executed in the correct order.
+                  Real values are used to allow steps to be inserted between
+                  existing steps without needing to renumber the entire
+                  sequence.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::rmvstep <replaceable>db name stepno</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Removes the step numbered <parameter>stepno</parameter>
+                  from the sequence named by <parameter>name</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::insertStep <replaceable>db seqname program priorstepno ?predelay? ?postdelay?</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Inserts a new sequence step after the existing step with a step
+                  numbered <parameter>priorstepno</parameter>.  The remaining
+                  parameters are the same as the parameters for
+                  <command>::sequence::insertStep</command>.
+               </para>
+                <para>
+                  Naturally if <parameter>priorstepno</parameter> designates
+                  the last step in <parameter>seqname</parameter>, this
+                  command acts identically to <command>::sequence::addStep</command>.
+                </para>
+                <para>
+                  The command returns the number of the new step.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::prependStep <replaceable>db seqname program ?predelay? >postdelay?</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new first step to the beginning of <parameter>seqname</parameter>
+                  All the remaining parameters are the same as
+                  <command>::sequence::addStep</command>.  The command returns
+                  the number of the new step.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::rmvState <replaceable>db state-name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Removes the state <parameter>state-name</parameter> from
+                  the state machine definition.  This can have far reaching consequences
+                  so use with care:
+               </para>
+                <itemizedlist>
+                  <listitem>
+                     <para>
+                        All sequences triggered by entry to this state are removed
+                        along with all steps in those sequences.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        Depending on the actual graph of the state machine,
+                        this may leave the system with unreachable states.
+                     </para>
+                  </listitem>
+                  <listitem>
+                     <para>
+                        Depending on the current state of the system, this
+                        may leave the system in a state with no valid
+                        successor states.
+                     </para>
+                  </listitem>
+                </itemizedlist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::rmvSequence <replaceable>db name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Removes the definition of the sequence <parameter>name</parameter>.
+                  Note that all steps in the sequence are also removed from
+                  the database.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::reachable db state-name</command>
+            </term>
+            <listitem>
+                <para>
+                  Returns the number of valid precursor states to
+                  the state <parameter>state-name</parameter>.  A precursor
+                  state is a state that has a transition to
+                  <parameter>state-name</parameter> defined.  If the
+                  returned value is <literal>0</literal>,
+                  <parameter>state-name</parameter> is orphaned in the sense
+                  that there it cannot be reached from any other state in the
+                  state machine via a legal transition.
+              </para>
+           </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::listReachableStates <replaceable>db state-name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of the states that can be reached by transition
+                  from the state <parameter>state-name</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::listLegalFromStates <replaceable>db state-name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of state names that can transition to
+                  <parameter>state-name</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>sequence::listStates <replaceable>db</replaceable></command></term>
+            <listitem>
+                <para>
+                  Lists all the states defined in the system. Using this
+                  and <command>sequence::listReachableStates</command>
+                  as well as <command>sequence::listLegalFromStates</command>
+                  it is possible to programmtically reconstruct the full state
+                  diagram.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::listLegalNextStates <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of states that can be transitioned to from
+                  the current state.  Note that the system's current state
+                  is stored in the database.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::isLegalTransition <replaceable>db next</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a boolean that is true valued if <parameter>next</parameter>
+                  is a legal next state for the current state.  This is a
+                  shortcut for
+                  <literal>expr $next in [::sequence::listLegalNextStates]</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::currentState <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns the name of the current state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::listSequences <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of dicts that describe the currently defined
+                  set of sequences.  The key/values in this dict are:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal></term>
+                     <listitem>
+                         <para>
+                           Integer primary key of the sequence.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>name</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the sequence.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>transtion_name</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the state whose that triggers the
+                           execution of the sequence.  An attempted legal
+                           transition to this named state will trigger sequence
+                           execution.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>transition_id</literal></term>
+                     <listitem>
+                       <para>
+                        The primary key of the transition named in
+                        <literal>transition_name</literal>.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::listSteps <replaceable>db sequence-name</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of dicts that describe the steps in the sequence
+                  named by <parameter>sequence-name</parameter>.
+                  Each of these dicts has the following key/value pairs:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>step</literal></term>
+                     <listitem>
+                         <para>
+                           Real number that is the step number of that step.
+                           Steps are executed from lowest step number to highest
+                           step number.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>program_name</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the program to run when the step is executed.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>program_id</literal></term>
+                     <listitem>
+                         <para>
+                           Primary key of the program to run when the step
+                           is executed.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>predelay</literal></term>
+                     <listitem>
+                         <para>
+                           Number of seconds to delay prior to running the program
+                           (integer).
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>postdelay</literal></term>
+                     <listitem>
+                         <para>
+                           Number of seconds to delay after running the program
+                           (integer).
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::addMonitor <replaceable>db sequence stepno monitor-base-command</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Attaches an <firstterm>output monitor</firstterm> to a
+                  step in a sequence.  The name of the sequence is
+                  <parameter>sequence</parameter>.  The monitor is attached to
+                  step <parameter>stepno</parameter>.
+                  <parameter>monitor-base-command</parameter> is the base command
+                  of a command ensemble described in
+                  <literal>OUTPUT MONITOR OBJECTS</literal> that is the
+                  output monitor for the program in that step.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::runSequence db name ?endproc?</command>
+            </term>
+            <listitem>
+                <para>
+                  Runs the named sequence <parameter>name</parameter>.
+                  If <parameter>endproc</parameter> is specified, it is called
+                  when the sequence has completed.  Note that running sequences
+                  require the event loop.
+               </para>
+                <para>
+                  The <parameter>endproc</parameter> command, if specified, is called
+                  with the SequenceRunner object, the completion status and
+                  a reason for the completion.
+                  SequenceRunner objects are described in
+                  <literal>SEQUENCE RUNNER OBJECTS</literal> below.
+                  The status can be either <literal>OK</literal> or
+                  <literal>ABORTED</literal> with meanings that should be clear.
+                  The reason is a user readable reason for the completion.
+                  This is an empty string for 
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::transition <replaceable>db transition ?endscript?</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Runs a transition to the state specified by
+                  <parameter>transition</parameter>.  For the transition to
+                  succeed, all steps in all sequences must complete
+                  successfully.  If <parameter>endscript</parameter> is specified,
+                  it is invoked at the end of the attempted transition.
+                  Note that as with <command>sequence::runSequence</command>,
+                  the event loop is needed to execute the transition.
+               </para>
+                <para>
+                  If specified, the end script is invoked with the
+                  database command, the Transition Manager (see
+                  <literal>TRANSITION MANAGER OBJECTS</literal> below),
+                  and completion status. The completion status is one of
+                  <literal>OK</literal> successful completion,
+                  <literal>ABORTED</literal> the sequence executaion was aborted
+                  (the system is not in a well defined state).
+                  <literal>SHUTDOWN</literal>, sequence execution failed and
+                  the system forced a transition to the
+                  <literal>SHUTDOWN</literal> initial state.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>sequence::getCurrentTransition</command></term>
+            <listitem>
+                <para>
+                  Returns the base command of the transition manager that
+                  is
+                  performing the current transition.  If no transition
+                  is in progress, an empty string is returned.
+                  See <literal>TRANSITION MANAGER OBJECTS</literal> for
+                  information about transition managers.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>sequence::relayOutput <replaceable>text</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Relays the <parameter>text</parameter> to all clients of the
+                  output relay server.  See
+                  <literal>OUTPUT RELAY SERVER</literal> below for more information.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
     <refsect1>
       <title>TRANSITION MANAGER OBJECTS</title>
       <para>
-         
+         When the sequence package performs a transition, it instantiates
+         a transition manager object.  This object, runs all of the sequences
+         triggered by the transition and invokes any script associated with
+         the end of the transition.  The Tcl/Tk event loop is required to
+         both to perform sequences and the transition as a whole.
       </para>
+      <para>
+         The transition manager object instances are are instances of a
+         snit::type named <classname>sequence::TransitionManager</classname>.
+         This section describes the options and methods of that object.
+      </para>
+      <refsect2>
+         <title>Options</title>
+         <para></para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-database</option></term>
+               <listitem>
+                   <para>
+                     This readonly (must be set at construction time) option
+                     must be set with the database connection command.  The
+                     connection command must be valid for the duration of the
+                     transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-type</option></term>
+               <listitem>
+                   <para>
+                     This readonly option must be set with the desired
+                     final state of the system.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-endscript</option></term>
+               <listitem>
+                   <para>
+                     This option can be modified any time before the
+                     transition ends.  If, when the transition ends, it is
+                     non empty, it is assumed to contain a script that is
+                     evaluated at the global level with  the database command,
+                     the transition manager instance command, and the
+                     transition
+                     completion status. The completion status is one of
+                     <literal>OK</literal> successful completion,
+                     <literal>ABORTED</literal> the sequence executaion was aborted
+                     (the system is not in a well defined state).
+                     <literal>SHUTDOWN</literal>, sequence execution failed and
+                     the system forced a transition to the
+                     <literal>SHUTDOWN</literal> initial state.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+      <refsect2>
+         <title>Methods</title>
+         <para>
+            
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><methodname>start</methodname></term>
+               <listitem>
+                   <para>
+                     Starts the transition managed by the instance.  If the
+                     transition is already in progress, this method
+                     reports an error.
+                   </para>
+                   <para>
+                     If there are no sequences triggered by this transition,
+                     the transition completes immediately.  Otherwise,
+                     the sequences are executed from the event loop.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>abort</methodname></term>
+               <listitem>
+                   <para>
+                     Aborts the transition.  The state remains unchanged,
+                     however it's not, in general, possible to reverse sequence
+                     steps already performed.   The current sequence is
+                     aborted.  The transition end is signalled with the status
+                     <literal>ABORTED</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>isActive</methodname></term>
+               <listitem>
+                   <para>
+                     Returns a boolean that is true valued if the transition
+                     is active and false valued if not.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>currentSequence</methodname></term>
+               <listitem>
+                   <para>
+                     Returns the name of the currently active sequence in the
+                     transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+    </refsect1>
+    <refsect1>
+      <title>SEQUENCE RUNNER OBJECTS</title>
+      <para>
+         Sequence runner objects are used to manage the execution of the
+         steps in a sequence.   They are instances of the snit::type
+         <classname>sequence::SequenceRunner</classname>.  Sequence execution
+         requires the event loop.
+      </para>
+      <refsect2>
+         <title>OPTIONS</title>
+         <para>
+            
+         </para>
+      </refsect2>
+      <refsect2>
+         <title>METHODS</title>
+         <para></para>
+      </refsect2>
     </refsect1>
     <refsect1>
       <title>OUTPUT MONITOR OBJECTS</title>
