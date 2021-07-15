@@ -1,9 +1,6 @@
 #!/bin/sh
 #
-#   Startup/shutdown script for NSCLDAQ intended for use _AT_
-#   the  where all thist stuff runs ina container.
-#   here our script called from an init.d script.
-#
+#   Startup/shutdown script for NSCLDAQ
 #   - Start/stop containerized Port Manager.
 #   - Start/stop containerized RINGMaster.
 #   - If necessary build, then load btp driver and mkbtp (native)
@@ -59,12 +56,12 @@ rm -f ${RINGMASTERLOGFILE}
 
 KERNEL_VERSION="`uname -r`"
 KERNEL_SOURCE_DIR="/usr/src/linux-headers-${KERNEL_VERSION}"
-DRIVERBUILD_EMAIL="fox@frib.msu.edu"
+DRIVERBUILD_EMAIL="daqhelp@frib.msu.edu"
 
 DRIVER_REPOSITORY="https://git.frib.msu.edu/daqdev/nscldaqdrivers.git"
 
 #DRIVER_TOPDIR="/usr/opt/init/nscldaqdrivers"
-DRIVER_TOPDIR="/root/nscldaqdrivers"
+DRIVER_TOPDIR="/usr/local/src/nscldrivers"
 BTPDRIVERDIR="${DRIVER_TOPDIR}/btp"
 BTPDRIVER="${BTPDRIVERDIR}/btp-${KERNEL_VERSION}.ko"
 
@@ -119,6 +116,7 @@ start_ringmaster () {
 update_drivers() {
     if test ! -d "${DRIVER_TOPDIR}"
     then
+	mkdir -p "${DRIVER_TOPDIR}"/..   # Make sure the enclosing dir exists.
 	git clone "${DRIVER_REPOSITORY}" "${DRIVER_TOPDIR}"
     fi
     #  Pull the master branch to get any updates since last boot:
@@ -249,4 +247,5 @@ case "$1" in
 	 exit 1
 	;;
 esac
+chmod a+w /dev/null #   Probably the redirections change the perms.
 # exit 0
