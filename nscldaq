@@ -136,7 +136,7 @@ build_btpdriver () {
    then
 	rm -f "${BTPDRIVERDIR}/dd/*.o"  "${BTPDRIVERDIR}/dd/*.ko"
 	(cd "${BTPDRIVERDIR}/dd"; make -C "${KERNEL_SOURCE_DIR}" SUBDIRS=`pwd` BTDRIVER=`pwd`/..) \
-	    2>&1 | mail -s"Driver build for btp-${KERNEL_VERSION}"  "${DRIVERBUILD_EMAIL}"
+	    2>&1 | mail -s"Driver build for btp-${KERNEL_VERSION}"  "${DRIVERBUILD_EMAIL} on `hostname`"
 	 cp "${BTPDRIVERDIR}/dd/btp.ko"  "${BTPDRIVER}"
 	 log_daemon_msg "BTP ${KERNEL_VERSION}"
    fi
@@ -155,7 +155,7 @@ build_plxdriver () {
       (cd "${PLXDRIVERDIR}" ; \
       	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers clean; \
 	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers) 2>&1 | \
-        mail -s "Build of PLX Driver family for ${KERNEL_VERSION}" "${DRIVERBUILD_EMAIL}"
+        mail -s "Build of PLX Driver family for ${KERNEL_VERSION}" "${DRIVERBUILD_EMAIL} on `hostname`"
       log_daemon_msg "Plx driver family ${KERNEL_VERSION}"
    fi
 }
