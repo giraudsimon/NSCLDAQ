@@ -303,7 +303,7 @@ snit::type sequence::SequenceRunner {
     #    Abort the sequence. An error is thrown if the sequence is not active.
     #
     # @param reason - optional - reason for the abort.
-    method abort {{reason {Programatically aborted}}} {
+    method abort {{reason {Programmatically aborted}}} {
         if {![$self isActive]} {
             error "sequence::SequenceRunner::abort - $options(-name) is not active"
         }

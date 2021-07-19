@@ -1639,7 +1639,110 @@ snit::type MyMonitor {
             The <literal>kvstore</literal> package
          </title>
          <para>
+            A key value store can be thought of as an array whose
+            keys are strings.  The manager key value store is string valued.
+            Associated with each key is a string value.  A
+            <literal>kvstore</literal> package provides the abiliy
+            directly access the key value store in the
+            configuration SQLite3 database file.
          </para>
+         <para>
+            Using the API, you can create a new key/value pair.  Your
+            application can read existing keys and modify their values.
+            Finally, you can also remove an existing key/value pair
+            from the store.
+         </para>
+         <para>
+            The key value store can be used by you  as you wish.  However,
+            note that the readout control packages create and use
+            a pair of keys: <literal>run</literal> and
+            <literal>title</literal> to hold the run number and title
+            of the next run.  As the manager evolves it is possible that
+            additional facilities will create and use other standard
+            key/value pairs.
+         </para>
+         <para>
+            See
+            <link linkend='tcl3.kvstore' endterm='tcl3.kvstore.title' />
+            for reference information on the key value store API.
+         </para>
+         <para>
+            The example below shows a few of the features of the
+            <literal>kvstore</literal> package.  It assumes that
+            the DAQ environment for a version 12.0 or higher NSCLDAQ
+            has been setup or, alternatively that the <literal>TCLLIBPATH</literal>
+            environment variable includes the <filename>TclLibs</filename>
+            subdirectory of such a version.
+         </para>
+         <example>
+            <title>Using the <literal>kvstore</literal> package</title>
+            <programlisting>
+if {[array names env DAQTCLLIBS] ne ""} {
+   lappend auto_path $env(DAQTCLLIBS)
+}
+package require kvstore        <co id='ex.kvstore.require' />
+package require sqlite3
+
+sqlite3 db myconfig.db
+
+kvstore::create db mykey myvalue  <co id='ex.kvstore.create' />
+
+kvstore::modify db mykey {A new value} <co id='ex.kvstore.modify' />
+
+puts "Contents of kvstore:"
+dict for {key value} [::kvstore::listAll db] {  <co id='ex.kvstore.listall' />'
+   puts "$key => $value"
+}
+
+db close
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.kvstore.require' >
+                <para>
+                  This and the next line import the packages needed
+                  for
+                  this simple example.  <literal>kvstore</literal>
+                  contains the code needed to access the key value
+                  store and the <literal>sqlite3</literal> package
+                  provides access to the Tcl bindings to the
+                  SQLite3 database system needed to access
+                  a database file.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvstore.create' >
+                <para>
+                  Creates a new key named <literal>mykey</literal>
+                  with an initial value <literal>myvalue</literal>.
+                  Not here and in futuure calls to the
+                  <literal>kvstore</literal> commands, that the
+                  first parameter is always the database command
+                  used to manipulate the desired database file.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvstore.modify' >
+                <para>
+                  <command>kvstore::modify</command> changes the value
+                  of an existing key.  In this line we change
+                  the value of the key we just created to
+                  <literal>A new value</literal>.  Note that the values
+                  of keys can be arbitrary strings.  In this case,
+                  we use Tcl's quoting system to create a value that
+                  has embedded white space.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvstore.listall' >
+                <para>
+                  The <command>kvstore::listAll</command> command
+                  returns a dict version of the key value store contents.
+                  Keys in the dict are keys in the kvstore, values are
+                  the values of those keys.  This means that the
+                  <command>dict for</command> command will output the
+                  contents of the key value store.
+                </para>
+            </callout>
+         </calloutlist>
       </section>
       <section id='sec.manager.auth'>
          <title id='sec.manager.auth.title'>
@@ -1650,10 +1753,47 @@ snit::type MyMonitor {
       </section>
       <section id='sec.manager.eventloggers'>
          <title id='sec.manager.eventloggers.title'>
-            The <literal>eventloggers</literal> package
+            The <literal>eventloggers</literal> Package.
          </title>
          <para>
+            The <literal>eventloggers</literal> package  provides
+            the
+            ability to define and control event loggers.  Event logger
+            definitions in the manager configuration database subsume
+            all of the capabilities of the NSCLDAQ-11
+            <command>ReadoutShell</command>'s
+            multilogger and primary event logger.  
+            
          </para>
+         <para>
+            An arbitrary number
+            of event loggers of <emphasis>both</emphasis> types
+            can be defined, enabled, disabled, and marked as critical.
+            If a critical logger fails, a <literal>SHUTDOWN</literal>
+            state transition is forced.  In this sense, this package
+            is dependent on the <literal>sequence</literal> package.
+         </para>
+         <para>
+            Event loggers have the following attributes:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>root</literal></term>
+               <listitem>
+                   <para>
+                     Top level directory of the NSCLDAQ installation that
+                     contains the event logger that will be run.
+                     This determines the version of NSCLDAQ from which
+                     the event logger comes.
+                   </para>
+                   <para>
+                     If the event logger is containerized (see
+                     <literal>options</literal> below), this  path
+                     must be the correct path inside the running container.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
       </section>
    </section>
    <section id='sec.manager.clientapi'>
@@ -3246,6 +3386,53 @@ sequence::relayOutput text
          <para>
             
          </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-database</option></term>
+               <listitem>
+                   <para>
+                     The SQLite3 database connection command
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-name</option></term>
+               <listitem>
+                   <para>
+                     Name of the sequence.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-steps</option></term>
+               <listitem>
+                   <para>
+                     List of step definition dicts.  These
+                     are the output of
+                     <command>sequence::listSteps</command>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-endcommand</option></term>
+               <listitem>
+                   <para>
+                     If not an empty string, this is a script
+                     that will be invoked when the sequence
+                     finishes running.  The script will receive
+                     three actual parameters.
+                     The command that represents the
+                     <classname>sequence::SequenceRunner</classname>
+                     instance, the completion status which will be
+                     one of <literal>NORMAL</literal> or
+                     <literal>ABORT</literal> and a text string that,
+                     if the completion reason was
+                     <literal>ABORT</literal> describes why the sequence
+                     was aborted.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
       </refsect2>
       <refsect2>
          <title>METHODS</title>
@@ -3255,14 +3442,209 @@ sequence::relayOutput text
     <refsect1>
       <title>OUTPUT MONITOR OBJECTS</title>
       <para>
-         
+         The following public methods are exported by
+         <classname>sequence::SequenceRunner</classname> objects.
+         They are intended for use by the
+         <classname>sequence::TransitionManager</classname> as
+         it executes sequences associated with its transition, however
+         they can be used for test purposes as well.
       </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>start</methodname></term>
+            <listitem>
+                <para>
+                  Starts sequence execution.  Sequence execution relies
+                  on the event loop to dispatch its execution of
+                  each step.  
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>abort</methodname> ?reason?</term>
+            <listitem>
+                <para>
+                  Aborts sequence execution. The sequence will
+                  complete immediately.  Any
+                  <option>-endcommand</option> will be executed with
+                  the reason <literal>ABORT</literal> and the
+                  reason text string given by the optional
+                  <parameter>reason</parameter> parameter which,
+                  if not provided defaults to
+                  <literal>Programmatically aborted</literal>
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
     <refsect1>
       <title>OUTPUT RELAY SERVER</title>
       <para>
-         
+         WHen the sequence package is loaded it starts a server
+         on an advertised service name.  The name of the
+         service is the value of the environment variable
+         <literal>SERVICE_NAME</literal> with
+         <literal>-outputMonitor</literal> appended.   Note that
+         when the manager is run, the environment variable
+         <literal>SERVICE_NAME</literal> is set to the name of the
+         service the manager advertises for REST interactions.
+      </para>
+      <para>
+         For test purposes, if the
+         <literal>SERVICE_NAME</literal> environment variable is
+         not defined the service name <literal>dummy-outputMonitor</literal>
+         is used instead.
+      </para>
+      <para>
+         The server started in this manner accepts connections from
+         clients and sends them the text that's passed to the command
+         <command>sequence::relayOutput</command>.  All clients
+         receive this text.  
+      </para>
+      <para>
+         By default, output from programs that are run in sequences
+         are sent to the <command>::sequence::relayOutput</command>
+         command.  In practice, this means that this service
+         provides combined output from all programs both persistent and
+         transitory.
       </para>
     </refsect1>
+</refentry>
+<refentry id='tcl3.kvstore'>
+   <refmeta>
+      <refentrytitle id='tcl3.kvstore.title'>kvstore</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>kvstore</refname>
+      <refpurpose>Access the manager configuration's key value store</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require kvstore
+
+kvstore::create db key value
+kvstore::modify db key new-value
+kvstore::remove db key
+set value [kvstore::get    db key]
+set keys [kvstore::listKeys db]
+set kvdict [dvstore::listAll db]
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The key value store API, <literal>kvstore</literal>,
+            provides access to the key value store table in a
+            manager configuration database.  
+          </para>
+          <para>
+          A key value store can be thought of as an array whose
+            keys are strings.  The manager key value store is string valued.
+            Associated with each key is a string value.  A
+            <literal>kvstore</literal> package provides the abiliy
+            directly access the key value store in the
+            configuration SQLite3 database file.
+         </para>
+         <para>
+            Using the API, you can create a new key/value pair.  Your
+            application can read existing keys and modify their values.
+            Finally, you can also remove an existing key/value pair
+            from the store.
+         </para>
+
+    </refsect1>
+    <refsect1>
+         <title>PUBLIC COMMANDS</title>
+         <para>
+            In the list of public entries that follow,
+            The <parameter>db</parameter> parameter is an
+            SQLite3 database connection command that's associated
+            with the manager configuration database that contains
+            the kvstore you wish to use.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <command>kvstore::create <replaceable>db key value</replaceable></command>
+               </term>
+               <listitem>
+                <para>
+                  Creates a new entry in the key value store with
+                  key named <parameter>key</parameter> and an initial
+                  value <parameter>value</parameter>
+                </para>
+                <para>
+                  If there is already a key named <parameter>key</parameter>
+                  in the database, an error is signalled.
+                </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <command>kvstore::modify <replaceable>db key new-value</replaceable></command>
+               </term>
+               <listitem>
+                <para>
+                  Modifies the value of the existing <parameter>key</parameter>
+                  setting it to <parameter>new-value</parameter>.
+                  If <parameter>key</parameter> does not yet exist,
+                  an error will be signalled.
+                </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <command>kvstore::remove <replaceable>db key</replaceable></command>
+               </term>
+               <listitem>
+                <para>
+                  Removes the existing <parameter>key</parameter>
+                  from the key value store.  If <parameter>key</parameter>
+                  was not yet defined, an error is signalled.
+                </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <command>kvstore::get <replaceable>db key</replaceable></command>
+               </term>
+               <listitem>
+                <para>
+                  Returns the value 
+                  associated with the <parameter>key</parameter>.
+                  If the <parameter>key</parameter> is not defined,
+                  an error is signalled.
+                </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <command>kvstore::listKeys <replaceable>db</replaceable></command>
+               </term>
+               <listitem>
+                   <para>
+                     Lists the keys defined in the key value store.
+                     It is not an error to invoke this when no keys
+                     are defined.  If that is the case an empty list
+                     is returned.
+                </para>
+             </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <command>dvstore::listAll <replaceable>db</replaceable></command>
+               </term>
+               <listitem>
+                <para>
+                  Returns a dict whose keys are all of the defined
+                  keys in the key value store and whose values are the
+                  values of those keys.
+                </para>
+             </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect1>
 </refentry>
 <!-- /manpage -->
