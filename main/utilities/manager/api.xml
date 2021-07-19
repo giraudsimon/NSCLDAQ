@@ -1774,9 +1774,23 @@ db close
             is dependent on the <literal>sequence</literal> package.
          </para>
          <para>
+            As you build the set of event loggers you will use, be careful to
+            consider the bandwidth required to run them.  
+         </para>
+         <para>
             Event loggers have the following attributes:
          </para>
          <variablelist>
+            <varlistentry>
+               <term><literal>id</literal></term>
+               <listitem>
+                   <para>
+                     A unique integer, or <literal>id</literal> is
+                     assigned to each logger as it is created.  This
+                     id can be used to refer to that logger in the future.
+                   </para>
+                </listitem>
+            </varlistentry>
             <varlistentry>
                <term><literal>root</literal></term>
                <listitem>
@@ -1793,7 +1807,284 @@ db close
                    </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+               <term><literal>source</literal></term>
+               <listitem>
+                   <para>
+                     The URL which defines the ring buffer from
+                     the logger logs data.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>host</literal></term>
+               <listitem>
+                   <para>
+                     The host in which the event logger must run.
+                     It is assumed, that <literal>root</literal> is
+                     valid in that host and that the host is running
+                     the NSCLDAQ services.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <literal>destination</literal>
+               </term>
+               <listitem>
+                   <para>
+                     The top level directory in which the loggers
+                     stores data.  See <literal>TYPES OF LOGGERS</literal>
+                     below for more information about this.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>partial</literal></term>
+               <listitem>
+                   <para>
+                     Boolean value. If <literal>true</literal>, this
+                     logger is a partial logger.  See
+                     <literal>TYPES OF LOGGERS</literal> below.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>critical</literal></term>
+               <listitem>
+                   <para>
+                     Boolean.  If <literal>true</literal>, the logger
+                     is a critical component of the running DAQ system.
+                     If this logger fails, the manager will therefore
+                     force
+                     a <literal>SHUTDOWN</literal> transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>enabled</literal></term>
+               <listitem>
+                   <para>
+                     Boolean that, if true, indicates the logger is
+                     enabled.   If not enabled, a logger won't run
+                     to take data during a data taking run.
+                     If enabled it will.
+                   </para>
+                   <para>
+                     Note that it is legal for critical loggers to be
+                     disabled.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>container</literal></term>
+               <listitem>
+                   <para>
+                     THe name of the container the event logger will run
+                     in.
+                   </para>
+                </listitem>
+            </varlistentry>
          </variablelist>
+         <para>
+            Destination directories, and data source URI's must be unique.
+         </para>
+         <formalpara>
+            <title>TYPES OF LOGGERS</title>
+            <para>
+               The event logging subsystem recognizes two types of loggers,
+               <firstterm>partial</firstterm> and <firstterm>complete</firstterm>.
+               Partial loggers, like loggers in the NSCLDAQ
+               <literal>multilogger</literal> package just log event files
+               into a directory in a 'soup of files'.  Event files are
+               preceded with the date/time at which the logger started to
+               ensure they are unique.  For partial loggers, the
+               <literal>destiniation</literal> is simply the
+               directory in which these files are stored.
+            </para>
+         </formalpara>
+         <para>
+            Full loggers, on the other hand, behave like the primary
+            event logger in the NSCLDAQ <command>ReadoutShell</command>.
+            The <literal>destination</literal> directory is the top level
+            directory of the directory tree managed by the logger and its
+            wrapper. The structure of this tree is shown below.
+            The intent is to provide an experiment view and a per run
+            view.  The experiment view provides access to all event files
+            while the per run view also provides access to
+            associated run metadata stored in the
+            <filename>experiment/current</filename> subdirectory
+            when the run ended.
+         </para>
+         <figure>
+            <title>Full logger directory tree</title>
+            <literallayout>
+(destiniation) +
+               +----> experiment+
+               |                +---> current
+               |                +---> run1
+               |                +---> run2
+               ...             ...
+               +----> complete
+        
+            </literallayout>
+         </figure>
+         <para>
+            The example below illustrates some of the simple capabilities
+            of the <literal>eventloggers</literal> package.  Full
+            reference documentation can be found at
+            <link linkend='tcl3.eventloggers' endterm='tcl3.eventloggers.title' />
+         </para>
+         <example>
+            <title>Sample Eventloggers Program</title>
+            <programlisting>
+if {[array names env DAQTCLLIBS]} {
+   lappend auto_path $env(DAQTCLLIBS)
+}
+
+package require eventloggers
+package require sqlite3     <co id='ex.evlog.require' />
+
+sqlite3 db myconfig.db
+
+set dest [file normalize ~/stagearea/evlog1] <co id='ex.evlog.dest' />
+file mkdir $dest
+
+set id [::eventlog::add db /usr/opt/daq/12.0-000 \ <co id='ex.evlog.add' />
+  tcp://spdaq99/fox $dest                        \
+  [dict create host evloghost critical 1 enabled 1 container buster] \
+]
+
+set killdest [file normalize ~/stagearea/evlog2]
+
+                    <co id='ex.evlog.searchdest' />
+
+foreach logger [eventlog::listLoggers db] {     <co id='ex.evlog.list' />
+    if {[file normalize[dict get $logger destination]] eq $killdest} {
+      eventlog::rm db [dict get $logger id]     <co id='ex.evlog.rm' />
+    }
+}
+
+
+db close
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.evlog.require' >
+                <para>
+                  Requires the packages needed to make this program
+                  work.  The <literal>eventloggers</literal>
+                  package has the code to manage event logging.
+                  Note that all public entries are in the
+                  <literal>::eventlog</literal> namespace.
+                </para>
+            </callout>
+            <callout arearefs='ex.evlog.dest' >
+                <para>
+                  These two lines of code determine the full file system
+                  path of the event area we want to populate
+                  (<command>file normalize</command>).
+                  Note that event loggers don't create their destination
+                  directory, so we use <command>file mkdir</command>
+                  to create it here as well.
+                </para>
+            </callout>
+            <callout arearefs='ex.evlog.add' >
+                <para>
+                  <command>eventlog::add</command> adds a new event logger
+                  and returns the id assigned to it.  The
+                  first four parameters are, in order, the database
+                  command, the NSCLDAQ installation root from which the
+                  logger comes, the URI of the data source, and where
+                  the event logger will put its data.
+                </para>
+                <para>
+                  The final parameter is a dict whose keys define
+                  overrides for optional configuration values.
+                  We illustrate some of the more common options here:
+                </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>host</literal></term>
+                     <listitem>
+                         <para>
+                           The system which will run the event logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>critical</literal></term>
+                     <listitem>
+                         <para>
+                           Flag that indicates whether or not the
+                           logger is critical, we've marked it critical
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>enabled</literal></term>
+                     <listitem>
+                         <para>
+                           Flag that indicates whether or not the
+                           logger is enabled.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container</literal></term>
+                     <listitem>
+                         <para>
+                           Name of a container that was established
+                           via the <literal>containers</literal>
+                           package.  Note that when supplying this any filesystem
+                           paths provided (in this case the destination
+                           and root), must be valid within the running
+                           container.
+                       </para>
+                     </listitem>
+                  </varlistentry>
+                </variablelist>
+                
+            </callout>
+            <callout arearefs='ex.evlog.searchdest' >
+                <para>
+                  The next section of code will search the existing
+                  loggers for one that has a specific destination
+                  (the value of <varname>killdest</varname>), and
+                  destroy it using
+                  <command>eventlog::rm</command>
+                </para>
+            </callout>
+            <callout arearefs='ex.evlog.list' >
+                <para>
+                  The <command>eventlog::listLoggers</command>
+                  command returns a list of dicts.  Each dict
+                  describes a logger.  The keys we need are
+                  <literal>destination</literal> whose value is the
+                  logging destination passed when the logger was
+                  defined and <literal>id</literal> which is the id
+                  that was assigned to the logger.
+                </para>
+                <para>
+                  This loop loops over the loggers searching for one
+                  who's normalized destination path is the same as
+                  the path in <varname>killdest</varname>.
+                  When comparing file system paths, it is important
+                  to compare normalized paths as several path designations
+                  can point to the same place.
+                </para>
+            </callout>
+            <callout arearefs='ex.evlog.rm' >
+                <para>
+                  <command>eventlog::rm</command> is used to remove
+                  the matching event logger.  Note that while we continue
+                  to iterate over logger definitions, theoretically we
+                  could <command>break</command> from the loop after
+                  finding a match because the API prevents you from
+                  specifying two loggers with the same destination.
+                </para>
+            </callout>
+         </calloutlist>
       </section>
    </section>
    <section id='sec.manager.clientapi'>
@@ -3646,5 +3937,533 @@ set kvdict [dvstore::listAll db]
             </varlistentry>
          </variablelist>
       </refsect1>
+</refentry>
+
+<refentry id='tcl3.eventloggers'>
+   <refmeta>
+      <refentrytitle id='tcl3.eventloggers.title'>eventloggers</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>eventloggers</refname>
+      <refpurpose>Define Event Logging for the NSCLDAQ Manager.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require eventloggers
+
+set id [eventlog::add db root source dest ?options?]
+set loggerInfo [eventlog::listLoggers db]
+eventlog::rm db id
+eventlog::enable db id
+eventlog::disable db id
+eventlog::enableAll db
+eventlog::disableAll db
+eventlog::enableRecording db
+eventlog::disableRecording db
+set state [eventlog::isRecording db]
+eventlog::start db
+
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This package provides the database manipulations to set up
+            and query event logger definitions.
+          </para>
+          <para>
+            An arbitrary number
+            of event loggers of <emphasis>both</emphasis> types
+            can be defined, enabled, disabled, and marked as critical.
+            If a critical logger fails, a <literal>SHUTDOWN</literal>
+            state transition is forced.  In this sense, this package
+            is dependent on the <literal>sequence</literal> package.
+         </para>
+         <para>
+            As you build the set of event loggers you will use, be careful to
+            consider the bandwidth required to run them.  
+         </para>
+         <para>
+            Event loggers have the following attributes:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>id</literal></term>
+               <listitem>
+                   <para>
+                     A unique integer, or <literal>id</literal> is
+                     assigned to each logger as it is created.  This
+                     id can be used to refer to that logger in the future.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>root</literal></term>
+               <listitem>
+                   <para>
+                     Top level directory of the NSCLDAQ installation that
+                     contains the event logger that will be run.
+                     This determines the version of NSCLDAQ from which
+                     the event logger comes.
+                   </para>
+                   <para>
+                     If the event logger is containerized (see
+                     <literal>options</literal> below), this  path
+                     must be the correct path inside the running container.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>source</literal></term>
+               <listitem>
+                   <para>
+                     The URL which defines the ring buffer from
+                     the logger logs data.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>host</literal></term>
+               <listitem>
+                   <para>
+                     The host in which the event logger must run.
+                     It is assumed, that <literal>root</literal> is
+                     valid in that host and that the host is running
+                     the NSCLDAQ services.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <literal>destination</literal>
+               </term>
+               <listitem>
+                   <para>
+                     The top level directory in which the loggers
+                     stores data.  See <literal>TYPES OF LOGGERS</literal>
+                     below for more information about this.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>partial</literal></term>
+               <listitem>
+                   <para>
+                     Boolean value. If <literal>true</literal>, this
+                     logger is a partial logger.  See
+                     <literal>TYPES OF LOGGERS</literal> below.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>critical</literal></term>
+               <listitem>
+                   <para>
+                     Boolean.  If <literal>true</literal>, the logger
+                     is a critical component of the running DAQ system.
+                     If this logger fails, the manager will therefore
+                     force
+                     a <literal>SHUTDOWN</literal> transition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>enabled</literal></term>
+               <listitem>
+                   <para>
+                     Boolean that, if true, indicates the logger is
+                     enabled.   If not enabled, a logger won't run
+                     to take data during a data taking run.
+                     If enabled it will.
+                   </para>
+                   <para>
+                     Note that it is legal for critical loggers to be
+                     disabled.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>container</literal></term>
+               <listitem>
+                   <para>
+                     THe name of the container the event logger will run
+                     in.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            Destination directories, and data source URI's must be unique.
+         </para>
+         <formalpara>
+            <title>TYPES OF LOGGERS</title>
+            <para>
+               The event logging subsystem recognizes two types of loggers,
+               <firstterm>partial</firstterm> and <firstterm>complete</firstterm>.
+               Partial loggers, like loggers in the NSCLDAQ
+               <literal>multilogger</literal> package just log event files
+               into a directory in a 'soup of files'.  Event files are
+               preceded with the date/time at which the logger started to
+               ensure they are unique.  For partial loggers, the
+               <literal>destiniation</literal> is simply the
+               directory in which these files are stored.
+            </para>
+         </formalpara>
+         <para>
+            Full loggers, on the other hand, behave like the primary
+            event logger in the NSCLDAQ <command>ReadoutShell</command>.
+            The <literal>destination</literal> directory is the top level
+            directory of the directory tree managed by the logger and its
+            wrapper. The structure of this tree is shown below.
+            The intent is to provide an experiment view and a per run
+            view.  The experiment view provides access to all event files
+            while the per run view also provides access to
+            associated run metadata stored in the
+            <filename>experiment/current</filename> subdirectory
+            when the run ended.
+         </para>
+         <figure>
+            <title>Full logger directory tree</title>
+            <literallayout>
+(destiniation) +
+               +----> experiment+
+               |                +---> current
+               |                +---> run1
+               |                +---> run2
+               ...             ...
+               +----> complete
+        
+            </literallayout>
+         </figure>
+         <para>
+            In addition to the logger definitions, the configuration
+            database includes a global enable flag which, if not boolean
+            true ensures no logging is done.
+            An entry also exists to start the appropriate loggers.  This is normally
+            done on a transition to <literal>BEGIN</literal>.  If you
+            implement <literal>PAUSE</literal>  state machine semantics it is,
+            therefore, very important to resume to a <literal>RESUME</literal>
+            state and not the <literal>BEGIN</literal> state.
+         </para>
+    </refsect1>
+    <refsect1>
+      <title>PUBLIC ENTRY POINTS</title>
+      <para>
+         In all of the entry points described below, the
+         <parameter>db</parameter> parameter represents an
+         SQLite3 database connection command created using the
+         <command>sqlite3</command> command.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <command>eventlog::add <replaceable>db root source dest ?options?</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new event logger definition to the database.
+                  <parameter>root</parameter> is the NSCLDAQ installation
+                  root directory who's event logger will be used.
+                  <parameter>source</parameter> is the URI of the ringbuffer
+                  from which the event data will be logged.
+                  <parameter>dest</parameter> is the destination
+                  directory that describes where data from
+                  <parameter>source</parameter> will be logged.
+               </para>
+               <para>
+                  The optional <parameter>options</parameter> parameter,
+                  if supplied is a dict of options that overrides default
+                  values.  The keys in the dict we care about are:
+               </para>
+               <variablelist>
+                  <varlistentry>
+                     <term><literal>host</literal> (defaults to localhost)</term>
+                     <listitem>
+                         <para>
+                           The host in which the event logger will be run.
+                           Note that <literal>localhost</literal>
+                           will be the host in which the manager is run,
+                           not the host in which the definition was made.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>partial</literal> (defaults to 0)</term>
+                     <listitem>
+                         <para>
+                           If non zero, the logger is a partial loggers.
+                           See <literal>DESCRIPTION</literal> for information
+                           on what a partial logger is and, by contrast,
+                           what a complete logger is.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>critical</literal> (defaults to 1)</term>
+                     <listitem>
+                         <para>
+                           If non zero, if the logger fails or exits prior
+                           to the run attempting to transition out of
+                           <literal>BEGIN</literal>, the system will
+                           enforce a <literal>SHUTDOWN</literal>
+                           transition.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>enabled</literal> (defaults to 1)</term>
+                     <listitem>
+                         <para>
+                           If nonzero the event logger will log the
+                           next run if global logging is enabled.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container</literal> (defaults to empty)</term>
+                     <listitem>
+                         <para>
+                           If a non-empty string, this specifies the name
+                           of a container defined in the
+                           <literal>containers</literal> package.
+                           The event logger, when run, will run in the container
+                           specified by this name.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+               </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>eventlog::listLoggers <replaceable>db</replaceable></command></term>
+            <listitem>
+                <para>
+                  Returns a list of dicts.  Each dict describes one of the
+                  loggers that has been defined via
+                  <command>eventlog::add</command>.  Each dict
+                  contains the following key/value pairs:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal></term>
+                     <listitem>
+                         <para>
+                           The integer id of the event logger. This is
+                           a unique id that can be used to refer to the
+                           logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>daqroot</literal></term>
+                     <listitem>
+                         <para>
+                           Path to the root of the NSCLDAQ installation
+                           whose event logger will be run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>ring</literal></term>
+                     <listitem>
+                         <para>
+                           URI of the ringbuffer from which the event
+                           logger will accept data.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>host</literal></term>
+                     <listitem>
+                         <para>
+                           DNS name of the host in which the event logger
+                           will run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>partial</literal></term>
+                     <listitem>
+                         <para>
+                           If non zero, this is a partial logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>destination</literal></term>
+                     <listitem>
+                         <para>
+                           The directory in which the data will be
+                           stored.  See <literal>DESCRIPTION</literal>
+                           and the types of event loggers for the
+                           full meaning of this.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>critical</literal></term>
+                     <listitem>
+                         <para>
+                           If non-zero, the event logger is considered
+                           critical and failure during a run will
+                           force a transition to <literal>SHUTDOWN</literal>.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>enabled</literal></term>
+                     <listitem>
+                         <para>
+                           If true the event logger is enabled and
+                           the
+                           <command>eventlog::start</command> will
+                           not start this logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the container in which the
+                           logger will run if it is containerized.
+                           This will be an empty string if there is
+                           no container.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container_id</literal></term>
+                     <listitem>
+                         <para>
+                           Id of the container that will run the
+                           logger.  This will be an empty string if
+                           no container was specified.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::rm <replaceable>db id</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Removes the event log definition associated with
+                  the id <parameter>id</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>eventlog::enable <replaceable> db id</replaceable></command></term>
+            <listitem>
+                <para>
+                  Enables the event logger identified by
+                  <parameter>id</parameter>.  
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::disable <replaceable>db id</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Disables the event logger identified by
+                  <parameter>id</parameter>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::enableAll <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Enables all event loggers.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>eventlog::disableAll <replaceable>db</replaceable></command></term>
+            <listitem>
+                <para>
+                  Disables all event loggers.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::enableRecording <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Turns on the global recording flag.   If this is off,
+                  no event loggers, regardless of their enabled state
+                  will record any data.
+               </para>
+            </listitem>
+         </varlistentry>         
+         <varlistentry>
+            <term>
+               <command>eventlog::disableRecording <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Turns off the global recording flag.  If this is off,
+                  no event recording is done.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::isRecording <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns the state of the global recording flag.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>eventlog::start <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Starts all elligible event recorders.  Event recorders
+                  that were started are expected to record a single run
+                  and then exit.  The following pseudo code describes
+                  how
+                  the decision to start an event logger is made:
+               </para>
+               <informalexample>
+                  <programlisting>
+if global recording flag enabled
+THEN
+    foreach event logger: logger
+    DO
+        if logger is enabled
+        THEN
+            start logger
+        ENDIF
+    END DO
+ENDIF
+                  </programlisting>
+               </informalexample>
+               <para>
+                  From the psuedo code above you can see that a logger
+                  is started only if the global recording flag is enabled
+                  <emphasis>and</emphasis> the logger itself is enabled.
+               </para>
+            </listitem>
+         </varlistentry>
+
+      </variablelist>
+    </refsect1>
 </refentry>
 <!-- /manpage -->
