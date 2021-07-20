@@ -2408,8 +2408,112 @@ exit 0
          </para>
          <para>
             Reference information is available:
-            <link linkend='tcl3.pgmstatus' endter='tcl3.pgmstatus.title' />
+            <link linkend='tcl3.pgmstatus' endterm='tcl3.pgmstatus.title' />.
          </para>
+         <para>
+            The example below creates a client, requests the status and displays
+            a list of which containers are activated and in which systems they
+            have been activated. 
+         </para>
+         <example>
+            <title>Using The <literal>programstatusclient</literal> Package</title>
+            <programlisting>
+if {[array names env DAQTCLLIBS] ne ""} {
+    lappend auto_path $env(DAQTCLLIBS)
+}
+
+package require programstatusclient    <co id='ex.pgmstat.require' />
+
+proc usage {} {
+    puts stderr "Usage:"
+    puts stderr "  $::argv0  host user"
+    puts stderr "Where:"
+    puts stderr "   host is the host on which the manager is running and"
+    puts stderr "   user is the name of the user running the manager"
+    exit -1
+}
+
+if {[llength $argv] != 2} {
+   usage
+}
+
+set host [lindex $argv 0]
+set user [lindex $argv 1]
+ProgramClient client -host $host -user $user  <co id='ex.pgmstat.construct' />
+
+set info [client status]                     <co id='ex.pgmstat.status' />
+set containers [dict get $info containers]
+puts "Active Containers:"
+foreach container $containers {
+    set name [dict get $container name]
+    set image [dict get $container image]
+    set activations [dict get $container activations]
+    if {[llength $activations] > 0} {
+      puts "$name ($image) is active in [join $activations {, }]"
+    }
+}
+
+client destroy                              <co id='ex.pgmstat.destroy' />
+exit 0
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.pgmstat.require' >
+                <para>
+                  To use the package it must be pulled into the script via
+                  the <command>package require</command> command shown.
+                </para>
+            </callout>
+            <callout arearefs='ex.pgmstat.construct' >
+                <para>
+                  This constructs a <classname>ProgramClient</classname> object
+                  that will be used to communicate with the REST server.
+                  The <option>-host</option> and <option>-user</option>
+                  options describe how to perform service discovery.
+                </para>
+                <para>
+                  The user and host can be provided at construction time as
+                  shown here or any time prior to the first REST request
+                  using the <methodname>configure</methodname> method.
+                </para>
+                <para>
+                  The object name will be <literal>client</literal>.  This
+                  will be a new base command for a command ensemble who's members
+                  are the methods supported by the object.
+                </para>
+            </callout>
+            <callout arearefs='ex.pgmstat.status' >
+                <para>
+                  The <methodname>status</methodname> method/subcommand provides
+                  the status of all containers and programs.  The return value
+                  is a dict with two keys: <literal>containers</literal> that
+                  provides information about container activations and
+                  <literal>programs</literal> which provides information about
+                  the programs that have been defined and their status.
+                </para>
+                <para>
+                  In this sample, we just output information about the containers.
+                  The value of the <literal>containers</literal> key is a list
+                  of dicts.  Each of the dicts describes a container.
+                  For this application we only need to know that
+                  <literal>name</literal> is the container name, <literal>image</literal>
+                  is the path to the container image file in the host filesystem
+                  and <literal>activations</literal> is a list of the hosts on
+                  which the container is activated (this will be an empty list if
+                  the container is not active).
+                </para>
+                <para>
+                  Subsequent code iterates over the containers outputting,
+                  for each container with at least one activation, information
+                  about the container and where it's active.
+                </para>
+            </callout>
+            <callout arearefs='ex.pgmstat.destroy' >
+                <para>
+                  This line destroys the client object.
+                </para>
+            </callout>
+         </calloutlist>
       </section>
       <section>
          <title>REST Client for Key Value Store</title>
