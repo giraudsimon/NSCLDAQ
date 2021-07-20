@@ -1749,7 +1749,120 @@ db close
             The <literal>auth</literal> package.
          </title>
          <para>
+            While it is not yet used as of NSCLDAQ-12.0, the manager supports
+            an authorization database.  In the future, this will be used
+            to limit the things individual users can request of the manager.
+            Understanding this part of the API and database requires understanding
+            the following basic terms:
          </para>
+         <variablelist>
+            <varlistentry>
+               <term><literal>users</literal></term>
+               <listitem>
+                   <para>
+                     Users represent holders of computer accounts.  Users
+                     band together to collaborate on experiments.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>roles</literal></term>
+               <listitem>
+                   <para>
+                     A role is represents a bundle of capabilities.
+                     Usually role names are designed to represent the things
+                     that individual users on an experiment might do.
+                     For example <literal>manager</literal> might be the
+                     people that can configure the system and start/stop the
+                     DAQ manager.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>grant/revoke</literal></term>
+               <listitem>
+                   <para>
+                     Roles can be granted and revoked to users.  When
+                     a role has been granted, the user  gains the
+                     bundle of capabilities represented by the role.
+                     For example, if a user is granted the role of
+                     <literal>ShiftOperator</literal>, they might gain
+                     the ability to start/stop runs.
+                </para>
+             </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            Full reference material for the authorization package
+            (<literal>auth)</literal>) is provided in
+            <link linkend='tcl3.auth' endterm='tcl3.auth.title' />.
+         </para>
+         <para>
+            The example below adds a new user to the experiment, creates a few
+            roles and grants a few of those roles to the new user.
+         </para>
+         <example>
+            <title>Program Using the <literal>auth</literal> Package</title>
+            <programlisting>
+if {[array  names env DAQTCLLIBS] ne ""} {
+   lappend auto_path $env(DAQTCLLIBS)
+}
+package require auth      <co id='ex.auth.require' />
+package require sqlite3
+
+sqlite3 db myconfig.db
+
+auth::adduser  db fox    <co id='ex.auth.adduser' />
+
+auth::addrole db manager
+auth::addrole db analyzer <co id='ex.auth.addroles' />
+auth::addrole db operator
+
+auth::grant fox operator  <co id='ex.auth.grantrole' />
+
+puts "People and the roles they have:"
+
+dict for {person roles} [auth::listAll db] {     <co id='ex.auth.listall' />
+   puts "$person has been granted [join $roles ", "]
+}
+
+db close
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.auth.require' >
+                <para>
+                  The <literal>auth</literal> package must be pulled into the
+                  program to use this API.  Note that all commands in that package
+                  are in the namespace <literal>::auth</literal>.  
+                </para>
+            </callout>
+            <callout arearefs='ex.auth.adduser' >
+                <para>
+                  <command>auth::adduser</command> makes a new user known to the
+                  configuration.  The name of the user should be the same as
+                  their account username.
+                </para>
+            </callout>
+            <callout arearefs='ex.auth.addroles' >
+                <para>
+                  This set of lines uses <command>auth::addrole</command> to
+                  add three roles, <literal>manager</literal>, <literal>analyzer</literal>
+                  and <literal>operator</literal> to the authorization database.
+                </para>
+            </callout>
+            <callout arearefs='ex.auth.grantrole' >
+                <para>
+                  The <command>auth::grant</command> command grants a role
+                  to a user.  In this case, the <literal>operator</literal>
+                  role is granted to the user <literal>fox</literal> we
+                  created earlier in the program.  Once a role has been granted
+                  to a user, all of the capabilities associated with that role
+                  are available to that user.
+                </para>
+            </callout>
+         </calloutlist>
       </section>
       <section id='sec.manager.eventloggers'>
          <title id='sec.manager.eventloggers.title'>
@@ -2090,7 +2203,224 @@ db close
    <section id='sec.manager.clientapi'>
       <title id='sec.manager.clientapi.title'>Manager REST client API.</title>
       <para>
+         While the APIs described in the previous section are required to
+         to define the configuration of an experiment;  software that
+         interacts with the running program manager will do so via
+         one or more of the REST interfaces and APIs provided for them.
       </para>
+      <para>
+         REST, or REpresentational State Transfer interfaces are
+         a mechanism to use normal web (http and https) protocols
+         to map URLs and query/form data to operations in a server.
+         The NSCLDAQ manager program provides several URL families (or
+         domains) and we also provide Tcl packages to allow your
+         applications to interact with those domains.
+      </para>
+      <para>
+         When the manager starts up, it uses the NSCLDAQ port manager
+         to advertise its REST service port.  By default this port is given
+         the service name <literal>DAQManager</literal>.   REST interfaces, in
+         general, do not make use of persistent connections.  In order to be
+         robust with respect to manager restarts, the rest client code
+         looks up the service port for each request.
+      </para>
+      <para>
+         In  the remainder of this section we will:
+      </para>
+      <itemizedlist>
+         <listitem>
+            <para>
+               Describe and show examples of the REST client for  handling state
+               transitions.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Describe and show examples of the REST client for checking
+               the status of programs run by the manager.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Describe and show examples of the REST client for accessing
+               the key value store.
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               Describe and show examples of the REST client for
+               managing event logging.
+            </para>
+         </listitem>
+      </itemizedlist>
+      <section>
+         <title>REST Client for State Transitions</title>
+         <para>
+            This client package, <literal>stateclient</literal> provides
+            a REST client to the State domain of the DAQ manager.  In order
+            to use it, you must know the host in which the DAQ manager is
+            running and the user that ran the manager (the NSCLDAQ port
+            manager advertises services as servicename-username pairs).
+         </para>
+         <para>
+            The REST client is exported in an object oriented manner.
+            Applications create an inteface object and then invoke its methods
+            to perform various actions.  Reference material is available:
+            <link linkend='tcl3.stateclient' endterm='tcl3.stateclient.title' />
+         </para>
+         <para>
+            The sample application below gets the current state of the system,
+            produces a list of the valid next states and then attempts a
+            transition into the first of the valid next states.  Please don't
+            try this yourself, in general the state transition we're going to
+            trigger makes little to no sense.
+         </para>
+         <para>
+            The application accepts the host and username as command parameters.
+         </para>
+         <example>
+            <title>Sample State Transition REST Client</title>
+            <programlisting>
+if {[array names env DAQTCLLIBS] ne ""} {
+    lappend auto_path $env(DAQTCLLIBS)
+}
+package require stateclient     <co id='ex.staterest.require' />
+
+proc usage {msg} {              <co id='ex.staterest.usage' />
+    puts stderr "Usage: "
+    puts stderr "   $::argv0 host user"
+    puts stderr "Where:"
+    puts stderr "   host is the host in which the manager is running and"
+    puts stderr "   user is the user that started the manager."
+    exit -1
+}
+
+
+if {[llength $argv] != 2} {
+   usage
+}
+
+set host [lindex $argv 0]     <co id='ex.staterest.parameters' />
+set user [lindex $argv 1]
+
+StateClient client -host $host -user $user  <co id='ex.staterest.construct' />
+puts "Current state: [client currentState"]  <co id='ex.staterest.current' />
+
+set nextStates [client nextStates]          <co id='ex.staterest.next' />
+puts "Allowed next states are [join $nextStates {, }]"
+client transition [lindex $nextStates 0]    <co id='ex.staterest.transition' />
+
+client destroy                              <co id='ex.staterest.destroy' />
+exit 0
+
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.staterest.require' >
+                <para>
+                  In order to use the REST state transition client, it is
+                  necessary to pull the <literal>stateclient</literal>
+                  package into your script.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.usage' >
+                <para>
+                  This proc outputs the program usage.  It'll be called if
+                  the user does not provide the correct command parameters.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.parameters' >
+                <para>
+                  These two lines of code extract the host and the username
+                  from the command line parameters.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.construct' >
+                <para>
+                  Constructs the client object.  The typical form of object
+                  construction in Tcl object systems  is
+                  <literal>classname objectname ?options...?</literal>.
+                  Where <literal>classname</literal> is the name of the class
+                  whose instance we're constructing.  <literal>objectname</literal>
+                  is the name to give to the object.  In Tcl objects are represented
+                  as command ensembles with the object name as the base command
+                  name.  
+                </para>
+                <para>
+                  Options can also be provided to construction and these, in this case,
+                  provide the host and username.  The result of this construction
+                  is a command ensemble named <command>client</command> whose
+                  subcommands are object method invocations.  Note that,
+                  as with Tk object construction, construction also returns
+                  the name of the object.  In some object systems like e.g.
+                  <literal>snit</literal>, the special object name
+                  <literal>%AUTO%</literal> makes the object system assign a
+                  unique object name to the constructed object.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.current' >
+                <para>
+                  The <methodname>currentState</methodname> method of a
+                  <classname>StateClient</classname> object returns the name
+                  of the current state in which the state machine is now in.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.next' >
+                <para>
+                  The <methodname>nextStates</methodname> method of
+                  <classname>StateClient</classname> objects returns a list of
+                  valid next state names.  That is a list of valid transitions
+                  out of the current state.  Note that the code that follows
+                  assumes that the state we are in is not terminal, that is there is
+                  at east one valid next state.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.transition' >
+                <para>
+                  Requests the manager to make a state transition to the
+                  first of the legal next states (we're assuming there is at
+                  least one legal next state).  The REST request completes only
+                  after the state transition has completed.
+                </para>
+            </callout>
+            <callout arearefs='ex.staterest.destroy' >
+                <para>
+                  The <classname>StateClient</classname> object has a
+                  pre-defined method <methodname>destroy</methodname> which
+                  destroys the object.  We call this before exiting the program.
+                </para>
+            </callout>
+         </calloutlist>
+         
+      </section>
+      <section>
+         <title>REST Client for Program Status</title>
+         <para>
+            The <literal>programstatusclient</literal> package provides an
+            object oriented interface to the REST server domain that
+            exports information about container and program status.  It
+            exports a single class: <classname>ProgramClient</classname>.
+            Instances of that object support the <methodname>status</methodname>
+            method in addition to the pre-defined <methodname>destroy</methodname>,
+            <methodname>configure</methodname> and <methodname>cget</methodname>
+            methods
+         </para>
+         <para>
+            Reference information is available:
+            <link linkend='tcl3.pgmstatus' endter='tcl3.pgmstatus.title' />
+         </para>
+      </section>
+      <section>
+         <title>REST Client for Key Value Store</title>
+         <para>
+         </para>
+      </section>
+      <section>
+         <title>REST Clients for Event Log Management</title>
+         <para>
+         </para>
+      </section>
    </section>
    <section id='sec.manager.guiapi'>
       <title id='sec.manager.guiapi.title'>Manager User Interface API</title>
@@ -4466,4 +4796,350 @@ ENDIF
       </variablelist>
     </refsect1>
 </refentry>
+
+<refentry id='tcl3.auth'>
+   <refmeta>
+      <refentrytitle id='tcl3.auth.title'>auth</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>auth</refname>
+      <refpurpose>Manager Authorization System</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require auth
+
+auth::adduser db username
+auth::addrole db rolename
+auth::rmrole db rolename
+auth::grant db user role
+auth::revoke db user role
+set usernames [auth::users db]
+set roles [auth::listRoles db]
+set info [auth::listAll db]
+
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>Description</title>
+          <para>
+            Implements the database for a role based authorization system.
+            In role based authorization systems, there are users and there
+            are roles.  Users can be <firstterm>granted</firstterm> one
+            or more roles and roles the currently have been granted can be
+            <firstterm>revoked</firstterm>.
+            The authorized capabilities of the user are then determined by the
+            roles they've been granted.
+          </para>
+          <para>
+            Note the difference between authorization, and authentication.
+            Authentication is the process of "proving" who you are.  For example,
+            when you provide a user name and a password to login, you are
+            authenticating.  Authorization is the process of determining,
+            the access appropriate to an authenticated user.  For example, the
+            unix file modes determine, for a specific authenticated user
+            the operations that user can perform on that file.
+          </para>
+         <para>
+            This package explicitly addresses <firstterm>authorization</firstterm>
+            and explictly does <emphasis>not</emphasis> address
+            <firstterm>authentication</firstterm>.
+         </para>
+    </refsect1>
+    <refsect1>
+      <title>PUBLIC ENTRIES</title>
+      <para>
+         In the command documentation that follows, all commands require an
+         SQLite3 database access command.  The parameter <parameter>db</parameter>
+         is that access command and will not be mentioned further.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <command>auth::adduser <replaceable>db username</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new user, <parameter>username</parameter> to the
+                  set of users that can be authorized with roles.
+                  <parameter>username</parameter> must not have been added
+                  in the past or an error will be thrown.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::addrole <replaceable>db rolename</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Adds a new role,
+                  <parameter>rolename</parameter>that can be granted to users.
+                  <parameter>rolename</parameter> must not be the name of an
+                  existing role or else an error will be thrown.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::rmrole <replaceable>db rolename</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Removes the role <parameter>rolename</parameter> from
+                  the list of roles that can be granted to users.
+                  A scorched earth policy is adopted in the sense that prior
+                  to removing the role it is revoked from any users it has
+                  been granted to.
+               </para>
+                <para>
+                  An error is throw if <parameter>rolename</parameter> is
+                  not an existing role.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::grant <replaceable>db user role</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Grants the <parameter>user</parameter> the role named by
+                  <parameter>role</parameter>.  Both
+                  <parameter>user</parameter> and <parameter>role</parameter>
+                  must have been previously defined as a user and a role
+                  respectively or else an error will be thrown.
+               </para>
+               <para>
+                  Once the user has been granted this <parameter>role</parameter>,
+                  the user has all of the capabilities implied by that role.
+               </para>
+            </listitem>
+         </varlistentry>      
+         <varlistentry>
+            <term>
+               <command>auth::revoke <replaceable>db user role</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Revokes the role named <parameter>role</parameter> from
+                  the user named <parameter>user</parameter>.   Any capabilities
+                  implied by the <parameter>role</parameter> that are not also
+                  implied by another role the user was granted are no longer
+                  allowed to that user.
+               </para>
+                <para>
+                  By the previous paragraph we mean that the set of capabilities
+                  carried by roles may not be orthogonal.  
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::users <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of the user names that have been added to the
+                  system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::listRoles <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Returns a list of all of the role names that have been
+                  added to the system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term></term>
+            <listitem>
+                <para>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <command>auth::listAll <replaceable>db</replaceable></command>
+            </term>
+            <listitem>
+                <para>
+                  Lists all of the information in the authorization database.
+                  The result is a dict.  The dict keys are usernames and the
+                  values for each key are a list of roles that have been
+                  granted to that user.  Users with no roles granted will
+                  appear as keys in to the dict and those keys
+                  will have empty lists as
+                  values.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    
+</refentry>
+
+<refentry id='tcl3.stateclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.stateclient.title'>stateclient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>stateclient</refname>
+      <refpurpose>REST client of manager state machine</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require stateclient
+
+set obj [StateClient objname ?options...?]
+$obj configure optname value ...
+set state [$obj currentState]
+set successors [$obj nextStates]
+set actual [$obj transition desired]
+$obj kill
+
+$obj destroy
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>stateclient</literal> package provides a
+            <command>snit::type</command> class that serves as a client to the
+            DAQ manager's state machine REST server domain.  The client hides
+            package presents a simple to use interface that completely hides
+            the process of service location, request formation and reply
+            decoding.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         The following options can be provided either at construction time
+         or later on via the <methodname>configure</methodname> method.
+         Each rest request performs service discovery and connects to the
+         server.  Therefore it is possible to dynamically switch the target
+         of a client object by reconfiguring the connection information.
+      </para>
+      <para>
+         Note that the service name discovered defaults to
+         <literal>DAQManager</literal>.  It can be modified by setting
+         the <varname>::clientutils::SERVICE</varname>  variable to the
+         desired service name.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-host</option> DNS-name</term>
+            <listitem>
+                <para>
+                  The DNS host name or IP address of the system on which
+                  the manager is running
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-user</option> username</term>
+            <listitem>
+                <para>
+                  The username of the user that started the server.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Constructed  <classname>StateClient </classname> objects have the following
+         methods:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>configure</methodname> option value...</term>
+            <listitem>
+                <para>
+                  Modifies the value of one or more options.  The parameters
+                  to this method are a sequence of option names followed by
+                  new values for that option.  See <literal>OPTIONS</literal>
+                  above for a list of the legal options.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>currentState</methodname></term>
+            <listitem>
+                <para>
+                  Returns the textual name of the current state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>nextStates</methodname></term>
+            <listitem>
+                <para>
+                  Returns a list of textual state names that can be
+                  reached by transitioning from the current state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>transition</methodname> <parameter>newstate</parameter></term>
+            <listitem>
+                <para>
+                  Attempts a tranisition to the <parameter>newstate</parameter>.
+                  The method call blocks until the server has completed its
+                  transition.  At that time the state of the system is returned.
+                  Note that it is possible the state transition will fail
+                  and that may result in a return value other than
+                  <parameter>newstate</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>kill</methodname></term>
+            <listitem>
+                <para>
+                  Request that the server exit. Note that the server will
+                  first attempt to transition into the <literal>SHUTDOWN</literal>
+                  state.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+
+
+<refentry id='tcl3.pgmstatus'>
+   <refmeta>
+      <refentrytitle id='tcl3.pgmstatus.title'>programstatusclient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>programstatusclient</refname>
+      <refpurpose>REST Client for Manager /Programs Domain.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+         
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title></title>
+          <para>
+            
+          </para>
+    </refsect1>
+</refentry>
+
 <!-- /manpage -->
