@@ -2525,8 +2525,101 @@ exit 0
          </para>
          <para>
             Full documentation on this package is available at
-            <linkn linkend='tcl3.kvclient' endterm='tcl3.kvclient.title' />
+            <link linkend='tcl3.kvclient' endterm='tcl3.kvclient.title' />.
+            In the example below we set the <literal>title</literal> key
+            and dump the entire KV store.  The <literal>title</literal> key is
+            used by the Readout support software to set the run titles in the various
+            Readouts used by the experiment.
          </para>
+         <example>
+            <title>Using the <literal>kvclient</literal> Package.</title>
+            <programlisting>
+if {[array names env DAQTCLLIBS] ne ""} {
+   lappend auto_path $env(DAQTCLLIBS)
+}
+package require kvclient     <co id='ex.kvclient.require' />
+
+proc usage {} {
+   puts stderr "Usage"
+   puts stderr "   $::argv0 host user new title words"
+   puts stderr "Where:"
+   puts stderr "   host and user specify the host running the manager and
+   puts stderr "   user that started it.  The remaining parameters are
+   puts stderr "   the new title to set.  They will be combined separated by spaces"
+   exit -1
+}
+
+if {[llength $argv] < 3} {
+    usage
+}
+
+set host [lindex $argv  0]
+set user [lindex $argv 1]
+set title [lrange $argv 2 end]           <co id='ex.kvclient.mktitle' />
+
+KvClient client -host $host -user $user   <co id='ex.kvclient.construct' />
+client setValue title $title              <co id='ex.kvclient.settitle' />
+
+puts "Dump of kv store:"
+
+dict for {name value} [client list] {               <co id='ex.kvclient.list' />
+   
+   puts "$name :     $value"
+}
+client destroy                          <co id='ex.kvclient.destroy' />
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.kvclient.require' >
+                <para>
+                  In order to make calls to the Key Value REST client API,
+                  the <literal>kvclient</literal> package must be pulled into the
+                  program.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvclient.mktitle' >
+                <para>
+                  This little bit of Tcl makes a variable named <varname>title</varname>
+                  from the words on the command line that follow the host and user
+                  (words 2 through the end).
+                </para>
+            </callout>
+            <callout arearefs='ex.kvclient.construct' >
+                <para>
+                  Constructs a Key Value store REST client object specifying
+                  the <option>-host</option> and <option>-user</option> options
+                  from the values on the command line.  Note that constructing
+                  the object does not network operations.  Network operations, like
+                  service discovery and connecting to the server are only
+                  done when a REST request is made.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvclient.settitle' >
+                <para>
+                  The <methodname>setValue</methodname> method accepts two parameters,
+                  the name of an existing key value store key and the new value
+                  to give to it.  This sets the key <literal>title</literal>
+                  to the title words the user passed in on the command line.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvclient.list' >
+                <para>
+                  The <methodname>list</methodname> method dumps the entire
+                  key value store, returning it as a dict whos keys are key value
+                  store keys and whose values are the values of the corresponding
+                  key value store key.
+                </para>
+            </callout>
+            <callout arearefs='ex.kvclient.destroy' >
+                <para>
+                  The <methodname>destroy</methodname> method destroys the client
+                  when we are done using it. Note that given the nature of
+                  interactions with REST servers, <classname>KvClient</classname>
+                  instance objects are quite light weight.
+                </para>
+            </callout>
+         </calloutlist>
       </section>
       <section>
          <title>REST Clients for Event Log Management</title>
@@ -4007,7 +4100,7 @@ sequence::relayOutput text
          This section describes the options and methods of that object.
       </para>
       <refsect2>
-         <title>Options</title>
+         <title>OPTIONS</title>
          <para></para>
          <variablelist>
             <varlistentry>
@@ -4053,7 +4146,7 @@ sequence::relayOutput text
          </variablelist>
       </refsect2>
       <refsect2>
-         <title>Methods</title>
+         <title>METHODS</title>
          <para>
             
          </para>
@@ -5421,7 +5514,7 @@ set info [name status]
 
 <refentry id='tcl3.kvclient'>
    <refmeta>
-      <refentrytitle id='tcl3.kvclient'>kvclient</refentrytitle>
+      <refentrytitle id='tcl3.kvclient.title'>kvclient</refentrytitle>
       <manvolnum>3tcl</manvolnum>
    </refmeta>
    <refnamediv>
@@ -5430,14 +5523,123 @@ set info [name status]
     </refnamediv>
     <refsynopsisdiv>
       <programlisting>
-         
+package require kvclient
+
+KvClient client-name ?option value...?
+client configure option value ?...?
+set value [client getValue keyname]
+client setValue keyname value
+set keys [client listNames]
+set kvdump [client list]
       </programlisting>
     </refsynopsisdiv>
     <refsect1>
-             <title></title>
+             <title>
+               DESCRIPTION
+             </title>
           <para>
-            
+            REST client for the key value store domain (<literal>/KVStore</literal>)
+            of the DAQ manager server.  This package provides an object oriented
+            client package.  The package does service discovery and reconnects for
+            every REST request rather than maintaining a connection with e.g.
+            persistent sockets.
           </para>
+          <para>
+            Because the package does per-request service discovery and connection,
+            it is generally tolerant of the sorts of port reassignment that can happen
+            as a result of server exit and restart.  Similarly server restarts
+            are transparent to the package because no persistent connection is
+            maintained.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         The client is configured using options, much the same way Tk widgets
+         are configured.  Options, in addition to the <varname>clientutils::SERVICE</varname>
+         variable configure service discovery.  <varname>clientutils::SERVICE</varname>
+         contains the service the manager advertises and defaults to
+         <literal>DAQManager</literal>, which is the default service advertised.
+      </para>
+      <para>
+         The host in which the server runs as well as the user that started the
+         server are configuration options:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-host</option></term>
+            <listitem>
+                <para>
+                  Host in which the server is running.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-user</option></term>
+            <listitem>
+                <para>
+                  User name of the user that started the server.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Constructed objects support the following methods:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>configure </methodname><parameter>option value ?...?</parameter></term>
+            <listitem>
+                <para>
+                  Built in method that configures the object's options. Since
+                  service discover and connections are made/broken with each
+                  request, this provide support for e.g. service migration.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>getValue</methodname> <parameter> keyname</parameter></term>
+            <listitem>
+                <para>
+                  Returns the value of the key <parameter>keyname</parameter>.
+                  <parameter>keyname</parameter> must be a defined key in the
+                  Key Value store or an error will be signalled.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>setValue</methodname><parameter> keyname value</parameter></term>
+            <listitem>
+                <para>
+                  This method modifies the value of the key <parameter>keyname</parameter>.
+                  setting it to <parameter>value</parameter>.  <parameter>keyname</parameter>
+                  must already exist in the key value store or an error will be returned.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>listNames</methodname></term>
+            <listitem>
+                <para>
+                  Returns a list of the keynames that are defined in the
+                  key value store.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>list</term>
+            <listitem>
+                <para>
+                  Returns a dict whose keys are the keys of the key value store and
+                  whose values are their values.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+
     </refsect1>
 </refentry>
 <!-- /manpage -->
