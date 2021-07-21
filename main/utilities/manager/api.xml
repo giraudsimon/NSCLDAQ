@@ -2518,6 +2518,14 @@ exit 0
       <section>
          <title>REST Client for Key Value Store</title>
          <para>
+            The <literal>kvclient</literal> package provides an object
+            oriented API to the key value store.  Using this package,
+            you can set and get values of keys as well as list keys and
+            dump the complete contents of the store.
+         </para>
+         <para>
+            Full documentation on this package is available at
+            <linkn linkend='tcl3.kvclient' endterm='tcl3.kvclient.title' />
          </para>
       </section>
       <section>
@@ -5235,6 +5243,193 @@ $obj destroy
     </refnamediv>
     <refsynopsisdiv>
       <programlisting>
+package require programstatusclient
+
+ProgramClient name ?option value...?
+
+set info [name status]
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a REST client for the <literal>/Programs</literal>
+            domain of the manager REST server.  This client allows applications
+            to learn about the status of both containers and programs
+            that are activated/run under the control of the DAQ manager.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         Options are used to guide service discovery.  The manager advertises
+         a service with its host's NSCLDAQ Port manager.   Services are qualified
+         by the username.  Therefore, to discover the service port used by the
+         manager, it's necesary to know the service name, the host the manager
+         is running in and the user that started the manager.
+      </para>
+      <para>
+         The service name defaults to <literal>DAQManager</literal> and is
+         stored in <varname>clientutils::DAQManager</varname>.  Each REST request
+         does service discovery, connects to the server, makes the request and
+         disconnects from the server.  As such, the service name, the user
+         and host are dynamic.  The host and user are <classname>ProgramClient</classname>
+         options that can be provided at construction time and/or set using an
+         instance's <methodname>configure</methodname> method:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-host</option></term>
+            <listitem>
+                <para>
+                  Host in which the server is running.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-user</option></term>
+            <listitem>
+                <para>
+                  Username of the account that started the server.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         Instances of <classname>ProgramClient</classname> have only one method:
+         <methodname>status</methodname>.  This method takes no parameters and
+         returns a dict.  The dict has two keys <literal>containers</literal>
+         and <literal>programs</literal>.  
+      </para>
+      <formalpara>
+         <title>The <literal>containers</literal> Key.</title>
+         <para>
+            This key contains a list of dicts.  Each dict describes a container
+            configured into the server.  The container dicts have the following
+            key/value pairs.
+         </para>
+      </formalpara>
+      <variablelist>
+         <varlistentry>
+            <term><literal>name</literal></term>
+            <listitem>
+                <para>
+                  Contains the name given to the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>image</literal></term>
+            <listitem>
+                <para>
+                  The container image file.  This path is, of course, in the host
+                  system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>bindings</literal></term>
+            <listitem>
+                <para>
+                  A list of file system bindings between the host filesystem and
+                  the containerized filesystem.  Each binding is a string given
+                  in the form expected by the
+                  <command>singularity</command> command's
+                  <option>--bind</option> option.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>activations</literal></term>
+            <listitem>
+                <para>
+                  List of hosts in which the container is currently active.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <formalpara>
+         <title>The <literal>programs</literal> Key</title>
+         <para>
+            The <literal>programs</literal> key contains a list of dicts
+            that describe programs configured into the server, and their status.
+            Each dict describes one such program and has the following
+            key/value pairs:
+         </para>
+      </formalpara>
+      <variablelist>
+         <varlistentry>
+            <term><literal>name</literal></term>
+            <listitem>
+                <para>
+                  Name of the program.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>path</literal></term>
+            <listitem>
+                <para>
+                  Path to the program image or script file.  If the program
+                  is run containerized, this is expressed in the filesystem
+                  as seen within the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>type</literal></term>
+            <listitem>
+                <para>
+                  Textual program type.  This will be one of
+                  <literal>Transitory</literal>, <literal>Persistent</literal>
+                  or <literal>Critical</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>host</literal></term>
+            <listitem>
+                <para>
+                  Host in which the program will be run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>container</literal></term>
+            <listitem>
+                <para>
+                  If not an empty string, the name of the container the program
+                  will be run in.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>active</literal></term>
+            <listitem>
+                <para>
+                  Boolean that, if true, indicates the program is currently
+                  active.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.kvclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.kvclient'>kvclient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>kvclient</refname>
+      <refpurpose>Client To Manager's REST Key Value Store Service</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
          
       </programlisting>
     </refsynopsisdiv>
@@ -5245,5 +5440,4 @@ $obj destroy
           </para>
     </refsect1>
 </refentry>
-
 <!-- /manpage -->
