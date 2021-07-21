@@ -2624,7 +2624,106 @@ client destroy                          <co id='ex.kvclient.destroy' />
       <section>
          <title>REST Clients for Event Log Management</title>
          <para>
+            The <literal>loggerrestclient</literal> package provides an
+            object oriented interface to the REST domain (<literal>/Loggers</literal>)
+            in the manager server that manages event loggers.
+            Reference material for this package is available
+            <link linkend='tcl3.loggerrestclient' endterm='tcl3.loggerrestclient.title' />
          </para>
+         <para>
+            The following example program enables all loggers, sets the recording
+            state on and starts the loggers.
+         </para>
+         <example>
+            <title>Using the <literal>loggerrestclient</literal> Package</title>
+            <programlisting>
+if {[array  names env DAQTCLLIBS] ne ""} {
+   lappend auto_path $env(DAQTCLLIBS)
+}
+package require loggerrestclient      <co id='ex.lgclient.require' />
+
+proc usage {} {
+   puts stderr "Usage:"
+   puts stderr "  $::argv0 host user"
+   puts stderr "Where:"
+   puts stderr "   host is the host on which the manager server is running."
+   puts stderr "   user is the user who started the server.
+   exit -1
+}
+
+if {[length $argv] != 2} {
+   usage
+}
+
+set host [lindex $argv 0]
+set user [lindex $argv 1]
+
+
+LoggerRestClient client -host $host  -user $user  <co id='ex.lgclient.construct' />
+
+foreach logger [client listLoggers] {             <co id='ex.lgclient.list' />
+    client enableLogger [dict get $logger destination]  <co id='ex.lgclient.enable' />
+}
+client record 1                         <co id='ex.lgclient.record' />
+client start                            <co id='ex.lgclient.start' />
+
+client destroy                          <co id='ex.lgclient.destroy' />
+
+
+
+            </programlisting>
+         </example>
+         <calloutlist>
+            <callout arearefs='ex.lgclient.require' >
+                <para>
+                  Using the logger rest client API means applications must
+                  <command>package require loggerrestclient</command> as this
+                  package contains the implementation of that package.
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.construct' >
+                <para>
+                  Constructs an instance of a client to a manager server that
+                  will interact with the logger REST  server domain.k
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.list' >
+                <para>
+                  The <methodname>listLoggers</methodname> method of a logger
+                  REST client instance returns a list of dicts. Each dict includes,
+                  among other keys, a <literal>destination</literal> key
+                  which contains the logger destination.  The logger
+                  destination is required, by the API to be unique and is used
+                   in the REST API, rather than the invisible id, to identify
+                   loggers.
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.enable' >
+                <para>
+                  The <methodname>enableLogger</methodname> method enables
+                  the logger designated by its destination.   If that logger
+                  is already enabled this call silently has no effect.
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.record' >
+                <para>
+                  The <methodname>record</methodname> method sets the state of
+                  the global recording flag.
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.start' >
+                <para>
+                  Starts all loggers that should start.   Since we've previously
+                  enabled all loggers and ensured the global recording flag is
+                  true, this will start all defined loggers.
+                </para>
+            </callout>
+            <callout arearefs='ex.lgclient.destroy' >
+                <para>
+                  Destroys the logger REST API Object
+                </para>
+            </callout>
+         </calloutlist>
       </section>
    </section>
    <section id='sec.manager.guiapi'>
@@ -5640,6 +5739,27 @@ set kvdump [client list]
          </varlistentry>
       </variablelist>
 
+    </refsect1>
+</refentry>
+<refentry id='tcl3.loggerrestclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.loggerrestclient.title'>loggerrestclient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>loggerrestclient</refname>
+      <refpurpose>Client to Manager's Event Log REST Interface</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+         
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title></title>
+          <para>
+            
+          </para>
     </refsect1>
 </refentry>
 <!-- /manpage -->
