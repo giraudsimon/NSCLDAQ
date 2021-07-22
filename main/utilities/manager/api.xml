@@ -5752,14 +5752,232 @@ set kvdump [client list]
     </refnamediv>
     <refsynopsisdiv>
       <programlisting>
-         
+package require loggerrestclient
+
+LoggerRestClient name -host hostname -user username
+name configure option value ?...?
+
+name enableLogger logger-dest
+name disableLogger logger-dest
+set loggerInfo [name listLoggers]
+name record recording-state
+name isRecording
+name start
+name destroy
       </programlisting>
     </refsynopsisdiv>
     <refsect1>
-             <title></title>
+             <title>DESCRIPTION</title>
           <para>
-            
+            Provides an object oriented interface to the part of the manager's
+            REST server that controls event logging.  Each method of a
+            <classname>LoggerRestClient</classname> instance makes a REST request of
+            the server.  The request logic includes service discovery based
+            on the current values of the <option>-host</option>, <option>-user</option>
+            options and <varname>clientutils::SERVICE</varname> variables.
           </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         Options control service lookup and how the server is connected during
+         each method call.   As such the host, user and even the service can be
+         varied from request to requrest.  Furthermore, the object is robust in
+         the presence of server restarts that may change the actual server port.
+      </para>
+      <para>
+         The options described below must be properly defined prior to any
+         method call that makes a REST request.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-host</option></term>
+            <listitem>
+                <para>
+                  Host in which the server is running.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-user</option></term>
+            <listitem>
+                <para>
+                  Username of the user that started th server.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>
+         METHODS
+      </title>
+      <para>
+         With the exception of the built in methods (e.g.
+         <methodname>configure</methodname>, <methodname>cget</methodname>,
+         <methodname>destroy</methodname>), each method call described
+         below performs exactly one REST request.  
+      </para>
+      <para>
+         The REST request includes service discovery which provides, from the
+         Port Manager the port on which the server is listening for connection.
+         This service discovery is performed for <emphasis>every</emphasis>
+         REST request.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>enableLogger</methodname> <parameter>dest</parameter></term>
+            <listitem>
+                <para>
+                  Enables the logger whose log destination is
+                  <parameter>dest</parameter>.  In the
+                  <classname>LoggerRestClient</classname> API, loggers are
+                  specified by their log destinations.  These are required by the
+                  database APIs to be unique.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>disableLogger</methodname> <parameter>dest</parameter></term>
+            <listitem>
+                <para>
+                  Disables the logger whose log destination is
+                  <parameter>dest</parameter>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>listLoggers</methodname></term>
+            <listitem>
+                <para>
+                  Returns a list of dicts that describe the loggers known
+                  to the server database.  Each list item is a dict that describes
+                  a single logger and has the following key/value pairs:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal></term>
+                     <listitem>
+                         <para>
+                           Unique integer number that is the logger's primary
+                           database key.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>daqroot</literal></term>
+                     <listitem>
+                         <para>
+                           The root directory where the NSCLDAQ installation
+                           lives.  Note that if the event logger runs containerized,
+                           this path is expressed in terms of the filesystem
+                           seen within the container.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>ring</literal></term>
+                     <listitem>
+                         <para>
+                           The URI of the ring buffer from which the logger
+                           will log data.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>host</literal></term>
+                     <listitem>
+                         <para>
+                           The host on which the event logger will run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>partial</literal></term>
+                     <listitem>
+                         <para>
+                           Boolean that is true if this is a partial event logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>destination</literal></term>
+                     <listitem>
+                         <para>
+                           The directory (or top level directory if full event
+                           logging is done) in which the event logging will be
+                           done.  If the event logger runs containerized,
+                           this destination will be a path in the containerized
+                           environment.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>critical</literal></term>
+                     <listitem>
+                         <para>
+                           Boolean that is true if the logger is critical to the
+                           functioning of the experiment.  If this is true
+                           and the logger exits prematurely for any reason,
+                           the manager forces a <literal>SHUTDOWN</literal>
+                           transition.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>enabled</literal></term>
+                     <listitem>
+                         <para>
+                           Boolean that is true if the event logger is enabled
+                           to record data.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container</literal></term>
+                     <listitem>
+                         <para>
+                           If the event logger should run containerized, this is
+                           the name of the container in which it will run.  If
+                           the event log runs in the native environment,
+                           this will be an empty string.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>record</methodname> <parameter>state</parameter></term>
+            <listitem>
+                <para>
+                  Set the
+                  global recording state to <parameter>state</parameter>.  This
+                  should be a boolean that is true to enable global recording
+                  or false to disable it.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>isRecording</methodname></term>
+            <listitem>
+                <para>
+                  Returns a boolean value.  The value will be true if event recording
+                  is enabled or false if not.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>start</methodname></term>
+            <listitem>
+                <para>
+                  Starts the appropriate set of loggers.  For a logger to start,
+                  it must be enabled and the global recording flag must also
+                  be true.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
 </refentry>
 <!-- /manpage -->
