@@ -2729,7 +2729,366 @@ client destroy                          <co id='ex.lgclient.destroy' />
    <section id='sec.manager.guiapi'>
       <title id='sec.manager.guiapi.title'>Manager User Interface API</title>
       <para>
+         This section descsribes support for building user interfaces that interact
+         with the Manager.  While these are intended to interact through the REST
+         interface, in fact the architecture is, in many cases quite a bit more
+         general. 
       </para>
+      <para>
+         Before digging into the user interface support classes in subsections to
+         this section, it's important to say something about the Model View
+         Controller (MVC) architecture on which most of these GUI classes are based.
+      </para>
+      <para>
+         MVC provides a generlized patter for building software that requires user
+         interaction. In MVC, applications consist of three interacting objects:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><firstterm>View</firstterm></term>
+            <listitem>
+                <para>
+                  A view object provides presentation and interaction controls.
+                  It specifies what the user sees, given data, and how the user
+                  can attempt to interact with that data.
+               </para>
+                <para>
+                  For the purposes of the following discussion, our view objects
+                  are represented by snit megawidgets.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><firstterm>Model</firstterm></term>
+            <listitem>
+                <para>
+                  Model objects provide access to the data.   This access can be
+                  read-only or read-write depending on the application.
+               </para>
+                <para>
+                  For the purposes of the following discussion, our model objects
+                  are represented by REST, interface objects or database APIs.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><firstterm>Controller</firstterm></term>
+            <listitem>
+                <para>
+                  Controller objects mediate between the view and the
+                  application's model.  It is controllers that get data from the
+                  models and load them into the view for presentation.
+                  Controllers also respond to events detected by the view and,
+                  interact with the model either to get more or different data
+                  to present or to request the model to modify data it managers.
+               </para>
+                <para>
+                  In the following discussion, the controllers are implemented
+                  as <command>snit::type</command> instances.
+                </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <section>
+         <title>Eventlog database configuration MVC</title>
+         <formalpara>
+            <title>Model</title>
+            <para>
+               The <literal>evlogeditmodel</literal> provides a model,
+               in the form of the <command>snit::type</command>
+               <classname>evlogEditModel</classname> that supports obtaining and
+               modifiying the event log configuration.
+            </para>
+         </formalpara>
+         <para>
+            The model is instantiated with the <option>-database</option> option
+            set to be a data base configuration file.  This is the underlying database
+            the model abstracts through the following methods:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><methodname>listContainers</methodname></term>
+               <listitem>
+                   <para>
+                     Returns a list of the names of all the containers
+                     defined in the database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>listEventLogs</methodname></term>
+               <listitem>
+                   <para>
+                     Returns a list of the dicts defining the current set of
+                     event loggers.  This is a thin wrapper around
+                     <command>::eventlog::listLoggers</command>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodname>updateEventLogs</methodname> <parameter>newLoggerDefs</parameter>
+               </term>
+               <listitem>
+                   <para>
+                     Removes existing event log definitions and replaces
+                     them with those in the <parameter>newLoggerDefs</parameter>
+                     list of dicts.  The dicst in <parameter>newLoggerDefs</parameter>
+                     have the same form as those returned from
+                     <methodname>listEventLogs</methodname>.  Note, however that the
+                     <literal>id</literal> key, if provided is ignored and
+                     the underlying API will assign its own ids.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <formalpara>
+            <title>View</title>
+            <para>
+               The package <literal>evlogEditViews</literal> provides several
+               view like <command>snit::widgetadaptors</command> (using
+               <command>ttk::frame</command> as hulls).  These views are:
+            </para>
+         </formalpara>
+         <variablelist>
+            <varlistentry>
+               <term><classname>evlogEditLogger</classname></term>
+               <listitem>
+                   <para>
+                     Which provides a view of a single logger and the capability
+                     to modify its definition.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><classname>evlogListView</classname></term>
+               <listitem>
+                   <para>
+                     Provides an overview presentation of a  list of event loggers
+                     with the ability to choose from the list.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><classname>evlogEditorView</classname></term>
+               <listitem>
+                   <para>
+                     Provides a fully featured editor view class that allows
+                     users to select from an logger in a
+                     <classname>evlogListView</classname> and then use
+                     <classname>evlogEditLogger</classname> to modify its
+                     definition.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            <classname>evlogEditLogger</classname>
+            can be loaded with the definition of a single event log and
+            provides the ability to edit it. It has the following options and
+            methods:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-containers</option></term>
+               <listitem>
+                   <para>
+                     The list of container names that p;opulate the drop down
+                     from which a container can be selected.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-savelabel</option></term>
+               <listitem>
+                   <para>
+                     The label of the button that saves the definition. This
+                     can be customized to allow it to read e.g.
+                     <literal>Create</literal> when creating a new editor or
+                     <literal>Update</literal> or <literal>Save</literal>
+                     when editing an existing one.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-command</option></term>
+               <listitem>
+                   <para>
+                     Script to be executed when the button is clicked. Note
+                     that this is normally the hook the controller uses to
+                     respond to saved event loggers.   
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>load</methodname> <parameter>logger</parameter></term>
+               <listitem>
+                   <para>
+                     Loads the <parameter>logger</parameter> eventlog definition
+                     dict into the view. <parameter>logger</parameter> is
+                     a dict with the same key/value pair definitions an
+                     element of the list returned from
+                     <command>eventlog::listLoggers</command>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>get</methodname></term>
+               <listitem>
+                   <para>
+                     Returns the contents of the editor as a logger definition
+                     dict with the keys:
+                     <literal>daqroot, ring, host, partial, destination
+                     critical, enabled</literal> and <literal>container</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>selectContainer</methodname> <parameter>name</parameter></term>
+               <listitem>
+                   <para>
+                     Sets the container selection dropdown to <parameter>name</parameter>.
+                     This is normaly done after a <methodname>load</methodname>
+                     call, after the <option>-containers</option> option has
+                     been configured to set the default container name to be the
+                     container the loaded event logger is using.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            The <classname>evlogListView</classname> view provides a table of
+            event log editor definitions.  It allows the client to set up a context
+            menu activated via a right click and handlers for that menu.
+            Instances of <classname>evlogListView</classname> have the following
+            options and methods:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-data</option></term>
+               <listitem>
+                   <para>
+                     The value of this option is the data that comes from
+                     <command>::eventlog::listLoggers</command>, or some
+                     identically formatted list of dicts.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-contextmenu</option></term>
+               <listitem>
+                   <para>
+                     A list of text strings.  These text strings will be the
+                     entries in the context menu activated by right clicking over
+                     a definition line in the table.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-command</option></term>
+               <listitem>
+                   <para>
+                     Command invoked when a context menu entry is seleted.
+                     The script is passed the text of the menu entry and the
+                     definition of the item the menu was selected on.
+                   </para>
+                   <para>
+                     This provides the hook for controllers or other clients
+                     to actually process context menu selections.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>highlight</methodname> <parameter>def</parameter></term>
+               <listitem>
+                   <para>
+                     Given a logger definition dict,
+                     <parameter>def</parameter>, highlight that entry in the
+                     table in reverse video.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>unhighlight</methodname> <parameter>def</parameter></term>
+               <listitem>
+                   <para>
+                     Given a logger definition dict
+                     <parameter>def</parameter>, remove any highlight from that
+                     entry that might have been added by
+                     <methodname>highlight</methodname>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>unhighlightall</methodname></term>
+               <listitem>
+                   <para>
+                     Removes the highlighting from all entries that are currently
+                     highlighted as a result of applying
+                     <methodname>highlight</methodname> to them.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            The <classname>evlogEditorView</classname> provides an integrated editor
+            view.  It builds on the <classname>evlogListView</classname>,
+            providing context menu definitions that support editing via the
+            <classname>evlogEditLogger</classname> view.
+            <classname>evlogEditorView</classname> does not export any public methods
+            but does export the following  configuration options:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-data</option></term>
+               <listitem>
+                   <para>
+                     Suplies/fetches the list of logger definitions in the form
+                     <command>eventlog::listLoggers</command> produces.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-containers</option></term>
+               <listitem>
+                   <para>
+                     List of containers to provide to the
+                     <classname>evlogEditLogger</classname> instance created
+                     to edit a logger.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-savecommand</option></term>
+               <listitem>
+                   <para>
+                     Script that will be called when the <guibutton>Save</guibutton>
+                     button is clicked.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-cancelcommand</option></term>
+               <listitem>
+                   <para>
+                     Command executed when the <guibutton>Cancel</guibutton>
+                     button is clicked.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <formalpara>
+            <title>Controller</title>
+            <para>
+               Mediates between a <classname>evlogEditorView</classname> or
+               compatible (via duck typing) view object and a
+               <classname>evlogEditModel</classname> or compatible mode object.
+               The controller supports only two options:
+               <option>-model</option> configures the model object and
+               <option>-view</option> configures the view object.
+            </para>
+         </formalpara>
+      </section>
    </section>
 </chapter>
 
