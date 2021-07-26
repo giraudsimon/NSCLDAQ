@@ -41,7 +41,7 @@ package require snit
 #
 snit::type ManagerOutputController {
     option -model -configuremethod _cfgModel
-    option -view
+    option -view ""
     
     constructor args {
         $self configurelist $args
@@ -87,7 +87,9 @@ snit::type ManagerOutputController {
     #
     #
     method _output {model txt} {
-        $options(-view) log output $txt
+        if {$options(-view) ne ""} {
+            $options(-view) log output $txt
+        }
     }
 }
     
