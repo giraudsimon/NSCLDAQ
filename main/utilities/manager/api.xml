@@ -6552,3 +6552,636 @@ name destroy
     </refsect1>
 </refentry>
 <!-- /manpage -->
+
+<!-- manpage 5daq -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>Manager REST</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Manager REST</refname>
+      <refpurpose>DAQ Manager REST Specification</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+
+/State/status
+/State/allowed
+/State/transition
+/State/shutdown
+
+/Programs/status
+
+/KVStore/value
+/KVStore/listnames
+/KVStore/list
+/KVSTore/set
+
+/Loggers/enable
+/Loggers/disable
+/Loggers/list
+/Loggers/record
+/Loggers/isrecording
+/Loggers/start
+/Loggers/stop
+/Loggers/status
+
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+               The DAQ Experiment manager daemon provides a REST interface that
+               allows external programs to control and query it.  This manpage
+               describes the requests that can be made and the form of the response
+               you can expect.  Note that Tcl client bindings already exist and
+               are documented elsewhere.  This page documents the URLs, the parameters
+               they require and the returned data.
+          </para>
+          <para>
+            REST interfaces use standard HTTPD protocols to provide an in interface
+            by which a client can make a server do something other than simply
+            return some HTML to be rendered in a browser.  In REST interfaces,
+            the requests are encoded a URLs with parameters provided either as
+            query parameters or as POST parameters.
+          </para>
+          <para>
+            In the case of the program manager, returned data are JSON encoded
+            objects.  All of these objects have at least the atributes
+            <literal>status</literal> which should be <literal>OK</literal>
+            on success or <literal>ERROR</literal> on failure, and
+            <literal>message</literal> which, in the case <literal>status</literal>
+            is <literal>ERROR</literal>, provides a textual message string that
+            describes why the action failed.
+          </para>
+          <para>
+            REST requests are expressed as URLs.  The server provides several
+            categories of REST requests or, as the server technology it uses calls
+            them <firstterm>Domains</firstterm>.  These domains are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>State</literal></term>
+               <listitem>
+                   <para>
+                     Provides control and query of the state machine.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Programs</literal></term>
+               <listitem>
+                   <para>
+                     provides status of programs run by the server.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>KVStore</literal></term>
+               <listitem>
+                   <para>
+                     Provides access to the key value store maintained by the
+                     server's configuration database.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>Loggers</literal></term>
+               <listitem>
+                   <para>
+                     Provides status and control over event loggers managed
+                     by the server.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            Specific requests within a domain are encoded within the URL.
+            For example; To obtain the current state of the state machine,
+            you would perform the GET method on a URL of the form:
+            <literal>http://serverhost:serverport/State/status</literal>.
+            In this URL, <literal>serverhost</literal> is the host in which the
+            server is running and <literal>serverport</literal> is the
+            port the server is listening on for HTTP connections. This can be
+            discovered by interacting with the port manager of <literal>serverhost</literal>
+            to translate the service name given the user that started
+            the manager.
+          </para>
+          <para>
+            The remaining sections document each domain and the requests it
+            supports.  Note that unless otherwise indictated, a request can
+            be made via the GET method.  Parameters are either query parameters
+            appended to the URL, in the case of GET request or POST form parameters
+            in the case of POST requests.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>The /State Domain</title>
+      <para>
+         This domain provides access to the experiment manager's state machine.
+         Note that in all requests a JSON encoded object is returned
+         (mimetype application/json). We document the attributes in addition to
+         <literal>status</literal> and <literal>message</literal> in the case
+         <literal>status</literal> is <literal>OK</literal>.
+         The following requests are supported:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>/status</literal></term>
+            <listitem>
+                <para>
+                  Returns a JSON object with the attribute
+                  <literal>state</literal>.  The value of this attribute is the
+                  textual state name of the current state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/allowed</literal></term>
+            <listitem>
+                <para>
+                  Returns a JSON object with the attribute
+                  <literal>states</literal>. The value of this attributes is
+                  an array of strings that are the state names of states the
+                  system can be made to transition to.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>transition</literal> (POST)</term>
+            <listitem>
+                <para>
+                  This request must be issued with a POST method. The required
+                  parameters are:
+                  <parameter>user</parameter> the username of the user issuing
+                  the request and <parameter>state</parameter> the requested
+                  name of the state to transition to.
+                  In the future <parameter>user</parameter> will be used in
+                  conjunction with the authorization database to ensure the
+                  user is authorized to request this transition.
+               </para>
+                <para>
+                  Authentication is 'honesty is the best policy' which is not
+                  secure at all but ok in the context of a collaborative experiment.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/shutdown</literal> (POST)</term>
+            <listitem>
+                <para>
+                  This request must be issued with a POST method.  The
+                  required parameter is <literal>user</literal>, the user
+                  name of the person issuing the request.  
+               </para>
+                <para>
+                  The server first performsa transtion to
+                  <literal>SHUTDOWN</literal>.  Once this transition is complete,
+                  the return data, which has no additional attributes is
+                  sent to the server and, the program exit is scheduled.
+                </para>
+                <para>
+                  There is some delay between the request and the actual
+                  shutdown.  This is done to ensure the requester has been
+                  sent the reply data before the server is actually shutdown.
+                </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title> The /Programs Domain</title>
+      <para>
+         The requests in this domain provide information about the programs
+         and containers under the control of the manager.  Note that there
+         is only one request: <literal>/status</literal>.  This request
+         requires no parameters and a GET method may be used to initiate it.
+         In addition to the <literal>status</literal> and <literal>message</literal>
+         attributes, if <literal>status</literal> is <literal>OK</literal>, the
+         reply contains two additional attributes: <literal>containers</literal>
+         and <literal>programs</literal>.
+      </para>
+      <para>
+         The <literal>containers</literal> attribute is an array of objects.
+         Each object describes a container managed by the server.  The
+         <literal>program</literal> attribute is an array of objects.  Each of those
+         objects describes a program managed by the server.
+      </para>
+      <para>
+         The attributes of each element of the <literal>containers</literal>
+         attribute are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>name</literal></term>
+            <listitem>
+                <para>
+                  The name of the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>image</literal></term>
+            <listitem>
+                <para>
+                  The container image path.  This file will be specified by
+                  a path in the host system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>bindings</literal></term>
+            <listitem>
+                <para>
+                  An array  of host/container filesystem bindings.  Each element
+                  is expressed in a form suitable for use with the
+                  <command>singularity</command> <option>--bind</option> option.
+                  That is either <literal>hostpath</literal> or
+                  <literal>hostpath:containerpath</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>activations</literal></term>
+            <listitem>
+                <para>
+                  An array of hostnames in which the container is currently
+                  active.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         The elements of the <literal>programs</literal> array are objects
+         that have the following attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>name</literal></term>
+            <listitem>
+                <para>
+                  The name of the program.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>path</literal></term>
+            <listitem>
+                <para>
+                  The path to the program file.  The meaning of this path
+                  depends on the environment in which the program is run.
+                  If the program is containerized, this path is specified
+                  within the running container's filesystem.  If not containerized,
+                  this path is expressed in terms of the host system's
+                  filesystem.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>type</literal></term>
+            <listitem>
+                <para>
+                  The textual program type.  This is one of
+                  <literal>Transitory</literal>, <literal>Critical</literal>
+                  or <literal>Persistent</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>container</literal></term>
+            <listitem>
+                <para>
+                  The container the program runs in.  If the program does not
+                  run containerized, this is an empty string.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>active</literal></term>
+            <listitem>
+                <para>
+                  A boolean value that is true if the program is running or
+                  false otherwise.  For the purposes of REST interfaces
+                  <literal>1</literal> is true and <literal>0</literal>
+                  is fales.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>The /KVStore domain</title>
+      <para>
+         The requests in this domain provide access to the key value
+         store through the server.  Accessing this information via the
+         server, rather than via direct database transactions, inherently serializes
+         all operations which, otherwise might, due to parallelism, result in
+         unpredictable results.  Even so, care must be taken.
+      </para>
+      <para>
+         The supported requests in this domain are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>/value</literal></term>
+            <listitem>
+                <para>
+                  Requires the parameter <literal>name</literal> which must
+                  be the name of an existing Key Value store key.  On
+                  <literal>status</literal> of <literal>OK</literal>,
+                  the returned object includes the attributes
+                  <literal>name</literal>, which is, once more the
+                  name of the key being queried and
+                  <literal>value</literal> its current value.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/listnames</literal></term>
+            <listitem>
+                <para>
+                  On <literal>status</literal> of <literal>OK</literal>,
+                  the reply JSON object contains the attribute
+                  <literal>names</literal> which is an array of strings.
+                  Each string is a valid key in the key values store and all keys
+                  are present in the array.  The user should not assume this array
+                  is in any particular order.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/list</literal></term>
+            <listitem>
+                <para>
+                  On <literal>status</literal> of <literal>OK</literal>,
+                  the reply JSON includes the attribute <literal>variables</literal>.
+                  The value of this attribute is an array of objects.  Each
+                  object in the array contains the attributes <literal>name</literal>
+                  which is a key in the key value store and
+                  <literal>value</literal> which is the value associated with that
+                  key.
+               </para>
+                <para>
+                  All key value pairs will be represented in the array.  You should
+                  not assume the array is in any particular order.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/set</literal> (POST)</term>
+            <listitem>
+                <para>
+                  This request requires a POST method.
+                  Changes the value of a key in the key values store.  Required
+                  parameters are:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>user</literal></term>
+                     <listitem>
+                         <para>
+                           Username of the requester (will eventually be used
+                           to check authorization)
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>name</literal></term>
+                     <listitem>
+                         <para>
+                           Name of the key to modify.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>value</literal></term>
+                     <listitem>
+                         <para>
+                           New value to give to the value of that key.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+                <para>
+                  Note that <literal>name</literal> must be an existing key.
+                  This request cannot be used to create a new key.
+                  On <literal>status</literal> of <literal>OK</literal>, the
+                  returned JSON object will have the additional attributes:
+                  <literal>name</literal>, the original key name.
+                  <literal>value</literal> the new value.
+                </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>The /Loggers domain</title>
+      <para>
+         Requests in this domain control and get information about the
+         event loggers that are managed by the server.  In the request documentation
+         below, the returned object attributes are only present if the
+         <literal>status</literal> attribute has the value <literal>OK</literal>.
+         Note as well that all requests documented as needing to use the
+         <literal>POST</literal> method have a required parameter
+         <parameter>user</parameter> which is the name of the user that is
+         making the request.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>/enable</literal> (POST)</term>
+            <listitem>
+               <para>
+                  Enables a specific logger.
+               </para>
+                <para>
+                  This request must use the POST method.  In addition it must
+                  supply the <literal>logger</literal> parameter which
+                  specifies the destination of the logger to enable.
+                  The returned object does not have any additional attributes.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/disable</literal> (POST)</term>
+            <listitem>
+               <para>
+                  Disables a specific logger.
+               </para>
+                <para>
+                  This request must use the POST method.  In addition in must supply the
+                  <literal>logger</literal> parameter which specifies the
+                  destination of the logger to be disabled.
+                  The returned object has no additional attributes.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/list</literal></term>
+            <listitem>
+                <para>
+                  Returns an object that has the addition attributes
+                  <literal>loggers</literal>.  The value of this attribute
+                  is an array of JSON encoded objects.  Each object in the
+                  array describes a logger.  These object have the following
+                  attributes:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal> (integer)</term>
+                     <listitem>
+                         <para>
+                           Primary key of the logger in the database.
+                           For most REST clients this is not useful.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>daqroot</literal> (string)</term>
+                     <listitem>
+                         <para>
+                           The root of the NSCLDAQ installation tree from which
+                           the logger will be run.  This indirectly specifies
+                           the event logging program that will be used.
+                       </para>
+                         <para>
+                           If the logger is run containerized, this path
+                           will be specified in the filesystem as seen within
+                           the running container.
+                         </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>ring</literal> (string)</term>
+                     <listitem>
+                         <para>
+                           URI of the ringbuffer that will be logged.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>host</literal> (string)</term>
+                     <listitem>
+                         <para>
+                           Host in which the event logger will be run.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>partial</literal> (integer)</term>
+                     <listitem>
+                         <para>
+                           Non zero if this logger is a partial (multilogger style)
+                           logger.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>destination</literal> (string)</term>
+                     <listitem>
+                         <para>
+                           Filesystem path to where the data will be logged.
+                           If the logger runs containerized, this is expressed
+                           in the filesystem as seen by the container.
+                       </para>
+                         <para>
+                           If this logger is partial, this is the path to the
+                           directory in which the data are logged.  If not,
+                           this path is  the top level of the directory tree of the
+                           logger directory structure.
+                         </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>critical</literal> (integer)</term>
+                     <listitem>
+                         <para>
+                           If nonzero, premature exits of this logger
+                           will result in a forced <literal>SHUTDOWN</literal>
+                           transition.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>enabled</literal> (integer)</term>
+                     <listitem>
+                         <para>
+                           If non zero the logger is enabled.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>container</literal> (string)</term>
+                     <listitem>
+                         <para>
+                           Name of the container if the logger should be
+                           run containerized.  If this is an empty string,
+                           the logger is run in the host system.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/record</literal> (POST)</term>
+            <listitem>
+                <para>
+                  Sets the state of the global recording flag.  This request
+                  must be done as  POST method and requires
+                  a POST parameter <parameter>state</parameter> which is
+                  an integer.  A value of 1 enables recording, zero values
+                  disable it.  All other values are illegal and result in an
+                  error object.  
+               </para>
+                <para>
+                  On success, no additional attributes are defined in the returned
+                  object.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/isrecording</literal></term>
+            <listitem>
+                <para>
+                  Returns an object with the additional attribute
+                  <literal>state</literal> which is <literal>1</literal>
+                  if the global recording flag is set and <literal>0</literal>
+                  if not.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/start</literal> (POST)</term>
+            <listitem>
+                <para>
+                  POST method required.  This request begins the event loggers
+                  that are entitled to start for this run.  A logger starts
+                  if the global recording flag is set
+                  <emphasis>and</emphasis> that logger is enabled.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/stop</literal></term>
+            <listitem>
+                <para>
+                  Not yet implemented.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/status</literal></term>
+            <listitem>
+                <para>
+                  Not yet implemented.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->
