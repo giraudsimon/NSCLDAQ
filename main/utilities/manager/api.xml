@@ -3089,6 +3089,218 @@ client destroy                          <co id='ex.lgclient.destroy' />
             </para>
          </formalpara>
       </section>
+      <section>
+         <title>Output Monitor MVC.</title>
+         <para>
+            This subsystem uses the pre-existing <classname>OutputWindow</classname>
+            view object which will not be documented here, other than to say that
+            it provides a scrolling window into which read-only text can be
+            placed.   The result of this MVC triad is to provide a user interface
+            into which output from programs relayed by the manager to clients
+            can be presented to users.
+         </para>
+         <formalpara>
+            <title>ManagerOutputModel (Model).</title>
+            <para>
+               Instances of this class provide the data from the manager.
+               Specifically, what's provided are lines of text that have been
+               output by programs under the control oft the manager.
+               Some features of this modela re:
+            </para>
+         </formalpara>
+         <itemizedlist>
+            <listitem>
+               <para>
+                  Since data are provided in an event driven mannner, the
+                  class provides for a callback script to receive notification
+                  of the arrival of new output.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The class manages connection failures by retrying connections
+                  when they are lost.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The class provides for a callback script  to be invoked when
+                  the connection retry limits are reached (possibly indicating
+                  that the manager has permenently exited).
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The class provides for a callback script to be notified when
+                  connection status has changed.  This allows for the client
+                  application to indicate to the user the current connection
+                  status.
+               </para>
+            </listitem>
+            
+         </itemizedlist>
+         <para>
+            Note that to immplement these features requirs that the client
+            application be event loop driven.
+         </para>
+         <para>
+            The <classname>ManagerOutputModel</classname> provides several
+            configuration options:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-host</option></term>
+               <listitem>
+                   <para>
+                     The value of this option is the host the manager is running in.
+                     This option can only be set at construction time.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-service</option></term>
+               <listitem>
+                   <para>
+                     This option is the service the manager is advertising
+                     for the output relay service.  This defaults to
+                     <literal>DAQManager-outputMonitor</literal> which
+                     is the default name of this service.
+                   </para>
+                   <para>
+                     This option can only be specified at constrution time.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-user</option></term>
+               <listitem>
+                   <para>
+                     The user that started the DAQ manager this object will
+                     connect to. This defaults to the current user which may
+                     not be correct.  This option can only be specified at
+                     construction time.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-output</option></term>
+               <listitem>
+                   <para>
+                     The script to be invoked when program output has been
+                     relayed to the model. This script will receive the
+                     object instance command and output received in that order
+                     as parameters.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-connected</option></term>
+               <listitem>
+                   <para>
+                     Script to be invoked when a connection has been made to the
+                     manager's output relay service.   This script will receive
+                     the object instance command as a parameter.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-disconnected</option></term>
+               <listitem>
+                   <para>
+                     Script to be invoked when the connection to the server has
+                     been lost.  This script will receive the object instance
+                     command as a parameter.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-connectionretries</option></term>
+               <listitem>
+                   <para>
+                     The number of times the object will try to reconnect if
+                     the connection is lost or cannot be made.  This
+                     defaults to <literal>100</literal>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-cnnnectioninterval</option></term>
+               <listitem>
+                   <para>
+                     Number of seconds between connection retries.  This
+                     defaults to <literal>1</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-connectionabandoned</option></term>
+               <listitem>
+                   <para>
+                     Script that's invoked if the connection retry count
+                     was exceeded.  The object instance command is passed
+                     as a parameter.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+         <para>
+            Only one public method is provided <methodname>connect</methodname>
+            which starts attempting connections.  If the object is already
+            connected it is disconnected.  If the object is attempting to connect
+            but not yet succeeded, this resets the connection retry count.
+         </para>
+         <para>
+            Note that <methodname>connect</methodname> is invoked by the
+            constructor and therefore is typically not needed unless
+            the <option>-connectionabandoned</option> script is invoked and the
+            application wants to start another cycle of connection requests./
+         </para>
+         <formalpara>
+            <title>ManagerOutputController (controller)</title>
+            <para>
+               Instances of this class bind togehter a
+               <classname>ManagerOutputModel</classname> with a
+               <classname>OutputWindow</classname> or compatible object(s).
+               Instances of the class latch onto the model's
+               <option>-output</option> option script and relay data received
+               to the <classname>OutputWindow</classname>.
+            </para>
+         </formalpara>
+         <para>
+            Two options configure instances:
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term><option>-model</option></term>
+               <listitem>
+                   <para>
+                     The value of this option is the model object instance
+                     command.  If there is previously an object configured as
+                     the model, the <option>-output</option> option of that
+                     model is configured to be an empty script.
+                   </para>
+                   <para>
+                     Supplying a <option>-model</option> object
+                     configures that object's <option>-output</option>
+                     option to be handled by this controller.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-view</option></term>
+               <listitem>
+                   <para>
+                     The value of this object is the view object instance
+                     command to which output will be sent via it's
+                     <methodname>log</methodname> method.  When output
+                     is received and a view is configured,
+                     it is logged using the <literal>output</literal>
+                     log level.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </section>
    </section>
 </chapter>
 
