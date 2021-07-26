@@ -317,7 +317,7 @@ name configure option value ?.,..?
                <term><option>-run</option></term>
                <listitem>
                    <para>
-                    Specifies/gets the value of the curren run number.
+                    Specifies/gets the value of the current run number.
                    </para>
                 </listitem>
             </varlistentry>
@@ -354,6 +354,76 @@ name configure option value ?.,..?
                     Specifies a script that is invoked when the run number
                      is changed.   The new run number is passed as a parameter
                      to the script.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.readoutstate'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutstate.title'>ReadoutState</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutState</refname>
+      <refpurpose>Show Readout State and Request Transitions (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
+
+ReadoutState name ?option value ...?
+name configure option value ?...?
+
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a view that allows users to see and attempt to modify
+            the state of a Readout program.  The view consists of a label
+            that shows a programmable state value, and three pushbuttons.  One
+            pushbutton has a variable function lable that depends on the
+            value of the state display.  The other two can request hardware
+            initialization and Readout program shutdown.
+          </para>
+          <para>
+            Two options determine what the user sees and what action is
+            performed as a result of clicking a button:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-state</option></term>
+               <listitem>
+                   <para>
+                    Provides the Readout's current state to the view.  Valid
+                    values are the text strings:
+                    <literal>idle</literal>, <literal>active</literal>,
+                    <literal>paused</literal> and
+                    <literal>inconsistent</literal>.  The value of this
+                    determines the label and state of the
+                    variable purpose button.  
+                   </para>
+                   <para>
+                    Legal values are, for the most part, self explanatory.
+                    The <literal>inconsistent</literal> value allows for
+                    a case when the view is displaying data from several
+                    Readout programs and the states of those programs is
+                    momentarily not consistent.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-command</option></term>
+               <listitem>
+                   <para>
+                    Provides a script that is invoked when any
+                    button is clicked.  THe script gets a value passed to it
+                    that indicates what the button wanted done.  This value is one of
+                    <literal>begin</literal>, <literal>end</literal>,
+                    <literal>init</literal> or <literal>shutdown</literal>.
                    </para>
                 </listitem>
             </varlistentry>
