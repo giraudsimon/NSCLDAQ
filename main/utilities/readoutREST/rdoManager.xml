@@ -244,7 +244,36 @@ name setRunNumber new-run-number
     </refsect1>
 </refentry>
 
+<refentry id='tcl3.readoutstatistics'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutstatistics.title'>ReadoutStatistics</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutStatistics</refname>
+      <refpurpose>Display readout statistics (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
 
+ReadoutStatistics name ?optname value...?
+name configure option value ?...?
+
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a widget that displays Readout trigger/transfer statistics.
+            The widget accepts a single configuration option:
+            <option>-data</option> which is a statistics dict such as what might
+            be returned from the <methodname>getStatistics</methodname>
+            method of
+            <link linkend='tcl3.readoutrestclient' endterm='tcl3.readoutrestclient.title' />
+          </para>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
