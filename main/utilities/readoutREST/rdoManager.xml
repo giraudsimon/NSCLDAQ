@@ -1,0 +1,252 @@
+<!-- manpage 3tcl -->
+
+<refentry id='tcl3.readoutrestclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutrestclient.title'>ReadoutRESTClient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutRESTClient</refname>
+      <refpurpose>Client for Readout REST servers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTClient
+
+ReadouRESTClient name ?option value...?
+name configure option value ?...?
+name begin
+name end
+name init
+name shutdown
+name getState
+name getTitle
+name getRunNumber
+name getStatistics
+name setTitle new-title-string
+name setRunNumber new-run-number
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>ReadoutREST</literal> package provides NSCLDAQ
+            based Tcl driven Readout programs a REST server that can be used
+            to remotely control and query the Readout.  This facility is normally
+            used in conjunction with the NSCLDAQ DAQ manager facility to
+            manage Readout programs as critical programs that require attention
+            during state transitions.
+          </para>
+          <para>
+            The <literal>ReadoutRESTClient</literal> package, ass the name
+            implies, provides a Tcl REST client library for the ReadoutREST
+            server.
+          </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Configuration options control how the REST client connects with the
+            server.  Note that each REST operations (public method call),
+            performs service discovery, connects with the server, performs the
+            request, gets the response and closes the connection.
+        </para>
+        <para>
+            Therefore the pre-defined <methodname>configure</methodname>
+            method allows client code to dynamically modify the server
+            options.  Furthermore, this strategy supports the
+            case when the server exits and restarts, potentially with a different
+            server listen port, between requests.
+        </para>
+        <para>
+            Here are the options, their defaults and their meanings:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><option>-host</option></term>
+               <listitem>
+                   <para>
+                    THe host in which the Readout program we want to communicate
+                    with is running.  This defaults to <literal>localhost</literal>.
+                    Note, however that the use of <literal>locahost</literal> is not
+                    host portable.  Please get in the habit of specifying a real
+                    hostname.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-user</option></term>
+               <listitem>
+                   <para>
+                    The user the Readout program you want to communicate with
+                    was run under.  Defaults to the name of the person
+                    runing the application.  This, in conjunction with the
+                    <option>-service</option> option below is used to
+                    translate the Readout's service advertisement into a
+                    numeric TCP/IP port number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-service</option></term>
+               <listitem>
+                   <para>
+                    The name of the servic advertised by the ReadoutREST
+                    package in the Readout we want to communicate with.
+                    This defaults to <literal>ReadoutREST</literal> which is
+                    the default service name.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>PUBLIC METHODS</title>
+        <para>
+            Each of the public methods below performs a REST transaction with
+            the server. This transaction includes service discovery (translating
+            the <option>-user</option> and <option>-service</option> values to
+            a numeric TCP/IP port number),  connecting with the server to perform
+            a REST transaction and unmarshalling any resulting JSON into
+            reasonable return values.
+        </para>
+        <para>
+            The methods which are considered public are:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><methodname>begin</methodname></term>
+               <listitem>
+                   <para>
+                    Attempts to start a new run.  The resulting Readout
+                    state is returned.  Note that this is not the same as the
+                    DAQ Manager's state.  If a transition to active data taking
+                    is not permitted (e.g. data taking is in progress) and
+                    error is raised.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>end</methodname></term>
+               <listitem>
+                   <para>
+                    Ends active data taking in the Readout program.  Returns
+                    the name of the resulting state.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>init</methodname></term>
+               <listitem>
+                   <para>
+                    Attempts to initialize the hardsware in the Readout.
+                    Not all Readout programs support this.  Those that do not
+                    are expected to silently ignore the request.
+                    Data taking must not be active.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>shutdown</methodname></term>
+               <listitem>
+                   <para>
+                    Requests the Readout program to exit.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getState</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the current Readout program state.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getTitle</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the currently set title.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getRunNumber</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the currently set run number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getStatistics</methodname></term>
+               <listitem>
+                   <para>
+                    Returns a dict that describes the Readout's statistics.
+                    This is a dict with the keys <literal>cumulative</literal>
+                    and <literal>perRun</literal>.  The cumulative key contains
+                    statistics over the course of the entire readout program while
+                    beginning a run clear the counters in the
+                    perRun statistics.
+                   </para>
+                   <para>
+                    Each of the keys contains a value that is a dict which is
+                    identical, containing the following keys:
+                   </para>
+                   <variablelist>
+                    <varlistentry>
+                       <term><literal>triggers</literal></term>
+                       <listitem>
+                           <para>
+                            Number of triggers sent to the Readout.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>acceptedTriggers</literal></term>
+                       <listitem>
+                           <para>Number of
+                           triggers that resulted in an event.  This reflects the
+                           ability of some hardware (e.g. XIA modules) and some software to reject
+                           triggers resulting in no data.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>bytes</literal></term>
+                       <listitem>
+                           <para>
+                            Number of bytes read from the hardware.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                   </variablelist>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>setTitle</methodname> <parameter>title-string</parameter></term>
+               <listitem>
+                   <para>
+                    Sets the Readout's title to the specified
+                    <parameter>title-string</parameter>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>setRunNumber5</methodname> <parameter>number</parameter></term>
+               <listitem>
+                   <para>
+                    Sets the new run number to <parameter>number</parameter>.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+
+
+<!-- /manpage -->
+
+<!-- manpage 5daq -->
+
+<!-- /manpage -->
