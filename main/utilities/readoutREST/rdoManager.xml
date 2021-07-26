@@ -274,6 +274,92 @@ name configure option value ?...?
           </para>
     </refsect1>
 </refentry>
+
+<refentry id='tcl3.readoutparameters'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutparameters.title'>ReadoutParameters</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutParameters</refname>
+      <refpurpose>Display/Set Readout Parametesrs (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
+
+ReadoutParameters name ?option value ...?
+name configure option value ?.,..?
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a vew class that lets users see the current run
+            parameters and set values for the next one.  This consists of
+            readonly displays of a title and run number as well as a pair of
+            controls that allow the entry of new run number and title.
+          </para>
+          <para>
+            The interface to the object is totally handled by configuration
+            options and the callouts they may specify:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-title</option></term>
+               <listitem>
+                   <para>
+                    Specifies/gets the value of the current title.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-run</option></term>
+               <listitem>
+                   <para>
+                    Specifies/gets the value of the curren run number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nextrun</option></term>
+               <listitem>
+                   <para>
+                    Specify/retrieve the value of the next run number spinbox.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nexttitle</option></term>
+               <listitem>
+                   <para>
+                    Specify/retrieve the vale of the next title text entry.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-titlecommand</option></term>
+               <listitem>
+                   <para>
+                    Specifies a script that is invoked when the title
+                    changes.  The new title is passed as a parameter to the
+                    script.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-runcommand</option></term>
+               <listitem>
+                   <para>
+                    Specifies a script that is invoked when the run number
+                     is changed.   The new run number is passed as a parameter
+                     to the script.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
