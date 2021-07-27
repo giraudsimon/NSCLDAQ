@@ -430,6 +430,145 @@ name configure option value ?...?
           </variablelist>
     </refsect1>
 </refentry>
+
+<refentry id='tcl3.readoutui'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutui.title'>ReadoutUI</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutUI</refname>
+      <refpurpose>Combined Readout Control Panel (REST VIEW).</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require ReadoutRESTUI
+
+ReadoutUI name ?option value...?
+name configure option value ?...?
+set value [name cget option]
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This megawidget glues together the
+            <link linkend='tcl3.readoutparameters' endterm='tcl3.readoutparameters.title' />,
+            <link linkend='tcl3.readoutstatistics' endterm='tcl3.readoutstatistics.title' />
+            and
+            <link linkend='tcl3.readoutstate' endterm='tcl3.readoutstate.title' />
+            views into a single integrated control panel for Readout program(s)
+            controlled via their REST interfaces. 
+          </para>
+          <para>
+            As such, this view inherits all of the options of its component
+            subviews:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-title</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets the readonly title label on the paramters
+                     part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nexttitle</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets the contents of the entry field that is to
+                     hold the title of the next run in the parameters part of
+                     the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-run</option></term>
+               <listitem>
+                   <para>
+                     Set/gets the contents of the readonly run number label on
+                     the parameters part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nextrun</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets/ the contents of the spinbox that is to hold the
+                     next run number in the parameters part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-titlecommand</option></term>
+               <listitem>
+                   <para>
+                     Script that will be invoked when the next title entry has been
+                     changed in the parameter subview.
+                     This script will be passed the new
+                     title string.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-runcommand</option></term>
+               <listitem>
+                   <para>
+                     Specifies a script that is invoked when the run number
+                     is changed in the parameter subview's next run number spinboxl
+                     The new run number is passed as a parameter
+                     to the script.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-currentstate</option></term>
+               <listitem>
+                   <para>
+                     Sets the current state of the run in the status/state
+                     control subview.  This can be
+                     one of <literal>idle</literal>, <literal>active</literal>,
+                     <literal>paused</literal> or <literal>inconsistent</literal>.
+                     This state will appropriately update the label on the
+                     variable purpose button.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-statecommand</option></term>
+               <listitem>
+                   <para>
+                     Sets a script to be 
+                     called when a button is clicked in the status/state
+                     control/subview.  The script is passed a
+                     string value indicating
+                     the desired action.  This is one of
+                     <literal>begin</literal>, <literal>end</literal>,
+                     <literal>init</literal> or
+                     <literal>shutdown</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-statistics</option></term>
+               <listitem>
+                   <para>
+                     Passes Readout statistics to the
+                     statistics display sub-view.
+                     The value of this option should be a
+                     statistics dict such as what might
+                     be returned from the <methodname>getStatistics</methodname>
+                     method of
+                     <link linkend='tcl3.readoutrestclient' endterm='tcl3.readoutrestclient.title' />
+                            </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 <!-- manpage 5daq -->
