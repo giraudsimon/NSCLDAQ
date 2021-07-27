@@ -10,7 +10,7 @@ SERVER_DIR=$(LIBRARY_DIR)/server
 
 
 EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) \
-	$(server_scripts)
+	$(server_scripts) rdoManager.xml
 
 
 
