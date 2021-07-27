@@ -1,0 +1,458 @@
+<!-- manpage 3tcl -->
+
+<refentry id='tcl3.evbrestui'>
+   <refmeta>
+      <refentrytitle id='tcl3.evbrestui.title'>EVBRestUI</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRestUI</refname>
+      <refname>InputStatsView</refname>
+      <refname>QueueStatsView</refname>
+      <refname>CompleteBarrierView</refname>
+      <refname>IncompleteBarrierView</refname>
+      <refname>DataLateView</refname>
+      <refname>OutOfOrderView</refname>
+      <refname>ConnectionView</refname>
+      <refname>FlowControlView</refname>
+      <refpurpose>EVentBuilder REST Client View classes</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require EVBRestUI
+
+InputStatesView view1 ?option value ...?
+view1 configure option value ?...?
+
+
+
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>EVBRestUI</literal> package provides Tcl views that can be used
+            to build up user interfaces that monitor event builder statistics
+            from the orderer stage of the pipeline.  A number of
+            <command>sni::widgetadaptor</command> classes are defined, each
+            with a <command>ttk::frame</command> installed as its hull.
+          </para>
+          <para>
+            While the views are intended for use with models that get data from the
+            Event Builder's REST interface, theoretically any model that
+            can have its data massaged into an appropriate format could
+            be used.
+          </para>
+          <para>
+            The remaining sections describe each of the views its options and,
+            if it has any public methods.
+          </para>
+    </refsect1>
+    <refsect1>
+        <title>InputStatsView</title>
+        <para>
+            Provides a view that displays input statistics.  This provides
+            a single configuration option <option>-inputstats</option> which
+            accepts and produces  a dict with the following key/value pairs:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>oldest</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp of the oldest fragment still in flight.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>newest</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp of the newest fragment still in flight.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>fragments</literal></term>
+               <listitem>
+                   <para>
+                    The number of fragments queued in the input queues.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>The QueueStatsView Queue Statistics View</title>
+        <para>
+            The QueuStatsView widget provides queue statistcs that come from e.g.
+            the REST interface.  These are displayed in a table with the
+            following headings:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>id</literal></term>
+               <listitem>
+                   <para>
+                    The id of the queue described on any row of the table.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>depth</literal></term>
+               <listitem>
+                   <para>
+                    Number of fragments in the queue
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>oldest</literal></term>
+               <listitem>
+                   <para>
+                    The timestamp of the oldest fragment in the queue (fragment
+                    at the front).
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>bytes</literal></term>
+               <listitem>
+                   <para>
+                    Total number of bytes queued.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>dequeued</literal></term>
+               <listitem>
+                   <para>
+                    Total number of fragments that have ever been dequeued.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>queued</literal></term>
+               <listitem>
+                   <para>
+                    Total number of fragments that have evern been queued.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            This information is communicated to the view via the <option>-queuestats</option>
+            option which is a list of dicts.  Each dict providing the input statistics
+            for one queue with the same dictionary keys as the column headings.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>
+            The BarrierStatsView View Class
+        </title>
+        <para>
+            <classname>BarrierStatsView</classname> provides a top level view
+            of the barrier events that have been processed by the orderer.
+            A barrier event is a synchronization device.  When a barrier
+            fragment is seen in a queue, no futher fragments can be dequeued
+            from that queue until there are barrier events in all queues.
+        </para>
+        <para>
+            Barrier fragments have a barrier type.  If the barriers that resolve
+            synchronization have the same type (normal), the barrier is said to
+            be <firstterm>homogenous</firstterm>. If the barrier fragments have
+            differing types the barrier is said to be <firstterm>heterogeneous</firstterm>.
+        </para>
+        <para>
+            If a barrier is not completely resolved within a timeout, the barrier
+            is said to be a <emphasis>partial</emphasis> barrier.
+        </para>
+        <para>
+            The object data are configured via the <option>-barrierstats</option>
+            option. The value of this option is a dict with the keys
+            <literal>complete</literal> and <literal>incommplete</literal>.
+            The values of these keys are themselves
+            dict with identical keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>barriers (integer)</literal></term>
+               <listitem>
+                   <para>
+                    Total number of barriers.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>homogeneous (integer)</literal></term>
+               <listitem>
+                   <para>
+                    Number of homogeneous barriers. Normally this should be the
+                    same as the value of <literal>barriers</literal>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>heterogenous (integer)</literal></term>
+               <listitem>
+                   <para>
+                    Number of heterogenous barriers.  
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>The CompleteBarrierView View For Completely Satisifed Barriers</title>
+        <para>
+            The <classname>CompleteBarrierView</classname> megawidget provides
+            a view for the detailed statistics associated with complete barriers.
+            A tree view is used to display these data with the ability to drill down
+            into per source or per barrier type information.
+        </para>
+        <para>
+            The display reflects the contents of the
+            <option>-completebarrierdetails</option> configuration option.
+            This must be a dict with the keys <literal>bytype</literal> which
+            describes barrier statistics by barrier types
+            and <literal>bySource</literal> which provides barrier statistics
+            organized by data source.
+        </para>
+        <refsect2>
+            <title>The bytype dict</title>
+            <para>
+                The value of the <literal>bytype</literal> key is a list of dicts   Each
+                dict contains keys <literal>type</literal> which is a barrier type
+                that has been seen and <literal>count</literal> which contains
+                the number of times that barrier type has occured,
+            </para>
+        </refsect2>
+        <refsect2>
+            <title>The bySource dict</title>
+            <para>
+                The value of the <literal>bySource</literal>  key is a list of dicts
+                each describing barrier statistics for a data source.
+                Each element of the list is a dict that has the following keys:
+                <literal>id</literal> the source id, <literal>count</literal>
+                the number of barriers from that source id and <literal>details</literal>.=
+            </para>
+            <para>
+                The value of the <literal>details</literal> key is itslef a list of
+                dicts that have the keys <literal>type</literal> which
+                contains a barrier type received from that source and
+                <literal>count</literal> the number of times that source
+                contributed a barrier of that type.
+            </para>
+        </refsect2>
+        <refsect2>
+            <title>The IncompleteBarrierView View for Incomplete Barrier Statistics</title>
+            <para>
+                This megawidget provides a vew that displays statistics from
+                incomplete barriers.  Ideally, this view should be empty as all
+                barriers should, normally, be complete.
+                The view displays a tree  view whose contents are configured
+                from the <option>-incompletedetails</option> option.
+            </para>
+            <para>
+                The value of this option must be a dict with two keys:
+                <literal>histogram</literal> and <literal>bysource</literal>.
+            </para>
+            <para>
+                The <literal>histogram</literal> key contains a list of dicts
+                that represents a histogram of the number of times a specific
+                number of barrier fragments was missing from a barrier.
+                Each dict contains the keys <literal>number</literal> which is
+                the number of missing barrier fragments and <literal>count</literal>
+                which is the number of times that number of fragments was missing.
+                There will be no entries where the value of <literal>count</literal>
+                is zero.
+            </para>
+            <para>
+                The <literal>bysource</literal> key contains a list that
+                describes the number of times data source ids did not contribute
+                a barrier fragment.  Each element of the list is a dict that
+                contains the keys <literal>id</literal>, a source id and
+                <literal>count</literal> the number of times that source id
+                did not contribute a barrier fragment to an incomplete barrier.
+            </para>
+        </refsect2>
+    </refsect1>
+    <refsect1>
+        <title>The DataLateView View for Data Late Statistics</title>
+        <para>
+            Provides a view of data late statistics.  Data late conditions occur
+            when a fragment arrives at a queue after earlier fragments have already been
+            emitted.   The rendition of this view is a tree.  The contents
+            of the tree reflect the value of the
+            <option>-datalatestatistics</option> option.
+        </para>
+        <para>
+            The value of this is a dict containing the keys:
+            <literal>count</literal> which has the number of data late incidents,
+            <literal>worst</literal> which has the worst case timestamp discrepancy
+            to date and <literal>details</literal> which contains more detailed
+            information
+        </para>
+        <para>
+            The <literal>details</literal>  key contains a list of dicts.
+            Each element of the list describes the data late statistics from
+            a single data source.  The elements of the list are dicts with the
+            following keys:
+            <literal>id</literal> the data source being described.
+            <literal>count</literal> the number of data late incidents observed
+            in that data source and
+            <literal>worst</literal> the worst case timestamp discrepancy from the
+            data lates on that source observed to date.
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>The OutOfOrderView View of out of order fragments</title>
+        <para>
+            Out of order fragments are those which must be emitted out of global
+            time ordering.   This can  be the result of data late fragments,
+            sort failures or queue to queue timing problems.
+        </para>
+        <para>
+            This view takes the form of a tree who's contents are configured via
+            the object's <option>-oostatistics</option> option.  The value of
+            this must be a dict with the following keys:  <literal>summary</literal>
+            contains summary statistics and <literal>bysource</literal> contains
+            detailed statistics organized by data source
+        </para>
+        <para>
+            The <literal>summary</literal> key value is a dict containing the
+            following keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>counts</literal></term>
+               <listitem>
+                   <para>
+                    Total number of out of order fragments.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>prior</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp prior to the most recent offending fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>offending</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp of the most recent offending fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The value of the <literal>bysource</literal> key is a list of dicts.
+            Each element of the list is a dict that provides information about the
+            out of order fragments from some data source that had at least one such
+            fragment.  The dicts have the following keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>id</literal></term>
+               <listitem>
+                   <para>
+                    Source id of the information that's included in this dict.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>counts</literal></term>
+               <listitem>
+                   <para>
+                    Number of out of order fragments in this queue.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>prior</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp prior to the most recent offending fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>offending</literal></term>
+               <listitem>
+                   <para>
+                    Timestamp of the most recent offending fragment.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>ConnectionView View of Client Connections</title>
+        <para>
+            Data are transmitted to the event builder ordering phase by
+            TCP/IP clients.  This view provides a presentation of connected
+            clients.  It provides a table of the connections.  The contents of
+            the table reflect the contents of the <option>-connections</option>
+            option.
+        </para>
+        <para>
+            The <option>-connections</option> value is a list of dicts.
+            Each dict describes a single connection.  The dicts contain the following
+            keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>host</literal></term>
+               <listitem>
+                   <para>
+                    Host from which the connection has been made.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>description</literal></term>
+               <listitem>
+                   <para>
+                    A description string that was provided when the connection
+                    was made.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>state</literal></term>
+               <listitem>
+                   <para>
+                    The connection state.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>idle</literal></term>
+               <listitem>
+                   <para>
+                    True if the connection has not sent data in some long
+                    period of time.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>FlowControlView</title>
+        <para>
+            A view that displays the current flow control status.   This is
+            configured via the boolean <option>-flowcontrol</option> option
+            which is boolean <literal>true</literal> if flow control is active
+            and <literal>false</literal> if not
+        </para>
+    </refsect1>
+</refentry>
+<!-- /manpage -->
+
+
+<!-- manpage 5daq -->
+<!-- /manpage -->
