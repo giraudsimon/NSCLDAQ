@@ -393,6 +393,8 @@ snit::widgetadaptor ReadoutUI {
     delegate option -currentstate to control as -state
     delegate option -statecommand to control as -command
     
+    delegate option  -statistics to statistics as -data
+    
     ##
     #  The constructor assembles the hull and components and
     #  the components do the rest.
