@@ -118,7 +118,7 @@ TCL_EVB_PACKAGE_FILES=evbRdoCallouts.tcl  EVBStateCallouts.tcl \
 TCL_TEST_FILES=tclTests.tcl cbmanagerTests.test cmanagerCallbacks.test ringsourcemgr.test
 
 
-EXTRA_DIST=eventbuilder_user.xml protocol.xml api.xml orderer.xml frag2ring.xml Asserts.h \
+EXTRA_DIST=eventbuilder_user.xml protocol.xml api.xml orderer.xml frag2ring.xml evbrest.xml Asserts.h \
 	$(TCL_PROGFILES) \
 	$(TCL_PACKAGE_FILES) \
 	$(TCL_TEST_FILES) options.ggo \
