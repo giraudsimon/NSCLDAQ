@@ -127,7 +127,7 @@ view1 configure option value ?...?
                <term><literal>dequeued</literal></term>
                <listitem>
                    <para>
-                    Total number of fragments that have ever been dequeued.
+                    Total number of bytes that have ever been dequeued.
                    </para>
                 </listitem>
             </varlistentry>
@@ -449,6 +449,490 @@ view1 configure option value ?...?
             which is boolean <literal>true</literal> if flow control is active
             and <literal>false</literal> if not
         </para>
+    </refsect1>
+</refentry>
+ 
+<refentry id='tcl3.evbrestclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.evbrestclient.title'>EVBRESTClient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRESTCient</refname>
+      <refpurpose>REST Client for Event Builder Statistics</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require EVBRESTClient
+
+EVBRestClient client ?option value...?
+client configure option value ?...?
+
+set stats [client inputstats]
+set stats [client queuestats]
+set stats [client outputstats]
+set stats [client barrierstats]
+set stats [client completebarrierdetails]
+set stats [client incompletebarrierdetails]
+set stats [client datalatestatistics]
+set stats [client oostatistics]
+set stats [client connections]
+set stats [client shutdown]
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>EVBRESTClient</literal> package provides a
+            <classname>EVBRestClient</classname> <command>snit::type</command>.
+            <classname>EVBRestClient</classname> provides an object oriented
+            REST client for the event builder's REST statistics server.
+          </para>
+          <para>
+            Each REST operation performs service discovery, connects to the server,
+            makes a request, gets the data back from the request and disconnects.
+            Thuse the configuration is tolerant in the presence of event builder
+            restarts (which might change the service port) and can made to
+            understand server migration.
+          </para>
+          <para>
+            Client configuration is via the object options, which can be set
+            either at construction time or via a later <command>configure</command>
+            subcommand.  Actual REST operations require calling one of the public methods.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         The options are used to configure service discovery and connection with the
+         event builder REST server.  They are consulted for every REST operation.
+         Each REST operation performs service discovery (interacting with the port
+         manager to translate the service name into a TCP/IP server port number),
+         connects to the server, performs the HTTP transaction and finally disconnects.
+      </para>
+      <para>
+         Options are as follows:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-host</option></term>
+            <listitem>
+                <para>
+                  Provides the host in which the server is running.  This is used
+                   both in service discovery and when connecting to the actual
+                   server.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-user</option></term>
+            <listitem>
+                <para>
+                  The user that ran the event builder.  This is used during
+                  service discovery to dis-ambiguate services with the same name
+                  that were registered by different users.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-service</option></term>
+            <listitem>
+                <para>
+                  Name of the service registered by the event builder's REST
+                  server.  This defaults to <literal>ORDERER_REST</literal> unless
+                  modified by the application.  This is used during service discovery.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>PUBLIC METHODS</title>
+      <para>
+         Most public methods  perform REST operations.  In order to perform a REST
+         transaction, it's necessary to have the information needed to do both
+         service discovery and to connect to the server.  Thus the options
+         described in the previous section must be properly configured prior
+         to the first public method call described below.   This configuration
+         can be done either at construction or via the <methodname>configure</methodname>
+         method.
+      </para>
+      <para>
+         The methods that perform REST operations are as follows:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>inputstats</methodname></term>
+            <listitem>
+                <para>
+                  Returns the event builder's input statistics as a dict with the
+                  following key/value pairs:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>oldest</literal></term>
+                     <listitem>
+                         <para>
+                           The timestamp of the oldest queued fragment.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>newest</literal></term>
+                     <listitem>
+                         <para>
+                           The timestamp of the newest queued fragment.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>fragments</literal></term>
+                     <listitem>
+                         <para>
+                           The total number of queued fragments.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+               </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>queuestats</methodname></term>
+            <listitem>
+                <para>
+                  Returns the queue statistics as list of dicts.  Each dict
+                  describes one of the source id queues.  The key/value pairs
+                  in each dict are:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>id</literal></term>
+                     <listitem>
+                         <para>
+                           The source id the queue serves.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>depth</literal></term>
+                     <listitem>
+                         <para>
+                           Number of fragments in the queue.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>oldest</literal></term>
+                     <listitem>
+                         <para>
+                           Timestamp of the oldest (front) element int he
+                           queue.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>bytes</literal></term>
+                     <listitem>
+                         <para>
+                           Number of fragment bytes queued.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>dequeued</literal></term>
+                     <listitem>
+                         <para>
+                           Total number of bytes dequeued from the queue.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>totalqueued</literal></term>
+                     <listitem>
+                         <para>
+                           Total number of bytes that have ever been queued
+                           in the queue.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>outputstats</methodname></term>
+            <listitem>
+                <para>
+                  Returns a dict that describes the event builder
+                  sorting stage's output statistics.  This is a dict
+                  with the following key/value pairs;
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><methodname>fragments</methodname></term>
+                     <listitem>
+                         <para>
+                           Total number of fragments otutput by the orderer.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>perqueue</literal></term>
+                     <listitem>
+                         <para>
+                           List of dicts showing output statistics for each
+                           queue. These dicts have the keys
+                           <literal>id</literal> whichi s the source id
+                           the queue serves and <literal>fragments</literal>,
+                           the number of fragments output from the queue.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>barrierstats</methodname></term>
+            <listitem>
+                <para>
+                  Returns a dict containing the top level barrier statistics.
+                  The dict has two keys, <literal>complete</literal> which
+                  describes the complete barriers and <literal>incomplete</literal>
+                  which describes the incomplete barriers.
+               </para>
+                <para>
+                  Each of key values above is, itself a dict.  Both dicts
+                  are identical in structure and have the following key/value
+                  pairs:
+                </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>barriers</literal></term>
+                     <listitem>
+                         <para>
+                           Number of that type of barrier (complete or incomplete).
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>homogeneous</literal></term>
+                     <listitem>
+                         <para>
+                           Number of homogeneous barriers of that type (complete or
+                           incomplete).
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>heterogeneous</literal></term>
+                     <listitem>
+                         <para>
+                           Number of heterogeneous barriers of that type.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>completebarrierdetails</methodname></term>
+            <listitem>
+                <para>
+                  Provides detailed information about the complete barriers.
+                  This is a dict with two keys that allow drill down in
+                  two directions:
+               </para>
+                <para>
+                  The <literal>bytype</literal> key contains a list of dicts
+                  that give complete barrier statistics by barrier type. Each
+                  dict contains the keys <literal>type</literal> (a barrier type)
+                  and <literal>count</literal> (number of occurences of that type).
+               </para>
+                <para>
+                  The <literal>bysource</literal> key provides a list of dicts that
+                  provide statistics of complete barrier contributions by data source
+                  Each list has the keys <literal>id</literal> (the source id),
+                  <literal>count</literal> (number of barrier fragments from this
+                  source that resulted in a complete barrier), and
+                  <literal>details</literal>.
+                </para>
+                <para>
+                  The <literal>details</literal> field is an array of dicts each
+                  with key <literal>type</literal>, a barrier type, and
+                  <literal>count</literal>, the number of times that source contributed
+                  a barrier fragment of that type that resulted in a complete
+                  barrier.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>incompletebarrierdetails</methodname></term>
+            <listitem>
+                <para>
+                  Provides full statistical details on incomplete barriers detected
+                  by the orderer.  This returns a dict containing two keys.
+                  <literal>histogram</literal> and <literal>bysource</literal>.
+               </para>
+               <para>
+                  The value of <literal>histogram</literal> is a list of dicts each with
+                  two keys.  <literal>number</literal>, which contains the number
+                  of missing fragments in an incomplete barrier and
+                  <literal>count</literal>, the number of times an incomplete barrier
+                  was missing that number of fragments.
+               </para>
+               <para>
+                  <literal>bysource</literal> is a list of dicts each with the
+                  keys <literal>id</literal> which is a source id and <literal>count</literal>,
+                  the number of times that source id was missing from a barrier.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>datalatestatistics</methodname></term>
+            <listitem>
+                <para>
+                  Returns a dict of data late statisitcs.  This dict contains the
+                  following keys:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>count</literal></term>
+                     <listitem>
+                         <para>
+                           Number of data late fragments.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>worst</literal></term>
+                     <listitem>
+                         <para>
+                           Worst gates timestamp difference for data late events.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>details</literal></term>
+                     <listitem>
+                         <para>
+                           A list of dicts that provides detailed data late
+                           statistics.  Each dict contains
+                           <literal>id</literal>, a source id.
+                           <literal>count</literal> number of data lates from
+                           that data source.
+                           <literal>worst</literal> worst case time difference
+                           for data laste events from that source id.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>oostatistics</methodname></term>
+            <listitem>
+                <para>
+                  Provides data on the out of order fragments set to the orderer.
+                  The data returned are a dict with the two keys
+                  <literal>summary</literal> and <literal>bysource</literal>
+               </para>
+                <para>
+                  The <literal>summary</literal> key provides top level, summary
+                  statistics.  It contains a dict that has the keys
+                  <literal>count</literal>, which is the number of out of order
+                  fragments observed, <literal>prior</literal>, the timestamp
+                  of the fragment prior to the last out of order fragment and
+                  <literal>offending</literal> the timestamp of the
+                  most recent offending
+                  fragment.
+                </para>
+                <para>
+                  <literal>bysource</literal>, on the other hand, provides information
+                  on the data late fragments by data source.  The value of this
+                  key is a list of dicts with the keys:
+                  <literal>id</literal> a data source id being described by this
+                  list element, <literal>count</literal> the number of data late
+                  fragments from that source, <literal>prior</literal>, the timestamp
+                  of the fragment prior to the last out of order fragment from this source
+                  and
+                  <literal>offending</literal> the timestamp of the
+                  most recent offending
+                  fragment from that source.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>connections</methodname></term>
+            <listitem>
+                <para>
+                  Returns a list of the connections of data sources to the
+                  event orderer stage of the event builder pipeline.
+                  This is a list of dicts.  Each dict has the following
+                  key/value pairs:
+               </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>host</literal></term>
+                     <listitem>
+                         <para>
+                           IP or DNS name of the host from which the client
+                           connects.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>description</literal></term>
+                     <listitem>
+                         <para>
+                           A descriptive text string the connecting client must
+                           provide. This is intended to provide information
+                           about the sort of data sent along this connection.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>state</literal></term>
+                     <listitem>
+                         <para>
+                           String version of the connection state.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>idle</literal></term>
+                     <listitem>
+                         <para>
+                           Boolean valued idle flag.  If the connection has not
+                           sent any data within the idle timeout this will
+                           be nonzero, otherwise it will be zero.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                </variablelist>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>flowcontrol</methodname></term>
+            <listitem>
+                <para>
+                  Returns a boolean which is true if the event builder is currently
+                  asserting flow control.  
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><methodname>shutdown</methodname> ?delay?</term>
+            <listitem>
+                <para>
+                  Requests that the event builder shutdown after
+                  <parameter>delay</parameter> seconds.  The default
+                  value of <parameter>delay</parameter> is
+                  <literal>2</literal>.  Note that early
+                  server implementations may ignore this value.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
     </refsect1>
 </refentry>
 <!-- /manpage -->
