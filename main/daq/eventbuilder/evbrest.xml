@@ -935,6 +935,154 @@ set stats [client shutdown]
       </variablelist>
     </refsect1>
 </refentry>
+
+<refentry id='tcl3.evbrestcontrollers'>
+   <refmeta>
+      <refentrytitle id='tcl3.evbrestcontrollers.title'>EVBRestControllers</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRestControllers</refname>
+      <refname>EVBInputStatsController</refname>
+      <refname>EVBQueueStatsController</refname>
+      <refname>EVBBarrierStatsController</refname>
+      <refname>EVBCompleteBarrierController</refname>
+      <refname>EVBIncompleteBarrierController</refname>
+      <refname>EVBDataLateController</refname>
+      <refname>EVBOutOfOrderController</refname>
+      <refname>EVBConnectionController</refname>
+      <refname>EVBFlowController</refname>
+      <refpurpose>Controllers for MVC Event Builder Statistics Packages</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require EVBRestControllers
+
+EVBInputStatsController name ?option value ...?
+EVBQueueStatsController name ?option value ...?
+EVBBarrierStatsController name ?option  value ...?
+EVBCompleteBarrierController name ?option value ...?
+EVBIncompleteBarrierController name ?option value ...?
+EVBDataLateController name ?option value ...?
+EVBOutOfOrderController name ?option value ...?
+EVBConnectionController name ?option value ...?
+EVBFlowController name ?option value ...?
+
+name configure option value ?...?
+
+name update
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This package provides a family of controllers that interface
+            between the model provided by
+            <link linkend='tcl3.evbrestclient' endterm='tcl3.evbrestclient.title' />
+            and the presentation views provided by
+            <link linkend='tcl3.evbrestui' endterm='tcl3.evbrestui.title' />.
+          </para>
+          <para>
+            All of these controller classes provide the following options:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-model</option></term>
+               <listitem>
+                   <para>
+                     An <classname>EVBRestClient</classname>  that will
+                     be used as the model in the MVC triad.  The
+                     client must be properly configured and the same client can,
+                     and often will be shared between controllers.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-view</option></term>
+               <listitem>
+                   <para>
+                     Should be the view instance associated with the
+                     specific controller (see
+                     <literal>CONTROLLER VIEW PAIRS</literal>
+                     below). 
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            All controllers have exactly one public method: <methodname>update</methodname>
+            which takes no parameters.  Prior to the first call of
+            <methodname>update</methodname>
+            the object must be fully configured with a valid
+            <option>-model</option> and <option>-view</option>.  What
+            <methodname>update</methodname> does is request the appropriate
+            statistics from the model and then configure them in the
+            appropriate option of the view.   In a normal application,
+            this will be done periodically, e.g. from a rescheduled
+            <command>after</command>.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>CONTROLLER VIEW PAIRS</title>
+      <para>
+         Each controller class in this package must be paired with the correct
+         view or a compatible view like object.  The table below assumes you
+         are pairing a controller with its compatible view in the
+         <literal>EVBRestUI</literal> package.
+      </para>
+      <table>
+         <title>EVBRestControllers and Corresponding EVBRestUI Views</title>
+         <tgroup cols='2' align='left' colsep='1' rowsep='1'>
+            <colspec colname='Controller' />
+            <colspec colname='View' />
+            <thead>
+               <row>
+                  <entry>Controller</entry>
+                  <entry>View</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>EVBInputStatsController</entry>
+                  <entry>InputStatsView</entry>
+               </row>
+               <row>
+                  <entry>EVBQueueStatsController</entry>
+                  <entry>QueueStatsView</entry>
+               </row>
+               <row>
+                  <entry>EVBBarrierStatsController</entry>
+                  <entry>BarrierStatsView</entry>
+               </row>
+               <row>
+                  <entry>EVBCompleteBarrierController</entry>
+                  <entry>CompleteBarrierView</entry>
+               </row>
+               <row>
+                  <entry>EVBIncompleteBarrierController</entry>
+                  <entry>IncompleteBarrierView</entry>
+               </row>
+               <row>
+                  <entry>EVBDataLateController</entry>
+                  <entry>DataLateView</entry>
+               </row>
+               <row>
+                  <entry>EVBOutOfOrderController</entry>
+                  <entry>OutOfOrderView</entry>
+               </row>
+               <row>
+                  <entry>EVBConnectionController</entry>
+                  <entry>ConnectionView</entry>
+               </row>
+               <row>
+                  <entry>EVBFlowController</entry>
+                  <entry>FlowControlView</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
 
 
