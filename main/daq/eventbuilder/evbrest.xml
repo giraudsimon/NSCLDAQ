@@ -1087,4 +1087,478 @@ name update
 
 
 <!-- manpage 5daq -->
+<refentry>
+   <refmeta>
+      <refentrytitle>Event Builder REST</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Event Builder REST</refname>
+      <refpurpose>Event Builder Statistics REST Protocol</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+/statistics/inputstats
+/statistics/queue
+/statistics/outputstats
+/statistics/barrierstats
+/statistics/completebarrierdetails
+/statistics/incompletebarrierdetails
+/statistics/datalatestatistics
+/statistics/oostatistics
+/statistics/connections
+/statistics/flowcontrol
+/statistics/shutdown
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+               The Orderer stage of the the event builder can be run
+               with a REST interface to its internal statistics through
+               the <literal>EVBREST</literal> package, which starts the server
+               and <literal>EVBStatistics</literal> package which maintains
+               statistics for the server in an easy to manage set of dicts.
+          </para>
+          <para>
+            The server advertises the service <literal>ORDERER_REST</literal>
+            by default. The service name can be modified by defining the
+            <literal>SERVICE_NAME</literal> environment variable or the
+            Tcl global variable <varname>ServiceName</varname> prior to starting
+            including the <literal>EVBREST</literal> package.
+          </para>
+          <para>
+            All REST requests have URLs of the form
+            <literal>http://hostname:port/statistics/request</literal>
+            where <literal>hostname</literal> is the name of the host in
+            which the event builder is running, <literal>port</literal>
+            is the port number of the server as translated from its advertised
+            service name and <literal>request</literal> identifies the
+            request.
+         </para>
+         <para>
+            Successful returns produce a JSON encoded object
+            (mimetype <literal>application/json</literal>).
+            The remainder of this manpage describes the requests and
+            the JSON object returned by each of them.
+         </para>
+         <para>
+            All of these objects have two common attributes;
+            <literal>status</literal> which has the string value
+            <literal>OK</literal> on success or
+            <literal>ERROR</literal> on failure and
+            <literal>message</literal> which is an empty string if
+            <literal>status</literal> was <literal>OK</literal> or
+            a human readable error string if not.
+         </para>
+    </refsect1>
+    <refsect1>
+      <title>/status/inputstats</title>
+      <para>
+         Returns input statistics.  The additional attributes returned are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>oldest</literal></term>
+            <listitem>
+                <para>
+                  Oldest queued fragment timestamp.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>newest</literal></term>
+            <listitem>
+                <para>
+                  Newest queued fragment timestamp.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>fragments</literal></term>
+            <listitem>
+                <para>
+                  Number of in-flight fragments in the orderer.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>/status/queue</title>
+      <para>
+         Returns information about all of the queues.  Each data source id
+         has an associated queue into which its fragments go until they
+         can be emitted.  The JSON attribute <literal>queues</literal>
+         contains information about each queue.  The value of this
+         attribute is a JSON array of objects.  Each of the objects
+         in the array has the following attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>id</literal></term>
+            <listitem>
+                <para>
+                  The source id of the queue described by this object.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>depth</literal></term>
+            <listitem>
+                <para>
+                  The number of fragments currently in that queue.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>olddest</literal></term>
+            <listitem>
+                <para>
+                  The timestamp of the oldest fragment in this queue (the
+                  queue head).
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>bytes</literal></term>
+            <listitem>
+                <para>
+                  The number of bytes of data in this queue.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>dequeued</literal></term>
+            <listitem>
+                <para>
+                  The total number of bytes of data that have been
+                  dequeued from this queue since the event builder started.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>totalqueued</literal></term>
+            <listitem>
+                <para>
+                  The total number of bytes of data that have ever been sent to
+                  this queue.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>/statistics/outputstats</title>
+      <para>
+         This request provides output statistics.  The resulting object has
+         two attributes: <literal>fragments</literal> and <literal>perqueue</literal>
+      </para>
+      <para>
+         The <literal>fragments</literal> value is just the total number of
+         fragments that have been output from the orderer.
+      </para>
+      <para>
+         The <literal>perqueue</literal> value is a bit more complex.  It is a
+         JSON array of JSON objects that provide output statistics from the
+         event queues.  Each object in the array contains the following
+         attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>id</literal></term>
+            <listitem>
+                <para>
+                  The source id associated with the output statistics in this
+                  object.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>fragments</literal></term>
+            <listitem>
+                <para>
+                  The number of fragments outupt from this queue.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>/status/barrierstats</title>
+      <para>
+         Provides an overview of the barrier statistics from the
+         event bulder orderer stage.  The data are returned in two attributes:
+         <literal>complete</literal> which provides statistics for complete
+         (successful) barriers and <literal>incomplete</literal> which
+         provides statistics for incomplete (failed) barriers.
+         The values of these attributes are JSON encoded objects as well.
+         Both objects have the same attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>barriers</literal></term>
+            <listitem>
+                <para>
+                  Number of barriers of this type (complete or incomplete).
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>homogeneous</literal></term>
+            <listitem>
+                <para>
+                  Number of barriers that were complete or not but whose fragments
+                  all had the same barrier type.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>heterogeneous</literal></term>
+            <listitem>
+                <para>
+                  Number of barriers that were complete or not but whose
+                  fragments had more than one barrier type.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>/statistics/completebarrierdetails</title>
+      <para>
+         Returns more detailed statistics about the complete (successful)
+         barriers.  The returned object has the two attributes:
+         <literal>bytype</literal> which provides statistics by barrier type
+         and <literal>bySource</literal> which provides statistics by data source.
+         The values of both of these are arrays of objects.
+      </para>
+      <variablelist>
+         <title><literal>bytype</literal> array element object attributes</title>
+         <varlistentry>
+            <term><literal>type</literal></term>
+            <listitem>
+                <para>
+                  Contains a barrier type.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>count</literal></term>
+            <listitem>
+                <para>
+                  Contains a count of the number of times a fragment with that
+                  barrier type has been seen.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <variablelist>
+         <title><literal>bySource</literal> array element object attributes</title>
+         <varlistentry>
+            <term><literal>id</literal></term>
+            <listitem>
+                <para>
+                  Source id this object provides statistics for.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>count</literal></term>
+            <listitem>
+                <para>
+                  Total number of barrier fragments from that source.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>details</literal></term>
+            <listitem>
+                <para>
+                  Array of objects that have attributes:
+                  <literal>type</literal> - a barrier type and
+                  <literal>count</literal> - the number of times that barrier
+                  type has been see in in that source id's queue.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title><literal>/statistics/incompletebarrierdetails</literal> Detailed Incomplete Barrier Statistics</title>
+      <para>
+         Provides detailed statistics for incomplete barriers.  An incomplete barrier
+         is a failure of barrier synchronization.  The statistics for these
+         events are captured in data in the following two attributes:
+         <literal>histogram</literal> which captures a histogram of number of
+         missing fragments and <literal>bysource</literal> whichcaptures
+         per source statistics.  Both of these attributes contain
+         list of JSON objects:
+      </para>
+      <variablelist>
+         <title><literal>histogram</literal> Array Element Attributes</title>
+         <varlistentry>
+            <term><literal>number</literal></term>
+            <listitem>
+                <para>
+                  Number of missing fragments.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>count</literal></term>
+            <listitem>
+                <para>
+                  Number of times that number of fragments was missing.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <variablelist>
+         <title><literal>bysource</literal> Array Element Attributes</title>
+         <varlistentry>
+            <term><literal>id</literal></term>
+            <listitem>
+                <para>
+                  Source id
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>count</literal></term>
+            <listitem>
+                <para>
+                  Number of times that source id was among the missing sources
+                  in a barrier synchronization.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title><literal>/statistics/datalatestatistics</literal> Data Late Statistics</title>
+      <para>
+         Provides statistics that describe the data late conditions detected
+         by the orderer.  This provides the following attributes:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>count</literal></term>
+            <listitem>
+                <para>
+                  Total number of data late conditions.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>worst</literal></term>
+            <listitem>
+                <para>
+                  Worst case time stamp difference.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>details</literal></term>
+            <listitem>
+                <para>
+                  An array of objects that provide per source data late
+                  statistics.  Each object has the attributes:
+                  <literal>id</literal> the data source id,
+                  <literal>count</literal> the number of times
+                  the source has had a data late condition.
+                  and <literal>worst</literal> the worst case timestamp
+                  deviation for that source.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title><literal>/statistics/oostatistics</literal> Out of Order Statistics</title>
+      <para>
+         Provide information about out of order statistics.  This object has
+         two attributes: <literal>summary</literal> providing summary statistics
+         and <literal>bysource</literal> providing per source statistics.
+      </para>
+      <para>
+         The <literal>summary</literal> attribute contains an objec with the
+         attribues <literal>count</literal> - the number of out of order
+         fragments, <literal>prior</literal> the timestamp of the fragment prior
+         to the most recent out of order fragment and
+         <literal>offending</literal> the timestamp of the most recent out of
+         order fragments.
+      </para>
+      <para>
+         <literal>bysource</literal> contains an array that provides per source
+         statistics. Each element has the <literal>id</literal> attribute which is
+         the source id and the attributs in <literal>summary</literal> which,
+         in this case are confined to the specific data source.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title><literal>/statistics/connections</literal> Connection List</title>
+      <para>
+         Data are fed to the event orderer via TCP/IP block transfer connections.
+         This request provides an object with the <literal>connections</literal>
+         attribute. The value of <literal>connections</literal> is an array
+         of objects.  The attributes of each object describe one connection:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>host</literal></term>
+            <listitem>
+                <para>
+                  Name or IP of host from which the connection was made.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>description</literal></term>
+            <listitem>
+                <para>
+                  A textual description of the connection supplied by the
+                  client.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>state</literal></term>
+            <listitem>
+                <para>
+                  Textual connection state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>idle</literal></term>
+            <listitem>
+                <para>
+                  Boolean idle flag.  If nonzero, the connection has been
+                  idel.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>
+         <literal>/status/flowcontrol</literal> Flow Control State
+      </title>
+      <para>
+         The object returned has the atribute <literal>state</literal>
+         which is non-zero if the even builder is asserting flow control
+         to its clients.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title><literal>/status/shutdown</literal> Shutdown Event Builder (POST)</title>
+      <para>
+         This request will shutdown the event builder.  The request must be
+         issued using a POST request.  At present a fixed delay is used to shut down
+         the event builder.  In the future, the POST parameter
+         <literal>delay</literal> will be the delay in seconds.
+      </para>
+    </refsect1>
+</refentry>
 <!-- /manpage -->

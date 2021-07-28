@@ -153,7 +153,7 @@ proc _formatBarrierType {data} {
 #                  below.
 #     Each of the objects above has the attributes:
 #       - barriers - number of barriers of that type.
-#       - homgeneious - numberof homogeneous barriers.
+#       - homgeneous - numberof homogeneous barriers.
 #       - heterogeneous - number of heterogenous barriers.
 #
 # @param stats - the statistics.
