@@ -1,0 +1,369 @@
+Manager Design Documentation
+============================
+[[_TOC_]]
+
+Background:
+===========
+ 
+In FRIB it is likely that we'll need a mechanism to allow several user
+accounts to collaborate on a single experiment while data taking is in progress.
+It is also likely that the person who starts the dataflow will need to be able
+to logout and let the system continue in the background.
+
+This implies some manager program that acts like a server and manages the
+persistent parts of the system.  At a minimum these are
+
+*  The dataflow components
+*  Event logging
+*  Persistent analysis software.
+*  Data acquisition state changes.
+*  System configuration.
+
+This implies programs are divided into critical and non-critical components.
+Failure of a non-critical component implies system level failure if detected.
+
+Configuration Management
+------------------------
+
+These are the things that need to be configured:
+
+*   Container images.
+*   Programs
+*   Sequences
+*   Event logging
+*   Configuration KV store
+
+
+### Container images
+
+Container images provide a run-time environment for programs.  Container images
+require the following information:
+
+*   Image path - which image to run.
+*   Bind points - directories and files that are bound to specific mount points
+in an image.
+*   Initialization script - script that is run after the container is activated
+but before anything is run in it (might e.g. setup the DAQ env names, load modules etc).
+
+If a database, this implies the following tables:
+
+**container**
+
+|  Field     |  Type    | description    |
+|------------|----------|----------------|
+| id         | INTEGER  | Primary key    |
+| container  | TEXT     | Name to use to refer to the container (mnemonic) |
+| image_path | TEXT     | Location of container image in filesystem |
+| init_script| TEXT     | (Can be null) optional script to run at activation |
+
+**bindpoint**
+
+|  Field     |  Type    | description    |
+|------------|----------|----------------|
+| id         | INTEGER  | Primary key    |
+| container_id | INTEGER | FK to container table |
+| path       | TEXT     | Host filesystem path to bind into container |
+| mountpoint | TEXT     | (can be null) where the path appears in the container |
+
+Note that if @mountpoint@ is null, then path maps to itself.
+
+In general a container is activated on the end of an ssh pipe in some host
+and commands then get passed into the container on activation.
+
+### Programs
+
+Programs are things that run in some environment.  In NSCLDAQ they often
+run in container envirionments but the Manager does not require that.
+Programs can be scripts just as easily as they can be actual executable images.
+Programs can assume they are running from a shell.  Programs can be any of:
+
+*   Transitory - the program is expected to run and exit.
+*   Critical   - If the program exits the DAQ is assumed to have failed.
+*   Persistent - The program is assumed to be persistent but if it fails the failure
+is only logged/displayed to the user who can re-start it.
+
+Programs can be parameterized.  Traditionally in Unix/Linux shells, parameterization
+comes in two forms: Options and parameters.  Options are keywords with optional values
+(e.g. --format=html, or --long).  Parameters occur on the command line after all
+options and are just words.  This implies the following tables:
+
+**programtype**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| name       | TEXT    | Program type name e.g. "Transitory" |
+
+**program**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| name       | TEXT    | name used to refer to the program |
+| path       | TEXT    | Path to program            |
+| type       | INTEGER | Foreign key into programtype table |
+| Host       | TEXT    | Host in which the program starts |
+| directory  | TEXT    | Directory if needed. |
+| container_id | INTEGER | If not null, the program is started in that container.
+| initscript | TEXT    | If not null, the initscript is run prior to the program |
+| service    | TEXT    | The name of the service to send state transition REST requests to |
+
+Note that interacting with other managers that are already running is supported
+by making everything but the id, host, and service null.
+
+**programoptions**
+ 
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| program_id | INTEGER | FK into program table      |
+| option     | TEXT    | Option name (e.g. --ring)  |
+| value      | TEXT    | (Can be null) See below    |
+
+If the option value is not null, the option is passed to the program
+command line as option="value"  where the quotation enclosure
+allows whitespace in the value.  If the option is null, the
+option is passed to the program commandline as just option
+
+**programparameters**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| program_id | INTEGER | FK into program table      |
+| parameter  | TEXT    | Parameter to pass          |
+
+Parameters are passed as doubly quoted strings.
+
+**programenvironment**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| program_id | INTEGER | FK into program table      |
+| name       | TEXT    | Name of the environment variable |
+| value      | TEXT    | Value                      |
+
+environment variable precede the program image name on the
+command line and look like name="value"  the assumption is that environment
+variable names don't have embedded whitespace.
+
+
+
+Enumerates the programs that participated in state transitions.  If service is not
+null, the program is assumed to operate a REST service to handle state transitions
+the service is assumed registered with the port manager
+of the host in which the program runs.
+
+### Sequences
+
+Sequences determine the order in which state transitions
+(including boot up) happen.  When a program is specified,
+it is, by default, tucked into the end of all state transition sequences.
+In order to facilitate cases where it's not possible to do closed loop control over
+a state transition, delays can be placed before and after each program's
+place in a transitions.  The transitions are:
+
+*   BOOT               - Bring up the system.
+*   SHUTDOWN           - Shut the system down.
+*   HWINIT             - Initialize the hardware prior to run start.
+*   BEGIN              - Begin a run
+*   END                - End a run.
+
+Each of these defines a sequence.  In addition, users can define their own
+sequences and fire them off on demand.
+
+(Note NSCLDAQ 12 manager will not support paused runs).
+Transitions and sequences and state diagram enforcement are described in the following
+tables.  If a program does not appear in a sequence, it takes no action on the transition:
+
+**sequence**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| name       | TEXT    | Name of sequence           |
+
+**transitionname**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| name       | TEXT    | transition name            |
+
+
+**legaltransition**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| sequence_id| INTEGER | FK into sequence           |
+| from       | INTEGER | FK into sequence  last transition |
+| to         | INTEGER | FK into sequence allowed transition |
+
+**lasttransition**
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| seq_id     | INTEGER | FK in to sequence          |
+| state      | INTEGER | id of last transition      |
+
+
+**step**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| sequence_id | INTEGER | FK Into sequence table this step belongs to |
+| step       | REAL    | Step number used to order steps | 
+| program    | INTEGER | FK into programs to send request to |
+| predelay   | INTEGER | if not null seconds prior to request |
+| postdelay  | INTEGER | IF non null seconds after request |
+
+The step being real just allows insertion of a new step between existing steps
+
+e.g. between 1 and 2 insert 1.5 between 1, 1.5 insert 1.25 etc. after 2 (if it's the last),
+however insert 3.  Before 1 if it's the first, insert 0.5 etc.  There can be a
+re-integerization operation to renumber using integers.
+
+### Event logging.
+
+Two types of event logging are supported.  In 12.0 there can be as many of
+each as desired.  Full logging supports the directory/file management that's done
+until now.  Partial supports just logging files.
+
+If a BEGIN transition is performed when logging is enabled, loggers
+are started to log event data to file.   Loggers are special transitory
+
+
+
+
+**loggers**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| daqroot    | TEXT    | Which NSCLDAQ logger to use |
+| ring       | TEXT    | URI of the ring to log from |
+| host       | TEXT    | host in which the logger runs |
+| partial    | INTEGER | 0 means full logging 1 partial |
+| destination | TEXT   | Directory path for logging - see below |
+| critical   | INTEGER | logging failure shutsdown DAQ |
+| enabled    | INTEGER | 0 not enabled, 1 enabled |
+
+Enabled allows some loggers to not start.
+
+**recording**
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+|  state     | INTEGER | 0 not recording 1, recording |
+
+Logging is only initiated/closed down if state is 1.
+
+
+### Configuration
+
+The kvstore provides for a generic key value store for configuration variables
+and their contents.  Some KVStore variables are required by the manager.
+
+*kvstore*
+
+|  Field     | Type    | Description                |
+|------------|---------|----------------------------|
+| id         | INTEGER | Primary key                |
+| key        | TEXT    | Key name                   |
+| value      | TEXT    | Key value                  |
+
+
+Manager Server
+==============
+
+The manager will be a server that accepts REST requests and returns
+application/json content where appropriate for status information.  The
+implementation is on top of tclhttpd as launched by tclhttpdlauncher so that
+the server can be registered on the port manager as the DAQManager service.
+
+Top level Domains
+
+*   State - state machine
+*   Status - Status of the system.
+*   Info   - Information about the system.
+
+Note there's some overlap, for example a GET method in /State/status will
+provide the current state.
+
+All operations that can modify (e.g. State PUT method) require a username
+parameter which may be used in future versions to restrict the sorts of things
+users with specific roles can do.
+
+### State domain:
+
+Provides access to the state machine.  The following GET requests are allowed
+
+*  /State/status - provides the current state.
+*  /State/allowed - provides the allowed next states.
+
+Return for /State/status is application/json containing:
+
+*   status  - OK or ERROR if there is a problem fulfilling the request.
+*   message - Only non-empty if status is ERROR - contains an error message string.
+*   state   - the current state.
+
+For /State/allowed the return is the same except that state is replaced by
+status and is an array of legal next states.
+
+PUT requests:
+*  /State/transition - Attempt to transition to a new state.
+
+/State/transition has the following POST parameters:
+
+*  user - the user requesting the change - may ned to have a specific role in
+future releases.
+*  state - The requested state.
+
+In addition to status, the new state is returned as state
+
+### Programs domain:
+
+Provides the status of programs and containser.
+
+Only /Programs/status is supported.  It returns JSON with:
+
+*   status - OK if successful.
+*   message - If status != OK error message string.
+*   containers - array of objects, one for each container.
+*   programs   - Array of objects one for each program.
+
+#### container object
+
+Each element of the containers array is an object containing:
+
+*   name  - name of the container definition.
+*   image - Container image name.
+*   bindings - array of binding specifications
+*   activations - array (possibly empty) of hosts the container is active in.
+
+#### program object
+
+Each element of the programs array is an object containing
+
+*   name   - Name of the program.
+*   path   - Path to the program image.
+*   type   - program type
+*   host   - host on which the program runs.
+*   container - Container in which the program runs.
+*   active  - 1 or 0  - 1 if the program is active.
+
+### Key value store
+
+Key value store is in /KVStore and has the following subdomains:
+
+*   value - (GET) return the value of a specific variable as:
+    name, value object.
+*   listnames - (GET) returns names - array of variable names.
+*   list     - (GET) returns array; 'variables' of name, value objects
+*   set   - (POST)  post parameters; user, name, value.
+*           returns name, value (updated).
+
+
+
+

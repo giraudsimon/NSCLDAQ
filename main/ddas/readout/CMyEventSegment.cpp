@@ -41,7 +41,9 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
  : m_config(),
    m_systemInitialized(false),
    m_firmwareLoadedRecently(false),
-   m_pExperiment(&exp)
+   m_pExperiment(&exp),
+   m_nCumulativeBytes(0),
+   m_nBytesPerRun(0)
 {
 
     ios_base::sync_with_stdio(true);
@@ -218,7 +220,7 @@ void CMyEventSegment::initialize(){
     } else {
         cout << "List Mode started OK " << retval << endl << flush;
     }
-
+    m_nBytesPerRun = 0;                // New run presumably.
     usleep(100000); // Delay for the DSP boot 
 
 
@@ -281,7 +283,12 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             m_pExperiment->haveMore();      // until we fall through the loop
             words[i] -= readSize;           // count down words still to read.
             
+            // maintain statistics and 
             // Return 16 bit words in the ring item body.
+            
+            size_t nBytes = sizeof(double) + (readSize+1)*sizeof(uint32_t);
+            m_nCumulativeBytes += nBytes;
+            m_nBytesPerRun     += nBytes;
             
             return (sizeof(double) + (readSize + 1) *sizeof(uint32_t))/sizeof(uint16_t);
         }

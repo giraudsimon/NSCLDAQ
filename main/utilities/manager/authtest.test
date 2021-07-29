@@ -1,0 +1,618 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   authtest.test
+# @brief  Tests of the auth package./
+    
+
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require auth
+package require sqlite3
+
+set dbFile ""
+set dbFd   -1
+proc commonSetup {} {
+    set ::dbFd [file tempfile ::dbFile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbFile
+    sqlite3 db $::dbFile
+
+
+}
+proc commonCleanup { } {
+    close $::dbFd
+    db close
+    file delete $::dbFile
+
+}
+################################################################################
+#  auth::adduser tests.
+tcltest::test add_1 {Add makes entry in db .} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT COUNT(*) FROM users}
+} \
+-result {1}
+
+tcltest::test add_2 {Proper username is added.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT username from users
+    }
+} -result [list fox]
+
+tcltest::test add_3 {can add several users.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+    auth::adduser db cerizza
+    auth::adduser db liddick
+    auth::adduser db gade
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT username FROM users ORDER BY username ASC
+    }
+} -result [lsort -increasing [list fox cerizza liddick gade]]
+
+tcltest::test add_4 {Adding a duplicate user is an error.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::adduser db fox
+} -result {There is already a user named: fox} -returnCodes error
+
+###############################################################################
+# auth::rmuser   tests
+
+tcltest::test rmuser_1 {Remove nonexistent user is an error} \
+-setup {
+    commonSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db fox
+} -result {fox is not an existing user and therefore cannot be removed} \
+    -returnCodes error
+
+tcltest::test rmuser_2 {rmuser removes one row.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+    auth::adduser db cerizza
+    auth::adduser db liddick
+    auth::adduser db chester
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set prior [db eval {SELECT COUNT(*) FROM users}]
+    auth::rmuser db liddick
+    set now [db eval {SELECT COUNT(*) FROM users}]
+    expr {$prior - $now}
+} -result 1
+
+tcltest::test rmuser_3 {Remove a user removes the correct user.} \
+-setup {
+    commonSetup
+    auth::adduser db fox
+    auth::adduser db cerizza
+    auth::adduser db liddick
+    auth::adduser db chester
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db cerizza
+    db eval {
+        SELECT username FROM users ORDER BY username ASC
+    }
+} -result [lsort -increasing [list fox liddick chester]]
+
+###############################################################################
+# auth::addrole tests
+
+tcltest::test addrole_1 {Adding a role adds a table entry.} \
+-setup {
+    commonSetup
+    ::auth::addrole db a_role
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT COUNT(*) FROM roles}
+} -result 1
+
+tcltest::test addrole_2 {Adding a role adds the right table entry.} \
+-setup {
+    commonSetup
+    ::auth::addrole db  a_role
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT role FROM roles}
+} -result [list a_role]
+
+tcltest::test addrole_3 {Can add more than one role} \
+-setup {
+    commonSetup
+    ::auth::addrole db arole
+    ::auth::addrole db SomeRole
+    ::auth::addrole db thisRole
+    ::auth::addrole db LastRoleEver
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT role FROM roles ORDER by role ASC}
+} -result [lsort -increasing [list arole SomeRole thisRole LastRoleEver]]
+
+tcltest::test addrole_4 {Duplicate role names are not allowed} \
+-setup {
+    commonSetup
+    ::auth::addrole db arole
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::addrole db arole
+} -result {The role arole already exists} -returnCodes error
+
+################################################################################
+# ::auth::rmrole tests
+
+tcltest::test rmrole_1 {Removing a nonexistent role is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db test
+} -result {There is no role named 'test' to remove} -returnCodes error
+
+tcltest::test rmrole_2 {Removing a role decreases the number of roles by one:} \
+-setup {
+    commonSetup
+    ::auth::addrole db role1
+    ::auth::addrole db role2
+    ::auth::addrole db role3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set before [db eval {SELECT COUNT(*) FROM roles}]
+    ::auth::rmrole db role2
+    set after [db eval {SELECT COUNT(*) FROM roles}]
+    expr {$before - $after}
+} -result 1
+
+tcltest::test rmrole_3 {Correct role is removed} \
+-setup {
+    commonSetup
+    ::auth::addrole db role1
+    ::auth::addrole db role2
+    ::auth::addrole db role3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db role2
+    db eval {SELECT role FROM roles ORDER by role ASC}
+} -result [lsort -increasing [list role1 role3]]
+
+#  Note we can't test rmrole's ability to remove existing grants until
+#  we've actually tested ::auth::grant...so that test will be one of the
+#  grant tests in stead of an rm role test -- so :
+
+################################################################################
+# ::auth::grant tests.
+
+# Do the common setup and then make some users and some roles.
+
+proc grantSetup { } {
+    commonSetup
+    
+    auth::adduser db fox
+    auth::adduser db chester
+    auth::adduser db liddick
+    auth::adduser db cerizza
+    
+    auth::addrole db manager
+    auth::addrole db administrator
+    auth::addrole db operator
+    auth::addrole db analyzer
+}
+
+tcltest::test grant_1 {Can grant a role and that adds to user_roles} \
+-setup {
+    grantSetup
+    
+    ::auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT COUNT(*) FROM user_roles}
+} -result 1
+
+tcltest::test grant_2 {Granting a role adds correct entry to join table.} \
+-setup {
+    grantSetup
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE user_id IN (
+            SELECT id FROM users WHERE username = 'fox') AND
+            role_id IN (SELECT id FROM roles WHERE role = 'administrator')
+        
+    }
+} -result 1
+
+tcltest::test grant_3 {Several grants can be done -- same role different users} \
+-setup {
+    grantSetup
+    
+    auth::grant db fox manager
+    auth::grant db chester manager
+    auth::grant db liddick manager
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE role_id IN (
+            SELECT id FROM roles WHERE role = 'manager'
+        )
+    }
+} -result 3
+
+tcltest::test grant_4 {Multiple grants several roles to same person} \
+-setup {
+    grantSetup
+    
+    ::auth::grant db fox manager
+    ::auth::grant db fox administrator
+    ::auth::grant db fox operator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE user_id IN (
+            SELECT id FROM users WHERE username='fox'
+        )
+    }
+} -result 3
+
+tcltest::test grant_5 {Invalid user is an error.} \
+-setup {
+    grantSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::grant db george administrator
+} -result {Cannot grant administrator to nonexistent user george}  \
+    -returnCodes error
+
+tcltest::test grant_6 {Invalid role is an error too} \
+-setup {
+    grantSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::grant db fox bad_role
+} -result {Cannot grant nonexistent role: bad_role to user fox} \
+    -returnCodes error
+
+tcltest::test rmrole_4 {Removing a role revokes grants too.} \
+-setup {
+    grantSetup
+    ::auth::grant db fox manager
+    ::auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db manager
+    
+    # Should only be on entry left in the user_roles table:
+    
+    db eval {
+        SELECT COUNT(*) FROM user_roles
+    }
+} -result 1
+
+tcltest::test rmrole_5 {The correct grants remain.} \
+-setup {
+    grantSetup
+    auth::grant db fox manager
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::rmrole db manager
+    
+    db eval {
+        SELECT COUNT(*) FROM user_roles WHERE role_id IN (
+            SELECT id FROM roles WHERE role = 'administrator'
+        )
+    }
+} -result 1
+
+tcltest::test rmuser_4 {Removing a user removes all grants to it from the user_roles tbl} \
+-setup {
+    grantSetup
+    auth::grant db fox manager
+    auth::grant db fox administrator
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::rmuser db fox
+    db eval {
+        SELECT COUNT(*) FROM user_roles
+    }
+} -result 0
+
+###############################################################################
+#  auth::revoke tests
+
+proc revokeSetup {} {
+    grantSetup
+    
+    #  Add some grants that we can play with to revoke:
+    
+    ::auth::grant db fox manager
+    ::auth::grant db fox administrator
+    ::auth::grant db chester operator
+    ::auth::grant db cerizza analyzer
+}
+
+tcltest::test revoke_1 {Revocation removes an entry from user_roles.} \
+-setup {
+    revokeSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set before [db eval {SELECT COUNT(*) FROM user_roles}]
+    ::auth::revoke db chester operator
+    set after [db eval {SELECT COUNT(*) FROM user_roles}]
+    expr {$before - $after}
+} -result 1
+
+tcltest::test revoke_2 {Revoking removes the correct user_roles entry} \
+-setup {
+    revokeSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::revoke db chester operator
+    
+    #  Should be no chester/operator in user_roles
+    
+    db eval {
+        SELECT COUNT(*) FROM user_roles
+        INNER JOIN users ON users.id = user_id
+        INNER JOIN roles ON roles.id = role_id
+        WHERE username='chester' AND role = 'operator'
+    }
+} -result 0
+
+tcltest::test revoke_3 {No such user in revoke is an error.} \
+-setup {
+    revokeSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::revoke db george operator
+} -result "There is no user 'george' from which roles can be revoked" \
+    -returnCodes error
+
+tcltest::test revoke_4 {No such role is a different error:} \
+-setup {
+    revokeSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::revoke db fox dragon-slayer
+} -result "There is no such role 'dragon-slayer' that can be revoked." \
+    -returnCodes error
+
+tcltest::test revoke_5 {valid user and valid role not granted is an error too} \
+-setup {
+    revokeSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::revoke db fox analyzer
+} -result {fox has never been granted analyzer} -returnCodes error
+
+
+##############################################################################
+#  auth::users tests.
+
+tcltest::test users_1 {Initially there are no users.} \
+-setup {
+    commonSetup;     # Note difference from next test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::users db
+} -result [list]
+
+tcltest::test users_2 {LIst users properly} \
+-setup {
+    grantSetup;    # Note different setup from prior test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lsort -increasing [auth::users db]
+} -result [lsort -increasing [list fox chester liddick cerizza]]
+
+#############################################################################
+# auth::listRoles tests
+#
+
+tcltest::test listRoles_1 {Initially, no roles} \
+-setup {
+    commonSetup;     #Note difference from next test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    auth::listRoles db
+} -result [list]
+    
+tcltest::test listRoles_2 {Existing roles are properly listed} \
+-setup {
+    grantSetup;     # Note difference from prior test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lsort -increasing [auth::listRoles db]
+} -result [lsort -increasing [list manager administrator operator analyzer]]
+
+##############################################################################
+# auth::listAll tests.
+
+tcltest::test listall_1 {Initially there's nothing to list.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::auth::listAll db
+} -result [dict create]
+
+##
+#  This normalizes dicts returned from ::auth::listAll:
+#  Given a dict that comes from that proc returns one that:
+#  is sorted by key (increasing) and has roles sorted increasing as well.
+#
+# @param d  - dict from ::auth::listAll.
+# @return dict - see above.
+#
+proc sortDict  {d} {
+    set result [dict create]
+    foreach key [lsort -increasing [dict keys $d]] {
+        dict set result $key [lsort -increasing [dict get $d $key]]    
+    }
+    
+    return $result
+}
+
+tcltest::test listall_2 {Now we have users with roles (except liddick).} \
+-setup {
+    revokeSetup ;     # Note difference from prior test.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set rawResult [::auth::listAll db]
+    set result [sortDict $rawResult]
+} -result [sortDict [dict create                                     \
+    liddick [list] fox [list manager administrator]                  \
+    chester [list operator] cerizza [list analyzer]                  \
+]]
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

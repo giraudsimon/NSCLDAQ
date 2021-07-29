@@ -1,0 +1,422 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   loggerdb.test
+# @brief  Test the logger database management functions.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require eventloggers
+package require containers
+package require sqlite3
+
+set dbFile ""
+set dbFd   -1
+proc commonSetup { } {
+    set ::dbFd [file tempfile ::dbFile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbFile
+    sqlite3 db $::dbFile
+
+}
+proc commonCleanup {} {
+    close $::dbFd
+    db close
+    file delete $::dbFile   
+}
+
+#------------------------------------------------------------------------------
+#  Tests ::eventloggers::add  - add an event logger.
+
+tcltest::test add_1 {Successful simple add adds an entry} \
+-setup {
+    commonSetup
+    ::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        select COUNT(*) FROM logger
+    }
+    
+} \
+-result 1
+
+tcltest::test add_2 {Does add put non dict stuff in the right place?} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT daqroot, ring, host, destination FROM logger WHERE id=$id
+    }
+} -result [list /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea]
+
+tcltest::test add_3 {Default options get set properly} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT partial, critical, enabled, container_id
+        FROM logger WHERE id=$id
+    }
+} -result [list 0 1 1 -1]
+
+tcltest::test add_4 {I can override the default options properly} \
+-setup {
+    commonSetup
+    ::container::add db AContainer ~/minimal.img "" ""
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create container AContainer critical 0 partial 1 enabled 0]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT partial, critical, enabled, container_id
+        FROM logger WHERE id=$id
+    }
+} -result [list 1 0 0 1]
+
+tcltest::test add_5 {Can't use same destination 2x.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://locahost/ring genesis \
+        ~/stagearea [dict create]
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# Enable/disable logger tests
+
+tcltest::test enable_1 {IF not enabled becomes so.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 0]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 1
+
+tcltest::test enable_2 {Remains enabled if enabled.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 1
+
+tcltest::test enable_3 {Bad id is an error} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::enableLogger $db [expr {$id + 1}]
+} -result * -match glob -returnCodes error
+
+tcltest::test disable_1 {Disable a logger sets enabled => 0} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 0
+
+tcltest::test disable_2 {If disabled it stays so.} \
+-setup {
+commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 0]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db $id
+    db eval {
+        SELECT enabled FROM logger WHERE id = $id
+    }
+} -result 0
+
+tcltest::test disable_3 {Invalid id is an error.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::disableLogger db [incr id]
+} -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+#  Global enable/disable tests
+
+tcltest::test gblenable_1 {Enable turns it on from off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT state FROM recording
+    }
+} -result 1
+
+tcltest::test gblenable_2 {Enable keeps it on if it's on.} \
+-setup {
+    commonSetup
+    eventloggers::enable db
+    eventloggers::enable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 1
+
+tcltest::test gbldisable_1 {Global disable turns it off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db ;       # We demonstrated it's on now
+    eventloggers::disable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 0
+
+tcltest::test gbldisable_2 {Global disable keeps it off.} \
+-setup {
+    commonSetup
+    eventloggers::enable db ;       # We demonstrated it's on now
+    eventloggers::disable db;       # It's off now.
+    eventloggers::disable db
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+db eval {
+        SELECT state FROM recording
+    }
+} -result 0
+
+#------------------------------------------------------------------------------
+#  eventloggers::delete tests.
+
+
+tcltest::test delete_1 {Deletes an existing one} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventloggers::delete db $id
+    db eval {
+        SELECT COUNT(*) FROM logger
+    }
+} -result 0
+
+tcltest::test delete_2 {Delete but does not exist.} \
+-setup {
+    commonSetup
+    set id [::eventloggers::add db \
+        /usr/opt/daq/12.0-000 tcp://localhost/ring genesis ~/stagearea \
+        [dict create enabled 1]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    eventloggers::delete db [incr id]
+} -result * -match glob -returnCodes error
+
+
+#-----------------------------------------------------------------------------
+# eventloggers::listLoggers tests.
+
+tcltest::test list_1 {Initially I get an empty list.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::eventloggers::listLoggers db
+} -result [list]
+    
+tcltest::test list_2 {Single item but no container.} \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [::eventloggers::listLoggers db]
+} -result 1
+
+tcltest::test list_3 {Correct values } \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set descr [lindex [::eventloggers::listLoggers db] 0]
+    list                                                        \
+        [dict get $descr daqroot] [dict get $descr ring]        \
+        [dict get $descr host]                                  \
+        [dict get $descr partial] [dict get $descr destination] \
+        [dict get $descr critical] [dict get $descr enabled]    \
+        [dict get $descr container] [dict get $descr container_id]
+} -result [list    \
+    /usr/opt/daq/12.0-000 tcp://localhost/ring  genesis 0 ~/stagearea 1 1 "" -1 \
+]
+
+tcltest::test list_4 {Join with container gets the container name?} \
+-setup {
+    commonSetup
+    ::container::add db AContainer ~/minimal.img "" ""
+    eventloggers::add db /usr/opt/daq/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create container AContainer]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set descr [lindex [eventloggers::listLoggers db] 0]
+    dict get $descr container
+} -result AContainer
+
+tcltest::test list_5 {descr} \
+-setup {
+    commonSetup
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring genesis \
+        ~/stagearea [dict create]
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring_b genesis \
+        ~/stagearea/b [dict create partial 1]
+    eventloggers::add db /usr/opt/12.0-000 tcp://localhost/ring_lendo genesis \
+        ~/stagearea/lendo [dict create partial 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [eventloggers::listLoggers db]
+} -result 3
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

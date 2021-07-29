@@ -22,6 +22,7 @@
 #include "USBDevice.h"
 #include "USB.h"
 #include <string.h>
+#include <iostream>
 
 static const unsigned MAX_SERIAL(256); // longest supported serial string.
 
@@ -95,14 +96,27 @@ USBDevice::getSerial()
         throw USBException(status, "Unable to get_device_descriptor");
     }
     uint8_t index = descriptor.iSerialNumber;
-    
-    // NOw get the serial string as a C string
-    
+ 
+
     unsigned char czserial[MAX_SERIAL];
     memset(czserial, 0, MAX_SERIAL);
-    status = libusb_get_string_descriptor_ascii(
-        m_pHandle, index,  czserial, MAX_SERIAL-1
-    );
+    if (index == 0) {
+      strcpy(reinterpret_cast<char*>(czserial), "CCUSB-OLD");
+      std::cerr << "This CC-USB does not have a good Serial # string\n";
+      std::cerr << "Update its firmware to fix this\n";
+      std::cerr << "We can work in a single CC-USB system\n";
+    } else {
+    
+      // NOw get the serial string as a C string
+    
+
+      status = libusb_get_string_descriptor_ascii(
+	  m_pHandle, index,  czserial, MAX_SERIAL
+     );
+      std::cerr << "Got serial " << czserial << std::endl;
+    }
+    
+    
     if (status < 0) {
         throw USBException(status, "Unable to get_string_descriptor_ascii");
     }

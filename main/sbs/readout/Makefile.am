@@ -53,7 +53,9 @@ libSBSProductionReadout_la_SOURCES	=				\
 	CVariableBuffers.cpp		\
 	CBusy.cpp			\
 	CCAENV262Busy.cpp		\
-	CV977Busy.cpp
+	CV977Busy.cpp \
+	CStatisticsCommand.h  CStatisticsCommand.cpp \
+	CRunStateCommand.h CRunStateCommand.cpp
 
 
 libSBSProductionReadout_la_CPPFLAGS=$(COMPILATION_FLAGS)

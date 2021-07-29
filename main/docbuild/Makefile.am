@@ -53,6 +53,8 @@ daq.mans: daq.xml
 BOOKDIRS = 	@top_srcdir@ \
             @top_srcdir@/base/dataflow\
 	@top_srcdir@/daq/format \
+	@top_srcdir@/utilities/manager \
+	@top_srcdir@/utilities/readoutREST \
 	@top_srcdir@/usb \
 	@top_srcdir@/usb/usb1 \
 	@top_srcdir@/usb/vmusb \
@@ -60,6 +62,7 @@ BOOKDIRS = 	@top_srcdir@ \
 	@top_srcdir@/daq/readoutgui \
 	@top_srcdir@/utilities/logbook \
 	@top_srcdir@/daq/eventbuilder \
+	@top_srcdir@/daq/evbtools/ringsource\
 	@top_srcdir@/utilities/newscaler \
 	@top_srcdir@/simplesetups/vmusb \
 	@top_srcdir@/simplesetups/v775 \

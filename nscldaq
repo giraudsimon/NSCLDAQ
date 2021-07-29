@@ -1,0 +1,251 @@
+#!/bin/sh
+#
+#   Startup/shutdown script for NSCLDAQ
+#   - Start/stop containerized Port Manager.
+#   - Start/stop containerized RINGMaster.
+#   - If necessary build, then load btp driver and mkbtp (native)
+#   - If necessary build, then load Plx driver 9054 (native).
+#
+#  The latter 2 on start only.  On stop we don't try to unload drviers.
+#  Note: Driver builds, unlike DKMS, capture build output/errors and
+#  email them to daqhelp@frib.msu.edu so that we can be advised of any
+#  failures.
+#
+
+
+. /lib/lsb/init-functions
+
+
+##
+#  Some definitions:
+#
+
+#  We run the port manager and the ring master under the following singularity container
+#  with BUSTEROPT bound to /usr/opt
+
+SINGULARITY_CONTAINER="/usr/opt/nscl-buster.img"
+USROPT="/usr/opt/opt-buster"
+
+
+#  The definition below is the top level directory of the NSCLDAQ we'll use
+#  _in_ the container's filesystem.
+
+
+#PIDDIR="/tmp/nscldaqpid"
+#LOGDIR="/tmp/nscldaqlog"
+
+PIDDIR="/var/run/nscldaq"
+LOGDIR="/var/log/nscldaq"
+
+DAQHOME="/usr/opt/daq/current"
+DAQBIN="${DAQHOME}/bin"
+
+DAQPORTMANAGER="${DAQBIN}/DaqPortManager"
+DAQPORTMANAGERPIDFILE="${PIDDIR}/portmgr.pid"
+DAQPORTMANAGERLOGFILE="${LOGDIR}/portmgr.log"
+
+RINGMASTER="${DAQBIN}/RingMaster"
+RINGMASTERPIDFILE="${PIDDIR}/ringmaster.pid"
+RINGMASTERLOGFILE=${LOGDIR}/ringmaster.log
+
+rm -f ${RINGMASTERLOGFILE}
+
+
+#  Driver locations and kernel revision:
+
+
+KERNEL_VERSION="`uname -r`"
+KERNEL_SOURCE_DIR="/usr/src/linux-headers-${KERNEL_VERSION}"
+DRIVERBUILD_EMAIL="daqhelp@frib.msu.edu"
+
+DRIVER_REPOSITORY="https://git.frib.msu.edu/daqdev/nscldaqdrivers.git"
+
+#DRIVER_TOPDIR="/usr/opt/init/nscldaqdrivers"
+DRIVER_TOPDIR="/usr/local/src/nscldrivers"
+BTPDRIVERDIR="${DRIVER_TOPDIR}/btp"
+BTPDRIVER="${BTPDRIVERDIR}/btp-${KERNEL_VERSION}.ko"
+
+PLX_SDK_DIR="${DRIVER_TOPDIR}/plx"
+PLXDRIVERDIR="${PLX_SDK_DIR}/Driver-${KERNEL_VERSION}"
+
+##
+# Needed directories 
+#
+
+mkdir -p "${PIDDIR}"
+mkdir -p "${LOGDIR}"
+
+#------------------------------------- start handling ----------------------------
+
+##
+# start_portmanager
+#     Starts the NSCLDAQ port manager inside the specified Singularity container.
+#     While the normal way to do this would be start-stop-daemon, that's got problems
+#     used with singularity since we'll be starting two processes in singularity,
+#    and start-stop-daemon assumes the command (singularity) is unique.
+#    so we fall back on the good old nohup. instead.
+#     
+start_portmanager () {
+    nohup singularity exec --bind "${USROPT}:/usr/opt" --no-home "${SINGULARITY_CONTAINER}"  \
+    	  "${DAQPORTMANAGER}" \
+	  -log "${DAQPORTMANAGERLOGFILE}" \
+	  -pidfile "${DAQPORTMANAGERPIDFILE}"  \
+	  </dev/null >/dev/null 2>&1 &
+   log_daemon_msg portmanager
+    sleep 3                         # Let the port manager start.
+
+}
+# start_ringmaster
+#   Note that the ringmaster does not have a -pidfile like option so we
+#   use $! to get this manually.
+
+start_ringmaster () {
+      nohup singularity exec --bind "${USROPT}:/usr/opt" --no-home "${SINGULARITY_CONTAINER}"  \
+   	  ${RINGMASTER} -f /tmp/ringmaster.log \
+	   </dev/null >/dev/null  2>&1 &
+   echo $! > "${RINGMASTERPIDFILE}"   	  
+   log_daemon_msg "ringmaster"
+
+}
+
+##
+# update_drivers
+#    Updates the drivers rouce tree at DRIVER_TOPDIR from the repository
+#    If necessary we do the initial clone:
+#
+update_drivers() {
+    if test ! -d "${DRIVER_TOPDIR}"
+    then
+	mkdir -p "${DRIVER_TOPDIR}"/..   # Make sure the enclosing dir exists.
+	git clone "${DRIVER_REPOSITORY}" "${DRIVER_TOPDIR}"
+    fi
+    #  Pull the master branch to get any updates since last boot:
+
+    (cd "${DRIVER_TOPDIR}"; git pull origin master)
+}
+
+##
+# build_btpdriver
+#    If there isn't a ${BTPDRIVERDIR}/btp-${KERNEL_VERSION}.ko file clean and build
+#    a new btp.ko and copy it into that location.
+#    The output of the build is then sent to daqhelp@frib.msu.edu
+#
+#
+build_btpdriver () {
+   if test ! -e "${BTPDRIVER}"
+   then
+	rm -f "${BTPDRIVERDIR}/dd/*.o"  "${BTPDRIVERDIR}/dd/*.ko"
+	(cd "${BTPDRIVERDIR}/dd"; make -C "${KERNEL_SOURCE_DIR}" SUBDIRS=`pwd` BTDRIVER=`pwd`/..) \
+	    2>&1 | mail -s"Driver build for btp-${KERNEL_VERSION}"  "${DRIVERBUILD_EMAIL} on `hostname`"
+	 cp "${BTPDRIVERDIR}/dd/btp.ko"  "${BTPDRIVER}"
+	 log_daemon_msg "BTP ${KERNEL_VERSION}"
+   fi
+}
+##
+# build_plxdriver
+#  The Plx build ecosystem is a bit nasty.  It expects to be built from the Plx
+#  distribution with an PLX_SDK_DIR shell variable set.  As such, we normally have
+#  modified the Plx_Load command to look for a driver in the appropriate directory
+#  tree (PLX_SDK_DIR/Driver-kernel-version).
+#
+build_plxdriver () {
+   if test ! -d "${PLXDRIVERDIR}"
+   then
+      (cd "${PLX_SDK_DIR}"; ./mkdrivertree)
+      (cd "${PLXDRIVERDIR}" ; \
+      	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers clean; \
+	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers) 2>&1 | \
+        mail -s "Build of PLX Driver family for ${KERNEL_VERSION}" "${DRIVERBUILD_EMAIL} on `hostname`"
+      log_daemon_msg "Plx driver family ${KERNEL_VERSION}"
+   fi
+}
+#------------------------------- Kernel module loads --------------------------
+
+
+##
+# load_btpdriver
+#     This requires both loading the kernel module and then running mkbtp
+#     to make the desired number of device special files.
+
+load_btpdriver () {
+    insmod "${BTPDRIVER}"
+    "${BTPDRIVERDIR}/mkbtp" 5
+    log_daemon_msg "btp loaded"
+}
+##
+# load_plxdriver
+#    There's a script in the PLX driver directory tree for this.  It's been modified
+#   from the original to load the driver from the Driver-kernel-version directory
+#   rather than from the Driver dir.
+#
+load_plxdriver () {
+   PLX_SDK_DIR="${PLX_SDK_DIR}" "${PLX_SDK_DIR}/Bin/Plx_load" 9054
+}
+
+#------------------------------- stop handling -----------------------------------
+##
+# stop_portmanager
+#     Stops the port manager.  Note the comments to start_portmanager
+#     about why start-stop-daemon won't work for us.  ${DAQPORTMANAGERPIDFILE}
+#     
+stop_portmanager () { 
+    if test -r "${DAQPORTMANAGERPIDFILE}"
+    then
+       kill -9 `cat "${DAQPORTMANAGERPIDFILE}"`
+       rm "${DAQPORTMANAGERPIDFILE}"
+       log_daemon_msg portmanager
+    fi
+}
+##
+# stop_ringmaster
+
+stop_ringmaster () {
+ if test -r "${RINGMASTERPIDFILE}"
+    then
+       kill -9 `cat "${RINGMASTERPIDFILE}"`
+       rm "${RINGMASTERPIDFILE}"
+       log_daemon_msg rigmaster
+    fi
+
+}
+
+
+#-----------------------------------------------------------------------------
+#   Script entry point.
+
+case "$1" in
+     start)
+	log_daemon_msg "Starting NSCLDAQ Daemons"
+	start_portmanager
+	start_ringmaster
+	log_daemon_msg "\nBuilding any needed drivers for kernel version ${KERNEL_VERSION}"
+	update_drivers
+	build_btpdriver
+	build_plxdriver
+	log_daemon_msg "Loading kernel mode modules"
+	load_btpdriver
+	load_plxdriver
+	log_daemon_msg "Loaded and setup"	
+	;;
+     stop)
+	log_daemon_msg "Stopping NSCLDAQ Daemons"
+	stop_ringmaster
+	stop_portmanager
+        ;;
+     status)
+        ;;
+     restart|force-reload)
+	 log_daemon_msg "Stopping NSCLDAQ Daemons"
+	 stop_ringmaster
+	 stop_portmanager
+	 log_daemon_msg "Starting NSCLDAQ Daemons"
+	 start_portmanager
+	 start_ringmaster
+        ;;
+     *)
+         echo "Usage: $0 {start|stop|status|restart|force-reload}" >&2
+	 exit 1
+	;;
+esac
+chmod a+w /dev/null #   Probably the redirections change the perms.
+# exit 0

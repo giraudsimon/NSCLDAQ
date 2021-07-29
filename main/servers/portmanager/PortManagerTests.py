@@ -138,11 +138,16 @@ class PortManagerTests(unittest.TestCase):
         pm    = PortManager.PortManager('localhost', 30000)
         ports = pm.listPorts()
         message = None
-        if len(ports) != 1:
+        if len(ports) >= 1:
             message = 'Number of ports... found ports {}'.format(ports)
-        self.assertEqual(1, len(ports), msg=message)
-        rm = ports[0]
-        self.assertEqual('RingMaster', rm['service'])
+        self.assertTrue( len(ports) >= 1, msg=message)
+        
+        found = False
+        for rm in ports:
+            if rm['service'] == 'RingMaster':
+                found = True
+        
+        self.assertTrue(found)
     
     ##
     # test_list_afew
@@ -151,16 +156,17 @@ class PortManagerTests(unittest.TestCase):
     #
     def test_list_afew(self):
         pm     = PortManager.PortManager('localhost', 30000)
+        pre    = pm.listPorts()
         myport = pm.getPort('myport')
         theport= pm.getPort('theport')
         iam    = getpass.getuser()
         
         info   = pm.listPorts()
         message = None
-        if len(info) != 3:
+        if len(info) != (len(pre) +2):
             message = 'Number of ports... found ports {}'.format(info)
 
-        self.assertEqual(3, len(info), msg=message)
+        self.assertEqual(len(pre)+2, len(info), msg=message)
         
         # Toss the data up into a dict keyed by service name.
         

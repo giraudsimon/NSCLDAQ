@@ -84,7 +84,8 @@ COutputThread::COutputThread(std::string ring, CSystemControl& sysControl) :
   m_pBeginRunCallback(0),
   m_systemControl(sysControl)
 {
-  
+	clearCounters(m_statistics.s_cumulative);
+	clearCounters(m_statistics.s_perRun);
 }
 /*!
   Destructor...actually this is probably not called as the thread lifetime
@@ -228,6 +229,7 @@ COutputThread::processBuffer(DataBuffer& buffer)
 {
   if (buffer.s_bufferType == TYPE_START) {
     m_runTime.start();
+		clearCounters(m_statistics.s_perRun);
     startRun(buffer);
   }
   else if (buffer.s_bufferType == TYPE_STOP) {
@@ -424,8 +426,8 @@ COutputThread::processEvents(DataBuffer& inBuffer)
 
       uint32_t* pNextLong = reinterpret_cast<uint32_t*>(pContents);
       if (*pNextLong != 0xffffffff) {
-	cerr << "Ran out of events but did not see buffer terminator\n";
-	cerr << nWords << " remaining unprocessed\n";
+				cerr << "Ran out of events but did not see buffer terminator\n";
+				cerr << nWords << " remaining unprocessed\n";
       }
 
       break;			// trusting event count vs word count(?).
@@ -710,13 +712,22 @@ COutputThread::event(void* pData)
     // Put the data in the event and figure out where the end pointer is.
 
     void* pDest = event.getBodyPointer();
-    memcpy(pDest, m_pBuffer, m_nWordsInBuffer*sizeof(uint16_t));
+		size_t nB = m_nWordsInBuffer*sizeof(uint16_t);
+		size_t nBytes = m_nWordsInBuffer*sizeof(uint16_t);
+    memcpy(pDest, m_pBuffer, nBytes);
     uint8_t* pEnd = reinterpret_cast<uint8_t*>(pDest);
     pEnd += m_nWordsInBuffer*sizeof(uint16_t); // Where the new body cursor goes.
 
     event.setBodyCursor(pEnd);
     event.updateSize();
     event.commitToRing(*m_pRing);
+		m_statistics.s_cumulative.s_triggers++;
+		m_statistics.s_cumulative.s_triggersAccepted++;
+		m_statistics.s_cumulative.s_bytes += nBytes;
+		
+		m_statistics.s_perRun.s_triggers++;
+		m_statistics.s_perRun.s_triggersAccepted++;
+		m_statistics.s_perRun.s_bytes += nBytes;
     delete pEvent;
     // Reset the cursor and word count in the assembly buffer:
 
@@ -867,5 +878,15 @@ COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
 
   item.commitToRing(*m_pRing);
 
+}
+/**
+ * ClearCounters
+ *    Clears a counter set
+ * @param c - references a counters object that will be zeroed.
+ */
+void
+COutputThread::clearCounters(Counters& c)
+{
+	memset(&c, 0, sizeof(Counters));
 }
 

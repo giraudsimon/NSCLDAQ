@@ -6,6 +6,7 @@
 
 
 using namespace std;
+typedef void* COutputThread;
 
 class TCLApplication;
 TCLApplication* gpTCLApplication = 0;
@@ -43,13 +44,14 @@ public:
   void logStateChangeStatus(const char* msg);
   void logProgress(const char* msg);
   void AcquisitionErrorHandler(Tcl_Event* pEvent, int flags);
+  void* getOutputThread() ;
 };
 CTheApplication* CTheApplication::m_pInstance(nullptr);
 void CTheApplication::logStateChangeRequest(const char* msg) {}
 void CTheApplication::logStateChangeStatus(const char* msg) {}
 void CTheApplication::logProgress(const char* msg) {}
 void CTheApplication::AcquisitionErrorHandler(Tcl_Event* pEvent, int flags) {}
-
+void* CTheApplication::getOutputThread() {return nullptr;}
 CTheApplication* CTheApplication::getInstance() {
     if (!m_pInstance) m_pInstance = new CTheApplication;
     return m_pInstance;

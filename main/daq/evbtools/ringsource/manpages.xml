@@ -1,0 +1,153 @@
+<!-- manpage 1daq -->
+
+<refentry id='daq1.ringfragsource'>
+   <refmeta>
+      <refentrytitle id='daq1.ringfragsource.title'>ringFragmentSource</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ringFragmentSource</refname>
+      <refpurpose>Provide Fragments To EventBuilder From Ring Buffers.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/ringFragmentSource <option>options...</option>
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides fragments from a ring buffer to the orderer stage of an
+            event builder pipeline.
+          </para>
+          <para>
+            The program accepts the following options.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>--evbhost</option>=<replaceable>hostname</replaceable></term>
+               <listitem>
+                   <para>
+                    Name of the host in which the event builder pipeline (orderer)
+                    is running.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--evbport</option>=<replaceable>portno | 'managed'</replaceable></term>
+               <listitem>
+                   <para>
+                    Provides the port on which the event builder is listening
+                    for data source connections.  If the string <literal>managed</literal>
+                    is used, the event builder is advertising its services via
+                    the port manager.  Otherwise this must be the number of a port.
+                    The default is <literal>managed</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>--evbname</literal>=<replaceable>name</replaceable></term>
+               <listitem>
+                   <para>
+                        This is the name field of the service the event builder
+                        is advertising.  The service name is a triplet of the form
+                        <literal>Orderer</literal>:<replaceable>name</replaceable>:<replaceable>uniquifier</replaceable>
+                        The uniquifier is intended to support running several event
+                        builders in the same system.  The middle member of the
+                        triplet is what should be supplied as the <parameter>name</parameter>
+                        value for this option.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--info</option>="InfoString"</term>
+               <listitem>
+                   <para>
+                    Provides an info string that describes what these data will
+                    be (documentation purposes onyl).  Since this is used by
+                    Tcl/Tk substitution characters should be avoided.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--default-id</option>=<replaceable>INT</replaceable></term>
+               <listitem>
+                   <para>
+                    Obsolete.  Only needed with DAQ 10.x  Provides a source id
+                    to use in the event a source id for a fragment annot be determined.
+                    NSCLDAQ 11 and 12 use body headers to assure this information
+                    is always present.  See <option>--expectbodyheaders</option>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--ring</option>=<replaceable>URI</replaceable></term>
+               <listitem>
+                   <para>
+                    Provides the URI of the ring from which this program will
+                    get data.  This must be a <literal>tcp</literal> protocol URI.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--timestampextractor</option></term>
+               <listitem>
+                   <para>
+                    Only needed for NSCLDAQ-10.x.   Provides a shared object library
+                    name containing a timestamp extraction library.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--expectbodyheaders</option></term>
+               <listitem>
+                   <para>
+                    If present, the data contain body headers that provide the
+                    source id and timestamp for each fragment.  If provided
+                    (default is off), there is no need to provide
+                    <option>--timestampextractor</option> or
+                    <option>--default-id</option>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--oneshot</option>=<replaceable>1 | 0</replaceable></term>
+               <listitem>
+                   <para>
+                    Supplies a flag that, if true, tells the program to exit
+                    after a run has been processed.  The software counts
+                    <literal>BEGIN_RUN</literal> ring items and when a matching number of
+                    <literal>END_RUN</literal> ring items are seen the program
+                    exits if it's in <option>--oneshot</option> mode.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--timeout</option></term>
+               <listitem>
+                   <para>
+                    In oneshot mode, the maximum number of seconds the source
+                    will wait for end runs once the first one has been
+                    seen.  
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--offset</option>=<replaceable>ticks</replaceable></term>
+               <listitem>
+                   <para>
+                    Provides the ability to compensate for fixed synchronization
+                    offsets in data sources.  The signed integer value of this
+                    option is added to the timestamps for all fragments.
+                    Note that this is added to the fragment header used to prepend
+                    all data items.  No modifications to the body occur.
+                   </para>
+                </listitem>
+            </varlistentry>
+           </variablelist>
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->

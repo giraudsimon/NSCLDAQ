@@ -121,7 +121,8 @@ CExperiment::CExperiment(string ringName,
 
   // ensure that the variable buffers know what source id to use.
   CVariableBuffers::getInstance()->setSourceId(m_nDefaultSourceId);
-
+  clearCounters(m_statistics.s_cumulative);
+  clearCounters(m_statistics.s_perRun);
 }
 
 /*!
@@ -253,8 +254,10 @@ CExperiment::Start(bool resume)
     time_t stamp = time(&stamp);	// Absolute timestamp for this 'event'.
     
     if (m_pRunState->m_state != RunState::paused) {
+      
       m_nEventsEmitted  = 0;
       m_runTime.start();
+      clearCounters(m_statistics.s_perRun);
     }
     if (resume) {
       pMain->logProgress("This is a resume run");
@@ -930,6 +933,9 @@ CExperiment::readEvent(CRingItem& item)
   size_t nWords =
     m_pReadout->read(pBuffer +2 , m_nDataBufferSize-sizeof(uint32_t));
 
+  m_statistics.s_cumulative.s_triggers++;
+  m_statistics.s_perRun.s_triggers++;
+  
   if (m_pReadout->getAcceptState() == CEventSegment::Keep) {
     *(reinterpret_cast<uint32_t*>(pBuffer)) = nWords +2;
     item.setBodyCursor(pBuffer + nWords+2);
@@ -939,5 +945,25 @@ CExperiment::readEvent(CRingItem& item)
     }
     item.commitToRing(*m_pRing);
     m_nEventsEmitted++;
+    
+    m_statistics.s_cumulative.s_acceptedTriggers++;
+    
+    m_statistics.s_perRun.s_acceptedTriggers++;
+    
+    size_t nBytes = (nWords+2)*sizeof(uint16_t);
+    m_statistics.s_cumulative.s_bytes += nBytes;
+    m_statistics.s_perRun.s_bytes     += nBytes;
+    
   }  
+}
+
+/**
+ * clearCounters
+ *    Given a reference to a set of statistics counters,
+ *    clear them.
+ *  @param c -reference to counters to clear.
+ */
+void
+CExperiment::clearCounters(Counters& c) {
+  memset(&c, 0, sizeof(Counters));
 }

@@ -85,6 +85,18 @@ class CSystemControl;
 
 class COutputThread  : public Thread
 {
+public:
+	// exported data structures:
+	
+	typedef struct _Counters {
+		size_t s_triggers;
+		size_t s_triggersAccepted;
+		size_t s_bytes;
+	} Counters;
+	typedef struct _Statistics {
+		Counters s_cumulative;
+		Counters s_perRun;
+	} Statistics;
 private:
    // Private data type:
    
@@ -118,6 +130,7 @@ private:
 
 	double      m_lastScaler;	
 	CElapsedTime m_runTime;
+	Statistics m_statistics;
 
 
   // Constuctors and other canonicals.
@@ -133,6 +146,7 @@ private:
 public:
 
   virtual void run();		/* Adapt between nextgen and spectrodaq threading model. */
+	const Statistics& getStatistics() const{ return m_statistics; }
 
   // Thread operations are all non-public in fact.. don't want to call them4
   // from outside this class.. only from within the thread.. This includes the
@@ -164,6 +178,7 @@ private:
   bool hasOptionalHeader();
   void scheduleApplicationExit(int status);
 	void emitStateChange(uint32_t type, uint32_t barrier);
+	void clearCounters(Counters& c);
 };
 
 

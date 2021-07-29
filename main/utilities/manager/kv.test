@@ -1,0 +1,266 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   <filename>
+# @brief  <Purpose>
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require kvstore
+package require sqlite3
+
+set dbFile ""
+set dbFd   -1
+proc commonSetup { } {
+    set ::dbFd [file tempfile ::dbFile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbFile
+    sqlite3 db $::dbFile
+
+}
+proc commonCleanup {} {
+    close $::dbFd
+    db close
+    file delete $::dbFile
+}
+
+#----------------------------------------------------------------------------
+# Tests of kvstore::create:
+
+tcltest::test create_1 {successful create makes entry.} \
+-setup {
+    commonSetup
+    ::kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {
+        SELECT COUNT(*) FROM kvstore WHERE keyname = 'Key'
+    }
+} \
+-result 1
+
+tcltest::test create_2 {Value properly set} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db  eval {
+        SELECT value FROM kvstore WHERE keyname = 'Key'
+    }
+} -result Value
+
+tcltest::test create_3 {Double create is a fail.} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::create db Key Value
+} -result * -match glob -returnCodes error
+#-------------------------------------------------------------------------------
+# Tests for modify:
+
+tcltest::test modify_1 {Modification of an existing key changes value.} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::modify db Key "New Value"
+    db eval {
+        SELECT value FROM kvstore WHERE keyname = 'Key'
+    }
+} -result [list "New Value"]
+
+tcltest::test modify_2 {Cannot modify a nonexistent key} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::modify db Key "New Value"
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# Tests of kvstore::get
+#
+
+tcltest::test get_1 {Getting the value of a key gets correct value} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::get db Key
+
+} -result Value
+
+tcltest::test get_2 {Get non-existent key is error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::get db Key
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# Tests of kvstore::listKeys
+
+tcltest::test listkeys_1 {Initially empty.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list]
+
+tcltest::test listkeys_2 {List a single one} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db 
+} -result [list Key1]
+
+tcltest::test listkeys_3 {List a few keys} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 value
+    kvstore::create db Key2 value
+    kvstore::create db Key3 value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list Key1 Key2 Key3]
+
+tcltest::test listkeys_4 {List keys with white space.} \
+-setup {
+    commonSetup
+    kvstore::create db "Key 1" value
+    kvstore::create db "Key 2" value
+    kvstore::create db "Key 3" value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listKeys db
+} -result [list "Key 1" "Key 2" "Key 3"]
+
+#------------------------------------------------------------------------------
+# Tests of kvstore::listAll
+
+tcltest::test listall_1 {Initially  there's nothing} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create]
+
+tcltest::test listall_2 {Single item.} \
+-setup {
+    commonSetup
+    kvstore::create db Key Value
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create Key Value]
+
+tcltest::test listAll_3 {Several items - no fancies.} \
+-setup {
+    commonSetup
+    kvstore::create db Key1 value1
+    kvstore::create db Key2 value2
+    kvstore::create db Key3 value3
+    kvstore::create db Key4 value4
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create Key1 value1 Key2 value2 Key3 value3 Key4 value4]
+
+tcltest::test listall_4 {Funky keywords and values.} \
+-setup {
+    commonSetup
+    kvstore::create db "Key 1" "value 1"
+    kvstore::create db "Key 2" "value 2"
+    kvstore::create db "Key 3" "value 3"
+    kvstore::create db "Key 4" "value 4"
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    kvstore::listAll db
+} -result [dict create "Key 1" "value 1" "Key 2" "value 2" "Key 3" "value 3" \
+           "Key 4"  "value 4"]
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

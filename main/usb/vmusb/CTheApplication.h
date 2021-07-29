@@ -24,6 +24,7 @@
 #include <CSystemControl.h>
 
 class CTCLInterpreter;
+class COutputThread;
 struct Tcl_Interp;
 struct Tcl_Event;
 
@@ -61,7 +62,7 @@ private:
   std::string         m_logFile;
   unsigned            m_logLevel;
   bool                m_canQuickstart;
-
+  COutputThread*      m_pOutputThread;
 public:
   // Canonicals
 
@@ -87,6 +88,7 @@ public:
   // Getters:
   
   bool canQuickstart() const {return m_canQuickstart;}
+  COutputThread* getOutputThread();
   
   // Segments of operation.
 private:

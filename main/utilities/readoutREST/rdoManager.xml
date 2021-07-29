@@ -1,0 +1,867 @@
+<!-- manpage 3tcl -->
+
+<refentry id='tcl3.readoutrestclient'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutrestclient.title'>ReadoutRESTClient</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutRESTClient</refname>
+      <refpurpose>Client for Readout REST servers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTClient
+
+ReadouRESTClient name ?option value...?
+name configure option value ?...?
+name begin
+name end
+name init
+name shutdown
+name getState
+name getTitle
+name getRunNumber
+name getStatistics
+name setTitle new-title-string
+name setRunNumber new-run-number
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>ReadoutREST</literal> package provides NSCLDAQ
+            based Tcl driven Readout programs a REST server that can be used
+            to remotely control and query the Readout.  This facility is normally
+            used in conjunction with the NSCLDAQ DAQ manager facility to
+            manage Readout programs as critical programs that require attention
+            during state transitions.
+          </para>
+          <para>
+            The <literal>ReadoutRESTClient</literal> package, ass the name
+            implies, provides a Tcl REST client library for the ReadoutREST
+            server.
+          </para>
+    </refsect1>
+    <refsect1>
+        <title>OPTIONS</title>
+        <para>
+            Configuration options control how the REST client connects with the
+            server.  Note that each REST operations (public method call),
+            performs service discovery, connects with the server, performs the
+            request, gets the response and closes the connection.
+        </para>
+        <para>
+            Therefore the pre-defined <methodname>configure</methodname>
+            method allows client code to dynamically modify the server
+            options.  Furthermore, this strategy supports the
+            case when the server exits and restarts, potentially with a different
+            server listen port, between requests.
+        </para>
+        <para>
+            Here are the options, their defaults and their meanings:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><option>-host</option></term>
+               <listitem>
+                   <para>
+                    THe host in which the Readout program we want to communicate
+                    with is running.  This defaults to <literal>localhost</literal>.
+                    Note, however that the use of <literal>locahost</literal> is not
+                    host portable.  Please get in the habit of specifying a real
+                    hostname.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-user</option></term>
+               <listitem>
+                   <para>
+                    The user the Readout program you want to communicate with
+                    was run under.  Defaults to the name of the person
+                    runing the application.  This, in conjunction with the
+                    <option>-service</option> option below is used to
+                    translate the Readout's service advertisement into a
+                    numeric TCP/IP port number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-service</option></term>
+               <listitem>
+                   <para>
+                    The name of the servic advertised by the ReadoutREST
+                    package in the Readout we want to communicate with.
+                    This defaults to <literal>ReadoutREST</literal> which is
+                    the default service name.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>PUBLIC METHODS</title>
+        <para>
+            Each of the public methods below performs a REST transaction with
+            the server. This transaction includes service discovery (translating
+            the <option>-user</option> and <option>-service</option> values to
+            a numeric TCP/IP port number),  connecting with the server to perform
+            a REST transaction and unmarshalling any resulting JSON into
+            reasonable return values.
+        </para>
+        <para>
+            The methods which are considered public are:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><methodname>begin</methodname></term>
+               <listitem>
+                   <para>
+                    Attempts to start a new run.  The resulting Readout
+                    state is returned.  Note that this is not the same as the
+                    DAQ Manager's state.  If a transition to active data taking
+                    is not permitted (e.g. data taking is in progress) and
+                    error is raised.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>end</methodname></term>
+               <listitem>
+                   <para>
+                    Ends active data taking in the Readout program.  Returns
+                    the name of the resulting state.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>init</methodname></term>
+               <listitem>
+                   <para>
+                    Attempts to initialize the hardsware in the Readout.
+                    Not all Readout programs support this.  Those that do not
+                    are expected to silently ignore the request.
+                    Data taking must not be active.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>shutdown</methodname></term>
+               <listitem>
+                   <para>
+                    Requests the Readout program to exit.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getState</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the current Readout program state.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getTitle</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the currently set title.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getRunNumber</methodname></term>
+               <listitem>
+                   <para>
+                    Returns the currently set run number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>getStatistics</methodname></term>
+               <listitem>
+                   <para>
+                    Returns a dict that describes the Readout's statistics.
+                    This is a dict with the keys <literal>cumulative</literal>
+                    and <literal>perRun</literal>.  The cumulative key contains
+                    statistics over the course of the entire readout program while
+                    beginning a run clear the counters in the
+                    perRun statistics.
+                   </para>
+                   <para>
+                    Each of the keys contains a value that is a dict which is
+                    identical, containing the following keys:
+                   </para>
+                   <variablelist>
+                    <varlistentry>
+                       <term><literal>triggers</literal></term>
+                       <listitem>
+                           <para>
+                            Number of triggers sent to the Readout.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>acceptedTriggers</literal></term>
+                       <listitem>
+                           <para>Number of
+                           triggers that resulted in an event.  This reflects the
+                           ability of some hardware (e.g. XIA modules) and some software to reject
+                           triggers resulting in no data.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                       <term><literal>bytes</literal></term>
+                       <listitem>
+                           <para>
+                            Number of bytes read from the hardware.
+                           </para>
+                        </listitem>
+                    </varlistentry>
+                   </variablelist>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>setTitle</methodname> <parameter>title-string</parameter></term>
+               <listitem>
+                   <para>
+                    Sets the Readout's title to the specified
+                    <parameter>title-string</parameter>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><methodname>setRunNumber5</methodname> <parameter>number</parameter></term>
+               <listitem>
+                   <para>
+                    Sets the new run number to <parameter>number</parameter>.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.readoutstatistics'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutstatistics.title'>ReadoutStatistics</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutStatistics</refname>
+      <refpurpose>Display readout statistics (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
+
+ReadoutStatistics name ?optname value...?
+name configure option value ?...?
+
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a widget that displays Readout trigger/transfer statistics.
+            The widget accepts a single configuration option:
+            <option>-data</option> which is a statistics dict such as what might
+            be returned from the <methodname>getStatistics</methodname>
+            method of
+            <link linkend='tcl3.readoutrestclient' endterm='tcl3.readoutrestclient.title' />
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.readoutparameters'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutparameters.title'>ReadoutParameters</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutParameters</refname>
+      <refpurpose>Display/Set Readout Parametesrs (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
+
+ReadoutParameters name ?option value ...?
+name configure option value ?.,..?
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a vew class that lets users see the current run
+            parameters and set values for the next one.  This consists of
+            readonly displays of a title and run number as well as a pair of
+            controls that allow the entry of new run number and title.
+          </para>
+          <para>
+            The interface to the object is totally handled by configuration
+            options and the callouts they may specify:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-title</option></term>
+               <listitem>
+                   <para>
+                    Specifies/gets the value of the current title.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-run</option></term>
+               <listitem>
+                   <para>
+                    Specifies/gets the value of the current run number.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nextrun</option></term>
+               <listitem>
+                   <para>
+                    Specify/retrieve the value of the next run number spinbox.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nexttitle</option></term>
+               <listitem>
+                   <para>
+                    Specify/retrieve the vale of the next title text entry.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-titlecommand</option></term>
+               <listitem>
+                   <para>
+                    Specifies a script that is invoked when the title
+                    changes.  The new title is passed as a parameter to the
+                    script.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-runcommand</option></term>
+               <listitem>
+                   <para>
+                    Specifies a script that is invoked when the run number
+                     is changed.   The new run number is passed as a parameter
+                     to the script.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.readoutstate'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutstate.title'>ReadoutState</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutState</refname>
+      <refpurpose>Show Readout State and Request Transitions (VIEW)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <programlisting>
+package require ReadoutRESTUI
+
+ReadoutState name ?option value ...?
+name configure option value ?...?
+
+        </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a view that allows users to see and attempt to modify
+            the state of a Readout program.  The view consists of a label
+            that shows a programmable state value, and three pushbuttons.  One
+            pushbutton has a variable function lable that depends on the
+            value of the state display.  The other two can request hardware
+            initialization and Readout program shutdown.
+          </para>
+          <para>
+            Two options determine what the user sees and what action is
+            performed as a result of clicking a button:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-state</option></term>
+               <listitem>
+                   <para>
+                    Provides the Readout's current state to the view.  Valid
+                    values are the text strings:
+                    <literal>idle</literal>, <literal>active</literal>,
+                    <literal>paused</literal> and
+                    <literal>inconsistent</literal>.  The value of this
+                    determines the label and state of the
+                    variable purpose button.  
+                   </para>
+                   <para>
+                    Legal values are, for the most part, self explanatory.
+                    The <literal>inconsistent</literal> value allows for
+                    a case when the view is displaying data from several
+                    Readout programs and the states of those programs is
+                    momentarily not consistent.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-command</option></term>
+               <listitem>
+                   <para>
+                    Provides a script that is invoked when any
+                    button is clicked.  THe script gets a value passed to it
+                    that indicates what the button wanted done.  This value is one of
+                    <literal>begin</literal>, <literal>end</literal>,
+                    <literal>init</literal> or <literal>shutdown</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+
+<refentry id='tcl3.readoutui'>
+   <refmeta>
+      <refentrytitle id='tcl3.readoutui.title'>ReadoutUI</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>ReadoutUI</refname>
+      <refpurpose>Combined Readout Control Panel (REST VIEW).</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require ReadoutRESTUI
+
+ReadoutUI name ?option value...?
+name configure option value ?...?
+set value [name cget option]
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This megawidget glues together the
+            <link linkend='tcl3.readoutparameters' endterm='tcl3.readoutparameters.title' />,
+            <link linkend='tcl3.readoutstatistics' endterm='tcl3.readoutstatistics.title' />
+            and
+            <link linkend='tcl3.readoutstate' endterm='tcl3.readoutstate.title' />
+            views into a single integrated control panel for Readout program(s)
+            controlled via their REST interfaces. 
+          </para>
+          <para>
+            As such, this view inherits all of the options of its component
+            subviews:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>-title</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets the readonly title label on the paramters
+                     part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nexttitle</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets the contents of the entry field that is to
+                     hold the title of the next run in the parameters part of
+                     the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-run</option></term>
+               <listitem>
+                   <para>
+                     Set/gets the contents of the readonly run number label on
+                     the parameters part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nextrun</option></term>
+               <listitem>
+                   <para>
+                     Sets/gets/ the contents of the spinbox that is to hold the
+                     next run number in the parameters part of the view.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-titlecommand</option></term>
+               <listitem>
+                   <para>
+                     Script that will be invoked when the next title entry has been
+                     changed in the parameter subview.
+                     This script will be passed the new
+                     title string.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-runcommand</option></term>
+               <listitem>
+                   <para>
+                     Specifies a script that is invoked when the run number
+                     is changed in the parameter subview's next run number spinboxl
+                     The new run number is passed as a parameter
+                     to the script.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-currentstate</option></term>
+               <listitem>
+                   <para>
+                     Sets the current state of the run in the status/state
+                     control subview.  This can be
+                     one of <literal>idle</literal>, <literal>active</literal>,
+                     <literal>paused</literal> or <literal>inconsistent</literal>.
+                     This state will appropriately update the label on the
+                     variable purpose button.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-statecommand</option></term>
+               <listitem>
+                   <para>
+                     Sets a script to be 
+                     called when a button is clicked in the status/state
+                     control/subview.  The script is passed a
+                     string value indicating
+                     the desired action.  This is one of
+                     <literal>begin</literal>, <literal>end</literal>,
+                     <literal>init</literal> or
+                     <literal>shutdown</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-statistics</option></term>
+               <listitem>
+                   <para>
+                     Passes Readout statistics to the
+                     statistics display sub-view.
+                     The value of this option should be a
+                     statistics dict such as what might
+                     be returned from the <methodname>getStatistics</methodname>
+                     method of
+                     <link linkend='tcl3.readoutrestclient' endterm='tcl3.readoutrestclient.title' />
+                            </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+</refentry>
+<!-- /manpage -->
+
+<!-- manpage 5daq -->
+<refentry>
+   <refmeta>
+      <refentrytitle>Readouts REST</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Readouts REST</refname>
+      <refpurpose>REST specification for Readouts</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+/status/state
+/status/title
+/status/runnumber
+/status/statistics
+
+/setparam
+
+/control
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The <literal>ReadoutREST</literal> package provides a
+            REST server to NSCLDAQ Tcl based Readout programs that adhere
+            to the standard Readout command set.  Clients can interact with
+            this REST interface to both control the state of the Readout program
+            and obtain status information.
+          </para>
+          <para>
+            The intent of this server is to support Readout programs that are run
+            under the control of the DAQ manager subsystem, however, in fact,
+            any situtation in which a Readout program must be controlled
+            remotely is supported.
+          </para>
+          <para>
+            The server package (tclhttpd) used to implement the REST server
+            divides the URL space recognized by the server into
+            <firstterm>Domains</firstterm>.   A domain is a URL prefix.
+            Three domains are supported by the ReadoutREST package:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>/status</literal></term>
+               <listitem>
+                   <para>
+                     Obtains status and state information
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>/setparam</literal></term>
+               <listitem>
+                   <para>
+                     Sets parameters (e.g. title or run number).
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>/control</literal></term>
+               <listitem>
+                   <para>
+                     Controls the Readout.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+          <para>
+            Before describing each of these domains, it's important to describe URL
+            formation.  Recall that a URL has the form
+            <literal>http://host:port/path/to/resource</literal>.
+            The host part of the URL is trivially the host in which the
+            Readout program exporting the REST service runs.  The port, in general,
+            is dynamically assigned by the NSCLDAQ Port manager and associated with
+            a named service advertised by the server, qualified by the user
+            running the program.  The default
+            service name is <literal>ReadoutREST</literal>.  This must be
+            translated into a port via interactions with the host's
+            DAQ Port manager.  The top level of the <literal>/path/to/resource</literal>
+            is a domain as described above.  E.g.
+            <literal>http://somehost:39998/status/state</literal> is a URL
+            that (assuming the host and port are correct) within the
+            <literal>/status</literal> domain that returns the program
+            state.
+          </para>
+          <para>
+            Finally a bit on what the server returns in response to its requests.
+            All reqplies are a JSON encoded object
+            (mimetype <literal>application/json</literal>). THe object
+            has two standard attributes and additional attributes that depend
+            on the request. The two standard attributes are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><literal>status</literal></term>
+               <listitem>
+                   <para>
+                     The status of the request.  This is either
+                     <literal>OK</literal> or, if the server recognized the
+                     request but, for some reason, could not execute it
+                     (e.g. a request for an invalid state transition),
+                     <literal>ERROR</literal>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>message</literal></term>
+               <listitem>
+                   <para>
+                     A human readable error message in the event that
+                     <literal>status</literal> was <literal>ERROR</literal>
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            In subsequent documentation we will only describe the additional
+            attributes each request can return if <literal>status</literal> is
+            <literal>OK</literal>
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>
+         The /status Domain
+      </title>
+      <para>
+         As described above, this domain provides state/status information.
+         Requests are made using additional URL path elements e.g. in
+         <literal>http://host:port/status/request-type</literal>,
+         <literal>request-type</literal> is the request.  Supported
+         requests and the additional JSON attributes they return are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>/state</literal></term>
+            <listitem>
+                <para>
+                  Returns the Readout's state in the <literal>state</literal>
+                  attribute.  This is a string that can be one of:
+                  <literal>idle</literal>, <literal>active</literal>,
+                  or <literal>paused</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/title</literal></term>
+            <listitem>
+                <para>
+                  Returns the Readout's title as the string value of the
+                  <literal>title</literal> attribute.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/runnumber</literal></term>
+            <listitem>
+                <para>
+                  Returns the Readout's run number as the integer value of
+                  the <literal>run</literal> attribute.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>/statistics</literal></term>
+            <listitem>
+                <para>
+                  Returns readout statistics.  These are provided in
+                  JSON encoded objects that are values of the
+                  <literal>cumulative</literal> and <literal>perRun</literal>
+                  attributes which provide statistics over the lifetime of the
+                  Readout program or over the current (or most recent if the
+                  state is <literal>idle</literal>) run.
+               </para>
+                <para>
+                  Statistics objects have the following attributes:
+                </para>
+                <variablelist>
+                  <varlistentry>
+                     <term><literal>triggers</literal></term>
+                     <listitem>
+                         <para>
+                           Number of triggers seen by the readout. 
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>acceptedTriggers</literal></term>
+                     <listitem>
+                         <para>
+                           Number of triggers that resulted in events.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+                  <varlistentry>
+                     <term><literal>bytes</literal></term>
+                     <listitem>
+                         <para>
+                           Number of bytes read from the hardware. Note that this
+                           explicitly does not include Ring item overhead or body
+                           header sizes.
+                       </para>
+                    </listitem>
+                  </varlistentry>
+               </variablelist>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>The /control Domain</title>
+      <para>
+         This domain provides the abilityfor the client to request state
+         transitions of the Readout program.  All requests must be POST
+         requests and must have a POST parameter called
+         <literal>operation</literal> that indicates
+         the state transition requested.  the returned JSON includes
+         an attribute, <literal>newstate</literal> that provides the
+         state
+         of the program after the transition.
+      </para>
+      <para>
+         Valid values for the <literal>operation</literal> POST parameter are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>INIT</literal></term>
+            <listitem>
+                <para>
+                  Not actually a transition.  This operation is legal in the
+                  <literal>idle</literal> state.  It requests that the
+                  Readout program perform what is normally one-time
+                  hardware initialization.  This is not fully supported by
+                  all Readout frameworks.  If not supported it is silently
+                  ignored (although the requirement the state by
+                  <literal>idle</literal> is enforced).
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>BEGIN</literal></term>
+            <listitem>
+                <para>
+                  Begins a new run. State must be <literal>idle</literal>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>END</literal></term>
+            <listitem>
+                <para>
+                  Ends the current run, the state must be either
+                  <literal>active</literal> or <literal>paused</literal>
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>SHUTDOWN</literal></term>
+            <listitem>
+                <para>
+                  Always legal, this operation requests the program shutdown
+                  (exit).
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Note that while the state <literal>paused</literal> is recognized
+         and <literal>END</literal> can end the run when the program is in
+         that state, the REST interface does not fully support
+         paused runs, in the sense that there is no mechanism to transition
+         the run into the paused state.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>The /setparam Domain</title>
+      <para>
+         This domain supports setting Readout parameters.  All operations
+         must be <literal>POST</literal> operations and two post
+         parameters are required: <literal>name</literal>, which is the name
+         of the parameter to modify and <literal>value</literal> the new
+         value to give to that value.  Return data does not provide any
+         additional JSON attributes.
+      </para>
+      <para>
+         The <literal>name</literal> parameter can be either
+         <literal>title</literal>, in which case <literal>value</literal>
+         is a new title string, or <literal>run</literal>, in which case
+         <literal>value</literal> must be a new positive integer run number.
+      </para>
+    </refsect1>
+</refentry>
+<!-- /manpage -->

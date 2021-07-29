@@ -6,7 +6,9 @@ SCRIPT_FILES=@srcdir@/mwutil.tcl @srcdir@/notebook.tcl @srcdir@/tablelist.tcl @s
 	@srcdir@/warning.tcl @srcdir@/NSCLBgerror.tcl @srcdir@/bells.tcl \
 	@srcdir@/icon.tcl @srcdir@/titledSpinBox.tcl @srcdir@/bindDown.tcl \
 	@srcdir@/meter.tcl @srcdir@/blockimage.tcl @srcdir@/dialogwrapper.tcl \
-	@srcdir@/textprompter.tcl
+	@srcdir@/textprompter.tcl \
+	@srcdir@/selectablelist.tcl \
+	@srcdir@/OutputWindow.tcl
 
 
 DOCS=RingStatus.xml ScaleControl_man.xml Frames.xml transientLabel.xml

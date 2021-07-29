@@ -1207,9 +1207,176 @@ EVBC::configure <replaceable>option value ...</replaceable>
 
       </refentry>
 
+<!-- /manpage -->
 
-<!-- /manpage     -->
 <!-- manpage 1daq -->
+
+<refentry id='daq1.EVBShutdown'>
+   <refmeta>
+      <refentrytitle id='daq1.EVBShutdown.title'>EVBShutdown</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBShutdown</refname>
+      <refpurpose>Stop Orderer Started with EVBRest</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/EVBShutdown <replaceable>host user</replaceable> <optional><replaceable>delay</replaceable><optional><replaceable>service</replaceable></optional></optional> 
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Requests that an event orderer started via
+            <link linkend='daq1.EVBRest' endterm='daq1.EVBRest.title' />
+            exit.  <replaceable>host</replaceable> and
+            <replaceable>user</replaceable> are the only required parameters.
+            They are the host the orderer is running in and the user that is
+            running it.  The optional <replaceable>delay</replaceable>
+            parameter will be implemented in the future to provide a settable
+            shutdown delay.  Currently a fixed delay of 2 seconds is used.
+            The optionals <replaceable>service</replaceable> parameter allows
+             you to specify a service name for the REST server different than
+             the default.
+          </para>
+          <para>
+            Note that since all elements of the event builder pipeline after
+            Orderer have reads always active, the resulting end of file on
+            the pipes will shutdown the remainder of the pipeline as well.
+            This is normally what is desired.
+          </para>
+    </refsect1>
+</refentry> 
+
+<refentry id='daq1.EVBRest'>
+   <refmeta>
+      <refentrytitle id='daq1.EVBRest.title'>EVBRest</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>EVBRest</refname>
+      <refpurpose>Run Event Builder Orderer With REST Interface</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+<optional>SERVICE_NAME=</optional><replaceable>svc</replaceable> $DAQBIN/EVBRest
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Starts the event builder orderer stage with its REST server.  The REST
+            server supports controlling the orderer and obtainig statistics
+            from this stage.  If the <literal>SERVICE_NAME</literal> environment
+            variable is defined, this will be used in place of the default
+            service name.  See the <literal>5daq</literal> section of the
+            manual for more information about the REST protocol.
+          </para>
+    </refsect1>
+</refentry>
+
+<refentry id='daq1.glom'>
+   <refmeta>
+      <refentrytitle id='daq1.glom.title'>glom</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>glom</refname>
+      <refpurpose>Glue Ordered Fragments Into Events</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/glom <option>option....</option>
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Accepts event orderer fragments on stdin and outputs ring itens
+            consisting of events on stdout.  Non event data are relayed,
+            re-tagged with glom's source id.  Event data are subject to being
+            built in accordance with the value of the <option>--dt</option>
+            option.
+          </para>
+          <para>
+            Options, besides the standard <option>--help</option>
+            and <option>--version</option> are:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><option>--dt</option>=<replaceable>ticks</replaceable></term>
+               <listitem>
+                   <para>
+                    Specifies the coincidence window of timestamps in which
+                    events will be built.  This is expressed in units of timestamp
+                    ticks.   The event builder will take a first fragment and
+                    then combine all following fragments within this interval
+                    from that timestamp into an event.
+                   </para>
+                   <para>
+                    This option is mandatory and, therefore has no default value.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>-nobuild</option></term>
+               <listitem>
+                   <para>
+                    If present, event building is not done.  Each physics fragment
+                    is output as a separate ring item. This can be useful in debuggin.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--timestamp-policy</option>=<replaceable>policy</replaceable></term>
+               <listitem>
+                   <para>
+                    Selects the timestamp policy for built events.  This value determines
+                    how the timestamp of output events is constructed.
+                    The allowed values are <literal>earliest</literal> which
+                    uses the timestamp of the first fragment,
+                    <literal>latest</literal> which uses the value of the timestamp
+                    in the last fragment and <literal>average</literal> which uses
+                    the average value of all timestamps in the event.
+                   </para>
+                   <para>
+                    Defaults to <literal>earliest</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--sourceid</option>=<replaceable>id</replaceable></term>
+               <listitem>
+                   <para>
+                    Sets the source id of the output events.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><option>--maxfragments</option>=<replaceable>frags</replaceable></term>
+               <listitem>
+                   <para>
+                    Defines the maximum number of fragments that can be built into
+                    an event.  This is useful when for any reason (e.g. frozen clock or
+                    initialization), a large number of fragments have the same
+                    timestamp.  Specifying this prevents the program from building up
+                    an event consisting of an unbounded number of fragments, which
+                    can cause virtual memory exhaustion and failure of glom.
+                    The default value is <literal>1000</literal>.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+  </refentry>
+
       <refentry id="daq1-evbclientfw-run">
         <refentryinfo>
             <author>

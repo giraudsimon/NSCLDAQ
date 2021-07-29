@@ -19,6 +19,7 @@
 #include <CErrnoException.h>
 #include <CMonVar.h>
 #include <CRunState.h>
+#include "CStatisticsCommand.h"
 
 #include <tcl.h>
 #include <unistd.h>
@@ -38,6 +39,7 @@ unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
 unique_ptr<CMonvarCommand>    CSystemControl::m_pMonVar;
+unique_ptr<CStatisticsCommand> CSystemControl::m_pStats;
 
 
 // The entry point
@@ -74,6 +76,7 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   m_pInit.reset(new CInit(*Globals::pMainInterpreter));
   m_pExit.reset(new CExit(*Globals::pMainInterpreter));
   m_pMonVar.reset(new CMonvarCommand(*Globals::pMainInterpreter));
+  m_pStats.reset(new CStatisticsCommand(*Globals::pMainInterpreter, "statistics"));
   
   CMonitorVariables* pMon = new CMonitorVariables(*Globals::pMainInterpreter, 2000);
   CRunState::getInstance()->setVarMonitor(pMon);

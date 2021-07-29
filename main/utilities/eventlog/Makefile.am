@@ -1,4 +1,5 @@
 bin_PROGRAMS		=	eventlog
+TCLSCRIPTS            = eventlog_wrapper.tcl
 BUILT_SOURCES		= 	eventlogargs.c eventlogargs.h
 
 eventlog_SOURCES	=	eventlog.cpp eventlogMain.cpp RingChunk.h RingChunk.cpp
@@ -35,13 +36,19 @@ eventlogargs.h: eventlogargs.ggo
 
 # Extra files to distribute.
 
-EXTRA_DIST		=	eventlogargs.ggo eventlog.xml Asserts.h
+EXTRA_DIST		=	eventlogargs.ggo eventlog.xml Asserts.h \
+	$(TCLSCRIPTS)
 
 #  Need to clean the products of processing eventlogargs.ggo:
 
 clean-local:
 	rm -f eventlogargs.h eventlogargs.c
 
+
+install-exec-local:
+	for f in $(TCLSCRIPTS) ; do  \
+          $(INSTALL_PROGRAM) @srcdir@/$$f  @bindir@/`basename $$f .tcl`; \
+	done
 
 #-------------------------------------------------------------
 #

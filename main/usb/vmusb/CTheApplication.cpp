@@ -362,7 +362,15 @@ CTheApplication::logProgress(const char* msg)
     daqlog::trace(msg);
   }
 }
-
+/**
+ * getOutputThread
+ *   @return COutputThread*
+ *      Pointer to the output thread.
+ */
+COutputThread*
+CTheApplication::getOutputThread() {
+  return m_pOutputThread;
+}
 /*
    Start the output thread.  This thread is responsible for 
    reformatting and transferring buffers of data from the VM-USB to 
@@ -377,6 +385,7 @@ CTheApplication::startOutputThread(std::string ring)
 {
   COutputThread* router = new COutputThread(ring, m_systemControl);
   router->start();
+  m_pOutputThread = router;
   Os::usleep(500);
 
 }
