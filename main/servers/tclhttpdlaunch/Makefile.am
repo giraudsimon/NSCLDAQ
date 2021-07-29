@@ -1,4 +1,4 @@
-EXTRA_DIST=tclhttpdlaunch.tcl
+EXTRA_DIST=tclhttpdlaunch.tcl embeddedLaunch.tcl
 
 install-exec-local:
 	$(mkinstalldirs) @bindir@

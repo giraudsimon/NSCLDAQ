@@ -23,7 +23,7 @@ docs=userguide.xml api.xml
 test_scripts=container.test program.test sequence.test transitions.test \
 	loggerdb.test kv.test authtest.test evlog.test
 
-EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) \
+EXTRA_DIST=$(program_scripts) $(library_scripts) $(test_scripts) \
 	$(server_scripts) $(docs)
 	minimal.img singexists.sh
 

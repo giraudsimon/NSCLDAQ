@@ -9,7 +9,7 @@ LIBRARY_DIR=@prefix@/TclLibs/readoutREST
 SERVER_DIR=$(LIBRARY_DIR)/server
 
 
-EXTRADIST=$(program_scripts) $(library_scripts) $(test_scripts) \
+EXTRA_DIST=$(program_scripts) $(library_scripts) $(test_scripts) \
 	$(server_scripts) rdoManager.xml
 
 
