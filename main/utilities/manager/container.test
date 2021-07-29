@@ -372,7 +372,7 @@ tcltest::test container_list_1 {List when there are no containers.} \
 } -result {}
 
 
-tcltest::test container_list_2 {descr} \
+tcltest::test container_list_2 {minmal description.} \
 -setup {
     commonSetup
     container::add db test [file join ~ minimal.img] "" ""
@@ -382,9 +382,9 @@ tcltest::test container_list_2 {descr} \
 } \
 -body {
     container::listDefinitions db
-} -result [list [dict create  name test image [file join ~ minimal.img] id 1] ]
+} -result [list [dict create  name test image [file join ~ minimal.img] bindings {} id 1] ]
 
-tcltest::test container_list_2 {Container has init script -> contents} \
+tcltest::test container_list_3 {Container has init script -> contents} \
 -setup {
     commonSetup
     set testfile [file join [file normalize ~] container_list_2.sh]
@@ -402,7 +402,7 @@ echo hi
 } -result [list \
 [dict create \
     name testing image [file join [file normalize ~] minimal.img]     \
-    init {
+    bindings {} init {
 #!/bin/bash
 echo hi
 }  id 1
@@ -434,3 +434,5 @@ proc tcltest::cleanupTestHook {} {
 
 tcltest::cleanupTestHook
 tcltest::cleanupTests
+
+exit $::exitCode

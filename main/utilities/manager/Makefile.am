@@ -45,7 +45,12 @@ check:
 	then \
 		$(INSTALL_DATA) @srcdir@/minimal.img ~ ;\
 		for script in $(test_scripts); do \
-		DAQBIN=@bindir@ SRCDIR=@srcdir@ TCLLIBPATH=@prefix@/TclLibs @TCLSH_CMD@ @srcdir@/$$script; \
+		  DAQBIN=@bindir@ SRCDIR=@srcdir@ TCLLIBPATH=@prefix@/TclLibs\
+ @TCLSH_CMD@ @srcdir@/$$script; \
+		 if test $$? -ne 0; \
+			then    \
+                           exit -1; \
+                 fi ; \
 		done; \
 	else \
 		echo No singularity manager tests will not be done; \
