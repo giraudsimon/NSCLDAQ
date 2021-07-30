@@ -52,7 +52,7 @@ install-data-local:
 	$(INSTALL_DATA) @srcdir@/figures/*.png @prefix@/share/html/figures
 
 
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks tclhttpd3.5.1
 
 #check-TESTS:
 #	@top_srcdir@/dotests $(SUBDIRS)
