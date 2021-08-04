@@ -14,31 +14,19 @@
 	     East Lansing, MI 48824-1321
 */
 
+/** daqdev/NSCLDAQ#1030 - changes s_mbz -> s_empty with sizeof(uint32_t)
+ *  implemented.
+ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include "DataFormat.h"
-
+#include <utils.h>
 /*-----------------------------------------------------------------------------
  *  Static utilities:
  *---------------------------------------------------------------------------*/
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    int      i;
-    for (i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
 
- static void fillHeader(pRingItem pItem, uint32_t size, uint32_t type)
- {
-    pItem->s_header.s_size = size;
-    pItem->s_header.s_type = type;
- }
- 
 /**
 * sizeStringArray
 *
@@ -69,12 +57,17 @@ sizeStringArray(unsigned nStrings, const char** ppStrings)
 * @param pItem - Pointer to the ring item.
 * @param size  - Size of the ring item.
 * @param type  - Type of the ring item.
+* @return void* - pointer to just past the header.
 */
-static void
+void*
 fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
 {
-    pItem->s_header.s_size = size;
-    pItem->s_header.s_type = type;
+    pRingItemHeader pHdr = &(pItem->s_header);
+    
+    pHdr->s_size = size;
+    pHdr->s_type = type;
+    
+    return pHdr +1;
 }
 
 /**
@@ -87,8 +80,9 @@ fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type)
  *    @param timestamp - s_timestamp value.
  *    @param sourceId  - Id of source of data.
  *    @param barrier   - Barrier type.
+ *    @return void* - pointer just past the body header.
  */
-static void
+void*
 fillBodyHeader(
     pRingItem pItem, uint64_t timestamp, uint32_t sourceId, uint32_t barrier)
 {
@@ -103,6 +97,8 @@ fillBodyHeader(
     pH->s_timestamp = timestamp;
     pH->s_sourceId  = sourceId;
     pH->s_barrier   = barrier;
+    
+    return pH+1;
 }
 
 /**
@@ -139,11 +135,13 @@ fillPhysicsBody(void* pBody, uint32_t wordCount, const void* pEvent)
  *  @param divisor - offset/divisor = seconds.
  *  @param unixTime- Unix time of day.
  *  @param count   - Number of events.
+ *  @param sid     - value of s_originalSid
+ *  @return void*  - Pointer to the next byte after the body.
  */
-static void
+void*
 fillEventCountBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
-    uint64_t count)
+    uint64_t count, uint32_t sid)
 {
     pPhysicsEventCountItemBody pBody = (pPhysicsEventCountItemBody)bodyPointer(pItem);
     
@@ -151,6 +149,8 @@ fillEventCountBody(
     pBody->s_offsetDivisor = divisor;
     pBody->s_timestamp     = unixTime;
     pBody->s_eventCount    = count;
+    pBody->s_originalSid    = sid;
+    return pBody+1;                     // Fixed length body so this is fine.
 }
 /**
  * fillScalerBody
@@ -168,11 +168,16 @@ fillEventCountBody(
  * @param incremental - True if these are incremental scalers.
  * @param pScalers    - Pointer to scalers. The assumption is that each scaler
  *                      is a uint32_t.
+ * @param sid         - value of s_originalSid
+ * @return void*      - Pointer to the next byte after the scaler body.
  */
-static void
+void*
 fillScalerBody(
     pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
-    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers)
+    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
+    uint32_t sid
+    
+)
 {
     pScalerItemBody pBody = (pScalerItemBody)bodyPointer(pItem);
     pBody->s_intervalStartOffset = start;
@@ -181,10 +186,16 @@ fillScalerBody(
     pBody->s_intervalDivisor     = divisor;
     pBody->s_scalerCount         = count;
     pBody->s_isIncremental       = incremental;
+    pBody->s_originalSid         = sid;
     
     if(count > 0) {
         memcpy(pBody->s_scalers, pScalers, count*sizeof(uint32_t));
     }
+    // Figure out the return value:
+    
+    uint8_t* p = (uint8_t*)(pBody+1);
+    p += count*sizeof(uint32_t);
+    return p;
 }
 /**
  * fillTextItemBody
@@ -197,11 +208,13 @@ fillScalerBody(
  * @param unixTime - time_t at which this is being emitted.
  * @param nStrings - Number of strings
  * @param ppStrings - Pointer to the strings.
+ * @param sid       - Sourceid
+ * @return void*   - Pointer just past the end of the text item body.
  */
-static void
+void*
 fillTextItemBody(
     pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
-    uint32_t nStrings, const char** ppStrings)
+    uint32_t nStrings, const char** ppStrings, int sid)
 {
     int i;
     pTextItemBody pBody = (pTextItemBody)bodyPointer(pItem);
@@ -210,13 +223,20 @@ fillTextItemBody(
     pBody->s_timestamp     = unixTime;
     pBody->s_stringCount   = nStrings;
     pBody->s_offsetDivisor = divisor;
-    
+    pBody->s_originalSid   = sid;
+    size_t totalSize = 0;
     char* pDest = pBody->s_strings;
     for (i =0; i < nStrings; i++) {
         size_t copySize = strlen(ppStrings[i]) + 1;
+        totalSize += copySize;
         memcpy(pDest, ppStrings[i], copySize);
         pDest += copySize;
     }
+    // Figure out the pointer past the end of the item:
+    
+    uint8_t* p = (uint8_t*)(pBody+1);
+    p += totalSize;
+    return p;
 }
 
 /**
@@ -231,11 +251,13 @@ fillTextItemBody(
  *  @param divisor  - offset/divisor = seconds.
  *  @param unixTime - Unix time_t at which this is being emitted.
  *  @param title    - Pointer to the run title.
+ *  @param sid      - Sourceid.
+ *  @note overlong titles are silently truncated.
  */
-static void
+void*
 fillStateChangeBody(
     pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
-    uint32_t unixTime, const char* pTitle)
+    uint32_t unixTime, const char* pTitle, int sid)
 {
     pStateChangeItemBody pBody = (pStateChangeItemBody)bodyPointer(pItem);
     
@@ -243,6 +265,7 @@ fillStateChangeBody(
     pBody->s_timeOffset    = offset;
     pBody->s_Timestamp     = unixTime;
     pBody->s_offsetDivisor = divisor;
+    pBody->s_originalSid   = sid;
     
     /*
       Zero out the title and copy in at most TITLE_MAXSIZE bytes of title:
@@ -252,14 +275,27 @@ fillStateChangeBody(
     
     memset(pBody->s_title, 0, TITLE_MAXSIZE+1);
     strncpy(pBody->s_title, pTitle, TITLE_MAXSIZE);
+    
+    // Fixed size so:
+    
+    return pBody+1;
 }
-/*------------------------------------------------------------------------------------*/
-/**
- * Implement the functions prototypes in DataFormat.h
- * These are functions that produce ring items.
- *
- */
 
+/**
+ * hasBodyHeader
+ *    @param pItem - pointer to a ring item.
+ *    @return int (bool) - True if there is a body header.
+ *    @note This anticipates daqdev/NSCLDAQ#1030.  Specifically there's no
+ *          body header if the header size is either 0 or sizeof(uint32_t).
+ */
+int
+hasBodyHeader(const RingItem* pItem)
+{
+ uint32_t hdrSize = pItem->s_body.u_noBodyHeader.s_empty;
+
+ int result = hdrSize > sizeof(uint32_t);
+ return result;
+}
 /**
  * bodyPointer
  *
@@ -271,7 +307,7 @@ fillStateChangeBody(
  * @return void* - Pointer to the internal payload of the ring item.
  */
 void*
-bodyPointer(pRingItem pItem)
+bodyPointer(RingItem* pItem)
 {
     void* pResult;
     
@@ -279,16 +315,38 @@ bodyPointer(pRingItem pItem)
         body header:
     */
 
+    // There are two cases (anticipating) daqdev/NSCLDAQ#1030:
+    // -  Body header size is zero - nscldaq11, no body header.
+    // -  Body header size is nonzero - Body header size is given  by the
+    //    value.
     
-    if (pItem->s_body.u_noBodyHeader.s_mbz) {
-        pResult = (void*)pItem->s_body.u_hasBodyHeader.s_body;
-    } else {
+    if (pItem->s_body.u_noBodyHeader.s_empty) { //nscldaq12.
+        uint32_t hdrBytes    = pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
+        uint8_t* pBodyHeader = (uint8_t*)(
+         &(pItem->s_body.u_hasBodyHeader.s_bodyHeader)  
+        );
+        pResult = pBodyHeader + hdrBytes;
+    } else {                         // NSCLDAQ-11 no body header.
+
         pResult = (void*)pItem->s_body.u_noBodyHeader.s_body;
     }
     
     return pResult;
 }
-
+/**
+  * bodyHeader
+  *    @param pItem - Pointer to a ring item.
+  *    @return void* - Pointer to a body header.
+  */
+ void*
+ bodyHeader(RingItem* pItem)
+ {
+  if (hasBodyHeader(pItem)) {
+   return &(pItem->s_body);
+  } else {
+   return NULL;
+  }
+ }
 
 /**
  * Format a physics event item.  The payload is put in the event body preceded by the uin32-T
@@ -320,15 +378,16 @@ bodyPointer(pRingItem pItem)
      return (pPhysicsEventItem)pItem;
    }
    
-   fillHeader(pItem, itemSize, PHYSICS_EVENT);
+   fillRingHeader(pItem, itemSize, PHYSICS_EVENT);
 
-   pItem->s_body.u_noBodyHeader.s_mbz = 0;           /* No body header. */
+   pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);           /* No body header. */
    
    pBody = bodyPointer(pItem);
    
    fillPhysicsBody(pBody, nWords, pPayload);
    return (pPhysicsEventItem)pItem;
  }
+ 
 
 /**
  * Create/Format a trigger count item.
@@ -354,11 +413,11 @@ formatTriggerCountItem(uint32_t runTime, time_t stamp, uint64_t triggerCount)
     return (pPhysicsEventCountItem)pItem;
   }
 
-  fillHeader(pItem, itemSize, PHYSICS_EVENT_COUNT);
+  fillRingHeader(pItem, itemSize, PHYSICS_EVENT_COUNT);
 
-  pItem->s_body.u_noBodyHeader.s_mbz = 0;
+  pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
-  fillEventCountBody(pItem, runTime, 1, stamp, triggerCount);
+  fillEventCountBody(pItem, runTime, 1, stamp, triggerCount, 0);
 
   return (pPhysicsEventCountItem)pItem;
 }
@@ -383,7 +442,7 @@ formatScalerItem(
     */
     size_t itemSize =
         sizeof(RingItemHeader) + sizeof(ScalerItemBody) + sizeof(uint32_t)
-        + scalerCount*sizeof(uint32_t);
+        + (scalerCount)*sizeof(uint32_t);
     pRingItem pItem = (pRingItem)malloc(itemSize);
     
   
@@ -392,11 +451,11 @@ formatScalerItem(
       return (pScalerItem)pItem;
     }
     
-    fillHeader(pItem, itemSize, PERIODIC_SCALERS);
+    fillRingHeader(pItem, itemSize, PERIODIC_SCALERS);
 
-    pItem->s_body.u_noBodyHeader.s_mbz = 0;
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
-    fillScalerBody(pItem, btime, etime, 1, timestamp, scalerCount, 1, pCounters);
+    fillScalerBody(pItem, btime, etime, 1, timestamp, scalerCount, 1, pCounters, 0);
    
     /* Return a pointer to the item. */
     return (pScalerItem)pItem;
@@ -469,12 +528,12 @@ formatTextItem(unsigned nStrings, time_t stamp, uint32_t runTime,  const char** 
     if (!pItem) {
       return (pTextItem)pItem;
     }
-    fillHeader(pItem, itemSize, type);
+    fillRingHeader(pItem, itemSize, type);
 
-    pItem->s_body.u_noBodyHeader.s_mbz = 0;
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
     
     
-    fillTextItemBody(pItem, runTime, 1, stamp, nStrings, pStrings);
+    fillTextItemBody(pItem, runTime, 1, stamp, nStrings, pStrings, 0);
     
     return (pTextItem)pItem;
 }
@@ -507,10 +566,11 @@ formatStateChange(time_t stamp, uint32_t offset, uint32_t runNumber,
   if (pItem) {
     /* Fill in the headers and get a body pointer: */
     
-    fillHeader(pItem, sizeof(StateChangeItem), type);
+    fillRingHeader(pItem, itemSize, type);
+    pItem->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
 
-    pItem->s_body.u_noBodyHeader.s_mbz   = 0;
-    fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle);
+    fillStateChangeBody(pItem, runNumber, offset, 1, stamp, pTitle, 0);
+
  
   }
   /* Either return the null pointer we got or the filled in beast: */
@@ -538,9 +598,9 @@ formatDataFormat()
 {
     pDataFormat pItem = malloc(sizeof(DataFormat));
     if (pItem) {
-      fillHeader((pRingItem)pItem, sizeof(DataFormat), RING_FORMAT);
+      fillRingHeader((pRingItem)pItem, sizeof(DataFormat), RING_FORMAT);
         
-        pItem->s_mbz           = 0;
+        pItem->s_empty = sizeof(uint32_t);
         pItem->s_majorVersion  = FORMAT_MAJOR;
         pItem->s_minorVersion  = FORMAT_MINOR;
     }
@@ -577,7 +637,7 @@ formatEVBFragment(uint64_t timestamp, uint32_t sourceId, uint32_t barrier,
     /* Only fill in the item if we could allocate it. */
     
     if (pItem) {
-        fillHeader((pRingItem)pItem, itemSize, EVB_FRAGMENT);
+        fillRingHeader((pRingItem)pItem, itemSize, EVB_FRAGMENT);
         
         pItem->s_bodyHeader.s_size        = sizeof(BodyHeader);
         pItem->s_bodyHeader.s_timestamp   = timestamp;
@@ -654,7 +714,7 @@ formatTimestampedEventItem(
         /* Fill in the headers: */
         
        
-        fillHeader(pItem, itemSize, PHYSICS_EVENT);
+        fillRingHeader(pItem, itemSize, PHYSICS_EVENT);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         
         void* pBody = bodyPointer(pItem);
@@ -699,7 +759,7 @@ formatTimestampedTriggerCountItem (
     if (pItem) {
         /* Fill in the header: */
         
-        fillHeader((pRingItem)pItem, itemSize, PHYSICS_EVENT_COUNT);
+        fillRingHeader((pRingItem)pItem, itemSize, PHYSICS_EVENT_COUNT);
         
         
         /* Fill in the body header */
@@ -708,7 +768,10 @@ formatTimestampedTriggerCountItem (
         
         /* Fill in the body */
         
-        fillEventCountBody(pItem, runTime, offsetDivisor, stamp, triggerCount);
+        fillEventCountBody(
+             pItem, runTime, offsetDivisor, stamp, triggerCount,
+             sourceId
+        );
     }
     
     /* Return either the item or null if allocation failed. */
@@ -755,7 +818,7 @@ formatTimestampedScalerItem(
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillScalerBody(
             pItem, btime, etime, timeIntervalDivisor, timeofday, nScalers,
-            isIncremental, pCounters
+            isIncremental, pCounters, sourceId
         );
     }
     return (pScalerItem)pItem;
@@ -799,7 +862,8 @@ formatTimestampedTextItem(
         fillRingHeader(pItem, itemSize, type);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillTextItemBody(
-            pItem, runTime, timeIntervalDivisor, stamp, nStrings, ppStrings
+            pItem, runTime, timeIntervalDivisor, stamp, nStrings, ppStrings,
+            sourceId
         );
     }
     return (pTextItem)pItem;
@@ -836,10 +900,10 @@ formatTimestampedStateChange(
     pRingItem pItem = (pRingItem)malloc(itemSize);
     
     if (pItem) {
-        fillHeader(pItem, itemSize, type);
+        fillRingHeader(pItem, itemSize, type);
         fillBodyHeader(pItem, timestamp, sourceId, barrier);
         fillStateChangeBody(
-            pItem, runNumber, offset, offsetDivisor, stamp, pTitle
+            pItem, runNumber, offset, offsetDivisor, stamp, pTitle, sourceId
         );
     }
     return (pStateChangeItem)pItem;
@@ -866,7 +930,7 @@ formatGlomParameters(uint64_t interval, int isBuilding, int timestampPolicy)
         pResult->s_header.s_size = sizeof(GlomParameters);
         pResult->s_header.s_type = EVB_GLOM_INFO;
         
-        pResult->s_mbz = 0;
+        pResult->s_empty = sizeof(uint32_t);
         pResult->s_coincidenceTicks = interval;
         pResult->s_isBuilding = isBuilding;
         pResult->s_timestampPolicy = timestampPolicy;
@@ -884,7 +948,7 @@ pAbnormalEndItem
 formatAbnormalEndItem()
 {
     pAbnormalEndItem p = (pAbnormalEndItem)(malloc(sizeof(AbnormalEndItem)));
-    p->s_mbz = 0;
+    p->s_empty = sizeof(uint32_t);
     p->s_header.s_size = sizeof(AbnormalEndItem);
     p->s_header.s_type = ABNORMAL_ENDRUN;
     

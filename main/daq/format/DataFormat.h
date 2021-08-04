@@ -50,7 +50,7 @@ typedef struct _DataSourceHeader {
 } DataSourceHeader, *pDataSourceHeader;
 
 typedef union _BodyHeader {
-    uint32_t         s_mbz;             // Contains zero.
+    uint32_t         s_empty;             // Contains sizeof(uint32_t)
     DataSourceHeader s_header;          // Has full header. 
 } BodyHeader;
 
@@ -71,7 +71,7 @@ body in both branches of the union thus:
 
 typdef union Body {
     struct {
-        uint32_t s_mbz;
+        uint32_t s_empty;
         uint8_t  s_body[];
     } u_noHader;
     struct {
@@ -110,7 +110,7 @@ typdef union Body {
     so that decoders know what format the ring is in.
 */
 
-static const uint16_t FORMAT_MAJOR  = 11;  /* nscldaq-11. */
+static const uint16_t FORMAT_MAJOR  = 12;  /* nscldaq-12. */
 static const uint16_t FORMAT_MINOR  =  0;  /* nscldaq-x.0 */
 
 /* state change item type codes: */
@@ -120,7 +120,7 @@ static const uint32_t END_RUN    = 2;
 static const uint32_t PAUSE_RUN  = 3;
 static const uint32_t RESUME_RUN = 4;
 
-// Not quite a state change since we don't know anything about what happened.
+/* Not quite a state change since we don't know anything about what happened. */
 
 static const uint32_t ABNORMAL_ENDRUN = 5;
 
@@ -167,7 +167,7 @@ static const uint16_t GLOM_TIMESTAMP_AVERAGE = 2;
 #endif
 
 
-// Macro to make packed structs:
+/* Macro to make packed structs: */
 
 
 
@@ -200,16 +200,23 @@ typedef PSTRUCT _BodyHeader {
   header and a generic body
 */
 
+// The define below is for compatibility sake.. it can be turned off
+// by defining DISABLE_V11_COMPATIBILITY
+
+#ifndef DISABLE_V11_COMPATIBILITY
+#define s_mbz s_empty
+#endif
+
 typedef PSTRUCT _RingItem {
   RingItemHeader s_header;
   union {
     struct {
-      uint32_t s_mbz;
-      uint8_t  s_body[1];
+      uint32_t s_empty;               /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
+      uint8_t  s_body[0];
     } u_noBodyHeader;
     struct {
         BodyHeader s_bodyHeader;
-        uint8_t s_body[];
+        uint8_t s_body[0];
     } u_hasBodyHeader;
   } s_body;
 } RingItem, *pRingItem;
@@ -228,14 +235,16 @@ typedef PSTRUCT _StateChangeItemBody {
   uint32_t        s_timeOffset;
   uint32_t        s_Timestamp;
   uint32_t        s_offsetDivisor;
+  uint32_t        s_originalSid;     // 12.0 original source id.
   char            s_title[TITLE_MAXSIZE+1];
+
 } StateChangeItemBody, *pStateChangeItemBody;
 
 typedef PSTRUCT _StateChangeItem  {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t            s_mbz;       /* Must be zero - no body header*/
+            uint32_t            s_empty;       /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
             StateChangeItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -251,7 +260,7 @@ typedef PSTRUCT _StateChangeItem  {
 */
 typedef PSTRUCT _AbnormalEndItem {
     RingItemHeader s_header;
-    uint32_t      s_mbz;                   // Empty body header.
+    uint32_t      s_empty;                 /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
     
 } AbnormalEndItem, *pAbnormalEndItem;
 
@@ -267,14 +276,15 @@ typedef PSTRUCT _ScalerItemBody {
   uint32_t        s_intervalDivisor;  /* 11.0 sub second time intervals */
   uint32_t        s_scalerCount;
   uint32_t        s_isIncremental;    /* 11.0 non-incremental scaler flag */
-  uint32_t        s_scalers[];
+  uint32_t        s_originalSid;
+  uint32_t        s_scalers[0];
 } ScalerItemBody, *pScalerItemBody;
 
 typedef PSTRUCT _ScalerItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz;              /* Must be zero .. no header */
+            uint32_t       s_empty;   /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
             ScalerItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -295,14 +305,16 @@ typedef PSTRUCT _TextItemBody {
   uint32_t       s_timestamp;
   uint32_t       s_stringCount;
   uint32_t       s_offsetDivisor;
-  char           s_strings[];
+  uint32_t        s_originalSid;
+  char           s_strings[0];
 } TextItemBody, *pTextItemBody;
+
 
 typedef PSTRUCT _TextItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t       s_mbz;            /* Must be zero (no body header) */
+            uint32_t       s_empty;    /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
             TextItemBody   s_body;
         } u_noBodyHeader;
         struct {
@@ -321,12 +333,12 @@ typedef PSTRUCT _PhysicsEventItem {
     RingItemHeader s_header;
     union {
         struct {
-            uint32_t      s_mbz;
-            uint16_t      s_body[];      /* Aribrtary length body */
+            uint32_t      s_empty;    /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
+            uint16_t      s_body[0];      /* Aribrtary length body */
         } u_noBodyHeader;
         struct {
             BodyHeader    s_bodyHeader;
-            uint16_t      s_body[];
+            uint16_t      s_body[0];
         } u_hasBodyHeader;
     } s_body;
 } PhysicsEventItem, *pPhysicsEventItem;
@@ -340,6 +352,7 @@ typedef PSTRUCT __PhysicsEventCountItemBody {
   uint32_t       s_timeOffset;
   uint32_t       s_offsetDivisor;
   uint32_t       s_timestamp;
+  uint32_t        s_originalSid;
   uint64_t       s_eventCount;	/* Maybe 4Gevents is too small ;-) */
 } PhysicsEventCountItemBody, *pPhysicsEventCountItemBody;
 
@@ -347,7 +360,7 @@ typedef PSTRUCT _PhysicsEventCountItem {
     RingItemHeader   s_header;
     union {
         struct {
-            uint32_t             s_mbz;      /* Must be zero - no body header*/
+            uint32_t             s_empty;      /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
             PhysicsEventCountItemBody s_body;
         } u_noBodyHeader;
         struct {
@@ -365,7 +378,7 @@ typedef PSTRUCT _PhysicsEventCountItem {
 typedef PSTRUCT _EventBuilderFragment {
   RingItemHeader s_header;
   BodyHeader     s_bodyHeader;
-  uint8_t       s_body[];	/* Really s_payload bytes of data.. */
+  uint8_t       s_body[0];	/* Really s_payload bytes of data.. */
 } EventBuilderFragment, *pEventBuilderFragment;
 
 /**
@@ -375,7 +388,7 @@ typedef PSTRUCT _EventBuilderFragment {
 
 typedef PSTRUCT _DataFormat {
     RingItemHeader s_header;
-    uint32_t       s_mbz;              /* No body header */
+    uint32_t       s_empty;          /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
     uint16_t       s_majorVersion;     /* FORMAT_MAJOR */
     uint16_t       s_minorVersion;     /* FORMAT_MINOR */
 } DataFormat, *pDataFormat;
@@ -385,7 +398,7 @@ typedef PSTRUCT _DataFormat {
  */
 typedef PSTRUCT _GlomParameters  {
     RingItemHeader s_header;
-    uint32_t       s_mbz;
+    uint32_t       s_empty;              /* sizeof(uint32_t) daqdev/NSCLDAQ#1030 */
     uint64_t       s_coincidenceTicks;
     uint16_t       s_isBuilding;
     uint16_t       s_timestampPolicy;   /* See GLOM_TIMESTAMP_* above */
@@ -453,12 +466,41 @@ extern "C" {
     const char* pTitle, int type
   );
   pAbnormalEndItem formatAbnormalEndItem();
+
+  int  hasBodyHeader(const RingItem* pItem);
+  void* bodyPointer(RingItem* pItem);
+  void* bodyHeader(RingItem* pItem);
+
   
-  void* bodyPointer(pRingItem pItem);
   uint32_t itemSize(const RingItem* pItem);
   uint16_t itemType(const RingItem* pItem);
   int      mustSwap(const RingItem* pItem);
 
+  // Make these visible so that e.g. ring item classes can use
+  // proven code.
+  
+  void* fillRingHeader(pRingItem pItem, uint32_t size, uint32_t type);
+  void* fillBodyHeader(
+      pRingItem pItem, uint64_t timestamp, uint32_t sourceId,
+      uint32_t barrier
+  );
+  void* fillEventCountBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint64_t count, uint32_t sid
+  );
+  void* fillScalerBody(
+    pRingItem pItem, uint32_t start, uint32_t end, uint32_t divisor,
+    uint32_t unixTime, uint32_t count, int incremental, uint32_t* pScalers,
+    uint32_t sid
+  );
+  void* fillTextItemBody(
+    pRingItem pItem, uint32_t offset, uint32_t divisor, uint32_t unixTime,
+    uint32_t nStrings, const char** ppStrings, int sid
+  );
+  void* fillStateChangeBody(
+    pRingItem pItem, uint32_t run, uint32_t offset, uint32_t divisor,
+    uint32_t unixTime, const char* pTitle, int sid
+  );
 #ifdef __cplusplus
 }
 #endif
