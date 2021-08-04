@@ -29,6 +29,7 @@ DDASReadout_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
+	@PIXIE_CPPFLAGS@						\
 	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions.txt\" \
 	-DSORTING
 
@@ -37,7 +38,7 @@ DDASReadout_LDFLAGS= \
 	@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la		\
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/base/os/libdaqshm.la			\
-	-L@DDAS_INSTDIR@/lib -lPixie16App -lPixie16Sys          \
+	-L@DDAS_INSTDIR@/lib @PIXIE_LDFLAGS@          \
 	-lConfiguration -lSystemBooter @PLX_LDFLAGS@ 		\
 	@LIBTCLPLUS_LDFLAGS@	@TCL_LDFLAGS@			\
 	-Wl,"-rpath=@DDAS_INSTDIR@/lib"

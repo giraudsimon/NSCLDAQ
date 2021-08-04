@@ -4,8 +4,7 @@
 AC_PREREQ(2.61)
 
 
-
-AC_INIT(nscldaq,11.4-011, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,11.4-013, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 
@@ -359,7 +358,26 @@ AC_ARG_ENABLE([ddas],
 if test "x$BUILD_DDAS" == "xyes"
 then
    AC_MSG_NOTICE([The XIA-DDAS Support software will be built support software in ${DDAS_INSTDIR}])
-   
+
+   #
+   #   The XIA API is now separated so we need to know where it is:
+   #
+   AC_ARG_WITH([xiaapidir],
+               [    --with-xiaapidir=path - path to the XIAAPI installation],
+               [xiaapidir=$withval])
+    if test -n -d ${xiaapidir}
+    then
+      AC_MSG_ERROR([Specify --with-xiaapidir to point to the actual installation of the XIA API])
+    fi
+    PIXIE_API_DIR=${xiaapidir}
+    PIXIE_CPPFLAGS="-I${xiaapidir}/include -DPLX_LINUX"
+    PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -Wl,-rpath=${xiaapidir}/lib"
+
+    AC_SUBST(PIXIE_API_DIR)
+    AC_SUBST(PIXIE_CPPFLAGS)
+    AC_SUBST(PIXIE_LDFLAGS)
+
+
    #  If --with-plx-sdk was provided we're done and that's that.
    #  If not:
    #
