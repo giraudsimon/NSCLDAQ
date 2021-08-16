@@ -58,6 +58,7 @@ KERNEL_VERSION="`uname -r`"
 KERNEL_SOURCE_DIR="/usr/src/linux-headers-${KERNEL_VERSION}"
 DRIVERBUILD_EMAIL="daqhelp@frib.msu.edu"
 
+
 DRIVER_REPOSITORY="https://git.frib.msu.edu/daqdev/nscldaqdrivers.git"
 
 #DRIVER_TOPDIR="/usr/opt/init/nscldaqdrivers"
@@ -67,6 +68,10 @@ BTPDRIVER="${BTPDRIVERDIR}/btp-${KERNEL_VERSION}.ko"
 
 PLX_SDK_DIR="${DRIVER_TOPDIR}/plx"
 PLXDRIVERDIR="${PLX_SDK_DIR}/Driver-${KERNEL_VERSION}"
+#
+# Testing
+#
+rm -rf ${DRIVER_TOPDIR}
 
 ##
 # Needed directories 
@@ -114,10 +119,10 @@ start_ringmaster () {
 #    If necessary we do the initial clone:
 #
 update_drivers() {
-    if test ! -d "${DRIVER_TOPDIR}"
+    if test ! -d "${PLX_SDK_DIR}"
     then
 	mkdir -p "${DRIVER_TOPDIR}"/..   # Make sure the enclosing dir exists.
-	git clone "${DRIVER_REPOSITORY}" "${DRIVER_TOPDIR}"
+	git clone "${DRIVER_REPOSITORY}" "${DRIVER_TOPDIR}" > /tmp/git.log 2>&1
     fi
     #  Pull the master branch to get any updates since last boot:
 
@@ -136,7 +141,7 @@ build_btpdriver () {
    then
 	rm -f "${BTPDRIVERDIR}/dd/*.o"  "${BTPDRIVERDIR}/dd/*.ko"
 	(cd "${BTPDRIVERDIR}/dd"; make -C "${KERNEL_SOURCE_DIR}" SUBDIRS=`pwd` BTDRIVER=`pwd`/..) \
-	    2>&1 | mail -s"Driver build for btp-${KERNEL_VERSION}"  "${DRIVERBUILD_EMAIL} on `hostname`"
+	    2>&1 | mail -s"Driver build for btp-${KERNEL_VERSION} on `hostname`"  "${DRIVERBUILD_EMAIL}"
 	 cp "${BTPDRIVERDIR}/dd/btp.ko"  "${BTPDRIVER}"
 	 log_daemon_msg "BTP ${KERNEL_VERSION}"
    fi
@@ -155,7 +160,7 @@ build_plxdriver () {
       (cd "${PLXDRIVERDIR}" ; \
       	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers clean; \
 	  PLX_SDK_DIR=${PLX_SDK_DIR} ${PLXDRIVERDIR}/buildalldrivers) 2>&1 | \
-        mail -s "Build of PLX Driver family for ${KERNEL_VERSION}" "${DRIVERBUILD_EMAIL} on `hostname`"
+        mail -s "Build of PLX Driver family for ${KERNEL_VERSION} on `hostname`" "${DRIVERBUILD_EMAIL}"
       log_daemon_msg "Plx driver family ${KERNEL_VERSION}"
    fi
 }
@@ -248,4 +253,6 @@ case "$1" in
 	;;
 esac
 chmod a+w /dev/null #   Probably the redirections change the perms.
+chgrp -R daqsoftg  "${DRIVER_TOPDIR}"
+chmod -R  g+w      "${DRIVER_TOPDIR}"
 # exit 0
