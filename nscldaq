@@ -71,7 +71,7 @@ PLXDRIVERDIR="${PLX_SDK_DIR}/Driver-${KERNEL_VERSION}"
 #
 # Testing
 #
-rm -rf ${DRIVER_TOPDIR}
+#rm -rf ${DRIVER_TOPDIR}
 
 ##
 # Needed directories 
