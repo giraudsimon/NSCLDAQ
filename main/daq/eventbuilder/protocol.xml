@@ -24,11 +24,33 @@
   </refnamediv>
   
   <refsynopsisdiv>
-    <cmdsynopsis>
-    <command>
-CONNECT source-name
-    </command>
-    </cmdsynopsis>
+    <programlisting>
+#include &lt;fragment.h&gt;
+#include &lt;CEventOrderClient.h&gt;
+
+static const unsigned EVB_MAX_DESCRIPTION=80;      // Description string size.
+
+namespace EVB {
+  typedef struct _ClientMessageHeader {
+    uint32_t  s_bodySize;          // # bytes of message body.
+    uint32_t  s_msgType;           // Type of message.
+  } ClientMessageHeader, *pClientMessageHeader;
+  
+  // Message type codes (bit encoded for the hell of it)
+  
+  static const uint32_t CONNECT   =1;
+  static const uint32_t FRAGMENTS =2;
+  static const uint32_t DISCONNECT=4;
+
+  typedef struct _ConnectBody {
+    char     s_description[EVB_MAX_DESCRIPTION];  // Description string.
+    uint32_t s_nSids;                             // Number of sids on this link.
+    uint32_t s_sids[0];                           // actually s_nSids follow.
+  } ConnectBody, *pConnectBody;
+
+  
+}
+    </programlisting>
 
   </refsynopsisdiv>
   <refsect1>
@@ -50,18 +72,19 @@ CONNECT source-name
      <para>
         The server never initiates an interaction with the clients.  Only
         clients initiate interactions through <firstterm>messages</firstterm>.
-        Messages consist of a command segment followed by an optional data segment.
-        The server responds to each message to indicate how the request has been
-        processed.
+        
      </para>
      <para>
         Messages consist of a header followed by an optional body.  The
-        Headers are pure ASCII while the bodies consist of binary data.
-        Each messages is descdribed fully in the next section: MESSAGES
+        Beginning with NSCLDAQ-12, all headers are pure binary. Thus the
+        event builder in NSCLDAQ-12 and later
+        cannot accept data from fragment sources
+        written for earlier versions of NSCLDAQ.
+        Each messages is described fully in the next section: MESSAGES
      </para>
      <para>
         The event orderer uses the NSCL port manager to advertise its
-        presence.  The service name used is "ORDERER"
+        presence.  The service name used is, by default, "ORDERER"
      </para>
   </refsect1>
   <refsect1>
@@ -72,9 +95,11 @@ CONNECT source-name
         Each subsection describes a specific message.  Messages consist of a header
         and an optional body.  The message type determines if there is a body.
         Each segment consist of a 32 bit little endian size followed by its
-        contents.  For headers, the contents are an ASCII string.  For bodies,
-        the contents are message specific.  Messages that don't have bodies
-        send a body size of 0.
+        contents.
+     </para>
+     <para>
+      Headers are described  in the synopsis by the struct
+      <structname>EVB::ClientMessageHeader</structname>. 
      </para>
      <para>
         The server replies to the client are fully textual.  Each reply is a
@@ -105,23 +130,103 @@ CONNECT source-name
         </varlistentry>
         
      </variablelist>
+     <para>
+      The message headers have the following fields:
+      <variablelist>
+        <varlistentry>
+           <term><type>uint32_t</type> <structfield>s_bodySize</structfield></term>
+           <listitem>
+               <para>
+                Number of bytes of the body.  This can be zero if the message has
+                no body.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><type>uint32_t</type> <structfield>s_msgType</structfield></term>
+           <listitem>
+               <para>
+                The message type.  This is one of:
+               </para>
+               <variablelist>
+                <varlistentry>
+                   <term><literal>EVB::CONNECT</literal></term>
+                   <listitem>
+                       <para>
+                        Message is sent just after the client connects to the
+                        server.  The body describes the connection and the
+                        set of source ids to expect from the client.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>EVB::FRAGMENTS</literal></term>
+                   <listitem>
+                       <para>
+                        The body contains fragment data
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><literal>EVB::DISCONNECT</literal></term>
+                   <listitem>
+                       <para>
+                        The client is about to disconnect.  This message has no
+                        body.
+                       </para>
+                    </listitem>
+                </varlistentry>
+               </variablelist>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+     </para>
      <refsect2>
-        <title>CONNECT</title>
+        <title>EVB::CONNECT</title>
         <para>
             Must be sent by the client immediately following a connection.
-            The body contains contains a null terminated string that
-            describes the connection.  This is followed by a 
-            <type>uint32_t</type> count of the number of
-            <type>uint32_t</type> items that follow and contain the source ids
-            that will be carried across this connection.
+            The body is a <structname>EVB::ConnectBody</structname> which descsribes
+            the connection and the source ids to expect from this connection.
+            The fields of <structname>EVB::ConnectBody</structname> are:
         </para>
+        <variablelist>
+          <varlistentry>
+             <term><type>char</type> <structfield>s_description[EVB_MAX_DESCRIPTION]</structfield></term>
+             <listitem>
+                 <para>
+                  Contains the connection description string.  Any unused bytes
+                  should be zero filled.  The description must be at most
+                  <literal>EVB_MAX_DESCRIPTION-1</literal> bytes long to
+                  allow a zero termination.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term><type>uint32_t</type> <structfield>s_nSids</structfield></term>
+             <listitem>
+                 <para>
+                  Number of source ids the client will send.
+               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+             <term><type>uint32_t</type> <structfield>s_sids[0]</structfield></term>
+             <listitem>
+                 <para>
+                  This array will actually be <structfield>s_nSids</structfield>
+                  long and will contain the actual source ids the client
+                  can send.  These are used to pre-allocate fragment queues.
+               </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
         <para>
             This message causes a transition from the CONNECTING to the
             CONNECTED state.
         </para>
      </refsect2>
      <refsect2>
-        <title>DISCONNECT</title>
+        <title>EVB::DISCONNECT</title>
         <para>
             Indicates an orderly, alarm free, disconnect of the client from
             the event builder.  If the client simply closes the socket, the
@@ -152,27 +257,20 @@ CONNECT source-name
         </para>
      </refsect2>
      <refsect2>
-        <title>FRAGMENTS</title>
+        <title>EVB::FRAGMENTS</title>
         <para>
-            A <literal>FRAGMENTS</literal> indicates the body is a set of
+            A <literal>EVB::FRAGMENTS</literal> type indicates the body is an
+            array of
             fragments from the data source.  Each fragment can be thought of
             as a header followed immediately by its payload.  The payload
-            itself is the event fragment.  The header describes the payload.
+            itself is the event fragment.  The header describes the payload
+            and is a <type>EVB::FragmentHeader</type>
             Note that the size of the body is still the first 32 bits in the
             entire body.  It is followed immediately by the first header.
         </para>
         <para>
-            The header has the following structure:
+          Fragment headers have the following fields:
         </para>
-        <informalexample>
-            <programlisting>
-typedef struct <type>_PacketHeader</type> {
-    <fieldsynopsis><type>uint64_t</type> <varname>s_timestamp</varname></fieldsynopsis>;
-    <fieldsynopsis><type>uint32_t</type> <varname>s_sourceId</varname></fieldsynopsis>;
-    <fieldsynopsis><type>uint32_t</type> <varname>s_size</varname></fieldsynopsis>;
-} <type>PacketHeader</type>, *<type>pPacketHeader</type>;
-            </programlisting>
-        </informalexample>
         <variablelist>
             <varlistentry>
                 <term><fieldsynopsis><type>uint64_t</type> <varname>s_timestamp</varname></fieldsynopsis></term>
@@ -200,6 +298,14 @@ typedef struct <type>_PacketHeader</type> {
                         The number of bytes in the payload that follows this
                         struct.
                     </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><fieldsynopsis><type>uint32_t</type> <varname>s_barrier</varname></fieldsynopsis></term>
+               <listitem>
+                   <para>
+                    The barrier type code.
+                   </para>
                 </listitem>
             </varlistentry>
         </variablelist>
