@@ -380,7 +380,7 @@ snit::widgetadaptor ReadoutUI {
     component statistics
     component control
     
-    delegate option -statistics to statistics as -data
+
     
     delegate option -title        to parameters
     delegate option -nexttitle     to parameters
