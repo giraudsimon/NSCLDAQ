@@ -225,11 +225,13 @@ catch {ssh::ssh $readouthost "$bindir/ringbuffer create $rdoring"}
 #   - we need the output/error for readout.
 #   - we need the output/error for the sorter.
 
-set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
-set readoutPid [pid $readoutfd]
+#set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
+set readoutfd [ssh::sshcomplex $readoutHost "(cd $readoutDir; $readoutCmd)" a+]
+set readoutPid [lindex [pid $readoutfd] 1]
 
-set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
-set sorterPid [pid $sorterfd]
+#set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
+set sorterfd [ssh::sshcomplex $sortHost $sortCmd a+]
+set sorterPid [lindex [pid $sorterfd] 1]
 
 fconfigure $sorterfd -buffering line -blocking 0
 fconfigure $readoutfd -buffering line -blocking 0

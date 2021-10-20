@@ -94,7 +94,20 @@ namespace eval  ssh {
 		set bindings  [ssh::getSingularityBindings]
 		return "singularity exec $bindings $container $command"
 	}
-
+	proc shellCommand { } {
+        if {[array names ::env SING_IMAGE] eq ""} {
+			# not in a container env.
+			
+			return bash
+		}
+		#
+		#  We're in a container:
+		
+		set container $::env(SING_IMAGE)
+		set bindings  [ssh::getSingularityBindings]
+		return "singularity shell $bindings $container "
+    }
+    #-------------------------------------------------------------------------
     proc ssh {host command} {
 		set command [ssh::actualCommand $command]
 		set stat [catch {set output [eval exec ssh $host $command]} error]
@@ -107,6 +120,11 @@ namespace eval  ssh {
 		set command [ssh::actualCommand $command]
 		lappend command {"2>&1"}
 		return [open "|ssh $host $command '2>&1'  " $access]
+    }
+	
+	proc sshcomplex {host command access} {
+        set shell [ssh::shellCommand]
+		return [open "| echo $command | ssh -t -t $host $shell 2>&1" $access]
     }
 
     #
@@ -131,5 +149,5 @@ namespace eval  ssh {
 		return [list $pid $pipe $pipe]
     }
 
-    namespace export ssh sshpipe sshpid
+    namespace export ssh sshpipe sshpid sshcomplex
 }
