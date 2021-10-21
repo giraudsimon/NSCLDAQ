@@ -124,7 +124,11 @@ namespace eval  ssh {
 	
 	proc sshcomplex {host command access} {
         set shell [ssh::shellCommand]
-		return [open "| echo $command | ssh -t -t $host $shell 2>&1" $access]
+	    set result  [open "| ssh -t -t $host $shell |& cat" a+]
+	    puts $result  $command
+	    flush $result
+	    return $result
+			 
     }
 
     #

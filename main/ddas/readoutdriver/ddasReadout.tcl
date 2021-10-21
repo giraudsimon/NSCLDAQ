@@ -227,11 +227,11 @@ catch {ssh::ssh $readouthost "$bindir/ringbuffer create $rdoring"}
 
 #set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
 set readoutfd [ssh::sshcomplex $readoutHost "(cd $readoutDir; $readoutCmd)" a+]
-set readoutPid [lindex [pid $readoutfd] 1]
+set readoutPid [pid $readoutfd]
 
 #set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
 set sorterfd [ssh::sshcomplex $sortHost $sortCmd a+]
-set sorterPid [lindex [pid $sorterfd] 1]
+set sorterPid [pid $sorterfd]
 
 fconfigure $sorterfd -buffering line -blocking 0
 fconfigure $readoutfd -buffering line -blocking 0
