@@ -110,7 +110,7 @@ typdef union Body {
     so that decoders know what format the ring is in.
 */
 
-static const uint16_t FORMAT_MAJOR  = 12;  /* nscldaq-12. */
+static const uint16_t FORMAT_MAJOR  = 11;  /* nscldaq-12. */
 static const uint16_t FORMAT_MINOR  =  0;  /* nscldaq-x.0 */
 
 /* state change item type codes: */

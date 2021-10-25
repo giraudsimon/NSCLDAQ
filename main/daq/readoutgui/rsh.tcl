@@ -92,9 +92,22 @@ namespace eval  ssh {
 		
 		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
-		return "singularity exec $bindings $container $command"
+		return "SING_IMAGE=$container singularity exec $bindings $container $command"
 	}
-
+	proc shellCommand { } {
+        if {[array names ::env SING_IMAGE] eq ""} {
+			# not in a container env.
+			
+			return bash
+		}
+		#
+		#  We're in a container:
+		
+		set container $::env(SING_IMAGE)
+		set bindings  [ssh::getSingularityBindings]
+		return "SING_IMAGE=$container singularity shell $bindings $container "
+    }
+    #-------------------------------------------------------------------------
     proc ssh {host command} {
 		set command [ssh::actualCommand $command]
 		set stat [catch {set output [eval exec ssh $host $command]} error]
@@ -107,6 +120,15 @@ namespace eval  ssh {
 		set command [ssh::actualCommand $command]
 		lappend command {"2>&1"}
 		return [open "|ssh $host $command '2>&1'  " $access]
+    }
+	
+	proc sshcomplex {host command access} {
+        set shell [ssh::shellCommand]
+	    set result  [open "| ssh -t -t -o \"StrictHostKeyChecking no\" $host $shell |& cat" a+]
+	    puts $result  $command
+	    flush $result
+	    return $result
+			 
     }
 
     #
@@ -122,14 +144,12 @@ namespace eval  ssh {
     #        outpipe- Pipe to write to to send data to the process.
     #
     #
-    proc sshpid {host command} {
-		set command [ssh::actualCommand $command]
-
-        set pipe [open "|  ssh -o \"StrictHostKeyChecking no\"  $host $command |& cat" a+]
-		set pid [lindex [pid $pipe] 0]
-
-		return [list $pid $pipe $pipe]
+	proc sshpid {host command} {
+	    set pipe [ssh::complex $host $cmmand a+]
+	    set command [ssh::actualCommand $command]
+	    set pid [lindex [pid $pipe] 0]
+	    return [list $pid $pipe $pipe]
     }
 
-    namespace export ssh sshpipe sshpid
+    namespace export ssh sshpipe sshpid sshcomplex
 }

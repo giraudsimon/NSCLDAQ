@@ -107,8 +107,9 @@ proc ::SSHPipe::start params {
     #  Start the ssh pipeline:
    
 
-   set pipeinfo [::ssh::sshpid $host "$starter $wd \"$program $cmdparams\""]
-
+    set pipeinfo [::ssh::sshpid $host "$starter $wd \"$program $cmdparams\""]
+    puts " $program : $pipeinfo"
+    puts "Full pipe: [pid [lindex $pipeinfo 1]]" 
     
     # Set up our context entry in activeProviders:
     

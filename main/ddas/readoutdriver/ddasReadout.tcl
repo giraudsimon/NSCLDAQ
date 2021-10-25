@@ -18,6 +18,7 @@ exec tclsh "$0" ${1+"$@"}
 #	     Michigan State University
 #	     East Lansing, MI 48824-1321
 
+
 package require cmdline
 
 #  Figure out how to add the NSCLDAQ TclLibs to the path:
@@ -33,7 +34,7 @@ if {[array names env DAQROOT] ne ""} {
     lappend auto_path $libdir
     set bindir [file normalize [file join $scriptdir .. bin]]
 }
-
+package require removetcllibpath
 package require ssh
 
 ##
@@ -126,6 +127,10 @@ set options {
     {window.arg     10   "Sorting window in seconds."}
     {fifothreshold.arg 20480 "FIFO Threshold value for DDAS Readout"}
     {buffersize.arg    16384 "Buffer size value for DDAS Readout"}
+    {infinity.arg   "off" "on|off - enable/disable infinity clock"}
+    {clockmultiplier.arg 1 "Time stamp multiplier for external clock"}
+    {scalerseconds.arg 16 "Time between scaler reads"}
+        
 }
 
 set mandatory [list readouthost sortring sorthost cratedir]
@@ -162,8 +167,19 @@ set readoutCmd [file join $bindir DDASReadout]
 set readoutHost [dict get $parsed readouthost]
 set fifoThreshold [dict get $parsed fifothreshold]
 set bufferSize    [dict get $parsed buffersize]
+set infinity    [dict get $parsed infinity]
+set clkmult      [dict get $parsed clockmultiplier]
+set scalerSecs   [dict get $parsed scalerseconds]
 
-set readoutCmd "FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
+if {$infinity} {
+    set infstring "INFINITY_CLOCK=1"
+} else {
+    set infstring ""
+}
+
+
+
+set readoutCmd "$infstring SCALER_SECONDS=$scalerSecs FIFO_THRESHOLD=$fifoThreshold EVENT_BUFFER_SIZE=$bufferSize $readoutCmd"
 
 foreach optMapEntry $ddasOptionMap {
     set opt [lindex $optMapEntry 0]
@@ -209,10 +225,12 @@ catch {ssh::ssh $readouthost "$bindir/ringbuffer create $rdoring"}
 #   - we need the output/error for readout.
 #   - we need the output/error for the sorter.
 
-set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
+#set readoutfd [open "|ssh -t -t $readoutHost \"(cd $readoutDir\; $readoutCmd)\"" a+]
+set readoutfd [ssh::sshcomplex $readoutHost "(cd $readoutDir; $readoutCmd)" a+]
 set readoutPid [pid $readoutfd]
 
-set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
+#set sorterfd [open "|ssh -t -t $sortHost $sortCmd" a+]
+set sorterfd [ssh::sshcomplex $sortHost $sortCmd a+]
 set sorterPid [pid $sorterfd]
 
 fconfigure $sorterfd -buffering line -blocking 0
