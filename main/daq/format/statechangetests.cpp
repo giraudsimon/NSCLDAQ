@@ -71,7 +71,8 @@ StateChangeOutput::begin()
 					     BEGIN_RUN);
 
   ASSERT(pItem);
-  EQMSG("State change item sizse", static_cast<uint32_t>(sizeof(StateChangeItem)), pItem->s_header.s_size);
+  
+  // EQMSG("State change item sizse", static_cast<uint32_t>(sizeof(StateChangeItem)), pItem->s_header.s_size);
   EQMSG("Item type", BEGIN_RUN, pItem->s_header.s_type);
   EQMSG("Run Number", static_cast<uint32_t>(1234), pItem->s_body.u_noBodyHeader.s_body.s_runNumber);
   EQMSG("Time offset", static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);

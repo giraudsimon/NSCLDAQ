@@ -43,7 +43,7 @@ CRingFragmentItem::CRingFragmentItem(uint64_t timestamp, uint32_t source, uint32
 {
   init(payloadSize);
   pEventBuilderFragment pFrag =
-    reinterpret_cast<pEventBuilderFragment>(getItemPointer());
+    reinterpret_cast<pEventBuilderFragment>(getBodyPointer());
   pBodyHeader pHeader = &(pFrag->s_bodyHeader);
   
   // This is fine because we're constructing the body header.
@@ -192,10 +192,14 @@ CRingFragmentItem::payloadSize()
 void*
 CRingFragmentItem::payloadPointer()
 {
-  pEventBuilderFragment pItem =
-    reinterpret_cast<pEventBuilderFragment>(getItemPointer());
+	return getBodyPointer();
+	pEventBuilderFragment pFrag =
+			reinterpret_cast<pEventBuilderFragment>(getItemPointer());
+	return pFrag->s_body;
+  //pEventBuilderFragment pItem =
+   // reinterpret_cast<pEventBuilderFragment>(getItemPointer());
 
-  return pItem->s_body;  
+  //return pItem->s_body;  
 
 }
 /**
@@ -312,11 +316,15 @@ CRingFragmentItem::bodySize(size_t payloadSize) const
 void
 CRingFragmentItem::copyPayload(const void* pPayloadSource, size_t size)
 {
+  
     if (size) {        
       pEventBuilderFragment pFragment =
-        reinterpret_cast<pEventBuilderFragment>(getItemPointer());
+        reinterpret_cast<pEventBuilderFragment>(getBodyPointer());
       memcpy(pFragment->s_body, pPayloadSource, size);
     }
+    uint8_t* pCursor = reinterpret_cast<uint8_t*>(getBodyPointer());
+    pCursor += size;
+    setBodyCursor(pCursor);
 }
 /**
  * init

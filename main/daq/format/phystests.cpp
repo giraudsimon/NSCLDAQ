@@ -89,8 +89,9 @@ void PhysicsItemOutput::empty() {
 	sizeof(uint32_t)/sizeof(uint16_t), static_cast<size_t>(*pPayload));
 
   // mbz check:
-  
-  EQ(static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_mbz);
+
+  ASSERT((pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
+	  (pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
 
   free(pItem);
 }

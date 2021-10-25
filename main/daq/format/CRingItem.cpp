@@ -348,7 +348,7 @@ CRingItem::size() const
 bool
 CRingItem::hasBodyHeader() const
 {
-    return (m_pItem->s_body.u_noBodyHeader.s_mbz != 0);
+  return (m_pItem->s_body.u_noBodyHeader.s_mbz != 0) && (m_pItem->s_body.u_noBodyHeader.s_mbz != sizeof(uint32_t));
 }
 /**
  * getEventTimestamp
@@ -416,19 +416,10 @@ CRingItem::setBodyCursor(void* pNewCursor)
 void
 CRingItem::updateSize()
 {
-  size_t s = sizeof(RingItemHeader) + getBodySize();
-  
-  // That body size does not count the body header if it's there.
-  // We need to allow for body header extensions becuse it's possible this
-  // ring item came from a ring rather than being constructed by us:
-  
-  if (hasBodyHeader()) {
-    pRingItem p = getItemPointer();
-    s += p->s_body.u_hasBodyHeader.s_bodyHeader.s_size;   // Use the real body header size.
-    // s += sizeof(BodyHeader);
-  } else {
-    s += sizeof(uint32_t);
-  }
+  uint8_t* pStart = reinterpret_cast<uint8_t*>(m_pItem);
+  uint8_t* pEnd   = reinterpret_cast<uint8_t*>(m_pCursor);
+  size_t s = pEnd - pStart;
+  m_pItem->s_header.s_size = s;
 
   m_pItem->s_header.s_size = s;
 }
@@ -459,6 +450,7 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
         
         uint8_t* pBody = (m_pItem->s_body.u_noBodyHeader.s_body);
         size_t moveSize = sizeof(BodyHeader) - sizeof(uint32_t);
+        m_pItem->s_header.s_size += moveSize;
         size_t moveCount= m_pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(uint32_t);
         memmove(pBody + moveSize, pBody, moveCount);
         m_pCursor += moveSize;
@@ -469,8 +461,7 @@ CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
     
     // Don't tamper with the existing size.  IF there was a body header there
     // before it may have an extension:
-    
-    //pHeader->s_size = sizeof(BodyHeader);
+
    
     pHeader->s_timestamp = timestamp;
     pHeader->s_sourceId  = sourceId;

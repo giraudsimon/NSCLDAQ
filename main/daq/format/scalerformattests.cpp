@@ -80,7 +80,8 @@ ScalerOutput::empty()
     
   EQMSG("Empty scaler size", properSize, pItem->s_header.s_size);
   EQMSG("Scaler type: ", PERIODIC_SCALERS, pItem->s_header.s_type);
-  EQMSG("mbz", static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_mbz);
+   ASSERT((pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
+	  (pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
   EQMSG("start time", static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_body.s_intervalStartOffset);
   EQMSG("stop time",  static_cast<uint32_t>(1), pItem->s_body.u_noBodyHeader.s_body.s_intervalEndOffset);
   EQMSG("timestamp",  static_cast<uint32_t>(0x1234), pItem->s_body.u_noBodyHeader.s_body.s_timestamp);

@@ -276,9 +276,10 @@ FragmentTests::payloadAccess()
         static_cast<uint64_t>(0xffeeddccaa998877ll), 1, sizeof(payload), payload
     );
     
-    uint8_t* p = reinterpret_cast<uint8_t*>(item.payloadPointer());
+    pEventBuilderFragment p =
+      reinterpret_cast<pEventBuilderFragment>(item.payloadPointer());
     
     for (int i =0; i < sizeof(payload); i++) {
-        EQ(payload[i], p[i]);
+        EQ((int)(payload[i]), (int)(p->s_body[i]));
     }
 }
