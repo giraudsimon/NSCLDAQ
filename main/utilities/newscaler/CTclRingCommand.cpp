@@ -610,8 +610,10 @@ CTclRingCommand::formatFragment(CTCLInterpreter& interp, CRingItem* pSpecificIte
     result += static_cast<int>(p->payloadSize());
     
     result += "body";
+    pEventBuilderFragment pFrag =
+        reinterpret_cast<pEventBuilderFragment>(p->payloadPointer());
     Tcl_Obj* pBody =Tcl_NewByteArrayObj(
-        reinterpret_cast<unsigned char*>(p->payloadPointer()),
+        pFrag->s_body,
         static_cast<int>(p->payloadSize()));
     CTCLObject body(pBody);
     body.Bind(interp);

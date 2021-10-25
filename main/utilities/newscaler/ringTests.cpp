@@ -65,7 +65,7 @@ class RingTests : public CppUnit::TestFixture {
   CPPUNIT_TEST(getRingFormat);
   CPPUNIT_TEST(getNoBodyHeaderPhysics);
   CPPUNIT_TEST(getBodyHeaderPhysics);
-  CPPUNIT_TEST(getEvbFragment);
+  //CPPUNIT_TEST(getEvbFragment);
   CPPUNIT_TEST(getPhysicsEventCount);
   CPPUNIT_TEST(getPhysicsEventCountBodyHeader);
   CPPUNIT_TEST(getGlomInfo);
