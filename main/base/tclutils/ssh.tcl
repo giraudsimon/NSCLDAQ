@@ -145,7 +145,7 @@ namespace eval  ssh {
     #
     #
 	proc sshpid {host command} {
-	    set pipe [ssh::complex $host $command a+]
+	    set pipe [ssh::sshcomplex $host $command a+]
 	    set pid [lindex [pid $pipe] 0]
 	    return [list $pid $pipe $pipe]
     }
