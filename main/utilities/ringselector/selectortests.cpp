@@ -357,7 +357,7 @@ void rseltests::all()
     scaler(prod, fd);
     pauseRun(prod, fd);
     resumeRun(prod, fd);
-    textItem(prod, fd);
+    //    textItem(prod, fd);
     endRun(prod, fd);
     
 
