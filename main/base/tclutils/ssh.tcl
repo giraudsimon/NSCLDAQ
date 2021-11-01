@@ -125,6 +125,9 @@ namespace eval  ssh {
 	proc sshcomplex {host command access} {
         set shell [ssh::shellCommand]
 	    set result  [open "| ssh -t -t -o \"StrictHostKeyChecking no\" $host $shell |& cat" a+]
+	    puts "--------------------------------------"
+	    puts "Using: $shell $command"
+	    puts "--------------------------------------"
 	    puts $result  $command
 	    flush $result
 	    return $result
