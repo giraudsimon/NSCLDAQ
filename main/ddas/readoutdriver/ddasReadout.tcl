@@ -18,6 +18,9 @@ exec tclsh "$0" ${1+"$@"}
 #	     Michigan State University
 #	     East Lansing, MI 48824-1321
 
+puts --------------------------------------------------------------
+puts   "DDAS Readout driver starting"
+puts ---------------------------------------------------------------
 
 package require cmdline
 
@@ -34,7 +37,7 @@ if {[array names env DAQROOT] ne ""} {
     lappend auto_path $libdir
     set bindir [file normalize [file join $scriptdir .. bin]]
 }
-package require removetcllibpath
+# package require removetcllibpath   # Not until 12.0?
 package require ssh
 
 ##
