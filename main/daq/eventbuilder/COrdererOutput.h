@@ -18,6 +18,7 @@
 #include "CFragmentHandler.h"
 #include <tcl.h>
 #include <io.h>
+#include <sys/uio.h>
 
 // Forward definitions:
 

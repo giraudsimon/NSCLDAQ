@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <io.h>
 
 static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
 /*------------------------------------------------------------------------

@@ -122,6 +122,7 @@ ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ @THREADCXX
 ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ @builddir@/libTclRingBuffer.la \
                        @top_builddir@/daq/format/libdataformat.la     \
                                @top_builddir@/base/dataflow/libDataFlow.la    \
+			@top_builddir@/base/os/libdaqshm.la   \
                                @LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
 
 ringTests_DEPENDENCIES=@builddir@/libTclRingBuffer.la @builddir@/libdataformat.la
