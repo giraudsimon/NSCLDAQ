@@ -3208,6 +3208,7 @@ snit::widgetadaptor ReadoutGUI {
         set sm [RunstateMachineSingleton %AUTO%]
         
         if {[$sm getState] ne "NotReady"} {
+	    puts "Stopping all data sources"
             $mgr stopAll
         }
         $sm destroy

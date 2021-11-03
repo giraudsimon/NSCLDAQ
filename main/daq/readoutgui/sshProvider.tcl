@@ -158,9 +158,13 @@ proc ::SSHPipe::stop source {
     
     
     if {[::SSHPipe::_notIdle $source]} {
+	puts "Attempting to end."
         ::SSHPipe::_attemptEnd $source
     }
     ::SSHPipe::_send $source exit
+    # For good measure kill the beast
+    
+    catch {exec kill -9 [dict get $::SSHPipe::activeProviders($source) sshpid]}
     Wait -pid [dict get $::SSHPipe::activeProviders($source) sshpid]
     dict set ::SSHPipe::activeProviders($source) closing true
     
