@@ -316,8 +316,9 @@ proc EVBC::start args {
     ::flush $EVBC::pipefd
     
     # Construct and set the GUI title:
-    
-    set title "Event builder -> [$options cget -destring]@$::env(HOST)"
+
+    set localhost [exec hostname]
+    set title "Event builder -> [$options cget -destring]@$localhost"
     puts $EVBC::pipefd "wm title . {$title}"
     
     # If any parameters have been set push those out now:
