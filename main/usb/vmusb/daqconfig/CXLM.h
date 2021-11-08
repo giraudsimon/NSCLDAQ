@@ -94,7 +94,7 @@ public:
 
   // XLM support functions derived classes can use these:
 protected:
-  void loadFirmware(CVMUSB& controller,  std::string path) throw(std::string);
+  void loadFirmware(CVMUSB& controller,  std::string path) ;
   void accessBus(CVMUSB& controller,  uint32_t accessPattern);
 
   void addBusAccess(CVMUSBReadoutList& list, uint32_t accessPattern, 

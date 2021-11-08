@@ -137,6 +137,7 @@ int
 RawChannel::SetLength()
 {
     s_channelLength = channelLength(s_data);
+    return s_channelLength;
 }
 
 /**

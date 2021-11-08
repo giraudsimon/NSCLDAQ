@@ -27,7 +27,7 @@
 #include <stdlib.h>
 
 #include <set>
-
+#include <string>
 #include <iostream>
 using namespace std;
 
@@ -602,12 +602,12 @@ CStack::getListNumber()
   TriggerType trigger = getTriggerType();
   if (trigger == Nim1) {
     return 0;
-  }
-  if (trigger == Scaler) {
+  } else if (trigger == Scaler) {
     return 1;
-  }
-  if (trigger == Interrupt) {
+  } else if (trigger == Interrupt) {
     return static_cast<uint8_t>(getIntegerParameter("-stack"));
+  } else {
+    throw std::string("Invalid trigger condition!!");
   }
 }
 /*

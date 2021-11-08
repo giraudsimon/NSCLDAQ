@@ -174,7 +174,7 @@ CXLM::onAttach(CReadoutModule& configuration)
   @exception std::string If there is an error.
 */
 void 
-CXLM::loadFirmware(CVMUSB& controller, string path) throw(std::string)
+CXLM::loadFirmware(CVMUSB& controller, string path) 
 {
   uint32_t base = m_pConfiguration->getUnsignedParameter("-base");
   std::cout << "XLM::loadFirmware " << path << " for module at "

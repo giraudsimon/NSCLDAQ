@@ -59,7 +59,7 @@ public:
     CPagedOutput(const char* filename, size_t bufferSize);
     CPagedOutput(int fd, size_t bufferSize);
     
-    virtual ~CPagedOutput();
+    virtual ~CPagedOutput() noexcept(false);
     
     void put(void* pData, size_t nBytes);
     void flush();

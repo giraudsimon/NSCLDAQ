@@ -703,6 +703,7 @@ int CULMTrigger<Controller,RdoList>::doRegisterRead(Controller& controller,
   uint16_t qx = 0;
   int slot = m_pConfig->getIntegerParameter("-slot"); 
   int status = controller.simpleRead16(slot,0,3,data,qx);
+  return data;
 }
 
 ////////////////////////////////////////////////////////////

@@ -173,7 +173,9 @@ vector<uint32_t> CMyScaler::read()
   }
   catch(...){
     cout << "exception in scaler " << endl;
+    throw;
   }
+  
 }
 
 void CMyScaler::clear() 

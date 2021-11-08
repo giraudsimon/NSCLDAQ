@@ -249,12 +249,13 @@ CZMQCommunicatorFactory::readEndpointFile(const char* filename)
             
             m_endpoints[index] = uri;
         }
-    } catch (std::runtime_error& r) {
-        std::cerr << r.what() << std::endl;
-        exit(EXIT_FAILURE);
     } catch (std::ios_base::failure& f) {
         if(configFile.eof()) return;
         throw;
+    }
+    catch (std::runtime_error& r) {
+        std::cerr << r.what() << std::endl;
+        exit(EXIT_FAILURE);
     }
 }
 /**

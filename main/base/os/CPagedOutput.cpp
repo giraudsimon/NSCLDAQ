@@ -82,7 +82,7 @@ CPagedOutput::CPagedOutput(int fd, size_t bufferSize) :
  *   - truncate the file to the actual number of bytes written
  *   - close the file.
  */
-CPagedOutput::~CPagedOutput()
+CPagedOutput::~CPagedOutput() noexcept(false)
 {
     if (munmap(m_pData, m_nDataSize) < 0) {
         throw std::system_error(

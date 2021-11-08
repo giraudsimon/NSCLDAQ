@@ -114,6 +114,7 @@ int CMockCCUSB::loadList(uint8_t listNumber, CCCUSBReadoutList& list)
   }
 
   m_record.push_back("loadlist-end");
+  return 0;
 }
 
 void CMockCCUSB::fillReturnData(void* pBuffer, size_t bufSize, size_t* nbytes) 
@@ -156,6 +157,7 @@ int CMockCCUSB::usbRead(void* data, size_t bufferSize, size_t* transferCount,
   m_formatter << dec << timeout << ")";
 
   m_record.push_back(m_formatter.str());
+  return 0;
 }
 
 

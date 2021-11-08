@@ -204,9 +204,13 @@ int tstampCompare(const void* e1, const void* e2)
   const uint64_t* t2 = static_cast<const uint64_t*>(e2);
   
   
-  if (*t1 < *t2) return -1;
-  if (*t1 == *t2) return 0;
-  if (*t1 > *t2) return 1;
+  if (*t1 < *t2) {
+    return -1;
+  } else if (*t1 == *t2) {
+    return 0;
+  } else  {
+    return 1;
+  }
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(HMTest);
