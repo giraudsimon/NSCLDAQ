@@ -716,7 +716,7 @@ EventLogMain::writeInterior(int fd, uint32_t runNumber, uint64_t bytesSoFar)
       }
     }
 
-    std::cout << "Begins " << m_nBeginsSeen << " ends: " << endsSeen << std::endl;
+
     // See if we've got a balanced set of begins/ends:
     
     if(endsSeen >= m_nBeginsSeen) {
@@ -799,6 +799,7 @@ EventLogMain::writeWrappedItem(int fd, int& ends)
   if (pH->s_type == END_RUN)   ends++;
   
   writeData(fd, buffer, nSize);
+  return nSize;
 }
 /**
  * writeData
