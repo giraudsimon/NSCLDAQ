@@ -383,6 +383,7 @@ AC_ARG_ENABLE([ddas],
 if test "x$BUILD_DDAS" == "xyes"
 then
    AC_MSG_NOTICE([The XIA-DDAS Support software will be built support software in ${DDAS_INSTDIR}])
+   AC_DEFINE([USING_DDAS],[1],  [DDAS SUpport Enabled])
 
    AC_ARG_WITH([xiaapidir],
 	[    -with-xiaapidir=path - Path to the XIAAPI installation.],
@@ -392,11 +393,75 @@ then
 	AC_MSG_ERROR([Specify --with-xiaapidir -t point to the actual installation of the XIA API])
    fi
    PIXIE_API_DIR=${xiaapidir}
-   PIXIE_CPPFLAGS="-I${xiaapidir}/include -DPLX_LINUX"
-   PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -Wl,-rpath=${xiaapidir}/lib"
-   AC_SUBST(PIXIE_API_DIR)
-   AC_SUBST(PIXIE_CPPFLAGS)
-   AC_SUBST(PIXIE_LDFLAGS)
+
+#  If the xiaapidir/include/pixie16/pixie16.h exists we're using the XIAAPI_V3
+#  or higher stuff:
+PIXIE_CPPFLAGS="-I${xiaapidir}/include"
+AC_CHECK_FILE([${xiaapidir}/include/pixie16/pixie16.h], [
+PIXIE_CPPFLAGS="${PIXIE_CPPFLAGS} -DXIAAPI_V3"
+PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixie16Api -lm -Wl,-rpath=${xiaapidir}/lib"
+AC_DEFINE([XIAAPI_VERSION], [3], [Pixie16 version 3 api])
+], [
+PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -lm -Wl,-rpath=${xiaapidir}/lib"
+AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
+])
+
+AC_SUBST(PIXIE_API_DIR)
+AC_SUBST(PIXIE_CPPFLAGS)
+AC_SUBST(PIXIE_LDFLAGS)
+
+AH_TOP([
+#ifndef NSCLDAQ_CONFIG_H
+#define NSCLDAQ_CONFIG_H
+])
+
+AH_BOTTOM([
+/* Extract the Pixie16 API includes and conditionalize them on the API version */
+
+#ifdef USING_DDAS
+
+#if XIAAPI_VERSION >= 3
+#include <pixie16/pixie16.h>
+/*
+  The transition manual says these will be deprecated but the API still needs them
+  and I'm damned if I'll use magic numbers instead so:
+*/
+#ifndef LIST_MODE_RUN
+#define LIST_MODE_RUN 0x100
+#endif
+
+#ifndef NEW_RUN
+#define NEW_RUN 1
+#endif
+
+/*  Readout programs need this to decide when to start reading */
+
+#ifndef EXTFIFO_READ_THRESH
+#define EXTFIFO_READ_THRESH   1024
+#endif
+
+
+
+
+#else
+
+#ifndef PLX_LINUX
+#define PLX_LINUX
+#endif
+
+
+#include <pixie16app_common.h>
+#include <pixie16app_defs.h>
+#include <pixie16app_export.h>
+#include <xia_common.h>
+#endif
+
+#endif
+
+#endif
+])
+
+
 
    #  If --with-plx-sdk was provided we're done and that's that.
    #  If not:

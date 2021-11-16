@@ -10,10 +10,7 @@
 #include <vector>
 #include <cmath>
 #include <string.h>
-
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
-//#include "pixie16app_globals.h"
+#include <config.h>
 
 
 extern unsigned int ChanEventsB_Address[];

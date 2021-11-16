@@ -6,9 +6,6 @@
 #include <stdlib.h>
 
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
-
 
 #define TRIGGER_TIMEOUT_SECS 5        // If no triggers in 5 seconds, auto-trigger.
 

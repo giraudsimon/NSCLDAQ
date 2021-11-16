@@ -38,8 +38,6 @@ using namespace std;
 #include <CDDASStatisticsCommand.h>
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
 #include <vector>
 
 CMyTrigger *mytrigger(0);             // Newing them here makes order of construction

@@ -11,10 +11,8 @@
 #include <RunState.h>
 #include <CVMEInterface.h>
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
-//#include "MyScaler.h"
-#include "pixie16app_globals.h"
+#include <config.h>
+
 #include <stdlib.h>
 
 #include <functional>
@@ -26,8 +24,7 @@
 using namespace std;
 #endif
 
-CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg,
-			     CExperiment* pexp) : CEndCommand(rInterp), m_pExp(pexp)
+CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg) : CEndCommand(rInterp) 
 {
     myeventsegment = myevseg;
     NumModules = myeventsegment->GetNumberOfModules();
@@ -82,10 +79,7 @@ int CMyEndCommand::transitionToInactive()
           std::cout << "Failed to end run in module " << k << std::endl;
       }
   }
-  // Now flush the sorted data in the event segment's hit manager:
 
-  myeventsegment->onEnd(m_pExp);
-  
   return 0;
 }
 
@@ -144,17 +138,20 @@ int CMyEndCommand::readOutRemainingData()
             // If retval==-1 then k is not a valid module number
             if (retval != 0) { 
                 EndOfRunRead = 1;
+		/* TODO:  figure this out for API 3.0 and larger */
+#if XIAAPI_VERSION < 3
                 sprintf(filnam, "lmdata_mod%d.bin", k);
                 retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, 
                         k, EndOfRunRead);
                 if(retval<0) {
-                    cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module %d, retval = " << k << endl << flush;
+		  cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module " << k
+		       << "  retval = " << retval << endl << flush;
                     // Pixie_Print_MSG (ErrMSG);
-		     
                     //return -5;
                 } // end error block
 
                 nFIFOWords[k] += mod_numwordsread;
+#endif		
             } else {
                 // No run is in progress
                 break;
@@ -176,14 +173,18 @@ int CMyEndCommand::readOutRemainingData()
 
     for(int k=0; k<NumModules; k++) {
         EndOfRunRead = 1;
+	/* TODO: Figure this out for 3.0 and later. */
+#if XIAAPI_VERSION < 3	
         sprintf(filnam, "lmdata_mod%d.bin", k);
         retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, k, EndOfRunRead);
         if(retval<0) {
-            cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module %d, retval = " << k << endl << flush;
+
+	  cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module "
+	       << k << " retval = " << retval << endl << flush;
 
         }
         nFIFOWords[k] += mod_numwordsread;
-
+#endif
         /* Get final statistics information */
         int retval;
         unsigned int statistics[448] = {0};
@@ -212,20 +213,12 @@ int CMyEndCommand::readOutRemainingData()
             // Pixie16ComputeOutputCountRate code
             // first get upper 32 bits of the number and push them up 32 bits, then
             // append on the lower 32 bits. Not the greatest but should work.
-            ChanEvents = (double)statistics[ChanEventsA_Address[k] + i 
-                - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER] * pow(2.0, 32.0);
-            ChanEvents += (double)statistics[ChanEventsB_Address[k] 
-                + i - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER];
+	    ChanEvents = Pixie16ComputeOutputCountRate(statistics, k, i);
 
             // Pixie16ComputeInputCountRate code
-            FastPeaks = (double)statistics[FastPeaksA_Address[k] + i - 
-                DATA_MEMORY_ADDRESS 
-                - DSP_IO_BORDER] * pow(2.0, 32.0);
-            FastPeaks += (double)statistics[FastPeaksB_Address[k] + i 
-                - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER];
+
+	    FastPeaks = Pixie16ComputeOutputCountRate(statistics, k, i);
+
 
             /* Print out final statistics to file */
             // "Channel #" "output events" "input events"
@@ -258,7 +251,6 @@ CMyEndCommand::operator()(CTCLInterpreter& interp,
   if (status == TCL_OK) {
     readOutRemainingData();
   }
-
   return TCL_OK;
 }
 
@@ -309,7 +301,7 @@ int CMyEndCommand::handleEndRun(Tcl_Event* pEvt, int flags)
 {
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
   pEnd->s_thisPtr->endRun();
-	return TCL_OK;
+  return 0;
 }
 
 int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
@@ -317,7 +309,7 @@ int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
 
   pEnd->s_thisPtr->readOutRemainingData();
-	return TCL_OK;
+  return 0;
 }
 
 void CMyEndCommand::rescheduleEndTransition() {
