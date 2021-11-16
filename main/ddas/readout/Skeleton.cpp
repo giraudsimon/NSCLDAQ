@@ -204,9 +204,23 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   timespec t;
   t.tv_sec  = 16;
   t.tv_nsec = 0;
+  
+
+  /// Allow the default scaler readout seconds to be overidden by the
+  // SCALER_SECONDS environment variable.
+  
+  const char* scalersecs = getenv("SCALER_SECONDS");
+  if (scalersecs) {
+    int secs = atoi(scalersecs);
+    if (secs > 0) {
+      t.tv_sec = secs;
+    }
+  }
+  
+  
   CTimedTrigger* pTrigger = new CTimedTrigger(t);
   pExperiment->setScalerTrigger(pTrigger);
-
+  
   // Create and add your scaler modules here.
   int modules;
   int crateid;
