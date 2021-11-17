@@ -58,7 +58,7 @@ libCCUSBCore_la_CPPFLAGS = \
 			-I@top_srcdir@/base/os \
 			-I@top_srcdir@/daq/format	\
 			-I@top_srcdir@/daq/eventbuilder \
-			@OPENSSL_INCLUDES@
+			@OPENSSL_INCLUDES@ @PIXIE_CPPFLAGS@
 
 # add -DREPORT_ERRORS to INCLUDES below for verbose
 # error reporting info.
@@ -76,6 +76,6 @@ libCCUSBCore_la_LIBADD	= \
 			@top_builddir@/daq/format/libdataformat.la	\
 			@TCL_LDFLAGS@ \
 			@THREADLD_FLAGS@ \
-			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@
+			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@ @PIXIE_CPPFLAGS@
 
 

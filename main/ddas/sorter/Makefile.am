@@ -6,8 +6,8 @@ ddasSort_SOURCES=ddasSort.cpp ddasSortOptions.c ddasSortOptions.h \
 	ReferenceCountedBuffer.h ReferenceCountedBuffer.cpp	\
 	HitManager.h HitManager.cpp
 
-ddasSort_CXXFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow  \
-	@LIBTCLPLUS_CFLAGS@
+ddasSort_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow  \
+	@LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 ddasSort_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/base/dataflow/libDataFlow.la @LIBEXCEPTION_LDFLAGS@
 
@@ -38,7 +38,7 @@ unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp \
 #
 #  sortertests.cpp 
 
-unittests_CXXFLAGS=$(ddasSort_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_CXXFLAGS=$(ddasSort_CPPFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS=$(ddasSort_LDFLAGS) @CPPUNIT_LDFLAGS@
 
 #  Fixed in 12.0-pre1

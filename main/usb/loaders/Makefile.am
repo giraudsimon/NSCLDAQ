@@ -13,9 +13,9 @@ vmusbloader_LDFLAGS=@USB_LIBS@
 
 xlmload_SOURCES = xlmloadparams.c xlmload.cpp 
 
-xlmload_CXXFLAGS = $(TCLFLAGS) -I@top_srcdir@/usb/vmusb/core -I@top_srcdir@/usb/vmusb/daqconfig \
+xlmload_CPPFLAGS = $(TCLFLAGS) -I@top_srcdir@/usb/vmusb/core -I@top_srcdir@/usb/vmusb/daqconfig \
 	-I@top_srcdir@/usb/vmusb/vmusb -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ \
-	-I@top_srcdir@/usb/usb1 @libusb_1_0_CFLAGS@
+	-I@top_srcdir@/usb/usb1 @libusb_1_0_CFLAGS@ @PIXIE_CPPFLAGS@
 xlmload_LDFLAGS=@top_builddir@/usb/vmusb/vmusb/libVMUSBRemote.la \
 	@top_builddir@/usb/vmusb/vmusb/libVMUSB.la \
 	@top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la @LIBTCLPLUS_LDFLAGS@ \
@@ -36,7 +36,7 @@ xlmloadparams.h: xlmloadparams.ggo
 noinst_PROGRAMS = unittests
 unittests_SOURCES = TestRunner.cpp skiptest.cpp skipHeader.cpp
 unittests_LDADD= $(CPPUNIT_LDFLAGS)
-unittests_CXXFLAGS=-DSRCDIR='"@srcdir@/"'
+unittests_CXXFLAGS=-DSRCDIR='"@srcdir@/"' @PIXIE_CPPFLAGS@
 
 # NOTE: These .bit/.bin files don't purport to be the latest they are
 #       only here to support unit tests for skipHeader.

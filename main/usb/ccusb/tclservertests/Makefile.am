@@ -24,7 +24,7 @@ unittests_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb  \
 		 -I@top_srcdir@/usb/ccusb/ctlconfig \
 		 -I@top_srcdir@/base/thread \
 		 @LIBTCLPLUS_CFLAGS@ \
-		 @TCL_FLAGS@
+		 @TCL_FLAGS@ @PIXIE_CPPFLAGS@
 
 
 TESTS = unittests

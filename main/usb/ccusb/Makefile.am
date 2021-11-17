@@ -29,7 +29,7 @@ CCUSBReadout_CPPFLAGS = -I@top_srcdir@/usb/ccusb/ccusb \
 	-I@top_srcdir@/base/dataflow	                       \
 	-I@top_srcdir@/base/os				\
         -I@top_srcdir@/servers/portmanager \
-	$(TCL_FLAGS) @THREADCXX_FLAGS@ @libusb_1_0_CFLAGS@
+	$(TCL_FLAGS) @THREADCXX_FLAGS@ @libusb_1_0_CFLAGS@ @PIXIE_CPPFLAGS@
 
 
 CCUSBReadout_LDADD	= \

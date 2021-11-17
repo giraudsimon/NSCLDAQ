@@ -91,7 +91,7 @@ bool CMyTrigger::operator()()
                 // Check how many words are stored in Pixie16's readout FIFO
                 ModNum = i;
                 nFIFOWords = 0;
-                retval = Pixie_Read_ExtFIFOStatus(&nFIFOWords,ModNum);
+                retval = Pixie16CheckExternalFIFOStatus(&nFIFOWords,ModNum);
                 if (retval < 0) {
                   std::cerr << "Failed to read ExtFiFo status for module: "
                     << ModNum;

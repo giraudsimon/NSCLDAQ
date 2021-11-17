@@ -24,9 +24,12 @@
 using namespace std;
 #endif
 
-CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg) : CEndCommand(rInterp) 
+CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp,
+			     CMyEventSegment *myevseg,
+			     CExperiment* pexp) : CEndCommand(rInterp) 
 {
     myeventsegment = myevseg;
+    m_pExp = pexp;
     NumModules = myeventsegment->GetNumberOfModules();
 }
 
