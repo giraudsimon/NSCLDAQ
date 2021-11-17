@@ -21,7 +21,7 @@ COMPILATION_FLAGS		=	-I@top_srcdir@/base/headers	\
                                 -I@top_srcdir@/daq/IO	\
 				@LIBTCLPLUS_CFLAGS@		\
 				-I@top_srcdir@/servers/portmanager \
-				-I@top_srcdir@/base/os
+				-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 sclclient_CPPFLAGS=$(COMPILATION_FLAGS)

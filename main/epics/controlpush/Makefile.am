@@ -53,9 +53,9 @@ COMPILATION_FLAGS            =	@LIBTCLPLUS_CFLAGS@		\
 			-I@top_srcdir@/base/factories  \
 			-I@top_srcdir@/base/thread    \
 			-I@top_srcdir@/epics/epicslib \
-			$(EPICS_BIN) $(EPICS_INCLUDES) 
+			$(EPICS_BIN) $(EPICS_INCLUDES)  @PIXIE_CPPFLAGS@
 
-controlpush_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
+controlpush_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
 
 
 cmdline.c: options.ggo

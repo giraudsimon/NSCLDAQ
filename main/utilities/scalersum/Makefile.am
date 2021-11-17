@@ -7,7 +7,7 @@ nodist_sumscaler_SOURCES=options.c options.h
 
 sumscaler_CPPFLAGS=-I@top_srcdir@/daq/IO 			\
 		    -I@top_srcdir@/daq/format			\
-		    @LIBTCLPLUS_CFLAGS@
+		    @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 sumscaler_LDFLAGS = @top_builddir@/daq/IO/libdaqio.la 	\
     @top_builddir@/daq/format/libdataformat.la			\
     @LIBEXCEPTION_LDFLAGS@

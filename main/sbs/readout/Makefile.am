@@ -11,7 +11,8 @@ COMPILATION_FLAGS	=	-I@top_srcdir@/sbs/vmemodules	\
                         -I@top_srcdir@/daq/eventbuilder         \
 			-I@top_srcdir@/base/os			\
 			$(TCL_FLAGS) $(THREADCXX_FLAGS)	\
-			-DHAVE_VME_MAPPING -DHAVE_SBSVME_INTERFACE
+			-DHAVE_VME_MAPPING -DHAVE_SBSVME_INTERFACE \
+			@PIXIE_CPPFLAGS@
 
 TCLPACKAGES = readoutStateHook.tcl
 TCLPKGDIR   = @prefix@/TclLibs/readoutStateHook

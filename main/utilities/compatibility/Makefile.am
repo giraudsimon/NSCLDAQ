@@ -15,13 +15,15 @@ EXTRA_DIST=compatibilitybuffer.ggo loggeroptions.ggo eventlog-compat.in \
 
 compatibilitybuffer_LDADD = \
 	@top_builddir@/daq/format/libdataformat.la @top_builddir@/base/os/libdaqshm.la
-compatibilitybuffer_CPPFLAGS = -I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
-	-I@top_srcdir@/base/os
+compatibilitybuffer_CPPFLAGS = -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/headers \
+	-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 compatibilitylogger_SOURCES = compatibilitylogger.cpp CLogRun.cpp 
 nodist_compatibilitylogger_SOURCES = loggeroptions.c loggeroptions.h
-compatibilitylogger_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
-	-I@top_srcdir@/base/os
+compatibilitylogger_CPPFLAGS=-I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/headers \
+	-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 
@@ -32,7 +34,8 @@ BufferToRing_LDADD   = @top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/base/os/libdaqshm.la
 BufferToRing_LDFLAGS = -ldl
 BufferToRing_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
-	-I@top_srcdir@/base/os -I@top_srcdir@/daq/eventbuilder
+	-I@top_srcdir@/base/os -I@top_srcdir@/daq/eventbuilder \
+	@PIXIE_CPPFLAGS@
 
 
 convert10to11_SOURCES = Convert10to11.cpp
@@ -42,7 +45,7 @@ convert10to11_LDADD = @top_builddir@/daq/format/libdataformat.la \
                 @top_builddir@/daq/IO/libdaqio.la
 convert10to11_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
 	-I@top_srcdir@/base/os \
-        -I@top_srcdir@/daq/IO
+        -I@top_srcdir@/daq/IO @PIXIE_CPPFLAGS@
 
 
 #  Anything that is generated from a .in file is in builddir anything
@@ -97,7 +100,7 @@ noinst_PROGRAMS = testDataSource
 testDataSource_SOURCES = testDataSource.cpp 
 nodist_testDataSource_SOURCES = test.c test.h
 
-testDataSource_CPPFLAGS = -I@top_srcdir@/base/os
+testDataSource_CPPFLAGS = -I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 testDataSource_LDADD    = @top_builddir@/base/os/libdaqshm.la \

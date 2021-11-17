@@ -59,7 +59,7 @@ libVMUSBCore_la_CPPFLAGS = \
 			-I@top_srcdir@/base/os \
 			-I@top_srcdir@/daq/format	\
 			-I@top_srcdir@/daq/eventbuilder \
-			@OPENSSL_INCLUDES@
+			@OPENSSL_INCLUDES@ @PIXIE_CPPFLAGS@
 
 # add -DREPORT_ERRORS to INCLUDES below for verbose
 # error reporting info.
@@ -95,7 +95,7 @@ unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
 
 unittests_CPPFLAGS = -I@top_srcdir@/base/thread	\
 	-I@top_srcdir@/daq/format		\
-	$(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)
+	$(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS) @PIXIE_CPPFLAGS@
 
 
 TESTS=unittests

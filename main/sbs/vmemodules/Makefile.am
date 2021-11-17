@@ -65,7 +65,7 @@ libSBSDeviceSupport_la_CPPFLAGS	=	-I@top_srcdir@/base/headers 	\
 			-I@top_srcdir@/sbs/nsclapi	\
 			-I@top_srcdir@/sbs/driver/include \
 			-DHAVE_VME_MAPPING -DHAVE_SBSVME_INTERFACE \
-			-I@top_srcdir@/base/os
+			-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 libSBSDeviceSupport_la_LIBADD =	@LIBTCLPLUS_LDFLAGS@	\

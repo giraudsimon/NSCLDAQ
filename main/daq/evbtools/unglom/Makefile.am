@@ -6,7 +6,7 @@ unglom_CPPFLAGS=-I@top_srcdir@/daq/eventbuilder \
 	-I@top_srcdir@/daq/format       \
 	@LIBTCLPLUS_CFLAGS@	\
 	-I@top_srcdir@/base/os		\
-	-I@top_srcdir@/base/headers  
+	-I@top_srcdir@/base/headers   @PIXIE_CPPFLAGS@
 
 unglom_LDADD = @top_builddir@/daq/format/libdataformat.la  \
 	@top_builddir@/daq/eventbuilder/libEventBuilder.la \

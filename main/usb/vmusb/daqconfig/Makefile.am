@@ -132,7 +132,7 @@ libVMUSBDaqConfig_la_CPPFLAGS = -I@top_srcdir@/usb/common/devices		\
 				-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/base/os		\
 				-I@top_srcdir@/usb/vmusb/daqconfig \
-				$(TCL_FLAGS) 
+				$(TCL_FLAGS) @PIXIE_CPPFLAGS@
 
 
 libVMUSBDaqConfig_la_LIBADD	= \
@@ -159,7 +159,8 @@ cmdtests_SOURCES=TestRunner.cpp Asserts.h ad811test.cpp \
 	lrs2551tests.cpp ctlexporttests.cpp
 
 
-cmdtests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libVMUSBDaqConfig_la_CXXFLAGS) $(libVMUSBDaqConfig_la_CPPFLAGS)
+cmdtests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libVMUSBDaqConfig_la_CXXFLAGS) \
+	$(libVMUSBDaqConfig_la_CPPFLAGS) @PIXIE_CPPFLAGS@
 cmdtests_LDFLAGS=@CPPUNIT_LDFLAGS@ 
 cmdtests_LDADD=@builddir@/libVMUSBDaqConfig.la $(libVMUSBDaqConfig_la_LIBADD)
 

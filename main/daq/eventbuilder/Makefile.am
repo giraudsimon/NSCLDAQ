@@ -10,7 +10,7 @@ COMPILATION_FLAGS =  \
 	-I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread \
 	@LIBTCLPLUS_CFLAGS@ \
-	@THREADCXX_FLAGS@ @TCL_FLAGS@ 
+	@THREADCXX_FLAGS@ @TCL_FLAGS@ @PIXIE_CPPFLAGS@
 
 
 lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
@@ -18,7 +18,8 @@ lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
 
 libFragmentIndex_la_SOURCES=FragmentIndex.cpp
 
-libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@
+libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@ \
+	@PIXIE_CPPFLAGS@
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \

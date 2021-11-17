@@ -10,7 +10,7 @@ COMPILATION_FLAGS =  $(VMEBUILDEADERS) \
 	-I@top_srcdir@/base/os      \
 	-I@top_srcdir@/base/factories \
 	-DVME $(TCL_FLAGS) \
-	-DINSTDIR=\"@prefix@\" -g -pthread
+	-DINSTDIR=\"@prefix@\" -g -pthread @PIXIE_CPPFLAGS@
 
 
 ScriptedReadout_SOURCES = Skeleton.cpp

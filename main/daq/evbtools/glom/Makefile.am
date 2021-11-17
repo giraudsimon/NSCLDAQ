@@ -9,7 +9,7 @@ BUILT_SOURCES = glom.c glom.h
 glom_CPPFLAGS = -I@top_srcdir@/daq/eventbuilder \
 	-I@top_srcdir@/daq/format          \
 	-I@top_srcdir@/base/thread		\
-	-I@top_srcdir@/base/os @LIBTCLPLUS_CFLAGS@
+	-I@top_srcdir@/base/os @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 glom_LDADD = @top_builddir@/daq/eventbuilder/libEventBuilderClient.la  \
 	@top_builddir@/daq/format/libdataformat.la                     \
@@ -30,10 +30,10 @@ unittests_SOURCES=TestRunner.cpp Asserts.h\
 	bufffragreadertests.cpp evacctests.cpp barrierxformtests.cpp \
 	CBufferedFragmentReader.cpp \
 	CEventAccumulator.cpp 
-unittests_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format \
+unittests_CPPFLAGS=-I@top_srcdir@/daq/eventbuilder @CPPUNIT_CFLAGS@ -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/uri -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/daq/IO	\
-	-I@top_srcdir@/base/os @LIBTCLPLUS_CFLAGS@
+	-I@top_srcdir@/base/os @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS=@top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/daq/IO/libdaqio.la    \

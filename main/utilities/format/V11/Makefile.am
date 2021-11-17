@@ -35,7 +35,7 @@ libdataformatv11_la_CFLAGS = -I@srcdir@/..
 
 libdataformatv11_la_CXXFLAGS = -I@srcdir@/.. \
 				-I@top_srcdir@/base/os \
-                               @LIBTCLPLUS_CFLAGS@
+                               @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 libdataformatv11_la_LDFLAGS = @top_builddir@/base/os/libdaqshm.la \
 	@LIBTCLPLUS_LDFLAGS@
@@ -60,7 +60,7 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
 		-I@top_srcdir@/base/os \
-                    -I@top_srcdir@/base/testutils
+                    -I@top_srcdir@/base/testutils @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \
                             @TCL_LDFLAGS@ \

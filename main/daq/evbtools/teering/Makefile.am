@@ -14,7 +14,7 @@ BUILT_SOURCES=@srcdir@/tcmdline.c
 teering_CPPFLAGS = -I@top_srcdir@/daq/eventbuilder  \
 	-I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/dataflow \
-	-I@top_srcdir@/base/os
+	-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 teering_LDADD = @top_builddir@/daq/eventbuilder/libEventBuilderClient.la \

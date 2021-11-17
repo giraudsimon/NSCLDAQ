@@ -8,7 +8,7 @@ COMPILATION_FLAGS		= \
 				@THREADCXX_FLAGS@ \
 				-I@top_srcdir@/base/tcpip  \
 				-I@top_srcdir@/usb/usb1	\
-				@libusb_1_0_CFLAGS@
+				@libusb_1_0_CFLAGS@ @PIXIE_CPPFLAGS@
 
 
 
@@ -125,7 +125,8 @@ remotetests_LDADD = @builddir@/libCCUSB.la        \
 	 		@USB_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@
 
 
-remotetests_CXXFLAGS = $(AM_CXXFLAGS) -I@top_srcdir@/base/thread
+remotetests_CXXFLAGS = $(AM_CXXFLAGS) -I@top_srcdir@/base/thread \
+	@PIXIE_CPPFLAGS@
 remotetests_LDFLAGS = @top_builddir@/base/thread/libdaqthreads.la \
 	-Wl,"-rpath=@libdir@" 
 
@@ -159,7 +160,7 @@ camactests_LDADD    = @builddir@/libCCUSB.la        \
 camactests_CXXFLAGS =  $(COMPILATION_FLAGS) \
 			-I@top_srcdir@/base/thread \
 			@libusb_1_0_CFLAGS@      \
-			$(AM_CXXFLAGS)
+			$(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
 camactests_LDFLAGS  = -Wl,"-rpath=@libdir@" 
 
 TESTS = ./unittests

@@ -14,7 +14,7 @@ noinst_HEADERS = cmdline.h CDAQStart.h  CFileSinkCreator.h \
 
 
 COMPILATION_FLAGS  =-I@top_srcdir@/base/os -I@top_srcdir@/base/factories \
-	-I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@
+	-I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 daqstart_CPPFLAGS	= $(COMPILATION_FLAGS)
 

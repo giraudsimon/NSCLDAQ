@@ -2,7 +2,9 @@ bin_PROGRAMS = ringFragmentSource
 
 ringFragmentSource_SOURCES=rfcmdline.c Main.cpp \
 	CRingFragmentSource.h CRingFragmentSource.cpp
-ringFragmentSource_CXXFLAGS=-I@top_srcdir@/daq/eventbuilder @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/dataflow -I@top_srcdir@/daq/format
+ringFragmentSource_CPPFLAGS=-I@top_srcdir@/daq/eventbuilder \
+	@LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/dataflow \
+	-I@top_srcdir@/daq/format @PIXIE_CPPFLAGS@
 ringFragmentSource_LDFLAGS=@top_builddir@/daq/eventbuilder/libEventBuilderClient.la \
 	@top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/base/dataflow/libDataFlow.la 	\
@@ -26,7 +28,7 @@ noinst_PROGRAMS= unittests
 
 unittests_SOURCES=TestRunner.cpp fragsrctests.cpp Asserts.h \
 	CRingFragmentSource.cpp 
-unittests_CXXFLAGS= $(ringFragmentSource_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_CPPFLAGS= $(ringFragmentSource_CPPFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @CPPUNIT_LDFLAGS@ @top_builddir@/daq/format/libdataformat.la \
 	-ldl
 

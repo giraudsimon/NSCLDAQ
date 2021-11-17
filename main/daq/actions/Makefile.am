@@ -1,7 +1,8 @@
 lib_LTLIBRARIES=libActions.la
 
 libActions_la_SOURCES=Actions.cpp
-libActions_la_CPPFLAGS = -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+libActions_la_CPPFLAGS = -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ \
+	@PIXIE_CPPFLAGS@
 libActions_la_LIBADD  = @top_builddir@/base/thread/libdaqthreads.la @LIBEXCEPTION_LDFLAGS@
 include_HEADERS = Actions.h
 

@@ -5,7 +5,7 @@ COMPILATION_FLAGS	= -I@top_srcdir@/base/dataflow	\
 		@LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/headers	\
 		-I@top_srcdir@/base/uri		\
-		-I@top_srcdir@/base/os
+		-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 libdataformat_la_SOURCES = CRingSelectionPredicate.cpp	\
 			   CDesiredTypesPredicate.cpp	\
@@ -75,7 +75,7 @@ libTclRingBuffer_la_LIBADD=	@builddir@/libdataformat.la     \
 libTclRingBuffer_la_CPPFLAGS=@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
 				-I@top_srcdir@/base/dataflow \
 				-I@top_srcdir@/daq/format \
-				-I@top_srcdir@/base/os 
+				-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 noinst_HEADERS=CTclRingCommand.h
 
@@ -116,7 +116,8 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 unittests_LDFLAGS	= -Wl,"-rpath-link=$(libdir)"
 
 ringTests_SOURCES = TestRunner.cpp ringTests.cpp
-ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
+ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ \
+			@PIXIE_CPPFLAGS@ @THREADCXX_FLAGS@ \
                        -I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow
 
 ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ @builddir@/libTclRingBuffer.la \

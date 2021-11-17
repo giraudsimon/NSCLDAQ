@@ -72,11 +72,12 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/base/dataflow/libDataFlow.la		\
 	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@ $(MPI_FLAGS)
 
-libSwTrigger_la_CXXFLAGS=-I@top_srcdir@/daq/IO -I@top_srcdir@/base/dataflow \
+libSwTrigger_la_CPPFLAGS=-I@top_srcdir@/daq/IO -I@top_srcdir@/base/dataflow \
 	-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/factories	\
-	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri -I@top_srcdir@/daq/eventbuilder \
-	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@ $(MPI_FLAGS)
+	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri \
+	-I@top_srcdir@/daq/eventbuilder \
+	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@ $(MPI_FLAGS) @PIXIE_CPPFLAGS@
 
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
 	CZMQServerTransport.h CSender.h CRingItemTransport.h CRingItemFileTransport.h \
@@ -99,18 +100,19 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h CClassifierApp.cpp \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
-	CRingBlockDataSink.cpp CZMQAppStrategy.h CZMQAppStrategy.cpp $(MPI_SoftwareTrigger_SRCS)
+	CRingBlockDataSink.cpp CZMQAppStrategy.h CZMQAppStrategy.cpp \
+	$(MPI_SoftwareTrigger_SRCS)
 
 
 
 SoftwareTrigger_DEPENDENCIES=libSwTrigger.la
-SoftwareTrigger_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+SoftwareTrigger_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp \
 	CEventFilterApp.cpp CEventFilterApp.h
 EventFilter_DEPENDENCIES=libSwTrigger.la
-EventFilter_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+EventFilter_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
@@ -123,7 +125,7 @@ Transformer_SOURCES=Transformer.cpp swtriggerflags.c swtriggerflags.h \
 	CZMQTransformerApp.cpp CZMQTransformerApp.h CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
 Transformer_DEPENDENCIES=libSwTrigger.la
-Transformer_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+Transformer_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 EventEditor_SOURCES=swtriggerflags.h swtriggerflags.c \
@@ -136,7 +138,7 @@ EventEditor_SOURCES=swtriggerflags.h swtriggerflags.c \
 	CZMQAppStrategy.h  CZMQAppStrategy.cpp 
 
 EventEditor_DEPENDENCIES=libSwTrigger.la
-EventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+EventEditor_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 FullEventEditor_SOURCES = swtriggerflags.h swtriggerflags.c CFullEventEditor.cpp \
@@ -148,18 +150,18 @@ FullEventEditor_SOURCES = swtriggerflags.h swtriggerflags.c CFullEventEditor.cpp
 	$(MPI_FullEventEditor_SRCS) CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
 FullEventEditor_DEPENDENCIES=libSwTrigger.la
-FullEventEditor_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+FullEventEditor_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 
 
 libTestClassifier_la_SOURCES=TestClassifier.cpp
-libTestClassifier_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+libTestClassifier_la_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 libTestClassifier_la_DEPENDENCIES=libSwTrigger.la
 
 libTestExtender_la_SOURCES=CTestExtender.cpp
-libTestExtender_la_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS)
+libTestExtender_la_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 libTestExtender_la_DEPENDENCIES=libSwTrigger.la
 
@@ -214,7 +216,7 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 	$(libSwTrigger_la_SOURCES)
 
 
-unittests_CXXFLAGS=$(libSwTrigger_la_CXXFLAGS) @CPPUNIT_CFLAGS@
+unittests_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @top_builddir@/daq/IO/libdaqio.la \
 	$(libSwTrigger_la_LDFLAGS) @CPPUNIT_LDFLAGS@
 

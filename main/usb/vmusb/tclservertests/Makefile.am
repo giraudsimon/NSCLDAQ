@@ -31,7 +31,7 @@ unittests_CPPFLAGS = -I@top_srcdir@/usb/vmusb/vmusb  \
 		$(CPPUNIT_FLAGS) \
 		-I@top_srcdir@/base/thread \
 		@LIBTCLPLUS_CFLAGS@ \
-		@TCL_FLAGS@
+		@TCL_FLAGS@ @PIXIE_CPPFLAGS@
 
 
 check-TESTS : $(UNITTEST_MODULES)
