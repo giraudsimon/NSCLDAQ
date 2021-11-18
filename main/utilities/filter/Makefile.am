@@ -49,7 +49,7 @@ libfilter_la_CPPFLAGS	= -I@top_srcdir@/utilities/common \
 		-I@top_srcdir@/base/uri		\
 		-I@top_srcdir@/daq/format \
 		-I@top_srcdir@/base/os \
-		-I@top_srcdir@/base/headers
+		-I@top_srcdir@/base/headers @PIXIE_CPPFLAGS@
 
 libfilter_la_LDFLAGS	= -version-info $(SOVERSION)	\
 				-Wl,"-rpath-link=$(libdir)" -lrt \
@@ -118,7 +118,7 @@ testapp_CPPFLAGS= -I@top_srcdir@/utilities \
     @LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/uri		\
     -I@top_srcdir@/daq/format \
-    -I@top_srcdir@/base/dataflow
+    -I@top_srcdir@/base/dataflow @PIXIE_CPPFLAGS@
 
 testapp_LDADD = -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 			@top_builddir@/base/dataflow/libDataFlow.la 	\

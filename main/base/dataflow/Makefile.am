@@ -16,7 +16,7 @@ COMPILATION_FLAGS =  -I@top_srcdir@/base/headers 	\
 	   -I@top_srcdir@/base/os	\
 		@LIBTCLPLUS_CFLAGS@	\
 		$(TCL_FLAGS)		\
-	-DBINDIR='"@prefix@/bin"'
+	-DBINDIR='"@prefix@/bin"' @PIXIE_CPPFLAGS@
 
 libDataFlow_la_LDFLAGS =  -version-info $(SOVERSION) \
 	                  -Wl,"-rpath-link=$(libdir)" 	\
@@ -53,8 +53,6 @@ bin_PROGRAMS 	= ringtostdout stdintoring
 ringtostdout_SOURCES = ringtostdout.cpp  
 nodist_ringtostdout_SOURCES = ringtostdoutsw.c ringtostdoutsw.h
 
-ringtostdout_CPPFLAGS=$(COMPILATION_FLAGS)
-
 ringtostdout_DEPENDENCIES =  libDataFlow.la 
 
 BUILT_SOURCES=ringtostdoutsw.c ringtostdoutsw.h  stdintoringsw.c stdintoringsw.h
@@ -76,7 +74,8 @@ ringtostdout_LDADD	=  @builddir@/libDataFlow.la \
 			@top_builddir@/base/os/libdaqshm.la	\
 			$(THREADLD_FLAGS) -lrt
 
-ringtostdout_CXXFLAGS	=  $(AM_CXXFLAGS) $(THREADCXX_FLAGS)
+ringtostdout_CPPFLAGS	= $(COMPILATION_FLAGS) \
+	$(AM_CXXFLAGS) $(THREADCXX_FLAGS) 
 
 stdintoring_SOURCES = stdintoring.cpp stdintoringUtils.h stdintoringUtils.cpp
 nodist_stdintoring_SOURCES=stdintoringsw.c stdinringtosw.h
@@ -90,7 +89,7 @@ stdintoring_LDADD	=  @builddir@/libDataFlow.la	\
 			@LIBEXCEPTION_LDFLAGS@ \
 			$(THREADLD_FLAGS) -lrt
 
-stdintoring_CXXFLAGS =	$(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
+stdintoring_CPPFLAGS =	$(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
 
 #   CLEANFILES=stdintoringsw.c stdintoringsw.h ringtostdoutsw.c ringtostdoutsw.h
 

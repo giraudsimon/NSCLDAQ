@@ -10,7 +10,7 @@ lib_LTLIBRARIES=libPortManager.la
 
 COMPILATION_FLAGS = -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@ \
 	-I@top_srcdir@/base/os		\
-		-DHOME=\"@prefix@\"
+		-DHOME=\"@prefix@\" @PIXIE_CPPFLAGS@
 
 libPortManager_la_SOURCES = CPortManagerException.cpp \
 			    CPortManager.cpp

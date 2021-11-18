@@ -10,7 +10,7 @@ COMPILATION_FLAGS =  \
 	-I@top_srcdir@/base/os \
 	-I@top_srcdir@/base/thread \
 	@LIBTCLPLUS_CFLAGS@ \
-	@THREADCXX_FLAGS@ @TCL_FLAGS@ 
+	@THREADCXX_FLAGS@ @TCL_FLAGS@  @PIXIE_CPPFLAGS@
 
 
 lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
@@ -18,7 +18,7 @@ lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
 
 libFragmentIndex_la_SOURCES=FragmentIndex.cpp
 
-libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@
+libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@ $(COMPILATION_FLAGS)
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \
@@ -46,7 +46,7 @@ libEventBuilder_la_LDFLAGS=  @LIBTCLPLUS_LDFLAGS@
 
 Orderer_SOURCES= Orderer.cpp $(libEventBuilder_la_SOURCES)
 
-Orderer_CPPFLAGS=$(libEventBuilder_la_CPPFLAGS) $(TCL_CPPFLAGS) 
+Orderer_CPPFLAGS=$(libEventBuilder_la_CPPFLAGS) $(TCL_CPPFLAGS)
 
 
 Orderer_LDFLAGS =  @LIBTCLPLUS_LDFLAGS@	\
@@ -79,11 +79,16 @@ include_HEADERS = CEventOrderClient.h fragment.h CEVBClientApp.h EVBFramework.h 
 
 
 noinst_HEADERS = CFragmentHandlerCommand.h CFragmentHandler.h  \
-	CInputStatsCommand.h COrdererOutput.h COutputStatsObserver.h COutputStatsCommand.h \
-	CDataLateStatistics.h CDLateStatsCommand.h CLateScriptObserver.h COnLateDataCommand.h \
-	CBarrierStatsCommand.h CBarrierStats.h CIncompleteBarrierStats.h CCompleteBarrierCallback.h \
-	CBarrierTraceCommand.h CPartialBarrierCallback.h CSourceCommand.h CDeadSourceCommand.h \
-	CReviveSocketCommand.h CFragReader.h CFragWriter.h CFlushCommand.h CResetCommand.h \
+	CInputStatsCommand.h COrdererOutput.h COutputStatsObserver.h \
+	COutputStatsCommand.h \
+	CDataLateStatistics.h CDLateStatsCommand.h CLateScriptObserver.h \
+	COnLateDataCommand.h \
+	CBarrierStatsCommand.h CBarrierStats.h CIncompleteBarrierStats.h \
+	CCompleteBarrierCallback.h \
+	CBarrierTraceCommand.h CPartialBarrierCallback.h CSourceCommand.h \
+	CDeadSourceCommand.h \
+	CReviveSocketCommand.h CFragReader.h CFragWriter.h CFlushCommand.h \
+	CResetCommand.h \
 	CConfigure.h fragio.h CDuplicateTimeStatCommand.h CXonXOffCallbackCommand.h \
 	COutOfOrderTraceCommand.h COutputThread.h CopyPopUntil.h CSortThread.h \
 	BarrierAbortCommand.h
@@ -148,7 +153,7 @@ noinst_PROGRAMS = unittests ordertests outputTests
 
 outputTests_SOURCES=TestRunner.cpp outputTests.cpp COrdererOutput.cpp
 outputTests_LDADD=@TCL_LIBS@ @LIBEXCEPTION_LDFLAGS@ @CPPUNIT_LDFLAGS@
-outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ $(COMPILATION_FLAGS)
 
 
 unittests_DEPENDENCIES = libEventBuilderClient.la cmdline.o cmdline.h

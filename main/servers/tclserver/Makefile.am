@@ -11,13 +11,15 @@ tclserver_LDADD = @LIBTCLPLUS_LDFLAGS@ \
 	$(X11LIBS)  	\
 	$(THREADLD_FLAGS)
 
-tclserver_CXXFLAGS	=	$(THREADCXX_FLAGS) $(AM_CXXFLAGS)
+tclserver_CXXFLAGS =	$(THREADCXX_FLAGS) $(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
 
 tclserver_LDFLAGS=-Wl,"-rpath=$(libdir)"
 
-tclserver_CPPFLAGS  = -I@top_srcdir@/base/headers -I@top_srcdir@/base/exception \
+tclserver_CPPFLAGS  = -I@top_srcdir@/base/headers \
+	-I@top_srcdir@/base/exception \
 	-I@top_srcdir@/servers/portmanager -I@top_srcdir@/base/os \
-	@LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/CopyrightTools $(TCL_FLAGS)
+	@LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/CopyrightTools $(TCL_FLAGS) \
+	@PIXIE_CPPFLAGS@
 
 noinst_HEADERS = TclAuthorizer.h \
 	server.h \

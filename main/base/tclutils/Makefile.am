@@ -1,6 +1,7 @@
 lib_LTLIBRARIES = libWait.la
 libWait_la_SOURCES = WaitPackage.cpp
-libWait_la_CPPFLAGS=@TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/CopyrightTools
+libWait_la_CPPFLAGS=@TCL_CPPFLAGS@ @LIBTCLPLUS_CFLAGS@ \
+	-I@top_srcdir@/base/CopyrightTools @PIXIE_CPPFLAGS@
 
 libWait_la_LDFLAGS =	@LIBTCLPLUS_LDFLAGS@ @TCL_LDFLAGS@	\
 			@top_builddir@/base/CopyrightTools/libLicense.la	 \

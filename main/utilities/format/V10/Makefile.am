@@ -29,7 +29,7 @@ nscldaq10_HEADERS = CRingItem.h \
 
 libdataformatv10_la_CXXFLAGS = -I@srcdir@/.. \
                                -I@top_srcdir@/utilities/Buffer \
-                               @LIBTCLPLUS_CFLAGS@
+                               @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 libdataformatv10_la_LDFLAGS = @top_builddir@/utilities/Buffer/libbuffer.la \
                               @LIBTCLPLUS_LDFLAGS@
@@ -51,7 +51,7 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
                     -I@top_srcdir@/utilities/Buffer \
-                    -I@top_srcdir@/base/testutils
+                    -I@top_srcdir@/base/testutils @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \
                             @TCL_LDFLAGS@ \

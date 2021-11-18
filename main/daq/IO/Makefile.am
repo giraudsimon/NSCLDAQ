@@ -51,7 +51,7 @@ libdaqio_la_LIBADD	= \
 			@LIBEXCEPTION_LDFLAGS@
 
 
-libdaqio_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS)
+libdaqio_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
 
 
 ------------------- Tests:
@@ -78,7 +78,7 @@ unittests_CPPFLAGS=  -I@top_srcdir@/utilities/filter \
 		-I@top_srcdir@/base/uri		\
 		-I@top_srcdir@/base/headers		\
     -I@top_srcdir@/daq/format \
-    -I@top_srcdir@/base/dataflow
+    -I@top_srcdir@/base/dataflow @PIXIE_CPPFLAGS@
 unittests_CXXFLAGS = $(AM_CXXFLAGS)
 
 unittests_LDFLAGS	= -Wl,"-rpath-link=$(libdir)"

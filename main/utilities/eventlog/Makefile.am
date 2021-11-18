@@ -14,7 +14,7 @@ eventlog_CPPFLAGS       =	-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/daq/format		\
 			        -I@top_srcdir@/base/dataflow	\
 				-I@top_srcdir@/base/os		\
-				@OPENSSL_INCLUDES@
+				@OPENSSL_INCLUDES@ @PIXIE_CPPFLAGS@
 
 eventlog_LDADD		=	@top_builddir@/daq/format/libdataformat.la	\
 				@top_builddir@/base/dataflow/libDataFlow.la	\
@@ -60,7 +60,7 @@ fakeruns_CPPFLAGS=-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/daq/format		\
 			        -I@top_srcdir@/base/dataflow	\
 				-I@top_srcdir@/base/os		\
-				@OPENSSL_INCLUDES@
+				@OPENSSL_INCLUDES@ @PIXIE_CPPFLAGS@
 
 eventlogTests_SOURCES = TestRunner.cpp eventlogTests.cpp chunkTests.cpp RingChunk.cpp
 eventlogTests_CPPFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/headers		\
@@ -68,7 +68,7 @@ eventlogTests_CPPFLAGS=@CPPUNIT_CFLAGS@ -I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/daq/format		\
 			        -I@top_srcdir@/base/dataflow	\
 				-I@top_srcdir@/base/os		\
-				@OPENSSL_INCLUDES@
+				@OPENSSL_INCLUDES@ @PIXIE_CPPFLAGS@
 
 eventlogTests_LDADD   = @CPPUNIT_LDFLAGS@ \
 				@top_builddir@/daq/format/libdataformat.la	\

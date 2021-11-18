@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libLicense.la
 libLicense_la_SOURCES = CopyrightNotice.cpp
 
-COMPILATION_FLAGS =  -I@top_srcdir@/base/headers
+COMPILATION_FLAGS =  -I@top_srcdir@/base/headers @PIXIE_CPPFLAGS@
 libLicense_la_CPPFLAGS = $(COMPILATION_FLAGS)
 
 
@@ -17,7 +17,7 @@ noinst_PROGRAMS = test
 
 test_SOURCES       = test.cpp
 
-test_LDADD = CopyrightNotice.o
+test_LDADD = libLicense.la
 
 test_CPPFLAGS=$(COMPILATION_FLAGS)
 

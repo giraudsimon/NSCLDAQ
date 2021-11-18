@@ -11,7 +11,8 @@ include_HEADERS = dshwrappthreads.h  dshwrapthreads.h  Runnable.h  SyncGuard.h  
 		CCondition.h CSynchronizedThread.h \
 		CGaurdedObject.h CBufferQueue.h CBufferQueue.cpp 
 
-COMPILATION_FLAGS = -I@top_srcdir@/base/headers -DUSE_PTHREADS @LIBTCLPLUS_CFLAGS@
+COMPILATION_FLAGS = -I@top_srcdir@/base/headers -DUSE_PTHREADS \
+	@LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 libdaqthreads_la_LDFLAGS = -version-info $(SOVERSION) \
 		-Wl,"-rpath-link=$(libdir)"	\

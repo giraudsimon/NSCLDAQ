@@ -31,7 +31,7 @@ nscldaq11_HEADERS = CRingItem.h \
                   RingItemComparisons.h \
                   DataFormatV11.h 
 
-libdataformatv11_la_CFLAGS = -I@srcdir@/..
+libdataformatv11_la_CPPFLAGS = -I@srcdir@/.. @PIXIE_CPPFLAGS@
 
 libdataformatv11_la_CXXFLAGS = -I@srcdir@/.. \
                                @LIBTCLPLUS_CFLAGS@
@@ -56,7 +56,7 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
 		    @CPPUNIT_CFLAGS@ \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
-                    -I@top_srcdir@/base/testutils
+                    -I@top_srcdir@/base/testutils @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \
                             @TCL_LDFLAGS@ \

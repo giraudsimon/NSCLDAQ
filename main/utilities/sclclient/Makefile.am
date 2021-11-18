@@ -21,7 +21,7 @@ COMPILATION_FLAGS		=	-I@top_srcdir@/base/headers	\
                                 -I@top_srcdir@/daq/IO	\
 				@LIBTCLPLUS_CFLAGS@		\
 				-I@top_srcdir@/servers/portmanager \
-				-I@top_srcdir@/base/os
+				-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
 sclclient_CPPFLAGS=$(COMPILATION_FLAGS)
@@ -40,8 +40,9 @@ sclclient_LDADD		=	@top_builddir@/servers/portmanager/libPortManager.la \
 
 sclclient_CXXFLAGS	=	$(THREADCXX_FLAGS) $(AM_CXXFLAGS)
 
+
 testData_SOURCES        =       testData.cpp
-testData_CXXFLAGS       =       -I@top_srcdir@/daq/format $(COMPILATION_FLAGS)
+testData_CPPFLAGS       =       -I@top_srcdir@/daq/format $(COMPILATION_FLAGS)
 testData_LDADD          =       @top_builddir@/servers/portmanager/libPortManager.la \
 				@top_builddir@/daq/format/libdataformat.la	\
 				@top_builddir@/base/dataflow/libDataFlow.la	\

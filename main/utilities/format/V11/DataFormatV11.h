@@ -113,6 +113,10 @@ static const uint32_t VOID = 0;
 static const uint32_t BEGIN_RUN  = 1;
 static const uint32_t END_RUN    = 2;
 static const uint32_t PAUSE_RUN  = 3;
+#ifdef RESUME_RUN                   // e.g. in config.h
+#undef RESUME_RUN
+#endif
+
 static const uint32_t RESUME_RUN = 4;
 
 // Not quite a state change since we don't know anything about what happened.

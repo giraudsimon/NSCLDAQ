@@ -5,7 +5,7 @@ COMPILATION_FLAGS	= -I@top_srcdir@/base/dataflow	\
 		@LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/headers	\
 		-I@top_srcdir@/base/uri		\
-		-I@top_srcdir@/base/os
+		-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 libdataformat_la_SOURCES = CRingSelectionPredicate.cpp	\
 			   CDesiredTypesPredicate.cpp	\
@@ -60,7 +60,8 @@ libdataformat_la_LIBADD	= @top_builddir@/base/dataflow/libDataFlow.la \
 			@LIBEXCEPTION_LDFLAGS@
 
 
-libdataformat_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS)
+libdataformat_la_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) \
+	$(COMPILATION_FLAGS)
 
 #------------------- Tests:
 

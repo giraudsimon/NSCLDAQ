@@ -17,7 +17,7 @@ ringselector_CPPFLAGS		= 	@LIBTCLPLUS_CFLAGS@	\
 				-I@top_srcdir@/daq/format	\
 			        -I@top_srcdir@/base/dataflow \
 				-I@top_srcdir@/base/os	\
-				-I@top_srcdir@/base/thread
+				-I@top_srcdir@/base/thread @PIXIE_CPPFLAGS@
 
 ringselector_LDADD	=  	@top_builddir@/utilities/common/libUtilCommon.la	\
 				@top_builddir@/daq/format/libdataformat.la	\
@@ -53,7 +53,7 @@ check_PROGRAMS	=	stringstointtests selectortests
 stringstointtests_SOURCES	=	TestRunner.cpp str2int.cpp 
 
 stringstointtests_CPPFLAGS	= @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/utilities/common \
-				-I@top_srcdir@/daq/format
+				-I@top_srcdir@/daq/format @PIXIE_CPPFLAGS@
 
 stringstointtests_LDADD		= -L$(libdir)			\
 				@top_builddir@/utilities/common/libUtilCommon.la \
@@ -73,7 +73,8 @@ selectortests_LDADD	=	$(CPPUNIT_LDFLAGS)	\
 
 selectortests_LDFLAGS	=	-Wl,"-rpath=link=$(libdir)"
 
-selectortests_CPPFLAGS	=	$(ringselector_CPPFLAGS) -DBINDIR="\"$(bindir)\""
+selectortests_CPPFLAGS	=	$(ringselector_CPPFLAGS) -DBINDIR="\"$(bindir)\"" \
+				@PIXIE_CPPFLAGS@
 
 
 TESTS=./stringstointtests ./selectortests

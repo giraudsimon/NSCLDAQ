@@ -1,7 +1,7 @@
 lib_LTLIBRARIES=libActions.la
 
 libActions_la_SOURCES=Actions.cpp
-libActions_la_CPPFLAGS = -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@
+libActions_la_CPPFLAGS = -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 libActions_la_LIBADD  = @top_builddir@/base/thread/libdaqthreads.la @LIBEXCEPTION_LDFLAGS@
 include_HEADERS = Actions.h
 
@@ -17,7 +17,7 @@ install-exec-local:
 #  committing to installing it.  testCompile.cpp just includes Actions.h
 
 testCompile.o: testCompile.cpp
-	$(CXX) $(CXXFLAGS) -c -I@srcdir@ @srcdir@/testCompile.cpp
+	$(CXX) $(CXXFLAGS) @PIXIE_CPPFLAGS@ -c -I@srcdir@ @srcdir@/testCompile.cpp
 
 TCLPACKAGES=actions.tcl defaultActions.tcl
 
