@@ -18,7 +18,7 @@ lib_LTLIBRARIES=libEventBuilder.la libEventBuilderClient.la libFragmentIndex.la
 
 libFragmentIndex_la_SOURCES=FragmentIndex.cpp
 
-libFragmentIndex_la_CXXFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@ $(COMPILATION_FLAGS)
+libFragmentIndex_la_CPPFLAGS=-I@top_srcdir@/daq/format @LIBTCLPLUS_CFLAGS@ $(COMPILATION_FLAGS)
 
 
 libEventBuilder_la_SOURCES = OrdererPackage.cpp CFragmentHandlerCommand.cpp CFragmentHandler.cpp \
@@ -156,7 +156,7 @@ outputTests_LDADD=@TCL_LIBS@ @LIBEXCEPTION_LDFLAGS@ @CPPUNIT_LDFLAGS@
 outputTests_CXXFLAGS=@TCL_CPPFLAGS@ -I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ $(COMPILATION_FLAGS)
 
 
-unittests_DEPENDENCIES = libEventBuilderClient.la cmdline.o cmdline.h
+unittests_DEPENDENCIES = libEventBuilderClient.la 
 unittests_SOURCES = TestRunner.cpp lookupTest.cpp  \
 	connectTest.cpp  
 nodist_unittests_SOURCES = cmdline.c cmdline.h

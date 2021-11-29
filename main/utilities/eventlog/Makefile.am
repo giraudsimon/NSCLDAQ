@@ -6,8 +6,6 @@ nodist_eventlog_SOURCES =       eventlogargs.c eventlogargs.h
 
 noinst_HEADERS		=	eventlogMain.h
 
-eventlog_DEPENDENCIES	=	eventlogargs.o
-
 
 eventlog_CPPFLAGS       =	-I@top_srcdir@/base/headers		\
 				@LIBTCLPLUS_CFLAGS@			\

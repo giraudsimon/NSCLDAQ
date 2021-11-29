@@ -18,6 +18,7 @@
 /** @file:  ModuleReader.cpp
  *  @brief: Implement the ModuleReader
  */
+#include <config.h>
 #include "ModuleReader.h"
 #include "ReferenceCountedBuffer.h"
 #include "ZeroCopyHit.h"
