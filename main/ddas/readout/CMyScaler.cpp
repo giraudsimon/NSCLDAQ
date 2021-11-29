@@ -4,14 +4,14 @@
  H.L. Crawford 6/13/2010
 *********************************************************/
 
+#include <config.h>
 #include "CMyScaler.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
+
 //#include "pixie16app_globals.h"
 
 
@@ -125,27 +125,10 @@ vector<uint32_t> CMyScaler::read()
     /* Compute LiveTime for each channel */    
     LiveTime[i] = Pixie16ComputeLiveTime (statistics, moduleNumber, i);
 
-    
-    ChanEvents[i] = (double)statistics[ChanEventsA_Address[moduleNumber] + i 
-				       - DATA_MEMORY_ADDRESS - 
-				       DSP_IO_BORDER] * pow(2.0, 32.0);
-    ChanEvents[i] += (double)statistics[ChanEventsB_Address[moduleNumber] + i 
-					- DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-    
-    FastPeaks[i] = (double)statistics[FastPeaksA_Address[moduleNumber] + i - 
-				      DATA_MEMORY_ADDRESS 
-				      - DSP_IO_BORDER] * pow(2.0, 32.0);
-    FastPeaks[i] += (double)statistics[FastPeaksB_Address[moduleNumber] + i 
-				       - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
-
-    /* Now compute total events for each channel, and total "live"
-       events for each channel. */
-    //    Counts[i] = (unsigned long)ICR[i]*LiveTime[i];
-    //    CountsLive[i] = (unsigned long)OCR[i]*RealTime;
-    Counts[i] = FastPeaks[i];
-    CountsLive[i] = ChanEvents[i];
-    
+    ChanEvents[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
+    FastPeaks[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
+   
+  
     /* Finally compute the events since the last scaler read! */
     OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - 
 						   PreviousCounts[i]);
@@ -165,7 +148,7 @@ vector<uint32_t> CMyScaler::read()
   }
 
   /* Copy scaler information into the output vector */
-  scalers.clear(); //SNL added for new readout
+  scalers.clear(); //SNL added for new readout -- This is questionable if there are other event segments?
   scalers.insert(scalers.end(), OutputScalerData, OutputScalerData+33);
   
   return scalers;

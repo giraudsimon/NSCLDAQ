@@ -6,10 +6,6 @@
 #include <stdlib.h>
 
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
-
-
 #define TRIGGER_TIMEOUT_SECS 5        // If no triggers in 5 seconds, auto-trigger.
 
 //#ifdef HAVE_STD_NAMESPACE
@@ -94,7 +90,7 @@ bool CMyTrigger::operator()()
                 // Check how many words are stored in Pixie16's readout FIFO
                 ModNum = i;
                 nFIFOWords = 0;
-                retval = Pixie_Read_ExtFIFOStatus(&nFIFOWords,ModNum);
+                retval = Pixie16CheckExternalFIFOStatus(&nFIFOWords,ModNum);
                 if (retval < 0) {
                   std::cerr << "Failed to read ExtFiFo status for module: "
                     << ModNum;

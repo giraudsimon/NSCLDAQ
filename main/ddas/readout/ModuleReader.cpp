@@ -25,8 +25,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
-#include <pixie16app_export.h>
-#include <pixie16sys_export.h>
 #include <string.h>
 
 namespace DDASReadout {

@@ -11,10 +11,6 @@
 #include <RunState.h>
 #include <CVMEInterface.h>
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
-//#include "MyScaler.h"
-#include "pixie16app_globals.h"
 #include <stdlib.h>
 
 #include <functional>
@@ -142,7 +138,8 @@ int CMyEndCommand::readOutRemainingData()
             
             // If retval==1 then run is still in progress...
             // If retval==-1 then k is not a valid module number
-            if (retval != 0) { 
+            if (retval != 0 ) {
+#if XIAAPI_VERSION < 3
                 EndOfRunRead = 1;
                 sprintf(filnam, "lmdata_mod%d.bin", k);
                 retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, 
@@ -155,6 +152,7 @@ int CMyEndCommand::readOutRemainingData()
                 } // end error block
 
                 nFIFOWords[k] += mod_numwordsread;
+#endif
             } else {
                 // No run is in progress
                 break;
@@ -175,6 +173,7 @@ int CMyEndCommand::readOutRemainingData()
     outputfile.open ("EndofRunScalers.txt", ios::app);
 
     for(int k=0; k<NumModules; k++) {
+#if XIAAPI_VERSION < 3
         EndOfRunRead = 1;
         sprintf(filnam, "lmdata_mod%d.bin", k);
         retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, k, EndOfRunRead);
@@ -183,12 +182,13 @@ int CMyEndCommand::readOutRemainingData()
 
         }
         nFIFOWords[k] += mod_numwordsread;
-
+#endif
         /* Get final statistics information */
         int retval;
         unsigned int statistics[448] = {0};
 
         retval = Pixie16ReadStatisticsFromModule(statistics, k);
+				double RealTime = Pixie16ComputeRealTime(statistics, k);
         if (retval < 0) {
             cout << "Error accessing scaler statistics from module " 
                 << k << endl;
@@ -212,20 +212,9 @@ int CMyEndCommand::readOutRemainingData()
             // Pixie16ComputeOutputCountRate code
             // first get upper 32 bits of the number and push them up 32 bits, then
             // append on the lower 32 bits. Not the greatest but should work.
-            ChanEvents = (double)statistics[ChanEventsA_Address[k] + i 
-                - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER] * pow(2.0, 32.0);
-            ChanEvents += (double)statistics[ChanEventsB_Address[k] 
-                + i - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER];
-
-            // Pixie16ComputeInputCountRate code
-            FastPeaks = (double)statistics[FastPeaksA_Address[k] + i - 
-                DATA_MEMORY_ADDRESS 
-                - DSP_IO_BORDER] * pow(2.0, 32.0);
-            FastPeaks += (double)statistics[FastPeaksB_Address[k] + i 
-                - DATA_MEMORY_ADDRESS - 
-                DSP_IO_BORDER];
+						
+						ChanEvents = Pixie16ComputeInputCountRate(statistics, k, i) * RealTime;
+            FastPeaks = Pixie16ComputeOutputCountRate(statistics, k, i) * RealTime;
 
             /* Print out final statistics to file */
             // "Channel #" "output events" "input events"

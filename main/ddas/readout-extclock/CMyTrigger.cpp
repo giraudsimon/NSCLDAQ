@@ -5,8 +5,6 @@
 #include "CMyTrigger.h"
 #include <stdlib.h>
 
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
 
 using namespace std;
 
@@ -83,7 +81,7 @@ bool CMyTrigger::operator()()
 
       for (unsigned short i=0; i<NumberOfModules; i++) {
         // Check how many words are stored in Pixie16's readout FIFO
-        retval = Pixie_Read_ExtFIFOStatus(&nFIFOWords,i);
+        retval = Pixie16CheckExternalFIFOStatus(&nFIFOWords,i);
 
         /* Trigger a read if the number of words in the external FIFO of 
            any pixie16 module in a crate exceeds a threshold defined in 

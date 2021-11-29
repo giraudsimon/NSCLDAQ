@@ -13,9 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-//#ifdef HAVE_STD_NAMESPACE
 using namespace std;
-//#endif
+
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -37,8 +36,7 @@ using namespace std;
 #include <CRunControlPackage.h>
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
+
 
 
 CMyTrigger *mytrigger(0);             // Newing them here makes order of construction

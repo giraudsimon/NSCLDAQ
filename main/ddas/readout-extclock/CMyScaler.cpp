@@ -9,9 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
-
-#include "pixie16app_export.h"
-#include "pixie16sys_export.h"
+#include <config.h>
 //#include "pixie16app_globals.h"
 
 
@@ -124,20 +122,9 @@ vector<uint32_t> CMyScaler::read()
 
     /* Compute LiveTime for each channel */    
     LiveTime[i] = Pixie16ComputeLiveTime (statistics, moduleNumber, i);
-
+    ChanEvents[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
+    FastPeaks[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
     
-    ChanEvents[i] = (double)statistics[ChanEventsA_Address[moduleNumber] + i 
-				       - DATA_MEMORY_ADDRESS - 
-				       DSP_IO_BORDER] * pow(2.0, 32.0);
-    ChanEvents[i] += (double)statistics[ChanEventsB_Address[moduleNumber] + i 
-					- DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-    
-    FastPeaks[i] = (double)statistics[FastPeaksA_Address[moduleNumber] + i - 
-				      DATA_MEMORY_ADDRESS 
-				      - DSP_IO_BORDER] * pow(2.0, 32.0);
-    FastPeaks[i] += (double)statistics[FastPeaksB_Address[moduleNumber] + i 
-				       - DATA_MEMORY_ADDRESS - DSP_IO_BORDER];
-
 
     /* Now compute total events for each channel, and total "live"
        events for each channel. */
