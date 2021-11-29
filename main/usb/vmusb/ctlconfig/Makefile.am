@@ -12,7 +12,7 @@ COMPILATION_FLAGS=@THREADCXX_FLAGS@ -I@top_srcdir@/usb/vmusb/vmusb		\
 					-I@top_srcdir@/base/headers \
 					-I@top_srcdir@/base/thread	\
 					-I@top_srcdir@/base/os		\
-					@TCL_FLAGS@
+					@TCL_FLAGS@ @PIXIE_CPPFLAGS@
 
 libVMUSBCtlConfig_la_CXXFLAGS	= $(COMPILATION_FLAGS)
 
@@ -118,7 +118,7 @@ unittests_CXXFLAGS = \
 			-I@srcdir@ \
 			@TCL_FLAGS@ \
 			@LIBTCLPLUS_CFLAGS@ \
-			$(CPPUNIT_INCLUDES)
+			$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@
 
 unittests_LDADD = \
 			@builddir@/libVMUSBCtlConfig.la \
@@ -129,7 +129,7 @@ unittests_LDADD = \
 
 unittests_DEPENDENCIES = \
 			@builddir@/libVMUSBCtlConfig.la 
-		  
+
 check-TESTS: 
 		./unittests
 

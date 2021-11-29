@@ -17,7 +17,7 @@ libSBSVme_la_LIBADD = @LIBTCLPLUS_LDFLAGS@ \
 libSBSVme_la_CPPFLAGS = -I@top_srcdir@/base/headers  \
 	-I@top_srcdir@/sbs/nsclapi @LIBTCLPLUS_CFLAGS@ \
 	-I@top_srcdir@/base/CopyrightTools \
-	$(TCL_FLAGS) -DHOME=\"@prefix@\"
+	$(TCL_FLAGS) -DHOME=\"@prefix@\"  @PIXIE_CPPFLAGS@
 
 
 noinst_HEADERS = VMECommand.h VMEMapCommand.h

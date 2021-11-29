@@ -5,7 +5,7 @@ COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAG
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os	\
 			-I@top_srcdir@/base/thread \
-			  @TCL_FLAGS@ @THREADCXX_FLAGS@
+			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
 
 libVMUSB_la_SOURCES 	=  CVMUSBusb.cpp CVMUSBReadoutList.cpp CVMUSBEthernet.cpp \
 	CVMUSBFactory.cpp \
@@ -93,10 +93,10 @@ UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
 noinst_PROGRAMS = unittests
 unittests_SOURCES = $(UNITTEST_MODULES)
 
-unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES)
+unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES) $(COMPILATION_FLAGS)
 unittests_LDADD = $(CPPUNIT_LDFLAGS) \
-								 	@builddir@/libVMUSB.la  \
-									@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
+			@builddir@/libVMUSB.la  \
+			@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
 unittests_LDFLAGS = -Wl,"-rpath=@prefix@/lib"
 
 installcheck-local: unittests

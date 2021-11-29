@@ -129,7 +129,7 @@ libVMUSBDaqConfig_la_CPPFLAGS = -I@top_srcdir@/usb/common/devices		\
 				@LIBTCLPLUS_CFLAGS@			\
 				-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/base/os		\
-				$(TCL_FLAGS) 
+				$(TCL_FLAGS)  @PIXIE_CPPFLAGS@
 
 
 libVMUSBDaqConfig_la_LIBADD	= \

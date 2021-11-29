@@ -17,7 +17,7 @@ libSBSVmeAPI_la_LIBADD = @LIBTCLPLUS_LDFLAGS@	\
 
 libSBSVmeAPI_la_CPPFLAGS = -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@	\
 	-I@top_srcdir@/sbs/driver/include	\
-	-I@top_srcdir@/sbs/driver/dd
+	-I@top_srcdir@/sbs/driver/dd @PIXIE_CPPFLAGS@
 
 AM_LDFLAGS = -lpthread
 
@@ -26,7 +26,7 @@ noinst_PROGRAMS = unittests
 
 unittests_SOURCES = TestRunner.cpp LockingTest.cpp
 
-unittests_CXXFLAGS = @CPPUNIT_CFLAGS@
+unittests_CXXFLAGS = @CPPUNIT_CFLAGS@ @PIXIE_CPPFLAGS@
 
 unittests_LDADD = @builddir@/libSBSVmeAPI.la @CPPUNIT_LDFLAGS@ @TCL_LIBS@
 

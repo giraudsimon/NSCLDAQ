@@ -48,9 +48,9 @@ COMPILATION_FLAGS            =	@LIBTCLPLUS_CFLAGS@		\
 			-I@top_srcdir@/base/headers		\
 			-I@top_srcdir@/base/tcpip	\
 			-I@top_srcdir@/base/os	\
-			$(EPICS_BIN) $(EPICS_INCLUDES) 
+			$(EPICS_BIN) $(EPICS_INCLUDES)  @PIXIE_CPPFLAGS@
 
-controlpush_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
+controlpush_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
 
 
 cmdline.c: options.ggo

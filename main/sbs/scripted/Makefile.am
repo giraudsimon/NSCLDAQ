@@ -8,7 +8,7 @@ COMPILATION_FLAGS =  $(VMEBUILDEADERS) \
 	-I@top_srcdir@/sbs/vmemodules\
 	-I@top_srcdir@/sbs/readout   \
 	-DVME $(TCL_FLAGS) \
-	-DINSTDIR=\"@prefix@\" -g -pthread
+	-DINSTDIR=\"@prefix@\" -g -pthread @PIXIE_CPPFLAGS@
 
 
 ScriptedReadout_SOURCES = Skeleton.cpp
