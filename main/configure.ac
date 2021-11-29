@@ -771,6 +771,7 @@ AC_CONFIG_FILES([Makefile
     ddas/sorter/Makefile
     ddas/readoutdriver/Makefile
     ddas/pixieplugin/Makefile
+    ddas/pixieplugin/definitions.tcl
     caendigitizers/Makefile
     caendigitizers/dpp-pha/Makefile
     caendigitizers/dpp-pha/skel/Makefile
