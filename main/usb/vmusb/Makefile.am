@@ -12,7 +12,7 @@ SUBDIRS = 	vmusb 		\
 
 bin_PROGRAMS = VMUSBReadout
 
-VMUSBReadout_CXXFLAGS= \
+VMUSBReadout_CPPFLAGS= \
   @THREADCXX_FLAGS@ \
 	-I@top_srcdir@/usb/vmusb/vmusb \
 	-I@top_srcdir@/usb/vmusb/core \
@@ -26,7 +26,7 @@ VMUSBReadout_CXXFLAGS= \
 	-I@top_srcdir@/base/dataflow   \
 	-I@top_srcdir@/servers/portmanager \
 	-I@top_srcdir@/base/os		\
-	@TCL_CPPFLAGS@ $(USBSWITCHES) 
+	@TCL_CPPFLAGS@ $(USBSWITCHES)  @PIXIE_CPPFLAGS@
 
 
 VMUSBReadout_CCFLAGS=@THREADC_FLAGS@

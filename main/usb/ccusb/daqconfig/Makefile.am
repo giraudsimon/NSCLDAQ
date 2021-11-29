@@ -74,13 +74,13 @@ noinst_HEADERS		= \
 libCCUSBDaqConfig_la_CPPFLAGS		= \
 				-I@top_srcdir@/usb/ccusb		\
 				-I@top_srcdir@/usb/ccusb/ccusb		\
-				-I@top_srcdir@/usb/ccusb/daqconfig		\
-				-I@top_srcdir@/usb/common/devices		\
+				-I@top_srcdir@/usb/ccusb/daqconfig	\
+				-I@top_srcdir@/usb/common/devices	\
 				-I@top_srcdir@/usb/common/configurableobject \
 				-I@top_srcdir@/base/headers		\
 				@LIBTCLPLUS_CFLAGS@		\
 				@TCL_FLAGS@ \
-				@THREADCXX_FLAGS@
+				@THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
 
 libCCUSBDaqConfig_la_LIBADD	=	 \
 				@top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
@@ -97,6 +97,3 @@ install-data-local:
 
 
 EXTRA_DIST = CCamacCompat.hpp 
-
-
-#CReadoutModule.h CReadoutHardware.h CStack.h

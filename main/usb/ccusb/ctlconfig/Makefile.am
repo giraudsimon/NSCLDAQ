@@ -34,28 +34,28 @@ noinst_HEADERS			=	 \
 
 
 libCCUSBCtlConfig_la_CPPFLAGS	= -I@top_srcdir@/usb/ccusb		\
-					-I@top_srcdir@/daq/format		\
-					-I@top_srcdir@/usb/ccusb/ccusb		\
-					-I@top_srcdir@/usb/ccusb/daqconfig	\
-					-I@top_srcdir@/usb/ccusb/rdothread	\
-					-I@top_srcdir@/usb/ccusb/router	\
-					-I@top_srcdir@/usb/common/slowcontrols	\
-					-I@top_srcdir@/usb/common/configurableobject \
-					@LIBTCLPLUS_CFLAGS@	\
-					-I@top_srcdir@/base/headers	\
-					-I@top_srcdir@/base/thread	\
-					-I@top_srcdir@/base/os		\
-					@TCL_FLAGS@ @THREADCXX_FLAGS@
+				-I@top_srcdir@/daq/format		\
+				-I@top_srcdir@/usb/ccusb/ccusb		\
+				-I@top_srcdir@/usb/ccusb/daqconfig	\
+				-I@top_srcdir@/usb/ccusb/rdothread	\
+				-I@top_srcdir@/usb/ccusb/router	\
+				-I@top_srcdir@/usb/common/slowcontrols	\
+				-I@top_srcdir@/usb/common/configurableobject \
+				@LIBTCLPLUS_CFLAGS@	\
+				-I@top_srcdir@/base/headers	\
+				-I@top_srcdir@/base/thread	\
+				-I@top_srcdir@/base/os		\
+				@TCL_FLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
 
-libCCUSBCtlConfig_la_LIBADD	= 	@top_builddir@/usb/ccusb/ccusb/libCCUSB.la          \
-					@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la \
-					@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
-					@top_builddir@/base/tcpip/libTcp.la			\
-					@TCL_LDFLAGS@						\
-					@LIBTCLPLUS_LDFLAGS@					\
-					@top_builddir@/base/os/libdaqshm.la			\
-					@top_builddir@/base/thread/libdaqthreads.la		\
-					@THREADLD_FLAGS@
+libCCUSBCtlConfig_la_LIBADD=@top_builddir@/usb/ccusb/ccusb/libCCUSB.la       \
+		@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la \
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+		@top_builddir@/base/tcpip/libTcp.la			\
+		@TCL_LDFLAGS@						\
+		@LIBTCLPLUS_LDFLAGS@					\
+		@top_builddir@/base/os/libdaqshm.la			\
+		@top_builddir@/base/thread/libdaqthreads.la		\
+		@THREADLD_FLAGS@
 
 install-data-local:
 	$(mkinstalldirs) @prefix@/ccusbdriver
@@ -86,7 +86,7 @@ unittests_CXXFLAGS = \
 	    -I@top_srcdir@/usb/common/configurableobject \
 			@TCL_FLAGS@ \
 			@LIBTCLPLUS_CFLAGS@ \
-			$(CPPUNIT_INCLUDES)
+			$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@
 
 unittests_LDADD = \
 			@builddir@/libCCUSBCtlConfig.la \
