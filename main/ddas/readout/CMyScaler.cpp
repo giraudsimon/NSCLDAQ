@@ -135,7 +135,7 @@ vector<uint32_t> CMyScaler::read()
        events for each channel. */
     //    Counts[i] = (unsigned long)ICR[i]*LiveTime[i];
     //    CountsLive[i] = (unsigned long)OCR[i]*RealTime;
-    Counts[i] = FastPeaks[i] * LiveTime[i];
+    Counts[i] = FastPeaks[i] * RealTime[i];
     CountsLive[i] = ChanEvents[i] * RealTime;
     
     /* Finally compute the events since the last scaler read! */
