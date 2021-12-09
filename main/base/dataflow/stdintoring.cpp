@@ -160,8 +160,15 @@ mainLoop(string ring, int timeout, int mindata)
              - If the first ring item is bigger than the ring we can't go on.
              - If the first ring item will fit in the ring, enlarge the buffer.
           */
+	  
           struct header* pHeader = reinterpret_cast<struct header*>(pBuffer);
-          uint32_t firstItemSize = computeSize(pHeader);
+	  // If the number of bytes in the buffer is not at least a header
+	  // we can't say anything about the first item size:
+
+	  uint32_t firstItemSize(0); // so default it to zero.
+	  if (totalRead >= sizeof(struct header)) { // reequire a header to set it.
+	      uint32_t firstItemSize = computeSize(pHeader);
+	    }
           if(firstItemSize > mindata) {
             if (firstItemSize > use.s_bufferSpace) {
               cerr << "Exiting because I just got an event that won't fit in the ring..enlarge the ring\n";
@@ -169,7 +176,19 @@ mainLoop(string ring, int timeout, int mindata)
               exit(EXIT_FAILURE);
             } else {
               mindata = firstItemSize + readOffset;
-              pBuffer = reinterpret_cast<uint8_t*>(realloc(pBuffer, firstItemSize + readOffset));
+              pBuffer = reinterpret_cast<uint8_t*>(
+		    realloc(pBuffer, firstItemSize + readOffset)
+	      );
+	      // We're doomed if the realloc failed
+
+	      if (!pBuffer) {
+		int e = errno;
+		cerr << "stdintoring failed realloc of "
+		     << firstItemSize + readOffset << " : " << strerror(e)
+		     << std::endl;
+		exit(EXIT_FAILURE);
+	      }
+	      
               readOffset += nread;
               readSize    = mindata - readOffset;
             }

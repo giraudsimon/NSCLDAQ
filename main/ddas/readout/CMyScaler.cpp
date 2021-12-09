@@ -125,8 +125,8 @@ vector<uint32_t> CMyScaler::read()
     /* Compute LiveTime for each channel */    
     LiveTime[i] = Pixie16ComputeLiveTime (statistics, moduleNumber, i);
 
-    ChanEvents[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
-    FastPeaks[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
+    Counts[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
+    CountsLive[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
    
   
     /* Finally compute the events since the last scaler read! */
