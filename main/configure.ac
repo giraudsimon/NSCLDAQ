@@ -470,7 +470,7 @@ AH_BOTTOM([
    fi
    
    #  If found then:
-    PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi"
+    PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"
    
    #  Now export all the variables to the Makefile.
    
