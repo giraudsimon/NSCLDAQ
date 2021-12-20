@@ -1,6 +1,0 @@
-1.2 -
-	Provide for TCLLiveEventLoop to exit when stdin eof's.
-
-1.2-003
-	Fix error in exception makefile when building tests.
-	
