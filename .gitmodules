@@ -1,3 +1,4 @@
 [submodule "main/libtcl"]
 	path = main/libtcl
-	url = https://git.nscl.msu.edu/daqdev/libtclplus.git
+	url = git@git.nscl.msu.edu:daqdev/libtclplus.git
+
