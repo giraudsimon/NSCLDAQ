@@ -72,8 +72,7 @@ if {$argc ni [list 0 1 2]} {
 }
 
     
-puts $host
-puts $userpat
+
 
 # Get the list of ports for that system:
 
