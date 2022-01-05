@@ -55,12 +55,13 @@ install-exec-local:
 	for f in  $(TCLAPPS); do @INSTALL_SCRIPT@ @srcdir@/$$f     @prefix@/bin/DaqPortManager; done
 	for f in $(PYTHON_PACKAGES);  do $(INSTALL_SCRIPT) @srcdir@/$$f $(PYTHON_PKGINSTDIR); done
 	echo "pkg_mkIndex @prefix@/TclLibs/PortManager *.tcl" | @TCLSH_CMD@
+	$(INSTALL_PROGRAM) @srcdir@/lsservices.tcl @bindir@/lsservices
 
 
 #
 #  The distribution should contain the tcl files as well as their unit tests:
 #
-EXTRA_DIST =$(TCLPACKAGES) $(TCLAPPS) $(TCLTESTS) $(PYTHON_PACKAGES) $(PYTHON_TESTS) portmanager.xml 
+EXTRA_DIST =$(TCLPACKAGES) $(TCLAPPS) $(TCLTESTS) $(PYTHON_PACKAGES) $(PYTHON_TESTS) portmanager.xml lsservices.tcl
 
 #
 #  The tests are all TCL tests and can be unconditionally run.
