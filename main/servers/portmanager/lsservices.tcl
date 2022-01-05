@@ -74,3 +74,52 @@ if {$argc ni [list 0 1 2]} {
     
 puts $host
 puts $userpat
+
+# Get the list of ports for that system:
+
+set mgr [portAllocator %AUTO% -hostname $host]
+set services [$mgr listPorts]
+
+# Now filter by those that match the userpat username pattern.
+
+set servicelist [list]
+foreach service $services {
+    set user [lindex $service 2]
+    if {[string match $userpat $user]} {
+        lappend servicelist $service
+    }
+}
+# service list is now the set of services we're going to
+# List in tabular form.
+
+::report::defstyle simpletable {} {
+    data set [split "[string repeat "| "   [columns]]|"]
+    top set  [split "[string repeat "+ - " [columns]]+"]
+    bottom set [top get]
+    top    enable 
+    bottom enable
+}
+
+::report::defstyle captionedtable {{n 1}} {
+    simpletable
+    topdata    set [data get]
+    topcapsep  set [top get]
+    topcapsep  enable
+    tcaption   $n
+}
+
+
+struct::matrix reportData
+reportData add columns 3
+reportData insert row 0 [list Service Port user]
+foreach service $servicelist {
+    reportData insert row end $service
+}
+::report::report r 3 style captionedtable 1
+puts [r printmatrix reportData]
+reportData destroy
+r destroy
+
+
+    
+
