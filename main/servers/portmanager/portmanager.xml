@@ -289,6 +289,87 @@ tclsh DaqPortManager <replaceable>options...</replaceable>
   </refsect1>
 </refentry>
 
+<refentry>
+   <refmeta>
+      <refentrytitle>lsservices</refentrytitle>
+      <manvolnum>1tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>lsservices</refname>
+      <refpurpose>List advertised services</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/lsservices <optional>host <optional>user-pattern</optional></optional>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Lists the services that are advertised by a port manager.
+            The parameters are all optional.
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term><parameter>host</parameter></term>
+               <listitem>
+                   <para>
+                    If supplied specifies the host who's port manager
+                    we want to query.  If not suplied, this parameter
+                    defaults to localhost.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><parameter>user-pattern</parameter></term>
+               <listitem>
+                   <para>
+                    If supplied specifies a glob pattern the services
+                    to be listed must successfully match in order for the
+                    service to be included in the list.
+                   </para>
+                   <para>
+                    If not supplied, defaults to <literal>*</literal>
+                    which matches all users.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <informalexample>
+        <programlisting>
+$DAQBIN/lsservices
+        </programlisting>
+      </informalexample>
+      <para>
+        This lists all services in the local system.
+      </para>
+      <informalexample>
+        <programlisting>
+$DAQBIN/lsservices spdaq.frib.msu.edu
+        </programlisting>
+      </informalexample>
+      <para>
+        This lists all services advertised by the port manager in
+        the host <literal>spdaq.frib.msu.edu</literal> if it  is
+        reachable.
+      </para>
+      <informalexample>
+        <programlisting>
+$DAQBIN/lsservices localhost charlie
+        </programlisting>
+      </informalexample>
+      <para>
+        Only lists the services advertised in the local host that
+        were allocated by the username <literal>charlie</literal>
+      </para>
+    </refsect1>
+</refentry>
+
 <!-- /manpage -->
 <!-- The c++ API -->
 
