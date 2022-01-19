@@ -92,7 +92,7 @@ namespace eval  ssh {
 		
 		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
-		return "SING_IMAGE=$container singularity exec $bindings $container $command"
+		return "SING_IMAGE=$container singularity exec $bindings $container bash -c $command"
 	}
 	proc shellCommand { } {
         if {[array names ::env SING_IMAGE] eq ""} {
@@ -105,7 +105,7 @@ namespace eval  ssh {
 		
 		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
-		return "SING_IMAGE=$container singularity shell $bindings $container "
+		return "SING_IMAGE=$container singularity shell --shell /bin/bash $bindings $container "
     }
     #-------------------------------------------------------------------------
     proc ssh {host command} {
