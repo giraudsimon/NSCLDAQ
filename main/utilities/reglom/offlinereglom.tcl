@@ -637,7 +637,17 @@ proc reglom {files dt sid tspol outfile} {
 # Entry point
 #
 
+
+
 wm withdraw .
+
+#  DAQBIN is necessary to locate glom:
+
+if {[array names env DAQBIN] eq ""} {
+    tk_messageBox -icon error -type ok -title {DAQBIN not defined} \
+	-message {The DAQBIN environment variable must be defined to use this command source daqsetup.bash from the top level directory of the NSCLDAQ installation this comes from.}
+    exit -1
+}
 
 # Clean up other unglommed files:
 
