@@ -125,7 +125,11 @@ vector<uint32_t> CMyScaler::read()
     /* Compute LiveTime for each channel */    
     LiveTime[i] = Pixie16ComputeLiveTime (statistics, moduleNumber, i);
 
-    Counts[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
+    // Note while input count rates are based on live time, output count rates
+    // are based on real time >sigh<  - XIA issue 702 asks for an API element
+    // to deliver the raw values of the counters.
+    
+    Counts[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * LiveTime[i];
     CountsLive[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
    
   
