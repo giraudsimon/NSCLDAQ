@@ -394,8 +394,8 @@ CMyEventSegment::checkBuffer(const uint32_t* pFifoContents, int nLongs, int id)
         lastCrate = thisCrate;
     }
     if (nLongs < 0) {
-        std::cerr << "last event in buffer went off the end:";
-        std::cerr << "Slot: " << lastSlot << "Chan: " << lastChan
+        m_debugStream << "last event in buffer went off the end:";
+        m_debugStream << "Slot: " << lastSlot << "Chan: " << lastChan
             << "Crate: " << lastCrate << " off end by " << -nLongs <<std::endl;
     }
 }
@@ -408,23 +408,23 @@ CMyEventSegment::checkBuffer(const uint32_t* pFifoContents, int nLongs, int id)
 void
 CMyEventSegment::dumpHeader(const void* pHeader, const char* msg)
 {
-    std::cerr << msg << std::endl;
+    m_debugStream << msg << std::endl;
     const HitHeader* p = reinterpret_cast<const HitHeader*>(pHeader);
     
-    std::cerr << "Channel: " << p->getChan() << std::endl;
-    std::cerr << "Slot:    " << p->getSlot() << std::endl;
-    std::cerr << "Crate:   " << p->getCrate() << std::endl;
-    std::cerr << "Header length: " << p->headerLength() << std::endl;
-    std::cerr << "Event Length:  " << p->eventLength() << std::endl;
-    std::cerr << "Timestamp low: " << std::hex << p->s_tstampLow
+    m_debugStream << "Channel: " << p->getChan() << std::endl;
+    m_debugStream << "Slot:    " << p->getSlot() << std::endl;
+    m_debugStream << "Crate:   " << p->getCrate() << std::endl;
+    m_debugStream << "Header length: " << p->headerLength() << std::endl;
+    m_debugStream << "Event Length:  " << p->eventLength() << std::endl;
+    m_debugStream << "Timestamp low: " << std::hex << p->s_tstampLow
         << std::dec << std::endl;
-    std::cerr << "Timestamp high" << std::hex << (p->s_tstampHighCFD & 0xffff)
+    m_debugStream << "Timestamp high" << std::hex << (p->s_tstampHighCFD & 0xffff)
         << " CFD: " << ((p->s_tstampHighCFD & 0xffff0000) >> 16)
         << std::dec << std::endl;
-    std::cerr << "Energy: " << (p->s_traceInfo & 0xffff) << std::endl;
-    std::cerr << "Trace length" << ((p->s_traceInfo & 0x7fff0000) >> 16)
+    m_debugStream << "Energy: " << (p->s_traceInfo & 0xffff) << std::endl;
+    m_debugStream << "Trace length: " << ((p->s_traceInfo & 0x7fff0000) >> 16)
         << std::endl;
         
-    std::cerr << "-------------------------------------------------------\n";
+    m_debugStream << "-------------------------------------------------------\n";
     
 }

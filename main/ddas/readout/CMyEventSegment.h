@@ -52,10 +52,10 @@ private:
             return (s_id & 0xf00) >> 8;
         }
         unsigned headerLength() const {
-           return (s_id & 0xf000) >> 12;
+           return (s_id & 0x1f000) >> 12;
         }
         unsigned eventLength() const {
-           return (s_id & 0x7fff0000) >> 16;
+           return (s_id & 0x7ffe0000) >> 17;
         }
     };
 #pragma pack(pop)
