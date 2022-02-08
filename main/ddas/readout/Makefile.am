@@ -64,7 +64,7 @@ EXTRA_DIST=crate_1 envset README
 
 noinst_PROGRAMS=unittests 
 unittests_SOURCES=TestRunner.cpp CMyEventSegment.cpp CMyEventSegment.h \
-	CMyTrigger.cpp CMyTrigger.h
+	CMyTrigger.cpp CMyTrigger.h sanitytests.cpp
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS)
 unittests_LDFLAGS=@CPPUNIT_LDFLAGS@ $(DDASReadout_LDFLAGS)
 
