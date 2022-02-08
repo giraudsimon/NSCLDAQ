@@ -344,36 +344,10 @@ int CMyEventSegment::GetCrateID() const
 // C++'s standard for where bit fields live is not sufficiently
 // precise to allow me to use them but...
 
-#pragma pack(push, 1)
-struct HitHeader {
-    uint32_t    s_id;
-    uint32_t    s_tstampLow;
-    uint32_t    s_tstampHighCFD;
-    uint32_t    s_traceInfo;
-    
-    // Selectors -- a bit too magic numbery but sufficient for
-    // what we want to do in debugging.
-    
-    unsigned getChan() const {
-       return s_id & 0xf;
-    }
-    unsigned getSlot() const {
-       return (s_id & 0xf0) >> 4;
-    }
-    unsigned getCrate() const {
-        return (s_id & 0xf00) >> 8;
-    }
-    unsigned headerLength() const {
-       return (s_id & 0xf000) >> 12;
-    }
-    unsigned eventLength() const {
-       return (s_id & 0x7fff0000) >> 16;
-    }
-};
 
 
 
-#pragma pack(pop)
+
 
 
 /**
