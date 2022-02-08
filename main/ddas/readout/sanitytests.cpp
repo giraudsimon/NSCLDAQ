@@ -41,6 +41,10 @@ class sanitytest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(wrongSlot_1);
     CPPUNIT_TEST(wrongSlot_2);
+    CPPUNIT_TEST(wrongSlot_3);
+    
+    CPPUNIT_TEST(wronghdr_1);
+    CPPUNIT_TEST(wronghdr_2);
     CPPUNIT_TEST_SUITE_END();
     
 private:
@@ -64,6 +68,10 @@ protected:
     
     void wrongSlot_1();
     void wrongSlot_2();
+    void wrongSlot_3();
+    
+    void wronghdr_1();
+    void wronghdr_2();
 private:
     size_t makeOkHeader(
         CMyEventSegment::HitHeader* hdr, int crate, int slot, int chan
@@ -250,4 +258,75 @@ sanitytest::wrongSlot_2()
     std::cout << "supposed to be an error: \n";
     std::cout << s;
 #endif
+}
+// middle of three hits is wrong slot:
+
+void
+sanitytest::wrongSlot_3()
+{
+    CMyEventSegment::HitHeader hdr[3];
+    auto n = makeOkHeader(hdr, 0, 2, 5);
+    n+= makeOkHeader(&hdr[1], 0, 4, 0);
+    n+= makeOkHeader(&hdr[2], 0, 2, 7);
+    
+    m_pSeg->m_idToSlots.push_back(2);
+    m_pSeg->checkBuffer(reinterpret_cast<uint32_t*>(hdr), n, 0);
+    
+    std::ostream& debugOutput(m_pSeg->getDebugStream());
+    
+    ASSERT(debugOutput.tellp() > 0);
+
+#ifdef DEBUG_OUTPUT    
+    std::stringstream* pS = dynamic_cast<std::stringstream*>(&debugOutput);
+    
+    std::string s = pS->str();
+    std::cout << "supposed to be an error: \n";
+    std::cout << s;
+#endif
+}
+
+// Header size is wrong
+
+void
+sanitytest::wronghdr_1()
+{
+    CMyEventSegment::HitHeader h;
+    h.s_id = makeId(0, 2, 0, 5, 4);
+    m_pSeg->m_idToSlots.push_back(2);
+    m_pSeg->checkBuffer(reinterpret_cast<uint32_t*>(&h), 4, 0);
+    
+    std::ostream& debugOutput(m_pSeg->getDebugStream());
+    
+    ASSERT(debugOutput.tellp() > 0);
+
+#ifdef DEBUG_OUTPUT    
+    std::stringstream* pS = dynamic_cast<std::stringstream*>(&debugOutput);
+    
+    std::string s = pS->str();
+    std::cout << "supposed to be an error: \n";
+    std::cout << s;
+#endif   
+    
+}
+// Header has bad event length
+
+void
+sanitytest::wronghdr_2()
+{
+    CMyEventSegment::HitHeader h;
+    h.s_id = makeId(0, 2, 0, 4, 5);
+    m_pSeg->m_idToSlots.push_back(2);
+    m_pSeg->checkBuffer(reinterpret_cast<uint32_t*>(&h), 4, 0);
+    
+    std::ostream& debugOutput(m_pSeg->getDebugStream());
+    
+    ASSERT(debugOutput.tellp() > 0);
+
+#ifdef DEBUG_OUTPUT    
+    std::stringstream* pS = dynamic_cast<std::stringstream*>(&debugOutput);
+    
+    std::string s = pS->str();
+    std::cout << "supposed to be an error: \n";
+    std::cout << s;
+#endif   
 }
