@@ -37,7 +37,8 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
  : m_config(),
    m_systemInitialized(false),
    m_firmwareLoadedRecently(false),
-   m_pExperiment(&exp)
+   m_pExperiment(&exp),
+   m_debugStream(std::cerr)
 {
 
     ios_base::sync_with_stdio(true);
@@ -105,14 +106,6 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         cout << "Module #" << k << " : module id word=0x" << hex << ModuleRevBitMSPSWord[k] << dec;
         cout << ", clock calibration=" << ModClockCal[k] << endl;
         
-        // Create the module reader for this module.
-        
-        m_readers.push_back(
-            new DDASReadout::ModuleReader(
-	      k, modEvtLengths[k],  ModuleRevBitMSPSWord[k], ModClockCal[k]
-            )
-        );
-        cout << " Reader created\n";
     }
 
     mytrigger->Initialize(NumModules);
@@ -133,9 +126,17 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     // @todo - allow this to be settable.
     
     uint64_t time_buffer = 10000000000;
+    m_debug = CReadoutMain::getInstance()->getDebugLevel() == 2;
     
-    m_sorter = new DDASReadout::CHitManager(10.0);         // bit kludgy for now.
+    
 }
+/**
+ * Test constructor.
+ */
+CMyEventSegment::CMyEventSegment() :
+    m_debug(true),
+    m_debugStream(*(new std::stringstream))
+{}
 
 CMyEventSegment::~CMyEventSegment()
 {
@@ -188,7 +189,7 @@ void CMyEventSegment::initialize(){
 
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
-  bool debug = CReadoutMain::getInstance()->getDebugLevel() == 2;
+  bool debug = m_debug;
   
    // memset(rBuffer, 0, maxwords);            // See what's been read.
     
@@ -243,75 +244,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
     return 0;
 
     
-    /*  If the sorter has data to output - we get a hit from it
-     *  output it and, if there are more hits, tell the Experiment we
-     *  want to output more:
-     */
-    if (m_sorter->haveHit()) {
-        size_t result = emitHit(rBuffer);
-
-        if (m_sorter->haveHit()) {
-            m_pExperiment->haveMore();    // We want to output more hits.
-        }
-        return result; 
-    }
-    // If we get here, we have a data in the modules.
     
-    
-    
-    // Read the modules and hand the data to the hit manager.
-    // if it says we have a hit that can be output output it and,
-    // if three are outputtable hits, indicate that to the experiment:
-
-    mytrigger->Reset();
-    std::vector<std::deque<DDASReadout::ModuleReader::HitInfo>> moduleHits;
-    
-    for(int  i = 0; i < m_readers.size(); i++) {
-        if (words[i]) {             // Don't bother with modules with no data:
-            
-            // By pushing back an empty hit list and then getting its reference,
-            // for the reader, we avoid copying the hit list
-            // If we'd just declared the deque read into it and then pushed it back,
-            // the push_back would push a copy of all the hits.
-            
-            std::deque<DDASReadout::ModuleReader::HitInfo> tmp;
-            moduleHits.push_back(tmp);
-            auto& hits(moduleHits.back());
-#ifdef SANITY_CHECKING
-	    unsigned int nActual;
-	    int status = Pixie16CheckExternalFIFOStatus(&nActual, i);
-	    if (status < 0) {
-	      std::cerr << "Sanity check fifo status read failed for module " << i << std::endl;
-	      std::cerr << "Status: " << status << std::endl;
-	    }
-	    if (nActual < words[i]) {
-	      std::cerr << "Fewer actual words than trigger words actual: "
-			<< nActual << " trigger: " << words[i]
-			<< " module: " << i << std::endl;
-	    }
-#endif	    
-            m_readers[i]->read(hits, words[i]);
-        }
-    }
-    m_sorter->addHits(moduleHits);
-    
-    // Can we output any hits?
-    
-    if (m_sorter->haveHit()) {
-        size_t nWords = emitHit(rBuffer);
-        
-        if (m_sorter->haveHit()) {
-            m_pExperiment->haveMore();    // We want to output more hits.
-        }
-        return nWords;
-    }
-    
-    // If we landed here, we read stuff out but there were no
-    // words ready to output yet;
-    // Reject the trigger:
-    
-    reject();
-    return 0;                      // nothing read.
 }
 
 
@@ -328,22 +261,7 @@ void CMyEventSegment::disable()
 void CMyEventSegment::onEnd(CExperiment* pExperiment) 
 {
   return;                       // sorting is offloaded.
-  std::cerr << "Ending run - flushing data in the hit manager\n";
   
-    //Flush hits from the hit manager:
-    
-    m_sorter->flushing(true);
-    if (m_sorter->haveHit()) {  // In case there aren't any:
-        
-        
-        m_pExperiment->ReadEvent();      // read will request retrigger till done.
-    }
-    std:: cerr << "Done\n";
-    m_sorter->flushing(false);
-    for (int i =0; i < m_readers.size(); i++) {
-        m_readers[i]->reset();                 // Clear last known channel timestamps.
-    }
-    std::cerr << "Finished with end run action\n";
 
 }
 
@@ -418,30 +336,7 @@ int CMyEventSegment::GetCrateID() const
     return m_config.getCrateId();
 }
 
-/**
- * emitHit
- *    Emit  a single hit from the sorter:
- *
- *  @return size_t number of 16 bit words emitted:
- */
-size_t
-CMyEventSegment::emitHit(void* pBuffer)
-{
-        auto hitInfo = m_sorter->getHit();
-        auto& hit(hitInfo.second);
-        
-        uint32_t* pWords = static_cast<uint32_t*>(pBuffer);
-        *pWords++ = hitInfo.first->m_moduleTypeWord;
-        
-        // Put the channel data in the buffer and set the timestamp:
-        size_t nBytes = hit->s_channelLength * sizeof(uint32_t);
-        memcpy(pWords, hit->s_data, nBytes);
-        setTimestamp(uint64_t(hit->s_time));
-        
-        DDASReadout::ModuleReader::freeHit(hitInfo);   // Return hit storage.
-        
-        return nBytes/sizeof(uint16_t) + sizeof(uint32_t)/sizeof(uint16_t); 
-}
+
 ////////////////////////////////////////////////////////////////////////
 // Debug logging.
 

@@ -63,9 +63,10 @@ install-exec-hook:
 EXTRA_DIST=crate_1 envset README
 
 noinst_PROGRAMS=unittests 
-unittests_SOURCES=TestRunner.cpp
+unittests_SOURCES=TestRunner.cpp CMyEventSegment.cpp CMyEventSegment.h \
+	CMyTrigger.cpp CMyTrigger.h
 unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(DDASReadout_CPPFLAGS)
-unittests_LDFLAGS=@CPPUNIT_LDFLAGS@
+unittests_LDFLAGS=@CPPUNIT_LDFLAGS@ $(DDASReadout_LDFLAGS)
 
 #  This is fixed in 12.0-pre1.
 TESTS=unittests

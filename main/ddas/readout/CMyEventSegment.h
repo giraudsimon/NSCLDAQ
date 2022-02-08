@@ -12,10 +12,9 @@
 #include <deque>
 #include <fstream>
 #include <string>
+#include <iostream>
 
-#include "CHitManager.h"
-#include "ZeroCopyHit.h"
-#include "ModuleReader.h"
+
 
 // event segment for the control
 // and readout of pixie16 modules
@@ -54,13 +53,14 @@ private:
     
     // These variables are used for readout:
     
-    std::vector<DDASReadout::ModuleReader*> m_readers;
-    DDASReadout::CHitManager*               m_sorter;
-    std::vector<int>                        m_idToSlots;
     
+    std::vector<int>                        m_idToSlots;
+    bool m_debug;
+    std::ostream& m_debugStream;
     
 public:
     CMyEventSegment(CMyTrigger *trig, CExperiment& exp);
+    CMyEventSegment();                  // For unit testing only!!
     ~CMyEventSegment();
 
     virtual void initialize();
@@ -76,8 +76,10 @@ public:
     void synchronize();            //!< Clock synchronization.
     void boot(DAQ::DDAS::SystemBooter::BootType = DAQ::DDAS::SystemBooter::FullBoot);                   //!< load fimrware and start boards.
 
+    std::ostream& getDebugStream() {
+        return m_debugStream;
+    }
 private:
-    size_t emitHit(void* pBuffer);
     void checkBuffer(const uint32_t* pFifoContents, int nLongs, int id);
     void dumpHeader(const void* pHeader, const char* msg);
     
