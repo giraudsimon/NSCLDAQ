@@ -11,6 +11,7 @@
 #include <vector>
 #include <deque>
 #include <fstream>
+#include <string>
 
 #include "CHitManager.h"
 #include "ZeroCopyHit.h"
@@ -55,6 +56,7 @@ private:
     
     std::vector<DDASReadout::ModuleReader*> m_readers;
     DDASReadout::CHitManager*               m_sorter;
+    std::vector<int>                        m_idToSlots;
     
     
 public:
@@ -76,6 +78,8 @@ public:
 
 private:
     size_t emitHit(void* pBuffer);
+    void checkBuffer(const uint32_t* pFifoContents, int nLongs, int id);
+    void dumpHeader(const void* pHeader, const char* msg);
     
 };
 #endif

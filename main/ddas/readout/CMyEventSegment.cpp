@@ -1,5 +1,6 @@
 #include <config.h>
 #include "CMyEventSegment.h"
+#include <CReadoutMain.h>
 #include "Configuration.h"
 #include <CExperiment.h> 
 #include "SystemBooter.h"
@@ -64,6 +65,8 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     NumModules = m_config.getNumberOfModules();
 
     auto modEvtLengths = m_config.getModuleEventLengths();
+    m_idToSlots = m_config.getHardwareMap();
+    
     ModEventLen = new unsigned int[NumModules+1];
     std::copy(modEvtLengths.begin(), modEvtLengths.end(), ModEventLen);
     std::cout << "Module event lengths: ";
@@ -185,6 +188,8 @@ void CMyEventSegment::initialize(){
 
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
+  bool debug = CReadoutMain::getInstance()->getDebugLevel() == 2;
+  
    // memset(rBuffer, 0, maxwords);            // See what's been read.
     
     // This loop finds the first module that has at least one event in it
@@ -436,4 +441,121 @@ CMyEventSegment::emitHit(void* pBuffer)
         DDASReadout::ModuleReader::freeHit(hitInfo);   // Return hit storage.
         
         return nBytes/sizeof(uint16_t) + sizeof(uint32_t)/sizeof(uint16_t); 
+}
+////////////////////////////////////////////////////////////////////////
+// Debug logging.
+
+// For a very idiodic level parse of the raw data:
+// C++'s standard for where bit fields live is not sufficiently
+// precise to allow me to use them but...
+
+#pragma pack(push, 1)
+struct HitHeader {
+    uint32_t    s_id;
+    uint32_t    s_tstampLow;
+    uint32_t    s_tstampHighCFD;
+    uint32_t    s_traceInfo;
+    
+    // Selectors -- a bit too magic numbery but sufficient for
+    // what we want to do in debugging.
+    
+    unsigned getChan() const {
+       return s_id & 0xf;
+    }
+    unsigned getSlot() const {
+       return (s_id & 0xf0) >> 4;
+    }
+    unsigned getCrate() const {
+        return (s_id & 0xf00) >> 8;
+    }
+    unsigned headerLength() const {
+       return (s_id & 0xf000) >> 12;
+    }
+    unsigned eventLength() const {
+       return (s_id & 0x7fff0000) >> 16;
+    }
+};
+
+
+
+#pragma pack(pop)
+
+
+/**
+ * checkBuffer
+ *    Ensure that a buffer of data from a Pixie is reasonable:
+ *
+ * @param pFifoContents - data from the FIFO.
+ * @param nLongs        - Number of longs in the data.
+ * @param id            - module id (slot in m_idToSlots[id]).
+ */
+void
+CMyEventSegment::checkBuffer(const uint32_t* pFifoContents, int nLongs, int id)
+{
+    uint32_t slot = m_idToSlots[id];
+    int lastSlot(-1);
+    int lastChan(-1);
+    int lastCrate(-1);
+    while (nLongs > 0) {
+        const HitHeader* pHeader = reinterpret_cast<const HitHeader*>(pFifoContents);
+        int thisSlot = pHeader->getSlot();
+        int thisChan = pHeader->getChan();
+        int thisCrate = pHeader->getCrate();
+        
+        // The header must always be exactly 4 :
+        
+        if (pHeader->headerLength() != 4) {
+           dumpHeader(pHeader, "Header length is not 4");
+        }
+        // The slot number must be correct:
+        
+        if (thisSlot != slot) {
+           std::stringstream msg;
+           msg << "Mismatch between expected and actual slots sb: "
+            << slot << " was " <<  thisSlot << std::endl;
+           msg << " Prior slot: " << lastSlot << " prior chan: " << lastChan;
+           std::string s = msg.str();
+           dumpHeader(pHeader, s.c_str());
+        }
+        
+        pFifoContents += pHeader->eventLength();
+        nLongs -= pHeader->eventLength();
+        lastSlot = thisSlot;
+        lastChan = thisChan;
+        lastCrate = thisCrate;
+    }
+    if (nLongs < 0) {
+        std::cerr << "last event in buffer went off the end:";
+        std::cerr << "Slot: " << lastSlot << "Chan: " << lastChan
+            << "Crate: " << lastCrate << " off end by " << -nLongs <<std::endl;
+    }
+}
+/**
+ * dumpHeader
+ *    Dump a XIA hit header.
+ *    @param pHeader - pointer to the header of a hit.
+ *    @param msg     - Error Message.
+ */
+void
+CMyEventSegment::dumpHeader(const void* pHeader, const char* msg)
+{
+    std::cerr << msg << std::endl;
+    const HitHeader* p = reinterpret_cast<const HitHeader*>(pHeader);
+    
+    std::cerr << "Channel: " << p->getChan() << std::endl;
+    std::cerr << "Slot:    " << p->getSlot() << std::endl;
+    std::cerr << "Crate:   " << p->getCrate() << std::endl;
+    std::cerr << "Header length: " << p->headerLength() << std::endl;
+    std::cerr << "Event Length:  " << p->eventLength() << std::endl;
+    std::cerr << "Timestamp low: " << std::hex << p->s_tstampLow
+        << std::dec << std::endl;
+    std::cerr << "Timestamp high" << std::hex << (p->s_tstampHighCFD & 0xffff)
+        << " CFD: " << ((p->s_tstampHighCFD & 0xffff0000) >> 16)
+        << std::dec << std::endl;
+    std::cerr << "Energy: " << (p->s_traceInfo & 0xffff) << std::endl;
+    std::cerr << "Trace length" << ((p->s_traceInfo & 0x7fff0000) >> 16)
+        << std::endl;
+        
+    std::cerr << "-------------------------------------------------------\n";
+    
 }

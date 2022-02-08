@@ -66,6 +66,10 @@ public:
   static CExperiment* getExperiment();
   static CReadoutMain* getInstance();
   
+  unsigned getDebugLevel() const {
+    return m_nDebugLevel;
+  }
+  
    // These methods allow logging; they do the filtering as needed.
   
   void logStateChangeRequest(const char* message);
