@@ -21,11 +21,14 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#define private public
 #include "CMyEventSegment.h"
+#undef private
+#include <sstream>
 
 class sanitytest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(sanitytest);
-    CPPUNIT_TEST(test_1);
+    CPPUNIT_TEST(construct_1);
     CPPUNIT_TEST_SUITE_END();
     
 private:
@@ -38,11 +41,13 @@ public:
         delete m_pSeg;
     }
 protected:
-    void test_1();
+    void construct_1();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(sanitytest);
 
-void sanitytest::test_1()
+void sanitytest::construct_1()
 {
+    std::ostream& debugOutput(m_pSeg->getDebugStream());
+    EQ(std::iostream::pos_type(0), debugOutput.tellp());
 }
