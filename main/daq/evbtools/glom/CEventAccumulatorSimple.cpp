@@ -320,12 +320,13 @@ CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outpuSid)
     if(m_pCurrentEvent) {
         throw std::logic_error("new event but there's already a current event!!!");
     }
+    m_pCurrentEvent = &m_currentEvent;
     // Fill in the current event:
     m_pCurrentEvent->s_header = reinterpret_cast<pEventHeader>(m_pCursor);
     m_pCurrentEvent->s_lastTimestamp = pFrag->s_header.s_timestamp;
     m_pCurrentEvent->s_timestampTotal = 0;
     m_pCurrentEvent->s_nFragments  = 0;
-    m_pCurrentEvent = &m_currentEvent;
+
     
     // We assume the fragment payload is a ring item:
     // Fill in what we can of the event header now:

@@ -31,6 +31,7 @@
 #include <sys/mman.h>    // where memfd_create lives in buster.
 #include <unistd.h>
 #include <sys/types.h>
+#include <fragment.h>
 
 // memory file name - we need something
 
@@ -47,12 +48,26 @@ const size_t      maxfrags(10);
 const CEventAccumulatorSimple::TimestampPolicy policy(
             CEventAccumulatorSimple::first
 );
+// Data structures:
+
+// This is really a flat fragment with some large fixed capacity
+
+#pragma pack(push, 1)
+typedef struct _TestFragment {
+    EVB::FragmentHeader s_header;
+    uint8_t             s__payload[bSize];
+} TestFragment, * pTestFragment;
 
 class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(simpleacctest);
     CPPUNIT_TEST(construct_1);
-    CPPUNIT_TEST(empty);
+    CPPUNIT_TEST(empty_1);
+    CPPUNIT_TEST(empty_2);
     CPPUNIT_TEST_SUITE_END();
+protected:
+    void construct_1();
+    void empty_1();
+    void empty_2();
     
 private:
     int m_fd;
@@ -70,9 +85,7 @@ public:
         close(m_fd);
         
     }
-protected:
-    void construct_1();
-    void empty();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(simpleacctest);
@@ -91,17 +104,35 @@ void simpleacctest::construct_1()
 }
 // If there's no data we must not need to flush:
 
-void simpleacctest::empty()
+void simpleacctest::empty_1()
 {
     m_pacc->finishEvent();
     m_pacc->flushEvents();
     
-    // The file should be empty...that meens off_t of current position
+    // The file should be empty_1...that meens off_t of current position
     // is the same as the rewound fd.
     
     off_t current = lseek(m_fd, 0, SEEK_CUR);
     off_t start   = lseek(m_fd, 0, SEEK_SET);
-    EQ(current, start);
+    EQ(current, start); 
+}
+// Just putting a fragment in does not output anything.
+// only finish/flushing does:
+void simpleacctest::empty_2()
+{
+    // For this we don't need a fragment payload of any specific content:
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
     
+    m_pacc->addFragment(
+        reinterpret_cast<EVB::pFlatFragment>(&f), 2
+    );
+    m_pacc->flushEvents();         // output should be empty
     
+    off_t current = lseek(m_fd, 0, SEEK_CUR);
+    off_t start   = lseek(m_fd, 0, SEEK_SET);
+    EQ(current, start); 
 }
