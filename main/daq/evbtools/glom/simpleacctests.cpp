@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <fragment.h>
+#include <DataFormat.h>
 
 // memory file name - we need something
 
@@ -55,7 +56,7 @@ const CEventAccumulatorSimple::TimestampPolicy policy(
 #pragma pack(push, 1)
 typedef struct _TestFragment {
     EVB::FragmentHeader s_header;
-    uint8_t             s__payload[bSize];
+    uint8_t             s_payload[bSize];
 } TestFragment, * pTestFragment;
 
 class simpleacctest : public CppUnit::TestFixture {
@@ -63,11 +64,17 @@ class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST(construct_1);
     CPPUNIT_TEST(empty_1);
     CPPUNIT_TEST(empty_2);
+    CPPUNIT_TEST(add_1);
+    CPPUNIT_TEST(add_2);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
+    
     void empty_1();
     void empty_2();
+    
+    void add_1();
+    void add_2();
     
 private:
     int m_fd;
@@ -135,4 +142,71 @@ void simpleacctest::empty_2()
     off_t current = lseek(m_fd, 0, SEEK_CUR);
     off_t start   = lseek(m_fd, 0, SEEK_SET);
     EQ(current, start); 
+}
+
+// Adding that empty fragment should set the current event fields
+// correctly.  Note we're still not setting a payload.
+
+void simpleacctest::add_1()
+{
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+    
+    m_pacc->addFragment(
+        reinterpret_cast<EVB::pFlatFragment>(&f), 2
+    );
+    // Note m_pCurrent event should (and we verified did) point to the
+    // m_currentEvent member.  m_pCurrentEvent is only null to show that
+    // no event is being built.
+    ASSERT(m_pacc->m_pCurrentEvent);
+    EQ(f.s_header.s_timestamp, m_pacc->m_currentEvent.s_lastTimestamp);
+    EQ(f.s_header.s_timestamp, m_pacc->m_currentEvent.s_timestampTotal);
+    EQ(size_t(1), m_pacc->m_currentEvent.s_nFragments);
+}
+// adding the first item gets the item header, body header and
+// fragment byte count set up in the new event.
+// For this we need to set up the ring item headers for the
+// event but not the actual body payload:
+
+void simpleacctest::add_2()
+{
+    // Make the fragment:
+    
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    CEventAccumulatorSimple::pEventHeader p = m_pacc->m_currentEvent.s_header;
+    EQ(PHYSICS_EVENT, p->s_itemHeader.s_type);
+    uint32_t totalsize = sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+        sizeof(EVB::FragmentHeader) + 100;
+    EQ(totalsize, p->s_itemHeader.s_size);
+    EQ(f.s_header.s_timestamp, p->s_bodyHeader.s_timestamp);
+    EQ(sizeof(BodyHeader), size_t(p->s_bodyHeader.s_size));
+    EQ(uint32_t(10), p->s_bodyHeader.s_sourceId);    // output sourceid.
+    EQ(uint32_t(0), p->s_bodyHeader.s_barrier);
+    
+    // Value of the fragbytes:
+    
+    uint32_t fragsize = sizeof(uint32_t) + sizeof(EVB::FragmentHeader) + 100;
+    EQ(fragsize, p->s_fragBytes);
+    
+    
 }

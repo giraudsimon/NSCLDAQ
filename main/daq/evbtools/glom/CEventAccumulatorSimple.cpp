@@ -315,7 +315,7 @@ CEventAccumulatorSimple::mustFlush(EVB::pFlatFragment pFrag)
  * @param outputSid - desired source id for the output event.
  */
 void
-CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outpuSid)
+CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outputSid)
 {
     if(m_pCurrentEvent) {
         throw std::logic_error("new event but there's already a current event!!!");
@@ -338,9 +338,9 @@ CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outpuSid)
     pEvent->s_itemHeader.s_size = sizeof(EventHeader);
     pEvent->s_bodyHeader.s_size      = sizeof(BodyHeader);
     pEvent->s_bodyHeader.s_timestamp = pFrag->s_header.s_timestamp;
-    pEvent->s_bodyHeader.s_sourceId = pFrag->s_header.s_sourceId;
+    pEvent->s_bodyHeader.s_sourceId = outputSid;
     pEvent->s_bodyHeader.s_barrier  = pFrag->s_header.s_barrier;
-    pEvent->s_fragBytes = 0;
+    pEvent->s_fragBytes = sizeof(uint32_t);
     
     m_pCursor += sizeof(EventHeader);
     m_nBytesInBuffer += sizeof(EventHeader);
