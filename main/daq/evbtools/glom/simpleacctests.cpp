@@ -58,6 +58,20 @@ typedef struct _TestFragment {
     EVB::FragmentHeader s_header;
     uint8_t             s_payload[bSize];
 } TestFragment, * pTestFragment;
+#pragma pack(pop)
+
+
+// This is what an event looks like (one fragment).
+
+#pragma pack(push, 1)
+
+typedef struct _Event {
+    CEventAccumulatorSimple::EventHeader s_evHeader;
+    TestFragment                         s_frag;
+} Event, *pEvent;
+
+#pragma pack(pop)
+
 
 class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(simpleacctest);
@@ -68,12 +82,15 @@ class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST(add_2);
     CPPUNIT_TEST(add_3);
     
+    CPPUNIT_TEST(finish_1);
+    CPPUNIT_TEST(finish_2);
+    
+    CPPUNIT_TEST(finish_3);
+    CPPUNIT_TEST(finish_4);
+    CPPUNIT_TEST(finish_5);
+    
     CPPUNIT_TEST(flush_1);
     CPPUNIT_TEST(flush_2);
-    
-    CPPUNIT_TEST(flush_3);
-    CPPUNIT_TEST(flush_4);
-    CPPUNIT_TEST(flush_5);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -85,12 +102,15 @@ protected:
     void add_2();
     void add_3();
 
+    void finish_1();
+    void finish_2();
+    
+    void finish_3();
+    void finish_4();
+    void finish_5();
+    
     void flush_1();
     void flush_2();
-    
-    void flush_3();
-    void flush_4();
-    void flush_5();
 private:
     int m_fd;
     CEventAccumulatorSimple* m_pacc;
@@ -290,7 +310,7 @@ void simpleacctest::add_3()
 // Make a single fragment event and do a forced flush.  there's no current
 // event but the cursor should still be advanced.
 
-void simpleacctest::flush_1()
+void simpleacctest::finish_1()
 {
     TestFragment f;
     f.s_header.s_timestamp = 0x124356789;
@@ -329,7 +349,7 @@ void simpleacctest::flush_1()
 // Let's make sure the headers got finished properly when an event is finished.
 
 
-void simpleacctest::flush_2()
+void simpleacctest::finish_2()
 {
     TestFragment f;
     f.s_header.s_timestamp = 0x124356789;
@@ -367,7 +387,7 @@ void simpleacctest::flush_2()
 }
 // two frags with first policy gives first timestamp.
 
-void simpleacctest::flush_3()
+void simpleacctest::finish_3()
 {
     m_pacc->m_tsPolicy = CEventAccumulatorSimple::first;
     TestFragment f;
@@ -399,7 +419,7 @@ void simpleacctest::flush_3()
 }
 
 // two frags with last policy gives last timestamp.
-void simpleacctest::flush_4()
+void simpleacctest::finish_4()
 {
     m_pacc->m_tsPolicy = CEventAccumulatorSimple::last;
     TestFragment f;
@@ -430,7 +450,7 @@ void simpleacctest::flush_4()
 }
 
 // two frags with average pollicy gives average timestamp
-void simpleacctest::flush_5()
+void simpleacctest::finish_5()
 {
     m_pacc->m_tsPolicy = CEventAccumulatorSimple::average;
     TestFragment f;
@@ -458,4 +478,100 @@ void simpleacctest::flush_5()
     CEventAccumulatorSimple::pEventHeader p =
         reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(m_pacc->m_pBuffer);
     EQ(uint64_t((0x123456789 + 0x123456800)/2), p->s_bodyHeader.s_timestamp);
+}
+// Flushing if we have no current event gets the file size right
+// and resets all the pointer stuff
+void simpleacctest::flush_1()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::average;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    off_t begin = lseek(m_fd, 0, SEEK_CUR);
+    m_pacc->flushEvents();
+    off_t end   = lseek(m_fd, 0, SEEK_CUR);
+    
+    off_t size = sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+        (sizeof(EVB::FragmentHeader) + 100);
+    EQ(size, end - begin);
+    
+    EQ((uint8_t*)(m_pacc->m_pBuffer), m_pacc->m_pCursor);
+    EQ(size_t(0), m_pacc->m_nBytesInBuffer);
+    ASSERT(!m_pacc->m_pCurrentEvent);    // May have already tested :=)
+}
+
+// flushing should give a file with the data for the event:
+
+void simpleacctest::flush_2()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::average;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    m_pacc->flushEvents();
+    off_t beg   = lseek(m_fd, 0, SEEK_SET);    // Rewind the file...
+    ssize_t size = sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+        (sizeof(EVB::FragmentHeader) + 100);
+    
+        
+    // Read the event:
+    
+    Event ev;
+    ssize_t nRead = read(m_fd, &ev, sizeof(Event));
+    EQ(size, nRead);
+ 
+    // Check event contents:
+    
+    // Header:
+    
+    EQ(uint32_t(size), ev.s_evHeader.s_itemHeader.s_size);
+    EQ(PHYSICS_EVENT, ev.s_evHeader.s_itemHeader.s_type);
+    EQ(f.s_header.s_timestamp, ev.s_evHeader.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), ev.s_evHeader.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), ev.s_evHeader.s_bodyHeader.s_barrier);
+    EQ(uint32_t(sizeof(uint32_t) + sizeof(EVB::FragmentHeader) + 100),
+       ev.s_evHeader.s_fragBytes
+    );
+    // Fragment body:
+    
+    EQ(f.s_header.s_timestamp, ev.s_frag.s_header.s_timestamp);
+    EQ(f.s_header.s_sourceId, ev.s_frag.s_header.s_sourceId);
+    EQ(f.s_header.s_size, ev.s_frag.s_header.s_size);
+    EQ(f.s_header.s_barrier, ev.s_frag.s_header.s_barrier);
+    
+    pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    EQ(PHYSICS_EVENT, pH->s_type);
+    EQ(uint32_t(100), pH->s_size);
+    
 }
