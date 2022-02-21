@@ -66,6 +66,14 @@ class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST(empty_2);
     CPPUNIT_TEST(add_1);
     CPPUNIT_TEST(add_2);
+    CPPUNIT_TEST(add_3);
+    
+    CPPUNIT_TEST(flush_1);
+    CPPUNIT_TEST(flush_2);
+    
+    CPPUNIT_TEST(flush_3);
+    CPPUNIT_TEST(flush_4);
+    CPPUNIT_TEST(flush_5);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -75,7 +83,14 @@ protected:
     
     void add_1();
     void add_2();
+    void add_3();
+
+    void flush_1();
+    void flush_2();
     
+    void flush_3();
+    void flush_4();
+    void flush_5();
 private:
     int m_fd;
     CEventAccumulatorSimple* m_pacc;
@@ -209,4 +224,238 @@ void simpleacctest::add_2()
     EQ(fragsize, p->s_fragBytes);
     
     
+}
+// adding another fragment should still not force an event to end. we'll
+// add the same fragment 2x.
+
+void simpleacctest::add_3()
+{
+    // Make the fragment:
+    
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    off_t begin = lseek(m_fd, 0, SEEK_CUR);   
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    f.s_header.s_timestamp = 0x124356800;   // change up the ts and 
+    f.s_header.s_sourceId  = 2;             // sid.
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    
+    m_pacc->flushEvents();             // Should be no output.
+    off_t end = lseek(m_fd, 0, SEEK_CUR);
+    EQ(begin, end);
+    
+    // Whitebox assertions:
+    
+    CEventAccumulatorSimple::Event& e((m_pacc->m_currentEvent));
+    EQ(f.s_header.s_timestamp, e.s_lastTimestamp);
+    EQ(uint64_t(0x124356789 + 0x124356800), e.s_timestampTotal);
+    EQ(size_t(2), e.s_nFragments);
+    
+    CEventAccumulatorSimple::EventHeader& eh(*(e.s_header));
+    
+    uint32_t totalsize = sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+        2*(sizeof(EVB::FragmentHeader) + 100);
+    EQ(totalsize, eh.s_itemHeader.s_size);
+    EQ(PHYSICS_EVENT, eh.s_itemHeader.s_type);
+    EQ(uint64_t( 0x124356789), eh.s_bodyHeader.s_timestamp);  // sb from first.
+    EQ(uint32_t(10), eh.s_bodyHeader.s_sourceId);    // STill output sid.
+    
+    uint32_t payloadSize = sizeof(uint32_t) + 2*(sizeof(EVB::FragmentHeader) + 100);
+    EQ(payloadSize, eh.s_fragBytes);
+    
+    // The cursor should have advanced by all those bytes too:
+    
+    EQ(
+       ptrdiff_t(totalsize),
+       (m_pacc->m_pCursor - reinterpret_cast<uint8_t*>(m_pacc->m_pBuffer))
+    );
+    
+    
+}
+// Make a single fragment event and do a forced flush.  there's no current
+// event but the cursor should still be advanced.
+
+void simpleacctest::flush_1()
+{
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    off_t begin = lseek(m_fd, 0, SEEK_CUR);   
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    m_pacc->finishEvent();           // Close off the event.
+    
+    // There's no current event but the cursor is still advanced.
+    
+    ASSERT(!m_pacc->m_pCurrentEvent);
+    off_t end = lseek(m_fd, 0, SEEK_CUR);
+    EQ(begin, end);               // NOthing got written.
+    
+    ptrdiff_t size = sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(uint32_t) +
+        (sizeof(EVB::FragmentHeader) + 100);
+    EQ(size,
+       (m_pacc->m_pCursor - reinterpret_cast<uint8_t*>(m_pacc->m_pBuffer))
+    );
+    
+}
+// Let's make sure the headers got finished properly when an event is finished.
+
+
+void simpleacctest::flush_2()
+{
+    TestFragment f;
+    f.s_header.s_timestamp = 0x124356789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    CEventAccumulatorSimple::pEventHeader p =
+        reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(m_pacc->m_pBuffer);
+    uint32_t payload = sizeof(uint32_t) + 100 + sizeof(EVB::FragmentHeader);
+    uint32_t total   = sizeof(RingItemHeader) + sizeof(BodyHeader) + payload;
+    
+    EQ(total, p->s_itemHeader.s_size);
+    EQ(PHYSICS_EVENT, p->s_itemHeader.s_type);
+    
+    EQ(f.s_header.s_timestamp, p->s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), p->s_bodyHeader.s_sourceId);
+    EQ(sizeof(BodyHeader), size_t(p->s_bodyHeader.s_size));
+    EQ(uint32_t(0), p->s_bodyHeader.s_barrier);
+    
+    EQ(payload, p->s_fragBytes);
+}
+// two frags with first policy gives first timestamp.
+
+void simpleacctest::flush_3()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::first;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    f.s_header.s_timestamp = 0x123456800;
+    pbHeader->s_timestamp    = 0x123456800;
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    CEventAccumulatorSimple::pEventHeader p =
+        reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(m_pacc->m_pBuffer);
+    EQ(uint64_t(0x123456789), p->s_bodyHeader.s_timestamp);
+    
+}
+
+// two frags with last policy gives last timestamp.
+void simpleacctest::flush_4()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::last;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    f.s_header.s_timestamp = 0x123456800;
+    pbHeader->s_timestamp    = 0x123456800;
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    CEventAccumulatorSimple::pEventHeader p =
+        reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(m_pacc->m_pBuffer);
+    EQ(uint64_t(0x123456800), p->s_bodyHeader.s_timestamp);
+}
+
+// two frags with average pollicy gives average timestamp
+void simpleacctest::flush_5()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::average;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    f.s_header.s_timestamp = 0x123456800;
+    pbHeader->s_timestamp    = 0x123456800;
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    CEventAccumulatorSimple::pEventHeader p =
+        reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(m_pacc->m_pBuffer);
+    EQ(uint64_t((0x123456789 + 0x123456800)/2), p->s_bodyHeader.s_timestamp);
 }
