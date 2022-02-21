@@ -30,6 +30,7 @@
 #include <string>
 #include <sys/mman.h>    // where memfd_create lives in buster.
 #include <unistd.h>
+#include <sys/types.h>
 
 // memory file name - we need something
 
@@ -47,9 +48,10 @@ const CEventAccumulatorSimple::TimestampPolicy policy(
             CEventAccumulatorSimple::first
 );
 
-class aTestSuite : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(aTestSuite);
-    CPPUNIT_TEST(test_1);
+class simpleacctest : public CppUnit::TestFixture {
+    CPPUNIT_TEST_SUITE(simpleacctest);
+    CPPUNIT_TEST(construct_1);
+    CPPUNIT_TEST(empty);
     CPPUNIT_TEST_SUITE_END();
     
 private:
@@ -69,11 +71,37 @@ public:
         
     }
 protected:
-    void test_1();
+    void construct_1();
+    void empty();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(aTestSuite);
-
-void aTestSuite::test_1()
+CPPUNIT_TEST_SUITE_REGISTRATION(simpleacctest);
+// Whitebox check all the attributes are as I think they should be:
+void simpleacctest::construct_1()
 {
+    EQ(m_fd, m_pacc->m_nFd);
+    EQ(maxFlushTime, m_pacc->m_maxFlushTime);
+    EQ(policy, m_pacc->m_tsPolicy);
+    EQ(bSize, m_pacc->m_nBufferSize);
+    EQ(maxfrags, m_pacc->m_nMaxFrags);
+    ASSERT(m_pacc->m_pBuffer);
+    EQ(size_t(0), m_pacc->m_nBytesInBuffer);
+    EQ((uint8_t*)(m_pacc->m_pBuffer), m_pacc->m_pCursor);
+    ASSERT(!m_pacc->m_pCurrentEvent);
+}
+// If there's no data we must not need to flush:
+
+void simpleacctest::empty()
+{
+    m_pacc->finishEvent();
+    m_pacc->flushEvents();
+    
+    // The file should be empty...that meens off_t of current position
+    // is the same as the rewound fd.
+    
+    off_t current = lseek(m_fd, 0, SEEK_CUR);
+    off_t start   = lseek(m_fd, 0, SEEK_SET);
+    EQ(current, start);
+    
+    
 }
