@@ -38,7 +38,7 @@
 class CEventAccumulatorSimple
 {
 public:
-    typdef enum _tsPolicy {
+    typedef enum _tsPolicy {
         first, last, average
     } TimestampPolicy;
 private:

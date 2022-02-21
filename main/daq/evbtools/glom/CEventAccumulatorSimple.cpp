@@ -41,10 +41,10 @@ CEventAccumulatorSimple::CEventAccumulatorSimple(
     TimestampPolicy policy
 ) :
     m_nFd(fd),
-    m_maxFushTime(maxFlushTime),
+    m_maxFlushTime(maxFlushTime),
     m_tsPolicy(policy),
     m_nBufferSize(bufferSize),
-    m_nMaxFrages(maxfrags),
+    m_nMaxFrags(maxfrags),
     m_pBuffer(nullptr),
     m_nBytesInBuffer(0),
     m_pCursor(nullptr),
@@ -54,7 +54,7 @@ CEventAccumulatorSimple::CEventAccumulatorSimple(
     
     m_pBuffer = malloc(bufferSize);
     if (!m_pBuffer) {
-        throw std::bad_alloc("Event accumulator could not allocate output buffer");
+        throw std::bad_alloc();
     }
     m_pCursor = reinterpret_cast<uint8_t*>(m_pBuffer);
     m_lastFlushTime = time(nullptr);
@@ -91,10 +91,10 @@ CEventAccumulatorSimple::~CEventAccumulatorSimple()
  
 {
     size_t fragSize = fragmentSize(pFrag);
-    if ((sizeof(EventHeader) + fragSize) m_nBufferSize) {
+    if ((sizeof(EventHeader) + fragSize) > m_nBufferSize) {
         throw std::range_error("Fragment won't fit in the accumulator buffer");
     }
-    if (mustFinish(pFrag, outputSourceId)) {
+    if (mustFinish(pFrag, outputSid)) {
         finishEvent();
     }
     if (mustFlush(pFrag)) {
@@ -102,15 +102,15 @@ CEventAccumulatorSimple::~CEventAccumulatorSimple()
     }
     if (!m_pCurrentEvent) {
 
-        newEvent(pFrag, outputSourceId); // Sets ts if first and output sid.        
+        newEvent(pFrag, outputSid); // Sets ts if first and output sid.        
     }
     
     // Add the fragment to the buffer at the cursor and update
     // all the book keeping stuff.
     
     memcpy(m_pCursor, pFrag, fragSize);
-    m_pCurrentEvent->s_lastTimestamp = pFrag->s_header.s_timstamp;
-    m_pCurrentEvent->s_timestampTotal += pFrag->s_header.s_timstamp;
+    m_pCurrentEvent->s_lastTimestamp = pFrag->s_header.s_timestamp;
+    m_pCurrentEvent->s_timestampTotal += pFrag->s_header.s_timestamp;
     m_pCurrentEvent->s_nFragments++;
     m_pCurrentEvent->s_header->s_itemHeader.s_size += fragSize;
     m_pCurrentEvent->s_header->s_fragBytes         += fragSize;
@@ -164,7 +164,7 @@ CEventAccumulatorSimple::finishEvent()
     if (m_pCurrentEvent) {
         // Set the timestamp if the policy isn't first.
         
-        uint64_t ts = m_pCurrent->s_header->s_bodyHeader.s_timestamp;
+        uint64_t ts = m_pCurrentEvent->s_header->s_bodyHeader.s_timestamp;
         if (m_tsPolicy == last) {
             ts = m_pCurrentEvent->s_lastTimestamp;
         } else if (m_tsPolicy == average) {
@@ -206,7 +206,7 @@ CEventAccumulatorSimple::flushEvents()
             // There must be at least one complete event to flush:
             
             if (nBytes) {
-                io::write(
+                io::writeData(
                     m_nFd, m_pBuffer,
                     (pEnd - reinterpret_cast<uint8_t*>(m_pBuffer))
                 );
@@ -220,7 +220,7 @@ CEventAccumulatorSimple::flushEvents()
                 // cursor as well as bytes in buffer:
                 
                 m_pCurrentEvent->s_header =
-                    reinterpret_cast<EventHeader>(m_pBuffer);
+                    reinterpret_cast<pEventHeader>(m_pBuffer);
                 m_pCursor = reinterpret_cast<uint8_t*>(m_pBuffer);
                 m_pCursor += eventSize;
                 m_nBytesInBuffer = eventSize;
@@ -268,10 +268,10 @@ CEventAccumulatorSimple::mustFinish(
            ) {
             result = true;
         }
-        if (m_pCurrentEvent->s_header.s_bodyHeader.s_sourceId != outputSid) {
+        if (m_pCurrentEvent->s_header->s_bodyHeader.s_sourceId != outputSid) {
             result = true;
         }
-        if (m_pCurrentEvent->s_nFragments == m_nMaxFrags) {
+        if (m_pCurrentEvent->s_nFragments >= m_nMaxFrags) {
             result = true;
         }
         uint32_t fragSize = fragmentSize(pFrag);
@@ -321,17 +321,17 @@ CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outpuSid)
         throw std::logic_error("new event but there's already a current event!!!");
     }
     // Fill in the current event:
-    m_currentEvent->s_header = reinterpret_cast<pEventHeader>(m_pCursor);
-    m_currentEvent->s_lastTimestamp = pFrag->s_header.s_timestamp;
-    m_currentEvent->s_timestampTotal = 0;
-    m_currentEvent->s_nFragments  = 0;
+    m_pCurrentEvent->s_header = reinterpret_cast<pEventHeader>(m_pCursor);
+    m_pCurrentEvent->s_lastTimestamp = pFrag->s_header.s_timestamp;
+    m_pCurrentEvent->s_timestampTotal = 0;
+    m_pCurrentEvent->s_nFragments  = 0;
     m_pCurrentEvent = &m_currentEvent;
     
     // We assume the fragment payload is a ring item:
     // Fill in what we can of the event header now:
     
-    pRingItemHeader pItem = reinterpret_cast<pItem>(pFrag->s_body);
-    pEventHeader     pEvent = m_currentEvent->s_header;
+    pRingItemHeader pItem = reinterpret_cast<pRingItemHeader>(pFrag->s_body);
+    pEventHeader     pEvent = m_pCurrentEvent->s_header;
     
     pEvent->s_itemHeader.s_type = pItem->s_type;
     pEvent->s_itemHeader.s_size = sizeof(EventHeader);
@@ -339,7 +339,7 @@ CEventAccumulatorSimple::newEvent(EVB::pFlatFragment pFrag, int outpuSid)
     pEvent->s_bodyHeader.s_timestamp = pFrag->s_header.s_timestamp;
     pEvent->s_bodyHeader.s_sourceId = pFrag->s_header.s_sourceId;
     pEvent->s_bodyHeader.s_barrier  = pFrag->s_header.s_barrier;
-    pEvent->s_fragByes = 0;
+    pEvent->s_fragBytes = 0;
     
     m_pCursor += sizeof(EventHeader);
     m_nBytesInBuffer += sizeof(EventHeader);
