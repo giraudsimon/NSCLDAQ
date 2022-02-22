@@ -91,6 +91,7 @@ class simpleacctest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(flush_1);
     CPPUNIT_TEST(flush_2);
+    CPPUNIT_TEST(flush_3);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -111,6 +112,7 @@ protected:
     
     void flush_1();
     void flush_2();
+    void flush_3();
 private:
     int m_fd;
     CEventAccumulatorSimple* m_pacc;
@@ -574,4 +576,57 @@ void simpleacctest::flush_2()
     EQ(PHYSICS_EVENT, pH->s_type);
     EQ(uint32_t(100), pH->s_size);
     
+}
+// Now ensure the payload contents are good.
+
+void simpleacctest::flush_3()
+{
+    m_pacc->m_tsPolicy = CEventAccumulatorSimple::average;
+    TestFragment f;
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    for (int i =0; i < 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader)); i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, finish the event and flush to file:
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    m_pacc->flushEvents();
+    
+    // Now read the built event from file:
+    
+    
+    lseek(m_fd, 0, SEEK_SET);    // Rewind the file...
+    Event ev;
+    ssize_t nRead = read(m_fd, &ev, sizeof(Event));  // We know from flush_2 nRead is correct.
+    
+    // We also know that all the stuf leading up to the payload is correct
+    // from flush_2.
+    
+    pHeader = reinterpret_cast<pRingItemHeader>(ev.s_frag.s_payload);
+    pBodyHeader     pBH     = reinterpret_cast<pBodyHeader>(pHeader+1);
+    uint8_t*       pPayload = reinterpret_cast<uint8_t*>(pBH+1);
+    
+    // Should be a counting pattern:
+    
+    for (uint8_t i =0; i < 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader)); i++) {
+        EQ(i, pPayload[i]);
+    }
 }
