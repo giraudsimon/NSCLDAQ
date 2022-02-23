@@ -100,6 +100,15 @@ class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST(oob_1);
     CPPUNIT_TEST(oob_2);
     CPPUNIT_TEST(oob_3);
+    
+    CPPUNIT_TEST(autofinish_1);
+    CPPUNIT_TEST(autofinish_2);
+    CPPUNIT_TEST(autofinish_3);
+    CPPUNIT_TEST(autofinish_4);
+    
+    CPPUNIT_TEST(autoflush_1);
+    CPPUNIT_TEST(autoflush_2);
+    CPPUNIT_TEST(flush_6);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -131,10 +140,15 @@ protected:
     void oob_3();
     // Tests that force the completion of an event.
     
-    
+    void autofinish_1();
+    void autofinish_2();
+    void autofinish_3();
+    void autofinish_4();
     // Tests that force a flush of the buffer.
     
-    
+    void autoflush_1();
+    void autoflush_2();
+    void flush_6();
 private:
     int m_fd;
     CEventAccumulatorSimple* m_pacc;
@@ -1195,4 +1209,416 @@ void simpleacctest::oob_3()
     EQ(PHYSICS_EVENT, ph1->s_type);
     pRingItemHeader ph2 = reinterpret_cast<pRingItemHeader>(&(data[ph1->s_size]));
     EQ(PERIODIC_SCALERS, ph2->s_type);
+}
+// Changing item types forces events to finish.
+
+void simpleacctest::autofinish_1()
+{
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, 
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    // Now we change the type to some user type, adding the fragment should
+    // force completion of the event which we can then flush to file to check
+    
+    pHeader->s_type = FIRST_USER_ITEM_CODE;
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->flushEvents();     // first fragment gets flushed as an event:
+    
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, here-begin);
+    
+    // It's a physics event:
+    
+    Event e;
+    ssize_t nRead=read(m_fd, &e, sizeof(e));
+    EQ(nRead, ssize_t(totalsize));
+    EQ(PHYSICS_EVENT, e.s_evHeader.s_itemHeader.s_type);
+    
+}
+// Changing the output source id finishes the event in progress:
+
+void simpleacctest::autofinish_2()
+{
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, 
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 11); // forces finish
+    m_pacc->flushEvents();
+    
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, here-begin);
+    
+    // It's a physics event:
+    
+    Event e;
+    ssize_t nRead=read(m_fd, &e, sizeof(e));
+    EQ(nRead, ssize_t(totalsize));
+    EQ(PHYSICS_EVENT, e.s_evHeader.s_itemHeader.s_type);
+    EQ(uint32_t(10), e.s_evHeader.s_bodyHeader.s_sourceId);
+}
+// Exceeding max frags forces a finish:
+
+void simpleacctest::autofinish_3()
+{
+    m_pacc->m_nMaxFrags = 1;        // Limit events to one fragment:
+    
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, 
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10); // finish
+    m_pacc->flushEvents();
+    
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, here-begin);
+    
+    // It's a physics event:
+    
+    Event e;
+    ssize_t nRead=read(m_fd, &e, sizeof(e));
+    EQ(nRead, ssize_t(totalsize));               // Ensures there's only one.
+    EQ(PHYSICS_EVENT, e.s_evHeader.s_itemHeader.s_type);
+    EQ(uint32_t(10), e.s_evHeader.s_bodyHeader.s_sourceId);
+    
+}
+// If the next fragment extends past the buffer that also forces a finish.
+
+void simpleacctest::autofinish_4()
+{
+
+    
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    m_pacc->m_nBufferSize = totalsize + 1;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10); // finish
+    // That second fragment should have foreced a flush as well to fit the first
+    // frag of the second event:
+    
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, here-begin);
+    
+    // It's a physics event:
+    
+    Event e;
+    ssize_t nRead=read(m_fd, &e, sizeof(e));
+    EQ(nRead, ssize_t(totalsize));               // Ensures there's only one.
+    EQ(PHYSICS_EVENT, e.s_evHeader.s_itemHeader.s_type);
+    EQ(uint32_t(10), e.s_evHeader.s_bodyHeader.s_sourceId);
+    
+}
+// If there's buffere with an event in it and the next fragment overflows
+// a flush is forced.
+
+void simpleacctest::autoflush_1()
+{
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    m_pacc->m_nBufferSize = totalsize + 1;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10); //autoflush.
+    
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, here-begin);
+    
+    // It's a physics event:
+    
+    Event e;
+    ssize_t nRead=read(m_fd, &e, sizeof(e));
+    EQ(nRead, ssize_t(totalsize));               // Ensures there's only one.
+    EQ(PHYSICS_EVENT, e.s_evHeader.s_itemHeader.s_type);
+    EQ(uint32_t(10), e.s_evHeader.s_bodyHeader.s_sourceId);
+    
+}
+// fragment after an autoflush is placed properly.
+
+void simpleacctest::autoflush_2()
+{
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    m_pacc->m_nBufferSize = totalsize + 1;
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10); //autoflush.
+    m_pacc->finishEvent();
+    m_pacc->flushEvents();
+    
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(2*totalsize, here-begin);
+    
+    
+    
+}
+// If a flush is forced when an event is in progress it can still be built
+// properly.
+
+void simpleacctest::flush_6()
+{
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    off_t totalsize = sizeof(CEventAccumulatorSimple::Event) +
+        sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    m_pacc->m_nBufferSize = 2*totalsize + 1;  // Can hold 2 frags.
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();     // Start second event.
+    
+    // Second event with 2 frags:
+    
+    f.s_header.s_timestamp += 10;
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    f.s_header.s_timestamp += 10;
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    f.s_header.s_sourceId = 2;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    // This insertion forces a flush and slide of the partial event.
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    m_pacc->flushEvents();
+    
+    // We should have 2 events, one with a single fragment, the other with
+    // two.  We're really interested to know that the contents of the
+    // second event are good.
+    
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    off_t filesize =  2*totalsize + sizeof(EVB::FragmentHeader) + f.s_header.s_size;
+    EQ(filesize, here-begin);
+    
+    uint8_t buffer[1000];
+    ssize_t nRead = read(m_fd, buffer, sizeof(buffer));
+    EQ(nRead, ssize_t(filesize));
+    
+    // We're interested in the second ring item:
+    
+    pRingItemHeader ph = reinterpret_cast<pRingItemHeader>(buffer);
+    CEventAccumulatorSimple::pEventHeader pEvent=
+        reinterpret_cast<CEventAccumulatorSimple::pEventHeader>(&(buffer[ph->s_size]));
+    uint32_t evSize = sizeof(CEventAccumulatorSimple::EventHeader)
+        + 2*(sizeof(EVB::FragmentHeader) + 100);
+    EQ(evSize, pEvent->s_itemHeader.s_size);
+    EQ(PHYSICS_EVENT, pEvent->s_itemHeader.s_type);
+    EQ(uint64_t(0x123456789+10), pEvent->s_bodyHeader.s_timestamp);  // first.
+    EQ(uint32_t(10), pEvent->s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), pEvent->s_bodyHeader.s_barrier);
+    EQ(uint32_t(sizeof(uint32_t) + 2*(sizeof(EVB::FragmentHeader) + 100)), pEvent->s_fragBytes);
+    // first fragment:
+    
+    pTestFragment f1 = reinterpret_cast<pTestFragment>(pEvent+1);
+    EQ(uint64_t(0x123456789+10), f1->s_header.s_timestamp);
+    EQ(uint32_t(100), f1->s_header.s_size);
+    EQ(uint32_t(0), f1->s_header.s_barrier);
+    EQ(uint32_t(1), f1->s_header.s_sourceId);
+    pRingItemHeader pH1 = reinterpret_cast<pRingItemHeader>(f1->s_payload);
+    EQ(uint32_t(100), pH1->s_size);
+    EQ(PHYSICS_EVENT, pH1->s_type);
+    pBodyHeader pB1 = reinterpret_cast<pBodyHeader>(pH1+1);
+    EQ(uint64_t(0x123456789+10), pB1->s_timestamp);
+    EQ(uint32_t(0), pB1->s_barrier);
+    EQ(uint32_t(1), pB1->s_sourceId);
+    uint8_t* p1 = reinterpret_cast<uint8_t*>(pB1+1);
+    unsigned payloadSize= 100 - sizeof(BodyHeader) - sizeof(RingItemHeader);
+    for (uint8_t i =0; i < payloadSize; i++) {
+       EQ(i, *p1);
+       p1++;
+    }
+    
+    // Second fragment:
+    
+    pTestFragment f2 = reinterpret_cast<pTestFragment>(p1);
+    EQ(uint64_t(0x123456789+20), f2->s_header.s_timestamp);
+    EQ(uint32_t(100), f2->s_header.s_size);
+    EQ(uint32_t(0), f2->s_header.s_barrier);
+    EQ(uint32_t(2), f2->s_header.s_sourceId);
+    pRingItemHeader pH2 = reinterpret_cast<pRingItemHeader>(f2->s_payload);
+    EQ(uint32_t(100), pH2->s_size);
+    EQ(PHYSICS_EVENT, pH2->s_type);
+    pBodyHeader pB2 = reinterpret_cast<pBodyHeader>(pH2+1);
+    EQ(uint64_t(0x123456789+20), pB2->s_timestamp);
+    EQ(uint32_t(0), pB2->s_barrier);
+    EQ(uint32_t(2), pB2->s_sourceId);
+    uint8_t* p2 = reinterpret_cast<uint8_t*>(pB2+1);
+   
+    for (uint8_t i =0; i < payloadSize; i++) {
+       EQ(i, *p2);
+       p2++;
+    }
+    
 }
