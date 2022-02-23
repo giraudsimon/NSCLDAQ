@@ -96,6 +96,10 @@ class simpleacctest : public CppUnit::TestFixture {
     CPPUNIT_TEST(flush_5);
     
     CPPUNIT_TEST(multievt_1);
+    
+    CPPUNIT_TEST(oob_1);
+    CPPUNIT_TEST(oob_2);
+    CPPUNIT_TEST(oob_3);
     CPPUNIT_TEST_SUITE_END();
 protected:
     void construct_1();
@@ -122,7 +126,11 @@ protected:
     
     void multievt_1();
     
+    void oob_1();
+    void oob_2();
+    void oob_3();
     // Tests that force the completion of an event.
+    
     
     // Tests that force a flush of the buffer.
     
@@ -954,4 +962,237 @@ void simpleacctest::multievt_1()
         EQ(uint8_t(payloadSize-i), *p);
         p++;
     }
+}
+// Out of band item goes out immediately to file.
+void simpleacctest::oob_1()
+{
+    TestFragment scaler;     // Will be the OOB fragment:
+    
+    scaler.s_header.s_timestamp = 0x111111111L;
+    scaler.s_header.s_barrier   = 0;
+    scaler.s_header.s_size =
+        sizeof(RingItemHeader) +     // Ring item with
+        sizeof(BodyHeader) +         // A body header
+        sizeof(ScalerItemBody) +32*sizeof(uint32_t);  // A scaler body with32 scalers.
+    pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(scaler.s_payload);
+    pH->s_type = PERIODIC_SCALERS;
+    pH->s_size = scaler.s_header.s_size;
+    pBodyHeader pB = reinterpret_cast<pBodyHeader>(pH+1);
+    pB->s_size = sizeof(BodyHeader);
+    pB->s_timestamp = scaler.s_header.s_timestamp;
+    pB->s_barrier    = 0;
+    pB->s_sourceId   = 1;
+    pScalerItemBody pS = reinterpret_cast<pScalerItemBody>(pB+1);
+    pS->s_intervalStartOffset = 0;
+    pS->s_intervalEndOffset   = 2;
+    pS->s_timestamp = time(nullptr);
+    pS->s_intervalDivisor     = 1;
+    pS->s_scalerCount = 32;
+    pS->s_isIncremental       = 1;
+    pS->s_originalSid    = 1;
+    for (int i = 0; i < 32; i++) {
+        pS->s_scalers[i] = i;
+    }
+    
+    // This should write the scaler to the 'file'.
+    
+    m_pacc->addOOBFragment(reinterpret_cast<EVB::pFlatFragment>(&scaler), 10);
+    
+    off_t totalSize = scaler.s_header.s_size;
+    off_t here = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin= lseek(m_fd, 0, SEEK_SET);    // Rewind.
+    EQ(totalSize, here-begin);
+    
+    // The output should be same as input but the body header will have
+    // the sid rewritten to 10:
+    
+    uint8_t buffer[1000];
+    ssize_t nRead = read(m_fd, buffer, sizeof(buffer));
+    EQ(nRead, ssize_t(totalSize));
+    
+    // Now the contents:
+    
+    pScalerItem pScaler = reinterpret_cast<pScalerItem>(buffer);
+    EQ(pH->s_type, pScaler->s_header.s_type);
+    EQ(pH->s_size, pScaler->s_header.s_size);
+    EQ(sizeof(BodyHeader), size_t(pScaler->s_body.u_hasBodyHeader.s_bodyHeader.s_size));
+    EQ(pB->s_timestamp, pScaler->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+    EQ(pB->s_barrier, pScaler->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    EQ(uint32_t(10), pScaler->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+    EQ(pS->s_intervalStartOffset, pScaler->s_body.u_hasBodyHeader.s_body.s_intervalStartOffset);
+    EQ(pS->s_intervalEndOffset, pScaler->s_body.u_hasBodyHeader.s_body.s_intervalEndOffset);
+    EQ(pS->s_timestamp, pScaler->s_body.u_hasBodyHeader.s_body.s_timestamp);
+    EQ(pS->s_intervalDivisor, pScaler->s_body.u_hasBodyHeader.s_body.s_intervalDivisor);
+    EQ(pS->s_scalerCount, pScaler->s_body.u_hasBodyHeader.s_body.s_scalerCount);
+    EQ(pS->s_isIncremental, pScaler->s_body.u_hasBodyHeader.s_body.s_isIncremental);
+    EQ(pS->s_originalSid, pScaler->s_body.u_hasBodyHeader.s_body.s_originalSid);
+    for (int i = 0; i < 32; i++) {
+        EQ(pS->s_scalers[i], pScaler->s_body.u_hasBodyHeader.s_body.s_scalers[i]);
+    }
+}
+// out of band item prior to complete events goes before them.
+void simpleacctest::oob_2()
+{
+    TestFragment scaler;     // Will be the OOB fragment:
+    
+    scaler.s_header.s_timestamp = 0x111111111L;
+    scaler.s_header.s_barrier   = 0;
+    scaler.s_header.s_size =
+        sizeof(RingItemHeader) +     // Ring item with
+        sizeof(BodyHeader) +         // A body header
+        sizeof(ScalerItemBody) +32*sizeof(uint32_t);  // A scaler body with32 scalers.
+    pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(scaler.s_payload);
+    pH->s_type = PERIODIC_SCALERS;
+    pH->s_size = scaler.s_header.s_size;
+    pBodyHeader pB = reinterpret_cast<pBodyHeader>(pH+1);
+    pB->s_size = sizeof(BodyHeader);
+    pB->s_timestamp = scaler.s_header.s_timestamp;
+    pB->s_barrier    = 0;
+    pB->s_sourceId   = 1;
+    pScalerItemBody pS = reinterpret_cast<pScalerItemBody>(pB+1);
+    pS->s_intervalStartOffset = 0;
+    pS->s_intervalEndOffset   = 2;
+    pS->s_timestamp = time(nullptr);
+    pS->s_intervalDivisor     = 1;
+    pS->s_scalerCount = 32;
+    pS->s_isIncremental       = 1;
+    pS->s_originalSid    = 1;
+    for (int i = 0; i < 32; i++) {
+        pS->s_scalers[i] = i;
+    }
+    
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, 
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    
+    // Since the event has not been finished the OOB event goes before it:
+    
+    m_pacc->addOOBFragment(reinterpret_cast<EVB::pFlatFragment>(&scaler), 10);
+    m_pacc->finishEvent();
+    m_pacc->flushEvents();       // Now f is written.
+    
+    off_t totalsize = scaler.s_header.s_size +
+        f.s_header.s_size + sizeof(EVB::FragmentHeader) +
+        sizeof (CEventAccumulatorSimple::Event);
+    off_t end = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, end - begin);
+    
+    // First event is the scaler, second event is PHYSICS_EVENT we trust
+    // everything else given our prior tests:
+    // (whitebox  - OOB uses flushEvents which has been tested).
+    
+    uint8_t data[1000];
+    ssize_t nBytes = read(m_fd, data, sizeof(data));
+    EQ(nBytes, ssize_t(totalsize));
+    
+    pRingItemHeader pScHeader = reinterpret_cast<pRingItemHeader>(data);
+    EQ(PERIODIC_SCALERS, pScHeader->s_type);
+    pRingItemHeader pPhHeader = reinterpret_cast<pRingItemHeader>(&(data[pScHeader->s_size]));
+    EQ(PHYSICS_EVENT, pPhHeader->s_type);
+    
+}
+
+// out of band items flush completed events:
+
+void simpleacctest::oob_3()
+{
+    TestFragment scaler;     // Will be the OOB fragment:
+    
+    scaler.s_header.s_timestamp = 0x111111111L;
+    scaler.s_header.s_barrier   = 0;
+    scaler.s_header.s_size =
+        sizeof(RingItemHeader) +     // Ring item with
+        sizeof(BodyHeader) +         // A body header
+        sizeof(ScalerItemBody) +32*sizeof(uint32_t);  // A scaler body with32 scalers.
+    pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(scaler.s_payload);
+    pH->s_type = PERIODIC_SCALERS;
+    pH->s_size = scaler.s_header.s_size;
+    pBodyHeader pB = reinterpret_cast<pBodyHeader>(pH+1);
+    pB->s_size = sizeof(BodyHeader);
+    pB->s_timestamp = scaler.s_header.s_timestamp;
+    pB->s_barrier    = 0;
+    pB->s_sourceId   = 1;
+    pScalerItemBody pS = reinterpret_cast<pScalerItemBody>(pB+1);
+    pS->s_intervalStartOffset = 0;
+    pS->s_intervalEndOffset   = 2;
+    pS->s_timestamp = time(nullptr);
+    pS->s_intervalDivisor     = 1;
+    pS->s_scalerCount = 32;
+    pS->s_isIncremental       = 1;
+    pS->s_originalSid    = 1;
+    for (int i = 0; i < 32; i++) {
+        pS->s_scalers[i] = i;
+    }
+    
+    TestFragment f;    // The fragment that is the event.
+    f.s_header.s_timestamp = 0x123456789;
+    f.s_header.s_sourceId  = 1;
+    f.s_header.s_size      = 100;
+    f.s_header.s_barrier   = 0;
+ 
+    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(f.s_payload);
+    pBodyHeader     pbHeader= reinterpret_cast<pBodyHeader>(pHeader+1);
+    
+    pHeader->s_type = PHYSICS_EVENT;
+    pHeader->s_size = 100;
+    pbHeader->s_size = sizeof(BodyHeader);
+    pbHeader->s_timestamp = f.s_header.s_timestamp;
+    pbHeader->s_sourceId  = f.s_header.s_sourceId;
+    pbHeader->s_barrier   = f.s_header.s_barrier;
+    
+    // Fill in a payload - the remainder of the ring item.
+    
+    uint8_t* pData = reinterpret_cast<uint8_t*>(pbHeader+1);
+    size_t bodySize = 100 -(sizeof(RingItemHeader) + sizeof(BodyHeader));
+    for (int i =0; i < bodySize; i++) {
+        pData[i] = i;
+    }
+    // insert the fragment, 
+    
+    m_pacc->addFragment(reinterpret_cast<EVB::pFlatFragment>(&f), 10);
+    m_pacc->finishEvent();
+    
+    // This writes both to file f and scaler in that order.
+    
+    m_pacc->addOOBFragment(reinterpret_cast<EVB::pFlatFragment>(&scaler), 10);
+    
+    off_t totalsize = scaler.s_header.s_size +
+        f.s_header.s_size + sizeof(EVB::FragmentHeader) +
+        sizeof (CEventAccumulatorSimple::Event);
+    off_t end = lseek(m_fd, 0, SEEK_CUR);
+    off_t begin = lseek(m_fd, 0, SEEK_SET);
+    EQ(totalsize, end - begin);
+    
+    uint8_t data[1000];
+    ssize_t nBytes = read(m_fd, data, sizeof(data));
+    EQ(nBytes, ssize_t(totalsize));
+    
+    pRingItemHeader ph1 = reinterpret_cast<pRingItemHeader>(data);
+    EQ(PHYSICS_EVENT, ph1->s_type);
+    pRingItemHeader ph2 = reinterpret_cast<pRingItemHeader>(&(data[ph1->s_size]));
+    EQ(PERIODIC_SCALERS, ph2->s_type);
 }
