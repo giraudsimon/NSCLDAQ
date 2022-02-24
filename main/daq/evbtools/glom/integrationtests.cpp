@@ -30,6 +30,9 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <DataFormat.h>
+#include <time.h>
+#include <string.h>
+#include <fragment.h>
 
 static  const char* argv[] = {
     "./glom", "--dt=100", "--timestamp-policy=earliest", "--sourceid=10",
@@ -40,7 +43,12 @@ static const char* glom="./glom";
 class integrationtest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(integrationtest);
     CPPUNIT_TEST(nothing_1);
+    CPPUNIT_TEST(begin_1);
     CPPUNIT_TEST_SUITE_END();
+
+protected:
+    void nothing_1();
+    void begin_1();
     
 private:
     pid_t m_glomPid;
@@ -59,11 +67,25 @@ public:
         }
             
     }
-protected:
-    void nothing_1();
 private:
     pid_t startGlom();
+    ssize_t writeGlom(const void* pBuffer, size_t nBytes);
+    ssize_t readGlom(void* pBuffer, size_t nBytes);
+    
 };
+// Write glom - must succeed or fail on one shot:
+
+ssize_t
+integrationtest::writeGlom(const void* pBuffer, size_t nBytes)
+{
+    return write(m_stdinpipe[1], pBuffer, nBytes);
+}
+ssize_t
+integrationtest::readGlom(void* pBuffer, size_t nBytes)
+{
+    return read(m_stdoutpipe[0], pBuffer, nBytes);
+}
+
 
 /**
  * startGlom
@@ -133,4 +155,57 @@ void integrationtest::nothing_1()
     EQ(m_glomPid, waitpid(m_glomPid, &status, 0));
     
     m_glomPid = 0;
+}
+// Sending a begin run at glom should give a format and begin run back.
+// We've already confirmed the format comes
+
+void integrationtest::begin_1()
+{
+    StateChangeItem begin;
+    DataFormat      format;
+    
+    // Should be able to get the data format right away:
+    
+    ssize_t n = readGlom(&format, sizeof(format));
+    EQ(sizeof(format), size_t(n));
+    
+    // Now format and produce the begin run item....we're going to not
+    // say this is a barrier to avoid  glom parameters record:
+    
+    
+    uint32_t itemsize =
+        sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(StateChangeItemBody);
+    begin.s_header.s_type = BEGIN_RUN;
+    begin.s_header.s_size = itemsize;
+    begin.s_body.u_hasBodyHeader.s_bodyHeader.s_size = sizeof(BodyHeader);
+    begin.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp = 0;
+    begin.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId = 1; // gets overwritten.
+    begin.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier = 0;  // cheat.
+    pStateChangeItemBody pBody = &begin.s_body.u_hasBodyHeader.s_body;
+    pBody->s_runNumber = 12;
+    pBody->s_timeOffset = 0;
+    pBody->s_Timestamp = time(nullptr);
+    pBody->s_offsetDivisor = 1;
+    pBody->s_originalSid = 1;   // Not overwritten.
+    strcpy(pBody->s_title, "A title string");
+    
+    // Need a fragment header for this:
+    
+    EVB::FragmentHeader h;
+    h.s_timestamp = 0;
+    h.s_sourceId = 1;
+    h.s_barrier = 0;
+    h.s_size = itemsize;
+    
+    // Write the flat fragment.
+    
+    writeGlom(&h, sizeof(h));
+    writeGlom(&begin, itemsize);  // Includes a flush.
+    
+    uint8_t buffer[1000];
+    memset(buffer, 0, sizeof(buffer));
+    n = readGlom(buffer, sizeof(buffer));
+    EQ(itemsize, uint32_t(n));
+    
+    
 }
