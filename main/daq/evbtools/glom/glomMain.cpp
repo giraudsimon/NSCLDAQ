@@ -32,7 +32,7 @@
 #include <CBufferedOutput.h>
 #include <time.h>
 #include "CBufferedFragmentReader.h"
-#include "CEventAccumulator.h"
+#include "CEventAccumulatorSimple.h"
 
 // File scoped  variables:
 
@@ -48,7 +48,7 @@ static uint64_t outputEvents(0);
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
 
-static CEventAccumulator* pAccumulator;
+static CEventAccumulatorSimple* pAccumulator;
 
 // We don't need threadsafe event fragment pools so:
 
@@ -63,16 +63,16 @@ static const unsigned BUFFER_SIZE=1024*1024;
  *    @param timestamp policy enum value from gengetopt.
  *    @return CEventAccumulator::TimestampPolicy - corresponding policy value.
  */
-CEventAccumulator::TimestampPolicy
+CEventAccumulatorSimple::TimestampPolicy
 policyFromEnum(enum_timestamp_policy policy)
 {
     switch (policy) {
     case timestamp_policy_arg_earliest:
-        return CEventAccumulator::first;
+        return CEventAccumulatorSimple::first;
     case timestamp_policy_arg_latest:
-        return CEventAccumulator::last;
+        return CEventAccumulatorSimple::last;
     case timestamp_policy_arg_average:
-        return CEventAccumulator::average;
+        return CEventAccumulatorSimple::average;
     }
     throw std::invalid_argument("Invalid timestamp enumerator value.");
 }
@@ -432,7 +432,7 @@ main(int argc, char**  argv)
   outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
   outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
   
-    pAccumulator = new CEventAccumulator(
+    pAccumulator = new CEventAccumulatorSimple(
         STDOUT_FILENO, 2, BUFFER_SIZE, maxFragments,
         policyFromEnum(timestampPolicy)
     );
