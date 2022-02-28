@@ -36,7 +36,7 @@
 
 static  const char* argv[] = {
     "./glom", "--dt=100", "--timestamp-policy=earliest", "--sourceid=10",
-    "--maxfragments=100", nullptr
+    "--maxfragments=2", nullptr
 };
 static const char* glom="./glom";
 
@@ -45,12 +45,16 @@ class integrationtest : public CppUnit::TestFixture {
     CPPUNIT_TEST(nothing_1);
     CPPUNIT_TEST(begin_1);
     CPPUNIT_TEST(scaler_1);
+    CPPUNIT_TEST(text_1);
+    
+    CPPUNIT_TEST(event_1);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
     void nothing_1();
     void begin_1();
     void scaler_1();
+    void text_1();
     
 private:
     pid_t m_glomPid;
@@ -299,4 +303,155 @@ void integrationtest::scaler_1()
     
     EQ(0, memcmp(&s.s_body, &p->s_body, sizeof(ScalerItemBody)));
     EQ(0, memcmp(s.scalers, p->scalers, 32*sizeof(uint32_t)));
+}
+// Text items also should come out right away
+// We do the same struct trick as for Scalers to make handing this easier.
+
+void integrationtest::text_1()
+{
+#pragma    pack(push, 1)
+    struct TextItem {
+        RingItemHeader s_header;
+        BodyHeader     s_bodyHeader;
+        TextItemBody   s_body;
+        char           s_strings[500];
+    };
+#pragma    pack (pop)
+    const char* const strings[] = {
+        "One string", "Two String", "Three string", "more",
+        "red string", "blue string", "that's all for now"
+    };
+    size_t nStrings = sizeof(strings)/sizeof(char*);
+    
+    // We need to figure out how much storage the strings really require so that
+    // we know how to set s_header.s_size:
+    size_t strsize = 0;
+    for (int i = 0;i < nStrings; i++) {
+        strsize += strlen(strings[i]) + 1;      // (+1 for null terminator).
+    }
+    ASSERT(strsize <= 500);                   // Else we blow up filling the strings.
+    
+    // Now fill in the fragment body:
+    
+    TextItem frag;
+    frag.s_header.s_type = PACKET_TYPES;    // Gotta chose one.
+    frag.s_header.s_size = sizeof(TextItem) + strsize;
+    
+    frag.s_bodyHeader.s_timestamp = 0x987654321;
+    frag.s_bodyHeader.s_sourceId = 1;
+    frag.s_bodyHeader.s_barrier   = 0;
+    frag.s_bodyHeader.s_size    = sizeof(BodyHeader);
+    
+    frag.s_body.s_timeOffset = 100;
+    frag.s_body.s_timestamp = time(nullptr);
+    frag.s_body.s_stringCount      = nStrings;
+    frag.s_body.s_offsetDivisor    = 1;
+    frag.s_body.s_originalSid = frag.s_bodyHeader.s_sourceId;
+    
+    char* p = frag.s_strings;
+    for (int i =0; i < nStrings; i++) {
+        strcpy(p, strings[i]);
+        p += strlen(strings[i]) + 1;
+    }
+    
+    // Fill in the fragment header:
+    
+    EVB::FragmentHeader hdr;
+    hdr.s_timestamp = frag.s_bodyHeader.s_timestamp;
+    hdr.s_sourceId  = frag.s_bodyHeader.s_sourceId;
+    hdr.s_barrier   = frag.s_bodyHeader.s_barrier;
+    hdr.s_size      = frag.s_header.s_size;
+    
+    
+    // Submit the fragment to glom:
+    
+    writeGlom(&hdr, sizeof(hdr));
+    writeGlom(&frag, frag.s_header.s_size);
+    
+    // Ignore the format item.
+    
+    DataFormat      format;
+    ssize_t n = readGlom(&format, sizeof(format));
+    EQ(sizeof(format), size_t(n));
+        
+    // Get the string item back and compare  - again only the body header
+    // sourceid should be different - it gets rewritten to 10.
+    
+    uint8_t buffer[1000];
+    memset(buffer, 0, sizeof(buffer));    // No coinidences
+    n = readGlom(buffer, sizeof(buffer));
+    EQ(n, ssize_t(frag.s_header.s_size));
+    
+    TextItem* pf = reinterpret_cast<TextItem*>(buffer);
+    
+    // Only the body header source id does not match.
+    
+    EQ(0, memcmp(&frag.s_header, &pf->s_header, sizeof(RingItemHeader)));
+    
+    EQ(frag.s_bodyHeader.s_timestamp, pf->s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), pf->s_bodyHeader.s_sourceId);
+    EQ(frag.s_bodyHeader.s_barrier, pf->s_bodyHeader.s_barrier);
+    EQ(frag.s_bodyHeader.s_size, pf->s_bodyHeader.s_size);
+    
+    EQ(0, memcmp(&frag.s_body, &pf->s_body, sizeof(TextItemBody) + strsize));
+    
+    
+}
+// Put a single fragment in followed by a statechange (end run)
+// I should get format, the event in built format and the state change item.
+
+void integrationtest::event_1()
+{
+    // Events:
+
+#pragma pack(push, 1)
+    struct Event {
+        RingItemHeader s_header;
+        BodyHeader     s_bodyHeader;
+        uint16_t       s_payload[100];
+    };
+#pragma pack(pop)
+
+    // State chane - used to flush the data.
+    
+#pragma pack(push, 1)
+    struct EndRun {
+        RingItemHeader s_header;
+        BodyHeader     s_bodyHeader;
+        StateChangeItemBody s_body;
+    }
+#pragma pack(pop)
+
+    Event event;
+    EndRun end;
+    
+    // Fill in and send the event.
+    
+    event.s_header.s_size = sizeof(Event);
+    event.s_header.s_type = PHYSICS_EVENT;
+    event.s_bodyHeader.s_timestamp = 0x1243512345;
+    event.s_bodyHeader.s_sourceId  = 1;
+    event.s_boydyHeader.s_barrier  = 0;
+    for (int i =0; i < 100; i++) {
+        event.s_payload[i] = i;
+    }
+    EVB::FragmentHeader evhdr;
+    evhdr.s_timestamp = event.s_bodyHeader.s_timestamp;
+    evhdr.s_sourceId  = event.s_bodyHeader.s_sourceId;
+    evhdr.s_barrier   = event.s_bodyHeader.s_barrier;
+    evhdr.s_size      = event.s_header.s_size;
+    
+    writeGlom(&evhdr, sizeof(evhdr));
+    writeGlom(&event, event.s_header.s_size);
+    
+    // Fill in and send the end run.
+    
+    
+    
+    
+    // Get and ignore the format
+    
+    // Get and check the event
+    
+    // Get and check the end run.
 }
