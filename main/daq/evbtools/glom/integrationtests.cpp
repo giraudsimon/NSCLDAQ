@@ -44,11 +44,13 @@ class integrationtest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(integrationtest);
     CPPUNIT_TEST(nothing_1);
     CPPUNIT_TEST(begin_1);
+    CPPUNIT_TEST(scaler_1);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
     void nothing_1();
     void begin_1();
+    void scaler_1();
     
 private:
     pid_t m_glomPid;
@@ -207,5 +209,94 @@ void integrationtest::begin_1()
     n = readGlom(buffer, sizeof(buffer));
     EQ(itemsize, uint32_t(n));
     
+    // The result should be a BEGIN_RUN item with the source id rewritten:
     
+    pStateChangeItem p = reinterpret_cast<pStateChangeItem>(buffer);
+    
+    EQ(begin.s_header.s_type, p->s_header.s_type);
+    EQ( begin.s_header.s_size, p->s_header.s_size);
+    EQ( begin.s_body.u_hasBodyHeader.s_bodyHeader.s_size, p->s_body.u_hasBodyHeader.s_bodyHeader.s_size );
+    EQ(begin.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp, p->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), p->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId);
+    EQ(begin.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier, p->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier);
+    
+    auto pB = &(p->s_body.u_hasBodyHeader.s_body);
+    EQ(pBody->s_runNumber, pB->s_runNumber);
+    EQ(pBody->s_timeOffset, pB->s_timeOffset);
+    EQ(pBody->s_Timestamp, pB->s_Timestamp);
+    EQ(pBody->s_offsetDivisor, pB->s_offsetDivisor);
+    EQ(pBody->s_originalSid, pB->s_originalSid);
+    EQ(0, strcmp(pBody->s_title, pB->s_title));
+
+    
+}
+// Sending a scaler item immediately gives me a scaler item back:
+// Note that oob also sends  a sclaer request.
+void integrationtest::scaler_1()
+{
+    // This declaration is a bit odd - it provides storage for the
+    // scalers with body header as well as 32 actual scalers.
+    // Doing it in this way means we don't have the variable sized
+    // union that ScalerItem has.
+#pragma packed(push, 1)
+    struct Scaler {
+        RingItemHeader  s_header;
+        BodyHeader      s_bodyHeader;
+        ScalerItemBody  s_body;
+        uint32_t        scalers[32];
+    };
+#pragma packed(pop)
+    Scaler s;                                // This is what we'll send:
+    s.s_header.s_type = PERIODIC_SCALERS;
+    s.s_header.s_size = sizeof(struct Scaler);
+    s.s_bodyHeader.s_size = sizeof(BodyHeader);
+    s.s_bodyHeader.s_timestamp = 0x123456789;
+    s.s_bodyHeader.s_sourceId  = 1;          // Will be edited to 10.
+    s.s_bodyHeader.s_barrier   = 0;
+    s.s_body.s_intervalStartOffset = 0;     // first 2 seconds of the run.
+    s.s_body.s_intervalEndOffset = 2;
+    s.s_body.s_timestamp = time(nullptr);
+    s.s_body.s_intervalDivisor = 1;
+    s.s_body.s_scalerCount = 32;
+    s.s_body.s_isIncremental=1;
+    s.s_body.s_originalSid = s.s_bodyHeader.s_sourceId;
+    for (int i = 0; i < 32; i++) {
+        s.scalers[i] = i*10;
+    }
+    EVB::FragmentHeader h;
+    h.s_timestamp = 0x123456789;
+    h.s_size      = sizeof(struct Scaler);
+    h.s_sourceId  = s.s_bodyHeader.s_sourceId;
+    h.s_barrier   = 0;
+    
+    // send glom the fragment header and the scaler item:
+    
+    writeGlom(&h, sizeof(h));
+    writeGlom(&s, sizeof(s));
+    
+    // Read the result, which should be a format item and a scaler item:
+    
+    DataFormat      format;
+    ssize_t n = readGlom(&format, sizeof(format));
+    EQ(sizeof(format), size_t(n));
+    
+    //
+    
+    uint8_t buffer[1000];
+    memset(buffer, 0, sizeof(buffer));    // No coinidences
+    n = readGlom(buffer, sizeof(buffer));
+    EQ(sizeof(Scaler), size_t(n));
+    
+    // The only things that should differ are the sourceid in the body header:
+    
+    Scaler* p = reinterpret_cast<Scaler*>(buffer);
+    EQ(0, memcmp(&(s.s_header), &(p->s_header), sizeof(RingItemHeader)));
+    
+    EQ(s.s_bodyHeader.s_size, p->s_bodyHeader.s_size);
+    EQ(uint32_t(10), p->s_bodyHeader.s_sourceId);
+    EQ(s.s_bodyHeader.s_timestamp, p->s_bodyHeader.s_timestamp);
+    EQ(s.s_bodyHeader.s_barrier, p->s_bodyHeader.s_barrier);
+    
+    EQ(0, memcmp(&s.s_body, &p->s_body, sizeof(ScalerItemBody)));
+    EQ(0, memcmp(s.scalers, p->scalers, 32*sizeof(uint32_t)));
 }
