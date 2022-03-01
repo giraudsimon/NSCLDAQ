@@ -34,6 +34,8 @@
 #include <string.h>
 #include <fragment.h>
 
+
+
 static  const char* argv[] = {
     "./glom", "--dt=100", "--timestamp-policy=earliest", "--sourceid=10",
     "--maxfragments=2", nullptr
@@ -75,6 +77,47 @@ public:
         }
             
     }
+private:
+#pragma packed(push, 1)
+struct Scaler {
+    RingItemHeader  s_header;
+    BodyHeader      s_bodyHeader;
+    ScalerItemBody  s_body;
+    uint32_t        scalers[32];
+};
+#pragma packed(pop)
+#pragma    pack(push, 1)
+struct Text {
+    RingItemHeader s_header;
+    BodyHeader     s_bodyHeader;
+    TextItemBody   s_body;
+    char           s_strings[500];
+};
+#pragma    pack (pop)
+#pragma pack(push, 1)
+struct Event {
+    RingItemHeader s_header;
+    BodyHeader     s_bodyHeader;
+    uint16_t       s_payload[100];
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+struct EndRun {
+    RingItemHeader s_header;
+    BodyHeader     s_bodyHeader;
+    StateChangeItemBody s_body;
+};
+#pragma pack(pop)
+#pragma pack(push, 1)
+struct BuiltEvent {                   // Built event looks like this:
+    RingItemHeader s_header;
+    BodyHeader     s_bodyHeader;
+    uint32_t       s_builtBytes;
+    uint8_t        s_payload[1000];    // Just big.
+} readEvent;
+#pragma pack(pop)
+
 private:
     pid_t startGlom();
     ssize_t writeGlom(const void* pBuffer, size_t nBytes);
@@ -244,14 +287,7 @@ void integrationtest::scaler_1()
     // scalers with body header as well as 32 actual scalers.
     // Doing it in this way means we don't have the variable sized
     // union that ScalerItem has.
-#pragma packed(push, 1)
-    struct Scaler {
-        RingItemHeader  s_header;
-        BodyHeader      s_bodyHeader;
-        ScalerItemBody  s_body;
-        uint32_t        scalers[32];
-    };
-#pragma packed(pop)
+
     Scaler s;                                // This is what we'll send:
     s.s_header.s_type = PERIODIC_SCALERS;
     s.s_header.s_size = sizeof(struct Scaler);
@@ -311,14 +347,7 @@ void integrationtest::scaler_1()
 
 void integrationtest::text_1()
 {
-#pragma    pack(push, 1)
-    struct TextItem {
-        RingItemHeader s_header;
-        BodyHeader     s_bodyHeader;
-        TextItemBody   s_body;
-        char           s_strings[500];
-    };
-#pragma    pack (pop)
+
     const char* const strings[] = {
         "One string", "Two String", "Three string", "more",
         "red string", "blue string", "that's all for now"
@@ -335,9 +364,9 @@ void integrationtest::text_1()
     
     // Now fill in the fragment body:
     
-    TextItem frag;
+    Text frag;
     frag.s_header.s_type = PACKET_TYPES;    // Gotta chose one.
-    frag.s_header.s_size = sizeof(TextItem) + strsize;
+    frag.s_header.s_size = sizeof(Text) + strsize;
     
     frag.s_bodyHeader.s_timestamp = 0x987654321;
     frag.s_bodyHeader.s_sourceId = 1;
@@ -384,7 +413,7 @@ void integrationtest::text_1()
     n = readGlom(buffer, sizeof(buffer));
     EQ(n, ssize_t(frag.s_header.s_size));
     
-    TextItem* pf = reinterpret_cast<TextItem*>(buffer);
+    Text* pf = reinterpret_cast<Text*>(buffer);
     
     // Only the body header source id does not match.
     
@@ -404,25 +433,9 @@ void integrationtest::text_1()
 
 void integrationtest::event_1()
 {
-    // Events:
-
-#pragma pack(push, 1)
-    struct Event {
-        RingItemHeader s_header;
-        BodyHeader     s_bodyHeader;
-        uint16_t       s_payload[100];
-    };
-#pragma pack(pop)
-
-    // State chane - used to flush the data.
     
-#pragma pack(push, 1)
-    struct EndRun {
-        RingItemHeader s_header;
-        BodyHeader     s_bodyHeader;
-        StateChangeItemBody s_body;
-    };
-#pragma pack(pop)
+    
+
 
     Event event;
     EndRun end;
@@ -484,14 +497,7 @@ void integrationtest::event_1()
     // Since the event has been built we need to read the size of the event
     // and then the rest of it:
     
-#pragma pack(push, 1)
-    struct BuiltEvent {                   // Built event looks like this:
-        RingItemHeader s_header;
-        BodyHeader     s_bodyHeader;
-        uint32_t       s_builtBytes;
-        uint8_t        s_payload[1000];    // Just big.
-    } readEvent;
-#pragma pack(pop)
+
 
     readGlom(&readEvent.s_header, sizeof(RingItemHeader));
     readGlom(&readEvent.s_bodyHeader, readEvent.s_header.s_size - sizeof(RingItemHeader));
@@ -538,6 +544,9 @@ void integrationtest::event_1()
     
     EQ(0, memcmp(&end.s_body, &readEnd.s_body, sizeof(StateChangeItemBody)));
 }
+// 2 fragment event pushed out by end run.
 
 void integrationtest::event_2()
-{}
+{
+    
+}
