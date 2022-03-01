@@ -48,6 +48,7 @@ class integrationtest : public CppUnit::TestFixture {
     CPPUNIT_TEST(text_1);
     
     CPPUNIT_TEST(event_1);
+    CPPUNIT_TEST(event_2);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -55,7 +56,8 @@ protected:
     void begin_1();
     void scaler_1();
     void text_1();
-    
+    void event_1();
+    void event_2();
 private:
     pid_t m_glomPid;
     int m_stdinpipe[2];         // glom reads 0, we write 1
@@ -419,7 +421,7 @@ void integrationtest::event_1()
         RingItemHeader s_header;
         BodyHeader     s_bodyHeader;
         StateChangeItemBody s_body;
-    }
+    };
 #pragma pack(pop)
 
     Event event;
@@ -431,7 +433,8 @@ void integrationtest::event_1()
     event.s_header.s_type = PHYSICS_EVENT;
     event.s_bodyHeader.s_timestamp = 0x1243512345;
     event.s_bodyHeader.s_sourceId  = 1;
-    event.s_boydyHeader.s_barrier  = 0;
+    event.s_bodyHeader.s_barrier  = 0;
+    event.s_bodyHeader.s_size = sizeof(BodyHeader);
     for (int i =0; i < 100; i++) {
         event.s_payload[i] = i;
     }
@@ -446,12 +449,95 @@ void integrationtest::event_1()
     
     // Fill in and send the end run.
     
+    end.s_header.s_size = sizeof(end);
+    end.s_header.s_type = END_RUN;
+    end.s_bodyHeader.s_timestamp = 0x222222222;
+    end.s_bodyHeader.s_sourceId  = 1;
+    end.s_bodyHeader.s_barrier   = 0;
+    end.s_bodyHeader.s_size     = sizeof(BodyHeader);
+    end.s_body.s_runNumber = 3;
+    end.s_body.s_timeOffset = 200;
+    end.s_body.s_Timestamp = time(nullptr);
+    end.s_body.s_offsetDivisor = 1;
+    end.s_body.s_originalSid = 1;
+    memset(end.s_body.s_title, 0, sizeof end.s_body.s_title);
+    strcpy(end.s_body.s_title, "Some title neeced to end the run");
+    
+    //  only need to update the timestap and payload size.
+    
+    evhdr.s_timestamp = end.s_bodyHeader.s_timestamp;
+    evhdr.s_size      = end.s_header.s_size;
+    evhdr.s_barrier   = 2;                // Else it's just an oob and does not push out event
+    
+    writeGlom(&evhdr, sizeof(evhdr));
+    writeGlom(&end, sizeof(end));             // Forces the event out.
     
     
     
     // Get and ignore the format
     
-    // Get and check the event
+    DataFormat format;
+    readGlom(&format, sizeof(format));
+    
+    // Get and check the event -- note since there are 2 items on the output
+    // we need to be careful how we do this and read each item by itself.
+    // Since the event has been built we need to read the size of the event
+    // and then the rest of it:
+    
+#pragma pack(push, 1)
+    struct BuiltEvent {                   // Built event looks like this:
+        RingItemHeader s_header;
+        BodyHeader     s_bodyHeader;
+        uint32_t       s_builtBytes;
+        uint8_t        s_payload[1000];    // Just big.
+    } readEvent;
+#pragma pack(pop)
+
+    readGlom(&readEvent.s_header, sizeof(RingItemHeader));
+    readGlom(&readEvent.s_bodyHeader, readEvent.s_header.s_size - sizeof(RingItemHeader));
+    
+    EQ(
+       size_t(readEvent.s_header.s_size),
+       sizeof(event) + sizeof(EVB::FragmentHeader) + sizeof(BodyHeader) +
+       sizeof(RingItemHeader) + sizeof(uint32_t));
+    EQ(PHYSICS_EVENT, readEvent.s_header.s_type);
+    
+    EQ(uint64_t(0x1243512345), readEvent.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), readEvent.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), readEvent.s_bodyHeader.s_barrier);
+    
+    EQ(sizeof(event) + sizeof(EVB::FragmentHeader) + sizeof(uint32_t),
+       size_t(readEvent.s_builtBytes)
+    );
+    
+    EVB::pFragmentHeader pf = reinterpret_cast<EVB::pFragmentHeader>(readEvent.s_payload);
+    EQ(uint64_t(0x1243512345), pf->s_timestamp);
+    EQ(event.s_header.s_size, pf->s_size);
+    EQ(uint32_t(1), pf->s_sourceId);
+    EQ(uint32_t(0), pf->s_barrier);
+    
+    // The remainder shoulid just be a copy of event:
+    
+    uint8_t* pPayload = reinterpret_cast<uint8_t*>(pf+1);
+    EQ(0, memcmp(&event, pPayload, event.s_header.s_size));
     
     // Get and check the end run.
+    
+    EndRun readEnd;
+    ssize_t sSize = readGlom(&readEnd, sizeof(readEnd));
+    EQ(sSize, ssize_t(sizeof(readEnd)));
+    
+    // The body header has been re-written with 10 as the srcid everything else
+    // should be the same as end:
+    
+    EQ(0, memcmp(&end.s_header, &readEnd.s_header, sizeof(RingItemHeader)));
+    
+    EQ(end.s_bodyHeader.s_timestamp, readEnd.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), readEnd.s_bodyHeader.s_sourceId);
+    EQ(end.s_bodyHeader.s_barrier, readEnd.s_bodyHeader.s_barrier);
+    
+    EQ(0, memcmp(&end.s_body, &readEnd.s_body, sizeof(StateChangeItemBody)));
 }
+
+void integrationtest::event_2()
+{}
