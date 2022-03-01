@@ -51,6 +51,7 @@ class integrationtest : public CppUnit::TestFixture {
     
     CPPUNIT_TEST(event_1);
     CPPUNIT_TEST(event_2);
+    CPPUNIT_TEST(event_3);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -60,6 +61,7 @@ protected:
     void text_1();
     void event_1();
     void event_2();
+    void event_3();
 private:
     pid_t m_glomPid;
     int m_stdinpipe[2];         // glom reads 0, we write 1
@@ -117,11 +119,19 @@ struct BuiltEvent {                   // Built event looks like this:
     uint8_t        s_payload[1000];    // Just big.
 } readEvent;
 #pragma pack(pop)
+#pragma pack(push, 1)
+struct EvtCount {
+    RingItemHeader s_header;
+    BodyHeader     s_bodyHeader;
+    PhysicsEventCountItemBody s_body;
+};
+#pragma pack(pop)
 
 private:
     pid_t startGlom();
     ssize_t writeGlom(const void* pBuffer, size_t nBytes);
     ssize_t readGlom(void* pBuffer, size_t nBytes);
+    ssize_t rdItem(void* pItem);
     
 };
 // Write glom - must succeed or fail on one shot:
@@ -135,6 +145,17 @@ ssize_t
 integrationtest::readGlom(void* pBuffer, size_t nBytes)
 {
     return read(m_stdoutpipe[0], pBuffer, nBytes);
+}
+// Read a ring item
+ssize_t
+integrationtest::rdItem(void* pBuffer)
+{
+    pRingItemHeader p =reinterpret_cast<pRingItemHeader>(pBuffer);
+    ssize_t hdrSize = readGlom(p, sizeof(RingItemHeader));
+    if (hdrSize <= 0) return hdrSize;
+    ssize_t bodySize = readGlom(p+1, p->s_size - sizeof(RingItemHeader));
+    if (bodySize <= 0) return bodySize;
+    return p->s_size;
 }
 
 
@@ -495,9 +516,7 @@ void integrationtest::event_1()
     // and then the rest of it:
     
 
-
-    readGlom(&readEvent.s_header, sizeof(RingItemHeader));
-    readGlom(&readEvent.s_bodyHeader, readEvent.s_header.s_size - sizeof(RingItemHeader));
+    rdItem(&readEvent);
     
     EQ(
        size_t(readEvent.s_header.s_size),
@@ -625,8 +644,8 @@ void integrationtest::event_2()
     // a 2 fragment event
     
     BuiltEvent event;
-    readGlom(&event.s_header, sizeof(RingItemHeader));
-    readGlom(&event.s_bodyHeader, event.s_header.s_size - sizeof(RingItemHeader));
+    rdItem(&event);
+    
     uint32_t payloadSize  = sizeof(uint32_t) + 2*(sizeof(EVB::FragmentHeader) + sizeof(Event));
     uint32_t totalSize    = sizeof(RingItemHeader) + sizeof(BodyHeader) + payloadSize;
     EQ(totalSize, event.s_header.s_size);
@@ -664,4 +683,194 @@ void integrationtest::event_2()
     ChangeState readEnd;
     ssize_t n = readGlom(&readEnd, sizeof(readEnd));
     EQ(n, ssize_t(sizeof(readEnd)));
+}
+// Sending a fragment, a scaler, a fragment and end run should yield (if
+// the --dt is made):  a scaler, a built event and an end run.
+//
+void integrationtest::event_3()
+{
+    Event frag1;
+    Event frag2;
+    ChangeState end;
+    Scaler  scaler;
+    
+    EVB::FragmentHeader fraghdr;
+    
+    // Fill this crap in.
+    
+    frag1.s_header.s_size = sizeof(Event);
+    frag1.s_header.s_type = PHYSICS_EVENT;
+    frag1.s_bodyHeader.s_timestamp = 0x1243512345;
+    frag1.s_bodyHeader.s_sourceId  = 1;
+    frag1.s_bodyHeader.s_barrier  = 0;
+    frag1.s_bodyHeader.s_size = sizeof(BodyHeader);
+    for (int i =0; i < 100; i++) {
+        frag1.s_payload[i] = i;
+    }
+    
+    // Just change the payload, sourceid and timestamp between frag1 and 2.
+    
+    memcpy(&frag2, &frag1, sizeof(Event));
+    frag2.s_bodyHeader.s_sourceId = 2;
+    frag2.s_bodyHeader.s_timestamp += 50;           // Within the build window.
+    for (int i =0; i < 100; i++) {
+        frag2.s_payload[i] += 100;
+    }
+    
+    // Set the fragment header and send the header and bodies of the two fragments:
+    
+    fraghdr.s_size      = frag1.s_header.s_size;
+    fraghdr.s_timestamp = frag1.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = frag1.s_bodyHeader.s_sourceId;
+    fraghdr.s_barrier   = frag1.s_bodyHeader.s_barrier;
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));     // Frag1 written.
+    writeGlom(&frag1, sizeof(frag1));
+    
+    // Fill in and write the scaler (OOB) item
+    
+    scaler.s_header.s_size = sizeof(scaler);
+    scaler.s_header.s_type = PERIODIC_SCALERS;
+    
+    scaler.s_bodyHeader.s_size = sizeof(BodyHeader);
+    scaler.s_bodyHeader.s_timestamp = frag1.s_bodyHeader.s_timestamp;
+    scaler.s_bodyHeader.s_sourceId  = 1;
+    scaler.s_bodyHeader.s_barrier = 0;
+    
+    scaler.s_body.s_intervalStartOffset = 10;
+    scaler.s_body.s_intervalEndOffset   = 12;
+    scaler.s_body.s_timestamp           = time(nullptr);
+    scaler.s_body.s_intervalDivisor     = 1;
+    scaler.s_body.s_scalerCount = 32;
+    scaler.s_body.s_isIncremental = 1;
+    scaler.s_body.s_originalSid = scaler.s_bodyHeader.s_sourceId;
+    for (int i =0; i < 32; i++) {
+        scaler.scalers[i] = 100*i;
+    }
+    fraghdr.s_size = sizeof(scaler);
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));
+    writeGlom(&scaler, sizeof(scaler));      // OOB fragment.
+    
+    // FIll in the fragment header and write the second fragment:
+    
+    fraghdr.s_timestamp = frag2.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = frag2.s_bodyHeader.s_sourceId;
+    fraghdr.s_size      = frag2.s_header.s_size;
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));
+    writeGlom(&frag2, sizeof(frag2));             // Second fragment.
+    
+    
+    // Fill in the end of run, its fragment header and send it as well.
+    
+    end.s_header.s_type = END_RUN;
+    end.s_header.s_size = sizeof(ChangeState);
+    
+    end.s_bodyHeader.s_size = sizeof(BodyHeader);
+    end.s_bodyHeader.s_timestamp = fraghdr.s_timestamp + 100;
+    end.s_bodyHeader.s_sourceId  = 1;
+    end.s_bodyHeader.s_barrier   = 2;
+    
+    end.s_body.s_runNumber = 3;
+    end.s_body.s_timeOffset = 200;
+    end.s_body.s_Timestamp = time(nullptr);
+    end.s_body.s_offsetDivisor = 1;
+    end.s_body.s_originalSid = 1;
+    memset(end.s_body.s_title, 0, sizeof end.s_body.s_title);
+    strcpy(end.s_body.s_title, "Some title neeced to end the run");
+    
+    fraghdr.s_timestamp = end.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = end.s_bodyHeader.s_sourceId;
+    fraghdr.s_size      = sizeof(end);
+    fraghdr.s_barrier   = end.s_bodyHeader.s_barrier;
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));
+    writeGlom(&end, sizeof(end));    // forces out event.
+    
+    
+    // Skip the format item:
+    
+    DataFormat fmt;
+    readGlom(&fmt, sizeof(DataFormat));
+    
+    // Next should be a scaler item:
+    
+    Scaler rdScaler;
+    ssize_t n = rdItem(&rdScaler);
+    EQ(ssize_t(sizeof(Scaler)), n);
+    EQ(scaler.s_header.s_size, rdScaler.s_header.s_size);
+    EQ(PERIODIC_SCALERS, rdScaler.s_header.s_type);
+    
+    // Body header source id was re-written -> 10
+    
+    EQ(scaler.s_bodyHeader.s_size, rdScaler.s_bodyHeader.s_size);
+    EQ(scaler.s_bodyHeader.s_timestamp, rdScaler.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), rdScaler.s_bodyHeader.s_sourceId);
+    EQ(scaler.s_bodyHeader.s_barrier, rdScaler.s_bodyHeader.s_barrier);
+    
+    EQ(0, memcmp(&scaler.s_body, &rdScaler.s_body, sizeof(ScalerItemBody)));
+    EQ(0, memcmp(scaler.scalers, rdScaler.scalers, 32*sizeof(uint32_t)));
+    
+    // Scaler push out an outputEvent count:
+    
+    EvtCount cnt;
+    n = rdItem(&cnt);
+    EQ(n, ssize_t(sizeof(cnt)));
+    
+    // Next should be a 2 fragment event
+    
+    BuiltEvent rdEvent; 
+    uint32_t payloadSize = sizeof(uint32_t) + 2*(sizeof(EVB::FragmentHeader) + sizeof(Event));
+    uint32_t totalSize   = payloadSize + sizeof(RingItemHeader) + sizeof(BodyHeader);
+    ssize_t esize  = rdItem(&rdEvent);
+    EQ(totalSize, uint32_t(esize));
+    
+    // Contents of the event as this may be one suspect place where we used to have
+    // corrupted data.
+    
+    EQ(totalSize, rdEvent.s_header.s_size);
+    EQ(PHYSICS_EVENT, rdEvent.s_header.s_type);
+    
+    EQ(sizeof(BodyHeader), size_t(rdEvent.s_bodyHeader.s_size));
+    EQ(uint64_t(0x1243512345), rdEvent.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), rdEvent.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), rdEvent.s_bodyHeader.s_barrier);
+    
+    EQ(payloadSize, rdEvent.s_builtBytes);
+    
+    // Fragment 1:
+    
+    EVB::pFragmentHeader pf = reinterpret_cast<EVB::pFragmentHeader>(rdEvent.s_payload);
+    EQ(frag1.s_bodyHeader.s_timestamp, pf->s_timestamp);
+    EQ(frag1.s_bodyHeader.s_sourceId, pf->s_sourceId);
+    EQ(frag1.s_header.s_size, pf->s_size);
+    EQ(frag1.s_bodyHeader.s_barrier, pf->s_barrier);
+    uint8_t* pE1 = reinterpret_cast<uint8_t*>(pf+1);
+    EQ(0, memcmp(&frag1, pE1, frag1.s_header.s_size));
+    
+    pf = reinterpret_cast<EVB::pFragmentHeader>(pE1 + frag1.s_header.s_size);
+    EQ(frag2.s_bodyHeader.s_timestamp, pf->s_timestamp);
+    EQ(frag2.s_bodyHeader.s_sourceId, pf->s_sourceId);
+    EQ(frag2.s_header.s_size, pf->s_size);
+    EQ(frag2.s_bodyHeader.s_barrier, pf->s_barrier);
+    uint8_t* pE2 = reinterpret_cast<uint8_t*>(pf+1);
+    EQ(0, memcmp(&frag2, pE2, frag2.s_header.s_size));
+    
+    // FInally an end of run.
+    
+    ChangeState rds;
+    ssize_t ssize = rdItem(&rds);
+    EQ(ssize_t(sizeof(ChangeState)), ssize);
+    
+    // The source id got changed to 10:
+    
+    EQ(0, memcmp(&end.s_header, &rds.s_header, sizeof(RingItemHeader)));
+    EQ(end.s_bodyHeader.s_size, rds.s_bodyHeader.s_size);
+    EQ(end.s_bodyHeader.s_timestamp, rds.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), rds.s_bodyHeader.s_sourceId);
+    EQ(end.s_bodyHeader.s_barrier, rds.s_bodyHeader.s_barrier);
+    
+    EQ(0, memcmp(&end.s_body, &rds.s_body, sizeof(StateChangeItemBody)));
+    
 }

@@ -474,6 +474,7 @@ main(int argc, char**  argv)
           
           if (!p) {
             flushEvent();
+            pAccumulator->flushEvents();
             std::cerr << "glom: EOF on input\n";
                 if(stateChangeNesting) {
                     emitAbnormalEnd();
@@ -484,6 +485,7 @@ main(int argc, char**  argv)
           
           if (p->s_header.s_barrier) {
             flushEvent();
+            pAccumulator->flushEvents();
             outputBarrier(p);
             
             
