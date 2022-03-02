@@ -188,6 +188,9 @@ CRingFragmentSource::processSegment(CRingBufferChunkAccess& a, size_t chunkSize)
         }
         chunk = a.nextChunk();
         chunkBytesGotten = chunk.size();
+        if(chunkBytesGotten  == 0) {
+            return false;                          // Odd impossible(?) case.
+        }
     }
     return sendChunk(chunk);
 }
