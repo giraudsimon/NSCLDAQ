@@ -52,6 +52,7 @@ class integrationtest : public CppUnit::TestFixture {
     CPPUNIT_TEST(event_1);
     CPPUNIT_TEST(event_2);
     CPPUNIT_TEST(event_3);
+    CPPUNIT_TEST(event_4);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -62,6 +63,7 @@ protected:
     void event_1();
     void event_2();
     void event_3();
+    void event_4();
 private:
     pid_t m_glomPid;
     int m_stdinpipe[2];         // glom reads 0, we write 1
@@ -872,5 +874,161 @@ void integrationtest::event_3()
     EQ(end.s_bodyHeader.s_barrier, rds.s_bodyHeader.s_barrier);
     
     EQ(0, memcmp(&end.s_body, &rds.s_body, sizeof(StateChangeItemBody)));
+    
+}
+// Two fragments out of the coincidence window result in two events.
+// we still need an end run to force the accumulator to flush.
+
+void integrationtest::event_4()
+{
+    Event frag1;
+    Event frag2;
+    ChangeState end;
+       
+    EVB::FragmentHeader fraghdr;
+    
+    // Fill this crap in.
+    
+    frag1.s_header.s_size = sizeof(Event);
+    frag1.s_header.s_type = PHYSICS_EVENT;
+    frag1.s_bodyHeader.s_timestamp = 0x1243512345;
+    frag1.s_bodyHeader.s_sourceId  = 1;
+    frag1.s_bodyHeader.s_barrier  = 0;
+    frag1.s_bodyHeader.s_size = sizeof(BodyHeader);
+    for (int i =0; i < 100; i++) {
+        frag1.s_payload[i] = i;
+    }
+    
+    // Just change the payload, sourceid and timestamp between frag1 and 2.
+    
+    memcpy(&frag2, &frag1, sizeof(Event));
+    frag2.s_bodyHeader.s_sourceId = 2;
+    frag2.s_bodyHeader.s_timestamp += 101;           // outside the build window.
+    for (int i =0; i < 100; i++) {
+        frag2.s_payload[i] += 100;
+    }
+    
+    // Set the fragment header and send the header and bodies of the two fragments:
+    
+    fraghdr.s_size      = frag1.s_header.s_size;
+    fraghdr.s_timestamp = frag1.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = frag1.s_bodyHeader.s_sourceId;
+    fraghdr.s_barrier   = frag1.s_bodyHeader.s_barrier;
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));     // Frag1 written.
+    writeGlom(&frag1, sizeof(frag1));
+    
+    // Now for the other fragment:
+    
+    fraghdr.s_timestamp = frag2.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = frag2.s_bodyHeader.s_sourceId;
+    writeGlom(&fraghdr, sizeof(fraghdr));     // Frag1 written.
+    writeGlom(&frag2, sizeof(frag2));
+    
+    
+    // Fill in the end of run, its fragment header and send it as well.
+    
+    end.s_header.s_type = END_RUN;
+    end.s_header.s_size = sizeof(ChangeState);
+    
+    end.s_bodyHeader.s_size = sizeof(BodyHeader);
+    end.s_bodyHeader.s_timestamp = fraghdr.s_timestamp + 100;
+    end.s_bodyHeader.s_sourceId  = 1;
+    end.s_bodyHeader.s_barrier   = 2;
+    
+    end.s_body.s_runNumber = 3;
+    end.s_body.s_timeOffset = 200;
+    end.s_body.s_Timestamp = time(nullptr);
+    end.s_body.s_offsetDivisor = 1;
+    end.s_body.s_originalSid = 1;
+    memset(end.s_body.s_title, 0, sizeof end.s_body.s_title);
+    strcpy(end.s_body.s_title, "Some title neeced to end the run");
+    
+    fraghdr.s_timestamp = end.s_bodyHeader.s_timestamp;
+    fraghdr.s_sourceId  = end.s_bodyHeader.s_sourceId;
+    fraghdr.s_size      = sizeof(end);
+    fraghdr.s_barrier   = end.s_bodyHeader.s_barrier;
+    
+    writeGlom(&fraghdr, sizeof(fraghdr));
+    writeGlom(&end, sizeof(end));    // forces out event.
+    
+    // We expect:
+    //   Data format.
+    //   Event with frag1 only.
+    //   Event with frag2 only.
+    //   End Run.
+    
+    // Skip data format:
+    
+    DataFormat fmt;
+    rdItem(&fmt);
+    
+    // Now an event with frag1:
+    
+    BuiltEvent e1;
+    ssize_t s1 = rdItem(&e1);
+    uint32_t expectedPayloadSize1 = frag1.s_header.s_size + sizeof(EVB::FragmentHeader) + sizeof(uint32_t);
+    ssize_t  expectedTotalSize1 = expectedPayloadSize1 + sizeof(RingItemHeader) + sizeof(BodyHeader);
+    EQ(expectedTotalSize1, s1);
+    
+    EQ(uint32_t(expectedTotalSize1), e1.s_header.s_size);
+    EQ(PHYSICS_EVENT, e1.s_header.s_type);
+    
+    EQ(uint32_t(sizeof(BodyHeader)), e1.s_bodyHeader.s_size);
+    EQ(frag1.s_bodyHeader.s_timestamp, e1.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), e1.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), e1.s_bodyHeader.s_barrier);
+    
+    EQ(expectedPayloadSize1, e1.s_builtBytes);
+    
+    EVB::pFragmentHeader pH1 = reinterpret_cast<EVB::pFragmentHeader>(e1.s_payload);
+    EQ(frag1.s_bodyHeader.s_timestamp, pH1->s_timestamp);
+    EQ(frag1.s_bodyHeader.s_sourceId, pH1->s_sourceId);
+    EQ(frag1.s_bodyHeader.s_barrier, pH1->s_barrier);
+    EQ(frag1.s_header.s_size, pH1->s_size);
+    
+    uint8_t* p = reinterpret_cast<uint8_t*>(pH1+1);   // The frag1 ring item copy:
+    EQ(0, memcmp(&frag1, p, frag1.s_header.s_size));
+
+    
+    // Second event:
+    
+    BuiltEvent e2;
+    ssize_t s2 = rdItem(&e2);
+    uint32_t expectedPayloadSize2 = frag2.s_header.s_size + sizeof(EVB::FragmentHeader) + sizeof(uint32_t);
+    ssize_t  expectedTotalSize2 = expectedPayloadSize2 + sizeof(RingItemHeader) + sizeof(BodyHeader);
+    EQ(expectedTotalSize2, s2);
+    
+    EQ(uint32_t(expectedTotalSize2), e2.s_header.s_size);
+    EQ(PHYSICS_EVENT, e2.s_header.s_type);
+    
+    EQ(uint32_t(sizeof(BodyHeader)), e2.s_bodyHeader.s_size);
+    EQ(frag2.s_bodyHeader.s_timestamp, e2.s_bodyHeader.s_timestamp);
+    EQ(uint32_t(10), e2.s_bodyHeader.s_sourceId);
+    EQ(uint32_t(0), e2.s_bodyHeader.s_barrier);
+    
+    EQ(expectedPayloadSize2, e2.s_builtBytes);
+    
+    EVB::pFragmentHeader pH2 = reinterpret_cast<EVB::pFragmentHeader>(e2.s_payload);
+    EQ(frag2.s_bodyHeader.s_timestamp, pH2->s_timestamp);
+    EQ(frag2.s_bodyHeader.s_sourceId,  pH2->s_sourceId);
+    EQ(frag2.s_header.s_size, pH2->s_size);
+    EQ(frag2.s_bodyHeader.s_barrier, pH2->s_barrier);
+    
+    p = reinterpret_cast<uint8_t*>(pH2+1);
+    EQ(0, memcmp(&frag2, p, frag2.s_header.s_size));    // Copy of frag2.
+    
+    // The end run:
+    
+    ChangeState s;
+    ssize_t s3 = rdItem(&s);
+    EQ(ssize_t(sizeof(s)), s3);
+    
+    // Should match end but the sourceid will be changed -> 10...we'll do this
+    // in a somewhat sneaky way:
+    
+    end.s_bodyHeader.s_sourceId = 10;
+    EQ(0, memcmp(&end, &s, end.s_header.s_size));
+    
     
 }
