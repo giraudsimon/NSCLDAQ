@@ -71,9 +71,18 @@ CRingBufferChunkAccess::CRingBufferChunkAccess(CRingBuffer* pRingBuffer) :
 /**
  * destructor
  *    free the wrapped chunk storage:
+ *    @note - the caller should soon after destroy the ring buffer.
  */
 CRingBufferChunkAccess::~CRingBufferChunkAccess()
 {
+    // If there's a chunk with sizes we skip it's data on the assumption
+    // that we're really done with this
+    
+    size_t s = m_chunk.size();
+    if (s > 0) {
+        m_pRingBuffer->skip(s);
+        m_chunk.setChunk(0, nullptr);  // Zero the chunk
+    }
     free(m_pWrappedItem);
 }
 
@@ -145,13 +154,16 @@ CRingBufferChunkAccess::nextChunk()
         m_chunk.setChunk(0, m_chunk.getStorage());  // Zero the chunk.
     }
 
-    // do we have any data:
+    // do we have at least one full ring item?  If not return a null chunk.
 
-    size_t availData = m_pRingBuffer->availableData();
+    size_t availData =   haveFullRingItem();
     if (!availData) {                             // nope return null chunk.
       m_chunk.setChunk(0, nullptr);
       return m_chunk;                  
     }
+    // If there's not at least one full ring item then make and return a null chunk
+    
+    
     
     // Distinguish between the cases described in the comment header:
     
@@ -256,6 +268,8 @@ CRingBufferChunkAccess::firstItemWraps()
  *    - The m_pWrapedItem buffer is sized to hold the item.
  *    - The item is peeked into the wrap buffer and
  *    - Chunk is set up with the wrap buffer as storage:
+ *   @note caller must have ensured there's at least one full ring item
+ *         available to us.
  */
 void
 CRingBufferChunkAccess::makeWrappedItemChunk()
@@ -433,11 +447,11 @@ ChunkIterator::operator++()
 {
     if(m_pData) {                         // Don't increment end.
         pRingItemHeader pH = (operator->());
-        m_nOffset += itemSize(reinterpret_cast<pRingItem>(pH));
+        m_nOffset += pH->s_size;
         if(m_nOffset < m_nTotalBytes) {    
         
             uint8_t*        p  = static_cast<uint8_t*>(m_pData);
-            p                 += itemSize(reinterpret_cast<pRingItem>(pH));
+            p                 += pH->s_size;
             m_pData = p;
         } else {                      // End.
             m_pData = nullptr;
