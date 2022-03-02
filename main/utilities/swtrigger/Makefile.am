@@ -1,3 +1,4 @@
+.NOTPARALLEL:
 
 MPI_TSRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
 	CMPIFanoutClientTransport_mpi.cpp CRingItemMPIDataSource_mpi.cpp
