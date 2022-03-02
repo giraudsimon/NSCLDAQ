@@ -54,7 +54,7 @@ class rbchunkTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(nextchunk_3);
   CPPUNIT_TEST(nextchunk_4);
   CPPUNIT_TEST(nextchunk_5);
-    
+  CPPUNIT_TEST(nextchunk_6);  
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -114,6 +114,7 @@ protected:
   void nextchunk_3();
   void nextchunk_4();
   void nextchunk_5();
+  void nextchunk_6();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rbchunkTest);
@@ -541,4 +542,27 @@ void rbchunkTest::nextchunk_5()
   EQ(uint32_t(0xa5a5a5a5), pChunk[4]);
   EQ(uint32_t(0x5a5a5a5a), pChunk[5]);
   
+}
+// Attempt to get a chunk when there's only a partial ring item.
+// should give null chunk:
+
+void rbchunkTest::nextchunk_6()
+{
+  CRingBufferChunkAccess a(m_consumer);
+  
+  RingItemHeader h;
+  h.s_size= sizeof(RingItemHeader) + 100;
+  h.s_type = PHYSICS_EVENT;
+  
+  // For this to possibly fail we need t make the item so it would wrap.
+  
+  size_t nBytes = m_producer->availablePutSpace();
+  m_producer->skip(nBytes - sizeof(uint16_t));
+  m_consumer->skip(nBytes - sizeof(uint16_t));
+  // Put the item:
+  
+  m_producer->put(&h, sizeof(h));    // This is an incomplete item.
+  
+  auto c = a.nextChunk();
+  EQ(size_t(0), c.size());
 }
