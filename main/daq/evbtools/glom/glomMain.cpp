@@ -32,7 +32,7 @@
 #include <CBufferedOutput.h>
 #include <time.h>
 #include "CBufferedFragmentReader.h"
-#include "CEventAccumulator.h"
+#include "CEventAccumulatorSimple.h"
 
 // File scoped  variables:
 
@@ -48,7 +48,7 @@ static uint64_t outputEvents(0);
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
 
-static CEventAccumulator* pAccumulator;
+static CEventAccumulatorSimple* pAccumulator;
 
 // We don't need threadsafe event fragment pools so:
 
@@ -63,16 +63,16 @@ static const unsigned BUFFER_SIZE=1024*1024;
  *    @param timestamp policy enum value from gengetopt.
  *    @return CEventAccumulator::TimestampPolicy - corresponding policy value.
  */
-CEventAccumulator::TimestampPolicy
+CEventAccumulatorSimple::TimestampPolicy
 policyFromEnum(enum_timestamp_policy policy)
 {
     switch (policy) {
     case timestamp_policy_arg_earliest:
-        return CEventAccumulator::first;
+        return CEventAccumulatorSimple::first;
     case timestamp_policy_arg_latest:
-        return CEventAccumulator::last;
+        return CEventAccumulatorSimple::last;
     case timestamp_policy_arg_average:
-        return CEventAccumulator::average;
+        return CEventAccumulatorSimple::average;
     }
     throw std::invalid_argument("Invalid timestamp enumerator value.");
 }
@@ -231,7 +231,7 @@ outputEventCount(pRingItemHeader pItem)
 {
     pAccumulator->flushEvents();      // Write any complete events to output.
     
-    // Format the physics event count item.
+    // Forma the physics event count item.
     
     CRingScalerItem* pScaler = dynamic_cast<CRingScalerItem*>(
         CRingItemFactory::createRingItem(pItem)  
@@ -250,29 +250,6 @@ outputEventCount(pRingItemHeader pItem)
         counters.getItemPointer(), counters.getItemPointer()->s_header.s_size
     );
     outputter->flush();
-}
-/**
- * unBarrier
- *    If a ring item has a body header ensure it's not a barrier.
- *
- * @param pHeader - pointer to the ring item header to modify.
- */
-void
-unBarrier(pRingItemHeader pHeader)
-{
-  pRingItem pItem = reinterpret_cast<pRingItem>(pHeader);
-  if (hasBodyHeader(pItem)) {
-    pBodyHeader pBh = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
-    
-    // The conditional below is intended to handle cases where there might be
-    // some tiny body header. Vulnerable to large custom body headers that
-    // lead with a non-standard body header -- that is don't do that.
-    
-    if (pBh->s_size >= sizeof(BodyHeader)) {
-      pBh->s_barrier = 0;
-    }
-  }
-  
 }
 
 /**
@@ -297,43 +274,23 @@ outputBarrier(EVB::pFlatFragment p)
     pRingItemHeader pH = 
       reinterpret_cast<pRingItemHeader>(p->s_body); 
   
-  // There's some type dependent processing needed:   
+    pAccumulator->addOOBFragment(p, sourceId);
+
+    // This is correct if there is or isn't a body header in the payload
+    // ring item.
+    
     
     if (pH->s_type == BEGIN_RUN) {
-      
-      // If there is a body header but statChangeNesting is > 0, we're going
-      // to re-write it to turn off the barrier so that next stage event building
-      // barrier syncrhonization won't go nuts.
-      // daqdev/NSCLDAQ#1016:
-      
-      
       outputEvents = 0;
-      if (stateChangeNesting) {
-        unBarrier(pH);
-      }
       stateChangeNesting++;
-      pAccumulator->addOOBFragment(p, sourceId);
-    } else  if (pH->s_type == END_RUN) {
-      
-      // We're going to turn off the barrier field for all but the
-      // last end run record.  Note that if the barrier is incomplete
-      // here subsequent event build levels will also have an incomplete
-      // end run barrier... oh well.
-      
-      stateChangeNesting--;
-      if (stateChangeNesting) {
-        unBarrier(pH);
-      }
-      pAccumulator->addOOBFragment(p, sourceId);
-    } else if (pH->s_type == PERIODIC_SCALERS) {
-      pAccumulator->addOOBFragment(p, sourceId);
-      outputEventCount(pH);
-    } else if (pH->s_type == ABNORMAL_ENDRUN) {
-      stateChangeNesting = 0;
-      pAccumulator->addOOBFragment(p, sourceId);
-    } else {
-      pAccumulator->addOOBFragment(p, sourceId);
     }
+    if (pH->s_type == END_RUN) {
+      stateChangeNesting--;
+    }
+    if (pH->s_type == PERIODIC_SCALERS) {
+        outputEventCount(pH);
+    }
+    if (pH->s_type == ABNORMAL_ENDRUN) stateChangeNesting = 0;
     
 
 }
@@ -382,7 +339,7 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
   // See if we need to flush:
 
   uint64_t timestamp = pFrag->s_header.s_timestamp;
- 
+ // std::cerr << "fragment: " << timestamp << std::endl;
 
   // This bit of kludgery is because we've observed that the
   // s800 emits data 'out of order' from its filter. Specifically,
@@ -434,11 +391,11 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
 
 static void outputEventFormat()
 {
-    
+    // std::cerr << "Outputting event format element\n";
     DataFormat format;
     format.s_header.s_size = sizeof(DataFormat);
     format.s_header.s_type = RING_FORMAT;
-    format.s_empty        = sizeof(uint32_t);
+    format.s_mbz         = 0;
     format.s_majorVersion = FORMAT_MAJOR;
     format.s_minorVersion = FORMAT_MINOR;
     
@@ -475,7 +432,7 @@ main(int argc, char**  argv)
   outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
   outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
   
-    pAccumulator = new CEventAccumulator(
+    pAccumulator = new CEventAccumulatorSimple(
         STDOUT_FILENO, 2, BUFFER_SIZE, maxFragments,
         policyFromEnum(timestampPolicy)
     );
@@ -483,7 +440,12 @@ main(int argc, char**  argv)
   outputEventFormat();
   
 
-  
+  std::cerr << (nobuild ? " glom: not building " : "glom: building events: ");
+  if (!nobuild) {
+    std::cerr << dtInt << std::endl;
+  } else {
+    std::cerr << std::endl;
+  }
 
   if (!nobuild && (dtInt < 0)) {
     std::cerr << "Coincidence window must be >= 0 was "
@@ -512,7 +474,8 @@ main(int argc, char**  argv)
           
           if (!p) {
             flushEvent();
-            
+            pAccumulator->flushEvents();
+            std::cerr << "glom: EOF on input\n";
                 if(stateChangeNesting) {
                     emitAbnormalEnd();
                 }
@@ -522,6 +485,7 @@ main(int argc, char**  argv)
           
           if (p->s_header.s_barrier) {
             flushEvent();
+            pAccumulator->flushEvents();
             outputBarrier(p);
             
             
@@ -531,7 +495,6 @@ main(int argc, char**  argv)
     
             
             if(firstBarrier && (p->s_header.s_barrier == 1)) {
-              std::cerr << "Ouptputting glom parameters\n";
                 outputGlomParameters(dtInt, !nobuild);
                 firstBarrier = false;
             }

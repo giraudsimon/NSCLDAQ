@@ -5,7 +5,7 @@ purpose "Build events given a stream of ordered fragments"
 
 option "dt" t "Coincidence time window in ticks" int required
 option "nobuild" n "If present, don't build" flag off
-option "timestamp-policy" p "How to derive timestamp of built events" 
+option "timestamp-policy" p "How to derive timstamp of built events" 
     values="earliest","latest","average" enum optional default="earliest"
 option "sourceid"   s  "Source Id of built events" int optional default="0"
 option "maxfragments" m "Maximum number of fragments in an event" int optional default="1000"

@@ -145,7 +145,7 @@ CEventAccumulator::addFragment(EVB::pFlatFragment pFrag, int outputSid)
  *    - Don't affect any event being assembled.
  *    - Bodies are output.  If the fragment has a body header,
  *      it's sid is changed to the outputSid
- *    
+ *
  * @param pFrag - pointer to the out of band fragment.
  * @param outputSid - source id to use for the output fragment.
  */
@@ -160,10 +160,8 @@ CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
     pRingItem pItem = reinterpret_cast<pRingItem>(pFrag->s_body);
     
     // If there's no body header just output as is:
-    // Note this is v11 and v12 clean
     
-
-    if (!hasBodyHeader(pItem)) {
+    if (pItem->s_body.u_noBodyHeader.s_mbz == 0) {
         io::writeData(m_nFd, pItem, pItem->s_header.s_size);
     } else {
         // Otherwise we need to modify the sid. We assume this is an
@@ -171,9 +169,8 @@ CEventAccumulator::addOOBFragment(EVB::pFlatFragment pFrag, int outputSid)
         
         uint8_t itemCopy[pItem->s_header.s_size];
         memcpy(itemCopy, pItem, pItem->s_header.s_size);
-        pItem = reinterpret_cast<pRingItem>(itemCopy);  // Make a  copy...
-        pBodyHeader pBh = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
-        pBh->s_sourceId = outputSid;
+        pItem = reinterpret_cast<pRingItem>(itemCopy);  // Maka  copy...
+        pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId = outputSid;
         io::writeData(m_nFd, pItem, pItem->s_header.s_size);
     }
     
