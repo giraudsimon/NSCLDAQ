@@ -267,6 +267,8 @@ CRingFragmentSource::setFragment(
  *
  * @param item      - References the ring item.
  * @return uint64_t - the timestamp
+ * @note The framework applies the timestamp offset to the stamp returned by the
+ *        user code.
  */
 uint64_t
 CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
@@ -299,6 +301,7 @@ CRingFragmentSource::barrierType(RingItem& item)
     case END_RUN:
         result = 2;
         break;
+    // Don't need default case because of initialization.
     }
     
     return result;
@@ -322,9 +325,11 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
         RingItemHeader& header(*p);
         RingItem&       item(reinterpret_cast<RingItem&>(header));
         
-        if (item.s_body.u_noBodyHeader.s_mbz == 0) {
+        if ((item.s_body.u_noBodyHeader.s_mbz == 0) ||
+            (item.s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t))) {
             setFragment(
-                n, getTimestampFromUserCode(item) , m_nDefaultSid,
+                n, getTimestampFromUserCode(item),
+                m_nDefaultSid,
                 item.s_header.s_size, barrierType(item), &item
                 
             );
