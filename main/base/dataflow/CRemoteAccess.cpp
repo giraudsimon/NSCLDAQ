@@ -316,7 +316,7 @@ CRingAccess::startFeeder(string proxyName, int socket)
 
 
   close(STDOUT_FILENO);
-  close(STDERR_FILENO);
+  //  close(STDERR_FILENO);
 
   // Detach from the current terminal
 

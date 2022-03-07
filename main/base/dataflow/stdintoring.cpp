@@ -37,10 +37,12 @@ using namespace std;
  *******************************************************************/
 
 int
-mainLoop(string ring, int timeout, int mindata)
+mainLoop(string ring, int timeout, unsigned  mindata)
 {
   // If stdin is a socket set keepalive so we're given a SIGPIPE if the other
   // end drops off (See Bug #6248).
+
+
   
   struct stat fdInfo;
   if (fstat(STDIN_FILENO, &fdInfo)) {
@@ -167,8 +169,9 @@ mainLoop(string ring, int timeout, int mindata)
 
 	  uint32_t firstItemSize(0); // so default it to zero.
 	  if (totalRead >= sizeof(struct header)) { // reequire a header to set it.
-	      uint32_t firstItemSize = computeSize(pHeader);
-	    }
+	      firstItemSize = computeSize(pHeader);
+	  }
+
           if(firstItemSize > mindata) {
             if (firstItemSize > use.s_bufferSpace) {
               cerr << "Exiting because I just got an event that won't fit in the ring..enlarge the ring\n";
@@ -194,10 +197,17 @@ mainLoop(string ring, int timeout, int mindata)
             }
           } else {
             leftoverData = putData(source, pBuffer, totalRead);
+	    auto originalReadSize = readSize;
+	    auto originalOffset   = readOffset;
             readOffset = leftoverData;
             readSize   = mindata - leftoverData;
             totalRead = leftoverData;
             if (readSize == 0) {
+	      cerr << "Want to exit with readSize ==0" << originalReadSize
+		   << ":" << mindata << ":" << originalOffset << " " << readOffset 
+		   << " : "  << nread << std::endl;
+	
+	      cerr << "type: " << pHeader->s_type << " size " << pHeader->s_size << std::endl; 
               exit(EXIT_FAILURE);
             }
           }
