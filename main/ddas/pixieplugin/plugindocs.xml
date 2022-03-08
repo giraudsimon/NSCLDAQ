@@ -443,6 +443,27 @@ Successful reply:
                        </informalexample>
                     </listitem>
                 </varlistentry>
+                <varlistentry>
+                   <term><literal>AdjustOffsets</literal> <replaceable>module-number</replaceable></term>
+                   <listitem>
+                       <para>
+                        This request performs an ADJUST_OFFSET run
+                        on the specified digitizer module (by number
+                        not slot).
+                       </para>
+                    </listitem>
+                   <informalexample>
+                     <programlisting>
+Request:
+
+AdjustOffsets 0
+
+Successful reply:
+
+0
+                     </programlisting>
+                   </informalexample>
+                </varlistentry>
             </variablelist>
         </refsect2>
     </refsect1>
