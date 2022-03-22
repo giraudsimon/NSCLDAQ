@@ -157,7 +157,7 @@ snit::widgetadaptor ScaleControl {
                 grid $win.minlbl -row 0 -column 3
                 grid $min -row 0 -column 4
             } else {
-                grid forget $min $win.minlbl
+                grid forget $min
             }
         }
         set options($optname) $value
