@@ -338,12 +338,13 @@ proc nextStep {button table} {
         $table tag delete current
         $button configure -text "Execute Plan" \
             -command [list executePlan $button $table]
-	enableChanges $table
-	tk_messageBox -icon info                        \
-	    -message {Run plan has ended}               \
-	    -title   {plan status}                      \
-	    -type    ok
-	set ::seqController::plannedRun 0;#  runs started are not planned.
+        enableChanges $table
+        tk_messageBox -icon info                        \
+            -message {Run plan has ended}               \
+            -title   {plan status}                      \
+            -type    ok
+        
+        set ::seqController::plannedRun 0;#  runs started are not planned.
         return
     }
     # Extract the run settings... and also exit if the first
@@ -354,12 +355,12 @@ proc nextStep {button table} {
         $table tag delete current
         $button configure -text "Execute Plan" \
             -command [list executePlan $button $table]
-	enableChanges $table
-	tk_messageBox -icon info                        \
-	    -message {Run plan has ended}               \
-	    -title   {plan status}                      \
-	    -type    ok
-	set ::seqController::plannedRun 0;# runs started are not planned.
+        enableChanges $table
+        tk_messageBox -icon info                        \
+            -message {Run plan has ended}               \
+            -title   {plan status}                      \
+            -type    ok
+        set ::seqController::plannedRun 0;# runs started are not planned.
         return
     }
     # Ok remove the highlight from the prior row, and highlight
@@ -376,26 +377,26 @@ proc nextStep {button table} {
         set action  [lindex $columnInfo($i) 1]
         if {$action ne ""} {
             if {[$action $name $setting]} {
-		# 
-		# Action returning nonzero is an error
-		#
-		planAborted
-		$table tag delete current
-
-		enableChanges $table
-		$button configure -text "Execute Plan" \
-		    -command [list executePlan $button $table]		
-		return
-	    }
+                # 
+                # Action returning nonzero is an error
+                #
+                planAborted
+                $table tag delete current
+        
+                enableChanges $table
+                $button configure -text "Execute Plan" \
+                    -command [list executePlan $button $table]		
+                return
+            }
         }
     }
     # Run might have gotten aborted:
 
     if {$runStep < $rows} {
-	startPlannedRun  $button $table
+        startPlannedRun  $button $table
     } else {
         $table tag delete current
-	enableChanges $table
+        enableChanges $table
         $button configure -text "Execute Plan" \
             -command [list executePlan $button $table]
 
@@ -430,11 +431,11 @@ proc executePlan {button table} {
 
 # Stop execution of a run plan:
 #
-proc abortPlan {button table} {
+proc abortPlan {button table {stop 1}} {
     global runStep
     set runStep 10000000;   # so that when/if nextStep is called its over.
-    if {$ReadoutControl::State ne "NotRunning"} {
-	stopPlannedRun
+    if {$stop && ([ReadoutControl::getState] eq "Active")} {
+        stopPlannedRun
     }
     planAborted
 
@@ -471,7 +472,7 @@ proc setupGui {{top .}} {
 
     menu $mtop.menu -tearoff 0
     set fileMenu [menu $mtop.menu.file -tearoff 0]
-    set helpMenu [menu $mtop.menu.help -tearoff 0]
+   # set helpMenu [menu $mtop.menu.help -tearoff 0]
     $mtop.menu add cascade -label File -menu $mtop.menu.file
     $mtop.menu add cascade -label Help -menu $mtop.menu.help
 
@@ -485,8 +486,8 @@ proc setupGui {{top .}} {
     $fileMenu add command -label "Clear..." \
         -command [list clearPlan $mtop.tblframe.tbl]
 
-    $helpMenu add command -label "About..."
-    $helpMenu add command -label "Topics..."
+   # $helpMenu add command -label "About..."
+   # $helpMenu add command -label "Topics..."
 
     # The top part of the widget is a table in a frame with a scrollbar.
 
