@@ -37,6 +37,12 @@ package require snit
 #  for details.
     
 
+# Note as KDC points out in helpme ticket 	BPL-225-12969
+# If this is run inside of SpecTcl, apply has been overridden by the SpecTcl
+# apply command so we only do this fix if SpecTclHome is not defined
+# ..and put up with the tag failure if it is.
+
+if {[info globals SpecTclHome] eq ""} {
 
 apply {name {
     set newmap {}
@@ -57,7 +63,7 @@ apply {name {
     }
     ttk::style map $name {*}$newmap
 }} Treeview
-
+}
 
 ##
 # @class page
