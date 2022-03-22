@@ -10,3 +10,4 @@
 
 package ifneeded controller 1.0 [list source [file join $dir controller.tcl]]
 package ifneeded runSequencer 1.0 [list source [file join $dir sequencerGui.tcl]]
+package ifneeded ReadoutControl 2.0 [list source [file join $dir ReadoutControl.tcl]]

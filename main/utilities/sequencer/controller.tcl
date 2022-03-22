@@ -80,8 +80,8 @@ proc OnEnd run {
     # Only do any of this, of course if this is a planned run:
     #
     if {$::seqController::plannedRun} {
-	incr runFlag
-	after 500 {nextStep $seqController::button $seqController::table}
+      incr runFlag
+      after 500 {nextStep $seqController::button $seqController::table}
     }
 }
 
@@ -102,21 +102,7 @@ proc startingPlan {} {
 #
 proc planAborted {} {
     global runNumber
-    if {[ReadoutControl::isTapeOn]} {
-        set lastRun [ReadoutControl::GetRun]
-        set answer [tk_messageBox \
-                        -title "Trash data?" \
-                        -type yesno          \
-                        -icon question       \
-                        -message "Do you want to delete the data you've taken (This action cannot be undone)?"]
-        if {$answer} {
-            for {set run $runNumber} {$run < $lastRun} {incr run} {
-                deleteData $run
-            }
-            ::ReadoutGUIPanel::setRun $runNumber;    # Reset the run number to first run of aborted plan.
-        }
-
-    }
+    #  with 11.x we can't as easily find our recorded data after the fact...
 }
 
 
@@ -128,10 +114,13 @@ proc planAborted {} {
 #
 proc startPlannedRun {button table} {
     global runFlag
-    if {$ReadoutControl::State ne "NotRunning"} {
+    set seqController::table $table
+    set seqController::button $button
+      
+    if {[ReadoutControl::getState] ne "NotRunning"} {
         tk_messageBox -icon error -title "Run active" \
-            -message {Run must first be stopped!!}
-        abortPlan $button $table
+            -message {The Readout GUI is not in a state that allows a run to be started. Correct that.}
+        abortPlan $button $table 0
     } else {
 
         # Force the timed run on.
@@ -143,10 +132,8 @@ proc startPlannedRun {button table} {
         # nextStep.. note that vwait will wait in the
         # event loop keeping the GUI alive.
 	
-	set seqController::table $table
-	set seqController::button $button
-
-	ReadoutGui::Begin
+         
+         ReadoutControl::Begin
 
     }
 
@@ -156,6 +143,6 @@ proc startPlannedRun {button table} {
 #  Just end the run.
 #
 proc stopPlannedRun {} {
-    ReadoutGui::End
+    ReadoutControl::End
 
 }

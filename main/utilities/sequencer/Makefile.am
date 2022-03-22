@@ -1,4 +1,4 @@
-TCLPACKAGES=sequencerGui.tcl controller.tcl pkgIndex.tcl
+TCLPACKAGES=sequencerGui.tcl controller.tcl ReadoutControl.tcl  pkgIndex.tcl 
 EXAMPLEFILES=ReadoutCallouts.tcl sequencerActions.tcl 
 
 EXTRA_DIST=$(TCLPACKAGES) $(EXAMPLEFILES) sequencer.xml
