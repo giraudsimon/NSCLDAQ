@@ -336,7 +336,7 @@ CV1729::Initialize(CVMUSB& controller)
 
   // Do the setup:
 
-  uint32_t rbuffer;
+  uint16_t rbuffer;
   size_t   readSize;
 
   int status = controller.executeList(setupList,

@@ -247,7 +247,7 @@ CV977::Initialize(CVMUSB& controller)
   // Now execute the initialization list.. don't have any read list but
   // we'll make a dummy:
 
-  uint32_t inBuffer;
+  uint16_t inBuffer;
   size_t   bytesRead;
   
   int status = controller.executeList(list, &inBuffer, sizeof(inBuffer),

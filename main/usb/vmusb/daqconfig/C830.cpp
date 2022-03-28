@@ -261,9 +261,9 @@ C830::Initialize(CVMUSB& controller)
   
 
   size_t dummyLong;
-
+  uint16_t dummy;
   int status = controller.executeList(initList,
-			 &dummyLong, sizeof(size_t), &dummyLong);
+			 &dummy, sizeof(dummy), &dummyLong);
 
   if (status < 0) {
     throw std::string("C830 initialization list failed");

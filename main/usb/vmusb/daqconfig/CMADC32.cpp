@@ -537,10 +537,9 @@ CMADC32::Initialize(CVMUSB& controller)
 
   //  Execute the list to initialize the module:
 
-
-  char readBuffer[100];		// really a dummy as these are all write...
+  uint16_t readBuffer;		// really a dummy as these are all write...
   size_t bytesRead;
-  int status = controller.executeList(list, readBuffer, sizeof(readBuffer), &bytesRead);
+  int status = controller.executeList(list, &readBuffer, sizeof(readBuffer), &bytesRead);
   if (status  < 0) {
      throw string("List excecution to initialize an MADC32 failed");
    }
