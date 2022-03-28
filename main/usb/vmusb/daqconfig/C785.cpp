@@ -552,9 +552,9 @@ void
 C785::getThresholds(vector<uint16_t>& thresholds)
 {
   
-  std::vector<int> ts; m_pConfiguration->getIntegerList("-thresholds");
-		assert(ts.size() == 32);
-		thresholds.clear();
+  std::vector<int> ts = m_pConfiguration->getIntegerList("-thresholds");
+  assert(ts.size() == 32);
+  thresholds.clear();
 		
   for(int i =0; i < 32; i++) {
     thresholds.push_back(ts[i]);
