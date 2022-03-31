@@ -66,6 +66,7 @@
 
 
 
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
@@ -467,6 +468,10 @@ CTheApplication::initializeLogging()
           << m_logLevel
           << "Must be 0, 1, or 2\n";
         exit(EXIT_FAILURE);
+    }
+    if (m_logLevel > 2) {
+      XXUSBUtil::logTransactions = true;
+      
     }
   }
  

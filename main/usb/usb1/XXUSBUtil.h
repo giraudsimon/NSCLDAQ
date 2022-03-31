@@ -48,6 +48,9 @@ namespace XXUSBUtil {
     typedef std::pair<std::string, USBDevice*> XXUSBDevice;
     typedef std::vector<XXUSBDevice> XXUSBDevices;
     
+    extern bool logTransactions;
+    
+    
     XXUSBDevices enumerateVMUSB(USB& context);
     XXUSBDevices enumerateCCUSB(USB& context);
     XXUSBDevices enumerateVendorAndProduct(

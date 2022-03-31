@@ -23,6 +23,8 @@
 #include "USBDeviceInfo.h"
 #include "USBDevice.h"
 #include <CMutex.h>
+#include <NSCLDAQLog.h>
+#include <sstream>
 /**
  * The following mutex is used for the critical section we use
  * to make the code threadsafe.
@@ -55,9 +57,101 @@ static const uint16_t TAVcsID12SHIFT = 4;
  */
 #define CRITICAL_BLOCK CriticalSection __critical_section__(XXUSBMutex)
 
+namespace XXUSBUtil {
+    bool logTransactions = false;
+    std::string logFile;
+}
 ////////////////////////////////////////////////////////////////
 // Private utilities:
+/**
+ * formatBlock
+ *    Format a block of bytes as consecutive uint16_t's
+ * @param stream - an ostream into which the formatting is done.
+ * @param block - pointer to the block.
+ * @param nBytes - number of _bytes_.
+ * @note nBytes will be assumed to be a multiple of uint16_t's.
+ * @note the caller must set up the desired radix.
+ * 
+ */
+static void
+formatBlock(std::ostream& stream, const void* block, size_t nBytes)
+{
+    const uint16_t* pBlock = reinterpret_cast<const uint16_t*>(block);
+    size_t n = nBytes / sizeof(uint16_t);
+    for (int i =0; i < n; n += 16) {
+        for (int j = 0; (j < 8) && ((i+j) < n); j++ ) {
+            stream << pBlock++ << " ";
+        }
+        stream << std::endl;
+    }
+}
 
+/**
+ * logBulkWrite
+ *    Does a trace log of the initiation of a bulk write
+ *  @param endpoint - the USB endpoint to which the write is directed.
+ *  @param block    - the block to write.
+ *  @param nBytes   - Bytes in the block.
+ */
+static void
+logBulkWrite(int endpoint, void* block, size_t nBytes)
+{
+    std::stringstream strMsg;
+    strMsg << "About to initiate a bulk write of " << nBytes << " bytes: \n";
+    strMsg << std::hex;
+    formatBlock(strMsg, block, nBytes);
+    strMsg << std::dec;
+    strMsg << std::endl;
+    
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+}
+/**
+ * logBulkWriteReswult
+ *    @param status - status of the operation.
+ *    @param xferred - bytes transferred.
+ */
+static void
+logBulkWriteResult(int status, size_t xferred)
+{
+    std::stringstream strMsg;
+    
+    strMsg << "Bulk read completed status: " << status
+        << " bytes transferred: " << xferred << std::endl;
+    
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+}
+
+/**
+ * logBulkRead
+ *    Log the completion of a bulk read.
+ *  @param int endpoint - USB endpoint being read from.
+ *  @param reqSize - requested size.
+ *  @param pBlock  - Block read.
+ *  @param nread   - Bytes actually read.
+ *  @param msTimeout - Read timeout used in ms.
+ */
+static void
+logBulkRead(
+    int endpoint, size_t reqSize, const void* pBlock, size_t nread,
+    unsigned msTimeout
+)
+{
+    std::stringstream strMsg;
+    strMsg << "Completed bukl read of USB endpoint "
+        << endpoint << " Requested: " << reqSize << " bytes "
+        << " received " << nread << " bytes (timeout ="
+        << msTimeout
+        << "ms)" << std::endl;
+    strMsg << "Data: \n";
+    strMsg << std::hex;
+    formatBlock(strMsg, pBlock, nread);
+    strMsg << std::dec << std::endl;
+    
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+}
 /**
  * copy32To16
  *    Copy a vector of 32 bit words to the back of a vector
@@ -257,11 +351,17 @@ XXUSBUtil::transaction(
 {
     CRITICAL_BLOCK;
     int xferred;
+    if (logTransactions) {
+        logBulkWrite(writeEndpoint(), writePacket, writeSize);
+    }
     int status = pDevice->bulkTransfer(
         writeEndpoint(),
         static_cast<unsigned char*>(writePacket), int(writeSize),
         xferred, 0                            // NO timeout.
     );
+    if (logTransactions) {
+        logBulkWriteResult(status, xferred);
+    }
     if (status) {
         //  Only error possible is a timeout:
         
@@ -277,12 +377,21 @@ XXUSBUtil::transaction(
     unsigned char* pCursor = static_cast<unsigned char*>(readPacket);
     int            nRead(0);
     int            nRemaining = readMax;
+    if (logTransactions) {
+        daqlog::trace("Starting USB block read: ");
+    }
     while(nRemaining) {
         int nTransferred(0);        // In case it's not filled in.
+        
         status = pDevice->bulkTransfer(
             readEndpoint(),
             pCursor, nRemaining, nTransferred, msTimeout
         );
+        if(logTransactions) {
+            logBulkRead(
+                readEndpoint(), nRemaining, pCursor, nTransferred, msTimeout
+            );
+        }
         // Fold in what we got.
         
         pCursor    += nTransferred;
@@ -295,6 +404,9 @@ XXUSBUtil::transaction(
         if(!nTransferred && (status == LIBUSB_ERROR_TIMEOUT)) {
             break;
         }
+    }
+    if (logTransactions) {
+        daqlog::trace("USB Block read completed");
     }
     return nRead;
 }
