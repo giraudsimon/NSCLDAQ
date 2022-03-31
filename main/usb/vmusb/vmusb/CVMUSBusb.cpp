@@ -303,7 +303,7 @@ CVMUSBusb::executeList(CVMUSBReadoutList&     list,
   try {
     XXUSBUtil::executeList(
         m_pHandle, list.get(),
-        pReadoutBuffer, readBufferSize, *bytesRead
+        pReadoutBuffer, readBufferSize, *bytesRead, m_timeout
     );
     
   }
@@ -589,9 +589,14 @@ CVMUSBusb::openVMUsb()
         std::cerr << "** Warning - not able to stop data taking VM-USB may need to be power cycled\n";
     }
     
-    while(usbRead(buffer, sizeof(buffer), &bytesRead) == 0) {
+    while(usbRead(buffer, sizeof(buffer), &bytesRead, 100) == 0) {
         fprintf(stderr, "Flushing VMUSB Buffer\n");
     }
+
+    // set the timeout low for this:
+
+    auto savedTimeout = m_timeout;
+    m_timeout = 100;
     
     // Now set the irq mask so that all bits are set..that:
     // - is the only way to ensure the m_irqMask value matches the register.
@@ -601,6 +606,7 @@ CVMUSBusb::openVMUsb()
 
     // Read the state of the module
     initializeShadowRegisters();
+    m_timeout= savedTimeout;
 }
 
 

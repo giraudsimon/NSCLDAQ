@@ -269,12 +269,12 @@ int CTheApplication::operator()(int argc, char** argv)
   }
   catch (const char* msg) {
     cerr << "CTheApplication caught a char* exception " << msg << endl;
-    Tcl_Exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 
   }
   catch (exception& exc) {
     cerr << "CTheApplication caught an exception: " << exc.what() << endl;
-    Tcl_Exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 
   }
   catch (CException& error) {
