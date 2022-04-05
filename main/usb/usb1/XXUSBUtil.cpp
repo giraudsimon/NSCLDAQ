@@ -78,9 +78,9 @@ formatBlock(std::ostream& stream, const void* block, size_t nBytes)
 {
     const uint16_t* pBlock = reinterpret_cast<const uint16_t*>(block);
     size_t n = nBytes / sizeof(uint16_t);
-    for (int i =0; i < n; n += 16) {
+    for (int i =0; i < n; i += 8) {
         for (int j = 0; (j < 8) && ((i+j) < n); j++ ) {
-            stream << pBlock++ << " ";
+            stream << *pBlock++ << " ";
         }
         stream << std::endl;
     }
