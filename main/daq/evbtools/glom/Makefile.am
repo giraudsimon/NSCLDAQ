@@ -23,6 +23,8 @@ glom.h: @srcdir@/glom.ggo
 
 EXTRA_DIST=glom.ggo glom.xml
 
+clean-local:
+	-rm -f glom.c glom.h
 
 noinst_PROGRAMS=unittests
 
