@@ -50,9 +50,7 @@ private:
     bool m_firmwareLoadedRecently;
     CExperiment*  m_pExperiment;
     
-    // These variables are used for readout:
     
-    std::vector<DDASReadout::ModuleReader*> m_readers;
     
     // Statistics:
     

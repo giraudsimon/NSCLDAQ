@@ -170,12 +170,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
         
         // Create the module reader for this module.
         
-        m_readers.push_back(
-            new DDASReadout::ModuleReader(
-	      k, modEvtLengths[k],  ModuleRevBitMSPSWord[k], ModClockCal[k]
-            )
-        );
-        cout << " Reader created\n";
+       
     }
 
     mytrigger->Initialize(NumModules);
@@ -288,7 +283,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             m_nCumulativeBytes += nBytes;
             m_nBytesPerRun     += nBytes;
             
-            return (sizeof(double) + (readSize + 1) *sizeof(uint32_t))/sizeof(uint16_t);
+            return nBytes/sizeof(uint16_t);
         }
     }
     // If we got here nobody had enough data left since the last trigger:
