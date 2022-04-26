@@ -4122,7 +4122,7 @@ $DAQBIN/rdo_titleFromKv <replaceable>mgr_host mgr_user readout_program</replacea
     <refsynopsisdiv>
       <cmdsynopsis>
          <command>
-$DAQBIN/rdo_rest <replaceable>rdo_host rdo_user subcommand </replaceable>  <optional><replaceable>parameter...</replaceable></optional>     
+$DAQBIN/rdo_control <replaceable>rdo_host rdo_user subcommand </replaceable>  <optional><replaceable>parameter...</replaceable></optional>     
          </command>
       </cmdsynopsis>
     </refsynopsisdiv>

@@ -1211,9 +1211,9 @@ proc ::sequence::reachable {db name} {
 proc ::sequence::listReachableStates {db state} {
     $db eval {
         SELECT name FROM transition_name
-        WHERE id IN (
+        WHERE transition_name.id IN (
             SELECT to_id FROM legal_transition
-            INNER JOIN transition_name ON from_id = id
+            INNER JOIN transition_name ON from_id = transition_name.id
             WHERE name = $state
         )
     }
@@ -1228,9 +1228,9 @@ proc ::sequence::listReachableStates {db state} {
 proc ::sequence::listLegalFromStates {db state} {
     $db eval {
         SELECT name FROM transition_name
-        WHERE id IN (
+        WHERE transition_name.id IN (
             SELECT from_id FROM legal_transition
-            INNER JOIN transition_name ON to_id = id
+            INNER JOIN transition_name ON to_id = transition_name.id
             WHERE name = $state
         )
     }    
