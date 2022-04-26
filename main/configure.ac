@@ -551,6 +551,7 @@ if test "$enableusb" == "yes"
 then
 	AX_LIBUSB
 	PKG_CHECK_MODULES([libusb_1_0], [libusb-1.0])
+	PKG_CHECK_MODULES([libusb], [libusb])
 	AM_CONDITIONAL([BUILD_USB], [true])
 else
 	AM_CONDITIONAL([BUILD_USB], [false])
@@ -754,6 +755,7 @@ AC_CONFIG_FILES([Makefile
     sbs/caenfwloader/Makefile
     usb/Makefile
     usb/usb1/Makefile
+    usb/usb0.1/Makefile
     usb/loaders/Makefile
     usb/vmusb/Makefile
     usb/vmusb/vmusb/Makefile 
