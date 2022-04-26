@@ -25,6 +25,7 @@
 #include <CMutex.h>
 #include <NSCLDAQLog.h>
 #include <sstream>
+#include <errno.h>
 /**
  * The following mutex is used for the critical section we use
  * to make the code threadsafe.
@@ -401,7 +402,7 @@ XXUSBUtil::transaction(
         // If there was a timeout but nothing was transferred,
         // then figure we're done:
         
-        if(!nTransferred && (status == LIBUSB_ERROR_TIMEOUT)) {
+        if(!nTransferred && (status == -ETIMEDOUT)) {
             break;
         }
     }

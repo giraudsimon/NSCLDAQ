@@ -40,9 +40,10 @@ class USBDevice;
 class USBDeviceInfo
 {
 private:
-    usb_device  m_Device;
+    struct usb_device  m_Device;
 public:
-    USBDeviceInfo(usb_device* pDevice);
+    
+    USBDeviceInfo(struct usb_device* pDevice);
     USBDeviceInfo(const USBDeviceInfo& rhs);
     virtual ~USBDeviceInfo();
     USBDeviceInfo& operator=(const USBDeviceInfo& rhs);
@@ -50,7 +51,7 @@ public:
     // the class -note that really you shouild implement that
     // operation here rather than use this:
     
-    libusb_device* getHandle() { return &m_Device; }
+    struct usb_device* getHandle() { return &m_Device; }
     
     // Informationals
     
@@ -63,7 +64,8 @@ public:
     
     
     USBDevice* open();
-
+private:
+    USBDeviceInfo() {}         // Copy constructor needs this.
     
 };
 

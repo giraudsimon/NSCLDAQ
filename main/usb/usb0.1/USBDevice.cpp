@@ -32,9 +32,9 @@ static const unsigned MAX_SERIAL(256); // longest supported serial string.
  *   @param pHandle - device handle we'll be wrapping.
  *   @param pInfo   - device information of the device.
  */
-USBDevice::USBDevice(usb_dev_handle* pHandle, USBDeviceInfo* pInfo;) :
+USBDevice::USBDevice(usb_dev_handle* pHandle, USBDeviceInfo* pInfo) :
     m_pHandle(pHandle),
-    m_Info((new USBDeviceInfo(*pInfo)))
+    m_info((new USBDeviceInfo(*pInfo)))
 {}
 
 /**
@@ -93,20 +93,20 @@ USBDevice::getSerial()
 {
     // Figure out the index of the string descriptor:
     
-    int serialDescNum = m_info->descriptor.iSerialNumber;
+    int serialDescNum = m_info->getHandle()->descriptor.iSerialNumber;
     if (serialDescNum == 0) {
-      strcpy(reinterpret_cast<char*>(czserial), "CCUSB-OLD");
+      
       std::cerr << "This CC-USB does not have a good Serial # string\n";
       std::cerr << "Update its firmware to fix this\n";
       std::cerr << "We can work in a single CC-USB system\n";
-      return "";
+      return std::string("CCUSB-OLD");
     } else {
         // NOw get the serial string as a C string
         
         char snumBuffer[256];
-        memset(snumBuffer, 0, sizeof(snnumBuffer));
+        memset(snumBuffer, 0, sizeof(snumBuffer));
         int nBytes = usb_get_string_simple(
-            m_pHandle, index, snumBuffer, sizeof(snumBuffer)
+            m_pHandle, serialDescNum, snumBuffer, sizeof(snumBuffer)
         );
         if (nBytes < 0) {
             throw USBException(nBytes, "Unable to get_string_simple");
@@ -215,7 +215,8 @@ USBDevice::controlTransfer(
 )
 {
     int status = usb_control_msg(
-        m_pHandle, reqType, request, wValue, windex, pData, wLength,
+        m_pHandle, reqType, request, wValue, windex,
+        reinterpret_cast<char*>(pData), wLength,
         msTimeout
     );
     
@@ -266,19 +267,18 @@ USBDevice::bulkTransfer(
     if (endpoint & USB_ENDPOINT_DIR_MASK) {
         // Write
         status = usb_bulk_write(
-            m_pHandle, endpoint, pData, dLength, msTimeout
+            m_pHandle, endpoint,
+            reinterpret_cast<char*>(pData), dLength, msTimeout
         );
         transferred = status >=  0 ?  status : 0;
         status = status >= 0 ? 0 : status;
     } else {
         status = usb_bulk_read(
-            m_pHandle, endpoint, pData, dLength, msTimeout
+            m_pHandle, endpoint,
+            reinterpret_cast<char*>(pData), dLength, msTimeout
         );
     }
-    int status = libusb_bulk_transfer(
-        m_pHandle,
-        endpoint, pData, dLength, &transferred, msTimeout
-    );
+    
     transferred = status >=  0 ?  status : 0;
     status = status < 0 ? status : 0;
     if (status < 0) {
@@ -309,17 +309,19 @@ USBDevice::interrupt(
 )
 {
     int status;
-    if (endpoing & USB_ENDPOINT_DIR_MASK) {
+    if (endpoint & USB_ENDPOINT_DIR_MASK) {
         // write
         
         status = usb_interrupt_write(
-            m_pHandle, endpoint, pData, dLength, msTimeout
+            m_pHandle, endpoint,
+            reinterpret_cast<char*>(pData), dLength, msTimeout
         );
     } else {
         // read
         
         status = usb_interrupt_read(
-            m_pHandle, endpoint, pData, dLength, msTimeout
+            m_pHandle, endpoint,
+            reinterpret_cast<char*>(pData), dLength, msTimeout
         );
     }
     transferred = status >= 0 ? status : 0;

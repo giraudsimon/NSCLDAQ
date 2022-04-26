@@ -99,7 +99,7 @@ USBException::what() const noexcept
  *   Initialize access to the library and save the context.
  *   If that fails we toss an appropriate USBException.
  */
-USB::USB() :m_pContext(nullptr)
+USB::USB()
 {
     init();
 
@@ -159,9 +159,9 @@ USB::enumerate()
     
     usb_bus* pBus = usb_get_busses();   // Gets the first.
     while (pBus) {
-       usb_device* pDevice = pBus->devices;   // first device on the bus.
+       struct usb_device* pDevice = pBus->devices;   // first device on the bus.
        while (pDevice) {
-          result.push_back(new USBDeviceInro(pDevice));
+          result.push_back(new USBDeviceInfo(pDevice));
           pDevice = pDevice->next;
        }
        pBus = pBus->next;
@@ -169,4 +169,15 @@ USB::enumerate()
     
     return result;
     
+}
+/**
+ * init if necessary initialize the USB library.
+ */
+void
+USB::init()
+{
+   if(!m_initialized) {
+    usb_init();
+    m_initialized = true;
+   }
 }

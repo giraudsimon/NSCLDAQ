@@ -35,10 +35,10 @@
  *
  *   @param pDevice - libusb_device to wrap.
  */
-USBDeviceInfo::USBDeviceInfo(libusb_device* pDevice) :
+USBDeviceInfo::USBDeviceInfo(struct usb_device* pDevice) 
     
 {
-     memcpy(&m_Device, pDevice, sizeof(usb_device_descriptor));
+     memcpy(&m_Device, pDevice, sizeof(struct usb_device));
 }
 /**
  * Copy construction
@@ -46,10 +46,10 @@ USBDeviceInfo::USBDeviceInfo(libusb_device* pDevice) :
  *   have another wrapping object.
  * @param rhs - the object we're constructing from:
  */
-USBDeviceInfo::USBDeviceInfo(const USBDeviceInfo& rhs) :
-   USBDeviceInfo(&(rhs.m_Device) 
+USBDeviceInfo::USBDeviceInfo(const USBDeviceInfo& rhs) 
+   
 {
-
+   memcpy(&m_Device, &rhs.m_Device, sizeof(struct usb_device));
 }
 /**
  * assignment
@@ -64,7 +64,7 @@ USBDeviceInfo&
 USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
 {
     if (this != &rhs) {
-        memcpy(&m_Device, &(rhs.m_device), sizeof(usb_device_descriptor));
+        memcpy(&m_Device, &(rhs.m_Device), sizeof(struct usb_device));
     }
     return *this;
 }
@@ -86,9 +86,9 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
   *        throw a segfault.
   */
  uint8_t
- USBDeviceInfo::getBus()
+ USBDeviceInfo::getBus() const
  {
-   return libusb_get_bus_number(m_pDevice);
+   return m_Device.bus->location;       // Probably not right but...
  }
  /**
   * getPort
@@ -99,7 +99,7 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
   *        throw a segfault.
   */
  uint8_t
- USBDeviceInfo::getPort()
+ USBDeviceInfo::getPort() const
  {
   return m_Device.devnum;
  }
@@ -112,7 +112,7 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
   *  @throw USBException if there are errors getting this information.
   */
  uint16_t
- USBDeviceInfo::getVendor()
+ USBDeviceInfo::getVendor() const
  {
     return m_Device.descriptor.idVendor;
  }
@@ -122,9 +122,9 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
   *   @throw USBException if there are errors getting this information.
   */
  uint16_t
- USBDeviceInfo::getProduct()
+ USBDeviceInfo::getProduct() const
  {
-   return m_Device.descriptor.id_Product;
+   return m_Device.descriptor.idProduct;
  }
  
  
@@ -142,9 +142,9 @@ USBDeviceInfo::operator=(const USBDeviceInfo& rhs)
  {
     auto handle = usb_open(&m_Device);
     if (handle) {
-       return new USBDevice(handle);
+       return new USBDevice(handle, this);
     } else {
-       throw USBException(status, "Unable to open the device"); 
+       throw USBException(0, "Unable to open the device"); 
     }
     
  }

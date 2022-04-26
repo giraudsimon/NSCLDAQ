@@ -9,3 +9,5 @@ libUSB01_la_CXXFLAGS=-I@top_srcdir@/base/thread \
 libUSB01_la_LDFLAGS= @libusb_LIBS@ \
 	@top_builddir@/base/thread/libdaqthreads.la \
 	@top_builddir@/base/os/libdaqshm.la
+
+includedir=@includedir@/usb01
