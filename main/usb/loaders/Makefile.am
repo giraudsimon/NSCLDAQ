@@ -15,13 +15,13 @@ xlmload_SOURCES = xlmloadparams.c xlmload.cpp
 
 xlmload_CPPFLAGS = $(TCLFLAGS) -I@top_srcdir@/usb/vmusb/core -I@top_srcdir@/usb/vmusb/daqconfig \
 	-I@top_srcdir@/usb/vmusb/vmusb -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ \
-	-I@top_srcdir@/usb/usb1 @libusb_1_0_CFLAGS@ @PIXIE_CPPFLAGS@
+	-I@top_srcdir@/usb/usb0.1 @libusb_CFLAGS@ @PIXIE_CPPFLAGS@
 xlmload_LDFLAGS=@top_builddir@/usb/vmusb/vmusb/libVMUSBRemote.la \
 	@top_builddir@/usb/vmusb/vmusb/libVMUSB.la \
 	@top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la @LIBTCLPLUS_LDFLAGS@ \
 	@top_builddir@/usb/vmusb/VMUSBReadout-Globals.o			\
-	@top_builddir@/usb/usb1/libUSB1.la \
-	@libusb_1_0_LIBS@ \
+	@top_builddir@/usb/usb0.1/libUSB01.la \
+	@libusb_LIBS@ \
 	-Wl,"-rpath=@libdir@"
 
 xlmloadparams.c : xlmloadparams.h
