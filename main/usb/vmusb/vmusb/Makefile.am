@@ -6,7 +6,7 @@ COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers \
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os	\
 			-I@top_srcdir@/base/thread \
-			-I@top_srcdir@/usb/usb1   \
+			-I@top_srcdir@/usb/usb0.1   \
 			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @libusb_1_0_CFLAGS@ \
 			@PIXIE_CPPFLAGS@
 
@@ -41,7 +41,7 @@ libVMUSB_la_LIBADD       = @top_builddir@/base/tcpip/libTcp.la \
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@LIBTCLPLUS_LDFLAGS@			\
 			@top_builddir@/base/os/libdaqshm.la	\
-			@top_builddir@/usb/usb1/libUSB1.la \
+			@top_builddir@/usb/usb0.1/libUSB01.la \
 			@libusb_1_0_LIBS@
 
 
@@ -69,13 +69,13 @@ tests_SOURCES = @srcdir@/TestRunner.cpp \
 
 
 tests_CPPFLAGS = -std=c++11 -g -I@prefix@/include -I@top_srcdir@/base/thread \
-		-I@top_srcdir@/usb/usb1 @libusb_1_0_CFLAGS@ \
+		-I@top_srcdir@/usb/usb0.1 @libusb_CFLAGS@ \
 		$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@
 tests_LDADD = @top_builddir@/base/thread/libdaqthreads.la \
 		$(CPPUNIT_LDFLAGS) \
 		@builddir@/libVMUSB.la \
-		@top_builddir@/usb/usb1/libUSB1.la \
-		@libusb_1_0_LIBS@ \
+		@top_builddir@/usb/usb0.1/libUSB01.la \
+		@libusb_LIBS@ \
 		 @TCL_LDFLAGS@ \
 		 @LIBTCLPLUS_LDFLAGS@
 

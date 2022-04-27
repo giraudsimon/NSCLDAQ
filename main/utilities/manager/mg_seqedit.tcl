@@ -772,6 +772,8 @@ proc _saveSequence {db seqName steps} {
 proc _sequenceSelected {db seqName} {
     variable currentSequence
     variable seqEditor
+
+
     
     #  Open a new topelevel widget and put in it:
     #   - A StepLister with the steps from the selected sequence

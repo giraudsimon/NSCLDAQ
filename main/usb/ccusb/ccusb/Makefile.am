@@ -7,8 +7,8 @@ COMPILATION_FLAGS		= \
 				@USBSWITCHES@ \
 				@THREADCXX_FLAGS@ \
 				-I@top_srcdir@/base/tcpip  \
-				-I@top_srcdir@/usb/usb1	\
-				@libusb_1_0_CFLAGS@ @PIXIE_CPPFLAGS@
+				-I@top_srcdir@/usb/usb0.1	\
+				@libusb_CFLAGS@ @PIXIE_CPPFLAGS@
 
 
 
@@ -33,10 +33,10 @@ libCCUSB_la_LIBADD	= \
 			@TCL_LDFLAGS@ \
 			@LIBTCLPLUS_LDFLAGS@ \
 			@top_builddir@/base/tcpip/libTcp.la \
-			@top_builddir@/usb/usb1/libUSB1.la \
+			@top_builddir@/usb/usb0.1/libUSB01.la \
 			@LIBEXCEPTION_LDFLAGS@ \
 			@THREADLD_FLAGS@ \
-			@libusb_1_0_LIBS@
+			@libusb_LIBS@
 
 ## SWIG wrapper generation
 
@@ -104,11 +104,11 @@ tests_CXXFLAGS = $(COMPILATION_FLAGS) \
 	-I@top_srcdir@/base/thread $(AM_CXXFLAGS) @libusb_1_0_CFLAGS@
 tests_LDFLAGS =  @top_builddir@/base/thread/libdaqthreads.la        \
 			@top_builddir@/base/tcpip/libTcp.la         \
-			@top_builddir@/usb/usb1/libUSB1.la 	\
+			@top_builddir@/usb/usb0.1/libUSB01.la 	\
 			@LIBTCLPLUS_LDFLAGS@                        \
 			@LIBEXCEPTION_LDFLAGS@                      \
 		   	@TCL_LDFLAGS@                               \
-	 		@libusb_1_0_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@ \
+	 		@libusb_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@ \
 		 -Wl,"-rpath=@libdir@" 
 
 
@@ -152,14 +152,14 @@ camactests_LDADD    = @builddir@/libCCUSB.la        \
 			$(CPPUNIT_LDFLAGS)                          \
 			@top_builddir@/base/tcpip/libTcp.la         \
 			@top_builddir@/base/thread/libdaqthreads.la \
-			@top_builddir@/usb/usb1/libUSB1.la \
-			 @libusb_1_0_LIBS@     \
+			@top_builddir@/usb/usb0.1/libUSB01.la \
+			 @libusb_LIBS@     \
 			@TCL_LDFLAGS@         \
 			@LIBTCLPLUS_LDFLAGS@
 
 camactests_CXXFLAGS =  $(COMPILATION_FLAGS) \
 			-I@top_srcdir@/base/thread \
-			@libusb_1_0_CFLAGS@      \
+			@libusb_CFLAGS@      \
 			$(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
 camactests_LDFLAGS  = -Wl,"-rpath=@libdir@" 
 
