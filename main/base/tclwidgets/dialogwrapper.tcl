@@ -135,7 +135,13 @@ snit::widgetadaptor DialogWrapper {
         $win.actionframe.ok configure      -command [mymethod _setAction Ok]
         $win.actionframe.cancel configure -command  [mymethod _setAction Cancel]
         bind $win <Destroy>                         [mymethod _setAction Destroyed]
-        
+
+	# Evidently it's possible for the window not to be visible yet so:
+
+	while {![winfo viewable $win]} {
+	    update ;         # Process events and idle tasks...
+	}
+	
         # Here's the modal section.
         
         grab set $win
