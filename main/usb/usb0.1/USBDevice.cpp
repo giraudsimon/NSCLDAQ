@@ -24,6 +24,7 @@
 #include "USB.h"
 #include <string.h>
 #include <iostream>
+#include <errno.h>
 
 static const unsigned MAX_SERIAL(256); // longest supported serial string.
 
@@ -219,7 +220,10 @@ USBDevice::controlTransfer(
         reinterpret_cast<char*>(pData), wLength,
         msTimeout
     );
-    
+    if (status == -ETIMEDOUT) {
+      errno = ETIMEDOUT;
+      return -ETIMEDOUT;
+    }
     if (status < 0) {
         throw USBException(status, "control_transfer failed");
     }
@@ -236,8 +240,8 @@ USBDevice::controlTransfer(
  *                   this is a read.  There are only 16 endpoints,
  *                   endpoint 0 is used for control operations.
  *                   The endpoints numbered 1-15 transfer data to
- *                   the host (reads) while those numbered
- *                   0x81-0x8f transfer data to the device (writes).
+ *                   the device (writes) while those numbered
+ *                   0x81-0x8f transfer data from  the device (reads).
  * @param pData  - Pointer to the data to transfer.
  * @param dLength - Length of data to transfer;  For reads, this
  *                  is the amount of data pData can accomodate
@@ -264,14 +268,13 @@ USBDevice::bulkTransfer(
 )
 {
     int status;
-    if (endpoint & USB_ENDPOINT_DIR_MASK) {
+    if (!(endpoint & USB_ENDPOINT_DIR_MASK)) {
         // Write
         status = usb_bulk_write(
             m_pHandle, endpoint,
             reinterpret_cast<char*>(pData), dLength, msTimeout
         );
-        transferred = status >=  0 ?  status : 0;
-        status = status >= 0 ? 0 : status;
+
     } else {
         status = usb_bulk_read(
             m_pHandle, endpoint,
@@ -281,6 +284,10 @@ USBDevice::bulkTransfer(
     
     transferred = status >=  0 ?  status : 0;
     status = status < 0 ? status : 0;
+    if (status == -ETIMEDOUT) {
+      errno = ETIMEDOUT;
+      return -ETIMEDOUT;
+    }
     if (status < 0) {
         throw USBException(status, "bulk_transfer failed");
     }
@@ -309,7 +316,7 @@ USBDevice::interrupt(
 )
 {
     int status;
-    if (endpoint & USB_ENDPOINT_DIR_MASK) {
+    if (!(endpoint & USB_ENDPOINT_DIR_MASK)) {
         // write
         
         status = usb_interrupt_write(
@@ -326,6 +333,13 @@ USBDevice::interrupt(
     }
     transferred = status >= 0 ? status : 0;
     status = status < 0 ? status : 0;
+
+    // Status is allowed to be a timeout without tossing an exception:
+
+    if (status = -ETIMEDOUT) {
+      errno = ETIMEDOUT;
+      return -ETIMEDOUT;
+    }
     
     if (status < 0) {
         throw USBException(status, "interrupt_transfer failed");
