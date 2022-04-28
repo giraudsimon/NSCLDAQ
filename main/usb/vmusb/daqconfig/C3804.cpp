@@ -164,9 +164,9 @@ C3804::Initialize(CVMUSB& controller)
 {
   // Get the configuration paramters we need:
 
-  uint32_t base     = m_pConfiguration->getUnsignedParameter("-base");
-  uint32_t disables = m_pConfiguration->getUnsignedParameter("-disables");
-  bool     refpulser= m_pConfiguration->getBoolParameter("-refpulser");
+  uint32_t base     = getIntegerParameter("-base");
+  uint32_t disables = getIntegerParameter("-disables");
+  bool     refpulser= getBoolParameter("-refpulser");
 
 
   // Check we have a 3804:
@@ -218,8 +218,8 @@ C3804::Initialize(CVMUSB& controller)
 void
 C3804::addReadoutList(CVMUSBReadoutList& list)
 {
-  bool     clear = m_pConfiguration->getBoolParameter("-autoclear");
-  uint32_t base  = m_pConfiguration->getUnsignedParameter("-base");
+  bool     clear = getBoolParameter("-autoclear");
+  uint32_t base  = getIntegerParameter("-base");
 
   
   if (clear) {
@@ -247,6 +247,42 @@ C3804::clone() const
 
 // Utility functions to get configuration parameters.
 
+// Return the value of an integer parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//    value
+// Throws a string exception (from cget) if there is no such parameter.
+// caller is responsible for ensuring the parameter is an int.
+//
+uint32_t
+C3804::getIntegerParameter(string name) const
+{
+  string sValue =  m_pConfiguration->cget(name);
+  uint32_t    value  = strtoul(sValue.c_str(), NULL, 0);
+
+  return value;
+}
+//  Return the value of a bool parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//   true if the value is one of: true, yes, 1, on, enabled.
+bool
+C3804::getBoolParameter(string name) const
+{
+  string sValue = m_pConfiguration->cget(name);
+  set<string> trueValues;
+  trueValues.insert("true");
+  trueValues.insert("yes");
+  trueValues.insert("yes");
+  trueValues.insert("1");
+  trueValues.insert("on");
+  trueValues.insert("enabled");
+
+
+  return (trueValues.count(sValue) != 0);
+}
 
 // Utility functions to do I/O that throws exceptions on errors:
 // Address modifiers are always CONTROLAMOD.

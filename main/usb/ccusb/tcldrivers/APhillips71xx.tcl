@@ -181,7 +181,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one pedestal value is out of range
   public method SetPedestals {peds} {
-    Execute 1 [list sSetPedestals [list $peds]]
+    Execute 1 [list sSetPedestals $peds]
   }
 
   ## @brief Write the lower thresholds to memory
@@ -196,7 +196,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one threshold value is out of range
   public method SetLowerThresholds {lth} {
-    Execute 1 [list sSetLowerThresholds [list $lth]]
+    Execute 1 [list sSetLowerThresholds $lth]
   }
 
   ## @brief Write the upper thresholds to memory
@@ -211,7 +211,7 @@ itcl::class APhillips71xx {
   #
   #  @throws error if any one threshold value is out of range
   public method SetUpperThresholds {uth} {
-    Execute 1 [list sSetUpperThresholds [list $uth]]
+    Execute 1 [list sSetUpperThresholds $uth]
   }
 
   ## @brief Read 16 channels of data corresponding to last set programming mode
@@ -390,7 +390,6 @@ itcl::class APhillips71xx {
   #  @param stack  a cccusbreadoutlist::CCCUSBReadoutList object 
 	public method sReadSparseLAM {stack}
 
-	private method ssetValueMemory {stack values selector low high doing}
 
 
 
@@ -614,21 +613,78 @@ itcl::body APhillips71xx::sSetProgrammingMode {stack mode} {
 
 
 itcl::body APhillips71xx::sSetPedestals {stack peds} {
-	ssetValueMemory $stack $peds 0 -4095 4095 APhillips71xx::sSetPedestals
 
+  # 
+  # check to see if the pedestal values are sensible
+  if {![Utils::listElementsInRange -4095 4095 $peds]} {
+    set msg "APhillips71xx::sSetPedestals at least one pedestal value is out "
+    append msg {of range. Must be in range [-4095,4095].}
+    return -code error $msg
+  }
+
+  # in addWrite32, there is an implicit conversion to a uint32_t in
+  # C++. A negative value in a 64-bit architecture is represented by 
+  # a bunch of bytes when interpreted as a unsigned int is larged than
+  # UINT32_MAX. This causes a swig exception. We thus have to be careful
+  # to truncate properly to 32 bits for that conversion. We also
+  # know that the module works with 16 bits twos-complement representations
+  # so that we need to truncate to 16 bits. This at least what worked in
+  # the S800DAQ implementation.
+  set pedsSafeForUint32 [list]
+  foreach ped $peds {
+    lappend pedsSafeForUint32 [expr 0xffff&$ped] 
+  }
+
+  # the values were sensible so 
+  sSetProgrammingMode $stack 0
+  set nPeds [llength $pedsSafeForUint32]
+  if {$nPeds>16} {set nPeds 16}
+
+  for {set ch 0} {$ch<$nPeds} {incr ch} {
+    set ped [lindex $pedsSafeForUint32 $ch]
+    $stack addWrite24 $node $ch 20 $ped
+  }
 }
-####
-# TODO: Refactor - set mode and then common list maker.
-#
+
 itcl::body APhillips71xx::sSetLowerThresholds {stack lth} {
-	ssetValueMemory $stack $lth 1 0 4095 APhillips71xx::sSetLowerThresholds
-  
+
+  # check to see if the pedestal values are sensible
+  if {![Utils::listElementsInRange 0 4095 $lth]} {
+    set msg "APhillips71xx::sSetLowerThresholds at least one threshold value "
+    append msg {is out of range. Must be in range [0,4095].}
+    return -code error $msg
+  }
+
+  # set into lower threshold programming mode
+  sSetProgrammingMode $stack 1
+  set nThresh [llength $lth]
+  if {$nThresh>16} {set nThresh 16}
+
+  for {set ch 0} {$ch<$nThresh} {incr ch} {
+    set thresh [lindex $lth $ch]
+    $stack addWrite24 $node $ch 20 $thresh
+  }
 }
 
 
 itcl::body APhillips71xx::sSetUpperThresholds {stack lth} {
-	ssetValueMemory $stack $lth 2 0 4095 APhillips71xx::sSetUpperThresholds
 
+  # check to see if the pedestal values are sensible
+  if {![Utils::listElementsInRange 0 4095 $lth]} {
+    set msg "APhillips71xx::sSetUpperThresholds at least one threshold value "
+    append msg {is out of range. Must be in range [0,4095].}
+    return -code error $msg
+  }
+
+  # set into lower threshold programming mode
+  sSetProgrammingMode $stack 2
+  set nThresh [llength $lth]
+  if {$nThresh>16} {set nThresh 16}
+
+  for {set ch 0} {$ch<$nThresh} {incr ch} {
+    set thresh [lindex $lth $ch]
+    $stack addWrite24 $node $ch 20 $thresh
+  }
 }
 
 
@@ -651,7 +707,18 @@ itcl::body APhillips71xx::Execute {grouping script} {
 #ensure there is a device to execute the readout list
   if {$device ne ""} {
 
-   set rdoList [::CCUSBDriverSupport::makeList $this $script]
+    # create a new readout list
+    set rdoList [cccusbreadoutlist::CCCUSBReadoutList %AUTO%]
+
+    # extract the proc we want to use to manipulate the stack
+    set cmd [lindex $script 0]
+
+    # if there are arguments provided, use them. otherwise, dont.
+    if {[llength $script]>1} { 
+      $cmd $rdoList {*}[lreplace $script 0 0] 
+    } else {
+      $cmd $rdoList 
+    }
 
     # At this point the list will contain some commands added by the cmd
     # command
@@ -702,49 +769,3 @@ itcl::body APhillips71xx::ReadDataIsAsExpected {expected readback} {
 
   return $result
 }
-##
-#  ssetValueMemory 
-#    Appends to a stack stuff needed to set a value memory
-#
-# @param stack  - stack we're bulding.
-# @param values - values to set.
-# @param selector - Selects the memory to wite (e.g. 0 for pedestals)
-# @param low     - lowest allowed value
-# @param high    - highest allowed value.
-# @param doing   - Textual what we're doing (added to error messages).
-#
-itcl::body APhillips71xx::ssetValueMemory {stack values selector low high doing} {
-	# Validate the pedestal values:
-	
-	if {![Utils::listElementsInRange $low $high $values]} {
-		set msg "$doing at least one value is out "
-    append msg "of range. Must be in range \[$low,$high\]."
-    return -code error $msg
-	}
-	
-	# in addWrite32, there is an implicit conversion to a uint32_t in
-  # C++. A negative value in a 64-bit architecture is represented by 
-  # a bunch of bytes when interpreted as a unsigned int is larged than
-  # UINT32_MAX. This causes a swig exception. We thus have to be careful
-  # to truncate properly to 32 bits for that conversion. We also
-  # know that the module works with 16 bits twos-complement representations
-  # so that we need to truncate to 16 bits. This at least what worked in
-  # the S800DAQ implementation.
-  set safeForUint32 [list]
-  foreach value $values {
-    lappend safeForUint32 [expr 0xffff&$value] 
-  }
-	
-	sSetProgrammingMode $stack $selector
-	
-	set nPeds [llength $safeForUint32]
-  if {$nPeds>16} {set nPeds 16}
-
-  for {set ch 0} {$ch<$nPeds} {incr ch} {
-    set v [lindex $safeForUint32 $ch]
-    $stack addWrite24 $node $ch 20 $v
-  }
-	
-}
-    
-

@@ -294,7 +294,7 @@ tcltest::test SetPedestals-1 {Test that it fails when ped value is too large
 } -body {
   set peds [list 4096 ]
   ::dev SetPedestals $peds
-} -result {APhillips71xx::sSetPedestals at least one value is out of range. Must be in range [-4095,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetPedestals at least one pedestal value is out of range. Must be in range [-4095,4095].} -returnCodes 1
 
 tcltest::test SetPedestals-2 {Test that it fails when ped value is too small
 } -setup { 
@@ -304,7 +304,7 @@ tcltest::test SetPedestals-2 {Test that it fails when ped value is too small
 } -body {
   set peds [list -4096]
   ::dev SetPedestals $peds
-} -result {APhillips71xx::sSetPedestals at least one value is out of range. Must be in range [-4095,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetPedestals at least one pedestal value is out of range. Must be in range [-4095,4095].} -returnCodes 1
 
 tcltest::test SetPedestals-3 {Test that only the first 16 pedestal values are
 set 
@@ -376,7 +376,7 @@ tcltest::test SetLowerThresholds-1 {Test that negative threshold fails
 } -body {
   set lowerThresh [list -1]
   ::dev SetLowerThresholds $lowerThresh
-} -result {APhillips71xx::sSetLowerThresholds at least one value is out of range. Must be in range [0,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetLowerThresholds at least one threshold value is out of range. Must be in range [0,4095].} -returnCodes 1
 
 
 tcltest::test SetLowerThresholds-2 {Test that too large of a threshold fails
@@ -387,7 +387,7 @@ tcltest::test SetLowerThresholds-2 {Test that too large of a threshold fails
 } -body {
   set lowerThresh [list 4096]
   ::dev SetLowerThresholds $lowerThresh
-} -result {APhillips71xx::sSetLowerThresholds at least one value is out of range. Must be in range [0,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetLowerThresholds at least one threshold value is out of range. Must be in range [0,4095].} -returnCodes 1
 
 
 
@@ -473,7 +473,7 @@ tcltest::test SetUpperThresholds-1 {Test that negative threshold fails
 } -body {
   set lowerThresh [list -1]
   ::dev SetUpperThresholds $lowerThresh
-} -result {APhillips71xx::sSetUpperThresholds at least one value is out of range. Must be in range [0,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetUpperThresholds at least one threshold value is out of range. Must be in range [0,4095].} -returnCodes 1
 
 
 tcltest::test SetUpperThresholds-2 {Test that too large of a threshold fails
@@ -484,7 +484,7 @@ tcltest::test SetUpperThresholds-2 {Test that too large of a threshold fails
 } -body {
   set lowerThresh [list 4096]
   ::dev SetUpperThresholds $lowerThresh
-} -result {APhillips71xx::sSetUpperThresholds at least one value is out of range. Must be in range [0,4095].} -returnCodes 1
+} -result {APhillips71xx::sSetUpperThresholds at least one threshold value is out of range. Must be in range [0,4095].} -returnCodes 1
 
 
 

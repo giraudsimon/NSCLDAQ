@@ -19,7 +19,6 @@
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <stdint.h>
-#include <tclUtil.h>
 
 /**
  * constructor
@@ -69,10 +68,32 @@ CTclControlModule::onAttach(CControlModule& configuration)
 void
 CTclControlModule::Initialize(CVMUSB& vme)
 {
-  CTCLObject command;
-  makeCommand(command, vme, "Initialize");
-  executeCommand(command);
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  if (baseCommand == "") {
+    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
+  }
 
+  // Build the command:
+
+  Tcl_Interp*      interp  = m_interp.getInterpreter();
+
+  CTCLObject       command;
+  command.Bind(&m_interp);
+  command += baseCommand;	// Base of ensemble
+  command += "Initialize";      // Subcommand.
+
+  // Turn vme into a marshalled pointer.
+
+  std::string vmusbPointer = swigPointer(&vme, "CVMUSB");
+  command += vmusbPointer;
+
+  // Run the command:
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+
+  if (status != TCL_OK) {
+    throw std::string(Tcl_GetStringResult(interp));
+  }
 }
 
 /**
@@ -91,12 +112,24 @@ CTclControlModule::Initialize(CVMUSB& vme)
 std::string
 CTclControlModule::Update(CVMUSB& vme)
 {
+  Tcl_Interp*      interp  = m_interp.getInterpreter();
+  CTCLObject       command;
+  command.Bind(&m_interp);
 
-  CTCLObject command;
-  makeCommand(command, vme, "Update");
-  return executeCommand(command);  
-  
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Update";
 
+  command += swigPointer(&vme, "CVMUSB");
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = std::string(Tcl_GetStringResult(interp));
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
 }
 /**
  * Set
@@ -119,12 +152,28 @@ CTclControlModule::Update(CVMUSB& vme)
 std::string
 CTclControlModule::Set(CVMUSB& vme, std::string parameter, std::string value)
 {
+  Tcl_Interp*      interp  = m_interp.getInterpreter();
+  CTCLObject       command;
+  command.Bind(&m_interp);
 
-  CTCLObject command;
-  makeCommand(command, vme, "Set");
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Set";
+
+  command += swigPointer(&vme, "CVMUSB");
   command += parameter;
   command += value;
-  return executeCommand(command);
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = Tcl_GetStringResult(interp);
+
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
+
 }
 /**
  * Get
@@ -144,11 +193,26 @@ CTclControlModule::Set(CVMUSB& vme, std::string parameter, std::string value)
 std::string
 CTclControlModule::Get(CVMUSB& vme, std::string parameter)
 {
+  Tcl_Interp*      interp  = m_interp.getInterpreter();
+  CTCLObject       command;
+  command.Bind(&m_interp);
 
-  CTCLObject command;
-  makeCommand(command, vme, "Get");
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Get";
+
+  command += swigPointer(&vme, "CVMUSB");
   command += parameter;
-  return executeCommand(command);
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = Tcl_GetStringResult(interp);
+
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
 
 }
 /**
@@ -182,7 +246,7 @@ CTclControlModule::addMonitorList(CVMUSBReadoutList& vmeList)
   std::string baseCommand = m_pConfig->cget("-ensemble");
   command += baseCommand;
   command += "addMonitorList";
-  command += tclUtil::swigPointer(&vmeList, "CVMUSBReadoutList");
+  command += swigPointer(&vmeList, "CVMUSBReadoutList");
 
   int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
   if (status != TCL_OK) {
@@ -255,12 +319,16 @@ CTclControlModule::getMonitoredData()
   std::string baseCommand = m_pConfig->cget("-ensemble");
   command += baseCommand;
   command += "getMonitoredData";
-  std::string result = executeCommand(command);
-  if (result.substr(0, strlen("ERROR")) == "ERROR") {
-    return result;
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string msg;
+  if (status != TCL_OK) {
+    msg = "ERROR -  ";
+
+  } else {
+    msg = "OK ";
   }
-  std::string msg("OK ");
-  msg += result;
+  msg += Tcl_GetStringResult(interp);
   return msg;
 
 }
@@ -268,57 +336,43 @@ CTclControlModule::getMonitoredData()
 /*-------------------------------------------------------------------------------
 ** Private utilities.
 */
+
 /**
- * makeCommand
- *   Makes the base command from the ensemble, a subcommand
- *   and a swig-ized controller object;
- * @param[out] command - CTCLObject reference into which the command is bult.
- * @param vme          - Reference to the VMUSB object.
- * @param subcommand   - subcommand.
- * @note the command will be bound to the current interpreter.
- */
-void
-CTclControlModule::makeCommand(
-  CTCLObject& object, CVMUSB& vme, const char* subcommand
-)
-{
-  std::string baseCommand = m_pConfig->cget("-ensemble");
-  if (baseCommand == "") {
-    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
-  }
-
-  // Build the command:
-
-  CTCLObject       command;
-  command.Bind(&m_interp);
-  command += baseCommand;	// Base of ensemble
-  command += "Initialize";      // Subcommand.
-
-  // Turn vme into a marshalled pointer.
-
-  std::string vmusbPointer = tclUtil::swigPointer(&vme, "CVMUSB");
-  command += vmusbPointer;
-}
-/**
- * execute command
- *    Execute a command object and report any errors.
- * @param command.
- * @return std::string - command result on success.
+ * Generate a swig pointer from the C++ Pointer and its type.
+ * This is of the form _address_p_typename
+ * @param obj - pointer to the object.
+ * @param type - Type name.
+ *
+ * @return std::string
  */
 std::string
-CTclControlModule::executeCommand(CTCLObject& command)
+CTclControlModule::swigPointer(void* p, std::string  type)
 {
-  Tcl_Interp* pInterp = m_interp.getInterpreter();
-  int status = Tcl_EvalObjEx(pInterp, command.getObject(), TCL_EVAL_GLOBAL);
-  std::string result = Tcl_GetStringResult(pInterp);
 
-  if (status != TCL_OK) {
-    std::string msg = "ERROR - ";
-    msg += result;
-    return msg;
+  char result [10000];
+  std::string hexified;		// Bigendian.
+
+  uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
+
+  // Note that doing the byte reversal this way should be
+  // 64 bit clean..and in fact should work for any sized ptr.
+
+  static const char hex[17] = "0123456789abcdef";
+  register const unsigned char *u = (unsigned char *) &p;
+  register const unsigned char *eu =  u + sizeof(void*);
+  for (; u != eu; ++u) {
+    register unsigned char uu = *u;
+    hexified += hex[(uu & 0xf0) >> 4];
+    hexified += hex[uu & 0xf];
   }
-  return result;
+
+  sprintf(result, "_%s_p_%s", hexified.c_str(), type.c_str());
+
+  return std::string(result);
+
+
 }
+
 /**
  * marshallData
  *   Marshall a block of byte data into a Tcl List in a 

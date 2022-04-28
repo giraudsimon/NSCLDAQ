@@ -40,13 +40,14 @@ using namespace std;
  * need the configuration.
  * @param name - Name of the module supplied in the script.
  */
-CVMUSBModule::CVMUSBModule()
+CVMUSBModule::CVMUSBModule() :
+  CControlHardware()
 {}
 /**
  * Copy construction
  */
 CVMUSBModule::CVMUSBModule(const CVMUSBModule& rhs) :
-  CVMUSBControlHardware(rhs)
+  CControlHardware(rhs)
   
 {
 }
@@ -66,7 +67,7 @@ CVMUSBModule&
 CVMUSBModule::operator=(const CVMUSBModule& rhs)
 {
   if (this != &rhs) {
-    CVMUSBControlHardware::operator=(rhs);
+    CControlHardware::operator=(rhs);
   }
   return *this;
 }
@@ -128,10 +129,9 @@ CVMUSBModule::Set(CVMUSB& controller, string parameter, string value)
   }
 
   uint8_t* readdata(0);
-  int oldTimeout = vme.getDefaultTimeout();
   try {
     if (parameter != "list") {
-      string msg = "Parameter name must be 'list' and was ";
+      string msg = "Parmaeter name must be 'list' and was ";
       msg       += parameter;
       throw msg;
     }
@@ -140,21 +140,32 @@ CVMUSBModule::Set(CVMUSB& controller, string parameter, string value)
     readdata                      = new uint8_t[maxBuffer];
     vector<uint32_t> listContents = decodeList(value);
     CVMUSBReadoutList theList(listContents);
-    
+    int oldTimeout = vme.getDefaultTimeout();
     vme.setDefaultTimeout(100);
-    doList(
-      vme, theList, readdata, maxBuffer, &bytesread,
-      "Executing list in Set"
-    );
+    int status                    = vme.executeList(theList,
+						    readdata,
+						    maxBuffer, &bytesread);
     vme.setDefaultTimeout(oldTimeout);
+    if (status >= 0) {
+      string result =  marshallOutput(readdata, bytesread);
+      delete []readdata;
+      return result;
+    }
+    string msg;
+    int ecode  = errno;
+    if (status == -1) {
+      msg += "usb_bulk_write failed: ";
+    }
+    else {
+      msg += "usb_bulk_read faild: ";
+    }
+    char errorMessage[1000];
+    strerror_r(ecode, errorMessage, sizeof(errorMessage)); // Safest to use in threaded code.
+    msg += errorMessage;
+    throw msg;
     
-    string result =  marshallOutput(readdata, bytesread);
-    delete []readdata;
-    return result;
-   
   }
   catch (string msg) {		// Return to the caller rather than re-throw.
-    vme.setDefaultTimeout(oldTimeout);
     string error  = "ERROR - "; // That returns the status to the ultimate caller.
     error        += msg;
     delete readdata;

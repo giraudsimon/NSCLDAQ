@@ -50,13 +50,12 @@ libVMUSBDaqConfig_la_SOURCES	= 	CADCCommand.cpp		\
 				CULMTrigger.cpp \
 				CLeCroy4300B.cpp \
 				CLeCroy4434.cpp \
-				CXLMFERA.cpp CXLMFERACommand.cpp \
+				CXLMFERA.cpp \
 				CXLMTimestamp.cpp \
 				CLeCroy2551.cpp \
 				CMQDC32StackBuilder.cpp \
 				CMQDC32RdoHdwr.cpp	\
-				CDeviceCommand.cpp \
-				tclUtil.cpp
+				CDeviceCommand.cpp
 
 
 
@@ -113,26 +112,24 @@ noinst_HEADERS		=	CADCCommand.h  		\
 				@top_srcdir@/usb/common/devices/CBCNAF.h \
 				@top_srcdir@/usb/common/devices/CCNAF.h \
 				@top_srcdir@/usb/common/devices/CNAF.h \
-				CXLMFERA.h CXLMFERACommand.h \
+				CXLMFERA.h \
 				CXLMTimestamp.h \
 				CMQDC32StackBuilder.h \
 				CMQDC32RdoHdwr.h \
-				MQDC32Registers.h \
-				tclUtil.h
+				MQDC32Registers.h
 
 
 libVMUSBDaqConfig_la_CXXFLAGS=@THREADCXX_FLAGS@
 
-libVMUSBDaqConfig_la_CPPFLAGS = -I@top_srcdir@/usb/common/devices		\
+libVMUSBDaqConfig_la_CPPFLAGS = -I@top_srcdir@/usb/common/devices	\
 				-I@top_srcdir@/usb/common/configurableobject \
-				-I@top_srcdir@/usb/vmusb			\
-				-I@top_srcdir@/usb/vmusb/vmusb			\
-				-I@top_srcdir@/usb/common/devices		\
+				-I@top_srcdir@/usb/vmusb		\
+				-I@top_srcdir@/usb/vmusb/vmusb		\
+				-I@top_srcdir@/usb/common/devices	\
 				@LIBTCLPLUS_CFLAGS@			\
 				-I@top_srcdir@/base/headers		\
 				-I@top_srcdir@/base/os		\
-				-I@top_srcdir@/usb/vmusb/daqconfig \
-				$(TCL_FLAGS) @PIXIE_CPPFLAGS@
+				$(TCL_FLAGS)  @PIXIE_CPPFLAGS@
 
 
 libVMUSBDaqConfig_la_LIBADD	= \
@@ -156,7 +153,7 @@ cmdtests_SOURCES=TestRunner.cpp Asserts.h ad811test.cpp \
 	v977tests.cpp masetests.cpp mtdctests.cpp delaytests.cpp \
 	xlmferatests.cpp cbdtests.cpp xlmtimestamptests.cpp mqdctests.cpp \
 	cbdcratetests.cpp ulmtriggertests.cpp lrs4300tests.cpp lrs4434tests.cpp \
-	lrs2551tests.cpp ctlexporttests.cpp
+	lrs2551tests.cpp
 
 
 cmdtests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(libVMUSBDaqConfig_la_CXXFLAGS) \

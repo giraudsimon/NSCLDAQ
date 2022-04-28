@@ -14,13 +14,33 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef C785_H
-#define C785_H
+#ifndef __C785_H
+#define __C785_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
 
 
 // Forward class definitions:
@@ -101,6 +121,8 @@ public:
 
   // utilities:
 private:
+  unsigned int  getIntegerParameter(std::string name);
+  bool getBoolParameter(std::string name);
   void getThresholds(std::vector<uint16_t>& thresholds);
   int  getModuleType(CVMUSB& controller, uint32_t base);
 };

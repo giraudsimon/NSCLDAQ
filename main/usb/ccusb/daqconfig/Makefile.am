@@ -32,9 +32,7 @@ libCCUSBDaqConfig_la_SOURCES	= \
 				CCamacCrate.cpp \
 				CLeCroy4300B.cpp \
 				CULMTrigger.cpp \
-				CMarker.cpp \
-				tclUtil.cpp \
-				Globals.cpp
+				CMarker.cpp
 
 
 
@@ -68,9 +66,7 @@ noinst_HEADERS		= \
 				CPH7132.h		\
 				CTclModule.h		\
 				CMarker.h		\
-				CCamacCompat.hpp \
-				tclUtil.h	\
-				Globals.h
+				CCamacCompat.hpp
 
 
 
@@ -78,8 +74,8 @@ noinst_HEADERS		= \
 libCCUSBDaqConfig_la_CPPFLAGS		= \
 				-I@top_srcdir@/usb/ccusb		\
 				-I@top_srcdir@/usb/ccusb/ccusb		\
-				-I@top_srcdir@/usb/ccusb/daqconfig		\
-				-I@top_srcdir@/usb/common/devices		\
+				-I@top_srcdir@/usb/ccusb/daqconfig	\
+				-I@top_srcdir@/usb/common/devices	\
 				-I@top_srcdir@/usb/common/configurableobject \
 				-I@top_srcdir@/base/headers		\
 				@LIBTCLPLUS_CFLAGS@		\
@@ -87,8 +83,8 @@ libCCUSBDaqConfig_la_CPPFLAGS		= \
 				@THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
 
 libCCUSBDaqConfig_la_LIBADD	=	 \
-				@top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
-				@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+	@top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 				@LIBTCLPLUS_LDFLAGS@ \
 				@TCL_LDFLAGS@ \
 				@THREADLD_FLAGS@ 
@@ -101,17 +97,6 @@ install-data-local:
 
 
 EXTRA_DIST = CCamacCompat.hpp 
-
-noinst_PROGRAMS=unittests
-
-unittests_SOURCES=TestRunner.cpp ctlexporttests.cpp 
-
-unittests_LDADD=libCCUSBDaqConfig.la \
-	$(libCCUSBDaqConfig_la_LIBADD) @CPPUNIT_CFLAGS@
-unittests_CXXFLAGS=$(libCCUSBDaqConfig_la_CPPFLAGS) @CPPUNIT_LDFLAGS@
-unittests_DEPENDENCIES=libCCUSBDaqConfig.la
-
-TESTS=@builddir@/unittests
 
 
 #CReadoutModule.h CReadoutHardware.h CStack.h

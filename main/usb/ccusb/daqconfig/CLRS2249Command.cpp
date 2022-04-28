@@ -22,7 +22,6 @@
 #include <CReadoutModule.h>
 #include <CLRS2249.h>
 #include <Exception.h>
-#include "tclUtil.h"
 
 using namespace std;
 
@@ -214,12 +213,23 @@ int
 CLRS2249Command::config(CTCLInterpreter& interp,
 		      std::vector<CTCLObject>& objv)
 {
-	CReadoutModule* pModule = tclUtil::getModule(
-		m_Config, interp, objv, (objv.size() < 5) || ((objv.size() & 1) == 0)
-	) ;
-	if (!pModule) return TCL_ERROR;
-  
-	std::string name = objv[2];
+  // Ensure the parameter counts are valid:
+
+  if ((objv.size() < 5) || ((objv.size() & 1) == 0)) {
+    Usage("Incorrect number of command parameters for config", objv);
+    return TCL_ERROR;
+  }
+
+  // Get the moduel name and locate it.. it's an error for the module to not exist.
+
+  string          name     = objv[2];
+  CReadoutModule* pModule  = m_Config.findAdc(name);
+  if(!pModule) {
+    Usage("lrs2249 module does not exist", objv);
+    return TCL_ERROR;
+  }
+  // and configure:
+
   m_Config.setResult(name);	// This gets overwritten in case of error.
   return configure(interp, pModule, objv);
 
@@ -252,12 +262,29 @@ int
 CLRS2249Command::cget(CTCLInterpreter& interp,
 		    std::vector<CTCLObject>& objv)
 {
-	CReadoutModule* pModule = tclUtil::getModule(
-		m_Config, interp, objv, objv.size() != 3
-	);
-	if (!pModule) return TCL_ERROR;
-  
-	tclUtil::listConfig(interp, pModule);
+  if (objv.size() != 3) {
+    Usage("Invalid command parameter count for cget", objv);
+    return TCL_ERROR;
+  }
+  string           name    = objv[2];
+  CReadoutModule *pModule = m_Config.findAdc(name);
+  if (!pModule) {
+    Usage("No such  module", objv);
+    return TCL_ERROR;
+  }
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
+
+  Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
+
+  for (int i =0; i < config.size(); i++) {
+    Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
+    Tcl_Obj* value = Tcl_NewStringObj(config[i].second.c_str(), -1);
+
+    Tcl_Obj* sublist[2] = {key, value};
+    Tcl_Obj* sl = Tcl_NewListObj(2, sublist);
+    Tcl_ListObjAppendElement(interp.getInterpreter(), pResult, sl);
+  }
+  Tcl_SetObjResult(interp.getInterpreter(), pResult);
   return TCL_OK;
 }
 /*!
@@ -280,13 +307,20 @@ CLRS2249Command::getConfiguration()
 void
 CLRS2249Command::Usage(std::string msg, std::vector<CTCLObject> objv)
 {
+  string result("ERROR: ");
+  result += msg;
+  result += "\n";
+  for (int i = 0; i < objv.size(); i++) {
+    result += string(objv[i]);
+    result += ' ';
+  }
+  result += "\n";
+  result += "Usage\n";
+  result += "    lrs2249 create name base-address\n";
+  result += "    lrs2249 config name config-params...\n";
+  result += "    lrs2249 cget name";
   
-  std::string usage("Usage\n");
-  usage += "    lrs2249 create name base-address\n";
-  usage += "    lrs2249 config name config-params...\n";
-  usage += "    lrs2249 cget name";
-  
-  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
+  m_Config.setResult(result);  
 }
 /*******************************************************************/
 /*   Configures an object.  The caller is supposed to have

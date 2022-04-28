@@ -14,11 +14,17 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef SERVERINSTANCE_H
-#define SERVERINSTANCE_H
+#ifndef _SERVERINSTANCE_H
+#define _SERVERINSTANCE_H
 
+#ifndef __SERVER_H
 #include "server.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#define __STL_STRING
+#endif
 
 
 

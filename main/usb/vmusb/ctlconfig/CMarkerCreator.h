@@ -20,8 +20,8 @@
 # @author <fox@nscl.msu.edu>
 */
 
-#ifndef CMARKERCREATOR_H
-#define CMARKERCREATOR_H
+#ifndef _CMARKERCREATOR_H
+#define _CMARKERCREATOR_H
 
 #include "CModuleCreator.h"
 #include "CControlHardware.h"
@@ -33,8 +33,7 @@
 class CMarkerCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()(void* userData);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 

@@ -38,6 +38,7 @@ using namespace std;
 
 // Constants:
 
+static const int DEFAULT_TIMEOUT(2000); // ms.
 
 /////////////////////////////////////////////////////////////////////
 

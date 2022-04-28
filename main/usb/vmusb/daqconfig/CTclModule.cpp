@@ -18,7 +18,6 @@
 #include "CTclModule.h"
 #include <TCLInterpreter.h>
 #include <arpa/inet.h>
-#include <tclUtil.h>
 
 /**
  * Construction simply saves the nam of the command ensemble:
@@ -132,7 +131,28 @@ CTclModule::clone() const
 std::string
 CTclModule::swigPointer(void* p, std::string  type)
 {
-  return tclUtil::swigPointer(p, type);
+
+  char result [10000];
+  std::string hexified;		// Bigendian.
+
+  uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
+
+  // Note that doing the byte reversal this way should be
+  // 64 bit clean..and in fact should work for any sized ptr.
+
+  static const char hex[17] = "0123456789abcdef";
+  register const unsigned char *u = (unsigned char *) &p;
+  register const unsigned char *eu =  u + sizeof(void*);
+  for (; u != eu; ++u) {
+    register unsigned char uu = *u;
+    hexified += hex[(uu & 0xf0) >> 4];
+    hexified += hex[uu & 0xf];
+  }
+
+  sprintf(result, "_%s_p_%s", hexified.c_str(), type.c_str());
+
+  return std::string(result);
+
 
 }
 

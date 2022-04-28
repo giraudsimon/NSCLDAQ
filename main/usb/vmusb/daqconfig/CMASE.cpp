@@ -33,8 +33,13 @@ using namespace XLM;
 
 // Address modifiers we are going to use:
 
+static const uint8_t   registerAmod(CVMUSBReadoutList::a32UserData);
+static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock); 
 
-static const float     busDelay(200/XLM::CXLM::vmusbClockTick); // ticks to delay prior to getting the bus.
+// Clock ns per VMUSB delay tick.
+
+static const float     vmusbClockTick(12.5);
+static const float     busDelay(200/vmusbClockTick); // ticks to delay prior to getting the bus.
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //  Canonical function implementations:

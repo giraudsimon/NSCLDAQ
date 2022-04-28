@@ -56,8 +56,10 @@ CLoggingReadoutList::addRead16(int n, int a, int f, bool lamwait)
 
   std::stringstream msg;
   msg << "read16 " << n << " " << a << " " << f;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
   
+  m_log.push_back(msg.str());
 }
 
 
@@ -68,7 +70,9 @@ CLoggingReadoutList::addRead24(int n, int a, int f, bool lamwait)
 
   std::stringstream msg;
   msg << "read24 " << n << " " << a << " " << f;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
+  m_log.push_back(msg.str());
 }
 
 void
@@ -89,7 +93,9 @@ CLoggingReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamwait)
 
   std::stringstream msg;
   msg << "qStop " << n << " " << a << " " << f << " " << max;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
+  m_log.push_back(msg.str());
 }
 
 
@@ -100,7 +106,9 @@ CLoggingReadoutList::addQStop24(int n, int a, int f, uint16_t max, bool lamwait)
 
   std::stringstream msg;
   msg << "qStop24 " << n << " " << a << " " << f << " " << max;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
+  m_log.push_back(msg.str());
 }
 
 void
@@ -110,7 +118,9 @@ CLoggingReadoutList::addQScan(int n, int a, int f, uint16_t max, bool lamwait)
 
   std::stringstream msg;
   msg << "qScan " << n << " " << a << " " << f << " " << max;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
+  m_log.push_back(msg.str());
 }
 
 
@@ -121,7 +131,9 @@ CLoggingReadoutList::addRepeat(int n, int a, int f, uint16_t max, bool lamwait)
 
   std::stringstream msg;
   msg << "repeat " << n << " " << a << " " << f << " " << max;
-  logLamwait(msg, lamwait);
+  if (lamwait) msg << " true";
+  else msg << " false";
+  m_log.push_back(msg.str());
 }
 
 void
@@ -131,7 +143,10 @@ CLoggingReadoutList::addAddressPatternRead16(int n, int a, int f, bool lamwait)
 
   std::stringstream msg;
   msg << "addressPatternRead16 " << n << " " << a << " " << f;
-  logLamwait(msg, lamwait);
+  if (lamwait)  msg << " true";
+  else  msg << " false";
+
+  m_log.push_back(msg.str());
 }
 
 void
@@ -144,13 +159,5 @@ CLoggingReadoutList::addMarker(uint16_t marker)
   msg << "marker ";
   msg.width(4);
   msg << marker;
-  m_log.push_back(msg.str());
-}
-
-void
-CLoggingReadoutList::logLamwait(std::stringstream& msg, bool lamwait)
-{
-  if (lamwait) msg << " true";
-  else msg << " false";
   m_log.push_back(msg.str());
 }

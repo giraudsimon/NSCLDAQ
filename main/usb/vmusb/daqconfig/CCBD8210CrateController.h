@@ -11,13 +11,13 @@ class CVMUSB;
 
 class CCBD8210CrateController : public CCrateController 
 {
-private:
+    private:
     int m_branch;
     int m_crate;
     
     CVMUSB* m_ctlr;
 
-public:
+    public:
     CCBD8210CrateController(int branch, int crate);
 
     int simpleWrite16(int n, int a, int f, uint16_t data, uint16_t& qx);
@@ -29,7 +29,7 @@ public:
     CCBD8210ReadoutList* createReadoutList() const;
     int executeList(CCamacReadoutList& list, void* pbuffer, size_t bufsize, size_t *nbytes);
 
-public:
+    public:
     int getCrateIndex() const {return m_crate;}
     int getBranchIndex() const {return m_branch;}
 
@@ -42,8 +42,6 @@ public:
     bool qTest();
     bool xTest();
     uint16_t formXQ(uint16_t x, uint16_t q) const;
-private:
-    static void checkStatus(int stat, const char* msg, int b, int c, int n, int a, int f);
 };
 
 #endif

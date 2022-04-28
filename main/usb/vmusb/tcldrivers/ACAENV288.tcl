@@ -307,26 +307,45 @@ itcl::body ACAENV288::ReceiveError {} {
 }
 
 #
-#  Send a command with one value.
+#
 #
 #
 itcl::body ACAENV288::Send {slave code value} {
-	
-	return [$self SendAll $slave $code $value 1]
-  
+	if {$slave < 0 || $slave > 99} {
+#		tk_messageBox -message "CAEN V288: slave address code out of range" -icon error
+    return -code error "ACAENV288::Send Slave address code out of range"
+	}
+  GetStatus
+	WriteTransmitBuffer 1
+	WriteTransmitBuffer $slave
+	WriteTransmitBuffer $code
+	WriteTransmitBuffer $value
+	TransmitData
+  set error [ReceiveError]
+	return $error
 }
 
 #
-#  Send a command with no values.
+#
 #
 #
 #
 itcl::body ACAENV288::SendCode {slave code} {
-	return [$self SendAll $slave $code {} 0]
+	if {$slave < 0 || $slave > 99} {
+    set msg "ACAENV288::SendCode slave address code out of range"
+	  return -code error $msg	
+	}
+  GetStatus
+	WriteTransmitBuffer 1
+	WriteTransmitBuffer $slave
+	WriteTransmitBuffer $code
+	TransmitData
+  set error [ReceiveError]
+	return $error
 }
 
 #
-#  Send a command with several values.
+#
 #
 #
 #

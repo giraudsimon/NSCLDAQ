@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CCHICOTRIGGERCREATOR_H
-#define CCHICOTRIGGERCREATOR_H
+#ifndef __CCHICOTRIGGERCREATOR_H
+#define __CCHICOTRIGGERCREATOR_H
 
 
 /**
@@ -22,7 +22,10 @@
  * @brief Defines a creational for a Chico trigger control module.
  */
 
+#ifndef __CMODULECREATOR_H
 #include <CModuleCreator.h>
+#endif
+
 #include <CControlHardware.h>
 #include <memory>
 
@@ -31,8 +34,7 @@
  */
 class CChicoTriggerCreator : public CModuleCreator
 {
-  virtual CControlHardware* operator()(void* userData);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 #endif

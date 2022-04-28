@@ -286,7 +286,6 @@ CAcquisitionThread::mainLoop()
   }
 }
 /*!
- * process command
   Process a command from our command queue.  The command can be one of the
   following:
   ACQUIRE   - The commander wants to acquire the VM-USB we must temporarily
@@ -294,28 +293,24 @@ CAcquisitionThread::mainLoop()
               and wait paitently for a RELEASE before restarting.
   PAUSE     - Commander wants the run to pause.
   END       - The commander wants the run to end.
-
-   @param command - the operation to perform.
-   @param running - true if the run is not paused.
 */
 void
-CAcquisitionThread::processCommand(CControlQueues::opCode command, bool running)
+CAcquisitionThread::processCommand(CControlQueues::opCode command)
 {
   CControlQueues* queues = CControlQueues::getInstance();
   CTheApplication* pApp = CTheApplication::getInstance();
-  CRunState* pState = CRunState::getInstance();
   if (command == CControlQueues::ACQUIRE) {
-    if (running) stopDaqImpl();
+    stopDaqImpl();
     queues->Acknowledge();
     CControlQueues::opCode release  = queues->getRequest();
     assert(release == CControlQueues::RELEASE);
     queues->Acknowledge();
-    if (running) CCusbToAutonomous();
+    CCusbToAutonomous();
   }
   else if (command == CControlQueues::END) {
     if (m_Running) {
       pApp->logStateChangeRequest("Acquisition thread asked to end run");
-      if (running) stopDaq();
+      stopDaq();
       pApp->logProgress("Data taking stopped by acquisition thread");
     }
     queues->Acknowledge();
@@ -323,24 +318,12 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command, bool running)
     throw 1;
   }
   else if (command == CControlQueues::PAUSE) {
-    assert(running);
     pApp->logStateChangeRequest("Acquisition thread asked to pause a run");
     pauseRun();
     pApp->logProgress("Pause run item passed to output thread");
     pauseDaq();
 
-  } else if (command == CControlQueues::RESUME) {
-    assert(!running);
-      pApp->logStateChangeRequest("Resume of paused run requested in acq thread");
-      resumeRun();
-      pApp->logProgress("Resume item queued for output thread");
-      startDaq();
-      pApp->logProgress("Data taking initiated in CCUSB");
-      queues->Acknowledge();
-      pState->setState(CRunState::Active);
-      pApp->logStateChangeStatus("Resume run completed in acquisition thread");
-      return;
-    }
+  }
 
   else {
     // bad error:
@@ -482,11 +465,8 @@ CAcquisitionThread::startDaq()
       pStack->Initialize(*m_pCamac);    // INitialize daq hardware associated with the stack.
       pApp->logProgress("Stack initialized");
       pStack->loadStack(*m_pCamac);     // Load into CC-USB .. The stack knows if it is event or scaler
-      sleep(1);
-
       pApp->logProgress("Stack loaded");
       pStack->enableStack(*m_pCamac);   // Enable the trigger logic for the stack.
-      std::cerr << " Enabled\n";
       pApp->logProgress("Stack enabled");
     }
   } else {
@@ -572,12 +552,38 @@ CAcquisitionThread::pauseDaq()
 
   while (1) {
     CControlQueues::opCode req = queues->getRequest();
-    processCommand(req, false);
     
-    // Need to break out of the loop on a resume
-    // end will throw over us to exit.
-    
-    if (req == CControlQueues::RESUME) break;
+    // Acceptable actions are to acquire the USB, 
+    // End the run or resume the run.
+    //
+
+    if (req == CControlQueues::ACQUIRE) {
+      queues->Acknowledge();
+      CControlQueues::opCode release = queues->getRequest();
+      assert (release == CControlQueues::RELEASE);
+      queues->Acknowledge();
+    }
+    else if (req == CControlQueues::END) {
+      pApp->logStateChangeRequest("End run requested in paused acq thread");
+      queues->Acknowledge();
+      pState->setState(CRunState::Idle);
+      pApp->logStateChangeStatus("Paused run ended in acq thread");
+      throw 0;
+    }
+    else if (req == CControlQueues::RESUME) {
+      pApp->logStateChangeRequest("Resume of paused run requested in acq thread");
+      resumeRun();
+      pApp->logProgress("Resume item queued for output thread");
+      startDaq();
+      pApp->logProgress("Data taking initiated in CCUSB");
+      queues->Acknowledge();
+      pState->setState(CRunState::Active);
+      pApp->logStateChangeStatus("Resume run completed in acquisition thread");
+      return;
+    }
+    else {
+      assert(0);
+    }
   }
   
 }

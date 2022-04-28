@@ -22,12 +22,10 @@
 #include <CStack.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
-#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
-
 
 using std::string;
 using std::vector;
@@ -272,11 +270,18 @@ CStackCommand::getConfiguration()
 void
 CStackCommand::Usage(std::string msg, std::vector<CTCLObject>& objv)
 {
-  
-  std::string usage("Usage\n");
-  usage += "    stack create name\n";
-  usage += "    stack config name config-params...\n";
-  usage += "    stack cget name";
+  string result("ERROR: ");
+  result += msg;
+  result += "\n";
+  for (int i = 0; i < objv.size(); i++) {
+    result += string(objv[i]);
+    result += ' ';
+  }
+  result += "\n";
+  result += "Usage\n";
+  result += "    stack create name\n";
+  result += "    stack config name config-params...\n";
+  result += "    stack cget name";
 
-  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
+  m_Config.setResult(result);
 }

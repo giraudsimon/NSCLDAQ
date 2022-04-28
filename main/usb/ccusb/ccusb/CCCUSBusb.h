@@ -14,20 +14,61 @@
        East Lansing, MI 48824-1321
 */
 
-#ifndef CCCUSBusb_H
-#define CCCUSBusb_H
+#ifndef __CCCUSBusb_H
+#define __CCCUSBusb_H
 
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __CRT_SYS_TYPES_H
 #include <sys/types.h>
+#ifndef __CRT_SYS_TYPES_H
+#define __CRT_SYS_TYPES_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CCCUSBREADOUTLIST_H
 #include <CCCUSBReadoutList.h>
+#ifndef __CCCUSBREADOUTLIST_H
+#define __CCCUSBREADOUTLIST_H
+#endif
+#endif
+
+
+#ifndef __CCCUSB_H
 #include <CCCUSB.h>
+#ifndef __CCCUSB_H
+#define __CCCUSB_H
+#endif
+#endif
+
 #include <CMutex.h>
 
+//  The structures below are defined in <usb.h> which is included
+//  by the implementation and can be treated as opaque by any of our
+//  clients (they are in fact opaque in usb.h if memory servers.
 
-class USB;
-class USBDevice;
+struct usb_device;
+struct usb_dev_handle;
 
 
 // Forward Class definitions:
@@ -48,13 +89,12 @@ class USBDevice;
 */
 class CCCUSBusb : public CCCUSB
 {
-  private:
-    static USB*            m_usbContext;
+
 
   // Class member data.
   private:
-    
-    USBDevice*              m_device;  //!< Device we are open on.
+    struct usb_dev_handle*  m_handle;  //!< Handle open on the device.
+    struct usb_device*      m_device;  //!< Device we are open on.
     int                     m_timeout; //!< Timeout used when user doesn't give one.
     std::string             m_serial;  //!< Connected device serial number.
     CMutex*                 m_pMutex;  // Basis for critical sections.
@@ -68,12 +108,9 @@ class CCCUSBusb : public CCCUSB
     // and destruction implies a usb_release_interface(),
     // equality comparison has no useful meaning either:
 
-    CCCUSBusb(USBDevice* vmUsbDevice);
+    CCCUSBusb(struct usb_device* vmUsbDevice);
     virtual ~CCCUSBusb();   // Although this is probably a final class.
 
-    static USB* getUsbContext();    // Get usb context singleton.
-    static USBDevice* findBySerial(const char* serial);
-    
     // Disallowed functions as described above.
   private:
     CCCUSBusb(const CCCUSBusb& rhs);
@@ -242,7 +279,7 @@ class CCCUSBusb : public CCCUSB
     void openUsb();
 
     void resetUSB();
-   
+    void enumerateAndIdentify();
 
 };
 

@@ -331,7 +331,7 @@ PAUSE     - Commander wants the run to pause.
 END       - The commander wants the run to end.
  */
   void
-CAcquisitionThread::processCommand(CControlQueues::opCode command, bool running)
+CAcquisitionThread::processCommand(CControlQueues::opCode command)
 {
   CControlQueues* queues = CControlQueues::getInstance();
   CRunState* pState = CRunState::getInstance();
@@ -339,39 +339,28 @@ CAcquisitionThread::processCommand(CControlQueues::opCode command, bool running)
   CTheApplication* pApp = CTheApplication::getInstance();
   
   if (command == CControlQueues::ACQUIRE) {
-    if (running) stopDaqImpl();
+    stopDaqImpl();
     queues->Acknowledge();
     CControlQueues::opCode release  = queues->getRequest();
     assert(release == CControlQueues::RELEASE);
     queues->Acknowledge();
-    if (running) VMusbToAutonomous();
+    VMusbToAutonomous();
     pState->setState(CRunState::Active);
   }
   else if (command == CControlQueues::END) {
     pApp->logProgress("Acquisition thread reacting to an end run request");  
-    if (running) stopDaq();
+    stopDaq();
     queues->Acknowledge();
     pApp->logStateChangeStatus("Acquisitino thread ended data taking");
     throw 0;
   }
   else if (command == CControlQueues::PAUSE) {
-    assert(running);
     pApp->logProgress("Acquisitino thread reacting to a pause run request");
     pauseRun();
     pauseDaq();
     pApp->logStateChangeStatus("Acquisition thread paused data taking.");
 
-  } else if (command == CControlQueues::RESUME) {
-    assert(!running);
-      pApp->logProgress("Acquisition thread received request to resume run");
-      resumeRun();             // Bug #5882
-      pApp->logProgress("Resume item emitted");
-      startDaq();
-      pApp->logProgress("Data taking resumed");
-      queues->Acknowledge();
-      pApp->logStateChangeStatus("Acquisition thread resumed run");
-      return;
-    }
+  }
   else {
     // bad error:
 
@@ -520,13 +509,7 @@ CAcquisitionThread::startDaq()
       pStack->Initialize(*m_pVme);    // INitialize daq hardware associated with the stack.
       pApp->logProgress("stack initialized");
 
-
       pStack->loadStack(*m_pVme);     // Load into VM-USB
-      // Libusb seems to need a delay before anabling the stack..
-
-      usleep(1000*1000);
-      sleep(4);
-      
       pApp->logProgress("stack loaded");
       pStack->enableStack(*m_pVme);   // Enable the trigger logic for the stack.
       pApp->logProgress("stack enabled");
@@ -644,10 +627,39 @@ CAcquisitionThread::pauseDaq()
 
   while (1) {
     CControlQueues::opCode req = queues->getRequest();
-    processCommand(req, false);
-    if (req == CControlQueues::RESUME) break; // no longer paused.
+
+    // Acceptable actions are to acquire the USB, 
+    // End the run or resume the run.
+    //
+
+    if (req == CControlQueues::ACQUIRE) {
+      queues->Acknowledge();
+      CControlQueues::opCode release = queues->getRequest();
+      assert (release == CControlQueues::RELEASE);
+      queues->Acknowledge();
+    }
+    else if (req == CControlQueues::END) {
+      queues->Acknowledge();
+      throw 0;
+    }
+    // Bug #5882 - pause/resume elements need to be emitted.
+    else if (req == CControlQueues::PAUSE) {    // Really should not happen.
+      pauseRun();
+    }
+    else if (req == CControlQueues::RESUME) {
+      pApp->logProgress("Acquisition thread received request to resume run");
+      resumeRun();             // Bug #5882
+      pApp->logProgress("Resume item emitted");
+      startDaq();
+      pApp->logProgress("Data taking resumed");
+      queues->Acknowledge();
+      pApp->logStateChangeStatus("Acquisition thread resumed run");
+      return;
+    }
+    else {
+      assert(0);
+    }
   }
-  
   pState->setState(CRunState::Active);
 
 }

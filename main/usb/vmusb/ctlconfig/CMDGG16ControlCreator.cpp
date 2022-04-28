@@ -11,14 +11,10 @@
 namespace WienerMDGG16
 {
 
-  CControlHardware* CControlCreator::operator()(void* unused)
+  CControlHardware* CControlCreator::operator()()
   {
     return new CControlHdwr;
   }
-  std::string
-  CControlCreator::describe() const
-  {
-    return "mdgg16 - create a wiener mdgg logic/gate and delay module";
-  }
 
 }
+

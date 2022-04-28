@@ -42,7 +42,6 @@
 #include <CControlQueues.h>
 #include <NSCLDAQLog.h>
 #include <CMutex.h>
-#include <io.h>
 
 #include <CPortManager.h>
 #include <Events.h>
@@ -60,9 +59,6 @@
 #include <string.h>
 
 #include "cmdline.h"
-#include <XXUSBUtil.h>
-#include <USBDevice.h>
-
 
 #ifndef NULL
 #define NULL ((void*)0)
@@ -333,9 +329,7 @@ void
 CTheApplication::startOutputThread(std::string ring)
 {
   COutputThread* router = new COutputThread(ring.c_str(), m_sysControl);
-  m_pOutputThread = router;
   router->start();
-  
 
 }
 
@@ -362,24 +356,27 @@ CTheApplication::startInterpreter()
 void
 CTheApplication::createUsbController(const char* pSerialNo)
 {
-  
-  USBDevice* pMyController(nullptr);
-  if (pSerialNo) {
-    pMyController = CCCUSBusb::findBySerial(pSerialNo);
-  } else {
-    auto devices = XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
-    if (devices.size()) {
-      pMyController = devices[0].second;
-      for (int i =1; i < devices.size(); i++) { // Kill off other controllers
-        delete devices[i].second;
-      }
-    } else {
-      throw std::string("There are no CCUSB devices attached to the system");
-    }
+  vector<struct usb_device*> controllers = CCCUSB::enumerate();
+  struct usb_device* pMyController(0);
+
+  if (controllers.size() == 0) {
+    cerr << "There appear to be no CC-USB controllers so I can't run\n";
+    exit(EX_CONFIG);
   }
-  
-  // or there are no devices:
-  
+  // If necessary locate the correct device:
+
+  if (pSerialNo) {
+    for (int i = 0; i < controllers.size(); i++) {
+      if (CCCUSB::serialNo(controllers[i]) == pSerialNo) {
+	pMyController = controllers[i];
+	break;
+      }
+    }
+  } else {
+    pMyController = controllers[0];
+  }
+  // This only fails if the serial number was provided
+
   if (!pMyController) {
     std::string msg = "Unable to find a CC-USB with the serial number: ";
     msg += pSerialNo;
@@ -396,15 +393,16 @@ CTheApplication::createUsbController(const char* pSerialNo)
 void 
 CTheApplication::enumerate()
 {
-  auto ccusbs = XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
-  
-
-  for (int i = 0; i < ccusbs.size(); i++) {
-    std::cout << "[" << i << "] : " << ccusbs[i].second << std::endl;
-    delete ccusbs[i].second;               // Kill the controller.
+  try {
+    std::vector<struct usb_device*> ccusbs = CCCUSB::enumerate();
+    for (int i = 0; i < ccusbs.size(); i++) {
+      std::cout << "[" << i << "] : " << CCCUSB::serialNo(ccusbs[i]) << std::endl;
+    }
+  }
+  catch (string msg) {
+    std::cerr << "Unable to enumerate CC-USB modules: " << msg << std::endl;
   }
 }
-  
 /* 
   Set the configuration files to the global storage
 
@@ -424,6 +422,61 @@ CTheApplication::setConfigFiles(const char* pDaqConfig, const char* pCtlConfig)
 }
 
 
+//
+///*
+//   Initialize the interpreter.  This invoves:
+//   - Wrapping the interpreter into a CTCLInterpreter Object.
+//   - Creating the commands that extend the interpreter.
+//   - Returning TCL_OK so that the interpreter will start running the main loop.
+//
+//*/
+//int
+//CTheApplication::AppInit(Tcl_Interp* interp)
+//{
+//  Tcl_Init(interp);
+//  CTCLInterpreter* pInterp  = new CTCLInterpreter(interp);
+//  Globals::pMainInterpreter = pInterp;
+//  Globals::mainThread       = Tcl_GetCurrentThread();
+//  new CBeginRun(*pInterp);
+//  new CEndRun(*pInterp);
+//  new CPauseRun(*pInterp);
+//  new CResumeRun(*pInterp);
+//  new CInit(*pInterp);
+//  new CExit(*pInterp);
+//
+//
+//  // Look for readoutRC.tcl in the config directory.  If it exists, run it.
+//
+//  string initScript = makeConfigFile(string("readoutRC.tcl"));
+//  try {
+//    if (access(initScript.c_str(), R_OK) == 0) {
+//      pInterp->EvalFile(initScript.c_str());
+//    }
+//    // If --init-script was specified, run it too:
+//    
+//    if (m_InitScript != "") {
+//        if (access(m_InitScript.c_str(), R_OK) == 0) {
+//            pInterp->EvalFile(m_InitScript.c_str());
+//        } else {
+//            throw CErrnoException("Checking accessibility of --init-script");
+//        }
+//    }
+//  }
+//  catch (CTCLException except) {
+//    cerr << "Failed to run initialization file.\n";
+//    cerr << except.ReasonText() << endl;
+//  }
+//
+//
+//  // Rather than returning, we're going to start the event loop here
+//  // so that we can be live to events posted from other threads:
+//
+//  CTCLLiveEventLoop* pEventLoop = CTCLLiveEventLoop::getInstance();
+//  pEventLoop->start(pInterp);
+//
+//  return TCL_OK;
+//}
+
 /*
    Make a configuration filename:  This is done by taking a basename
    and prepending the home directory and config subdir to its path:
@@ -432,13 +485,23 @@ CTheApplication::setConfigFiles(const char* pDaqConfig, const char* pCtlConfig)
 string
 CTheApplication::makeConfigFile(string baseName)
 {
-  std::string result = io::getReadableFileFromEnvdir("CONFIGDIR", baseName.c_str());
-  if (result != "") return result;
+  string home(getenv("HOME"));
+  string pathsep("/");
+  string config("config");
+  string dir;
   
-  std::string path = "/config/";
-  path            += baseName;
-  return io::getReadableFileFromHome(path.c_str());
-  
+  // The user can define a CONFIGDIR env variable to move the configuration dir.
+
+  if (getenv("CONFIGDIR")) {
+    dir =getenv("CONFIGDIR");
+  } else {
+    dir = home + pathsep + config;
+  }
+
+
+  string result = dir +  pathsep + baseName;
+  return result;
+
 }
 
 
@@ -523,6 +586,95 @@ CTheApplication::setupLogging()
     }
    }
 }
+///**
+// * ExitHandler
+// *
+// * Called when Tcl is exiting the application.  If data taking is in progress,
+// * stop it and flush the buffers.
+// *
+// * @param pData - Actually a pointer to the application object in case we need it later on.
+// */
+//void
+//CTheApplication::ExitHandler(ClientData pData)
+//{
+//  CAcquisitionThread* pReadout = CAcquisitionThread::getInstance();
+//  if (pReadout->isRunning()) {
+//    pReadout->stopDaq();	// Also flushes buffers
+//  }
+//}
+//
+///**
+// * HandleAcqThreadError
+//*    Event handler that is queued when an acquisition thread error causes thread
+//*    exit.  We invoke onTriggerFail.  If that returns an error we invoke
+//*    bgerror.  In both cases the error messages is passed to the command.
+//*
+//*    @param Tcl_Event* pEvent - Pointer to the event... this has appended to it
+//*                               a AcquisitionFailedEvent
+//*    @param flgs              - Event flags.
+//*
+//*    @return int - 1 to allow the event to be deallocated.
+// */
+//int
+//CTheApplication::HandleAcqThreadError(Tcl_Event* pEvent, int flags)
+//{
+//    // Pull out the message and release its storage so that the event
+//    // can be deleted without hanging storage around:
+//    
+//    typedef struct _AcqFailEvent {
+//        Tcl_Event              event;
+//        AcquisitionFailedEvent moreData;
+//        
+//    } *pAcqFailEvent;
+//    pAcqFailEvent pE = reinterpret_cast<pAcqFailEvent>(pEvent);
+//    std::string message = pE->moreData.pMessage;
+//    Tcl_Free(pE->moreData.pMessage);
+//    
+//    // First try to execute the onTriggerFail command:
+//    
+//    CTCLObject cmd = makeCommand(Globals::pMainInterpreter, "onTriggerFail", message);
+//    
+//    try {
+//        Globals::pMainInterpreter->GlobalEval(cmd);
+//    } catch(...) {
+//        // Failed so run the bgerror with a try /catch ignore...
+//        
+//        cmd = makeCommand(Globals::pMainInterpreter, "bgerror", message);
+//        try {
+//            Globals::pMainInterpreter->GlobalEval(cmd);
+//        }
+//        catch (...) {
+//            
+//        }
+//    }
+//    
+//    return 1;                        // Can deallocate the event.
+//}
+///**
+// * makeCommand
+// *    Create a command that consists of a verb and a single parameter.
+// *    Do it in such a way that quoting is done properly (e.g. a command is
+// *    a list)
+// *
+// *   @param pInterp - Pointer to the CTCLInterpreter that will be used to
+// *                    help in the list assembly.
+// *   @param verb    - The verb of the command.
+// *   @param param   - The command's parameter.
+// *   @return CTCLObject - Containing the command as a list, bound to pInterp.
+// */
+//CTCLObject
+//CTheApplication::makeCommand(
+//    CTCLInterpreter* pInterp, const char* verb, std::string param
+//)
+//{
+//    CTCLObject result;
+//    result.Bind(pInterp);
+//    
+//    result = verb;
+//    result += param;
+//    
+//    return result;
+//}
 /**
  * Create the application object and transfer control to it.
  *

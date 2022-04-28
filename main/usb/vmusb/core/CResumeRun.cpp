@@ -61,14 +61,13 @@ CResumeRun::operator()(CTCLInterpreter& interp,
 {
   // Check the prereqs:
 
-  try {
-    requireExactly(objv, 1, "Invalid Paramter Count");
-  } catch (std::string msg)
-  {
-    interp.setResult(msg);
+  if (objv.size() != 1) {
+    tclUtil::Usage(interp,
+		   "Invalid parameter count",
+		   objv,
+		   usage);
     return TCL_ERROR;
   }
-  
   CTheApplication* pApp = CTheApplication::getInstance();
   pApp->logStateChangeRequest("Resuming run");
   CRunState* pState = CRunState::getInstance();

@@ -21,8 +21,6 @@ set here [file dirname [file normalize [info script]]]
 lappend auto_path $here
 lappend auto_path [file join $here ../TclLibs]
 
-package require removetcllibpath
-
 # the next two lines are a workaround to prevent the Tk argument parsing from seeing
 # switches like -help.
 set argv2 $argv

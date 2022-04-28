@@ -58,10 +58,8 @@
 #include <TCLObjectProcessor.h>
 #include <Exception.h>
 #include <Globals.h>
-#include <CVMUSB.h>
 
 #include <tcl.h>
-#include <tclUtil.h>
 #include <iostream>
 #include <algorithm>
 
@@ -292,27 +290,6 @@ CConfiguration::setResult(string msg)
 {
   Tcl_Obj* result = Tcl_NewStringObj(msg.c_str(), -1);
   Tcl_SetObjResult(m_pInterp->getInterpreter(), result);
-}
-/**
- * exportController
- *    Export the controller to our interpreter as ::Globals::aController
- * @param pController - pointer to the VMUSB controller.
- */
-void
-CConfiguration::exportController(CVMUSB* pController)
-{
-  
-  Tcl_Interp*       pRaw = m_pInterp->getInterpreter();
-  
-  // Make the namespace:
-  
-  Tcl_CreateNamespace(pRaw, "::Globals", nullptr, nullptr);
-  
-  // create the swig pointer and store it in the
-  // ::Globals::aController variable:
-  
-  std::string value = tclUtil::swigPointer(pController, "CVMUSB");
-  Tcl_SetVar(pRaw, "::Globals::aController", value.c_str(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////

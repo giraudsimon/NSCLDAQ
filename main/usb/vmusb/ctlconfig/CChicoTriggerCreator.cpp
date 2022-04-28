@@ -27,16 +27,7 @@
  * @return CControlHardware*
  */
 CControlHardware*
-CChicoTriggerCreator::operator()(void* unused)
+CChicoTriggerCreator::operator()()
 {
   return new ChicoTrigger;
-}
-
-/**
- * describe what we make.
- */
-std::string
-CChicoTriggerCreator::describe() const
-{
-  return "chicotrigger - Chico smart trigger module controller";
 }

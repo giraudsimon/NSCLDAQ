@@ -80,7 +80,7 @@ protected:
   virtual void operator()();
 private:
   void mainLoop();
-  void processCommand(CControlQueues::opCode command, bool running = true);
+  void processCommand(CControlQueues::opCode command);
   void processBuffer(DataBuffer* pBuffer);
   void startDaq();
 public:

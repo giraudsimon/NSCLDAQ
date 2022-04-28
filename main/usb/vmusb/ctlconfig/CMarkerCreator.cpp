@@ -23,13 +23,7 @@
 #include "CMarkerObject.h"
 
 CControlHardware*
-CMarkerCreator::operator()(void* unused)
+CMarkerCreator::operator()()
 {
   return new CMarkerObject;
-}
-// describe what we make
-
-std::string CMarkerCreator::describe() const
-{
-  return "marker - Add a marker to the monitor list";
 }

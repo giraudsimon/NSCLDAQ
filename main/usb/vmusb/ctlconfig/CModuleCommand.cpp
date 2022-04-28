@@ -64,19 +64,30 @@ CModuleCommand::CModuleCommand(CTCLInterpreter& interp,
   // Register the standard creators:
 
   CModuleFactory* pFact = CModuleFactory::instance();
-  pFact->addCreator("jtecgdg", (new CJtecgdgCreator));
-  pFact->addCreator("caenv812", (new CV812Creator));
-  pFact->addCreator("caenv895", (new CV812Creator)); // not a typo these create the same type.
-  pFact->addCreator("vmusb", (new CVMUSBCreator));
-  pFact->addCreator("v6533", (new CV6533Creator));
-  pFact->addCreator("tcl", (new CTclModuleCreator(interp)));
-  pFact->addCreator("xlm", (new XLM::CXLMControlsCreator));
-  pFact->addCreator("mxdcrcbus",  (new CMxDCRCBusCreator));
-  pFact->addCreator("chicotrigger", (new CChicoTriggerCreator));
-  pFact->addCreator("marker", (new CMarkerCreator));
+  pFact->addCreator("jtecgdg", 
+                    unique_ptr<CModuleCreator>(new CJtecgdgCreator));
+  pFact->addCreator("caenv812", 
+                    unique_ptr<CModuleCreator>(new CV812Creator));
+  pFact->addCreator("caenv895", 
+                    unique_ptr<CModuleCreator>(new CV812Creator)); // not a typo these create the same type.
+  pFact->addCreator("vmusb", 
+                    unique_ptr<CModuleCreator>(new CVMUSBCreator));
+  pFact->addCreator("v6533", 
+                    unique_ptr<CModuleCreator>(new CV6533Creator));
+  pFact->addCreator("tcl", 
+                    unique_ptr<CModuleCreator>(new CTclModuleCreator(interp)));
+  pFact->addCreator("xlm", 
+                    unique_ptr<CModuleCreator>(new XLM::CXLMControlsCreator));
+  pFact->addCreator("mxdcrcbus", 
+                    unique_ptr<CModuleCreator>(new CMxDCRCBusCreator));
+  pFact->addCreator("chicotrigger", 
+                    unique_ptr<CModuleCreator>(new CChicoTriggerCreator));
+  pFact->addCreator("marker", unique_ptr<CModuleCreator>(new CMarkerCreator));
 
-  pFact->addCreator("mdgg16", (new WienerMDGG16::CControlCreator));
-  pFact->addCreator("mxdcreset", (new CMxDCResetCreator));
+  pFact->addCreator("mdgg16",
+                    unique_ptr<CModuleCreator>(new WienerMDGG16::CControlCreator));
+  pFact->addCreator("mxdcreset",
+                    unique_ptr<CModuleCreator>(new CMxDCResetCreator));
 
 }
 //! Destroy the module.. no op provided only as a chain to the base class destructor.
@@ -166,13 +177,7 @@ CModuleCommand::create(CTCLInterpreter& interp,
   CModuleFactory*   pFact = CModuleFactory::instance();
   CControlHardware* pHdwr(pFact->create(type));
   if (!pHdwr) {
-		std::string result = "Module create: Invalid type, must be one the following";
-		std::vector<std::string> d = pFact->getDescriptions();
-		for (int i =0; i < d.size(); i++) {
-			result += "\n";
-			result += d[i];
-		}
-    interp.setResult(result);
+    interp.setResult("Module create: Invalid type, must be one of jtecgdg, caenv812, caenvg895, vmusb, chicotrigger, v6533, xlm");
     return TCL_ERROR;
   }
 

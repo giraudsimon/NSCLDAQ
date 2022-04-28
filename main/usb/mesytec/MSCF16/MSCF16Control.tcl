@@ -21,7 +21,6 @@ lappend auto_path $here
 # add $DAQROOT/TclLibs to the auto_path
 lappend auto_path [file join $here .. TclLibs]
 
-package require removetcllibpath
 # Tk package parses argv when it is required... It will cause a crash 
 # when it encounters unknown commands, so we have to hide the real arguments
 # from it.

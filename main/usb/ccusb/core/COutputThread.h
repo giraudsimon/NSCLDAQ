@@ -23,7 +23,6 @@ using namespace std;
 
 #include <stdint.h>
 #include <string>
-#include <CElapsedTime.h>
 
 // Forward definitions:
 
@@ -82,19 +81,6 @@ class CSystemControl;
 
 class COutputThread  : public CSynchronizedThread
 {
-  // Class public types:
-public:
-  typedef struct _Counters {
-          size_t s_triggers;
-          size_t s_triggersAccepted;
-          size_t s_bytes;
-  } Counters;
-  typedef struct _Statistics {
-          Counters s_cumulative;
-          Counters s_perRun;
-  } Statistics;
-
-private:
   // Class private types
   
   typedef uint64_t (*TimestampExtractor)(void*);
@@ -109,9 +95,11 @@ private:
 
   // other data:
 private:
-
+  unsigned int m_elapsedSeconds;   // Seconds into the run.
   uint32_t    m_sequence;	   // Buffer sequence number.
   uint32_t    m_outputBufferSize;  // Bytes in output buffers.
+  timespec      m_startTimestamp;    //!< Run start time.
+  timespec      m_lastStampedBuffer; //!< Seconds into run of last stamped buffer.
   std::string m_ringName;
   CRingBuffer* m_pRing;
   uint64_t    m_nEventsSeen;
@@ -128,11 +116,6 @@ private:
   StateChangeCallback m_pBeginRunCallback;
   CSystemControl&   m_systemControl;
   
-  double        m_lastScalerTime;
-  CElapsedTime  m_runTime;
-  
-  Statistics    m_statistics;
-  
   // Constuctors and other canonicals.
 
 public:
@@ -144,7 +127,7 @@ private:
   int operator==(const COutputThread& rhs) const;
   int operator!=(const COutputThread& rhs) const;
 public:
-  const Statistics& getStatistics() const { return m_statistics;}
+
   // Thread operations are all non-public in fact.. don't want to call them
   // from outside this class.. only from within the thread.. This includes the
   // thread entry point.
@@ -177,8 +160,7 @@ private:
   void attachRing();
   uint8_t* newOutputBuffer();
   void outputTriggerCount(uint32_t runOffset);
-  void emitStateChange(uint32_t type, uint32_t barrier);
-  void clearCounters(Counters& c);
+
 };
 
 #endif

@@ -16,13 +16,27 @@
 Driver for C894 - CAEN LED 
 */
 
-#ifndef C894_H
-#define C894_h
+#ifndef __C894_H
+#define __C894_h
 
 
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT
 #include <stdint.h>
+#ifndef __CRT_STDINT
+#define __CRT_STDINT
+#endif
+#endif
 
 
 #include <CControlModule.h>

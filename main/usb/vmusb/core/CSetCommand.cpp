@@ -16,7 +16,6 @@
 
 #include <config.h>
 #include "CSetCommand.h"
-#include "TclServer.h"
 #include <CCtlConfiguration.h>
 #include <TCLObject.h>
 #include <TCLInterpreter.h>
@@ -79,8 +78,13 @@ CSetCommand::operator()(CTCLInterpreter& interp,
 
   // If we are in the middle of a run, we need to halt data collection
   // before using the vmusb
-  bool mustRelease = TclServer::acquireUSBIfNeeded();
-    string result;
+  bool mustRelease(false);
+  if (CRunState::getInstance()->getState() == CRunState::Active) {
+    mustRelease = true;
+    CControlQueues::getInstance()->AcquireUsb();
+  }
+
+  string result;
   try {
   // Now try the command returning any string error that is thrown:
     result = pModule->Set(m_Vme, point.c_str(), value.c_str());

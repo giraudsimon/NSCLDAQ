@@ -10,18 +10,13 @@
 #include <CExit.h>
 #include <Globals.h>
 #include <Events.h>
-#include "CStatisticsCommand.h"
-#include "CRunStateCommand.h"
 
 #include <TCLLiveEventLoop.h>
 #include <TCLInterpreter.h>
 #include <TCLException.h>
 #include <CErrnoException.h>
-#include <XXUSBConfigurableObject.h>
-#include <tclUtil.h>
 
 #include <tcl.h>
-
 #include <unistd.h>
 
 #include <iostream>
@@ -37,8 +32,7 @@ unique_ptr<CPauseRun>  CSystemControl::m_pPauseRun;
 unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
-unique_ptr<CStatisticsCommand>      CSystemControl::m_pStats;
-unique_ptr<CRunStateCommand> CSystemControl::m_pRunState;
+
 
 // The entry point
 void CSystemControl::run(int argc, char** argv) 
@@ -71,8 +65,6 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   m_pResumeRun.reset(new CResumeRun(*Globals::pMainInterpreter));
   m_pInit.reset(new CInit(*Globals::pMainInterpreter));
   m_pExit.reset(new CExit(*Globals::pMainInterpreter));
-  m_pStats.reset(new CStatisticsCommand(*Globals::pMainInterpreter, "statistics"));
-  m_pRunState.reset(new CRunStateCommand(*Globals::pMainInterpreter, "runstate"));
   
   // Look for readoutRC.tcl in the config directory.  If it exists, run it.
 
@@ -82,16 +74,7 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   try {
     if (m_initScript != "") {
       if (access(m_initScript.c_str(), R_OK) == 0) {
-        try {
-          Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
-        }
-        catch (...) {
-          Tcl_Interp* pRaw = Globals::pMainInterpreter->getInterpreter();
-          std::cerr << "Error executing init script " << m_initScript << std::endl;
-          std::cerr << ": " << Tcl_GetStringResult(pRaw) << ": "
-		    << tclUtil::getTclTraceback(*Globals::pMainInterpreter) << std::endl;
-          std:: cerr << "Processing continues\n";
-        }
+        Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
       } else {
         throw CErrnoException("Checking accessibility of --init-script");
       }

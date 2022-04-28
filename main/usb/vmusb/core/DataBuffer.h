@@ -17,10 +17,30 @@
 #define DATABUFFER_H
 
 
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __CRT_UNISTD_H
 #include <unistd.h>
+#ifndef __CRT_UNISTD_H
+#define __CRT_UNISTD_H
+#endif 
+#endif
+
+#ifndef __CRT_TIME_H
 #include <time.h>
+#ifndef __CRT_TIME_H
+#define __CRT_TIME_H
+#endif
+#endif
+
+#ifndef __CBUFFERQUEUE_h
 #include <CBufferQueue.h>
+#endif
 
 /*!
     \file DataBuffer

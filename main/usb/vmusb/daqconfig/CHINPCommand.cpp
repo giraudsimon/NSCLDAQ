@@ -89,9 +89,11 @@ CHINPCommand::~CHINPCommand()
 int
 CHINPCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-  Usage(interp, "NSCLDAQ does NOT support software for CHINP. Please contact whom it may concern.", objv);
-
-  return TCL_ERROR;
+  if (objv.size()) {
+    Usage(interp, "NSCLDAQ does NOT support software for CHINP. Please contact whom it may concern.", objv);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
 
 }
 /*

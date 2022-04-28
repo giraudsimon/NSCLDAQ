@@ -247,7 +247,7 @@ CV1495sc::Initialize(CVMUSB& controller)
 
   // Execute the list:
 
-  int16_t buffer;
+  int32_t buffer;
   size_t  bytesread;
   int status  = controller.executeList(list, &buffer, sizeof(buffer), &bytesread);
   

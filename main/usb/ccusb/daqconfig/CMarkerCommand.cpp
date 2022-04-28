@@ -23,7 +23,6 @@
 #include <CMarker.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
-#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -195,11 +194,18 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 int
 CMarkerCommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-	CReadoutModule* pModule = tclUtil::getModule(
-		m_Config, interp, objv, (objv.size() < 5) || ((objv.size() & 1) == 0)
-	);
-	if (!pModule) return TCL_ERROR;
-	
+  if ( (objv.size() < 5) || ((objv.size() & 1) == 0)) {
+    Usage("Incorrect number of command parameters for config", objv);
+    return TCL_ERROR;
+  }
+  /* Get the module name and use it to locate the module or report an error. */
+
+  string name = objv[2];
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (!pModule) {
+    Usage("Marker module does not exist", objv);
+    return TCL_ERROR;
+  }
   /* Process the configuration... this is done inside a try/catch block
     as the configure can throw.
   */
@@ -214,7 +220,7 @@ CMarkerCommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(msg, objv);
     return TCL_ERROR;
   }
-	std::string name = objv[2];
+
   m_Config.setResult(name);
   return TCL_OK;
 }
@@ -243,13 +249,29 @@ CMarkerCommand::config(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 int
 CMarkerCommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
-	CReadoutModule* pModule = tclUtil::getModule(
-		m_Config, interp, objv, objv.size() != 3
-	);
-	if (!pModule) return TCL_ERROR;
-  
-	tclUtil::listConfig(interp, pModule);
-	
+  if (objv.size() != 3) {
+    Usage("Invalid command parameter count for cget", objv);
+    return TCL_ERROR;
+  }
+  string           name    = objv[2];
+  CReadoutModule *pModule = m_Config.findAdc(name);
+  if (!pModule) {
+    Usage("No such  module", objv);
+    return TCL_ERROR;
+  }
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
+
+  Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
+
+  for (int i =0; i < config.size(); i++) {
+    Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
+    Tcl_Obj* value = Tcl_NewStringObj(config[i].second.c_str(), -1);
+
+    Tcl_Obj* sublist[2] = {key, value};
+    Tcl_Obj* sl = Tcl_NewListObj(2, sublist);
+    Tcl_ListObjAppendElement(interp.getInterpreter(), pResult, sl);
+  }
+  Tcl_SetObjResult(interp.getInterpreter(), pResult);
   return TCL_OK;
 
 }
@@ -260,11 +282,18 @@ CMarkerCommand::cget(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void
 CMarkerCommand::Usage(std::string msg, std::vector<CTCLObject>& objv)
 {
-  
-  std::string usage("Usage\n");
-  usage += "    marker create name value\n";
-  usage += "    marker config name config-params...\n";
-  usage += "    marker cget name";
+  string result("ERROR: ");
+  result += msg;
+  result += "\n";
+  for (int i = 0; i < objv.size(); i++) {
+    result += string(objv[i]);
+    result += ' ';
+  }
+  result += "\n";
+  result += "Usage\n";
+  result += "    marker create name value\n";
+  result += "    marker config name config-params...\n";
+  result += "    marker cget name";
 
-  tclUtil::Usage(*getInterpreter(), msg, objv, usage);
+  m_Config.setResult(result);
 }

@@ -70,8 +70,8 @@ void c3820test::config()
 
 void c3820test::init()
 {
-  auto interface = CVMUSBusb::findFirst();
-  CVMUSB vme(interface);
+  vector<struct usb_device*> interfaces = CVMUSB::enumerate();
+  CVMUSB vme(interfaces[0]);
 
   m_pConfig->configure("-base", baseString);
   try {

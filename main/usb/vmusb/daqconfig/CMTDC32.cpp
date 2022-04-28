@@ -445,7 +445,7 @@ CMTDC32::Initialize(CVMUSB& controller)
     // Run the list:
 
     size_t readSize;
-    uint16_t rdBuffer;
+    uint8_t rdBuffer[128];
 
     int status = controller.executeList(list, &rdBuffer, sizeof(rdBuffer), &readSize);
 

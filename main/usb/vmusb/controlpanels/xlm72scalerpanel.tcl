@@ -476,8 +476,11 @@ itcl::body XLM72ScalerGUI::BuildPanel {parent name offset} {
   for {set i $begin} {$i < $end} {incr i} {
 
     set trigger($i) 0
+#    ttk::label $w.ch$i -text [format "%02d" $i] -width 2
     ChannelLabel $w.name$i -defaultstring [format "Ch %02d" $i] \
                           -textvariable [itcl::scope name($i)] -width 20
+    #ttk::entry $w.name$i   -textvariable [itcl::scope name($i)] -width 8 \
+    #                  ;#-validatecommand SaveSettings
     ttk::label $w.scaler$i -textvariable [itcl::scope scaler($i)]  \
                           -padding 2 -width 10 -anchor e
     ttk::label $w.rate$i   -textvariable [itcl::scope rate($i)] \

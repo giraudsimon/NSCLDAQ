@@ -14,13 +14,26 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CPSDCOMMAND_H
-#define CPSDCOMMAND_H
+#ifndef __CPSDCOMMAND_H
+#define __CPSDCOMMAND_H
 
 #include "CDeviceCommand.h"
 
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+
 
 class CTCLInterpreter;
 class CTCLObject;

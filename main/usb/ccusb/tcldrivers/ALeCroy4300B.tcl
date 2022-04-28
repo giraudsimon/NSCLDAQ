@@ -259,10 +259,9 @@ itcl::body ALeCroy4300B::GetController {} {
 #
 #
 itcl::body ALeCroy4300B::SetPedestals {peds} {
-  set res [catch {Execute 1 [list sSetPedestals [list $peds]]} msg]
+  set res [catch {Execute 1 [list sSetPedestals $peds]} msg]
   if {$res} {
-    return -code error "[lreplace $msg 0 0 ALeCroy4300B::SetPedestals]"
-	
+    return -code error [lreplace $msg 0 0 ALeCroy4300B::SetPedestals]
   }
   return $msg
 }
@@ -485,7 +484,18 @@ itcl::body ALeCroy4300B::Execute {grouping script} {
 #ensure there is a device to execute the readout list
   if {$device ne ""} {
 
-		set rdoList [::CCUSBDriverSupport::makeList $this $script]
+    # create a new readout list
+    set rdoList [cccusbreadoutlist::CCCUSBReadoutList %AUTO%]
+
+    # extract the proc we want to use to manipulate the stack
+    set cmd [lindex $script 0]
+
+    # if there are arguments provided, use them. otherwise, dont.
+    if {[llength $script]>1} { 
+      $cmd $rdoList {*}[lreplace $script 0 0] 
+    } else {
+      $cmd $rdoList 
+    }
 
     # At this point the list will contain some commands added by the cmd
     # command

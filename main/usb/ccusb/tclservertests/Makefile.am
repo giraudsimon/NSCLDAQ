@@ -6,7 +6,6 @@ unittests_SOURCES = @srcdir@/TestRunner.cpp  @srcdir@/modulecommandtest.cpp \
 		@srcdir@/ctclmoduletest.cpp
 
 unittests_LDADD = @top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
-		@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la \
 		@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 		@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la \
 		@top_builddir@/usb/ccusb/core/libCCUSBCore.la \

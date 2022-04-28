@@ -373,12 +373,11 @@ CV1x90::Initialize(CVMUSB& controller)
 
   // Do that list:
 
-  uint16_t dummy;
-  size_t   replyBytes;
+  size_t dummy;
   int status = controller.executeList(registerWrites,
              &dummy,
              sizeof(dummy),
-             &replyBytes);
+             &dummy);
   if (status < 0) {
     throw std::string("CCAENV1x90 initialization register writ list failed");
   }

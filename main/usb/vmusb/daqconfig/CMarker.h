@@ -15,13 +15,33 @@
 */
 
 
-#ifndef CMARKER_H
-#define CMARKER_H
+#ifndef __CMARKER_H
+#define __CMARKER_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
 
 
 // Forward class definitions:

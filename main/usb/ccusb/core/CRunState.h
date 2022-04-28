@@ -14,12 +14,26 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CRUNSTATE_H
-#define CRUNSTATE_H
+#ifndef __CRUNSTATE_H
+#define __CRUNSTATE_H
 
+#ifndef __CGAURDEDOBJECT_H
 #include <CGaurdedObject.h>
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 /*!
    This class contains run state information.  Methods allow the

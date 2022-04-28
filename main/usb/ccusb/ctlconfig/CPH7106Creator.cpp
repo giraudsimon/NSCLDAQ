@@ -28,14 +28,8 @@
  *
  * @param name - the name to assign the new module object.
  */
-CControlHardware*
-CPH7106Creator::operator()(void* unused)
+  CControlHardware*
+CPH7106Creator::operator()()
 {
   return (new CPH7106);
-}
-
-std::string
-CPH7106Creator::describe() const
-{
-  return "ph7106 - leading edge discriminator";
 }

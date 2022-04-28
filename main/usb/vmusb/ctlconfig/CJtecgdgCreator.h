@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CJTECGDGCREATOR_H
-#define CJTECGDGCREATOR_H
+#ifndef __CJTECGDGCREATOR_H
+#define __CJTECGDGCREATOR_H
 
 /**
  * @file CJetcgdgCreator.h
@@ -22,7 +22,10 @@
  * @author Ron Fox <fox@nscl.msu.edu>
  */
 
+#ifndef __CMODULECREATOR_H
 #include <CModuleCreator.h>
+#endif
+
 #include <CControlHardware.h>
 #include <memory>
 
@@ -33,8 +36,7 @@
 class CJtecgdgCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()(void* userData);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 #endif

@@ -21,13 +21,28 @@
  * @author Ron Fox (fox@nscl.msu.edu).
  */
 
-#ifndef CVMUSBCOMMAND_H
-#define CVMUSBCOMMAND_H
+#ifndef __CVMUSBCOMMAND_H
+#define __CVMUSBCOMMAND_H
 
 
+#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
 
 class CTCLInterpreter;
 class CTCLObject;

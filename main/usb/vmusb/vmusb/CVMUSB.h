@@ -44,8 +44,6 @@ struct usb_dev_handle;
 
 class CMutex;
 
-
-
 /*!
    This class is part of the support package for the Wiener/JTEC VM-USB 
    USB to VME interface. This class is intended to be used in conjunction
@@ -71,6 +69,8 @@ class CVMUSB
 {
   public:
     typedef CVMUSBReadoutList RdoList;
+  public:
+    static bool  m_logTransactions;
 
   public:
 
@@ -122,13 +122,16 @@ class CVMUSB
 
 	// Class member data.
 private:
-    
-    ShadowRegisters      m_regShadow; // stores copies of all the
-    int m_timeout;
+    struct usb_dev_handle*  m_handle;	// Handle open on the device.
+    struct usb_device*      m_device;   // Device we are open on.
+    int                    m_timeout; // Timeout used when user doesn't give one.
+    ShadowRegisters      m_regShadow; // stores copies of all the  
 
     // Static functions.
 public:
-    
+    static std::vector<struct usb_device*> enumerate();
+    static std::string serialNo(struct usb_device* dev);
+
     static CMutex& getGlobalMutex();
 
     // Constructors and other canonical functions.
@@ -139,9 +142,10 @@ public:
     // and destruction implies a usb_release_interface(),
     // equality comparison has no useful meaning either:
 
-  CVMUSB() : m_timeout(2000)
+  CVMUSB() :
+    m_handle(0), m_device(0)
   {}
-
+  CVMUSB(struct usb_device* vmUsbDevice);
   virtual ~CVMUSB();
 
     // Disallowed functions as described above.
@@ -605,17 +609,6 @@ public:
 	static const uint32_t timeoutMask            = 0xf00;
 	static const uint32_t timeoutShift           = 8;
     };
-public:
-      // Bits in the list target address word:
-    
-    static const uint16_t TAVcsID0 = 1; // Bit mask of Stack id bit 0.
-    static const uint16_t TAVcsSel = 2; // Bit mask to select list dnload
-    static const uint16_t TAVcsWrite = 4; // Write bitmask.
-    static const uint16_t TAVcsIMMED = 8; // Target the VCS immediately.
-    static const uint16_t TAVcsID1 = 0x10;
-    static const uint16_t TAVcsID2 = 0x20;
-    static const uint16_t TAVcsID12MASK = 0x30; // Mask for top 2 id bits
-    static const uint16_t TAVcsID12SHIFT = 4;
     // Local functions:
 protected:
     void* addToPacket16(void* packet,   uint16_t datum);

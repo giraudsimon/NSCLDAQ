@@ -136,36 +136,4 @@ proc ::CCUSBDriverSupport::lower24Bits {value} {
   return [expr {int($value)&0xffffff}]
 }
 
-##
-# makeList
-#
-# Evaluate a script that produces a CCUSBReadoutList
-# with some items in it.  THe list is returned to the caller
-#
-# @param obj    - Object executing the command.
-# @param script - which might be parameterized.
-#                 a method of obj that generates the actual list.
-# @return cccusbreadoutlist object command.
-# @note If the script is a list (parameterized) the
-#       CCUSBReadoutlist object is inserted prior to the argument
-#       list when the script is invoked.
-# @note The script is invoked in the level of our caller
-#       in case that's important.
-#
-proc ::CCUSBDriverSupport::makeList {obj script} {
-    set rdoList [cccusbreadoutlist::CCCUSBReadoutList %AUTO%]
 
-    # extract the proc we want to use to manipulate the stack
-    set cmd [lindex $script 0]
-  
-    # if there are arguments provided, use them. otherwise, dont.
-    if {[llength $script]>1} {
-      set fcmd "$obj $cmd $rdoList {*}[lreplace $script 0 0]"
-      uplevel 1 $obj $cmd $rdoList {*}[lreplace $script 0 0]
-    
-    } else {
-      uplevel 1 $obj $cmd $rdoList
-    }
-    
-    return $rdoList
-}

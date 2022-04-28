@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CCONTROLMODULE_H
-#define CCONTROLMODULE_H
+#ifndef __CCONTROLMODULE_H
+#define __CCONTROLMODULE_H
 
 #include <CVMUSB.h>
 #include <CControlModuleT.h>

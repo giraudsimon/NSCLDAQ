@@ -13,10 +13,12 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CMADCCHAINCOMMAND_H
-#define CMADCCHAINCOMMAND_H
+#ifndef __CMADCCHAINCOMMAND_H
+#define __CMADCCHAINCOMMAND_H
 
+#ifndef __CADCCOMMAND_H
 #include "CADCCommand.h"
+#endif
 
 
 /*!
@@ -64,6 +66,7 @@ public:
 private:
   virtual int create(CTCLInterpreter& interp,
 		     std::vector<CTCLObject>& objv); // We just need to be sure a chain is created.
-  void Usage(std::string msg, std::vector<CTCLObject>& objv);
+  virtual void Usage(std::string msg, std::vector<CTCLObject>& obvj);
+    
 };
 #endif

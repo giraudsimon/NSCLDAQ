@@ -14,10 +14,11 @@
 //  East Lansing, MI 48824-1321
 //
 
-#ifndef CWienerMDGG16_H
-#define CWienerMDGG16_H
+#ifndef __CWienerMDGG16_H
+#define __CWienerMDGG16_H
 
 #include <stdint.h>
+
 #include <CVMUSB.h>
 #include <CVMUSBReadoutList.h>
 

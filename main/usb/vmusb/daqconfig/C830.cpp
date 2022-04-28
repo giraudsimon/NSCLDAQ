@@ -209,18 +209,18 @@ C830::Initialize(CVMUSB& controller)
 {
   // Just fetch the parameters first:
 
-  uint32_t  baseAddress       = m_pConfiguration->getUnsignedParameter("-base");
-  uint32_t  channelEnables    = m_pConfiguration->getUnsignedParameter("-channels");   
-  uint32_t  dwellTime         = m_pConfiguration->getUnsignedParameter("-dwelltime");   
-  bool      enableHeaders     = m_pConfiguration->getBoolParameter("-header");
+  uint32_t  baseAddress       = getIntegerParameter("-base");
+  uint32_t  channelEnables    = getIntegerParameter("-channels");   
+  uint32_t  dwellTime         = getIntegerParameter("-dwelltime");   
+  bool      enableHeaders     = getBooleanParameter("-header");
   TriggerSource latchSource   = getTriggerSource();
-  bool      isWide            = m_pConfiguration->getBoolParameter("-wide");
-  bool      autoReset         = m_pConfiguration->getBoolParameter("-autoreset");
-  uint32_t  geo               = m_pConfiguration->getUnsignedParameter("-geo");
-  bool      setGeo            = m_pConfiguration->getBoolParameter("-setgeo"); 
-  uint32_t  ipl               = m_pConfiguration->getUnsignedParameter("-ipl");
-  uint32_t  statusId            = m_pConfiguration->getUnsignedParameter("-vector");
-  uint32_t  highWaterMark     = m_pConfiguration->getUnsignedParameter("-highwatermark");
+  bool      isWide            = getBooleanParameter("-wide");
+  bool      autoReset         = getBooleanParameter("-autoreset");
+  uint32_t  geo               = getIntegerParameter("-geo");
+  bool      setGeo            = getBooleanParameter("-setgeo"); 
+  uint32_t  ipl               = getIntegerParameter("-ipl");
+  uint32_t  statusId            = getIntegerParameter("-vector");
+  uint32_t  highWaterMark     = getIntegerParameter("-highwatermark");
 
   // Reset the module:
 
@@ -261,9 +261,9 @@ C830::Initialize(CVMUSB& controller)
   
 
   size_t dummyLong;
-  uint16_t dummy;
+
   int status = controller.executeList(initList,
-			 &dummy, sizeof(dummy), &dummyLong);
+			 &dummyLong, sizeof(size_t), &dummyLong);
 
   if (status < 0) {
     throw std::string("C830 initialization list failed");
@@ -285,9 +285,9 @@ C830::Initialize(CVMUSB& controller)
 void
 C830::addReadoutList(CVMUSBReadoutList& list)
 {
-  uint32_t baseAddress = m_pConfiguration->getUnsignedParameter("-base"); // Need to know where the module lives too.
-  uint32_t enables     = m_pConfiguration->getUnsignedParameter("-channels");
-  bool     headers     = m_pConfiguration->getBoolParameter("-header");
+  uint32_t baseAddress = getIntegerParameter("-base"); // Need to know where the module lives too.
+  uint32_t enables     = getIntegerParameter("-channels");
+  bool     headers     = getBooleanParameter("-header");
 
   // compute the number of longwords to read from the MEB:
 
@@ -334,7 +334,43 @@ C830::clone() const
 //////////////////////////////////////////////////////////////////////
 
 
+// Return the value of an integer parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//    value
+// Throws a string exception (from cget) if there is no such parameter.
+// caller is responsible for ensuring the parameter is an int.
+//
+unsigned int
+C830::getIntegerParameter(string name) const
+{
+  string sValue =  m_pConfiguration->cget(name);
+  unsigned int    value  = strtoul(sValue.c_str(), NULL, 0);
 
+  return value;
+}
+
+//  Return the value of a bool parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//   true if the value is one of: true, yes, 1, on, enabled.
+bool
+C830::getBooleanParameter(string name) const
+{
+  string sValue = m_pConfiguration->cget(name);
+  set<string> trueValues;
+  trueValues.insert("true");
+  trueValues.insert("yes");
+  trueValues.insert("yes");
+  trueValues.insert("1");
+  trueValues.insert("on");
+  trueValues.insert("enabled");
+
+
+  return (trueValues.count(sValue) != 0);
+}
 //
 //  Return the source of the latch trigger for the module.
 //  Since the enum has been validated to be a valid value,

@@ -35,6 +35,31 @@
 
 using namespace std;
 
+// Constants:
+
+// Identifying marks for the VM-usb:
+
+static const short USB_WIENER_VENDOR_ID(0x16dc);
+static const short USB_VMUSB_PRODUCT_ID(0xb);
+static const short USB_CCUSB_PRODUCT_ID(1);
+
+// Bulk transfer endpoints
+
+static const int ENDPOINT_OUT(2);
+static const int ENDPOINT_IN(0x86);
+
+// Bits in the list target address words (TAV)
+
+static const uint16_t TAVcsWrite(4);  // Operation writes.
+static const uint16_t TAVcsDATA(2);   // DAQ event Data stack.
+static const uint16_t TAVcsSCALER(3); // DAQ scaler data stack.
+static const uint16_t TAVcsCNAF(0xc);   // Immediate execution of a CNAF list.
+static const uint16_t TAVcsIMMED(TAVcsCNAF);
+
+
+// Timeouts:
+
+static const int DEFAULT_TIMEOUT(2000); // ms.
 
 
 //   The following flag determines if enumerate needs to init the libusb:
@@ -49,6 +74,87 @@ const uint16_t CCCUSB::X(2);
 
 CMutex *CCCUSB::m_pGlobalMutex = nullptr;
 
+/////////////////////////////////////////////////////////////////////
+/*!
+  Enumerate the Wiener/JTec VM-USB devices.
+  This function returns a vector of usb_device descriptor pointers
+  for each Wiener/JTec device on the bus.  The assumption is that
+  some other luck function has initialized the libusb.
+  It is perfectly ok for thesre to be no VM-USB device on the USB 
+  subsystem.  In that case an empty vector is returned.
+*/
+  vector<struct usb_device*>
+CCCUSB::enumerate()
+{
+  if(!usbInitialized) {
+    usb_init();
+    usbInitialized = true;
+  }
+  usb_find_busses();    // re-enumerate the busses
+  usb_find_devices();   // re-enumerate the devices.
+
+  // Now we are ready to start the search:
+
+  vector<struct usb_device*> devices; // Result vector.
+  struct usb_bus* pBus = usb_get_busses();
+
+  while(pBus) {
+    struct usb_device* pDevice = pBus->devices;
+    while(pDevice) {
+      usb_device_descriptor* pDesc = &(pDevice->descriptor);
+      if ((pDesc->idVendor  == USB_WIENER_VENDOR_ID)    &&
+          (pDesc->idProduct == USB_CCUSB_PRODUCT_ID)) {
+        devices.push_back(pDevice);
+      }
+
+      pDevice = pDevice->next;
+    }
+
+    pBus = pBus->next;
+  }
+
+  return devices;
+}
+/**
+ * Return the serial number of a usb device.  This involves:
+ * - Opening the device.
+ * - Doing a simple string fetch on the SerialString
+ * - closing the device.
+ * - Converting that to an std::string which is then returned to the caller.
+ *
+ * @param dev - The usb_device* from which we want the serial number string.
+ *
+ * @return std::string
+ * @retval The serial number string of the device.  For VM-USB's this is a
+ *         string of the form VMnnnn where nnnn is an integer.
+ *
+ * @throw std::string exception if any of the USB functions fails indicating
+ *        why.
+ */
+string
+CCCUSB::serialNo(struct usb_device* dev)
+{
+  usb_dev_handle* pDevice = usb_open(dev);
+
+  if (pDevice) {
+    char szSerialNo[256]; // actual string is only 6chars + null.
+    int nBytes = usb_get_string_simple(pDevice, dev->descriptor.iSerialNumber,
+               szSerialNo, sizeof(szSerialNo));
+    usb_close(pDevice);
+
+    if (nBytes > 0) {
+      return std::string(szSerialNo);
+    } else {
+      throw std::string("usb_get_string_simple failed in CCCUSB::serialNo");
+    }
+               
+  } else {
+    throw std::string("usb_open failed in CCCUSB::serialNo");
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////
 /*!

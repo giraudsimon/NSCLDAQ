@@ -171,8 +171,7 @@ class CCBDCamacBranch : public CReadoutHardware
     *   \param arg is unused
     */
     static bool crateChecker(std::string name, std::string proposedValue, void* arg);
-private:
-    CCBD8210CrateController* adaptCrateController(CVMUSB& controller, iterator& p);
+
 }; // class CCBDCamacBranch
 
 #endif

@@ -14,15 +14,18 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CVMUSBCREATOR_H
-#define CVMUSBCREATOR_H
+#ifndef __CVMUSBCREATOR_H
+#define __CVMUSBCREATOR_H
 
 /**
  * @file CVMUSBCreator.h
  * @brief Define a creator for the VMUSB remote list processor.
  */
 
+#ifndef __CMODULECREATOR_H
 #include <CModuleCreator.h>
+#endif
+
 #include <CControlHardware.h>
 #include <memory>
 
@@ -32,8 +35,7 @@
 class CVMUSBCreator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()(void* userData);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 #endif

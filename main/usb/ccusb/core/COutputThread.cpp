@@ -58,6 +58,28 @@ static uint64_t bufferNumber(0);
 
 static unsigned BUFFERS_BETWEEN_STATS(64);
 
+////////////////////////////////////////////////////////////////////////
+//   mytimersub - since BSD timeval is not the same as POSIX timespec:
+////////////////////////////////////////////////////////////////////////
+static inline void 
+mytimersub(timespec* minuend, timespec* subtrahend, timespec* difference)
+{
+  // We'll cheat and map these to timevals, use timersub and convert back:
+  // this means we're only good to a microsecond not a nanosecond _sigh_
+  // if this is not good enough we'll do the subtraction manually later.
+
+  timeval m,s,d;
+  m.tv_sec   = minuend->tv_sec;
+  m.tv_usec  = minuend->tv_nsec/1000;
+
+  s.tv_sec   = subtrahend->tv_sec;
+  s.tv_usec  = subtrahend->tv_nsec/1000;
+
+  timersub(&m, &s, &d);
+
+  difference->tv_sec  = d.tv_sec;
+  difference->tv_nsec = d.tv_usec * 1000;
+}
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -87,8 +109,7 @@ COutputThread::COutputThread(const char* pRing, CSystemControl& sysControl) :
   m_pBeginRunCallback(nullptr),
   m_systemControl(sysControl)
 {
-  clearCounters(m_statistics.s_cumulative);
-  clearCounters(m_statistics.s_perRun);
+  
 }
 /*!
   Destruction is a no-op at this time.
@@ -261,8 +282,8 @@ COutputThread::formatBuffer(DataBuffer& buffer)
         //
         timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
-        uint32_t offset = m_runTime.measure() * 1000;
-        outputTriggerCount(offset);
+       
+        outputTriggerCount(now.tv_sec - m_startTimestamp.tv_sec);
         m_nBuffersBeforeCount = BUFFERS_BETWEEN_STATS;
     }
   } 
@@ -290,14 +311,13 @@ COutputThread::startRun(DataBuffer& buffer)
 {
 
 
+  time_t timestamp;
 
-  m_runTime.start();
-  m_lastScalerTime = 0.0;
-  clearCounters(m_statistics.s_perRun);    // Zero per run transfer statistics.
-  
   m_nOutputBufferSize = Globals::bufferSize;
 
-  
+  if (time(&timestamp) == -1) {
+    throw CErrnoException("Failed to get the time in COutputThread::startRun");
+  }
   // Call the timestamp extractor's callback if they have one
   
   if (m_pBeginRunCallback) {
@@ -309,13 +329,26 @@ COutputThread::startRun(DataBuffer& buffer)
   m_runNumber       = pState->getRunNumber();
   m_title           = pState->getTitle();
 
+  clock_gettime(CLOCK_REALTIME, &m_startTimestamp);
+  m_lastStampedBuffer = m_startTimestamp; // Last timestamped event...that is.
+  m_elapsedSeconds = 0;
+  
   m_nEventsSeen    = 0;
 
 
   CDataFormatItem format;
   format.commitToRing(*m_pRing);
 
-  emitStateChange(BEGIN_RUN, BARRIER_START);
+
+  CRingStateChangeItem begin(NULL_TIMESTAMP, Globals::sourceId, BARRIER_START,
+                             BEGIN_RUN,
+			     m_runNumber,
+			     0,
+			     static_cast<uint32_t>(timestamp),
+			     m_title.substr(0, TITLE_MAXSIZE-1));
+
+  begin.commitToRing(*m_pRing);
+  
   m_nBuffersBeforeCount = BUFFERS_BETWEEN_STATS;
 
 }
@@ -332,7 +365,28 @@ COutputThread::endRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-  emitStateChange(END_RUN, BARRIER_END);
+
+  // Determine the absolute timestamp.
+
+  time_t stamp;
+  if (time(&stamp) == -1) {
+    throw CErrnoException("Failed  to get the timestamp in COutputThread::endRun");
+  }
+ 
+  timespec microtime;
+  clock_gettime(CLOCK_REALTIME, &microtime);
+  timespec microdiff;
+  mytimersub(&microtime, &m_startTimestamp, &microdiff);
+  
+  CRingStateChangeItem end(NULL_TIMESTAMP, Globals::sourceId, BARRIER_END,
+                           END_RUN,
+			   m_runNumber,
+			   microdiff.tv_sec,
+			   stamp,
+			   m_title);
+
+  end.commitToRing(*m_pRing);
+			   
 }
 
 /**
@@ -347,7 +401,26 @@ COutputThread::pauseRun(DataBuffer& buffer)
   free(m_pBuffer);
   m_pBuffer = 0;
 
-  emitStateChange(PAUSE_RUN, BARRIER_END);
+  // Determine the absolute timestamp.
+
+  time_t stamp;
+  if (time(&stamp) == -1) {
+    throw CErrnoException("Failed  to get the timestamp in COutputThread::endRun");
+  }
+ 
+  timespec microtime;
+  clock_gettime(CLOCK_REALTIME, &microtime);
+  timespec microdiff;
+  mytimersub(&microtime, &m_startTimestamp, &microdiff);
+  
+  CRingStateChangeItem pause(NULL_TIMESTAMP, Globals::sourceId, BARRIER_END,
+                           PAUSE_RUN,
+			   m_runNumber,
+			   microdiff.tv_sec,
+			   stamp,
+			   m_title);
+
+  pause.commitToRing(*m_pRing);
 }
 /**
  * resumeRun    (Bug #5882)
@@ -360,7 +433,27 @@ COutputThread::resumeRun(DataBuffer& buffer)
 {
   free(m_pBuffer);
   m_pBuffer = 0;
-  emitStateChange(RESUME_RUN, BARRIER_START);
+
+  // Determine the absolute timestamp.
+
+  time_t stamp;
+  if (time(&stamp) == -1) {
+    throw CErrnoException("Failed  to get the timestamp in COutputThread::endRun");
+  }
+ 
+  timespec microtime;
+  clock_gettime(CLOCK_REALTIME, &microtime);
+  timespec microdiff;
+  mytimersub(&microtime, &m_startTimestamp, &microdiff);
+  
+  CRingStateChangeItem resume(NULL_TIMESTAMP, Globals::sourceId, BARRIER_END,
+                           RESUME_RUN,
+			   m_runNumber,
+			   microdiff.tv_sec,
+			   stamp,
+			   m_title);
+
+  resume.commitToRing(*m_pRing);  
 }
 
 
@@ -384,8 +477,11 @@ COutputThread::scaler(void* pData)
 {
 
 
-  time_t timestamp = time(nullptr);
-  
+  time_t timestamp;
+  if (time(&timestamp) == -1) {
+    throw CErrnoException("COutputThread::scaler unable to get the absolute timestamp");
+  }
+
   // Figure out where the scalers are and fetch the event header.
 
   uint16_t* pHeader = reinterpret_cast<uint16_t*>(pData);
@@ -419,7 +515,7 @@ COutputThread::scaler(void* pData)
   // The CCUSB does not timestamp scaler data for us at this time so we
   // are going to rely on the scaler period to be correct:
 
-  uint32_t endTime = m_runTime.measure() * 1000;
+  uint32_t endTime = m_elapsedSeconds + Globals::scalerPeriod;
 
   // Output a ring count item using this time:
 
@@ -430,20 +526,24 @@ COutputThread::scaler(void* pData)
 
   CRingItem* pEvent;
   if (m_pSclrTimestampExtractor) {
-    pEvent = new CRingScalerItem(
-      m_pSclrTimestampExtractor(pData), Globals::sourceId, BARRIER_NOTBARRIER,
-      m_lastScalerTime, endTime, timestamp, counterData, 1000,
-      CStack::isIncremental()
-    );
+    pEvent = new CRingScalerItem(m_pSclrTimestampExtractor(pData), 
+                                 Globals::sourceId, 
+                                 BARRIER_NOTBARRIER,
+                                 m_elapsedSeconds, 
+                                 endTime, 
+                                 timestamp, 
+                                 counterData,
+				 1, CStack::isIncremental());
   } else {
-    pEvent = new CRingScalerItem(
-      m_lastScalerTime, endTime, timestamp, counterData,
-      CStack::isIncremental(), 1000
-    );
+    pEvent = new CRingScalerItem(m_elapsedSeconds,
+                                 endTime,
+                                 timestamp, 
+                                 counterData,
+				 CStack::isIncremental());
   }
 
   pEvent->commitToRing(*m_pRing);
-  m_lastScalerTime = endTime;
+  m_elapsedSeconds = endTime;
   delete pEvent;
 
 }
@@ -591,27 +691,15 @@ COutputThread::event(void* pData)
     
     CRingItem* pEvent;
     
-    size_t nBytes = m_nWordsInBuffer*sizeof(uint16_t);
-    
-    // Count the statistics.  Note we can't reject triggers so both trigger
-    // counters unconditionally increment.
-    
-    m_statistics.s_cumulative.s_triggers++;
-    m_statistics.s_cumulative.s_triggersAccepted++;
-    m_statistics.s_cumulative.s_bytes += nBytes;
-    
-    m_statistics.s_perRun.s_triggers++;
-    m_statistics.s_perRun.s_triggersAccepted++;
-    m_statistics.s_perRun.s_bytes += nBytes;
     
     if (m_pEvtTimestampExtractor) {
         pEvent = new CRingItem(
             PHYSICS_EVENT, m_pEvtTimestampExtractor(m_pBuffer), Globals::sourceId,
-            0, nBytes + 100
+            0, m_nWordsInBuffer*sizeof(uint16_t) + 100
         );
     } else {
         pEvent = new CRingItem(
-            PHYSICS_EVENT, nBytes + 100
+            PHYSICS_EVENT, m_nWordsInBuffer*sizeof(uint16_t) + 100
         ); // +100 really needed?
     }
     CRingItem& event(*pEvent);
@@ -676,7 +764,7 @@ COutputThread::outputTriggerCount(uint32_t runOffset)
   
   time_t now = time(nullptr);
   CRingPhysicsEventCountItem item(NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
-				  m_nEventsSeen, runOffset, now, 1000);
+				  m_nEventsSeen, runOffset, now);
   item.commitToRing(*m_pRing);
 }
 /**
@@ -704,14 +792,14 @@ COutputThread::processStrings(DataBuffer& buffer, StringsBuffer& strings)
   // Once we have a timestamp we're ready to go.
 
   time_t now = time(NULL);
-  uint32_t offset = m_runTime.measure() * 1000;
-  
+
   // Create and commit the item to the ring.
 
-  CRingTextItem texts(strings.s_ringType, NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
+  CRingTextItem texts(strings.s_ringType,
+		      NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
 		      stringVector,
-		      offset,
-          now, 1000);
+		      m_elapsedSeconds, // best we can do for now.
+		      static_cast<uint32_t>(now));
   texts.commitToRing(*m_pRing);
 
 }
@@ -776,29 +864,4 @@ COutputThread::getTimestampExtractor()
 void COutputThread::scheduleApplicationExit(int status)
 {
   m_systemControl.scheduleExit(status);
-}
-
-void COutputThread::emitStateChange(uint32_t type, uint32_t barrier)
-{
-  time_t stamp = time(nullptr);
-  
-  uint32_t offset = m_runTime.measure() * 1000;
-  
-  CRingStateChangeItem item(
-    NULL_TIMESTAMP, Globals::sourceId, barrier, type,
-		m_runNumber, offset, stamp, m_title, 1000
-  );
-
-  item.commitToRing(*m_pRing);
-
-
-}
-/**
- * clearCounters
- *     Clears a set of statistics counters.
- * @param c - references the counters to clear.
- */
-void
-COutputThread::clearCounters(Counters& c) {
-  memset(&c, 0, sizeof(Counters));
 }

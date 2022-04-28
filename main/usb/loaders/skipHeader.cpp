@@ -27,24 +27,7 @@ static bool checkSyncHeader(uint32_t* p)
 {
    return ((p[0] == ntohl(sync1)) && (p[1] == ntohl(sync2))); 
 }
-/**
- * skipCounted
- *    Skip a header that has a 16 bit byte count.
- * @param p16 - pointer to the header.
- * @return uint16_t* - pointer past the heade.r
- */
-static uint16_t*
-skipCounted(uint16_t* p16)
-{
-    uint8_t* p8;
-    
-    uint16_t length = ntohs(*p16++);    // Bytes in funky header 1.
-    p8 = reinterpret_cast<uint8_t*>(p16);
-    p8 += length;
-    p16 = reinterpret_cast<uint16_t*>(p8);
-    
-    return p16;
-}
+
 /**
  * skipHeader
  *   Skips the header of a Xilinx load image
@@ -76,7 +59,7 @@ void*
 skipHeader(void* pLoadImage)
 {
     uint32_t* pSync;
-   uint16_t length;    
+    
     /*
        If this is a .bin file the header synch header starts right away:
     */
@@ -92,19 +75,26 @@ skipHeader(void* pLoadImage)
     
     // skip first funky header:
     
-    p16 = skipCounted(p16);
-    
+    uint16_t length = ntohs(*p16++);    // Bytes in funky header 1.
+    p8 = reinterpret_cast<uint8_t*>(p16);
+    p8 += length;
+    p16 = reinterpret_cast<uint16_t*>(p8);
     
     // p8, p16 are now pointing to the second funky header.
     
-    p16 = skipCounted(p16);
+    length = ntohs(*p16++);
+    p8 = reinterpret_cast<uint8_t*>(p16);
+    p8 += length;
+    p16 = reinterpret_cast<uint16_t*>(p8);
     
     // p8,p16 are pointing to the third funky header:
     
-    p16 = skipCounted(p16);
-    p8  = reinterpret_cast<uint8_t*>(p16);
     
-    
+    length = ntohs(*p16++);
+    p8 = reinterpret_cast<uint8_t*>(p16);
+    p8 += length;
+    p16 = reinterpret_cast<uint16_t*>(p8);
+
     // Now we're pointing at the first of the ascci keys which is always
     // 'b'.  The Ascii keys are consecutive:
     // Skip the key/counted field pairs:

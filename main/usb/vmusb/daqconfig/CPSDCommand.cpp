@@ -16,7 +16,6 @@
 
 #include <config.h>
 #include "CPSDCommand.h"
-#include "tclUtil.h"
 #include <CPSD.h>
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
@@ -100,7 +99,7 @@ CPSDCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 
   // Get the command elements and validate them:
 
-  string name    = tclUtil::newName(interp, &m_Config, objv);
+  string name    = objv[2];
   string sBase   = objv[3];
 
   errno = 0;
@@ -109,10 +108,15 @@ CPSDCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(interp, "Invalid value for base address", objv);
     return TCL_ERROR;
   }
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (pModule) {
+    Usage(interp, "Duplicate module creation attempted", objv);
+    return TCL_ERROR;
+  }
   // This is a unique module so we can create it:
 
   CPSD* pPSD = new CPSD;
-  CReadoutModule* pModule    = new CReadoutModule(name, *pPSD);
+  pModule    = new CReadoutModule(name, *pPSD);
   pModule->configure("-base", sBase);
 
   m_Config.addAdc(pModule);

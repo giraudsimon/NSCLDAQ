@@ -14,8 +14,8 @@
              East Lansing, MI 48824-1321
 */
 
-#ifndef SKIPHEADER_H
-#define SKIPHEADER_H
+#ifndef __SKIPHEADER_H
+#define __SKIPHEADER_H
 
 
 /**

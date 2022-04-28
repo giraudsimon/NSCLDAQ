@@ -258,7 +258,7 @@ void CMDGG16ControlTests::set_3()
   CMockVMUSB ctlr;
   ctlr.addReturnDatum(0,-1); // force negative return status
 
-  CPPUNIT_ASSERT_EQUAL( string("ERROR - Set failed - executeList returned status = -1"),
+  CPPUNIT_ASSERT_EQUAL( string("ERROR - executeList returned status = -1"),
                                 m_pMod->Set(ctlr, "or_ab", "0"));
 
 }
@@ -310,7 +310,7 @@ void CMDGG16ControlTests::get_3()
   CMockVMUSB ctlr;
   ctlr.addReturnDatum(0,-1); // force negative return status
 
-  CPPUNIT_ASSERT_EQUAL( string("ERROR - Get failed - executeList returned status = -1"),
+  CPPUNIT_ASSERT_EQUAL( string("ERROR - executeList returned status = -1"),
                                 m_pMod->Get(ctlr, "or_ab"));
 
 }

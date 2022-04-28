@@ -14,13 +14,27 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CV1495SC_H
-#define CV1495SC_H
+#ifndef _CV1495SC_H
+#define _CV1495SC_H
 
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 // Forward class definitions:
 

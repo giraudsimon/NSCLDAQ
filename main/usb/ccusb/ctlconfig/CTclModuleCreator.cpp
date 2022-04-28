@@ -36,15 +36,7 @@ CTclModuleCreator::CTclModuleCreator(CTCLInterpreter& interp)
  * @return CControlHardware* Pointer to the newly created module.
  */
   CControlHardware*
-CTclModuleCreator::operator()(void* unused)
+CTclModuleCreator::operator()()
 {
   return (new CTclControlModule(m_interp));
-}
-/**
- * describe - describe the module we create
- */
-std::string
-CTclModuleCreator::describe() const
-{
-  return "tcl - TCL implementation of a control module";
 }

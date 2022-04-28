@@ -13,13 +13,30 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CCUSBDATABUFFER_H
-#define CCUSBDATABUFFER_H
-
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __CRT_UNISTD_H
 #include <unistd.h>
+#ifndef __CRT_UNISTD_H
+#define __CRT_UNISTD_H
+#endif 
+#endif
+
+#ifndef __CRT_TIME_H
 #include <time.h>
+#ifndef __CRT_TIME_H
+#define __CRT_TIME_H
+#endif
+#endif
+
+#ifndef __CBUFFERQUEUE_h
 #include <CBufferQueue.h>
+#endif
 
 /*!
     \file DataBuffer
@@ -81,5 +98,3 @@ static const int TYPE_EVENTS(3);
 static const int TYPE_STRINGS(4);
 static const int TYPE_PAUSE(5);           // Pause/resume for Bug #5882
 static const int TYPE_RESUME(6);
-
-#endif

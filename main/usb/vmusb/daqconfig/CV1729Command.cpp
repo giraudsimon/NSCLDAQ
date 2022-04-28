@@ -16,7 +16,6 @@
 
 #include <config.h>
 #include "CV1729Command.h"
-#include "tclUtil.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include "CConfiguration.h"
@@ -96,7 +95,7 @@ CV1729Command::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 
   // Get the command elements and validate them:
 
-  string name    = tclUtil::newName(interp, &m_Config, objv);
+  string name    = objv[2];
   string sBase   = objv[3];
 
   errno = 0;
@@ -105,7 +104,12 @@ CV1729Command::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(interp, "Invalid value for base address", objv);
     return TCL_ERROR;
   }
-  CReadoutModule* pModule;
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (pModule) {
+    Usage(interp, "Duplicate module creation attempted", objv);
+    return TCL_ERROR;
+  }
+  // This is a unique module so we can create it:
 
   CV1729* pAdc = new CV1729;
   pModule    = new CReadoutModule(name, *pAdc);

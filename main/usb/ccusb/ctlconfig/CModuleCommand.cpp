@@ -53,10 +53,10 @@ CModuleCommand::CModuleCommand(CTCLInterpreter& interp,
   m_config(server)  
 {
   CModuleFactory* pFact = CModuleFactory::instance();
-  pFact->addCreator("caen894",  (new CCAEN894Creator));
-  pFact->addCreator("ph7106", (new CPH7106Creator));
-  pFact->addCreator("tcl",    (new CTclModuleCreator(interp)));
-  pFact->addCreator("ccusb",  (new CCCUSBControlCreator));
+  pFact->addCreator("caen894", unique_ptr<CModuleCreator>(new CCAEN894Creator));
+  pFact->addCreator("ph7106", unique_ptr<CModuleCreator>(new CPH7106Creator));
+  pFact->addCreator("tcl",    unique_ptr<CModuleCreator>(new CTclModuleCreator(interp)));
+  pFact->addCreator("ccusb",  unique_ptr<CModuleCreator>(new CCCUSBControlCreator));
 }
 //! Destroy the module.. no op provided only as a chain to the base class destructor.
 CModuleCommand::~CModuleCommand()
@@ -144,14 +144,7 @@ CModuleCommand::create(CTCLInterpreter& interp,
   CModuleFactory* pFact = CModuleFactory::instance();
   CControlHardware* pHdwr = pFact->create(type);
   if (!pHdwr) {
-		std::string result =
-			"Module create: Invalid type only the following types are supported:";
-		std::vector<std::string> descriptions = pFact->getDescriptions();
-		for (int i = 0;  i < descriptions.size(); i++) {
-			result += "\n";
-			result += descriptions[i];
-		}
-    interp.setResult(result);
+    interp.setResult("Module create: Invalid type, must be one of caen894, ph7106, tcl, or ccusb.");
     return TCL_ERROR;
   }
 

@@ -41,8 +41,6 @@ using namespace std;
 #include <DataBuffer.h>
 #include <Globals.h>
 #include <DataFormat.h>
-#include "XXUSBConfigurableObject.h"
-#include <tclUtil.h>
 
 static const int VarUpdateInterval(1);
 
@@ -362,51 +360,59 @@ TclServer::sendWatchedVariables()
 
       for (int i = 0; i < modifications.size(); i++) {
 	
-        // If necessary get a buffer.
-        
-        if (!pBuffer) {
-          pBuffer  = gFreeBuffers.get();
-          pStrings = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-          pDest    = initStringBuffer(pBuffer);
-          
-        }
-        
-      
-        // construct the variable name:
-        
-        std::string fullName = modifications[i].first;
-        if (modifications[i].second != "") {
-          fullName += "(" + modifications[i].second + ")";
-        }
-        const char* pValue = Tcl_GetVar(pInterp, fullName.c_str(), TCL_GLOBAL_ONLY);
-        if (pValue) {		// Protect against an unset between modification and now:
-          
-          // Construct the command as a list so that stuff will be properly quoted:
-      
-          CTCLObject setCommandObj;
-          setCommandObj.Bind(*m_pInterpreter);
-          setCommandObj += "set";
-          setCommandObj += fullName;
-          setCommandObj += pValue;
-      
-          std::string setCommand = (std::string)(setCommandObj); // Now it's all properly quoted.
-      
-          /*
-            If there's room, add to the buffer etc.  If not submit the buffer
-            and get a new one. This code assumes the set command will fit in an empty buffer.
-          */
-          if ((setCommand.size() + pBuffer->s_bufferSize + 1) > pBuffer->s_storageSize) {
-            gFilledBuffers.queue(pBuffer);
-            
-            pBuffer  = gFreeBuffers.get();
-            pStrings = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-            pDest    = initStringBuffer(pBuffer);    
-          }
-          strcpy(pDest, setCommand.c_str());
-          *pDest = 0;
-          pStrings->s_stringCount++;
-          pBuffer->s_bufferSize += setCommand.size() + 1;
-        }
+	// If necessary get a buffer.
+	
+	if (!pBuffer) {
+	  pBuffer               = gFreeBuffers.get();
+	  pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
+	  pBuffer->s_bufferType = TYPE_STRINGS;
+	  pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
+	  pStrings->s_stringCount = 0;
+	  pStrings->s_ringType    = MONITORED_VARIABLES;
+	  pDest                 = pStrings->s_strings;
+	}
+	
+
+	// construct the variable name:
+	
+	std::string fullName = modifications[i].first;
+	if (modifications[i].second != "") {
+	  fullName += "(" + modifications[i].second + ")";
+	}
+	const char* pValue = Tcl_GetVar(pInterp, fullName.c_str(), TCL_GLOBAL_ONLY);
+	if (pValue) {		// Protect against an unset between modification and now:
+	  
+	  // Construct the command as a list so that stuff will be properly quoted:
+
+	  CTCLObject setCommandObj;
+	  setCommandObj.Bind(*m_pInterpreter);
+	  setCommandObj += "set";
+	  setCommandObj += fullName;
+	  setCommandObj += pValue;
+
+	  std::string setCommand = (std::string)(setCommandObj); // Now it's all properly quoted.
+
+	  /*
+	    If there's room, add to the buffer etc.  If not submit the buffer
+	    and get a new one. This code assumes the set command will fit in an empty buffer.
+	  */
+	  if ((setCommand.size() + pBuffer->s_bufferSize + 1) > pBuffer->s_storageSize) {
+	    gFilledBuffers.queue(pBuffer);
+	    
+	    pBuffer               = gFreeBuffers.get();
+	    pBuffer->s_bufferSize = sizeof(StringsBuffer) - sizeof(char);
+	    pBuffer->s_bufferType = TYPE_STRINGS;
+	    pStrings              = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
+	    pStrings->s_stringCount = 0;
+	    pStrings->s_ringType    = MONITORED_VARIABLES;
+	    pDest                 = pStrings->s_strings;
+	    
+	  }
+	  strcpy(pDest, setCommand.c_str());
+	  *pDest = 0;
+	  pStrings->s_stringCount++;
+	  pBuffer->s_bufferSize += setCommand.size() + 1;
+	}
       }
       // Submit any partial buffer:
 
@@ -440,26 +446,9 @@ TclServer::Exit(Tcl_Event* pEvent, int flags)
 void
 TclServer::stackTrace()
 {
-  std::cerr << tclUtil::getTclTraceback(*m_pInterpreter)
-    << std::endl;
-  
-
-}
-/**
- * initStringBuffer
- *     Given a data buffer initialize it as a string buffer
- *  @param pBuffer - pointer to the data buffer.
- *  @return char*  - pointer to the string destination.
- */
-char*
-TclServer::initStringBuffer(DataBuffer* pBuffer)
-{
-  
-  pBuffer->s_bufferSize   = sizeof(StringsBuffer) - sizeof(char);
-  pBuffer->s_bufferType   = TYPE_STRINGS;
-  pStringsBuffer pStrings = reinterpret_cast<pStringsBuffer>(pBuffer->s_rawData);
-  pStrings->s_stringCount = 0;
-  pStrings->s_ringType    = MONITORED_VARIABLES;
-  char* pDest             = pStrings->s_strings;
-  return pDest;
+  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", TCLPLUS::kfFALSE);
+  const char* msg =  errorInfo.Get(TCL_GLOBAL_ONLY);
+  if (msg) {
+    std::cerr << msg << std::endl;
+  }
 }

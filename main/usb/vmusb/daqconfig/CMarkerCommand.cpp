@@ -23,7 +23,6 @@
 #include <CMarker.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
-#include "tclUtil.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -98,7 +97,7 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 
   // Get the command elements and validate them:
 
-  string name    = tclUtil::newName(interp, &m_Config, objv);
+  string name    = objv[2];
   string sValue   = objv[3];
 
   errno = 0;
@@ -107,10 +106,15 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(interp, "Invalid value for marker value.", objv);
     return TCL_ERROR;
   }
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (pModule) {
+    Usage(interp, "Duplicate module creation attempted", objv);
+    return TCL_ERROR;
+  }
   // This is a unique module so we can create it:
 
   CMarker* pMarker = new CMarker;
-  CReadoutModule* pModule    = new CReadoutModule(name, *pMarker);
+  pModule    = new CReadoutModule(name, *pMarker);
   pModule->configure("-value", sValue);
 
   m_Config.addAdc(pModule);
@@ -124,19 +128,26 @@ CMarkerCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 void
 CMarkerCommand::Usage(CTCLInterpreter& interp, const char *msg, std::vector<CTCLObject>& objv)
 {
-  std::string cmd = objv[0];
-  std::string usage("Usage\n");
-  usage += "    ";
-  usage += cmd;
-  usage += "  create name value\n";
-  usage += "    ";
-  usage += cmd;
-  usage += " config name config-params...\n";
-  usage += "    ";
-  usage += cmd;
-  usage += " cget name";
-  
-  tclUtil::Usage(interp, msg, objv, usage);
-  
-}
+  std::string result("ERROR: ");
+  std::string cmdName = objv[0];
 
+  result += msg;
+  result += "\n";
+  for (int i = 0; i < objv.size(); i++) {
+    result += std::string(objv[i]);
+    result += ' ';
+  }
+  result += "\n";
+  result += "Usage\n";
+  result += "    ";
+  result += cmdName;
+  result += "  create name value\n";
+  result += "    ";
+  result += cmdName;
+  result += " config name config-params...\n";
+  result += "    ";
+  result += cmdName;
+  result += " cget name";
+  
+  interp.setResult(result);  
+}

@@ -233,7 +233,7 @@ C785::addToChain(CVMUSB& controller,
 {
   // Get the base address of the module:
 
-  uint32_t baseAddress = m_pConfiguration->getUnsignedParameter("-base");
+  uint32_t baseAddress = getIntegerParameter("-base");
 
   // Set the MCST/CBLT register:
 
@@ -392,7 +392,7 @@ C785::Initialize(CVMUSB& controller)
 
   // Set the GEOgraphical address of the module.
 
-  uint16_t geo = m_pConfiguration->getUnsignedParameter("-geo");
+  uint16_t geo = getIntegerParameter("-geo");
   controller.vmeWrite16(base+GEO, initamod, geo);
   controller.vmeWrite16(base+BSet1, initamod, (uint16_t)0x80);
   controller.vmeWrite16(base+BClear1, initamod, (uint16_t)0x80);
@@ -407,7 +407,7 @@ C785::Initialize(CVMUSB& controller)
     controller.vmeWrite16(base+Thresholds+chan*sizeof(uint16_t), initamod, 
 			  threshold);
   }
-  if (m_pConfiguration->getBoolParameter("-smallthresholds")) {
+  if (getBoolParameter("-smallthresholds")) {
     controller.vmeWrite16(base+BSet2, initamod, (uint16_t)0x100);	// big thresholds.
   } 
   else {
@@ -416,9 +416,9 @@ C785::Initialize(CVMUSB& controller)
   
   // Set the interrupt characteristics of the module:
 
-  uint16_t ipl     = m_pConfiguration->getUnsignedParameter("-ipl");
-  uint16_t IVector = m_pConfiguration->getUnsignedParameter("-vector");
-  uint16_t WhenIRQ = m_pConfiguration->getUnsignedParameter("-highwater");
+  uint16_t ipl     = getIntegerParameter("-ipl");
+  uint16_t IVector = getIntegerParameter("-vector");
+  uint16_t WhenIRQ = getIntegerParameter("-highwater");
 
   controller.vmeWrite16(base+IPL,       initamod, ipl);
   controller.vmeWrite16(base+Vector,    initamod, IVector);
@@ -431,12 +431,12 @@ C785::Initialize(CVMUSB& controller)
 
   // Set the fast clear window:
 
-  uint16_t fclearValue = m_pConfiguration->getUnsignedParameter("-fastclear");
+  uint16_t fclearValue = getIntegerParameter("-fastclear");
   controller.vmeWrite16(base+FastClear, initamod, fclearValue);
 
   // Set the supression.
 
-  bool supressed = m_pConfiguration->getBoolParameter("-supressrange");
+  bool supressed = getBoolParameter("-supressrange");
   if (!supressed) {		// Set means disable checks.
     controller.vmeWrite16(base+BSet2, initamod, (uint16_t)0x38);
   }
@@ -447,7 +447,7 @@ C785::Initialize(CVMUSB& controller)
   // If the user chooses to require data even if the module
   // is 'empty' take care of that too:
 
-  bool requireData = m_pConfiguration->getBoolParameter("-requiredata");
+  bool requireData = getBoolParameter("-requiredata");
   if (requireData) {
     controller.vmeWrite16(base+BSet2, initamod, (uint16_t)0x1000);
   } 
@@ -458,7 +458,7 @@ C785::Initialize(CVMUSB& controller)
   // If the module is a 775 write the timerange register.
 
   if (type == 775) {
-    int    range   = m_pConfiguration->getUnsignedParameter("-timescale");
+    int    range   = getIntegerParameter("-timescale");
     int    reg2Offset;
     //
     // Compute the register value (see 4.33 of the V775 manual).
@@ -469,7 +469,7 @@ C785::Initialize(CVMUSB& controller)
 
     // Set common start/stop mode.
 
-    bool commonStop = m_pConfiguration->getBoolParameter("-commonstop");
+    bool commonStop = getBoolParameter("-commonstop");
     if (commonStop) {
       
       reg2Offset = BSet2;
@@ -482,7 +482,7 @@ C785::Initialize(CVMUSB& controller)
   }
   // QDC specific settings:
   if ((type == 792) || (type == 862) || (type == 965)) {
-    int iped = m_pConfiguration->getUnsignedParameter("-iped");
+    int iped = getIntegerParameter("-iped");
     controller.vmeWrite16(base + Iped, initamod, static_cast<uint16_t>(iped));
   }
 
@@ -543,6 +543,42 @@ C785::clone() const
 //////////////////// Private utility functions //////////////////////
 /////////////////////////////////////////////////////////////////////
 
+// Return the value of an integer parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//    value
+// Throws a string exception (from cget) if there is no such parameter.
+// caller is responsible for ensuring the parameter is an int.
+//
+unsigned int
+C785::getIntegerParameter(string name)
+{
+  string sValue =  m_pConfiguration->cget(name);
+  unsigned int    value  = strtoul(sValue.c_str(), NULL, 0);
+
+  return value;
+}
+//  Return the value of a bool parameter.
+// Parameters:
+//    std::string name - name of the parameter.
+// Returns:
+//   true if the value is one of: true, yes, 1, on, enabled.
+bool
+C785::getBoolParameter(string name)
+{
+  string sValue = m_pConfiguration->cget(name);
+  set<string> trueValues;
+  trueValues.insert("true");
+  trueValues.insert("yes");
+  trueValues.insert("yes");
+  trueValues.insert("1");
+  trueValues.insert("on");
+  trueValues.insert("enabled");
+
+
+  return (trueValues.count(sValue) != 0);
+}
 // Get the values of the thresholds  The thresholds should be a list
 // of integer values.. which we will stuff into a vector.
 // Parameters:
@@ -551,15 +587,21 @@ C785::clone() const
 void
 C785::getThresholds(vector<uint16_t>& thresholds)
 {
-  
-  std::vector<int> ts = m_pConfiguration->getIntegerList("-thresholds");
-  assert(ts.size() == 32);
-  thresholds.clear();
-		
+  int    argc;
+  const char **argv;
+  string sValue = m_pConfiguration->cget("-thresholds");
+  Tcl_SplitList(NULL, sValue.c_str(), &argc, &argv);
+
+  assert(argc == 32);		// Validator should have done this.
+
   for(int i =0; i < 32; i++) {
-    thresholds.push_back(ts[i]);
+    thresholds.push_back(static_cast<uint16_t>(strtol(argv[i], NULL, 0)));
   }
   
+
+  Tcl_Free((char*)argv);
+
+ 
 }
 // Get the module type.  This is done by reading the three module type
 // bytes from the module's configuratino prom.

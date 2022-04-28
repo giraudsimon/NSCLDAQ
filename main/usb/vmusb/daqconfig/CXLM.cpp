@@ -50,11 +50,8 @@ using namespace std;
 
 static const uint8_t   registerAmod(CVMUSBReadoutList::a32UserData);
 static const uint8_t   sramaAmod(CVMUSBReadoutList::a32UserData);
-static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock);
+static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock); 
 
-const uint8_t XLM::CXLM::registerAmod(CVMUSBReadoutList::a32UserData);
-const uint8_t XLM::CXLM::blockTransferAmod(CVMUSBReadoutList::a32UserBlock);
-const float   XLM::CXLM::vmusbClockTick(12.5);
 
 // The IRQ/serial number register is some mess of bits; both in/out
 // we're just going to define a function for extracting the serial number from a read:
@@ -449,8 +446,10 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
   while (nRemainingBytes > blockSize*sizeof(uint32_t)) {
     CVMUSBReadoutList  loadList;
     for (int i =0; i < blockSize; i++) {
-#ifdef DUMPDEBUG
-      dumpLong(dump, destAddr, sramAmod, *p);
+#ifdef DUMPDEBUG      
+      dump << "\n" << setw(8) << destAddr 
+           << " " << setw(2)  << static_cast<int>(sramaAmod)
+           << " " << setw(8) << *p;
 #endif      
       loadList.addWrite32(destAddr, sramaAmod,  *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
@@ -459,16 +458,24 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
     nRemainingBytes -= blockSize*sizeof(uint32_t);
     // Write the block:
 
-    doList(loadList);
-    
+    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
+    if (retData.size() == 0) {
+      string error = strerror(errno);
+      string msg   = "XLM::CFirmwareLoader::loadSRAMA - list execution failed to load the SRAM: ";
+      msg         += error;
+      throw msg;
+    }
+
   }
 
   // Handle any odd partial block:
   if (nRemainingBytes > 0) {
     CVMUSBReadoutList loadList;
     while (nRemainingBytes > 0) {
-#ifdef DUMPDEBUG
-      dumpLong(dump, destAddr, sramaAmod, *p);
+#ifdef DUMPDEBUG     
+      dump << "\n" << setw(8) << destAddr 
+           << " " << setw(2)  << static_cast<int>(sramaAmod)
+           << " " << setw(8) << *p;
 #endif      
       loadList.addWrite32(destAddr, sramaAmod, *p++);
 //      loadList.addRead32(destAddr, sramaAmod);
@@ -476,13 +483,19 @@ void CFirmwareLoader::loadSRAM0(uint32_t destAddr, uint32_t* image, uint32_t nBy
       nRemainingBytes -= sizeof(uint32_t);
     }
     // Write the block:
-  
-    doList(loadList);
+
+    std::vector<uint8_t> retData = m_ctlr.executeList(loadList, sizeof(uint16_t));
+    if (retData.size() == 0) {
+      string error = strerror(errno);
+      string msg   = "CXM::loadSRAMA - list execution failed to load the SRAM: ";
+      msg         += error;
+      throw msg;
+    }
   }
 #ifdef DUMPDEBUG  
   dump << endl;
 #endif  
-}                // Any dump string gets closed here.
+}
 
 void CFirmwareLoader::loadSRAM1(uint32_t destAddr, uint32_t* image, uint32_t nBytes)
 {
@@ -655,44 +668,16 @@ void CFirmwareLoader::releaseBusses()
   list.addWrite32(m_baseAddr + BusRequest, registerAmod, uint32_t(0));	// Release bus request.
   list.addWrite32(m_baseAddr + ForceOffBus, registerAmod, uint32_t(0)); // Remove force
 
-  doList(list);
-  
-
-}
-/**
- * dumpLong
- *    (debugging) dump address, amod and value to be loaded
- *    to that address.
- * @param f - stream to which to do the dump.
- * @param a - address
- * @param amod - address modifiter.
- * @param data - data being dumped.
- */
-void
-CFirmwareLoader::dumpLong(std::ostream& f, uint32_t a, uint8_t amod, uint32_t data)
-{
-  f << "\n" << setw(8) << a
-           << " " << setw(2)  << static_cast<int>(amod)
-           << " " << setw(8) << data;
-}
-/**
- * doList
- *    Peform a list of operations on the controller.
- * @param list - the list to perform.
- * @throws std::string with error message on failure.
- */
-void
-CFirmwareLoader::doList(CVMUSBReadoutList& list)
-{
   auto retData = m_ctlr.executeList(list, sizeof(uint16_t));
   if (retData.size() == 0) {
     string reason = strerror(errno);
     string message = "XLM::CFirmwareLoader::releaseBusses failed to execute reset list ";
     message       += reason;
     throw message;
-  }  
+  }
 
 }
+
 /*!
   Access some combination of the busses.  The assumption is that since this
   is a one shot, and since I'm ensured that I'll get the bus within 200ns, the host

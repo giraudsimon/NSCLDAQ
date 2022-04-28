@@ -20,13 +20,28 @@
 # @author <fox@nscl.msu.edu>
 */
 
-#ifndef CMARKEROBJECT_H
-#define CMARKEROBJECT_H
+#ifndef _CMARKEROBJECT_H
+#define _CMARKEROBJECT_H
 
 
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
 #include "CControlModule.h"
 
 

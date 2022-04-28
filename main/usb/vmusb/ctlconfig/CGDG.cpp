@@ -29,9 +29,6 @@ using namespace std;
 
 // MDD8 register etc. definitions.
 
-#ifdef CONST
-#undef CONST        /* Defined in tclh. */
-#endif
 #define CONST(name) static const uint32_t name = 
 
 static const uint8_t  am (CVMUSBReadoutList::a24UserData); // Address modifier.
@@ -130,6 +127,7 @@ CONST(SEL_4)        24;
   handled at attach time.
 */
 CGDG::CGDG() :
+  CControlHardware(),
   m_pConfiguration(0)
 {
   for (int i=0; i < 8; i++) {
@@ -141,7 +139,7 @@ CGDG::CGDG() :
   regularity.
 */
 CGDG::CGDG(const CGDG& rhs)  : 
-  CVMUSBControlHardware(rhs)
+  CControlHardware(rhs)
 {
 }
 /*!
@@ -157,7 +155,7 @@ CGDG&
 CGDG::operator=(const CGDG& rhs) 
 {
   if (this != &rhs) {
-    CVMUSBControlHardware::operator=(rhs);
+    CControlHardware::operator=(rhs);
   }
   return *this;
 }
@@ -275,11 +273,11 @@ CGDG::Update(CVMUSB& vme)
 
   uint32_t inputData[16];	// Data buffer for the list.
   size_t   readSize;
-  try {
-    doList(vme, ops, inputData, sizeof(inputData), &readSize, "ERROR - could not update" );
-  } catch (std::string msg) {
-    return msg;
+  int status = vme.executeList(ops, inputData, sizeof(inputData), &readSize);
+  if (status < 0) {
+    return string("ERROR - Could not execute Update List");
   }
+  
   for (int i=0; i < 8; i++) {
     m_delays[i] = inputData[i*2];   // delays are the evens.
     m_widths[i] = inputData[1+i*2]; // widths are the odds.

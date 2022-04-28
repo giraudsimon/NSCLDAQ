@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CMODULEFACTORY_H
-#define CMODULEFACTORY_H
+#ifndef __CMODULEFACTORY_H
+#define __CMODULEFACTORY_H
 
 #include <CVMUSB.h>
 #include <CModuleFactoryT.h>

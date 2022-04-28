@@ -14,10 +14,15 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#ifndef __GLOBALS_H
+#define __GLOBALS_H
 
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 
 class CConfiguration;

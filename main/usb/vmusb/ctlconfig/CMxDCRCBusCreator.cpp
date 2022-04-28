@@ -8,14 +8,9 @@
 /////////////////////// CMxDCRCBusCreator ///////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-CControlHardware* CMxDCRCBusCreator::operator()(void* unused)
+CControlHardware* CMxDCRCBusCreator::operator()()
 {
   CMxDCRCBus* pItem = new CMxDCRCBus;
   return pItem;
-}
-std::string
-CMxDCRCBusCreator::describe() const
-{
-  return "mxdcrcbus - Mesytec RC bus controller";
 }
 

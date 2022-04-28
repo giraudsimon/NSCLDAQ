@@ -14,11 +14,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CMODULECREATORT_H
-#define CMODULECREATORT_H
+#ifndef __CMODULECREATORT_H
+#define __CMODULECREATORT_H
 
 #include <memory>
-#include <CExtensibleFactory.h>
 
 /**
  * @file CModuleCreatorT.h
@@ -29,8 +28,23 @@
 
 template<class Ctlr> class CControlHardwareT;
 
+/**
+ * @class CModuleCreator
+ *
+ *     Creates modules of a specific type.  This is an ABC
+ */
 template<class Ctlr>
-using CModuleCreatorT = CCreator<CControlHardwareT<Ctlr>>;
+class CModuleCreatorT
+{
+public:
+  /**! \brief Factory method
+   *
+   * Derived classes must implement this.
+   *
+   * \returns new instance of type derived from CControlHardwareT<Ctlr>
+   */
+  virtual CControlHardwareT<Ctlr>* operator()() = 0; 
+};
 
 
 #endif

@@ -15,8 +15,8 @@
 */
 
 
-#ifndef CCCUSBREMOTE_H
-#define CCCUSBREMOTE_H
+#ifndef __CCCUSBREMOTE_H
+#define __CCCUSBREMOTE_H
 
 #include <CCCUSB.h> 
 #include <vector>

@@ -14,10 +14,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CREADOUTMODULE_H
-#define CREADOUTMODULE_H
+#ifndef __CREADOUTMODULE_H
+#define __CREADOUTMODULE_H
 
+#ifndef __CCONFIGURABLEOBJECT_h
 #include "XXUSBConfigurableObject.h"
+#endif
 
 // Forward classes:
 

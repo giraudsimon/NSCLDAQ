@@ -19,7 +19,6 @@ class CResumeRun;
 class CInit;
 class CExit;
 class CMonvarCommand;
-class CStatisticsCommand;
 
 /*! \brief Encapsulation of UI control 
  *
@@ -47,7 +46,7 @@ class CSystemControl
     static std::unique_ptr<CInit>      m_pInit;
     static std::unique_ptr<CExit>      m_pExit;
     static std::unique_ptr<CMonvarCommand> m_pMonVar;
-    static  std::unique_ptr<CStatisticsCommand> m_pStats;
+
   public:
 
     /*! \brief Wrapper around Tcl_Main 
@@ -104,7 +103,5 @@ class CSystemControl
     static CTCLObject makeCommand(CTCLInterpreter* pInterp, 
                                   const char* verb, 
                                   std::string argument);
-    static std::string getEventString(Tcl_Event* pEvent);
-    static Tcl_Event* makeStringEvent(std::string msg);
 };
 #endif

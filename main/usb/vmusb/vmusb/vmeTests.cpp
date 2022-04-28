@@ -16,7 +16,6 @@
 
 
 #include "Asserts.h"
-#include <USBDevice.h>
 
 using namespace std;
 
@@ -45,16 +44,16 @@ class vmeTests : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE_END();
 
 private:
-  USBDevice* m_dev;
+  struct usb_device*   m_dev;
   CVMUSB*  m_pInterface;
 public:
   void setUp() {
-    m_dev = CVMUSBusb::findFirst();
-    if (!m_dev) {
+    vector<struct usb_device*> devices = CVMUSB::enumerate();
+    if (devices.size() == 0) {
       cerr << " NO USB interfaces\n";
       exit(0);
     }
-    m_pInterface = new CVMUSBusb(m_dev);
+    m_pInterface = new CVMUSBusb(devices[0]);
     
     uint32_t one=1;
     m_pInterface->vmeWrite32(vmebase | 0x00800000,amod,one);
@@ -65,7 +64,6 @@ public:
     m_pInterface->vmeWrite32(vmebase | 0x00800000,amod,zero);
     m_pInterface->vmeWrite32(vmebase | 0x0080000c,amod,zero);
     delete m_pInterface;
-    delete m_dev;
   }
 protected:
   void rdwr32();

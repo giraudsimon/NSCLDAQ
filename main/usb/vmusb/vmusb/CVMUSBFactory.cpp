@@ -18,7 +18,6 @@
 #include "CVMUSBEthernet.h"
 #include <string>
 #include <vector>
-
 /**
  * @file   CVMUSBFactory.cpp
  * @brief  implementation of VMUSB factory methods.
@@ -69,20 +68,34 @@ CVMUSBFactory::createUSBController(CVMUSBFactory::ControllerType type, const cha
 CVMUSB*
 CVMUSBFactory::createLocalController(const char* serialNumber)
 {
-  USBDevice* pDevice;
-  if (serialNumber) {
-   pDevice = CVMUSBusb::findBySerial(serialNumber);
-  } else {
-   pDevice = CVMUSBusb::findFirst();
+  // enumerate the devices - if there aren't any it's an error.
+
+  std::vector<struct usb_device*> controllers = CVMUSBusb::enumerate();
+
+ if (controllers.size() == 0) {
+    throw std::string("There are no VM-USB controllers attached to this system");
   }
-  if (!pDevice) {
-    if (serialNumber) {
-     throw std::string("The VMUSB with the requested Serial number is not connected to this system");
-    } else {
-     throw std::string("There are no VMUSB devices connected to this system.");
+  // Figure out which we want to match:
+
+  struct usb_device* pSelected = controllers[0];
+
+  if (serialNumber) {
+    pSelected = 0;
+    for (int i =0; i < controllers.size(); i++) {
+      std::string serial = CVMUSBusb::serialNo(controllers[i]);
+      if (serial == serialNumber) {
+	pSelected = controllers[i];
+	break;
+      }
     }
   }
-  return new CVMUSBusb(pDevice);
+  // It's an error for there not to be any matching serial number
+    
+  if (!pSelected) {
+    throw std::string("No matching VM-USB controller");
+  }
+
+  return new CVMUSBusb(pSelected);
 
 
 }

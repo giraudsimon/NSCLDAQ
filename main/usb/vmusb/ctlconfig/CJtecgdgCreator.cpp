@@ -27,13 +27,7 @@
  * @return CControlHardware* - Pointer to a CGDG.
  */
   CControlHardware*
-CJtecgdgCreator::operator()(void* userdata)
+CJtecgdgCreator::operator()()
 {
   return new CGDG;
-}
-
-std::string
-CJtecgdgCreator::describe() const
-{
-  return "jtecgdg - Create a JTEC gdg module controller";
 }

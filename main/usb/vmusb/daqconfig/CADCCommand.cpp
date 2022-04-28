@@ -22,7 +22,6 @@
 #include <C785.h>
 #include <CReadoutModule.h>
 #include <XXUSBConfigurableObject.h>
-#include <tclUtil.h>
 
 #include <stdlib.h>
 #include <errno.h>
@@ -90,17 +89,14 @@ CADCCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
 {
   // Need to have exactly 4 elements, command 'create' name base.
 
-	if (objv.size() < 4) {
+  if (objv.size() < 4) {
     Usage(interp, "Not enough parameters for create subcommand", objv);
     return TCL_ERROR;
   }
-	
-	std::string name = tclUtil::newName(interp, &m_Config, objv);
-	if (name == "") return TCL_ERROR;
-  
 
   // Get the command elements and validate them:
 
+  string name    = objv[2];
   string sBase   = objv[3];
 
   errno = 0;
@@ -109,10 +105,15 @@ CADCCommand::create(CTCLInterpreter& interp, vector<CTCLObject>& objv)
     Usage(interp, "Invalid value for base address", objv);
     return TCL_ERROR;
   }
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (pModule) {
+    Usage(interp, "Duplicate module creation attempted", objv);
+    return TCL_ERROR;
+  }
   // This is a unique module so we can create it:
 
   C785* pAdc = new C785;
-  CReadoutModule* pModule    = new CReadoutModule(name, *pAdc);
+  pModule    = new CReadoutModule(name, *pAdc);
   pModule->configure("-base", sBase);
   
   // If there are sufficient parameters, try to do additional configuration:

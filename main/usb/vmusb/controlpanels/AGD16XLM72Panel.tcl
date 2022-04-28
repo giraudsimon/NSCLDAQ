@@ -112,7 +112,8 @@ itcl::class AGD16XLM72Panel {
   # The following deal with the construction and behavior of the 
   # custom spinboxes used in this class
 	public method DrawEntryGD16 {c x y id var label color}
-	public method IncrementGD16 {var amount}
+	public method IncrementGD16 {var}
+	public method DecrementGD16 {var}
 	public method StopRepeatGD16 {}
 
   ## \brief Makes all of the child widgets disabled
@@ -404,48 +405,62 @@ itcl::body AGD16XLM72Panel::DrawEntryGD16 {c x y id var label color} {
 	[expr $x+45] [expr $y+2] [expr $x+40] [expr $y+10] -fill white -outline black]
 	$c bind $up <Enter> "$c itemconfigure $up -fill black"
 	$c bind $up <Leave> "$c itemconfigure $up -fill white"
-	$c bind $up <Button-1> "$this IncrementGD16 $var 1"
+	$c bind $up <Button-1> "$this IncrementGD16 $var"
 	$c bind $up <ButtonRelease> "$this StopRepeatGD16"
 	$c bind $down <Enter> "$c itemconfigure $down -fill black"
 	$c bind $down <Leave> "$c itemconfigure $down -fill white"
-	$c bind $down <Button-1> "$this IncrementGD16 $var -1"
+	$c bind $down <Button-1> "$this DecrementGD16 $var"
 	$c bind $down <ButtonRelease> "$this StopRepeatGD16"
 	return $c.$id
 }
 
 #
-itcl::body AGD16XLM72Panel::IncrementGD16 {var amount} {
+itcl::body AGD16XLM72Panel::IncrementGD16 {var} {
 	global gd16
-  
-  # Nothing happens if we're locked.
-  
-  if {$gd16(locked) == 1} {
-		return
-	}
-  
 	if {[info exist gd16(firstClick)] == 0} {
 		set gd16(firstClick) 1
 	}
 	if {$gd16(firstClick) == 1} {
-		set gd16(repeatID) [after 500 $this IncrementGD16 $var $amount]
+		set gd16(repeatID) [after 500 $this IncrementGD16 $var]
 		set gd16(firstClick) 0
 	} else {
-		set gd16(repeatID) [after 50 $this IncrementGD16 $var $amount]
+		set gd16(repeatID) [after 50 $this IncrementGD16 $var]
 	}
-	
-  incr bd16($var) $amount
-	
+	if {$gd16(locked) == 1} {
+		return
+	}
+	set gd16($var) [expr $gd16($var) + 1]
 	if {$gd16($var) > 255} {
 		set gd16($var) 255
 	}
-  if {$gd16($var) < 0} {
-    set gd16($var) 0
-  }
 	if {[string match delay* $var]} {set i [string trimleft $var delay]}
 	if {[string match width* $var]} {set i [string trimleft $var width]}
 	$proxy SetDelayWidth $i $gd16(delay$i) $gd16(width$i)
 }
 
+#
+itcl::body AGD16XLM72Panel::DecrementGD16 {var} {
+	global gd16
+	if {[info exist gd16(firstClick)] == 0} {
+		set gd16(firstClick) 1
+	}
+	if {$gd16(firstClick) == 1} {
+		set gd16(repeatID) [after 500 $this DecrementGD16 $var]
+		set gd16(firstClick) 0
+	} else {
+		set gd16(repeatID) [after 50 $this DecrementGD16 $var]
+	}
+	if {$gd16(locked) == 1} {
+		return
+	}
+	set gd16($var) [expr $gd16($var) - 1]
+	if {$gd16($var) < 0} {
+		set gd16($var) 0
+	}
+	if {[string match delay* $var]} {set i [string trimleft $var delay]}
+	if {[string match width* $var]} {set i [string trimleft $var width]}
+	$proxy SetDelayWidth $i $gd16(delay$i) $gd16(width$i)
+}
 
 #
 itcl::body AGD16XLM72Panel::StopRepeatGD16 {} {

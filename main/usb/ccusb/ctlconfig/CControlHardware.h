@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CCONTROLHARDWARE_H
-#define CCONTROLHARDWARE_H
+#ifndef __CCONTROLHARDWARE_H
+#define __CCONTROLHARDWARE_H
 
 #include <CControlHardwareT.h>
 #include <CCCUSB.h>

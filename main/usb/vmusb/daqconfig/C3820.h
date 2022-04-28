@@ -13,11 +13,19 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef C3820_H
-#define C3820_H
+#ifndef __C3820_H
+#define __C3820_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
 
 // Forward class definitions:
 

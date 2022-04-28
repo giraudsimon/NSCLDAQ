@@ -41,8 +41,13 @@ using namespace XLM;
 
 // Address modifiers we are going to use:
 
+static const uint8_t   registerAmod(CVMUSBReadoutList::a32UserData);
+static const uint8_t   blockTransferAmod(CVMUSBReadoutList::a32UserBlock); 
 
-static const float     busDelay(10/XLM::CXLM::vmusbClockTick); // ticks to delay prior to getting the bus.
+// Clock ns per VMUSB delay tick.
+
+static const float     vmusbClockTick(12.5);
+static const float     busDelay(10/vmusbClockTick); // ticks to delay prior to getting the bus.
 // map some XLM register addresses
 static const uint32_t  BUSAOwner  (0x810000); // Shows who has bus A (SRAM A)
 static const uint32_t  BUSBOwner  (0x810004); // Shows who has bus B (SRAM B)

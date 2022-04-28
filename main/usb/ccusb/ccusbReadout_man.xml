@@ -7396,28 +7396,15 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
        <refsynopsisdiv>
         <programlisting>
         <synopsis>
-            #include &lt;CCCUSB.h&gt;
             class <ooclass><classname>CCCUSBusb</classname></ooclass> : public <ooclass><classname>CCCUSB</classname></ooclass> {
             
            <constructorsynopsis>
              <methodname>CCCUSBusb</methodname>
               <methodparam>
-                <type>USBDevice*</type><parameter>UsbDevice</parameter>
+                <type>struct usb_device*</type><parameter>UsbDevice</parameter>
               </methodparam>
              </constructorsynopsis>
-            <methodsynopsis>
-               <type>static USB*</type>
-               <methodname>getUsbContext</methodname>
-               <void />
-            </methodsynopsis>
-            <methodsynopsis>
-               <type>static USBDevice*</type>
-               <methodname>findBySerial</methodname>
-               <methodparam>
-                   <type>const char*</type><parameter>serial</parameter>
-                <initializer></initializer>
-               </methodparam>
-            </methodsynopsis>
+            
             <methodsynopsis>
               <type>void</type>
               <methodname>writeActionRegister</methodname>
@@ -7489,7 +7476,7 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
           object which can the ben operated on.
           </para>
           <para>
-          Most all of the functionality is implemented in the base class CCCUSB. 
+          Most all of the functionality is implemented in te base class CCCUSB. 
           The methods defined in this class are the minimum needed to be implemented
           in order to attach to a locally connected usb device (i.e. the usb device
           is directly connected to the computer).
@@ -7512,67 +7499,16 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
                     <term><constructorsynopsis>
                     <methodname>CCCUSBusb</methodname>
                     <methodparam>
-                      <type>USBDevice*</type><parameter>ccUsbDevice</parameter>
+                      <type>struct usb_device*</type><parameter>ccUsbDevice</parameter>
                     </methodparam>
                      </constructorsynopsis></term>
                     <listitem>
                         <para>
                             Constructs a <classname>CCCUSB</classname> object.
                             The resulting object can be used to communicate
-                            with the CC-USB represented by the open <parameter>ccUsbDevice</parameter>.
-                            This can be gotten  either from
-                            the classes described in
-                            <filename>libUSB1</filename> or,
-                            if you wish to connect with a
-                            CCUSB with a specific serial number string,
-                            a call to <methodname>findBySerial</methodname>
-                            below.
+                            with the CC-USB represented by the
+                            <parameter>ccUsbDevice</parameter> object.
                         </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                   <term>
-                    <methodsynopsis>
-                       <type>static USB*</type>
-                       <methodname>getUsbContext</methodname>
-                       <void />
-                    </methodsynopsis>
-                   </term>
-                   <listitem>
-                       <para>
-                        The underlying USB library (<filename>libUSB1</filename>)
-                        requires the use of a USB context object.
-                        This object encapsulates per application stream
-                        library context.  In the CCUSBReadout program
-                        the context is implemented as an application
-                        singleton object.
-                       </para>
-                       <para>
-                        This thread safe method returns a pointer
-                        to the singleton context object.
-                       </para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                   <term>
-                    <methodsynopsis>
-                       <type>static</type>
-                       <methodname>findBySeial</methodname>
-                       <methodparam>
-                           <type>const char*</type><parameter>serial</parameter>
-                        <initializer></initializer>
-                       </methodparam>
-                    </methodsynopsis>
-                   </term>
-                   <listitem>
-                       <para>
-                        Returns a <classname>USBDevice*</classname>
-                        open on the CCUSB device sith the
-                        <parameter>serial</parameter> number
-                        given.  If there is no matching device,
-                        <literal>nullptr</literal> will be returned
-                        instead.
-                       </para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -7616,7 +7552,7 @@ uint32_t revision = (d &amp; CCCUSB::FirmwareRegister::revisionMask)
                             Performs a CAMAC list operation in immediate mode.
                             In order to do this data taking mode must not
                             be on.   The <parameter>list</parameter> is built up
-                           by constructing a <classname>CCCUSBReadoutList</classname>
+                            by constructing a <classname>CCCUSBReadoutList</classname>
                             (see <xref linkend='ccusb3-CCCUSBReadoutList' />)
                             object and using its methods to add the appropriate
                             set of instructions to the list.

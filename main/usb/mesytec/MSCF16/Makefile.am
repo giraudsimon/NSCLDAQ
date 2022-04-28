@@ -26,7 +26,7 @@ TCLTESTS=tclTests.tcl mscf16usb.test mscf16memorizer.test \
 				 mscf16commandlogger.test mscf16scriptheadergenerator.test \
 				 mscf16statesaver.test mscf16fileloader.test
 
-LOG_COMPILER = @TCLSH_CMD@ @srcdir@/tclTests.tcl 
+LOG_COMPILER = @TCLSH_CMD@ tclTests.tcl 
 
 AM_TESTS_ENVIRONMENT = TCLLIBPATH="@prefix@/TclLibs" HERE=@srcdir@ tcl=@TCLSH_CMD@ ; \
 											 export TCLLIBPATH; \

@@ -42,8 +42,7 @@ class CTclModuleCreator : public CModuleCreator
 
 public:
   CTclModuleCreator(CTCLInterpreter& interp);
-  virtual CControlHardware* operator()(void* unused);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 

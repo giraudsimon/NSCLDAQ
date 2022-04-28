@@ -12,7 +12,7 @@ SUBDIRS = 	vmusb 		\
 
 bin_PROGRAMS = VMUSBReadout
 
-VMUSBReadout_CXXFLAGS= \
+VMUSBReadout_CPPFLAGS= \
   @THREADCXX_FLAGS@ \
 	-I@top_srcdir@/usb/vmusb/vmusb \
 	-I@top_srcdir@/usb/vmusb/core \
@@ -26,12 +26,10 @@ VMUSBReadout_CXXFLAGS= \
 	-I@top_srcdir@/base/dataflow   \
 	-I@top_srcdir@/servers/portmanager \
 	-I@top_srcdir@/base/os		\
-	-I@top_srcdir@/usb/usb0.1 \
-	@libusb_CFLAGS@   \
-	@TCL_CPPFLAGS@ $(USBSWITCHES) 
+	@TCL_CPPFLAGS@ $(USBSWITCHES)  @PIXIE_CPPFLAGS@
 
 
-VMUSBReadout_CPPFLAGS=@THREADC_FLAGS@ @PIXIE_CPPFLAGS@
+VMUSBReadout_CCFLAGS=@THREADC_FLAGS@
 
 VMUSBReadout_SOURCES = CTheApplication.cpp Globals.cpp 
 
@@ -49,12 +47,11 @@ VMUSBReadout_LDADD	= @top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la	\
 		@top_builddir@/servers/portmanager/libPortManager.la \
 		@top_builddir@/base/dataflow/libDataFlow.la \
 		@top_builddir@/usb/vmusb/vmusb/libVMUSB.la	\
-		@top_builddir@/usb/usb0.1/libUSB01.la \
 		@LIBTCLPLUS_LDFLAGS@	\
 		@top_builddir@/base/thread/libdaqthreads.la	\
 		@top_builddir@/base/os/libdaqshm.la	\
 		$(TCL_LDFLAGS) \
-		 @libusb_LIBS@ \
+		 $(USB_LIBS) \
 		@THREADLD_FLAGS@
 
 VMUSBReadout_LDFLAGS=-Wl,"-rpath=$(libdir)"

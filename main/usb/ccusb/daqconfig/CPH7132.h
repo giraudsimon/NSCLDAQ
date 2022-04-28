@@ -13,12 +13,32 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CPH7132_H
-#define CPH7132_H
+#ifndef __CPH7132_H
+#define __CPH7132_H
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
 
 
 // Forward class definitions:

@@ -14,11 +14,18 @@
 
 */
 
-#ifndef CMESYTECBASE_H
-#define CMESYTECBASE_H
+#ifndef __CMESYTECBASE_H
+#define __CMESYTECBASE_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+#ifndef _CRT_STDINT_H
+#ifndef _CRT_STDINT_H
+#define _CRT_STDINT_H
 #include <stdint.h>
+#endif
+#endif
 
 class ReadoutModule;
 class CVMUSB;

@@ -1,7 +1,7 @@
 
 
 #include "CSystemControl.h"
-#include "tclUtil.h"
+
 #include <CBeginRun.h>
 #include <CEndRun.h>
 #include <CPauseRun.h>
@@ -13,17 +13,12 @@
 
 #include <TCLLiveEventLoop.h>
 #include <TCLInterpreter.h>
-#include <Exception.h>
-#include <stdexcept>
-#include <string>
 #include <CErrnoException.h>
 #include <CMonVar.h>
 #include <CRunState.h>
-#include "CStatisticsCommand.h"
 
 #include <tcl.h>
 #include <unistd.h>
-#include <stdlib.h>
 
 #include <iostream>
 
@@ -39,7 +34,6 @@ unique_ptr<CResumeRun> CSystemControl::m_pResumeRun;
 unique_ptr<CInit>      CSystemControl::m_pInit;
 unique_ptr<CExit>      CSystemControl::m_pExit;
 unique_ptr<CMonvarCommand>    CSystemControl::m_pMonVar;
-unique_ptr<CStatisticsCommand> CSystemControl::m_pStats;
 
 
 // The entry point
@@ -76,7 +70,6 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   m_pInit.reset(new CInit(*Globals::pMainInterpreter));
   m_pExit.reset(new CExit(*Globals::pMainInterpreter));
   m_pMonVar.reset(new CMonvarCommand(*Globals::pMainInterpreter));
-  m_pStats.reset(new CStatisticsCommand(*Globals::pMainInterpreter, "statistics"));
   
   CMonitorVariables* pMon = new CMonitorVariables(*Globals::pMainInterpreter, 2000);
   CRunState::getInstance()->setVarMonitor(pMon);
@@ -84,33 +77,8 @@ int CSystemControl::AppInit( Tcl_Interp* interp)
   // If there's an initialization script then run it now:
   
   if (m_initScript != "") {
-    bool ok(true);
-    std::string msg;
     if (access(m_initScript.c_str(), R_OK) == 0) {
-      try {
             Globals::pMainInterpreter->EvalFile(m_initScript.c_str());
-      } catch (CException& e) {
-        msg = e.ReasonText();
-        ok = false;
-      } catch (std::exception& e) {
-        msg = e.what();
-        ok = false;
-      }
-      catch (std::string m) {
-        msg = m;
-        ok = false;
-      }
-      catch (...) {
-        msg = "Unanticipated exception type processing init script";
-        ok = false;
-      }
-      if (!ok) {
-        msg += " : ";
-        msg += tclUtil::getTclTraceback(*Globals::pMainInterpreter);
-        std::cerr << "Failure processing initialization script: "
-          << msg << std::endl;
-        exit(EXIT_FAILURE);
-      }
     } else {
             throw CErrnoException("Checking accessibility of --init-script");
     }
@@ -141,7 +109,13 @@ CSystemControl::AcquisitionErrorHandler(Tcl_Event* pEvent, int flags)
 {
     // Get the message text:
     
-    std::string msg = getEventString(pEvent);
+    struct event {
+        Tcl_Event     event;
+        StringPayload message;
+    };
+    event* pFullEvent = reinterpret_cast<event*>(pEvent);
+    std::string msg = pFullEvent->message.pMessage;
+    Tcl_Free(pFullEvent->message.pMessage);
     
     // Try the onTriggerFail command:
     
@@ -194,11 +168,15 @@ int CSystemControl::scheduleExit(int status)
       Tcl_Event     event;
       StringPayload message;
     };
-    Tcl_Event* pEvent = makeStringEvent(to_string(status));
-    pEvent->proc = CSystemControl::tclExit;
+
+    event* pEvent = reinterpret_cast<event*>(Tcl_Alloc(sizeof(event)));
+    string msg = to_string(status);
+    pEvent->event.proc = CSystemControl::tclExit;
+    pEvent->message.pMessage = Tcl_Alloc( msg.size()+1 );
+    strcpy(pEvent->message.pMessage, msg.c_str() );
 
     Tcl_ThreadQueueEvent(Globals::mainThreadId, 
-                         pEvent,
+                         reinterpret_cast<Tcl_Event*>(pEvent),
                          TCL_QUEUE_TAIL);
 
   }
@@ -209,52 +187,18 @@ int CSystemControl::scheduleExit(int status)
 int CSystemControl::tclExit(Tcl_Event* pEvent, int flags)
 {
     // Get the message text:
-    std::string msg = getEventString(pEvent);
+    
+    struct event {
+        Tcl_Event     event; 
+        StringPayload message;
+    };
+    event* pFullEvent = reinterpret_cast<event*>(pEvent);
+    std::string msg = pFullEvent->message.pMessage;
+    Tcl_Free(pFullEvent->message.pMessage);
     
     // Try the onTriggerFail command:
     
     CTCLInterpreter* pInterp = Globals::pMainInterpreter;
     pInterp->GlobalEval(string(makeCommand( pInterp, "exit", msg)));
     return 1;    
-}
-/**
- * getEventString
- *   Given a Tcl event with a string hanging on the back,
- *   retursn the string freeing the extra storage in the event.
- * @param pEvent pointer to Raw Tcl Event.
- * @return std::string
- */
-string
-CSystemControl::getEventString(Tcl_Event* pEvent)
-{
-   struct event {
-        Tcl_Event     event; 
-        StringPayload message;
-    } ;
-    event* pFullEvent = reinterpret_cast<event*>(pEvent);
-    std::string msg = pFullEvent->message.pMessage;
-    Tcl_Free(pFullEvent->message.pMessage);
-   
-    return  msg; 
-}
-/**
- * makeStringEvent
- *    Create a string event (event with string payload).
- * @param msg - string
- * @return Tcl_Event* event.
- */
-Tcl_Event*
-CSystemControl::makeStringEvent(std::string msg)
-{
-   struct event {
-        Tcl_Event     event; 
-        StringPayload message;
-    };
-
-    event* pEvent = reinterpret_cast<event*>(Tcl_Alloc(sizeof(event)));
-    pEvent->message.pMessage = Tcl_Alloc( msg.size()+1 );
-    strcpy(pEvent->message.pMessage, msg.c_str() );
-    
-    return reinterpret_cast<Tcl_Event*>(pEvent);
-  
 }

@@ -17,7 +17,7 @@ package provide mcfd16usb 1.0
 
 package require snit
 package require Utils
-package require MCFD16Common
+
 
 ## @brief USB Communications Package for the Mesystec MCFD16
 #
@@ -542,8 +542,22 @@ snit::type MCFD16USB {
   #
   # @returns result of _Transaction
   method SetTriggerSource {trigId source veto} {
-    
-    set value [MCFD16Common::computeTriggerBits $trigId $source $veto]
+    if {$trigId ni [list 0 1 2]} {
+        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
+        return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
+    }
+
+    set sourceBits [dict create or 1 multiplicity 2 pair_coinc 4 mon 8 pat_or_0 16 pat_or_1 32 gg 128]
+    if {$source ni [dict keys $sourceBits]} {
+        set msg "Invalid source provided. Must be or, multiplicity, pair_coinc, mon, pat_or_0, pat_or_1, or gg."
+        return -code error -errorinfo MCFD16USB::SetTriggerSource $msg
+    }
+
+    set value [dict get $sourceBits $source]
+    if {[string is true $veto]} {
+        set value [expr {$value + 0x40}]
+    }
+
     return [$self _Transaction "TR $trigId $value"]
   }
 
@@ -555,22 +569,28 @@ snit::type MCFD16USB {
   #
   # @returns list. first element is source, second element is veto enabled
   method GetTriggerSource {trigId} {
-    MCFD16Common::errorOnInvalidTriggerId $trigId
-    
+
+    if {$trigId ni [list 0 1 2]} {
+        set msg "Invalid trigger id argument provided. Must be 0, 1, or 2."
+        return -code error -errorinfo MCFD16USB::GetTriggerSource $msg
+    }
+
     if {$m_needsUpdate} {
       $self Update
     }
 
     set code [dict get $m_moduleState Trig${trigId}_src]
 
-    set decoded [MCFD16Common::getTriggerFields $code]
-    set vetoEnabled [lindex $decoded 1]
-    set source      [lindex $decoded 0]
+    set vetoEnabled [expr {($code&0x40)!=0}]
+    set source      [expr {$code&0xbf}]
 
     # SW 2.18 supports not having bit set in the source mask.
     
     
-    set sourceName [MCFD16Common::triggerSourceName $source]
+    set sourceNameMap [dict create 0 none  1 or 2 multiplicity 4 pair_coinc 8 \
+                                    mon 16 pat_or_0 32 pat_or_1 128 gg]
+    set sourceName [dict get $sourceNameMap $source]
+
     return [list $sourceName $vetoEnabled]
   }
 
@@ -584,9 +604,11 @@ snit::type MCFD16USB {
   # 
   # @returns result of last transactions
   method SetTriggerOrPattern {trigId pattern} {
-    
-    MCFD16Common::validateTriggerOrId $trigId
-    
+    if {$trigId ni [list 0 1]} {
+        set msg "Invalid pattern id argument provided. Must be 0 or 1."
+        return -code error -errorinfo MCFD16USB::SetTriggerOrPattern $msg
+    }
+
     if {![Utils::isInRange 0 0xffff $pattern]} {
       set msg {Invalid bit pattern provided. Must be in range [0,65535].}
       return -code error -errorinfo MCFD16USB::SetTriggerOrPattern $msg
@@ -611,7 +633,11 @@ snit::type MCFD16USB {
   # @returns integer whose set bits represent the channel states.
   #
   method GetTriggerOrPattern {patternId} {
-    MCFD16Common::validateTriggerOrId $patternId
+
+    if {$patternId ni [list 0 1]} {
+        set msg "Invalid pattern id argument provided. Must be 0 or 1."
+        return -code error -errorinfo MCFD16USB::GetTriggerOrPattern $msg
+    }
 
     if {$m_needsUpdate} {
       $self Update

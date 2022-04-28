@@ -28,7 +28,6 @@
 #include <CVMUSBReadoutList.h>
 #include <usb.h>		// Probably don't need this(?)
 #include <stdio.h>
-#include <USBDevice.h>
 
 //
 // Handles are indices into this vector of pointers to structs
@@ -119,17 +118,32 @@ extern "C" {
 ******************************************************************************/
 CAENComm_ErrorCode STDCALL CAENComm_OpenDevice(CAENComm_ConnectionType LinkType, int LinkNum, int ConetNode, uint32_t VMEBaseAddress, int *handle)
 {
+  // Enumerate the modules:
+
+  std::vector<struct usb_device*> controllers;
+  controllers = CVMUSB::enumerate();
+
+  // No devices at all means CAENComm_DeviceNotFound.
+
+  if (controllers.size() == 0) {
+    return CAENComm_DeviceNotFound; 
+  }
   // Figure out which one we want to open:
 
-  USBDevice* pDevice = NULL;
+  struct usb_device* pDevice = NULL;
   if (LinkNum != 0) {
     char czSerialDesired[100];
     sprintf(czSerialDesired, "VM%04d", LinkNum);
-    pDevice = CVMUSBusb::findBySerial(czSerialDesired);
-		
+    std::string SerialDesired = czSerialDesired;
+
+    for (int i = 0; i < controllers.size(); i++) {
+      if (CVMUSB::serialNo(controllers[i]) == SerialDesired) {
+	pDevice = controllers[i];
+	break;
+      }
+    } 
   } else {
-    pDevice = CVMUSBusb::findFirst();
-		
+    pDevice = controllers[0]; // Default to first.
   }
   if (!pDevice) {
     return CAENComm_DeviceNotFound;

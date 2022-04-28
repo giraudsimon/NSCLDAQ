@@ -458,18 +458,31 @@ namespace eval ccusbcamac {
   #
   proc isInhibited {b c} {
    
-    set reg [_getControllerInfo $b $c]
-    set ctlr [lindex $reg 0]
+    ::ccusbcamac::_checkValidBAndC $b $c
+    # if here then b and c are good
+  
+    set id [::ccusbcamac::_computeIndex $b $c]
+  
+    # check if cdconn has been called before
+    if {[dict exist $::ccusbcamac::connectionInfo $id]} {
+      set connInfo [dict get $::ccusbcamac::connectionInfo $id]
+      set reg [ccusbcamac::cdreg $b $c 0]
+  
+      set ctlr [lindex $reg 0]
 
-    set fwId [ $ctlr readFirmware ]
-    if {$fwId >= 0x8e000601} {
-      return [$ctlr isInhibited]
+      set fwId [ $ctlr readFirmware ]
+      if {$fwId >= 0x8e000601} {
+        return [$ctlr isInhibited]
+      } else {
+        set msg    "::ccusbcamac::isInhibited unsupported for CC-USB firmware version "
+        append msg [format "0x%x. Version must be >= 0x8e000601." $fwId]
+        return -code error $msg
+      }
     } else {
-      set msg    "::ccusbcamac::isInhibited unsupported for CC-USB firmware version "
-      append msg [format "0x%x. Version must be >= 0x8e000601." $fwId]
+      set msg "::ccusbcamac::isInhibited connection info not provided. "
+      append msg "cdconn needs to be called prior to calling this." 
       return -code error $msg
     }
-  
   }
   
   
@@ -488,15 +501,28 @@ namespace eval ccusbcamac {
   # - Error if b and/or c are out of range
   # - Error if cdconn has not be called before this
   proc Inhibit {b c on} {
-    set reg [_getControllerInfo $b $c]
-    
-    set ctlr [lindex $reg 0]
-    if {$on} {
-       $ctlr inhibit
-    } else {
-       $ctlr uninhibit
-    }
   
+    ::ccusbcamac::_checkValidBAndC $b $c
+    # if here then b and c are good
+  
+    set id [::ccusbcamac::_computeIndex $b $c]
+  
+    # check if cdconn has been called before
+    if {[dict exist $::ccusbcamac::connectionInfo $id]} {
+      set connInfo [dict get $::ccusbcamac::connectionInfo $id]
+      set reg [ccusbcamac::cdreg $b $c 0]
+  
+      set ctlr [lindex $reg 0]
+      if {$on} {
+         $ctlr inhibit
+      } else {
+         $ctlr uninhibit
+      }
+    } else {
+      set msg "::ccusbcamac::inhibit connection info not provided. "
+      append msg "cdconn needs to be called prior to calling this." 
+      return -code error $msg
+    }
   }
   
   
@@ -784,30 +810,6 @@ namespace eval ccusbcamac {
     
   }
   
-  ##
-  # _getControllerInfo
-  #   Return a list of controller information.
-  #
-  # @param b  - the branch number.
-  # @param c  - the crate within the branch.
-  # @return list - controller is element 0.
-  #
-  proc _getControllerInfo {b c} {
-    ::ccusbcamac::_checkValidBAndC $b $c
-    # if here then b and c are good
-  
-    set id [::ccusbcamac::_computeIndex $b $c]
-  
-    # check if cdconn has been called before
-    if {[dict exist $::ccusbcamac::connectionInfo $id]} {
-      set connInfo [dict get $::ccusbcamac::connectionInfo $id]
-      set reg [ccusbcamac::cdreg $b $c 0]
-      return $reg
-    } else {
-      set msg "::ccusbcamac::_getControllerInfo connection info not provided. "
-      append msg "cdconn needs to be called prior to calling this." 
-      return -code error $msg
-    }
-  }
+
 }
 # -- END OF NAMESPACE --

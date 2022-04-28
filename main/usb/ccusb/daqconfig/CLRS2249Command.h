@@ -13,12 +13,28 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CLRS2249COMMAND_H
-#define CLRS2249COMMAND_H
+#ifndef __CLRS2249COMMAND_H
+#define __CLRS2249COMMAND_H
 
+#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+
 
 class CTCLInterpreter;
 class CTCLObject;

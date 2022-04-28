@@ -12,14 +12,10 @@ namespace XLM
 ///////////////////////////////////////////////////////////////////////////////
 
 
-  CControlHardware* CXLMControlsCreator::operator()(void* unused)
+  CControlHardware* CXLMControlsCreator::operator()()
   {
     return (new CXLMControls);
   }
-  std::string
-  CXLMControlsCreator::describe() const
-  {
-    return "xml - XML control module";
-  }
+
 
 }

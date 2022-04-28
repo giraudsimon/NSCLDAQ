@@ -26,15 +26,7 @@
  * @return CControlHardware* - Pointer to the created CVMUSBModule.
  */
 CControlHardware*
-CVMUSBCreator::operator()(void* unused)
+CVMUSBCreator::operator()()
 {
   return (new CVMUSBModule);
-}
-/**
- * describe what's being created.
- */
-std::string
-CVMUSBCreator::describe() const
-{
-  return "vmusb - Define a VMUSB controller as a controllable module.";
 }

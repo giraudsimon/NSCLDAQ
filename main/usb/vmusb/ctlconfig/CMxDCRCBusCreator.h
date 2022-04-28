@@ -15,8 +15,7 @@ class CMxDCRCBusCreator : public ::CModuleCreator
 {
   public:
    /**! The factory method */
-   virtual CControlHardware* operator()(void* userData);
-   std::string describe() const;
+   virtual CControlHardware* operator()(); 
 };
 
 

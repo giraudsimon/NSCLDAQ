@@ -15,10 +15,15 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CCONTROLHARDWARET_H
-#define CCONTROLHARDWARET_H
+#ifndef __CCONTROLHARDWARET_H
+#define __CCONTROLHARDWARET_H
 
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 #include <memory>
 

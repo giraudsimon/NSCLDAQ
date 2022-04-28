@@ -592,6 +592,23 @@ tcltest::test CoincRegGateWidth-0 {Test that we add the proper NAF
 
 
 
+tcltest::test Execute-0 {Test that we can pass a stack to ProcessStack
+} -setup {
+  setup
+
+  proc ::addctrl {stack } {
+    $stack addControl 4 0 9
+  }
+
+} -cleanup {
+  tearDown
+
+  rename ::addctrl ""
+} -body {
+  ::dev Execute 1 [list ::addctrl]
+  ::ctlr getHistory
+}  -result "{control 4 0 9}"
+
 
 tcltest::cleanupTests
 

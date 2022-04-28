@@ -28,10 +28,7 @@
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
-#include <USB.h>
-#include <USBDeviceInfo.h>
-#include <USBDevice.h>
-#include <XXUSBUtil.h>
+
 
 
 using namespace std;
@@ -40,80 +37,51 @@ using namespace std;
 
 // Identifying marks for the VM-usb:
 
+static const short USB_WIENER_VENDOR_ID(0x16dc);
+static const short USB_VMUSB_PRODUCT_ID(0xb);
+static const short USB_CCUSB_PRODUCT_ID(1);
+
+// Bulk transfer endpoints
+
+static const int ENDPOINT_OUT(2);
+static const int ENDPOINT_IN(0x86);
+
+// Bits in the list target address words (TAV)
+
+static const uint16_t TAVcsWrite(4);  // Operation writes.
+static const uint16_t TAVcsDATA(2);   // DAQ event Data stack.
+static const uint16_t TAVcsSCALER(3); // DAQ scaler data stack.
+static const uint16_t TAVcsCNAF(0xc);   // Immediate execution of a CNAF list.
+static const uint16_t TAVcsIMMED(TAVcsCNAF);
+
+
+// Timeouts:
+
+static const int DEFAULT_TIMEOUT(2000); // ms.
 
 
 //   The following flag determines if enumerate needs to init the libusb:
 
 static bool usbInitialized(false);
-static CMutex StaticMethodProtector;    // for critical setions in static methods
-USB* CCCUSBusb::m_usbContext(0);
 
-
-///////////////////////////////////////////////////////////////
-// static methods:
-
-/**
- * getUsbContext
- *    Return the context associated with the USB.
- *    (singlethon method).
- * @return USB*   Pointer to the singleton USB context.
- */
-USB*
-CCCUSBusb::getUsbContext()
-{
-  CriticalSection s(StaticMethodProtector);
-  if(m_usbContext == nullptr) {
-    m_usbContext = new USB;
-  }
-  return m_usbContext;
-}
-/**
- * findBySerial
- *    Locate a CCUSB device by serial number.
- *
- * @serial - serial number string
- * @return USBDevice* device for the serial number open and
- *                   claimed.
- * @retval nullptr - no matching serial number.
- */
-USBDevice*
-CCCUSBusb::findBySerial(const char* serial)
-{
-  USB* pUsb = getUsbContext();   // has a critical setion
-  auto ccusbs = XXUSBUtil::enumerateCCUSB(*pUsb); // has its own critsec
-  
-  // No critical section required (I think).
-  // Note we need to go through all of these devices
-  // to prevent any leakage.  The assumption is only one match at most.
-  
-  USBDevice* pResult(0);
-  for (int i =0; i < ccusbs.size(); i++) {
-    if(ccusbs[i].first == serial) {
-      pResult = ccusbs[i].second;      // Can't break, may not be last.
-    } else {
-      delete ccusbs[i].second;        // closes unmatched devs.
-    }
-  }
-  if(pResult) pResult->claim(0);     // IF there's a match, claim it.
-  return pResult;                   // Matching device.
-}
 
 ////////////////////////////////////////////////////////////////////
 /*!
   Construct the CCCUSBusb object.  This involves storing the
   device descriptor we are given, opening the device and
   claiming it.  Any errors are signalled via const char* exceptions.
-  \param device   : USBDevice*
-      Pointer to a USB device object that we'll do our I/O through.
+  \param vmUsbDevice   : usb_device*
+      Pointer to a USB device descriptor that we want to open.
 
   \bug
-      At this point we take the caller's word that this is a CC-USB.
+      At this point we take the caller's word that this is a VM-USB.
       Future implementations should verify the vendor and product
       id in the device structure, throwing an appropriate exception
       if there is aproblem.
 
 */
-CCCUSBusb::CCCUSBusb(USBDevice* device) :
+CCCUSBusb::CCCUSBusb(struct usb_device* device) :
+  m_handle(0),
   m_device(device),
   m_timeout(DEFAULT_TIMEOUT),
   m_pMutex(0)
@@ -122,7 +90,7 @@ CCCUSBusb::CCCUSBusb(USBDevice* device) :
   attributes.setType(PTHREAD_MUTEX_RECURSIVE_NP);
   m_pMutex = new CMutex(attributes);
 
-  m_serial = m_device->getSerial();
+  m_serial = serialNo(m_device);
   openUsb();
 
 }
@@ -133,11 +101,11 @@ CCCUSBusb::CCCUSBusb(USBDevice* device) :
  */
 CCCUSBusb::~CCCUSBusb()
 {
-  m_device->release(0);  // unclaim.
-  delete m_device;     //  Close and relese resource
+  usb_release_interface(m_handle, 0);
+  usb_close(m_handle);
   delete m_pMutex;
 
-  Os::usleep(5000);   // Seems needed.
+  Os::usleep(5000);
 }
 
 
@@ -153,13 +121,11 @@ bool
 CCCUSBusb::reconnect()
 {
   uint32_t fw;
-  if (readFirmware(fw) != 0) {         /// need to reconnect.
-    m_device->release(0);
-    delete m_device;
+  if (readFirmware(fw) != 0) {
+    usb_release_interface(m_handle, 0);
+    usb_close(m_handle);
     Os::usleep(1000);
   
-    m_device = findBySerial(m_serial.c_str());
-    
     openUsb();
     return true;
   } else {
@@ -183,8 +149,30 @@ CCCUSBusb::reconnect()
 void
 CCCUSBusb::writeActionRegister(uint16_t value)
 {
-  XXUSBUtil::writeActionRegister(m_device, value);
-  
+  char outPacket[100];
+  CriticalSection s(*m_pMutex);
+
+  // Build up the output packet:
+
+  char* pOut = outPacket;
+
+  pOut = static_cast<char*>(addToPacket16(pOut, 5)); // Select Register block for transfer.
+  pOut = static_cast<char*>(addToPacket16(pOut, 1)); // Select action register wthin block.
+  pOut = static_cast<char*>(addToPacket16(pOut, value));
+
+  // This operation is write only.
+
+  int outSize = pOut - outPacket;
+  int status = usb_bulk_write(m_handle, ENDPOINT_OUT, 
+                              outPacket, outSize, m_timeout);
+  if (status < 0) {
+    string message = "Error in usb_bulk_write, writing action register ";
+    message == strerror(-status);
+    throw message;
+  }
+  if (status != outSize) {
+    throw "usb_bulk_write wrote different size than expected";
+  }
 }
 
 
@@ -221,15 +209,25 @@ CCCUSBusb::executeList( CCCUSBReadoutList&     list,
                         size_t                 readBufferSize,
                         size_t*                bytesRead)
 {
-  try {
-    XXUSBUtil::executeList(
-      m_device, list.get(), &pReadoutBuffer, readBufferSize,
-      *bytesRead
-    );
-  } catch (...) {
-    return -2;
+  size_t outSize;
+  uint16_t* outPacket = listToOutPacket(TAVcsIMMED,
+                                        list, &outSize);
+    
+  // Now we can execute the transaction:
+    
+  int status = transaction(outPacket, outSize,
+                           pReadoutBuffer, readBufferSize);
+  
+  
+  
+  delete []outPacket;
+  if(status >= 0) {
+    *bytesRead = status;
+  } 
+  else {
+    *bytesRead = 0;
   }
-  return 0;
+  return (status >= 0) ? 0 : status;
   
 }
 
@@ -246,7 +244,7 @@ CCCUSBusb::executeList( CCCUSBReadoutList&     list,
    that is done via register operations performed after all the required lists
    are in place.
     
-   \param listNumber : uint_t  
+   \param listNumber : uint8_t  
       Number of the list to load. 
       - 0 - Data list
       - 1 - Scaler list.
@@ -263,18 +261,36 @@ CCCUSBusb::executeList( CCCUSBReadoutList&     list,
 int
 CCCUSBusb::loadList(uint8_t  listNumber, CCCUSBReadoutList& list)
 {
-  if ((listNumber != 0) && (listNumber != 1)) {
-    return -4;
+  // Need to construct the TA field, straightforward except for the list number
+  // which is splattered all over creation.
+  
+  uint16_t ta =  TAVcsWrite;
+  if (listNumber == 0) {
+    ta |= TAVcsDATA;
   }
-  try {
-    XXUSBUtil::CCUSB::loadList(
-      m_device, list.get(), listNumber == 1
-    );
+  else if (listNumber == 1) {
+    ta |= TAVcsSCALER;
   }
-  catch (...) {
-    return -1;
+  else {
+    return -4; 
   }
-  return 0;
+
+  size_t   packetSize;
+  uint16_t* outPacket = listToOutPacket(ta, list, &packetSize);
+
+  int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
+                              reinterpret_cast<char*>(outPacket),
+                              packetSize, m_timeout);
+  if (status < 0) {
+    errno = -status;
+    status= -1;
+  }
+
+  delete []outPacket;
+  return (status >= 0) ? 0 : status;
+
+
+  
 }
 /*!
   Execute a bulk read for the user.  The user will need to do this
@@ -297,27 +313,22 @@ CCCUSBusb::loadList(uint8_t  listNumber, CCCUSBReadoutList& list)
 int 
 CCCUSBusb::usbRead(void* data, size_t bufferSize, size_t* transferCount, int timeout)
 {
-  *transferCount = 0;
   CriticalSection s(*m_pMutex);
-  try {
-    int actual;
-    int status = m_device->bulkTransfer(
-        XXUSBUtil::readEndpoint(),
-        static_cast<unsigned char*>(data),
-        bufferSize, actual, timeout
-    );
-    *transferCount = actual;
-    if (status < 0) {
-      errno = -ETIMEDOUT;
-      return -1;
-    }
+  int status = usb_bulk_read( m_handle, ENDPOINT_IN,
+                              static_cast<char*>(data), bufferSize,
+                              timeout);
+  if (status >= 0) {
+    *transferCount = status;
+    status = 0;
+  } 
+  else {
+    errno = -status;
+    status= -1;
+    *transferCount = 0;
   }
-  catch (...) {
-    errno = -EIO;
-    return -1;
-  }
-  return 0;
+  return status;
 }
+
 /*! 
    Set a new transaction timeout.  The transaction timeout is used for
    all usb transactions but usbRead where the user has full control.
@@ -394,19 +405,33 @@ int
 CCCUSBusb::transaction( void* writePacket, size_t writeSize,
                         void* readPacket,  size_t readSize)
 {
-  try {
-    int status = XXUSBUtil::transaction(
-      m_device, writePacket, writeSize, readPacket, readSize, m_timeout
-    );
-    if (status < 0) {
-      errno = ETIMEDOUT;
-      return -1;
-    }
-  } catch (...) {
-    errno = EIO;
-    return -1;
-  }
-  return 0;
+    char buf[8192];
+
+      CriticalSection s(*m_pMutex);
+      int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
+                                          static_cast<char*>(writePacket), writeSize,
+                                  m_timeout);
+      if (status < 0) {
+        errno = -status;
+        return -1;		// Write failed!!
+      }
+
+      status    = usb_bulk_read(m_handle, ENDPOINT_IN,
+                                    buf, sizeof(buf), m_timeout);
+      if (status < 0) {
+        errno = -status;
+        return -2;
+      }
+
+      long bytesRead = status;
+      auto pReadCursor = reinterpret_cast<char*>(readPacket);
+
+      // Copy the newly read data into the output buffer
+      pReadCursor = std::copy(buf, buf + status, pReadCursor);
+
+
+      return bytesRead;
+
 }
 
 
@@ -426,9 +451,31 @@ CCCUSBusb::transaction( void* writePacket, size_t writeSize,
 void
 CCCUSBusb::openUsb()
 {
-    
-  m_device->setConfig(1);
-  
+    enumerateAndIdentify();
+    m_handle  = usb_open(m_device);
+  if (!m_handle) {
+    throw "CCCUSBusb::CCCUSBusb  - unable to open the device";
+  }
+
+  resetUSB();
+
+  enumerateAndIdentify();
+  m_handle  = usb_open(m_device);
+  if (!m_handle) {
+      throw "CCCUSBusb::CCCUSBusb  - unable to open the device";
+  }
+
+  // Now claim the interface.. again this could in theory fail.. but.
+
+  usb_set_configuration(m_handle, 1);
+  int status = usb_claim_interface(m_handle, 0);
+  if (status == -EBUSY) {
+    throw "CCCUSBusb::CCCUSBusb - some other process has already claimed";
+  }
+
+  if (status == -ENOMEM) {
+    throw "CCCUSBusb::CCCUSBusb - claim failed for lack of memory";
+  }
 
   Os::usleep(10000);
 
@@ -458,8 +505,6 @@ CCCUSBusb::openUsb()
        fprintf(stderr, "Flushing CCUSB Buffer\n");
   }
 
-  m_device->clearHalt(XXUSBUtil::readEndpoint());
-  m_device->clearHalt(XXUSBUtil::writeEndpoint());
   Os::usleep(10000); // sleep 10 ms
 }
 
@@ -474,6 +519,40 @@ CCCUSBusb::openUsb()
  */
 void CCCUSBusb::resetUSB()
 {
-  m_device->reset();
+  int status = usb_reset(m_handle);
+  if (status < 0) {
+    throw std::runtime_error("CCCUSB::resetCCUSB() failed to reset the device");
+  }
 }
 
+
+/*!
+ * \brief Enumerate and locate the device by serial number
+ *
+ * It is expected that the serial number of the device has already been
+ * specified. This will enumerate the USB busses and then locate the
+ * device on it with a matching serial number. If found, the device is
+ * stored by the class for later use.
+ *
+ * \throws std::string if no device with a matching serial number is found
+ */
+void CCCUSBusb::enumerateAndIdentify()
+{
+  // Since we might be re-opening the device we're going to
+  // assume only the serial number is right and re-enumerate
+
+  std::vector<struct usb_device*> devices = enumerate();
+  m_device = 0;
+  for (int i = 0; i < devices.size(); i++) {
+    if (serialNo(devices[i]) == m_serial) {
+      m_device = devices[i];
+      break;
+    }
+  }
+  if (!m_device) {
+    std::string msg = "The CC-USB with serial number ";
+    msg += m_serial;
+    msg += " could not be enumerated";
+    throw msg;
+  }
+}

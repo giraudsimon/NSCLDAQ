@@ -26,9 +26,6 @@
 class CTCLInterpreter;
 class CTCLInterpreterObject;
 
-class CVMUSB;
-class CConfiguration;
-
 /*!
     This class provides the begin command for the readout main
     command interpreter.  This command starts a data taking run.
@@ -57,8 +54,6 @@ public:
 protected:
   virtual int operator()(CTCLInterpreter& interp,
 			 std::vector<CTCLObject>& objv);
-private:
-  static void exportController(CVMUSB* pController, CConfiguration* pConfig);
 
 };
 

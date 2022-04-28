@@ -67,6 +67,7 @@ Const(FixedCodeValue) 0xfaf5;
    construct the beast.. The shadow registers will all get set to zero
 */
 CV812::CV812() :
+  CControlHardware(),
   m_pConfiguration(0),
   m_is812(true)
 {
@@ -86,7 +87,7 @@ CV812::CV812() :
   Copy construction:
 */
 CV812::CV812(const CV812& rhs) :
-  CVMUSBControlHardware(rhs)
+  CControlHardware(rhs)
 {
 }
 /*!
@@ -104,7 +105,7 @@ CV812&
 CV812::operator=(const CV812& rhs)
 {
   if(this != &rhs) {
-    CVMUSBControlHardware::operator=(rhs);
+    CControlHardware::operator=(rhs);
   }
   return *this;
 }
@@ -115,7 +116,7 @@ CV812::operator=(const CV812& rhs)
 int 
 CV812::operator==(const CV812& rhs) const
 {
-  return CVMUSBControlHardware::operator==(rhs);
+  return CControlHardware::operator==(rhs);
 }
 /*
    != is the logical inverse of ==
@@ -243,7 +244,56 @@ CV812::Update(CVMUSB& vme)
 		 majorityToRegister(m_majority));
 
 
+#if 0
+  CVMUSBReadoutList list;
 
+  // The thresholds:
+
+  for (int i=0; i < 16; i ++) {
+    list.addWrite16(baseAddress + Thresholds + (i*sizeof(uint16_t)),
+		    am,
+		    -m_thresholds[i]);
+    list.addDelay(1);
+  }
+  // The widths/deadtimes:
+
+  for (int i=0; i < 2; i++) {
+    list.addWrite16(baseAddress + Widths + (i*sizeof(uint16_t)),
+		    am, 
+		    m_widths[i]);
+    list.addDelay(1);
+    if (m_is812) {
+      list.addWrite16(baseAddress + DeadTimes + (i*sizeof(uint16_t)),
+		      am,
+		      m_deadtimes[i]);
+      list.addDelay(1);
+    }
+    
+  }
+  // The enables:
+
+  list.addWrite16(baseAddress + Inhibits, am,
+		  m_inhibits);
+  list.addDelay(1);
+  list.addWrite16(baseAddress + Majority, am,
+		  majorityToRegister(m_majority));
+
+  list.addDelay(1);
+
+  // Execute the list:
+
+  uint32_t dummy;
+  size_t   dummysize;
+
+  int status = vme.executeList(list, &dummy, sizeof(dummy), &dummysize);
+
+  if (status < 0) {
+    return string("ERROR - Could not execute update list in VM-USB");
+  }
+  else {
+    return string("OK");
+  }
+#endif
   return string("OK");
 }
 ///////////////////////////////////////////////////////////////////////////////////

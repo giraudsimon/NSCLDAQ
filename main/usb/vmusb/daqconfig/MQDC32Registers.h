@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef MADC32REGISTERS_H
-#define MADC32REGISTERS_H
+#ifndef __MADC32REGISTERS_H
+#define __MADC32REGISTERS_H
 
 #ifndef Const
 #define Const(name) static const int name =

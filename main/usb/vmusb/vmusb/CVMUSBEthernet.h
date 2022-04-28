@@ -15,14 +15,40 @@
 */
 
 
-#ifndef CVMUSBETHERNET_H
-#define CVMUSBETHERNET_H
-
+#ifndef __CVMUSBETHERNET_H
+#define __CVMUSBETHERNET_H
+#ifndef __CVMUSB
 #include "CVMUSB.h"
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __CRT_SYS_TYPES_H
 #include <sys/types.h>
+#ifndef __CRT_SYS_TYPES_H
+#define __CRT_SYS_TYPES_H
+#endif
+#endif
+
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 // Forward Class definitions:
 

@@ -28,11 +28,35 @@ exec wish "$0" ${1+"$@"}
 
 # Set up auto path
 
+##
+# removeTclLibPath
+#   Removes the directories in TCLLIBPATH from the front of auto_path.
+#   this keeps the user from screwing us over by defining TCLLIBPATH
+#   in a way that pulls in old directories.
+#
+proc removeTclLibPath {} {
+    if {[array names ::env TCLLIBPATH] ne ""} {
+	set badDirs $::env(TCLLIBPATH)
+	set path    $::auto_path
+
+	foreach dir $badDirs {
+	    set i [lsearch -exact $path $dir]
+	    set path [lreplace $path $i $i]
+	}
+
+	set ::auto_path $path
+    }
+}
+
+#  Add TclLibs for stuff relative to us
+
+removeTclLibPath
+
 set here [file dirname [info script]]
 set tcllibs [file normalize [file join $here .. TclLibs]]
 lappend auto_path $tcllibs
 
-package require removetcllibpath
+
 
 package require cmdline
 

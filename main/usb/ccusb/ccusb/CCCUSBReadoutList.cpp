@@ -206,8 +206,19 @@ CCCUSBReadoutList::addWrite24(int n, int a, int f, uint32_t data)
 void
 CCCUSBReadoutList::addRead16(int n, int a, int f, bool lamWait)
 {
-  addRead(n, a, f, lamWait, false);
-  
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
+  uint16_t naf = NAF(n,a,f);
+  if (lamWait) {
+    naf |= CONTINUATION;
+    m_list.push_back(naf);
+    m_list.push_back(MODE_LAMWAIT);
+  }
+  else {
+    m_list.push_back(naf);
+  }
 }
 /****************************************************************************/
 /*!
@@ -226,22 +237,11 @@ CCCUSBReadoutList::addRead16(int n, int a, int f, bool lamWait)
 void
 CCCUSBReadoutList::addRead24(int n, int a, int f, bool lamWait)
 {
-  addRead(n,a,f,lamWait, true);
-  
-}
-/**
- * addRead
- *    generic version of the two reads above.  Adds longwd
- *    parameter that sets or does not set the 24 bit transfer bit.
- */
-void
-CCCUSBReadoutList::addRead(int n, int a, int f, bool lamWait, bool longwd)
-{
   string msg;
   if (!validRead(n,a,f,msg)) {
     throw msg;
   }
-  uint16_t naf = NAF(n,a,f, longwd);
+  uint16_t naf = NAF(n,a,f, true);
   if (lamWait) {
     naf |= CONTINUATION;
     m_list.push_back(naf);
@@ -251,7 +251,6 @@ CCCUSBReadoutList::addRead(int n, int a, int f, bool lamWait, bool longwd)
     m_list.push_back(naf);
   }
 }
-
 /****************************************************************************/
 /*!
    Add a control transfer to the stack.
@@ -292,8 +291,20 @@ CCCUSBReadoutList::addControl(int n, int a, int f)
 void
 CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
 {
-  addGenericQop( MODE_QSTOP, n, a, f, max, lamWait, false);
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
 
+  // build up the elements of the stack (three words, naf, mode, max-count).
+
+  uint16_t naf  = NAF(n,a,f) | CONTINUATION;
+  uint16_t mode = MODE_QSTOP | CONTINUATION;
+  if (lamWait) mode |= MODE_LAMWAIT;
+  
+  m_list.push_back(naf);
+  m_list.push_back(mode);
+  m_list.push_back(max);
 
 }
 
@@ -301,12 +312,23 @@ CCCUSBReadoutList::addQStop(int n, int a, int f, uint16_t max, bool lamWait)
   Same as above but the readout is for 24 bit data.
 */
 void
-CCCUSBReadoutList::addQStop24( int n, int a, int f, uint16_t max, bool lamWait)
+CCCUSBReadoutList::addQStop24(int n, int a, int f, uint16_t max, bool lamWait)
 {
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
 
-  addGenericQop(MODE_QSTOP, n, a, f, max, lamWait, true);
+  // build up the elements of the stack (three words, naf, mode, max-count).
 
+  uint16_t naf  = NAF(n,a,f) | CONTINUATION | NAFIsLong;
+  uint16_t mode = MODE_QSTOP | CONTINUATION;
+  if (lamWait) mode |= MODE_LAMWAIT;
   
+  m_list.push_back(naf);
+  m_list.push_back(mode);
+  m_list.push_back(max);
+
 }
 /****************************************************************************/
 /*!
@@ -332,8 +354,21 @@ CCCUSBReadoutList::addQStop24( int n, int a, int f, uint16_t max, bool lamWait)
 void
 CCCUSBReadoutList::addQScan(int n, int a, int f, uint16_t max, bool lamWait)
 {
-  addGenericQop(MODE_QSCAN, n, a, f, max, lamWait, false);
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
+
+  // build up and add the stack elements: NAF, Mode, Max count.
+
+  uint16_t naf = NAF(n,a,f) | CONTINUATION;
+  uint16_t mode= MODE_QSCAN | CONTINUATION;
+  if (lamWait) mode |= MODE_LAMWAIT;
   
+  m_list.push_back(naf);
+  m_list.push_back(mode);
+  m_list.push_back(max);
+
 }
 
 /*****************************************************************************/
@@ -356,7 +391,20 @@ CCCUSBReadoutList::addQScan(int n, int a, int f, uint16_t max, bool lamWait)
 void
 CCCUSBReadoutList::addRepeat(int n, int a, int f, uint16_t count, bool lamWait)
 {
-  addGenericQop(MODE_COUNT, n, a, f, count, lamWait, false);
+  string msg;
+  if (!validRead(n,a,f,msg)) {
+    throw msg;
+  }
+
+  // Three elements, NAF, mode,and count get added to the stack:
+
+  uint16_t naf = NAF(n,a,f) | CONTINUATION;
+  uint16_t mode= MODE_COUNT | CONTINUATION;
+  if (lamWait) mode |= MODE_LAMWAIT;
+  
+  m_list.push_back(naf);
+  m_list.push_back(mode);
+  m_list.push_back(count);
 
 }
 
@@ -571,36 +619,3 @@ CCCUSBReadoutList::validControl(int n, int a, int f, string& msg)
      
 }
 
-/**
- * addGenericQSop
- *   Factor common Q operation generation.
- * @param type - type of operation e.g. MODE_QSTOP
- * @param n - slot
- * @param a  - subaddress.
- * @param max - maximum transfers.
- * @param lamwait - wait for lam?
- * @param longwd - is longword.
- */
-void
-CCCUSBReadoutList::addGenericQop(int type, int n, int a, int f, uint16_t max, bool lamWait, bool longwd)
-
-{
-  string msg;
-  if (!validRead(n,a,f,msg)) {
-    throw msg;
-  }
-
-  // build up the elements of the stack (three words, naf, mode, max-count).
-
-
-  uint16_t naf  = NAF(n,a,f, longwd) | CONTINUATION;
-  uint16_t mode = type | CONTINUATION;
-
-  if (longwd) naf |= NAFIsLong;
-  if (lamWait) mode |= MODE_LAMWAIT;
-  
-  m_list.push_back(naf);
-  m_list.push_back(mode);
-  m_list.push_back(max);
-  
-}

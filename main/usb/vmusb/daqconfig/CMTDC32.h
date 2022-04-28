@@ -13,12 +13,26 @@
 # @author Ron Fox (rfoxkendo@gmail.com)
 
 */
-#ifndef MTDC32_H
-#define MTDC32_H
+#ifndef __MTDC32_H
+#define __MTDC32_H
 
+
+#ifndef __CMESYTECBASE_H
 #include "CMesytecBase.h"
+#endif
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 // Forward definitions:
 

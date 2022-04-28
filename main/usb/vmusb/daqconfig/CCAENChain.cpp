@@ -236,9 +236,26 @@ CCAENChain::getCBLTAddress()
 list<string>
 CCAENChain::getModules()
 {
-  std::vector<std::string> aResult = m_pConfiguration->getList("-modules");
-  list   <string>   Result(aResult.begin(), aResult.end());
+  // These two are for Tcl_SplitList
 
+  int    argc;
+  const char** argv;
+  list   <string>   Result;	                       // This is what we'll return.
+
+  string sValue  = m_pConfiguration->cget("-modules"); // String valued parameter...
+  Tcl_SplitList(NULL, sValue.c_str(), &argc, &argv);   // List has already been validated.
+
+  assert(argc > 1);		                       // Validator should have ensured this.
+
+  // Store the names in our result list
+
+  for (int i=0; i < argc; i++) {
+    Result.push_back(string(argv[i]));
+  }
+
+  // Free the argv Tcl_SplitList dynamically allocated and return Result:
+
+  Tcl_Free((char*)argv);
   return Result;
 }
 

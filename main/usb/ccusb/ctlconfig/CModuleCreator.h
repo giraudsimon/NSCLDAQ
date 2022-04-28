@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CMODULECREATOR_H
-#define CMODULECREATOR_H
+#ifndef __CMODULECREATOR_H
+#define __CMODULECREATOR_H
 
 #include <CCCUSB.h>
 #include <CModuleCreatorT.h>

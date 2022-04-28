@@ -142,14 +142,6 @@ CBeginRun::operator()(CTCLInterpreter& interp,
     CConfiguration* pConfig = new CConfiguration;
     Globals::pConfig = pConfig;
     string errorMessage = "Begin - configuration file processing failed: ";
-    
-    /* daqdev/NSCLDAQ#992 - export the controller as a swig object
-       into the interpreter the configuration created. This allows
-       script modules to use it in construction or for it even
-       to be used at the top level daqconfig.tcl file.
-   */
-    pConfig->exportController(Globals::pUSBController);
-    
     try {
         pConfig->processConfiguration(Globals::configurationFilename);
         pApp->logProgress(

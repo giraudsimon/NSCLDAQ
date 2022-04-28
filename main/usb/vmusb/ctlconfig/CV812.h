@@ -14,12 +14,29 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CV812_H
-#define CV812_h
+#ifndef __CV812_H
+#define __CV812_h
 
+
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+
 #include <CControlModule.h>
 class CVMUSB;
 
@@ -51,7 +68,7 @@ class CVMUSB;
 
 */
 
-class CV812 : public CVMUSBControlHardware
+class CV812 : public CControlHardware
 {
 private:
   CControlModule*     m_pConfiguration;

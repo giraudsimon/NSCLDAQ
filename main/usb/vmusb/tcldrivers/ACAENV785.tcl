@@ -35,7 +35,6 @@ itcl::class ACAENV785 {
     public method ClearBitSet1 {bit}
     public method ReadBitSet1 {}
     public method Init {}
-    private method _getRegSize {}
 
 # stack functions
     public method sRead {stack}
@@ -108,43 +107,66 @@ itcl::body ACAENV785::SetThreshold {chan threshold} {
     # The default is (threshold << 4).
 
     # check that we know if we have a V785 or a V785N
-    
+    if {$version == 0x1} {
+	set regsize 2
+    } elseif {$version == 0xE} {
+	set regsize 4
+    } else {
+	tk_messageBox -icon error -message "Warning, the version type of V785 module $this is currently $version.\nCheck that ACAENV785::GetVersion has been called in the init script"
+	return
+    }
     
     $device Write32D16 [expr $base+0x1080+($chan*$regsize)] $threshold
 }
 
 itcl::body ACAENV785::ReadThreshold {chan} {
     # Read back lld
-    
-    set regsize [_getRegSize]
-    if {$regsize} {
-        set thresh [$device Read32D16 [expr $base+0x1080+($chan*$regsize)]]
-        return $thresh
+    # check that we know if we have a V785 or a V785N
+    if {$version == 0x1} {
+	set regsize 2
+    } elseif {$version == 0xE} {
+	set regsize 4
+    } else {
+	tk_messageBox -icon error -message "Warning, the version type of V785 module $this is currently $version.\nCheck that ACAENV785::GetVersion has been called in the init script"
+	return
     }
+    
+    set thresh [$device Read32D16 [expr $base+0x1080+($chan*$regsize)]]
+    return $thresh
 }
 
 itcl::body ACAENV785::SetThresholds {threshold} {
     # set all thresholds to a common value
 
-    set nchan 0;         # Does nothing if bad module type.
-    set regsize [_getRegSize]
-    if {$regsize == 2} {
-        set nchan 32
-    } elseif {$eregsize == 4} {
-        set nchan 16
+    # check that we know if we have a V785 or a V785N
+    if {$version == 0x1} {
+	set nchan 32
+    } elseif {$version == 0xE} {
+	set nchan 16
+    } else {
+	tk_messageBox -icon error -message "Warning, the version type of V785 module $this is currently $version.\nCheck that ACAENV785::GetVersion has been called in the init script"
+	return
     }
+    set nchan 16
     for {set i 0} {$i < $nchan} {incr i} {
-        SetThreshold $i $threshold
+	SetThreshold $i $threshold
     }
 }
 
 itcl::body ACAENV785::DisableChannel {channel} {
     # Disable a channel by setting a kill bit.
 
-    set regsize [_getRegSize]
-    if {$regsize} {
-        $device Write32D16 [expr $base+0x1080+($channel*$regsize)] 0x100
+    # check that we know if we have a V785 or a V785N
+    if {$version == 0x1} {
+	set regsize 2
+    } elseif {$version == 0xE} {
+	set regsize 4
+    } else {
+	tk_messageBox -icon error -message "Warning, the version type of V785 module $this is currently $version.\nCheck that ACAENV785::GetVersion has been called in the init script"
+	return
     }
+
+    $device Write32D16 [expr $base+0x1080+($channel*$regsize)] 0x100
 }
 
 itcl::body ACAENV785::DisableChannels {start end} {
@@ -188,24 +210,4 @@ itcl::body ACAENV785::Init {} {
     DataReset
     GetVersion
     SetReadoutMode 0x0024; # Enable BLOCK MODE AND BERR for single event block mode readout
-}
-
-##
-# _getRegSize
-#   Given the version of the module, determine the distance between
-#   per channnle registers.  This is needed because the N
-#   version populates every other channel of a the ribbon input module.
-# @return int (2 or 4 if it works).
-# @retval 0 - if no version match.
-# @error  Error pop up if failure.
-#
-itcl::body ACAENV785::_getRegSize {} {
-    if {$version == 0x1} {
-        set regsize 2
-    } elseif {$version == 0xE} {
-        set regsize 4
-    } else {
-        tk_messageBox -icon error -message "Warning, the version type of V785 module $this is currently $version.\nCheck that ACAENV785::GetVersion has been called in the init script"
-        return 0
-    }
 }

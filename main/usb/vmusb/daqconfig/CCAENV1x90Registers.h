@@ -1,5 +1,5 @@
-#ifndef CCAENV1X90REGISTERS_H
-#define CCAENV1X90REGISTERS_H
+#ifndef __CCAENV1X90REGISTERS_H
+#define __CCAENV1X90REGISTERS_H
 
 /*!
   This file contains register definitions for the CAEN V1190, V1290 TDC

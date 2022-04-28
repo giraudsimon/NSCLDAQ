@@ -13,15 +13,18 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef CV6553CREATOR_H
-#define CV6553CREATOR_H
+#ifndef __CV6553CREATOR_H
+#define __CV6553CREATOR_H
 
 /**
  * @file CV6553Creator.h
  * @brief Defines a creational for the V6553 HV Module.
  */
 
+#ifndef __CMODULECREATOR_H
 #include <CModuleCreator.h>
+#endif
+
 #include <CControlHardware.h>
 #include <memory>
 
@@ -31,8 +34,7 @@
 class CV6533Creator : public CModuleCreator
 {
 public:
-  virtual CControlHardware* operator()(void* userData);
-  std::string describe() const;
+  virtual CControlHardware* operator()();
 };
 
 

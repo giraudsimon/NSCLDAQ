@@ -73,7 +73,7 @@ namespace WienerMDGG16
     construct the beast.. The shadow registers will all get set to zero
     */
   CControlHdwr::CControlHdwr() :
-     m_dev()
+    CControlHardware(), m_dev()
   {
   }
 
@@ -82,7 +82,7 @@ namespace WienerMDGG16
     Copy construction:
     */
   CControlHdwr::CControlHdwr(const CControlHdwr& rhs) :
-    CVMUSBControlHardware(rhs), m_dev(rhs.m_dev)
+    CControlHardware(rhs), m_dev(rhs.m_dev)
   {
   }
   /*!
@@ -101,7 +101,7 @@ namespace WienerMDGG16
     {
       if(this != &rhs) {
         m_dev = rhs.m_dev;
-        CVMUSBControlHardware::operator=(rhs);
+        CControlHardware::operator=(rhs);
       }
       return *this;
     }
@@ -112,7 +112,7 @@ namespace WienerMDGG16
   int 
     CControlHdwr::operator==(const CControlHdwr& rhs) const
     {
-      return CVMUSBControlHardware::operator==(rhs);
+      return CControlHardware::operator==(rhs);
     }
   /*
      != is the logical inverse of ==
@@ -170,11 +170,14 @@ namespace WienerMDGG16
       // execute the list
       size_t nRead=0;
       uint32_t buf[8];
-      doList(
-          vme, *pList, buf, sizeof(uint16_t), &nRead,
-          "CControlHdwr::Initialize() failed"
-      );
-      
+      int status = vme.executeList(*pList, buf, sizeof(uint16_t), &nRead);
+
+      if (status < 0) {
+        std::stringstream errmsg;
+        errmsg << "CControlHdwr::Initialize() failed while executing list ";
+        errmsg << "with status = " << status;
+        throw errmsg.str();
+      }
     }
 
   string CControlHdwr::Update(CVMUSB& vme)
@@ -209,13 +212,13 @@ namespace WienerMDGG16
       // Execute the list.
       size_t nRead=0;
       uint32_t buf[8];
-      try {
-        doList(
-          vme, *pList, buf, sizeof(uint16_t), &nRead,
-          "ERROR - Set failed"
-        );
-      } catch (std::string msg) { return msg;}
-      
+      int status = vme.executeList(*pList, buf, sizeof(uint16_t), &nRead);
+      if (status<0) {
+        std::string retval("ERROR - executeList returned status = ");
+        retval += std::to_string(status);
+        return retval;
+      }
+
       // Format the output
       std::string result;
       size_t nLongs = nRead/sizeof(uint32_t);
@@ -252,13 +255,13 @@ namespace WienerMDGG16
     // execute list
     size_t nRead=0;
     uint32_t buf;
-    try {
-      doList(
-        vme, *pList, &buf, sizeof(buf), &nRead,
-        "ERROR - Get failed"
-      );
-    } catch (std::string msg) { return msg; }
-    
+    int status = vme.executeList(*pList, &buf, sizeof(buf), &nRead);
+    if (status<0) {
+      std::string retval("ERROR - executeList returned status = ");
+      retval += std::to_string(status);
+      return retval;
+    }
+
     string result = "OK";
     // convert returned data into a list
     size_t nLongs = nRead/sizeof(uint32_t);

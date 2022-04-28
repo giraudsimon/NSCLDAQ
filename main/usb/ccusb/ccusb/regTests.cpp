@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <iomanip>
-#include <XXUSBUtil.h>
 
 
 using namespace std;
@@ -36,28 +35,23 @@ class registerTests : public CppUnit::TestFixture {
 
 
 private:
-
+  struct usb_device*   m_dev;
   CCCUSB*  m_pInterface;
-  USBDevice* m_pDevice;
+//  const CCCUSB::ShadowRegisters* m_pShadow;
 
 public:
   void setUp() {
-    auto devices =
-      XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
-  
+    vector<struct usb_device*> devices = CCCUSBusb::enumerate();
     if (devices.size() == 0) {
       cerr << " NO USB interfaces\n";
       exit(0);
     }
-    m_pDevice    = devices[0].second;
-    m_pInterface = new CCCUSBusb(m_pDevice);
-    for (int i = 1; i < devices.size(); i++) {
-      delete devices[i].second;
-    }
+    m_pInterface = new CCCUSBusb(devices[0]);
+//    m_pShadow = &m_pInterface->getShadowRegisters();
   }
   void tearDown() {
     delete m_pInterface;
-    delete m_pDevice;
+//    m_pShadow=0;
   }
 protected:
   void action();

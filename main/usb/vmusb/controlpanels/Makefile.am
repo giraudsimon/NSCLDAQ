@@ -18,7 +18,7 @@ install-exec-local:
 	$(mkinstalldirs) @prefix@/TclLibs/vmusbcontrol
 	$(mkinstalldirs) @prefix/share/images
 	for f in $(PACKAGES); do $(INSTALL_SCRIPT) @srcdir@/$$f @prefix@/TclLibs/vmusbcontrol; done
-	echo pkg_mkIndex -verbose @prefix@/TclLibs/vmusbcontrol "*.tcl" | DAQROOT=@prefix@ DAQLIB=@libdir@ tclsh
+	echo pkg_mkIndex -verbose @prefix@/TclLibs/vmusbcontrol "*.tcl" | tclsh
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@/`basename $$f .tcl`;  done
 	for f in $(APPS); do $(INSTALL_SCRIPT) @srcdir@/$$f @bindir@;  done    # Compatible installation
 	$(INSTALL_SCRIPT) @srcdir@/v812usbcontrol.tcl @bindir@/v895usbcontrol.tcl	
@@ -32,6 +32,3 @@ check-TESTS:
 
 EXTRA_DIST= $(APPS) $(PACKAGES) XLM72ScalerGUI.tcl $(TCL_TESTS) mdgg16control.xml \
 	XLM72GateDelayControl.tcl gd16_startup.png xlm72gatedelaycontrol.xml $(IMAGES)
-
-check: check-TESTS
-

@@ -16,9 +16,8 @@ libCCUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
 				serverinstance.cpp \
 				CGetCommand.cpp  \
 				CSetCommand.cpp  \
-				CUpdateCommand.cpp \
-				CStatisticsCommand.cpp \
-				CRunStateCommand.cpp
+				CUpdateCommand.cpp  \
+				tclUtil.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
 			CControlQueues.h \
@@ -38,9 +37,8 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 			CGetCommand.h  \
 			CSetCommand.h  \
 			CUpdateCommand.h  \
-			Events.h	\
-			CStatisticsCommand.h \
-			CRunStateCommand.h
+			tclUtil.h \
+			Events.h
 
 libCCUSBCore_la_CPPFLAGS = \
 		  @THREADCXX_FLAGS@ \
@@ -66,16 +64,16 @@ libCCUSBCore_la_CPPFLAGS = \
 
 
 libCCUSBCore_la_LIBADD	= \
-			@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la	\
-			@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la	\
-			@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
-		 	 @top_builddir@/usb/ccusb/ccusb/libCCUSB.la		\
-			@LIBTCLPLUS_LDFLAGS@					\
+		@top_builddir@/usb/ccusb/daqconfig/libCCUSBDaqConfig.la	\
+		@top_builddir@/usb/ccusb/ctlconfig/libCCUSBCtlConfig.la	\
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+	 	 @top_builddir@/usb/ccusb/ccusb/libCCUSB.la		\
+		@LIBTCLPLUS_LDFLAGS@					\
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@top_builddir@/base/os/libdaqshm.la	\
 			@top_builddir@/daq/format/libdataformat.la	\
 			@TCL_LDFLAGS@ \
 			@THREADLD_FLAGS@ \
-			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@ @PIXIE_CPPFLAGS@
+			@OPENSSL_LDFLAGS@ @OPENSSL_LIBS@
 
 

@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <iomanip>
-#include <XXUSBUtil.h>
 
 
 using namespace std;
@@ -37,13 +36,12 @@ private:
 
 public:
   void setUp() {
-    auto devices = XXUSBUtil::enumerateCCUSB(*(CCCUSBusb::getUsbContext()));
-    
+    vector<struct usb_device*> devices = CCCUSBusb::enumerate();
     if (devices.size() == 0) {
       cerr << " NO USB interfaces\n";
       exit(0);
     }
-    m_pInterface = new CCCUSBusb(devices[0].second);
+    m_pInterface = new CCCUSBusb(devices[0]);
   }
   void tearDown() {
     delete m_pInterface;

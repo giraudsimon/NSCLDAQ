@@ -14,13 +14,33 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CCAENCHAIN_H
-#define CCAENCHAIN_H
+#ifndef __CCAENCHAIN_H
+#define __CCAENCHAIN_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif 
+#endif
+
+#ifndef __STL_LIST
 #include <list>
+#ifndef __STL_LIST
+#define __STL_LIST
+#endif
+#endif
 
 
 class CReadouModule;

@@ -28,9 +28,6 @@
 #include <Exception.h>
 #include <stdexcept>
 #include <CXLM.h>
-#include <USB.h>
-#include <USBDevice.h>
-#include <XXUSBUtil.h>
 
 /**
  * Usage:
@@ -62,26 +59,32 @@
  *     that element (complain if no match).
  *     
  * @param parsedArgs - parsed parameter arguments.
- * @return USBDevice*
+ * @return usb_device*
  *
  */
-static USBDevice*
+static usb_device*
 selectVMUSB(gengetopt_args_info& parsedParams)
 {
-    USBDevice* result;
+    std::vector<usb_device*> devices = CVMUSBusb::enumerate();
+    if (devices.size() == 0) {
+        throw std::string("No VMUSB's are attached to this system");
+    }
+    
     if (!parsedParams.serial_given) {
-        result = CVMUSBusb::findFirst();
-        if (!result) {
-            throw std::string("There are no VMUSB controllers connected to this system");
-        }
-    } else {
-        result = CVMUSBusb::findBySerial(parsedParams.serial_arg);
-        if (!result) {
-            throw std::string("There is no VMUSB controller with the requested serial number string");
+        return devices[0];
+    }
+    
+    // Look for a match:
+    
+    for (int i = 0; i < devices.size(); i++) {
+        if (CVMUSBusb::serialNo(devices[i]) == parsedParams.serial_arg) {
+            return devices[i];
         }
     }
-    return result;
-    
+    std::string except = "No VMUSB with serial number ";
+    except += parsedParams.serial_arg;
+    except += " is attached to this system";
+    throw except;
 }
 /**
  * createRemoteController
@@ -109,7 +112,7 @@ createRemoteController(gengetopt_args_info& parsedParams)
 static CVMUSB*
 createLocalController(gengetopt_args_info& parsedParams)
 {
-    USBDevice* dev = selectVMUSB(parsedParams);
+    usb_device* dev = selectVMUSB(parsedParams);
     return new CVMUSBusb(dev);
 }
 /**

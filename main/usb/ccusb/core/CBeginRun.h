@@ -15,12 +15,26 @@
 */
 
 
-#ifndef CBEGINRUN_H
-#define CBEGINRUN_H
+#ifndef __CBEGINRUN_H
+#define __CBEGINRUN_H
 
+#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
+#endif
+
+#ifndef __STL_VECTOR
 #include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
 
 
 

@@ -60,3 +60,44 @@ CModuleFactoryT<Ctlr>::instance()
   }
   return m_pInstance;
 }
+
+/**
+ * addCreator
+ *
+ *  Adds a new creator to the factory.
+ *
+ * @param type - The type of the creator.
+ * @param pCreator - Pointer to a creator (best if dynamically allocated).
+ *
+ * @note duplicate type - last one wins for now. - TODO - detect and object
+ */
+template <class Ctlr>
+void
+CModuleFactoryT<Ctlr>::addCreator(std::string type, 
+                                  std::unique_ptr<CModuleCreatorT<Ctlr>> pCreator)
+{
+  m_Creators[type] = std::move(pCreator);
+}
+/**
+ * create
+ *
+ *   Asks a module creator to create a control module.
+ *
+ * @param type - The type of control module to create.
+ * @param name - Name of the module
+ *
+ * @return CControlHardware* - Pointer to the created module.
+ * @retval NULL - no such type.
+ */
+template <class Ctlr>
+CControlHardwareT<Ctlr>*
+CModuleFactoryT<Ctlr>::create(std::string type)
+{
+  auto p = m_Creators.find(type);
+  if (p != m_Creators.end()) {
+    auto& creator = p->second;
+    return creator->operator()();
+  } else {
+    return nullptr;
+  }
+}

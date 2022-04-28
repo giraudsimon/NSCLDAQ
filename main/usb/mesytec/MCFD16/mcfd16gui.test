@@ -14,8 +14,6 @@
 
 package require tcltest
 package require snit
-package require Utils
-
 set loadFailure 0
 tcltest::test pkgrequire-0 {Ensure that we can require the package
 } {set ::loadFailure [catch {package require mcfd16gui}]} 0
@@ -730,7 +728,6 @@ tcltest::test loader_isvalidapicall-0 { valid api calls are accepted
 } -result 1
 }
 
-
 tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces state
 } -setup {
   # there are 8 lines in a usb protocol header
@@ -742,8 +739,7 @@ tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces s
   # ::lines contains only valid API calls
   MCFD16Memorizer ::asdf
 
-  #loader EvaluateAPILines $::lines
-  Utils::runGlobally $::lines
+  loader EvaluateAPILines $::lines
 
   set res [list]
   lappend res [::asdf GetThreshold 0]
@@ -763,6 +759,8 @@ tcltest::test loader_evaluateLines-0 {establish that evaluating lines produces s
 } -result {2 2 2 2 3 20 neg common 1 0 0 {pat_or_1 1} 65535}
 
 
+
+###############################################################################
 
 # don't build the gui 
 snit::method ChannelEnableDisableView BuildGUI {} {}

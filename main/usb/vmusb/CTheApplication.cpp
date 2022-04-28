@@ -24,8 +24,6 @@
 #include <TclServer.h>
 #include <CVMUSBusb.h>
 #include <CVMUSBFactory.h>
-#include <USBDevice.h>
-#include <XXUSBUtil.h>
 
 #include <TCLInterpreter.h>
 #include <TCLLiveEventLoop.h>
@@ -38,7 +36,7 @@
 #include <os.h>
 #include <CRunState.h>
 #include <CControlQueues.h>
-#include <io.h>
+
 
 #include <CPortManager.h>
 #include <CMutex.h>
@@ -63,7 +61,6 @@
 
 
 #include <string>
-
 
 
 
@@ -103,7 +100,7 @@ CTheApplication::CTheApplication()
 {
   if (m_Exists) {
     cerr << "Attempted to create more than one instance of the application\n";
-    exit(EX_SOFTWARE);
+    Tcl_Exit(EX_SOFTWARE);
   }
   m_Exists = true;
   m_pInterpreter = static_cast<CTCLInterpreter*>(NULL);
@@ -185,7 +182,7 @@ int CTheApplication::operator()(int argc, char** argv)
 
   if (parsedArgs.enumerate_given) {
     enumerateVMUSB();
-    exit(EXIT_SUCCESS);
+    Tcl_Exit(EXIT_SUCCESS);
   }
   if (parsedArgs.init_script_given) {
     m_systemControl.setInitScript(string(parsedArgs.init_script_arg));
@@ -253,7 +250,7 @@ int CTheApplication::operator()(int argc, char** argv)
         if(end == portString.c_str()) {       // failed.
             std::cerr << "--port string must be either a number or 'managed'\n";
             cmdline_parser_print_help();
-            exit(EXIT_FAILURE);
+            Tcl_Exit(EXIT_FAILURE);
         } else {
             tclServerPort = port;
         }
@@ -270,12 +267,12 @@ int CTheApplication::operator()(int argc, char** argv)
   }
   catch (const char* msg) {
     cerr << "CTheApplication caught a char* exception " << msg << endl;
-    exit(EXIT_FAILURE);
+    Tcl_Exit(EXIT_FAILURE);
 
   }
   catch (exception& exc) {
     cerr << "CTheApplication caught an exception: " << exc.what() << endl;
-    exit(EXIT_FAILURE);
+    Tcl_Exit(EXIT_FAILURE);
 
   }
   catch (CException& error) {
@@ -363,15 +360,7 @@ CTheApplication::logProgress(const char* msg)
     daqlog::trace(msg);
   }
 }
-/**
- * getOutputThread
- *   @return COutputThread*
- *      Pointer to the output thread.
- */
-COutputThread*
-CTheApplication::getOutputThread() {
-  return m_pOutputThread;
-}
+
 /*
    Start the output thread.  This thread is responsible for 
    reformatting and transferring buffers of data from the VM-USB to 
@@ -386,7 +375,6 @@ CTheApplication::startOutputThread(std::string ring)
 {
   COutputThread* router = new COutputThread(ring, m_systemControl);
   router->start();
-  m_pOutputThread = router;
   Os::usleep(500);
 
 }
@@ -436,12 +424,16 @@ CTheApplication::startInterpreter()
 void
 CTheApplication::enumerateVMUSB()
 {
-  auto controllers = XXUSBUtil::enumerateVMUSB(*(CVMUSBusb::getUSBContext()));
-  
-  for (int i =0; i < controllers.size(); i++) {
-    std::cout << "[" << i << "] : "
-      << controllers[i].first << std::endl;
-    delete controllers[i].second;
+  try {
+    vector<struct usb_device*> controllers = CVMUSBusb::enumerate();
+    for (int i = 0; i < controllers.size(); i++) {
+      std::string serial = CVMUSBusb::serialNo(controllers[i]);
+      std::cout << "[" << i << "] : " << serial << std::endl;
+    }
+    cout.flush();
+  }
+  catch(std::string msg) {
+    std::cerr << "Unable to enumerate VM-USB modules: " << msg << std::endl;
   }
 }
 /**
@@ -461,20 +453,16 @@ CTheApplication::initializeLogging()
         daqlog::setLogLevel(daqlog::Debug);
         break;
       case 2:
-      case 3:
+    case 3:
         daqlog::setLogLevel(daqlog::Trace);
         break;
-	
       default:
         std::cerr << "Invalid log level "
           << m_logLevel
           << "Must be 0, 1, or 2\n";
         exit(EXIT_FAILURE);
     }
-    if (m_logLevel > 2) {
-      XXUSBUtil::logTransactions = true;
-      
-    }
+    CVMUSB::m_logTransactions   = m_logLevel > 2;           // Export that to the full app.
   }
  
 }
@@ -519,14 +507,22 @@ CTheApplication::initializeBufferPool()
 string
 CTheApplication::makeConfigFile(string baseName)
 {
+  string home(getenv("HOME"));
+  string pathsep("/");
+  string config("config");
+  string dir;
   
-  std::string result;
-  result = io::getReadableFileFromEnvdir("CONFIGDIR", baseName.c_str());
-  if (result != "") return result;
-  
-  std::string path = "/config/";
-  path += baseName;
-  return io::getReadableFileFromHome(path.c_str());
+  // The user can define a CONFIGDIR env variable to move the configuration dir.
+
+  if (getenv("CONFIGDIR")) {
+    dir =getenv("CONFIGDIR");
+  } else {
+    dir = home + pathsep + config;
+  }
+
+
+  string result = dir +  pathsep + baseName;
+  return result;
 
 }
 

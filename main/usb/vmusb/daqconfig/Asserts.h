@@ -1,5 +1,5 @@
-#ifndef ASSERTS_H
-#define ASSERTS_H
+#ifndef __ASSERTS_H
+#define __ASSERTS_H
 
 #include <iostream>
 #include <string>

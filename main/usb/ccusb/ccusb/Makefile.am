@@ -6,9 +6,7 @@ COMPILATION_FLAGS		= \
 				@TCL_FLAGS@ \
 				@USBSWITCHES@ \
 				@THREADCXX_FLAGS@ \
-				-I@top_srcdir@/base/tcpip  \
-				-I@top_srcdir@/usb/usb0.1	\
-				@libusb_CFLAGS@ @PIXIE_CPPFLAGS@
+				-I@top_srcdir@/base/tcpip  @PIXIE_CPPFLAGS@
 
 
 
@@ -31,12 +29,11 @@ libCCUSB_la_LIBADD	= \
 		  @top_builddir@/base/os/libdaqshm.la \
 		  @top_builddir@/base/thread/libdaqthreads.la \
 			@TCL_LDFLAGS@ \
-			@LIBTCLPLUS_LDFLAGS@ \
+      @LIBTCLPLUS_LDFLAGS@ \
 			@top_builddir@/base/tcpip/libTcp.la \
-			@top_builddir@/usb/usb0.1/libUSB01.la \
 			@LIBEXCEPTION_LDFLAGS@ \
 			@THREADLD_FLAGS@ \
-			@libusb_LIBS@
+	 		@USB_LIBS@  
 
 ## SWIG wrapper generation
 
@@ -67,6 +64,7 @@ libCCCUSB_la_LIBADD = \
 			@LIBTCLPLUS_LDFLAGS@                        \
 			@LIBEXCEPTION_LDFLAGS@                      \
 		 	@TCL_LDFLAGS@                               \
+	 		@USB_LIBS@ \
 			@THREADLD_FLAGS@
 
 ## SWIG Wrapper containing cvmusbreadoutlist::CCCUSBReadoutList
@@ -100,15 +98,13 @@ tests_SOURCES = TestRunner.cpp \
 tests_LDADD = $(CPPUNIT_LDFLAGS) @builddir@/libCCUSB.la \
 		@TCL_LDFLAGS@ \
 		@LIBTCLPLUS_LDFLAGS@
-tests_CXXFLAGS = $(COMPILATION_FLAGS) \
-	-I@top_srcdir@/base/thread $(AM_CXXFLAGS) @libusb_1_0_CFLAGS@
+tests_CPPFLAGS = -I@top_srcdir@/base/thread $(AM_CXXFLAGS)  @PIXIE_CPPFLAGS@
 tests_LDFLAGS =  @top_builddir@/base/thread/libdaqthreads.la        \
 			@top_builddir@/base/tcpip/libTcp.la         \
-			@top_builddir@/usb/usb0.1/libUSB01.la 	\
 			@LIBTCLPLUS_LDFLAGS@                        \
 			@LIBEXCEPTION_LDFLAGS@                      \
 		   	@TCL_LDFLAGS@                               \
-	 		@libusb_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@ \
+	 		@USB_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@ \
 		 -Wl,"-rpath=@libdir@" 
 
 
@@ -116,7 +112,7 @@ tests_LDFLAGS =  @top_builddir@/base/thread/libdaqthreads.la        \
 remotetests_SOURCES = TestRunner.cpp \
 			remoteRegTests.cpp
 remotetests_LDADD = @builddir@/libCCUSB.la        \
-			$(CPPUNIT_LDFLAGS) 			\
+		  $(CPPUNIT_LDFLAGS)			\
 			@top_builddir@/base/tcpip/libTcp.la         \
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@LIBTCLPLUS_LDFLAGS@                        \
@@ -125,8 +121,8 @@ remotetests_LDADD = @builddir@/libCCUSB.la        \
 	 		@USB_LIBS@   @THREADLD_FLAGS@ @TCL_LDFLAGS@
 
 
-remotetests_CXXFLAGS = $(AM_CXXFLAGS) -I@top_srcdir@/base/thread \
-	@PIXIE_CPPFLAGS@
+remotetests_CPPFLAGS = $(AM_CXXFLAGS) -I@top_srcdir@/base/thread \
+	 @PIXIE_CPPFLAGS@
 remotetests_LDFLAGS = @top_builddir@/base/thread/libdaqthreads.la \
 	-Wl,"-rpath=@libdir@" 
 
@@ -152,14 +148,10 @@ camactests_LDADD    = @builddir@/libCCUSB.la        \
 			$(CPPUNIT_LDFLAGS)                          \
 			@top_builddir@/base/tcpip/libTcp.la         \
 			@top_builddir@/base/thread/libdaqthreads.la \
-			@top_builddir@/usb/usb0.1/libUSB01.la \
-			 @libusb_LIBS@     \
-			@TCL_LDFLAGS@         \
+			@TCL_LDFLAGS@                               \
 			@LIBTCLPLUS_LDFLAGS@
 
-camactests_CXXFLAGS =  $(COMPILATION_FLAGS) \
-			-I@top_srcdir@/base/thread \
-			@libusb_CFLAGS@      \
+camactests_CPPFLAGS = -I@top_srcdir@/base/thread \
 			$(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
 camactests_LDFLAGS  = -Wl,"-rpath=@libdir@" 
 
@@ -171,4 +163,3 @@ clean-local:
 
 
 EXTRA_DIST=CCCUSB.i CCCUSBReadoutList.i Asserts.h
-

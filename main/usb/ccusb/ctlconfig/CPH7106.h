@@ -17,11 +17,27 @@ Control driver for Phililps Ph7106 Leading edge discriminator.
 
 */
 
-#ifndef CPH7106_H
-#define CPH7106_H
+#ifndef __CPH7106_H
+#define __CPH7106_H
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT
 #include <stdint.h>
+#ifndef __CRT_STDINT
+#define __CRT_STDINT
+#endif
+#endif
+
+
 #include <CControlModule.h>
 class CCCUSB;
 

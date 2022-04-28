@@ -14,16 +14,31 @@ Michigan State University
 East Lansing, MI 48824-1321
 */
 
-#ifndef CMDGG16Control_H
-#define CMDGG16Control_H
+#ifndef __CMDGG16Control_H
+#define __CMDGG16Control_H
 
 
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
+#endif
+
+#ifndef __STL_STRING
 #include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
 #include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+
 #include <CControlModule.h>
 #include <CWienerMDGG16.h>
-
 class CVMUSB;
 
 namespace WienerMDGG16 
@@ -60,7 +75,7 @@ namespace WienerMDGG16
    *  -configfile  - path to file (must exist)
    *
    */
-  class CControlHdwr : public CVMUSBControlHardware
+  class CControlHdwr : public CControlHardware
   {
     private:
       CDeviceDriver m_dev; //!< low-level driver that handle logic

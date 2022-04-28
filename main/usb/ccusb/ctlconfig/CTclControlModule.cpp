@@ -21,7 +21,6 @@
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include <Globals.h>
-#include <tclUtil.h>
 #include <stdint.h>
 
 /**
@@ -72,10 +71,32 @@ CTclControlModule::onAttach(CControlModule& configuration)
 void
 CTclControlModule::Initialize(CCCUSB& vme)
 {
-  CTCLObject command;
-  makeCommand(command, vme, "Initialize");
-  executeCommand(command);
-  
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  if (baseCommand == "") {
+    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
+  }
+
+  // Build the command:
+  CTCLInterpreter* pInterp = &m_interp;
+  Tcl_Interp*      interp  = pInterp->getInterpreter();
+
+  CTCLObject       command;
+  command.Bind(pInterp);
+  command += baseCommand;	// Base of ensemble
+  command += "Initialize";      // Subcommand.
+
+  // Turn vme into a marshalled pointer.
+
+  std::string vmusbPointer = swigPointer(&vme, "CCCUSB");
+  command += vmusbPointer;
+
+  // Run the command:
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+
+  if (status != TCL_OK) {
+    throw std::string(Tcl_GetStringResult(interp));
+  }
 }
 
 /**
@@ -94,12 +115,25 @@ CTclControlModule::Initialize(CCCUSB& vme)
 std::string
 CTclControlModule::Update(CCCUSB& vme)
 {
-  CTCLObject command;
-  makeCommand(command, vme, "Update");
-  
-  return executeCommand(command);
-  
+  CTCLInterpreter* pInterp = &m_interp;
+  Tcl_Interp*      interp  = pInterp->getInterpreter();
+  CTCLObject       command;
+  command.Bind(pInterp);
 
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Update";
+
+  command += swigPointer(&vme, "CCCUSB");
+
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = std::string(Tcl_GetStringResult(interp));
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
 }
 /**
  * Set
@@ -122,13 +156,29 @@ CTclControlModule::Update(CCCUSB& vme)
 std::string
 CTclControlModule::Set(CCCUSB& vme, std::string parameter, std::string value)
 {
-  CTCLObject command;
-  makeCommand(command, vme, "Set");
-  
+  CTCLInterpreter* pInterp = &m_interp;
+  Tcl_Interp*      interp  = pInterp->getInterpreter();
+  CTCLObject       command;
+  command.Bind(pInterp);
+
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Set";
+
+  command += swigPointer(&vme, "CCCUSB");
   command += parameter;
   command += value;
 
-  return executeCommand(command);
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = Tcl_GetStringResult(interp);
+
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
+
 }
 /**
  * Get
@@ -148,12 +198,27 @@ CTclControlModule::Set(CCCUSB& vme, std::string parameter, std::string value)
 std::string
 CTclControlModule::Get(CCCUSB& vme, std::string parameter)
 {
-  CTCLObject command;
-  makeCommand(command, vme, "Get");
-  
+  CTCLInterpreter* pInterp = &m_interp;
+  Tcl_Interp*      interp  = pInterp->getInterpreter();
+  CTCLObject       command;
+  command.Bind(pInterp);
+
+  std::string baseCommand = m_pConfig->cget("-ensemble");
+  command += baseCommand;
+  command += "Get";
+
+  command += swigPointer(&vme, "CCCUSB");
   command += parameter;
 
-  return executeCommand(command);
+  int status = Tcl_EvalObjEx(interp, command.getObject(), TCL_EVAL_GLOBAL);
+  std::string result = Tcl_GetStringResult(interp);
+
+  if (status != TCL_OK) {
+    std::string msg = "ERROR - ";
+    msg += result;
+    return msg;
+  }
+  return result;
 
 }
 /**
@@ -171,67 +236,39 @@ CTclControlModule::clone() const
 */
 
 /**
- * makeCommand
- *    All commands are of the form:
- *    ensemble-name subcommand controller-object
+ * Generate a swig pointer from the C++ Pointer and its type.
+ * This is of the form _address_p_typename
+ * @param obj - pointer to the object.
+ * @param type - Type name.
  *
- *    There may or may not be additioanl command words
- *    depending on the subcommand.  This method
- *    creates a CTCLObject that contains that part of the
- *    command.
- * @param[out] command - object into which the command is generated.
- * @param  usb    - the usb controller.
- * @param subcommand   - Subcommand string.
- * @note command is a reference and will have been bound
- *               to the interpreter on exit.
-*/
-void
-CTclControlModule::makeCommand(
-  CTCLObject& command, CCCUSB& usb, const char* subcommand
-)
-{
-  std::string baseCommand = m_pConfig->cget("-ensemble");
-  if (baseCommand == "") {
-    throw std::string("Tcl drivers require an -ensemble option to provide the base command name");
-  }
-
-  // Build the command:
-  
-  CTCLInterpreter* pInterp = &m_interp;
-
-  command.Bind(pInterp);
-  command += baseCommand;	// Base of ensemble
-  command += subcommand;
-
-  // Turn vme into a marshalled pointer.
-
-  std::string vmusbPointer = tclUtil::swigPointer(&usb, "CCCUSB");
-  command += vmusbPointer;  
-}
-/**
- * executeCommand
- *    Run a generated command object and return the result
- *    or throw an exception if there's a failure.
- * @param command - the generated commando bject.
- * @return std::string - commnand result.
+ * @return std::string
  */
 std::string
-CTclControlModule::executeCommand(CTCLObject& command)
+CTclControlModule::swigPointer(void* p, std::string  type)
 {
-  Tcl_Interp* pInterp = m_interp.getInterpreter();
-  int status = Tcl_EvalObjEx(pInterp, command.getObject(), TCL_EVAL_GLOBAL);
-  std::string result = Tcl_GetStringResult(pInterp);
 
-  if (status != TCL_OK) {
-    std::string msg = "ERROR - Executing  command";
-    msg += std::string("command");
-    msg += ": ";
-    msg += result;
-    msg += ": ";
-    msg += tclUtil::getTclTraceback(m_interp);
-    return msg;
+  char result [10000];
+  std::string hexified;		// Bigendian.
+
+  uint8_t* s = reinterpret_cast<uint8_t*>(&p); // Point to the bytes of the pointer
+
+  // Note that doing the byte reversal this way should be
+  // 64 bit clean..and in fact should work for any sized ptr.
+
+  static const char hex[17] = "0123456789abcdef";
+  register const unsigned char *u = (unsigned char *) &p;
+  register const unsigned char *eu =  u + sizeof(void*);
+  for (; u != eu; ++u) {
+    register unsigned char uu = *u;
+    hexified += hex[(uu & 0xf0) >> 4];
+    hexified += hex[uu & 0xf];
   }
-  return result;
+
+  sprintf(result, "_%s_p_%s", hexified.c_str(), type.c_str());
+
+  return std::string(result);
+
+
 }
 
 /**

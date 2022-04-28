@@ -16,7 +16,6 @@
 
 #include <config.h>
 #include "CScalerCommand.h"
-#include "tclUtil.h"
 #include <TCLInterpreter.h>
 #include <TCLObject.h>
 #include "CConfiguration.h"
@@ -101,13 +100,19 @@ CScalerCommand:: create(CTCLInterpreter& interp,
     Usage(interp, "Invalid parameter count", objv);
     return TCL_ERROR;
   }
-  
-  string name       = tclUtil::newName(interp, &m_Config, objv);
+  string subcommand = objv[1];
+  string name       = objv[2];
   string sBase      = objv[3];
+
+  CReadoutModule*  pModule = m_Config.findAdc(name);
+  if (pModule) {
+    Usage(interp, "Attempted to create a duplicate scaler", objv);
+    return TCL_ERROR;
+  }
 
 
   CReadoutHardware* pHardware = new C3820;
-  CReadoutModule*   pModule  = new CReadoutModule(name, *pHardware);
+  pModule  = new CReadoutModule(name, *pHardware);
   pModule->configure(string("-base"), sBase);
 
 

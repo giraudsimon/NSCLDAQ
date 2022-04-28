@@ -284,7 +284,7 @@ C3820::Initialize(CVMUSB& controller)
   initList.addWrite32(base+KeyEnable, CVMUSBReadoutList::a32UserData, (uint32_t)0);
 
 
-  uint16_t inBuffer;
+  uint32_t inBuffer[100];
   size_t   bytesRead;
   status = controller.executeList(initList,
 				      &inBuffer, sizeof(inBuffer), &bytesRead);

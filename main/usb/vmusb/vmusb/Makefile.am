@@ -1,17 +1,14 @@
 lib_LTLIBRARIES		= libVMUSB.la libVMUSBRemote.la libCVMUSB.la \
 	libCVMUSBReadoutList.la
 
-COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers \
-			@LIBTCLPLUS_CFLAGS@  \
+COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@  \
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os	\
 			-I@top_srcdir@/base/thread \
-			-I@top_srcdir@/usb/usb0.1   \
-			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @libusb_1_0_CFLAGS@ \
-			@PIXIE_CPPFLAGS@
+			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@ \
+			-I@srcdir@/.. -I@top_srcdir@/base/os
 
-libVMUSB_la_SOURCES 	=  CVMUSBusb.cpp CVMUSBReadoutList.cpp \
-	CVMUSBEthernet.cpp \
+libVMUSB_la_SOURCES 	=  CVMUSBusb.cpp CVMUSBReadoutList.cpp CVMUSBEthernet.cpp \
 	CVMUSBFactory.cpp \
 	CVMUSB.cpp \
 	CMockVMUSB.cpp \
@@ -25,6 +22,7 @@ libVMUSBRemote_la_SOURCES = CVMUSBReadoutList.cpp \
 
 libVMUSBRemote_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
+
 noinst_HEADERS		= CVMUSB.h   \
 	CVMUSBReadoutList.h  \
 	CVMUSBusb.h	\
@@ -35,18 +33,15 @@ noinst_HEADERS		= CVMUSB.h   \
 	CLoggingReadoutList.h
 
 
-libVMUSB_CXXFLAGS=@THREADCXX_FLAGS@
+libVMUSB_CXXFLAGS=@THREADCXX_FLAGS@ -I@srcdir@/.. -I@top_srcdir@/base/os
 
 libVMUSB_la_LIBADD       = @top_builddir@/base/tcpip/libTcp.la \
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@LIBTCLPLUS_LDFLAGS@			\
 			@top_builddir@/base/os/libdaqshm.la	\
-			@top_builddir@/usb/usb0.1/libUSB01.la \
-			@libusb_1_0_LIBS@
+				$(USB_LIBS)  
 
-
-AM_CPPFLAGS		= $(USBSWITCHES) -I@top_srcdir@/base/headers\
-			@LIBTCLPLUS_CFLAGS@  \
+AM_CPPFLAGS		= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@  \
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os \
 			  @TCL_FLAGS@
@@ -69,13 +64,10 @@ tests_SOURCES = @srcdir@/TestRunner.cpp \
 
 
 tests_CPPFLAGS = -std=c++11 -g -I@prefix@/include -I@top_srcdir@/base/thread \
-		-I@top_srcdir@/usb/usb0.1 @libusb_CFLAGS@ \
-		$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@
+		$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
 tests_LDADD = @top_builddir@/base/thread/libdaqthreads.la \
 		$(CPPUNIT_LDFLAGS) \
 		@builddir@/libVMUSB.la \
-		@top_builddir@/usb/usb0.1/libUSB01.la \
-		@libusb_LIBS@ \
 		 @TCL_LDFLAGS@ \
 		 @LIBTCLPLUS_LDFLAGS@
 
@@ -91,9 +83,9 @@ REMOTE_TEST_MODULES = @srcdir@/TestRunner.cpp \
 
 remotetests: $(REMOTE_TEST_MODULES)
 	$(CXX) -g -o remotetests -I@srcdir@ -I@prefix@/include \
-	$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@ \
-	$(REMOTE_TEST_MODULES) $(CPPUNIT_LDFLAGS) -L@prefix@/lib \
-	-lVMUSB -lVMUSBRemote \
+	$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@ \
+	$(REMOTE_TEST_MODULES) $(CPPUNIT_LDFLAGS) -L@prefix@/lib -lVMUSB \
+	-lVMUSBRemote \
 	-Wl,"-rpath=@prefix@/lib" @TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
 
 UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
@@ -104,10 +96,10 @@ UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
 noinst_PROGRAMS = unittests
 unittests_SOURCES = $(UNITTEST_MODULES)
 
-unittests_CPPFLAGS = -I@srcdir@ -I@top_srcdir@/usb/usb1 $(CPPUNIT_INCLUDES) \
-	@PIXIE_CPPFLAGS@
+unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include \
+	$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
 unittests_LDADD = $(CPPUNIT_LDFLAGS) \
-		@builddir@/libVMUSB.la  \
+	 	@builddir@/libVMUSB.la  \
 		@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
 unittests_LDFLAGS = -Wl,"-rpath=@prefix@/lib"
 
@@ -156,5 +148,3 @@ libCVMUSBReadoutList_la_CPPFLAGS=$(COMPILATION_FLAGS)
 
 #  Stuff that needs to go int the distro:
 EXTRA_DIST = $(TEST_MODULES) $(UNITTEST_MODULES) @srcdir@/CVMUSB.i @srcdir@/CVMUSBReadoutList.i
-
-check: check-TESTS

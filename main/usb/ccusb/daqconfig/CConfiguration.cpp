@@ -47,7 +47,6 @@
 #include <CMarkerCommand.h>
 #include <tcl.h>
 #include <algorithm>
-#include "tclUtil.h"
 
 using namespace std;
 
@@ -159,19 +158,16 @@ CConfiguration::processConfiguration(string configFile)
   catch (char* msg) {
     cerr << "CConfiguration::processConfiguration caught char* exception: "
 	 << msg << endl;
-    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
   catch (CException& error) {
     cerr << "CConfiguration::processConfiguration caught CExcpetion : "
 	 << error.ReasonText() << " while " << error.WasDoing() << endl;
     cerr << Tcl_GetStringResult(m_pInterp->getInterpreter()) << endl;
-    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
   catch (...) {
     cerr << "CConfiguration::processConfiguration caught an unknown exception type\n";
-    cerr << tclUtil::getTclTraceback(*m_pInterp) << std::endl;
     throw;
   }
 }
@@ -255,31 +251,6 @@ CConfiguration::setResult(string msg)
 {
   Tcl_Obj* result = Tcl_NewStringObj(msg.c_str(), -1);
   Tcl_SetObjResult(m_pInterp->getInterpreter(), result);
-}
-/**
- * exportController
- *    Exports the controller to our Tcl interpreter for use
- *    by SWIG clients.  The controller 'pointer' is placed in
- *    Globals::aController.  If necessary the ::Globals namespace
- *    is created.
- *
- *  @param pController pointer to the actual controller object.
- */
-void
-CConfiguration::exportController(CCCUSB* pController)
-{
-  Tcl_Interp*       pRaw = m_pInterp->getInterpreter();
-
-  // Make the namespace:
-
-  Tcl_CreateNamespace(pRaw, "::Globals", nullptr, nullptr);
-
-  // create the swig pointer and store it in the
-  // ::Globals::aController variable:
-
-  std::string value = tclUtil::swigPointer(pController, "CCCUSB");
-  Tcl_SetVar(pRaw, "::Globals::aController", value.c_str(), 0);
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////

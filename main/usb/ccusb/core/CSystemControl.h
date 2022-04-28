@@ -17,8 +17,6 @@ class CPauseRun;
 class CResumeRun;
 class CInit;
 class CExit;
-class CStatisticsCommand;
-class CRunStateCommand;
 
 /*! \brief Encapsulation of UI control 
  *
@@ -45,8 +43,7 @@ class CSystemControl
     static std::unique_ptr<CResumeRun> m_pResumeRun;
     static std::unique_ptr<CInit>      m_pInit;
     static std::unique_ptr<CExit>      m_pExit;
-    static std::unique_ptr<CStatisticsCommand> m_pStats;
-    static std::unique_ptr<CRunStateCommand> m_pRunState;
+
   public:
 
     /*! \brief Wrapper around Tcl_Main 

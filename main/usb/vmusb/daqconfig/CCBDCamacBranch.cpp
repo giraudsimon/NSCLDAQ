@@ -98,14 +98,17 @@ void CCBDCamacBranch::Initialize(CVMUSB& controller)
     
     for(; crate_it != crate_end; ++crate_it) {
 
-        
-        adapted_controller = adaptCrateController(controller, crate_it);
-        
+        // Set p the crate controller
+        int crate_index = (*crate_it)->getCrateIndex();
+
+        adapted_controller = m_brDriver->createCrateController(branchID, 
+                                                               crate_index);
+        adapted_controller->setController(controller);
+
         // Initialize the crate on the branch w/ the fake controller
-        
-        m_brDriver->initializeCrate(
-           *adapted_controller, branchID, (*crate_it)->getCrateIndex()
-        );
+        m_brDriver->initializeCrate(*adapted_controller, branchID, crate_index);
+       
+        // Turn control over to the crate to initialize its components 
         (*crate_it)->Initialize(*adapted_controller);
 
         delete adapted_controller; // don't leak
@@ -143,21 +146,25 @@ void CCBDCamacBranch::addReadoutList(CVMUSBReadoutList& list)
 */
 void CCBDCamacBranch::onEndRun(CVMUSB& controller)
 {
-    
+    int branchID = m_pConfig->getIntegerParameter("-branch");
 
     // This passes the hardware back from it...
     // The wrapped crates are unwrapped before passing back the list
-
     BranchElements crates = getBranchElements();
 
+    CCBD8210CrateController* adapted_controller; 
 
     iterator crate_it = crates.begin();
     const iterator crate_end = crates.end();
     
     for(; crate_it != crate_end; ++crate_it) {
 
-        auto adapted_controller =
-         adaptCrateController(controller, crate_it);
+        // Set up the crate controller
+        int crate_index = (*crate_it)->getCrateIndex();
+
+        adapted_controller = m_brDriver->createCrateController(branchID, 
+                                                               crate_index);
+        adapted_controller->setController(controller);
 
         // Turn control over to the crate to do end of run operations 
         // on its components 
@@ -262,26 +269,3 @@ bool CCBDCamacBranch::crateChecker(std::string name, std::string proposedValue, 
 }
 
 
-////////////////////// private methods /////////////
-
-/**
- * adaptCrateController
- *     Dynamically create and adapted crate controller
- *     for an iterator into the crates collection.
- * @param p - iterator into the crates collection
- * @return CCBD8210CrateController* - the created adapted
- *      controller, must be deleted when no longer needed.
- */
-CCBD8210CrateController*
-CCBDCamacBranch::adaptCrateController(CVMUSB& controller, iterator& p)
-{
- CCBD8210CrateController* adapted_controller;
-   int branchID = m_pConfig->getIntegerParameter("-branch");
-   int crate_index = (*p)->getCrateIndex();
-
-   adapted_controller =
-       m_brDriver->createCrateController(branchID, crate_index);
-   adapted_controller->setController(controller);
-   
-   return adapted_controller;
-}

@@ -14,14 +14,29 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CV6533_H
-#define CV6533_H
+#ifndef __CV6533_H
+#define __CV6533_H
 
+#ifndef __CCONTROLHARDWARE_H
 #include "CControlHardware.h"
-#include <string>
-#include <stdint.h>
-#include <CControlModule.h>
+#endif
 
+#ifndef __STL_STRING
+#include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __CRT_STDINT_H
+#include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+
+#include <CControlModule.h>
 class CVMUSB;
 class CVMUSBReadoutList;
 /**
@@ -43,7 +58,7 @@ class CVMUSBReadoutList;
  *   - tempn         - Temperature of channel n.
  */
 
-class CV6533 : public CVMUSBControlHardware
+class CV6533 : public CControlHardware
 {
 private:
   CControlModule*    m_pConfiguration;

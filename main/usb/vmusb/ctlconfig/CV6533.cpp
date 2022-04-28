@@ -121,6 +121,7 @@ static const uint8_t amod = CVMUSBReadoutList::a32PrivData;
  * populate as the update/monitor list runs.
  */
 CV6533::CV6533() :
+  CControlHardware(),
   m_pConfiguration(0)
 {
 }
@@ -129,7 +130,7 @@ CV6533::CV6533() :
  * just invoke it:
  */
 CV6533::CV6533(const CV6533& rhs) :
-  CVMUSBControlHardware(rhs)
+  CControlHardware(rhs)
 {
   copy(rhs);
 }
@@ -152,7 +153,7 @@ CV6533::operator=(const CV6533& rhs)
 {
   if (this != &rhs) {
     copy(rhs);
-    CVMUSBControlHardware::operator=(rhs);
+    CControlHardware::operator=(rhs);
   }
   return *this;
 }
@@ -163,7 +164,7 @@ CV6533::operator=(const CV6533& rhs)
 int
 CV6533::operator==(const CV6533& rhs) const
 {
-  return CVMUSBControlHardware::operator==(rhs);
+  return CControlHardware::operator==(rhs);
 }
 /**
  ** Inequality as usual is the inverse of equality:
@@ -215,8 +216,10 @@ CV6533::Initialize(CVMUSB& vme)
   }
   // Execute the list.
   size_t buffer;		// No actual reads..
-  doList(vme, *pList, &buffer, sizeof(buffer), &buffer, "CV6533 Initialization faled");
-  
+  int status = vme.executeList(list,
+			       &buffer, sizeof(buffer),
+			       &buffer);
+
 }
 /**
  * For devices with write-only registers, this function
@@ -294,7 +297,12 @@ CV6533::Set(CVMUSB& vme, string parameter, string value)
     
     if (list.size() > 0) {
       size_t buffer;
-      doList(vme, list, &buffer, sizeof(buffer), &buffer, "Set Failed");
+      int status= vme.executeList(list,
+				  &buffer, sizeof(buffer),
+				  &buffer);
+      if (status < 0) {
+	throw string("VME list execution failed");
+      }
     }
   }
   catch(string msg) {
@@ -803,10 +811,10 @@ CV6533::getChannelVoltages(CVMUSB& vme)
     list.addRead16(getBase() + Channels[i] + Vset,
 		   amod);
   }
-  doList(
-      vme, list, requests, sizeof(requests), &nread,
-      "Could not read voltage requests"
-  );
+  status = vme.executeList(list, requests, sizeof(requests), &nread);
+  if (status < 0) {
+    throw string("Could not read voltage requests");
+  }
   return scaledIToString(requests, 0.1);
 }
 /**
@@ -827,11 +835,11 @@ CV6533::getChannelCurrents(CVMUSB& vme)
     list.addRead16(getBase() + Channels[i] + Iset, 
 		   amod);
   }
-  doList(
-    vme, list, requests, sizeof(requests), &nread,
-    "Could not read current requests"
-  );
-  
+  status = vme.executeList(list, requests, sizeof(requests), &nread);
+  if (status < 0) {
+    throw string("Could not read current requests");
+  }
+
   return scaledIToString(requests, 0.05);
 }
 /**
@@ -854,11 +862,11 @@ CV6533::getOnOffRequests(CVMUSB& vme)
     list.addRead16(getBase() + Channels[i]  + PW,
 		   amod);
   }
-  doList(
-    vme, list, requests, sizeof(requests), &nRead,
-    "Unable to read channel power on/off requests"
-  );
-  
+  status = vme.executeList(list, requests, sizeof(requests), &nRead);
+
+  if (status < 0) {
+    throw string("Unable to read channel power on/off requests");
+  }
   return scaledIToString(requests, 1.0);
 }
 /**
@@ -879,11 +887,10 @@ CV6533::getActualVoltages(CVMUSB& vme)
     list.addRead16(getBase() + Channels[i] + VMon,
 		   amod);
   }
-  doList(
-    vme, list, m_voltages, sizeof(m_voltages), &nRead,
-    "Unable to read output voltage monitors"
-  );
-
+  status = vme.executeList(list, m_voltages, sizeof(m_voltages), &nRead);
+  if (status < 0) {
+    throw string("Unable to read channel output voltages monitors");
+  }
   return scaledIToString(m_voltages, 0.1);
 }
 /**
@@ -903,10 +910,10 @@ CV6533::getActualCurrents(CVMUSB& vme)
   for (int i =0; i < 6; i++) {
     list.addRead16(getBase() + Channels[i] + IMon, amod);
   }
-  doList(
-      vme, list, m_currents, sizeof(m_currents), &nRead,
-     "Unable to read channel output currents"
-  );
+  status = vme.executeList(list, m_currents, sizeof(m_currents), &nRead);
+  if (status < 0) {
+    throw string("Unable to read the channel output currents");
+  }
   return scaledIToString(m_currents, 0.1);
 }
 /**
@@ -927,11 +934,10 @@ CV6533::getChannelStatuses(CVMUSB& vme)
   for (int i =0; i < 6; i++) {
     list.addRead16(getBase() + Channels[i] + ChStatus, amod);
   }
-  doList(
-    vme, list, m_channelStatus, sizeof(m_channelStatus), &nRead,
-    "Unable to read channel status registers"
-  );
-  
+  status = vme.executeList(list, m_channelStatus, sizeof(m_channelStatus), &nRead);
+  if (status < 0) {
+    throw string("Unable to read the channel status registers");
+  }
   // Use a captive interpreter to do the list formatting:
 
   CTCLInterpreter interp;
@@ -967,11 +973,10 @@ CV6533::getTripTimes(CVMUSB& vme)
     list.addRead16(getBase() + Channels[i] + TripTime,
 		   amod);
   }
-  doList(
-    vme, list, tripTimes, sizeof(tripTimes), &nRead,
-    "Unable to read trip times"
-  );
-  
+  status = vme.executeList(list, tripTimes, sizeof(tripTimes), &nRead);
+  if (status < 0) {
+    throw string("Unable to read trip times");
+  }
   return scaledIToString(tripTimes, 0.1);
 }
 /**
@@ -994,11 +999,10 @@ CV6533::getSoftwareVmax(CVMUSB& vme)
   for (int i=0; i < 6; i++) {
     list.addRead16(getBase() +  Channels[i] + SVMax, amod);
   }
-  doList(
-        vme, list, sVmax, sizeof(sVmax), &nRead,
-        "Unable to read software VMAX registers"
-  );
-  
+  status = vme.executeList(list, sVmax, sizeof(sVmax), &nRead);
+  if (status < 0) {
+    throw string("Unable to read software VMAX registeres in list");
+  }
   return scaledIToString(sVmax, 0.1);
 }
 /**
@@ -1018,11 +1022,10 @@ CV6533::getRampDownRates(CVMUSB& vme)
   for (int i=0; i < 6; i++) {
     list.addRead16(getBase() + Channels[i] + RampDown, amod);
   }
-  doList(
-    vme, list, rdRates, sizeof(rdRates), &nRead,
-    "Unable to read ramp down rates"
-  );
-   
+  status = vme.executeList(list, rdRates, sizeof(rdRates), &nRead);
+  if (status <  0) {
+    throw string("Unable to read ramp down rates via list");
+  } 
   return scaledIToString(rdRates,1.0);
 }
 /**
@@ -1072,11 +1075,10 @@ CV6533::getPowerdownModes(CVMUSB& vme)
   for (int i=0; i < 6; i++) {
     list.addRead16(getBase() + Channels[i] + PwDown, amod);
   }
-  doList(
-    vme, list, modes, sizeof(modes), &nRead,
-    "Unable t read power down mode registers"
-  );
-  
+  status = vme.executeList(list, modes, sizeof(modes), &nRead);
+  if (status < 0) {
+    throw string("Unable to read power down mode registers from list");
+  }
   for(int i =0; i < 6; i++) {
     objResult += string(modes[i] ? "ramp" : "kill");
   }
@@ -1103,11 +1105,10 @@ CV6533::getTemperatures(CVMUSB& vme)
   for (int i =0; i < 6; i++) {
     list.addRead16(getBase() + Channels[i] + Temp, amod);
   }
-  doList(
-    vme, list, &m_temperatures, sizeof(m_temperatures), &nRead,
-    "Unable to read temperatures in getTemperatures"
-  );
-  
+  status = vme.executeList(list, &m_temperatures, sizeof(m_temperatures), &nRead);
+  if (status < 0) {
+    throw string("Unable to read temperatures in getTemperatures list");
+  }
   return scaledIToString(m_temperatures, 1.0);
 }
 
@@ -1131,11 +1132,10 @@ CV6533::getPolarities(CVMUSB& vme)
   for (int i=0; i < 16; i++) {
     list.addRead16(getBase() + Channels[i] + Polarity, amod);
   }
-  doList(
-    vme, list, polarityValues, sizeof(polarityValues), &nRead,
-    "Unable to read channel polarity values"
-  );
-  
+  status = vme.executeList(list, polarityValues, sizeof(polarityValues), & nRead);
+  if (status < 0) {
+    throw string("Unable to read the channel polarity values via list");
+  }
 
   objResult.Bind(interp);
   for (int i =0; i < 6; i++) {

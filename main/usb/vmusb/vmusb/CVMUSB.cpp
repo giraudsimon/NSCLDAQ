@@ -29,6 +29,9 @@
 
 using namespace std;
 
+
+bool CVMUSB::m_logTransactions(false);
+
 // Constants:
 
 // Identifying marks for the VM-usb:
@@ -69,6 +72,16 @@ static const unsigned int USBVHIGH1(0x40);       // additional bits of some of t
 static const unsigned int USBVHIGH2(0x44);       // additional bits of the other interrupt vectors.
 
 
+// Bits in the list target address word:
+
+static const uint16_t TAVcsID0(1); // Bit mask of Stack id bit 0.
+static const uint16_t TAVcsSel(2); // Bit mask to select list dnload
+static const uint16_t TAVcsWrite(4); // Write bitmask.
+static const uint16_t TAVcsIMMED(8); // Target the VCS immediately.
+static const uint16_t TAVcsID1(0x10);
+static const uint16_t TAVcsID2(0x20);
+static const uint16_t TAVcsID12MASK(0x30); // Mask for top 2 id bits
+static const uint16_t TAVcsID12SHIFT(4);
 
 //   The following flag determines if enumerate needs to init the libusb:
 
@@ -78,6 +91,85 @@ static bool usbInitialized(false);
 CMutex *CVMUSB::m_pGlobalMutex = nullptr;
 
 /////////////////////////////////////////////////////////////////////
+/*!
+  Enumerate the Wiener/JTec VM-USB devices.
+  This function returns a vector of usb_device descriptor pointers
+  for each Wiener/JTec device on the bus.  The assumption is that
+  some other luck function has initialized the libusb.
+  It is perfectly ok for there to be no VM-USB device on the USB 
+  subsystem.  In that case an empty vector is returned.
+*/
+vector<struct usb_device*>
+CVMUSB::enumerate()
+{
+  if(!usbInitialized) {
+    usb_init();
+    usbInitialized = true;
+  }
+  usb_find_busses();		// re-enumerate the busses
+  usb_find_devices();		// re-enumerate the devices.
+  
+  // Now we are ready to start the search:
+  
+  vector<struct usb_device*> devices;	// Result vector.
+  struct usb_bus* pBus = usb_get_busses();
+
+  while(pBus) {
+    struct usb_device* pDevice = pBus->devices;
+    while(pDevice) {
+      usb_device_descriptor* pDesc = &(pDevice->descriptor);
+      if ((pDesc->idVendor  == USB_WIENER_VENDOR_ID)    &&
+	  (pDesc->idProduct == USB_VMUSB_PRODUCT_ID)) {
+	devices.push_back(pDevice);
+      }
+      
+      pDevice = pDevice->next;
+    }
+    
+    pBus = pBus->next;
+  }
+  
+  return devices;
+}
+
+/**
+ * Return the serial number of a usb device.  This involves:
+ * - Opening the device.
+ * - Doing a simple string fetch on the SerialString
+ * - closing the device.
+ * - Converting that to an std::string which is then returned to the caller.
+ *
+ * @param dev - The usb_device* from which we want the serial number string.
+ *
+ * @return std::string
+ * @retval The serial number string of the device.  For VM-USB's this is a
+ *         string of the form VMnnnn where nnnn is an integer.
+ *
+ * @throw std::string exception if any of the USB functions fails indicating
+ *        why.
+ */
+string
+CVMUSB::serialNo(struct usb_device* dev)
+{
+  usb_dev_handle* pDevice = usb_open(dev);
+
+  if (pDevice) {
+    char szSerialNo[256];	// actual string is only 6chars + null.
+    int nBytes = usb_get_string_simple(pDevice, dev->descriptor.iSerialNumber,
+				       szSerialNo, sizeof(szSerialNo));
+    usb_close(pDevice);
+
+    if (nBytes > 0) {
+      return std::string(szSerialNo);
+    } else {
+      throw std::string("usb_get_string_simple failed in CVMUSB::serialNo");
+    }
+				       
+  } else {
+    throw std::string("usb_open failed in CVMUSB::serialNo");
+  }
+
+}
 
 /*!
  * \brief Retrieve the mutex for high level synchronization
@@ -101,7 +193,60 @@ CMutex& CVMUSB::getGlobalMutex()
 }
 
 ////////////////////////////////////////////////////////////////////
+/*!
+  Construct the CVMUSB object.  This involves storing the
+  device descriptor we are given, opening the device and
+  claiming it.  Any errors are signalled via const char* exceptions.
+  \param vmUsbDevice   : usb_device*
+      Pointer to a USB device descriptor that we want to open.
 
+  \bug
+      At this point we take the caller's word that this is a VM-USB.
+      Future implementations should verify the vendor and product
+      id in the device structure, throwing an appropriate exception
+      if there is aproblem.
+
+*/
+CVMUSB::CVMUSB(struct usb_device* device) :
+    m_handle(0),
+    m_device(device),
+    m_timeout(DEFAULT_TIMEOUT),
+    m_regShadow()
+{
+    m_handle  = usb_open(m_device);
+    if (!m_handle) {
+	throw "CVMUSB::CVMUSB  - unable to open the device";
+    }
+    // Now claim the interface.. again this could in theory fail.. but.
+
+    usb_set_configuration(m_handle, 1);
+    int status = usb_claim_interface(m_handle, 
+				     0);
+    if (status == -EBUSY) {
+	throw "CVMUSB::CVMUSB - some other process has already claimed";
+    }
+
+    if (status == -ENOMEM) {
+	throw "CVMUSB::CMVUSB - claim failed for lack of memory";
+    }
+    // Errors we don't know about:
+
+    if (status < 0) {
+      std::string msg("Failed to claim the interface: ");
+      msg += strerror(-status);
+      throw msg;
+    }
+    usb_clear_halt(m_handle, ENDPOINT_IN);
+    usb_clear_halt(m_handle, ENDPOINT_OUT);
+
+    usleep(100);
+    
+    // Now set the irq mask so that all bits are set..that:
+    // - is the only way to ensure the m_irqMask value matches the register.
+    // - ensures m_irqMask actually gets set:
+
+    writeIrqMask(0x7f);
+}
 ////////////////////////////////////////////////////////////////
 /*!
     Destruction of the interface involves releasing the claimed
@@ -109,7 +254,11 @@ CMutex& CVMUSB::getGlobalMutex()
 */
 CVMUSB::~CVMUSB()
 {
-  
+  if (m_handle) {
+    usb_release_interface(m_handle, 0);
+    usb_close(m_handle);
+    usleep(5000); 
+  }
 }
 /**
  * Close and re-open the VM-USB interface:

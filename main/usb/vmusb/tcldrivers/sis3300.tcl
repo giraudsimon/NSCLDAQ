@@ -131,13 +131,232 @@ snit::type sis330x {
     variable DAQControl                        0x10; # Data acquisition control register (JK)
 
         # What the clock source values mean in terms of Acquisition control register bits:
-   
+    
+    variable clockSourceAcqRegister -array [list     \
+        100Mhz      0                                \
+        50Mhz       0x1000                          \
+        25Mhz       0x2000                          \
+        12.5Mhz     0x3000                          \
+        6.25Mhz     0x4000                          \
+        3.125Mhz    0x5000                          \
+        external    0x6000                          \
+        random      0x6800                          \
+        hira        0x6008                          \
+    ]
     #  What the mode values mean in terms of Acquisition control register bits:
     
-    package require sis3300defs
-   
+    variable modeAcqRegister -array [list           \
+        start   0x100                               \
+        stop    0x100                               \
+        gate    0x500                               \
+    ]  
+    
+    #  The following bits enable the start delay and stop delay
+    #  They are also relevant to the acquisition control register:
+    
+    variable DAQControlEnableStartDelay     0x40
+    variable DAQControlEnableStopDelay      0x80
+
+    variable ExternStartDelay                  0x14; # External start delay register.
+    variable ExternStopDelay                   0x18; # External stop delay register.
+    variable Predivider                        0x1c; # Timestamp predivider register.
+    variable Reset                             0x20; # General reset.
+    variable VMEStart                          0x30; # VME Start sampling.
+    variable VMEStop                           0x34; # VME Stop sampling.
+    variable StartAutoBankSwitch               0x40; # Start auto memory bank switch.
+    variable StopAutoBankSwitch   	       0x44; # Stop auto memory bank switch.
+    variable ClearBank1Full                    0x48; # Clear bank 1 memory full
+    variable ClearBank2Full                    0x4c; # Clear bank 2 memory full.
+
+    #    Time stamp directories (each is 0x1000 bytes long).
+
+    variable TimestampDir1                     0x1000; # Event timestamp directory bank 1
+    variable TimestampDir2                     0x2000; # Event timestamp directory bank 2
 
     
+
+    #   Each ADC group (2 adcs/bank) has an event information register page
+    #   for that group.  The structur of that page is common so this
+    #   section supplies the offsets to each adc bank information page
+    #   and the offsets to each register within the page
+    #   Therefore referencing means base + information page base + register offset
+    #   In addition there's a common group:
+    #
+    
+    
+
+    variable CommonInfo                       0x00100000; # Common group register base.
+    variable EventInfo1                       0x00200000; # Event information for group 1.
+    variable EventInfo2                       0x00280000; # Event information for group 2.
+    variable EventInfo3                       0x00300000; # Event information for group 3
+    variable EventInfo4                       0x00380000; # Event information for group 4
+
+    variable EventConfiguration               0x00000000; # Event configuration register (all ADCS)
+    
+    #
+    #  What the -samples value means for bits in the event configuration register:
+    #
+    variable samplesEvtConfigReg -array [list       \
+        128K    0                                   \
+        16K     1                                   \
+        4K      2                                   \
+        2K      3                                   \
+        1K      4                                   \
+        512     5                                   \
+        256     6                                   \
+        128     7                                   \
+    ]
+    
+    variable longwordsPerSample -array [list        \
+        128K        [expr {128*1024}]               \
+        16K         [expr {16*1024}]                \
+        4K          [expr {4*1024}]                 \
+        2K          [expr {2*1024}]                 \
+        1K          1024                            \
+        512         512                             \
+        256         256                             \
+        128         128                             \
+    ]  
+    #   Wrap bit:
+    
+    variable WrapEnableEvtConfigReg         8
+    
+    #  In HiRA clock mode we need to set the external random clock mode.
+    
+    variable  HiRaRandomClockEvtConfigReg   0x800
+    
+    variable TriggerThreshold                 0x00000004; # Trigger threshold register (all ADCS)
+    
+    #  Threshold registers are essentially  two 16 bit registers packed into
+    #  a single 32 bit word.  The low order word is the odd adc (numbered from 0)
+    #  the high order word is the even adc.  (Note that the SIS manual nubers from
+    #  1 just to confuse us).
+    
+    variable ShiftTriggerThreshReg                  16;          # Shift this much for high bits.
+    variable LETriggerThreshReg                 0x8000;          # Bit for LE selection.
+    
+    variable Bank1AddressCounter              0x00000008; # Bank 1 address counter Really an item count
+    variable Bank2AddressCounter              0x0000000c; # Bank 2 address counter.
+    variable Bank1EventCounter                0x00000010; # Bank 1 event count register.
+    variable Bank2EventCounter                0x00000014; # Bank2 event count register
+    variable SampleValue                      0x00000018; # Actual sample value.
+    variable TriggerClearCounter              0x0000001c; # Trigger flag clear counter register.
+    variable ClockPredivider                  0x00000020; # GRP 3 only Sampling clock predivider.
+    variable SampleCount                      0x00000024; # Number of samples
+    variable TriggerSetup                     0x00000028; # Trigger setup register (all ADCS)
+    
+    #  TriggerSetup as M, N, P and enable bits for those bits.
+    
+    variable mShiftTriggerSetupReg            0
+    variable nShiftTriggerSetupReg            8
+    variable pShiftTriggerSetupReg            16
+    variable mnEnableTriggerSetupReg           0x01000000
+    variable pEnableTriggerSetupReg           0x10000000
+    
+    variable MaxEvents                        0x0000002c; # Max no of events register (all ADCS).
+    
+    variable EventDirectory1                  0x00001000; # Event directory bank 1.
+    variable EventDirectory2		      0x00002000; # Event directory bank 2.
+
+    # Event memory buffers.  Each event memory is 0x80000 bytes long:
+
+    variable Bank1Group1                      0x00400000; # Bank 1 adc 1/2
+    variable Bank1Group2                      0x00480000; # Bank 1 adc 3/4
+    variable Bank1Group3                      0x00500000; # Bank 1 adc 5/6
+    variable Bank1Group4                      0x00580000; # Bank 1 adc 7/8.
+
+    
+
+
+    #
+    #  The bit field defs etc. are basically cut and pasted from sis3300.h and
+    #  mechanically converted.
+    #
+
+    # Bits in the control register: Each control has a set/unset bit (J/K flip
+    # flop control).
+
+    variable CRLedOn                            1
+    variable CRUserOutputOn                     2
+    variable CREnableTriggerOutput              4
+    variable CRInvertTriggerOutput       0x000010
+    variable CRTriggerOnArmedAndStarted  0x000020
+    variable CRLedOff                    0x010000
+    variable CRUserOutputOff             0x020000
+    variable CREnableUserOutput          0x040000
+    variable CRNormalTriggerOutput       0x100000
+    variable CRTriggerOnArmed            0x200000
+
+    # Bits in the status register:
+
+    variable SRLedStatus                    1
+    variable SRUserOutputState              2
+    variable SRTriggerOutputState           4 
+    variable SRTriggerIsInverted     0x000010
+    variable SRTriggerCondition      0x000020; # 1: armed and started
+    variable SRUserInputCondition    0x010000
+    variable SRP2_TEST_IN            0x020000
+    variable SRP2_RESET_IN           0x040000
+    variable SRP2_SAMPLE_IN          0X080000
+
+
+    # Bits in the data acquisition control register:
+    #
+    variable DAQSampleBank1On        0x00000001
+    variable DAQSampleBank2On        0x00000002
+    variable DAQEnableHiRARCM        0x00000008
+    variable DAQAutostartOn          0x00000010
+    variable DAQMultiEventOn         0x00000020
+    variable DAQStopDelayOn          0x00000080
+    variable DAQStartDelayOn         0x00000040
+    variable DAQEnableLemoStartStop  0x00000100
+    variable DAQEnableP2StartStop    0x00000200
+    variable DAQEnableGateMode       0x00000400
+    variable DAQEnableRandomClock    0x00000800
+    variable DAQClockSetMask         0x00007000
+    variable DAQDisableHiRARCM       0x00080000
+    variable DAQClockSetShiftCount   12
+    variable DAQSampleBank1Off       0x00010000
+    variable DAQBusyStatus           0x00010000
+    variable DAQSampleBank2Off       0x00020000
+    variable DAQAutostartOff         0x00100000
+    variable DAQMultiEventOff        0x00200000
+    variable DAQStopDelayOff         0x00800000
+    variable DAQStartDelayOff        0x00400000
+    variable DAQDisableLemoStartStop 0x01000000
+    variable DAQDisableP2StartStop   0x02000000
+    variable DAQDisableGateMode      0x04000000
+    variable DAQDisableRandomClock   0x08000000
+    variable DAQClockClearMask       0x70000000
+    variable DAQCLockClearShiftCount 28
+
+
+    # Bits and fields in the event configuration register.
+    #
+
+    variable ECFGPageSizeMask       7
+    variable ECFGPageSizeShiftCount 0
+    variable ECFGWrapMask           8
+    variable ECFGWrapShiftCount     3
+    variable ECFGRandomClock        [expr {1 << 11}]
+
+    # Bits and fields in the threshold register.
+    variable THRLt                 0x8000
+    variable THRChannelShift     16
+
+    # Bits and fields in the event directory longs:
+    #
+
+    variable EDIREndEventMask 0x00001ffff
+    variable EDIRWrapFlag     0x000080000
+    variable EDIRTriggers     0xff000000
+
+    # HiRA firmware is a pre-requisite to using the HiRA
+    # indpendent random clock mode.
+
+    variable HIRAFWMAJOR  0x13
+    variable HIRAFWMINOR  0x05
+
 
     ##
     # constructor
@@ -222,7 +441,7 @@ snit::type sis330x {
         # for all groups so this is programmed in the $CommonInfo + $EventConfiguration
         # register.
         
-        $self _writeEvtConfigReg $controller $sampleSizeValues($options(-samples))
+        $self _writeEvtConfigReg $controller $samplesEvtConfigReg($options(-samples))
         
         # If the clock mode is HiRA we need to set the External clock random
         # mode in that register as well
@@ -235,7 +454,7 @@ snit::type sis330x {
         
         if {$options(-mode) eq "stop"} {
             set evtConfigReg [$self _readEvtConfigReg $controller]
-            set evtConfigReg  [expr {$evtConfigReg | $ECFGWrapMask}]
+            set evtConfigReg  [expr {$evtConfigReg | $WrapEnableEvtConfigReg}]
             $self _writeEvtConfigReg $controller $evtConfigReg
         }
 
@@ -489,7 +708,7 @@ snit::type sis330x {
     # @param value   - Propopsed new value.
     #
     method _validPageSize {optnam value} {
-        _enumElement $value [array names sampleSizeValues]
+        _enumElement $value [array names samplesEvtConfigReg]
     }
     ##
     # _validRangeList

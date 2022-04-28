@@ -28,18 +28,8 @@
  *
  * @param name - the name to assign the new module object.
  */
-CControlHardware*
-CCAEN894Creator::operator()(void* unused)
+  CControlHardware*
+CCAEN894Creator::operator()()
 {
   return  (new C894);
-}
-
-/**
- * describe
- *    Provide a description of the module created by this:
- */
-std::string
-CCAEN894Creator::describe() const
-{
-  return "caen894 - leading edge discriminator";
 }

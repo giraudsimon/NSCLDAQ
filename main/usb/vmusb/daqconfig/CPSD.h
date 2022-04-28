@@ -14,15 +14,37 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef CPSD_H
-#define CPSD_H
+#ifndef __CPSD_H
+#define __CPSD_H
 
+#ifndef __CREADOUTHARDWARE_H
 #include "CReadoutHardware.h"
-#include <stdint.h>
-#include <string>
-#include <vector>
-#include "CXLM.h"		/* Base class definition. */
+#endif
 
+#ifndef __CRT_STDINT_H
+#include <stdint.h>
+#ifndef __CRT_STDINT_H
+#define __CRT_STDINT_H
+#endif
+#endif
+
+#ifndef __STL_STRING
+#include <string>
+#ifndef __STL_STRING
+#define __STL_STRING
+#endif
+#endif
+
+#ifndef __STL_VECTOR
+#include <vector>
+#ifndef __STL_VECTOR
+#define __STL_VECTOR
+#endif
+#endif
+
+#ifndef __CXLM_H
+#include "CXLM.h"		/* Base class definition. */
+#endif
 
 // register layout of PSD XLM
 /* define bit masks for output from motherboard register */

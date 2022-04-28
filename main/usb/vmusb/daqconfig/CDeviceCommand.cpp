@@ -27,7 +27,6 @@
 #include <string>
 #include <Exception.h>
 #include "CConfiguration.h"
-#include "tclUtil.h"
 
 
 /**
@@ -94,12 +93,17 @@ CDeviceCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObject>& obj
 int
 CDeviceCommand::config(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
-  
-  CReadoutModule* pModule = tclUtil::getModule(
-    m_Config, interp, objv, (objv.size() < 5)
-  );
-  if (!pModule) return TCL_ERROR;
-  
+  if ( (objv.size() < 5)) {
+    Usage(interp, "Incorrect number of command parameters for config", objv);
+    return TCL_ERROR;
+  }
+  /* Get the module name and use it to locate the module or report an error. */
+  std::string name = objv[2];
+  CReadoutModule* pModule = m_Config.findAdc(name);
+  if (!pModule) {
+    Usage(interp, "Device module has does not exist", objv);
+    return TCL_ERROR;
+  }
   return configure(interp, pModule, objv);
 }
 /**
@@ -113,13 +117,29 @@ CDeviceCommand::config(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 int
 CDeviceCommand::cget(CTCLInterpreter& interp, std::vector<CTCLObject>& objv)
 {
-  
-  CReadoutModule* pModule = tclUtil::getModule(
-    m_Config, interp, objv, objv.size() != 3
-  );
-  if (!pModule) return TCL_ERROR;
-  tclUtil::listConfig(interp, pModule);
-  
+  if (objv.size() != 3) {
+    Usage(interp, "Invalid command parameter count for cget", objv);
+    return TCL_ERROR;
+  }
+  std::string           name    = objv[2];
+  CReadoutModule *pModule = m_Config.findAdc(name);
+  if (!pModule) {
+    Usage(interp,"No such  module", objv);
+    return TCL_ERROR;
+  }
+  XXUSB::CConfigurableObject::ConfigurationArray config = pModule->cget();
+
+  Tcl_Obj* pResult = Tcl_NewListObj(0, NULL);
+
+  for (int i =0; i < config.size(); i++) {
+    Tcl_Obj* key   = Tcl_NewStringObj(config[i].first.c_str(), -1);
+    Tcl_Obj* value = Tcl_NewStringObj(config[i].second.c_str(), -1);
+
+    Tcl_Obj* sublist[2] = {key, value};
+    Tcl_Obj* sl = Tcl_NewListObj(2, sublist);
+    Tcl_ListObjAppendElement(interp.getInterpreter(), pResult, sl);
+  }
+  Tcl_SetObjResult(interp.getInterpreter(), pResult);
   return TCL_OK;
 
 }
@@ -230,17 +250,26 @@ CDeviceCommand::Usage(
   CTCLInterpreter& interp, std::string msg, std::vector<CTCLObject> objv
 )
 {
+  std::string result("ERROR: ");
   std::string cmdName = objv[0];
-  std::string usage("Usage\n");
-  usage += "    ";
-  usage += cmdName;
-  usage += "  create name value\n";
-  usage += "    ";
-  usage += cmdName;
-  usage += " config name config-params...\n";
-  usage += "    ";
-  usage += cmdName;
-  usage += " cget name";
+
+  result += msg;
+  result += "\n";
+  for (int i = 0; i < objv.size(); i++) {
+    result += std::string(objv[i]);
+    result += ' ';
+  }
+  result += "\n";
+  result += "Usage\n";
+  result += "    ";
+  result += cmdName;
+  result += "  create name -slot n\n";
+  result += "    ";
+  result += cmdName;
+  result += " config name config-params...\n";
+  result += "    ";
+  result += cmdName;
+  result += " cget name";
   
-  tclUtil::Usage(interp, msg, objv, usage); 
+  interp.setResult(result);  
 }
