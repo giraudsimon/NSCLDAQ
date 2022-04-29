@@ -52,7 +52,7 @@ install-data-local:
 	$(INSTALL_DATA) @srcdir@/figures/*.png @prefix@/share/html/figures
 
 
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks ddas/config_pixie16api.h
 
 check-TESTS:
 	@top_srcdir@/dotests $(SUBDIRS)
