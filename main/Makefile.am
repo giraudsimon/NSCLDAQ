@@ -39,12 +39,12 @@ INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
 								@srcdir@/figures/intro-data-flow-diagram-diagnostics.png 
 install-data-local:
 	$(mkinstalldirs) @prefix@/TclLibs
-	$(mkinstalldirs) @prefix@/include
+	$(mkinstalldirs) @includedir@
 	$(mkinstalldirs) @prefix@/pythonLibs @prefix@/pythonLibs/nscldaq
 	$(mkinstalldirs) @prefix@/share/html/figures
 	echo "pkg_mkIndex @prefix@/TclLibs *.so" >makeindex.tcl
 	$(TCLSH_CMD) <makeindex.tcl
-	$(INSTALL_SCRIPT) config.h @prefix@/include
+	$(INSTALL_DATA) config.h ddas/config_pixie16api.h @includedir@
 	touch @prefix@/pythonLibs/nscldaq/__init__.py
 	echo "Version: "NSCLDAQ-$(VERSION) built on `hostname` `date` > @prefix@/VERSION
 	$(INSTALL_DATA) @srcdir@/ChangeLog @prefix@

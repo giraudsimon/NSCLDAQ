@@ -1,4 +1,5 @@
 #include <config.h>
+#include <config_pixie16api.h>
 #include "CMyEventSegment.h"
 #include <CReadoutMain.h>
 #include "Configuration.h"

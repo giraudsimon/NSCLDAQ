@@ -5,6 +5,7 @@
 *********************************************************/
 
 #include <config.h>
+#include <config_pixie16api.h>
 #include "CMyScaler.h"
 #include <iostream>
 #include <fstream>

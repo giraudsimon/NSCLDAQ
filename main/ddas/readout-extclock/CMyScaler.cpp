@@ -10,6 +10,7 @@
 #include <vector>
 #include <cmath>
 #include <config.h>
+#include <config_pixie16api.h>
 //#include "pixie16app_globals.h"
 
 
