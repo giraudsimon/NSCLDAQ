@@ -44,7 +44,7 @@ install-data-local:
 	$(mkinstalldirs) @prefix@/share/html/figures
 	echo "pkg_mkIndex @prefix@/TclLibs *.so" >makeindex.tcl
 	$(TCLSH_CMD) <makeindex.tcl
-	$(INSTALL_DATA) config.h ddas/config_pixie16api.h @includedir@
+	$(INSTALL_DATA) config.h @srcdir@/ddas/config_pixie16api.h @includedir@
 	touch @prefix@/pythonLibs/nscldaq/__init__.py
 	echo "Version: "NSCLDAQ-$(VERSION) built on `hostname` `date` > @prefix@/VERSION
 	$(INSTALL_DATA) @srcdir@/ChangeLog @prefix@
