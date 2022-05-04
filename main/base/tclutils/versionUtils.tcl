@@ -9,11 +9,11 @@ namespace eval versionUtils {
   # do not need back references
   # This should work but for some reason it won't let me have access to all
   # of the submatches. So I am forced to punt and deal with them independently
-  variable fullFormat {^\d+$|^\d+\.\d+$|^\d+\.\d+-(alpha|beta|rc\d+|\d+){1}$}
+  variable fullFormat {^\d+$|^\d+\.\d+$|^\d+\.\d+-(pre\d+|alpha|beta|rc\d+|\d+){1}$}
   variable format0 {^(\d+)$}
   variable format1 {^(\d+)\.(\d+)$}
-  variable format2 {^(\d+)\.(\d+)-(alpha|beta|rc\d+|\d+){1}$}
-  variable patchFormat {^(alpha|beta|rc\d+|\d+){1}$}
+  variable format2 {^(\d+)\.(\d+)-(pre\d+|alpha|beta|rc\d+|\d+){1}$}
+  variable patchFormat {^(pre\d+|alpha|beta|rc\d+|\d+){1}$}
 }
 
 ##
@@ -184,7 +184,7 @@ proc ::versionUtils::comparePatch {lhsPatch rhsPatch} {
       # beta < all else
       return -1
     }
-  } elseif { [string match "rc*" $lhsPatch] } {
+} elseif { [string match "pre*" $lhsPatch] || [string match "rc*" $lhsPatch] } {
     # deal with lhs == "rc"
 
     if { [string equal "alpha" $rhsPatch] } {
@@ -193,7 +193,7 @@ proc ::versionUtils::comparePatch {lhsPatch rhsPatch} {
     } elseif {[string equal "beta" $rhsPatch]} {
       # rc# > beta 
       return 1
-    } elseif {[string match "rc*" $rhsPatch]} {
+  } elseif {[string match "pre*" $rhsPatch] || [string match "rc*" $rhsPatch]} {
       # both lhs and rhs side are rc#... compare their respective numbers
       set lVsn [string range $lhsPatch 2 end] 
       set rVsn [string range $rhsPatch 2 end]
@@ -219,7 +219,7 @@ proc ::versionUtils::comparePatch {lhsPatch rhsPatch} {
     } elseif {[string equal "beta" $rhsPatch]} {
       # 000 > beta 
       return 1
-    } elseif {[string match "rc*" $rhsPatch]} {
+  } elseif {[string match "pre*" $rhsPatch] || [string match "rc*" $rhsPatch]} {
       # 000 > rc<infinity>
       return 1
     } else {
