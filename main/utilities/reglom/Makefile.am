@@ -28,7 +28,7 @@ EXTRA_DIST=reglomopts.ggo offlinereglom.tcl reglom_ref.xml
 reglomopts.c: reglomopts.h
 
 reglomopts.h: reglomopts.ggo
-	@GENGETOPT@ -i reglomopts.ggo -F reglomopts -u
+	@GENGETOPT@ -i @srcdir@/reglomopts.ggo -F reglomopts -u
 
 install-exec-local:
 	$(INSTALL_PROGRAM) @srcdir@/offlinereglom.tcl @bindir@/offlinereglom
