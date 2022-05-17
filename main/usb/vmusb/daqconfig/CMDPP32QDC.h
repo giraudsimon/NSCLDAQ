@@ -67,6 +67,9 @@ static const uint8_t cbltamod(CVMUSBReadoutList::a32UserBlock);
 static const uint8_t mcstamod(CVMUSBReadoutList::a32UserData);
 
 
+Const(MDPPDELAY)            1;
+Const(MDPPCHCONFIGDELAY)    101;  // 200 ns x 101 = 20.2 us
+
 // Mcast/CBLT control register bits
 Const(MCSTENB)              0x80;
 Const(MCSTDIS)              0x40;
@@ -99,7 +102,6 @@ Const(IrqEventThreshold)    0x601e;
 Const(CbltMcstControl)      0x6020;
 Const(CbltAddress)          0x6022;
 Const(McstAddress)          0x6024;
-
 
 Const(LongCount)            0x6030;
 Const(DataFormat)           0x6032;
@@ -163,6 +165,20 @@ Const(TDCStopCtrB)          0x60ae;
 // Multiplicity filter
 Const(Bank0HighLimit)       0x60b0;
 Const(Bank0LowLimit)        0x60b2;
+
+Const(ChannelSelection)     0x6100;
+Const(SignalWidth)          0x6110;
+Const(InputAmplitude)       0x6112;
+Const(JumperRange)          0x6114;
+Const(QDCJumper)            0x6116;
+Const(IntegrationLong)      0x6118;
+Const(IntegrationShort)     0x611a;
+Const(Threshold0)           0x611c;
+Const(Threshold1)           0x611e;
+Const(Threshold2)           0x6120;
+Const(Threshold3)           0x6122;
+Const(LongGainCorrection)   0x612a;
+Const(ShortGainCorrection)  0x612e;
 
 // Special trigger outputs:
 Const(TrigToIRQ1L)          0x6300; // Ch 0-16 from low to high bit

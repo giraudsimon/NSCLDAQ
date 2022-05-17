@@ -19,39 +19,24 @@
 #include <unistd.h>
 #include <CVMUSB.h>
 
+using std::vector;
+using std::string;
+
 /////////////////////////////////////////////////////////////////////////////////
 // Data that drives parameter validity checks.
 
 static XXUSB::CConfigurableObject::limit Zero(0);    // Useful for many of the integer limits.
 
-static XXUSB::CConfigurableObject::limit OutputFormatMax(3);
-static XXUSB::CConfigurableObject::Limits OutputFormatLimits(Zero, OutputFormatMax);
-
 static const char* ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
-static XXUSB::CConfigurableObject::isEnumParameter ADCResolutionValues(XXUSB::CConfigurableObject::makeEnumSet(ADCResolutionStrings));
-
-static XXUSB::CConfigurableObject::limit ChannelAddressingMax(8);
-static XXUSB::CConfigurableObject::Limits ChannelAddressingLimits(Zero, ChannelAddressingMax);
-
-static XXUSB::CConfigurableObject::Limits QDCJumperLimits(0, 1);
-
-static XXUSB::CConfigurableObject::limit IntegrationLongMin(2); // in 12.5 ns
-static XXUSB::CConfigurableObject::limit IntegrationLongMax(506); // in 12.5 ns, old FW=127, new FW=506
-static XXUSB::CConfigurableObject::Limits IntegrationLongLimits(IntegrationLongMin, IntegrationLongMax);
-
-static XXUSB::CConfigurableObject::limit IntegrationShortMin(1); // in 12.5 ns
-static XXUSB::CConfigurableObject::limit IntegrationShortMax(127); // in 12.5 ns, old FW=31, new FW=127
-static XXUSB::CConfigurableObject::Limits IntegrationShortLimits(IntegrationShortMin, IntegrationShortMax);
-
-static XXUSB::CConfigurableObject::limit ThresholdMin(1);
-static XXUSB::CConfigurableObject::limit ThresholdMax(0xffff);
-static XXUSB::CConfigurableObject::Limits ThresholdLimits(ThresholdMin, ThresholdMax);
+static const int   ADCResolutionValues[] = {0, 1, 2, 3, 4};
 
 static const char* GainCorrectionStrings[] = {"div4", "mult4", "none"};
-static XXUSB::CConfigurableObject::isEnumParameter GainCorrectionValues(XXUSB::CConfigurableObject::makeEnumSet(GainCorrectionStrings));
 
-CMDPP32QDC::EnumMap m_gainCorrectionMap(CMDPP32QDC::gainCorrectionMap());
+static const char* IrqSourceStrings[] = {"event", "data"};
+static const int   IrqSourceValues[]  = {0, 1};
+
 CMDPP32QDC::EnumMap m_adcResolutionMap(CMDPP32QDC::adcResolutionMap());
+CMDPP32QDC::EnumMap m_gainCorrectionMap(CMDPP32QDC::gainCorrectionMap());
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Constructors and other 'canonical' methods
@@ -107,25 +92,32 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
 {
   m_pConfiguration = &configuration; 
 
-  m_pConfiguration -> addIntegerParameter("-base");
-  m_pConfiguration -> addIntegerParameter("-ipl");
-  m_pConfiguration -> addIntegerParameter("-vecctor");
+  m_pConfiguration -> addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
+  m_pConfiguration -> addIntegerParameter("-id", 0, 255, 0);
+  m_pConfiguration -> addIntegerParameter("-ipl", 0, 7, 0);
+  m_pConfiguration -> addIntegerParameter("-vector", 0, 255, 0);
 
-  m_pConfiguration -> addParameter("-outputformat", XXUSB::CConfigurableObject::isInteger, &OutputFormatLimits, "3");
+  m_pConfiguration -> addIntegerParameter("-irqdatathreshold", 0, 32256, 1);
+  m_pConfiguration -> addIntegerParameter("-maxtransfer", 0, 32256, 1);
+  m_pConfiguration -> addEnumParameter("-irqsource", IrqSourceStrings, IrqSourceStrings[1]);
+  m_pConfiguration -> addIntegerParameter("-irqeventthreshold", 0, 32256, 1);
+
+  m_pConfiguration -> addIntegerParameter("-datalenformat", 0, 4, 2);
+  m_pConfiguration -> addIntegerParameter("-multievent", 0, 15, 0);
+  m_pConfiguration -> addIntegerParameter("-markingtype", 0, 3, 0);
+
+  m_pConfiguration -> addIntegerParameter("-outputformat", 0, 3, 3);
   m_pConfiguration -> addEnumParameter("-adcresolution", ADCResolutionStrings, ADCResolutionStrings[4]);
-  m_pConfiguration -> addParameter("-channelset", XXUSB::CConfigurableObject::isInteger, &ChannelAddressingLimits, "8");
-  m_pConfiguration -> addIntegerParameter("-signalwidth", 16);
-  m_pConfiguration -> addIntegerParameter("-inputamplitude", 1024);
-  m_pConfiguration -> addIntegerParameter("-jumperrange", 3072);
-  m_pConfiguration -> addBooleanParameter("-qdcjumper", 0);
-  m_pConfiguration -> addParameter("-intlong", XXUSB::CConfigurableObject::isInteger, &IntegrationLongLimits, "16");
-  m_pConfiguration -> addParameter("-intshort", XXUSB::CConfigurableObject::isInteger, &IntegrationShortLimits, "2");
-  m_pConfiguration -> addParameter("-th0", XXUSB::CConfigurableObject::isInteger, &ThresholdLimits, "0xff");
-  m_pConfiguration -> addParameter("-th1", XXUSB::CConfigurableObject::isInteger, &ThresholdLimits, "0xff");
-  m_pConfiguration -> addParameter("-th2", XXUSB::CConfigurableObject::isInteger, &ThresholdLimits, "0xff");
-  m_pConfiguration -> addParameter("-th3", XXUSB::CConfigurableObject::isInteger, &ThresholdLimits, "0xff");
-  m_pConfiguration -> addEnumParameter("-gaincorrectionlong", GainCorrectionStrings, GainCorrectionStrings[2]);
-  m_pConfiguration -> addEnumParameter("-gaincorrectionshort", GainCorrectionStrings, GainCorrectionStrings[2]);
+
+  m_pConfiguration -> addIntListParameter("-signalwidth", 8, 16);
+  m_pConfiguration -> addIntListParameter("-inputamplitude", 8, 1024);
+  m_pConfiguration -> addIntListParameter("-jumperrange", 8, 0);
+  m_pConfiguration -> addBoolListParameter("-qdcjumper", 8, false);
+  m_pConfiguration -> addIntListParameter("-intlong", 2, 506, 8, 8, 8, 16);
+  m_pConfiguration -> addIntListParameter("-intshort", 1, 127, 8, 8, 8, 2);
+  m_pConfiguration -> addIntListParameter("-threshold", 1, 0xffff, 32, 32, 32, 0xff);
+  m_pConfiguration -> addStringListParameter("-gaincorrectionlong", 8, GainCorrectionStrings[2]);
+  m_pConfiguration -> addStringListParameter("-gaincorrectionshort", 8, GainCorrectionStrings[2]);
 }
 /**
  * This method is called when a driver instance is being asked to initialize the hardware
@@ -140,15 +132,96 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
 void
 CMDPP32QDC::Initialize(CVMUSB& controller)
 {
-  uint32_t base = m_pConfiguration->getUnsignedParameter("-base");
-  controller.vmeWrite16(base+Reset, initamod, static_cast<uint16_t>(0));
+  uint32_t base = m_pConfiguration -> getUnsignedParameter("-base");
+  controller.vmeWrite16(base + Reset, initamod, static_cast<uint16_t>(0));
   sleep(1);
+  controller.vmeWrite16(base + StartAcq, initamod, static_cast<uint16_t>(0));
+  controller.vmeWrite16(base + ReadoutReset, initamod, static_cast<uint16_t>(0));
 
-  controller.vmeWrite16(base+StartAcq, initamod, static_cast<uint16_t>(0));
+  CVMUSBReadoutList list;	// Initialization instructions will be added to this.
 
-  controller.vmeWrite16(base+ReadoutReset, initamod, static_cast<uint16_t>(0));
+  // First disable the interrupts so that we can't get any spurious ones during init.
+  list.addWrite16(base + Ipl, initamod, 0);
+  list.addDelay(MDPPDELAY);
 
-  controller.vmeWrite16(base+StartAcq, initamod, static_cast<uint16_t>(1));
+  // Now retrieve the configuration parameters:
+  uint16_t       id                  = m_pConfiguration -> getIntegerParameter("-id");
+  uint16_t       ipl                 = m_pConfiguration -> getIntegerParameter("-ipl");
+  uint16_t       ivector             = m_pConfiguration -> getIntegerParameter("-vector");
+
+  uint16_t       irqdatathreshold    = m_pConfiguration -> getIntegerParameter("-irqdatathreshold");
+  uint16_t       maxtransfer         = m_pConfiguration -> getIntegerParameter("-maxtransfer");
+  uint16_t       irqsource           = IrqSourceValues[m_pConfiguration -> getEnumParameter("-irqsource", IrqSourceStrings)];
+  uint16_t       irqeventthreshold   = m_pConfiguration -> getIntegerParameter("-irqeventthreshold");
+
+  uint16_t       datalenformat       = m_pConfiguration -> getIntegerParameter("-datalenformat");
+  uint16_t       multievent          = m_pConfiguration -> getIntegerParameter("-multievent");
+  uint16_t       markingtype         = m_pConfiguration -> getIntegerParameter("-markingtype");
+  uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
+	int            adcresolution       = ADCResolutionValues[m_pConfiguration -> getEnumParameter("-adcresolution", ADCResolutionStrings)];
+  vector<int>    signalwidths        = m_pConfiguration -> getIntegerList("-signalwidth");
+  vector<int>    inputamplitude      = m_pConfiguration -> getIntegerList("-inputamplitude");
+  vector<int>    jumperrange         = m_pConfiguration -> getIntegerList("-jumperrange");
+  vector<int>    qdcjumper           = m_pConfiguration -> getIntegerList("-qdcjumper");
+  vector<int>    intlong             = m_pConfiguration -> getIntegerList("-intlong");
+  vector<int>    intshort            = m_pConfiguration -> getIntegerList("-intshort");
+  vector<int>    thresholds          = m_pConfiguration -> getIntegerList("-threshold");
+  vector<string> gaincorrectionlong  = m_pConfiguration -> getList("-gaincorrectionlong");
+  vector<string> gaincorrectionshort = m_pConfiguration -> getList("-gaincorrectionshort");
+
+  list.addWrite16(base + ModuleId,          initamod, id); // Module id.
+
+  list.addWrite16(base + DataFormat,        initamod, datalenformat);
+  list.addWrite16(base + MultiEvent,        initamod, multievent);
+  list.addWrite16(base + MarkType,          initamod, markingtype); 
+
+  list.addWrite16(base + OutputFormat,      initamod, outputformat);
+  list.addWrite16(base + ADCResolution,     initamod, adcresolution);
+
+  for (uint16_t channelPair = 0; channelPair < 8; channelPair++) {
+    list.addWrite16(base + ChannelSelection,    initamod, channelPair);
+    list.addWrite16(base + SignalWidth,         initamod, (uint16_t)signalwidths.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + InputAmplitude,      initamod, (uint16_t)inputamplitude.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + JumperRange,         initamod, (uint16_t)jumperrange.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + QDCJumper,           initamod, (uint16_t)qdcjumper.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + IntegrationLong,     initamod, (uint16_t)intlong.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + IntegrationShort,    initamod, (uint16_t)intshort.at(channelPair));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + Threshold0,          initamod, (uint16_t)thresholds.at(channelPair*4));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + Threshold1,          initamod, (uint16_t)thresholds.at(channelPair*4 + 1));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + Threshold2,          initamod, (uint16_t)thresholds.at(channelPair*4 + 2));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + Threshold3,          initamod, (uint16_t)thresholds.at(channelPair*4 + 3));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + LongGainCorrection,  initamod, (uint16_t)gainCorrectionMap()[gaincorrectionlong.at(channelPair)]);
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + ShortGainCorrection, initamod, (uint16_t)gainCorrectionMap()[gaincorrectionshort.at(channelPair)]);
+    list.addDelay(MDPPCHCONFIGDELAY);
+  }
+
+  // Finally clear the converter and set the IPL which enables interrupts if
+  // the IPL is non-zero, and does no harm if it is zero.
+  list.addWrite16(base + Vector,            initamod, ivector);
+  list.addWrite16(base + Ipl,               initamod, ipl);
+  list.addWrite16(base + IrqDataThreshold,  initamod, irqdatathreshold);
+  list.addWrite16(base + MaxTransfer,       initamod, maxtransfer);
+  list.addWrite16(base + IrqSource,         initamod, irqsource);
+  list.addWrite16(base + IrqEventThreshold, initamod, irqeventthreshold);
+
+  // Now reset again and start daq:
+  list.addWrite16(base + ReadoutReset,      initamod, 1);
+  list.addWrite16(base + InitFifo,          initamod, 0);
+
+  // The VMUSB does not like lists that end in a delay so:
+
+  controller.vmeWrite16(base + StartAcq, initamod, static_cast<uint16_t>(1));
 }
 
 /**
@@ -164,7 +237,7 @@ CMDPP32QDC::addReadoutList(CVMUSBReadoutList& list)
 {
   // Functions are directed at the slot the module is in so:
 
-  uint32_t base  = m_pConfiguration->getUnsignedParameter("-base"); // Get the value of -slot.
+  uint32_t base  = m_pConfiguration -> getUnsignedParameter("-base"); // Get the value of -slot.
   list.addFifoRead32(base + eventBuffer, readamod, (size_t)1024); 
   list.addWrite16(base + ReadoutReset, initamod, (uint16_t)1);
 
