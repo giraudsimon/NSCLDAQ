@@ -239,7 +239,9 @@ public:
                        uint32_t cbltAddress,
                        int wordsPermodule);
 
-};
 
+private:
+  void printRegisters(CVMUSB& controller);
+};
 
 #endif
