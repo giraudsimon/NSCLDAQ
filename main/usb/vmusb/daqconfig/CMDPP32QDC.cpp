@@ -637,7 +637,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4);
-      cout << setw(30) << channelNumber << (data&0x7fff) << endl;
+      cout << setw(30) << channelNumber << (data&0xffff) << endl;
     }
 
     status = controller.vmeRead16(base + Threshold1, initamod, &data);
@@ -646,7 +646,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 1);
-      cout << setw(30) << channelNumber << (data&0x7fff) << endl;
+      cout << setw(30) << channelNumber << (data&0xffff) << endl;
     }
 
     status = controller.vmeRead16(base + Threshold2, initamod, &data);
@@ -655,7 +655,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 2);
-      cout << setw(30) << channelNumber << (data&0x7fff) << endl;
+      cout << setw(30) << channelNumber << (data&0xffff) << endl;
     }
 
     status = controller.vmeRead16(base + Threshold3, initamod, &data);
@@ -664,7 +664,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 3);
-      cout << setw(30) << channelNumber << (data&0x7fff) << endl;
+      cout << setw(30) << channelNumber << (data&0xffff) << endl;
     }
 
     status = controller.vmeRead16(base + LongGainCorrection, initamod, &data);
