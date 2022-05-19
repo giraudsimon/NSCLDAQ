@@ -118,7 +118,7 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
 
   m_pConfiguration -> addIntListParameter("-signalwidth", 8, 16);
   m_pConfiguration -> addIntListParameter("-inputamplitude", 8, 1024);
-  m_pConfiguration -> addIntListParameter("-jumperrange", 8, 0);
+  m_pConfiguration -> addIntListParameter("-jumperrange", 8, 3072);
   m_pConfiguration -> addBoolListParameter("-qdcjumper", 8, false);
   m_pConfiguration -> addIntListParameter("-intlong", 2, 506, 8, 8, 8, 16);
   m_pConfiguration -> addIntListParameter("-intshort", 1, 127, 8, 8, 8, 2);
@@ -586,14 +586,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   for (uint16_t channelPair = 0; channelPair < 8; channelPair++) {
     controller.vmeWrite16(base + ChannelSelection, initamod, channelPair);
 
-    CVMUSBReadoutList list;
-    list.addDelay(MDPPCHCONFIGDELAY);
-    char readBuffer[100];
-    size_t bytesRead;
-    int status = controller.executeList(list, readBuffer, sizeof(readBuffer), &bytesRead);
-    if (status < 0) {
-       throw string("Delay faield!");
-    }
+    usleep(21);
     cout << setw(30) << "Channels: " << channelPair*4 << "-" << (channelPair + 1)*4 - 1 << endl;
 
     status = controller.vmeRead16(base + SignalWidth, initamod, &data);
