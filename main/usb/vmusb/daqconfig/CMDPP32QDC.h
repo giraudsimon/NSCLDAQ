@@ -202,10 +202,6 @@ public:
   typedef std::map<std::string, uint16_t> EnumMap;
 
 private:
-  static EnumMap    m_gainCorrectionMap;
-  static EnumMap    m_adcResolutionMap;
-
-private:
   CReadoutModule* m_pConfiguration;
 
 public:
@@ -228,7 +224,6 @@ public:
 
 public:
   static EnumMap gainCorrectionMap();
-  static EnumMap adcResolutionMap();
 
   void setChainAddresses(CVMUSB& controller,
                          CMesytecBase::ChainPosition position,

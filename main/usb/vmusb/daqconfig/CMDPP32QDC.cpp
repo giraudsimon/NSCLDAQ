@@ -33,23 +33,22 @@ using std::setw;
 
 static XXUSB::CConfigurableObject::limit Zero(0);    // Useful for many of the integer limits.
 
-static const char* ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
-static const int   ADCResolutionValues[] = {0, 1, 2, 3, 4};
+static const char*    ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
+static const uint16_t ADCResolutionValues[]  = {0, 1, 2, 3, 4};
 
-static const char* GainCorrectionStrings[] = {"div4", "mult4", "none"};
+static const char*         GainCorrectionStrings[] = {"div4", "mult4", "none"};
+static CMDPP32QDC::EnumMap GainCorrectionMap(CMDPP32QDC::gainCorrectionMap());
 
-static const char* IrqSourceStrings[] = {"event", "data"};
-static const int   IrqSourceValues[]  = {0, 1};
 
-CMDPP32QDC::EnumMap m_adcResolutionMap(CMDPP32QDC::adcResolutionMap());
-CMDPP32QDC::EnumMap m_gainCorrectionMap(CMDPP32QDC::gainCorrectionMap());
+static const char*    IrqSourceStrings[] = {"event", "data"};
+static const uint16_t IrqSourceValues[]  = {0, 1};
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Constructors and other 'canonical' methods
 
 /**
  * Construct an instance of the device.  Note that in this framework this will
- * typically only be used to make a 'template' instance which will be cloned to
+ * typically only be used to make a 'MDPP32QDC' instance which will be cloned to
  * create instances that are bound to configurations and actual hardware.
  */
 CMDPP32QDC::CMDPP32QDC() 
@@ -61,7 +60,7 @@ CMDPP32QDC::CMDPP32QDC()
  * Copy construction.  This cannot be virtual by the rules of C++ the clone()
  * method normally creates a new object from an existing template object.
  * 
- * @param rhs  - Template device that is being copied to create the  new device.
+ * @param rhs  - MDPP32QDC is being copied to create the new device.
  */
 CMDPP32QDC::CMDPP32QDC(const CMDPP32QDC& rhs)
 {
@@ -142,10 +141,10 @@ void
 CMDPP32QDC::Initialize(CVMUSB& controller)
 {
   uint32_t base = m_pConfiguration -> getUnsignedParameter("-base");
-  controller.vmeWrite16(base + Reset, initamod, static_cast<uint16_t>(0));
+  controller.vmeWrite16(base + Reset,        initamod, 0);
   sleep(1);
-  controller.vmeWrite16(base + StartAcq, initamod, static_cast<uint16_t>(0));
-  controller.vmeWrite16(base + ReadoutReset, initamod, static_cast<uint16_t>(0));
+  controller.vmeWrite16(base + StartAcq,     initamod, 0);
+  controller.vmeWrite16(base + ReadoutReset, initamod, 0);
 
   CVMUSBReadoutList list;	// Initialization instructions will be added to this.
 
@@ -169,7 +168,7 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 
 	uint16_t       tdcresolution       = m_pConfiguration -> getIntegerParameter("-tdcresolution");
   uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
-	int            adcresolution       = ADCResolutionValues[m_pConfiguration -> getEnumParameter("-adcresolution", ADCResolutionStrings)];
+	uint16_t       adcresolution       = ADCResolutionValues[m_pConfiguration -> getEnumParameter("-adcresolution", ADCResolutionStrings)];
   vector<int>    signalwidths        = m_pConfiguration -> getIntegerList("-signalwidth");
   vector<int>    inputamplitude      = m_pConfiguration -> getIntegerList("-inputamplitude");
   vector<int>    jumperrange         = m_pConfiguration -> getIntegerList("-jumperrange");
@@ -213,9 +212,9 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
     list.addDelay(MDPPCHCONFIGDELAY);
     list.addWrite16(base + Threshold3,          initamod, (uint16_t)thresholds.at(channelPair*4 + 3));
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + LongGainCorrection,  initamod, (uint16_t)gainCorrectionMap()[gaincorrectionlong.at(channelPair)]);
+    list.addWrite16(base + LongGainCorrection,  initamod, (uint16_t)GainCorrectionMap[gaincorrectionlong.at(channelPair)]);
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + ShortGainCorrection, initamod, (uint16_t)gainCorrectionMap()[gaincorrectionshort.at(channelPair)]);
+    list.addWrite16(base + ShortGainCorrection, initamod, (uint16_t)GainCorrectionMap[gaincorrectionshort.at(channelPair)]);
     list.addDelay(MDPPCHCONFIGDELAY);
   }
 
@@ -312,24 +311,6 @@ CMDPP32QDC::gainCorrectionMap()
   result["div4"]  = 0x0100;
   result["mult4"] = 0x1000; 
   result["none"]  = 0x0400;
-
-  return result;
-}
-
-/*
-  Creates a map from the value of -adcresolution to the values that can be programmed
-  into the system.
-*/
-CMDPP32QDC::EnumMap
-CMDPP32QDC::adcResolutionMap()
-{
-  EnumMap result;
-
-  result["64k"] = 0;
-  result["32k"] = 1;
-  result["16k"] = 2;
-  result["8k"]  = 3;
-  result["4k"]  = 4;
 
   return result;
 }
@@ -487,7 +468,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    cout << setw(30) << "IRQ data threshold: " << (data&0x7f) << endl;
+    cout << setw(30) << "IRQ data threshold: " << (data&0x7f) << " [# of 32 bit words]" << endl;
   }
 
   status = controller.vmeRead16(base + MaxTransfer, initamod, &data);
@@ -512,15 +493,14 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    cout << setw(30) << "IRQ event threshold: " << (data&0x7f) << endl;
+    cout << setw(30) << "IRQ event threshold: " << (data&0x7f) << " [# of 32 bit words]" << endl;
   }
 
   status = controller.vmeRead16(base + DataFormat, initamod, &data);
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    // Datasheet says it's 2 bits. So, 4 cannnot be returend....
-    data = data&0x3;
+    data = data&0x7;
     cout << setw(30) << "Data Length Format: " << data << " ";
     if (data == 0)      cout << "(8 bit)";
     else if (data == 1) cout << "(16 bit)";
@@ -535,7 +515,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    cout << setw(30) << "Multi event(bin): " << (std::bitset<5>(data&0xf)) << endl;
+    cout << setw(30) << "Multi event(bin): " << (std::bitset<4>(data&0xf)) << endl;
   }
 
   status = controller.vmeRead16(base + MarkType, initamod, &data); 
@@ -543,7 +523,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     cerr << "Error in reading register" << endl;
   } else {
     data = data&0x3;
-    cout << setw(30) << "Marking type(bin): " << data << " ";
+    cout << setw(30) << "Marking type(bin): " << std::bitset<2>(data) << " ";
     if (data == 0)      cout << "(event counter)";
     else if (data == 1) cout << "(time stamp)";
     else if (data == 2) cout << "(extended time stamp)";
@@ -593,21 +573,21 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Signal width: " << (data&0x3ff) << " (ns [FWHM])" << endl;
+      cout << setw(30) << "Signal width: " << (data&0x3ff) << " [ns (FWHM)]" << endl;
     }
 
     status = controller.vmeRead16(base + InputAmplitude, initamod, &data);
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Input amplitude: " << (data&0xffff) << " (mV)" << endl;
+      cout << setw(30) << "Input amplitude: " << (data&0xffff) << " [mV]" << endl;
     }
 
     status = controller.vmeRead16(base + JumperRange, initamod, &data);
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Jumper range: " << (data&0xffff) << " (mV)" << endl;
+      cout << setw(30) << "Jumper range: " << (data&0xffff) << " [mV]" << endl;
     }
 
     status = controller.vmeRead16(base + QDCJumper, initamod, &data);
@@ -621,14 +601,14 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Integration long: " << (data&0x7f) << " (*12.5 ns)" << endl;
+      cout << setw(30) << "Integration long: " << (data&0x7f) << " (*12.5 [ns])" << endl;
     }
 
     status = controller.vmeRead16(base + IntegrationShort, initamod, &data);
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Integration short: " << (data&0x1f) << " (*12.5 ns)" << endl;
+      cout << setw(30) << "Integration short: " << (data&0x1f) << " (*12.5 [ns])" << endl;
     }
 
     status = controller.vmeRead16(base + Threshold0, initamod, &data);
@@ -637,7 +617,11 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4);
-      cout << setw(30) << channelNumber << (data&0xffff) << endl;
+      data = data&0xffff;
+      double percentage = ((double)data)*100;
+      char percentageString[8] = "";
+      sprintf(percentageString, "%.02f %%", percentage);
+      cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
     }
 
     status = controller.vmeRead16(base + Threshold1, initamod, &data);
@@ -646,7 +630,11 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 1);
-      cout << setw(30) << channelNumber << (data&0xffff) << endl;
+      data = data&0xffff;
+      double percentage = ((double)data)*100;
+      char percentageString[8] = "";
+      sprintf(percentageString, "%.02f %%", percentage);
+      cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
     }
 
     status = controller.vmeRead16(base + Threshold2, initamod, &data);
@@ -655,7 +643,11 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 2);
-      cout << setw(30) << channelNumber << (data&0xffff) << endl;
+      data = data&0xffff;
+      double percentage = ((double)data)*100;
+      char percentageString[8] = "";
+      sprintf(percentageString, "%.02f %%", percentage);
+      cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
     }
 
     status = controller.vmeRead16(base + Threshold3, initamod, &data);
@@ -664,7 +656,11 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     } else {
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 3);
-      cout << setw(30) << channelNumber << (data&0xffff) << endl;
+      data = data&0xffff;
+      double percentage = ((double)data)*100;
+      char percentageString[8] = "";
+      sprintf(percentageString, "%.02f %%", percentage);
+      cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
     }
 
     status = controller.vmeRead16(base + LongGainCorrection, initamod, &data);
@@ -672,7 +668,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       cerr << "Error in reading register" << endl;
     } else {
       cout << setw(30) << "Long gain correction: " << data << " ";
-      data = data&0xfff;
+      data = data&0x1fff;
       if (data == 256)       cout << "(divide by 4)";
       else if (data == 4096) cout << "(multiply by 4)";
       else if (data == 1024) cout << "(neutral)";
@@ -685,7 +681,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       cerr << "Error in reading register" << endl;
     } else {
       cout << setw(30) << "Short gain correction: " << data << " ";
-      data = data&0xfff;
+      data = data&0x1fff;
       if (data == 256)       cout << "(divide by 4)";
       else if (data == 4096) cout << "(multiply by 4)";
       else if (data == 1024) cout << "(neutral)";
