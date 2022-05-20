@@ -618,7 +618,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4);
       data = data&0xffff;
-      double percentage = ((double)data)*100;
+      double percentage = ((double)data/0xffff)*100;
       char percentageString[8] = "";
       sprintf(percentageString, "%.02f %%", percentage);
       cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
@@ -631,7 +631,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 1);
       data = data&0xffff;
-      double percentage = ((double)data)*100;
+      double percentage = ((double)data/0xffff)*100;
       char percentageString[8] = "";
       sprintf(percentageString, "%.02f %%", percentage);
       cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
@@ -644,7 +644,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 2);
       data = data&0xffff;
-      double percentage = ((double)data)*100;
+      double percentage = ((double)data/0xffff)*100;
       char percentageString[8] = "";
       sprintf(percentageString, "%.02f %%", percentage);
       cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
@@ -657,7 +657,7 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       char channelNumber[100] = "";
       sprintf(channelNumber, "Ch %d Threshold: ", channelPair*4 + 3);
       data = data&0xffff;
-      double percentage = ((double)data)*100;
+      double percentage = ((double)data/0xffff)*100;
       char percentageString[8] = "";
       sprintf(percentageString, "%.02f %%", percentage);
       cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
