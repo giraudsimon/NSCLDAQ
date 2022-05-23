@@ -177,6 +177,7 @@ Const(Threshold0)           0x611c;
 Const(Threshold1)           0x611e;
 Const(Threshold2)           0x6120;
 Const(Threshold3)           0x6122;
+Const(ResetTime)            0x6128;
 Const(LongGainCorrection)   0x612a;
 Const(ShortGainCorrection)  0x612e;
 

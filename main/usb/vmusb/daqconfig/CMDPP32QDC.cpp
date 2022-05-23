@@ -115,13 +115,14 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration -> addIntegerParameter("-outputformat", 0, 3, 3);
   m_pConfiguration -> addEnumParameter("-adcresolution", ADCResolutionStrings, ADCResolutionStrings[4]);
 
-  m_pConfiguration -> addIntListParameter("-signalwidth", 8, 16);
-  m_pConfiguration -> addIntListParameter("-inputamplitude", 8, 1024);
-  m_pConfiguration -> addIntListParameter("-jumperrange", 8, 3072);
+  m_pConfiguration -> addIntListParameter("-signalwidth", 0, 0x3ff, 8, 8, 8, 16);
+  m_pConfiguration -> addIntListParameter("-inputamplitude", 0, 0xfff, 8, 8, 8, 1024);
+  m_pConfiguration -> addIntListParameter("-jumperrange", 0, 0xffff, 8, 8, 8, 3072);
   m_pConfiguration -> addBoolListParameter("-qdcjumper", 8, false);
   m_pConfiguration -> addIntListParameter("-intlong", 2, 506, 8, 8, 8, 16);
   m_pConfiguration -> addIntListParameter("-intshort", 1, 127, 8, 8, 8, 2);
   m_pConfiguration -> addIntListParameter("-threshold", 1, 0xffff, 32, 32, 32, 0xff);
+  m_pConfiguration -> addIntListParameter("-resettime", 0, 0x3ff, 8, 8, 8, 32);
   m_pConfiguration -> addStringListParameter("-gaincorrectionlong", 8, GainCorrectionStrings[2]);
   m_pConfiguration -> addStringListParameter("-gaincorrectionshort", 8, GainCorrectionStrings[2]);
 
@@ -175,7 +176,8 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
   vector<int>    qdcjumper           = m_pConfiguration -> getIntegerList("-qdcjumper");
   vector<int>    intlong             = m_pConfiguration -> getIntegerList("-intlong");
   vector<int>    intshort            = m_pConfiguration -> getIntegerList("-intshort");
-  vector<int>    thresholds          = m_pConfiguration -> getIntegerList("-threshold");
+  vector<int>    threshold           = m_pConfiguration -> getIntegerList("-threshold");
+  vector<int>    resettime           = m_pConfiguration -> getIntegerList("-resettime");
   vector<string> gaincorrectionlong  = m_pConfiguration -> getList("-gaincorrectionlong");
   vector<string> gaincorrectionshort = m_pConfiguration -> getList("-gaincorrectionshort");
   bool           isPrintRegisters    = m_pConfiguration -> getBoolParameter("-printregisters");
@@ -204,13 +206,15 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
     list.addDelay(MDPPCHCONFIGDELAY);
     list.addWrite16(base + IntegrationShort,    initamod, (uint16_t)intshort.at(channelPair));
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + Threshold0,          initamod, (uint16_t)thresholds.at(channelPair*4));
+    list.addWrite16(base + Threshold0,          initamod, (uint16_t)threshold.at(channelPair*4));
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + Threshold1,          initamod, (uint16_t)thresholds.at(channelPair*4 + 1));
+    list.addWrite16(base + Threshold1,          initamod, (uint16_t)threshold.at(channelPair*4 + 1));
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + Threshold2,          initamod, (uint16_t)thresholds.at(channelPair*4 + 2));
+    list.addWrite16(base + Threshold2,          initamod, (uint16_t)threshold.at(channelPair*4 + 2));
     list.addDelay(MDPPCHCONFIGDELAY);
-    list.addWrite16(base + Threshold3,          initamod, (uint16_t)thresholds.at(channelPair*4 + 3));
+    list.addWrite16(base + Threshold3,          initamod, (uint16_t)threshold.at(channelPair*4 + 3));
+    list.addDelay(MDPPCHCONFIGDELAY);
+    list.addWrite16(base + ResetTime,           initamod, (uint16_t)resettime.at(channelPair));
     list.addDelay(MDPPCHCONFIGDELAY);
     list.addWrite16(base + LongGainCorrection,  initamod, (uint16_t)GainCorrectionMap[gaincorrectionlong.at(channelPair)]);
     list.addDelay(MDPPCHCONFIGDELAY);
@@ -500,7 +504,6 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    data = data&0x7;
     cout << setw(30) << "Data Length Format: " << data << " ";
     if (data == 0)      cout << "(8 bit)";
     else if (data == 1) cout << "(16 bit)";
@@ -522,12 +525,11 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    data = data&0x3;
-    cout << setw(30) << "Marking type(bin): " << std::bitset<2>(data) << " ";
-    if (data == 0)      cout << "(event counter)";
-    else if (data == 1) cout << "(time stamp)";
-    else if (data == 2) cout << "(extended time stamp)";
-    else                cout << "(error)";
+    cout << setw(30) << "Marking type(bin): ";
+    if (data == 0)      cout << std::bitset<2>(data) << " (event counter)";
+    else if (data == 1) cout << std::bitset<2>(data) << " (time stamp)";
+    else if (data == 2) cout << std::bitset<2>(data) << " (extended time stamp)";
+    else                cout << data << " (error)";
     cout << endl;
   }
 
@@ -543,7 +545,6 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   if (status < 0) {
     cerr << "Error in reading register" << endl;
   } else {
-    data = data&0x3;
     cout << setw(30) << "Output Format: " << data << " ";
     if (data == 0)      cout << "(time and long integral)";
     else if (data == 1) cout << "(long integral only [QDC mode])";
@@ -663,12 +664,30 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       cout << setw(30) << channelNumber << data << " (0x" << std::hex << data << std::dec << ", " << percentageString << ")" << endl;
     }
 
+    status = controller.vmeRead16(base + ResetTime, initamod, &data);
+    if (status < 0) {
+      cerr << "Error in reading register" << endl;
+    } else {
+      cout << setw(30) << "Reset time: " << (data&0x3ff) << " (*12.5 [ns])" << endl;
+    }
+
+    status = controller.vmeRead16(base + ShortGainCorrection, initamod, &data);
+    if (status < 0) {
+      cerr << "Error in reading register" << endl;
+    } else {
+      cout << setw(30) << "Short gain correction: " << data << " ";
+      if (data == 256)       cout << "(divide by 4)";
+      else if (data == 4096) cout << "(multiply by 4)";
+      else if (data == 1024) cout << "(neutral)";
+      else                   cout << "(error)";
+      cout << endl;
+    }
+
     status = controller.vmeRead16(base + LongGainCorrection, initamod, &data);
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
       cout << setw(30) << "Long gain correction: " << data << " ";
-      data = data&0x1fff;
       if (data == 256)       cout << "(divide by 4)";
       else if (data == 4096) cout << "(multiply by 4)";
       else if (data == 1024) cout << "(neutral)";
@@ -681,7 +700,6 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       cerr << "Error in reading register" << endl;
     } else {
       cout << setw(30) << "Short gain correction: " << data << " ";
-      data = data&0x1fff;
       if (data == 256)       cout << "(divide by 4)";
       else if (data == 4096) cout << "(multiply by 4)";
       else if (data == 1024) cout << "(neutral)";
