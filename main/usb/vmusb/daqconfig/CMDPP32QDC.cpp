@@ -31,7 +31,9 @@ using std::setw;
 /////////////////////////////////////////////////////////////////////////////////
 // Data that drives parameter validity checks.
 
-static XXUSB::CConfigurableObject::limit Zero(0);    // Useful for many of the integer limits.
+
+static const char*    markTypeStrings[] = {"eventcount", "timestamp", "extended-timestamp"};
+static const uint16_t markTypeValues[] = {0, 1, 3};
 
 static const char*    ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
 static const uint16_t ADCResolutionValues[]  = {0, 1, 2, 3, 4};
@@ -98,32 +100,32 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration = &configuration; 
 
   m_pConfiguration -> addParameter("-base", XXUSB::CConfigurableObject::isInteger, NULL, "0");
-  m_pConfiguration -> addIntegerParameter("-id", 0, 255, 0);
-  m_pConfiguration -> addIntegerParameter("-ipl", 0, 7, 0);
-  m_pConfiguration -> addIntegerParameter("-vector", 0, 255, 0);
+  m_pConfiguration -> addIntegerParameter("-id",                0, 255, 0);
+  m_pConfiguration -> addIntegerParameter("-ipl",               0,   7, 0);
+  m_pConfiguration -> addIntegerParameter("-vector",            0, 255, 0);
 
-  m_pConfiguration -> addIntegerParameter("-irqdatathreshold", 0, 32256, 1);
-  m_pConfiguration -> addIntegerParameter("-maxtransfer", 0, 32256, 1);
+  m_pConfiguration -> addIntegerParameter("-irqdatathreshold",  0, 32256, 1);
+  m_pConfiguration -> addIntegerParameter("-maxtransfer",       0, 32256, 1);
   m_pConfiguration -> addEnumParameter("-irqsource", IrqSourceStrings, IrqSourceStrings[1]);
   m_pConfiguration -> addIntegerParameter("-irqeventthreshold", 0, 32256, 1);
 
-  m_pConfiguration -> addIntegerParameter("-datalenformat", 0, 4, 2);
-  m_pConfiguration -> addIntegerParameter("-multievent", 0, 15, 0);
-  m_pConfiguration -> addIntegerParameter("-markingtype", 0, 3, 0);
+  m_pConfiguration -> addIntegerParameter("-datalenformat", 0,  4, 2);
+  m_pConfiguration -> addIntegerParameter("-multievent",    0, 15, 0);
+  m_pConfiguration -> addEnumParameter("-marktype", markTypeStrings, markTypeStrings[0]);
 
-  m_pConfiguration -> addIntegerParameter("-tdcresolution", 0, 5, 5);
-  m_pConfiguration -> addIntegerParameter("-outputformat", 0, 3, 3);
+  m_pConfiguration -> addIntegerParameter("-tdcresolution", 0,  5, 5);
+  m_pConfiguration -> addIntegerParameter("-outputformat",  0,  3, 3);
   m_pConfiguration -> addEnumParameter("-adcresolution", ADCResolutionStrings, ADCResolutionStrings[4]);
-
-  m_pConfiguration -> addIntListParameter("-signalwidth", 0, 0x3ff, 8, 8, 8, 16);
-  m_pConfiguration -> addIntListParameter("-inputamplitude", 0, 0xfff, 8, 8, 8, 1024);
-  m_pConfiguration -> addIntListParameter("-jumperrange", 0, 0xffff, 8, 8, 8, 3072);
+ 
+  m_pConfiguration -> addIntListParameter("-signalwidth",    0, 0x03ff,  8,  8,  8,   16);
+  m_pConfiguration -> addIntListParameter("-inputamplitude", 0, 0xffff,  8,  8,  8, 1024);
+  m_pConfiguration -> addIntListParameter("-jumperrange",    0, 0xffff,  8,  8,  8, 3072);
   m_pConfiguration -> addBoolListParameter("-qdcjumper", 8, false);
-  m_pConfiguration -> addIntListParameter("-intlong", 2, 506, 8, 8, 8, 16);
-  m_pConfiguration -> addIntListParameter("-intshort", 1, 127, 8, 8, 8, 2);
-  m_pConfiguration -> addIntListParameter("-threshold", 1, 0xffff, 32, 32, 32, 0xff);
-  m_pConfiguration -> addIntListParameter("-resettime", 0, 0x3ff, 8, 8, 8, 32);
-  m_pConfiguration -> addStringListParameter("-gaincorrectionlong", 8, GainCorrectionStrings[2]);
+  m_pConfiguration -> addIntListParameter("-intlong",        2,    506,  8,  8,  8,   16);
+  m_pConfiguration -> addIntListParameter("-intshort",       1,    127,  8,  8,  8,    2);
+  m_pConfiguration -> addIntListParameter("-threshold",      1, 0xffff, 32, 32, 32, 0xff);
+  m_pConfiguration -> addIntListParameter("-resettime",      0, 0x03ff,  8,  8,  8,   32);
+  m_pConfiguration -> addStringListParameter("-gaincorrectionlong",  8, GainCorrectionStrings[2]);
   m_pConfiguration -> addStringListParameter("-gaincorrectionshort", 8, GainCorrectionStrings[2]);
 
   m_pConfiguration -> addBooleanParameter("-printregisters", false);
@@ -165,7 +167,7 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 
   uint16_t       datalenformat       = m_pConfiguration -> getIntegerParameter("-datalenformat");
   uint16_t       multievent          = m_pConfiguration -> getIntegerParameter("-multievent");
-  uint16_t       markingtype         = m_pConfiguration -> getIntegerParameter("-markingtype");
+  uint16_t       marktype            = markTypeValues[m_pConfiguration -> getEnumParameter("-marktype", markTypeStrings)];
 
 	uint16_t       tdcresolution       = m_pConfiguration -> getIntegerParameter("-tdcresolution");
   uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
@@ -186,7 +188,7 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 
   list.addWrite16(base + DataFormat,        initamod, datalenformat);
   list.addWrite16(base + MultiEvent,        initamod, multievent);
-  list.addWrite16(base + MarkType,          initamod, markingtype); 
+  list.addWrite16(base + MarkType,          initamod, marktype);
 
   list.addWrite16(base + TDCResolution,     initamod, tdcresolution);
   list.addWrite16(base + OutputFormat,      initamod, outputformat);
@@ -284,9 +286,6 @@ CMDPP32QDC::addReadoutList(CVMUSBReadoutList& list)
 void
 CMDPP32QDC::onEndRun(CVMUSB& controller)
 {
-  /* MODIFY ME HERE */
-
-  /* END MODIFICATIONS */
 }
 
 /**
@@ -359,8 +358,8 @@ CMDPP32QDC::setChainAddresses(CVMUSB& controller, CMesytecBase::ChainPosition po
 
   // program the registers, note that the address registers take only the top 8 bits.
 
-  controller.vmeWrite16(base + CbltAddress, initamod, (uint16_t)(cbltBase >> 24));
-  controller.vmeWrite16(base + McstAddress, initamod, (uint16_t)(mcastBase >> 24));
+  controller.vmeWrite16(base + CbltAddress,     initamod, (uint16_t)(cbltBase >> 24));
+  controller.vmeWrite16(base + McstAddress,     initamod, (uint16_t)(mcastBase >> 24));
   controller.vmeWrite16(base + CbltMcstControl, initamod, (uint16_t)(controlRegister));    
 }
 
@@ -388,51 +387,52 @@ CMDPP32QDC::initCBLTReadout(CVMUSB& controller,
   //               most modulep arameters are already set up.
 
 
-  int irqThreshold   = m_pConfiguration -> getIntegerParameter("-irqthreshold");
-  int vector         = m_pConfiguration -> getIntegerParameter("-vector");
-  int ipl            = m_pConfiguration -> getIntegerParameter("-ipl");
-  string    markType = m_pConfiguration -> cget("-marktype");
-  bool timestamping  = (markType == "timestamp") || (markType == "extended-timestamp");
+  uint16_t irqDataThreshold  = m_pConfiguration -> getIntegerParameter("-irqdatathreshold");
+  uint16_t irqEventThreshold = m_pConfiguration -> getIntegerParameter("-irqeventthreshold");
+  uint16_t irqSource         = IrqSourceValues[m_pConfiguration -> getEnumParameter("-irqsource", IrqSourceStrings)];
+  uint16_t vector            = m_pConfiguration -> getIntegerParameter("-vector");
+  uint16_t ipl               = m_pConfiguration -> getIntegerParameter("-ipl");
+  string   markType          = m_pConfiguration -> cget("-marktype");
+  bool     timestamping      = (markType == "timestamp") || (markType == "extended-timestamp");
   
   // Stop acquistiion
   // ..and clear buffer memory:
-  controller.vmeWrite16(cbltAddress + StartAcq, initamod, (uint16_t)0);
-  controller.vmeWrite16(cbltAddress + InitFifo, initamod, (uint16_t)0);
-
-  // Set stamping
-
-
-  // Note the generic configuration already set the correct marktype.
+  controller.vmeWrite16(cbltAddress + StartAcq, initamod, 0);
+  controller.vmeWrite16(cbltAddress + InitFifo, initamod, 0);
 
   if(timestamping) {
-    // Oscillator sources are assumed to already be set.
-    // Reset the timer:
-
-    //    controller.vmeWrite16(cbltAddress + MarkType,       initamod, (uint16_t)1); // Show timestamp, not event count.
-    controller.vmeWrite16(cbltAddress + TimestampReset, initamod, (uint16_t)3); // reset all counter.
+    controller.vmeWrite16(cbltAddress + TimestampReset,    initamod, 3); // reset all counter.
   }
   else {
-    // controller.vmeWrite16(cbltAddress + MarkType,       initamod, (uint16_t)0); // Use Eventcounter.
-    controller.vmeWrite16(cbltAddress + EventCounterReset, initamod, (uint16_t)0); // Reset al event counters.
+    controller.vmeWrite16(cbltAddress + EventCounterReset, initamod, 0); // Reset all event counters.
   }
-  // Set multievent mode
-  
-  //  controller.vmeWrite16(cbltAddress + MultiEvent, initamod, (uint16_t)3);      // Multi event mode 3.
-  controller.vmeWrite16(cbltAddress + IrqDataThreshold, initamod, (uint16_t)irqThreshold);
-  controller.vmeWrite16(cbltAddress + MaxTransfer, initamod,  (uint16_t)wordsPermodule);
 
   // Set the IRQ
+  controller.vmeWrite16(cbltAddress + Ipl,    initamod, ipl);
+  controller.vmeWrite16(cbltAddress + Vector, initamod, vector);
 
-  controller.vmeWrite16(cbltAddress + Vector, initamod, (uint16_t)vector);
-  controller.vmeWrite16(cbltAddress + Ipl,    initamod, (uint16_t)ipl);
-  controller.vmeWrite16(cbltAddress + IrqDataThreshold, initamod, (uint16_t)irqThreshold);
+  controller.vmeWrite16(cbltAddress + MaxTransfer, initamod,  (uint16_t)wordsPermodule);
+
+  if (irqSoruce == 0) {
+    controller.vmeWrite16(cbltAddress + IrqSource,         initamod, irqSource);
+    controller.vmeWrite16(cbltAddress + IrqEventThreshold, initamod, irqEventThreshold);
+  } else {
+    controller.vmeWrite16(cbltAddress + IrqSource,         initamod, irqSource);
+    controller.vmeWrite16(cbltAddress + IrqDataThreshold,  initamod, irqDataThreshold);
+  }
 
   // Init the buffer and start data taking.
-
-  controller.vmeWrite16(cbltAddress + InitFifo, initamod, (uint16_t)0);
-  controller.vmeWrite16(cbltAddress + ReadoutReset, initamod, (uint16_t)0);
-  controller.vmeWrite16(cbltAddress + StartAcq , initamod, (uint16_t)1);
+  controller.vmeWrite16(cbltAddress + InitFifo,     initamod, 0);
+  controller.vmeWrite16(cbltAddress + ReadoutReset, initamod, 0);
+  controller.vmeWrite16(cbltAddress + StartAcq,     initamod, 1);
 }
+
+/**
+ * Printing all register values in MDPP-32 module with QDC firmware
+ * read from the module, not the user-input values.
+ *
+ *  @param controller - a vmusb controller
+ */
 
 void
 CMDPP32QDC::printRegisters(CVMUSB& controller)
@@ -669,18 +669,6 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
       cerr << "Error in reading register" << endl;
     } else {
       cout << setw(30) << "Reset time: " << (data&0x3ff) << " (*12.5 [ns])" << endl;
-    }
-
-    status = controller.vmeRead16(base + ShortGainCorrection, initamod, &data);
-    if (status < 0) {
-      cerr << "Error in reading register" << endl;
-    } else {
-      cout << setw(30) << "Short gain correction: " << data << " ";
-      if (data == 256)       cout << "(divide by 4)";
-      else if (data == 4096) cout << "(multiply by 4)";
-      else if (data == 1024) cout << "(neutral)";
-      else                   cout << "(error)";
-      cout << endl;
     }
 
     status = controller.vmeRead16(base + LongGainCorrection, initamod, &data);

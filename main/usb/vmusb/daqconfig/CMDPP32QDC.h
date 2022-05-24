@@ -63,10 +63,6 @@ class CVMUSBReadoutList;
 static const uint8_t initamod(CVMUSBReadoutList::a32UserData);   //  setup using user data access.
 static const uint8_t readamod(CVMUSBReadoutList::a32UserBlock);  //  Read in block mode.
 
-static const uint8_t cbltamod(CVMUSBReadoutList::a32UserBlock);
-static const uint8_t mcstamod(CVMUSBReadoutList::a32UserData);
-
-
 Const(MDPPDELAY)            1;
 Const(MDPPCHCONFIGDELAY)    101;  // 200 ns x 101 = 20.2 us
 
@@ -133,7 +129,7 @@ Const(NIM2)                 0x606c;
 Const(NIM1)                 0x606e;
 
 // Test pulser
-Const(TestPulser)           0x6070; // In order to ensure it's off !
+Const(TestPulser)           0x6070;
 Const(PulserAmplitude)      0x6072;
 Const(NIM0)                 0x6074;
 Const(MonSwitch)            0x607a;
@@ -196,6 +192,45 @@ Const(TrigToIRQ6L)          0x6314;
 Const(TrigToIRQ6H)          0x6316;
 Const(TrigToIRQ7L)          0x6318;
 Const(TrigToIRQ7H)          0x631a;
+
+/*!
+   The MDPP-32 is a 32 channel fast high resolution time and amplitude digitizer module produced by Mesytec.
+   The following configuration parameters can be sued to tailor
+   the module:
+
+\verbatim
+   Name                 Value type          Description
+   -base                integer             Base address of the module in VME space.
+   -id                  integer [0-255]     Module id (part of the module header).
+   -ipl                 integer [0-7]       Interrupt priority level 0 means disabled.
+   -vector              integer [0-255]     Interrupt vector.
+   -irqdatathreshold    integer [0-32256]   Threshold of the number of 32bit words in FIFO to transfer
+   -irqeventthreshold   integer [0-32256]   Threshold of the number of events in FIFO to transfer
+   -irqsource           enum (data,event)   Which IRQ threshold to be applied
+   -maxtransfer         integer [0-irqth]   The maximum amount of data being transferred at once. See Doc.
+   -datalenformat       integer [0-4]       Data length format. See Doc.
+   -multievent          integer             Multi event register. See Doc.
+   -marktype            enum (eventcounter,timestamp,extended-timestamp)
+   -tdcresolution       integer [0-5]       25ns/2^(10-value)
+   -adcresolution       enum (4k,8k,16k,32k,64k)
+   -outputformat        integer [0-3]       0:Time(T) and long integral(L), 1:L, 2:T, 3:LT and short integral
+   -signalwidth         int[8] [0-1023]     FWHM in ns
+   -inputamplitude      int[8] [0-65535]    0 to peak voltage in mV. Maximum value is the jumper range value.
+   -jumperrange         int[8] [0-65535]    Range printed on jumper top.
+   -qdcjumper           bool[8]             If QDC jumper is used.
+   -intlong             int[8] [2-506]      Long integration time. Multiple of 12.5 ns.
+   -intshort            int[8] [1-intlong)  Short integration time. Multiple of 12.5 ns.
+   -threshold           int[32] [1-65535]   Threshold to start measuring. Calculated as value/0xFFFF percentage.
+   -resettime           int[8] [0-1023]     When OF/UF, input preamp and digital section is resetted.
+   -gaincorrectionlong  enum (div4,mult4,none) Either divide by 4 or multiply by 4 to the integral value.
+   -gaincorrectionshort enum (div4,mult4,none) Either divide by 4 or multiply by 4 to the integral value.
+   -printregisters      bool                Print out all the register values on screen.
+\endverbatim
+
+   Comment by Genie:
+     - MDPP-16 QDC firmware has tf_gain_correction at 0x612C while MDPP-32 doesn't have one listed in the doc.
+     - MDPP-32 QDC chain methods are implemented, but chain mode is not supported as of 05/24/22.
+*/
 
 class CMDPP32QDC : public CMesytecBase
 {
