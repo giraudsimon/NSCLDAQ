@@ -726,6 +726,7 @@ AC_CONFIG_FILES([Makefile
     daq/evbtools/offlineorderer/figures/Makefile
     daq/evbtools/evts2frags/Makefile
     daq/actions/Makefile
+    daq/evbtools/evblite/Makefile
     simplesetups/Makefile
     simplesetups/v775/Makefile
     simplesetups/v785/Makefile
