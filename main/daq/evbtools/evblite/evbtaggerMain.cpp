@@ -44,9 +44,10 @@ int main (int argc, char** argv)
     size_t inputBufferSize = parsedArgs.buffersize_arg * 1024;  // In k.
     int source = STDIN_FILENO;
     int sink   = STDOUT_FILENO;
+    uint32_t sid = parsedArgs.sourceid_arg;
     
     ItemTagger tagger(
-        source, sink, inputBufferSize, resetTimestampOnBeginRun
+        source, sink, inputBufferSize, resetTimestampOnBeginRun, sid
     );
     tagger();
 }

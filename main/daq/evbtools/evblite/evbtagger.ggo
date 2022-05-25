@@ -4,3 +4,4 @@ purpose "Filter to add event builder fragment headers to an input ring item stre
 
 option "buffersize" s "Size of internal item buffer in KBytes" int optional default="1024"
 option "resetts" r  "Reset begin run timestamp" flag on
+option "sourceid" i  "Source ID for items with no body header" int required
