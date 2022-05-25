@@ -22,7 +22,9 @@
 #include <stddef.h>
 #include <unistd.h>
 #include "ItemTagger.h"
-
+#include <stdexcept>
+#include <iostream>
+#include <stdlib.h>
 
 /**
  * This program takes an input stream of ring items on STDIN_FILENO
@@ -49,5 +51,13 @@ int main (int argc, char** argv)
     ItemTagger tagger(
         source, sink, inputBufferSize, resetTimestampOnBeginRun, sid
     );
-    tagger();
+    try {
+        tagger();
+    }
+    catch (std::exception& e) {
+        std::cerr << " Item Tagger threw an exception: " << e.what()
+            << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    return EXIT_SUCCESS;
 }
