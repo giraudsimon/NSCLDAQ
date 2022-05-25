@@ -32,15 +32,14 @@ using std::setw;
 // Data that drives parameter validity checks.
 
 
-static const char*    markTypeStrings[] = {"eventcount", "timestamp", "extended-timestamp"};
-static const uint16_t markTypeValues[] = {0, 1, 3};
+static const char*    MarkTypeStrings[] = {"eventcount", "timestamp", "extended-timestamp"};
+static const uint16_t MarkTypeValues[] = {0, 1, 3};
 
 static const char*    ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
 static const uint16_t ADCResolutionValues[]  = {0, 1, 2, 3, 4};
 
 static const char*         GainCorrectionStrings[] = {"div4", "mult4", "none"};
 static CMDPP32QDC::EnumMap GainCorrectionMap(CMDPP32QDC::gainCorrectionMap());
-
 
 static const char*    IrqSourceStrings[] = {"event", "data"};
 static const uint16_t IrqSourceValues[]  = {0, 1};
@@ -111,7 +110,7 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
 
   m_pConfiguration -> addIntegerParameter("-datalenformat", 0,  4, 2);
   m_pConfiguration -> addIntegerParameter("-multievent",    0, 15, 0);
-  m_pConfiguration -> addEnumParameter("-marktype", markTypeStrings, markTypeStrings[0]);
+  m_pConfiguration -> addEnumParameter("-marktype", MarkTypeStrings, MarkTypeStrings[0]);
 
   m_pConfiguration -> addIntegerParameter("-tdcresolution", 0,  5, 5);
   m_pConfiguration -> addIntegerParameter("-outputformat",  0,  3, 3);
@@ -167,7 +166,7 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 
   uint16_t       datalenformat       = m_pConfiguration -> getIntegerParameter("-datalenformat");
   uint16_t       multievent          = m_pConfiguration -> getIntegerParameter("-multievent");
-  uint16_t       marktype            = markTypeValues[m_pConfiguration -> getEnumParameter("-marktype", markTypeStrings)];
+  uint16_t       marktype            = MarkTypeValues[m_pConfiguration -> getEnumParameter("-marktype", MarkTypeStrings)];
 
 	uint16_t       tdcresolution       = m_pConfiguration -> getIntegerParameter("-tdcresolution");
   uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
@@ -357,7 +356,6 @@ CMDPP32QDC::setChainAddresses(CVMUSB& controller, CMesytecBase::ChainPosition po
   cerr << "Setting mdpp32-qdc chain address with " << std::hex << controlRegister << std::dec << endl;
 
   // program the registers, note that the address registers take only the top 8 bits.
-
   controller.vmeWrite16(base + CbltAddress,     initamod, (uint16_t)(cbltBase >> 24));
   controller.vmeWrite16(base + McstAddress,     initamod, (uint16_t)(mcastBase >> 24));
   controller.vmeWrite16(base + CbltMcstControl, initamod, (uint16_t)(controlRegister));    
@@ -413,7 +411,7 @@ CMDPP32QDC::initCBLTReadout(CVMUSB& controller,
 
   controller.vmeWrite16(cbltAddress + MaxTransfer, initamod,  (uint16_t)wordsPermodule);
 
-  if (irqSoruce == 0) {
+  if (irqSource == 0) {
     controller.vmeWrite16(cbltAddress + IrqSource,         initamod, irqSource);
     controller.vmeWrite16(cbltAddress + IrqEventThreshold, initamod, irqEventThreshold);
   } else {
