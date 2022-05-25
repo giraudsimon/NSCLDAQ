@@ -11,6 +11,14 @@
 #include <cstddef>
 #include <pixie16/pixie16.h>
 
+/*
+  Statistics size is magic numbered for now, should use Pixie16GetStatisticsSize()
+  in the long term for XIA API 3+.
+*/
+#ifndef STATISTICS_SIZE
+#define STATISTICS_SIZE 2600
+#endif
+
 /* 
    The transition manual says these will be deprecated but the API 
    still needs them and I'm damned if I'll use magic numbers instead so:
@@ -166,5 +174,13 @@
 #include <pixie16app_defs.h>
 #include <pixie16app_export.h>
 #include <xia_common.h>
+
+/*
+  Statistics size is magic numbered for now, should use Pixie16GetStatisticsSize()
+  in the long term for XIA API 3+.
+*/
+#ifndef STATISTICS_SIZE
+#define STATISTICS_SIZE 448
+#endif
 
 #endif

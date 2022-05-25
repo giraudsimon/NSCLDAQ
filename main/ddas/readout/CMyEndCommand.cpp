@@ -186,8 +186,8 @@ int CMyEndCommand::readOutRemainingData()
 #endif
         /* Get final statistics information */
         int retval;
-        unsigned int statistics[448] = {0};
-
+        //unsigned int statistics[448] = {0};
+	unsigned int statistics[2600] = {0}; // version 3.4.0 stats size from Pixie16GetStatisticsSize()
         retval = Pixie16ReadStatisticsFromModule(statistics, k);
 				double RealTime = Pixie16ComputeRealTime(statistics, k);
         if (retval < 0) {

@@ -192,11 +192,12 @@ CTriggerLoop::mainLoop()
       if(m_vmeLock) CVMEInterface::Lock();
       for (int i =0; i < DWELL_COUNT; i++) {
         if ((*pEvent)()) {
-
+	  //std::cerr << "---- CTriggerLoop.cpp: event trigger received, reading event data ----" << std::endl;
           m_pExperiment->ReadEvent();
 
         }
         if ((*pScaler)()) {
+	  //std::cerr << "++++ CTriggerLoop.cpp: scaler trigger received, reading scaler data ++++" << std::endl;
           m_pExperiment->TriggerScalerReadout();
           
           if (m_stopping) break;

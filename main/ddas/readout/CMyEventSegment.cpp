@@ -192,7 +192,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
   bool debug = m_debug;
   
-   // memset(rBuffer, 0, maxwords);            // See what's been read.
+  //memset(rBuffer, 0, maxwords);            // See what's been read.
     
     // This loop finds the first module that has at least one event in it
     // since the trigger fired.  We read the minimum of all complete events
@@ -221,8 +221,8 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 
             // Read the data right into the ring item:
             
-      //      std::cerr << "Going to read " << readSize
-      //          << "(" << words[i] <<") " << " from " << i << std::endl;
+            //std::cerr << "Going to read " << readSize
+            //    << "(" << words[i] <<") " << " from " << i << std::endl;
             int stat = Pixie16ReadDataFromExternalFIFO(
                 reinterpret_cast<unsigned int*>(p), (unsigned long)readSize, (unsigned short)i
             );
@@ -239,7 +239,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
         }
     }
     // If we got here nobody had enough data left since the last trigger:
-    
+    //std::cerr << "Not enough data to read (" << words[0] << ") since last trigger" << std::endl;
     mytrigger->Reset();
     reject();
     return 0;

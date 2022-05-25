@@ -83,8 +83,9 @@ vector<uint32_t> CMyScaler::read()
   try{
 
   int retval;
-  unsigned int statistics[448] = {0};
-  
+  //unsigned int statistics[448] = {0};
+  //unsigned int statistics[2600] = {0}; // version 3.4.0 stats size from Pixie16GetStatisticsSize()
+  unsigned int statistics[STATISTICS_SIZE] = {0};
   retval = Pixie16ReadStatisticsFromModule(statistics, moduleNumber);
   if (retval < 0) {
     cout << "Error accessing scaler statistics from module " 
