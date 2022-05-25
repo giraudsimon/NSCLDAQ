@@ -21,7 +21,7 @@
 #include "evbtagger.h"
 #include <stddef.h>
 #include <unistd.h>
-
+#include "ItemTagger.h"
 
 
 /**
@@ -44,4 +44,9 @@ int main (int argc, char** argv)
     size_t inputBufferSize = parsedArgs.buffersize_arg * 1024;  // In k.
     int source = STDIN_FILENO;
     int sink   = STDOUT_FILENO;
+    
+    ItemTagger tagger(
+        source, sink, inputBufferSize, resetTimestampOnBeginRun
+    );
+    tagger();
 }
