@@ -28,7 +28,9 @@
  * This program takes an input stream of ring items on STDIN_FILENO
  * tags them with fragment headers and blasts them out on STDOUT_FILENO
  * This allows the resulting stream of items to be directly used as input to
- * glom.
+ * glom.  This pipeline with ringtostdout on theinput end and stdinto ring on
+ * the output end constitutes evblite event builder for a single source of
+ * timestamp sorted data (e.g. the output of a DDASSort process).
  *   See evbtagger.ggo for the usage.
  */
 
@@ -39,7 +41,7 @@ int main (int argc, char** argv)
     cmdline_parser(argc, argv, &parsedArgs);
     
     bool resetTimestampOnBeginRun = parsedArgs.resetts_flag != 0;
-    size_t inputBufferSize = parsedArgs.buffersize_arg;
+    size_t inputBufferSize = parsedArgs.buffersize_arg * 1024;  // In k.
     int source = STDIN_FILENO;
     int sink   = STDOUT_FILENO;
 }
