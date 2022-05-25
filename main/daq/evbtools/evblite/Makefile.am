@@ -1,6 +1,6 @@
 bin_PROGRAMS=evbtagger
 
-evbtagger_SOURCES=evbtagger.cpp evbtagger.h
+evbtagger_SOURCES=evbtagger.cpp evbtagger.h evbtaggerMain.cpp
 
 BUILT_SOURCES=evbtagger.cpp evbtagger.h
 

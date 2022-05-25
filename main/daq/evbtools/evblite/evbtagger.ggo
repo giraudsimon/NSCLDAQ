@@ -2,4 +2,5 @@ package "evbtagger"
 version "1.0"
 purpose "Filter to add event builder fragment headers to an input ring item stream"
 
-option "buffersize" s "Size of internal item buffer in KBytes" int default="1024"
+option "buffersize" s "Size of internal item buffer in KBytes" int optional default="1024"
+option "resetts" r  "Reset begin run timestamp" flag on
