@@ -27,12 +27,10 @@
 #include <CRingItemFactory.h>
 #include <CRingScalerItem.h>
 #include <CRingPhysicsEventCountItem.h>
-#include <stdexcept>
+#include <exception>
 #include <CAbnormalEndItem.h>
 #include <CBufferedOutput.h>
 #include <time.h>
-#include "CBufferedFragmentReader.h"
-#include "CEventAccumulatorSimple.h"
 
 // File scoped  variables:
 
@@ -48,8 +46,6 @@ static uint64_t outputEvents(0);
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
 
-static CEventAccumulatorSimple* pAccumulator;
-
 // We don't need threadsafe event fragment pools so:
 
 namespace EVB {
@@ -59,26 +55,7 @@ namespace EVB {
 static const unsigned BUFFER_SIZE=1024*1024;
 
 /**
- * policyFromEnum
- *    @param timestamp policy enum value from gengetopt.
- *    @return CEventAccumulator::TimestampPolicy - corresponding policy value.
- */
-CEventAccumulatorSimple::TimestampPolicy
-policyFromEnum(enum_timestamp_policy policy)
-{
-    switch (policy) {
-    case timestamp_policy_arg_earliest:
-        return CEventAccumulatorSimple::first;
-    case timestamp_policy_arg_latest:
-        return CEventAccumulatorSimple::last;
-    case timestamp_policy_arg_average:
-        return CEventAccumulatorSimple::average;
-    }
-    throw std::invalid_argument("Invalid timestamp enumerator value.");
-}
-
-/**
- *  The next items are used to minimize  dynamic storage manipulations
+ *  The next items are used to minimize the dynamic storage manipulations
  *  requred by Glom as profiling shows the realloc of pAccumulatedEvent
  *  to have been a significant part of the glom time:
  *
@@ -195,7 +172,6 @@ outputGlomParameters(uint64_t dt, bool building)
     pGlomParameters p = formatGlomParameters(dt, building ? 1 : 0,
                                              timestampPolicy);
     outputter->put( p, p->s_header.s_size);
-    outputter->flush();                       // We buffer via the event accumulator.
 }
 
 /**
@@ -210,9 +186,50 @@ outputGlomParameters(uint64_t dt, bool building)
 static void
 flushEvent()
 {
-  pAccumulator->finishEvent();    
-  outputEvents++;                  // Count the event.
-  
+  if (totalEventSize) {
+    
+    // Figure out which timestamp to use in the generated event:
+    
+    uint64_t eventTimestamp;
+    switch (timestampPolicy) {
+        case timestamp_policy_arg_earliest:
+            eventTimestamp = firstTimestamp;
+            break;
+        case timestamp_policy_arg_latest:
+            eventTimestamp = lastTimestamp;
+            break;
+        case timestamp_policy_arg_average:
+            eventTimestamp = (timestampSum/fragmentCount);
+            break;
+        default:
+            // Default to earliest...but should not occur:
+            eventTimestamp = firstTimestamp;
+            break;
+    }
+    
+    RingItemHeader header;
+    BodyHeader     bHeader;
+    bHeader.s_size      = sizeof(BodyHeader);
+    bHeader.s_timestamp = eventTimestamp;
+    bHeader.s_sourceId  = sourceId;
+    bHeader.s_barrier   = 0;
+    
+    
+    header.s_size = totalEventSize + sizeof(header) + sizeof(uint32_t) + sizeof(BodyHeader);
+    header.s_type = PHYSICS_EVENT;
+    uint32_t eventSize = totalEventSize + sizeof(uint32_t);
+
+    outputter->put(&header, sizeof(header));
+    outputter->put(&bHeader, sizeof(BodyHeader));
+    outputter->put(&eventSize,  sizeof(uint32_t));
+    
+    outputter->put(pAccumulatedEvent,  totalEventSize);
+
+    resetAccumulatedEvent();
+    firstEvent        = true;
+    
+    outputEvents++;                  // Count the event.
+  }
 }
 
 /**
@@ -229,10 +246,6 @@ flushEvent()
 static void
 outputEventCount(pRingItemHeader pItem)
 {
-    pAccumulator->flushEvents();      // Write any complete events to output.
-    
-    // Forma the physics event count item.
-    
     CRingScalerItem* pScaler = dynamic_cast<CRingScalerItem*>(
         CRingItemFactory::createRingItem(pItem)  
     );
@@ -245,11 +258,9 @@ outputEventCount(pRingItemHeader pItem)
         NULL_TIMESTAMP, sourceId, 0, outputEvents, tOffset, 
         time(nullptr), divisor
     );
-    // TODO
     outputter->put(
         counters.getItemPointer(), counters.getItemPointer()->s_header.s_size
     );
-    outputter->flush();
 }
 
 /**
@@ -269,16 +280,18 @@ outputEventCount(pRingItemHeader pItem)
  *
  */
 static void
-outputBarrier(EVB::pFlatFragment p)
+outputBarrier(EVB::pFragment p)
 {
-    pRingItemHeader pH = 
-      reinterpret_cast<pRingItemHeader>(p->s_body); 
-  
-    pAccumulator->addOOBFragment(p, sourceId);
-
+  pRingItemHeader pH = 
+      reinterpret_cast<pRingItemHeader>(p->s_pBody); 
+  if(CRingItemFactory::isKnownItemType(p->s_pBody)) {
+    
     // This is correct if there is or isn't a body header in the payload
     // ring item.
     
+    
+    outputter->put( pH, pH->s_size);
+    outputter->flush();		// Ensure this is output along with other stuff.
     
     if (pH->s_type == BEGIN_RUN) {
       outputEvents = 0;
@@ -291,8 +304,24 @@ outputBarrier(EVB::pFlatFragment p)
         outputEventCount(pH);
     }
     if (pH->s_type == ABNORMAL_ENDRUN) stateChangeNesting = 0;
-    
 
+  } else {
+    std::cerr << "Unknown barrier payload: \n";
+    dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100);
+    RingItemHeader unknownHdr;
+    unknownHdr.s_type = EVB_UNKNOWN_PAYLOAD;
+    //
+    // Size is the fragment header + ring header + payload.
+    // 
+    uint32_t size = sizeof(RingItemHeader) +
+      sizeof(EVB::FragmentHeader) + p->s_header.s_size;
+    unknownHdr.s_size = size;
+
+    outputter->put( &unknownHdr, sizeof(RingItemHeader));
+    outputter->put( p, sizeof(EVB::FragmentHeader));
+    outputter->put(p->s_pBody, p->s_header.s_size);
+    outputter->flush();  // So end runs are always seen quickly.
+  }
 }
 /**
  * emitAbnormalEnd
@@ -302,14 +331,8 @@ void emitAbnormalEnd()
 {
     CAbnormalEndItem end;
     pRingItem pItem= end.getItemPointer();
-    uint8_t fragmentStorage[pItem->s_header.s_size + sizeof(EVB::FragmentHeader)];
-    EVB::pFlatFragment pF = reinterpret_cast<EVB::pFlatFragment>(fragmentStorage);
-    pF->s_header.s_timestamp = NULL_TIMESTAMP;
-    pF->s_header.s_sourceId = 0xffffffff;
-    pF->s_header.s_size     = pItem->s_header.s_size;
-    pF->s_header.s_barrier  = 0;
-    memcpy(pF->s_body, pItem, pItem->s_header.s_size);
-    outputBarrier(pF);
+    EVB::Fragment frag = {{NULL_TIMESTAMP, 0xffffffff, pItem->s_header.s_size, 0}, pItem};
+    outputBarrier(&frag);
 }
 
 /**
@@ -334,7 +357,7 @@ void emitAbnormalEnd()
  * @param pFrag - Pointer to the next event fragment.
  */
 void
-accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
+accumulateEvent(uint64_t dt, EVB::pFragment pFrag)
 {
   // See if we need to flush:
 
@@ -365,8 +388,7 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
    */
   
   if (nobuild || (!firstEvent && ((tsdiff) > dt)) || (fragmentCount > maxFragments)) {
-    pAccumulator->finishEvent();
-    firstEvent = true;                // next event is first.
+    flushEvent();
   }
   // If firstEvent...our timestamp starts the interval:
 
@@ -381,11 +403,11 @@ accumulateEvent(uint64_t dt, EVB::pFlatFragment pFrag)
   
   timestampSum    += timestamp;
 
-  pAccumulator->addFragment(pFrag, sourceId);
   
     // Add the data to the accumulated event:
   
-
+  addDataToAccumulatedEvent(&pFrag->s_header, sizeof(EVB::FragmentHeader));
+  addDataToAccumulatedEvent(pFrag->s_pBody, pFrag->s_header.s_size);
 
 }
 
@@ -400,7 +422,6 @@ static void outputEventFormat()
     format.s_minorVersion = FORMAT_MINOR;
     
     outputter->put( & format, sizeof(format));
-    outputter->flush();
 }
 
 /**
@@ -432,11 +453,6 @@ main(int argc, char**  argv)
   outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
   outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
   
-    pAccumulator = new CEventAccumulatorSimple(
-        STDOUT_FILENO, 2, BUFFER_SIZE, maxFragments,
-        policyFromEnum(timestampPolicy)
-    );
-  
   outputEventFormat();
   
 
@@ -462,66 +478,68 @@ main(int argc, char**  argv)
      outputBarrier   - for barriers.
   */
 
-  CBufferedFragmentReader reader(STDIN_FILENO);
   bool firstBarrier(true);
   bool consecutiveBarrier(false);
   try {
-        while (1) {
-          const EVB::pFlatFragment p = reader.getFragment();
-          
-          // If error or EOF flush the event and break from
-          // the loop:
-          
-          if (!p) {
-            flushEvent();
-            pAccumulator->flushEvents();
-            std::cerr << "glom: EOF on input\n";
-                if(stateChangeNesting) {
-                    emitAbnormalEnd();
-                }
-            break;
-          }
-          // We have a fragment:
-          
-          if (p->s_header.s_barrier) {
-            flushEvent();
-            pAccumulator->flushEvents();
-            outputBarrier(p);
-            
-            
-            // Barrier type of 1 is a begin run.
-            // First begin run barrier will result in
-            // emitting a glom parameter record.
-    
-            
-            if(firstBarrier && (p->s_header.s_barrier == 1)) {
-                outputGlomParameters(dtInt, !nobuild);
-                firstBarrier = false;
+    while (1) {
+      EVB::pFragment p = CFragIO::readFragment(STDIN_FILENO);
+      
+      // If error or EOF flush the event and break from
+      // the loop:
+      
+      if (!p) {
+        flushEvent();
+        std::cerr << "glom: EOF on input\n";
+            if(stateChangeNesting) {
+                emitAbnormalEnd();
             }
-          } else {
+        break;
+      }
+      // We have a fragment:
+      
+      if (p->s_header.s_barrier) {
+        flushEvent();
+        outputBarrier(p);
+        
+        
+        // Barrier type of 1 is a begin run.
+        // First begin run barrier will result in
+        // emitting a glom parameter record.
+
+        
+        if(firstBarrier && (p->s_header.s_barrier == 1)) {
+            outputGlomParameters(dtInt, !nobuild);
+            firstBarrier = false;
+        }
+      } else {
+
+        // Once we have a non barrier, reset firstBarrier so that we'll
+        // emit a glom parameters next time we have a barrier.
+        // This is needed if the event builder is run in persistent mode.
+        // see gitlab issue #11 for nscldaq.
+        
+        firstBarrier = true;
+        
+        // If we can determine this is a valid ring item other than
+        // an event fragment it goes out out of band but without flushing
+        // the event.
     
-            // Once we have a non barrier, reset firstBarrier so that we'll
-            // emit a glom parameters next time we have a barrier.
-            // This is needed if the event builder is run in persistent mode.
-            // see gitlab issue #11 for nscldaq.
-            
-            firstBarrier = true;
-            
-            // If we can determine this is a valid ring item other than
-            // an event fragment it goes out out of band but without flushing
-            // the event.
-        
-            pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p->s_body);
-        
+        pRingItemHeader pH = reinterpret_cast<pRingItemHeader>(p->s_pBody);
+        if (CRingItemFactory::isKnownItemType(p->s_pBody)) {
             
             if (pH->s_type == PHYSICS_EVENT) {
               accumulateEvent(dt, p); // Ring item physics event.
             } else {
               outputBarrier(p);	// Ring item non-physics event.
             }
-            
-        }
+        } else {		// non ring item..treat like event.
+          std::cerr << "GLOM: Unknown ring item type encountered: \n";
+          dump(std::cerr, pH, pH->s_size < 100 ? pH->s_size : 100); 
           
+          outputBarrier(p);
+        }
+    }
+      freeFragment(p);
     }
   }
   catch (std::string msg) {
