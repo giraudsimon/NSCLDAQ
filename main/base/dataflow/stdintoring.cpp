@@ -123,6 +123,10 @@ mainLoop(string ring, int timeout, int mindata)
   size_t readOffset = 0; 
   size_t leftoverData = 0;
   size_t totalRead    = 0;
+  
+  // IF stdin is a pipe then set the pipe buffersize big:
+  
+  fcntl(STDIN_FILENO, F_SETPIPE_SZ, 1024*1024);
 
   while (1) {
 

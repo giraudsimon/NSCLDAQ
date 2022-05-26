@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <os.h>
 #include "stdintoringUtils.h"
+#include <fcntl.h>
 
 using namespace std;
 /********************************************************************
@@ -61,6 +62,11 @@ writeData(int fd, void* pData, size_t size)
 static void
 mainLoop(string ring, int timeout, size_t mindata)
 {
+  // If STDOUT is a pipe set the pipe buf bit but ignore failures since they're
+  // not important.
+  
+  fcntl(STDOUT_FILENO, F_SETPIPE_SZ, 1024*1024);
+  
   // Attach to the ring. If we fail, report the error and exti.
 
  
