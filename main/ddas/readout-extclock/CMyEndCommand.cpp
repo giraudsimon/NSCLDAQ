@@ -137,9 +137,12 @@ int CMyEndCommand::ExecutePreFunction()
 #endif
         /* Get final statistics information */
         int retval;
-        unsigned int statistics[448] = {0};
-
-        retval = Pixie16ReadStatisticsFromModule(statistics, k);
+	#if XIAAPI_VERSION >= 3
+    std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(),0);
+#else
+    std::vector<unsigned int> statistics(448,0); // see any v11.3
+#endif
+    retval = Pixie16ReadStatisticsFromModule(statistics.data(), k);
         
         if (retval < 0) {
             cout << "Error accessing scaler statistics from module " 
@@ -148,7 +151,7 @@ int CMyEndCommand::ExecutePreFunction()
             // cout << "Accessing statistics for module " 
             //      << k << endl;
         }
-        double RealTime = Pixie16ComputeRealTime(statistics, k);
+        double RealTime = Pixie16ComputeRealTime(statistics.data(), k);
         double ChanEvents = 0; 
         double FastPeaks = 0;
 
@@ -164,8 +167,8 @@ int CMyEndCommand::ExecutePreFunction()
             // Pixie16ComputeOutputCountRate code
             // first get upper 32 bits of the number and push them up 32 bits, then
             // append on the lower 32 bits. Not the greatest but should work.
-            ChanEvents = Pixie16ComputeInputCountRate(statistics, k, i) * RealTime;;
-            FastPeaks  = Pixie16ComputeOutputCountRate(statistics, k, i) * RealTime;
+            ChanEvents = Pixie16ComputeInputCountRate(statistics.data(), k, i) * RealTime;;
+            FastPeaks  = Pixie16ComputeOutputCountRate(statistics.data(), k, i) * RealTime;
             
             /* Print out final statistics to file */
             // "Channel #" "output events" "input events"

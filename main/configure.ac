@@ -421,6 +421,18 @@ AH_BOTTOM([
          fi
       done
    fi
+
+# do it again if empty and look for PlxApi.so from version 8.X??
+   if test -z "$PLX_SDK_DIR"
+   then
+      for d in /usr/opt/plx $(prefix)/../../plx
+      do
+         if test -z "$PLX_SDK_DIR"
+         then
+            AC_CHECK_FILE([$d/PlxApi/Library/PlxApi.so], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+         fi
+      done
+   fi
    
    #  If PLX_SDK_DIR is still "" then we toss an error:
    
@@ -430,9 +442,16 @@ AH_BOTTOM([
    fi
    
    #  If found then:
-    PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"
-   
-   #  Now export all the variables to the Makefile.
+   #PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"
+   # well its one or the other...
+   AC_CHECK_FILE([$PLX_SDK_DIR/PlxApi/Library/PlxApi.so],[
+   PLX_LDFLAGS="-L$PLX_SDK_DIR/PlxApi/Library -l:PlxApi.so -Wl,-rpath=$PLX_SDK_DIR/PlxApi/Library"
+   ], [
+   PLX_LDFLAGS="-L$PLX_SDK_DIR/PlxApi/Library -lPlxApi"
+   ])
+
+
+#  Now export all the variables to the Makefile.
    
    AM_CONDITIONAL([BUILD_DDAS], [true])
    AC_SUBST(DDAS_INSTDIR)

@@ -81,9 +81,12 @@ vector<uint32_t> CMyScaler::read()
   try{
 
   int retval;
-  unsigned int statistics[448] = {0};
-  
-  retval = Pixie16ReadStatisticsFromModule(statistics, moduleNumber);
+#if XIAAPI_VERSION >= 3
+  std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(),0);
+#else
+  std::vector<unsigned int> statistics(448,0); // see any v11.3
+#endif
+  retval = Pixie16ReadStatisticsFromModule(statistics.data(), moduleNumber);
   if (retval < 0) {
     cout << "Error accessing scaler statistics from module " 
 	 << moduleNumber << endl;
@@ -110,21 +113,21 @@ vector<uint32_t> CMyScaler::read()
   unsigned long OutputScalerData[33] = {0};
   
   /* Compute module RealTime */
-  RealTime = Pixie16ComputeRealTime(statistics, moduleNumber);
+  RealTime = Pixie16ComputeRealTime(statistics.data(), moduleNumber);
   OutputScalerData[0] = (unsigned long)crateID;
   
   for (int i=0; i<16; i++) {
    
     /* Compute input count rate in counts/second for each channel */  
-    ICR[i] = Pixie16ComputeInputCountRate (statistics, moduleNumber, i);
+    ICR[i] = Pixie16ComputeInputCountRate (statistics.data(), moduleNumber, i);
 
     /* Compute output count rate in counts/second for each channel */
-    OCR[i] = Pixie16ComputeOutputCountRate (statistics, moduleNumber, i);
+    OCR[i] = Pixie16ComputeOutputCountRate (statistics.data(), moduleNumber, i);
 
     /* Compute LiveTime for each channel */    
-    LiveTime[i] = Pixie16ComputeLiveTime (statistics, moduleNumber, i);
-    ChanEvents[i] = Pixie16ComputeInputCountRate(statistics, moduleNumber, i) * RealTime;
-    FastPeaks[i]  = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i) * RealTime;
+    LiveTime[i] = Pixie16ComputeLiveTime (statistics.data(), moduleNumber, i);
+    ChanEvents[i] = Pixie16ComputeInputCountRate(statistics.data(), moduleNumber, i) * RealTime;
+    FastPeaks[i]  = Pixie16ComputeOutputCountRate(statistics.data(), moduleNumber, i) * RealTime;
     
 
     /* Now compute total events for each channel, and total "live"
