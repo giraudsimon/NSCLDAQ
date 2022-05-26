@@ -12,3 +12,11 @@ evbtagger.cpp: evbtagger.h
 
 evbtagger.h: evbtagger.ggo
 	$(GENGETOPT) <@srcdir@/evbtagger.ggo -c cpp -F evbtagger
+
+install-exec-hook:
+	$(mkinstalldirs) @prefix@/TclLibs/evb-lite
+	$(INSTALL_SCRIPT) @srcdir@/evblitePackage.tcl @prefix@/TclLibs/evb-lite
+	echo "pkg_mkIndex -verbose @prefix@/TclLibs/evb-lite *.tcl" | @TCLSH_CMD@
+
+
+EXTRA_DIST=evblitePackage.tcl evbtagger.ggo
