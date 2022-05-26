@@ -679,7 +679,7 @@ CRingBuffer::~CRingBuffer()
 size_t
 CRingBuffer::put(const void* pBuffer, size_t nBytes, unsigned long timeout)
 {
-  validateTransferAccess(producer, "CRingBuffer::get");
+  validateTransferAccess(producer, "CRingBuffer::put");
 
   // Ensure the ring is big enough for the data:
 
