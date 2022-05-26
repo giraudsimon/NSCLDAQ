@@ -27,6 +27,7 @@ exec tclsh "$0" ${1+"$@"}
 
 package provide evblite 1.0
 package require snit
+package require ringutils
 
 
 # hide everything in the evblite namespace
@@ -59,6 +60,7 @@ set ringtostdout [file join $bindir ringtostdout]
 set stdintoring  [file join $bindir stdintoring]
 set evbtagger    [file join $bindir evbtagger]
 set glom         [file join $bindir glom]
+set ringbuffercmd [file join $bindir ringbuffer]
 
 ##
 # evblite
@@ -101,11 +103,11 @@ snit::type evblite {
     
     #  These options must be nonempty:
     
-    variable requiredOptions [list -dt -insid -inring -outring]
+    variable requiredOptions [list -inring -outring]
     
     # pipeline pids
     
-    variable pidList -1;          
+    variable pidList [list]
     ##
     # constructor
     #   @param args - command line options.
@@ -114,6 +116,151 @@ snit::type evblite {
     #
     constructor args {
         $self configurelist $args
+    }
+    ############################################################################
+    #  Public methods
+    
+    ##
+    # start evb-lite
+    #   - Make sure the inring and the outring have been set.
+    #   - If we think we're already running then stop
+    #   - If our output ringbuffer does not yet exist, make it.
+    #   - Construct the pipeline command
+    #   - exec it inthe background.
+    # @note that since this is a pipe grounded in ringbuffers on bothends,
+    #    we can't capture the output/errors.
+    method start {} {
+        if {![$self _ringsSpecified]} {
+            puts stderr "evblite: -inring and -outring must have been set and at least one of them has not been"
+            exit 1
+        }
+        if {[$self _isRunning]} {
+            $self stop
+        }
+        $self _makeOutRingIfNeeded
+        
+        set command [$self _constructPipeCommand]
+        # puts $command;# debugging.
+        set pidList [exec {*}$command &]
+    }
+    ##
+    # stop
+    #   Stops each PID in the pidList.  This is done with kill -9 inside
+    #   catch blocks that ignore the errors since killing one might kill all.
+    #
+    method stop {} {
+        foreach pid $pidList {
+            catch {exec kill -9 $pid}
+        }
+    }
+    
+    ###########################################################################
+    #  Private utility methods.
+    
+    ##
+    # _ringsSpecified
+    #   @return bool - false if one of -inring or -outring is an empty string.
+    #
+    method _ringsSpecified {} {
+        if {[$self cget -inring] eq ""} {
+            return 0
+        }
+        if {[$self cget -outring] eq ""} {
+            return 0
+        }
+        return 1
+    }
+    ##
+    # _makeOutRingIfNeeded
+    #   If the output ring does not exist, create it with the default parameters.
+    #
+    method _makeOutRingIfNeeded {} {
+        set usage [getRingUsage]
+        set outring [$self cget -outring]
+        set index [lsearch -index 0 $usage $outring]
+        if {$index == -1} {
+            exec $::evblite::ringbuffercmd create $outring
+        }
+    }
+    ##
+    # _constructPipeCommand
+    #   @return list - which makes up the pipeline command.
+    #
+    method _constructPipeCommand {} {
+        set result [list]
+        
+        #  First pipeline element is a ringtostdout on the source ring:
+        
+        lappend result $::evblite::ringtostdout [$self cget -inring] |
+        
+        # Second element is the evbtagger with appropriate options added:
+        
+        lappend result $::evblite::evbtagger --buffersize [$self cget -inbuffersize] \
+            --sourceid [$self cget -insid]
+        if {[$self cget -resetts]} {
+            lappend result --resetts;     # toggles it to off.
+        }
+        lappend result |
+        
+        #  Third element is glom:
+        
+        lappend result $::evblite::glom --dt [$self cget -dt] \
+            --timestamp-policy [$self cget -timestamp-policy] \
+            --sourceid [$self cget -outsid] --maxfragments [$self cget -maxfragments]
+        
+        if {[$self cget -nobuild]} {
+            lappend result --nobuild
+        }
+        lappend result |
+        
+        # Final element is stdintoring
+        
+        lappend result $::evblite::stdintoring [$self cget -outring]
+        
+        return $result
+    }
+    ##
+    # _isRunning
+    #   @return bool - true if we think we're already runnin.
+    #   @note This can have the side-effect of setting the pidList instance
+    #         variable if there's already a producer on the out ring and
+    #         we have no record of starting it.
+    #   @note regarding the note above, what can happen is that we start the
+    #         the event builder, exit, and run again with the old event builder
+    #         still running.
+    #
+    method _isRunning {} {
+        #  IF we have a pid list we're running:
+        
+        if {[llength $pidList] > 0} {
+            return 1
+        }
+        # But someone else might have started so look for a producer
+        # on our output ring:
+            
+        # if so we'll put it's pid in our pid list..._probably_ stopping it
+        # will stop the whole pipeline in the [stop] method...unless some other
+        # _user_ stopped it in which case we're pretty much unable to stop.
+        
+        set usage [getRingUsage]
+        
+        # What we have is a list of elements like {ringname {- - - producer - - -}}
+        # where - means we don't care what it is.
+        
+        set index [lsearch -index 0 $usage [$self cget -outring]]
+        if {$index == -1} {
+            return 0
+        }
+        set ringInfo [lindex $usage $index]
+        set ringUsage [lindex $ringInfo 1]
+        set producerPid [lindex $ringUsage 3]
+        
+        if {$producerPid == -1} {
+            return 0;      # no producer.
+        } else {
+            set pidList $producerPid ;  # so in stop we can try to kill it.
+            return 1;     # Assume we're the producer.
+        }
     }
 }
 
