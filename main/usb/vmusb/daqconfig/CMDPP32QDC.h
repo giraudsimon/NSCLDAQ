@@ -206,7 +206,7 @@ Const(TrigToIRQ7H)          0x631a;
    -vector              integer [0-255]     Interrupt vector.
    -irqdatathreshold    integer [0-32256]   Threshold of the number of 32bit words in FIFO to transfer
    -irqeventthreshold   integer [0-32256]   Threshold of the number of events in FIFO to transfer
-   -irqsource           enum (data,event)   Which IRQ threshold to be applied
+   -irqsource           enum (event,data)   Which IRQ threshold to be applied
    -maxtransfer         integer [0-irqth]   The maximum amount of data being transferred at once. See Doc.
    -datalenformat       integer [0-4]       Data length format. See Doc.
    -multievent          integer             Multi event register. See Doc.
@@ -219,7 +219,8 @@ Const(TrigToIRQ7H)          0x631a;
    -jumperrange         int[8] [0-65535]    Range printed on jumper top.
    -qdcjumper           bool[8]             If QDC jumper is used.
    -intlong             int[8] [2-506]      Long integration time. Multiple of 12.5 ns.
-   -intshort            int[8] [1-intlong)  Short integration time. Multiple of 12.5 ns.
+   -intshort            int[8] [1-127]      Short integration time. Multiple of 12.5 ns.
+                                            This should be smaller than intlong.
    -threshold           int[32] [1-65535]   Threshold to start measuring. Calculated as value/0xFFFF percentage.
    -resettime           int[8] [0-1023]     When OF/UF, input preamp and digital section is resetted.
    -gaincorrectionlong  enum (div4,mult4,none) Either divide by 4 or multiply by 4 to the integral value.

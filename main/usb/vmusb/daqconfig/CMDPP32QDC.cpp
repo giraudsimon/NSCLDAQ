@@ -29,11 +29,16 @@ using std::endl;
 using std::setw;
 
 /////////////////////////////////////////////////////////////////////////////////
-// Data that drives parameter validity checks.
+// Arrays for ENUM parameters
 
+static const char*    DataLengthFormatStrings[] = {"8bit", "16bit", "32bit", "64bit", "numevents"};
+static const uint16_t DataLengthFormatValues[] = {0, 1, 2, 3, 4};
 
 static const char*    MarkTypeStrings[] = {"eventcount", "timestamp", "extended-timestamp"};
 static const uint16_t MarkTypeValues[] = {0, 1, 3};
+
+static const char*    TDCResolutionStrings[] = {"24ps", "49ps", "98ps", "195ps", "391ps", "781ps"};
+static const uint16_t TDCResolutionValues[]  = {0, 1, 2, 3, 4, 5};
 
 static const char*    ADCResolutionStrings[] = {"64k", "32k", "16k", "8k", "4k"};
 static const uint16_t ADCResolutionValues[]  = {0, 1, 2, 3, 4};
@@ -48,9 +53,7 @@ static const uint16_t IrqSourceValues[]  = {0, 1};
 // Constructors and other 'canonical' methods
 
 /**
- * Construct an instance of the device.  Note that in this framework this will
- * typically only be used to make a 'MDPP32QDC' instance which will be cloned to
- * create instances that are bound to configurations and actual hardware.
+ * Constructor
  */
 CMDPP32QDC::CMDPP32QDC() 
 {
@@ -108,11 +111,11 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration -> addEnumParameter("-irqsource", IrqSourceStrings, IrqSourceStrings[1]);
   m_pConfiguration -> addIntegerParameter("-irqeventthreshold", 0, 32256, 1);
 
-  m_pConfiguration -> addIntegerParameter("-datalenformat", 0,  4, 2);
+  m_pConfiguration -> addEnumParameter("-datalenformat", DataLengthFormatStrings, DataLengthFormatStrings[2]);
   m_pConfiguration -> addIntegerParameter("-multievent",    0, 15, 0);
   m_pConfiguration -> addEnumParameter("-marktype", MarkTypeStrings, MarkTypeStrings[0]);
 
-  m_pConfiguration -> addIntegerParameter("-tdcresolution", 0,  5, 5);
+  m_pConfiguration -> addEnumParameter("-tdcresolution", TDCResolutionStrings, TDCResolutionStrings[5]);
   m_pConfiguration -> addIntegerParameter("-outputformat",  0,  3, 3);
   m_pConfiguration -> addEnumParameter("-adcresolution", ADCResolutionStrings, ADCResolutionStrings[4]);
  
@@ -164,11 +167,11 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
   uint16_t       irqsource           = IrqSourceValues[m_pConfiguration -> getEnumParameter("-irqsource", IrqSourceStrings)];
   uint16_t       irqeventthreshold   = m_pConfiguration -> getIntegerParameter("-irqeventthreshold");
 
-  uint16_t       datalenformat       = m_pConfiguration -> getIntegerParameter("-datalenformat");
+  uint16_t       datalenformat       = DataLengthFormatValues[m_pConfiguration -> getEnumParameter("-datalenformat", DataLengthFormatStrings)];
   uint16_t       multievent          = m_pConfiguration -> getIntegerParameter("-multievent");
   uint16_t       marktype            = MarkTypeValues[m_pConfiguration -> getEnumParameter("-marktype", MarkTypeStrings)];
 
-	uint16_t       tdcresolution       = m_pConfiguration -> getIntegerParameter("-tdcresolution");
+	uint16_t       tdcresolution       = TDCResolutionValues[m_pConfiguration -> getEnumParameter("-tdcresolution", TDCResolutionStrings)];
   uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
 	uint16_t       adcresolution       = ADCResolutionValues[m_pConfiguration -> getEnumParameter("-adcresolution", ADCResolutionStrings)];
   vector<int>    signalwidths        = m_pConfiguration -> getIntegerList("-signalwidth");
@@ -253,24 +256,18 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 /**
  * This method is called to ask a driver instance to contribute to the readout list (stack)
  * in which the module has been placed.  Normally you'll need to get some of the configuration
- * parameters and use them to add elements to the readout list using CCUSBReadoutList methods.
+ * parameters and use them to add elements to the readout list using VMUSBReadoutList methods.
  *
- * @param list - A CCUSBReadoutList reference to the list that will be loaded into the
- *               CCUSB.
+ * @param list - A CVMUSBReadoutList reference to the list that will be loaded into the
+ *               VMUSB.
  */
 void
 CMDPP32QDC::addReadoutList(CVMUSBReadoutList& list)
 {
-  // Functions are directed at the slot the module is in so:
-
   uint32_t base  = m_pConfiguration -> getUnsignedParameter("-base"); // Get the value of -slot.
+
   list.addFifoRead32(base + eventBuffer, readamod, (size_t)1024); 
   list.addWrite16(base + ReadoutReset, initamod, (uint16_t)1);
-
-  /*
-  int      id    = m_pConfiguration->getIntegerParameter("-id");
-  list.addMarker(id);
-  */
 }
 
 
@@ -289,7 +286,7 @@ CMDPP32QDC::onEndRun(CVMUSB& controller)
 
 /**
  * This method virtualizes copy construction by providing a virtual method that
- * invokes it.  Usually you don't have to modify this code.
+ * invokes it. Usually you don't have to modify this code.
  *
  * @return CMDPP32QDC*
  * @retval Pointer to a dynamically allocated driver instance created by copy construction
@@ -319,8 +316,11 @@ CMDPP32QDC::gainCorrectionMap()
 
 /**
  * setChainAddresses
- *    Called by the chain to insert this module into a CBLT readout with common
- *    CBLT base address and MCST address.
+ *
+ * Called by the chain to insert this module into a CBLT readout with common
+ * CBLT base address and MCST address.
+ *
+ * This method is not tested with MDPP32QDC.
  *
  *   @param controller - The controller object.
  *   @param position   - indicator of the position of the module in chain (begining, middle, end)
@@ -365,6 +365,8 @@ CMDPP32QDC::setChainAddresses(CVMUSB& controller, CMesytecBase::ChainPosition po
  *  initCBLTReadout
  *
  *  Initialize the readout for CBLT transfer (called by chain).
+ *  This method is not tested with MDPP32QDC.
+ *
  *    @param controller - the controller object.
  *    @param cbltAddress - the chain block/broadcast address.
  *    @param wordsPerModule - Maximum number of words that can be read by this mod
@@ -600,14 +602,16 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Integration long: " << (data&0x7f) << " (*12.5 [ns])" << endl;
+      data = data&0x7f;
+      cout << setw(30) << "Integration long: " << data << " (*12.5 [ns], " << data*12.5 << " ns)" << endl;
     }
 
     status = controller.vmeRead16(base + IntegrationShort, initamod, &data);
     if (status < 0) {
       cerr << "Error in reading register" << endl;
     } else {
-      cout << setw(30) << "Integration short: " << (data&0x1f) << " (*12.5 [ns])" << endl;
+      data = data&0x1f;
+      cout << setw(30) << "Integration short: " << data << " (*12.5 [ns], " << data*12.5 << " ns)" << endl;
     }
 
     status = controller.vmeRead16(base + Threshold0, initamod, &data);
