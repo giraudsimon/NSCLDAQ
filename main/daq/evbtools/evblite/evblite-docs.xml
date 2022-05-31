@@ -1,0 +1,615 @@
+<!-- chapter user-guide -->
+<chapter>
+   <title>EVBLite -  light event building</title>
+   <para>
+    EVBLite is an event builder that can be used in the following circumstances:
+   </para>
+   <itemizedlist>
+    <listitem>
+       <para>
+          You have a single data source of ordered fragments.  Examples include
+          single crate XIA systems, and single CoBo GET systems.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          You don't require a graphical user interface that shows event builder
+          statistics.
+       </para>
+    </listitem>
+    <listitem>
+       <para>
+          You have high rates that may stress or saturate the normal NSCLDAQ
+          event builder.
+       </para>
+    </listitem>
+   </itemizedlist>
+   <para>
+    EVBLite was introduced with NSCLDAQ version 12.0.
+   </para>
+   <section>
+      <title>What is EVBLite</title>
+      <para>
+        The best way to understand EVBLite is to dissect the normal NSCLDAQ event
+        builder the compare and contrast EVBLite with it.
+      </para>
+      <para>
+        The NSCLDAQ event builder consists of a unix pipe. The members of that pipe
+        are:
+      </para>
+      <variablelist>
+        <varlistentry>
+           <term>Orderer</term>
+           <listitem>
+               <para>
+                Accepts connections from several data sources.  The ordered fragments
+                from these data sources are then output in a totally ordered stream
+                of fragments.  Fragments consist of a header that contains, among
+                other things, the fragment timestamp and the payload, which is just
+                the data from the original data source.
+               </para>
+               <para>
+                    Orderer data sources are TCP/IP clients, usually RingFragmentSource
+                    programs.  These data sources send blocks of fragments to the
+                    Orderer over socket connections.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>Glom</term>
+           <listitem>
+               <para>
+                Glom accepts fragments on stdin created by the Orderer.  Glom's
+                primary function is to glue together physics event fragments
+                that occur within a coincidence interval into events.  Thus it's
+                really glom that is performing the function of event building.
+               </para>
+               <para>
+                Glom outputs events to its stdout as NSLCDAQ ring items.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>stdintoring</term>
+           <listitem>
+               <para>
+                This simple program just accepts data on stdin and puts it into
+                an NSCLDAQ ringbuffer.  
+               </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+      <para>
+        Since Glom is a filter (stdin to stdout), if the orderer program
+        were replaced by any other program that produces a stream of ordered
+        fragments with the correct event builder headers, it will happily build
+        events from that data stream.  The single data source EVBLite works with
+        therefore simply needs a tagger - a program that takes a stream of ring
+        items from its single data source, prepends the appropriate headers
+        and psses the resulting fragments to stdout.
+      </para>
+      <para>
+        EVBLite is therefore a linux pipe consisting of::
+      </para>
+      <variablelist>
+        <varlistentry>
+           <term>ringtostdout</term>
+           <listitem>
+               <para>
+                A standard NSCLDAQ program that ouptputs data from a ringbuffer
+                to its stdout.  It is the source of data for EVBLite
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>evbtagger</term>
+           <listitem>
+               <para>
+                Accepts a stream of ring items on its stdin and produces an output
+                stream consisting of those ring items prepended with
+                the appropriate fragment headers.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>Glom</term>
+           <listitem>
+               <para>
+                As with the full event builder, glom produces a stream of event ring items.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>stdintoring</term>
+           <listitem>
+               <para>
+                As before stdintoring puts the output from glom into an NSCLDAQ
+                ringbuffer.
+               </para>
+            </listitem>
+        </varlistentry>
+      </variablelist>
+      <para>
+        EVBLite also provides a Tcl package that can be used to define and start
+        the EVBLite event building pipeline from e.g. <filename>ReadoutCallouts.tcl</filename>
+        or a sequence step in the program manager.
+      </para>
+   </section>
+   <section>
+    <title>evbtagger - making event builder fragments from ring items.</title>
+    <para>
+        The <command>evbtagger</command> command takes a stream of ring items
+        on stdin and emits a stream of ring items prepended by fragment headers
+         on stdout.  It accepts the following program options:
+    </para>
+    <variablelist>
+        <varlistentry>
+           <term><option>--buffersize</option></term>
+           <listitem>
+               <para>
+                The number of Kbytes of input buffer used for reads from stdin.
+                This must be large enough to contain at least one input ring item.
+                Larger buffers, result in better throughput up to a point but
+                longer latencies between fragments sent from <command>ringtostdout</command>
+                and seeing those fragments in events in the output ringbuffer.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><option>--sourceid</option></term>
+           <listitem>
+               <para>
+                Some NSCLDAQ ring items types do not have the body headers from
+                which the information required by the fragment header can be
+                extracte.  These items get the timestamp of the previous item
+                and source id specified by the value of this option.
+               </para>
+               <para>
+                Normally the value of this option should be just the value of the
+                source id of the data source for EVBLite.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><option>--resetts</option></term>
+           <listitem>
+               <para>
+                By default, this is enabled.  If the option is supplied, it will
+                be turned off.   When enabled, when a begin run is encountered,
+                the last timestamp value is reset to zero.  This really only
+                influences the timestamps given to items that don't have timestamps
+                before the first timestamped events appear.  It should be turned
+                off in systems that don't reset the timestamp at the beginning of
+                the run (e.g. XIA systems in infinity clock mode).
+               </para>
+            </listitem>
+        </varlistentry>
+    </variablelist>
+   </section>
+   <section>
+    <title>The evblite Tcl package.</title>
+    <para>
+      EVBLite is a Linux pipeline.  The evblite Tcl package makes it easy to define, start and stop
+      the EVBLite pipeline passing the <command>evbtagger</command> and <command>glom</command> programs
+      any options required to make the function properly.  The evblite package can be used in the
+      <filename>ReadoutCallouts.tcl</filename> script to automatically start the pipeline.  It is recommended
+      that this be done in <literal>OnStart</literal> as the pipeline is persistent.
+    </para>
+    <para>
+      Here's a sample fragment from a <filename>ReadoutCallouts.tcl</filename> script that sets up and starts
+      EVBLite when the system transitions from not ready to halted:
+    </para>
+    <example>
+      <title>Starting EVBLite from ReadoutCallouts.tcl</title>
+      <programlisting>
+package require evblite  <co id='evblite.require' />
+...
+set evbInstance [evblite::evblite %AUTO% \
+   -insid 0 -inring rawdata -outring builtdata -dt 1000] <co id='evblite.instance' />
+...
+proc OnStart {} {
+   ...
+   $::evbInstance start                            <co id='evblite.start' />
+   ...
+}
+      </programlisting>
+    </example>
+    <para>
+      Let's deconstruct this step by step.  Note, however, that the example above
+      assumes the script is running in an environment wich includes $DAQROOT/TclLibs in the  Tcl package
+      search path.  This is the case in <filename>ReadoutCallouts.tcl</filename>.  When using the manager,
+      the container initialization script can source an appropriate <filename>daqsetup.tcl</filename>
+      and the program definition can define the <literal>TCLLIBPATH</literal> environment to be
+      <literal>$DAQROOT/TclLibs</literal>.
+    </para>
+    <calloutlist>
+      <callout arearefs='evblite.require' >
+          <para>
+            Pulls the <literal>evblite</literal> package into the script.  This package defines a snit type;
+            evblite::evblite to encapsulate each instance od EVBLite.  Note that running several EVBLite instances
+            which, in turn, feed a second level event builder is perfectly reasonable.
+        </para>
+      </callout>
+      <callout arearefs='evblite.instance' >
+          <para>
+            This pair of lines define an event builder instance.
+            In this case, the event builder is configured as it's instantiated.   It is also possibel to use
+            the objects' <methodname>configure</methodname> subcommand to configure the event builder
+            after instantiation.  Configuration is done using the option database.   The full set of options
+            accepted by evblite objects can be found in the refrence pages.  We use:
+        </para>
+          <variablelist>
+            <varlistentry>
+               <term>-insid 0 </term>
+               <listitem>
+                   <para>
+                     <option>-insid</option> specifies the input source id.  If non physics items are found
+                     with no body header, this is the sourcde id that will be put in its fragment header.
+                     Note; EVBLite requires that all physics items have body headers.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>-inring rawdata </term>
+               <listitem>
+                   <para>
+                     Specifies the ringbuffer (name not URL) that will be the source of data for
+                     EVBLite.  If a remote ring is desired you can specify the proxy ring for the remote
+                     ring in the localhost.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>-outring builtdata</term>
+               <listitem>
+                   <para>
+                     Specifies the name of the ringbuffer into which EVBLite will put built event data.
+                     Ringbuffer producers must be local so the ring buffer is specified by name rather than
+                     URL.
+                   </para>
+                </listitem>
+            </varlistentry>
+             <varlistentry>
+                <term>-dt 1000</term>
+                <listitem>
+                    <para>
+                     Specifies the event builder coincidence window.   Events will all lie in a time interval
+                     where their timestamps will be at most 1000ticks larger than the initial fragment.
+                   </para>
+                </listitem>
+             </varlistentry>
+          </variablelist>
+      </callout>
+    </calloutlist>
+   </section>
+</chapter>
+
+<!-- /chapter -->
+<!-- manpage 1daq -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>evbtagger</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>evbtagger</refname>
+      <refpurpose>Filter to add fragment headers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <cmdsynopsis>
+         <command>
+$DAQBIN/evbtagger <replaceable>options</replaceable>
+         </command>
+      </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This filter accepts a stream of NSCLDAQ ring itemss on stdin and emits a stream of Orderer
+            fragments suitable for input to glom on its standard output.  The operation of this program
+            is fully controlled by program options.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         Eac option has a short, single letter, form and a longer form.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-h, --help</option></term>
+            <listitem>
+                <para>
+                  Print help and exit
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-V, --version</option></term>
+            <listitem>
+                <para>
+                  Print version and exit
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-s, --buffersize</option>=INT</term>
+            <listitem>
+                <para>
+                  Size of internal item buffer in KBytes.  If not specified, this optional parameter
+                  defaults to 1024 (1 Megabyte).  The input buffer must be large enough to accomodate
+                  at least one largest, complete, ring item.
+               </para>
+                <para>
+                  Larger values, up to the size of the pipe buffer can improve performance at the cost
+                  of longer latencies in the pipeline itself.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-r, --resetts</option></term>
+            <listitem>
+                <para>
+                  This option is a toggle and defaults to true.   When true, each time a
+                  <literal>BEGIN_RUN</literal> item is seen the memory of the last timestamp is set to 0.
+                  The last timestamp is used as the timestamp in items with no body header or items with
+                  the special timestamp value of <literal>0xffff ffff ffff ffff</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-i, --sourceid=INT</option></term>
+            <listitem>
+                <para>
+                  Source ID for items with no body header.  Just as the last timestamp value is used to tag
+                  items with no body header (other than Physics items which must have a body header),
+                  this value is used to tag the source id of items without body headers.
+                  Normally this shoulid be set to the source id of the rest of the event stream.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    
+           
+  
+
+</refentry>
+
+<!-- /manpage -->
+<!-- manpage 3tcl -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>evblite::evblite</refentrytitle>
+      <manvolnum>3tcl</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>evblite::evblite</refname>
+      <refpurpose>Encapsulste EVBLite instances</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+package require evblite
+
+set instance [evblite::evblite name option value...]
+
+$instance configure option value...
+set value [$instance cget optname]
+
+$instance start
+$instance stop
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            The NSCLDAQ Tcl package <literal>evblite</literal> provides a
+            <literal>snit::type</literal> <command>evblite::evblite</command>
+            which creates encapsulations of event builder lite instances.
+            These instances are configured via object options which can be provided
+            either at creation time or using the instance's <command>configure</command>
+            subcommand/method.
+          </para>
+          <para>
+            evblite instances are given a name either explicitly by the program
+            at instantiation time or assigned an instance name if the special
+            instance name %AUTO% is used at instantiation.  Instantiation
+            returns the instance name.
+            The example below
+            shows the creation of two event builder instances, one named
+            <literal>evb</literal>, the other assigned a name by snit.
+          </para>
+         <informalexample>
+            <programlisting>
+set name [evbinstance::evbinstance evb];    # Name is evb.
+set name [evbinstance::evbinstance %AUTO%]; # Unique name assigned by snit.
+            </programlisting>
+         </informalexample>
+         <para>
+            Each instance is a command ensemble whose subcommands operate on the
+            instace.
+         </para>
+    </refsect1>
+    <refsect1>
+      <title>OPTIONS</title>
+      <para>
+         The following options can be used to configure an evblite instance
+         either at creation time or via the <command>configure</command>
+         subcommand of the instance:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><option>-dt</option> ticks</term>
+            <listitem>
+                <para>
+                  The value of this option is passed as the
+                  <option>--dt</option> option value to the glom stage of the
+                  EVBLite pipeline.  The value represents the event building
+                  coincidence window in units of timestamp ticks.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-nobuild</option> bool</term>
+            <listitem>
+                <para>
+                  If the boolean value is true, then
+                  <option>--nobuild</option> is passed on the glom command
+                  line.  In this case, glom does not perform event building but
+                  just strips the fragment headers from the incoming ringitems.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>--timestamp-policy</option> value</term>
+            <listitem>
+                <para>
+                  The value of this option is passed as the value of the
+                  glom <option>--timestamp-policy</option> option.  Valid values
+                  are <literal>earliest</literal>, <literal>latest</literal> and
+                  <literal>average</literal>.  The value chosen selects how the
+                  timestamps of the events produced by glom are generated from
+                  their fragments.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-outsid</option> INT</term>
+            <listitem>
+                <para>
+                  Provides the value of the source id for fragments emitted
+                  by glom (glom's <option>--sourceid</option> option).  If not provided,
+                  this defaults to <literal>0</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-maxfragments</option> INT</term>
+            <listitem>
+                <para>
+                  Provides the largest number of fragments that can be grouped together
+                  in an event.  This protects glom in the event the clock providing
+                  the timestamp is not counting.  This is the value handed to glom's
+                  <option>--maxfragments</option> option.  It defaults to
+                  <literal>1000</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-inbuffersize</option> INT</term>
+            <listitem>
+                <para>
+                  Provides the evbtagger's <option>--buffersize</option> parameter.
+                  The value is the number of kilobytes of input buffer the
+                  evbtagger program allocates.  Note that in this case a kilobyte
+                  is <literal>1024</literal> bytes.  If not provided the default is
+                  <literal>1024</literal> which resuls in a megabyte input buffer.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-resetts</option> BOOL</term>
+            <listitem>
+                <para>
+                  If true, the evbtagger program will reset its idea of the most
+                  recent timestamp to zero when it sees a new begin run.  If
+                  <literal>0</literal>, no action is taken on the begin run
+                  item.  In most cases this should be <literal>1</literal>, however
+                  if using an XIA system as the data source with
+                  Infinity clock enabled, it should be <literal>0</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-insid</option> INT</term>
+            <listitem>
+                <para>
+                  Provides the default source id to use for input data.
+                  There are some NSCLDAQ ring items that, historically, have no
+                  source id associated with them.  This provides a source id to
+                  put in those item's fragment header.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-inring</option> ringname</term>
+            <listitem>
+                <para>
+                  Mandatory option that provides the name of the ring buffer
+                  from which input event fragments are taken.  This ringbuffer
+                  must already exist.  Note it is a name not a URL.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><option>-outring</option> ringname</term>
+            <listitem>
+                <para>
+                  Mandatory option that provides the name of the output ringbuffer
+                  that will receive built events.  If this ringbuffer does not exit,
+                  it will be created.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <para>
+         In addition to the standard <methodname>configure</methodname> and
+         <methodname>cget</methodname> methods to manipulate instance configuration
+         values, Two methods are important:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><methodname>start</methodname></term>
+            <listitem>
+                <para>
+                  Starts the event builder pipeline. The event builder pipeline
+                  will continue to run until it is stopped. Note that
+                  the if the output ring buffer has a producer, it's assumed
+                  that the event building pipeline is already running and
+                  nothing is done, however the PID of the final element of the
+                  pipeline (the ringbuffer producer) is memorized.
+                  See <methodname>stop</methodname> below.
+               </para>
+            </listitem>
+         </varlistentry>
+                  <varlistentry>
+            <term><methodname>stop</methodname></term>
+            <listitem>
+                <para>
+                  All of the processes in the event builder pipeline are killed
+                  with <literal>SIGKILL</literal>. 
+              </para>
+               <para>
+                  It's worth, at this point, saying a bit more about the
+                  <methodname>start</methodname> method.  If the output ring exists,
+                  and has a producer, it's assumed that the producer is the
+                  <literal>stdintoring</literal> process on the end of the
+                  event builder pipeline.  In that case <methodname>start</methodname>
+                  will just remember the PID of this producer and not start
+                  a new pipeline.  Otherwise all the PIDs of the processes in the
+                  event buidler pipeline will be memorized.
+               </para>
+               <para>
+                  The <literal>SIGKILL</literal> will, if <methodname>start</methodname>
+                  determined there was already a producer for the output ringbuffer,
+                  stop that producer (if it has permission to do so).  If the remainder of
+                  that pipeline is active the next flow of data will destroy it due to
+                  the resulting cascade of broken pipes.
+               </para>
+               <para>
+                  Invoking <methodname>stop</methodname> without first, at some point,
+                  invoking <methodname>start</methodname> will fail to stop anything.
+               </para>
+           </listitem>
+         </varlistentry>
+      </variablelist>
+
+    </refsect1>
+</refentry>
+
+<!-- /manpage -->
