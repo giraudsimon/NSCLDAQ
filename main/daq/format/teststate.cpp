@@ -27,6 +27,10 @@ class teststate : public CppUnit::TestFixture {
   CPPUNIT_TEST(tstampCons);
   CPPUNIT_TEST(tstampCopyCons);
   CPPUNIT_TEST(fractionalRunTime);
+  
+  CPPUNIT_TEST(origsid_1);    // Added for nscldaq-12pre1
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -55,6 +59,9 @@ protected:
   
   void fractionalRunTime();
   
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(teststate);
@@ -87,27 +94,7 @@ void teststate::fullcons()
   EQ(PAUSE_RUN, item.type());
   EQ((uint32_t)1234, item.getRunNumber());
   EQ((uint32_t)5678, item.getElapsedTime());
-  EQ((time_t)(314159), item.getTimestamp());
-
-  // The title does not fit in this one:
-
-  string title("supercalifragalisticexpialidocious");
-  while (title.size() <= TITLE_MAXSIZE) {
-    title += title;
-  }
-  
-
-  bool threw(false);
-  try {
-    CRingStateChangeItem(RESUME_RUN,
-			 1234, 5678, 314159,
-			 title);
-  }
-  catch (CRangeError& except) {
-    threw = true;
-  }
-  ASSERT(threw);
-  
+  EQ((time_t)(314159), item.getTimestamp());  
   
 }
 // Test construction that effectively up-casts a CRingItem.
@@ -211,6 +198,7 @@ void teststate::tstampCons()
     EQ(true, item.hasBodyHeader());
     EQ(static_cast<uint64_t>(0x1234567890123456ll), item.getEventTimestamp());
     EQ(static_cast<uint32_t>(1), item.getSourceId());
+    EQ(static_cast<uint32_t>(1), item.getOriginalSourceId());
     EQ(static_cast<uint32_t>(0), item.getBarrierType());
     
     // Ensure we cfan still get the other goodies:
@@ -271,4 +259,28 @@ teststate::fractionalRunTime()
     );
     float offset = orig.computeElapsedTime();
     EQ(static_cast<float>(5.0/2.0), offset);
+}
+
+// Added for 12.x - original source id checks.
+
+void teststate::origsid_1()
+{
+  CRingStateChangeItem item;          // Sid of zero.
+  
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void teststate::origsid_2()
+{
+  CRingStateChangeItem item(BEGIN_RUN, 124, 0, time(nullptr), "Test Title");
+  EQ(uint32_t(0), item.getOriginalSourceId());
+  
+  
+}
+void teststate::origsid_3()
+{
+  CRingStateChangeItem item(
+    0x123456789a, 12, 0, BEGIN_RUN,
+    10, 0, time(nullptr), "This is a test"
+  );
+  EQ(uint32_t(12), item.getOriginalSourceId());
 }

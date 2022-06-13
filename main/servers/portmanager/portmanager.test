@@ -7,7 +7,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 set here [file dirname [info script]]
-source [file join $here Log.tcl]
+source [file join $here ../../base/tclutils  Log.tcl]
 source [file join $here PortManager.tcl]
 package require PortManager
 

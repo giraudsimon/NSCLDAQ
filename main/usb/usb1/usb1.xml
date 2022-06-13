@@ -1,0 +1,1992 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- manpage 3daq -->
+
+<refentry>
+   <refmeta>
+      <refentrytitle>LIBUSB1 INTRO</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>LIBUSB1 INTRO</refname>
+      <refpurpose>Wrappers for userspace USB library.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;USB.h&gt;
+#include &lt;USBDeviceInfo.h&gt;
+#include &lt;USBDevice.h&gt;
+#include &lt;XXUSBUtil.h&gt;
+
+g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>
+                DESCRIPTION
+             </title>
+          <para>
+            This page provides introductory material that describes the
+            <filename>libUSB1</filename> library.  Currently, this provides a
+            simplified interface to the libusb-1.0 usb user space library.
+            However, by using this class library, rather than libusb-1.0's API
+            directly, the maintainers of NSCLDAQ can switch to newer better(?)
+            userspace USB libraries with minimal impact on your code.
+          </para>
+          <para>
+            The library defines three classes and a namespace containing
+            unbound utilities that are primarily intended to support
+            programming the Wiener-JTEC XXUSB controller family.
+          </para>
+          <para>
+             The <classname>USBException</classname>, derived from
+             <classname>std::exception</classname> is used to
+             report errors from functions and methods in this library.
+          </para>
+          <para>
+            The <classname>USB</classname> provides a top level wrapping
+            of operations that don't actually involve a specific device.
+            The purpose  of this class is to wrap any library call stream
+            context required by the underlying library, and to provide
+            an enumeration of the devices on the USB subsystem.
+          </para>
+          <para>
+            Device enumeration comes in the form of <classname>USBDeviceInfo</classname>
+            devices.  Each <classname>USBDeviceInfo</classname> object
+            provides access to descriptive information about a device attached to
+            the USB subsystem that does not require a connection to the device
+            itself.  A method is provided, as well to open the device.
+          </para>
+          <para>
+            Open devices are represented by <classname>USBDevice</classname> objects.
+            These can be configured and set and transfers of various types
+            can be performed to and from the device.
+          </para>
+          <para>
+            The <literal>XXUSBUtil</literal> namespace provides utility functions
+            that are intended, primarily, to allow you to manage the Wiener-JTEC
+            XXUSB controller family (the VMUSB is a VME usb controller, the
+            CCUSB is a CAMAC USB controller).  Support is provided for
+            enumerations that are restricted to these devices, downloading lists
+            and executing immediate lists.
+          </para>
+          <para>
+            The reference pages that follow document each of these classes and
+            the datatypes and functions defined in the <literal>XXUSBUtil</literal>
+            namespace.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>FILES</title>
+      <itemizedlist mark='none'>
+         <listitem>
+            <para>
+               <filename>USB.h</filename> 
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               <filename>USBDeviceInfo.h</filename>
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               <filename>USBDevice.h</filename>
+            </para>
+         </listitem>
+         <listitem>
+            <para>
+               <filename>XXUSBUtil.h</filename> 
+            </para>
+         </listitem>
+      </itemizedlist>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>USBException</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>USBException</refname>
+      <refpurpose>Report errors from libUSB1</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`         
+      </synopsis>
+      <synopsis>
+
+#include &lt;USB.h&gt;
+class USBException : public std::exception
+{
+public:
+    USBException(int code, const std::string&amp; msg)  noexcept;
+    USBException(const USBException&amp; rhs) noexcept;
+    USBException&amp; operator=(const USBException&amp; rhs) noexcept;
+    
+    virtual const char* what() const noexcept;
+    
+};         
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This class is intended to be used to signal
+            errors by the USB library.  The <parameter>code</parameter>
+            parmaeter for the constructor is a lower lever library
+            error code and is used to create the final error
+            message produced by the <methodname>what</methodname>
+            method.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+         Catching the detailed exception:
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;USB.h&gt;
+#include &lt;iostream&gt;
+#include &lt;stdlib.h&gt;
+...
+{
+...
+   try {
+       // Some libUSB1 calls in this block:
+   }
+   catch (USBException&amp; e) {
+       std::cerr &lt;&lt; "An error occured during a USB call: \n";
+       std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
+       exit(EXIT_FAILURE);
+   }
+   ...
+}
+         </programlisting>
+      </informalexample>
+      <para>
+         If all you want to do is kill the program on any exception
+         you don't need to catch the detailed exception take advantage
+         of the fact that
+         <classname>USBException</classname> is derived from
+         <classname>std::exception</classname> and be sure to
+         catch <classname>std::exception</classname> by
+         reference so the proper <methodname>what</methodname>
+         method is executed e.g.:
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;stdexcept&gt;
+#include &lt;iostream&gt;
+#include &lt;stdlib.h&gt;
+...
+{
+...
+   try {
+       // Some libUSB1 calls in this block:
+   }
+   catch (std::exception&amp; e) {
+       std::cerr &lt;&lt; "An error occured: \n";
+       std::cerr &lt;&lt; e.what() &lt;&lt; std::endl;
+       exit(EXIT_FAILURE);
+   }
+   ...
+}
+         </programlisting>
+      </informalexample>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>USB</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>USB</refname>
+      <refpurpose>Encapsulate low level USB context</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+         g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`         
+      </synopsis>
+      <synopsis>
+         
+#include &lt;USB.h&gt;         
+class USB
+{
+public:
+    USB();
+    virtual ~USB();
+    void setDebug(int level);
+    std::vector&lt;USBDeviceInfo*&gt; enumerate();
+};         
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Provides a top level wrapping of a stream of operations on
+            a low level USB user space API.  If the library requires some
+            context object or other application or stream global
+            object, this object encapsulates it.
+          </para>
+          <para>
+            A few opt level services are also provided that do not
+            require accessing USB devices that are attached to the
+            system's usb subsystem.  Note that device enumeration is
+            something that's done in hotplug and builds system
+            data structures that don't require any device operations
+            to access.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void</type>
+                  <methodname>setDebug</methodname>
+                  <methodparam>
+                      <type>int</type><parameter>level</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Provides a mechanism to set the underlying library's
+                  debug level.  Currently, <parameter>level</parameter>
+                  is a debug level value in
+                  <filename>libusb.h</filename>.  In a later
+                  implementation it's possble we'll make this
+                  method map from some generic set of levels to
+                  debug levels in the underlying library.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>std::vector&lt;USBDeviceInfo*&gt;</type>
+                  <methodname>enumerate</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns a container that contains pointers to
+                  <classname>USBDeviceInfo*</classname>
+                  objects for all of the devices attached to the
+                  system's USB subsystem.  Note that these
+                  objects are dynamically allocated and must
+                  be <literal>delete</literal>ed when no longer
+                  required.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+         Below we show a typical use case for the
+         <methodname>enumerate</methodname> method.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;USB.h&gt;
+#include &lt;stdexcept;
+#include &lt;iostream&gt;
+...
+ try {
+   USB usb;
+   auto devices usb.enumerate();
+   USBDeviceInfo* selectDevice(devices);
+   
+   // Operate on the selected device.
+   ...
+   
+ }
+ catch (std::exception&amp; e) {
+   std::cerr &lt;&lt; "Error encountered: " &lt;&lt; e.what()
+             &lt;&lt; std::endl;
+ }
+ 
+         </programlisting>
+      </informalexample>
+      <para>
+         The example enumerates the devices attached to the
+         USB subsystem and then calls <function>selectDevice</function>
+         (internal to the application) to select the USB device
+         to use.  All other devices in the container
+         are deleed by <function>selectDevice</function>.
+      </para>
+      <para>
+         See the documentation of <classname>USBDeviceInfo</classname>
+         for more information about how to select a specific
+         device and open it for use.
+      </para>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>USBDeviceInfo</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>USBDeviceInfo</refname>
+      <refpurpose>Provide information about a USB device.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+         g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`         
+      </synopsis>
+      <synopsis>
+
+#include &lt;USBDeviceInfo.h&gt;
+class USBDeviceInfo
+{
+public:
+    USBDeviceInfo();
+    USBDeviceInfo(libusb_device* pDevice);
+    USBDeviceInfo(const USBDeviceInfo&amp; rhs);
+    virtual ~USBDeviceInfo();
+    USBDeviceInfo&amp; operator=(const USBDeviceInfo&amp; rhs);
+    libusb_device* getHandle() { return m_pDevice; }
+    uint8_t getBus();
+    uint8_t getPort();
+    uint16_t getVendor();
+    uint16_t getProduct();
+    USBDevice* open();
+    
+};
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+         <title>DESCRIPTION</title>
+          <para>
+            Provides information about a device that does not
+            require opening a connection to the device to obtain.
+            This information includes the location of the device
+            in the USB subsystem as well as information about
+            the device itself.
+          </para>
+          <para>
+            Finally, the <methodname>open</methodname>
+            method provides a <classname>USBDevice</classname>
+            which can then be used to interact with the device
+            itself.
+          </para>
+          <para>
+            The libusb-1.0 implementation just provides a wrapper
+            for an instance of a <structname>libusb_device*</structname>.
+            libusb-1.0 manages these structs using reference
+            counting.  Destruction of a
+            <classname>USBDeviceInfo</classname> object decrements
+            the reference count.  Copy construction and assignment
+            are implemented using the device reference count so that
+            the destruction of the last object referencing
+            <structname>libusb_device</structname> will cause libusb-1.0
+            to destroy the struct.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>USBDeviceInfo</methodname>
+                <void />
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This constructor does not create a functioning object
+                  as it does not encapsulate a device object.
+                  Use this constructor prior to assigning
+                  from an existing object that has been
+                  well constructed.
+               </para>
+                <para>
+                  See the examples for more.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>USBDeviceInfo</methodname>
+                <methodparam>
+                    <type>libusb_device*</type><parameter>pDevice</parameter>
+                </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Constructs this object from a USB device object
+                  from the underlying libusb-1.0 library. Normally
+                  you won't actually directly create an object
+                  like this either but you'll obtain an object from
+                  the <methodname>enumerate</methodname>
+                  method of the <classname>USB</classname> class.
+               </para>
+                <para>
+                  See Examples for more.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>USBDeviceInfo</methodname>
+                  <methodparam>
+                      <type>const USBDeviceInfo&amp;</type><parameter>rhs</parameter>
+                  </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Copy construction is supported.  The
+                  underlying object's reference count is incremented.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>USBDeviceInfo&amp;</type>
+                  <methodname>operator</methodname>
+                  <methodparam>
+                      <type>const USBDeviceInfo&amp;</type><parameter>rhs</parameter>                    
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Assignment operator.  If the left hand side of the
+                  operation is not the same as the right, the
+                  encapsulated object on the left hand side is
+                  dereferenced (reference count decremented) and
+                  the object on the rhs referenced (referenc
+                  cont incremented).
+               </para>
+                <para>
+                  The method returns a reference to the lhs
+                  after the assignment is complete to support
+                  operation chaining.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>libusb_device* </type>
+                  <methodname>getHandle</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the libusb-1.0 <structname>libusb_device*</structname>
+                  this object encapsulates.  If you have to do this
+                  you should aks the operations you need to perform
+                  be added to this class. If you intend to hold
+                  on to the pointer longer than the lifetime of the
+                  <classname>USBDeviceInfo</classname> object
+                  from which it came you should increment the
+                  reference count.
+               </para>
+                <para>
+                  See the examples for more information.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint8_t</type>
+                  <methodname>getBus</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the number of the USB bus to which this
+                  device is connected.  This is one part of the
+                  physical location of the device in the USB's
+                  subsystem.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint8_t</type>
+                  <methodname>getPort</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the port on the USB bus to which the
+                  device is connected.  Each USB bus controller
+                  (what you get from <methodname>getBus</methodname>).
+                  can have up to 255 attached devices.  The
+                  devices are attached to numbered ports.  This
+                  method returns a device's port number.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint16_t </type>
+                  <methodname>getVendor</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the device's vendor id.  Each USB device vendor
+                  is assigned a vendor identification number.
+                  Their devices identify to the system using that
+                  number.  This method returns that vendor Id
+                  for the devices.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint16_t </type>
+                  <methodname>getProduct</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the device's product id.  The product
+                  id is a number assigned to identify device models
+                  produced by a USB vendor.  For example, if a vendor
+                  produces keyboards and mice, their mouse will have
+                  a distinct product id from the keyboard so that
+                  software can tell the difference.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>USBDevice* </type>
+                  <methodname>open</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Opens the device for use returning a pointer
+                  to a dynamically allocated <classname>USBDevice</classname>
+                  object.  Further operations on the device
+                  are performed through this object.  Destroying
+                  the <classname>USBDevice</classname>
+                  returned by this method will also close access
+                  to the device.
+               </para>
+                <para>
+                  The <classname>USBDevice</classname> object
+                  returned by this method provides an implicit reference
+                  to the device information object wrapped by this
+                  class.  It is therefore safe to destroy the
+                  object on whic you called
+                  <methodname>open</methodname> immediately if it's
+                  no longer needed.
+                </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+         The first example shows how and when to use
+         the default constructor.  In the example below,
+         the function <function>selectDevice</function> choses
+         the 'correct' USB device from amongst the ones
+         connected to the system, and is assumed to be implemented
+         somewhere else in the application.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;USB.h&gt;
+#include &lt;USBDevice.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+...
+
+try {
+   USB usb;
+   auto devices = usb.enumerate();
+   USBDeviceInfo* pDevice = selectDevice(devices);
+   USBDeviceInfo u;
+   u = *pDevice;
+   
+   // Do more stuff.
+   ...
+   
+}
+catch (std::exception&amp; e) {
+   std::cerr &lt;&lt; "Some error occured: "  &lt;&lt;  e.what()
+       &lt;&lt;  std::endl;
+   exit(EXIT_FAILURE);
+}
+         </programlisting>
+      </informalexample>
+      <para>
+         In this case, the default constructor is used to
+         "turn" the <classname>USBDeviceInfo</classname> pointer
+         into an object.  This could just as easily be done with
+         copy construction or construction on the return value
+         of <methodname>getHandle</methodname>.
+      </para>
+      <para>
+         Using enumerate to get a USBDeviceInfo object.
+         Normally, our USB programs need to operate on a specific
+         USB device.  The first cut for determining the device
+         is usually a match on the vendor and product id of the
+         devices in question.  Throughout our examples, we
+         have been doing this selection inside a function
+         named <function>selectDevice</function>.  This example
+         shows one possible implementation of this function.
+         Note that <literal>XXUSBUtil</literal> contains enumeration
+         methods that make it unecessar to code your own
+         <function>selectDevice</function> for XXUSB controllers.
+      </para>
+      <para>
+         Our example will locate and return the last
+         VMUSB device it finds and throw an exception if none
+         are found.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;stdint.h&gt;
+#include &lt;USBDeviceInfo.h&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+static const uint16_t WIENERID(0x16dc);  // Wiener vendor id.
+static const uint16_t VMUSBID(0xb);      // VMUSB product id.
+
+USBDeviceInfo*
+selectDevice(const std::vector&lt;USBDeviceInfo*&gt;&amp; devices)
+{
+   USBDeviceInfo* result(nullptr);
+   for (int i = 0; i &lt; devices.size(); i++) {
+      if ((WIENERID == devices[i]-&gt;getVendor()) &amp;&amp;
+          (VMUSBID  == devices[i]-&gt;getProduct())) {
+         delete result;    // In case we already found one.
+         result = devices[i];
+      } else {
+         delete devices[i];
+      }
+   }
+   if (!result) {
+      throw std::runtime_error(
+         "There are no VMUSB devices attached to the system"
+      );
+   }
+   return result;
+}
+
+         </programlisting>
+      </informalexample>
+      <para>
+         If you intende to hold on to a libusb_device pointer
+         for longer than the life time of the the
+         <classname>USBDeviceInfo</classname> object from
+         which it came you need to properly handle its reference
+         count as shown below. Note again, however, if you find yourself
+         using a libusb_device to do what you can't otherwise do,
+         you should reques the missing functionality be added
+         to libUSB1.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;libusb.h&gt;
+#include &lt;USBDeviceInfo&gt;
+
+...
+
+USBDeviceInfo* pDevice = getDevice();   // Somehow.
+
+libusb_device* pRawDevice = pDevice->getHandle();
+libusb_ref_device(pRawDevice);
+
+delete pDevice;
+
+//   ... do stuff with the device until no longer needed:
+
+libusb_unref_device(pRawDevice);
+...
+
+         </programlisting>
+      </informalexample>
+      <para>
+         Note that if the call to libusb_ref_device is
+         performed <emphasis>after</emphasis>
+         <varname>pDevice</varname> is deleted, and
+         <varname>pDevice</varname> is the last reference
+         to that handle, lib usb will destroy the struture
+         pointed to by <varname>pRawDevice</varname> because
+         the destructor for <classname>USBDeviceInfo*</classname>
+         calls libusb_unref_device.
+      </para>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>USBDevice</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>USBDevice</refname>
+      <refpurpose>I/O object for a USB device</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+         g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`         
+      </synopsis>
+      <synopsis>
+
+#include &lt;USBDevice.h&gt;
+
+class USBDevice
+{
+public:
+    USBDevice(libusb_device_handle* pHandle);
+    virtual ~USBDevice();            // Closes.
+    
+public:    
+    libusb_device_handle* getHandle();
+    void claim(int interface);
+    void release(int interface);
+    std::string getSerial();
+    
+    int getConfig();
+    void setConfig(int config);
+    
+    void clearHalt(unsigned char endpoint);
+    void reset();
+    
+    int controlTransfer(
+        uint8_t reqType, uint8_t request, uint16_t wValue, uint16_t windex,
+        unsigned char* pData, uint16_t wLength, unsigned int msTimeout
+    );
+    int bulkTransfer(
+        unsigned char endpoint, unsigned char* pData, int dLength,
+        int&amp; transferred, unsigned msTimeout
+    );
+    int interrupt(
+        unsigned char endpoint, unsigned char* pData, int dLength,
+        int&amp; transferred, unsigned int msTimeout
+    );
+    
+
+};
+
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+         <title>DESCRIPTION</title>
+          <para>
+            This class encapsulates a connection to a USB device.
+            connections allow you to query the device for information
+            it stores locally (for example the serial string).
+            You can also perform I/O to or from a device through
+            this object.
+          </para>
+          <para>
+            Normally you obtain a pointer to a
+            <classname>USBDevice</classname> object by
+            selecting an appropriate <classname>USBDeviceInfo</classname>
+            object from the enumeration produced by a
+            <classname>USB</classname> object. To close the
+            device, simply destroy the object.  If you
+            are working with code that directly uses
+            libusb-1.0, you can also construct a
+            <classname>USBDevice</classname> from a
+            libusb_device_handle pointer.
+          </para>
+          <para>
+            The structure of a USB device can be potentially
+            complex.  Fortunately it normally isn't but it's
+            necessary to understand the structure of a worst
+            case device to know how to use the simplest devices.
+          </para>
+          <para>
+            USB devices have a hierarchy of internal objects.
+            At the top level of the device is a
+            <firstterm>configuration</firstterm>.  To perform
+            I/O on a device you must have selected which configuration
+            you intend to use. The normal purpose of configurations
+            is to distinguish between low and high power modes
+            of the device.
+          </para>
+          <para>
+            Within a configuration there can be one or more
+            <firstterm>interfaces</firstterm>.  Each inteface
+            performs a logical set of operations.  For example,
+            in a human interface devices like a wireless keyboard/mouse
+            combination, you might have one interface that represents
+            the keyboard and a second that represents the mouse.
+          </para>
+          <para>
+            Each interface then has at least one endpoint.  Endpoints
+            are unidirectional things to which data can be sent
+            or received.  By unidirectional I mean that data
+            can be either written or read to or from a single
+            endpoint but not both.  The top bit in an endpoint
+            number is set for readonly devices and clear for
+            write-only devices.  It is therefore common for
+            there to be at least two end points for an interface.
+            One to which data are written and another from which they are
+            read.
+          </para>
+          <para>
+            I/O must specify the full path through this hierarchy.
+            This is done by:
+          </para>
+          <orderedlist>
+            <listitem>
+               <para>
+                  Selecting a configuration with
+                  <methodname>setConfig</methodname>
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Claiming an interface within the configuration
+                  with <methodname>claim</methodname>. Claiming
+                  an interface provides exclusive access to that
+                  interface.  If you attempt to claim an interface
+                  that is already claimed, an error will be thrown.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Each transfer operation then specifies either
+                  explicitly or implicitly (in the case of
+                  control transfers) the endpoint to which
+                  or from which it operates.  As stated previously,
+                  the end point number implies the transfer direction.
+               </para>
+            </listitem>
+          </orderedlist>
+          <para>
+            Three types of USB I/O are suported:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Control transfers which are intended for
+                  endpoint/device configuration.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Bulk transfers, which are intended for sequential
+                  data transfer.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  interrupt transfers which is a transfer that's
+                  scheduled to happen at regular intervals and
+                  have minimal latency.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            libusb-1.0 supports synchronous data transfers, where the
+            application blocks until the transfer either completes or
+            times out, and asynchronous transfers, where the transfer
+            is scheduled and the application in informed by
+            a function callback (in an indeterminate thread)
+            when the operation finally completes.
+          </para>
+          <para>
+            The libUSB1 library does not expose the asynchronous
+            transfer capabilities of the library directly.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>METHODS</title>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <constructorsynopsis>
+                   <methodname>USBDevice</methodname>
+                  <methodparam>
+                      <type>libusb_device_handle*</type><parameter> pHandle</parameter>
+                  </methodparam>
+               </constructorsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Unless you are mixing calls to libUSB1 with
+                  direct libusb-1.0 calls, you normally don't
+                  directly construct a
+                  <classname>USBDevice</classname> object. Instead,
+                  the <methodname>open</methodname> method for a
+                  <classname>USBDeviceInfo</classname> object
+                  returns a pointer to one that it dynamically
+                  constructs.
+               </para>
+                <para>
+                  The parameter, <parameter>pHandle</parameter>
+                  is a libusb_device_handle pointer that would have
+                  been returned from
+                  e.g. libusb_open.
+                </para>
+                <para>
+                  If you explicitly construct this, note that
+                  destruction will invoke libusb_close on the
+                  handle passed to he constructor.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>libusb_device_handle* </type>
+                  <methodname>getHandle</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the device handle wrapped by this
+                  <classname>USBDevice</classname> object.
+                  Note that if you need to use this, it might be
+                  better to request additional methods be added
+                  to this class.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>claim</methodname>
+                  <methodparam>
+                      <type>int </type><parameter>interface</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Claims the requested interface within the
+                  currently selected configuration.
+                  If another library stream has already claimed this
+                  interface, a <classname>USBException</classname>
+                  will be thrown.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>release</methodname>
+                  <methodparam>
+                      <type>int </type><parameter>interface</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Releases a claimed interface. Normally, this is
+                  done to claim a different interface within the
+                  configuration or to select a different configuration
+                  altogether.  Note that destruction
+                  of the object implies releasing interface
+                  claims.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>std::string </type>
+                  <methodname>getSerial</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the serial number string from the device.
+                  The serial number string is supposed to uniquely identify
+                  the physical device within a manufacturerer/model
+                  pair.  Note this is  a string not a number.  For example,
+                  the form of a VMUSB serial number is
+                  <literal>VM%03d</literal>  where %03d is a
+                  zero filled three digit number.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int </type>
+                  <methodname>getConfig</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Get the current configuration number.
+                  Recall that a configuration is a collection of
+                  interfaces, each interface is a collection'
+                  of endpoints dedicated to a specific device
+                  purpose.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>setConfig</methodname>
+                  <methodparam>
+                      <type>int </type><parameter>config</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Selects the configuration to be manipulated by
+                  this object. Note that the normal order of things
+                  is to select a configuration, claim  an interface
+                  in the configuration, and finally do transfers
+                  to endpoints in the claimed interface.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>clearHalt</methodname>
+                  <methodparam>
+                      <type>unsigned char </type><parameter>endpoint</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Clears any halt condition present in the endpoint
+                  described by <parameter>endpoint</parameter>.
+                  Note that the configuration must have been selecteda
+                  and an interface claimed to unambiguously
+                  select an endpoint.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>reset</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Performs a hard reset on the entire device.
+                  This reset normally causes the device to be renumerated
+                  which, in turn invalidates this object. What you normally
+                  need to do is perform the reset, destroy the object,
+                  re-locate the device via enumeration, vendor/product
+                  matching and, if necessary serial number matching,
+                  and finally, open/use an <classname>USBDevice</classname>
+                  object.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int</type>
+                  <methodname>controlTransfer</methodname>
+                  <methodparam>
+                      <type>uint8_t </type><parameter>reqType</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint8_t </type><parameter>request</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint16_t</type><parameter> wValue</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint16_t</type><parameter> windex</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned char* </type><parameter>pData</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint16_t </type><parameter>wLength</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned int </type><parameter>msTimeout</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Control transfers always are sent/received from
+                  endpoint 0x00/0x80.  Control transfers consist of
+                  a setup packet which is then followed by data,
+                  either in or out relative to the host. The
+                  request type in the setup packet has bits that
+                  determine the direction of data transfer. Examples
+                  of data transfer and direction might be setting or
+                  getting the 'speed' of a mouse like device.
+                  For more about control transfers, see e.g.
+                  <ulink url='https://www.beyondlogic.org/usbnutshell/usb4.shtml' />
+               </para>
+                <para>
+                  The setup packet in a control transfer is
+                  determined by the three  parameters,
+                  <parameter>reqType</parameter>, which specifies
+                  the request type, <parameter>request</parameter>
+                  which specifies the request field of the
+                  setup packet, <parameter>wValue</parameter>
+                  which specifies the value field of the setup packet
+                  and finally, <parameter>windex</parameter>
+                  which specifies the setup packet's index field.
+                </para>
+                <para>
+                  The data transfer direction is determined by the
+                  direction bits in <parameter>reqType</parameter>.
+                  <parameter>pData</parameter>
+                  points to a buffer from/to which data are transferrd.
+                  <parameter>wLength</parameter> is the number
+                  of bytes to transfer (out) or the size of the
+                  buffer (in) in to which data can be transferred.
+                  Finally <parameter>msTimeout</parameter> is the
+                  maximum number of milliseconds the operation
+                  will block before a timeout is declared.
+                </para>
+                <para>
+                  The return value is the number of bytes actually
+                  transferred in the data part of the transfer
+                  or, if negative, <literal>LIBUSB_ERROR_TIMEOUT</literal>
+                  if the transfer timed out.  Other error conditions
+                  are signalled by throwing a
+                  <classname>USBException</classname> object.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int </type>
+                  <methodname>bulkTransfer</methodname>
+                  <methodparam>
+                      <type>unsigned char </type><parameter>endpoint</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned char* </type><parameter>pData</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>dLength</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int&amp; </type><parameter>transferred</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned </type><parameter>msTimeout</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Performs a bulk data transfer.  This is the
+                  main mechanism used to transfer data to/from
+                  a device.  THe size of a bulk transfer is
+                  limited (other than by memory and the number
+                  of bits of size field).   If necessary,
+                  bulk transfer requests are broken down int
+                  more than one USB packet.
+                  See <ulink url='https://www.beyondlogic.org/usbnutshell/usb4.shtml' />
+                  for more about bulk transfers.
+               </para>
+                <para>
+                  The direction of a bulk transfer is determined by
+                  by the top bit of the <parameter>endpoint</parameter>
+                  parameter (which specifies the endpoint to/from
+                  which the transfer occurs).  If the top bit
+                  is set (endpoints 0x80 - 0xff), the operation is
+                  a read.  If clear (endpoints 0x00-0x7f), the
+                  operation is a write.
+                </para>
+                <para>
+                  The transfer is specified by
+                  <parameter>pData</parameter>, which contains
+                  data to write or will receive data read,
+                  <parameter>dLength</parameter> which is either
+                  the lengt of the write to attempt, or the number
+                  of bytes of available data in <parameter>pData</parameter>
+                  for read operations, <parameter>transferred</parameter>,
+                  receives the actual number of bytes transferred.
+                </para>
+                <para>
+                  <parameter>msTimeout</parameter> determines the
+                  maximum number of milliseconds <methodname>bulkTransfer</methodname>
+                  will block waiting for the transfer to complete.
+                  Note that partial transfers are possible and must
+                  be detected, in the case of a timeout be
+                  checking the number of bytes transferred against
+                  the desired number of bytes.
+                </para>
+                <para>
+                  The return value is either 0, indicating a success
+                  or <literal>LIBUSB_ERROR_TIMEOUT</literal> if
+                  the timeout was signalled. All other errors are
+                  signalled by throwing a <classname>USBException</classname>
+                  object.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int </type>
+                  <methodname>interrupt</methodname>
+                  <methodparam>
+                      <type>unsigned char</type><parameter>endpoint</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned char* </type><parameter>pData</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int</type><parameter>dLength</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int&amp; </type><parameter>transferred</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>unsigned int</type><parameter> msTimeout</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Interrupt transfers are queued by the device
+                  or the host to be later picked up via polling.
+                  For interrupt data sent to the device, the
+                  transfer is retried at the appropriate polling
+                  interval (specified by the endpoint's descriptor)
+                  if the device has no free buffer space.
+                  For interrupt data from the device; the device
+                  holds this data until the host issues an interrupt
+                  read request.  This is done via the
+                  <methodname>interrupt</methodname> method.
+               </para>
+                <para>
+                  <parameter>endpoint</parameter> specifies the
+                  endpoint which, as you might recall, in turn,
+                  specifies the transfer direction.
+                  Data transferred are specified by
+                  <parameter>pData</parameter>, which either
+                  contains the data to write or space to receive
+                  interrupt data from the device,
+                  <parameter>dLength</parameter> specifies the
+                  buffer size (number of bytes to write or bytes
+                  available to receive read data). Finally,
+                  <parameter>transferred</parameter> receives the
+                  number of bytes atually transferred and
+                  <parameter>msTimeout</parameter> specifies the
+                  number of milliseconds to block before
+                  timingout.
+                </para>
+                <para>
+                  A word about timeouts.  The timeout on a read
+                  interrupt operation should be relatively short.
+                  It's quite possible the device has no interrupt
+                  data and a long timeout will decrease overall
+                  application latency. The timeout specified on the
+                  write, by contrast, should be rather long to allow
+                  the device to get around to having sufficient
+                  buffer space to accomodate the write.
+                </para>
+                <para>
+                  The return value is 0 on success, or,
+                  <literal>LIBUSB_ERROR_TIMEOUT</literal> if
+                   a timeout occured. If the operation timed out,
+                   it may be necessary to re-issue the request
+                   to complete the data transfer; check the value
+                   of <parameter>transferred</parameter>.
+                   All other errors are signalled via a
+                   <classname>USBException</classname>
+                   exception.
+                </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>XXUSBUtil</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>XXUSBUtil</refname>
+      <refpurpose>Utility methods for JTEC/Wiener XXUSB controllers</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+g++ yourstuff -L$DAQLIB -Wl-rpath=$DAQLIB -llibUSB1 \
+   `pkg-config libusb-1.0 --libs` `pkg-config libusb-1.0 --cflags`         
+      </synopsis>
+      <synopsis>
+
+#include &lt;XXUSBUtil.h&gt;
+namespace XXUSBUtil {
+    
+    
+    typedef std::pair&lt;std::string, USBDevice*&gt; XXUSBDevice;
+    typedef std::vector&lt;XXUSBDevice&gt; XXUSBDevices;
+    
+    XXUSBDevices enumerateVMUSB(USB&amp; context);
+    XXUSBDevices enumerateCCUSB(USB&amp; context);
+    XXUSBDevices enumerateVendorAndProduct(
+        USB&amp; context, uint16_t vendor, uint16_t product
+    );
+    
+    int transaction(
+        USBDevice* pDevice,
+        void* writePacket, size_t writeSize,
+        void* readPacket,  size_t readMax, int msTimeout = 0
+    );
+    void writeActionRegister(USBDevice* pDevice, uint16_t data);
+
+    void executeList(               // VMUSB
+        USBDevice* pDevice, const std::vector&lt;uint32_t&gt;&amp; list,
+        void* pReturnedData, size_t maxRead, size_t&amp; bytesRead,
+        int msTimeout = 0
+    );
+    
+    void executeList(               // CCUSB
+        USBDevice* pDevice, const std::vector&lt;uint16_t&gt;&amp; list,
+        void* pReturnedData, size_t maxRead, size_t&amp; bytesRead,
+        int msTimeout = 0
+    );
+
+    uint8_t readEndpoint();
+    uint8_t writeEndpoint();
+    uint16_t vendorId();
+    uint16_t VMUSBProductId();
+    uint16_t CCUSBProductId();
+    
+    // A few operations are somewhat device dependent:
+    
+    namespace VMUSB {
+        void loadList(
+            USBDevice* pDevice, uint8_t listNum,
+            const std::vector&lt;uint32_t&gt;&amp; list, size_t offset
+        );
+                
+    }
+    namespace CCUSB {
+        void loadList(
+            USBDevice* pDevice, const std::vector&lt;uint16_t&gt;&amp; list,
+            bool scaler=false
+        );
+    }
+}
+
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+         <title>DESCRIPTION</title>
+          <para>
+            Since the VMUSB and CCUSB controllers have
+            similarities at the gross level, it's possible to
+            factor opertions common to them into a stet of
+            unbound functions.  The <literal>XXUSBUtil</literal>
+            package does exactly that; putting data types and
+            functions into the <literal>XXUSBUtil</literal>
+            namespace.
+          </para>
+          <para>
+            This manpage documents these functions and data types.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>FUNCTIONS AND METHODS</title>
+      <para>
+         Note that all functions and methods are defined inide
+         the <literal>XXUSBUtil</literal> namespace so
+         e.g. the function documented as <function>enumerateVMUSB</function>
+         is actually nameed <function>XXUSBUtil::enumerateVMUSB</function>.
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>XXUSBDevices </type>
+                  <methodname>enumerateVMUSB</methodname>
+                  <methodparam>
+                      <type>USB&amp; </type><parameter>context</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Produces a list of VMUSB devices.  See
+                  <literal>DATA TYPES</literal> for information
+                  about the <type>XXUSBDevices</type> data type.
+                  Note that all devices objects returned are
+                  dynamically allocated and have not claimed an
+                  interface.  Unused devices must be deleted.
+                  See the first example.
+               </para>
+                <para>
+                  <parameter>context</parameter> is the USB
+                  context within which to locate the devices.
+                  Note that in the XXUSBReadout programs,
+                  the controller objects have methods to return
+                  a singleton instance
+                  pointer to a <classname>USB</classname>
+                  object.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>XXUSBDevices </type>
+                  <methodname>enumerateCCUSB</methodname>
+                  <methodparam>
+                      <type>USB&amp; </type><parameter>context</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Same as <methodname>enumerateVMUSB</methodname>
+                  but the CCUSB contollers are enumerated.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>XXUSBDevices </type>
+                  <methodname>enumerateVendorAndProduct</methodname>
+                  <methodparam>
+                      <type>USB&amp; </type><parameter>context</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint16_t </type><parameter>vendor</parameter>
+                  </methodparam>
+                  <methodparam>
+                     <type>uint16_t </type>
+                     <parameter>product</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  This method enumerates devices that match
+                  an arbitraty <parameter>vendor</parameter>
+                  and <parameter>product</parameter> id.
+                  Once more <parameter>context</parameter>
+                  is the USB context.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>int </type>
+                  <methodname>transaction</methodname>
+                  <methodparam>
+                      <type>USBDevice* </type><parameter>pDevice</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>void* </type><parameter>writePacket</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type> size_t </type><parameter>writeSize</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>void* </type><parameter>readPacket</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>size_t </type><parameter>readMax</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>msTimeout </parameter>
+                    <initializer>0</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Many operations on the XXUSB controllers are
+                  writes followed by reads.  For example, immediate
+                  operation execution consists of sending a list
+                  of operations to the controller, followed by reading
+                  back the data the operations in the list
+                  generated.
+               </para>
+                <para>
+                  This operation performs these <firstterm>transactions</firstterm>.
+                  <parameter>pDevice</parameter>, as a USB device
+                  on which the transaction is performed. This is
+                  normally gotten via one of the enumerate
+                  operations above.
+                </para>
+                <para>
+                  <parameter>writePacket</parameter> contains
+                  a pointer to the data to write. The number
+                  of bytes of write data are
+                  <parameter>writeSize</parameter>.
+                </para>
+                <para>
+                  <parameter>readPacket</parameter> points to
+                  a buffer into which the data read back from the
+                  device is stored. It provides <parameter>readMax</parameter>
+                  bytes of storage.  The actual number of bytes
+                  read is stored in <parameter>bytesRead</parameter>.
+                  <parameter>msTimeout</parameter> is the maximum
+                  number of milliseconds the function blocks
+                  for the read. Note that the default value,
+                  <literal>0</literal>, means there is no timeout.
+                </para>
+                <para>
+                  The return value is the number of bytes read
+                  if greater than zero. The value
+                  <literal>LIBUSB_ERROR_TIMEOUT</literal> reports
+                  a timeout, and you must then refer to <parameter>bytesRead</parameter>
+                  to determine if a retry is approprate.
+                  Any actual errors are signalled by throwing
+                  a <classname>USBException</classname> object.
+                </para>
+            </listitem>
+            
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>writeActionRegister</methodname>
+                  <methodparam>
+                      <type>USBDevice* </type><parameter>pDevice</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>uint16_t </type><parameter>data</parameter>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Both the CCUSB and VMUSB have one write only register,
+                  called the action register.  All other registers
+                  are accessible via immediate list operations.
+                  This register is only accessible via
+                  this function.  <parameter>pDevice</parameter>
+                  points to the <classname>USBDevice</classname> object
+                  that specifies which device we're writing.
+               </para>
+               <para>
+                  <parameter>data</parameter> specifies the data
+                  to write to the action register.  Note that the
+                  bits in the action register may have
+                  different meanings between the CC and VM USB
+                  controllers.  Refer to their manuals.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>executeList</methodname>
+                  <methodparam>
+                      <type>USBDevice* </type><parameter>pDevice</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const std::vector&lt;uint32_t&gt;&amp; </type><parameter>list</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>void* </type><parameter>pReturnedData</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>size_t </type><parameter>maxRead</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>size_t&amp; </type><parameter>bytesRead</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>msTimeout</parameter>
+                    <initializer>0</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Executes an immediate list of VME operations
+                  for a VMUSB. VMUSB list elements are
+                  <type>uint32_t</type>'s.  <parameter>pDevice</parameter>,
+                  as usual is the device on which the list is to be
+                  executed.
+               </para>
+                <para>
+                  The list is defined by <parameter>list</parameter>
+                  which provides the list operations and the size of the
+                  list.  <parameter>pReturnedData</parameter>
+                  is a pointer to a buffer into which data read by
+                  the list will be read.  <parameter>maxRead</parameter>
+                  is the number of bytes available in
+                  <parameter>pReturnedData</parameter>.
+                  <parameter>bytesRead</parameter> will be written
+                  with the number of bytes actually read from the
+                  VME bus by the list. <parameter>msTimeout</parameter>
+                  is the maximum number of milliseconds to block the
+                  read in the <methodname>transaction</methodname>
+                  this operation implies.  Note that the default,
+                  <literal>0</literal> implies no timeout.
+                </para>
+                <para>
+                  <classname>USBException</classname>s are used to signal all errors.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>void </type>
+                  <methodname>executeList</methodname>
+                  <methodparam>
+                      <type>USBDevice* </type><parameter>pDevice</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>const std::vector&lt;uint16_t&gt;&amp; </type><parameter>list</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>void* </type><parameter>pReturnedData</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>size_t</type><parameter> maxRead</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type> size_t&amp; </type><parameter>bytesRead</parameter>
+                  </methodparam>
+                  <methodparam>
+                      <type>int </type><parameter>msTimeout</parameter>
+                    <initializer>0</initializer>
+                  </methodparam>
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Same as previously, but the list is composed of
+                  <type>uint16_t</type> elements as the lists for a
+                  CCUSB are. Note that this will work perfectly fine
+                  on a VMUSB as long as the list is properly
+                  formatted. 
+               </para>
+                <para>
+                  See the prior overload of <methodname>executeList</methodname>
+                  for a description of its parameters.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint8_t </type>
+                  <methodname>readEndpoint</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the endpoint number from which
+                  data should be read from an XXUSB controller.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint8_t </type>
+                  <methodname>writeEndpoint</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the endpoint number to which data should
+                  be writen for an XXUSB controller.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint16_t </type>
+                  <methodname>vendorId</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the vendor id assigned to Wiener for
+                  usb devices.  This number was assigned by the
+                  USB-IF organization.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint16_t </type>
+                  <methodname>VMUSBProductId</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the product id assigned by Wiener/JTEC
+                  for the VMUSB USB VME controller.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>
+               <methodsynopsis>
+                  <type>uint16_t </type>
+                  <methodname>CCUSBProductId</methodname>
+                  <void />
+               </methodsynopsis>
+            </term>
+            <listitem>
+                <para>
+                  Returns the product ID assigned by Wiener/JTEC
+                  for the CCUSB USB CAMAC controller.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <refsect2>
+         <title>LOADING LISTS.</title>
+         <para>
+            The VMUSB and CCUSB operate in data taking by triggering
+            a list of operations on an appropriate trigger.  These
+            lists read data which are then blocked and buffered for
+            maximum throughput.  The mechanisms for loading a list
+            for later execution, are different between the
+            CCUSB and VMUSB.  The CCUSB supports only two lists, an
+            event list and a scaler list and has dedicaed memory
+            for the two.  The trigger for the event list is specified
+            by writing appropriate bits in registers in the CCUSB (refer
+            to the CCUSB manual).  The VMUSB, supports 8 lists, numbered
+            0-7 inclusive.  Each list can have an independent trigger,
+            however the capability for periodic triggering makes list 1
+            especially useful as a scaler read list.
+         </para>
+         <para>
+            A pair of nested namespaces, support
+            <methodname>loadList</methodname> methods for the
+            two conrollers.  While the parameter signatures for
+            the two <methodname>loadList</methodname> functions
+            are, in theory, sufficient to distinguish them
+            to the compiler, putting them in specific namespaces makes
+            unambiguously clear which method should be used when
+            loading lists for   specific ontroller.
+         </para>
+         <variablelist>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>
+                        void
+                     </type>
+                     <methodname>XXUSBUtil::VMUSB::loadList</methodname>
+                     <methodparam>
+                         <type>USBDevice* </type><parameter>pDevice</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type> uint8_t </type><parameter>listNum</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const std::vector&lt;uint32_t&gt;&amp;</type><parameter>list</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>size_t </type><parameter>offset</parameter>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Loads a list of operations into a VMUSB stack for triggered
+                     execution in data taking mode.
+                     <parameter>pDevice</parameter> is the device object
+                     connected to the VMUSB.
+                     <parameter>listNum</parameter> is the number
+                     of the list to load [0-7].
+                     <parameter>list</parameter>
+                     is the list of operations.  The <classname>CVMUSBReadoutList</classname>
+                     can be used to create this list.
+                   </para>
+                   <para>
+                     <parameter>offset</parameter> is a value
+                     that indicates where in list memory the list
+                     should be loaded.  The offset to use depends on
+                     the sizes of the lists prior to the given list.
+                     Each list requires
+                     (<parameter>list.size()</parameter> + 2)*sizeof(uint32_t)/sizeof(uint16_t))
+                     'words' of stack space.  That is the number of 16bit words required
+                     for the list and a two long word header inserted
+                     by the firmware.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>
+                  <methodsynopsis>
+                     <type>void </type>
+                     <methodname>XXUSBUtil::CCUSB::loadList</methodname>
+                     <methodparam>
+                         <type>USBDevice* </type><parameter>pDevice</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>const std::vector&lt;uint16_t&gt;&amp;</type><parameter> list</parameter>
+                     </methodparam>
+                     <methodparam>
+                         <type>bool </type><parameter>scaler</parameter>
+                        <initializer>false</initializer>
+                     </methodparam>
+                  </methodsynopsis>
+               </term>
+               <listitem>
+                   <para>
+                     Loads a CCUSB readout list.  <parameter>pDevice</parameter>
+                     is the device that's open on the device. <parameter>list</parameter>
+                     is the list to load and <parameter>scaler</parameter>
+                     is a flag that, if true, indicates that the
+                     list should be loaded as a scaler list.
+                   </para>
+                </listitem>
+            </varlistentry>
+         </variablelist>
+      </refsect2>
+    </refsect1>
+    
+    <refsect1>
+      <title>DATA TYPES</title>
+      <para>
+         The <literal>XXUSBUtil</literal> namespace exports two
+         data types:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><type>XXUSBDevice</type></term>
+            <listitem>
+                <para>
+                  This type is an
+                  <literal>std::pair&lt;std::string, USBDevice*&gt;</literal>.
+                  The first element of the pair is the serial number
+                  of a USB device and the second elemet a pointer to
+                  a dynamically allocated <classname>USBDevice</classname>
+                  that's open on that device.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><type>VMUSBDevices</type></term>
+            <listitem>
+                <para>
+                  Just a vector of <type>XXUSBDevice</type>.
+                  This type is returned from the enumertion
+                  methods.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLES</title>
+      <para>
+         Enumerating and selecting a VMUSB by serial number.
+         Note that the process is the same for a CCUSB, thought
+         <methodname>enumerateCCUSB</methodname> must be used
+         below instead of <methodname>enumerateVMUSB</methodname>.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;XXUSBUtil.h&gt;
+#include &lt;USBDevice.h&gt;
+#include &lt;string&gt;
+
+USBDevice*
+findVMUSB(const std::stringamp; serial, USB* pContext)
+{
+   auto devices = XXUSBUtil::enumerateVMUSB(*pContext);
+   USBDevice* pResult
+   for (int i=0; i &lt; devices.size(); i++) {
+      if (serial == devices[i].first) {
+        pResult = devices[i].second;
+      } else {
+         delete devices[i].second;
+      }
+   }
+   if (!pResult) {
+      throw std::string("No matching VMUSB in findVMUSB");
+   }
+   return pResult;
+}
+         </programlisting>
+      </informalexample>
+      <para>
+         In the context of the CCUSB program, here's how
+         to load a CCUSB list into a CCUSB controller.
+      </para>
+      <informalexample>
+         <programlisting>
+#include &lt;CCUSBReaoutList.h&gt;
+#include &lt;XXUSBUtil.h&gt;
+#include &lt;USBDevice.h&gt;
+
+/// code fragment to load a CCUSB event readout list:
+
+USB              usb;
+CCCUSBReadoutList eventList;
+USBDevice* pCCUSB = findDevice(usb);
+
+//... do stuff needed to stuff the eventList
+/...
+
+XXUSBUtil::CCUSB::loadList(pDevice, eventList.get(), false);
+
+....
+
+
+         </programlisting>
+      </informalexample>
+    </refsect1>
+</refentry>
+<!-- /manpage -->

@@ -78,7 +78,8 @@
       to allow it to include timestamp, event source, and barrier information
       either emitted by or intended for the event builder.  This header follows
       immediately after the ring item header but is optionally present. If it is
-      not present, there is a single 32-bit integer whose value is zero to
+      not present, there is a single 32-bit integer whose value is zero
+      (version 11) or sizeof(uint32_t) (version 12) to
       indicate no body header is present. Otherwise, it is present. The
       structure of the body header is as follows:
     </para>
@@ -155,6 +156,10 @@
         </listitem>
       </varlistentry>
     </variablelist>
+    <para>
+      See the documentation of <filename>DataFormat.h</filename> for more
+      detailed information about these stuctures.
+    </para>
 
 
     <para>
@@ -233,7 +238,7 @@
           </row>
           <row>
             <entry>Body Header</entry>
-            <entry>Size = 0</entry>
+            <entry>Size = szzeof(uint32_t)</entry>
             <entry>4</entry>
           </row>
           <row>

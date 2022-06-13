@@ -219,7 +219,7 @@ void fragsrctest::makefrags_3()
     }
     pItems[i]->setBodyCursor(p);
     pItems[i]->updateSize();
-    totalSize += pItems[i]->getItemPointer()->s_header.s_size;  
+    totalSize += itemSize(pItems[i]->getItemPointer());  
   }
   
   pChunkStorage = new uint8_t[totalSize];
@@ -230,8 +230,8 @@ void fragsrctest::makefrags_3()
   
   for (int i =0; i < 10; i++) {
     pRingItem pi = pItems[i]->getItemPointer();
-    memcpy(p, pi, pi->s_header.s_size);
-    p += pi->s_header.s_size;
+    memcpy(p, pi, itemSize(pi));
+    p += itemSize(pi);
   }
   CRingBufferChunkAccess::Chunk c;
   c.setChunk(totalSize, pChunkStorage);
@@ -282,7 +282,7 @@ void fragsrctest::makefrags_4()
   EQ(size_t(1), result.first);
   auto f = result.second;
   EQ(NULL_TIMESTAMP, f->s_header.s_timestamp);   // From extractor which is null
-  EQ(pRawItem->s_header.s_size, f->s_header.s_size);
+  EQ(itemSize(pRawItem), f->s_header.s_size);
   EQ(uint32_t(0), f->s_header.s_barrier);
   EQ(uint32_t(1), f->s_header.s_sourceId);   // Default id.
   EQ((void*)(pRawItem), f->s_pBody);
@@ -364,7 +364,7 @@ void fragsrctest::sendchunk_2()
     }
     pItems[i]->setBodyCursor(p);
     pItems[i]->updateSize();
-    totalSize += pItems[i]->getItemPointer()->s_header.s_size;  
+    totalSize += itemSize(pItems[i]->getItemPointer());
   }
   
   pChunkStorage = new uint8_t[totalSize];
@@ -375,8 +375,8 @@ void fragsrctest::sendchunk_2()
   
   for (int i =0; i < 10; i++) {
     pRingItem pi = pItems[i]->getItemPointer();
-    memcpy(p, pi, pi->s_header.s_size);
-    p += pi->s_header.s_size;
+    memcpy(p, pi, itemSize(pi));
+    p += itemSize(pi);
   }
   CRingBufferChunkAccess::Chunk c;
   c.setChunk(totalSize, pChunkStorage);
@@ -392,7 +392,7 @@ void fragsrctest::sendchunk_2()
     EQ(pItems[i]->getEventTimestamp(), pFrags->s_header.s_timestamp);
     EQ(pItems[i]->getSourceId(), pFrags->s_header.s_sourceId);
     EQ(pItems[i]->getBarrierType(), pFrags->s_header.s_barrier);
-    EQ(pItem->s_header.s_size, pFrags->s_header.s_size);
+    EQ(itemSize(pItem), pFrags->s_header.s_size);
     
     ASSERT(memcmp(pItem, pFrags->s_pBody, pItem->s_header.s_size) == 0);
     

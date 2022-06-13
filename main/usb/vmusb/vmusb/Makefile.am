@@ -5,7 +5,8 @@ COMPILATION_FLAGS	= $(USBSWITCHES) -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAG
 			-I@top_srcdir@/base/tcpip \
 			-I@top_srcdir@/base/os	\
 			-I@top_srcdir@/base/thread \
-			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
+			  @TCL_FLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@ \
+			-I@srcdir@/.. -I@top_srcdir@/base/os
 
 libVMUSB_la_SOURCES 	=  CVMUSBusb.cpp CVMUSBReadoutList.cpp CVMUSBEthernet.cpp \
 	CVMUSBFactory.cpp \
@@ -32,7 +33,7 @@ noinst_HEADERS		= CVMUSB.h   \
 	CLoggingReadoutList.h
 
 
-libVMUSB_CXXFLAGS=@THREADCXX_FLAGS@
+libVMUSB_CXXFLAGS=@THREADCXX_FLAGS@ -I@srcdir@/.. -I@top_srcdir@/base/os
 
 libVMUSB_la_LIBADD       = @top_builddir@/base/tcpip/libTcp.la \
 			@top_builddir@/base/thread/libdaqthreads.la \
@@ -63,7 +64,7 @@ tests_SOURCES = @srcdir@/TestRunner.cpp \
 
 
 tests_CPPFLAGS = -std=c++11 -g -I@prefix@/include -I@top_srcdir@/base/thread \
-		$(CPPUNIT_INCLUDES)
+		$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
 tests_LDADD = @top_builddir@/base/thread/libdaqthreads.la \
 		$(CPPUNIT_LDFLAGS) \
 		@builddir@/libVMUSB.la \
@@ -81,22 +82,32 @@ REMOTE_TEST_MODULES = @srcdir@/TestRunner.cpp \
              @srcdir@/remoteVMETests.cpp 
 
 remotetests: $(REMOTE_TEST_MODULES)
-	$(CXX) -g -o remotetests -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES) \
-	$(REMOTE_TEST_MODULES) $(CPPUNIT_LDFLAGS) -L@prefix@/lib -lVMUSB -lVMUSBRemote \
+	$(CXX) -g -o remotetests -I@srcdir@ -I@prefix@/include \
+	$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@ \
+	$(REMOTE_TEST_MODULES) $(CPPUNIT_LDFLAGS) -L@prefix@/lib -lVMUSB \
+	-lVMUSBRemote \
 	-Wl,"-rpath=@prefix@/lib" @TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
 
 UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
-									@srcdir@/vmusbrdolisttests.cpp \
-									@srcdir@/loggingrdolisttests.cpp \
-									@srcdir@/mockvmusbtests.cpp
+		@srcdir@/vmusbrdolisttests.cpp \
+		@srcdir@/loggingrdolisttests.cpp \
+		@srcdir@/mockvmusbtests.cpp
 
 noinst_PROGRAMS = unittests
 unittests_SOURCES = $(UNITTEST_MODULES)
 
+<<<<<<< HEAD
 unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES) $(COMPILATION_FLAGS)
 unittests_LDADD = $(CPPUNIT_LDFLAGS) \
 			@builddir@/libVMUSB.la  \
 			@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
+=======
+unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include \
+	$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
+unittests_LDADD = $(CPPUNIT_LDFLAGS) \
+	 	@builddir@/libVMUSB.la  \
+		@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
+>>>>>>> origin/12.0-pre5
 unittests_LDFLAGS = -Wl,"-rpath=@prefix@/lib"
 
 installcheck-local: unittests

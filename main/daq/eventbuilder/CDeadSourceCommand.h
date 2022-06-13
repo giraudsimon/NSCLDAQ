@@ -14,16 +14,15 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CDEADSOURCECOMMAND_H
-#define __CDEADSOURCECOMMAND_H
+#ifndef CDEADSOURCECOMMAND_H
+#define CDEADSOURCECOMMAND_H
 /**
  * @file CDeadSourceCommand.h
  * @brief Implements Tcl command to mark an event source dead by id.
  */
 
-#ifndef __TCLOBJECTPROCESSOR_h
 #include <TCLObjectProcessor.h>
-#endif
+
 
 // Forward definitions:
 

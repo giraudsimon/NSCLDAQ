@@ -61,19 +61,20 @@ CEndCommand::operator()(CTCLInterpreter&    interp,
 {
   // There should be no command words other than the 'end' keyword:
 
-  if (objv.size() > 1) {
-    std::string result = "Too many command line parameters:\n";
-    result            += usage();
+  try {
+    requireExactly(objv, 1,"Too many command line parameters:\n"); 
+    
+    int status =0;
+    string result;
+    tie(status, result) = end();
+  
     interp.setResult(result);
+    return status;
+  }
+  catch (std::string msg) {
+    interp.setResult(msg);
     return TCL_ERROR;
   }
-
-  int status =0;
-  string result;
-  tie(status, result) = end();
-
-  interp.setResult(result);
-  return status;
 }
 
 tuple<int, string> CEndCommand::end() 

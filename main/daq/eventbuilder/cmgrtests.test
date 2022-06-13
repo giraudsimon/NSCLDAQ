@@ -1,0 +1,254 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file    cmgrtests.test
+# @brief   Test the connection manager.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+
+package require tcltest
+package provide EvbOrderer 1.0
+package require EVB::ConnectionManager
+
+
+
+proc writeConnectmsg {description sids} {
+    # figure out the body size and write the header.
+}
+
+
+tcltest::test create_1 {Create Connection object} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r]
+} \
+-cleanup {
+   close $writefd
+   close $readfd
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set mgr [EVB::Connection junk -socket $readfd]
+   
+
+} -result ::junk
+
+tcltest::test create_2 {Connection object is in FORMING state} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r]
+} \
+-cleanup {
+   close $writefd
+   close $readfd
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set mgr [EVB::Connection %AUTO% -socket $readfd]
+   
+   $mgr cget -state
+            
+} -result FORMING
+
+## See if we can get a connection properly handled.
+#
+
+# connection handler:
+
+set sourceids [list]
+proc EVB::source {socket args} {
+    set ::sourceids $args
+}
+
+tcltest::test connect_1 {Connection with no source ids.} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   # With no source ids, the body size is sizeof(uint32_t) = 4.
+   
+   set message [binary format iia80i 84 $EVB::CONNECT "Test" 0]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Connect $readfd
+   
+   list [$mgr cget -state] $::sourceids
+   
+} -result [list ACTIVE [list]]
+
+tcltest::test connect_2 {Connection saves description properly} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   # With no source ids, the body size is 80 + sizeof(uint32_t) = 84.
+   
+   set message [binary format iia80i 84 $EVB::CONNECT "Test" 0]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Connect $readfd
+   $mgr cget -description
+} -result Test
+
+tcltest::test connect_3 {Calls EVB:source properly} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   # With three source ids, the body is now 80+4*sizeof(uint32_t) = 96
+   
+   set message [binary format iia80iiii 96 $EVB::CONNECT "Test" 3 1 2 3]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Connect $readfd
+   set ::sourceids
+} -result [list 1 2 3]
+
+#  Fragments: - fragment handler:
+
+set fragmentBody ""
+proc EVB::handleFragments {socket fragments} {
+    set ::fragmentBody $fragments
+}
+
+tcltest::test fragments_1 {Empty fragment message} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd -state ACTIVE]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set message [binary format ii 0 $EVB::FRAGMENTS]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Fragments $readfd
+   
+   string length $::fragmentBody
+} -result 0
+
+tcltest::test fragments_2 {Longword body containing 0xaaaaaaaa} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd -state ACTIVE]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set message [binary format iii 4 $EVB::FRAGMENTS 0xaaaaaaaa]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Fragments $readfd
+   
+   binary scan $::fragmentBody i v
+   format 0x%x [expr {$v & 0xffffffff}];    # In case 64 bit integers.
+} -result 0xaaaaaaaa
+
+   
+##
+#  I'm allowed to disconnect as well when expecting fragments.
+
+
+tcltest::test disconnect_1 {Disconnect when expecting fragments} \
+-setup {
+    set tempname [tcltest::makeFile "" cmgr_testdata.dat]
+    set writefd [open $tempname w]
+    set readfd  [open $tempname r+]
+    fconfigure $writefd -encoding binary -translation binary
+    fconfigure $readfd  -encoding binary -translation binary
+    set mgr [EVB::Connection %AUTO% -socket $readfd -state ACTIVE]
+} \
+-cleanup {
+   close $writefd
+   catch {close $readfd}
+   tcltest::removeFile $tempname
+   $mgr destroy
+} \
+-body {
+   set message [binary format ii 0 $EVB::DISCONNECT]
+   puts -nonewline $writefd $message
+   flush $writefd
+   
+   $mgr _Fragments $readfd
+   
+   $mgr cget -state 
+} -result CLOSED
+   
+                

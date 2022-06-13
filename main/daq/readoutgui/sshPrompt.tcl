@@ -36,6 +36,8 @@ package require Configuration
 package require Tk
 package require DataSourceUI
 package require snit
+package require dialogwrapper
+package require textprompter
 
 # Make sure the provider namespace has been established:
 
@@ -133,27 +135,35 @@ snit::widgetadaptor ::SSHPipe::ParameterPromptDialog {
         install form using $wrapper controlarea
         set f $form
         
-        ttk::label $f.hostlabel  -text {Host name:}
-        ttk::entry $f.host       -textvariable [myvar options(-host)]
+        #ttk::label $f.hostlabel  -text {Host name:}
+        #ttk::entry $f.host       -textvariable [myvar options(-host)]
+        textprompt $f.host -text {Host name:} -textvariable [myvar options(-host)]
         
-        ttk::label  $f.programlabel -text {Readout program:}
-        ttk::entry  $f.program      -textvariable [myvar options(-program)]
+        #ttk::label  $f.programlabel -text {Readout program:}
+        #ttk::entry  $f.program      -textvariable [myvar options(-program)]
+        textprompt $f.program -text {Readout program:} \
+            -textvariable [myvar options(-program)]
         ttk::button $f.findprogram  -text Browse... -command [mymethod _browseProgram]
         
-        ttk::label $f.dirlabel -text {Working directory}
-        ttk::entry $f.dir     -textvariable  [myvar options(-defaultdir)] \
+        #ttk::label $f.dirlabel -text {Working directory}
+        #ttk::entry $f.dir     -textvariable  [myvar options(-defaultdir)] \
+        #    -state disabled
+        textprompt $f.dir  -text {Working directory} \
+            -textvariable  [myvar options(-defaultdir)] \
             -state disabled
         ttk::button $f.dirbrowse -text Browse... -command [mymethod _browseWD]
         ttk::checkbutton $f.samedir -text {Same as Readout} -variable [myvar sameAsProgram] \
             -onvalue 1 -offvalue 0 -command [mymethod _sameDirButton]
         
-        ttk::label  $f.paramlabel   -text {Command line options}
-        ttk::entry  $f.params       -textvariable [myvar options(-parameters)]
+        #ttk::label  $f.paramlabel   -text {Command line options}
+        #ttk::entry  $f.params       -textvariable [myvar options(-parameters)]
+        textprompt $f.params -text {Command line options} \
+            -textvariable [myvar options(-parameters)]
         
-        grid $f.hostlabel $f.host
-        grid $f.programlabel $f.program $f.findprogram
-        grid $f.dirlabel $f.dir $f.dirbrowse $f.samedir
-        grid $f.paramlabel $f.params
+        grid $f.host
+        grid $f.program $f.findprogram
+        grid $f.dir $f.dirbrowse $f.samedir
+        grid $f.params
         
         pack $wrapper
         

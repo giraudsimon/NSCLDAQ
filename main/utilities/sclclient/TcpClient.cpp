@@ -58,17 +58,17 @@ static const char* pCopyrightNotice =
 //     Connect()
 //  Operation Type: 
 //     
-Bool_t TcpClientConnection::Connect()  
+TCLPLUS::Bool_t TcpClientConnection::Connect()  
 {
   // Attempts to form a connection to the current host and port.
   //  If successful, the connection callback is called prior
   // to returning.
   if(m_eConnectionState == Connected) {// Error if already connected.
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   m_nFd = socket(AF_INET, SOCK_STREAM, 0);
   if(m_nFd < 0) {
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   try {
     sockaddr_in peer = MakeSocketAddress();
@@ -78,7 +78,7 @@ Bool_t TcpClientConnection::Connect()
   }
   catch(string& reason) {	// Error with the fd open.
     DoDisconnect();
-    return kfFALSE;
+    return TCLPLUS::kfFALSE;
   }
   // Success
 
@@ -86,7 +86,7 @@ Bool_t TcpClientConnection::Connect()
   if(m_ConnectionCallback) {
     m_ConnectionCallback(*this, m_ConnectionCbData);
   }
-  return kfTRUE;
+  return TCLPLUS::kfTRUE;
 
 }
 
@@ -174,14 +174,14 @@ int TcpClientConnection::GetLine(string& rBuffer)
   // Peek is used to look at the data to determine how many bytes to actually
   // read.
 
-  Bool_t fDone = kfFALSE;
+  TCLPLUS::Bool_t fDone = TCLPLUS::kfFALSE;
   int    nBytes= 0;
   char   Buffer[1000];		// Internal buffer for peekahead.
-  Bool_t fGotBytes = kfFALSE;	// To deal with empty lines.
+  TCLPLUS::Bool_t fGotBytes = TCLPLUS::kfFALSE;	// To deal with empty lines.
   while(!fDone) {
     int nAvail = recv(m_nFd, Buffer, sizeof(Buffer-1), MSG_PEEK);
     int nBytesAdded = 0;
-    if(nAvail >0) fGotBytes = kfTRUE;
+    if(nAvail >0) fGotBytes = TCLPLUS::kfTRUE;
     if(nAvail ==0) return nBytes; // End of file (socket closed).
     if(nAvail < 0) return nAvail; // Error.
     Buffer[nAvail] = 0;		// Ensure null termination.
@@ -190,14 +190,14 @@ int TcpClientConnection::GetLine(string& rBuffer)
       pEol--;			// Don't include the eol character.
       AppendString(rBuffer, Buffer, pEol);
       nBytesAdded = ((unsigned long)pEol - (unsigned long)Buffer);
-      fDone = kfTRUE;		// Done at end of line.
+      fDone = TCLPLUS::kfTRUE;		// Done at end of line.
     }
     else if (!pEol) {
       nBytesAdded  = nAvail;
       rBuffer += Buffer;
     }
     else {			// Bare end of line:
-      fDone = kfTRUE;
+      fDone = TCLPLUS::kfTRUE;
     }
     nBytes += nBytesAdded;		// Update the number of bytes read.
     recv(m_nFd, Buffer, nAvail, 0); // Flush them from the input.

@@ -19,9 +19,10 @@ DDASReadout_extcl_SOURCES=Skeleton.cpp CMyEventSegment.cpp CMyTrigger.cpp CMyBus
 
 
 DDASReadout_extcl_CPPFLAGS=-I@DDAS_INSTDIR@/include -I@top_srcdir@/daq/format \
+	@PIXIE_CPPFLAGS@					\
 	-I@top_srcdir@/sbs/readout -I@top_srcdir@/base/dataflow		\
 	-I@top_srcdir@/sbs/nsclapi					\
-	-I@top_srcdir@/ddas						\
+	-I@top_srcdir@/base/os						\
 	@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@         			\
 	@PIXIE_CPPFLAGS@			\
 	-fPIC -DFIRMWARE_FILE=\"@DDAS_INSTDIR@/share/readout/DDASFirmwareVersions_ExtClock.txt\"
@@ -31,7 +32,7 @@ DDASReadout_extcl_LDFLAGS= \
 	@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la		\
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/base/os/libdaqshm.la			\
-	-L@DDAS_INSTDIR@/lib  @PIXIE_LDFLAGS@          \
+	-L@DDAS_INSTDIR@/lib @PIXIE_LDFLAGS@          \
 	-lConfiguration -lSystemBooter @PLX_LDFLAGS@ 		\
 	@LIBTCLPLUS_LDFLAGS@	@TCL_LDFLAGS@			\
 	-Wl,"-rpath=@DDAS_INSTDIR@/lib"

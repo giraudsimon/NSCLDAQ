@@ -12,75 +12,10 @@
 #include <signal.h>
 #include <stdio.h>
 #include <os.h>
+#include "stdintoringUtils.h"
+#include <fcntl.h>
 
 using namespace std;
-
-/**************************************************************
- * integerize:                                                *
- *   Utility function that converts a string to an integer    *
- *   while allowing the suffixes k, m, g to be kilo, mega     *
- *   and giga multipliers respectively.  Computer sizes e.g.  *
- *   k = 1024, m = 1024*1024, g = 1024*1024*1024              *
- *                                                            *
- * On failure, this will print the usage and exit with a fail *
- * code.                                                      *
- *                                                            *
- * Parameters:                                                *
- *   const char* str  - The input string                      *
- * Returns:                                                   *
- *   The integer result                                       *
- *************************************************************/
-
-static int 
-integerize(const char* str)
-{
-  char* endptr;
-
-  // Decode the front part:
-
-  int base = strtol(str, &endptr, 0); // Allow hex etc.
-  
-  // It's an error to not have at least one digit:
-
-  if (endptr == str) {
-    cmdline_parser_print_help();
-    exit(EXIT_FAILURE);
-  }
-
-  // If the entire string was converted return it:
-
-  if(strlen(endptr) == 0) {
-    return base;
-  }
-  // If there's more than one extra char, that's an error too:
-
-  if (strlen(endptr) > 1) {
-    cmdline_parser_print_help();
-    exit(EXIT_FAILURE);
-  }
-
-  // One extra character can be the multiplier
-
-  char multiplier = *endptr;
-  int value;
-
-  switch (multiplier) {
-  case 'k':
-    value = base*1024;
-    break;
-  case 'm':
-    value = base*1024*1024;
-    break;
-  case 'g':
-    value = base*1024*1024*1024;
-    break;
-
-  default:
-    cmdline_parser_print_help();
-    exit(EXIT_FAILURE);
-  }
-  return value;
-}
 /********************************************************************
  * writeData                                                        *
  *   Writes a block of data to an output file descriptor.   If      *
@@ -127,6 +62,11 @@ writeData(int fd, void* pData, size_t size)
 static void
 mainLoop(string ring, int timeout, size_t mindata)
 {
+  // If STDOUT is a pipe set the pipe buf bit but ignore failures since they're
+  // not important.
+  
+  fcntl(STDOUT_FILENO, F_SETPIPE_SZ, 1024*1024);
+  
   // Attach to the ring. If we fail, report the error and exti.
 
  

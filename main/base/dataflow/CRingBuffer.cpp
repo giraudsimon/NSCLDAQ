@@ -679,16 +679,7 @@ CRingBuffer::~CRingBuffer()
 size_t
 CRingBuffer::put(const void* pBuffer, size_t nBytes, unsigned long timeout)
 {
-  // Require that we are the producer:
-
-  if (m_mode != producer) {
-    throw CStateException(modeString().c_str(), "producer", 
-			  "CRingBuffer::put");
-  }
-  if(m_myPid != m_pClientInfo->s_pid) {
-    throw CStateException("My PID", "Someone else's pid",
-			  "CRingBuffer::get");
-  }
+  validateTransferAccess(producer, "CRingBuffer::put");
 
   // Ensure the ring is big enough for the data:
 
@@ -777,21 +768,8 @@ CRingBuffer::get(void*        pBuffer,
 		 size_t       minBytes, 
 		 unsigned long timeout)
 {
-  // Ensure we are a consumer:
-
-  if (m_mode != consumer) {
-    throw CStateException(modeString().c_str(), "consumer",
-			  "CRingBuffer::get");
-  }
-  // Ensure our PID matches the consumer struct for us.
-  // note that the class variable m_myPid must be set to our PID because
-  // to connect to this ring we must have contacted the RingMaster and that's
-  // what sets that.
-
-  if(m_myPid != m_pClientInfo->s_pid) {
-    throw CStateException("My PID", "Someone else's pid",
-			  "CRingBuffer::get");
-  }
+  validateTransferAccess(consumer, "CRingBuffer::get");
+  
 
   // Ensure that we won't block forever:
 
@@ -843,22 +821,7 @@ size_t
 CRingBuffer::peek(void*   pBuffer,
 		  size_t  maxBytes)
 {
-  // Ensure we are a consumer:
-
-  if (m_mode != consumer) {
-    throw CStateException(modeString().c_str(), "consumer",
-			  "CRingBuffer::get");
-  }
-  // Ensure our PID matches the consumer struct for us.
-  // note that the class variable m_myPid must be set to our PID because
-  // to connect to this ring we must have contacted the RingMaster and that's
-  // what sets that.
-
-  if(m_myPid != m_pClientInfo->s_pid) {
-    throw CStateException("My PID", "Someone else's pid",
-			  "CRingBuffer::get");
-  }
-
+  validateTransferAccess(consumer, "CRingBUffer::get");
 
   size_t transferSize = availableData();
   if (transferSize == 0) {
@@ -900,8 +863,10 @@ CRingBuffer::peek(void*   pBuffer,
   
 }
 /*!
-   Skip the user's get/put pointer ahead.  Only consumers can call this.
-   Use this to avoid transferring data you know you won't use.
+   Skip the user's get/put pointer ahead.  In zero copy mode
+   a consumer or a producer can call this because producers
+   do a skip once data has been placed directly into the ring buffer
+   to increment the put pointer.
 
    \param nBytes - Number of bytes to skip.
 
@@ -1459,4 +1424,30 @@ CRingBuffer::ringHeader(RingBuffer* p)
 {
 return strcmp(p->s_header.s_magicString, 
 	       MAGICSTRING) == 0;
+}
+/**
+ * validateTransferAccess
+ *    For a process to access ring data access/transfer
+ *    methods requires that this object be attached with an appropriate
+ *    mode and that the pid associated with our header be our own.
+ *    If that's not the case exceptions get thrown.
+ *   @param mode  - required access mode.
+ *   @param doing - what's being attempted that requires access.
+ */
+void
+CRingBuffer::validateTransferAccess(ClientMode mode, const char* doing)
+{
+if (m_mode != mode) {
+    throw CStateException(modeString().c_str(), "consumer",
+			  doing);
+  }
+  // Ensure our PID matches the consumer struct for us.
+  // note that the class variable m_myPid must be set to our PID because
+  // to connect to this ring we must have contacted the RingMaster and that's
+  // what sets that.
+
+  if(m_myPid != m_pClientInfo->s_pid) {
+    throw CStateException("My PID", "Someone else's pid",
+			  doing);
+  }
 }

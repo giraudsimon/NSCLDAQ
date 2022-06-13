@@ -29,8 +29,8 @@ namespace DAQ {
     // C10p08p0MediatorCreator Implementation
     //
 
-    std::unique_ptr<CBaseMediator> C10p0to8p0MediatorCreator::operator ()() const {
-      return std::unique_ptr<CBaseMediator>(new C10p0to8p0Mediator());
+    CBaseMediator* C10p0to8p0MediatorCreator::operator ()(void* unused)  {
+      return (new C10p0to8p0Mediator());
     }
 
 

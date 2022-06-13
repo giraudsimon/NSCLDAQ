@@ -78,6 +78,10 @@ static const char* timestampPolicies[] = {
 static std::string
 glomCommand(const gengetopt_args_info& arginfo)
 {
+  if (!std::getenv("DAQBIN")) {
+    std::cerr << "DAQBIN is not defined.  Source a daqsetup script\n";
+    std::exit(EXIT_FAILURE);
+  }
     std::stringstream cmd;
     cmd << "${DAQBIN}/glom --dt=" << arginfo.dt_arg
         << " --timestamp-policy=" << timestampPolicies[arginfo.timestamp_policy_arg]

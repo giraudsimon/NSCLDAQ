@@ -3,14 +3,13 @@
 #  Manage the submodule for libtclplus
 #  Usage ./tcl++incorp tag-to-switch-to
 #
-#  e.g. ./tcl++incorp libtclplus-v3.0-008
+#  e.g. ./tcl++incorp libtclplus-v4.3-001
 #  last used in this branch.
 #
 
 tag=$1
-
+git submodule update --init;    # Pull in the new repository
 (cd libtcl ; git checkout $tag)
 git add libtcl
 git commit -m"Update libtcl tag to $tag"
-
 git submodule foreach 'autoreconf -if'

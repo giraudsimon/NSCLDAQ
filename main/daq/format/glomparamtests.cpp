@@ -70,7 +70,7 @@ GlomItemTests::structure()
     
     // Lack of body header:
     
-    EQ(static_cast<uint32_t>(0), pItem->s_mbz);
+    EQ(static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_empty);
     
     // Body contents:
     

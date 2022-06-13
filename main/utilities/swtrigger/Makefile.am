@@ -6,16 +6,20 @@ MPI_TSRCS=CMPITransport_mpi.cpp CMPIFanoutTransport_mpi.cpp \
 MPI_THDRS=CMPITransport_mpi.h   CMPIFanoutTransport_mpi.h \
 	CMPIFanoutClientTransport_mpi.h CRingItemMPIDataSource_mpi.h
 
-MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h
+MPI_SWTSRCS=CMPIClassifierApp_mpi.cpp CMPIClassifierApp_mpi.h \
+	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
-MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp
+MPI_TRSRCS=CMPITransformerApp_mpi.h CMPITransformerApp_mpi.cpp \
+	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 MPI_EDITORSRCS=CMPIBuiltRingItemEditorApp_mpi.h  \
-	CMPIBuiltRingItemEditorApp_mpi.cpp
+	CMPIBuiltRingItemEditorApp_mpi.cpp 	CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
-MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp
+MPI_FULLEDITORSRCS=CMPIFullEventEditorApp_mpi.h CMPIFullEventEditorApp_mpi.cpp \
+		CMPIAppStrategy_mpi.cpp CMPIAppStrategy_mpi.h
 
 if MPI
+MPI_FLAGS=$(shell $(MPICXX) -show|cut -d" " -f2-1000)
 
 #  Define the transport sources and headers.
 
@@ -67,14 +71,14 @@ libSwTrigger_la_LDFLAGS=@top_builddir@/base/os/libdaqshm.la           \
 	@top_builddir@/base/thread/libdaqthreads.la		\
 	@top_builddir@/base/uri/liburl.la			\
 	@top_builddir@/base/dataflow/libDataFlow.la		\
-	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@
+	@LIBEXCEPTION_LDFLAGS@ @ZMQ_LDFLAGS@ @THREADLD_FLAGS@ $(MPI_FLAGS)
 
 libSwTrigger_la_CPPFLAGS=-I@top_srcdir@/daq/IO -I@top_srcdir@/base/dataflow \
 	-I@top_srcdir@/base/os -I@top_srcdir@/daq/format \
 	-I@top_srcdir@/base/factories	\
 	-I@top_srcdir@/base/thread -I@top_srcdir@/base/uri \
 	-I@top_srcdir@/daq/eventbuilder \
-	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
+	@LIBTCLPLUS_CFLAGS@ @THREADCXX_FLAGS@ $(MPI_FLAGS) @PIXIE_CPPFLAGS@
 
 include_HEADERS = CTransport.h CReceiver.h CZMQTransport.h CZMQClientTransport.h \
 	CZMQServerTransport.h CSender.h CRingItemTransport.h CRingItemFileTransport.h \
@@ -97,60 +101,56 @@ SoftwareTrigger_SOURCES=swtriggerflags.c swtriggerflags.h SoftwareTrigger.cpp \
 	CClassifierApp.h CClassifierApp.cpp \
 	CZMQThreadedClassifierApp.cpp CZMQThreadedClassifierApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
-	CRingBlockDataSink.cpp $(MPI_SoftwareTrigger_SRCS)
+	CRingBlockDataSink.cpp CZMQAppStrategy.h CZMQAppStrategy.cpp \
+	$(MPI_SoftwareTrigger_SRCS)
+
+
 
 SoftwareTrigger_DEPENDENCIES=libSwTrigger.la
-
-
-
 SoftwareTrigger_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 SoftwareTrigger_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
 EventFilter_SOURCES=eventfilterflags.c eventfilterflags.h EventFilterMain.cpp \
 	CEventFilterApp.cpp CEventFilterApp.h
-
-EventFilter_Dependencies=libSwTrigger.la
-
+EventFilter_DEPENDENCIES=libSwTrigger.la
 EventFilter_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 EventFilter_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
 
 
 
-Transformer_SOURCES=Transformer.cpp transformer.c transformer.h \
+Transformer_SOURCES=Transformer.cpp swtriggerflags.c swtriggerflags.h \
 	$(MPI_Transformer_SRCS)  \
 	CTransformerApp.cpp CTransformerApp.h \
 	CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp 				\
-	CZMQTransformerApp.cpp CZMQTransformerApp.h
+	CZMQTransformerApp.cpp CZMQTransformerApp.h CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
-Transformer_Dependencies=libSwTrigger.la
-
+Transformer_DEPENDENCIES=libSwTrigger.la
 Transformer_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 Transformer_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
-EventEditor_SOURCES=eventeditor.h eventeditor.c \
+EventEditor_SOURCES=swtriggerflags.h swtriggerflags.c \
 	$(MPI_EventEditor_SRCS) \
 	CTransformerApp.cpp CTransformerApp.h \
         CRingItemSorter.h CRingItemSorter.cpp CRingBlockDataSink.h \
         CRingBlockDataSink.cpp                          \
 	EventEditor.cpp CBuiltRingItemEditorApp.h CBuiltRingItemEditorApp.cpp	\
-	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp
+	CZMQBuiltRingItemEditorApp.h CZMQBuiltRingItemEditorApp.cpp \
+	CZMQAppStrategy.h  CZMQAppStrategy.cpp 
 
-EventEditor_Dependencies=libSwTrigger.la
-
+EventEditor_DEPENDENCIES=libSwTrigger.la
 EventEditor_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 EventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
-FullEventEditor_SOURCES = fulleventeditor.h fulleventeditor.c CFullEventEditor.cpp \
+FullEventEditor_SOURCES = swtriggerflags.h swtriggerflags.c CFullEventEditor.cpp \
 	FullEventEditor.cpp	\
 	CFullEventEditorApp.h CFullEventEditorApp.cpp \
 	CZMQFullEventEditorApp.h CZMQFullEventEditorApp.cpp \
 	CRingItemSorter.h CRingItemSorter.cpp \
 	CRingBlockDataSink.h CRingBlockDataSink.cpp\
-	$(MPI_FullEventEditor_SRCS)
+	$(MPI_FullEventEditor_SRCS) CZMQAppStrategy.h  CZMQAppStrategy.cpp
 
-FullEventEditor_Dependencies=libSwTrigger.la
-
+FullEventEditor_DEPENDENCIES=libSwTrigger.la
 FullEventEditor_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 
@@ -159,11 +159,12 @@ FullEventEditor_LDFLAGS= libSwTrigger.la $(libSwTrigger_la_LDFLAGS) -ldl
 libTestClassifier_la_SOURCES=TestClassifier.cpp
 libTestClassifier_la_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 libTestClassifier_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
+libTestClassifier_la_DEPENDENCIES=libSwTrigger.la
 
 libTestExtender_la_SOURCES=CTestExtender.cpp
 libTestExtender_la_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS)
 libTestExtender_la_LDFLAGS=libSwTrigger.la $(libSwTrigger_la_LDFLAGS)
-
+libTestExtender_la_DEPENDENCIES=libSwTrigger.la
 
 
 BUILT_SOURCES=swtriggerflags.c swtriggerflags.h eventfilterflags.c eventfilterflags.h \
@@ -215,7 +216,6 @@ unittests_SOURCES=TestRunner.cpp Asserts.h testxporttests.cpp zmqxporttests.cpp 
 	zmqworkertests.cpp	\
 	$(libSwTrigger_la_SOURCES)
 
-unittests_DEPENDENCIES=libSwTrigger.la
 
 unittests_CPPFLAGS=$(libSwTrigger_la_CPPFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS= @top_builddir@/daq/IO/libdaqio.la \

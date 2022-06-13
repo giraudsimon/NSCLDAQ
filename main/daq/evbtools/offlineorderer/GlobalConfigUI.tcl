@@ -36,6 +36,7 @@ package require OfflineEVBJob
 package require ring
 package require ExpFileSystem 
 package require Configuration
+package require textprompter
 
 ## @brief A configuraiton dialogue that enables control over ring buffers and
 #         stagearea
@@ -111,12 +112,16 @@ snit::widget GlobalConfigUIView {
 
       set top $win.ringFrm
       ttk::labelframe $top -text "Data Flow" -padding 9
-      ttk::label $top.iringLbl  -text "Input ring"
-      ttk::entry $top.iringEntry -textvariable [myvar options(-inputring)] -width 40
-      ttk::label $top.oringLbl  -text "Output ring"
-      ttk::entry $top.oringEntry -textvariable [myvar options(-outputring)] -width 40
-      grid $top.iringLbl $top.iringEntry -sticky new -pady {0 9}
-      grid $top.oringLbl $top.oringEntry -sticky new
+      #ttk::label $top.iringLbl  -text "Input ring"
+      #ttk::entry $top.iringEntry -textvariable [myvar options(-inputring)] -width 40
+      textprompt $top.iringEntry -text "Input ring" \
+        -textvariable [myvar options(-inputring)] -width 40
+      #ttk::label $top.oringLbl  -text "Output ring"
+      #ttk::entry $top.oringEntry -textvariable [myvar options(-outputring)] -width 40
+      textprompt $top.oringEntry -text "Output ring" \
+        -textvariable [myvar options(-outputring)] -width 40
+      grid  $top.iringEntry -sticky new -pady {0 9}
+      grid $top.oringEntry -sticky new
       grid columnconfigure $top 0 -weight 1
 
       set top $win.stageFrm
@@ -129,10 +134,12 @@ snit::widget GlobalConfigUIView {
       append msg "it can manage as an experimental stagearea."
       $top.descr insert end $msg
       $top.descr configure -state disabled
-      ttk::label $top.stageareaLbl   -text "Stagearea Directory" 
-      ttk::entry $top.stageareaEntry -textvariable [myvar options(-stagearea)] -width 40
+      #ttk::label $top.stageareaLbl   -text "Stagearea Directory" 
+      #ttk::entry $top.stageareaEntry -textvariable [myvar options(-stagearea)] -width 40
+      textprompt $top.stageareaEntry -text "Stagearea Directory"  \
+        -textvariable [myvar options(-stagearea)] -width 40
       grid $top.descr -  -sticky new -pady {0 9}
-      grid $top.stageareaLbl $top.stageareaEntry -sticky new
+      grid $top.stageareaEntry -sticky new
       grid columnconfigure $top {0 1} -weight 1
 
       ttk::button $win.apply -text "Apply"  -command [mymethod onApply]

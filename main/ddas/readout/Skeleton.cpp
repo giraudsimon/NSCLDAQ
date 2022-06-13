@@ -34,14 +34,15 @@ using namespace std;
 #include "CMyEndCommand.h"
 #include "CMyScaler.h"
 #include <CRunControlPackage.h>
+#include <CDDASStatisticsCommand.h>
 #include <CSyncCommand.h>
 #include <CBootCommand.h>
 
-
+#include <vector>
 
 CMyTrigger *mytrigger(0);             // Newing them here makes order of construction
 CMyEventSegment *myeventsegment(0);   // un-controlled - now newed in SetupReadout.
-
+std::vector<CMyScaler*> scalerModules;
 /*
 /*
 ** This file is a skeleton for the production readout software for
@@ -202,6 +203,7 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   timespec t;
   t.tv_sec  = 16;
   t.tv_nsec = 0;
+<<<<<<< HEAD
   
 
   /// Allow the default scaler readout seconds to be overidden by the
@@ -216,6 +218,15 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   }
   
   
+=======
+  const char* scalerenv = getenv("SCALER_SECONDS");
+  if (scalerenv) {
+    int seconds = atoi(scalerenv);
+    if (seconds > 0) {
+      t.tv_sec = seconds;
+    }
+  }
+>>>>>>> origin/12.0-pre5
   CTimedTrigger* pTrigger = new CTimedTrigger(t);
   pExperiment->setScalerTrigger(pTrigger);
   
@@ -230,7 +241,12 @@ Skeleton::SetupScalers(CExperiment* pExperiment)
   if(modules > 20) cout << "how do you fit " << modules << " into one crate for scaler readout " << endl;
 
   for( int i=0; i<modules; i++){
-    if(i < 20) pExperiment->AddScalerModule(new CMyScaler(i,crateid));
+    
+    if(i < 20) {
+      CMyScaler* pModule = new CMyScaler(i,crateid);
+      scalerModules.push_back(pModule);
+      pExperiment->AddScalerModule(pModule);
+    }
   }
 
 }
@@ -251,7 +267,7 @@ void
 Skeleton::addCommands(CTCLInterpreter* pInterp)
 {
   CReadoutMain::addCommands(pInterp); // Add standard commands.
-
+  new CDDASStatisticsCommand(*pInterp, "statistics", myeventsegment, scalerModules);
 }
 
 /*!

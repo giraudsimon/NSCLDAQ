@@ -32,18 +32,11 @@
 // (c) Copyright NSCL 1999, All rights reserved StringInteractor.h
 //
 
-#ifndef __STRINGINTERACTOR_H  //Required for current class
-#define __STRINGINTERACTOR_H
+#ifndef STRINGINTERACTOR_H  //Required for current class
+#define STRINGINTERACTOR_H
 
-                               //Required for base classes
-#ifndef __INTERACTOR_H
 #include "Interactor.h"
-#endif
-
-#ifndef __STL_STRING                               
 #include <string>        //Required for include files
-#define __STL_STRING
-#endif
                                
 class CStringInteractor  : public CInteractor        
 {                       

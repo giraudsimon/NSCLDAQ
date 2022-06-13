@@ -354,7 +354,6 @@ CWatchCommand::traceRelay(ClientData object, Tcl_Interp* pInterp, const char* na
 {
   CTCLInterpreter interp(pInterp);
   CWatchCommand* pObject = reinterpret_cast<CWatchCommand*>(object);
-
-  return  pObject->logModification(&interp, name1, name2, flags);
+  return pObject->logModification(&interp, name1, name2, flags);
   
 }

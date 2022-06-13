@@ -126,17 +126,14 @@ RingSelectorMain::createPredicate(struct gengetopt_args_info* parse)
 
     std::string types = parse->accept_arg;
     std::vector<int> acceptTypes = stringListToIntegers(types);
-    for (int i =0; i < acceptTypes.size(); i++) {
-      p->addDesiredType(acceptTypes[i]);
-    }
+    addTypes(*p, acceptTypes);
+    
     // Any sampling?
 
     if (parse->sample_given) {
       types = parse->sample_arg;
       std::vector<int> sampleTypes = stringListToIntegers(types);
-      for (int i =0; i < sampleTypes.size(); i++) {
-	p->addDesiredType(sampleTypes[i], true);
-      }
+      addTypes(*p, sampleTypes, true);
     }
     returnValue = p;
 
@@ -154,9 +151,7 @@ RingSelectorMain::createPredicate(struct gengetopt_args_info* parse)
     if (parse->exclude_given) {
       types = parse->exclude_arg;
       std::vector<int> excludeTypes = stringListToIntegers(types);
-      for (int i=0; i < excludeTypes.size(); i++) {
-	p->addExceptionType(excludeTypes[i]);
-      }
+      addExceptions(*p, excludeTypes);
     }
   
 
@@ -165,9 +160,8 @@ RingSelectorMain::createPredicate(struct gengetopt_args_info* parse)
     if (parse->sample_given) {
       types = parse->sample_arg;
       std::vector<int> sampleTypes = stringListToIntegers(types);
-      for (int i=0; i < sampleTypes.size(); i++) {
-	p->addExceptionType(sampleTypes[i], true);
-      }
+      addExceptions(*p, sampleTypes, true);
+      
     }
     returnValue = p;
   }
@@ -214,14 +208,14 @@ RingSelectorMain::processData()
   while(1) {
     CRingItem* pItem = CRingItem::getFromRing(*m_pRing, *m_pPredicate);
     RingItem*  pData = pItem->getItemPointer();
-    size_t     size  = pData->s_header.s_size;
+    size_t     size  = itemSize(pData);
     if (m_nonBlocking) {
       CRingItem* pQueueElement = m_queues.getFree();
       if(pQueueElement) {
-	pQueueElement = pItem;
-	m_queues.send(pQueueElement);
+        pQueueElement = pItem;
+        m_queues.send(pQueueElement);
       } else {
-	delete pItem;		// no free elements and non-blocking
+        delete pItem;		// no free elements and non-blocking
       }
     } else {
       CRingItem* pQueueElement = m_queues.getFreeW();
@@ -262,4 +256,39 @@ RingSelectorMain::writeBlock(int fd, void* pData, size_t size)
     }
   }
 
+}
+/**
+ * addTypes
+ *    Add desired0 types to an all but predicate
+ *    (daqdev/NSCLDAQ#700).
+ * @param p - refernences the predicate.
+ * @param types - types to add.
+ * @param sample - true if added with sampling.
+ */
+void
+RingSelectorMain::addTypes(
+  CDesiredTypesPredicate&  p, std::vector<int>& types, bool sample
+)
+{
+  for (int i = 0; i < types.size(); i++) {
+    p.addDesiredType(types[i], sample);
+  }
+  
+}
+/**
+ * addExcedptions
+ *    Add exception types to an all but predicate.
+ *
+ * @param p - refernences the predicate.
+ * @param types - types to add.
+ * @param sample - true if added with sampling.
+ */
+void
+RingSelectorMain::addExceptions(
+  CAllButPredicate&  p, std::vector<int>& types, bool sample
+)
+{
+  for (int i =0; i < types.size(); i++) {
+    p.addExceptionType(types[i], sample);
+  }
 }

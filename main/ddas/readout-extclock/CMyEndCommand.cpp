@@ -246,8 +246,8 @@ CMyEndCommand::operator()(CTCLInterpreter& interp,
     if(okToEnd) ExecutePreFunction();
     CEndCommand::operator()(interp,objv);
     if(okToEnd) ExecutePostFunction();
-
-  return TCL_OK;
+    
+    return TCL_OK;
 
 }
 

@@ -14,19 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CV977BUSY_H
-#define __CV977BUSY_H
+#ifndef CV977BUSY_H
+#define CV977BUSY_H
 
-#ifndef __CBUSY_H
 #include "CBusy.h"
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 class CCAENV977;
 

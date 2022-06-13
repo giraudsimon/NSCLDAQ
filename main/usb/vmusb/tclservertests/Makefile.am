@@ -23,14 +23,14 @@ unittests_LDADD = @top_builddir@/usb/vmusb/core/libVMUSBCore.la \
 		@top_builddir@/base/thread/libdaqthreads.la 
 
 unittests_CPPFLAGS = -I@top_srcdir@/usb/vmusb/vmusb  \
-			 -I@top_srcdir@/usb/vmusb/ctlconfig  \
-			 -I@top_srcdir@/usb/vmusb/core  \
-			 -I@top_srcdir@/usb/common/configurableobject \
-			 -I@top_srcdir@/usb/common/slowcontrols \
-			 $(CPPUNIT_FLAGS) \
-			 -I@top_srcdir@/base/thread \
-			 @LIBTCLPLUS_CFLAGS@ \
-			 @TCL_FLAGS@ @PIXIE_CPPFLAGS@
+		 -I@top_srcdir@/usb/vmusb/ctlconfig  \
+		 -I@top_srcdir@/usb/vmusb/core  \
+		 -I@top_srcdir@/usb/common/configurableobject \
+		 -I@top_srcdir@/usb/common/slowcontrols \
+		 $(CPPUNIT_FLAGS) \
+		 -I@top_srcdir@/base/thread \
+		 @LIBTCLPLUS_CFLAGS@ \
+		 @TCL_FLAGS@ @PIXIE_CPPFLAGS@
 
 
 check-TESTS : $(UNITTEST_MODULES)

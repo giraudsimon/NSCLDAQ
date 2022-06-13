@@ -407,3 +407,53 @@ snit::widgetadaptor EVB::utility::sortedPair {
     }
     
 }
+##
+# EVB::utility _formatUnsigned
+#
+#   Factored common code from various _unsignedOption methods
+proc EVB::utility::_formatUnsigned {value} {
+    if {[string is integer -strict $value]} {
+            return  [format %u $value]
+        } else {
+            return  $value
+        }
+}
+
+##
+# EVB::utility::_dispatch
+#  Dispatches a command at level 0:
+#
+# @param cmd   - The base command which may have substitution strings.
+# @param map   - substitution map.  This is a list of the form
+#                expected by [string map] it defines substitution strings
+#                and their substitution values.
+# @return - value of the command
+# @note - there's no need to ensure that cmd is nonempty if cmd is an empty string
+#         this method is a no-op. In that case an empty string is returned.
+#
+proc EVB::utility::_dispatch {cmd map} {
+    if {$cmd ne ""} {
+        set cmd [string map $map $cmd]
+        return [uplevel #0 $cmd]
+    } else {
+        return ""
+    }
+}
+##
+# EVB::utility::_setStateFromBool
+#
+#  Given a boolean value set the state of a widget to normal (true) or
+#  disabled (false)
+#
+# @param w - the widget.
+# @param b - the boolean
+#
+proc EVB::utility::_setStateFromBool {w b} {
+    if {$b} {
+        set state normal
+    } else {
+        set state disabled
+    }
+    $w configure -state $state
+
+}

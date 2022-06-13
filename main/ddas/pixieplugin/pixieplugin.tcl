@@ -44,7 +44,11 @@ set DDASTclPackages [file join $DDAS_INSTDIR TclLibs]
 set DAQTclPackages  [file join $DAQ_INSTDIR TclLibs]
 
 lappend auto_path $DDASTclPackages $DAQTclPackages
+<<<<<<< HEAD
 
+=======
+package require removetcllibpath
+>>>>>>> origin/12.0-pre5
 package require pixieserver
 package require portAllocator
 package provide pixieplugin 1.0
@@ -74,7 +78,11 @@ namespace eval ReadoutPixieServer {
     #
     
     set alloc [::portAllocator create pm]
+<<<<<<< HEAD
     set port [$alloc allocatePort pixe16config]    
+=======
+    set port [$alloc allocatePort pixie16config]    
+>>>>>>> origin/12.0-pre5
     
     socket -server ::ReadoutPixieServer::_onConnection  $::ReadoutPixieServer::port
 }

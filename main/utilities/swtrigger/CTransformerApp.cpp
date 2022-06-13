@@ -37,11 +37,11 @@
 ExtenderFactory
 CTransformerApp::getExtenderFactory()
 {
-    void* soHandle = dlopen(m_params.extendlib_arg, RTLD_NOW |RTLD_GLOBAL);
+    void* soHandle = dlopen(m_params.classifier_arg, RTLD_NOW |RTLD_GLOBAL);
     if (!soHandle) {
         std::string error = dlerror();
         std::string msg   = "Failed to open shared library: ";
-        msg += m_params.extendlib_arg;
+        msg += m_params.classifier_arg;
         msg += " ";
         msg += error;
         throw std::runtime_error(msg);
@@ -51,7 +51,7 @@ CTransformerApp::getExtenderFactory()
     char* error = dlerror();
     if (error != nullptr) {
         std::string msg = "Unable to locate 'createExtender' in  ";
-        msg += m_params.extendlib_arg;
+        msg += m_params.classifier_arg;
         msg += " ";
         msg += error;
         msg += " be sure it's delcared extern \"C\"";

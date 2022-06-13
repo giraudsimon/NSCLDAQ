@@ -17,7 +17,7 @@ FIGURES =  @srcdir@/figures/sis3820blockdiagram.dia  \
 
 
 
-CHAPTER2BOOK=@top_srcdir@/docbuild/chapter2book.py
+CHAPTER2BOOK=@PYTHON@ @top_srcdir@/docbuild/chapter2book.py
 
 BOOK = @builddir@/vmusbsetup_autobook.pdf
 

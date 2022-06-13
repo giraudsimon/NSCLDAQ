@@ -29,6 +29,9 @@
 
 using namespace std;
 
+
+bool CVMUSB::m_logTransactions(false);
+
 // Constants:
 
 // Identifying marks for the VM-usb:

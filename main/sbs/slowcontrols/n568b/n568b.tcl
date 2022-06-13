@@ -41,18 +41,12 @@ namespace eval n568b {
 #   The identification string from the device.
 proc n568b::Id {controller node} {
 
-    after 100
-
-    set reply [caennet::send $controller $node 0]
-
-    set error [lindex $reply 0]
-    if {$error != 0} {
-
-	error "CAENnet reply message error $error"  "n568b::Id" $error
-    }
+    after 25;    # in case we need the full 100ms.
+    set reply [n568::_command $controller $node 0 {getting id string}]
+    
 
     for {set i 1} {$i < [llength $reply] } {incr i} {
-	append id [format %c [lindex $reply $i]]
+        append id [format %c [lindex $reply $i]]
 
     }
 
@@ -119,12 +113,8 @@ proc n568b::FormatParams {stat} {
 # 	Coarse Gain ... Offset Value
 #
 proc n568b::GetAllParameters {controller node} {
-    after 75
-    set reply [caennet::send $controller $node 1]
-    set error [lindex $reply 0]
-    if {$error != 0} {
-	error "CAENnet reply message error $error" n568b::GetParameters $error
-    }
+    set reply [n568b::_command $controller $node 1 {getting all parameters}]
+    
     #  There are 16 statuses just like a 'normal' individual status.
     #
     set base 1
@@ -151,13 +141,8 @@ proc n568b::GetAllParameters {controller node} {
 #    The value of the common offset.
 #
 proc n568b::GetOffset {controller node} {
-    after 75
-    set reply [caennet::send $controller $node 2]
-    set error [lindex $reply 0]
-    if {$error != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::GetOffset $error
-    }
+    set reply [n568b::_command $controller $node 2 {Getting offset}]
+    
     return [lindex $reply 1]
 }
 #----------------------------------------------------------------
@@ -177,13 +162,9 @@ proc n568b::GetOffset {controller node} {
 #
 proc n568b::GetChannelParameters {controller node channel} {
     set function [expr ($channel << 8) | 3]
-    after 75
-    set reply [caennet::send $controller $node $function]
-    set error [lindex $reply 0]
-    if {$error != 0} {
-	error "CAENnet reply message error $error "\
-		n568b::GetChannelParameters $error
-    }
+    set reply [n568b::_command $controller $node $function {Getting channel parameters}]
+
+    
     set chstat [list [lindex $reply 1] \
 		     [lindex $reply 2] \
 		     [lindex $reply 3]]
@@ -204,14 +185,8 @@ proc n568b::GetChannelParameters {controller node channel} {
 #      channel is the currently programmed mux channel.
 #
 proc n568b::GetMuxStatus {controller node} {
-    after 75
-    set reply [caennet::send $controller $node 4]
-    set error [lindex $reply 0]
-    if {$error != 0} {
-	error "CAENnet reply message error $error "\
-		n568b::GetMuxStatus $error
-    }
-
+    set reply [n568b::_command $controller $node 4 n568b::getMuxStatus]
+    
     set reply [lindex $reply  1]
     if {($reply & 0x80) != 0} {
 	lappend result on
@@ -244,12 +219,11 @@ proc n568b::SetFineGain {controller node channel value} {
 	error "n568b - invalid fine gain $value" \
 		n568b::SetFineGain
     }
+    
     after 75
     set reply [caennet::send $controller $node $command $value]
-    if {$reply != 0} {
-	error "CAENnet reply message error $error "\
-		n568b::SetFineGain $error
-    }
+    n568b::_checkerror $reply n568b::SetFineGain
+    
 }
 #------------------------------------------------------------------
 # n568b::SetCoarseGain controller node channel value
@@ -276,10 +250,7 @@ proc n568b::SetCoarseGain {controller node channel value} {
     }
     after 75
     set reply [caennet::send $controller $node $command $value]
-    if {$reply != 0} {
-	error "CAENnet Reply message error $reply" \
-		n568b::SetCoarseGain $reply
-    }
+    n568b::_checkerror $reply n568b::SetCoarseGain
 }
 #-----------------------------------------------------------------
 # n568b::SetPole0 controller node channel value
@@ -303,10 +274,7 @@ proc n568b::SetPole0 {controller node channel value} {
     }
     after 75
     set reply [caennet::send $controller $node $command $value]
-    if  {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::SetPole0
-    }
+    n568b::_checkError $reply  n568b::SetPole0
 
 }
 #---------------------------------------------------------------
@@ -333,10 +301,8 @@ proc n568b::SetShapingTime {controller node channel value} {
     }
     after 75
     set reply [caennet::send $controller $node $command $value]
-    if  {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::SetShapingTime
-    }
+    n568b::_checkError $reply  n568b::SetShapingTime
+
 }
 #-----------------------------------------------------------
 # n568b::SetPolarity controller node channel value
@@ -361,10 +327,8 @@ proc n568b::SetPolarity {controller node channel value} {
     }
     after 75               ;# Seems to need a delay  between consecutives
     set reply [caennet::send $controller $node $command $value]
-    if  {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::SetPolarity
-    }
+    n568b::_checkerror $reply  n56b::SetPolarity
+    
 }
 #-----------------------------------------------------------------------
 # n568b::SetOutputConfiguration controller node channel value
@@ -390,10 +354,8 @@ proc n568b::SetOutputConfiguration {controller node channel value} {
     }
     after 75		;#  Seems to need a delay  for consecutives
     set reply [caennet::send $controller $node $command $value]
-    if  {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::SetOutputConfiguration
-    }
+    n568b::_checkerror $reply n568b::SetOutputConfiguration
+    
 }
 #-------------------------------------------------------------------
 # n568b::SetOffset controller node value
@@ -412,10 +374,8 @@ proc n568b::SetOffset {controller node value} {
     }
     after 75
     set reply [caennet::send $controller $node $command $value]
-    if {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::SetOffset
-    }
+    n568b::_checkerror $reply n568b::SetOffset
+    
 }
 #------------------------------------------------------------------
 # n568b::EnableMuxOut
@@ -429,11 +389,8 @@ proc n568b::EnableMuxOut {controller node} {
     set command 0x21
     after 75
     set reply [caennet::send $controller $node $command]
-    if {$reply != 0} {
-	error "CAENnet reply message error $error" \
-		n568b::EnableMuxOut $error
-    }
-}
+    n568b::_checkerror $reply  n568b::EnableMuxOut
+} 
 #------------------------------------------------------------------
 # n568b::DisableMuxOut controller node
 #
@@ -444,12 +401,38 @@ proc n568b::EnableMuxOut {controller node} {
 #
 proc n568b::DisableMuxOut {controller node} {
     set command 0x20
+    n568b::_command $controller $node $command {Disabling mux}
+}
+##
+# _checkerror
+#   Checks for a caennet error and throws if there is one:
+#
+# @param reply - reply from caennet::send.
+# @param doing - string describing what's being attempted.
+#
+proc n568b::_checkerror {reply doing} {
+    set error [lindex $reply 0]
+    if {$error != 0} {
+        error "CAENnet reply message error $error " \
+		$doing $error
+    }
+}
+##
+# _command
+#  Perform a command with a 75ms delay preceding it that the
+#  n568 seems to need.  The command has no data of its own.
+#
+# @param controller - controller handle
+# @param node       - caennet node number.
+# @param cmd        - the command to send.
+# @param doing      - operation  in english
+# @return list      - full reply list.
+# @note an error is thrown if the reply indicates a failure.
+proc n568b::_command {controller node command doing} {
     after 75
     set reply [caennet::send $controller $node $command]
-    if {$reply != 0} {
-	error "CAENnet reply message error $error " \
-		n568b::DisableMuxOut $error
-    }
+    n568b::_checkerror $reply $doing
+    return $reply
 }
 
 

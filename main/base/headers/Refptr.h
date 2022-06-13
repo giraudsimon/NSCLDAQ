@@ -13,8 +13,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef _REFPTR_H
-#define _REFPTR_H
+#ifndef REFPTR_H
+#define REFPTR_H
 #pragma interface
 //
 //   This file contains template classes to provide automated memory 

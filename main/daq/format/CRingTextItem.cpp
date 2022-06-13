@@ -39,13 +39,14 @@ using namespace std;
 CRingTextItem::CRingTextItem(uint16_t type, vector<string> theStrings) :
   CRingItem(type, bodySize(theStrings) + sizeof(BodyHeader))
 {
-    init();			
-    copyStrings(theStrings);
-  
-    pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer());      
-    pItem->s_timeOffset = 0;
-    pItem->s_timestamp = static_cast<uint32_t>(time(NULL));
-    pItem->s_offsetDivisor = 1;
+
+    auto stringPtrs = makeStringPointers(theStrings);
+    void* p = fillTextItemBody(
+      getItemPointer(), 0, 1, time(nullptr), stringPtrs.size(), stringPtrs.data(),
+      0
+    );
+    setBodyCursor(p);
+    updateSize();
 }
 /*!
   Construct a ring buffer, but this time provide actual values for the
@@ -65,14 +66,14 @@ CRingTextItem::CRingTextItem(uint16_t       type,
 			     time_t         timestamp) :
   CRingItem(type, bodySize(strings) + sizeof(BodyHeader))
 {
-  init();
-  copyStrings(strings);
-
-  pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer()); 
-  pItem->s_timeOffset = offsetTime;
-  pItem->s_timestamp  = timestamp;
-  pItem->s_offsetDivisor = 1;
   
+  auto stringPtrs = makeStringPointers(strings);
+  void* p = fillTextItemBody(
+    getItemPointer(), offsetTime, 1, timestamp, stringPtrs.size(),
+    stringPtrs.data(), 0
+  );
+  setBodyCursor(p);
+  updateSize();
 }
 /**
  * constructor
@@ -102,12 +103,14 @@ CRingTextItem::CRingTextItem(
     CRingItem(type, eventTimestamp, source, barrier,
     bodySize(theStrings) + sizeof(BodyHeader))
 {
-    init();
-    pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer()); 
-    pItem->s_timeOffset = offsetTime;
-    pItem->s_timestamp  = timestamp;
-    pItem->s_offsetDivisor = divisor;
-    copyStrings(theStrings);
+    
+    auto stringPointers = makeStringPointers(theStrings);
+    void* p = fillTextItemBody(
+      getItemPointer(), offsetTime, divisor, timestamp,
+      stringPointers.size(), stringPointers.data(), source 
+    );
+    setBodyCursor(p);
+    updateSize();
 
 }
 
@@ -124,7 +127,7 @@ CRingTextItem::CRingTextItem(const CRingItem& rhs)
 {
   if (!validType()) throw bad_cast();
 
-  init();
+  
 }
 
 /*!
@@ -134,7 +137,7 @@ CRingTextItem::CRingTextItem(const CRingItem& rhs)
 CRingTextItem::CRingTextItem(const CRingTextItem& rhs) :
   CRingItem(rhs)
 {
-  init();
+  
 }
 
 /*!
@@ -154,7 +157,7 @@ CRingTextItem::operator=(const CRingTextItem& rhs)
 {
   if (this != &rhs) {
     CRingItem::operator=(rhs);
-    init();
+    
   }
   return *this;
 }
@@ -285,7 +288,19 @@ CRingTextItem::getTimestamp() const
   pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer());
   return pItem->s_timestamp;
 }
-
+/**
+ * getOriginalSourceId
+ *    Returns the sourceId that was used to construct this item.
+ *    Note that the body header can be rewritten by glom. This method
+ *    returns the source id that was saved in the body of the item.
+ * @return uint32_t
+ */
+uint32_t
+CRingTextItem::getOriginalSourceId() const
+{
+  pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer());
+  return pItem->s_originalSid;
+}
 ///////////////////////////////////////////////////////////
 //
 // Virtual method implementations.
@@ -324,11 +339,12 @@ CRingTextItem::toString() const
   // uint32_t elapsed  = getTimeOffset();
   string   time     = timeString(getTimestamp());
   vector<string> strings = getStrings();
+  uint32_t sid      = getOriginalSourceId();
 
   out << time << " : Documentation item ";
   out << typeName();
   out << bodyHeaderToString();
-
+  out << "Originally emitted by source id: " << sid << " ";
   out << computeElapsedTime() << " seconds in to the run\n";
   for (int i = 0; i < strings.size(); i++) {
     out << strings[i] << endl;
@@ -369,31 +385,27 @@ CRingTextItem::validType() const
   return ((t == PACKET_TYPES)               ||
 	  (t == MONITORED_VARIABLES));
 }
-/*
-** Copies a set of strings into the item's 
-** s_scalers region.   Each string is followed by a 
-** null.  
-**   When done the cursor is updated to point past the item.
-**   When done, s_stringCount is updated to the number of strings.
-*/
-void
-CRingTextItem::copyStrings(vector<string> strings)
-{
-  pTextItemBody pItem = reinterpret_cast<pTextItemBody>(getBodyPointer());
-  pItem->s_stringCount = strings.size();
-  char* p                = pItem->s_strings;
-  for (int i = 0; i < strings.size(); i++) {
-    strcpy(p, strings[i].c_str());
-    p += strlen(strings[i].c_str()) + 1;
-  }
-  setBodyCursor(p);
-  updateSize();
-}
-/*
-** Initialize m_pItem from the underlying item.
-*/
-void
-CRingTextItem::init()
-{
 
+/**
+ * makeStringPointers
+ *    Sets up for e.g. fillTextItemBody by producing a vector of
+ *    pointers to the string data.  The data method of that vector can
+ *    then provide the pointer to the array of string pointers needed by
+ *    that call.
+ *
+ *  @param strings - Reference to the vector of strings we're getting pointers to
+ *  @return  std::vector<const char*
+ *  @note any operations on  original vector
+ *        can invalidate the pointers.
+ */
+std::vector<const char*>
+CRingTextItem::makeStringPointers(const std::vector<std::string>& strings)
+{
+  std::vector<const char*> result;
+  
+  for (int i =0; i < strings.size(); i++) {
+    result.push_back(strings[i].c_str());
+  }
+  
+  return result;
 }

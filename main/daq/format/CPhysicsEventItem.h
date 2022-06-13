@@ -17,34 +17,10 @@
 */
 
 #include <CRingItem.h>		/* Base class */
-
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRTUNISTD_H
-#define __CRTUNISTD_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 struct _RingItem;
 

@@ -36,8 +36,8 @@
 **      @(#)buftypes.h	1.2 3/25/94 Include
 **--
 **/
-#ifndef __BUFTYPES_H
-#define __BUFTYPES_H
+#ifndef BUFTYPES_H
+#define BUFTYPES_H
 
 #define DATABF	        1
 #define SCALERBF        2

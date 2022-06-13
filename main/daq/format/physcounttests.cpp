@@ -21,6 +21,12 @@ class physcounttests : public CppUnit::TestFixture {
   CPPUNIT_TEST(copycons);
   CPPUNIT_TEST(tscons);
   CPPUNIT_TEST(fractionalTime);
+  CPPUNIT_TEST(origsid);              // V12.0-pre1
+  CPPUNIT_TEST(tsorigsid);            // V12.0-pre1.
+  CPPUNIT_TEST(origsid_1);    // Added 12.0pre1
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
+  CPPUNIT_TEST(origsid_4);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -40,6 +46,12 @@ protected:
   void copycons();
   void tscons();
   void fractionalTime();
+  void origsid();
+  void tsorigsid();
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
+  void origsid_4();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(physcounttests);
@@ -225,3 +237,54 @@ physcounttests::fractionalTime()
   
   EQ(static_cast<float>(100.0/3.0), item.computeElapsedTime());
 }
+
+// New tests as of V12.0pre1 to ensure the s_originalSid field is set correctly.
+void physcounttests::origsid()
+{
+  time_t now = time(nullptr);
+  pPhysicsEventCountItem pItem = formatTriggerCountItem(10, now, 100);
+  pPhysicsEventCountItemBody pBody = reinterpret_cast<pPhysicsEventCountItemBody>(
+    bodyPointer(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQ(uint32_t(0), pBody->s_originalSid);
+  
+  free(pItem);
+}
+void physcounttests::tsorigsid()
+{
+  time_t now = time(nullptr);
+  pPhysicsEventCountItem pItem = formatTimestampedTriggerCountItem(
+      0x124356789, 12, 0, 10, 1, now, 12345
+  );
+  pPhysicsEventCountItemBody pBody = reinterpret_cast<pPhysicsEventCountItemBody>(
+    bodyPointer(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQ(uint32_t(12), pBody->s_originalSid);
+  
+  free(pItem);
+
+}
+
+void physcounttests::origsid_1()
+{
+  CRingPhysicsEventCountItem item;
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_2()
+{
+  CRingPhysicsEventCountItem item(100, 10);
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_3()
+{
+  CRingPhysicsEventCountItem item(200, 10, time(nullptr));
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void physcounttests::origsid_4()
+{
+  CRingPhysicsEventCountItem item(
+    0x9876543210, 80, 0, 314159, 100, time(nullptr)
+  );
+  EQ(uint32_t(80), item.getOriginalSourceId());
+}
+  

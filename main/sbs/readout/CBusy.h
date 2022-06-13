@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CBUSY_H
-#define __CBUSY_H
+#ifndef CBUSY_H
+#define CBUSY_H
 
 /*!
    Abstract base class for a module that manages the busy for 

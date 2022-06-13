@@ -211,7 +211,17 @@ CRingItem* CFilter::handleTextItem(CRingTextItem* item) {
       processed and the finalize() method is executed after the last ring item is
       processed.
     </para>
-
+    <para>
+      Finally as of NSCLDAQ 12.0, it is possible for a filter handler to
+      emit more than one ring item. The <classname>CFilterMain</classname>
+      has a method <methodname>putRingItem</methodname> that accepts a
+      pointer to a ring item object and emits that item to the data sink.
+      If you instantiate your filter to contain a pointer or reference
+      to your <classname>CFilterMain</classname> application object, your
+      filter elements have access to this method and can emit
+      ring items in addition to returning a ring item to be emitted
+      by the framework.
+    </para>
 
   </section> 
   <!-- End of building a primitive filter -->
@@ -1037,5 +1047,155 @@ int main(int argc, char* argv[])
   </refsect1>
 
 </refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>CFilterMain</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>CFilterMain</refname>
+      <refpurpose>Ring item filter application class.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <synopsis>
+#include &lt;CFilterMain.h&gt;
 
+class CFilterMain
+{
+  
+
+  public:
+    CFilterMain(int argc, char** argv);
+    void operator()();
+    void registerFilter(const CFilter* filter);
+    CMediator* getMediator() { return m_mediator; }
+    void putRingItem(CRingItem* pRingItem);
+    
+};
+
+      </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRPTION</title>
+          <para>
+            The <classname>CFilterMain</classname> class contains
+            the application logic for the filter framework.
+            When constructing a custom filter you instantiate
+            this class, register your filter objects (which are
+            added to a composite filter object) and
+            invoke the object's <methodname>operator()</methodname>
+            method.
+          </para>
+          <para>
+            The application class takes care of processing command line
+            parameters, instantiating the proper data source and
+            data sinks as well as instantiating the correct logic
+            object (mediator).  
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>
+        METHODS
+      </title>
+      <variablelist>
+        <varlistentry>
+           <term>
+            <constructorsynopsis>
+                <methodname>CFilterMain</methodname>
+                <methodparam>
+                    <type>int </type><parameter>argc</parameter>
+                    <initializer></initializer>
+                </methodparam>
+                <methodparam>
+                    <type>char** </type><parameter>argv</parameter>
+                    <initializer></initializer>
+                </methodparam>
+            </constructorsynopsis>
+           </term>
+           <listitem>
+               <para>
+                Pass the constructor the program arguments as they
+                are passed to <function>main</function>.
+                The constructor will instantitate the data source,
+                data sink and proper mediator type.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>
+            <methodsynopsis>
+               <type>void </type>
+               <methodname>operator()</methodname>
+               <void />
+            </methodsynopsis>
+           </term>
+           <listitem>
+               <para>
+                Executes the application logic.  This can only return
+                if the desired mediator (expressed via command
+                parameters passed at construction) is a one-shot,
+                or the data source is a file and the end-file is
+                encountered.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>
+            <methodsynopsis>
+               <type>void </type>
+               <methodname>registerFilter</methodname>
+               <methodparam>
+                   <type>const CFilter* </type><parameter>filter</parameter>
+                <initializer></initializer>
+               </methodparam>
+            </methodsynopsis>
+           </term>
+           <listitem>
+               <para>
+                Adds a clone of the filter object pointed to by
+                <parameter>filter</parameter> to the end of the chain
+                of filters in the composite filter maintained by
+                the application logic object.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>
+            <methodsynopsis>
+               <type>CMediator* </type>
+               <methodname>getMediator</methodname>
+               <void />
+            </methodsynopsis>
+           </term>
+           <listitem>
+               <para>
+                Returns a pointer to the mediator. The filter framework
+                uses objects called mediators to implement actual
+                detailed program logic.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term>
+            <methodsynopsis>
+               <type>void </type>
+               <methodname>putRingItem</methodname>
+               <methodparam>
+                   <type>CRingItem* </type><parameter>pRingItem</parameter>
+                <initializer></initializer>
+               </methodparam>
+            </methodsynopsis>
+           </term>
+           <listitem>
+               <para>
+                Puts the ring item object <parameter>pRingItem</parameter>
+                in the data sink.   This results in the ring item
+                being sent to the data sink, whatever it is.
+               </para>
+            </listitem>
+        </varlistentry>
+        
+      </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->

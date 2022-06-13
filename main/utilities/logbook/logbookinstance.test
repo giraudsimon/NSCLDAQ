@@ -1,0 +1,1672 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   logbookinstance.test
+# @brief  Test logbook instances.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require logbook
+package require sqlite3
+
+#tcltest::verbose {start}
+
+# In case there are hanging files:
+
+if {[file exists test.logbook.db]} {
+    file delete test.logbookk.db
+}
+
+#  Commmon setup/cleanup procs.
+
+set LogbookInstance {}
+proc commonSetup {} {
+    if {[file exists test.logbook.db]} {file delete test.logbook.db}
+    logbook::logbook create test.logbook.db 0400x {Ron Fox} {Logbook Tcl Tests}
+    set ::LogbookInstance [logbook::logbook open test.logbook.db]
+}
+proc commonCleanup {} {
+    $::LogbookInstance destroy
+    file delete test.logbook.db
+}
+
+
+tcltest::test cmd_exists {Ensure the command exists properly} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    expr {[info command $::LogbookInstance] ne ""}
+} \
+-result 1
+
+#####################
+
+tcltest::test usage_1 { Need to have a subcommand} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstance}
+} -result 1
+
+tcltest::test usage_2 {garbage subcommand is an error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstancde junky-subcommand}
+} -result 1
+
+#####################
+
+tcltest::test destroy_1 {Destroy makes the command go away} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    file delete test.logbook.db
+} \
+-body {
+    $::LogbookInstance destroy
+    info command $::LogbookInstance
+} -result ""
+
+#########################
+
+
+
+tcltest::test addPerson_1 {Add person insufficient parameter count} \
+-setup {
+    commonSetup
+} -cleanup {
+    commonCleanup
+} -body {
+    catch {$::LogbookInstance addPerson lastname-only}
+} -result 1
+
+tcltest::test addPerson_2 {Add Person too many parameters} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    catch {$::LogbookInstance addPerson lastname firstname salutation estra}
+} -result 1
+
+
+tcltest::test addPerson_3 {Add person with salutation} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set cmd [$::LogbookInstance addPerson Fox Ron Mr.]
+    set result [expr {[info command $cmd] ne ""}]
+    $cmd destroy    
+    set result
+    
+} -result 1
+
+tcltest::test addPerson_4 {Add Person without salutation} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set cmd [$::LogbookInstance addPerson Fox Ron]
+    set result [expr  {[info command $cmd] ne ""}]
+    $cmd destroy
+    set result
+} -result 1
+
+
+########################################################
+
+tcltest::test findPerson_1 {No people to find} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance findPeople
+} -result [list]
+
+tcltest::test findPerson_2 {two people to find no conditions} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople]
+    
+    llength $people
+} -result 2
+
+tcltest::test find_person_3 {one person due to conditions} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople {lastname = 'Fox'}]
+    llength $people
+} -result 1
+
+tcltest::test find_person_4 {Nobody matches the condition} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance findPeople {lastname = 'Fox' AND firstname = 'Giordano'}]
+    llength $people
+} -result 0
+
+##########################################################
+
+tcltest::test listPeople_1 {Nobody to list} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    set people [$::LogbookInstance listPeople]
+    llength $people
+} -result 0
+
+tcltest::test listPeople_2 {two people to list} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    foreach person $people {$person destroy}
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set people [$::LogbookInstance listPeople]
+    llength $people
+} -result 2 
+
+####################################################################
+
+tcltest::test getperson_1 {Not found is an error} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getPerson 1
+} -returnCodes error -result * -match glob
+
+tcltest::test getperson_2 {Found gets a command} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $cmd      destroy
+    
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+   
+    
+    # Giordano is id  2:
+    
+    set cmd [$::LogbookInstance  getPerson 2]
+    expr {[info command $cmd] ne ""}
+} -result 1
+######################################################################
+
+tcltest::test newshift_1 {Create a new empty shift} \
+-setup { commonSetup } -cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift shift]
+    expr {[info command $shift] ne ""}
+} -result 1
+
+
+tcltest::test newshift_2 {Create a shift with people} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift [list $fox $giordano]]
+    
+    expr {[info command $shift] ne ""}
+} -result 1
+
+tcltest::test newshift_3 {Create a shift but bad person command name} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    
+    set shift [$::LogbookInstance  createShift shift $fox giordano]
+} -returnCodes error  -result * -match glob
+
+
+#########################################################################
+
+tcltest::test getShift_1 {No such shift is an error} \
+-setup { commonSetup } -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getShift 12
+} -returnCodes error -result * -match glob
+
+tcltest::test getShift_2 {Find a shift properly} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift    destroy
+    $shift1   destroy
+    $sh       destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift [list $fox $giordano]]
+    set shift1 [$::LogbookInstance createShift shift1]
+    
+    set sh [$::LogbookInstance getShift 2]
+    expr {[info command $sh] ne ""}
+} -result 1
+
+#=================================================================
+
+tcltest::test addShiftMember_1 {Bad shift} \
+-setup { commonSetup } \
+-cleanup {
+    $fox destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $LogbookInstance addShiftMember ashift $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test addShiftMember_2 {Bad Person} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift  $fox]
+    $::LogbookInstance addShiftMember giordano;    # Needs to be $giordano
+} -returnCodes error -result * -match glob
+
+tcltest::test addShiftMember_3 {good add} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    $giordano destroy
+    $fox      destroy
+    $shift      destroy
+    commonCleanup
+} \
+-body {
+    
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set giordano [$::LogbookInstance addPerson Cerizza Giordano]
+    set shift [$::LogbookInstance createShift shift  $fox]
+    set modifiedShift [$::LogbookInstance addShiftMember $shift $giordano]
+    expr {$shift == $modifiedShift}
+} -result 1
+
+###########################################################################
+
+tcltest::test removeShiftMember_1 {No such shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember nosuchshift $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_2 {No such person} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance  createShift ashift]
+    $::LogbookInstance removeShiftMember $shift fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_3 {No such person in the shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
+tcltest::test removeShiftMember_4 {Good removal} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $fox   destroy
+    commonCleanup
+} \
+-body {
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $fox]
+    set oldshift [$::LogbookInstance removeShiftMember $shift $fox]
+    
+    expr {$oldshift == $shift}
+    
+} -result 1
+
+###########################################################
+
+tcltest::test listShifts_1   {Nothing to list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance listShifts
+} -result [list]
+
+tcltest::test listShifts_2   {One shift to list} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach s $shifts {$s destroy}
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    set shifts [$::LogbookInstance listShifts]
+    llength $shifts
+} -result 1
+
+tcltest::test listShifts_3   {Several shifts to list} \
+-setup {commonSetup} -cleanup {
+    foreach s $madeShifts {$s destroy}
+    foreach s $shifts {$s destroy}
+    commonCleanup
+} \
+-body {
+    set madeShifts [list]
+    for {set i 0} {$i < 10} {incr i} {
+        lappend madeShifts [$::LogbookInstance createShift shift-$i]
+    }
+    set shifts [$::LogbookInstance listShifts]
+    llength $shifts
+} -result 10
+#######################################################################
+
+tcltest::test findShift_1 {No such shift} \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
+
+
+tcltest::test findShift_2 {Find shift }  \
+-setup {commonSetup} -cleanup {
+    $fox destroy
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift ashift]
+    set fox [$::LogbookInstance addPerson Fox Ron]
+    $::LogbookInstance removeShiftMember $fox
+} -returnCodes error -result * -match glob
+
+
+###########################################################################
+
+tcltest::test setCurrent_1 {No such shift} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance setCurrentShift nosuch
+} -returnCodes error -result * -match glob
+
+
+tcltest::test setCurrent_2 {Correct call} \
+-setup {commonSetup} -cleanup {
+    $shift1 destroy
+    $shift2 destroy
+    commonCleanup
+} \
+-body {
+    set shift1 [$::LogbookInstance createShift shift1]
+    set shift2 [$::LogbookInstance createShift shift2]
+    
+    $::LogbookInstance setCurrentShift shift2
+    
+    sqlite3 db test.logbook.db
+    set result [list]
+    db eval {SELECT name FROM current_shift
+        INNER JOIN shift ON shift.id = current_shift.shift_id} {
+        set result $name
+    }
+    db close
+    set result
+} -result shift2
+#######################################################################
+
+tcltest::test getCurrent_1 {There's no current shift} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getCurrentShift
+} -result ""
+
+tcltest::test getCurrent_2 {There is a current shift}  \
+-setup {commonSetup} -cleanup {
+    $shift1 destroy
+    $shift2 destroy
+    $current destroy
+    commonCleanup
+} \
+-body {
+    set shift1 [$::LogbookInstance createShift shift1]
+    set shift2 [$::LogbookInstance createShift shift2]
+    
+    $::LogbookInstance setCurrentShift shift2
+    
+    set current [$::LogbookInstance getCurrentShift]
+    expr {$current ne ""}
+} -result 1
+##############################################################################
+
+tcltest::test begin_1  {There's no current shift}\
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance begin 1 {This is a title} {This is a remark}
+} -returnCodes error -result * -match glob
+
+tcltest::test begin_2  {Good begin} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift theshift]
+    $::LogbookInstance setCurrentShift theshift
+    set run [$::LogbookInstance begin 1 {This is a title} {This is a remark}]
+    
+    expr {[info command $run] ne ""}
+        
+} -result 1
+
+tcltest::test begin_3  {existing current run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift theshift]
+    $::LogbookInstance setCurrentShift theshift
+    set run [$::LogbookInstance begin 1 {This is a title} {This is a remark}]
+    $::LogboogkInstance begin 2 {This is a title} {A run is already active!!}
+} -returnCodes error -result * -match glob
+
+###########################################################################
+
+tcltest::test end_1 {Successful end} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance end $run {End run remark}]
+    expr {$ended == $run}
+} -result 1
+
+
+tcltest::test end_2 {Can't end an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance end $run {End run remark}]
+    $::LogbookInstance end $run {This run is already ended}
+} -returnCodes error -result * -match glob
+    
+#############################################################################
+
+tcltest::test pauseRun_1 {Successful pause} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {This is a pause}]
+    expr {$pause == $run}
+} -result 1
+    
+tcltest::test pauseRun_2 {Can't pause paused run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {This is a pause}]
+    $::LogbookInstance pause $run {This should fail}
+} -returnCodes error -result * -match glob
+
+tcltest::test pauseRun_2 {Can't pause an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set ended [$::LogbookInstance end $run {The run is now ended.}]
+    $::LogbookInstance pause $run {This should fail}
+} -returnCodes error -result * -match glob
+
+tcltest::test pauseRun_3 {Can end a paused Run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set pause [$::LogbookInstance pause $run {The run is now Paused}]
+    set ended [$::LogbookInstance end $run {The run is now ended}]
+    expr {$ended == $run}
+} -result 1
+
+##################################################################
+
+tcltest::test resume_1 {Can't resume an active run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+
+    $::LogbookInstance resume $run {This is a remark that won't work anyway}
+} -returnCodes error -result * -match glob
+
+tcltest::test resume_2 {Can't resume an ended run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {The run is now ended}
+    $::LogbookInstance resume $run {This should fail as well}
+} -returnCodes error -result * -match glob
+
+tcltest::test resume_3 {Can resume a paused run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run {Paused runs can be resumed...}
+    set paused [$::LogbookInstance resume $run {This should work just fine}]
+    expr {$paused == $run}
+} -result 1
+###########################################################################
+
+tcltest::test estop_1 {Can emergency stop active runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set ended [$::LogbookInstance emergencyStop $run {Ended to test}]
+    expr {$ended == $run}
+} -result 1
+
+tcltest::test estop_2 {Can emergency stop paused runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run
+    set end [$::LogbookInstance emergencyStop $run ended]
+    expr {$end == $run}
+} -result 1
+
+tcltest::test estop_3 {Can emergency stop resumed runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance pause $run
+    $::LogbookInstance resume $run
+    
+    set ended [$::LogbookInstance emergencyStop $run {ended run}]
+    expr {$ended == $run}
+} -result 1
+
+tcltest::test estop_4 {Can *not* emergency stop ended runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {Run can no longer be ended}
+    $::LogbookInstance emergencyStop $run
+} -returnCodes error -result * -match glob
+
+tcltest::test estop_5 {Can *not* emergency stop emergency ended runs} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance emergencyStop $run {Can no longer be emergency ended}
+    $::LogbookInstance emergencyStop $run
+} -returnCodes error -result * -match glob
+
+tcltest::test estop_6 {Can *not* emergenyc stop a non-existent run} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance emergencyStop george {This should fail too}
+} -returnCodes error -result * -match glob
+
+###########################################################################
+
+tcltest::test listruns_1 {Empty list if there are no runs} \
+-setup {commonSetup} -cleanup {
+    foreach run $runs {$run destroy}
+    commonCleanup
+} \
+-body {
+    set runs [$::LogbookInstance listRuns]
+    llength $runs
+} -result 0
+
+tcltest::test listruns_2 {A single run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    foreach run $r { $run destroy }
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set r [$::LogbookInstance listRuns]
+    llength $r
+} -result 1
+    
+tcltest::test listruns_3 {10 runs}  \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach r $cruns {$r destroy}
+    foreach r $lruns { $r destroy }
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set cruns [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i {This is a title} {This is a remark}]
+        $::LogbookInstance end $r {Ended}
+        lappend cruns $r
+    }
+    set lruns [$::LogbookInstance listRuns]
+    llength $lruns
+} -result 10
+###############################################################################
+
+tcltest::test findrun_1 {No runs to find} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance findRun 1
+} -result ""
+
+tcltest::test findrun_2 {Found the only run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    $found destroy
+
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    
+    set found [$::LogbookInstance findRun 1]
+    expr {[info command $found] ne ""}
+} -result 1
+
+tcltest::test findrun_3 {Found a run among several} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach run $runs {$run   destroy}
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set runs [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i "Title for run $i" "remark for run $i"]
+        $::LogbookInstance end $r "Ended run $i"
+        lappend runs $r
+    }
+    set found [$::LogbookInstance findRun 5]
+    expr {[info command $found] ne ""}
+} -result 1
+    
+tcltest::test findrun_4 {Found no run amongst serveral} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    foreach run $runs {$run   destroy}
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set runs [list]
+    for {set i 1} {$i <= 10} {incr i} {
+        set r [$::LogbookInstance begin $i "Title for run $i" "remark for run $i"]
+        $::LogbookInstance end $r "Ended run $i"
+        lappend runs $r
+    }
+    $::LogbookInstance findRun 500
+} -result ""
+################################################################################
+
+tcltest::test runid_1 {Get run id from a run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance runId $run
+} -result 1
+
+
+#################################################################################
+
+tcltest::test currentRun_1 {There is a current run} \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    $current destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+    
+    # Establish a current run
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    set current [$::LogbookInstance currentRun]
+    expr {[info command $current] ne ""}
+} -result 1
+tcltest::test currentRun_2 {there is no current run}  \
+-setup {commonSetup} -cleanup {
+    $shift destroy
+    $run   destroy
+    commonCleanup
+} \
+-body {
+    set shift [$::LogbookInstance createShift myshift]
+    $::LogbookInstance setCurrentShift myshift
+
+    #Establish a current run then end it so it's no longer current:
+    
+    set run [$::LogbookInstance begin 1 {this is a title} {this is a remark}]
+    $::LogbookInstance end $run {NO longer current}
+    $::LogbookInstance currentRun
+} -result ""
+
+###########################################################################
+
+tcltest::test createNote_1 {Author and text only} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {This is some note text}]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_2 {Author text and associated run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {This is some note text}]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_3 {Author text and images} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set note [  \
+        $::LogbookInstance createNote $ron {This is some note text} \
+            [list [info script]] [list 0]
+              ]
+    expr {[info command $note] ne ""}
+} -result 1
+
+tcltest::test createNote_4 {Author text images and associated run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote \
+        $ron {Some note text} [info script] 0 $run
+    ]
+    expr {[info command $ron] ne ""}
+} -result 1
+
+tcltest::test createNote_5 {Author text and invalid run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron {Some text} norun
+} -returnCodes error -result * -match glob
+
+tcltest::test createNote_6 {Author text images and invalid run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron text [info script] 1 invalidRun
+} -returnCodes error -result * -match glob
+
+tcltest::test createNote_7 {Author, text images with a non integer offset} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+    set shift [$::LogbookInstance createShift ashift $ron]
+    $::LogbookInstance setCurrentShift ashift
+    set run [$::LogbookInstance begin 1 {Some title} {Some remark}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    $::LogbookInstance createNote $ron text [info script] nogood
+} -returnCodes error -result * -match glob
+##############################################################################
+
+tcltest::test getnote_1 {Get existing note} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron]
+} \
+-cleanup {
+    $ron destroy
+    $note destroy
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {Some silly note text}]; # id =1
+    set found [$::LogbookInstance getNote 1]
+    expr {[info command $found] ne ""}  
+} -result 1
+
+
+
+tcltest::test getnote_2 {get nonexistent note} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance getNote 1
+} -returnCodes error -result * -match glob
+
+#################################################################################
+
+
+tcltest::test listallNotes_1 {No notes to list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    set found [$::LogbookInstance listAllNotes]
+    llength $found
+} -result 0
+
+tcltest::test listallNotes_2 {One note to list} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    foreach n $notelist {
+        $n destroy
+    }
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {Some note text}]
+    set notelist [$::LogbookInstance listAllNotes]
+    foreach n $notelist {
+        if {[info command $n] eq ""} {
+            error "List notes did not create commands for all notes"
+        }
+    }
+    llength $notelist
+} -result 1
+
+tcltest::test listallNotes_3 {10 notes to list} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    foreach note $notes {
+        $note destroy    
+    }
+    
+    foreach n $notelist {
+        $n destroy
+    }
+    $ron destroy
+    commonCleanup
+} \
+-body {
+    set notes [list]
+    for {set i 0} {$i < 10} {incr i} {
+        lappend notes \
+            [$::LogbookInstance createNote $ron "Note number $i"]
+    }
+    set notelist [$::LogbookInstance listAllNotes]
+    llength $notelist
+} -result 10
+###############################################################################
+
+tcltest::test listNotesForRunId_1 {No notes} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    llength [$::LogbookInstance listNotesForRunId 1]
+} -result 0
+
+tcltest::test listNotesForRunId_2 {Notes but not associated with a run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+} \
+-cleanup {
+    $note destroy
+    $ron destroy
+    
+    commonCleanup
+} \
+-body {
+    set note [$::LogbookInstance createNote $ron {this is some note text}]
+    llength [$::LogbookInstance listNotesForRunId 1]
+} -result 0
+
+tcltest::test listNotesForRunId_3 {One run associated note, one not} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set note1 [$::LogbookInstance createNote $ron {This is note text}]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 1 {Some title} {some Remark}]
+    set notes2 [$::LogbookInstance createNote $ron {This note has a run} $run]
+    
+} \
+-cleanup {
+    $ron destroy
+    $note1 destroy
+    $shift destroy
+    $run destroy
+    $notes2 destroy
+    foreach note $listed {
+        $note destroy
+    }
+    commonCleanup
+} \
+-body  {
+    set listed [$::LogbookInstance listNotesForRunId 1]
+    llength $listed
+} -result 1
+
+tcltest::test listNotesForRunId_4 {Mix of run associated notes and not.} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 1 {Some title} {some Remark}]
+    
+    set fullList [list]
+    for {set i 0} {$i < 10} {incr i} {
+        if {($i %2) == 0} {
+            lappend fullList \
+                [$::LogbookInstance createNote $ron "Non run note $i"]
+        } else {
+            lappend fullList \
+                [$::LogbookInstance createNote $ron "Run note $i" $run]
+        }
+    }
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    foreach note $fullList {
+        $note destroy
+    }
+    foreach note $listed {
+        $note destroy
+    }
+    commonCleanup
+} \
+-body {
+    set listed [$::LogbookInstance listNotesForRunId 1]
+    llength $listed
+} -result 5
+    
+##############################################################################
+
+tcltest::test listNotesForRun_1 {No run associated notes} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 2 {Some title} {some Remark}]
+    set note [$::LogbookInstance createNote $ron {Note text}]
+    
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $note destroy
+    $run destroy
+    commonCleanup
+} \
+-body {
+    llength [$::LogbookInstance listNotesForRunNumber 1];  #no match
+} -result 0
+
+
+tcltest::test listNotesForRun_2 {two notes but only one matches} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run [$::LogbookInstance begin 2 {Some title} {some Remark}]
+    set notes [list]
+    lappend notes [$::LogbookInstance createNote $ron {Note text}]
+    lappend notes [$::LogbookInstance createNote $ron {Note text} $run]
+    
+    set found [list]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    foreach note $notes {
+        $note destroy
+    }
+    foreach note $found {
+        $note destroy
+    }
+    commonCleanup 
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRunNumber 2]
+    llength $found
+    
+} -result 1
+    
+tcltest::test listNotesForRun_3 {5 notes for correct run,  5 for incorrect} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    
+    set notes [list]
+    set found [list]
+    
+    set run1 [$::LogbookInstance begin 1 {Run 1 title} {run 1 remark}]
+    $::LogbookInstance end $run1
+    set run2 [$::LogbookInstance begin 2 {Run 2 title} {run 2 remark}]
+    
+    set runs [list $run1 $run2]
+    for {set i 0} {$i < 10} {incr i} {
+        set run [lindex $runs [expr {$i % 2}]]
+        lappend notes [$::LogbookInstance createNote $ron {a note} $run]
+    }
+        
+    
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run1 destroy
+    $run2 destroy
+    foreach note $notes {
+        $note destroy
+    }
+    foreach note $found {
+        $note destroy
+    }
+    commonCleanup
+    
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRunNumber 1]
+    llength $found
+} -result 5
+
+    
+########################################################################
+
+tcltest::test listNotesForRun_1 {List when there are not notes for the run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    # There's a note but it's not associated.
+    
+    set note [$::LogbookInstance createNote $ron {Some note text}]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    llength [$::LogbookInstance listNotesForRun $run]
+} -result 0
+
+tcltest::test listNotesForRun_2 {List when there are notes attached to a run} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    
+    set note [$::LogbookInstance createNote $ron {Some note text} $run]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set found [$::LogbookInstance listNotesForRun $run]
+    llength $found
+} -result 1
+################################################################################
+
+
+tcltest::test listNonRunNotes_1 {No notes to list} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    # This note exists but is associated with a run.
+    
+    set note [$::LogbookInstance createNote $ron {Some note text} $run]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+} \
+-body {
+    llength [$::LogbookInstance listNonRunNotes]
+} -result 0
+
+tcltest::test listNonRunNotes_2 {Only non run notes} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    
+    # non run note:
+    
+    set note [$::LogbookInstance createNote $ron {Some note text} ]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    $found destroy
+    commonCleanup
+} \
+-body {
+    set found [$::LogbookInstance listNonRunNotes]
+    llength $found
+} -result 1
+
+tcltest::test listNonRunNotes_3 {Mix of nonrun and run notes} \
+-setup {
+    commonSetup
+    set ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set shift [$::LogbookInstance createShift myshift $ron]
+    $::LogbookInstance setCurrentShift myshift
+    set run   [$::LogbookInstance begin 1 {The title} {The remark}]
+    set notes [list]
+    set found [list]
+    for {set i 0} {$i < 10} {incr i} {
+        if {($i % 2) == 0} {
+            lappend notes [$::LogbookInstance createNote $ron $i $run]
+        } else {
+            lappend notes [$::LogbookInstance createNote $ron $i]
+        }
+    }
+} -cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    foreach note $notes {
+        $note destroy
+    }
+    foreach note $found {
+        $note destroy
+    }
+    commonCleanup
+} \
+-body {
+    set found [$::LogbookInstance listNonRunNotes]
+    llength $found
+    
+} -result 5
+        
+    
+##########################################################################
+
+tcltest::test getNoteRun_1 {Note has no run} \
+-setup {
+    commonSetup
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
+    set note [$LogbookInstance createNote $ron {Some notes text}]
+} \
+-cleanup {
+    $ron destroy
+    $note destroy
+    commonCleanup
+} \
+-body {
+    $LogbookInstance getNoteRun $note
+} -result ""
+
+tcltest::test getNoteRun_2 {Note has a run} \
+-setup {
+    commonSetup
+    
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
+    
+    set shift [$LogbookInstance createShift theshift $ron]
+    $LogbookInstance setCurrentShift theshift
+    
+    set run [$LogbookInstance begin 1 {Some run title} {some remerk}]
+    set note [$LogbookInstance createNote $ron {Some notes text} $run]
+} \
+-cleanup {
+    $ron destroy
+    $shift destroy
+    $run destroy
+    $note destroy
+    $assocrun destroy
+    commonCleanup
+} \
+-body {
+    set assocrun [$LogbookInstance getNoteRun $note]
+    expr {[info command $assocrun] ne ""}
+} -result 1
+##################################################################
+
+tcltest::test getNoteAuthor_1 {Get note author} \
+-setup {
+    commonSetup
+    set ron [$LogbookInstance addPerson Fox Ron Mr.]
+    set note [$LogbookInstance createNote $ron Txt]
+} \
+-cleanup {
+    $ron destroy
+    $note destroy
+    $author destroy
+    commonCleanup
+} \
+-body {
+    set author [$LogbookInstance getNoteAuthor $note]
+    expr {[info command $author] == $author}
+} -result 1
+
+#========================================================================
+
+tcltest::test kvexists_1 {Key exists} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvExists experiment
+} -result 1
+tcltest::test kvexists_2 {Key does not exist} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvExists no-such-key
+} -result 0
+
+tcltest::test kvget_1 {Key exists} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvGet experiment
+} -result  0400x
+
+tcltest::test kvget_2 {Key does not exist} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogBookInstance kvGet no-such-key
+} -returnCodes error -result * -match glob
+
+
+tcltest::test kvset_1 {Replacing key value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvSet experiment e17011
+    $LogbookInstance kvGet experiment
+} -result e17011
+tcltest::test kvset_2 {New key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvSet new-key new-value
+    $LogbookInstance kvGet new-key
+} -result new-value
+
+tcltest::test kvcreate_1 {Truly new key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvCreate new-key new-value
+    $LogbookInstance kvGet new-key
+} -result new-value
+    
+tcltest::test kvcreate_2 {Attempt to overwrite existing key/value} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $LogbookInstance kvCreate experiment
+
+} -returnCodes error -result * -match glob
+
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

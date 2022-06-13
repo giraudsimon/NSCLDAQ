@@ -1,20 +1,12 @@
-#ifndef __CCAENV1X90DATA_H
-#define __CCAENV1X90DATA_H
+#ifndef CCAENV1X90DATA_H
+#define CCAENV1X90DATA_H
 /*!
   This file contains a namespace that has several static inline
   functions for peeling bits and pieces of the data buffer and
   making sense of what we get.
 */
-#ifndef __STL_STRING
 #include <string>
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 
 namespace CCAENV1x90Data {

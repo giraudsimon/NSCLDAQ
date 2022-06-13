@@ -242,18 +242,12 @@ CVariableBuffers::createDocEvent(CRingBuffer* pRing,
 
   timespec currentTime;
   uint64_t msTime;
-  clock_gettime(CLOCK_REALTIME, &currentTime);
-  msTime = currentTime.tv_sec;
-  msTime *= 1000;
-  msTime += currentTime.tv_nsec/(1000*1000);
+  
 
-  CRingTextItem item(eventType, 
-      NULL_TIMESTAMP, 
-      m_nSourceId, 
-      BARRIER_NOTBARRIER,
-      elements,
-      (msTime - tbase)/1000,
-      timestamp);
+  CRingTextItem item(
+      eventType, NULL_TIMESTAMP, m_nSourceId, BARRIER_NOTBARRIER, elements,
+      tbase, timestamp, 1000
+  );
   item.commitToRing(*pRing);
 
 }

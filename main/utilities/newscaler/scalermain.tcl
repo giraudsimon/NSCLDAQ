@@ -81,6 +81,7 @@ set alarmcontrol 1;               # start with alarms on.
 
 set autoY 1;                      # If true autoscaling y axis.
 set initialYrange  "";            # Range of y values when autoscale turned off.
+set clearStrips   1;              # Firs begin clears stripcharts.
 
 #-------------------------------------------------------------------------
 # Provide access to the globals for extensions:
@@ -330,11 +331,17 @@ proc updatePages {} {
 	if {$bkg eq "ok"} {
 	    $::notebook tab $tabidx -compound text
 	} elseif {$bkg eq "low"} {
-	    $::notebook tab $tabidx -image GreenBrick -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::lowAlarmTabColor] \
+            -compound center
 	} elseif {$bkg eq "high"} {
-	    $::notebook tab $tabidx -image RedBrick -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::highAlarmTabColor] \
+            -compound center
 	} else {
-	    $::notebook tab $tabidx -image AmberBrick -compound center
+	    $::notebook tab $tabidx \
+            -image [::getColorImage $::scalerconfig::bothAlarmTabColor] \
+            -compound center
 	}
     }
 
@@ -351,6 +358,7 @@ proc updatePages {} {
 #    Clear all the data from the stripcharts and prepare the plot for
 #    new data with auto-y scale.
 #
+#  @param sid - source id whose data set should be cleared.
 #
 proc clearStripcharts {} {
     # Clear the plot:
@@ -450,26 +458,23 @@ proc scaler item {
     #  Figure out if there's a source id that needs to appended to the channel
     #  number:
     
-    if {[dict exists $item bodyheader]} {
-        set sourceId .[dict get $item bodyheader source]
-    } else {
-        set sourceId "";                   # No source id.
-    }
+    set sourceId [dict get $item source]
+    
     # Figure out the interval over which the scalers accumulated
     # Note the divisor changes whatever timebase used for the start/end
     # values to floating point seconds.
     
-    set end [dict get $item end]
-    set start [dict get $item start]
-    set dt [expr {double($end - $start)/[dict get $item divisor]}]
+    set end [dict get $item endsec]
+    set start [dict get $item startsec]
+    set dt [expr {$end - $start}]
     
     # Iterate over the channels invoking update methods for those channels
     # that have been defined for us:
     
     set channel 0
     foreach counter [dict get $item scalers] {
-        if {[info command ::channel_$channel$sourceId] ne ""} {
-            ::channel_$channel$sourceId update $counter $dt
+        if {[info command ::channel_$channel.$sourceId] ne ""} {
+            ::channel_$channel.$sourceId update $counter $dt
         }
         
         incr channel
@@ -486,7 +491,7 @@ proc scaler item {
     
     # If the end time is longer than duration, use it:
     
-    set elapsed [expr {$end/[dict get $item divisor]}]
+    set elapsed $end
     if {$elapsed > $::duration} {
         set ::duration $elapsed
         $h configure -elapsed $elapsed
@@ -494,11 +499,8 @@ proc scaler item {
     # Set the dt in seconds for the source, if there is no  body
     # header to supply  an sid, just make a blank source id:
     
-    set sid ""
-    if {[dict exists $item bodyheader]} {
-        set sid [dict get $item bodyheader source]
-    }
-    $h update $sid $dt
+    
+    $h update $sourceId $dt
     
     # If the user has extended us with a UserUpdate call that:
     
@@ -519,12 +521,18 @@ proc scaler item {
 proc beginRun {item} {
     
     set ::startTime [dict get $item realtime]
+    set  srcid      [dict get $item source]
     set ::duration  0
     
-    foreach counter [::scalerconfig::channelMap list] {
-        [::scalerconfig::channelMap get $counter] clear
+    # Only zero the channels for this source id as
+    # theoretically there could be counts from another source id before the
+    # begin run is received from this one.
         
+    
+    foreach counter [info command ::channel_*$srcid] {
+        $counter clear
     }
+    
     updatePages
     
     set h [getHeader]
@@ -532,7 +540,18 @@ proc beginRun {item} {
         -state Active
     $h clear;                   # Clear the dt's for each data source.
     
-    clearStripcharts;           # If there are stripcharts clear them.
+    # This business is not perfect.  We do it because there's the
+    # minute chance scalers will arrive on one source beforeach all
+    # sources give us their begin.
+    #
+    #  What we're now vulnerable to is a begin without an end
+    #  which can happen if the previous run ended abnormally. In
+    #  that case the user can poperly end the run and begin again.
+    
+    if {$::clearStrips} {
+        clearStripcharts;           # If there are stripcharts clear them.
+        set ::clearStrips 0
+    }
     
     #  If the user has plugged into use with a UserBeginRun call it:
     
@@ -543,8 +562,10 @@ proc beginRun {item} {
 ##
 # endRun
 #   state -> inactive.
+
 proc endRun   {item} {
     
+    set ::clearStrips 1;     # Next begin can clear stripcharts.
     [getHeader] configure -state Inactive
     
     # Only make reports if the run start time is available:
@@ -553,6 +574,8 @@ proc endRun   {item} {
         
         
         # Human readable: daqdev/NSCLDAQ#961 - added settable output filedir.
+        #  This actually gets done once per end but that's
+        #  ok.  just rewritten with any additional end run info.
         
         set run [dict get $item run]
         set filename [file join $::outputFileDirectory [format run%04d.report $run]]

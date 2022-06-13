@@ -58,27 +58,25 @@ int
 CResumeCommand::operator()(CTCLInterpreter&    interp,
 			  vector<CTCLObject>& objv)
 {
-  // There should be no command words other than the 'resume' keyword:
-
-  if (objv.size() > 1) {
-    std::string result = "Too many command line parameters:\n";
-    result            += usage();
-    interp.setResult(result);
-    return TCL_ERROR;
-  }
-  CReadoutMain* pMain = CReadoutMain::getInstance();
-  
-  // Get the package and cast it to a CRunControlPackage:
-
-  CTCLObjectPackage*   pPack       = getPackage();
-  CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
-
-  // Attempt the resume.  We will catch the common types of exceptions in addition 
-  // to the CStateException:
-  //
   bool error = false;
   string result;
+  CReadoutMain* pMain = CReadoutMain::getInstance();
+  
+  // There should be no command words other than the 'resume' keyword:
   try {
+    requireExactly(objv, 1, "Too many command line parameters:\n");
+
+    // Get the package and cast it to a CRunControlPackage:
+  
+    CTCLObjectPackage*   pPack       = getPackage();
+    CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
+  
+    // Attempt the resume.  We will catch the common types of exceptions in addition 
+    // to the CStateException:
+    //
+   
+    
+    
     pMain->logStateChangeRequest("Resuming run");
     pRunControl.resume();
     pMain->logStateChangeStatus("Run successfully resumed");

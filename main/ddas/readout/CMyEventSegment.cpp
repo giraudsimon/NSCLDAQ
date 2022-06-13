@@ -33,13 +33,16 @@ using namespace std;
 
 using namespace DAQ::DDAS;
 
+const uint32_t CCSRA_EXTTSENAmask(1 << 21);    // Mask for ext ts enable.
+const uint32_t ModRevEXTCLKBit(1 << 21);   // Ext clock indicator.
 
 CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
  : m_config(),
    m_systemInitialized(false),
    m_firmwareLoadedRecently(false),
    m_pExperiment(&exp),
-   m_debugStream(std::cerr)
+   m_nCumulativeBytes(0),
+   m_nBytesPerRun(0)
 {
 
     ios_base::sync_with_stdio(true);
@@ -97,38 +100,87 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     namespace HR = HardwareRegistry;
 
     std::vector<int> hdwrMap = m_config.getHardwareMap();
+    int numInternalClock(0);
+    int numExternalClock(0);
     for(unsigned int k=0; k<NumModules; k++) {
         auto type = hdwrMap.at(k);
         HR::HardwareSpecification specs = HR::getSpecification(type);
 
+        
         ModuleRevBitMSPSWord[k] = (specs.s_hdwrRevision<<24) + (specs.s_adcResolution<<16) + specs.s_adcFrequency;
         ModClockCal[k] = specs.s_clockCalibration;
+        
+        // Fold in the external clock  - in our implemenation,
+        // all channels save the external clock or none do..
+        // We'll determine if all do by looking at the CCSRA_EXTSENA
+        // bit of channel control register A of channel 0.
+        // We assume that resolution is limited to 16 bits max
+        // making the resolution field of the ModuleRevBitMSPSWord 5 bits
+        // wide;  So we'll put a 1 in bit 21 if the external clock is used:
+        
+        
+        double fCsra = fCsra;
+        int stat = Pixie16ReadSglChanPar(
+           "CHANNEL_CSRA", &fCsra,  k, 0);
+        if (stat < 0) {
+         std::cerr << "****ERROR Failed to read chanel CSRA Module: " << k
+                   << " status: " << stat << std::endl;
+         std::exit(EXIT_FAILURE);  // Can't go on.
+        }
+        // External clock mode:
+        
+        uint32_t csra = static_cast<uint32_t>(fCsra);
+        if (csra & CCSRA_EXTTSENAmask) {
+         ModuleRevBitMSPSWord[k] |= ModRevEXTCLKBit;
+         numExternalClock++;
+         
+         // In external clock mode, the default clock scale factory
+         // is 1 but the DDAS_TSTAMP_SCALE_FACTOR environment
+         //variable can override this.
+         // Note that our implementation doesn't well support a mix
+         // of internal and external timestamps in a crate:
+         
+         ModClockCal[k] = 1;
+         const char* override = std::getenv("DDAS_TSTAMP_SCALE_FACTOR");
+         if (override) {
+          ModClockCal[k] = atof(override);
+          if (ModClockCal[k] <= 0) {
+           std::cerr << "Invalid value for DDAS_TSTAMP_SCALE_FACTOR: '"
+            << ModClockCal[k] << "'\n";
+           std::exit(EXIT_FAILURE);
+          }
+         }
+         
+        } else {
+         numInternalClock++;
+        }
+        // We don't really support both internal and external
+        // clocks in the same readout at present
+        
+        if ((numInternalClock > 0) && (numExternalClock > 0)) {
+         std::cerr << "Some modules are set for internal while others for external clock\n";
+         std::cerr << "This is not a supported configuration\n";
+         std::exit(EXIT_FAILURE);
+        }
+        
 
         cout << "Module #" << k << " : module id word=0x" << hex << ModuleRevBitMSPSWord[k] << dec;
         cout << ", clock calibration=" << ModClockCal[k] << endl;
+        if (ModuleRevBitMSPSWord[k] & ModRevEXTCLKBit) {
+         cout << "External clock timestamping will be used\n";
+         cout << " With a clock multiplier of " << ModClockCal[k] << std::endl;
+        }
         
+
+        // Create the module reader for this module.
+        
+       
     }
 
     mytrigger->Initialize(NumModules);
 
 
-#ifdef PRINTQUEINFO
-    ofile.open("/scratch/data/dump.dat", std::ofstream::out);
-    ofile.flags(std::ios::fixed);
-    ofile.precision(0);
-    
-    // For the purpose of debugging... we want all of the output to go to 
-    // the output file
-    std::cout.rdbuf(ofile.rdbuf());
-#endif 
-
-    // specify the time_buffer... units of nanoseconds
-    //buffer set to 10 seconds
-    // @todo - allow this to be settable.
-    
-    uint64_t time_buffer = 10000000000;
-    m_debug = CReadoutMain::getInstance()->getDebugLevel() == 2;
-    
+   
     
 }
 /**
@@ -173,7 +225,7 @@ void CMyEventSegment::initialize(){
     } else {
         cout << "List Mode started OK " << retval << endl << flush;
     }
-
+    m_nBytesPerRun = 0;                // New run presumably.
     usleep(100000); // Delay for the DSP boot 
 
 
@@ -213,6 +265,11 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             uint32_t* p = static_cast<uint32_t*>(rBuffer);
             *p++        = ModuleRevBitMSPSWord[i];
             maxLongs--;   // count that word.
+            double* pd = reinterpret_cast<double*>(p);
+            *pd++       = ModClockCal[i];   // Clock multiplier.
+            maxLongs -= (sizeof(double)/sizeof(uint32_t)); // Count it.
+            p          = reinterpret_cast<uint32_t*>(pd);
+            
             int readSize = words[i];
             if (readSize > maxLongs) readSize = maxLongs;
             // Truncated to the the nearest event size:
@@ -223,7 +280,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             
             //std::cerr << "Going to read " << readSize
             //    << "(" << words[i] <<") " << " from " << i << std::endl;
-            int stat = Pixie16ReadDataFromExternalFIFO(
+           int stat = Pixie16ReadDataFromExternalFIFO(
                 reinterpret_cast<unsigned int*>(p), (unsigned long)readSize, (unsigned short)i
             );
             if (stat != 0) {
@@ -235,7 +292,14 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             m_pExperiment->haveMore();      // until we fall through the loop
             words[i] -= readSize;           // count down words still to read.
             
-            return (readSize + 1) *sizeof(uint32_t)/sizeof(uint16_t);
+            // maintain statistics and 
+            // Return 16 bit words in the ring item body.
+            
+            size_t nBytes = sizeof(double) + (readSize+1)*sizeof(uint32_t);
+            m_nCumulativeBytes += nBytes;
+            m_nBytesPerRun     += nBytes;
+            
+            return nBytes/sizeof(uint16_t);
         }
     }
     // If we got here nobody had enough data left since the last trigger:
@@ -245,7 +309,7 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
     return 0;
 
     
-    
+
 }
 
 
@@ -335,97 +399,4 @@ CMyEventSegment::boot(SystemBooter::BootType type)
 int CMyEventSegment::GetCrateID() const
 {
     return m_config.getCrateId();
-}
-
-
-////////////////////////////////////////////////////////////////////////
-// Debug logging.
-
-// For a very idiodic level parse of the raw data:
-// C++'s standard for where bit fields live is not sufficiently
-// precise to allow me to use them but...
-
-
-
-
-
-
-
-/**
- * checkBuffer
- *    Ensure that a buffer of data from a Pixie is reasonable:
- *
- * @param pFifoContents - data from the FIFO.
- * @param nLongs        - Number of longs in the data.
- * @param id            - module id (slot in m_idToSlots[id]).
- */
-void
-CMyEventSegment::checkBuffer(const uint32_t* pFifoContents, int nLongs, int id)
-{
-    uint32_t slot = m_idToSlots[id];
-    int lastSlot(-1);
-    int lastChan(-1);
-    int lastCrate(-1);
-    while (nLongs > 0) {
-        const HitHeader* pHeader = reinterpret_cast<const HitHeader*>(pFifoContents);
-        int thisSlot = pHeader->getSlot();
-        int thisChan = pHeader->getChan();
-        int thisCrate = pHeader->getCrate();
-        
-        // The header must always be exactly 4 :
-        
-        if (pHeader->headerLength() != 4) {
-           dumpHeader(pHeader, "Header length is not 4");
-        }
-        // The slot number must be correct:
-        
-        if (thisSlot != slot) {
-           std::stringstream msg;
-           msg << "Mismatch between expected and actual slots sb: "
-            << slot << " was " <<  thisSlot << std::endl;
-           msg << " Prior slot: " << lastSlot << " prior chan: " << lastChan;
-           std::string s = msg.str();
-           dumpHeader(pHeader, s.c_str());
-        }
-        
-        pFifoContents += pHeader->eventLength();
-        nLongs -= pHeader->eventLength();
-        lastSlot = thisSlot;
-        lastChan = thisChan;
-        lastCrate = thisCrate;
-    }
-    if (nLongs < 0) {
-        m_debugStream << "last event in buffer went off the end:";
-        m_debugStream << "Slot: " << lastSlot << "Chan: " << lastChan
-            << "Crate: " << lastCrate << " off end by " << -nLongs <<std::endl;
-    }
-}
-/**
- * dumpHeader
- *    Dump a XIA hit header.
- *    @param pHeader - pointer to the header of a hit.
- *    @param msg     - Error Message.
- */
-void
-CMyEventSegment::dumpHeader(const void* pHeader, const char* msg)
-{
-    m_debugStream << msg << std::endl;
-    const HitHeader* p = reinterpret_cast<const HitHeader*>(pHeader);
-    
-    m_debugStream << "Channel: " << p->getChan() << std::endl;
-    m_debugStream << "Slot:    " << p->getSlot() << std::endl;
-    m_debugStream << "Crate:   " << p->getCrate() << std::endl;
-    m_debugStream << "Header length: " << p->headerLength() << std::endl;
-    m_debugStream << "Event Length:  " << p->eventLength() << std::endl;
-    m_debugStream << "Timestamp low: " << std::hex << p->s_tstampLow
-        << std::dec << std::endl;
-    m_debugStream << "Timestamp high" << std::hex << (p->s_tstampHighCFD & 0xffff)
-        << " CFD: " << ((p->s_tstampHighCFD & 0xffff0000) >> 16)
-        << std::dec << std::endl;
-    m_debugStream << "Energy: " << (p->s_traceInfo & 0xffff) << std::endl;
-    m_debugStream << "Trace length: " << ((p->s_traceInfo & 0x7fff0000) >> 16)
-        << std::endl;
-        
-    m_debugStream << "-------------------------------------------------------\n";
-    
 }

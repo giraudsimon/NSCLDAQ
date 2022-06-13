@@ -41,6 +41,10 @@ namespace eval ::scalerconfig {
     variable normalColor     white
     variable lowAlarmColor   green
     variable highAlarmColor  red
+    
+    variable lowAlarmTabColor  green
+    variable highAlarmTabColor red
+    variable bothAlarmTabColor amber
 
 }
 
@@ -131,14 +135,25 @@ proc channel args {
         error "Need at least a channel name and identifier"
     }
     set name       [lindex $args end-1]
-    set descriptor [lindex $args end];     # index?.source
+    set descriptor [lindex $args end];     # index?.source source defaults->0 .
     set options    [lrange $args 0 end-2]
+    
+    # Figure out if we need to add .0 to the descriptor.
+    #  12.0
+    
+    set dlist [split $descriptor .]
+    if {[llength $dlist] == 1} {
+        append descriptor .0
+    }
+    
+    set dlist [split $descriptor .]
+    set sid   [lindex $descriptor 1];   # Source id.
     
     if {[info commands ::channel_$descriptor] eq "::channel_$descriptor"} {
         error "A channel with index $descriptor already has a name"
     }
     
-    if {[catch {::scalerconfig::channelMap add $name [Channel channel_$descriptor {*}$options -name $name]} msg opts]} {
+    if {[catch {::scalerconfig::channelMap add $name [Channel channel_$descriptor {*}$options -source $sid -name $name]} msg opts]} {
         catch {channel_$descriptor destroy};            # In case the channel got made.
         if {[dict get $opts -errorcode] eq "DUPKEY"} {
             set command [::scalerconfig::channelMap get $name]

@@ -30,14 +30,8 @@ exec tclsh ${0} ${@}
 #  We assume we're one down from the top.
 
 set here [file dirname [info script]]
-set libdir [file join $here .. TclLibs]
-#
-# Canonicalize $here/..
-#
-set wd [pwd]
-cd $libdir
-set libdir [pwd]
-cd $wd
+set libdir [file normalize  [file join $here .. TclLibs]]
+
 #   
 #  Prepend to auto_path only if it's not already 
 #  there.
@@ -47,32 +41,15 @@ if {[lsearch -exact $auto_path $libdir] == -1} {
 }
 
 package require camac
+package require bcnafutils
 
 proc usage {} {
-    puts stderr " usage:\n\t  bcnaf.tcl b c n a f \[d\]"
+    puts stderr " usage:\n\t  cesbcnaf.tcl b c n a f \[d\]"
+
 }
 
 
-set nparams [llength $argv]
-
-if {$nparams < 5} {
-  usage
-  exit -1
-}
-
-set b [lindex $argv 0]
-set c [lindex $argv 1]
-set n [lindex $argv 2]
-set a [lindex $argv 3]
-set f [lindex $argv 4]
-set d ""
-if {($f > 15) && ($f < 24)} {
-    if {$nparams != 6} {
-	usage
-	exit -1
-    }
-    set d [lindex $argv 5]
-}
+bcnafutils::checkUsage cesbcnaf.tcl
 
 set module [camac::cdreg $b $c $n]
 set output [camac::cfsa $module  $f $a $d]

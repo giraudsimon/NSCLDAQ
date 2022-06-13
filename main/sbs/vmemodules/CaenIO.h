@@ -38,8 +38,8 @@
 
 
 
-#ifndef __CCAENIO_H
-#define __CCAENIO_H
+#ifndef CCAENIO_H
+#define CCAENIO_H
 
 #include <config.h>
 #include <stdint.h>

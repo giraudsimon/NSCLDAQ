@@ -36,4 +36,4 @@ unittests_LDFLAGS=$(sumscaler_LDFLAGS)   @CPPUNIT_LDFLAGS@
 
 TESTS = unittests
 
-EXTRA_DIST = makeNameFile.tcl options.ggo
+EXTRA_DIST = makeNameFile.tcl options.ggo scalersum.xml

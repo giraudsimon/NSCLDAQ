@@ -1,6 +1,6 @@
 #-------------- The library libdataformat
 
-lib_LTLIBRARIES	=	libdataformat.la
+lib_LTLIBRARIES	=	libdataformat.la libTclRingBuffer.la
 COMPILATION_FLAGS	= -I@top_srcdir@/base/dataflow	\
 		@LIBTCLPLUS_CFLAGS@	\
 		-I@top_srcdir@/base/headers	\
@@ -63,9 +63,36 @@ libdataformat_la_LIBADD	= @top_builddir@/base/dataflow/libDataFlow.la \
 libdataformat_la_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) \
 	$(COMPILATION_FLAGS)
 
+
+libTclRingBuffer_la_DEPENDENCIES=@builddir@/libdataformat.la
+libTclRingBuffer_la_SOURCES=CTclRingCommand.cpp
+libTclRingBuffer_la_LIBADD=	@builddir@/libdataformat.la     \
+				@top_builddir@/base/dataflow/libDataFlow.la    \
+				@top_builddir@/base/tcpip/libTcp.la		\
+				@top_builddir@/base/os/libdaqshm.la 		\
+				@LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+
+libTclRingBuffer_la_CPPFLAGS=@LIBTCLPLUS_CFLAGS@ @TCL_FLAGS@ @THREADCXX_FLAGS@ \
+				-I@top_srcdir@/base/dataflow \
+				-I@top_srcdir@/daq/format \
+				-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
+
+noinst_HEADERS=CTclRingCommand.h
+
+# Get the package installed:
+
+INSTDIR=@prefix@/TclLibs/ringcommand
+
+
+install-exec-hook:
+	$(mkinstalldirs) $(INSTDIR) 
+	install @libdir@/libTclRingBuffer.so $(INSTDIR)
+	echo "package ifneeded TclRingBuffer 1.0 [list load [file join \$$dir libTclRingBuffer.so]]" >> $(INSTDIR)/pkgIndex.tcl
+
 #------------------- Tests:
 
-noinst_PROGRAMS = unittests
+noinst_PROGRAMS = unittests ringTests
 
 unittests_SOURCES	= TestRunner.cpp selecttest.cpp desiredtests.cpp	\
 			  allbuttests.cpp ringitemtests.cpp teststate.cpp	\
@@ -74,7 +101,9 @@ unittests_SOURCES	= TestRunner.cpp selecttest.cpp desiredtests.cpp	\
 			scalerformattests.cpp  statechangetests.cpp dataformattests.cpp       \
 			textformattests.cpp					\
                         fragmenttest.cpp glomparamtests.cpp factorytests.cpp \
-                      physeventtests.cpp bufferedconstest.cpp rbchunktests.cpp zcopytests.cpp
+                      physeventtests.cpp bufferedconstest.cpp rbchunktests.cpp zcopytests.cpp \
+			formatprimitiveTests.cpp
+
 
 unittests_LDADD		= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 			@top_builddir@/base/dataflow/libDataFlow.la 	\
@@ -87,7 +116,20 @@ unittests_CPPFLAGS=$(COMPILATION_FLAGS)
 
 unittests_LDFLAGS	= -Wl,"-rpath-link=$(libdir)"
 
+ringTests_SOURCES = TestRunner.cpp ringTests.cpp
+ringTests_CPPFLAGS = @LIBTCLPLUS_CFLAGS@ @CPPUNIT_CFLAGS@ @TCL_FLAGS@ \
+			@PIXIE_CPPFLAGS@ @THREADCXX_FLAGS@ \
+                       -I@top_srcdir@/daq/format -I@top_srcdir@/base/dataflow
 
-TESTS=./unittests
+ringTests_LDADD    =  @CPPUNIT_LDFLAGS@ @builddir@/libTclRingBuffer.la \
+                       @top_builddir@/daq/format/libdataformat.la     \
+                               @top_builddir@/base/dataflow/libDataFlow.la    \
+			@top_builddir@/base/os/libdaqshm.la   \
+                               @LIBTCLPLUS_LDFLAGS@  @TCL_LDFLAGS@ @THREADLD_FLAGS@
+
+ringTests_DEPENDENCIES=@builddir@/libTclRingBuffer.la @builddir@/libdataformat.la
+
+
+TESTS=./unittests ./ringTests
 
 EXTRA_DIST		=	dataformat_user.xml dataformat_dev.xml

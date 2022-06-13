@@ -25,6 +25,8 @@
 #include "swtriggerflags.h"
 
 class CProcessingElement;
+class CMPIAppStrategy;
+
 /**
  * @class CMPIClasifierApp
  *   This class provides setup code for the MPI parallelization strategy
@@ -35,19 +37,15 @@ class CProcessingElement;
 
 class CMPIClassifierApp : public CClassifierApp
 {
-
+private:
+    CMPIAppStrategy* m_strategy;
     
 public:
     CMPIClassifierApp(int argc, char** argv, gengetopt_args_info& args);
     virtual ~CMPIClassifierApp();
     
     virtual int operator()();
-private:
-    CProcessingElement* createProcessingElement();
-    CProcessingElement* createDataSource();        // Rank 0
-    CProcessingElement* createWorker();            // Rank >=3
-    CProcessingElement* createSorter();            // Rank 1
-    CProcessingElement* createSink();              // Rank 2
+
 };
 
 

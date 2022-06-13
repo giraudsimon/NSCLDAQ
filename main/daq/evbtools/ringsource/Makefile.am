@@ -2,7 +2,11 @@ bin_PROGRAMS = ringFragmentSource
 
 ringFragmentSource_SOURCES=rfcmdline.c Main.cpp \
 	CRingFragmentSource.h CRingFragmentSource.cpp
-ringFragmentSource_CPPFLAGS=-I@top_srcdir@/daq/eventbuilder @LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/dataflow -I@top_srcdir@/daq/format @PIXIE_CPPFLAGS@
+
+ringFragmentSource_CPPFLAGS=-I@top_srcdir@/daq/eventbuilder \
+	@LIBTCLPLUS_CFLAGS@ -I@top_srcdir@/base/dataflow \
+	-I@top_srcdir@/daq/format @PIXIE_CPPFLAGS@
+
 ringFragmentSource_LDFLAGS=@top_builddir@/daq/eventbuilder/libEventBuilderClient.la \
 	@top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/base/dataflow/libDataFlow.la 	\
@@ -11,7 +15,7 @@ ringFragmentSource_LDFLAGS=@top_builddir@/daq/eventbuilder/libEventBuilderClient
 
 BUILT_SOURCES = rfcmdline.c rfcmdline.h
 
-EXTRA_DIST=  options.ggo
+EXTRA_DIST=  options.ggo manpages.xml
 
 
 rfcmdline.c: rfcmdline.h

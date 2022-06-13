@@ -60,6 +60,9 @@ CFragmentHandlerCommand::~CFragmentHandlerCommand() {
  * @param interp - reference to the encapsulated interpreter.
  * @param objv   - reference to a vetor of encpasulated Tcl_Obj*'s.
  *
+ * The first command object is the socket -  used by the fragment handler.
+ * The second the message body containing the fragments.
+ *
  * @return int
  * @retval TCL_OK - success.
  * @retval TCL_ERROR -Failure.
@@ -75,9 +78,8 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
   int status = TCL_OK;
   uint8_t* msgBody(0);
 
-  try {
-    
-    if (objv.size() != 2) {
+	try {    
+    if (objv.size() != 3) {
       interp.setResult(std::string("Incorrect number of parameters"));
       return TCL_ERROR;
     }
@@ -90,32 +92,17 @@ CFragmentHandlerCommand::operator()(CTCLInterpreter& interp, std::vector<CTCLObj
       interp.setResult(std::string("Tcl does not know about this channel name"));
       return TCL_ERROR;
     }
+    // The second object is a byte array object containing the message body:
+		
+    int msgLength;
+    const unsigned char* msg;
     
-
-    // Read the message length:
-
-    uint32_t msgLength;
-    int n = Tcl_Read(pChannel, reinterpret_cast<char*>(&msgLength), sizeof(msgLength));
-    if (n != sizeof(msgLength))  {
-      interp.setResult("Message Length read failed");
-      return TCL_ERROR;
-    }
-
-    // ..and the body itself.
-
-
-    if (msgLength > 0) {
-      msgBody = getBuffer(msgLength);
-      n    = Tcl_Read(pChannel, reinterpret_cast<char*>(msgBody), msgLength);
-      if(n != msgLength) {
-        throw std::string("Message Body could not be completely read");
-      }
-      
-      // Dispatch the body as the flattened fragments they are:
-      
-      CFragmentHandler* pHandler = CFragmentHandler::getInstance();
-      pHandler->addFragments(msgLength, reinterpret_cast<EVB::pFlatFragment>(msgBody));
-    }
+    msg = Tcl_GetByteArrayFromObj(objv[2].getObject(), &msgLength);
+    
+    // Dispatch the body as the flattened fragments they are:
+    
+    CFragmentHandler* pHandler = CFragmentHandler::getInstance();
+    pHandler->addFragments(msgLength, reinterpret_cast<const EVB::FlatFragment*>(msg));
     
 
 

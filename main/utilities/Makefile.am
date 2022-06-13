@@ -20,7 +20,10 @@ SUBDIRS = 				common	\
 					fileanalyzer	\
                                         scalerReader \
 					scalersum reglom  \
-					swtrigger
+					swtrigger \
+					logbook \
+					manager \
+					readoutREST
 
 # scalerdisplay - removed in favor of newscaler
 

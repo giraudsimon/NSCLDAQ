@@ -255,25 +255,27 @@ snit::type Plotchart::xyplotContainer {
         # and get the dict or
         # make an empty dict:
         
+        
         if {[array names plotSeries $name] ne ""} {
-            set dict $plotSeries($name)
-            set series [dict get $dict data]
-            $series destroy
+            $self deleteSeries $name
             set isNew 0
         } else {
             set isNew 1
-            set dict [dict create]
         }
-        # Create the data series and fill in the dict using dict replace.
+        # Create the data series and fill in the dict.
         # then store in the plotSeries array:
         #
         
         set data [Plotchart::series %AUTO% -xdata $xcoords -ydata $ycoords]
-        set dict [dict replace $dict name $name color $color data $data]
+        set dict [dict create name $name color $color data $data]
         set plotSeries($name) $dict
-        # Schedule the replot -- only the data need to be redrawn:
-        
-        $self _ScheduleRedraw
+    
+        # If this is a new series we need to schedule the redraw.
+        # otherwise, deleteSeries already did:
+    
+        if {$isNew} {
+            $self _ScheduleRedraw
+        }
     }   
     ##
     #   deleteSeries

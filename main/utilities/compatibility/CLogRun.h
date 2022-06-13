@@ -13,22 +13,11 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CLOGRUN_H
-#define __CLOGRUN_H
+#ifndef CLOGRUN_H
+#define CLOGRUN_H
 
-#ifndef _CPP_CSTDDEF
 #include <cstddef>
-#ifndef _CPP_CSTDDEF
-#define _CPP_CSTDDEF
-#endif
-#endif
-
-#ifndef _CPP_FSTREAM
 #include <fstream>
-#ifndef _CPP_FSTREAM
-#define _CPP_FSTREAM
-#endif
-#endif
 
 
 

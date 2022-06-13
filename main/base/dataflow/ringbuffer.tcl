@@ -51,8 +51,10 @@ set libdir [file join [file dirname [info script]] .. TclLibs]
 set libdir [file normalize $libdir]
 lappend auto_path $libdir
 
-
+package require removetcllibpath
 package require ring
+package require ringutils
+
 package require portAllocator
 package require struct::matrix
 package require report
@@ -197,43 +199,7 @@ proc size parameter {
 
     error "$parameter does not end with a vaild scale letter"
 }
-#--------------------------------------------------------------------------
-#
-#  Get the rings used/known by a ringmaster.
-# Parameters:
-#   host  - Computer on which we want to know this information.
-#
-# Returns the list from the LIST command to that ringmaster.
-#
-proc getRingUsage host {
-    portAllocator create manager -hostname $host
-    set ports [manager listPorts]
-    manager destroy
 
-    set port -1
-    foreach item $ports {
-	set port [lindex $item 0]
-	set app  [lindex $item 1]
-	if {$app eq "RingMaster"} {
-	    set port $port
-	    break
-	}
-    }
-    if {$port == -1} {
-	error "No RingMaster server  on $host"
-    }
-
-    set sock [socket $host $port]
-    fconfigure $sock -buffering line
-    puts $sock LIST
-    gets $sock OK
-    if {$OK ne "OK"} {
-	error "Expected OK from Ring master but got $OK"
-    }
-    gets $sock info
-    close $sock
-    return $info
-}
 #--------------------------------------------------------------------------
 #  Formats the usage information into a tabular report and 
 #  shoots that out stdout.

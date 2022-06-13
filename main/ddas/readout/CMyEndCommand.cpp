@@ -12,6 +12,7 @@
 #include <RunState.h>
 #include <CVMEInterface.h>
 
+
 #include <stdlib.h>
 
 #include <functional>
@@ -23,11 +24,18 @@
 using namespace std;
 #endif
 
-CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp, CMyEventSegment *myevseg,
-			     CExperiment* pexp) : CEndCommand(rInterp), m_pExp(pexp)
+CMyEndCommand::CMyEndCommand(CTCLInterpreter& rInterp,
+			     CMyEventSegment *myevseg,
+			     CExperiment* pexp) : CEndCommand(rInterp) 
 {
+<<<<<<< HEAD
   myeventsegment = myevseg;
   NumModules = myeventsegment->GetNumberOfModules();
+=======
+    myeventsegment = myevseg;
+    m_pExp = pexp;
+    NumModules = myeventsegment->GetNumberOfModules();
+>>>>>>> origin/12.0-pre5
 }
 
 CMyEndCommand::~CMyEndCommand()
@@ -79,10 +87,7 @@ int CMyEndCommand::transitionToInactive()
       std::cout << "Failed to end run in module " << k << std::endl;
     }
   }
-  // Now flush the sorted data in the event segment's hit manager:
 
-  myeventsegment->onEnd(m_pExp);
-  
   return 0;
 }
 
@@ -137,6 +142,7 @@ int CMyEndCommand::readOutRemainingData()
     do{
       retval = Pixie16CheckRunStatus(k);
             
+<<<<<<< HEAD
       // If retval==1 then run is still in progress...
       // If retval==-1 then k is not a valid module number
       if (retval != 0 ) {
@@ -165,6 +171,38 @@ int CMyEndCommand::readOutRemainingData()
 
     if(count == 10){
       cout << "End run in module " << k << " failed" << endl << flush;
+=======
+            // If retval==1 then run is still in progress...
+            // If retval==-1 then k is not a valid module number
+            if (retval != 0) { 
+                EndOfRunRead = 1;
+		/* TODO:  figure this out for API 3.0 and larger */
+#if XIAAPI_VERSION < 3
+                sprintf(filnam, "lmdata_mod%d.bin", k);
+                retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, 
+                        k, EndOfRunRead);
+                if(retval<0) {
+		  cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module " << k
+		       << "  retval = " << retval << endl << flush;
+                    // Pixie_Print_MSG (ErrMSG);
+                    //return -5;
+                } // end error block
+
+                nFIFOWords[k] += mod_numwordsread;
+#endif		
+            } else {
+                // No run is in progress
+                break;
+            } // end retval conditional block 
+
+            count ++;
+            usleep(100);
+        } while(count < 10);
+
+        if(count == 10){
+            cout << "End run in module " << k << " failed" << endl << flush;
+        }
+>>>>>>> origin/12.0-pre5
     }
   }
 
@@ -173,6 +211,7 @@ int CMyEndCommand::readOutRemainingData()
   ofstream outputfile;
   outputfile.open ("EndofRunScalers.txt", ios::app);
 
+<<<<<<< HEAD
   for(int k=0; k<NumModules; k++) {
 #if XIAAPI_VERSION < 3
     EndOfRunRead = 1;
@@ -180,6 +219,68 @@ int CMyEndCommand::readOutRemainingData()
     retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, k, EndOfRunRead);
     if(retval<0) {
       cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module %d, retval = " << k << endl << flush;
+=======
+    /* All modules have their run stopped successfully. Now read out the 
+       possible last words from the external FIFO, and get statistics */
+    ofstream outputfile;
+    outputfile.open ("EndofRunScalers.txt", ios::app);
+
+    for(int k=0; k<NumModules; k++) {
+        EndOfRunRead = 1;
+	/* TODO: Figure this out for 3.0 and later. */
+#if XIAAPI_VERSION < 3	
+        sprintf(filnam, "lmdata_mod%d.bin", k);
+        retval = Pixie16SaveExternalFIFODataToFile(filnam, &mod_numwordsread, k, EndOfRunRead);
+        if(retval<0) {
+
+	  cout << "*ERROR* Pixie16SaveExternalFIFODataToFile failed in module "
+	       << k << " retval = " << retval << endl << flush;
+
+        }
+        nFIFOWords[k] += mod_numwordsread;
+#endif
+        /* Get final statistics information */
+        int retval;
+        unsigned int statistics[448] = {0};
+
+        retval = Pixie16ReadStatisticsFromModule(statistics, k);
+        if (retval < 0) {
+            cout << "Error accessing scaler statistics from module " 
+                << k << endl;
+        } else {
+            // cout << "Accessing statistics for module " 
+            //      << k << endl;
+        }
+
+        double ChanEvents = 0; 
+        double FastPeaks = 0;
+
+        outputfile << "Module " << k << endl; 
+
+        for (int i=0; i<16; i++) {
+
+            ChanEvents = 0;
+            FastPeaks = 0;
+
+            // These are lines are taken straight from the pixie16app.c file.
+
+            // Pixie16ComputeOutputCountRate code
+            // first get upper 32 bits of the number and push them up 32 bits, then
+            // append on the lower 32 bits. Not the greatest but should work.
+	    ChanEvents = Pixie16ComputeOutputCountRate(statistics, k, i);
+
+            // Pixie16ComputeInputCountRate code
+
+	    FastPeaks = Pixie16ComputeOutputCountRate(statistics, k, i);
+
+
+            /* Print out final statistics to file */
+            // "Channel #" "output events" "input events"
+            outputfile << "   Channel " << i << ": " << ChanEvents << " " 
+                << FastPeaks << endl;
+
+        }
+>>>>>>> origin/12.0-pre5
 
     }
     nFIFOWords[k] += mod_numwordsread;
@@ -251,7 +352,6 @@ CMyEndCommand::operator()(CTCLInterpreter& interp,
   if (status == TCL_OK) {
     readOutRemainingData();
   }
-
   return TCL_OK;
 }
 
@@ -302,7 +402,11 @@ int CMyEndCommand::handleEndRun(Tcl_Event* pEvt, int flags)
 {
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
   pEnd->s_thisPtr->endRun();
+<<<<<<< HEAD
   return TCL_OK;
+=======
+  return 0;
+>>>>>>> origin/12.0-pre5
 }
 
 int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
@@ -310,7 +414,11 @@ int CMyEndCommand::handleReadOutRemainingData(Tcl_Event* pEvt, int flags)
   EndEvent* pEnd = reinterpret_cast<EndEvent*>(pEvt);
 
   pEnd->s_thisPtr->readOutRemainingData();
+<<<<<<< HEAD
   return TCL_OK;
+=======
+  return 0;
+>>>>>>> origin/12.0-pre5
 }
 
 void CMyEndCommand::rescheduleEndTransition() {

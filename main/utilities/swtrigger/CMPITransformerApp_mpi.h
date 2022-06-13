@@ -22,24 +22,19 @@
 #define CMPITRANSFORMERAPP_MPI_H
 
 #include "CTransformerApp.h"
-#include "transformer.h"
 
-class CProcessingElement;
+class CMPIAppStrategy;
+
 
 class CMPITransformerApp : public CTransformerApp
 {
+private:
+    CMPIAppStrategy*  m_strategy;
 public:
     CMPITransformerApp(int argc, char** argv, gengetopt_args_info& args);
     virtual ~CMPITransformerApp();
     
     virtual int operator()();
-    
-private:
-    CProcessingElement* createProcessingElement();
-    CProcessingElement* createDataSource();        // Rank 0
-    CProcessingElement* createWorker();            // Rank >=3
-    CProcessingElement* createSorter();            // Rank 1
-    CProcessingElement* createSink();              // Rank 2    
 
 };
 

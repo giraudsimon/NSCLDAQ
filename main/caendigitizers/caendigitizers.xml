@@ -1362,6 +1362,8 @@ make
 +-----------------------------------+
 | Pile up rejection flag (uint16_t) |
 +-----------------------------------+
+| Extras word   (uint32_t)          |
++-----------------------------------+
 | Wave form data ...  see below     |
        ...
 +-----------------------------------+
@@ -1418,6 +1420,17 @@ make
                 data.  Note that the digitizer this hit came
                 from can be deduced from the source id located
                 in the hit's body header.
+            </para>
+            <para>
+                Note in this version, the extras are hard coded to be the an
+                additional top 16 bits of timestamp (raw which should be ignored)
+                in the top 16 bits, Flag information of some sort in bits
+                10-15 and the bottom 10 bits (bits 0-9) the fine
+                timestamp from the CFD.  We chose this so that we can
+                unambiguously unpack a high precision time in SpecTcl e.g. for
+                the computation of time differences as might be needed for time of
+                flight parameters.  A later version will support the full set of
+                selections available in COMPASS.
             </para>
             <para>
                 The digitizers can be told to acquire waveforms.

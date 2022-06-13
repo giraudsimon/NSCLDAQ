@@ -199,9 +199,9 @@ static void writeEvent(void* pEvent)
   //
   //  
   pRingItem pRItem = pItem->getItemPointer();
-  pLastItem = realloc(pLastItem, pRItem->s_header.s_size);
+  pLastItem = realloc(pLastItem, itemSize(pRItem));
   if (pLastItem) {
-    memcpy(pLastItem, pRItem, pRItem->s_header.s_size);
+    memcpy(pLastItem, pRItem, itemSize(pRItem));
   } else {
     throw std::string("Unable to allocate storage for prior item");
   }
@@ -234,8 +234,8 @@ static void writeNonPhysicsItem(CRingItem* pItem)
   EVB::FragmentHeader hdr;
   hdr.s_timestamp = NULL_TIMESTAMP;
   hdr.s_sourceId  = sourceId;
-  hdr.s_size      = pRItem->s_header.s_size;
-  uint32_t type=pRItem->s_header.s_type;
+  hdr.s_size      = itemSize(pRItem);
+  uint32_t type=itemType(pRItem);
 
   // at the moment we assume that only state change items are barriers
   if (    type == BEGIN_RUN || type == END_RUN 

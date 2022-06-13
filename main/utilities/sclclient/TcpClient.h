@@ -36,39 +36,19 @@
 // (c) Copyright NSCL 1999, All rights reserved TcpClient.h
 //
 
-#ifndef __TCPCLIENT_H  //Required for current class
-#define __TCPCLIENT_H
+#ifndef TCPCLIENT_H  //Required for current class
+#define TCPCLIENT_H
 
-#ifndef __HISTOTYPES_H
-#include <daqdatatypes.h>
-#endif
 
-#ifndef __BASETYPES_H
-#include <daqdatatypes.h>
-#endif
+#include <libtclplusdatatypes.h>
 
-#ifndef __CRT_NETINET_IN_H
 #include <netinet/in.h>
-#define __CRT_NETINET_IN_H
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
-#ifndef __CRTL_SOCKET_H
 #include <sys/socket.h>
 #ifndef SHUT_RDWR
 #define SHUT_RDWR 3
 #endif
-#define __CRTL_SOCKET_H
-#endif
-
-#ifndef __CRTL_UNISTD_H
 #include <unistd.h>
-#define __CRTL_UNISTD_H
-#endif
 
 
 class TcpClientConnection;
@@ -205,8 +185,8 @@ protected:
        
 public:
 
-  Bool_t Connect ()    ;
-  Bool_t Connect (const std::string& sRemoteHost, unsigned port) {
+  TCLPLUS::Bool_t Connect ()    ;
+  TCLPLUS::Bool_t Connect (const std::string& sRemoteHost, unsigned port) {
     m_sRemoteHost = sRemoteHost;
     m_nRemotePort = port;
     return Connect();

@@ -67,11 +67,11 @@ libVMUSBCore_la_CPPFLAGS = \
 
 
 libVMUSBCore_la_LIBADD	= \
-			@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
-			@top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la	\
-			@top_builddir@/usb/vmusb/ctlconfig/libVMUSBCtlConfig.la	\
-		  @top_builddir@/usb/vmusb/vmusb/libVMUSB.la		\
-			@LIBTCLPLUS_LDFLAGS@					\
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+	@top_builddir@/usb/vmusb/daqconfig/libVMUSBDaqConfig.la	\
+	@top_builddir@/usb/vmusb/ctlconfig/libVMUSBCtlConfig.la	\
+  @top_builddir@/usb/vmusb/vmusb/libVMUSB.la		\
+	@LIBTCLPLUS_LDFLAGS@					\
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@top_builddir@/base/os/libdaqshm.la	\
 			@top_builddir@/daq/format/libdataformat.la	\
@@ -94,8 +94,8 @@ unittests_LDADD    = @top_builddir@/base/thread/libdaqthreads.la   \
 	$(LIBTCLPLUS_LDFLAGS) $(TCL_LDFLAGS)  $(CPPUNIT_LDFLAGS)
 
 unittests_CPPFLAGS = -I@top_srcdir@/base/thread	\
-	-I@top_srcdir@/daq/format @PIXIE_CPPFLAGS@	\
-	$(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)
+	-I@top_srcdir@/daq/format		\
+	$(LIBTCLPLUS_CFLAGS) $(CPPUNIT_CFLAGS) $(TCL_FLAGS)  @PIXIE_CPPFLAGS@
 
 
 TESTS=unittests

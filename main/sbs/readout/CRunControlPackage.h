@@ -1,5 +1,5 @@
-#ifndef __CRUNCONTROLPACKAGE_H
-#define __CRUNCONTROLPACKAGE_H
+#ifndef CRUNCONTROLPACKAGE_H
+#define CRUNCONTROLPACKAGE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -15,18 +15,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __TCLOBJECTPACKAGE_H
 #include <TCLObjectPackage.h>
-#endif
-
 
 //
 

@@ -1,11 +1,11 @@
 # Meant to be run on Tclserver.
 # 
 
-puts  "---------------------------------"
+set scriptdir [file dirname [info script]]
+lappend auto_path [file join $scriptdir ..];    #s.b TclLibs dir.
 
-
-puts  $argc
-puts  $argv
+package require removetcllibpath
+package require tkutils
 
 
 #  We require DAQHOST to be an environment
@@ -24,25 +24,16 @@ set spdaq  $env(DAQHOST)
 #  The user must have supplied a command line argument 
 #  which is the name of their setup file.
 #
+tkutils::requireArgs 1 "No setup file" \
+	"You must supply a command argument that is your scaler config file"
 
-if {[llength $argv] < 2} {
-   tk_dialog .failure "No setup file" \
-   "You must supply a command argument that is your scaler config file" \
-   error 0 Dismiss
-   exit -1
-}
 set file [lindex $argv 0]
-puts "Setup file: $file"
 
 #  And the file must be readable...
 #
-if {![file readable $file]} {
-	tk_dialog .failure "Unreadable setup file" \
-	"The setup file $file  is not readable by me and must be" \
-	error 0 Dismiss
-	exit -1
-}
 
+tkutils::requireReadable $file "Unreadable setup file" \
+	"The setup file $file  is not readable by me and must be"
 
 #  We need to establish our location and source in the
 #  scaler GUI support. We assume that we are installed
@@ -56,17 +47,13 @@ set bindir     $mydirectory/../bin
 set scriptdir  $mydirectory/../TclLibs/ScalerDisplay
 puts "Runing $scriptdir/scaler.tcl"
 source $scriptdir/scaler.tcl
-puts running
+
 
 # Canonicalize the TclLibs directory subtree location and
 # if needed, prepend to auto_path.
 
 
-set libDir [file join  $mydirectory ..]
-set wd [pwd]
-cd $libDir
-set libDir [pwd]
-cd $wd
+set libDir [file normalize [file join  $mydirectory ..]]
 
 if {[lsearch -exact $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]

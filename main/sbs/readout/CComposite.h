@@ -1,5 +1,5 @@
-#ifndef __CCOMPOSITE_H
-#define __CCOMPOSITE_H
+#ifndef CCOMPOSITE_H
+#define CCOMPOSITE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,23 +16,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __COBJECT_H
 #include "CObject.h"
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __UNISTD_H
 #include <unistd.h>
-#ifndef __UNISTD_H
-#define __UNISTD_H
-#endif
-#endif
 
 
 

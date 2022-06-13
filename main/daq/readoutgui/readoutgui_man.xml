@@ -3469,6 +3469,31 @@ set <replaceable>sm</replaceable> [RunstateMachineSingleton %AUTO%]
                 for the callout bundles are invoked in the order in which the
                 bundles were registered.
             </para>
+            <para>
+               As of NSCLDAQ 11.3 and The <command>precheckTransitionForErrors</command>
+               was added to the set of procs a bundle may implement.
+               This proc is optional not mandatory. If a bundle implements
+               that proc, it is called prior to any state transition attempt.  The
+               current and destination states are passed in that order as parameters.
+               If the bundle wishes to veto the state transition, it returns a
+               non-empty string describing why.  The set of veto strings will be
+               output to the user as conditions to correct in order to allow the
+               transition.  If all bundles return empty strings, the transition
+               will be attempted.
+            </para>
+            <para>
+               As of NSCLDAQ-12, the additional <command>failure</command> method
+               was added to the set of procs a bundle may implement.  If
+               This proc is purely optiona.   If implemented when a callback
+               to a bundle fails, this method is called for all bundles that
+               succeeded in the execution of that callback.  Note that if
+               several bundles succeed, failure is called in reverse registration
+               order.  This allows succeeding callbacks to cleanup as needed for
+               aborted transitions.  The arguments passed to the original callback
+               are passed to the <command>failure</command> method.  Note that
+               errors from calls to <command>failure</command> are completely
+               ignored.
+            </para>
         </refsect1>
         <refsect1>
             <title>EXAMPLES</title>
@@ -7056,7 +7081,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
         <para>
          GUI control panels must be declared elligible for remote control. See
          the <literal>Remote control package</literal> section of the
-         <literal>ReadoutGUI & ReadoutShell</literal> chapter of the general
+         <literal>ReadoutGUI &amp; ReadoutShell</literal> chapter of the general
          documentation for information that describes how to do that.
         </para>
         <para>
@@ -7083,8 +7108,14 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
                  user the output that normally would only be shown on a
                  controlled Readout GUI's control panel.
                 </para>
+                <para>
+                  As of NSCLDAQ-12.0, the names of these services can be overridden by
+                  supplying them to the <command>RemoteControlClient::initialize</command>
+                  command.
+               </para>
             </listitem>
          </varlistentry>
+         
         </variablelist>
         <para>
          The controlling protocol is fully textual.  The connected process will
@@ -7236,7 +7267,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
              <literal>OK</literal> is returned with no additional data.
             </para>
             <para>
-             See the chapter on the <literal>ReadoutGUI & ReadoutShell</literal>
+             See the chapter on the <literal>ReadoutGUI &amp; ReadoutShell</literal>
              for a diagram showing the legal states and the transitions allowed
              from each state.  Note that this request takes as additional data
              the <emphasis>name</emphasis> of the proposed target state, not
@@ -7267,7 +7298,7 @@ set info [::ssh::sshpid <replaceable>host command</replaceable> ]
               returns the current run state.  On success, this is the string
               <literal>OK</literal> followed by one of the state names
                in the ReadoutGUI state diagram shown in the chapter
-               <literal>ReadoutGUI & ReadoutShell</literal>.
+               <literal>ReadoutGUI &amp; ReadoutShell</literal>.
              </para>
              <para>
               <literal>slave</literal> returns <literal>OK</literal> followed

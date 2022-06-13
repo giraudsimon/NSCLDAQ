@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CBARRIERSTATS_H
-#define __CBARRIERSTATS_H
+#ifndef CBARRIERSTATS_H
+#define CBARRIERSTATS_H
 
 
 /**
@@ -23,9 +23,8 @@
  * @brief Observer to accumulate statistics on complete barriers.
  */
 
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
+
 
 /**
  * @class CBarrierStats

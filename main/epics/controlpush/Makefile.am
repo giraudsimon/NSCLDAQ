@@ -38,7 +38,9 @@ noinst_HEADERS=  CApplication.h CChannelList.h \
 
 controlpush_LDADD   =   @top_builddir@/base/tcpip/libTcp.la	\
 			@LIBEXCEPTION_LDFLAGS@	\
+			@top_builddir@/epics/epicslib/libEpicslib.la \
 			@top_builddir@/base/os/libdaqshm.la	\
+			@top_builddir@/base/thread/libdaqthreads.la \
 			@top_builddir@/base/CopyrightTools/libLicense.la \
 			$(EPICS_LDFLAGS)  $(THREADLD_FLAGS) @TCL_LDFLAGS@
 controlpush_LDFLAGS= -Wl,"-rpath=$(libdir)"
@@ -48,6 +50,9 @@ COMPILATION_FLAGS            =	@LIBTCLPLUS_CFLAGS@		\
 			-I@top_srcdir@/base/headers		\
 			-I@top_srcdir@/base/tcpip	\
 			-I@top_srcdir@/base/os	\
+			-I@top_srcdir@/base/factories  \
+			-I@top_srcdir@/base/thread    \
+			-I@top_srcdir@/epics/epicslib \
 			$(EPICS_BIN) $(EPICS_INCLUDES)  @PIXIE_CPPFLAGS@
 
 controlpush_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)

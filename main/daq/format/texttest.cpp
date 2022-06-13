@@ -28,6 +28,11 @@ class texttests : public CppUnit::TestFixture {
   CPPUNIT_TEST(copycons);
   CPPUNIT_TEST(tscons);
   CPPUNIT_TEST(fractionalRunTime);
+  CPPUNIT_TEST(origsid);     // v12.0-pre1
+  CPPUNIT_TEST(tsorigsid);   // v12.0-pre1
+  CPPUNIT_TEST(origsid_1);
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -46,6 +51,11 @@ protected:
   void copycons();
   void tscons();
   void fractionalRunTime();
+  void origsid();
+  void tsorigsid();
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(texttests);
@@ -70,12 +80,14 @@ void texttests::simplecons() {
   
   pTextItem pItem = reinterpret_cast<pTextItem>(item.getItemPointer());
   
-  EQ((uint32_t)0, pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
-  EQ((uint32_t)4, pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
+  pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+    bodyPointer(reinterpret_cast<pRingItem>(pItem)));
+  EQ((uint32_t)0, pB->s_timeOffset);
+  EQ((uint32_t)4, pB->s_stringCount);
 
   // Check the contents:
 
-  const char* p = pItem->s_body.u_noBodyHeader.s_body.s_strings;
+  const char* p = pB->s_strings;
   EQ(s1, string(p));
   p  += strlen(p) + 1;
   EQ(s2, string(p));
@@ -106,15 +118,18 @@ void texttests::fullcons()
 		     5678);
   
   pTextItem pItem = reinterpret_cast<pTextItem>(item.getItemPointer());
-  EQ((uint32_t)1234, pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
-  EQ((uint32_t)4, pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
-  EQ((uint32_t)5678, pItem->s_body.u_noBodyHeader.s_body.s_timestamp);
+  pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+        bodyPointer(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQ((uint32_t)1234, pB->s_timeOffset);
+  EQ((uint32_t)4, pB->s_stringCount);
+  EQ((uint32_t)5678, pB->s_timestamp);
 
 
 
    // Check the contents:
 
-  const char* p = pItem->s_body.u_noBodyHeader.s_body.s_strings;
+  const char* p = pB->s_strings;
   EQ(s1, string(p));
   p  += strlen(p) + 1;
   EQ(s2, string(p));
@@ -161,13 +176,16 @@ void texttests::castcons()
   try {
     CRingTextItem item(ritem);
     pText = reinterpret_cast<pTextItem>(item.getItemPointer());
-    EQ((uint32_t)1234, pText->s_body.u_noBodyHeader.s_body.s_timeOffset);
-    EQ((uint32_t)4321, pText->s_body.u_noBodyHeader.s_body.s_timestamp);
-    EQ((uint32_t)4,    pText->s_body.u_noBodyHeader.s_body.s_stringCount);
+    pTextItemBody pB = reinterpret_cast<pTextItemBody>(
+       bodyPointer(reinterpret_cast<pRingItem>(pText))
+    );
+    EQ((uint32_t)1234, pB->s_timeOffset);
+    EQ((uint32_t)4321, pB->s_timestamp);
+    EQ((uint32_t)4,    pB->s_stringCount);
     
     // Check the contents:
     
-    char* p = pText->s_body.u_noBodyHeader.s_body.s_strings;
+    char* p = pB->s_strings;
     EQ(s1, string(p));
     p  += strlen(p) + 1;
     EQ(s2, string(p));
@@ -245,13 +263,13 @@ void texttests::copycons()
   CRingTextItem copy(original);
 
   EQ(original.getBodySize(), copy.getBodySize());
-  _RingItem* porig = original.getItemPointer();
-  _RingItem* pcopy = copy.getItemPointer();
-
+  pRingItem porig = original.getItemPointer();
+  pRingItem pcopy = copy.getItemPointer();
+  
   // headers must match 
 
-  EQ(porig->s_header.s_size, pcopy->s_header.s_size);
-  EQ(porig->s_header.s_type, pcopy->s_header.s_type);
+  EQ(itemSize(porig), itemSize(pcopy));
+  EQ(itemType(porig), itemType(pcopy));
 
   // Contents must match:
 
@@ -297,17 +315,19 @@ texttests::tscons()
     //Check out the header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    EQ(PACKET_TYPES, pItem->s_header.s_type);
+    EQ(PACKET_TYPES, uint32_t(itemType(reinterpret_cast<pRingItem>(pItem))));
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(TextItemBody)
             + stringSize 
-        ), pItem->s_header.s_size
+        ), itemSize(reinterpret_cast<pRingItem>(pItem))
     );
     // The body header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    pBodyHeader pH = reinterpret_cast<pBodyHeader>(
+       bodyHeader(reinterpret_cast<pRingItem>(pItem))
+    );
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x8877665544332211ll), pH->s_timestamp);
     EQ(static_cast<uint32_t>(1), pH->s_sourceId);
@@ -320,7 +340,7 @@ texttests::tscons()
     pTextItemBody pBody = reinterpret_cast<pTextItemBody>(item.getBodyPointer());
     EQ(
        pBody,
-       reinterpret_cast<pTextItemBody>(&(pItem->s_body.u_hasBodyHeader.s_body))
+      reinterpret_cast<pTextItemBody>(bodyPointer(reinterpret_cast<pRingItem>(pItem)))
     );
     // Check the body contents against what was constructed:
     
@@ -363,4 +383,54 @@ texttests::fractionalRunTime()
       strings, 1234, stamp, 3
     );
     EQ(static_cast<float>(1234.0/3.0), item.computeElapsedTime());
+}
+
+// V12.0-pre1.
+
+void texttests::origsid()
+{
+  // Apologies to Dr. Seuss.
+  const char* strings[4] = {"one string", "two string", "three string", "more"};
+  time_t now = time(nullptr);
+  pTextItem pItem = formatTextItem(4, now, 10, strings, PACKET_TYPES);
+  pTextItemBody pBody = reinterpret_cast<pTextItemBody>(bodyPointer(
+   reinterpret_cast<pRingItem>(pItem) 
+  ));
+  EQ(uint32_t(0), pBody->s_originalSid);
+}
+void texttests::tsorigsid()
+{
+// Apologies to Dr. Seuss.
+  const char* strings[4] = {"one string", "two string", "three string", "more"};
+  time_t now = time(nullptr);
+  pTextItem pItem = formatTimestampedTextItem(
+   0x123456789, 6, 0, 4, now, 10, strings, PACKET_TYPES, 1 
+  );
+  pTextItemBody pBody = reinterpret_cast<pTextItemBody>(bodyPointer(
+   reinterpret_cast<pRingItem>(pItem) 
+  ));
+  EQ(uint32_t(6), pBody->s_originalSid);
+}
+
+void texttests::origsid_1()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(PACKET_TYPES, strings);
+ EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void texttests::origsid_2()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(PACKET_TYPES, strings, 12340, time(nullptr));
+ EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void texttests::origsid_3()
+{
+ std::vector<std::string> strings={"set a b", "set c d", "set d e"};
+ CRingTextItem item(
+     PACKET_TYPES, 0x9876543210, 777, 0, strings, 10, time(nullptr)
+ );
+ 
+ EQ(uint32_t(777), item.getOriginalSourceId());
+
 }

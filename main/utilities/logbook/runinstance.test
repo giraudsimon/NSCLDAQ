@@ -1,0 +1,154 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   runinstance.test
+# @brief  Test run instances.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require logbook
+
+proc commonSetup {} {
+    if {[file exists test.logbook.db]} {file delete test.logbook.db}
+    logbook::logbook create test.logbook.db 0400x {Ron Fox} {Logbook Tcl Tests}
+    set ::LogbookInstance [logbook::logbook open test.logbook.db]
+    set ::ron [$::LogbookInstance addPerson Fox Ron Mr.]
+    set ::giordano [$::LogbookInstance addPerson Cerizza Giordano Dr.]
+    set ::shift  [$::LogbookInstance createShift theshift [list $::ron $::giordano]]
+    $::LogbookInstance setCurrentShift theshift
+    set ::run    [$::LogbookInstance begin 12 {Run title} {Run Comment}]
+}
+proc commonCleanup { } {
+    $::run destroy
+    $::shift destroy
+    $::giordano destroy
+    $::ron destroy
+    $::LogbookInstance destroy
+    file delete test.logbook.db
+}
+
+tcltest::test id {get run PK} \
+-setup {
+    commonSetup    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    $::run id
+} \
+-result 1
+
+tcltest::test number {Get run number} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::run number
+} -result 12
+
+tcltest::test title {Get the run title} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::run title
+} -result {Run title}
+
+tcltest::test isActive_1 {Is the run active (yes)} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::run isActive
+} -result 1
+
+tcltest::test isActive_2 {Is the run active (no)} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    $::LogbookInstance end $::run {This is the end run comment}
+    $::run isActive
+} -result 0
+
+
+tcltest::test transition_1 {We start with one transition the begin run : 1} \
+-setup {commonSetup} \
+-cleanup {
+    
+    commonCleanup
+} \
+-body {
+    # Some transition dict entries are tough to match (e.g. the time, shift)
+    
+    set t [lindex [$::run transitions] 0]
+    set result [list \
+        [dict get $t id] [dict get $t transition ] [dict get $t transitionName] \
+        [dict get $t transitionComment]]
+    
+} -result [list 1 1 BEGIN {Run Comment}]
+
+tcltest::test transition_2 {We start with one transition the begin run: 2} \
+-setup {commonSetup} -cleanup {
+    $runshift destroy
+    foreach person $members {
+        $person destroy
+    }
+    commonCleanup
+} \
+-body {
+    set t [lindex [$::run transitions] 0]
+    
+    set runshift [dict get $t shift]
+    set members [$runshift members]
+    llength $members
+} -result 2
+
+tcltest::test transition_3 {Ending the run adds a second transition} \
+-setup {
+    commonSetup
+    $::LogbookInstance end $::run {Ends the run}
+}\
+-cleanup {
+    
+    commonCleanup
+} \
+-body {
+    llength [$::run transitions]
+} -result 2
+
+tcltest::test transition_4 {ending the run adds a second transition : contents} \
+-setup {
+    commonSetup
+    $::LogbookInstance end $::run {Ends the run}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set t [lindex [$::run transitions] 1]
+    set result [list [dict get $t transitionName] [dict get $t transitionComment]]
+} -result [list END {Ends the run}]
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

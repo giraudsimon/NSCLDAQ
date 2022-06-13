@@ -1,5 +1,5 @@
-#ifndef __CVC32CC32_H
-#define __CVC32CC32_H
+#ifndef CVC32CC32_H
+#define CVC32CC32_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -15,10 +15,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CMEMORYMAPPEDCAMACBRANCH_h
-#include "CMemoryMappedCAMACBranch.h"
-#endif
 
+#include "CMemoryMappedCAMACBranch.h"
 
 /*!
    The Wiener VC32/CC32 is a board set that allows

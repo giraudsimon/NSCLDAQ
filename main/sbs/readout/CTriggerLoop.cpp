@@ -135,18 +135,14 @@ CTriggerLoop::run()
     mainLoop();
   }
   catch (const char* msg) {
-    m_pExperiment->triggerFail(msg);
-    m_running  = false;
-    m_stopping = false;
-    m_failed   = true;
+    reportFail(msg);
+    
     throw;
 
   }
   catch (std::string msg) {
-    m_pExperiment->triggerFail(msg);
-    m_running  = false;
-    m_stopping = false;
-    m_failed   = true;
+    reportFail(msg);
+    
     throw;
 
   }
@@ -154,18 +150,14 @@ CTriggerLoop::run()
     std::string msg = e.ReasonText();
     msg += " ";
     msg +=  e.WasDoing();
-    m_pExperiment->triggerFail(msg);
-    m_running  = false;
-    m_stopping = false;
-    m_failed   = true;
+    reportFail(msg);
+    
     throw;
 
   }
   catch (...) {
-    m_pExperiment->triggerFail("Unexpected exception caught");
-    m_running  = false;
-    m_stopping = false;
-    m_failed = true;
+    reportFail("Unexpected exception caught");
+
     throw;
 
   }
@@ -217,4 +209,18 @@ CTriggerLoop::mainLoop()
   m_pExperiment->ScheduleEndRunBuffer(m_pausing);
 
   return;
+}
+/**
+ * reportFail
+ *    Report trigger failure to the experiment and set our state
+ *    to halted/failed:
+ * @param msg - message to report to the experiment
+ */
+void
+CTriggerLoop::reportFail(std::string msg)
+{
+  m_pExperiment->triggerFail(msg);
+  m_running  = false;
+  m_stopping = false;
+  m_failed   = true;
 }

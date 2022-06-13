@@ -42,6 +42,7 @@ class CRawADCUnpacker
     Iter 
       unpackData(const Iter& begin, const Iter& end, ParsedADCEvent& event);
     void unpackEOE(std::uint32_t word, ParsedADCEvent& event);
+    void incompleteEvent(const char* whence);
 };
 
 #endif

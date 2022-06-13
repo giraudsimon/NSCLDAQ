@@ -17,13 +17,10 @@
 
 //////////////////////////CCAMACScalerLRS2551.h file//////////////////////////////////
 
-#ifndef __CVMESCALERLRS1151_H
-#define __CVMESCALERLRS1151_H
+#ifndef CVMESCALERLRS1151_H
+#define CVMESCALERLRS1151_H
                                
-#ifndef __CSCALER_H
 #include "CVMEScaler.h"
-#endif
-
 #include <VmeModule.h>
                                
 /*!

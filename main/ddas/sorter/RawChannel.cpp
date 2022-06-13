@@ -122,17 +122,36 @@ RawChannel::SetTime()
  * SetTime
  *    Set the time in ns.
  *    @param ticksPerNs - nanoseconds each tick is worth.
+ *    @param useExt   - true if base timestamp comes from ext stamp
  */
 int
-RawChannel::SetTime(double ticksPerNs)
+RawChannel::SetTime(double ticksPerNs, bool useExt)
 {
-    if (s_channelLength >= 4) {
-        SetTime();
-        s_time *= ticksPerNs;
-        return 0;
+    if (useExt) {
+        // The external timestamp requires a header length of at
+        // least 6 words and is always the last two words of the
+        // header:
+        
+        uint32_t headerSize = (s_data[0] & 0x1f000) >> 12;
+        if (headerSize >= 6) {
+           uint64_t extStampHi = s_data[headerSize-1] & 0xffff;
+           uint64_t extStampLo = s_data[headerSize-2];
+           uint64_t stamp      = (extStampHi << 32) | (extStampLo);
+           s_time = stamp;
+        } else {
+            return 1;          // There's no external stamp.
+        }
+        
     } else {
-        return 1;
+        if (s_channelLength >= 4) {
+            SetTime();
+        
+        } else {
+            return 1;
+        }
     }
+    s_time *= ticksPerNs;
+    return 0;
 }
 /**
  * SetLength
@@ -142,7 +161,7 @@ int
 RawChannel::SetLength()
 {
     s_channelLength = channelLength(s_data);
-    return s_channelLength;
+    return 0;
 }
 
 /**
@@ -286,9 +305,8 @@ uint32_t
 RawChannel::channelLength(void* pData)
 {
     uint32_t* p = static_cast<uint32_t*>(pData);
-
-    return (*p & CHANNELLENGTHMASK) >> CHANNELLENGTHSHIFT;
-
+    uint32_t result = (*p & CHANNELLENGTHMASK) >> CHANNELLENGTHSHIFT;
+    return result;
 }
 
 

@@ -43,6 +43,7 @@
 #include "COutOfOrderTraceCommand.h"
 #include "CFragmentHandler.h"
 #include "BarrierAbortCommand.h"
+#include "COutOfOrderStatsCommand.h"
 
 static const char* version = "1.0"; // package version string.
 
@@ -63,7 +64,7 @@ int Eventbuilder_Init(Tcl_Interp* pInterp)
   
   
   
-  new CFragmentHandlerCommand(*pInterpObject, "EVB::handleFragment");
+  new CFragmentHandlerCommand(*pInterpObject, "EVB::handleFragments");
   new CInputStatsCommand(*pInterpObject, "EVB::inputStats");
   new COutputStatsCommand(*pInterpObject, "EVB::outputStats");
   new CDLateStatsCommand(*pInterpObject, "EVB::dlatestats");
@@ -80,6 +81,7 @@ int Eventbuilder_Init(Tcl_Interp* pInterp)
   new CXonXoffCallbackCommand(*pInterpObject, "EVB::onflow");
   new COutOfOrderTraceCommand(*pInterpObject, "EVB::ootrace");
   new CBarrierAbortCommand(*pInterpObject, "EVB::abortbarrier");
+  new COutOfOrderStatsCommand(*pInterpObject, "EVB::getoostats");
   // Setup the output stage:
 
   

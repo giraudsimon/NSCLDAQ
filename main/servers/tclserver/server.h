@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 #include <tk.h>
 
 extern int serverport;

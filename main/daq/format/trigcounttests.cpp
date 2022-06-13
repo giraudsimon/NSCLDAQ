@@ -33,16 +33,6 @@
 #include "CAbnormalEndItem.h"
 #include <iostream>
 
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    for (int i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
-
 /////////////////////////////////////////////////////////////////////////////////
 // Event trigger count item tests.
 
@@ -84,9 +74,7 @@ PhysicsCountOutput::itemformat()
   EQMSG("Time stamp", static_cast<uint32_t>(666), pItem->s_body.u_noBodyHeader.s_body.s_timestamp);
   EQMSG("Trigger count", static_cast<uint64_t>(0xaaaa), pItem->s_body.u_noBodyHeader.s_body.s_eventCount);
   EQMSG("Offset Divisor", static_cast<uint32_t>(1), pItem->s_body.u_noBodyHeader.s_body.s_offsetDivisor);
-   ASSERT((pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
-	  (pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
-
+  EQMSG("empty", static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_body.u_noBodyHeader.s_empty);
 
 
   free(pItem);

@@ -69,6 +69,13 @@ public:
     void Xon(std::string qid) {m_fXoned = true;}
 };
 
+static void initFragment(EVB::pFlatFragment frag)
+{
+    frag->s_header.s_timestamp = 100;              // nonzero is the key.
+    frag->s_header.s_sourceId  = 1;
+    frag->s_header.s_size      = 10;
+    frag->s_header.s_barrier   = 0;
+}
 void ConfigCmdTest::xoffObserved()
 {
     XonOffObserver obs;
@@ -80,10 +87,7 @@ void ConfigCmdTest::xoffObserved()
         reinterpret_cast<EVB::FlatFragment*>(
             malloc(sizeof(EVB::FlatFragment) + 10));
 
-    frag->s_header.s_timestamp = 100;              // nonzero is the key.
-    frag->s_header.s_sourceId  = 1;
-    frag->s_header.s_size      = 10;
-    frag->s_header.s_barrier   = 0;
+    initFragment(frag);
     
     // Submitting this fragment should invoke the Xoff observer
     
@@ -104,10 +108,7 @@ void ConfigCmdTest::xonObserved()
         reinterpret_cast<EVB::FlatFragment*>(
             malloc(sizeof(EVB::FlatFragment) + 10));
 
-    frag->s_header.s_timestamp = 100;              // nonzero is the key.
-    frag->s_header.s_sourceId  = 1;
-    frag->s_header.s_size      = 10;
-    frag->s_header.s_barrier   = 0;
+    initFragment(frag);
     
     // Submitting this fragment should invoke the Xoff observer
     

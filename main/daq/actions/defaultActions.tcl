@@ -3,7 +3,7 @@ package provide DefaultActions 1.0
 package require ReadoutGUIPanel
 
 namespace eval DefaultActions {
-  variable name
+  variable name ""
 
   proc handleError str { 
     variable name

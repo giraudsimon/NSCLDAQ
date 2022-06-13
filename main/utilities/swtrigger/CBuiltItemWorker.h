@@ -42,7 +42,7 @@ public:
     // Front of the  ring item in a work item has timestamp and the
     // rest of this.
     
-    typedef struct __attribute__(__packed__)) _EventHeader {
+    typedef struct __attribute__((__packed__)) _EventHeader {
         uint64_t             s_timestamp;  
         RingItemHeader       s_ringHeader;
         BodyHeader           s_bodyHeader;
@@ -53,7 +53,7 @@ public:
     // because we'll need to adjust the payload size in the fragment header
     // and the ringitem header size if an extension is added on.
     
-    typedef struct __attribute__(__packed__)) _FragmentItem {
+    typedef struct __attribute__((__packed__)) _FragmentItem {
         EVB::FragmentHeader   s_fragHeader;
         RingItemHeader        s_ringItemHeader;
     } FragmentItem, *pFragmentItem;

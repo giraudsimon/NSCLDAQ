@@ -19,7 +19,7 @@
  *  @brief: Main program for the full event editor application.
  */
 
-#include "fulleventeditor.h"
+#include "swtriggerflags.h"
 class CFullEventEditorApp;
 #include "CFullEventEditor.h"
 #include "CZMQFullEventEditorApp.h"

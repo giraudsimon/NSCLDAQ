@@ -15,24 +15,13 @@
 */
 
 
-#ifndef __CCAENV830_H
-#define __CCAENV830_H
+#ifndef CCAENV830_H
+#define CCAENV830_H
 
 
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
 #include <VmeModule.h>
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
 
 #ifndef CCAENV820
 #define CCAENV820 CCAENV830	// V820/V830 -- same class.

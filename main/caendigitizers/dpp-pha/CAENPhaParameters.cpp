@@ -52,7 +52,7 @@ std::vector<std::pair<unsigned, pugi::xml_document*> > CAENPhaParameters::emptyD
 CAENPhaParameters::CAENPhaParameters(
     pugi::xml_document& dom, std::vector<std::pair<unsigned, pugi::xml_document*> >& chDoms) :
   m_dom(dom),
-  m_channelDoms(chDoms), acqMode(1), ioctlmask(0)
+  m_channelDoms(chDoms), acqMode(1), ioctlmask(0),isExtTrgEnabled(false),isExtVetoEnabled(false)
 {}
 /**
  * Copy construction.
@@ -98,12 +98,14 @@ CAENPhaParameters::operator=(const CAENPhaParameters& rhs)
     gpioLogic = rhs. gpioLogic;
     transResetLength = rhs.transResetLength;
     transResetPeriod = rhs.transResetPeriod;
+    OnboardCoinc = rhs.OnboardCoinc;
 
     groupconfigs[0] = rhs.groupconfigs[0];
     groupconfigs[1] = rhs.groupconfigs[1];
 
     s_startMode = rhs.s_startMode;
-
+    shapTrgWidth = rhs.shapTrgWidth;
+    trgoutmode = rhs.trgoutmode;
     m_channelParameters = rhs.m_channelParameters;
     ioctlmask = rhs.ioctlmask;
 

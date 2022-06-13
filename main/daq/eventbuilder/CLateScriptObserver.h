@@ -14,24 +14,17 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CLATESCRIPTOBSERVER_H
-#define __CLATESCRIPTOBSERVER_H
+#ifndef CLATESCRIPTOBSERVER_H
+#define CLATESCRIPTOBSERVER_H
 
 /**
  * @file CLateScriptObserver.h 
  * @brief  Defines a class that can observe data late fragments and call a script
  */
 
-#ifndef __CFRAGMENTHANDLER_H
-#include "CFragmentHandler.h"
-#endif
 
-#ifndef __STL_STRING
+#include "CFragmentHandler.h"
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward definitions:
 

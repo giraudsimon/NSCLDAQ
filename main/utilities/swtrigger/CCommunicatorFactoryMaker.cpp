@@ -33,7 +33,7 @@ private:
 public:
     CCommunicatorFactoryCreator(const char* d, CCommunicatorFactory* f) :
         m_pFactory(f), m_description(d) {}
-    virtual CCommunicatorFactory* operator()() { return m_pFactory; }
+    virtual CCommunicatorFactory* operator()(void* unused) { return m_pFactory; }
     virtual std::string describe() const { return m_description; }
 };
 

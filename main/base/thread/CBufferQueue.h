@@ -15,34 +15,14 @@
 */
 
 
-#ifndef __CBUFFERQUEUE_H
-#define __CBUFFERQUEUE_H
+#ifndef CBUFFERQUEUE_H
+#define CBUFFERQUEUE_H
 using namespace std;
 
-#ifndef __CGAURDEDOBJECT_H
 #include <CGaurdedObject.h>
-#endif
-
-#ifndef __CRT_UNISTD_H
 #include <unistd.h>
-#ifndef __CRTUNISTD_H
-#define __CRTUNISTD_H
-#endif
-#endif
-
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __PTHREAD_H
 #include <pthread.h>
-#ifndef __PTHREAD_H
-#define __PTHREAD_H
-#endif
-#endif
 
 #include <sys/time.h>
 #include <time.h>

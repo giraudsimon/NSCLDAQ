@@ -38,3 +38,4 @@ check-TESTS:
 EXTRA_DIST = $(TCLPACKAGES) $(TCLAPPS) $(TCLTESTS)
 
 
+check: check-TESTS

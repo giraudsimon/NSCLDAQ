@@ -22,6 +22,8 @@
 #include<sys/uio.h>
 
 #include <set>
+#include <string>
+
 /**
  * @file io.h
  * @brief Commonly used I/O method definitions.
@@ -34,6 +36,11 @@ namespace io {
   void closeUnusedFiles(std::set<int> keepOpen);
   void writeDataV(int fd, struct iovec* iov, int iovcnt);
   void writeDataVUnlimited(int fd, struct iovec* iov, int iovcnt);
+  std::string getReadableEnvFile(const char* envName);
+  std::string getReadableFileFromHome(const char* file);
+  std::string getReadableFileFromWd(const char* file);
+  std::string getReadableFileFromEnvdir(const char* env, const char* file);
+
 }
 
 

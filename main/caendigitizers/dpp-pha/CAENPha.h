@@ -41,10 +41,8 @@
 
 class CAENPha
 {
-
 private:
   CAENPhaParameters&  m_configuration;
-
   int                 m_handle;
   CAEN_DGTZ_BoardInfo_t m_info;
 
@@ -64,11 +62,9 @@ private:
   uint64_t           m_nTimestampAdjusts[CAEN_DGTZ_MAX_CHANNEL];
   uint64_t           m_nLastTimestamp[CAEN_DGTZ_MAX_CHANNEL];
   unsigned           m_nsPerTick; /* Nanoseconds per digitizer clock. */
+  unsigned           m_nsPerTrigger;  // ns per trigger clock tick.
   const char*        m_pCheatFile;
   int conet_node;
- public:
-  int                m_incrementsPerLsb[16];
-  
   // Other data
   
   int m_enableMask;
@@ -79,20 +75,11 @@ public:
   ~CAENPha();
   void setup();
   void shutdown();
-  unsigned Getm_nsPerTick(); //Written by B.Sudarsan
+
   bool haveData();
   std::tuple<int, const CAEN_DGTZ_DPP_PHA_Event_t*, const CAEN_DGTZ_DPP_PHA_Waveforms_t*> Read();
 
-  // Synchronized module chain methods:
-  
-  bool isMaster();        // True if board is master of chain.
-  void startMaster();     // Start the master board (must be last).
-  void startSlave();      // Start a slave board -- all must be done before master.
-  
- 
-  
-   // Private utility  methods  
-  
+  // Organizational methods
   
 private:
   int setChannelMask();
@@ -101,14 +88,13 @@ private:
   void setPerChannelParameters();
   void calibrate();
 
-  
+  // Utility methods.
+private:
   void setRegisterBits(uint16_t addr, int start_bit, int end_bit, int val);
   bool dataBuffered();
   void fillBuffers();
   int  findEarliest();
   uint16_t fineGainRegister(double value, int k, int m);
-  int      fgShiftCount(int M, int k);    
   void processCheatFile();
-  
 };
 #endif

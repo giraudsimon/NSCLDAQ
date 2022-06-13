@@ -14,27 +14,13 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CAUTHORIZEDTCLSERVER_h
-#define __CAUTHORIZEDTCLSERVER_h
+#ifndef CAUTHORIZEDTCLSERVER_h
+#define CAUTHORIZEDTCLSERVER_h
 
 
-#ifndef __CTCLSERVER_H
 #include <CTCLServer.h>
-#endif
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 // forward class definitions:

@@ -104,8 +104,8 @@ tcltest::test load-1 {Load a nonexistent package} \
 } \
 -body {
   set status [catch {$manager load NoSuchPackage} msg]
-  list $status $msg
-} -result [list 1 {No provider named NoSuchPackage could be found check the package load path}]
+
+} -result 1
 
 if {$debug} {
     tcltest::cleanupTests
@@ -369,7 +369,9 @@ tcltest::test addSource-3 {Add source failed in provider} \
     
 } -result 1
 
-
+if {$debug} {
+    tcltest::cleanupTests
+}
 
 #-----------------------------------------------------------------------------#
 #

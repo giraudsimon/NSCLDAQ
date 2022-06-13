@@ -27,6 +27,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 package provide scalerUtil 1.0
+package require Utils
 
 ##
 # formatElapsedTime
@@ -37,16 +38,8 @@ package provide scalerUtil 1.0
 # @return string - The formatted elapsed time.
 #
 proc formatElapsedTime secs {
-    
-    set seconds [expr {$secs %60}]
-    
-    set mins [expr {int($secs/60)}]
-    set minutes [expr {$mins %60}]
-    
-    set hours [expr {int($mins/60)}]
-    set hrs   [expr {$hours % 24}]
-    
-    set days [expr {int($hours/24)}]
-    
-    return [format "%d %02d:%02d:%02d" $days $hrs $minutes $seconds]
+
+    return [Utils::formatDeltaTime $secs]
+
 }
+

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <io.h>
 
 static const int BUFFERSIZE=1024*1024;  // Hard coded for now.
 /*------------------------------------------------------------------------
@@ -52,7 +52,7 @@ COrdererOutput::COrdererOutput(int fd) :
 
   long maxWrite = fcntl(m_OutputChannel, F_GETPIPE_SZ, nullptr);
   if (maxWrite == -1) {
-    std::cerr << "* Warning * fpathconf would not return a value for PIP_BUF\n";
+    std::cerr << "* Warning * fcntl would not return a value for F_GETPIPE_SZ\n";
     std::cerr << "* Using 1Mbyte by default\n";
     std::cerr.flush();
     maxWrite = 1024*1024;

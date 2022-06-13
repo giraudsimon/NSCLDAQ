@@ -18,13 +18,10 @@
  * @brief Define the class that implements EVB::flush  - flush event queues.
  */
 
-#ifndef __CFLUSHCOMMAND_H
-#define __CFLUSHCOMMAND_H
+#ifndef CFLUSHCOMMAND_H
+#define CFLUSHCOMMAND_H
 
-
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
 
 // Forward class/type definitions:
 

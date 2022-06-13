@@ -3,9 +3,7 @@
 
 AC_PREREQ(2.61)
 
-
-AC_INIT(nscldaq,11.4-029, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
-
+AC_INIT(nscldaq,12.0-pre5-xiaapi-3.4.0, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
@@ -59,7 +57,18 @@ else
 	AM_CONDITIONAL([CAENSUPPORT], [false])
 fi
 
+# Pandoc is needed for printed versions of the logbook:
+
+AC_CHECK_PROG(HAVE_PANDOC, [pandoc], [true], [false])
+if test "$HAVE_PANDOC" ==  "false"
+then
+	AC_MSG_FAILURE([pandoc is required to produce PDF output from the logbook utilities])
+	
+fi
+
 # Documentation
+
+
 
 AC_ARG_ENABLE([docs],
               AS_HELP_STRING([--enable-docs],[Build the documentation]),
@@ -192,10 +201,13 @@ SOVERSION="11:0:0"
 #  Local tests:
 #
 
-# Ensure Python is 2.7 or greater, and the packages/dependencies we need
+# Ensure Python is 3.0  or greater, and the packages/dependencies we need
 
-AM_PATH_PYTHON([2.7], [], [AC_MSG_ERROR([Python 2.7 or higher is needed for NSCLDAQ])])
+
+AM_PATH_PYTHON([3.0], [], [AC_MSG_ERROR([Python 3.0  or higher is needed for NSCLDAQ])])
 AX_PYQT
+PKG_CHECK_MODULES(PYTHON3, python3)
+
 
 # Ensure swig is installed: -- this is used to generate wrappers for the
 #  VMUSB and CCUSB libraries for use within Tcl drivers.
@@ -216,6 +228,8 @@ AX_GENGETOPT
 # Tcl/Tk is pervasive in NCLDAQ so we need to have it too:
 
 AX_TCL
+
+
 
 #
 #  The substs below are for compatibility sake 
@@ -304,6 +318,17 @@ AC_SUBST(LIBTCLPLUS_CFLAGS)
 AC_SUBST(LIBTCLPLUS_LDFLAGS)
 AC_SUBST(LIBEXCEPTION_LDFLAGS)
 
+#  Configure and install tclhttpd
+#  We use that /usr/lib/tclx.y has tclConfig
+#  and /usr/include/tclx.y     has the headers.
+
+tcl_basename=`basename ${TCLSH}`
+tcl_configdir="/usr/lib/$tcl_basename"
+tcl_incdir="/usr/include/$tcl_basename"
+
+(cd ${srcdir}/tclhttpd3.5.1; ./configure --prefix=${prefix}/share/tclhttpd --enable-gcc --with-tclinclude=$tcl_incdir --with-tcl=$tcl_configdir)
+(cd ${srcdir}/tclhttpd3.5.1; make all install)
+
 
 # Epics
 #
@@ -359,17 +384,17 @@ if test "x$BUILD_DDAS" == "xyes"
 then
    AC_MSG_NOTICE([The XIA-DDAS Support software will be built support software in ${DDAS_INSTDIR}])
 
-  AC_DEFINE([USING_DDAS], [1], [DDAS Definitions are in use])
+   AC_DEFINE([USING_DDAS],[1],  [DDAS Support Enabled])
 
    AC_ARG_WITH([xiaapidir],
-        [    -with-xiaapidir=path - Path to the XIAAPI installation.],
-        [xiaapidir=$withval])
+	[    -with-xiaapidir=path - Path to the XIAAPI installation.],
+	[xiaapidir=$withval])
    if test -n -d ${xiaapidir}
    then
-        AC_MSG_ERROR([Specify --with-xiaapidir -t point to the actual installation o\
-f the XIA API])
+	AC_MSG_ERROR([Specify --with-xiaapidir -t point to the actual installation of the XIA API])
    fi
    PIXIE_API_DIR=${xiaapidir}
+
 #  If the xiaapidir/include/pixie16/pixie16.h exists we're using the XIAAPI_V3
 #  or higher stuff:
 PIXIE_CPPFLAGS="-I${xiaapidir}/include"
@@ -452,6 +477,7 @@ AH_BOTTOM([
 
 
 #  Now export all the variables to the Makefile.
+
    
    AM_CONDITIONAL([BUILD_DDAS], [true])
    AC_SUBST(DDAS_INSTDIR)
@@ -502,10 +528,16 @@ AC_ARG_ENABLE([usb],
 if test "$enableusb" == "yes"
 then
 	AX_LIBUSB
+	PKG_CHECK_MODULES([libusb_1_0], [libusb-1.0])
+	PKG_CHECK_MODULES([libusb], [libusb])
 	AM_CONDITIONAL([BUILD_USB], [true])
 else
 	AM_CONDITIONAL([BUILD_USB], [false])
 fi
+
+# Check for libsqlite3:
+
+PKG_CHECK_MODULES([SQLITE3], [sqlite3])
 
 ##
 #  Check for zmq presence:
@@ -530,10 +562,6 @@ AC_CHECK_HEADERS([algorithm zmq.hpp],[], [AC_MSG_ERROR([The zeromq C++ header (z
 AC_LANG_POP
 
 
-##
-# check for presence of Python zmq package
-
-AC_PYTHON_MODULE([zmq])
 
 #----------------------------------------------------------------------------
 
@@ -609,10 +637,12 @@ AC_CONFIG_FILES([Makefile
     base/tcpip/Makefile
     base/tclutils/Makefile
     base/testutils/Makefile
+    base/sqliteplus/Makefile
     caenfw-common/Makefile
     servers/Makefile
     servers/tclserver/Makefile
     servers/portmanager/Makefile
+    servers/tclhttpdlaunch/Makefile
     utilities/Makefile
     utilities/common/Makefile
     utilities/Buffer/Makefile
@@ -646,6 +676,10 @@ AC_CONFIG_FILES([Makefile
     utilities/reglom/Makefile
     utilities/scalerReader/Makefile
     utilities/swtrigger/Makefile
+    utilities/logbook/Makefile
+    utilities/manager/Makefile
+    utilities/readoutREST/Makefile
+    epics/epicslib/Makefile
     epics/chanlog/Makefile
     epics/controlpush/Makefile
     epics/epicsdisplay/Makefile
@@ -670,6 +704,7 @@ AC_CONFIG_FILES([Makefile
     daq/evbtools/offlineorderer/figures/Makefile
     daq/evbtools/evts2frags/Makefile
     daq/actions/Makefile
+    daq/evbtools/evblite/Makefile
     simplesetups/Makefile
     simplesetups/v775/Makefile
     simplesetups/v785/Makefile
@@ -698,6 +733,8 @@ AC_CONFIG_FILES([Makefile
     sbs/VmeDevice/Makefile
     sbs/caenfwloader/Makefile
     usb/Makefile
+    usb/usb1/Makefile
+    usb/usb0.1/Makefile
     usb/loaders/Makefile
     usb/vmusb/Makefile
     usb/vmusb/vmusb/Makefile 
@@ -746,7 +783,6 @@ AC_CONFIG_FILES([Makefile
     examples/Makefile
     examples/ReadNSCLDAQFiles/Makefile
     ddas/Makefile ddas/readout/Makefile
-    ddas/readout-extclock/Makefile
     ddas/sorter/Makefile
     ddas/readoutdriver/Makefile
     ddas/pixieplugin/Makefile
@@ -757,6 +793,9 @@ AC_CONFIG_FILES([Makefile
     caendigitizers/dpp-psd/Makefile
     caendigitizers/dpp-psd/skel/Makefile
     caendigitizers/caendump/Makefile
+    caendigitizers/tweaker/Makefile
+    ddas/pixieplugin/Makefile
+    ddas/pixieplugin/definitions.tcl
     cookbooks/Makefile
     ])
 

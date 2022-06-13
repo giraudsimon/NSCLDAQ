@@ -469,7 +469,7 @@ App::scaler(CRingItem& item)
     
     unsigned srcId;
     if (pScaler->hasBodyHeader()) {
-        srcId = pScaler->getSourceId();
+        srcId = pScaler->getOriginalSourceId();
     } else {
         srcId = 0;
     }

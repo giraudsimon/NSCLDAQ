@@ -1,5 +1,5 @@
-#ifndef __COBJECT_H
-#define __COBJECT_H
+#ifndef COBJECT_H
+#define COBJECT_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan

@@ -20,14 +20,11 @@
  */
 
 
-#ifndef __CFRAGWRITER_H
-#define __CFRAGWRITER_H
+#ifndef CFRAGWRITER_H
+#define CFRAGWRITER_H
 
-#ifndef __CRT_STDLIB_H
+
 #include <stdlib.h>		/* for size_t */
-#ifndef __CRT_STDLIB_H
-#endif
-#endif
 
 /**
  * CFragWriter

@@ -25,17 +25,14 @@
 //
 // Copyright 
 
-#ifndef __CLOOKUPVISITOR_H  //Required for current class
-#define __CLOOKUPVISITOR_H
+#ifndef CLOOKUPVISITOR_H  //Required for current class
+#define CLOOKUPVISITOR_H
 
 //
 // Include files:
 //
 
-                               //Required for base classes
-#ifndef __CCHANNELVISITOR_H     //CChannelVisitor
 #include "CChannelVisitor.h"
-#endif
  
 /*!
 

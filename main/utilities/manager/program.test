@@ -1,0 +1,812 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   program.test
+# @brief  Test the configuration API for programs.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require containers
+package require programs
+package require sqlite3
+
+set dbfile test-config.db
+set TestContainerImage [file normalize [file join ~ minimal.img]]
+set echo               [file join /bin echo];     # Test prograsm.
+
+proc commonSetup { } {
+    tcltest::makeFile [list] $::dbfile
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbfile
+    sqlite3 db $::dbfile -create 0
+}
+proc commonCleanup {} {
+    db close
+    tcltest::removeFile $::dbfile
+
+}
+
+#------------------------------------------------------------------------
+# program::add tests
+
+tcltest::test add_1 {Add a base program makes the proper entries.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT id, name, path, type_id, host, directory,
+                    container_id, initscript, service
+            FROM program
+            WHERE name = 'test'}
+} \
+-result [list 1 test $echo 1 localhost "" "" "" ""]
+
+tcltest::test add_2 {Test with options in root table.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        service TEST_SERVICE initscript [file normalize ~/singexists.sh] \
+        directory /temp   \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set result [db eval {SELECT id, name, path, type_id, host, directory,
+                    container_id, initscript, service
+            FROM program
+            WHERE name = 'test'}]
+    # Need to massage the  init script to make it a match result.
+    
+    set fd [open ~/singexists.sh r]
+    set contents [read $fd]
+    set dbresult [lindex $result 7]
+    set match [expr {$contents eq $dbresult}]
+    lreplace $result 7 7 $match
+    
+    
+} -result [list 1 test $echo 1 localhost /temp "" 1 TEST_SERVICE]
+
+tcltest::test add_3 {Test with a container specified.} \
+-setup {
+    commonSetup
+    container::add db test1 [file normalize ~/minimal.img] "" ""
+    container::add db test2 \
+        [file normalize ~/minimal.img] [file normalize ~/singexists.sh] ""
+    program::add db test $echo Transitory localhost [dict create container test2]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    db eval {SELECT container_id FROM program WHERE name = 'test'}
+} -result 2
+
+tcltest::test add_4 {Invalid container is an error.} \
+-setup {
+    commonSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::add db test $echo Transitory localhost [dict create container test2]
+} -result * -match glob -returnCodes error
+
+
+tcltest::test add_5 {program with options} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create options  [list {--ring junk} {--sourceid 6} ]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT option, value FROM program_option WHERE program_id=$id}
+} -result [list --ring junk --sourceid 6]
+
+tcltest::test add_6 {program with parameters} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create parameters [list a b c]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT parameter FROM program_parameter WHERE program_id=$id}
+} -result [list a b c]
+
+tcltest::test add_7 {program with environment variables} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create environment [list {DAQROOT /usr/opt/daq/12.0pre3} \
+         {IMAGE /ron/fox/minimal.img} {TEDDY Bear}]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [db eval {SELECT id FROM program WHERE name='test'}]
+    db eval {SELECT name, value FROM program_environment WHERE program_id = $id}
+} -result [list DAQROOT /usr/opt/daq/12.0pre3 IMAGE /ron/fox/minimal.img \
+        TEDDY Bear ]
+
+tcltest::test add_8 {Duplicate add is illegal} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost \
+        [dict create environment [list {DAQROOT /usr/opt/daq/12.0pre3} \
+         {IMAGE /ron/fox/minimal.img} {TEDDY Bear}]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::add db test $echo Transitory localhost [dict create]
+} -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+# program::exists tests.
+
+tcltest::test exists_1 {Program does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::exists db test
+} -result 0
+
+tcltest::test exists_2 {Program does exist} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::exists db test
+
+} -result 1
+
+#------------------------------------------------------------------------------
+# program::remove tests.
+
+tcltest::test remove_1 {Nonexistent remove is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::remvoe db test
+} -result * -match glob -returnCodes error
+    
+    
+tcltest::test remove_2 {Remove existing is no error.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    program::remove db test
+} -result * -match glob -returnCodes [list return ok]
+
+tcltest::test remove_3 {Once removed, it's gone.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::remove db test
+    program::exists db test
+} -result 0
+#-----------------------------------------------------------------------------
+#  getdef tests
+
+tcltest::test getdef_1 {Program does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::getdef db test
+
+} -result * -match glob -returnCodes error
+
+tcltest::test getdef_2 {getdef for minimal definition} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost
+    program::add db not_me $echo Persistent localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::getdef db test
+} -result [dict create                                                      \
+    id 1 name test path $echo type Transitory type_id 1 host localhost     \
+    options [list] environment [list] parameters [list] 
+]
+
+tcltest::test getdef_3 {Directory specified.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        directory [pwd]                                         \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] directory
+} -result [pwd]
+
+tcltest::test getdef_4 {Initscript gets sucked in and returned.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        initscript [file normalize ~/singexists.sh]             \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set dbcontents [dict get [program::getdef db test] initscript]
+    set fd [open ~/singexists.sh r]
+    set contents [read $fd]
+    close $fd
+    
+    expr {$dbcontents eq $contents}
+} -result 1
+
+tcltest::test getdef_5 {Program had directory and service specifications} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create          \
+        service TEST_SERVICE directory /ron/fox
+    ]  
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set info [program::getdef db test]
+    list [dict get $info service] [dict get $info directory]
+} -result [list TEST_SERVICE /ron/fox]
+
+tcltest::test getdef_6 {Definition has container information} \
+-setup {
+    commonSetup
+    container::add db a-container [file normalize ~/minimal.img] "" ""
+    program::add db test $echo Transitory localhost [dict create \
+        container a-container \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set info [program::getdef db test]
+    list [dict get $info container_name] [dict get $info container_id]
+} -result [list a-container 1]
+
+tcltest::test getdef_7 {Options present} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        options [list {--id 5} {--ring fox} {--name lost}]     \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] options
+} -result [list {--id 5} {--ring fox} {--name lost}]
+
+tcltest::test getdef_8 {Get def when we have parameters} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        parameters [list a b c d e]
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] parameters
+} -result [list a b c d e]
+
+tcltest::test getdef_9 {Program definition has environment vars.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    dict get [program::getdef db test] environment
+} -result [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+
+#------------------------------------------------------------------------------
+# listDefinition tests
+
+tcltest::test listDefs_1 {No definitions means and empty list} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    program::listDefinitions db
+} -result [list]
+
+tcltest::test listDefs_2 {Get the right sized list:} \
+-setup {
+    commonSetup
+     program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory locahost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [program::listDefinitions db]
+} -result 2
+
+
+tcltest::test listDefs_3 {First program definition is correct} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lindex [program::listDefinitions db] 0
+} -result [dict create                                                \
+    id 1 name test1 path $echo type Transitory type_id 1 host localhost \
+    options [list] environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} \
+                                {a b}]                                        \
+    parameters [list]                                                        \
+]
+
+tcltest::test listDefs_4 {Second program definition is correct} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    lindex [program::listDefinitions db] 1
+} -result [dict create                                                    \
+    id 2 name test2 path $echo type Transitory type_id 1 host localhost \
+    options [list] environment [list] parameters [list]                  \
+]
+#------------------------------------------------------------------------------
+# The various things that are active should indicate nothing is active
+#  if no program has been run.
+#
+tcltest::test nonactive_1 {Defined program is inactive} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        environment [list {TCLLIBS /usr/opt/daq/12.0pre3/TclLibs} {a b}]
+    ]
+    program::add db test2 $echo Transitory localhost
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::isActive test1
+} -result 0
+
+tcltest::test noneactive_2 {It's ok to ask about a program that does not exist} \
+-setup {
+    
+} \
+-cleanup {
+    
+} \
+-body {
+    program::isActive test
+} -result 0
+
+tcltest::test noneactive_3 {No activce containers} \
+-setup {
+
+} \
+-cleanup {
+
+} \
+-body {
+    program::activeContainers
+} -result [list]
+
+tcltest::test noneactive_4 {Active program list is empty} \
+-setup {
+
+} \
+-cleanup {
+    
+} \
+-body {
+    program::activePrograms
+} -result [list]
+#------------------------------------------------------------------------------
+#  program::run tests
+
+tcltest::test run_1 {Error to run a command program that does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::run db test
+} -result * -match glob -returnCodes error
+
+tcltest::test run_2 {Containerless program runs properly.} \
+-setup {
+    commonSetup
+    program::add db test $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test]
+    set output [read $fd]
+    after 200 [list incr waitover]
+    vwait waitover
+    set output
+} -result "Hello world\n"
+
+#  Note this implicitly tests one bit of the post exit cleanup...that's why
+#  we call the program test1 and not test...so if test didn't get cleaned out
+#  of the book-keeping variables we'll learn that.
+#
+tcltest::test run_3 {Running a bare program makes it active..} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test1]
+    set output [read $fd]
+    set active [program::isActive test1];           #sb true
+    set activePrograms [program::activePrograms];   #sb [list test1]
+    after 200 [list incr waitover]
+    vwait waitover;                                 # Cleanup here.
+    list $active $activePrograms
+} -result [list 1 [list test1]]
+
+tcltest::test run_4 {Ensure there's cleanup after the program exists (explicitly} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fd [program::run db test1]
+    set output [read $fd]
+    after 200 [list incr waitover]
+    vwait waitover
+    
+    ## By now we're cleaned up:
+    
+    list [::program::isActive test1] [::program::activePrograms]
+} -result [list 0 [list]]
+
+tcltest::test run_5 {Can we dispatch to reader?} \
+-setup {
+    commonSetup
+    program::add db test1 $echo Transitory localhost [dict create \
+        parameters [list Hello world]]
+    set outputLines [list]
+    proc run_5_inputHandler {name fd} {
+        lappend ::outputLines [list $name [gets $fd]]
+    }
+} \
+-cleanup {
+    after cancel $id1
+    after cancel $id2
+    commonCleanup
+} \
+-body {
+    program::run db test1 run_5_inputHandler
+
+    #  These two afters are essentially timeouts the
+    #  completion of the program.  They allow us to run without delays for
+    #  the program spinning up that may fail.
+    
+    set id1 [after 1000 [list lappend outputLines Failed]]
+    set id2 [after 1100 [list lappend outputLines failed]]
+    vwait outputLines
+    vwait outputLines
+    
+    set outputLines
+} -result [list [list test1 "Hello world"] [list test1 ""]]
+
+
+### These run tests try to run in containers... including nonexistent containers.
+#
+
+tcltest::test run_6 {Run with nonexistent container is an error.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+    # Yank the container out from underneath the program:
+    
+    container::remove db minimal
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::run db test
+} -result * -match glob -returnCodes error
+
+tcltest::test run_7 {Run with good container} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test]
+    set input [read $fd]
+    after 200 incr waitover
+    vwait waitover
+    set input
+} -result "Hello world\n"
+
+tcltest::test run_8 {Running in container marks all of that.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test]
+    set isactive [::program::isActive test]
+    set containers [::program::activeContainers]
+    set activ  [::program::activePrograms]
+    
+    read $fd
+    after 200 incr waitover
+    vwait waitover
+    list $isactive $containers $activ
+    
+} -result [list 1 [list [list minimal localhost]] [list test]]
+
+tcltest::test run_9 {Ensure the program is cleaned up.} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+} \
+-cleanup {
+    container::deactivate localhost minimal
+    commonCleanup
+    after 200 incr waitover;              # For the container to stop.
+    vwait waitover
+} \
+-body {
+    set fd [program::run db test ]
+    read $fd
+    after 200 incr waitover
+    vwait waitover
+    
+    set isactive [::program::isActive test]
+    set containers [::program::activeContainers];   #Note the container persists.
+    set active  [::program::activePrograms]
+
+    list $isactive $containers $active
+} -result  [list 0 [list [list minimal localhost]] [list]]
+
+tcltest::test run_10 {Can also establish an input handler with containerized programs} \
+-setup {
+    commonSetup
+    ::container::add db minimal [file normalize ~/minimal.img ] "" ""
+    ::program::add db test $echo Transitory localhost [dict create \
+        container minimal parameters [list Hello world]         \
+    ]
+    set inputlines [list]
+    proc run_10_inputHandler {name fd} {
+        lappend ::inputlines [list $name [gets $fd]]
+    }
+} \
+-cleanup {
+    ::container::deactivate localhost minimal
+    commonCleanup
+    after cancel $id1
+    after cancel $id2
+    after 200 incr waitover;              # For the container to stop.
+    vwait waitover
+} \
+-body {
+    ::program::run db test run_10_inputHandler
+    set id1 [after 1000 lappend inputlines ""]
+    set id2 [after 1100 lappend inputlines ""]
+    vwait inputlines
+    vwait inputlines
+    set inputlines
+} -result [list [list test "Hello world"] [list test ""]]
+
+#-------------------------------------------------------------------------------
+#  Kill tests
+
+tcltest::test kill_1 {Error if the program isn't even defined.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::kill db test
+} -result * -match glob -returnCodes error
+
+tcltest::test kill_2 {Error if the progrm is defined but not running:} \
+-setup {
+    commonSetup
+    ::program::add db test /bin/sleep Transitory localhost [dict create  \
+        parameters [list 12h]                                            \
+    ]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::kill test
+} -result * -match glob -returnCodes error
+
+
+tcltest::test kill_3 {Kill actually works.} \
+-setup {
+    commonSetup
+    ::program::add db killtest /bin/sleep Transitory localhost [dict create  \
+        parameters [list 12h]                                            \
+    ]
+    # Our input handler is our detector for actual program exit
+    
+    set exitstatus 0
+    proc kill_3_inputHandler {name fd} {
+        
+        if {[eof $fd]} {
+        
+            set ::exitstatus 1
+        } else {
+        
+            gets $fd;              # Toss the input
+            # The read may have given the EOF condition too:
+            
+            if {[eof $fd]} {
+        
+                set ::exitstatus 1
+            }
+        }
+    }
+} \
+-cleanup {
+    after cancel $afterid
+    commonCleanup
+} \
+-body {
+    program::run db killtest kill_3_inputHandler
+    after 250;                 # Let the program start.
+    program::kill db killtest
+    set afterid [after 1500 set exitstatus 2]
+    vwait exitstatus
+    
+    set exitstatus
+} -result 1
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

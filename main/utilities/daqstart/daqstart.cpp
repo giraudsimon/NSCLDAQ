@@ -31,9 +31,9 @@ main(int argc, char** argv)
 {
   // Stock the sink factory with all the legal sink types:
 
-
-  CSinkFactory::AddCreator(string("file"),
-			   new CFileSinkCreator); // File sinks.
+  CSinkFactory* pFact = CSinkFactory::getInstance();
+  
+  pFact->AddCreator(string("file"), new CFileSinkCreator); // File sinks.
 
   // Create and run the application within the giant try block:
 

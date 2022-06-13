@@ -32,18 +32,12 @@
 // (c) Copyright NSCL 1999, All rights reserved PasswordCheck.h
 //
 
-#ifndef __PASSWORDCHECK_H  //Required for current class
-#define __PASSWORDCHECK_H
+#ifndef PASSWORDCHECK_H  //Required for current class
+#define PASSWORDCHECK_H
 
                                //Required for base classes
-#ifndef __AUTHENTICATOR_H
 #include "Authenticator.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
 
 class CPasswordCheck  : public CAuthenticator        
 {                       

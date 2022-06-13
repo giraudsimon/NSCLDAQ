@@ -15,7 +15,8 @@ libSBSVmeAPI_la_LIBADD = @LIBTCLPLUS_LDFLAGS@	\
 
 
 
-libSBSVmeAPI_la_CPPFLAGS = -I@top_srcdir@/base/headers @LIBTCLPLUS_CFLAGS@	\
+libSBSVmeAPI_la_CPPFLAGS = -I@top_srcdir@/base/headers \
+	@LIBTCLPLUS_CFLAGS@	\
 	-I@top_srcdir@/sbs/driver/include	\
 	-I@top_srcdir@/sbs/driver/dd @PIXIE_CPPFLAGS@
 
@@ -34,3 +35,6 @@ check-TESTS:
 	./unittests
 
 EXTRA_DIST = sbsVmeApi.xml  Asserts.h
+
+
+check:  check-TESTS

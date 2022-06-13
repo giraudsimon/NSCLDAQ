@@ -1,5 +1,5 @@
-#ifndef __CRINGTEXTITEM_H
-#define __CRINGTEXTITEM_H
+#ifndef CRINGTEXTITEM_H
+#define CRINGTEXTITEM_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,53 +17,14 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"
-#endif
-
-#ifndef __DATAFORMAT_H
 #include "DataFormat.h"
-#endif
-
-#ifndef __RANGEERROR_H
 #include <RangeError.h>
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __CRT_TIME_H
 #include <time.h>
-#ifndef __CRT_TIME_H
-#define __CRT_TIME_H
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 
 /*!
@@ -109,18 +70,20 @@ public:
 
   void     setTimestamp(time_t stamp);
   time_t   getTimestamp() const;
-
+  uint32_t getOriginalSourceId() const;
+  
   // Virtual methods all ring overrides.
 
   virtual std::string typeName() const;
   virtual std::string toString() const;
+  
 
   //private utilities:
 private:
   size_t bodySize(std::vector<std::string> strings) const;
   bool   validType() const;
-  void   copyStrings(std::vector<std::string> strings);
-  void   init();
+  
+  std::vector<const char*> makeStringPointers(const std::vector<std::string>& strings);
 };
 
 

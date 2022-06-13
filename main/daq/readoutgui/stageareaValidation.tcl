@@ -44,7 +44,19 @@ proc ::StageareaValidation::correctFixableProblems {} {
   # check if experiment/current/.exited exists
   if {[::StageareaValidation::_dotExitedExists]} {
     ::StageareaValidation::deleteExitFile
-  } 
+  }
+  
+  #  If there are .evt links in current run dir get rid of them too.
+  
+  puts "Getting rid of old event file links in current"
+  set dir [::ExpFileSystem::getCurrentRunDir]
+  set evtfiles [glob -nocomplain [file join $dir run*.evt]]
+  foreach file $evtfiles {
+    if {[catch {file readlink $file} value] == 0} {
+      puts "deleting link $file -> $value (just the link)"
+      file delete -force $file
+    }
+  }
     
 }
 

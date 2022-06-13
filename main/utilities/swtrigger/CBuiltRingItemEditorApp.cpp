@@ -32,11 +32,11 @@
 EditorFactory
 CBuiltRingItemEditorApp::getEditorFactory()
 {
-     void* soHandle = dlopen(m_args.editorlib_arg, RTLD_NOW |RTLD_GLOBAL);
+     void* soHandle = dlopen(m_args.classifier_arg, RTLD_NOW |RTLD_GLOBAL);
     if (!soHandle) {
         std::string error = dlerror();
         std::string msg   = "Failed to open shared library: ";
-        msg += m_args.editorlib_arg;
+        msg += m_args.classifier_arg;
         msg += " ";
         msg += error;
         throw std::runtime_error(msg);
@@ -46,7 +46,7 @@ CBuiltRingItemEditorApp::getEditorFactory()
     char* error = dlerror();
     if (error != nullptr) {
         std::string msg = "Unable to locate 'createEditor' in  ";
-        msg += m_args.editorlib_arg;
+        msg += m_args.classifier_arg;
         msg += " ";
         msg += error;
         msg += " be sure it's delcared extern \"C\"";

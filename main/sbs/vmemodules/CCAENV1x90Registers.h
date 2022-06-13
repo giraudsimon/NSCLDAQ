@@ -1,5 +1,5 @@
-#ifndef __CCAENV1X90REGISTERS_H
-#define __CCAENV1X90REGISTERS_H
+#ifndef CCAENV1X90REGISTERS_H
+#define CCAENV1X90REGISTERS_H
 
 /*!
   This file contains register definitions for the CAEN V1190, V1290 TDC
@@ -16,12 +16,7 @@
 
 */
 
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 namespace CCAENV1x90Registers
 {

@@ -33,15 +33,6 @@
 #include "CAbnormalEndItem.h"
 #include <iostream>
 
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    for (int i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Event item tests.
@@ -89,9 +80,8 @@ void PhysicsItemOutput::empty() {
 	sizeof(uint32_t)/sizeof(uint16_t), static_cast<size_t>(*pPayload));
 
   // mbz check:
-
-  ASSERT((pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
-	  (pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
+  
+  EQ(static_cast<uint32_t>(sizeof(uint32_t)), pItem->s_body.u_noBodyHeader.s_empty);
 
   free(pItem);
 }

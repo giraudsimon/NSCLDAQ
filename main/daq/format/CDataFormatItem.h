@@ -1,5 +1,5 @@
-#ifndef __CDATAFORMATITEM_H
-#define __CDATAFORMATITEM_H
+#ifndef CDATAFORMATITEM_H
+#define CDATAFORMATITEM_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,16 +16,8 @@
  * @author Ron Fox<fox@nscl.msu.edu>
  */
 
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"            // Base class.
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 
 /**

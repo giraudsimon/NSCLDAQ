@@ -391,7 +391,10 @@ TOTAL NUMBER OF EVENTS:                                                    38711
 
 
 
-
+proc tcltest::cleanupTestHook {} {
+  variable numTests
+  set ::exitCode [expr {$numTests(Failed) > 0}]
+}
 
 
 tcltest::cleanupTests

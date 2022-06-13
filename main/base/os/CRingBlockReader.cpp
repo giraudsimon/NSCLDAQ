@@ -183,7 +183,7 @@ CRingBlockReader::read(size_t nBytes)
 ssize_t
 CRingBlockReader::readBlock(void* pBuffer, size_t maxBytes)
 {
-  return 0;
+  return -1;        // Must be from derived class.
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,7 @@ template <class T>
 class CCreator
 {
 public:
-  virtual T* operator()() = 0;
+  virtual T* operator()(void* userData) = 0;
   virtual std::string describe() const = 0;
 };
 

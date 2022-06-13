@@ -39,9 +39,11 @@ lappend auto_path $tcllibdir
 #   This script is installed as a program and is used to fix event files that
 #   come from the NSCL event builder but have out of order timestamps.
 #
+package require removetcllibpath
 package require Tk
 package require snit
 package require DataSourceUI;          # for the DialogWrapper base class.
+package require dialogwrapper
 
 #-----------------------------------------------------------------------------
 #  This is the setup UI.
@@ -635,7 +637,17 @@ proc reglom {files dt sid tspol outfile} {
 # Entry point
 #
 
+
+
 wm withdraw .
+
+#  DAQBIN is necessary to locate glom:
+
+if {[array names env DAQBIN] eq ""} {
+    tk_messageBox -icon error -type ok -title {DAQBIN not defined} \
+	-message {The DAQBIN environment variable must be defined to use this command source daqsetup.bash from the top level directory of the NSCLDAQ installation this comes from.}
+    exit -1
+}
 
 # Clean up other unglommed files:
 

@@ -159,7 +159,7 @@ CMonvarDictionary::end()
  *                   in which the variable names will be looked up.
  *   @param ms     - Number of ms the timer runs for.
  */
-CMonitorVariables::CMonitorVariables(CTCLInterpreter& interp, UInt_t msec) :
+CMonitorVariables::CMonitorVariables(CTCLInterpreter& interp, TCLPLUS::UInt_t msec) :
     CTCLTimer(&interp, msec)
 {}
 /**
@@ -249,7 +249,7 @@ std::string
 CMonitorVariables::createScript(const std::string& var)
 {
     CTCLInterpreter* pInterp = getInterpreter();
-    CTCLVariable     tclVar(pInterp, var, kfFALSE);
+    CTCLVariable     tclVar(pInterp, var, TCLPLUS::kfFALSE);
     const char* pValue = tclVar.Get();
     if (!pValue) {
         pValue = "*UNDEFINED*";           // no value for the variable.
@@ -297,7 +297,7 @@ CMonitorVariables::initBuffer(void* pBuffer)
  */
 CMonvarCommand::CMonvarCommand(
     CTCLInterpreter& interp, const char* command
-)  :   CTCLObjectProcessor(interp, command, kfTRUE)
+)  :   CTCLObjectProcessor(interp, command, TCLPLUS::kfTRUE)
 {
     
 }

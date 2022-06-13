@@ -57,6 +57,8 @@ CModuleCommand::CModuleCommand (CTCLInterpreter* pInterp,
   m_pModules(pDictionary)
 {
    Register();
+			
+
 } 
 /*!
    Destroy the module command.  Assumptions:
@@ -198,36 +200,29 @@ CModuleCommand::Create(CTCLInterpreter& rInterp,
       // Determine if this is a duplicate module:
       
       if(DigitizerFind(ModuleName) != DigitizerEnd()) {
-	 rResult  = "Duplicate module name: ";
-	 rResult += ModuleName;
-	 status = TCL_ERROR;
-      }
-      else {
-	 // Locate the matching Creator:
-	
-	CreatorIterator i = FindCreator(Moduletype);
-	if(i == CreatorEnd()) {
+	rResult  = "Duplicate module name: ";
+	rResult += ModuleName;
+	status = TCL_ERROR;
+      } else {
+	std::pair<const char*, CTCLInterpreter*> info(ModuleName.c_str(), &rInterp);	
+	CReadableObject* pModule = m_factory.create(Moduletype, &info);
+	if(!pModule) {
 	  rResult  = "Unable create module type: ";
 	  rResult += Moduletype;
 	  rResult += " does not have an associated creator";
 	  status = TCL_ERROR;
-	}
-	else {
-	  CReadableObject* pModule = (*i)->Create(rInterp,
-						  rResult,
-						  nArgs,
-						  pArgs);
-	  if(! pModule) {
-	    rResult += "Unable to create module";
-	    status = TCL_ERROR;
-	  }
-	  else {
-	    m_pModules->DigitizerAdd(pModule);
-	  }
+	}	else {
+	  // Meet the expectations of Configure:
+	    
+	    pArgs[1] = pArgs[0];
+	    pArgs++;
+	    nArgs--;
+	    int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
+	    m_pModules->DigitizerAdd(pModule);	    
 	}
       }
    }
-   return status;
+   return status;   
 }  
 
 /*! 
@@ -281,7 +276,7 @@ CModuleCommand::List(CTCLInterpreter& rInterp,
    }
    else {		       
       if(nArgs) {	      // This is really exactly one parameter : pattern.
-	pPattern = *pArgs;    // Update the pattern.
+								pPattern = *pArgs;    // Update the pattern.
       }
 	 
       // Next iterate through the modules in the map
@@ -344,19 +339,18 @@ CModuleCommand::Delete(CTCLInterpreter& rInterp,
       string sName(*pArgs);            // Name to delete.
       CDigitizerDictionary::ModuleIterator p = DigitizerFind(sName);
       if(p == DigitizerEnd()) {
-	 nStatus  = TCL_ERROR;
-	 rResult  = sName;
-	 rResult += ": Module does not exist";
-      }
-      else {
+								nStatus  = TCL_ERROR;
+								rResult  = sName;
+								rResult += ": Module does not exist";
+      } else {
 
-	 // Remove the module from the map and...
-
-	 CReadableObject* pModule = p->second;
-	 assert(pModule);	// Better be non-null!!
-	 m_pModules->Remove(p);
-	 pModule->OnDelete();	// This unlinks it from any reader.
-	 delete pModule;	// Destroy it.
+									// Remove the module from the map and...
+							
+									CReadableObject* pModule = p->second;
+									assert(pModule);	// Better be non-null!!
+									m_pModules->Remove(p);
+									pModule->OnDelete();	// This unlinks it from any reader.
+									delete pModule;	// Destroy it.
       }
    }
    return nStatus;
@@ -404,10 +398,14 @@ CModuleCommand::ListTypes(CTCLInterpreter& rInterp,
       nStatus = TCL_ERROR;
    }
    else {
-      TypesGatherer gatherer(rResult);
-      for_each(CreatorBegin(), CreatorEnd(),
-	       gatherer);
-   }
+				std::vector<std::string> ds = m_factory.getDescriptions();
+				std::string r;
+				for (int i =0; i < ds.size(); i++) {
+					r += ds[i];
+					r += "\n";
+				}
+				rResult = r;
+			}
    return nStatus;
 }  
 
@@ -423,36 +421,13 @@ command.
 
 */
 void 
-CModuleCommand::AddCreator(CModuleCreator* pCreator)  
+CModuleCommand::AddCreator(const char* type, CModuleCreator* pCreator)  
 {
   if(pCreator) {
-    m_Creators.push_back(pCreator);
+				m_factory.addCreator(std::string(type), pCreator);
   }
 }
-/*!
-  Returns an iterator to the front  of the creator list:
-*/
-CModuleCommand::CreatorIterator 
-CModuleCommand::CreatorBegin()
-{
-   return m_Creators.begin();
-}
-/*!
-   Returns an end of iteration iterator to the creation list:
-*/
-CModuleCommand::CreatorIterator 
-CModuleCommand::CreatorEnd()
-{
-   return m_Creators.end();
-}
-/*!
-  Returns the number of modules in the creator list.
-*/
-int             
-CModuleCommand::CreatorSize()
-{
-   return m_Creators.size();
-}
+
 /*!
   Returns an iterator to the front of the created modules 
 Dictionary.
@@ -507,27 +482,6 @@ CModuleCommand::Usage()
    return usage;
 }
 
-/*!
-   Locate a module creator that matches the creation name.
-   \param ModuleName (const string&)
-       Name of the module type to locate.
-   \return CreatorIterator
-      end() if not found otherwise an iterator 'pointing' to the
-      creator.
-*/
-CModuleCommand::CreatorIterator
-CModuleCommand::FindCreator(const string& ModuleType)
-{
-  CreatorIterator i = CreatorBegin();
-  while (i != CreatorEnd()) {
-    if((*i)->getModuleType() == ModuleType) {
-      break;
-    }
-    i++;
-  }
-  return i;
-
-}
 //  Implementation of local classes:
 
 
@@ -549,12 +503,3 @@ CModuleCommand::ListGatherer::operator()(pair<string,CReadableObject*>p)
 }
 //   TypesGatherer:
 
-void
-CModuleCommand::TypesGatherer::operator()(CModuleCreator* pModule)
-{
-  assert(pModule);
-  m_rResult += pModule->getModuleType();
-  m_rResult += "\t-\t";
-  m_rResult += pModule->Help();
-  m_rResult += "\n";
-}

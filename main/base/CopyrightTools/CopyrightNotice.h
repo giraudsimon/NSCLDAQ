@@ -1,5 +1,5 @@
-#ifndef __COPYRIGHTNOTICE_H
-#define __COPYRIGHTNOTICE_H
+#ifndef COPYRIGHTNOTICE_H
+#define COPYRIGHTNOTICE_H
 
 /// Requires include of config.h by parent.
 

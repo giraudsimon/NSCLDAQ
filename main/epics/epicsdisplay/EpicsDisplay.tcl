@@ -1,32 +1,24 @@
 # Meant to be run on Tclserver.
 #
+set scriptdir [file dirname [info script]]
+lappend auto_path [file join $scriptdir .. TclLibs];   # s.b TclLibs dir.
 
-puts  "---------------------------------"
 
-
-puts  $argc
-puts  $argv
+package require tkutils
 
 #  The user must have supplied a command line argument
 #  which is the name of their setup file.
 #
 
-if {[llength $argv] < 2} {
-   tk_dialog .failure "No setup file" \
-   "You must supply a command argument that is your scaler config file" \
-   error 0 Dismiss
-   exit -1
-}
+tkutils::requireArgs 1 "No Setup File" \
+   "You must suppy a command argument that is your epics config file"
 set file [lindex $argv 0]
 
 #  And the file must be readable...
 #
-if {![file readable $file]} {
-	tk_dialog .failure "Unreadable setup file" \
-	"The setup file $file  is not readable by me and must be" \
-	error 0 Dismiss
-	exit -1
-}
+tkutils::requireReadable $file "Setup file unreadable" \
+   "The setup file: $file is not readable"
+
 
 
 #  We need to establish our location and source in the

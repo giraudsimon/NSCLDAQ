@@ -112,15 +112,47 @@ package require snit
             set user $::tcl_platform(user)
         }
         
-        set allocations [$self listPorts]
-        set port ""
-        foreach server $allocations {
-            if {([lindex $server 1] eq $service) && ([lindex $server 2]  eq $user)} {
-                set port [lindex $server 0]
+        # Get all the services that match our servic name
+        #  Then hunt for one that matches our desired username.
+            
+        
+        set servers [$self findServerAllUsers $service]
+        foreach server $servers {
+            set u [lindex $server 0]
+            if {$u eq $user} {
+                return [lindex $server 1]
             }
         }
-        return $port
+        return ""
     }
+    ##
+    # findServerAllUsers
+    #
+    #   Locates services that match the requested service name regardless
+    #   of the user.  This is needed in order to handle locating
+    #   daq servers (e.g. ringmaster) in both test and production environments
+    #   in test environments, the ring master might have been run by a developer
+    #   while in production it will, in general be run by root.
+    #
+    #  @param service -name of the service.
+    #  @return list of pairs.  The first item in each pair is the user.
+    #          the second the port.
+    method findServerAllUsers {service} {
+
+        set allocations [$self listPorts]
+        set port ""
+        set result [list]
+        foreach server $allocations {
+            set s [lindex $server 1]
+            set u [lindex $server 2]
+            if {$s eq $service} {
+                lappend result [list $u [lindex $server 0]]
+            }
+        }
+        return $result
+    }
+        
+    
     #
     # allocatePort:
     #    Asks the server to allocate a port to the specified

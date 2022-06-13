@@ -20,7 +20,8 @@ dumper_CPPFLAGS =	-I@srcdir@/.. 				\
 				-I@top_srcdir@/base/dataflow		\
                                 -I@top_srcdir@/daq/IO		\
                                 -I@top_srcdir@/base/os			\
-				-I@top_srcdir@/utilities/common @PIXIE_CPPFLAGS@
+				-I@top_srcdir@/utilities/common \
+				@PIXIE_CPPFLAGS@
 
 dumper_LDADD		=	@top_builddir@/utilities/common/libUtilCommon.la 	\
 				@top_builddir@/base/uri/liburl.la			\

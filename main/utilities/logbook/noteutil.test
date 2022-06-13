@@ -1,0 +1,95 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   noteutil.test
+# @brief  <Purpose>
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require lg_noteutilities
+
+#--------------------------------------------------------------
+#  Test analysis of markdown to get image list:
+
+tcltest::test makelist_1 {No links so empty list} \
+-body {
+    makeNoteImageList "Thist text has no file links in it"
+} \
+-result [list]
+
+tcltest::test makelist_2 {Entire text is an image link.} \
+-body {
+    makeNoteImageList {![Image title](imagefile.png)}
+} -result [list {0 imagefile.png}]
+
+tcltest::test makelist_3 {Text has leading stuff then an image link} \
+-body {
+    makeNoteImageList {some text ![IMage title](image.png)}
+} -result [list {10 image.png}]
+
+tcltest::test makelist_4 {Text has leading and trailing stuff around an image link} \
+-body {
+    makeNoteImageList {some text ![IMage title](image.png)some more text}
+} -result [list {10 image.png}]
+
+tcltest::test makelist_5 {Text has two images} \
+-body {
+    makeNoteImageList {![title](image1.png) ![more](image2.png)}
+} -result [list {0 image1.png} {21 image2.png}]
+
+
+#---------------------------------------------------------------
+# Test image file readable tests.
+#
+
+tcltest::test validimages_1 {No images emptylist} \
+-body {
+    validateImageFiles [list]
+} -result [list]
+
+tcltest::test validimages_2 {Single image that does not exist} \
+-body {
+    validateImageFiles [list {100 /no/such/file}]
+} -result [list /no/such/file]
+
+tcltest::test validimages_3 {Single image, exissts} \
+-body {
+    validateImageFiles [list [list 100 [info script]]]
+} -result [list]
+
+tcltest::test validimages_4 {two files one does not exist} \
+-body {
+    validateImageFiles \
+        [list [list 100 [info script]] [list 200 /no/such/file ]]
+} -result [list /no/such/file ]
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

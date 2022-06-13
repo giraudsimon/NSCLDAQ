@@ -99,7 +99,7 @@ CFullEventEditor::process(void* pData, size_t nBytes)
             pRingItemHeader pRHeader = &(pEH->s_ringHeader);
             
             p = reinterpret_cast<uint8_t*>(pRHeader);          // Before this can get changed.
-	    p += pRHeader->s_size;
+            p += pRHeader->s_size;
             
             if (pRHeader->s_type == PHYSICS_EVENT) {
                 std::vector<SegmentDescriptor> newBody = editEvent(pRHeader);

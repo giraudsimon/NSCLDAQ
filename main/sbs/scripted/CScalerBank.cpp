@@ -82,8 +82,8 @@ into the buffer passed in.
 \throw bad_cast exception if a module is in the
    readout list that is not a CScalerModule. 
 */
-ULong_t* 
-CScalerBank::Read(ULong_t* pBuffer)  
+TCLPLUS::ULong_t* 
+CScalerBank::Read(TCLPLUS::ULong_t* pBuffer)  
 { 
    CReadOrder::ModuleIterator  p = readerbegin();
    while(p != readerend()) {

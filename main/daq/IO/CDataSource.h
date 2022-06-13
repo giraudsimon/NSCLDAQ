@@ -61,7 +61,7 @@ private:
 public:
 
   /*!
-   * \brief DEPRECATED - Extract complete CRingItem from source
+   * \brief - Extract complete CRingItem from source
    *
    * The operation will block until the complete ring item is received.
    * The caller receives ownership of the returned object.

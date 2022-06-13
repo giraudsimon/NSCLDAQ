@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __GETOPT_H
-#define __GETOPT_H
+#ifndef GETOPT_H
+#define GETOPT_H
 
 #include <string>
 #include <list>

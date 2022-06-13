@@ -123,22 +123,12 @@ void
 CRingFragmentSource::setTsExtractor(const char* tsExtractorLib)
 {
     if (tsExtractorLib == nullptr) {
-        if (!m_expectBodyHeaders) {
-            std::cerr << "If --expectbodyheaders is not supplied --timestampextractor is required\n";
-            throw std::logic_error(
-                "If --expectbodyheaders is not supplied --timestampextractor is required"
-            );
-        }
+        throwIfNotExpectingBodyHeaders("If --expectbodyheaders is not supplied --timestampextractor is required");
         return;                      // NO timestamp extractor is ok if we have body headers.
     }
     std::string tsLib(tsExtractorLib);
     if (tsLib == "") {
-        if (!m_expectBodyHeaders) {
-           std::cerr << "If --expectbodyheaders is not supplied --timestampextractor is required\n";
-            throw std::logic_error(
-                "If --expectbodyheaders is not supplied --timestampextractor is required"
-            );
-        }
+        throwIfNotExpectingBodyHeaders("If --expectbodyheaders is not supplied --timestampextractor is required");
         return;   
     }
     // Access the timestamp extractor.  From here on in,
@@ -276,7 +266,7 @@ CRingFragmentSource::setFragment(
 uint64_t
 CRingFragmentSource::getTimestampFromUserCode(RingItem& item)
 {
-    if ((item.s_header.s_type == PHYSICS_EVENT) && m_tsExtractor) {
+    if ((itemType(&item) == PHYSICS_EVENT) && m_tsExtractor) {
         pPhysicsEventItem pEvent = reinterpret_cast<pPhysicsEventItem>(&item);
         return (*m_tsExtractor)(pEvent) + m_timestampOffset;
     } else {
@@ -297,7 +287,7 @@ uint32_t
 CRingFragmentSource::barrierType(RingItem& item)
 {
     uint32_t result(0);                // Default result.
-    switch (item.s_header.s_type) {
+    switch (itemType(&item)) {
     case BEGIN_RUN:
         result = 1;
         break;
@@ -328,8 +318,8 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
         RingItemHeader& header(*p);
         RingItem&       item(reinterpret_cast<RingItem&>(header));
         
-        if ((item.s_body.u_noBodyHeader.s_mbz == 0) ||
-            (item.s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t))) {
+        
+        if (!hasBodyHeader(&item)) {
             setFragment(
                 n, getTimestampFromUserCode(item),
                 m_nDefaultSid,
@@ -337,19 +327,21 @@ CRingFragmentSource::makeFragments(CRingBufferChunkAccess::Chunk& c)
                 
             );
         } else {
+            pBodyHeader pB =
+                reinterpret_cast<pBodyHeader>(bodyHeader(&item));
             setFragment(
                 n,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp +m_timestampOffset,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId,
-                item.s_header.s_size,
-                item.s_body.u_hasBodyHeader.s_bodyHeader.s_barrier,
+                pB->s_timestamp + m_timestampOffset,
+                pB->s_sourceId,
+                itemSize(&item),
+                pB->s_barrier,
                 &item
             );
         }
         
         // Count end runs and when they happened for one-shot and timeout
         
-        if (header.s_type == END_RUN) {
+        if (itemType(&item) == END_RUN) {
             m_endRunTime = time_t(nullptr);
             m_endsSeen++;
         }
@@ -379,4 +371,20 @@ CRingFragmentSource::timedOut()
     if ((now - m_endRunTime) > m_endRunTimeout) return true;
         
     return false;
+}
+/**
+ * throwIfNotExpectingBodyHeaders
+ *    Outputs an error to cerr and throws it as a string
+ *    if we're not expecting body headers.
+ *    This method was motivated by daqdev/NSCLDAQ#700
+ *
+ *  @p[aram msg - the message to output/throw.
+ */
+void
+CRingFragmentSource::throwIfNotExpectingBodyHeaders(const char* msg)
+{
+    if (!m_expectBodyHeaders) {
+        std::cerr << msg << std::endl;
+        throw std::logic_error(msg);
+    }
 }

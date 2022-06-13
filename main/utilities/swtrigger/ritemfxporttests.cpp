@@ -107,7 +107,10 @@ void rtransportTest::write_1() {   // Write a ring itme to file, can it be read?
   
   CRingItem* pItem = src.getItem();
   EQ(PHYSICS_EVENT, pItem->type());
-  EQ(uint32_t(sizeof(RingItemHeader)), pItem->getItemPointer()->s_header.s_size);
+  EQ(
+     uint32_t(sizeof(RingItemHeader)),
+     itemSize(pItem->getItemPointer())
+  );
   
   delete pItem;
   pItem = src.getItem();
@@ -190,9 +193,9 @@ void rtransportTest::read_1()
   m_pRTestObj->recv(&pData, n);
   ASSERT(pData);
   EQ(sizeof(hdr), n);
-  pRingItemHeader p = reinterpret_cast<pRingItemHeader>(pData);
-  EQ(hdr.s_size, p->s_size);
-  EQ(hdr.s_type, p->s_type);
+  pRingItem p = reinterpret_cast<pRingItem>(pData);
+  EQ(hdr.s_size, itemSize(p));
+  EQ(uint16_t(hdr.s_type), itemType(p));
   
   free(pData);
 }
@@ -226,13 +229,12 @@ void rtransportTest::read_2()
     void* pData;
     size_t n;
     m_pRTestObj->recv(&pData, n);
-    pRingItemHeader hdr = reinterpret_cast<pRingItemHeader>(pData);
-    EQ(uint32_t(sizeof(RingItemHeader) + 2*sizeof(uint32_t)), hdr->s_size);
-    EQ(PHYSICS_EVENT, hdr->s_type);
-    hdr++;                       // Point to body.
-    uint32_t* p = reinterpret_cast<uint32_t*>(hdr);
-    EQ(uint32_t(0), *p);            // mbz.
-    p++;
+    pRingItem item = reinterpret_cast<pRingItem>(pData);
+    EQ(uint32_t(sizeof(RingItemHeader) + 2*sizeof(uint32_t)), itemSize(item));
+    EQ(uint16_t(PHYSICS_EVENT), itemType(item));
+    
+    ASSERT(!bodyHeader(item));
+    uint32_t* p = static_cast<uint32_t*>(bodyPointer(item));
     EQ(uint32_t(i), *p);            // body.
     
     free(pData);

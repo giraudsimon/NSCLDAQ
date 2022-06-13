@@ -36,7 +36,7 @@ xlmloadparams.h: xlmloadparams.ggo
 noinst_PROGRAMS = unittests
 unittests_SOURCES = TestRunner.cpp skiptest.cpp skipHeader.cpp
 unittests_LDADD= $(CPPUNIT_LDFLAGS)
-unittests_CXXFLAGS=-DSRCDIR='"@srcdir@/"' @PIXIE_CPPFLAGS@
+unittests_CPPFLAGS=-DSRCDIR='"@srcdir@/"' @PIXIE_CPPFLAGS@
 
 # NOTE: These .bit/.bin files don't purport to be the latest they are
 #       only here to support unit tests for skipHeader.

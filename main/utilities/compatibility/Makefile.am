@@ -14,13 +14,15 @@ EXTRA_DIST=compatibilitybuffer.ggo loggeroptions.ggo eventlog-compat.in \
 
 
 compatibilitybuffer_LDADD = \
-	@top_builddir@/daq/format/libdataformat.la
-compatibilitybuffer_CPPFLAGS = -I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
+	@top_builddir@/daq/format/libdataformat.la @top_builddir@/base/os/libdaqshm.la
+compatibilitybuffer_CPPFLAGS = -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/headers \
 	-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 compatibilitylogger_SOURCES = compatibilitylogger.cpp CLogRun.cpp 
 nodist_compatibilitylogger_SOURCES = loggeroptions.c loggeroptions.h
-compatibilitylogger_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
+compatibilitylogger_CPPFLAGS=-I@top_srcdir@/daq/format \
+	-I@top_srcdir@/base/headers \
 	-I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 
@@ -32,7 +34,8 @@ BufferToRing_LDADD   = @top_builddir@/daq/format/libdataformat.la \
 	@top_builddir@/base/os/libdaqshm.la
 BufferToRing_LDFLAGS = -ldl
 BufferToRing_CPPFLAGS=-I@top_srcdir@/daq/format -I@top_srcdir@/base/headers \
-	-I@top_srcdir@/base/os -I@top_srcdir@/daq/eventbuilder @PIXIE_CPPFLAGS@
+	-I@top_srcdir@/base/os -I@top_srcdir@/daq/eventbuilder \
+	@PIXIE_CPPFLAGS@
 
 
 convert10to11_SOURCES = Convert10to11.cpp

@@ -14,23 +14,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CEVENTPACKET_H
-#define __CEVENTPACKET_H
+#ifndef CEVENTPACKET_H
+#define CEVENTPACKET_H
 
-#ifndef __CEVENTSEGMENT_H
 #include "CEventSegment.h"
-#endif
-
-#ifndef __CDOCUMENTEDPACKET_H
 #include "CDocumentedPacket.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 /*!
    This class defines an event segment that is encapsulated in a

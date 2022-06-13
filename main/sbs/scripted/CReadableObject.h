@@ -40,8 +40,8 @@ The ReadableObjerct class:
 //
 // Copyright 
 
-#ifndef __CREADABLEOBJECT_H  //Required for current class
-#define __CREADABLEOBJECT_H
+#ifndef CREADABLEOBJECT_H  //Required for current class
+#define CREADABLEOBJECT_H
 
 
 //

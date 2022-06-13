@@ -1,0 +1,816 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file bundlemgr.test
+# @brief Test BundleManager.tcl
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+
+package require tcltest
+package require Bundles
+##
+# reinitialize the singleton by destroying it.,
+proc reinit {} {
+    $BundleManager::instance destroy
+    set BundleManager::instance "";   # get instance makes a new one.
+}
+
+tcltest::test singleton-1 {The manager is a singleton} \
+-body {
+    set m1 [BundleManager getInstance]
+    set m2 [BundleManager getInstance]
+    expr {$m1 eq $m2}
+} -result 1
+##
+#  addCalloutBundle tests
+#
+tcltest::test add-1 {Add successfully} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {from to} {
+        }
+        proc enter {from to} {
+        }
+        namespace export attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    set result [catch {$m addCalloutBundle Testbundle state} msg]
+    if {$result} {set result $msg}
+    set result
+} -result 0
+
+tcltest::test add-2 {Double add is bad} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {from to} {
+        }
+        proc enter {from to} {
+        }
+        namespace export attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    $m addCalloutBundle Testbundle state
+    catch {$m addCalloutBundle Testbundle state}
+    
+} -result 1
+
+tcltest::test add-3 {Add no such is bad} \
+-setup {
+    set m [BundleManager getInstance]
+} -cleanup {
+  reinit  
+} -body {
+    catch {$m addCalloutBundle Testbundle state}
+} -result 1
+
+tcltest::test add-4 {add with missing mandatory proc is bad} \
+-setup {
+    
+        namespace eval Testbundle { ;# attach missing
+        proc leave {from to} {
+        }
+        proc enter {from to} {
+        }
+        namespace export leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    catch {$m addCalloutBundle Testbundle state} msg
+    
+} -result 1
+
+tcltest::test add-5 {add with bad parameterization is bad} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        namespace export attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    catch {$m addCalloutBundle Testbundle state} msg
+} -result 1
+
+tcltest::test add-6 {add with optional methods is ok} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc precheckTransitionForErrors {from to} {
+            
+        }
+        proc remotecontrol {host reason} {
+            
+        }
+        namespace export precheckTransitionForErrors remotecontrol attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    set result [catch {$m addCalloutBundle Testbundle state} msg]
+    if {$result} {set result $msg}
+    set result
+} -result 0
+
+tcltest::test add-7 {optional with wrong params count is bad}  \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc precheckTransitionForErrors {from} { ; # missing parameter
+            
+        }
+        proc remotecontrol {host reason} {
+            
+        }
+        namespace export precheckTransitionForErrors remotecontrol attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    catch {$m addCalloutBundle Testbundle state} msg
+    
+} -result 1
+
+tcltest::test add-7a {optional with wrong params count is bad}  \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc precheckTransitionForErrors {from to} { ; # missing parameter
+            
+        }
+        proc remotecontrol {host} {
+            
+        }
+        namespace export precheckTransitionForErrors remotecontrol attach leave enter
+    }
+    set m [BundleManager getInstance]
+} -cleanup {
+    reinit
+    namespace delete Testbundle
+} -body  {
+    catch {$m addCalloutBundle Testbundle state} msg
+    
+} -result 1
+
+#-----------------------------------------------------------------
+#  tests for listCalloutBundles.
+
+tcltest::test list-1 {Initially empty list} \
+-cleanup {
+    reinit
+} -body {
+    set m [BundleManager getInstance]
+    $m listCalloutBundles
+} -result [list]
+
+tcltest::test list-2 {Adding a bundle allows it to be listed} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+
+} -cleanup {
+    reinit
+    namespace delete Testbundle1
+} -body  {
+    $m listCalloutBundles
+    
+} -result [list Testbundle1]
+
+ 
+
+tcltest::test list-3 {Adding several bundles shows them in order}\
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    $m listCalloutBundles
+    
+} -result [list Testbundle1 Testbundle2 Testbundle3]
+#------------------------------------------------------------------
+# Test for removeCalloutBundle
+
+tcltest::test remove-1 {Remove and it's not listed anymore } \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    $m removeCalloutBundle Testbundle2
+    $m listCalloutBundles
+    
+} -result [list Testbundle1 Testbundle3]
+
+tcltest::test remove-2 {Not allowed to remove a nonexistent bundle} \
+-setup {
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    catch {$m removeCalloutBundle testbundle2};  # wrong case
+    
+} -result 1
+
+#-------------------------------------------------------------
+# Test invoke.
+
+tcltest::test invoke-1 {Called in registration order.} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+            lappend ::called Testbundle1
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+            lappend ::called Testbundle2
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+        }
+        proc leave {from to} {; #missing parameter.
+            lappend ::called Testbundle3
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+    set called [list]
+} -body  {
+    $m invoke leave from to
+    set called
+} -result [list Testbundle1 Testbundle2 Testbundle3]
+
+tcltest::test invoke-2 {Registration means attach is called} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            lappend ::called Testbundle1
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            lappend ::called Testbundle2
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            lappend ::called Testbundle3            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    set called
+    
+} -result [list Testbundle1 Testbundle2 Testbundle3]
+
+tcltest::test invoke-3 {Proper handling of bundle method errors} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            lappend ::called Testbundle1
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            lappend ::called Testbundle2
+        }
+        proc leave {from to} {; #missing parameter.
+            error "Error message"
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            lappend ::called Testbundle3            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    set result [catch {$m invoke leave from to} msg]
+    set msg [string range $msg 0 [string length "Error message"]-1]
+    list $result $msg
+} -result [list 1 "Error message"]
+
+tcltest::test invoke-4 {Failure methods get called on errors} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle1
+            
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+            
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle2
+        }
+        
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        error "Error message"
+        }
+        proc enter {from to} {
+        }
+        proc failure {} {
+            lappend ::called Testbundle3
+        }
+        
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    catch {$m invoke leave from to}
+    set ::called
+} -result [list Testbundle2 Testbundle1]
+
+#--------------------------------------------------------------
+# precheck tests
+
+tcltest::test precheck-1 {Successful call of precheck} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle1
+            
+        }
+        proc precheckTransitionForErrors {from to} {
+            lappend ::called Testbundle1
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+            
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle2
+        }
+        proc precheckTransitionForErrors {from to} {
+            lappend ::called Testbundle2
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        error "Error message"
+        }
+        proc enter {from to} {
+        }
+        proc failure {} {
+            lappend ::called Testbundle3
+        }
+        proc precheckTransitionForErrors {from to} {
+            lappend ::called Testbundle3
+        }
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    $m precheck from to
+    set ::called
+} -result [list Testbundle1 Testbundle2 Testbundle3]
+
+tcltest::test precheck-2 {Precheck returns empty if successful} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle1
+            
+        }
+        proc precheckTransitionForErrors {from to} {
+            
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+            
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            
+        }
+        proc precheckTransitionForErrors {from to} {
+
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        error "Error message"
+        }
+        proc enter {from to} {
+        }
+        proc failure {} {
+            lappend ::called Testbundle3
+        }
+        proc precheckTransitionForErrors {from to} {
+            
+        }
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    $m precheck from to
+} -result [list]
+
+tcltest::test precheck-3 {precheck identifies where non nulls come from} \
+-setup {
+    set called [list]
+    # Minima bundle:
+    namespace eval Testbundle1 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle1
+            
+        }
+        proc precheckTransitionForErrors {from to} {
+            return 1
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle2 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+            
+        }
+        proc enter {from to} {
+        }
+        proc failure {args} {
+            lappend ::called Testbundle2
+        }
+        proc precheckTransitionForErrors {from to} {
+            return 2
+        }
+        namespace export  attach leave enter
+    }
+    namespace eval Testbundle3 {
+        proc attach s {
+            
+        }
+        proc leave {from to} {; #missing parameter.
+        error "Error message"
+        }
+        proc enter {from to} {
+        }
+        proc failure {} {
+            return 3
+        }
+        proc precheckTransitionForErrors {from to} {
+            return 3
+        }
+        namespace export  attach leave enter
+    }
+    set m [BundleManager getInstance]
+    $m addCalloutBundle Testbundle1 state
+    $m addCalloutBundle Testbundle2 state
+    $m addCalloutBundle Testbundle3 state
+} -cleanup {
+    reinit
+    namespace delete Testbundle1 Testbundle2 Testbundle3
+} -body  {
+    $m precheck from to
+} -result [list [list Testbundle1 1] [list Testbundle2 2] [list Testbundle3 3]]
+
+#--------------------------------------------------------------
+# If standalone then cleanup.
+
+if {[info global testmanager] eq ""} {
+    tcltest::cleanupTests
+}

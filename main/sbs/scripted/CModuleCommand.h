@@ -36,48 +36,18 @@ When one is found it is used to create the actual module.
 //   East Lansing, MI 48824-1321
 //   mailto:fox@nscl.msu.edu
 
-#ifndef __CMODULECOMMAND_H  //Required for current class
-#define __CMODULECOMMAND_H
+#ifndef CMODULECOMMAND_H  //Required for current class
+#define CMODULECOMMAND_H
 
 
-#ifndef __CDigitizerDictionary_H
 #include <CDigitizerDictionary.h>
-#endif
-
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
-//
-// Include files:
-//
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_LIST   // we have a list of creators.
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __STL_MAP    // and a map of modules.
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __CRTL_ASSERT_H
 #include <assert.h>
-#ifndef __CRTL_ASSERT_H
-#define __CRTL_ASSERT_H
-#endif
-#endif
+#include <CExtensibleFactory.h>
+#include <CReadableObject.h>
 
 // forward class definitions:
 
@@ -91,15 +61,13 @@ class CModuleCommand  : public CTCLProcessor
 {
 	// Type definitions:
 public:
-typedef std::list<CModuleCreator*>  CreatorList;
-typedef CreatorList::iterator  CreatorIterator;
-
-
+ using ModuleFactory = CExtensibleFactory<CReadableObject>;
+ 
 private:
   
   // Private Member data:
-   CDigitizerDictionary*           m_pModules;  //!< Created module lookup. 
-   CreatorList                     m_Creators; //!< List of Creators.
+   CDigitizerDictionary*           m_pModules;  //!< Created module lookup.
+   ModuleFactory                   m_factory;
 
 
 private:
@@ -120,18 +88,6 @@ private:
     void operator()(std::pair<std::string, CReadableObject*> p);
 
   };
-  // Function class to build up the output of module -types:
-  class TypesGatherer
-  {
-  private:
-    CTCLResult& m_rResult;
-  public:
-    TypesGatherer(CTCLResult& rResult) :
-      m_rResult(rResult)
-    {}
-    void operator()(CModuleCreator* pModule);
-
-  };
   
 
 public:
@@ -149,43 +105,18 @@ private:
 public:
 
 public:
-// Selectors:
-   CDigitizerDictionary& getModules()
-   { 
-     return *m_pModules;
-   }
-   CreatorList getCreators() const
-   {
-      return m_Creators;
-   }
-
-protected:
-   // Mutators:
-
-   void setModules(CDigitizerDictionary* pModules)
-   {
-      m_pModules = pModules;
-   }
-   void setCreators(const CreatorList& creators)
-   {
-      m_Creators = creators;
-   }
-public:
 
    virtual int operator() (CTCLInterpreter& rInterp, 
 			   CTCLResult& rResult, 
 			   int nArgs, char** pArgs); 
-   void AddCreator (CModuleCreator* pCreator);
-   CreatorIterator CreatorBegin();
-   CreatorIterator CreatorEnd();
-   int             CreatorSize();
+   void AddCreator (const char* type, CModuleCreator* pCreator);
    
    CDigitizerDictionary::ModuleIterator DigitizerBegin();
    CDigitizerDictionary::ModuleIterator DigitizerEnd();
    int                                  DigitizerSize();
    CDigitizerDictionary::ModuleIterator DigitizerFind(const std::string& rName)
    {
-	return m_pModules->DigitizerFind(rName);
+     return m_pModules->DigitizerFind(rName);
    }
    std::string            Usage();
 
@@ -203,7 +134,7 @@ public:
 		  CTCLResult& rResult, 
 		  int nArgs, char** pArgs); 
 
-  CreatorIterator FindCreator(const std::string& ModuleType);
+ 
 };
 
 #endif

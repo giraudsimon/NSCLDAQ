@@ -27,24 +27,15 @@
 //
 // Copyright 
 
-#ifndef __CSTRINGCONFIGPARAM_H  //Required for current class
-#define __CSTRINGCONFIGPARAM_H
+#ifndef CSTRINGCONFIGPARAM_H  //Required for current class
+#define CSTRINGCONFIGPARAM_H
 
 //
 // Include files:
 //
 
-                               //Required for base classes
-#ifndef __CCONFIGURATIONPARAMETER_H     //CConfigurationParameter
 #include "CConfigurationParameter.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
  
 // Forward class defintions.
 

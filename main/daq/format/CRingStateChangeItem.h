@@ -1,5 +1,5 @@
-#ifndef __CRINGSTATECHANGEITEM_H
-#define __CRINGSTATECHANGEITEM_H
+#ifndef CRINGSTATECHANGEITEM_H
+#define CRINGSTATECHANGEITEM_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -17,32 +17,12 @@
 */
 
 
-#ifndef __CRINGITEM_H
+
 #include <CRingItem.h>
-#endif
-
-
-#ifndef __DATAFORMAT_H
 #include <DataFormat.h>
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#endif
-#endif
-
-#ifndef __RANGEERROR_H
 #include <RangeError.h>
-#endif
 
 /*!
   This class represents a state change item.
@@ -94,6 +74,7 @@ public:
 
   void setElapsedTime(uint32_t offset);
   uint32_t getElapsedTime() const;
+  uint32_t getTimeDivisor() const;
   float    computeElapsedTime() const;
 
   void setTitle(std::string title) ;
@@ -101,11 +82,13 @@ public:
 
   void setTimestamp(time_t stamp);
   time_t getTimestamp() const;
-
+  uint32_t getOriginalSourceId() const;
+  
   // Virtual method overrides.
 
   virtual std::string typeName() const;
   virtual std::string toString() const;
+
 
   // Utitlity functions..
 

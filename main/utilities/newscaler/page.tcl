@@ -30,6 +30,40 @@ package provide pagedisplay 1.0
 package require Tk
 package require snit
 
+##
+#  The following styling magic works around a defect in Tk 8.6.9
+# with regards to tree view tag handling:
+#  See https://core.tcl-lang.org/tk/tktview?name=509cafafae
+#  for details.
+    
+
+# Note as KDC points out in helpme ticket 	BPL-225-12969
+# If this is run inside of SpecTcl, apply has been overridden by the SpecTcl
+# apply command so we only do this fix if SpecTclHome is not defined
+# ..and put up with the tag failure if it is.
+
+if {[info globals SpecTclHome] eq ""} {
+
+apply {name {
+    set newmap {}
+    foreach {opt lst} [ttk::style map $name] {
+        if {($opt eq "-foreground") || ($opt eq "-background")} {
+            set newlst {}
+            foreach {st val} $lst {
+                if {($st eq "disabled") || ($st eq "selected")} {
+                    lappend newlst $st $val
+                }
+            }
+            if {$newlst ne {}} {
+                lappend newmap $opt $newlst
+            }
+        } else {
+            lappend newmap $opt $lst
+        }
+    }
+    ttk::style map $name {*}$newmap
+}} Treeview
+}
 
 ##
 # @class page
@@ -105,12 +139,12 @@ snit::widgetadaptor pageDisplay {
     #    Updates the display lines from the models.  
     # @return - directive about what to do with the page tab:
     #          * ok - No background.
-    #          * low - GreenBrick background.
-    #          * high - RedBrick background.
-    #          * both - AmberBrick background.
+    #          * low - Display low alarm tab color
+    #          * high - Display high alarm tab color
+    #          * both - Display both alarm tab color.
     #
     method update {} {
-	array set pageTags [list]
+        array set pageTags [list]
         foreach line [lsort -increasing -integer [array names models]] {
             set id    [dict get $models($line) -id]
             set model [dict get $models($line) -model]
@@ -127,28 +161,28 @@ snit::widgetadaptor pageDisplay {
             
             
             set tag [$model alarmState]
-	    set pageTags($tag) 1
+            set pageTags($tag) 1
             
             # Configure the item:
             
             $table item $id -values $values -tags $tag
         }
-	# Figure out how/if to color the tab:
-	
-	if {$alarmState} {
-	    array unset pageTags ok
-	    if {[llength [array names pageTags *]] == 2} {
-		return both
-	    } elseif {[array names pageTags high] eq "high"} {
-		return high
-	    } elseif {[array names pageTags low] eq "low"} {
-		return low
-	    }
-	    return ok
-		
-	} else {
-	    return ok
-	}
+        # Figure out how/if to color the tab:
+        
+        if {$alarmState} {
+            array unset pageTags ok
+            if {[llength [array names pageTags *]] == 2} {
+                return both
+            } elseif {[array names pageTags high] eq "high"} {
+                return high
+            } elseif {[array names pageTags low] eq "low"} {
+                return low
+            }
+            return ok
+            
+        } else {
+            return ok
+        }
     }
     ##
     # alarms

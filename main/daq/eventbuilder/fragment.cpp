@@ -252,7 +252,7 @@ void freeFragment(pFragment p)
  *  TODO: malloc failure handling.
  */
 extern "C" {
-pFragment allocateFragment(pFragmentHeader pHeader)
+pFragment allocateFragment(const FragmentHeader* pHeader)
 {
   std::unique_ptr<CriticalSection> l;
   if (threadsafe) l.reset(new CriticalSection(poolProtector));
@@ -276,7 +276,7 @@ pFragment allocateFragment(pFragmentHeader pHeader)
 extern "C" {
 pFragment newFragment(uint64_t timestamp, uint32_t sourceId, uint32_t size)
 {
-  FragmentHeader h = {timestamp, sourceId, size};
+  FragmentHeader h = {timestamp, sourceId, size, BARRIER_NOTBARRIER};
   return allocateFragment(&h);
 }
 }

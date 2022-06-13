@@ -25,16 +25,21 @@ EXTRA_DIST=ddasSortOptions.ggo
 
 noinst_PROGRAMS=unittests
 
-unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp sortertests.cpp \
-	refcountTests.cpp arenaTests.cpp rawchTests.cpp	zcopyhitTests.cpp \
+unittests_SOURCES=TestRunner.cpp Asserts.h hitmgrtests.cpp \
+	refcountTests.cpp arenaTests.cpp rawchTests.cpp zcopyhitTests.cpp \
+	testcommon.cpp testcommon.h \
 	DDASSorter.cpp DDASSorter.h				\
 	HitManager.cpp 	HitManager.h ZeroCopyHit.h ZeroCopyHit.cpp	\
 	RawChannel.h RawChannel.cpp \
 	ReferenceCountedBuffer.h ReferenceCountedBuffer.cpp \
-	BufferArena.h BufferArena.cpp testcommon.cpp testcommon.h
+	BufferArena.h BufferArena.cpp 
 
-unittests_CXXFLAGS=$(ddasSort_CPPFLAGS) @CPPUNIT_CFLAGS@ 
+
+#
+#  sortertests.cpp 
+
+unittests_CXXFLAGS=$(ddasSort_CPPFLAGS) @CPPUNIT_CFLAGS@
 unittests_LDFLAGS=$(ddasSort_LDFLAGS) @CPPUNIT_LDFLAGS@
 
 #  Fixed in 12.0-pre1
-#TESTS=@builddir@/unittests
+TESTS=@builddir@/unittests

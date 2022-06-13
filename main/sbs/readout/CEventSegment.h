@@ -1,5 +1,5 @@
-#ifndef __CEVENTSEGMENT_H
-#define __CEVENTSEGMENT_H
+#ifndef CEVENTSEGMENT_H
+#define CEVENTSEGMENT_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,23 +16,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __COBJECT_H
 #include "CObject.h"
-#endif
-
-
-#ifndef __CRT_STDDEF_H
 #include <stddef.h>
-#ifndef __CRT_STDDEF_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /*!
 

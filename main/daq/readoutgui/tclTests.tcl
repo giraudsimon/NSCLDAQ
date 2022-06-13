@@ -3,6 +3,7 @@
 exec tclsh "$0" "$@"
 
 package require tcltest
+set testmanager 1
 #
 #  sshpipe.test is too finicky - can't get it to run quite right yet because
 #  timing is not-deterministic.

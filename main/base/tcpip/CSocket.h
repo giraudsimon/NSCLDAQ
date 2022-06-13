@@ -25,31 +25,17 @@
 // Copyright 
 //   NSCL All rights reserved.
 //
-#ifndef __CSOCKET_H  //Required for current class
-#define __CSOCKET_H
+#ifndef CSOCKET_H  //Required for current class
+#define CSOCKET_H
 
 //
 // Include files:
 //
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __INET_IN_H
+#include <vector>
 #include <netinet/in.h>
-#define __INET_IN_H
-#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -190,6 +176,9 @@ protected:
   unsigned short Service(const std::string& rService);
   std::string         AddressToHostString(in_addr peer);
   void           OpenSocket();
+  void throwIfIncorrectState(State required, const char* doing);
+  void dropConnection();
+
 };
 
 #endif

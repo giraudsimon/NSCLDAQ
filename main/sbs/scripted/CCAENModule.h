@@ -1,5 +1,5 @@
-#ifndef __CCAENMODULE_H
-#define __CCAENMODULE_H
+#ifndef CCAENMODULE_H
+#define CCAENMODULE_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -19,23 +19,11 @@
 
 //
 //  Header files:
-#ifndef __CDIGITIZERMODULE_H
+
 #include "CDigitizerModule.h"
-#endif
-
-#ifdef HAVE_STD_NAMESPACE
-using namespace std;
-#endif
-
-
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
+
+using namespace std;
 
 // forward class definitions:
 

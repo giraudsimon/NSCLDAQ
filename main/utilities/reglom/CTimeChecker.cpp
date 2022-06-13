@@ -31,7 +31,7 @@
  *  Constructor
  *     Just initialize stuff:
  */
-CRingItemDecoder::CRingItemDecoder() :
+CTimeCheckDecoder::CTimeCheckDecoder() :
     m_lastStamp(0), m_ooCount(0)
 {}
 
@@ -43,7 +43,7 @@ CRingItemDecoder::CRingItemDecoder() :
  *   @param pItem - undifferentiated ring item.
  */
 void
-CRingItemDecoder::operator()(CRingItem* pItem)
+CTimeCheckDecoder::operator()(CRingItem* pItem)
 {
     if (pItem->type() == PHYSICS_EVENT) {
         if (!pItem->hasBodyHeader()) {
@@ -66,7 +66,7 @@ CRingItemDecoder::operator()(CRingItem* pItem)
  *    Reports the number of errors:
  */
 void
-CRingItemDecoder::onEndFile()
+CTimeCheckDecoder::onEndFile()
 {
     std::cerr << " End of file we saw " << m_ooCount << " out of order timestamps\n";
 }

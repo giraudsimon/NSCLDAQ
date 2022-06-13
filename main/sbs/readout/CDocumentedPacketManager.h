@@ -17,30 +17,13 @@
 
 //////////////////////////CDocumentedPacketManager.h file//////////////////////////////////
 
-#ifndef __CDOCUMENTEDPACKETMANAGER_H  
-#define __CDOCUMENTEDPACKETMANAGER_H
+#ifndef CDOCUMENTEDPACKETMANAGER_H  
+#define CDOCUMENTEDPACKETMANAGER_H
                                
 
-#ifndef __STL_LIST
 #include <list>
-#ifndef __STL_LIST
-#define __STL_LIST
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 /*!
    Manages a set of documented packet types.  This is

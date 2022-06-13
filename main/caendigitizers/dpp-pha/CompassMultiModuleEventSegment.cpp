@@ -43,20 +43,6 @@ CompassMultiModuleEventSegment::initialize()
     for (int i =0; i < m_modules.size(); i++) {
         m_modules[i]->initialize();
     }
-    // Start the slaves:
-    
-    for (int i =0; i < m_modules.size(); i++) {
-        if (!m_modules[i]->isMaster()) {
-            m_modules[i]->startSlave();
-        }
-    }
-    // Now that all of the slaves are primed, we can start the master:
-    
-    for (int i =0; i < m_modules.size(); i++) {
-        if (m_modules[i]->isMaster()) {
-            m_modules[i]->startMaster();
-        }
-    }
 }
 /**
  *  clear

@@ -131,9 +131,9 @@ CDataFormatItem::operator!=(const CDataFormatItem& rhs) const
 uint16_t
 CDataFormatItem::getMajor() const
 {
-    CDataFormatItem* This = const_cast<CDataFormatItem*>(this);
     
-    pDataFormat pItem = reinterpret_cast<pDataFormat>(This->getItemPointer());
+    const DataFormat* pItem =
+        reinterpret_cast<const DataFormat*>(getItemPointer());
     return pItem->s_majorVersion;
 }
 /**
@@ -146,10 +146,9 @@ CDataFormatItem::getMajor() const
 uint16_t
 CDataFormatItem::getMinor() const
 {
-    CDataFormatItem* This = const_cast<CDataFormatItem*>(this);
-    
-    pDataFormat pItem = reinterpret_cast<pDataFormat>(This->getItemPointer());
-
+   
+    const DataFormat* pItem =
+        reinterpret_cast<const DataFormat*>(getItemPointer());
     return pItem->s_minorVersion;    
 }
 /*----------------------------------------------------------------------------

@@ -74,7 +74,7 @@ set libdir [file join [file dirname [info script]] .. TclLibs]
 set libdir [file normalize $libdir]
 
 lappend auto_path $libdir
-
+package require removetcllibpath;   # Probably not a problem except in testing.
 package require portAllocator
 package require log
 package require ring

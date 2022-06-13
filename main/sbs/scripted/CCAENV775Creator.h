@@ -24,25 +24,12 @@
 //
 // Copyright 
 
-#ifndef __CCAENV775CREATOR_H  //Required for current class
-#define __CCAENV775CREATOR_H
+#ifndef CCAENV775CREATOR_H  //Required for current class
+#define CCAENV775CREATOR_H
 
-//
-// Include files:
-//
 
-//Required for base classes
-
-#ifndef __CMODULECREATOR_H     //CModuleCreator
 #include "CModuleCreator.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 
@@ -59,20 +46,11 @@ public:
   //   Constructors and other cannonical operations.
   
   CCAENV775Creator ();
-  ~CCAENV775Creator ( );
-  CCAENV775Creator (const CCAENV775Creator& aCCAENV775Creator );
-  CCAENV775Creator& operator= (const CCAENV775Creator& aCCAENV775Creator);
-  int operator== (const CCAENV775Creator& aCCAENV775Creator) const;
-  
-  
-  // Class operations:
+  virtual ~CCAENV775Creator ( );
   
 public:
   
-  virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-				      CTCLResult& rResult, 
-				      int nArgs, char** pArgs)   ; 
-  virtual   std::string  Help (); 
+  virtual CReadableObject* Create(const char* name, CTCLInterpreter& rInterp); 
   
 };
 

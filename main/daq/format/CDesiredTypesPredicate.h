@@ -1,5 +1,5 @@
-#ifndef __CDESIREDTYPESPREDICATE_H
-#define __CDESIREDTYPESPREDICATE_H
+#ifndef CDESIREDTYPESPREDICATE_H
+#define CDESIREDTYPESPREDICATE_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -17,11 +17,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-
-#ifndef __CRINGSELECTIONPREDICATE_H
 #include "CRingSelectionPredicate.h"
-#endif
-
 
 /*! 
 

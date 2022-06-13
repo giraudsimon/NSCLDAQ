@@ -45,7 +45,17 @@ package require Observer;	# Observer pattern component
 
 package provide EVB::ConnectionManager 1.0
 
-namespace eval EVB {}
+namespace eval EVB {
+    #
+    #  Message type codes:
+    #
+    variable CONNECT    1
+    variable FRAGMENTS  2
+    variable DISCONNECT 4
+    
+    variable HeaderSize 8;           # two uint32_t items in the header.
+}
+
 
 ##
 # Connection object
@@ -72,7 +82,7 @@ snit::type EVB::Connection {
 
     variable alive 0
     variable callbacks
-    variable expecting
+    variable expecting ""
     variable stateMethods -array [list FORMING _Connect ACTIVE _Fragments]
 
 
@@ -152,10 +162,11 @@ snit::type EVB::Connection {
     ##
     # _DecodeConnectBody
     #
-    #  Decodes the body of a connect message.  This consists of a null terminated
-    #  ASCII String that is then followed by:
-    #  - A count of the source ids
-    #  - The source ids themselves.
+    #  Decodes the body of a connect message.  This consists of:
+    #
+    #  - 80 characters of description information.
+    #  - uint32 of number of following source ids.
+    #  - source ids each in a uint32_t
     #  
     #  The count and source ids are all little endian uint32_t numbers.
     #
@@ -164,41 +175,18 @@ snit::type EVB::Connection {
     # @retval First list element is the description string.  The second, a list of source ids.
     #
     method _DecodeConnectBody body {
+        #  The string and number of bytes:
         
-     # The loop below pulls the characters out of the description
-     # one at a time.  cursor is the current position in the binary 
-     # array.  Characters are appended to description until a null is seen:
- 
-     set cursor 0
-     set description ""
- 
-     while {1} {
-         binary scan $body "@${cursor}c1" char
-         incr cursor
- 
-         if {$char} {
-         append description [format %c $char]
-         } else {
-         break
-         }
-     }
-     # cursor now point just past the null in the string.. at the
-     # number of source ids:
- 
-     binary scan $body "@${cursor}i1" sourceCount
-     incr cursor 4
- 
-     set sourceList [list]
-     for {} {$sourceCount > 0} {
-         incr sourceCount -1
-         incr cursor 4
-     } {
-         binary scan $body "@${cursor}i1" source
-         lappend sourceList $source
-     }
- 
- 
-     return [list $description $sourceList]
+        binary scan $body A80i description sourceCount
+        set cursor 84;                # where we start.
+        set sources [list]
+        for {set i 0} {$i < $sourceCount} {incr i} {
+            
+            binary scan $body @${cursor}i sid
+            lappend sources $sid
+            incr cursor 4
+        }
+        return [list $description $sources]
     }
 
     ##
@@ -317,33 +305,43 @@ snit::type EVB::Connection {
         # Get the header and get the body.
         # The header is a string, but the body is a counted binary block:
     
-        if {[catch {$self _ReadCountedString $socket} header]} {
+
+        if {[catch {read $socket $EVB::HeaderSize} header]} {
             catch {puts $socket "ERROR {Could not read header expecting CONNECT}"}; # Might fail.
             $self _Close ERROR
             return
         }
-    
-        if {[catch {$self _ReadBinaryData $socket} body]} {
+        if {[eof $socket]} {
+            catch puts $socket "ERROR - unable to read header\n"
+            puts stderr "EOF on read of header! ignore connection."
+            $self _Close ERROR
+            return
+        }
+        #
+        #  Decode the header and read the body, if there is one:
+        #
+        binary scan $header "ii" bodySize msgType
+
+        if {[catch {read $socket $bodySize} body]} {
+            puts stderr "Could not read body: $body"
             puts $socket "ERROR {Corrupt body in CONNECT message}"
             $self _Close ERROR
+            return
         }
+    
     
         # Must be a CONNECT message with a non-zero body.
         #
     
-        if {$header ne "CONNECT"} {
+        if {$msgType ne $EVB::CONNECT} {
             catch {puts $socket "ERROR {Expected CONNECT}"}
             $self _Close ERROR
             return
         }
+        
+        # the body consist of 80 characters of description  and
+        # a count of source ids followed by that many source ids.
     
-    
-        if {[string length $body] == 0} {
-            catch {puts $socket "ERROR {Empty Body}"}
-            $self _Close ERROR
-            return
-        }
-        puts $socket "OK"
         set alive 1
     
         # Pull out the description and the source id list
@@ -351,8 +349,9 @@ snit::type EVB::Connection {
         set decodedBody [$self _DecodeConnectBody $body]
         set description [lindex $decodedBody 0]
         set sourceIds   [lindex $decodedBody 1]
-    
-    
+
+        puts $socket "OK"
+        flush $socket
     
         # Save the description and transition to the active state:
             # Register ourself with the event builder core
@@ -374,19 +373,41 @@ snit::type EVB::Connection {
     # @param socket - socket that is readable.
     #
     method _Fragments socket {
-        set status [catch {
-            set header [$self _ReadCountedString $socket]
-    #	    set body   [$self _ReadBinaryData    $socket]
-        } msg]
-        if {[eof $options(-socket)]} {
+        # Read the header:
+        
+        if {[catch {read $socket $EVB::HeaderSize} header]} {
+            if {[eof $socket]} {
+                $self _Close LOST
+                return
+            } else {
+                #  Some other error:
+                
+                $self $Close LOST
+                error "Failure reading FRAGMENTS"
+            }
+        }
+        set result [binary scan $header ii bodySize msgType]
+        if {$result != 2} {
+            puts stderr "Header only decoded to $result values instead of 2"
+            puts stderr "Closing connection due to errors"
+            flush stderr
+            # Closing connection.
             $self _Close LOST
-            return;		# Nothing else to do.
+            return
         }
     
        #  Presumably the most common case is "FRAGMENTS"
     
-       if {$header eq "FRAGMENTS"} {
+       if {$msgType == $EVB::FRAGMENTS} {
     
+            
+            # protocol allows FRAGMENTS here:
+            # TODO: Handle errors as a close
+            
+            # We can read the fragments from the socket:
+            
+            set fragments [read $socket $bodySize]
+            
             # Acknowledging the fragments here allows next bunch to be prepared
             # in the caller.
             
@@ -396,23 +417,19 @@ snit::type EVB::Connection {
             } else {
                 flush $socket
             }
-            # protocol allows FRAGMENTS here:
-            # TODO: Handle errors as a close
-    
-            if {[catch {EVB::handleFragment $socket} msg]} {
-                puts stderr "Event orderer failed call to handleFragment: : $msg"
-                tk_messageBox -type ok -icon error -title "Fragment Handling error [clock format [clock seconds]]" \
-                    -message "C++ Fragment handler reported an error: $msg"
-                exit;		# can't really continue.
-            }
-    
+
+            EVB::handleFragments $socket $fragments;    # Handle fragments in C++
     
             $callbacks invoke -fragmentcommand [list] [list]
     
             
-        # Protocol allows a DISCONNECT here:
-    
-        } elseif {$header eq "DISCONNECT"} {
+        # Protocol allows a DISCONNECT here as well as fragments.. note disconnect
+        # has no body data.:
+
+        } elseif {$msgType == $EVB::DISCONNECT} {
+
+            # There is no body in disconnect messages.
+            
             puts $socket "OK"
             flush $socket
             $self _Close CLOSED

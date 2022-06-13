@@ -69,6 +69,8 @@ class CVMUSB
 {
   public:
     typedef CVMUSBReadoutList RdoList;
+  public:
+    static bool  m_logTransactions;
 
   public:
 

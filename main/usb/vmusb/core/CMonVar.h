@@ -70,7 +70,7 @@ class CMonitorVariables : public CTCLTimer
 private:
 
 public:
-    CMonitorVariables(CTCLInterpreter& interp, UInt_t msec);
+    CMonitorVariables(CTCLInterpreter& interp, TCLPLUS::UInt_t msec);
     virtual void operator()();
 private:
     void createItems();

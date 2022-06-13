@@ -1,6 +1,6 @@
 
-#ifndef __WIENERCAMAC_H
-#define __WIENERCAMAC_H
+#ifndef WIENERCAMAC_H
+#define WIENERCAMAC_H
 #include <daqdatatypes.h>
 /* 
 The Wiener VC32 each control only one crate, so an array of pointers is

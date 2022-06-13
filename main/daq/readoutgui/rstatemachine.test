@@ -48,6 +48,7 @@ tcltest::test addbundle-1  {Add a new bundle lets me list it.} \
     }
 } \
 -cleanup {
+    $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
 } \
@@ -82,7 +83,8 @@ tcltest::test addbundle-3 {Double registration is not allowed} \
     }
 } \
 -cleanup {
-    $s destroy
+    $s removeCalloutBundle testBundle
+    $s destroy    
     namespace delete testBundle
 } \
 -body {
@@ -138,7 +140,8 @@ tcltest::test addbundle-5 {Exported namespace procs must have the right paramete
 
     list $status $msg
 } \
--result [list 1 {testBundle has interface procs with the wrong number of params: attach(0), leave(1) should be: attach(1), leave(2)}]
+-result [list 1 {testBundle has interface procs with the wrong number of params: attach(1), leave(2)}]
+
 
 tcltest::test addbundle-6 {Properly added namespace bundles become a namespace ensemble.} \
 -setup {
@@ -151,6 +154,8 @@ tcltest::test addbundle-6 {Properly added namespace bundles become a namespace e
     }
 } \
 -cleanup {
+
+    $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
 } \
@@ -175,6 +180,7 @@ tcltest::test addbundle-7 {Added callback bundles have attach called} \
     }
 } \
 -cleanup {
+    $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
 } \
@@ -200,6 +206,7 @@ tcltest::test  removebundle-1  {Remove an existing bundle works} \
     $s addCalloutBundle testBundle
 } \
 -cleanup {
+
     $s destroy
     namespace delete testBundle
 } \
@@ -310,6 +317,8 @@ tcltest::test transitions-2 {Transitions invoke leave callback}  \
     $s addCalloutBundle testBundle    
 } \
 -cleanup {
+
+    $s removeCalloutBundle testBundle
     $s destroy
     namespace delete testBundle
 } \
@@ -341,6 +350,8 @@ tcltest::test transitions-3 {Transitions invoke the enter callback} \
     $s addCalloutBundle testBundle    
 } \
 -cleanup {
+    $s removeCalloutBundle testBundle
+
     $s destroy
     namespace delete testBundle
 } \
@@ -432,11 +443,204 @@ tcltest::test failedTransition-0 {Test that a failed callout bundle will cause s
   rm addCalloutBundle FailBundle
 
 } -cleanup {
+  rm removeCalloutBundle FailBundle
   namespace forget FailBundle
   rm destroy
 } -body {
-  rm transition Starting
-} -result "Failed leave NotReady to Starting" -returnCodes 1
+  set status [catch {rm transition Starting}]
+  set state [rm getState]
+  list $status $state
+} -result [list 1 NotReady]
+
+
+#  Testing solution of issue daqdev/NSCLDAQ#659
+    
+tcltest::test failure-callback-1 {Failure callbacks don't get called if there are no successes.} \
+-setup {
+    set ::failureInfo [list]
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle FailBundle
+
+    
+} \
+-cleanup {
+
+  rm removeCalloutBundle FailBundle
+  rm destroy
+  namespace forget FailBundle
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list]
+
+tcltest::test failure-callback-2  {If there's a success it's falure callback is called} \
+-setup {
+    set ::failureInfo [list]
+namespace eval OkBundle {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+        set ::failureInfo $args
+    }
+    namespace export attach enter leave failure
+}
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle OkBundle
+    rm addCalloutBundle FailBundle
+    
+    
+} \
+-cleanup {
+  rm removeCalloutBundle OkBundle
+  rm removeCalloutBundle FailBundle
+
+  rm destroy
+  namespace forget FailBundle
+  namespace forget OkBundle
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list NotReady Starting]
+
+tcltest::test failure-callback-3 {Failures called in reverse registration order} \
+-setup {
+    set ::failureInfo [list]
+namespace eval OkBundle1 {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+       lappend ::failureInfo Ok1
+    }
+    namespace export attach enter leave failure
+}
+namespace eval OkBundle2 {
+    proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      
+    }
+
+    proc leave {from to} {
+      
+    }
+    proc failure args {
+       lappend ::failureInfo Ok2
+    }
+    namespace export attach enter leave failure
+}
+
+namespace eval FailBundle {
+    variable count 0
+
+      proc attach {state} {
+        variable count 0
+
+      }
+
+    proc enter {from to} {
+      return -code error "Failed enter $from to $to"
+    }
+
+    proc leave {from to} {
+      return -code error "Failed leave $from to $to"
+    }
+    proc failure args {
+        
+        set ::failureInfo [list $args]
+    }
+    namespace export attach enter leave failure
+    }
+    RunstateMachine rm
+    rm addCalloutBundle OkBundle1
+    rm addCalloutBundle OkBundle2
+    rm addCalloutBundle FailBundle
+    
+    
+} \
+-cleanup {
+    rm removeCalloutBundle OkBundle1
+    rm removeCalloutBundle OkBundle2
+    rm removeCalloutBundle FailBundle
+
+  rm destroy
+  namespace forget FailBundle
+  namespace forget OkBundle1
+  namespace forget OkBundle2
+  unset ::failureInfo
+} \
+-body {
+    catch {rm transition Starting}
+    set ::failureInfo
+} -result [list Ok2 Ok1]
 
 #-----------------------------------------------------------------------------
 #

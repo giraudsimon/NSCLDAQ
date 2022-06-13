@@ -573,6 +573,35 @@ stripconfig <replaceable>option ?...?</replaceable>
 			</para>
 		    </listitem>
 		</varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::lowAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                The color for tabs on pages that are displaying
+                channels that are in low rate alarm.  The
+                default color is green.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::highAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                Color for tabs on pages that are displaying channels that
+                are in high rate alarm.  THe default color is red.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><varname>::scalerconfig::bothAlarmTabColor</varname></term>
+           <listitem>
+               <para>
+                Color for tabs on pages that are displaying channels
+                that are both in high and low rate alarm. The default
+                color is amber.
+               </para>
+            </listitem>
+        </varlistentry>
 		<varlistentry>
             <term>::outputFileDirectory</term>
             <listitem>
@@ -635,7 +664,7 @@ ringbuffer attach <replaceable>ring-uri</replaceable>
     </cmdsynopsis>
     <cmdsynopsis>
 	<command>
-set item [ringbuffer get <replaceable>ring-uri ?type-list?</replaceable>
+set item [ringbuffer get ?<option>-timeout</option> secs? <replaceable>ring-uri ?type-list?</replaceable>
 	</command>
     </cmdsynopsis>
     <cmdsynopsis>
@@ -661,7 +690,11 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 	fromt he ring, blocking as needed.  The optional
 	<replaceable>type-list</replaceable> limits the types
 	of ring items returned.  The type list is a list of integer
-	item types.  See the header <filename>DataFormat.h</filename>
+	item types.  If the <option>-timeout</option> is provided to the
+    <command>get</command> subcommand, the operation will block
+    at most that many seconds.  If a ring item is not read after the
+    timeout, an empty string is returned.
+    See the header <filename>DataFormat.h</filename>
 	for the ring data types.
      </para>
      <para>
@@ -717,6 +750,26 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>divisor</literal></term>
+           <listitem>
+               <para>
+                Provides the number of ticks in <literal>timeoffset</literal>
+                in a second.  This provides support for sub second timing
+                resolution.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><literal>timeoffsetsec</literal></term>
+           <listitem>
+               <para>
+                Uses the <literal>timeoffset</literal> and
+                <literal>divisor</literal> values and returns the offset
+                into the run as floating point seconds.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term>title</term>
 		<listitem>
@@ -735,6 +788,18 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>source</literal></term>
+           <listitem>
+               <para>
+                Provides the original data source id that created this
+                state change item.  There is a source id in the
+                body header, however the event builder pipeline will, in general
+                edit that.  This key provides the original source id and is
+                immune from that editing.
+               </para>
+            </listitem>
+        </varlistentry>
 	</variablelist>
      </refsect2>
      <refsect2>
@@ -785,6 +850,24 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>startsec</literal></term>
+           <listitem>
+               <para>
+                The counting interval start offset into the run in
+                floating point seconds.
+               </para>
+            </listitem>
+        </varlistentry>
+        <varlistentry>
+           <term><literal>endsec</literal></term>
+           <listitem>
+               <para>
+                The counting interval end offset into the run in
+                floating point seconds.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term><literal>incremental</literal></term>
 		<listitem>
@@ -794,6 +877,17 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>source</literal></term>
+           <listitem>
+               <para>
+                The original source id of the scaler item. While there
+                is a source id in the body header, that is subject to editing
+                by event builder piplines the item may have flowed through.
+                This key provides a source id that is immune to that editing.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term><literal>scalers</literal></term>
 		<listitem>
@@ -831,6 +925,14 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>offsetsec</literal></term>
+           <listitem>
+               <para>
+                The offset into the run in floating point seconds.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term><literal>realtime</literal></term>
 		<listitem>
@@ -842,6 +944,18 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>source</literal></term>
+           <listitem>
+               <para>
+                The id of the original source that generated this item.
+                While there is a source id in the body header, it is subject
+                to editing by any event pipelines this item has flowed through.
+                This key provides the authoritative source id for this item
+                immune to event builder pipeline editing.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term><literal>strings</literal></term>
 		<listitem>
@@ -998,6 +1112,15 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		    </para>
 		</listitem>
 	    </varlistentry>
+        <varlistentry>
+           <term><literal>offsetsec</literal></term>
+           <listitem>
+               <para>
+                The offset into the run at which this item was generated
+                in floating point seconds.
+               </para>
+            </listitem>
+        </varlistentry>
 	    <varlistentry>
 		<term><literal>realtime</literal></term>
 		<listitem>
@@ -1013,11 +1136,23 @@ ringbuffer detach <replaceable>ring-uri</replaceable>
 		<listitem>
 		    <para>
 			Number of triggers this source responded to this run
-			(live trigers).
+			(live trigers).  Note that this is a wide integer (generated
+            from a 64 bit source).
 		    </para>
 		</listitem>
 	    </varlistentry>
-	    
+	    <varlistentry>
+           <term><literal>source</literal></term>
+           <listitem>
+               <para>
+                The id of the data source that generated this item.
+                Note that while the body header contains a source id, it could
+                have been edited by any event building pipelines the item
+                flowed through.  The value of this key is not subject to that
+                sort of editing.
+               </para>
+            </listitem>
+        </varlistentry>
 	</variablelist>
      </refsect2>
      <refsect2>

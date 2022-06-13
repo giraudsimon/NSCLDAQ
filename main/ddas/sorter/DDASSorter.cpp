@@ -35,6 +35,8 @@
 #include <sstream>
 #include <stdlib.h>
 
+static const uint32_t EXTCLKBIT(1 << 21);
+
 /**
  * constructor:
  *    @param source - ringbuffer from which data comes.
@@ -105,11 +107,12 @@ DDASSorter::processChunk(CRingBufferChunkAccess::Chunk& chunk)
       
       // If there's a source id, pull it out and save it in m_sid.
       
-      if (fullItem.s_body.u_noBodyHeader.s_mbz) {
-	m_sid = fullItem.s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
+      if (hasBodyHeader(&fullItem)) {
+          m_sid =
+            (reinterpret_cast<pBodyHeader>(bodyHeader(&fullItem)))->s_sourceId;
       }
       
-      switch (item.s_type) {
+      switch (itemType(&fullItem)) {
       case PHYSICS_EVENT:
             processHits(&item);
             break;
@@ -146,6 +149,20 @@ DDASSorter::outputRingItem(pRingItemHeader pItem)
  *       zero copy hits.
  *    -  Adds those hits to the hit manager.
  *    -  Outputs any hits the hit manager says can be output.
+ *
+ *    The ring item body of a physics event has the following contents:
+ *    \verbatim
+ *
+ *    +------------------------------------------------------+
+ *    |   Size of the body in 16 bit words (uint32_t)        |
+ *    +------------------------------------------------------+
+ *    |  Module id uint32_t (note bit 21 says use ext clock) |
+ *    +------------------------------------------------------+
+ *    | Clock scale factor (double precision).               |
+ *    +------------------------------------------------------+
+ *    |    soup of hits as they come from the module         |
+ *
+ *    \endverbatim
  */
 void
 DDASSorter::processHits(pRingItemHeader pItem)
@@ -157,17 +174,15 @@ DDASSorter::processHits(pRingItemHeader pItem)
     // This is ok because Readout does not put body header extensions in
     // its events.
     
-    uint32_t* pBodySize;
-    if (pFullItem->s_body.u_noBodyHeader.s_mbz) {   /// has a body header.
-        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_hasBodyHeader.s_body);
-    } else {                                     // does not have a body header
-        pBodySize = reinterpret_cast<uint32_t*>(pFullItem->s_body.u_noBodyHeader.s_body);
-    }
+    uint32_t* pBodySize = static_cast<uint32_t*>(bodyPointer(pFullItem));    
     
     uint32_t bodySize   = *pBodySize++;
     uint32_t moduleType = *pBodySize++;
-    bodySize           -= 2*sizeof(uint32_t)/sizeof(uint16_t);
-    
+    double*  pScale     = reinterpret_cast<double*>(pBodySize);
+    double   clockScale = *pScale++;
+    pBodySize           = reinterpret_cast<uint32_t*>(pScale);
+    bodySize           -= (2*sizeof(uint32_t)+sizeof(double))/sizeof(uint16_t);
+    bool useExtClock    = (moduleType & EXTCLKBIT) != 0;
     memcpy(pBuffer->s_pData, pBodySize, bodySize*sizeof(uint16_t));   //Copy the raw data.
     uint8_t* p(*pBuffer);
     std::deque<DDASReadout::ZeroCopyHit*> hitList;
@@ -179,7 +194,7 @@ DDASSorter::processHits(pRingItemHeader pItem)
         pHit->s_moduleType = moduleType;
         pHit->SetTime();
         pHit->SetLength();
-        pHit->SetTime(DDASReadout::RawChannel::moduleCalibration(moduleType));
+        pHit->SetTime(clockScale, useExtClock);
         pHit->SetChannel();
         pHit->Validate(hitSize);
     
@@ -194,6 +209,12 @@ DDASSorter::processHits(pRingItemHeader pItem)
             
             warnedLate = true;
         }
+        // Figure out the hit timestamp.
+        // That's either the coarse timestamp or the
+        // external timestamp, in either case multiplied
+        // by the clockScale:
+        
+        
         
         hitList.push_back(pHit);
 
@@ -278,7 +299,7 @@ void
 DDASSorter::outputHit(DDASReadout::ZeroCopyHit* pHit)
 {
     
-    // sizeof(BodyHeader) ok here because we're construting the output
+    // sizeof(BodyHeader) ok here because we're constructing the output
     // event and we know there's no extension.
     
     uint64_t ts = pHit->s_time;

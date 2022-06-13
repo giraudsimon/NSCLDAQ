@@ -31,14 +31,8 @@
 #ifndef CMMAPERROR_H
 #define CMMAPERROR_H
 
-#ifndef __CEXCEPTION_H
 #include <Exception.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
 
 class CMmapError : public CException
 {

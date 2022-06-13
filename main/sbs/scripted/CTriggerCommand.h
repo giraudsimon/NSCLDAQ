@@ -14,20 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CTRIGGERCOMMAND_H
-#define __CTRIGGERCOMMAND_H
+#ifndef CTRIGGERCOMMAND_H
+#define CTRIGGERCOMMAND_H
 
-#ifndef __TCLPROCESSOR_H
 #include <TCLProcessor.h>
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class definitions.
 

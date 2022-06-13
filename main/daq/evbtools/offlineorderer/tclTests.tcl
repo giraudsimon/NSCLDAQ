@@ -26,17 +26,14 @@ tcltest::testConstraint false 0
 eval ::tcltest::configure $argv
 
 # add hook to access whether tests failed for generating a meaningful return code
-set ::failures [list]
+set ::failures 0
 proc ::tcltest::cleanupTestsHook {} {
   variable numTests
-  lappend ::failures [expr {$numTests(Failed) >0}]
+  incr ::failures $numTests(Failed)
 }
 
 ::tcltest::runAllTests
 
-puts $::failures
-foreach job $::failures {
-  if {$job > 0} {
-    exit 1
-  }
+if {$::failures} {
+  exit -1
 }

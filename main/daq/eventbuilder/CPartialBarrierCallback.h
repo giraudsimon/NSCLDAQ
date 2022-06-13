@@ -13,24 +13,16 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CPARTIALBARRIERCALLBACK_H
-#define __CPARTIALBARRIERCALLBACK_H
+#ifndef CPARTIALBARRIERCALLBACK_H
+#define CPARTIALBARRIERCALLBACK_H
 
 /**
  * @file CPartialBarrierCallback.h
  * @brief Define a partial barrier observer that executes Tcl scripts.
  */
 
-#ifndef __CFRAGMENTHANDLER_H
 #include "CFragmentHandler.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // forward definitions:
 

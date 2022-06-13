@@ -136,11 +136,7 @@ CDAQShm::create(std::string name, size_t size, unsigned int flags)
   umask(old);
   errno = e;
   if (fd < 0) {
-    if (errno == EEXIST) {
-      m_nLastError = Exists;
-    } else {
-      m_nLastError = CheckOSError;
-    }
+    setLastErrorFromErrno();
     return true;
   }
   // Now set its length:
@@ -168,11 +164,7 @@ CDAQShm::remove(std::string name)
 {
   m_nLastError = CDAQShm::Success;
   if(shm_unlink(name.c_str())) {
-    if (errno == ENOENT) {
-      m_nLastError = NonExistent;
-    } else {
-      m_nLastError = CheckOSError;
-    }
+    setLastErrorFromErrno();
     return true;
     
   }
@@ -202,13 +194,8 @@ CDAQShm::attach(std::string name)
   }
 
   if (fd < 0) {
-    if (errno == ENOENT) {
-      m_nLastError = NonExistent;
-    } else if (errno == EACCES) {
-      m_nLastError = NoAccess;
-    }  else {
-      m_nLastError = CheckOSError;
-    }
+    setLastErrorFromErrno();
+    
     return 0;
   }
 
@@ -235,11 +222,8 @@ CDAQShm::attach(std::string name)
     pMemory = mmap(NULL, fileSize, PROT_READ, MAP_SHARED, fd, 0);
   }
   if (pMemory == reinterpret_cast<void*>(-1)) {
-    if (errno == EACCES) {
-      m_nLastError = NoAccess;
-    } else {
-      m_nLastError = CheckOSError;
-    }
+    setLastErrorFromErrno();
+    
     return 0;
   }
 
@@ -265,14 +249,8 @@ CDAQShm::size(std::string name)
 {
   int fd = shm_open(name.c_str(), O_RDONLY, 0);
   if (fd < -1) {
-    if (errno == ENOENT) {
-      m_nLastError = NonExistent;
-    } else if (errno = EACCES) {
-      m_nLastError = NoAccess;
-    }
-    else {
-      m_nLastError = CheckOSError;
-    }
+    setLastErrorFromErrno();
+    
     return -1;
   }
   // The gymnastics below ensures that errno contains the value
@@ -383,10 +361,9 @@ CDAQShm::stat(std::string name, struct stat* pStat)
   int result = fstat(fd, pStat);
   int eno = errno;                        // Close modifies errno
   close(fd);
-  
   errno = eno;
   if (result < 0) {
-    m_nLastError =  CheckOSError;
+    setLastErrorFromErrno();
   } else {
     m_nLastError = Success;
   }
@@ -423,4 +400,26 @@ CDAQShm::fdSize(int fd)
   }
   size_t fileSize = fileInfo.st_size;
   return fileSize;
+}
+/**
+ * setLastErrorFromErrno
+ *    Sets the m_nLastError from the current value of errno.
+ */
+void
+CDAQShm::setLastErrorFromErrno()
+{
+  switch errno {
+    case EEXIST:
+      m_nLastError = Exists;
+      break;
+    case ENOENT:
+      m_nLastError = NonExistent;
+      break;
+    case EACCES:
+      m_nLastError = NoAccess;
+      break;
+    default:
+      m_nLastError = CheckOSError;
+      break;
+  }
 }

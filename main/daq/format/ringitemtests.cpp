@@ -84,18 +84,14 @@ void physeventtests::construct() {
   // Let's look at the member data for small too:
 
   EQ((void*)small.m_pItem->s_body.u_noBodyHeader.s_body, (void*)small.m_pCursor);
-  // EQ((uint32_t)0, small.m_pItem->s_body.u_noBodyHeader.s_mbz);
-   ASSERT((small.m_pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
-	  (small.m_pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
+  EQ((uint32_t)sizeof(uint32_t), small.m_pItem->s_body.u_noBodyHeader.s_empty);
   EQ(CRingItemStaticBufferSize-10, small.m_storageSize);
   EQ(false, small.m_swapNeeded);
 
   // Let's look at the member data for big:
   
   EQ((uint8_t*)big.m_pItem->s_body.u_noBodyHeader.s_body, big.m_pCursor);
-  ASSERT((big.m_pItem->s_body.u_noBodyHeader.s_mbz == 0) ||
-	 (big.m_pItem->s_body.u_noBodyHeader.s_mbz == sizeof(uint32_t)));
-
+  EQ((uint32_t)sizeof(uint32_t), big.m_pItem->s_body.u_noBodyHeader.s_empty);
   EQ(CRingItemStaticBufferSize*2, big.m_storageSize);
   EQ(false, big.m_swapNeeded);
 }

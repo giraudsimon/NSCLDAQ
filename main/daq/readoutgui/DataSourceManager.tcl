@@ -111,21 +111,21 @@ snit::type DataSourceManager {
         if {[$self _isLoaded $name]} {
             error "The $name provider is already loaded."
         }
-        
         set package ${name}_Provider
-
-        set status [catch {package require $package} msg]
         
+        set status [catch {package require $package} msg]
         if {$status} {
-            error "No provider named $name could be found check the package load path"
+            puts stderr "Loading ${name} failed: $msg\n $::errorInfo"
+            error "No provider named $name could be found check the package load path : $msg : $::errorInfo"
         }
         if {![namespace exists ::$name]} {
             error "The ${name}_Provider package does not provide the ::${name}:: namespace so it cannot be a provider."
         }
-        
+
         # Successful load remember the provider:
         
         lappend loadedProviders $name
+        
     }
 
     ##
@@ -343,7 +343,8 @@ snit::type DataSourceManager {
                 set providerType [dict get $paramDict provider]
                 dict set paramDict sourceid $id
                 if {[catch {::${providerType}::start $paramDict} msg]} {
-		    set msg "$msg : $::errorInfo"
+                    set msg [list $msg : $::errorInfo]
+                    puts stderr "Error $providerType start $msg"
                     incr failures
                     set msg [string map [list \" \\\"] $msg]
                     lappend errors [join $msg " "]
@@ -556,7 +557,7 @@ snit::type DataSourceManager {
 
       set provider [dict get $dataSources($id) provider]
       if {[catch {::${provider}::init $id} msg]} {
-        error [list [list $provider $id] $msg]
+        error [list [list $provider $id] "$msg : $::errorInfo"]
       }
 
     }
@@ -593,7 +594,7 @@ snit::type DataSourceManager {
       foreach id $sources {
         set provider [dict get $dataSources($id) provider]
         if {[catch {::${provider}::init $id} msg]} {
-          lappend messages [list [list $provider $id] $msg]
+          lappend messages [list [list $provider $id] "$msg $::errorInfo"]
         }
       }
 

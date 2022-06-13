@@ -19,24 +19,33 @@
 
 #include <CBaseMediator.h>
 #include <CTransformMediator.h>
-
+#include <CExtensibleFactory.h>
 #include <map>
 #include <memory>
 #include <utility>
+#include <string>
+#include <stdint.h>
+
+/*
+ * daqdev/NSCLDAQ#510 - rewritten to use CExtensible factory NOTE!!!!
+ * the original implementation used as a lookup key std::pair<int,int>
+ * where the pair was the from/to  pair.  We  transform that into a uint64_t
+ * key composed by (from << 32) | to.
+ * Really this whole implementation suffers from **2 scalability problems.
+ * The 'correct' way to do this is a two step transform. First step transforms
+ * to highest level of NSCLDAQ and second level transforms to the desired level.
+ * That reduces the number of mediators from O(n**2) to O(n*2)
+ * That's for a later day when we look at what's needed (if anything) to deal with
+ * with the change in body header contents in 12.x
+ *   Note on std::pointers -it's up to the caller to decide to or not to wrap
+ * returned pointersin std::pointers because otherwise there are transfer issues.
+ */
 
 
 namespace DAQ {
   namespace Transform {
 
-    /*!
-      * \brief The CTransformCreator class
-      *
-      *  Base class for all creators used by the CTransformFactories
-      */
-    class CTransformCreator {
-    public:
-      virtual std::unique_ptr<CBaseMediator> operator()() const = 0;
-    };
+    
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -50,61 +59,35 @@ namespace DAQ {
       * the appropriate type of CTransformMediator<> and return a pointer to a
       * new instance created with the default constructor
       */
-    template<class T>
-    class CGenericCreator : public CTransformCreator
+
+    class CTransformCreator : public CCreator<CBaseMediator>
     {
     public:
-      std::unique_ptr<CBaseMediator> operator()() const {
-        return std::unique_ptr<CBaseMediator>(new CTransformMediator<T>());
+      CBaseMediator* operator()(void* unused) = 0;
+      std::string describe() const { return ""; }  // We're not using descriptions
+    };
+    
+    template<class T>
+    class CGenericCreator : public CTransformCreator {
+      CBaseMediator* operator()(void* unused) {
+          return new CTransformMediator<T>;
       }
     };
+    
+    //  This typedef is the factory we us
+    
 
-    /*!
-      * \brief Extensible factory for constructing CTransformMediators
-      *
-      * The transform factory. Really this could work with any type of CBaseMediator, but it
-      * is designed to use to and from version numbers to appropriately select the desired
-      * transform.
-      *
-      */
-    class CTransformFactory
-    {
+    using TransformFactory = CGenericExtensibleFactory<uint64_t, CBaseMediator>;
+
+    // We wrap it to supply an adaptor to existing code.
+  
+    class  CTransformFactory : public TransformFactory {
     public:
-      using Container = typename std::map< std::pair<int, int>, std::unique_ptr<CTransformCreator> >;
-      using Key       = typename Container::iterator;
-
-    private:
-      Container m_creators;
-
-    public:
-      CTransformFactory();
-
-      /*!
-       * \brief Sets the creator object for a specific transform type
-       *
-       * If a creator already exists for the pair of vsnFrom and vsnTo, this
-       * swaps out the old creator for the new one. Otherwise, the creator
-       * is added. The ownership of the pointer wrapped in pCreator will
-       * be transferred.
-       *
-       * \param vsnFrom - version to transform from
-       * \param vsnTo   - version to transform to
-       * \param pCreator - creator object
-       */
-      void setCreator(int vsnFrom, int vsnTo, std::unique_ptr<CTransformCreator> pCreator);
-
-      /*!
-        * \brief Create a mediator instance
-        * \param vsnFrom - version to transform from
-        * \param vsnTo   - version to transform to
-        * \return new instance of a mediator
-        *
-        * \throws std::out_of_range exception if no creator is associated with the version specifiers
-        */
-      std::unique_ptr<CBaseMediator> create(int vsnFrom, int vsnTo);
+      void setCreator(int vsnFrom, int vsnTo, CTransformCreator* pCreator);
+      CBaseMediator* create(int vsnFrom, int vsnTo);
     };
-
-
+  
+    
   } // end of Transform
 } // end of DAQ
 

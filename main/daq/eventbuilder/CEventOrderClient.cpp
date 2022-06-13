@@ -59,8 +59,6 @@ CEventOrderClient::CEventOrderClient(std::string host, uint16_t port) :
 
 /**
  * Destroy the object. Any existing connection to the event builder is dropped.
- * properly. See the event builder protocol documentations for a description of 
- * what that means.
  */
 CEventOrderClient::~CEventOrderClient()
 {
@@ -130,7 +128,7 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
   uint8_t* connectionBody(0);
   sprintf(portNumber, "%u", m_port);
   m_pConnection = new CSocket();
-  void* pConnectMessage(0);
+
   try {
     m_pConnection->Connect(m_host, std::string(portNumber));
     
@@ -145,51 +143,48 @@ CEventOrderClient::Connect(std::string description, std::list<int> sources)
     fdFlags |= FD_CLOEXEC;                    // Close on exec.
     fcntl(fd, F_SETFD, fdFlags);
 
-    // figure out the length of the connection body and allocated it:
-
-    size_t connectionBodyLength = sizeof(uint8_t) + description.size()
-      + (sources.size() + 1) * sizeof(uint32_t);
-
-    connectionBody = new uint8_t[connectionBodyLength];
+    // Message header:
     
-    // Build the connection body...
-    // description is null terminated:
-
-    memcpy(connectionBody, description.c_str(), description.size());
-    connectionBody[description.size()] = 0; //  Null termination.
-
-    uint32_t* pSourceInfo = reinterpret_cast<uint32_t*>(&(connectionBody[description.size()+1]));
-    *pSourceInfo++ = sources.size();
-    for (std::list<int>::iterator p = sources.begin(); p != sources.end(); p++) {
-      *pSourceInfo++ = static_cast<uint32_t>(*p);
+    EVB::ClientMessageHeader hdr = {0 , EVB::CONNECT};
+    
+    // Figure out the total body size, allocate it, fill in hdr.s_bodySize:
+    
+    uint32_t bodySize = EVB_MAX_DESCRIPTION + (sources.size() + 1)*sizeof(uint32_t);
+    EVB::pConnectBody pBody = static_cast<EVB::pConnectBody>(malloc(bodySize));
+    if (!pBody) {
+      throw CErrnoException("Unable to allocated connect msg body");
     }
-
-
-    size_t length= message(&pConnectMessage, "CONNECT", strlen("CONNECT"), 
-			   connectionBody, connectionBodyLength);
-
-    m_pConnection->Write(pConnectMessage, length);
-
-
-    std::string reply = getReplyString();
-    if (reply != "OK") {
-      errno = ECONNREFUSED;
-      throw CErrnoException("ERROR reply from server");
+    hdr.s_bodySize = bodySize;
+    memset(pBody->s_description, 0, EVB_MAX_DESCRIPTION);
+    strncpy(pBody->s_description, description.c_str(), EVB_MAX_DESCRIPTION);
+    pBody->s_nSids = sources.size();
+    int i(0);
+    for (auto p = sources.begin(); p != sources.end(); p++) {
+      pBody->s_sids[i] = *p;
+      i++;
     }
-			     
+    // We'll need to I/O vectors, one for the header, one for the body:
+    
+    iovec d[2];
+    d[0].iov_base = &hdr;
+    d[0].iov_len  = sizeof(EVB::ClientMessageHeader);
+    
+    d[1].iov_base = pBody;
+    d[1].iov_len  = bodySize;
+    
+    message(2, d);          // Send and process reply.
+    free(pBody);
   }
   catch (CTCPConnectionFailed& e) {
-    delete []connectionBody;
-    free(pConnectMessage);
-
-
-    // Convert to ECONNREFUSED errno
-    
     errno = ECONNREFUSED;
     throw CErrnoException("Failed connection to server");
   }
-  delete []connectionBody;
-  free(pConnectMessage);
+  catch (std::string msg) {
+    delete m_pConnection;
+    m_pConnection = nullptr;
+    m_fConnected = false;
+    throw;
+  }
   m_fConnected = true;
 
 }
@@ -205,23 +200,27 @@ CEventOrderClient::disconnect()
     errno = ENOTCONN;
     throw CErrnoException("Disconnect from server");
   }
-  void* pDisconnectMessage(0);
-  size_t msgLength = message(&pDisconnectMessage, "DISCONNECT", strlen("DISCONNECT"), NULL, 0);
+  
   try {
-    m_pConnection->Write(pDisconnectMessage, msgLength);
-    free(pDisconnectMessage);
-
+    // Disconnect message has no body.
+    
+    EVB::ClientMessageHeader hdr = {0, EVB::DISCONNECT};
+    iovec d;
+    d.iov_base = &hdr;
+    d.iov_len  = sizeof(EVB::ClientMessageHeader);
+    message(1, &d);
   }
   catch (...) {
-    free(pDisconnectMessage);
+    delete m_pConnection;
+    m_pConnection = nullptr;
+    m_fConnected = false;
     throw;
   }
-  std::string  reply = getReplyString();
-  if (reply != "OK") {
-    errno = EOPNOTSUPP;
-    throw CErrnoException("ERROR - Reply from server");
-  }
-  
+
+  delete m_pConnection;
+  m_pConnection = nullptr;
+
+  m_fConnected = false;
 }
 /**
  * Submits a chain of fragments.  (FragmentChain).  The chain is marshalled into 
@@ -237,54 +236,37 @@ void
 CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
 {
   if (m_fConnected) {
+    iovec* pDescription(nullptr);
+    EVB::ClientMessageHeader hdr;
+    hdr.s_msgType = EVB::FRAGMENTS;
+    
+    size_t bodyBytes = bytesInChain(pChain);
+    hdr.s_bodySize = bodyBytes;
+    size_t nIovsInChain = iovecsInChain(pChain);
+    pDescription = static_cast<iovec*>(malloc((nIovsInChain+1)*sizeof(iovec)));
+    
+    pDescription[0].iov_base = &hdr;
+    pDescription[0].iov_len = sizeof(EVB::ClientMessageHeader);
 
-    // Size the body buffer, allocate it and fill it in from the chain.
-
-    size_t nBytes = fragmentChainLength(pChain);
-    char* pBodyBuffer = reinterpret_cast<char*>(malloc(nBytes)); // Need space for the size.
-    if (!pBodyBuffer) {
-      throw CErrnoException("Allocating body buffer memory");
-    }
-
-    char* pDest       = reinterpret_cast<char*>(pBodyBuffer);
-
-    while (pChain) {
-      memcpy(pDest, &(pChain->s_pFragment->s_header), sizeof(EVB::FragmentHeader));
-      pDest += sizeof(EVB::FragmentHeader);
-      uint32_t bodySize =  pChain->s_pFragment->s_header.s_size;
-      memcpy(pDest, pChain->s_pFragment->s_pBody, bodySize);
-      pDest += bodySize;
-      pChain = pChain->s_pNext;
-    }
-    // Output the buffer in a try/catch block so that we can be sure it gets freed:
-
-    void* msg(0);
+    fillFragmentDescriptors(pDescription+1, pChain);
+    
 
     try {
 
 
       // The -1 below is because we don't relay the null terminator on the strings.
 
-      size_t msgLen = message(&msg, "FRAGMENTS", sizeof("FRAGMENTS") -1 , pBodyBuffer, nBytes);
-      m_pConnection->Write(msg, msgLen);
-      free(pBodyBuffer);
-      free(msg);		// Don't leak messages
+      message(nIovsInChain+1, pDescription);
+      free(pDescription);
     
     }
     catch (...) {
-      free(pBodyBuffer);
-      free(msg);
+      free(pDescription);
       throw;
     }
     // get the reply and hope it's what we expect.
 
-    std:: string reply = getReplyString();
-    if (reply != "OK") {
-      errno = ENOTSUP;
-      throw CErrnoException("Reply from 'FRAGMENTS' message");
-
-    }
-
+    
   } else {
     errno = ENOTCONN;		// Not connected.
     throw CErrnoException ("submitting fragment chain");
@@ -303,78 +285,28 @@ CEventOrderClient::submitFragments(EVB::pFragmentChain pChain)
 void
 CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments)
 {
-  // Each fragment requires 2 iovector elements:
-  // One for the header and one for the body, First ensure we have enough:
-  
-  
-  
-  if (m_nIovecSize < 2*nFragments + 1) {
-    free(m_pIovec);
-    m_pIovec = static_cast<iovec*>(
-      malloc((2*nFragments+1) * sizeof(iovec) )  // +1 for the header stuff
-    );
-    if (!m_pIovec) {
-      throw std::bad_alloc();
+  // Just make a fragment chain out of the fragments and use the previous
+  // method:
+  if (nFragments == 0) return;
+  EVB::pFragmentChain pChain = new EVB::FragmentChain[nFragments];
+
+  for (size_t i = 0; i < nFragments; i++) {
+
+    pChain[i].s_pFragment = &(ppFragments[i]);
+    if (i != nFragments-1) {
+      pChain[i].s_pNext = &(pChain[i+1]);
+    } else {
+      pChain[i].s_pNext = nullptr;
     }
-    m_nIovecSize = 2*nFragments + 1;
   }
-  iovec* p = m_pIovec;
-  
-  // Fill in the header and it's iovec:
-  
-  
-  uint32_t hdrsize = strlen("FRAGMENTS");
-  uint8_t header[hdrsize + 2*sizeof(uint32_t)];  // fragments size piggy backs.
-  
-  memcpy(header, &hdrsize, sizeof(uint32_t));
-  memcpy(header+sizeof(uint32_t), "FRAGMENTS", strlen("FRAGMENTS"));
-  
-  p->iov_base = header;
-  p->iov_len  = hdrsize + 2*sizeof(uint32_t);
-   
-  p++;
-  uint32_t payloadSize = 0;
-  
-  for (int i =0; i < nFragments; i++) {
-    iovec* pNext = makeIoVec(ppFragments[i], p);
-    payloadSize += p[0].iov_len;
-    payloadSize += p[1].iov_len;
-    
-    p = pNext;
+  try {
+    submitFragments(pChain);
   }
-  // Fill in the payload size field of the header:
-  //           "FRAGMENTS"  string length
-  memcpy(header + hdrsize + sizeof(uint32_t), &payloadSize , sizeof(uint32_t));
-  
-  // Now we can pull the fd from the soccket and use the gather version of
-  // io::writeData No data copies -- hoorah.
-  //
-  int sock = m_pConnection->getSocketFd();
-  
-  int iovLen = 2*nFragments + 1;
-  
-  // This loop is because there's a maximum number of I/O vector elements
-  // allowed.  We've squirreled that at construction time in:  m_nIovecMaxSize
-  
-  iovec* pVec = m_pIovec;
-  while (iovLen) {
-    int nToWrite = iovLen;
-    if (iovLen >  m_nIovecMaxSize) nToWrite =  m_nIovecMaxSize;
-    
-    io::writeDataVUnlimited(sock, pVec, nToWrite);
-    iovLen -= nToWrite;
-    pVec   += nToWrite;
+  catch (...) {
+    delete []pChain;
+    throw;
   }
-  
-  // Get the response and complain  if it's not "OK"
-  
-  std:: string reply = getReplyString();
-  if (reply != "OK") {
-    errno = ENOTSUP;
-    throw CErrnoException("Reply from 'FRAGMENTS' message");
-
-  }
-
+  delete []pChain;
 }
 /**
  * Given an STL list of pointers to events:
@@ -389,40 +321,33 @@ CEventOrderClient::submitFragments(size_t nFragments, EVB::pFragment ppFragments
 void
 CEventOrderClient::submitFragments(EVB::FragmentPointerList& fragments)
 {
-  if (fragments.size() == 0) return; // degenerate edge case...empty list...don't send.
+  size_t nFrags = fragments.size();
+  if (nFrags == 0) return; // degenerate edge case...empty list...don't send.
   
-  EVB::pFragmentChain pChain = new EVB::FragmentChain;
-  try {
+  
+  EVB::pFragmentChain pChain = new EVB::FragmentChain[nFrags];
+  auto p = fragments.begin();
+  size_t i(0);
 
-    // Do the first one:
-    
-    EVB::FragmentPointerList::iterator src = fragments.begin();
-    EVB::pFragmentChain pPrior = pChain;
-    pPrior->s_pNext = 0;
-    pPrior->s_pFragment = *src++;
-    
-    // Do the remainder of the chain.. if there are any:'
-    
-    while (src != fragments.end()) {
-      // Allocate the new element and fill it in.
-      EVB::pFragmentChain pNext = new EVB::FragmentChain;
-      pNext->s_pNext = 0;
-      pNext->s_pFragment = *src++;
-      
-      // Link this to the previous element.
-      
-      pPrior->s_pNext = pNext;
-      pPrior = pNext;
+  while (p != fragments.end()) {
+    pChain[i].s_pFragment = *p;
+    if (i != nFrags-1) {
+      pChain[i].s_pNext  = &(pChain[i+1]);
+    } else {
+      pChain[i].s_pNext = nullptr;
     }
-    submitFragments(pChain);
-  } catch(...) {
-    // Clean the chain and then rethrow.
+    p++;
+    i++;
 
-    freeChain(pChain);
-    throw;
   }
-  freeChain(pChain);
-
+  try {
+    submitFragments(pChain);
+  }
+  catch (...) {
+    delete []pChain;
+  }
+  delete []pChain;
+  
 }
 
 /*-------------------------------------------------------------------------------------*/
@@ -532,4 +457,70 @@ CEventOrderClient::makeIoVec(EVB::Fragment& Frag, iovec* pVecs)
   pVecs->iov_len  = Frag.s_header.s_size;
   
   return ++pVecs;
+}
+/**
+ * message
+ *    Sends a message and gets a reply.  If the reply is not
+ *    the OK string we expect, then we throw it as an std::string exception.
+ *
+ *  @param nItems  - Number of iovec structs used to describe the message.
+ *  @param parts   - Pointer to the iovecs.
+ */
+void
+CEventOrderClient::message(size_t nItems, iovec* parts)
+{
+  int fd = m_pConnection->getSocketFd();
+  io::writeDataVUnlimited(fd, parts, nItems);
+  std::string reply = getReplyString();
+  if (reply != "OK") {
+    throw reply;
+  }
+}
+/**
+ * bytesInChain
+ *   @param pFrags   - a fragment chain.
+ *   @return size_t  - number of bytes needed to write the chain.
+ */
+size_t
+CEventOrderClient::bytesInChain(EVB::pFragmentChain pFrags)
+{
+  EVB::pFragmentChain p = pFrags;
+  size_t result(0);
+  while (p) {
+    result += sizeof(EVB::FragmentHeader) + p->s_pFragment->s_header.s_size;
+    p      = p->s_pNext;
+  }
+  
+  return result;
+}
+/**
+ * iovecsInChain
+ *   @param pFrags - fragment chain to size.
+ *   @return size_t  - number of iovects needed to describe the whole chain.
+ */
+size_t
+CEventOrderClient::iovecsInChain(EVB::pFragmentChain pFrags)
+{
+  size_t result(0);
+  
+   while (pFrags) {
+    result += 2;                    // Each chain entry needs 2 iovecs.
+    pFrags      = pFrags->s_pNext;
+  }
+  
+  return result;
+}
+/**
+ * fillFragmentDescriptors
+ *    Fills in the fragment descriptors for a chain.
+ * @param pVec - the vectors to fill - caller must have ensured it's big enough.
+ * @param pFrags - Fragment chain to describe.
+ */
+void
+CEventOrderClient::fillFragmentDescriptors(iovec* pVec, EVB::pFragmentChain pFrags)
+{
+    while (pFrags) {
+      pVec = makeIoVec(*pFrags->s_pFragment, pVec);
+      pFrags = pFrags->s_pNext;
+    }
 }

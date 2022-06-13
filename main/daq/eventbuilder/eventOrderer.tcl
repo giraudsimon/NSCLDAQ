@@ -27,7 +27,7 @@
 #
 
 package provide EventBuilder 1.0
-package require Tk
+#package require Tk
 package require snit
 package require EVB::ConnectionManager
 package require portAllocator
@@ -81,29 +81,29 @@ snit::type EVB::EventBuilder {
 	set pa [portAllocator create %AUTO%]
 
 	#
-	#  If there's already an event builder registered on this por,
+	#  If there's already an event builder registered on this port,
 	#  Give the user a chance to not start this one:
 	#
 
-	set existingApps [$pa listPorts] 
-	foreach app $existingApps {
-	    set registeredName [lindex $app 1]
-	    if {$appName eq $registeredName} {
-		set reply [tk_messageBox -type yesno -title {Duplicate event builder} \
-			       -message "An event orderer named $appName already exists are you sure you want to start?"
-			   ]
-		if {$reply eq "no"} {
-		    exit -1
-		}
+
+	set existing [$pa findServerAllUsers $appName]
+	
+	if {[llength $existing] > 0} {
+	    set reply [tk_messageBox -type yesno -title {Duplicate event builder} \
+			   -message "An event orderer named $appName already exists are you sure you want to start?"
+		      ]
+	    if {$reply eq "no"} {
+		exit -1
 	    }
 	}
-
+	
 	set port [$pa allocatePort $appName]
 	$pa destroy
+	puts stderr "Got port $port for orderer "
 
 	return $port
     }
-
+    
 }
 
 #------------------------------------------------------------------------

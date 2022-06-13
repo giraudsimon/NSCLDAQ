@@ -1,5 +1,5 @@
-#ifndef __CMEMORYMAPPEDCAMACBRANCH_H
-#define __CMEMORYMAPPEDCAMACBRANCH_H
+#ifndef CMEMORYMAPPEDCAMACBRANCH_H
+#define CMEMORYMAPPEDCAMACBRANCH_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -18,9 +18,7 @@
 */
 
 
-#ifndef __CCAMACBRANCH_H
 #include "CCAMACBranch.h"
-#endif
 
 /*!
    The important set of CAMAC interfaces we deal with are memory mapped..

@@ -1,5 +1,7 @@
 package require tcltest
 
+tcltest::verbose [list start pass]]
+
 # mock packages and their implementations.
 
 package provide ssh 1.0
@@ -219,10 +221,15 @@ tcltest::test stop-1 {After starting a source stopping it kills/cleans it} \
     ::mytests::clearlog
 } \
 -body {
+puts body
     ::SSHPipe::stop 0
+puts stop
     vwait ::SSHPipe::activeProviders(0);   #Echo of exit command
+puts vw1
     vwait ::SSHPipe::activeProviders(0)
-    vwait ::SSHPipe::activeProviders(0);   #EOF?
+puts vw2
+#    vwait ::SSHPipe::activeProviders(0);   #EOF?
+#puts vw3
     array names ::SSHPipe::activeProviders 0
     
 } -result ""

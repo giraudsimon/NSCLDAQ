@@ -20,36 +20,13 @@
 # @author <fox@nscl.msu.edu>
 */
 
-#ifndef _CSTATEMONITOR_H
-#define _CSTATEMONITOR_H
+#ifndef CSTATEMONITOR_H
+#define CSTATEMONITOR_H
 
-#ifndef __ZMQ_HPP
 #include <zmq.hpp>
-#ifndef __ZMQ_HPP
-#define __ZMQ_HPP
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
 
 
 /*

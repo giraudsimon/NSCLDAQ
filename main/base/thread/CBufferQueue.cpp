@@ -56,7 +56,8 @@ CBufferQueue<T>::CBufferQueue(size_t wakeLevel) :
 template<class T>
 CBufferQueue<T>::~CBufferQueue<T>() 
 {
-  pthread_cond_destroy(&m_condition);
+  // Not really safe since behavior if the condvar is owned is not defined.
+  //pthread_cond_destroy(&m_condition);
 }
 
 /*!

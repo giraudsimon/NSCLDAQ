@@ -15,6 +15,7 @@
 package provide  s800 1.0
 package require  snit
 package require  portAllocator
+package require  Bundles
 
 
 ##
@@ -138,8 +139,11 @@ snit::type s800rctl {
   # an error:
   #
   method setSlave {} {
+		set bundles [BundleManager getInstance]
+		$bundles invoke remotecontrol OnEnslaving $options(-host)
     set result [$self Transaction "set slave 1"]
     $self ThrowIfNak $result
+		
   }
   ##
   # Set the s800 back into master mode:
@@ -148,6 +152,8 @@ snit::type s800rctl {
   # an error.
   #
   method setMaster {} {
+		set bundles [BundleManager getInstance]
+		$bundles invoke remotecontrol OnFreeing $options(-host)
     set result [$self Transaction "set slave 0"]
     $self ThrowIfNak $result
   }
@@ -505,6 +511,7 @@ snit::type s800rctl {
     if {[eof $fd]} {
       # close the channel
       catch {close $fd}
+			
     } else {
       # read what we can from the channel
       if {[catch {gets $fd line} len]} {

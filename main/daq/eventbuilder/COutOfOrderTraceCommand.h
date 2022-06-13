@@ -20,8 +20,8 @@
 # @author <fox@nscl.msu.edu>
 */
 
-#ifndef _COUTOFORDERTRACECOMMAND_H
-#define _COUTOFORDERTRACECOMMAND_H
+#ifndef COUTOFORDERTRACECOMMAND_H
+#define COUTOFORDERTRACECOMMAND_H
 
 #include <TCLObjectProcessor.h>
 #include "CFragmentHandler.h"

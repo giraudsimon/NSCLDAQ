@@ -129,10 +129,10 @@ void rbufxportTest::write_3()          // Multipart write.
   EQ(size_t(hdr.s_size), nBytes);
   
   pRingItem pItem = reinterpret_cast<pRingItem>(buffer);
-  EQ(PHYSICS_EVENT, pItem->s_header.s_type);
-  EQ(hdr.s_size, pItem->s_header.s_size);
-  EQ(uint32_t(0), pItem->s_body.u_noBodyHeader.s_mbz);
-  uint32_t* pBody = reinterpret_cast<uint32_t*>(pItem->s_body.u_noBodyHeader.s_body);
+  EQ(uint16_t(PHYSICS_EVENT),itemType(pItem));
+  EQ(hdr.s_size, itemSize(pItem));
+  EQ(0, hasBodyHeader(pItem));
+  uint32_t* pBody = reinterpret_cast<uint32_t*>(bodyPointer(pItem));
   
   for (int i = 0; i < sizeof(data)/sizeof(uint32_t); i++ ) {
     EQ(data[i], pBody[i]);
@@ -196,10 +196,10 @@ void rbufxportTest::read_3()        // Ring buffer with counting value.
     void*  pData;
     m_consumer->recv(&pData, nBytes);
     
-    pRingItemHeader p = reinterpret_cast<pRingItemHeader>(pData);
-    EQ(hdr.s_size, p->s_size);
-    EQ(hdr.s_type, p->s_type);
-    uint32_t* pD = reinterpret_cast<uint32_t*>(p+1);
+    pRingItem p = reinterpret_cast<pRingItem>(pData);
+    EQ(hdr.s_size, itemSize(p));
+    EQ(uint16_t(hdr.s_type), itemType(p));
+    uint32_t* pD = reinterpret_cast<uint32_t*>(bodyPointer(p));
     EQ(uint32_t(0), *pD);   pD++;
     EQ(uint32_t(i), *pD);
     

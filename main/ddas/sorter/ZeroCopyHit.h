@@ -68,7 +68,8 @@ public:
         size_t nWords, void* pHitData, ReferenceCountedBuffer* pBuffer,
         BufferArena* pArena
     );                        
-    void freeHit();           
+    void freeHit();
+
 private:
     void reference();
     void dereference();

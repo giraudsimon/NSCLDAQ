@@ -1,5 +1,5 @@
-#ifndef __CMYEVENTSEGMENT_H
-#define __CMYEVENTSEGMENT_H
+#ifndef CMYEVENTSEGMENT_H
+#define CMYEVENTSEGMENT_H
 
 #include <Configuration.h>
 #include <SystemBooter.h>
@@ -14,7 +14,8 @@
 #include <string>
 #include <iostream>
 
-
+#include "ZeroCopyHit.h"
+#include "ModuleReader.h"
 
 // event segment for the control
 // and readout of pixie16 modules
@@ -67,7 +68,7 @@ private:
     unsigned int *ModEventLen;
 
     unsigned int ModuleRevBitMSPSWord[MAX_NUM_PIXIE16_MODULES]; //word to store rev, bit depth, and MSPS of module for insertion into the data stream.
-    unsigned int ModClockCal[MAX_NUM_PIXIE16_MODULES]; //word to calibration between clock ticks and nanoseconds.
+    double ModClockCal[MAX_NUM_PIXIE16_MODULES]; //word to calibration between clock ticks and nanoseconds.
 
 
 
@@ -77,13 +78,11 @@ private:
     bool m_systemInitialized;
     bool m_firmwareLoadedRecently;
     CExperiment*  m_pExperiment;
+   
+    // Statistics:
     
-    // These variables are used for readout:
-    
-    
-    std::vector<int>                        m_idToSlots;
-    bool m_debug;
-    std::ostream& m_debugStream;
+    size_t m_nCumulativeBytes;
+    size_t m_nBytesPerRun;
     
 public:
     CMyEventSegment(CMyTrigger *trig, CExperiment& exp);
@@ -103,12 +102,9 @@ public:
     void synchronize();            //!< Clock synchronization.
     void boot(DAQ::DDAS::SystemBooter::BootType = DAQ::DDAS::SystemBooter::FullBoot);                   //!< load fimrware and start boards.
 
-    std::ostream& getDebugStream() {
-        return m_debugStream;
+    std::pair<size_t, size_t>getStatistics() {
+        return std::pair<size_t, size_t>(m_nCumulativeBytes, m_nBytesPerRun);
     }
-private:
-    void checkBuffer(const uint32_t* pFifoContents, int nLongs, int id);
-    void dumpHeader(const void* pHeader, const char* msg);
     
 };
 #endif

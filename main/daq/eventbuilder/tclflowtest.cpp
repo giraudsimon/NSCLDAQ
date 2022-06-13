@@ -61,6 +61,14 @@ void TclFlowTest::establish() {
     EQ(size_t(1), CFragmentHandler::getInstance()->m_flowControlObservers.size());
 }
 
+static void initFragment(EVB::pFlatFragment pFrag)
+{
+    pFrag->s_header.s_timestamp = 100;
+    pFrag->s_header.s_sourceId  =   1;
+    pFrag->s_header.s_size      =  10;
+    pFrag->s_header.s_barrier   =   0;
+}
+
 /*
  *  Adding a flow off script and forcing flow off will invoke the script.
  */
@@ -72,10 +80,7 @@ TclFlowTest::foffcalled()
     CFragmentHandler* p = CFragmentHandler::getInstance();
     p->setXoffThreshold(5);
     EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(malloc(sizeof(EVB::FlatFragment) + 10));
-    pFrag->s_header.s_timestamp = 100;
-    pFrag->s_header.s_sourceId  =   1;
-    pFrag->s_header.s_size      =  10;
-    pFrag->s_header.s_barrier   =   0;
+    initFragment(pFrag);
     
     p->addFragments(sizeof(EVB::FlatFragment) + 10, pFrag);          // Shouild flow off.
     CTCLVariable flow(m_pInterp, "::flow", false);
@@ -85,6 +90,8 @@ TclFlowTest::foffcalled()
     
 }
 
+
+
 void TclFlowTest::foncalled()
 {
     m_pInterp->Eval("set ::flow on");
@@ -92,10 +99,7 @@ void TclFlowTest::foncalled()
     CFragmentHandler* p = CFragmentHandler::getInstance();
     p->setXoffThreshold(5);
     EVB::pFlatFragment pFrag = reinterpret_cast<EVB::pFlatFragment>(malloc(sizeof(EVB::FlatFragment) + 10));
-    pFrag->s_header.s_timestamp = 100;
-    pFrag->s_header.s_sourceId  =   1;
-    pFrag->s_header.s_size      =  10;
-    pFrag->s_header.s_barrier   =   0;
+    initFragment(pFrag);
     
     p->addFragments(sizeof(EVB::FlatFragment) + 10, pFrag);          // Shouild flow off.
     CTCLVariable flow(m_pInterp, "::flow", false);

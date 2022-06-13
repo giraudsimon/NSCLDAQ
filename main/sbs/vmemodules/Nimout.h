@@ -31,17 +31,11 @@
      mailto: venemaja@msu.edu
 */
 
-#ifndef __NIMOUT_H
-#define __NIMOUT_H
+#ifndef NIMOUT_H
+#define NIMOUT_H
 
 #include <VmeModule.h>
-
-#ifndef __CRTL_STDINT_H
 #include <stdint.h>
-#ifndef __CRTL_STDINT_H
-#define __CRTL_STDINT_H
-#endif
-#endif
 
 
 class CNimout : public CVmeModule

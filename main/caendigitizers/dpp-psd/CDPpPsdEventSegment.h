@@ -27,6 +27,7 @@
 #include <CEventSegment.h>           // Base class from NSCLDAQ
 #include "PSDParameters.h"
 #include <string>
+#include <chrono>
 #include <CAENDigitizerType.h>
 
 /**
@@ -69,6 +70,7 @@ private:
     // Used to tag data from the digitizer in event builder fragment e.g.
     
     int m_nSourceId;
+
     
     // Used to buffer events from the digitizer so that Read can return
     // just the oldest hit from each channnel.
@@ -84,11 +86,12 @@ private:
     uint64_t                   m_timestampAdjust[CAEN_DGTZ_MAX_CHANNEL];
     uint32_t                   m_lastTimestamps[CAEN_DGTZ_MAX_CHANNEL];
     uint64_t m_nsPerTick;
+    const char*        m_pCheatFile;
     
 public:
     CDPpPsdEventSegment(
         PSDBoardParameters::LinkType linkType, int linkNum, int nodeNum,
-        int base, int sourceid, const char* configFile
+        int base, int sourceid, const char* configFile, const char* pCheatFile=0
     );
     virtual ~CDPpPsdEventSegment();
 
@@ -103,12 +106,20 @@ public:
   
   bool isMaster();
   void startAcquisition();  
+
+  uint32_t           m_triggerCount[16];
+  uint32_t           m_missedTriggers[16];
+  double t[16];
+  double tmiss[16];
+
+
 private:
     PSDBoardParameters* matchConfig(const PSDParameters& systemConfig);
     bool ourConfig(const PSDBoardParameters& board);
     void openModule();
     void getModuleInformation();
     void setupBoard();
+    void processCheatFile();
     
     
     
@@ -142,6 +153,7 @@ private:
     void      setLVDSPLLLockLost();
     void      setLVDSVirtualProbe();
     void      setLVDSSIN();
+    void      setLVDSOutputMode(uint32_t maskValue, uint32_t fpioValue);
 };
 
 

@@ -36,7 +36,8 @@
 **--
 **/
 
-#ifndef __DAQTYPES_H
+#ifndef DAQTYPES_H
+
 
 #include <sys/types.h>
 
@@ -141,8 +142,5 @@ static const UInt_t kn1K                  = 1024;
 static const UInt_t kn1M                  = kn1K*kn1K;
 
 
-
-
-
-#define __DAQTYPES_H
+#define DAQTYPES_H
 #endif

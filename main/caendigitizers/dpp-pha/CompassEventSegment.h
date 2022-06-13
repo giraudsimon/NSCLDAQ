@@ -18,7 +18,7 @@
 #include <CEventSegment.h>
 #include <string>
 #include <CAENDigitizerType.h>
-#include "CAENPha.h"
+#include <chrono>
 
 class CAENPha;
 class CAENPhaParameters;
@@ -37,19 +37,13 @@ private:
     std::string m_filename;
     CAENPha*    m_board;                    // Board level driver.
     int         m_id;
+
     CAEN_DGTZ_ConnectionType m_linkType;
     int                      m_nLinkNum;
     int                      m_nNode;
     uint32_t                 m_nBase;
     const char*              m_pCheatFile;
-public:
-    bool               m_countersActive;
-    uint16_t           m_lastTriggerCount[16];           // overflow
-    uint16_t           m_lastMissedTriggerCount[16];     // detectors.
     
-    uint32_t           m_triggerCount[16];
-    uint32_t           m_missedTriggers[16];
-
 public:
     CompassEventSegment(
         std::string filename, int sourceId,
@@ -69,22 +63,15 @@ public:
     /** Code from here down could be refactored into a base class
      *  common to PHAEventSegment and  CompassEventSegment.
      */
+    uint32_t           m_triggerCount[16];
+    uint32_t           m_missedTriggers[16];
+    double t[16];
+    double tmiss[16];
+
     
     // Other publics:
-   
+    
     bool checkTrigger();
-    
-    // Delegations to the module (for synchronized chains).
-    
-    bool isMaster() {
-        return m_board->isMaster();
-    }
-    void startMaster() {
-        m_board->startMaster();
-    }
-    void startSlave() {
-        m_board->startSlave();
-    }
 private:
     size_t computeEventSize(const CAEN_DGTZ_DPP_PHA_Event_t& dppInfo, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wfInfo);
     void   setupBoard(CAENPhaParameters& board);

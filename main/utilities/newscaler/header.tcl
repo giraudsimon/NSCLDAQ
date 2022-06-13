@@ -88,7 +88,7 @@ snit::widgetadaptor runInfo {
 snit::widgetadaptor runTime {
     option -elapsed -default 0 -configuremethod _formatElapsed
     
-    variable formattedElapsed "0 0:0:0"
+    variable formattedElapsed "0 0:0:0.0"
     
     #  This array is indexed by source id and has values that are the widgets
     #  that contain the update interval for that source id.
@@ -169,6 +169,7 @@ snit::widgetadaptor runTime {
     # @param value - New value.
     #
     method _formatElapsed {opt value} {
+
         set formattedElapsed "[formatElapsedTime $value]  "
         set options($opt) $value
     }

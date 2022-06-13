@@ -1,0 +1,438 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   container.test
+# @brief  Test the container api to the configuration system.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require containers
+package require sqlite3
+
+set dbfile "test-config.db"
+set TestImage [file normalize [file join ~ minimal.img ]]
+proc commonSetup {} {
+    tcltest::makeFile [list] $::dbfile
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbfile
+    sqlite3 db $::dbfile -create 1
+}
+proc commonCleanup {} {
+    db close
+    tcltest::removeFile $::dbfile
+    
+}
+
+## Tests for container::add
+
+tcltest::test container_add_1 {Container with no mount points no init script} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test /scratch/nscl-buster.db "" [list]
+    set root [db eval {SELECT  container, image_path, init_script FROM container}]
+    set count [db eval {SELECT COUNT(*) FROM bindpoint}]
+    
+    list $root $count
+    
+} \
+-result [list [list test /scratch/nscl-buster.db ""] 0]
+
+tcltest::test container_add_2 {Container with an init script - contents get sucked in} \
+-setup {
+    commonSetup
+    tcltest::makeFile {#!/bin/bash
+echo testing}  test_container_init.sh
+} \
+-cleanup {
+    tcltest::removeFile test_container_init.sh
+    commonCleanup
+    
+} \
+-body {
+    ::container::add db test /scratch/nscl-buster.db [file join [pwd] test_container_init.sh] [list]
+    set root [db eval {SELECT init_script FROM container}]
+    set root [join $root "\n"]
+} -result {#!/bin/bash
+echo testing
+}
+
+tcltest::test container_add_3 {1 bind point to self.} \
+-setup {
+    commonSetup
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test ~/minimal.img "" [list /scratch]
+    
+    db eval {
+        SELECT path, mountpoint FROM bindpoint
+        INNER JOIN container ON container.id = bindpoint.id
+        WHERE container = 'test'
+    }
+
+} -result [list /scratch ""]
+
+tcltest::test container_add_4 {A bind point to a different position} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test ~/minimal.img "" [list [list /scratch /test]]
+    db eval {
+        SELECT path, mountpoint FROM bindpoint
+        INNER JOIN container ON container.id = bindpoint.id
+        WHERE container = 'test'
+    }
+    
+} -result [list /scratch /test]
+
+tcltest::test container_add_5 {Add bind points to both self and different spots} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+::container::add db test ~/minimal.img "" [list [list /tmp "" ] [list /scratch /test]]
+    db eval {
+        SELECT path, mountpoint FROM bindpoint
+        INNER JOIN container ON container.id = bindpoint.container_id
+        WHERE container = 'test'
+    }
+} -result [list /tmp "" /scratch /test]
+
+### ::container::remove tests
+
+tcltest::test container_remove_1 {Can remove non-existent container no prob.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+    
+} \
+-body {
+    container::remove db junk
+} -result * -match glob -returnCodes [list ok]
+
+tcltest::test container_remove_2 {Can actually remove containers without bindings} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test [file normalize ~/mininmal.img] "" ""
+    ::container::remove db test
+    db eval {SELECT COUNT(*) FROM container}
+} -result 0
+
+tcltest::test continer_remove_3 {Remove container with bind points.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::container::add db test [file normalize ~/minimal.img] "" \
+        [list [list /scratch] [list [file normalize ~] /temp]]
+    ::container::remove db test
+    db eval {SELECT COUNT(*) FROM bindpoint}
+} -result 0
+
+### ::container::activate tests.  We know that we have a
+#  container named ~/minimal.img
+#  A file named singexists.sh.
+#  This gives us almost enough muscle to test the whole shooting match
+#  We'll add another file (at some point) to ~ which will set an environment
+#  variable so that we can check on that.
+tcltest::test container_activate_1 {Activate none-xistent container is error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::activate db fluff localhost
+} -result * -match glob -returnCodes error
+
+tcltest::test container_activate_2 {Minimal definition should be able to see it.} \
+-setup {
+    commonSetup
+    container::add db test [file normalize ~/minimal.img] "" ""
+} \
+-cleanup {
+    exec ssh localhost singularity instance stop test
+    commonCleanup
+    
+} \
+-body {
+    set fd [container::activate db test localhost]
+    after 300;               # Wait image start.
+    set result [exec ssh localhost singularity instance list | grep test]
+    set pid [pid $fd]
+    exec kill {*}$pid
+    catch {close $fd}
+    lindex $result 0
+} -result test
+
+tcltest::test container_activate_3 {Activate can run a command} \
+-setup {
+    commonSetup
+    container::add db test [file normalize ~/minimal.img] "" ""
+    set singfd [container::activate db test localhost]
+} \
+-cleanup {
+    exec kill {*}[pid $singfd]
+    catch {close $singfd}
+    exec ssh localhost singularity instance stop test
+    commonCleanup
+} \
+-body {
+    # This tests our system level init script
+    
+    after 300
+    set result [exec ssh localhost singularity run instance://test echo test]
+} -result test
+
+tcltest::test container_activate_4 {Activating containers can do bindpoints} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set testscript [file join $home nscldaq_container_activate_4.sh]
+    set mappedscript [file join /testing nscldaq_container_activate_4.sh]
+    tcltest::makeFile {
+#!/bin/bash
+echo hello there
+    } $testscript
+    file attributes $testscript -permissions 0700 
+    ::container::add  db test [file join $home minimal.img] "" [list [list $home /testing]]
+    set fd [::container::activate db test localhost]
+    
+} \
+-cleanup {
+    exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $testscript
+    commonCleanup
+} \
+-body {
+    after 300
+    set result [exec ssh localhost singularity run instance://test $mappedscript]
+    
+} -result {hello there}
+
+tcltest::test container_activate_5 {User init script} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set initscript [file join $home nscldaq_container_activate_5.sh]
+    tcltest::makeFile {
+#!/bin/bash
+CONTAINER_TEST="working"
+export CONTAINER_TEST
+    } $initscript
+    ::container::add db test [file  join $home  minimal.img] $initscript [list]
+    set fd [::container::activate db test localhost]
+    fconfigure $fd -buffering line
+    after 300
+    
+} \
+-cleanup {
+    #exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $initscript
+    commonCleanup
+} \
+-body {
+    set result [exec ssh localhost singularity run instance://test printenv CONTAINER_TEST]
+    set result
+    
+} -result {working}
+
+###
+#   Tests for ::container::run
+
+tcltest::test container_run_1 {Same as container_activate_5 but using run} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set initscript [file join $home nscldaq_container_activate_5.sh]
+    tcltest::makeFile {
+#!/bin/bash
+CONTAINER_TEST="working"
+export CONTAINER_TEST
+    } $initscript
+    ::container::add db test [file  join $home  minimal.img] $initscript [list]
+    set fd [::container::activate db test localhost]
+    fconfigure $fd -buffering line
+    after 300
+    
+} \
+-cleanup {
+    exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $initscript
+    commonCleanup
+} \
+-body {
+    set runfd [::container::run test localhost {printenv CONTAINER_TEST}]
+    fconfigure $runfd -buffering line
+    set result [gets $runfd]
+    close $runfd
+    set result
+} -result {working}
+    
+##
+# tests for container::deactivate
+
+tcltest::test container_deactivate_1 {Start container, then deactivate it should be gone.} \
+-setup {
+    commonSetup
+    set home [file normalize ~]
+    set initscript [file join $home nscldaq_container_activate_5.sh]
+    tcltest::makeFile {
+#!/bin/bash
+CONTAINER_TEST="working"
+export CONTAINER_TEST
+    } $initscript
+    ::container::add db test [file  join $home  minimal.img] $initscript [list]
+    set fd [::container::activate db test localhost]
+    fconfigure $fd -buffering line
+    after 300
+} \
+-cleanup {
+    #exec ssh localhost singularity instance stop test
+    exec kill {*}[pid $fd]
+    catch {close $fd}
+    tcltest::removeFile $initscript
+    commonCleanup
+} \
+-body {
+    ::container::deactivate localhost test
+    
+    # Note instance list returns 1 if there are no containers.
+    
+    set status  [catch {exec ssh localhost singularity instance list test} msg] 
+    set resultlist [split $msg "\n"]
+    set result [lindex $resultlist 1]
+    
+    list $status $result
+    
+} -result {1 {}} 
+    
+###
+#   container::listDefinitions tests.
+
+tcltest::test container_list_1 {List when there are no containers.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result {}
+
+
+tcltest::test container_list_2 {minmal description.} \
+-setup {
+    commonSetup
+    container::add db test [file join ~ minimal.img] "" ""
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result [list [dict create  name test image [file join ~ minimal.img] bindings {} id 1] ]
+
+tcltest::test container_list_3 {Container has init script -> contents} \
+-setup {
+    commonSetup
+    set testfile [file join [file normalize ~] container_list_2.sh]
+    tcltest::makeFile {
+#!/bin/bash
+echo hi
+} $testfile
+    container::add db testing [file join [file normalize ~] minimal.img] $testfile [list]
+} \
+-cleanup {
+    #tcltest::removeFile $testfile
+} \
+-body {
+    container::listDefinitions db
+} -result [list \
+[dict create \
+    name testing image [file join [file normalize ~] minimal.img]     \
+    bindings {} init {
+#!/bin/bash
+echo hi
+}  id 1
+]]
+
+tcltest::test container_list_3 {Container with mountpoints} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::listDefinitions db
+} -result [list                                   \
+    [dict create                                  \
+        name test1 image $TestImage              \
+        bindings [list {/a} {/c /d}] id 1         \
+     ]                                            \
+] 
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+
+exit $::exitCode

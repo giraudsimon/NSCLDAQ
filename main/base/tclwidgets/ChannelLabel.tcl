@@ -17,6 +17,12 @@ package provide ChannelLabel 1.0
 package require snit
 package require Tk
 
+lappend auto_path [file join [file dirname [info script]] .. TclLibs]
+
+package require Utils
+
+
+
 ## @brief ttk::entry widget with default value
 #
 # This will not allow the user to leave the widget empty unless the
@@ -55,6 +61,7 @@ snit::widgetadaptor ChannelLabel {
   # @retval 0 - string was empty or all whitespace
   # @retval 1 - otherwise
   method ValidateName {name} {
+    return [Utils::nonemptString $name]
     set name [string trim $name]
     set good [expr [string length $name]!=0]
 

@@ -345,7 +345,7 @@ bool formatEvents (void* pBuffer)
         pItem = formatEventItem(eventSize - 1, pBody);    
     }
     
-    bool status = writeData(pItem, pItem->s_header.s_size);
+    bool status = writeData(pItem, itemSize(reinterpret_cast<pRingItem>(pItem)));
     free(pItem);
 
     if (!status) return false;
@@ -394,7 +394,7 @@ bool formatTriggerCount(uint32_t runTime, time_t stamp)
     pItem = formatTriggerCountItem(runTime, stamp, triggers);
   }
   
-  bool status = writeData(pItem, pItem->s_header.s_size);
+  bool status = writeData(pItem, itemSize(reinterpret_cast<pRingItem>(pItem)));
   free(pItem);
   return status;
 }
@@ -503,7 +503,7 @@ bool formatScaler (void* pBuffer)
     );    
   }
    
-  int status = writeData(pTSItem, pTSItem->s_header.s_size);
+  int status = writeData(pTSItem, itemSize(reinterpret_cast<pRingItem>(pTSItem)));
   free(pTSItem);
 
   return status;
@@ -565,7 +565,7 @@ bool formatStrings (void* pBuffer)
     );  
   }
   
-  bool status = writeData(pItem, pItem->s_header.s_size);
+  bool status = writeData(pItem, itemSize(reinterpret_cast<pRingItem>(pItem)));
   free(pItem);
   delete [] pStrings;
   return status;
@@ -641,7 +641,7 @@ bool formatStateChange (void* pBuffer)
     );    
 }
   
-  bool status = writeData(pItem, pItem->s_header.s_size);
+  bool status = writeData(pItem, itemSize(reinterpret_cast<pRingItem>(pItem)));
   free(pItem);
   return status;
 

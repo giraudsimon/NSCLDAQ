@@ -191,15 +191,14 @@ CRingSelectionPredicate::operator()(CRingBuffer& ring)
   RingItemHeader header;
   ring.peek(&header, sizeof(header));
 
-  if ((header.s_type & 0xffff0000) != 0) {
-    header.s_size = longswap(header.s_size);
-    header.s_type = longswap(header.s_type);
-  }
-
+  uint32_t size = itemSize(reinterpret_cast<pRingItem>(&header));
+  uint32_t type = itemType(reinterpret_cast<pRingItem>(&header));
+  
+  
   // Now that we have a header don't allow us to progress further if we don't
   // also have the full event:
 
-  if (ring.availableData() < header.s_size) {
+  if (ring.availableData() < size) {
     ring.pollblock();
     return true;
   }
@@ -213,11 +212,11 @@ CRingSelectionPredicate::operator()(CRingBuffer& ring)
   //     a chance to arrive else
   //   * return again to get us called to look at the next item.
   // 
-  if (selectThis(header.s_type)) {
+  if (selectThis(type)) {
 
       // full item in ring.
 
-    ring.skip(header.s_size);	// Skip the ring item.
+    ring.skip(size);	// Skip the ring item.
 
     if (!ring.availableData()) { // block for more data to come in.
       ring.pollblock();
@@ -236,23 +235,21 @@ CRingSelectionPredicate::operator()(CRingBuffer& ring)
     size_t freeSpace     = usage.s_putSpace;
     size_t availableData = ring.availableData();
 
-    SelectionMapIterator p = find(header.s_type);
+    SelectionMapIterator p = find(type);
     if (p == end()) {
       return false;
     }
     if (p->second.s_sampled) {
       if (freeSpace     >= m_highWaterMark) {
-	return false;		// full item is in ring, and below high water.
-      } 
-      else if (availableData < header.s_size) {
-	// Full item not yet in ring so wait and return true to try again.
-
-	ring.pollblock();
-	return true;
-      }
-      else if (freeSpace < m_highWaterMark) {
-	ring.skip(header.s_size); // no need to block here.
-	return true;
+        return false;		// full item is in ring, and below high water.
+      }  else if (availableData < header.s_size) {
+        // Full item not yet in ring so wait and return true to try again.
+      
+        ring.pollblock();
+        return true;
+      } else if (freeSpace < m_highWaterMark) {
+        ring.skip(header.s_size); // no need to block here.
+        return true;
       }
     } else {
 

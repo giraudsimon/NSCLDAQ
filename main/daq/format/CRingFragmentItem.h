@@ -14,19 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRINGFRAGMENTITEM_H
-#define __CRINGFRAGMENTITEM_H
+#ifndef CRINGFRAGMENTITEM_H
+#define CRINGFRAGMENTITEM_H
 
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
 
 
 

@@ -20,40 +20,43 @@ TCLPKGDIR   = @prefix@/TclLibs/readoutStateHook
 BUILT_SOURCES=options.c options.h
 
 libSBSProductionReadout_la_SOURCES	=				\
-						CReadoutMain.cpp		\
-						CTCLAuthorizer.cpp		\
-						CAuthorizedTclServer.cpp	\
-						CExperiment.cpp			\
-						RunState.cpp			\
-						CComposite.cpp			\
-						CScaler.cpp			\
-						CEventSegment.cpp		\
-						CScalerBank.cpp			\
-						CCompoundEventSegment.cpp	\
-						CEventTrigger.cpp		\
-						CNullTrigger.cpp		\
-						CTimedTrigger.cpp		\
-						CCAENV262Trigger.cpp		\
-						CV977Trigger.cpp		\
-						CTriggerLoop.cpp		\
-						CRunControlPackage.cpp		\
-						options.c			\
-						CBeginCommand.cpp		\
-						CPauseCommand.cpp		\
-						CResumeCommand.cpp		\
-						CEndCommand.cpp			\
-						CInitCommand.cpp			\
-						CDocumentedPacket.cpp		\
-						CDocumentedPacketManager.cpp	\
-						CReadoutException.cpp	\
-						CInvalidPacketStateException.cpp \
-						CEventPacket.cpp 	\
-						CVarList.cpp	\
-						CDocumentedVars.cpp		\
-						CVariableBuffers.cpp		\
-						CBusy.cpp			\
-						CCAENV262Busy.cpp		\
-						CV977Busy.cpp
+	PacketUtils.h PacketUtils.cpp \
+	CReadoutMain.cpp		\
+	CTCLAuthorizer.cpp		\
+	CAuthorizedTclServer.cpp	\
+	CExperiment.cpp			\
+	RunState.cpp			\
+	CComposite.cpp			\
+	CScaler.cpp			\
+	CEventSegment.cpp		\
+	CScalerBank.cpp			\
+	CCompoundEventSegment.cpp	\
+	CEventTrigger.cpp		\
+	CNullTrigger.cpp		\
+	CTimedTrigger.cpp		\
+	CCAENV262Trigger.cpp		\
+	CV977Trigger.cpp		\
+	CTriggerLoop.cpp		\
+	CRunControlPackage.cpp		\
+	options.c			\
+	CBeginCommand.cpp		\
+	CPauseCommand.cpp		\
+	CResumeCommand.cpp		\
+	CEndCommand.cpp			\
+	CInitCommand.cpp			\
+	CDocumentedPacket.cpp		\
+	CDocumentedPacketManager.cpp	\
+	CReadoutException.cpp	\
+	CInvalidPacketStateException.cpp \
+	CEventPacket.cpp 	\
+	CVarList.cpp	\
+	CDocumentedVars.cpp		\
+	CVariableBuffers.cpp		\
+	CBusy.cpp			\
+	CCAENV262Busy.cpp		\
+	CV977Busy.cpp \
+	CStatisticsCommand.h  CStatisticsCommand.cpp \
+	CRunStateCommand.h CRunStateCommand.cpp
 
 
 libSBSProductionReadout_la_CPPFLAGS=$(COMPILATION_FLAGS)
@@ -93,7 +96,7 @@ EXTRA_DIST	=	options.ggo Skeleton.cpp UserMakefile.in SBSRdoMakeIncludes.in SBSR
 			$(TCLPACKAGES)
 
 
-noinst_PROGRAMS	= Readout tests
+noinst_PROGRAMS	= Readout
 
 Readout_SOURCES = Skeleton.cpp
 
@@ -135,51 +138,3 @@ options.h:	options.ggo
 clean-local:
 	-rm -f options.c options.h
 
-tests_SOURCES=TestRunner.cpp experimentTests.cpp \
-		compositeTests.cpp scalerbankTests.cpp	\
-		compoundevsegTest.cpp			\
-		triggerresponseTests.cpp 	\
-		timedtriggerTest.cpp		\
-		testRunStatePkg.cpp		\
-		packettests.cpp			\
-		eventpackettests.cpp		\
-		varlisttest.cpp docvartests.cpp	\
-		testVariableBuffers.cpp	
-
-tests_DEPENDENCIES=libSBSProductionReadout.la
-
-tests_CPPFLAGS=$(COMPILATION_FLAGS)
-
-tests_LDADD = 	libSBSProductionReadout_la-CExperiment.lo	\
-		libSBSProductionReadout_la-CComposite.lo	\
-		libSBSProductionReadout_la-CScaler.lo libSBSProductionReadout_la-CScalerBank.lo	\
-		libSBSProductionReadout_la-CEventSegment.lo libSBSProductionReadout_la-CCompoundEventSegment.lo \
-		libSBSProductionReadout_la-RunState.lo	\
-		libSBSProductionReadout_la-CEventTrigger.lo libSBSProductionReadout_la-CTimedTrigger.lo	\
-		libSBSProductionReadout_la-CNullTrigger.lo	libSBSProductionReadout_la-CRunControlPackage.lo		\
-		libSBSProductionReadout_la-CBeginCommand.lo				\
-		libSBSProductionReadout_la-CPauseCommand.lo				\
-		libSBSProductionReadout_la-CResumeCommand.lo				\
-		libSBSProductionReadout_la-CEndCommand.lo					\
-		libSBSProductionReadout_la-CInitCommand.lo					\
-		libSBSProductionReadout_la-CTriggerLoop.lo					\
-		libSBSProductionReadout_la-CDocumentedPacket.lo libSBSProductionReadout_la-CDocumentedPacketManager.lo \
-		libSBSProductionReadout_la-CReadoutException.lo libSBSProductionReadout_la-CInvalidPacketStateException.lo \
-		libSBSProductionReadout_la-CEventPacket.lo					\
-		libSBSProductionReadout_la-CDocumentedVars.lo				\
-		libSBSProductionReadout_la-CVarList.lo					\
-		libSBSProductionReadout_la-CVariableBuffers.lo				\
-		@top_builddir@/daq/format/libdataformat.la	\
-		@top_builddir@/base/dataflow/libDataFlow.la	\
-		@top_builddir@/sbs/nsclapi/libSBSVmeAPI.la	\
-		@top_builddir@/base/thread/libdaqthreads.la	\
-		@top_builddir@/base/os/libdaqshm.la		\
-		$(TCL_LDFLAGS) 					\
-		$(CPPUNIT_LDFLAGS)  $(THREADLD_FLAGS)
-
-tests_LDFLAGS= @LIBTCLPLUS_LDFLAGS@ -Wl,"-rpath-link=$(libdir)"
-
-
-
-
-# TESTS=./tests

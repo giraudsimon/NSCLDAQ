@@ -23,28 +23,17 @@ is an overload for the Read member function that
 allows the module to read into a buffer that is
 pointed to by a long*
 */
-#ifndef __CSCALERMODULE_H  //Required for current class
-#define __CSCALERMODULE_H
+#ifndef CSCALERMODULE_H  //Required for current class
+#define CSCALERMODULE_H
 
 //
 // Include files:
 //
 
-#ifndef __DAQTYPES_H
-#include <daqdatatypes.h>
-#endif
 
-                               //Required for base classes
-#ifndef __CDIGITIZERMODULE_H   // CReadableObject
+#include <libtclplusdatatypes.h>
 #include "CReadableObject.h"
-#endif
- 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class definitions:
 
@@ -77,7 +66,7 @@ public:
 
 public:
 
-  virtual   ULong_t* Read (ULong_t* pBuffer)   = 0 ; // 
+  virtual   TCLPLUS::ULong_t* Read (TCLPLUS::ULong_t* pBuffer)   = 0 ; // 
 
 };
 

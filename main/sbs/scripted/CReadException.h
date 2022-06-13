@@ -43,8 +43,8 @@ is then thrown if any exceptions occured.
 //
 // Copyright 
 
-#ifndef __CREADEXCEPTION_H  //Required for current class
-#define __CREADEXCEPTION_H
+#ifndef CREADEXCEPTION_H  //Required for current class
+#define CREADEXCEPTION_H
 
 //
 // Include files:

@@ -28,9 +28,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
+#include <fstream>
 
 // Register offset definitions not in CAENDigitizerType.h:
-
 #define CFD_SETTINGS                 0x103c            // Per channel
 #define DPP_ALGORITHM_CONTROL        0x1080            // Per channel
 #define DPP_LOCAL_TRIGGER_MANAGEMENT 0x1084            // per channel
@@ -62,18 +62,20 @@
  */
 CDPpPsdEventSegment::CDPpPsdEventSegment(
     PSDBoardParameters::LinkType linkType, int linkNum, int nodeNum,
-    int base, int sourceid, const char* configFile
+    int base, int sourceid, const char* configFile,  const char* pCheatFile
 ) :
     m_configFilename(configFile), m_pCurrentConfiguration(nullptr),
     m_linkType(linkType), m_linkNum(linkNum), m_nodeNumber(nodeNum),
     m_base(base), m_handle(-1), m_moduleName(""), m_serialNumber(-1),
-    m_nSourceId(sourceid), m_rawBuffer(nullptr), m_pWaveforms(nullptr)
+    m_nSourceId(sourceid), m_rawBuffer(nullptr), m_pWaveforms(nullptr), m_pCheatFile(pCheatFile)
 {
     for(int i =0; i < CAEN_DGTZ_MAX_CHANNEL; i++) {
         m_dppBuffer[i] = nullptr;
         m_nHits[i]     = 0;
         m_nChannelIndices[i]= 0;
     }
+
+
 }
 /**
  * destructor
@@ -103,7 +105,6 @@ CDPpPsdEventSegment::initialize()
 {
     openModule();
     getModuleInformation();
-    
     PSDParameters systemConfig;
     systemConfig.parseConfigurationFile(m_configFilename.c_str());
     m_pCurrentConfiguration = matchConfig(systemConfig);
@@ -122,13 +123,27 @@ CDPpPsdEventSegment::initialize()
     
     setupBoard();
     
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()
+			).count();
+
+
+    for (int i=0; i<16; i++)
+    {
+	  m_triggerCount[i]=0;
+          m_missedTriggers[i]=0;
+          t[i] = now;
+          tmiss[i] = now;
+    }
+
+
     // 32 -64 bit timestamp adjustments:
     
     memset(m_timestampAdjust, 0, CAEN_DGTZ_MAX_CHANNEL*sizeof(uint64_t));
     memset(m_lastTimestamps, 0, CAEN_DGTZ_MAX_CHANNEL*sizeof(uint32_t));
     
     // Let the external world do this in case we're compound.
-    
+
 }
 /**
  * read
@@ -166,12 +181,21 @@ bool
 CDPpPsdEventSegment::checkTrigger()
 {
     if (!needBufferFill()) return true;
-    uint32_t statusRegister;
+   /* uint32_t statusRegister;
     throwIfBadStatus(
         CAEN_DGTZ_ReadRegister(m_handle,CAEN_DGTZ_ACQ_STATUS_ADD , &statusRegister) ,
         "Unable to read status register to see if there are events"
     );
-    return ((statusRegister & 8) != 0);
+
+    return ((statusRegister & 8) != 0);*/
+
+  fillBuffer();                    // In anticipation of read.
+  if (needBufferFill()) {
+    return false;
+  } else {
+    return true;
+  }
+
 }
 /**
  * disable
@@ -274,10 +298,31 @@ CDPpPsdEventSegment::getModuleInformation()
     CAEN_DGTZ_BoardInfo_t info;
     CAEN_DGTZ_ErrorCode stat = CAEN_DGTZ_GetInfo(m_handle, &info);
     throwIfBadStatus(stat, "Unable to get board information");
+/*
+    int lsb, msb, SN;
+    lsb = -1; msb = -1; SN = -1; 
+    uint32_t temp;
+    
+    throwIfBadStatus(
+            CAEN_DGTZ_ReadRegister(m_handle, 0xF084, &temp),
+            "Reading a channel algorithm control register (LSB S/N)"
+        );
+
+    lsb = (0xFF & temp);
+
+    throwIfBadStatus(
+            CAEN_DGTZ_ReadRegister(m_handle, 0xF080, &temp),
+            "Reading a channel algorithm control register (MSB S/N)"
+        );
+    msb = (0xFF & temp)<<8;
+
+    SN = lsb + msb;
+*/
 
     m_moduleName   = info.ModelName;
     m_serialNumber = info.SerialNumber;
     m_nChans       = info.Channels;            // We'll only set up the channels board has.
+
 
     // Figure out the timestamp calibration (stamp -> ns).
 
@@ -359,10 +404,25 @@ CDPpPsdEventSegment::setupBoard()
             } else {
                 algoControl |= negativeBit;                      // set the negative bit.
             }
-        throwIfBadStatus(
+
+//	algoControl |= (1<<6); //Set bit 6 to high because compass is doing so too.
+	throwIfBadStatus(
             CAEN_DGTZ_WriteRegister(m_handle, DPP_ALGORITHM_CONTROL | chSelect, algoControl),
-            "Writing a channel algorithm control register (setting polarity)."
+            "Writing a channel algorithm control register."
         );
+	
+	 // Dynamic range selection only 0.5 and 2VPP are supported by the board.
+        uint32_t ppRangeValue =
+            (m_pCurrentConfiguration->s_channelConfig[i].s_dynamicRange == PSDChannelParameters::vpp2V) ?
+                0 : 1;
+
+        throwIfBadStatus(
+            CAEN_DGTZ_WriteRegister(m_handle, DPP_DYNRANGE | chSelect,ppRangeValue),
+            "Setting a channel dynamic range"
+        );
+
+
+
         // Set the CFD delay.
         
         uint32_t cfdSettings;
@@ -385,30 +445,7 @@ CDPpPsdEventSegment::setupBoard()
         
         if(m_pCurrentConfiguration->s_channelConfig[i].s_enabled) enabledChannels |= (1 << i);
         
-        // CFD Smoothing. Note that we'll always enable it but let the smoothing value actually
-        // set whether or not it's smoothed.
-        
-        uint32_t localTriggerManagement;
-        throwIfBadStatus(
-            CAEN_DGTZ_ReadRegister(m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT | chSelect, &localTriggerManagement),
-            "Reading local trigger management register (CFD Smoothing)"
-        );
-        localTriggerManagement &= ~cfdSmoothMask;
-        throwIfBadStatus(
-            CAEN_DGTZ_WriteRegister(
-                m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT| chSelect, localTriggerManagement | cfdSmooth(i)
-            ),
-            "Setting CFD SMoothing in local trigger management register."
-        );
-        // Dynamic range selection only 0.5 and 2VPP are supported by the board.
-        
-        uint32_t ppRangeValue =
-            m_pCurrentConfiguration->s_channelConfig[i].s_dynamicRange == PSDChannelParameters::vpp2V ?
-                0 : 1;
-        throwIfBadStatus(
-            CAEN_DGTZ_WriteRegister(m_handle, DPP_DYNRANGE | chSelect, ppRangeValue),
-            "Setting a channel dynamic range"
-        );
+
         // Short gate 
         dppParameters.sgate[i] =
             nsToSamples(m_pCurrentConfiguration->s_channelConfig[i].s_shortGate);
@@ -428,34 +465,6 @@ CDPpPsdEventSegment::setupBoard()
                 m_handle, CFD_SETTINGS | chSelect, cfdSettings
             ), "Writing CFD Fraction value"
         );
-        // Discriminator mode:
-        
-        throwIfBadStatus(
-            CAEN_DGTZ_ReadRegister(
-                m_handle, DPP_ALGORITHM_CONTROL | chSelect, &algoControl
-            ), "Reading DPP Algorithm control (set Discriminator mode)"
-        );
-        if (m_pCurrentConfiguration->s_channelConfig[i].s_discriminatorType ==
-            PSDChannelParameters::led) {
-            algoControl &= ~cfdMode;
-        } else {
-            algoControl |= cfdMode;
-        };
-        throwIfBadStatus(
-            CAEN_DGTZ_WriteRegister(
-                m_handle, DPP_ALGORITHM_CONTROL | chSelect, algoControl
-            ), "Writing DPP Algorithm control (set Discriminator mode)"
-        );
-        // Hard to tell but I _think_ the fixed baseline value is in register units.
-        // (LSBs).
-        
-        uint32_t fixedBaselineValue =
-            m_pCurrentConfiguration->s_channelConfig[i].s_fixedBline;
-        throwIfBadStatus(
-            CAEN_DGTZ_WriteRegister(
-                m_handle, DPP_FIXED_BASELINE | chSelect, fixedBaselineValue
-            ), "Writing channel fixed baseline register value"
-        );
         
         dppParameters.trgho = nsToSamples(          // Trigger hold off -- not actually per ch?
             m_pCurrentConfiguration->s_channelConfig[i].s_triggerHoldoff
@@ -464,9 +473,14 @@ CDPpPsdEventSegment::setupBoard()
             m_pCurrentConfiguration->s_channelConfig[i].s_gateLen
         );
 	// This value seems to be the percentage of 0xffff *sigh*
-	
+
+        if (m_pCurrentConfiguration->s_channelConfig[i].s_polarity == PSDChannelParameters::positive) {
+		m_pCurrentConfiguration->s_channelConfig[i].s_dcOffset = 100.0 - m_pCurrentConfiguration->s_channelConfig[i].s_dcOffset;
+	}
+
 	uint32_t dcOffsetValue = 
             m_pCurrentConfiguration->s_channelConfig[i].s_dcOffset*65535.0/100.0;
+
         throwIfBadStatus(
             CAEN_DGTZ_SetChannelDCOffset(m_handle, i, dcOffsetValue),
             "Setting channel DC Offset"
@@ -499,6 +513,71 @@ CDPpPsdEventSegment::setupBoard()
 
     for (int i =0; i < m_nChans; i++) {
         uint32_t chSelect = i << 8;
+
+	
+	
+        // Discriminator mode: Moved here from the loop before SetDPPParameters(), by B.Sudarsan.
+        uint32_t algoControl;
+        throwIfBadStatus(
+            CAEN_DGTZ_ReadRegister(
+                m_handle, DPP_ALGORITHM_CONTROL | chSelect, &algoControl
+            ), "Reading DPP Algorithm control (set Discriminator mode)"
+        );
+        if (m_pCurrentConfiguration->s_channelConfig[i].s_discriminatorType ==
+            PSDChannelParameters::led) {
+            algoControl &= ~cfdMode;
+        } else {
+            algoControl |= cfdMode;
+        };
+
+
+       if(m_pCurrentConfiguration->s_coincidenceMode == PSDBoardParameters::ExtTrgGate)
+		algoControl |= ((0x01<<18));
+       else if(m_pCurrentConfiguration->s_coincidenceMode == PSDBoardParameters::ExtTrgVeto)
+		algoControl |= ((0x3<<18));
+
+
+	algoControl &= ~(1<<17);
+	//std::cout << std::hex<< algoControl << '\n'<< std::dec;
+
+        throwIfBadStatus(
+            CAEN_DGTZ_WriteRegister(
+                m_handle, DPP_ALGORITHM_CONTROL | chSelect, algoControl
+            ), "Writing DPP Algorithm control (set Discriminator mode)"
+        );
+
+        // CFD Smoothing. Note that we'll always enable it but let the smoothing value actually
+        // set whether or not it's smoothed.
+        
+        uint32_t localTriggerManagement;
+        throwIfBadStatus(
+            CAEN_DGTZ_ReadRegister(m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT | chSelect, &localTriggerManagement),
+            "Reading local trigger management register (CFD Smoothing)"
+        );
+        
+        localTriggerManagement &= ~0x07;
+	localTriggerManagement &= ~cfdSmoothMask;
+
+        throwIfBadStatus(
+            CAEN_DGTZ_WriteRegister(
+                m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT| chSelect, localTriggerManagement | cfdSmooth(i) | (1<<9)
+            ),
+            "Setting CFD SMoothing in local trigger management register."
+        ); // (1<<9) sets timestamp mode to 010 which gives extended timestamp, flags and finetimestamp
+       
+
+        // Hard to tell but I _think_ the fixed baseline value is in register units.
+        // (LSBs).
+        
+        uint32_t fixedBaselineValue =
+            m_pCurrentConfiguration->s_channelConfig[i].s_fixedBline;
+        throwIfBadStatus(
+            CAEN_DGTZ_WriteRegister(
+                m_handle, DPP_FIXED_BASELINE | chSelect, fixedBaselineValue
+            ), "Writing channel fixed baseline register value"
+        );
+
+
 
 	// Pileup rejection gap:
         // Compass claims that this value is in LSB units in the parameter descriptor.. be prepared,
@@ -561,10 +640,20 @@ CDPpPsdEventSegment::setupBoard()
 	// this might mean it's only supposed to be 6 for 725's (I'm
 	// developing with a 730)... if we don't see this it
 	// should be part of a cheat file addtion.
+	// ^ This hunch turned out to be true, which leads to the following conditional assignment
+
+	if(m_nsPerTick==2)
 	throwIfBadStatus(
 	   CAEN_DGTZ_WriteRegister(m_handle, 0x1070 | chSelect, 0xc),
 	   "Unable to set per channel shaped trigger width"
 	);
+
+	if(m_nsPerTick==4)
+	throwIfBadStatus(
+	   CAEN_DGTZ_WriteRegister(m_handle, 0x1070 | chSelect, 0x6),
+	   "Unable to set per channel shaped trigger width"
+	);
+	
 	// It seems that the dpp settings function gets the trigger holdoff width
 	// register value wrong -- at least for the 730..so I'm going to  
 	// compute the correct value here and override:  XML has ns.  The
@@ -583,6 +672,24 @@ CDPpPsdEventSegment::setupBoard()
 "Unable to set the trigger hold off register value"
 	);
 
+/*	throwIfBadStatus(
+	    CAEN_DGTZ_WriteRegister(m_handle, DPP_ALGORITHM_CONTROL | chSelect, 0x330042),
+	    "Writing a channel algorithm control register."
+	);
+*/
+
+	uint32_t temp;
+        throwIfBadStatus(CAEN_DGTZ_ReadRegister(m_handle, DPP_LOCAL_TRIGGER_MANAGEMENT | chSelect, &temp),"Reading local trigger management register");
+      	temp |= 0x10200;
+	if(m_pCurrentConfiguration->s_coincidenceMode == PSDBoardParameters::ExtTrgGate)
+		temp |= 0x50;
+	else if(m_pCurrentConfiguration->s_coincidenceMode == PSDBoardParameters::ExtTrgVeto)
+		temp |= 0x40050;
+
+	throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x1084 | chSelect, temp),"Writing a channel algorithm control 2 register.");
+	temp = 0;
+	temp = m_pCurrentConfiguration->s_coincidenceTriggerOut/(m_nsPerTick*4);
+	throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x1070 | chSelect, temp), "Writing shaped trigger width");
 
 	// End per channel settings.
     }
@@ -603,6 +710,7 @@ CDPpPsdEventSegment::setupBoard()
     } else {
         lvl = CAEN_DGTZ_IOLevel_TTL;
     }
+
     throwIfBadStatus(
         CAEN_DGTZ_SetIOLevel(m_handle, lvl),
         "Setting front panel I/O levels"
@@ -628,6 +736,23 @@ CDPpPsdEventSegment::setupBoard()
        "Unable to set buffer organization"
     );
     
+
+    /*Setup Onboard Coincidences*/
+    //std::cout << "\nCoinc mode " << m_pCurrentConfiguration->s_coincidenceMode << " " << PSDBoardParameters::ExtTrgGate;
+    switch(m_pCurrentConfiguration->s_coincidenceMode)
+	{
+		case PSDBoardParameters::ExtTrgGate: 
+		case PSDBoardParameters::ExtTrgVeto: uint32_t temp;
+						     throwIfBadStatus(CAEN_DGTZ_ReadRegister(m_handle, 0x811c, &temp), "Reading 0x811c");
+	  				     	     temp |= ((3<<10)); 
+						     throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x811c, temp),  "Unable to set 0x811c");
+						     break;
+		//case PSDBoardParameters::disabled: 
+		default:;
+	}
+
+   processCheatFile();
+
 }
 /**
  *  startAcquisition
@@ -644,13 +769,72 @@ CDPpPsdEventSegment::startAcquisition()
     // be converted into delay ticks:
     
     int delayValue = nsToDelay(m_pCurrentConfiguration->s_startDelay);
+    //std::cout << "\n Start Delay:" << delayValue;
+
     throwIfBadStatus(
         CAEN_DGTZ_WriteRegister(m_handle, DPP_START_DELAY, delayValue),
         "Setting the start delay"
     );
 
-    throwIfBadStatus(CAEN_DGTZ_SWStartAcquisition(m_handle), "Unable to start acquisition");
-    
+
+        if(m_pCurrentConfiguration->s_startMode == PSDBoardParameters::software)    
+	{
+	  uint32_t AcqControl;
+	     throwIfBadStatus(
+		    CAEN_DGTZ_ReadRegister(
+		        m_handle, 0x8100, &AcqControl
+		    ), "Reading Acq control (startmode)"
+		);
+     	  AcqControl &= ~0x3; //Unset bits 0,1
+     	  AcqControl |= 0x00; //Write them back in as 0b01
+
+	  throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x8100, AcqControl),  "Unable to start acquisition(SW)"); //Arm acquisition
+
+	}
+
+	if(m_pCurrentConfiguration->s_startMode == PSDBoardParameters::sIn)
+	{
+	  uint32_t AcqControl;
+	     throwIfBadStatus(
+		    CAEN_DGTZ_ReadRegister(
+		        m_handle, 0x8100, &AcqControl
+		    ), "Reading Acq control (startmode)"
+		);
+     	  AcqControl &= ~0x3; //Unset bits 0,1
+     	  AcqControl |= 0x1; //Write them back in as 0b01
+
+	  throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x8100, AcqControl),  "Unable to start acquisition(S-IN)");
+	}
+
+	if(m_pCurrentConfiguration->s_startMode == PSDBoardParameters::firstTrigger)
+	{
+	  uint32_t AcqControl;
+	     throwIfBadStatus(
+		    CAEN_DGTZ_ReadRegister(
+		        m_handle, 0x8100, &AcqControl
+		    ), "Reading Acq control (startmode)"
+		);
+     	  AcqControl &= ~0x3; //Unset bits 0,1
+     	  AcqControl |= 0x2; //Write them back in as 0b10
+
+	  throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x8100, AcqControl),  "Unable to start acquisition(FirstTrg)");
+
+	  throwIfBadStatus( CAEN_DGTZ_SetRunSynchronizationMode(m_handle, CAEN_DGTZ_RUN_SYNC_TrgOutTrgInDaisyChain), "Unable to start acquisition(FirstTrg)");
+	  //throwIfBadStatus( CAEN_DGTZ_SetRunSynchronizationMode(m_handle, CAEN_DGTZ_RUN_SYNC_Disabled), "Unable to start acquisition(FirstTrg)");
+	  throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x8108, 1),  "Unable to start acquisition(SW)");
+	}
+
+    throwIfBadStatus(CAEN_DGTZ_SWStartAcquisition(m_handle), "Unable to start acquisition");    
+
+/* throwIfBadStatus(
+       CAEN_DGTZ_WriteRegister(m_handle, 0x8100, 6), 
+       "Unable to arm acquisition"
+    );*/
+  
+  /*Needs an additional software trigger if we have the first board with 'trgout-trgin-auto'*/
+  if(m_pCurrentConfiguration->s_startMode == PSDBoardParameters::firstTrigger && m_pCurrentConfiguration->s_triggerOutputMode==PSDBoardParameters::softwareTrigger)
+          throwIfBadStatus( CAEN_DGTZ_WriteRegister(m_handle, 0x8108, 1),  "Unable to start acquisition(SW)"); //Start acquisition
+
 }
 
 /**
@@ -772,9 +956,9 @@ CDPpPsdEventSegment::nsToDelay(double ns)
     
     double psPerSample = m_pCurrentConfiguration->s_psPerSample;
     if (psPerSample == 2000) {             // 2ns/sample == 730 (500MHz).
-        return ns/8;                       // 730 has 8ns trigger clock (according to registers docs)
+        return ns/16;                       // 730 has 8ns trigger clock (according to registers docs), 16ns division for trigger.
     } else if (psPerSample == 4000) {     // 4ns/sample == 725 (250MHz)
-        return ns/16;                     // 725 has a 16s trigger clock. (according to web techspecs).
+        return ns/32;                     // 725 has a 16s trigger clock. (according to web techspecs), 32ns division for trigger.
     } else {                              // unsupported module.
         
         throw std::invalid_argument("(nsToDelay): This module type is not supported!!");
@@ -851,9 +1035,11 @@ CDPpPsdEventSegment::setOutputMode()
     switch (m_pCurrentConfiguration->s_triggerOutputMode)
     {
     case PSDBoardParameters::externalTrigger:
+      std::cout << "\nPSD: TrgOutMode set to External";
       setLVDSExternalTrigger();
       break;
     case PSDBoardParameters::globalOrTrigger:
+      std::cout << "\nPSD: TrgOutMode set to Global OR";
       setLVDSGlobalOrTrigger();
       break;
     case PSDBoardParameters::running:
@@ -878,9 +1064,11 @@ CDPpPsdEventSegment::setOutputMode()
       setLVDSVirtualProbe();
       break;
     case PSDBoardParameters::syncIn:
+      std::cout << "\nPSD: TrgOutMode set to S_IN";
       setLVDSSIN();
       break;
     case PSDBoardParameters::softwareTrigger:
+      std::cout << "\nPSD: TrgOutMode set to SW";
       setLVDSSwTrigger();
       break;
     case PSDBoardParameters::level1:
@@ -939,6 +1127,9 @@ CDPpPsdEventSegment::fillBuffer()
         ),
         "Unable to read raw data from the digitizer"
     );
+//  if (status != CAEN_DGTZ_Success) return;   // Unable to buffer for some reason.
+  if (readSize == 0) return;                    // Nothing to read.
+
     throwIfBadStatus(
         CAEN_DGTZ_GetDPPEvents(
             m_handle, m_rawBuffer, readSize,
@@ -977,8 +1168,7 @@ CDPpPsdEventSegment::allocateBuffers()
             m_handle, reinterpret_cast<void**>(&m_pWaveforms), &m_wfBufferSize
         ), "Failed to allocate decoded waveform buffers."
     );
-    
-    
+   
 }
 /**
  * oldestChannel
@@ -998,7 +1188,7 @@ CDPpPsdEventSegment::oldestChannel()
 {
     uint32_t result = 0xffffffff;           // Illegal channel.
     uint64_t smallest = 0xffffffffffffffff; // ALl timestamps will be smaller than this.
-    
+    uint64_t adjustout = 0x0;
     for (int i =0; i < CAEN_DGTZ_MAX_CHANNEL; i++) {
         // Only look at channels with data left buffered:
         
@@ -1009,8 +1199,9 @@ CDPpPsdEventSegment::oldestChannel()
             uint64_t adjust = m_timestampAdjust[i];
             
             // Is there one more adjust:
-            
-            if (rawTimestamp <= m_lastTimestamps[i]) adjust += UINT64_C(0x100000000);
+	    //std::cout << "\n--->" << std::hex<<     rawTimestamp  << "\t" <<  m_lastTimestamps[i] << std::dec << "\n";            
+//            if (rawTimestamp <= m_lastTimestamps[i]) adjust += UINT64_C(0x100000000);
+            if (rawTimestamp <= m_lastTimestamps[i]) adjust += UINT64_C(0x80000000); //why does this work? :(
             
             // Figure out the 64 bit timestamp:
             
@@ -1028,8 +1219,10 @@ CDPpPsdEventSegment::oldestChannel()
     // We need to commit the last timestamp and timestamp adjust for the  channel.
     // We can retrieve this from the smallest timestamp:
     
-    m_timestampAdjust[result] = smallest & 0xffffffff00000000;   // Top 32 bits.
-    m_lastTimestamps[result]  = smallest & 0xffffffff;           // Bottom 32 bits.
+    m_timestampAdjust[result] = smallest & 0xffffffff80000000;   // Top 32 bits. (33?)
+    m_lastTimestamps[result]  = smallest & 0x7fffffff;           // Bottom 32 bits. (31?)
+
+    //std::cout << "\n" << std::hex<<     m_timestampAdjust[result]  << "\t" <<  m_lastTimestamps[result] << std::dec << "\n";
     
     return result;
 }
@@ -1068,8 +1261,8 @@ CDPpPsdEventSegment::formatEvent(void* pBuffer, int chan)
     m_nChannelIndices[chan]++;
     uint64_t adjustedStamp = pHit->TimeTag;
     adjustedStamp         += m_timestampAdjust[chan];
-    *pStamp++ = adjustedStamp;
-
+    *pStamp++ = adjustedStamp*m_nsPerTick;
+    //std::cout << "\nTs:" << adjustedStamp*m_nsPerTick;
     
     // Set the timestamp and the source id.
     
@@ -1080,21 +1273,45 @@ CDPpPsdEventSegment::formatEvent(void* pBuffer, int chan)
 
     uint16_t* p16 = reinterpret_cast<uint16_t*>(pStamp);
     *p16++ = chan;
-
+    //std::cout << " ch:" << chan;
     
     // now the charges:
     
     uint32_t* p32 = reinterpret_cast<uint32_t*>(p16);
     *p32++  = pHit->ChargeShort;
     *p32++  = pHit->ChargeLong;
-    
+    //std::cout << " Elong:" << pHit->ChargeShort;
+//    std::cout << " Extras:" << pHit->Extras;
+     uint32_t temp = (pHit->Extras&0xf000)>>12;
+//     if(temp)
+	
+     /*temp has the structure: 0b(ABCD) with bit A = trigger lost, B=over range (set when a trigger is lost or over range in a single event)*/
+     /* C = set each time 128 triggers are counted, D is set each time 128 triggers are lost */
+     if(temp&2)//
+     {
+//	m_triggerCount[chan] += 128.;//./(double(clock() - t[chan]));
+//	t[chan] = clock();
+	auto now =    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	m_triggerCount[chan] = static_cast<uint32_t>(128./((now-t[chan])*1.e-3));
+	t[chan] = now;
+        //std::cout << "\n Extras:" << pHit->Extras << " 1024s:" << temp << " ft:" << (pHit->Extras&0x1ff) << " xt:" << ((pHit->Extras&0xffff0000) >>16);
+     }
+     if(temp&1)//
+     {
+	auto now =    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	m_missedTriggers[chan] = static_cast<uint32_t>(128./((now-tmiss[chan])*1.e-3));
+	tmiss[chan] = now;
+     }
+
     // Now the baselines and the Pileup rejection flag:
+    *p32++ = pHit->Extras;
+    //std::cout << std::hex<< "\n Extras: 0x" << pHit->Extras << std::dec << " 1024s:" << temp << " ft:" << (pHit->Extras&0x1ff) << " xt:" << ((pHit->Extras&0xffff0000) >>16);
+    /* Old form here */
+    //p16 = reinterpret_cast<uint16_t*>(p32);
+    //*p16++ = pHit->Baseline;
+    //*p16++ = pHit->Pur;
     
-    p16 = reinterpret_cast<uint16_t*>(p32);
-    *p16++ = pHit->Baseline;
-    *p16++ = pHit->Pur;
-    
-    p32    = reinterpret_cast<uint32_t*>(p16);
+    //p32    = reinterpret_cast<uint32_t*>(p16);
     
     /* Now the waveforms:
        While the XML does not yet support dual traces,
@@ -1264,11 +1481,16 @@ CDPpPsdEventSegment::setLVDSSwTrigger()
 {
   // Enable software trigger:
 
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x80000000),
+  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0x8000ffff),
 		   "Unable to enable sw trigger in mask register");
-  // Enable new LVDS Features:
 
-  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x100),
+  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x810c, 0x8000ffff),
+		   "Unable to enable sw trigger in mask register");
+
+  // Enable new LVDS Features:
+  int temp = (m_pCurrentConfiguration->s_ioLevel==PSDBoardParameters::nim)? 0 : 1 ;
+
+  throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x811c, 0x0100+temp),
 		   "Unable to enable new lvds featurs in FP IO control register"
 		   );
   // Set the lVDS to reflect triggers:
@@ -1304,12 +1526,20 @@ CDPpPsdEventSegment::setLVDSExternalTrigger()
 void
 CDPpPsdEventSegment::setLVDSGlobalOrTrigger()
 {
+
   // Set the channel couples to or mode:
 
   for (int i = 0; i < m_nChans; i++) {
-    throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x1084 | (i << 8), 0x207),
+    throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x1084 | (i << 8), 0x10207),
 		     "Could not set the per channel DPPAlgorithm control 2 register");
   }
+
+  //Disable local shaped trigger
+//  for (int i = 0; i < m_nChans; i++) {
+//    throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x1084 | (i << 8), 0x200),
+//		     "Could not set the per channel DPPAlgorithm control 2 register");
+//  }
+
   //  Enable the couples to participate
 
   throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x8110, 0xff),
@@ -1512,4 +1742,107 @@ CDPpPsdEventSegment::setLVDSSIN()
   throwIfBadStatus(CAEN_DGTZ_WriteRegister(m_handle, 0x81a0, 0x1111), 
 		   "Unable to set LVDS output");
 
+}
+
+
+static std::string trim( std::string str )
+{
+    // remove trailing white space
+    while( !str.empty() && std::isspace( str.back() ) ) str.pop_back() ;
+
+    // return residue after leading white space
+    std::size_t pos = 0 ;
+    while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
+    return str.substr(pos) ;
+}
+
+
+/**
+ * processCheatFile
+ *    Process the register cheat file.
+ *    If m_pCheatFile is nullptr, nothing is done.
+ *    Otherwise, the cheat file is opened and processed line by line.
+ *    The cheat file has the following format:
+ *    operation address value
+ *    Operation is one of
+ *       - . - set the value,
+ *       - # ignore the line (comment)
+ *       - | or the value into the register.
+ *       - * And the value into the registger
+ *       
+ *    address - is the address of the register to be modified.
+ *    value   - is the value that's either set or ored into the
+ *    register depending on the operation.
+ *    operation, addresss and value must  be separated by whitespace.
+ *    Lines with errors result in warnings but are ignored.
+ *    Borrowed from CAENPha.h implementation in DPP-PHA library
+ */
+void CDPpPsdEventSegment::processCheatFile()
+{
+  if (!m_pCheatFile) return;
+  std::ifstream infile(m_pCheatFile);
+  if (!infile) {
+    std::cerr << "Cheat file: " << m_pCheatFile << "could not be opened\n";
+    return;
+  }
+  while (!infile.eof()) {
+    std::string line;
+    std::getline(infile, line);
+    line = trim(line);              // Lose leading and trailing whitespace.
+    if (!line.empty()) {            // Ignore blank lines which are empty after trimming.
+      std::stringstream s(line);
+      char op;
+      std::string sAddr;
+      std::string sValue;
+      uint32_t  addr;
+      uint32_t  value;
+      op = '\0';
+      s >> op >> sAddr >> sValue;
+      
+      
+      if (s.fail())  {  // Note that I don't think the decode can fail going into strings...
+        std::cerr << "Warning: '" << line << "' was in error\n";
+        s.clear(std::ios_base::failbit);
+      } else {
+        
+        // What we do depends on the operation:
+        
+        // If the operation is not a comment, we can decode the address and
+        // value:
+        
+        if (op != '#')   {
+          addr  = strtoul(sAddr.c_str(), nullptr, 0);
+          value = strtoul(sValue.c_str(), nullptr, 0);
+        }
+        switch (op) {
+          case '#':                                    // comment.
+            break;
+          case '.':                                   // set:
+            {
+              CAEN_DGTZ_WriteRegister(m_handle, addr, value);
+            }
+            break;
+          case '|':                                 // bitwise or.
+            {
+              uint32_t currentValue;
+              CAEN_DGTZ_ReadRegister(m_handle, addr, &currentValue);
+              value |= currentValue;
+              CAEN_DGTZ_WriteRegister(m_handle, addr, value);
+            }
+            break;
+          case '*':                               // bitwise and.
+            {
+              uint32_t currentValue;
+              CAEN_DGTZ_ReadRegister(m_handle, addr, &currentValue);
+              value &= currentValue;
+              CAEN_DGTZ_WriteRegister(m_handle, addr, value);
+            }
+            break;
+          default:                               // unrecognized operation.
+            std::cerr << "Unrecognized operation in '" << line << "'\n";
+            break;
+        }
+      }
+    }
+  }
 }

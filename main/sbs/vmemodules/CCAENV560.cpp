@@ -30,8 +30,7 @@ using namespace std;
 // The 'macros' below are used to do structure like offsets
 // using the register structure through VmeModule:
 //
-#define SOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint16_t)))
-#define LOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint32_t)))
+
 #define GetShort(field) (m_pModule->peekw(SOffset(CAENV560Registers,field)))
 #define GetLong(field)  (m_pModule->peekl(LOffset(CAENV560Registers,field)))
 #define PutShort(field,value) (m_pModule->pokew((value),  \

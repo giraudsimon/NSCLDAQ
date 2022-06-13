@@ -15,34 +15,13 @@
 */
 
 
-#ifndef __CENUMPARAMETER_H
-#define __CENUMPARAMETER_H
+#ifndef CENUMPARAMETER_H
+#define CENUMPARAMETER_H
 
-#ifndef __CCONFIGURATIONPARAMETER_H
 #include <CConfigurationParameter.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-
-#ifndef STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 class CTCLInterpreter;
 class CTCLResult;

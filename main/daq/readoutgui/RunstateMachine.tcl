@@ -19,6 +19,7 @@
 
 package provide RunstateMachine 1.0
 package require snit
+package require Bundles
 
 ##
 # @class RunstateMachine
@@ -57,6 +58,10 @@ package require snit
 #   listTransitions
 #   getState
 #
+#  daqdev/NSCLDAQ#659 - We keep track of the successful bundle calls and, if one
+#                       fails we call the optional method failed in the successful
+#                       bundles.
+#
 #  Any methods that start with _ are considered private.  Note that
 #
 #   _setState  will be used by the tests to force the state machine to a
@@ -68,6 +73,11 @@ snit::type RunstateMachine {
     #--------------------------------------------------------------------------
     #  Class variables:
     
+    #
+    #   validTransitions defines the legal edges of the state machine.
+    #   this is an array indexed by state name with values a list of valid transitions.
+    #
+    
     typevariable validTransitions -array {
         NotReady {NotReady Starting}
         Starting {NotReady Halted}
@@ -76,24 +86,14 @@ snit::type RunstateMachine {
         Paused   {NotReady Halted Active}
     }
     
-    # Arra indexed by callback name contents are the number of parameters the
-    # callback must accept.
-    
-    typevariable requiredExports -array [list \
-        enter 2 leave 2 attach 1]
-    
     #---------------------------------------------------------------------------
     #  Instance variables
     
+    # Current state.
+    
     variable state NotReady
     
-    #
-    #   validTransitions defines the legal edges of the state machine.
-    #   this is an array indexed by state name with values a list of valid transitions.
-    #
     
-    
-    variable callouts [list]
     
     ##
     # constructor
@@ -143,10 +143,12 @@ snit::type RunstateMachine {
     #   This list defines what happens on state transitions...specifically,
     #   on leaving an old state and on entering a new state.
     #
+    #  daqdev/NSCLDAQ#711 -for compatibility with 11.x and before.
+    #
     method listCalloutBundles {} {
-        return $callouts
+        set manager [BundleManager getInstance]
+        return [$manager listCalloutBundles]
     }
-    
     ##
     # addCalloutBundle
     #
@@ -166,39 +168,12 @@ snit::type RunstateMachine {
     #   *  The bundle name is added to the callouts variable.
     #   *  A namespace ensemble is generated for that bundle.
     #
+    # daqdev/NSCLDAQ#711 - compatibility with v11 and before e.g.
+    #
     method addCalloutBundle {name {where ""}} {
-        if {![namespace exists ::$name]} {
-            error "No such bundle $name"
-        }
-        if {[lsearch -exact $callouts $name] != -1} {
-            error "$name is already registered as a callback bundle"
-        }
-        $self _checkRequiredExports $name
-        $self _checkRequiredParams $name
-        
-
-        #  Now we can make a namespace ensemble from the bundle and
-        #  add it to the callout list.
-        
-        namespace eval ::${name} {
-            namespace ensemble create
-        }
-        
-        if {$where eq "" } {
-            lappend callouts $name
-        } else {
-            set idx [lsearch -exact $callouts $where]
-            if {$idx == -1} {
-                error "Attempt to register callout bundle $name before $where which does not exist"
-            }
-            set callouts [linsert $callouts $idx $name]
-        }
-        
-        # Finally invoke the attach method:
-        
-        ::$name attach $state
+        set manager [BundleManager getInstance]
+        $manager addCalloutBundle $name $state $where
     }
-    
     ##
     # removeCalloutBundle
     #
@@ -209,13 +184,11 @@ snit::type RunstateMachine {
     #
     # @param name - Name of namespace that holds the bundle methods.
     #
+    #  daqdev/NSCLDAQ#711 - compatibility with v11 and before e.g
+    #
     method removeCalloutBundle name {
-        set index [lsearch -exact $callouts $name]
-        if {$index == -1} {
-            error "$name has not been registered"
-        }
-        set callouts [lreplace $callouts $index $index]
-        rename ::${name} {}
+        set manager [BundleManager getInstance]
+        $manager removeCalloutBundle $name
     }
     ##
     # transition
@@ -227,12 +200,13 @@ snit::type RunstateMachine {
     # @error the transition is to a prohibited state.
     #
     method transition to {
+        set manager [BundleManager getInstance]
         if {$to in $validTransitions($state)} {
-            
-            $self _callback leave $state $to
+            $manager invoke leave $state $to
+
             set from $state
             set state $to
-            $self _callback enter $from $to
+            $manager invoke enter $from $to
         
         } else {
             error "The transtion from $state to $to is not allowed"
@@ -265,19 +239,14 @@ snit::type RunstateMachine {
     # @param to   state to transition to
     # @returns list of detected problems.
     #
+    #  Reimplemented due to code organization in daqdev/NSCLDAQ#711
+    #  retains compatibility with nscldaq 11 etc.
+   
+    
     method precheckTransitionForErrors {to} {
-      set errors [list]
-      foreach cb $callouts {
-        # skip bundles that do not implement the precheckTransitionForErrors
-        if {[llength [info procs ::${cb}::precheckTransitionForErrors]] != 0} {
+        set manager [BundleManager getInstance]
+        return [$manager precheck $state $to]
 
-          set error [::${cb}::precheckTransitionForErrors $state $to]
-          if {$error ne {}} {
-            lappend errors [list $cb $error]
-          }
-        }
-      }
-      return $errors
     }
     
     #--------------------------------------------------------------------------
@@ -294,86 +263,6 @@ snit::type RunstateMachine {
     #
     method _setState newState {
         set state $newState
-    }
-    ##
-    #  _callback
-    #    Perform a callback in the list of callbacks.
-    #
-    # @param callback - Name of the namespace callback method (e.g. enter)
-    # @param args     - Arguments to hand to the callback method
-    #
-    method _callback {method args} {
-        foreach cb $callouts {
-            $cb $method {*}$args
-        }
-    }
-    
-    method _precheckTransitionForErrors {from to} {
-    }
-    ##
-    # _checkRequiredExports
-    #
-    #   Checks that a namespace has the required exports for a callback bundle.
-    #   Throws an error if not.
-    #
-    # @param name - Name of the namespace to check
-    # @throw If one or more exports is missing.
-    #
-    method _checkRequiredExports name {
-        
-        # Make a list of missing exported procs.  The only way to figure out which
-        # procs are exported from a namespace is to do a namespace export in the
-        # context of the namespace itself:
-        
-        set exports [namespace eval ::${name} { namespace export}]
-        set missingProcs [list]
-        
-        #
-        #  The sort below is done to make the output repeatable/predictble
-        #  and hence testable.
-        #
-        foreach proc [lsort -ascii -increasing [array names requiredExports]] {
-            if {[lsearch -exact $exports $proc] == -1} {
-                lappend missingProcs $proc
-            }
-        }
-        if {[llength $missingProcs] > 0} {
-            set missingList [join $missingProcs ", "]
-            error "$name is missing the following exported procs: $missingList"
-        }
-    }
-    ##
-    # _checkRequiredParams
-    #
-    #  Checks that a namespace that is being proposed as a callback bundle
-    #  has the right number of parameters for each of the required exported procs.
-    #
-    # @param name - Path to the namespace relative to ::
-    #
-    # @throw If one or more required exports has the wrong argument signature.
-    #
-    method _checkRequiredParams name {
-        
-        set badProcs [list]
-        set actualArgs [list]
-        set requiredArgs [list]
-        foreach proc [lsort -ascii -increasing [array names requiredExports]] {
-            set params [llength [info args ::${name}::${proc}]]
-            if {$params != $requiredExports($proc)} {
-                lappend badProcs     $proc
-                lappend actualArgs   $params
-                lappend requiredArgs $requiredExports($proc)
-            }
-        }
-        if {[llength $badProcs] > 0} {
-            foreach proc $badProcs required $requiredArgs actual $actualArgs {
-                lappend badList       ${proc}(${actual})
-                lappend requiredList  ${proc}(${required})
-            }
-            set badList [join $badList ", "]
-            set requiredList [join $requiredList ", "]
-            error "$name has interface procs with the wrong number of params: $badList should be: $requiredList"
-        }
     }
 }
 
@@ -460,6 +349,7 @@ snit::type ClientRunstateMachine {
 
     return $retval
   }
+  
 
 }; # end of ClientRunstateMachine snit::type
 
@@ -522,6 +412,7 @@ snit::type RemoteControllableRunstateMachine {
   method isSlave {} {
     return [expr {$currentStateMachine eq $clientStateMachine}]
   }
+  
 }
 
 ##
@@ -553,12 +444,27 @@ snit::type RunstateMachineSingleton {
         
     }
 }
+namespace eval RunStateMachineConvenience {
+    
+}
+##
+# RunStateMachineConvenience::removeBundle
+#   Convenience proc to remove a callout bundle from the state machine
+#  singleton
+#
+proc RunStateMachineConvenience::removeBundle {name} {
+    set sm [RunstateMachineSingleton %AUTO%]
+    $sm removeCalloutBundle $name
+    $sm destroy
+}
 
 
 ##------------------------------------------------------------
 # Convenience functions
 #
-
+namespace eval Pending {
+    variable pendingState None;    # During state transitions this will indicate the next state.
+}
 
 ##
 # Global start proc to transition from NotReady -> Starting -> Halted
@@ -575,6 +481,7 @@ proc start {} {
   set state [$machine getState]
   if {$state eq "Starting"} return;                      # don't allow double start.
   # Transition NotReady -> Starting
+  set Pending::pendingState Starting
   if { [catch { $machine transition Starting } msg] } {
     set trace $::errorInfo
     forceFailure
@@ -584,6 +491,7 @@ proc start {} {
 
   $machine destroy
   
+  set Pending::pendingState Halted
   # Transition Starting -> Halted
   after idle {
     set machine [RunstateMachineSingleton %AUTO%]
@@ -595,18 +503,21 @@ proc start {} {
     }
     $machine destroy
   }
+  set Pending::pendingState None
 
 }
 
 proc begin {} {
-  set machine [RunstateMachineSingleton %AUTO%]
+    set machine [RunstateMachineSingleton %AUTO%]
     set state [$machine getState]
     if {$state eq "Active"} return;              # don't allow double begin.
-  if { [catch { $machine transition Active } msg] } {
-    set trace $::errorInfo
-    forceFailure
-    error "begin failed with message : $msg : $trace"
+    set Pending::pendingState Active
+    if { [catch { $machine transition Active } msg] } {
+        set trace $::errorInfo
+        forceFailure
+        error "begin failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
@@ -614,52 +525,61 @@ proc end {} {
   set machine [RunstateMachineSingleton %AUTO%]
     set state [$machine getState]
     if {$state eq "Halted"} return;              # don't allow double end
-
+    set Pending::pendingState Halted
     if { [catch { $machine transition Halted } msg] } {
-    set trace $::errorInfo
-    forceFailure
-    error "end failed with message : $msg : $trace"
+        set trace $::errorInfo
+        forceFailure
+        error "end failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc pause {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState Paused
   if { [catch { $machine transition Paused } msg] } {
     set trace $::errorInfo
     forceFailure
     error "pause failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc resume {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState Active
   if { [catch { $machine transition Active } msg] } {
     set trace $::errorInfo
     forceFailure
     error "resume failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy
 }
 
 proc forceFailure {} {
   set machine [RunstateMachineSingleton %AUTO%]
+  set Pending::pendingState NotReady
   if { [catch { $machine transition NotReady } msg] } {
-    error "Transition to not ready failed with message : $msg"
+    set trace $::errorInfo
+    error "Transition to not ready failed with message : $msg : $trace"
   }
+  set Pending::pendingState None
   $machine destroy    
 }
 
 proc transitionTo {to} {
   set machine [RunstateMachineSingleton %AUTO%]
-
+  set Pending::pendingState $to
   set retCode [catch [$machine transition $to] msg]
   $machine destroy
 
   if {$retCode} {
     return -code error $msg
   } else {
+    set Pending::pendingState None
     return $msg
   }
 }

@@ -50,9 +50,12 @@ install-data-local:
 	$(INSTALL_DATA) @srcdir@/ChangeLog @prefix@
 	$(INSTALL_SCRIPT) daqsetup.bash @prefix@
 	$(INSTALL_DATA) @srcdir@/figures/*.png @prefix@/share/html/figures
+	$(mkinstalldirs) @prefix@/share/tclhttpd
+	(cd @srcdir@/tclhttpd3.5.1; tar czf - .)|(cd @prefix@/share/tclhttpd; tar xzf -)
+	chmod a+x @prefix@/share/tclhttpd/bin/*
 
 
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks ddas/config_pixie16api.h
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks tclhttpd3.5.1
 
-check-TESTS:
-	@top_srcdir@/dotests $(SUBDIRS)
+#check-TESTS:
+#	@top_srcdir@/dotests $(SUBDIRS)

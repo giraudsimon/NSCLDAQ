@@ -14,7 +14,7 @@ lappend auto_path $here
 
 
 
-source [file join $here Log.tcl]
+source [file join $here ../../base/tclutils Log.tcl]
 source [file join $here PortManager.tcl]
 source [file join $here ConnectionManager.tcl]
 source [file join $here portAllocator.tcl]

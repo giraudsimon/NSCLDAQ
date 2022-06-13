@@ -1,5 +1,5 @@
-#ifndef __CV1X90MODULE_H
-#define __CV1x90MODULE_H
+#ifndef CV1X90MODULE_H
+#define CV1x90MODULE_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -19,22 +19,11 @@
 
 //
 //  Header files:
-#ifndef __CDIGITIZERMODULE_H
+
 #include "CDigitizerModule.h"
-#endif
-
-#ifdef HAVE_STD_NAMESPACE
-using namespace std;
-#endif
-
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
+
+using namespace std;
 
 // forward class definitions:
 

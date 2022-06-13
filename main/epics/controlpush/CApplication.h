@@ -34,35 +34,18 @@ to start the application.
 
 */
 
-#ifndef __CAPPLICATION_H  //Required for current class
-#define __CAPPLICATION_H
+#ifndef CAPPLICATION_H  //Required for current class
+#define CAPPLICATION_H
 
 //
 // Include files:
 //
 
-#ifndef __CSOCKET_H
 #include <CSocket.h>
-#endif
-
-#ifndef __CCHANNELLIST_H
 #include <CChannelList.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>        //Required for include files 
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
 #include <istream>
-
-
-#ifndef __CRT_TIME_H
 #include <time.h>
-#define __CRT_TIME_H
-#endif
 
 // Forward class definitions:
 

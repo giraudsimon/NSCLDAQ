@@ -427,6 +427,45 @@ EVBC::registerRingSource tcp://localhost/sidet0 {} 0 "Si Dets" 1 1 20 0
       </para>
     </section>
   </section>
+  <section>
+    <title>Using the Event Builder With The Manager</title>
+    <para>
+      When the event builder is used with the DAQ Manager it must be
+      started differently.  The event builder must be started from within the
+      manager and should be run in persistent mode.  The event buider should
+      be started from the <literal>BOOT</literal> transition of the manager.
+      In general, since the event builder is a pipeline, you will need a script
+      to run the event bulder.  The form of this script should be:
+    </para>
+    <example>
+      <title>Script To Start The EventBuilder in the Manager</title>
+      <programlisting>
+#!/bin/bash
+TCLLIBPATH=$DAQTCLLIBS $DAQBIN/EVBRest |             \
+                       $DAQBIN/glom [glom options] | \
+                       $DAQBIN/stdintoring [evb ring]
+      </programlisting>
+    </example>
+    <para>
+      There are a few items in this sample script you'll need to fill in depending
+      on the needs of your experiment.  For <literal>[glom options]</literal>
+      you must fill in at least a <option>--dt</option> value to set the coincidence
+      window in which events are built.  You may also wish to set the
+      <option>--sourceid</option> to define the output source id and
+      <option>--timestamp-policy</option> to determine how output event timestamps
+      are computed.
+    </para>
+    <para>
+      For <literal>[evb ring]</literal> you will need to supply the name of a
+      ring buffer into which the data will be placed for distribution.
+    </para>
+    <para>
+      When the Event Builder is used in this manner, there is no inherent user
+      interface. You can use the <filename>$DAQBIN/EVBMonitor</filename> program
+      to display the graphical statistics.  This program is descsribed in
+      <link linkend='daq1.evbmonitor' endterm='daq1.evbmonitor.title' />
+    </para>
+  </section>
 </chapter>
 
 <!-- /chapter -->

@@ -1,8 +1,8 @@
-#ifndef __CESCBD8210_H
-#define __CESCBD8210_H
+#ifndef CESCBD8210_H
+#define CESCBD8210_H
 
 
-#endif
+
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -19,9 +19,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CMEMORYMAPPEDCAMACBRANCH_h
 #include "CMemoryMappedCAMACBranch.h"
-#endif
 
 /*!
    The CES CBD 8210 is a parallel branch highway driver.
@@ -60,3 +58,4 @@ private:
   void mapBranch(unsigned branch, unsigned crate);
   
 };
+#endif

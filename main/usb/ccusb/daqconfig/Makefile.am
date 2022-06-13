@@ -83,8 +83,8 @@ libCCUSBDaqConfig_la_CPPFLAGS		= \
 				@THREADCXX_FLAGS@ @PIXIE_CPPFLAGS@
 
 libCCUSBDaqConfig_la_LIBADD	=	 \
-				@top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
-				@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
+	@top_builddir@/usb/ccusb/ccusb/libCCUSB.la \
+	@top_builddir@/usb/common/configurableobject/libConfigurableObject.la \
 				@LIBTCLPLUS_LDFLAGS@ \
 				@TCL_LDFLAGS@ \
 				@THREADLD_FLAGS@ 

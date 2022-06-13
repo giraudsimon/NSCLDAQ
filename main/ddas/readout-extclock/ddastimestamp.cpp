@@ -19,7 +19,11 @@ uint64_t timestamp(pPhysicsEventItem item)
   // ddas data easily accessible in 32 bit words
   // get a pointer to the body of the ring item and 
   // reinterpret into 32-bit words
-  uint32_t *body = reinterpret_cast<uint32_t*>(item->s_body);
+  uint32_t *body =
+    reinterpret_cast<uint32_t*>(
+        bodyPointer(reinterpret_cast<pRingItem>(item)
+        )
+    );
   
   //body[0] - size of body, default information placed by ring item
   //body[1] - channel identifying information

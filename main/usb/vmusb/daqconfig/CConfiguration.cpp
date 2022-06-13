@@ -53,6 +53,8 @@
 #include <CV977.h>
 #include <CV1x90.h>
 
+#include "CMDPP32QDC.h"
+
 #include <CReadoutModule.h>
 #include <TCLInterpreter.h>
 #include <TCLObjectProcessor.h>
@@ -121,6 +123,7 @@ CConfiguration::CConfiguration() :
   m_Commands.push_back(new CUserCommand(*m_pInterp, *this, "XLMTimestamp", 
                                         new CXLMTimestamp) );
   m_Commands.push_back(new CUserCommand(*m_pInterp, *this, "mqdc", new CMQDC32RdoHdwr) );
+  m_Commands.push_back(new CUserCommand(*m_pInterp, *this, "mdpp32qdc", new CMDPP32QDC));
 
   // Add hybrid drivers
   typedef CCBD8210CrateController Ctlr;
@@ -142,7 +145,6 @@ CConfiguration::CConfiguration() :
                             compat_clone(CLeCroy2551<Ctlr,RdoList>())) );
     
 //  m_Commands.push_back(new C3820TstampCommand(*m_pInterp, *this));
-
 }
 /*!
    Destruction must:

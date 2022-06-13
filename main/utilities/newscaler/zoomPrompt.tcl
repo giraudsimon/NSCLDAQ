@@ -29,7 +29,8 @@ exec tclsh "$0" ${1+"$@"}
 package provide zoomPrompt 1.0
 package require Tk
 package require snit
-package require DataSourceUI
+package require dialogwrapper
+package require textprompter
 
 ##
 # @class ZoomForm
@@ -53,11 +54,13 @@ snit::widgetadaptor ZoomForm {
     #
     constructor args {
         installhull using ttk::frame
-        ttk::label  $win.l -text "Zoom Factor: "
-        install entry using ttk::entry $win.e -width 6 -validate focusout \
-            -validatecommand [mymethod _validate %s]
+        #ttk::label  $win.l -text "Zoom Factor: "
+        #install entry using ttk::entry $win.e -width 6 -validate focusout \
+        #    -validatecommand [mymethod _validate %s]
+        install entry using textprompt $win.e -text "Zoom Factor: " \
+            -width 6 -validate focusout -validatecommand [mymethod _validate %s]
         
-        grid $win.l $entry
+        grid $entry
         
         # Return and keypad enter are also going to force the validation
         

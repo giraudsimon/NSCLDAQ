@@ -35,6 +35,7 @@ lappend auto_path $libdir
 
 #  This require pulls in the scaler program's configuration processing pkg.
 
+package require removetcllibpath
 package require scalerconfig
 
 # Stubs for unused config bits.

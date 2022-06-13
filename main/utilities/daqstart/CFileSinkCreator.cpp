@@ -24,44 +24,6 @@ CFileSinkCreator::CFileSinkCreator ()
  CFileSinkCreator::~CFileSinkCreator ( )
 {
 }
-/*!
-   Called to create an instance of CFileSinkCreator that is a
-   functional duplicate of another instance.
-   \param rSource (const CFileSinkCreator& ):
-      The object that we will dupliate.
-*/
-CFileSinkCreator::CFileSinkCreator (const CFileSinkCreator& aCFileSinkCreator ) 
-  : CSinkCreator (aCFileSinkCreator) 
-{
-} 
-/*!
-  Assign to *this from rhs so that *this becomes a functional
-  duplicate of rhs.
-  \param rhs (const CFileSinkCreator& rhs ):
-     The object that will be functionally copied to *this.
- */
-CFileSinkCreator& 
-CFileSinkCreator::operator= (const CFileSinkCreator& rhs)
-{ 
-  if(this != &rhs) {
-    CSinkCreator::operator=(rhs);
-  }
-  return *this;
-
-}
-/*!
-  Compare *this for functional equality with another object of
-  type CFileSinkCreator.
-  \param rhs (const CFileSinkCreator& rhs ):
-     The object to be compared with *this.
-
- */
-int 
-CFileSinkCreator::operator== (const CFileSinkCreator& rhs) const
-{
-  return CSinkCreator::operator==(rhs);
-}
-
 
 // Functions for class CFileSinkCreator
 
@@ -128,4 +90,13 @@ CFileSinkCreator::Create(string sCommand, string sName)
   catch(...) {
     return (CSink*)NULL;
   }
+}
+/**
+ * describe
+ * @return std::string - description of the thing we're creating.
+ */
+std::string
+CFileSinkCreator::describe() const
+{
+ return "File sink";
 }

@@ -32,23 +32,13 @@
 // (c) Copyright NSCL 1999, All rights reserved AccessListCheck.h
 //
 
-#ifndef __ACCESSLISTCHECK_H  //Required for current class
-#define __ACCESSLISTCHECK_H
+#ifndef ACCESSLISTCHECK_H  //Required for current class
+#define ACCESSLISTCHECK_H
 
                                //Required for base classes
-#ifndef __AUTHENTICATOR_H
 #include "Authenticator.h"
-#endif
-              
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif                 
-                               //Required for 1:1 association classes
-#ifndef __STL_SET
 #include <set>
-#define __STL_STE
-#endif
 
                         
 class CAccessListCheck  : public CAuthenticator        

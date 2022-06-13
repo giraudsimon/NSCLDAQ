@@ -15,8 +15,8 @@
 */
 
 
-#ifndef __CREADOUTEXCEPTION_H  
-#define __CREADOUTEXCEPTION_H
+#ifndef CREADOUTEXCEPTION_H  
+#define CREADOUTEXCEPTION_H
                                
 #include <Exception.h>
 

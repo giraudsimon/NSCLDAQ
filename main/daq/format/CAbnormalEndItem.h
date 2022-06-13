@@ -19,12 +19,10 @@
 # @brief  Define the wrapper class for the abnormal end run ring item.
 # @author <fox@nscl.msu.edu>
 */
-#ifndef __CABNORMALENDITEM_H
-#define __CABNORMALENDITEM_H
+#ifndef CABNORMALENDITEM_H
+#define CABNORMALENDITEM_H
 
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"
-#endif
 
 class CAbnormalEndItem : public CRingItem
 {

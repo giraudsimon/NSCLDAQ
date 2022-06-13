@@ -23,6 +23,7 @@
 #include <CBoolConfigParam.h>
 #include <stdint.h>
 
+#include "PacketUtils.h"
 #include "CEnumParameter.h"
 
 static const size_t LARGEST_SIZE(4*128*1024+1024); // largest buffer + slop.
@@ -225,10 +226,10 @@ CSIS3300Module::Read(void* pBuffer)
 
   // We always put a jumbo packet structure around this;
 
+
   uint16_t* start = p;
-  p+=2;
-  *p = m_id;
-  ++p;
+  p = PacketUtil::startPacket(p, m_id);
+  
 
   // Now we're ready for the body.
   // Alas we must do each group separately without a loop since we have no
@@ -239,83 +240,65 @@ CSIS3300Module::Read(void* pBuffer)
     uint16_t*  pkstart = p;
     int groupId              = 1;
     if(m_subpackets) {
-      p += 2;
-      *p = groupId;
-      ++p;
+      p = PacketUtil::startPacket(p, groupId);
+
     }
-    m_pModule->ReadGroup1(p);
+    p += m_pModule->ReadGroup1(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff;
+      PacketUtil::endPacket(pkstart, p);      
+
+
     }
   }
   if (m_groupsRead & 0x2) {
+		
     uint16_t* pkstart = p;
     int groupId              = 2;
     if(m_subpackets) {
-      p +=2;
-      *p = groupId;
-      ++p;
+
+      p = PacketUtil::startPacket(p, groupId);
+
     }
-    m_pModule->ReadGroup2(p);
+    p += m_pModule->ReadGroup2(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff;
+      PacketUtil::endPacket(pkstart, p);
+      
     }
   }
   if (m_groupsRead & 0x4) {
     uint16_t* pkstart = p;
     int groupId              = 3;
     if(m_subpackets) {
-      p +=2;
-      *p = groupId;
-      ++p;
+      p = PacketUtil::startPacket(p, groupId);
     }
-    m_pModule->ReadGroup3(p);
+    p += m_pModule->ReadGroup3(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff ;
+      PacketUtil::endPacket(pkstart, p);
+
     }
+
   }
   if (m_groupsRead & 0x8) {
     uint16_t* pkstart = p;
     int groupId              = 4;
     if(m_subpackets) {
-      ++p;
-      *p = groupId;
-      ++p;
+      p = PacketUtil::startPacket(p, groupId);
+
     }
-    m_pModule->ReadGroup4(p);
+    p += m_pModule->ReadGroup4(p);
 
     if(m_subpackets) {
-      int subsize =  (p - pkstart);
-      *pkstart = (subsize & 0xffff);
-      ++pkstart;
-      *pkstart = (subsize >> 16) & 0xffff ;
+      PacketUtil::endPacket(pkstart, p);
     }
   }
 
   // Close the packet:
 
-  int wordsRead = (p - start);
-  union {
-    int    l;
-    short  w[2];
-  } lw;
-  lw.l = wordsRead;
-  *start++ = lw.w[0];
-  *start   = lw.w[1];
-
-  return wordsRead;
+	return PacketUtil::endPacket(start, p);
+  
 
 }
 

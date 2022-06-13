@@ -1,5 +1,5 @@
-#ifndef __CRINGSELECTIONPREDICATE_H
-#define __CRINGSELECTIONPREDICATE_H
+#ifndef CRINGSELECTIONPREDICATE_H
+#define CRINGSELECTIONPREDICATE_H
 
 
 /*
@@ -18,34 +18,10 @@
 	     East Lansing, MI 48824-1321
 */
 
-
-#ifndef __CRINGBUFFER_H
 #include <CRingBuffer.h>
-#ifndef __CRINGBUFFER_H
-#define __CRINGBUFFER_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 
 class CRingBuffer;

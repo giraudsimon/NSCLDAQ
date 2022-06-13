@@ -19,8 +19,8 @@
  * @brief Class definition for COnLateDataCommand - invoke user script on data late.
  */
 
-#ifndef __CONLATEDATACOMMAND_H
-#define __CONLATEDATACOMMAND_H
+#ifndef CONLATEDATACOMMAND_H
+#define CONLATEDATACOMMAND_H
 
 #include <TCLObjectProcessor.h>	// base class
 

@@ -34,15 +34,6 @@
 #include "CAbnormalEndItem.h"
 #include <iostream>
 
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    for (int i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +44,8 @@ class StateChangeOutput : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(StateChangeOutput);
   CPPUNIT_TEST(begin);
   CPPUNIT_TEST(beginTimestamped);
+  CPPUNIT_TEST(beginorigsid);           // 12.0pre1.
+  CPPUNIT_TEST(beginTsorigsid);         // 12.0pre1
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -61,6 +54,8 @@ public:
 protected:
   void begin();
   void beginTimestamped();
+  void beginorigsid();
+  void beginTsorigsid();
 };
 CPPUNIT_TEST_SUITE_REGISTRATION(StateChangeOutput);
 
@@ -71,8 +66,9 @@ StateChangeOutput::begin()
 					     BEGIN_RUN);
 
   ASSERT(pItem);
-  
-  // EQMSG("State change item sizse", static_cast<uint32_t>(sizeof(StateChangeItem)), pItem->s_header.s_size);
+  EQMSG("State change item size",
+        uint32_t(sizeof(RingItemHeader)+sizeof(uint32_t) + sizeof(StateChangeItemBody)),
+        pItem->s_header.s_size);
   EQMSG("Item type", BEGIN_RUN, pItem->s_header.s_type);
   EQMSG("Run Number", static_cast<uint32_t>(1234), pItem->s_body.u_noBodyHeader.s_body.s_runNumber);
   EQMSG("Time offset", static_cast<uint32_t>(0), pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
@@ -122,6 +118,41 @@ StateChangeOutput::beginTimestamped()
     EQ(static_cast<uint32_t>(stamp), pBody->s_Timestamp);
     EQ(static_cast<uint32_t>(1), pBody->s_offsetDivisor);
     EQ(0, strcmp(titleString, pBody->s_title));
+    
+    free(pItem);
+}
+
+/// Tests below are added for 12.0-pre1 - they ensure that the
+//  s_originalSid field of the body is appropiately set both with and without
+//  body header state change items.
+
+void StateChangeOutput::beginorigsid()
+{
+    time_t now = time(nullptr);
+    pStateChangeItem pItem =
+      formatStateChange(now, 0, 123, "A test title", BEGIN_RUN);
+    pStateChangeItemBody pBody =
+      reinterpret_cast<pStateChangeItemBody>(bodyPointer(
+        reinterpret_cast<pRingItem>(pItem)
+      ));
+    EQ(uint32_t(0), pBody->s_originalSid);
+    
+    free(pItem);
+}
+
+void StateChangeOutput::beginTsorigsid()
+{
+   time_t now = time(nullptr);
+   pStateChangeItem pItem =
+    formatTimestampedStateChange(
+      0x123456789a, 10, 1, now, 0, 12345, 1, "This is a test", BEGIN_RUN
+    );
+    
+    pStateChangeItemBody pBody =
+      reinterpret_cast<pStateChangeItemBody>(bodyPointer(
+        reinterpret_cast<pRingItem>(pItem)
+    ));
+    EQ(uint32_t(10), pBody->s_originalSid);
     
     free(pItem);
 }

@@ -21,7 +21,7 @@
 
 #ifndef CFULLEVENTEDITORAPP_H
 #define CFULLEVENTEDITORAPP_H
-#include "fulleventeditor.h"
+#include "swtriggerflags.h"
 #include <CFullEventEditor.h>
 class CTransport;
 class CFullEventEditor;
@@ -33,19 +33,20 @@ class CFullEventEditor;
  */
 class CFullEventEditorApp
 {
-private:
+public:
     typedef CFullEventEditor::Editor* (*createEditor)();
 protected:
     gengetopt_args_info m_params;            // Derived classes can fish this out.
-    createEditor        m_pEditorFactory;    // Editor createor.
+    createEditor        m_pEditorFactory;    // Editor creator.
+    
 public:
     CFullEventEditorApp(gengetopt_args_info& p);
     virtual ~CFullEventEditorApp();
     CTransport* createRingSink();           // Creates a ring transport sink.
-    CFullEventEditor::Editor* createUserEditor();
+    
     
     virtual int operator()() = 0;
-
+    CFullEventEditor::Editor* createUserEditor();
 };
 
 

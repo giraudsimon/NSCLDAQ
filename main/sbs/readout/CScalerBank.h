@@ -1,5 +1,5 @@
-#ifndef __CSCALERBANK_H
-#define __CSCALERBANK_H
+#ifndef CSCALERBANK_H
+#define CSCALERBANK_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,34 +16,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CCOMPOSITE_H
 #include "CComposite.h"
-#endif
-
-#ifndef __CSCALER_H
 #include "CScaler.h"
-#endif
-
-#ifndef __CRT_STDDEF_H
 #include <stddef.h>
-#ifndef __CRT_STDDEF_H
-#define __CRT_STDDEF_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 /*!
   CScalerBank is a container or CScaler objects,and CScalerBank objects.

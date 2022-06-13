@@ -1,5 +1,5 @@
-#ifndef __CPORTMANAGER_H
-#define __CPORTMANAGER_H
+#ifndef CPORTMANAGER_H
+#define CPORTMANAGER_H
 /*!
  *  The CPortManager class interfaces with the 
  * Tcp/Ip port allocation server. Using this class allows applications in
@@ -22,19 +22,9 @@
 // Licensed under the GNU Public License, 
 //   see http://www.gnu.org/licenses/gpl.txt for license text.
 //
-#ifndef __STL_STRING
-#include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
-#ifndef __STL_VECTOR
+#include <string>
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
 
 // Forward references:
 

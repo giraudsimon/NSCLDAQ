@@ -54,6 +54,7 @@ snit::type Channel {
     option -lowlim      ""
     option -hilim       ""
     option -name        ""
+    option -source    0
     
     variable total 0
     variable rate  0
@@ -156,7 +157,7 @@ snit::type Channel {
     }
     ##
     # mean
-    #   Get the average rage over the elapsed time since the last clear.
+    #   Get the average rate over the elapsed time since the last clear.
     #
     # @return double.
     #

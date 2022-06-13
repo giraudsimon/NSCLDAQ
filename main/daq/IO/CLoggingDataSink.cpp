@@ -38,6 +38,7 @@ void CLoggingDataSink::put(const void* pData, size_t nBytes)
     m_log.push_back(*item);
     delete item;
 
-    iter += header->s_size;
+    iter +=
+      itemSize(reinterpret_cast<const RingItem*>(header));;
   }
 }

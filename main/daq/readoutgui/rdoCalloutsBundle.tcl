@@ -21,6 +21,7 @@
 package provide rdoCalloutsBundle 1.0
 package require RunstateMachine
 package require ReadoutGUIPanel
+package require ExpFileSystem
 
 ##
 #  Provides a RunstateMachine callback bundle that implements the old
@@ -44,6 +45,13 @@ package require ReadoutGUIPanel
 #  In addition, the following new callbacks are implemented:
 #
 #  * OnFail     - Called when NotReady is entered from any other state. (tested)
+#  * OnPrecheck - Hooks into the precheckTransitionForErrors bundle.
+#  * OnEnslaving- Called when we are enslaving a slave GUI.
+#  * OnEnslaved - Called when we are being enslaved by a master GUI.
+#  * OnFreeing  - Called when we are freeing a slave GUI.
+#  * OnEmancipation - Called when we are being freed by a master GUI.
+#  * OnSlaveConnectionLost - Called when as a master we lose connection to a slave.
+#
 
 
 #
@@ -57,6 +65,8 @@ package require ReadoutGUIPanel
 namespace eval ::rdoCallouts {
     variable stateMachine ""
     namespace export attach enter leave
+    namespace export precheckTransitionForErrors
+    namespace export remotecontrol
     namespace ensemble create
     variable  runNumber 0;               # Memorized at run start.
 }
@@ -146,6 +156,45 @@ proc ::rdoCallouts::leave {from to} {
     }
 }
 
+##
+# ::rdoCallouts::precheckTransitionForErrors
+#    If OnPrecheck exists in the global namespace,
+#    we relay to it.
+#    Note that:
+#   -   If the proc returns an error we capture the messag and
+#       return it as expected by the BundleManager (Prechecks are
+#       only allowed to report errors, not throw them).
+#    -  If the proc returns a string that too is returned.
+#
+proc ::rdoCallouts::precheckTransitionForErrors {from to} {
+    set msg "";               # in case it's not defined.
+    if {[info commands ::OnPrecheck] ne ""} {
+        catch {::OnPrecheck $from $to} msg;  #return value if no error.
+    }
+    return $msg
+}
+##
+# ::remotecontrol
+#   Called to handle a remote control change.  The first
+#   Parameter is the action that occured, the second is the
+#   host that is involved. Note that the first parameter is actually,
+#   as luck? design?  would have it the name of the global proc
+#   we'll call (if it's defined).
+# @param method to call.
+# @param host  involved host.
+# @return - whatever the proc returns (though that's actually ignored
+#           in this implementation.
+# @throws - Whatever the proc throws.
+#
+proc ::rdoCallouts::remotecontrol {what host} {
+    set result ""
+    
+    if {[info commands ::${what}] ne ""} {
+        set result [::${what} $host]
+    }
+    
+    return $result
+}
 #------------------------------------------------------------------------------
 #  Other methods in the namespace:
 
@@ -165,8 +214,14 @@ proc ::rdoCallouts::reload {} {
     }
 
     # Look for an load the new file:
+    # daqdev/NSCLDAQ#1029  To honor the fact that EVENTS can move the
+    # stagearea we need to get the stagaearea from the configuration as that's
+    # already folded that in:
     
-    foreach directory [list ~ ~/stagearea/experiment/current [pwd]] {
+    set stagearea [ExpFileSystem::getStageArea]
+    set expcurrent [file join $stagearea experiment current]
+    
+    foreach directory [list ~ $expcurrent [pwd]] {
         set candidate [file join $directory ReadoutCallouts.tcl]
         if {[file readable $candidate]} {
             uplevel #0 source $candidate

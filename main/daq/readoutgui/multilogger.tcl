@@ -84,6 +84,8 @@ package require snit
 package require csv
 package require stageareaValidation
 package require DAQParameters
+package require dialogwrapper
+package require textprompter
 
 # Namespace to hold our variables:
 
@@ -201,10 +203,11 @@ snit::type EventLogger {
     #
     method stop {} {
         if {$options(-enable) } {
-
+            
             # First of all only do anything if there is a logger
             # 
             if {[llength $loggerPids] > 0} {
+                puts "Stopping multilogger: $options(-ring) -> $options(-out)"
                 set expectingExit 1;            # So _handleInput does not freak.
                 set afterId                                 \
                     [after [expr $options(-timeout)*1000]   \
@@ -241,6 +244,13 @@ snit::type EventLogger {
         }
     }
     ##
+    # getPid
+    #   Get the logger PID list.
+    #
+    method getPid {} {
+        return $loggerPids
+    }
+    ##
     # _handleInput
     #   Called when the logger fd is readable:
     #   - Actual input is relayed as a log message to the console.
@@ -250,7 +260,7 @@ snit::type EventLogger {
     #
     method _handleInput {channel} {
 
-      set pid [lindex [pid $channel] 0]
+        set pid [lindex [pid $channel] 0]
 
         if {![eof $channel]} {
             fconfigure $channel -blocking 0
@@ -261,12 +271,50 @@ snit::type EventLogger {
               set ring $options(-ring)
               set out  $options(-out)
               ::ReadoutGUIPanel::Log MultiLogger: output "$ring -> $out (pid=$pid): \"$data\""
+        
+        } elseif {$loggerFd eq $channel} {
+            set ring $options(-ring)
+            set out  $options(-out)
+            
+            catch {close $channel}
+            incr waitDone;             # Trigger vwait to finish if waiting.
+            set loggerFd -1;           # Set the variables back to show the logger
+            set loggerPids [list];     # no loger exists.
+            catch {close $loggerFd}
+            incr [myvar waitDone];             # Trigger vwait to finish if waiting.
+            set loggerFd -1;           # Set the variables back to show the logger
+            set loggerPids [list];     # no loger exists.
+            
+            # If the exit was unexpected, yell:
+            
+            if {! $expectingExit || ($::Pending::pendingState ne "Halted")} {
+                set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
+                
+                set dlgmsg "MultiLogger: $msg Check log for errors."
+                tk_messageBox -icon error -type ok -title {Logger exited} \
+                -message $dlgmsg 
+                
+                ::ReadoutGUIPanel::Log MultiLogger: error $msg 
+            } else {
+                set msg "$ring -> $out (pid=$pid) exited normally."
+                ::ReadoutGUIPanel::Log MultiLogger: log $msg
             }
-        } else {
-            if {$loggerFd eq $channel} {
-		set ring $options(-ring)
-		set out  $options(-out)
 		
+        } else { 
+    
+            # Log this occurrence as a warning. It is not really an error necessarily, but
+            # should be noted as something potentially bizarre.
+            set ring $options(-ring)
+            set out  $options(-out)
+            set msg "$ring -> $out: closing eventlog process (pid=$pid) different than most recently launched! "
+            append msg "This is not a bad thing if there was a failure during startup of the a previous run."
+            ::ReadoutGUIPanel::Log MultiLogger: warning $msg
+            
+            # clean up the pids associated with the pipe and close the pipe 
+            set pids [pid $channel]
+            catch {close $channel}
+            foreach pid $pids {
+                catch {exec kill -9 $pid}
 		catch {close $channel}
 		incr waitDone;             # Trigger vwait to finish if waiting.
 		set loggerFd -1;           # Set the variables back to show the logger
@@ -278,7 +326,7 @@ snit::type EventLogger {
 		
 		# If the exit was unexpected, yell:
 		
-		if {! $expectingExit} {
+		if {! $expectingExit || ($::Pending::pendingState ne "Halted")} {
 		    set msg "$ring -> $out (pid=$pid) exited unexpectedly!"
 		    
 		    set dlgmsg "MultiLogger: $msg Check log for errors."
@@ -291,26 +339,11 @@ snit::type EventLogger {
 		    ::ReadoutGUIPanel::Log MultiLogger: log $msg
 		}
 		
-            } else { 
-		
-		# Log this occurrence as a warning. It is not really an error necessarily, but
-		# should be noted as something potentially bizarre.
-		set ring $options(-ring)
-		set out  $options(-out)
-		set msg "$ring -> $out: closing eventlog process (pid=$pid) different than most recently launched! "
-		append msg "This is not a bad thing if there was a failure during startup of the a previous run."
-		::ReadoutGUIPanel::Log MultiLogger: warning $msg
-		
-		# clean up the pids associated with the pipe and close the pipe 
-		set pids [pid $channel]
-		catch {close $channel}
-		foreach pid $pids {
-		    catch {exec kill -9 $pid}
-		}
+
             }
         }
-  }
-
+      }
+    }
 }
 
 
@@ -346,11 +379,14 @@ snit::widgetadaptor AddLogger {
         
         $self configurelist $args
         
-        ttk::label $win.rlabel -text {Ring URI}
-        ttk::entry $win.ring   -textvariable [myvar options(-ring)]
+        #ttk::label $win.rlabel -text {Ring URI}
+        #ttk::entry $win.ring   -textvariable [myvar options(-ring)]
+        textprompt $win.ring -text {Ring URI} -textvariable [myvar options(-ring)]
         
-        ttk::label  $win.lout   -text {Output directory}
-        ttk::entry  $win.outdir -textvariable [myvar options(-out)]
+        #ttk::label  $win.lout   -text {Output directory}
+        #ttk::entry  $win.outdir -textvariable [myvar options(-out)]
+        textprompt $win.outdir -text {Output directory} \
+            -textvariable [myvar options(-out)]
         ttk::button $win.outbrowse -text Browse... -command [mymethod _browseDir]
         
         ttk::label $win.ltimeout -text {End Run timeout}
@@ -364,8 +400,8 @@ snit::widgetadaptor AddLogger {
         ttk::spinbox $win.sources -from 1 -to 1000 -textvariable [myvar options(-sources)]
         
         
-        grid $win.rlabel $win.ring                   -sticky w
-        grid $win.lout $win.outdir $win.outbrowse    -sticky w
+        grid $win.ring                   -sticky w
+        grid $win.outdir $win.outbrowse    -sticky w
         grid $win.ltimeout $win.timeout              -sticky w
         grid $win.lsources $win.sources              -sticky w
         grid $win.enable                   -column 1 -sticky w
@@ -833,6 +869,78 @@ proc ::multilogger::loadLoggers {} {
         close $fd
     }
 }
+#-----------------------------------------------------------------------------
+#  Snit megawidget that shows which loggers are still active
+#  as they're being shut down.  The hull is a top level.
+#
+#
+#  @class LoggerList - the displays the list of active loggers.
+#
+# OPTIONS
+#  -loggers - The list of logger objects.
+#
+snit::widgetadaptor multilogger::LoggerDisplay {
+    option -loggers -default [list] -configuremethod _CfgLoggerlist
+    component loggers
+    
+    variable items [list];       #Item ids in the treeview.
+    
+    ##
+    #  Build the component widgets,
+    #  and lay them out as appropriate.
+    #
+    constructor args {
+        installhull using toplevel
+        wm title $win {Stopping multiloggers}
+        set f [ttk::frame $win.f]
+        install loggers using ttk::treeview $f.loggers \
+            -columns [list Ring Directory] -selectmode none -show headings \
+            -yscrollcommand  [list $f.sb set]
+        $loggers heading 0 -text Ring
+        $loggers heading 1 -text Directory
+        ttk::scrollbar $f.sb -orient vertical -command [list $loggers yview]
+        
+        grid $f -sticky nsew
+        grid $loggers $f.sb -sticky nsew
+        
+            
+    }
+        #---------------------------------------------------------------------
+        # Private methods
+        
+        ##
+        # _CfgLoggerlist
+        #    Called to configure the set of loggers.
+        #   - Clear the logger list.
+        #   - for each logger extract the logger ring and logger directory
+        #      and add it tothe tree.
+        #
+        #  @param optn  -name of the option being provided.
+        #  @param optv  - valueof the option
+        method _CfgLoggerlist {optn optv} {
+            set options($optn) $optv
+            
+            # Clear the tree:
+            
+            foreach item $items {
+                $loggers delete $item
+            }
+            set items [list]
+            
+            foreach logger $optv {
+                set dir [$logger cget -out]
+                set ring [$logger cget -ring]
+                
+                set item [$loggers insert {} end]
+                $loggers set $item 0 $ring
+                $loggers set $item 1 $dir
+                
+                lappend items $item
+            }
+        }
+            
+        
+}
 
 #------------------------------------------------------------------------------
 #  Our state transition methods:
@@ -890,15 +998,27 @@ proc ::multilogger::enter {from to} {
        
         # ensure they all vanished within their timeout or kill:
         
+        # Put up a little top level GUI thta shows which
+        # Multiloggers need stopping 
+        
+        multilogger::LoggerDisplay .loggerstostop -loggers $::multilogger::Loggers]
+        set remaining $::multilogger::Loggers
         foreach logger $::multilogger::Loggers {
             $logger stop
             
-            # If multilogger is recording but the 'central' eventlogger is not,l
-            # increment the run number to avoid stomping on event files next time
-            # around.
-            
-            
+            # remove the stopped logger from the GUI.
+
+            set remaining [lrange $remaining 1 end]
+            .loggerstostop configure -loggers $remaining
         }
+        # Destroy the top level.
+         
+         destroy .loggerstostop
+        
+        # If multilogger is recording but the 'central' eventlogger is not,l
+        # increment the run number to avoid stomping on event files next time
+        # around.
+
         if {$::multilogger::recordAlways && ![::ReadoutGUIPanel::recordData]} {
                 ::ReadoutGUIPanel::setRun [expr {[::ReadoutGUIPanel::getRun] + 1}]
             }

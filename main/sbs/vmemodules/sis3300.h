@@ -15,23 +15,14 @@
 */
 
 
-#ifndef __SIS3300_H
-#define __SIS3300_H
+#ifndef SIS3300_H
+#define SIS3300_H
 
 
 
 
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
-#ifndef __CRTL_STDINT_H
 #include <stdint.h>
-#ifndef __CRTL_STDINT_H
-#define __CRTL_STDINT_H
-#endif
-#endif
 
 /*!
    Preliminary class to setup and read the SIS3300 flash adc.

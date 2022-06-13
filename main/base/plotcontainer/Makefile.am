@@ -15,3 +15,5 @@ check-TESTS:
 	(cd @srcdir@ && @TCLSH@ tclTests.tcl)
 
 EXTRA_DIST=$(PKGFILES) $(DOCS) $(TEST_FILES)
+
+check: check-TESTS

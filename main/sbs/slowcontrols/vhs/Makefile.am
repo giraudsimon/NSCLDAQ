@@ -2,7 +2,7 @@ DRIVERDIR = @prefix@/TclLibs/vhs
 APPDIR=@prefix@/bin
 
 
-PACKAGES = pollmanager.tcl vhs.tcl VhsWidgets.tcl meter.tcl bindDown.tcl
+PACKAGES =  vhs.tcl VhsWidgets.tcl 
 APPS     = vhsPanel.tcl
 
 install-exec-local:

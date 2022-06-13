@@ -1,5 +1,5 @@
-#ifndef __CV977TRIGGER_H
-#define __CV977TRIGGER_H
+#ifndef CV977TRIGGER_H
+#define CV977TRIGGER_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,16 +16,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CEVENTTRIGGER_H
 #include <CEventTrigger.h>
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 class CCAENV977;
 

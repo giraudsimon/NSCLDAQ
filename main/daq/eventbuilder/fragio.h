@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __FRAGIO_H
-#define __FRAGIO_H
+#ifndef FRAGIO_H
+#define FRAGIO_H
 
 /**
  * @brief fragment I/O library.

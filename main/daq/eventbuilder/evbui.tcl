@@ -30,6 +30,8 @@ package require Tk
 package require snit
 package require nsclspinbox
 package require NSCLBgerror
+package require EVBUtilities
+package require textprompter
 
 namespace eval ::EVBC {
     
@@ -202,17 +204,8 @@ snit::widgetadaptor ::EVBC::buildparams {
         #
         
         if {$options(-state) eq "normal"} {
-            if {$value} {
-                set state normal
-            } else {
-                set state disabled
-            }            
-        } else {
-            set state disabled
+            EVB::utility::_setStateFromBool $win.dt $value
         }
-        $win.dt configure -state $state
-
-        
         set options($optname) $value
     }
     ##
@@ -421,14 +414,17 @@ snit::widgetadaptor ::EVBC::intermedRing {
 	ttk::checkbutton $win.tee -variable [myvar options(-tee)] \
 	    -onvalue 1 -offvalue 0 -text {Tee output to this ring} \
 	    -command [mymethod _onCheckbox]
-	ttk::label    $win.rlabel -text {Ring Name}
-	ttk::entry     $win.ring -textvariable [myvar options(-ring)] \
+    textprompt $win.ring -text {Ring Name} \
+        -textvariable [myvar options(-ring)] \
 	    -state disabled
+	#ttk::label    $win.rlabel -text {Ring Name} 
+	#ttk::entry     $win.ring -textvariable [myvar options(-ring)] \
+	#    -state disabled
 	
 	# Layout:
 
 	grid $win.tee -sticky w -columnspan 2
-	grid $win.rlabel $win.ring -sticky w
+	grid $win.ring -sticky w
 
 	bind $win.ring <FocusOut> [mymethod _onRingChange]
 	bind $win.ring <Return>   [mymethod _onRingChange]
@@ -448,25 +444,18 @@ snit::widgetadaptor ::EVBC::intermedRing {
     # @param value   - proposed value.
     #
     method _configTee {optname value} {
-	if {$value ni [list 0 1]} {
-	    error "$optname value must be in {0,1} was $value"
-	}
-	set options($optname) $value
+        if {$value ni [list 0 1]} {
+            error "$optname value must be in {0,1} was $value"
+        }
+        set options($optname) $value
+    
+        # Handle the state of the entry widget:
+        
+        if {$options(-state) eq "normal"} {
 
-	# Handle the state of the entry widget:
-
-	if {$value} {
-	    set state normal
-	} else {
-	    set state disabled
-	}
-	#  We can only change the state of the 
-	#  entry if we ourselves are enabled:
-
-	if {$options(-state)  eq "normal"} {
-	    $win.ring configure -state $state
-
-	}
+            EVB::utility::_setStateFromBool $win.ring $value
+        }
+        
     }
     ##
     # _configState
@@ -533,11 +522,7 @@ snit::widgetadaptor ::EVBC::intermedRing {
     #   dispatch the -command script along with the substitutions it uses.
     #
     method _command {} {
-	set cmd $options(-command)
-	if {$cmd ne ""} {
-	    set cmd [string map [list %W $win] $cmd]
-	    uplevel #0 $cmd
-	}
+        EVB::utility::_dispatch $options(-command) [list %W $win]
     }
 }
 ##
@@ -568,8 +553,9 @@ snit::widgetadaptor ::EVBC::destring {
 
 	ttk::checkbutton $win.record -text {Use for recording} -onvalue 1 -offvalue 0 \
 	    -variable [myvar options(-record)] -command [mymethod _onCommand]
-	ttk::label       $win.ringlabel -text {Output Ring}
-	ttk::entry       $win.ring      -textvariable [myvar options(-ring)]
+    textprompt $win.ring -text {Output Ring} -textvariable [myvar options(-ring)]
+	#ttk::label       $win.ringlabel -text {Output Ring}
+	#ttk::entry       $win.ring      -textvariable [myvar options(-ring)]
 
 	bind $win.ring <Return> [mymethod _onCommand]
 	bind $win.ring <FocusOut> [mymethod _onCommand]
@@ -578,7 +564,7 @@ snit::widgetadaptor ::EVBC::destring {
 
 	
 
-	grid $win.ringlabel $win.ring -sticky w
+	grid $win.ring -sticky w
 	grid $win.record              -sticky w
 
 	#  Process any construction configuration options:
@@ -631,11 +617,7 @@ snit::widgetadaptor ::EVBC::destring {
     #   widget control contents changed.
     #
     method _onCommand {} {
-	set cmd $options(-command)
-	if {$cmd ne ""} {
-	    set cmd [string map [list %W $win] $cmd]
-	    uplevel #0 $cmd
-	}
+        EVB::utility::_dispatch $options(-command) [list %W $win]
     }
 
 }
@@ -703,26 +685,26 @@ snit::widgetadaptor EVBC::eventbuildercp {
     #
 
     constructor args {
-	installhull using ttk::frame
-  ttk::frame $win.leftStretch
-  ttk::frame $win.rightStretch
-
-	install glomparams using ::EVBC::glomparams $win.build \
-	    -title {Event building parameters (vsn 11)} -relief groove
-	install tee using ::EVBC::intermedRing $win.tee \
-	    -title {Ordered Fragment Ring} -relief groove
-	install outring using ::EVBC::destring $win.oring \
-	    -title {Destination ring} -relief groove
-
-	grid $glomparams -column 0 -row 0 -sticky w -pady 3 -pady 3
-  grid $win.leftStretch -column 1 -row 0  -sticky nsew
-	grid $tee -column 2 -row 0 -sticky ew -pady 3 -pady 3
-  grid $win.rightStretch -column 3 -row 0  -sticky nsew
-	grid $outring -column 4 -row 0 -sticky e -pady 3 -pady 3
-
-  grid columnconfigure $win {1 3} -weight 1
-
-	$self configurelist $args
+        installhull using ttk::frame
+        ttk::frame $win.leftStretch
+        ttk::frame $win.rightStretch
+      
+        install glomparams using ::EVBC::glomparams $win.build \
+            -title {Event building parameters (vsn 11)} -relief groove
+        install tee using ::EVBC::intermedRing $win.tee \
+            -title {Ordered Fragment Ring} -relief groove
+        install outring using ::EVBC::destring $win.oring \
+            -title {Destination ring} -relief groove
+    
+        grid $glomparams -column 0 -row 0 -sticky w -pady 3 -pady 3
+        grid $win.leftStretch -column 1 -row 0  -sticky nsew
+        grid $tee -column 2 -row 0 -sticky ew -pady 3 -pady 3
+        grid $win.rightStretch -column 3 -row 0  -sticky nsew
+        grid $outring -column 4 -row 0 -sticky e -pady 3 -pady 3
+      
+        grid columnconfigure $win {1 3} -weight 1
+      
+        $self configurelist $args
     }
     #-------------------------------------------------------
     #  Configuration processors.
@@ -736,13 +718,13 @@ snit::widgetadaptor EVBC::eventbuildercp {
     # @param value    - Proposed new value.
     #
     method _configState {optname value} {
-	if {$value ni [list normal disabled]} {
-	    error "$optname value must be one of {norma, disabled} was $value"
-	}
-	foreach w [list $glomparams $tee $outring] {
-	    $w configure -state $value
-	}
-	set options($optname) $value
+        if {$value ni [list normal disabled]} {
+            error "$optname value must be one of {norma, disabled} was $value"
+        }
+        foreach w [list $glomparams $tee $outring] {
+            $w configure -state $value
+        }
+        set options($optname) $value
     }
     
 }

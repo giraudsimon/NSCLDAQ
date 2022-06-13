@@ -60,18 +60,15 @@ pair<CRawADCUnpacker::Iter, ParsedADCEvent>
   if (iter<end) {
     unpackHeader(*iter++, event);
   } else {
-    string errmsg("CRawADCUnpacker::parseSingle() ");
-    errmsg += "Incomplete event found in buffer.";
-    throw runtime_error(errmsg);
+    incompleteEvent("CRawADCUnpacker::parseSingle() ");
+    
   }
 
   int nWords = event.s_count;
   auto dataEnd = iter+nWords;
 
   if ((dataEnd > end) || (dataEnd == end)) {
-    string errmsg("CRawADCUnpacker::parseSingle() ");
-    errmsg += "Incomplete event found in buffer.";
-    throw runtime_error(errmsg);
+    incompleteEvent("CRawADCUnpacker::parseSingle() ");
   } else {
     iter = unpackData(iter, dataEnd, event);
   }
@@ -79,9 +76,7 @@ pair<CRawADCUnpacker::Iter, ParsedADCEvent>
   if (iter<end) {
     unpackEOE(*iter++,event);
   } else {
-    string errmsg("CRawADCUnpacker::parseSingle() ");
-    errmsg += "Incomplete event found in buffer.";
-    throw runtime_error(errmsg);
+    incompleteEvent("CRawADCUnpacker::parseSingle() ");
   }
 
   return make_pair(iter,event);
@@ -179,4 +174,11 @@ void CRawADCUnpacker::unpackEOE(uint32_t word, ParsedADCEvent& event)
 //  cout << hex << "EOE = " << word << dec << endl;
   
   event.s_eventNumber = (word & TRAIL_COUNT_MASK);
+}
+
+void CRawAdcUnpacker::incompleteEvent(const char* whence)
+{
+  string errmsg(whence);
+  errmsg += "Incomplete event found in buffer.";
+  throw runtime_error(errmsg);  
 }

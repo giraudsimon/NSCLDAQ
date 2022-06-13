@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __SKELETON_H
-#define __SKELETON_H
+#ifndef SKELETON_H
+#define SKELETON_H
 
 #ifndef __CREADOUTMAIN_H
 #include <CReadoutMain.h>

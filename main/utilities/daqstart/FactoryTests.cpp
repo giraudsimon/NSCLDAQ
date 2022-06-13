@@ -3,7 +3,9 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/Asserter.h>
 #include "Asserts.h"
+#define private public
 #include <CSinkFactory.h>
+#undef private
 #include <CFileSinkCreator.h>
 #include <CSink.h>
 
@@ -30,6 +32,10 @@ public:
   void setUp() {
   }
   void tearDown() {
+    // Force re-creation of the factory.
+    
+    delete CSinkFactory::m_pInstance;
+    CSinkFactory::m_pInstance = nullptr;
   }
 protected:
   void SplitTest();
@@ -65,7 +71,7 @@ void FactoryTests::SplitTest() {
 void
 FactoryTests::NullCreateTest()
 {
-  CSink* pSink = CSinkFactory::Create(FileType, 
+  CSink* pSink = CSinkFactory::getInstance()->Create(FileType, 
 				      Command, Filename);
   EQMSG("Null sink", (CSink*)NULL, pSink);
 }
@@ -80,15 +86,15 @@ Create "zzzzz", "name"
 void
 FactoryTests::CreateTest()
 {
-  CSinkFactory::AddCreator(FileType, new CFileSinkCreator);
+  CSinkFactory::getInstance()->AddCreator(FileType, new CFileSinkCreator);
 
-  CSink* pSink = CSinkFactory::Create(FileType,
+  CSink* pSink = CSinkFactory::getInstance()->Create(FileType,
 				      Command, Filename);
   ASSERT(pSink);
   delete pSink;
   unlink(Filename.c_str());
 
-  pSink = CSinkFactory::Create(string("zzzzz"), Command,
+  pSink = CSinkFactory::getInstance()->Create(string("zzzzz"), Command,
 			       Filename);
   ASSERT(! pSink);
 }

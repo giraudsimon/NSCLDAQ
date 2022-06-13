@@ -103,7 +103,7 @@ void monvartimertests::avar()
 {
   // Create and set a variable:
   
-  CTCLVariable var(m_pInterp, "avar", kfFALSE);
+  CTCLVariable var(m_pInterp, "avar", TCLPLUS::kfFALSE);
   var.Set("SomeValue");
   
   CMonvarDictionary::getInstance()->add("avar");
@@ -129,11 +129,11 @@ void monvartimertests::avar()
 
 void monvartimertests::twovar()
 {
-  CTCLVariable var(m_pInterp, "avar", kfFALSE);
+  CTCLVariable var(m_pInterp, "avar", TCLPLUS::kfFALSE);
   var.Set("SomeValue");
   CMonvarDictionary::getInstance()->add("avar");
   
-  CTCLVariable v2(m_pInterp, "bvar", kfFALSE);
+  CTCLVariable v2(m_pInterp, "bvar", TCLPLUS::kfFALSE);
   v2.Set("anotherValue");
   CMonvarDictionary::getInstance()->add("bvar");
   
@@ -169,7 +169,7 @@ void monvartimertests::split()
     std::stringstream strvarname;
     strvarname << "var" << i;
     std::string vname(strvarname.str());
-    CTCLVariable v(m_pInterp, vname, kfFALSE);
+    CTCLVariable v(m_pInterp, vname, TCLPLUS::kfFALSE);
     v.Set("a");
     
     CMonvarDictionary::getInstance()->add(vname);

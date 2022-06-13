@@ -49,7 +49,7 @@ namespace DDASReadout {
         virtual ~RawChannel();
         int SetTime();
         int SetLength();
-        int SetTime(double clockcal);
+        int SetTime(double clockcal, bool useExternal=false);
         int SetChannel();
         int Validate(int expecting);
         

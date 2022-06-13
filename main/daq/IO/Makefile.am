@@ -14,7 +14,7 @@ libdaqio_la_SOURCES = CDataSource.cpp \
 		 CLoggingDataSink.cpp \
 		 CDataSinkFactory.cpp \
 		 CDataSinkException.cpp
-                       
+
 include_HEADERS	=  CDataSource.h \
 		 CFileDataSource.h \
 		 CRingDataSource.h \
@@ -37,7 +37,7 @@ libdaqio_la_CPPFLAGS	=  \
 		-I@top_srcdir@/base/os \
 		-I@top_srcdir@/base/headers \
     -I@top_srcdir@/base/dataflow \
-    @LIBTCLPLUS_CFLAGS@	
+    @LIBTCLPLUS_CFLAGS@	 @PIXIE_CPPFLAGS@
 
 libdaqio_la_LDFLAGS	= -version-info $(SOVERSION)	\
 				-Wl,"-rpath-link=$(libdir)" -lrt \

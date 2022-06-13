@@ -1,0 +1,1245 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   sequence.test
+# @brief  Test sequence part of manager API.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require sequence
+package require programs
+package require sqlite3
+
+variable dbFile
+variable dbFd
+
+proc commonSetup { } {
+    set ::dbFd [file tempfile ::dbFile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbFile
+    sqlite3 db $::dbFile
+}
+
+proc commonCleanup { } {
+    close $::dbFd
+    db close
+    if {[file exists $::dbFile]} {
+        file delete $::dbFile
+    }
+}
+
+#-----------------------------------------------------------------------------
+#  newState Tests.
+#
+tcltest::test newstate_1 {Successful add} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newState db test
+    db eval {SELECT COUNT(*) FROM transition_name WHERE name='test'}
+} \
+-result 1
+
+tcltest::test newstate_2 {Duplicate add is an error.} \
+-setup {
+    commonSetup
+    sequence::newState db test
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newState db test
+} -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+#  newTransition tests
+
+tcltest::test newtransition_1 {Successful new transition} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+    
+    #  Get the ids of state1 and state2 and require that we have a legal
+    #  transition with that from and to:
+    
+    set id1 [db eval {SELECT id FROM transition_name WHERE name = 'state1'}]
+    set id2 [db eval {SELECT id FROM transition_name WHERE name = 'state2'}]
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE from_id=$id1 AND to_id=$id2
+    }
+    
+} -result 1
+
+tcltest::test newTransition_2 {to state does not exist.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+tcltest::test newTransition_3 {from state does not exist.} \
+-setup {
+    commonSetup
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+
+tcltest::test newtransition_4 {Duplicate transition definitions illegal/detected} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newTransition db state1 state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::newTransition db state1 state2;               # Duplicate illegal
+} -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+#  sequence::add tests
+
+tcltest::test add_1 {Successful creation of an empty transition.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add db seq1 state1
+    
+    set stateId [db eval {
+        SELECT id FROM transition_name WHERE name = 'state1'
+    }]
+    db eval {
+        SELECT COUNT(*) FROM sequence
+        WHERE name='seq1' and transition_id=$stateId
+    }
+    
+} -result 1
+
+tcltest::test add_2 {2 sequences triggered on the same transition is OK} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    sequence::add db seq1 state1
+    sequence::add db seq2 state1
+    
+    set stateId [db eval {
+        SELECT id FROM transition_name WHERE name ='state1'
+    }]
+    db eval {
+        SELECT COUNT(*) FROM sequence
+        WHERE name IN ('seq1', 'seq2') AND transition_id=$stateId
+    }
+} -result 2
+
+tcltest::test add_3 {Duplicate sequence name is not allowed.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add db seq1 state1
+    sequence::add db seq1 state2;          # Duplicate name not allowed.
+} -result * -match glob -returnCodes error
+
+tcltest::test add_4 {Nonexisting triggering state is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::add seq1 state1
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+# addStep tests.
+
+tcltest::test addstep_1 {Add a single step to a sequence - gives right step num.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set number [::sequence::addStep db seq echo]
+    
+} -result $::sequence::step_interval
+
+tcltest::test addstep_2 {Step data is added correctly.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set stepno [::sequence::addStep db seq echo]
+    set pgmId [dict get [::program::getdef db echo] id]
+    set seqid [::sequence::_getSeqId db seq]
+    
+    db eval {
+        SELECT COUNT(*) FROM step
+        WHERE sequence_id = $seqid AND step = $stepno AND program_id = $pgmId
+              AND predelay = 0 AND postdelay = 0
+    }
+} -result 1
+
+tcltest::test addstep_3 {Step can have non zero delays} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set stepno [::sequence::addStep db seq echo 1 2]
+    set pgmId [dict get [::program::getdef db echo] id]
+    set seqid [::sequence::_getSeqId db seq]
+    
+    db eval {
+        SELECT COUNT(*) FROM step
+        WHERE sequence_id = $seqid AND step = $stepno AND program_id = $pgmId
+            AND predelay = 1 AND postdelay  = 2
+    }
+} -result 1
+
+tcltest::test addstep_4 {Can add two steps:} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set step1 [::sequence::addStep db seq echo]
+    set step2 [::sequence::addStep db seq ls]
+    list $step1 $step2
+} -result [list $::sequence::step_interval [expr {$::sequence::step_interval*2}]]
+
+tcltest::test addstep_5 {Sequence must exist or it's an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    # sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    # program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::addStep db seq echo
+} -result * -match glob -returnCodes error
+
+tcltest::test addstep_6 {Program must exist or it's an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    # program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body { 
+    ::sequence::addStep deb seq ls0
+} -result * -match glob -returnCodes error
+
+#------------------------------------------------------------------------------
+#  Tests of rmvStep - removing existing steps.
+#
+tcltest::test rmvstep_1 {Removing the only step leaves none.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    set stepNum [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvStep db seq $stepNum
+    set seqid [::sequence::_getSeqId db seq]
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $seqid
+    }
+    
+} -result 0
+
+tcltest::test rmvstep_2 {Test selectivity of rmv when there's more than one step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db seq $step1
+    
+    set seqid [::sequence::_getSeqId db seq]
+    set remainingStep [db eval {
+        SELECT step FROM step WHERE sequence_id = $seqid
+    }]
+    
+    expr {$remainingStep == $step2}
+    
+    
+} -result 1
+
+tcltest::test rvsstep_3 {More selectivity of testing.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db seq $step2
+    
+    set seqid [::sequence::_getSeqId db seq]
+    set remaining [db eval {
+        SELECT step FROM step WHERE sequence_id = $seqid
+        ORDER BY step ASC
+    }]
+    
+    list [expr {$step1 == [lindex $remaining 0]}] \
+        [expr {$step3 == [lindex $remaining 1]}]
+} -result [list 1 1]
+
+tcltest::test rmvstep_4 {Removing nonexistent step is an error.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set nosuchStep [expr {($step1 + $step2)/2}]
+    ::sequence::rmvStep seq $nosuchStep
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvstep_5 {NO such sequence is also an error} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvStep db sequence $step1
+} -result * -match glob -returnCodes error
+
+
+#------------------------------------------------------------------------------
+# Tests for sequence::insertStep
+
+tcltest::test insertstep_1 {Insert after single makes a final step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set step [sequence::insertStep db seq ls $step1]
+    
+} -result [expr {$::sequence::step_interval * 2}]
+
+tcltest::test insertstep_2 {Insert between two steps} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+    
+} \
+-body {
+    set newStep [sequence::insertStep db seq ls $step1]
+} -result [expr {($::sequence::step_interval * 3.0)/2.0}]
+
+
+tcltest::test insertstep_3 {No such step to insert after.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db seq ls \
+        [expr {$step1+($::sequence::step_interval/2.0)}]
+} -result * -match glob -returnCodes error
+
+tcltest::test insertstep_4 {No such sequence to insert into.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db sequence ls $step1
+} -result * -match glob -returnCodes error
+
+tcltest::test insertstep_5 {No such program.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+    set step2 [sequence::addStep db seq echo]
+
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::insertStep db seq echoplex $step1
+} -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+# sequence::prependStep tests.
+
+tcltest::test prepend_1 {If there are no steps this is the first.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::prependStep db seq ls
+} -result $::sequence::step_interval
+
+tcltest::test prepend_2 {descr} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add      db seq state1
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    set step1 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::prependStep db seq ls
+} -result [expr {$::sequence::step_interval/2.0}]
+
+#------------------------------------------------------------------------------
+#  rmvState tests - remove a state removes everything associated with it.
+#
+
+tcltest::test rmvstate_1 {No such state} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvState db nosuchstate
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvstate_2 {Only the state exists.} \
+-setup {
+    commonSetup
+    ::sequence::newState db mystate
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvState db mystate
+    db eval {
+        SELECT COUNT(*) FROM transition_name WHERE name  = 'mystate'
+    }
+} -result 0
+
+tcltest::test rmvstate_3 {Removing a state removes transitions to it.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state2 state1
+    ::sequence::newTransition db state3 state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id1 [::sequence::_stateId db state1];    # For later.
+    
+    ::sequence::rmvState db state1
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE to_id = $id1
+    }
+} -result 0
+
+tcltest::test rmvstate_4 {Removing a state removes transitions from it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state1 state2
+    ::sequence::newTransition db state1 state3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_stateId db state1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition WHERE from_id = $id1
+    }
+} -result 0
+
+tcltest::test rmvstate_5 {Removing a state removes sequences that trigger on it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    ::sequence::add db seq2 state1
+    ::sequence::add db seq3 state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_stateId db state1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM sequence WHERE transition_id = $id
+    }
+} -result 0
+
+tcltest::test rmvstate_6 {Removing a state removes sequence steps of seqs triggered by it} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    ::sequence::addStep db seq1 echo
+    ::sequence::addStep db seq1 ls
+    ::sequence::addStep db seq1 echo
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set seqid [::sequence::_getSeqId db seq1]
+    ::sequence::rmvState db state1
+    
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $seqid
+    }
+} -result 0
+#------------------------------------------------------------------------
+#
+tcltest::test rmvtransition_1 {Remove works when from/to states are defined} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newTransition db state1 state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set fromId [::sequence::_stateId db state1]
+    set toId   [::sequence::_stateId db state2]
+    
+    ::sequence::rmvTransition db state1 state2
+    
+    db eval {
+        SELECT COUNT(*) FROM legal_transition
+        WHERE from_id = $fromId AND to_id = $toId
+    }    
+} -result 0
+
+tcltest::test rmvtransition_2 {Not an error if there's not a transition:} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvTransition db state1 state2
+    set a 0
+} -result 0
+
+tcltest::test rmvtransition_3 {To state does not exist -> error.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::rmvTransition db state1 state2
+} -result * -match glob -returnCodes error
+
+tcltest::test rmvtransition_4 {From state does not exist -> error.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvTransition db state2 state1
+} -result * -match glob -returnCodes error
+
+#-----------------------------------------------------------------------------
+# rmvSequence tests.
+
+tcltest::test rmvsequence_1 {Remove a sequence with no steps.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvSequence db seq
+    db eval {SELECT COUNT(*) FROM sequence WHERE name = 'seq'}
+} -result 0
+
+tcltest::test rmvsequecne_2 {Removing a sequence removes its steps} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::add db seq1 state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    ::sequence::addStep db seq1 echo
+    ::sequence::addStep db seq1 ls
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set id [::sequence::_getSeqId db seq1]
+    ::sequence::rmvSequence db seq1
+    
+    db eval {
+        SELECT COUNT(*) FROM step WHERE sequence_id = $id
+    }
+} -result 0
+
+tcltest::test rmvsequence_3 {Error to remove a sequence that does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::rmvSequence db seq1
+} -result * -match glob -returnCodes error
+
+#----------------------------------------------------------------------------
+#  ::sequence::reachable tests
+
+
+tcltest::test reachable_1 {Unreachable state has 0 return value.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state1
+} -result 0
+
+tcltest::test reachable_2 {Correct number of froms when reachable.} \
+-setup {
+    commonSetup
+    ::sequence::newState db state1
+    ::sequence::newState db state2
+    ::sequence::newState db state3
+    
+    ::sequence::newTransition db state1 state3
+    ::sequence::newTransition db state2 state3
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state3
+} -result 2
+
+tcltest::test reachable_3 {error if the state does not exist.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::reachable db state1
+} -result * -match glob -returnCodes error
+
+
+#------------------------------------------------------------------------------
+# ::sequence::listStates tests.
+
+tcltest::test liststates_1 {Initially empty.} \
+-setup {
+    commonSetup
+    db eval {DELETE FROM transition_name} ;   # only use our states.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listStates db
+} -result [list]
+
+tcltest::test liststates_2 {Have states to list} \
+-setup {
+    commonSetup
+    db eval {DELETE FROM transition_name} ;   # only use our states.
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    #  We sort both the expeted result and the actual result in case
+    #  the orders are different.
+    
+    set result [::sequence::listStates db]
+    set result [lsort $result]
+} -result [lsort [list state1 state2 state3]]
+
+#---------------------------------------------------------------------------
+#  sequence::listLegalNextStates
+
+#  Note that these will involve a bit of jiggerypokery so that we
+#  confine it to the toy state diagrams we create.  Specifically, we'll need
+#  to set the current state in a dirty way.
+#
+tcltest::test legalnextstates_1 {No legal next states (bad news but these are tests)} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state3]
+    
+    db eval {
+        UPDATE last_transition SET state = $id 
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listLegalNextStates db
+} -result [list]
+
+tcltest::test legalnextstates_2 {One legal next state} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state1]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::listLegalNextStates db
+} -result [list state3]
+
+tcltest::test legalnextstates_3 {Multiple next states} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state2]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set result [::sequence::listLegalNextStates db]
+    lsort $result
+} -result [lsort [list state1 state3]]
+
+#-------------------------------------------------------------------------------
+#  ::sequence::isLegalTranstion tests.
+
+tcltest::test isLegalTransition_1 {transition is legal:} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state2]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::isLegalTransition db state3
+} -result 1
+
+tcltest::test <test_name> {descr} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::newTransition db state1 state3
+    sequence::newTransition db state2 state3;  # state 3 is a dead end.
+    sequence::newTransition db state2 state1
+    
+    set id [::sequence::_stateId db state1]
+    db eval {UPDATE last_transition SET state = $id}
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::isLegalTransition db state2
+} -result 0
+
+#-------------------------------------------------------------------------------
+#  ::sequence::listSequences
+
+
+tcltest::test listsequences_1 {There are initially no sequences} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::listSequences db
+} -result [list]
+
+tcltest::test listsequences_2 {All names/transition names are right} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::newState db state2
+    sequence::newState db state3
+    
+    sequence::add db seq1 state1
+    sequence::add db seq2 state2
+    sequence::add db seq3 state3
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set rawDicts [sequence::listSequences db]
+    set result [list]
+    foreach item $rawDicts {
+        set name [dict get $item name]
+        set tr   [dict get $item transition_name]
+        lappend result [list $name $tr]
+    }
+    lsort -index 0 $result  
+} -result [lsort -index 0 [list {seq1 state1} {seq2 state2} {seq3 state3}]]
+
+#-------------------------------------------------------------------------------
+# sequence::listSteps tests.
+
+tcltest::test liststeps_1 {Sequence with no steps gives an empty list.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listSteps db seq
+} -result [list]
+
+tcltest::test liststeps_2 {Sequence with a step lists the step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    sequence::addStep db seq echo 1 2
+    
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set result [::sequence::listSteps db seq]
+    set result [lindex $result 0]
+    list                                                                \
+        [dict get $result step]                                         \
+        [dict get $result program_name]                                 \
+        [dict get $result predelay]                                     \
+        [dict get $result postdelay]
+} -result [list $::sequence::step_interval echo 1 2]
+
+tcltest::test liststeps_3 {Sequence with more than one step.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    sequence::addStep db seq echo 1 2
+    sequence::addStep db seq ls
+    sequence::addStep db seq echo
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    set raw [::sequence::listSteps db seq]
+    set steps [list]
+    foreach step $raw {
+        lappend steps [dict get $step step]
+    }
+    set steps
+} -result [list $::sequence::step_interval                         \
+    [expr {$::sequence::step_interval*2}]                           \
+    [expr {$::sequence::step_interval*3}]                           \
+]
+
+tcltest::test liststeps_4 {No such sequence is an error} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::listSteps seq
+} -result * -match glob -returnCodes error
+
+
+#-------------------------------------------------------------------------------
+#  ::sequence::addMonitor tests
+#
+proc monCleanup { } {
+    commonCleanup
+    array unset ::sequence::StepMonitors *;   # W/o pattern the variable disappears.
+}
+
+tcltest::test addmonitor_1 {Can add a monitor and it's there.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    set result [::sequence::addMonitor db seq $step2 test]
+    set idx [::sequence::_monitorIndex [::sequence::_getSeqId db seq] $step2]
+    list $result $::sequence::StepMonitors($idx)
+} -result [list "" test]
+
+tcltest::test addmonitor_2 {If there's already a monitor we get it back} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    set result [::sequence::addMonitor db seq $step2 test]
+    set result [::sequence::addMonitor db seq $step2 junk]
+} -result test
+
+tcltest::test addmonitor_3 {Can delete a monitor.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq $step2 test]
+    ::sequence::addMonitor db seq $step2
+    
+    
+    
+    array names ::sequence::StepMonitors  \
+        [::sequence::_monitorIndex [::sequence::_getSeqId db seq] $step2]
+} -result {}
+
+tcltest::test addmonitor_4 {No such sequence fails.} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq1 $step2 test
+
+} -result * -match glob -returnCodes error
+
+tcltest::test addmonitor_5 {No Such step error} \
+-setup {
+    commonSetup
+    sequence::newState db state1
+    sequence::add db seq state1
+    
+    program::add  db echo /bin/echo Transitory genesis.nscl.msu.edu [dict create]
+    program::add  db ls   /bin/ls   Transitory genesis.nscl.msu.edu [dict create]
+    
+    set step1 [sequence::addStep db seq echo 1 2]
+    set step2 [sequence::addStep db seq ls]
+    set step3 [sequence::addStep db seq echo]
+} \
+-cleanup {
+    monCleanup
+} \
+-body {
+    ::sequence::addMonitor db seq [expr {$step3 + $::sequence::step_interval}] test
+
+} -result * -match glob -returnCodes error
+
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

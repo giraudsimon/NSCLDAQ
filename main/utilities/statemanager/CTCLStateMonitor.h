@@ -21,31 +21,13 @@
 */
 
 
-#ifndef _CTCLSTATEMONITOR_H
-#define _CTCLSTATEMONITOR_H
+#ifndef CTCLSTATEMONITOR_H
+#define CTCLSTATEMONITOR_H
 
-#ifndef _CSTATEMONITOR_H
 #include "CStateMonitor.h"
-#endif
-
-#ifndef _TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
-
-
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
-
-#ifndef __STL_MAP
 #include <map>
-#ifndef __STL_MAP
-#define __STL_MAP
-#endif
-#endif
 
 
 

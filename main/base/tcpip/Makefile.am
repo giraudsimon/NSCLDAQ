@@ -16,8 +16,7 @@ include_HEADERS = CSocket.h \
 
 
 libTcp_la_CPPFLAGS = @LIBTCLPLUS_CFLAGS@	\
-	-I@top_srcdir@/base/headers -I@top_srcdir@/base/os \
-	@PIXIE_CPPFLAGS@
+	-I@top_srcdir@/base/headers -I@top_srcdir@/base/os @PIXIE_CPPFLAGS@
 
 libTcp_la_LIBADD = @LIBEXCEPTION_LDFLAGS@	\
 	@top_builddir@/base/os/libdaqshm.la

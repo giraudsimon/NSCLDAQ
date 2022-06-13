@@ -27,6 +27,9 @@ from nscldaq.portmanager import PortManager
 import errno
 import socket
 import getpass
+import warnings
+
+
 
 
 ##
@@ -36,6 +39,7 @@ import getpass
 #
 class PortManagerTests(unittest.TestCase):
     def setUp(self):
+        warnings.simplefilter('ignore', ResourceWarning)
         pass
     def tearDown(self):
         pass
@@ -101,7 +105,7 @@ class PortManagerTests(unittest.TestCase):
     def test_getPort_ok(self):
         pm = PortManager.PortManager('localhost', 30000)
         port = pm.getPort('myport')
-        self.assertTrue(isinstance(port, (int, long)))
+        self.assertTrue(isinstance(port, (int)))
     
     ##
     # test_getPort_remotefail -- This test is not viable in some circumstances
@@ -134,11 +138,16 @@ class PortManagerTests(unittest.TestCase):
         pm    = PortManager.PortManager('localhost', 30000)
         ports = pm.listPorts()
         message = None
-        if len(ports) != 1:
+        if len(ports) >= 1:
             message = 'Number of ports... found ports {}'.format(ports)
-        self.assertEquals(1, len(ports), msg=message)
-        rm = ports[0]
-        self.assertEquals('RingMaster', rm['service'])
+        self.assertTrue( len(ports) >= 1, msg=message)
+        
+        found = False
+        for rm in ports:
+            if rm['service'] == 'RingMaster':
+                found = True
+        
+        self.assertTrue(found)
     
     ##
     # test_list_afew
@@ -147,16 +156,17 @@ class PortManagerTests(unittest.TestCase):
     #
     def test_list_afew(self):
         pm     = PortManager.PortManager('localhost', 30000)
+        pre    = pm.listPorts()
         myport = pm.getPort('myport')
         theport= pm.getPort('theport')
         iam    = getpass.getuser()
         
         info   = pm.listPorts()
         message = None
-        if len(info) != 3:
+        if len(info) != (len(pre) +2):
             message = 'Number of ports... found ports {}'.format(info)
 
-        self.assertEquals(3, len(info), msg=message)
+        self.assertEqual(len(pre)+2, len(info), msg=message)
         
         # Toss the data up into a dict keyed by service name.
         
@@ -169,14 +179,14 @@ class PortManagerTests(unittest.TestCase):
         # myport is present and has the right stuff:
         
         self.assertTrue('myport' in keyedData.keys())
-        self.assertEquals(myport, keyedData['myport']['port'])
-        self.assertEquals(iam,    keyedData['myport']['user'])
+        self.assertEqual(myport, keyedData['myport']['port'])
+        self.assertEqual(iam,    keyedData['myport']['user'])
         
         # theport is present and has the right stuff:
         
         self.assertTrue('theport' in keyedData.keys())
-        self.assertEquals(theport, keyedData['theport']['port'])
-        self.assertEquals(iam,     keyedData['theport']['user'])
+        self.assertEqual(theport, keyedData['theport']['port'])
+        self.assertEqual(iam,     keyedData['theport']['user'])
 
     ##
     # test_find_byservice
@@ -189,12 +199,12 @@ class PortManagerTests(unittest.TestCase):
         iam    = getpass.getuser()
         
         info = pm.find(service = 'theport')
-        self.assertEquals(1, len(info))
+        self.assertEqual(1, len(info))
         pinfo = info[0]
         
-        self.assertEquals('theport', pinfo['service'])
-        self.assertEquals(theport,  pinfo['port'])
-        self.assertEquals(iam,      pinfo['user'])
+        self.assertEqual('theport', pinfo['service'])
+        self.assertEqual(theport,  pinfo['port'])
+        self.assertEqual(iam,      pinfo['user'])
     
     
     ##
@@ -208,12 +218,12 @@ class PortManagerTests(unittest.TestCase):
         iam    = getpass.getuser()
         
         info   = pm.find(beginswith = 'my')
-        self.assertEquals(1, len(info))
+        self.assertEqual(1, len(info))
         pinfo = info[0]
         
-        self.assertEquals('myport', pinfo['service'])
-        self.assertEquals(myport,  pinfo['port'])
-        self.assertEquals(iam,      pinfo['user'])
+        self.assertEqual('myport', pinfo['service'])
+        self.assertEqual(myport,  pinfo['port'])
+        self.assertEqual(iam,      pinfo['user'])
     
     ##
     # test_find_byuser

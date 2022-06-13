@@ -17,20 +17,11 @@
 
 //////////////////////////CVMEScaler.h file//////////////////////////////////
 
-#ifndef __CVMESCALER_H  
-#define __CVMESCALER_H
+#ifndef CVMESCALER_H  
+#define CVMESCALER_H
 
-#ifndef __STL_VECTOR
 #include <vector>
-#define __STL_VECTOR
-#endif                               
-
-#ifndef __STDC_STDINT_H
 #include <stdint.h>
-#ifndef __STDC_STDINT_H
-#define __STDC_STDINT_H
-#endif
-#endif
 
                                
 /*!

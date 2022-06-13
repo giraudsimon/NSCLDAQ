@@ -3,7 +3,7 @@ package provide ReadoutGUIPanel 1.0
 package require tcltest
 package require S800_Provider
 
-tcltest::configure -verbose tebp
+
 namespace eval ::s800test {
     variable fd
     variable port 1234

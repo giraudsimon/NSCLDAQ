@@ -792,13 +792,14 @@ COutputThread::processStrings(DataBuffer& buffer, StringsBuffer& strings)
   // Once we have a timestamp we're ready to go.
 
   time_t now = time(NULL);
-  
+
   // Create and commit the item to the ring.
 
-  CRingTextItem texts(strings.s_ringType, NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
+  CRingTextItem texts(strings.s_ringType,
+		      NULL_TIMESTAMP, Globals::sourceId, BARRIER_NOTBARRIER,
 		      stringVector,
 		      m_elapsedSeconds, // best we can do for now.
-          now);
+		      static_cast<uint32_t>(now));
   texts.commitToRing(*m_pRing);
 
 }

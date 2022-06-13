@@ -1,0 +1,137 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   shiftinstanc.test
+# @brief  Test shift instances.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require logbook
+
+set LogBook ""
+set fox     ""
+set cerizza ""
+
+
+proc commonSetup {} {
+    if {[file exists test.logbook.db]} {file delete test.logbook.db}
+    logbook::logbook create test.logbook.db 0400x {Ron Fox} {Logbook for Tcl tests}
+    set ::LogBook [logbook::logbook open test.logbook.db]
+    set ::fox   [$::LogBook addPerson Fox Ron Mr.]
+    set ::cerizza [$::LogBook addPerson Cerizza Giordano Dr.]
+}
+proc commonCleanup {} {
+    $::fox     destroy
+    $::cerizza destroy
+    $::LogBook destroy
+    file delete test.logbook.db
+}
+
+tcltest::test name_1 {Get the name of the shift correctly.} \
+-setup {
+    commonSetup
+    set shift [$LogBook createShift both [list $fox $cerizza]]
+    
+} \
+-cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    $shift name
+} \
+-result both
+
+tcltest::test members_1 {Shift with no members} \
+-setup {
+    commonSetup
+    set shift [$LogBook createShift empty]
+    
+} \
+-cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    $shift members
+} -result [list]
+
+tcltest::test members_2 {Members are correct in number} \
+-setup {
+    commonSetup
+    set shift [$LogBook createShift both [list $fox $cerizza]]
+    
+} \
+-cleanup {
+    $shift destroy
+    foreach member $members {$member destroy}
+    commonCleanup
+} \
+-body {
+    set members [$shift members]
+    llength $members
+} -result 2
+
+tcltest::test members_3 {Members are correct in content} \
+-setup {
+    commonSetup
+    set shift [$LogBook createShift both [list $fox $cerizza]]
+    
+} \
+-cleanup {
+    $shift destroy
+    foreach member $members {$member destroy}
+    commonCleanup
+} \
+-body {
+    set members [$shift members]
+    set result [list]
+    foreach member $members {
+        lappend result [$member lastName]
+    }
+    set result
+} -result [list Fox Cerizza]
+
+tcltest::test id {Id is correctl} \
+-setup {
+    commonSetup
+    set shift [$LogBook createShift empty]
+    
+} \
+-cleanup {
+    $shift destroy
+    commonCleanup
+} \
+-body {
+    $shift id
+} -result 1
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

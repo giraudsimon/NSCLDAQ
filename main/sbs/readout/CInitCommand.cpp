@@ -72,39 +72,9 @@ CInitCommand::operator()(CTCLInterpreter&    interp,
   CTCLObjectPackage*   pPack       = getPackage();
   CRunControlPackage&  pRunControl = reinterpret_cast<CRunControlPackage&>(*pPack);
 
-  // Attempt the resume.  We will catch the common types of exceptions in addition 
-  // to the CStateException:
-  //
-  bool error = false;
-  string result;
-  try {
-    std::cout << "Init not implemented" << std::endl;
-//    pRunControl.resume();
-  }
-  catch (CStateException& e) {
-    error   = true;
-    result  = "Run was not in the proper state to resume: \n";
-    result += e.ReasonText();
-  }
-  catch (string message) {
-    error   = true;
-    result  = "String exception caught attempting to resume the run: \n";
-    result += message;
-  }
-  catch (const char* message) {
-    error   = true;
-    result  = "char* exception caught attempting to resume the run: \n";
-    result += message;
-  }
-  catch (...) {
-    error = true;
-    result = "Some unanticipated exception was caught while attempting to resume the run";
-  }
-
-  interp.setResult(result);
-
-  return error ? TCL_ERROR : TCL_OK;
-
+  interp.setResult("Init not implemented");
+  return TCL_OK;
+  
 }
 /*!
    Provides the usage string for the command

@@ -19,7 +19,7 @@
 
 package require tcltest
 package require RunstateMachine
-package require rdoCalloutsBundle
+#package require rdoCalloutsBundle
 
 
 
@@ -41,9 +41,9 @@ proc ReadoutGUIPanel::getRun {} {
 }
 
 #-------------------------------------------------------------------------------
-#  rdoCalloutsBundle is a bundle:
+#  rdoCalloutsBundle is a bundle  -- it's autoloaded.
 
-tcltest::test bundle-1 {rdoCalloutsBundle package should have the rdoCallouts bundle} \
+tcltest::test bundle-1 {rdoCalloutsBundle package should have the rdoCallouts bundle which auto registers.} \
 -setup {
     package require rdoCalloutsBundle
     set s [RunstateMachine %AUTO%]
@@ -59,8 +59,9 @@ tcltest::test bundle-1 {rdoCalloutsBundle package should have the rdoCallouts bu
 } \
 -body {
     catch {$s addCalloutBundle rdoCallouts} msg
+    
 } \
--result 0
+-result 1
 
 tcltest::test bundle-2 {rdoCallouts package auto registerd with the singleton} \
 -setup {

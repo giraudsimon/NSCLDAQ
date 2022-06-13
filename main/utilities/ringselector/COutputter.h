@@ -22,12 +22,10 @@
  */
 
 
-#ifndef __COUTPUTTER_H
-#define __COUTPUTTER_H
+#ifndef COUTPUTTER_H
+#define COUTPUTTER_H
 
-#ifndef DAQHWAPI_THREAD_H
 #include <Thread.h>
-#endif
 
 // Forward definitions:
 

@@ -1,5 +1,5 @@
-#ifndef __CSCRIPTEDSEGMENT_H
-#define __CSCRIPTEDSEGMENT_H
+#ifndef CSCRIPTEDSEGMENT_H
+#define CSCRIPTEDSEGMENT_H
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -18,23 +18,15 @@
 */
 
 
-#ifndef __CEVENTSEGMENT_H
 #include <CEventSegment.h>
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
+#include "CModuleCreator.h"
 
 class CDigitizerDictionary;
 class CReadOrder;
 class CTCLInterpreter;
 class CModuleCommand;
-class CModuleCreator;
+
 
 struct ScriptedBundle;
 
@@ -62,10 +54,13 @@ public:
   // protected members:
 
 protected:
-  void addCreator(CModuleCreator& creator);
+  void addCreator(const char* type, CModuleCreator& creator);
   void addStandardCreators();
   virtual void addUserWrittenCreators(); // Hook for user written readout modules.
   virtual std::string getConfigurationFile(); // Hook for users to override default config file
+public:
+  static void reportConfigFileFailure(const char* why, const char* where);
+  static std::string locateConfigFile(const char* envvar, const char* name);
 
 };
 #endif

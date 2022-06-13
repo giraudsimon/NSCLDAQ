@@ -1,6 +1,7 @@
 bin_PROGRAMS=evts2frags
 
-evts2frag_COMMON_CFLAGS = -I@top_srcdir@/daq/format -I@top_srcdir@/daq/eventbuilder \
+evts2frag_COMMON_CFLAGS = -I@top_srcdir@/daq/format \
+	-I@top_srcdir@/daq/eventbuilder \
 	-I@top_srcdir@/base/os -I@top_srcdir@/base/thread @LIBTCLPLUS_CFLAGS@ \
 	@PIXIE_CPPFLAGS@
 
@@ -39,7 +40,9 @@ unittests_SOURCES=TestRunner.cpp headerbuildertests.cpp apptests.cpp \
 
 
 unittests_CPPFLAGS=@CPPUNIT_CFLAGS@ $(evts2frag_COMMON_CFLAGS)
-unittests_LDADD=@CPPUNIT_LDFLAGS@ @top_builddir@/base/os/libdaqshm.la \
+unittests_LDADD=@CPPUNIT_LDFLAGS@ \
+	@top_builddir@/daq/format/libdataformat.la \
+	@top_builddir@/base/os/libdaqshm.la \
 	@top_builddir@/base/thread/libdaqthreads.la @LIBEXCEPTION_LDFLAGS@
 
 

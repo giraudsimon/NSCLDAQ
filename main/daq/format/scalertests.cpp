@@ -26,6 +26,11 @@ class scltests : public CppUnit::TestFixture {
   CPPUNIT_TEST(tstampCopyCons);
   CPPUNIT_TEST(fractionalRunTime);
   CPPUNIT_TEST(incremental);
+  CPPUNIT_TEST(origsid);           // V12.0-pre1
+  CPPUNIT_TEST(tsorigsid);         // V12.0-pre1
+  CPPUNIT_TEST(origsid_1);
+  CPPUNIT_TEST(origsid_2);
+  CPPUNIT_TEST(origsid_3);
   CPPUNIT_TEST_SUITE_END();
 
 
@@ -46,6 +51,12 @@ protected:
   void tstampCopyCons();
   void fractionalRunTime();
   void incremental();
+  void origsid();
+  void tsorigsid();
+  void origsid_1();
+  void origsid_2();
+  void origsid_3();
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(scltests);
@@ -317,4 +328,62 @@ scltests::incremental()
     ASSERT(inc.isIncremental());
     ASSERT(!notinc.isIncremental());
     
+}
+  // These tests were added for 12.0-pre1 to check that the s_originalSid
+  // field of the body is correctly set.
+  
+void
+scltests::origsid()
+{
+  uint32_t counters[32];
+  time_t now = time(nullptr);
+  pScalerItem pItem = formatScalerItem(
+    32, now, 0, 10, counters
+  );
+  pScalerItemBody pBody = reinterpret_cast<pScalerItemBody>(bodyPointer(
+    reinterpret_cast<pRingItem>(pItem)
+  ));
+  EQ(uint32_t(0), pBody->s_originalSid);
+  
+  free(pItem);
+}
+void
+scltests::tsorigsid()
+{
+    uint32_t counters[32];
+    time_t now = time(nullptr);
+    
+    pScalerItem pItem = formatTimestampedScalerItem(
+        0x123456789, 15, 0, 1, 1, static_cast<uint32_t>(now), 0, 10, 32,
+        counters
+    );
+    
+    pScalerItemBody pBody = reinterpret_cast<pScalerItemBody>(bodyPointer(
+    reinterpret_cast<pRingItem>(pItem)
+  ));
+  EQ(uint32_t(15), pBody->s_originalSid);
+  
+  free(pItem);
+    
+}
+
+void scltests::origsid_1()
+{
+  CRingScalerItem item(5);
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void scltests::origsid_2()
+{
+  std::vector<uint32_t> scalers={1,2,3,4,5};
+  CRingScalerItem item(0, 10, time(nullptr), scalers);
+  EQ(uint32_t(0), item.getOriginalSourceId());
+}
+void scltests::origsid_3()
+{
+  std::vector<uint32_t> scalers={1,2,3,4,5,6};
+  CRingScalerItem item(
+    0x123456789a, 5, 0, 10, 20, time(nullptr), scalers
+  );
+  EQ(uint32_t(5), item.getOriginalSourceId());
+
 }

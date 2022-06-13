@@ -33,15 +33,6 @@
 #include "CAbnormalEndItem.h"
 #include <iostream>
 
-static uint32_t swal(uint32_t l)
-{
-    uint32_t result = 0;
-    for (int i = 0; i < 4; i++) {
-        result = (result << 8) | (l & 0xff);
-        l = l >> 8;
-    }
-    return result;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Test text output item.
@@ -81,11 +72,19 @@ TextOutput::empty()
   ASSERT(pItem);
   uint32_t properSize =
     sizeof(RingItemHeader) + sizeof(uint32_t) + sizeof(TextItemBody);
-  EQMSG("Empty text item size", properSize, pItem->s_header.s_size);
-  EQMSG("Type ", MONITORED_VARIABLES, pItem->s_header.s_type);
-  EQMSG(" time offset", static_cast<uint32_t>(0xbbbb), pItem->s_body.u_noBodyHeader.s_body.s_timeOffset);
-  EQMSG(" timestamp", static_cast<uint32_t>(0xaaaa), pItem->s_body.u_noBodyHeader.s_body.s_timestamp);
-  EQMSG(" string count", static_cast<uint32_t>(0),   pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
+  pTextItemBody pBody = reinterpret_cast<pTextItemBody>(
+    bodyPointer(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQMSG(
+      "Empty text item size", properSize,
+      itemSize(reinterpret_cast<pRingItem>(pItem))
+  );
+  EQMSG("Type ", uint16_t(MONITORED_VARIABLES), itemType(reinterpret_cast<pRingItem>(pItem)));
+  EQMSG(
+    " time offset", static_cast<uint32_t>(0xbbbb), pBody->s_timeOffset
+  );
+  EQMSG(" timestamp", static_cast<uint32_t>(0xaaaa), pBody->s_timestamp);
+  EQMSG(" string count", static_cast<uint32_t>(0),   pBody->s_stringCount);
 
   free(pItem);
 }
@@ -101,17 +100,20 @@ TextOutput::emptyTimestamp()
     // Check header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
+    EQ(
+       uint16_t(MONITORED_VARIABLES),
+       itemType(reinterpret_cast<pRingItem>(reinterpret_cast<pRingItem>(pItem)))
+    );
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(TextItemBody)
-        ), pItem->s_header.s_size
+        ), itemSize(reinterpret_cast<pRingItem>(pItem))
     );
     
     // Check body header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    pBodyHeader pB = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    pBodyHeader pB = reinterpret_cast<pBodyHeader>(bodyHeader(reinterpret_cast<pRingItem>(pItem)));
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pB->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pB->s_timestamp);
     EQ(static_cast<uint32_t>(1), pB->s_sourceId);
@@ -122,7 +124,8 @@ TextOutput::emptyTimestamp()
 	// Use of u_hasBodyHeader.s_body is ok here because we are generating
 	// synthetic events that don't have a body header extension.
     
-    pTextItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
+    pTextItemBody pBody =
+       reinterpret_cast<pTextItemBody>(bodyPointer(reinterpret_cast<pRingItem>(pItem)));
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
     EQ(static_cast<uint32_t>(stamp), pBody->s_timestamp);
     EQ(static_cast<uint32_t>(0), pBody->s_stringCount);
@@ -154,10 +157,13 @@ TextOutput::someStrings()
   uint32_t properSize =
     sizeof(RingItemHeader) + sizeof(uint32_t) + sizeof(TextItemBody)
     + stringSize;
-  EQMSG("Item size",    properSize, pItem->s_header.s_size);
-  EQMSG("String count", static_cast<uint32_t>(4), pItem->s_body.u_noBodyHeader.s_body.s_stringCount);
+  EQMSG("Item size",    properSize, itemSize(reinterpret_cast<pRingItem>(pItem)));
+  pTextItemBody pB = reinterpret_cast<pTextItemBody>(bodyPointer(
+      reinterpret_cast<pRingItem>(pItem)
+  ));
+  EQMSG("String count", static_cast<uint32_t>(4), pB->s_stringCount);
  
-  char* p = pItem->s_body.u_noBodyHeader.s_body.s_strings;
+  char* p = pB->s_strings;
 
   for (int i = 0; i < 4; i++) {
     EQMSG("Contents", std::string(strings[i]), std::string(p));
@@ -190,18 +196,23 @@ TextOutput::someStringsTimestamp()
     // Check header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    EQ(MONITORED_VARIABLES, pItem->s_header.s_type);
+    EQ(
+       uint16_t(MONITORED_VARIABLES),
+       itemType(reinterpret_cast<pRingItem>(pItem))
+    );
     EQ(
         static_cast<uint32_t>(
             sizeof(RingItemHeader) + sizeof(BodyHeader) + sizeof(TextItemBody)
             + stringSizes
-        ), pItem->s_header.s_size
+        ), itemSize(reinterpret_cast<pRingItem>(pItem))
     );
     
     // Check body header:
     // Note this is contrived data so sizeof(BodyHeader) is ok.
 	
-    pBodyHeader pH = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    pBodyHeader pH = reinterpret_cast<pBodyHeader>(
+        bodyHeader(reinterpret_cast<pRingItem>(pItem))
+    );
     EQ(static_cast<uint32_t>(sizeof(BodyHeader)), pH->s_size);
     EQ(static_cast<uint64_t>(0x1122334455667788ll), pH->s_timestamp);
     EQ(static_cast<uint32_t>(1), pH->s_sourceId);
@@ -212,7 +223,9 @@ TextOutput::someStringsTimestamp()
 	// Use of u_hasBodyHeader.s_body is ok here because we are generating
 	// synthetic events that don't have a body header extension.
 
-    pTextItemBody pBody = &(pItem->s_body.u_hasBodyHeader.s_body);
+    pTextItemBody pBody = reinterpret_cast<pTextItemBody>(
+        bodyPointer(reinterpret_cast<pRingItem>(pItem))
+    );
     EQ(static_cast<uint32_t>(1234), pBody->s_timeOffset);
     EQ(static_cast<uint32_t>(stamp), pBody->s_timestamp);
     EQ(static_cast<uint32_t>(4), pBody->s_stringCount);

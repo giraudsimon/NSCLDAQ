@@ -202,7 +202,7 @@ apptests::packItems(std::vector<pRingItem> items)
   // Now figure out the total size:
   
   for (int i = 0; i < items.size(); i++) {
-    result.s_nBytes += items[i]->s_header.s_size;
+    result.s_nBytes += itemSize(items[i]);
   }
   
   result.s_pData = malloc(result.s_nBytes);
@@ -211,7 +211,7 @@ apptests::packItems(std::vector<pRingItem> items)
   
   uint8_t* p = static_cast<uint8_t*>(result.s_pData);
   for (int i =0; i < items.size();  i++) {
-    size_t n = items[i]->s_header.s_size;
+    size_t n = itemSize(items[i]);
     memcpy(p, items[i], n);
     p += n;
     free(items[i]);
@@ -236,6 +236,9 @@ apptests::makeStateChange(uint64_t ts, uint32_t sid, uint32_t type)
   
   p->s_header.s_size = itemSize;
   p->s_header.s_type = type;
+  
+  // Cant' use bodyHeader method -- it'll return nullptr.
+  // since there's no body header .. yet.
   
   pBodyHeader pB = &(p->s_body.u_hasBodyHeader.s_bodyHeader);
   pB->s_size = sizeof(BodyHeader);
@@ -267,7 +270,7 @@ apptests::makeStateChange(uint32_t type)
   p->s_header.s_size = itemSize;
   p->s_header.s_type = type;
   
-  p->s_body.u_noBodyHeader.s_mbz = 0;
+  p->s_body.u_noBodyHeader.s_empty = sizeof(uint32_t);
   
   return reinterpret_cast<pRingItem>(p);
 }
@@ -445,8 +448,10 @@ void apptests::fragmaker_eof()
 void apptests::fragmaker_begonly_1()
 {
   pRingItem pBegin = makeStateChange(0x12345, 2, BEGIN_RUN);
+  uint32_t  sBegin = itemSize(pBegin);
   CRingBlockReader::DataDescriptor d =
-    {pBegin->s_header.s_size, 1, pBegin};
+      {sBegin, 1, pBegin};
+    
   
   m_pReader->addData(d);
   
@@ -471,9 +476,9 @@ void apptests::fragmaker_begonly_1()
   std::pair<size_t, void*> i = m_pWriter->get();
   pRingItem pItem = static_cast<pRingItem>(i.second);
   
-  EQ(pH->s_size, pItem->s_header.s_size);
-  EQ(size_t(pItem->s_header.s_size), i.first);
-  EQ(BEGIN_RUN, pItem->s_header.s_type);
+  EQ(pH->s_size, itemSize(pItem));
+  EQ(size_t(itemSize(pItem)), i.first);
+  EQ(uint16_t(BEGIN_RUN), itemType(pItem));
   
   free(h.second);
   free(i.second);
@@ -487,8 +492,9 @@ void apptests::fragmaker_begonly_1()
 void apptests::fragmaker_begonly_2()
 {
   pRingItem pBegin = makeStateChange(BEGIN_RUN);
+  uint32_t  sBegin = itemSize(pBegin);
   CRingBlockReader::DataDescriptor d =
-    {pBegin->s_header.s_size, 1, pBegin};
+    {sBegin, 1, pBegin};
   
   m_pReader->addData(d);
   
@@ -512,9 +518,9 @@ void apptests::fragmaker_begonly_2()
   
   std::pair<size_t, void*> i = m_pWriter->get();
   pStateChangeItem pItem = static_cast<pStateChangeItem>(i.second);
-  EQ(size_t(pItem->s_header.s_size), i.first);
-  EQ(pH->s_size, pItem->s_header.s_size);
-  EQ(BEGIN_RUN, pItem->s_header.s_type);
+  EQ(size_t(itemSize(reinterpret_cast<pRingItem>(pItem))), i.first);
+  EQ(pH->s_size, itemSize(reinterpret_cast<pRingItem>(pItem)));
+  EQ(BEGIN_RUN, uint32_t(itemType(reinterpret_cast<pRingItem>(pItem))));
   
   free(h.second);
   free(i.second);

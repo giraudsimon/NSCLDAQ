@@ -29,6 +29,7 @@ exec tclsh "$0" ${1+"$@"}
 package provide scaleControl 1.0
 package require Tk
 package require snit
+package require textprompter
 
 ##
 # @class ScaleControl
@@ -116,14 +117,16 @@ snit::widgetadaptor ScaleControl {
         install menu using \
             menu $win.zoombutton.menu -tearoff 0;    # Filled in on -menulist config.
         
-        ttk::label $win.minlbl -text Min:
-        install min using ttk::entry $win.min -width 6 -validate focusout \
+        #ttk::label $win.minlbl -text Min:
+        #install min using ttk::entry $win.min -width 6 -validate focusout \
+        #    -validatecommand [mymethod _validateMin %s]
+        install min using textprompt $win.min -text Min: -width 6 -validate focusout \
             -validatecommand [mymethod _validateMin %s]
         $win.min insert end 0
         
         # Lay them out:
         
-        grid $win.plus $win.minus $win.zoombutton $win.minlbl $win.min
+        grid $win.plus $win.minus $win.zoombutton  $win.min
         
         #  <Return> in $min forces validation ...which can dispatch as well.
         #
@@ -154,7 +157,7 @@ snit::widgetadaptor ScaleControl {
                 grid $win.minlbl -row 0 -column 3
                 grid $min -row 0 -column 4
             } else {
-                grid forget $min $win.minlbl
+                grid forget $min
             }
         }
         set options($optname) $value

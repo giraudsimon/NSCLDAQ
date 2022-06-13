@@ -13,12 +13,11 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CSIS3300CREATOR_H
-#define __CSIS3300CREATOR_H
+#ifndef CSIS3300CREATOR_H
+#define CSIS3300CREATOR_H
 
-#ifndef __CMODULECREATOR_h
 #include <CModuleCreator.h>
-#endif
+#include <stdint.h>
 
 /*!
    recognizer/creator within the scriptable readout framework
@@ -28,20 +27,11 @@
 class CSIS3300Creator : public CModuleCreator
 {
 public:
-  CSIS3300Creator(const std::string& type = std::string("sis3300"));
+  CSIS3300Creator();
   virtual ~CSIS3300Creator();
 
-  CSIS3300Creator(const CSIS3300Creator& rhs);
-  CSIS3300Creator& operator=(const CSIS3300Creator& rhs);
-  int operator==(const CSIS3300Creator& rhs) const;
-  int operator!=(const CSIS3300Creator& rhs) const;
+  virtual CReadableObject*  Create(const char* name, CTCLInterpreter& rInterp);
 
-  // Base class overrrides:
-public:
-  virtual CReadableObject*  Create(CTCLInterpreter& rInterp, 
-				  CTCLResult& rResult,
-				  int nargs, char** pargs);
-  virtual std::string Help();
 };
 
 

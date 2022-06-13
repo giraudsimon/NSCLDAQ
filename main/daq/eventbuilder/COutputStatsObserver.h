@@ -14,8 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __COUTPUTSTATSOBSERVER_H
-#define __COUTPUTSTATSOBSERVER_H
+#ifndef COUTPUTSTATSOBSERVER_H
+#define COUTPUTSTATSOBSERVER_H
 #include "CFragmentHandler.h"
 #include <tcl.h>
 #include <stdint.h>

@@ -30,6 +30,9 @@
 #include <stdexcept>
 #include <system_error>
 #include <errno.h>
+#include <stdlib.h>
+
+#include <iostream>
 namespace io {
 /**
  * constructor
@@ -85,24 +88,22 @@ CPagedOutput::CPagedOutput(int fd, size_t bufferSize) :
 CPagedOutput::~CPagedOutput() noexcept(false)
 {
     if (munmap(m_pData, m_nDataSize) < 0) {
-        throw std::system_error(
-            errno, std::generic_category(),
-            "CPagedOutput destructor unmapping from file."
-        );
+        std::cerr<<"CPagedOutput destructor unmapping from file. "
+            << strerror(errno) << std::endl;
+        exit(EXIT_FAILURE);
     }
     
     if(ftruncate(m_nFd, m_nFilesize) < 0) {
-        throw std::system_error(
-            errno, std::generic_category(),
-            "CPagedOutput destructor truncating file to actual length."
-        );
+        std::cerr << "CPagedOutput destructor unmapping from file. "
+		  << strerror(errno) <<  std::endl;
+        exit(EXIT_FAILURE);
     }
     
     if (close(m_nFd) < 0) {
-        throw std::system_error(
-            errno, std::generic_category(),
-            "CPagedOutput destructor closing output file."
-        );
+        std::cerr << "CPagedOutput destructor closing output file. "
+            << strerror(errno) << std::endl;
+        exit(EXIT_FAILURE);
+        
     }
 }
 /**

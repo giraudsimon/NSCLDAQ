@@ -20,9 +20,7 @@
    The inventory of functions includes:
    - main          - Program entry point.
    - EpicsInit     - Perform whatever initialization EPICS requires.
-   - startRepeater - Workaround to properly start/stop the caRepeater
-                     process when it is not started by the system startup
-                     scripts.
+   
 */
 
 #include <config.h>
@@ -40,48 +38,13 @@
 #include <Exception.h>
 #include <stdlib.h>
 #include <os.h>
+#include <epicslib.h>
 
 
 using namespace std;
 
 
 
-/*!
-   This function kludges around a problem with epics.  It's supposed
-   to start up caRepeater, but evidently:
-   - It does that by forking and making caRepeater the parent process.
-   - the resulting caRepeater identifies to ps as us.
-   - After our process exits, the resulting caRepeater doesn't work quite
-     right but hangs around.
-
-
-*/
-void
-startRepeater(int argc, char** argv)
-{
-  string repeatername(EPICS_BIN);
-  repeatername += "/caRepeater";
-
-  int pid = fork();
-  if(pid < 0) {			// Fork failed.
-    perror("Failed to fork in startRepeater()");
-    exit(errno);
-  }
-  else if (pid == 0) {		// child process
-    if(daemon(0,0) < 0) {
-      perror("Child could not setsid");
-      exit(errno);
-    }
-    argv[0]  = const_cast<char*>("caRepeater");
-    int stat = execlp(repeatername.c_str(),
-		      repeatername.c_str(), NULL);
-    perror("Child: execlp failed!!");
-    exit(errno);
-  }
-  else {			// Fork parent process..
-    Os::usleep(1000);			// Let it startup.
-  }
-}
 
 /*!
   Initializes access to EPICS
@@ -91,7 +54,7 @@ startRepeater(int argc, char** argv)
 void EpicsInit(int argc, char** argv)
 {
 
-  startRepeater(argc, argv);
+  epicslib::startRepeater(argc, argv);
   int status = ca_task_initialize();
   SEVCHK(status, "Initialization failed");
   

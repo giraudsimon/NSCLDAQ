@@ -61,6 +61,8 @@ public:
 private:
   void lock();			// Lock the synchronizable
   void trylock();		// Try to lock the synchronizable
+	void createIfNeeded();  // Make syncer.sync if needed.
+	bool owner();     // True if I already own the mutex.
 };
 
 

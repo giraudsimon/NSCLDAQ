@@ -39,11 +39,7 @@ exec tclsh $0 $@
 #
 
 set here [file dirname [info script]]
-set libDir [file join $here .. TclLibs]
-set wd [pwd]
-cd $libDir
-set libDir [pwd]
-cd $wd
+set libDir [file normalize [file join $here .. TclLibs]]
 
 if {[lsearch -exact $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]

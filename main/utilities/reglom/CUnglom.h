@@ -20,8 +20,10 @@
  *  
  */
 
-#ifndef CRINGITEMDECODER_H            // Multiple include gaurd.
-#define CRINGITEMDECODER_H
+#ifndef CUNGLOMDECODER_H            // Multiple include gaurd.
+#define CUNGLOMDECODER_H
+
+#include "CRingItemDecoder.h"
 
 /* forward class definitions. */
 
@@ -52,7 +54,8 @@ struct FragmentInfo;
  *                    just report that to stderr and ignore that fragment.
  **/
 
-class CRingItemDecoder {
+class CUnglomDecoder : public CRingItemDecoder
+{
 private:
     
     // Holds information about a source.
@@ -67,7 +70,7 @@ private:
     std::map<std::uint32_t, sourceInfo> m_sourceMap;
     
 public:
-    CRingItemDecoder();
+    CUnglomDecoder();
     void operator()(CRingItem* pItem);
     void onEndFile();
     

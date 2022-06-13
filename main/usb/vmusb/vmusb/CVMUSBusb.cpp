@@ -36,6 +36,10 @@
 
 #include <thread>
 #include <chrono>
+#include <Globals.h>
+#include <NSCLDAQLog.h>
+#include <sstream>
+
 using namespace std;
 
 // Constants:
@@ -76,7 +80,7 @@ static const uint16_t TAVcsID12SHIFT(4);
 
 static bool usbInitialized(false);
 
-void print_stack(const char* beg, const char* end, size_t unitWidth)
+static void print_stack(const char* beg, const char* end, size_t unitWidth)
 {
   using namespace std;
 
@@ -99,7 +103,124 @@ void print_stack(const char* beg, const char* end, size_t unitWidth)
   cout << dec << setfill(' ');
   cout << "--------" << std::endl;
 }
+/////////////////////////////// Logging functions /////////////////////////////
+
+/**                                                                                                                                                                                                                                
+ * formatBlock                                                                                                                                                                                                                     
+ *    Format a block of bytes as consecutive uint16_t's                                                                                                                                                                            
+ * @param stream - an ostream into which the formatting is done.                                                                                                                                                                   
+ * @param block - pointer to the block.                                                                                                                                                                                            
+ * @param nBytes - number of _bytes_.                                                                                                                                                                                              
+ * @note nBytes will be assumed to be a multiple of uint16_t's.                                                                                                                                                                    
+ * @note the caller must set up the desired radix.                                                                                                                                                                                 
+ *                                                                                                                                                                                                                                 
+ */
+static void
+formatBlock(std::ostream& stream, const void* block, size_t nBytes)
+{
+    const uint16_t* pBlock = reinterpret_cast<const uint16_t*>(block);
+    size_t n = nBytes / sizeof(uint16_t);
+    for (int i =0; i < n; i += 8) {
+        for (int j = 0; (j < 8) && ((i+j) < n); j++ ) {
+            stream << *pBlock++ << " ";
+        }
+        stream << std::endl;
+    }
+}
+/**
+ * logBulkWrite
+ *    Log that a bulk write is about to occur in a standard format.
+ * @param endpoint - The endpoint the write is going to.
+ * @param block    - the block of data being written.
+ * @param nBytes   - Number of bytes being written.
+ */
+static void
+logBulkWrite(int endpoint, void* block, size_t nBytes)
+{
+    std::stringstream strMsg;
+    strMsg << "About to initiate a bulk write of " << nBytes << " bytes: \n";
+    strMsg << std::hex;
+    formatBlock(strMsg, block, nBytes);
+    strMsg << std::dec;
+    strMsg << std::endl;
+
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+}
+/**
+ * logBulkWriteResult
+ *    Logs the bulk write completion status in a 'standard' way that
+ *    shows status and bytes written.
+ * @param status - in usb_bulk_write this is either a negative number
+ *                 (-errno) or number of bytes written.
+ */
+static void
+logBulkWriteResult(int status)
+{
+    // This chunk of code maps status and xferred into something at least
+    // similar to what we get from libusb-1+.
+    
+    size_t xferred;
+    if (status >= 0) {
+        xferred = status;
+        status = 0;
+    } else {
+        status = -status;
+    }
+    // Now emit the standard log message.
+    
+    std::stringstream strMsg;
+
+    strMsg << "Bulk read completed status: " << status
+        << " bytes transferred: " << xferred << std::endl;
+
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+    
  
+}
+/**
+ * logBulkRead
+ *    Log the completion of a bulk read.  Note that the information
+ *    provided differs from libusb1 and the write stratgey is strangely
+ *    contorted and a fixed sized internal buffer is used making an
+ *    exact match of log messages impossible
+ * @param endpoint  - endpoint from which the read is done.
+ * @param status    - If >= 0 the number of bytes transferred else
+ *                     the negative of an appropriate errno.
+ * @param pBlock     - Pointer to the data being read.
+ * @param reqSize    - Bytes attempting to read.
+ * @param msTimeout   - Read timeout in ms.
+ */
+static void
+logBulkRead(int endpoint, int status, void* pBlock, size_t reqSize, unsigned msTimeout)
+{
+    // Map the returns to what we'd expect from libusb 1+
+  
+    size_t nread = 0;
+    if (status >= 0) {
+        nread = status;
+        status = 0;
+    } else {
+      status = - status;
+    }
+    // Now log as we would from libusb1:
+    
+    std::stringstream strMsg;
+    strMsg << "Completed bukl read of USB endpoint "
+        << endpoint << " Requested: " << reqSize << " bytes "
+        << " received " << nread << " bytes (timeout ="
+        << msTimeout
+        << "ms)" << std::endl;
+    strMsg << "Data: \n";
+    strMsg << std::hex;
+    formatBlock(strMsg, pBlock, nread);
+    strMsg << std::dec << std::endl;
+
+    std::string msg = strMsg.str();
+    daqlog::trace(msg);
+
+}
 /////////////////////////////////////////////////////////////////////
 /*!
   Enumerate the Wiener/JTec VM-USB devices.
@@ -204,6 +325,8 @@ CVMUSBusb::CVMUSBusb(struct usb_device* device) :
   CMutexAttr  attr;
   attr.setType(PTHREAD_MUTEX_RECURSIVE_NP);
   m_pMutex  = new CMutex(attr);
+  
+  
   
   openVMUsb();
 }
@@ -494,22 +617,33 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
   //    reinterpret_cast<char*>(writePacket)+writeSize, sizeof(uint16_t));
 
     CriticalSection s(*m_pMutex);
+    if (m_logTransactions) {
+      logBulkWrite(ENDPOINT_OUT, writePacket, writeSize);
+    }
     int status = usb_bulk_write(m_handle, ENDPOINT_OUT,
 		                        		static_cast<char*>(writePacket), writeSize, 
                                 DEFAULT_TIMEOUT);
+    if (m_logTransactions) {
+      logBulkWriteResult(status);
+    }
     if (status < 0) {
       errno = -status;
       return -1;		// Write failed!!
     } 
-    
+    if (m_logTransactions) {
+      daqlog::trace("starting USB block read");
+    }
     status    = usb_bulk_read(m_handle, ENDPOINT_IN,
 			      buf, sizeof(buf), m_timeout);
+    if (m_logTransactions) {
+      logBulkRead(ENDPOINT_IN, status, buf, sizeof(buf), m_timeout);
+    }
     if (status < 0) {
       if ((status == EINTR) || (status == EAGAIN)) {
-	status = 0;                 // can try again.
+        status = 0;                 // can try again.
       } else {
-	errno = -status;
-	return -2;
+        errno = -status;
+        return -2;
       }
     } 
 
@@ -543,6 +677,9 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
       size_t bytesLeft = readSize - bytesRead;
       status = usb_bulk_read(m_handle, ENDPOINT_IN, buf,
 			     sizeof(buf), m_timeout);
+      if (m_logTransactions) {
+        logBulkRead(ENDPOINT_IN, status, buf, bytesLeft, m_timeout);
+      }
       if (status < 0) {
           if ( status != -ETIMEDOUT) {
 	    if ( (status == EAGAIN) || (status == EINTR)) {
@@ -555,12 +692,15 @@ CVMUSBusb::transaction(void* writePacket, size_t writeSize,
               return bytesRead;
           }
       }
+      if (m_logTransactions) {
+        daqlog::trace("USB Block read complete");
+      }
 
 //      std::cout << "updating after a successful read of " << status << " bytes" << std::endl;
       bytesToTransfer = std::min(static_cast<size_t>(status), bytesLeft);
       pReadCursor = std::copy(
            buf,
-	   buf+bytesToTransfer, pReadCursor);
+      buf+bytesToTransfer, pReadCursor);
 
       bytesRead += bytesToTransfer;
 

@@ -108,7 +108,9 @@ struct PSDBoardParameters
         disabled,
         couples,
         andOneToAll,
-        oneChannelVeto        
+        oneChannelVeto,
+	ExtTrgGate,
+	ExtTrgVeto        
     }        s_coincidenceMode;      // Coincidence trigger mode.
     enum {
         software, sIn, firstTrigger
@@ -249,7 +251,7 @@ public:
     
     void parseConfigurationFile(const char* pFilename);
     void parseConfiguration(pugi::xml_document& doc);
-  void configureBoard(pugi::xml_node& boardNode, PSDBoardParameters& board);
+    void configureBoard(pugi::xml_node& boardNode, PSDBoardParameters& board);
     
     void configureBoardGlobalParameters(
         pugi::xml_node& boardNode, PSDBoardParameters& board
@@ -265,7 +267,7 @@ public:
     // Utilities:
     
     void setParameterValue(
-	pugi::xml_node& entry, PSDBoardParameters& board, unsigned chanNum
+	pugi::xml_node& entry, PSDBoardParameters& board, int chanNum
     );
     void setLinkType(const std::string& value, PSDBoardParameters& board);
     void setPolarity(

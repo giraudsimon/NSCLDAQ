@@ -36,6 +36,7 @@ using namespace std;
 #include "CConfigurationParameter.h"
 #include "CIntConfigParam.h"
 #include "CBoolConfigParam.h"
+#include "PacketUtils.h"
 
 /*!
 	Constructor: Creates an instance of a CReadOrder class.
@@ -164,18 +165,21 @@ int
 CReadOrder::Read(void* pBuf)
 {
   ModuleIterator pM = readerbegin();
-  short*         p((short*)pBuf);
-  short*         pwords((short*)pBuf);
+  uint16_t*         p((uint16_t*)pBuf);
+  uint16_t*         pwords((uint16_t*)pBuf);
   int            nRead(0);
   CReadException except;
   bool           jumbo = true; 	//  for now ring buffers counts are all 32 bit.
-
+	
 
   if(m_fPacketize) {
-    p++;
-    if (jumbo) p++;
-    *p++ = m_nPacketId;
-    nRead = 2;			// Packet overhead is 2 words.
+		if (jumbo) {
+			p = PacketUtil::startPacket(p, m_nPacketId);
+			nRead = 3;
+		} else {
+			p = PacketUtil::startPacket16(p, m_nPacketId);
+			nRead = 2;			// Packet overhead is 2 words.
+		}
   }
 
   try {
@@ -200,17 +204,10 @@ CReadOrder::Read(void* pBuf)
 
   if(m_fPacketize) {
     if (jumbo) {
-      union {
-	int   l;
-	short w[2];
-      } lw;
-      lw.l = nRead;
-      *pwords++ = lw.w[0];
-      *pwords   = lw.w[1];
-
-    }
-    else {
-      *pwords = nRead;		// Fill in size.
+			nRead = PacketUtil::endPacket(pwords, p);
+      
+		} else {
+			nRead = PacketUtil::endPacket16(pwords, p);
     }
   }
   if(except.GetCount()) {

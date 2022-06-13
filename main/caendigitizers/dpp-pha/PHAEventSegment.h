@@ -77,18 +77,9 @@ public:
     
     // Utilities
 private:
-    
     std::string makeChannelKey(unsigned chan, const char* subkey);
-    size_t computeEventSize(const CAEN_DGTZ_DPP_PHA_Event_t& dppInfo, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wfInfo);
-    
-    // Buffer storage methods
-    
-    void*  putWord(void* pDest, uint16_t data);
-    void*  putLong(void* pDest, uint32_t data);
-    void*  putQuad(void* pDest, uint64_t data);
-    void*  putDppData(void* pDest, const CAEN_DGTZ_DPP_PHA_Event_t& dpp);
-    void*  putWfData(void* pDest, const CAEN_DGTZ_DPP_PHA_Waveforms_t& wf);
-    
+    void freeStorage();
+
 };
 
 

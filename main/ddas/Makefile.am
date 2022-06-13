@@ -1,4 +1,3 @@
-SUBDIRS=readout readout-extclock sorter readoutdriver pixieplugin
+SUBDIRS=readout  sorter readoutdriver pixieplugin
 
-
-
+#readout-extclock - external clock handling is subsumed into readout.

@@ -27,9 +27,7 @@
 #define _REENTRANT
 #endif
 
-#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
-#endif
 
 typedef pthread_t dshwrapthread_t; 
 typedef pthread_attr_t dshwrapthread_attr_t; 

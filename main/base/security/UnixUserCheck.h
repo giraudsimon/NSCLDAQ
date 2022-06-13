@@ -35,21 +35,12 @@
 // (c) Copyright NSCL 1999, All rights reserved UnixUserCheck.h
 //
 
-#ifndef __UNIXUSERCHECK_H  //Required for current class
-#define __UNIXUSERCHECK_H
+#ifndef UNIXUSERCHECK_H  //Required for current class
+#define UNIXUSERCHECK_H
 
                                //Required for base classes
-#ifndef __AUTHENTICATOR_H
 #include "Authenticator.h"
-#endif
-                               
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 class CUnixUserCheck  : public CAuthenticator        

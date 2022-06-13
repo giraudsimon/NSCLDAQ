@@ -50,7 +50,7 @@ cd $wd
 if {[lsearch -exact $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]
 }
-
+package require removetcllibpath
 package require snit
 package require ConnectionManager
 package require PortManager

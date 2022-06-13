@@ -60,7 +60,7 @@ COutputter::run()
   while(1) {
     CRingItem* pItem = m_RingQueues.receive(); // blocks.
     RingItem*  pData = pItem->getItemPointer();
-    size_t     nBytes= pData->s_header.s_size;
+    size_t     nBytes= itemSize(pData);
     uint32_t   type  = pItem->type();
 
     io::writeData(STDOUT_FILENO, pData, nBytes);  // Failures throw exiting.

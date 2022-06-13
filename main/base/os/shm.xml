@@ -1448,7 +1448,7 @@ protected:
         </para>
         <variablelist>
             <varlistentry>
-                <term><type>std::uint32_t </type><structfield>s_nBytes</structfield><</term>
+                <term><type>std::uint32_t </type><structfield>s_nBytes</structfield></term>
                 <listitem>
                     <para>
                         Number of bytes in this chunk of data.  This may be
@@ -1555,5 +1555,45 @@ public:
         </variablelist>
     </refsect1>
 
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>CElapsedTime</refentrytitle>
+      <manvolnum>3daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>CElapsedTime</refname>
+      <refpurpose>Subsecond measurement of elapsed times.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>
+#include &lt;CElapsedTime&gt;
+class CElapsedTime
+{
+public:
+    CElapsedTime();
+    void start();
+    double measure() const;
+
+};
+
+        </synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            This class supports POSIX-.1-2001 conforming sub second interval
+            measurement.
+            Note that the actual resolution of this timing is dependent on the
+            resolution of the underlying system clock used by
+            <function>gettimeofday</function>(3).
+          </para>
+          <para>
+            Constructing the object or invoking <methodname>start</methodname>
+            on a constructed object sets a start time.  Subsequent calls to
+            <methodname>measure</methodname> return the elapsed time since
+            that start time in double precision seconds.
+          </para>
+    </refsect1>
 </refentry>
 <!-- /manpage -->

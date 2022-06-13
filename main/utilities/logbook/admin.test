@@ -1,0 +1,1201 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   admin.test
+# @brief  Test Tcl logbook administration package.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require logbookadmin
+
+set here [file dirname [info script]]
+set logbook [file normalize [file join [file dirname [info script]]  logbook.logbook]]
+
+if {[file exists $logbook]} {file delete $logbook}
+
+tcltest::test create_1 {Create makes a file} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin layer}    
+} \
+-cleanup {
+    file delete $logbook
+} \
+-body {
+    file exists $logbook
+} \
+-result 1
+
+# Note this also tests setCurrentLogBook.
+
+tcltest::test create_2 {Creae with select writes ~/.nscl-logbook-current} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin Layer} 1
+    
+} \
+-cleanup {
+    file delete $logbook
+    file delete [file join ~ .nscl-logbook-current]
+} \
+-body {
+    set f [open [file join ~ .nscl-logbook-current]]
+    set contents [gets $f]
+    close $f
+    set contents
+} -result $logbook
+
+tcltest::test current_1  {No current logbook so empty string} \
+-body {
+    currentLogBook
+} -result ""
+
+tcltest::test current_2 {Current log book st by creating it} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin Layer} 1
+    
+} \
+-cleanup {
+    file delete $logbook
+    file delete [file join ~ .nscl-logbook-current]
+} \
+-body {
+    currentLogBook
+} -result $logbook
+
+tcltest::test current_or_error_1 {No current logbook} \
+-body {
+    currentLogBookOrError
+} -returnCodes error -result * -match glob
+
+tcltest::test current_or_error_2 {Correct logbook} \
+-setup {
+    createLogBook $logbook 0400x {Ron Fox} {Test admin Layer} 1
+    
+} \
+-cleanup {
+    file delete $logbook
+    file delete [file join ~ .nscl-logbook-current]
+} \
+-body {
+    currentLogBookOrError
+} -result $logbook
+
+#----------------------------------------------------------
+
+proc commonSetup {} {
+    createLogBook $::logbook 0400x {Ron Fox} {test admin layer} 1
+}
+proc commonCleanup { } {
+    file delete $::logbook
+    file delete [file join ~ .nscl-logbook-current]
+}
+
+tcltest::test kvexists_1 {Key exists} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvExists experiment
+} -result 1
+tcltest::test kvexists_2 {Key does not exist} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvExists no-such-key
+} -result 0
+
+tcltest::test kvget_1 {Get with existing key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvGet experiment
+} -result 0400x
+
+tcltest::test kvget_2 {get with nonexistent key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvGet no-such-key
+} -returnCodes error -result * -match glob
+
+tcltest::test kvset_1 {Set replacing existing key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvSet spokesperson {Sean Liddick}
+    kvGet spokesperson
+} -result {Sean Liddick}
+
+tcltest::test kvset_2 {Set creating new key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvSet Date-Written {December 23, 2020}
+    kvGet Date-Written
+} -result {December 23, 2020}
+
+tcltest::test kvcreate_1 {Create creating new key} \
+-setup {commonSetup } -cleanup {commonCleanup} \
+-body {
+    kvCreate Date-Written {December 23, 2020}
+    kvGet Date-Written
+} -result {December 23, 2020}
+
+tcltest::test kvcreate_2 {Create fails attempting to overwrite existing key} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    kvCreate experiment illegal
+} -returnCodes error -result * -match glob
+
+
+#------------------------------------------------------------------
+tcltest::test addperson_1 {Add a person see if there's one person} \
+-setup {commonSetup} \
+-cleanup {
+    foreach person $people {
+        $person destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    addPerson Fox Ron Mr.
+    set l [logbook::logbook open $logbook]
+    set people [$l listPeople]
+    llength $people
+} -result 1
+
+tcltest::test addperson_2 {Add a person and see if there's correct stuff} \
+-setup {commonSetup} \
+-cleanup {
+    foreach person $people {
+        $person destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    addPerson Fox Ron Mr.
+    set l [logbook::logbook open $logbook]
+    set people [$l listPeople]
+    set person [lindex $people 0]
+    list [$person lastName] [$person firstName] [$person salutation]
+
+} -result [list Fox Ron Mr.]
+
+tcltest::test listpeople_1 {No people gives an empty list} \
+-setup {commonSetup} -cleanup {commonCleanup} \
+-body {
+    listPeople
+} -result [list]
+
+tcltest::test listpeople_2 {If I create a person I get 1 element} \
+-setup {
+    commonSetup
+    addPerson Fox Ron Mr.
+    
+} \
+-cleanup  {
+    commonCleanup
+} \
+-body {
+    llength [listPeople]
+} -result 1
+
+tcltest::test listpeople_3 {list gives the right stuff} \
+-setup {
+    commonSetup
+    addPerson Fox Ron Mr.
+    
+} \
+-cleanup  {
+    commonCleanup
+} \
+-body {
+    set person [lindex [listPeople] 0]
+    list [dict get $person lastName] [dict get $person firstName] \
+        [dict get $person salutation]
+} -result [list Fox Ron Mr.]
+
+proc commonSetup1 { } {
+    commonSetup
+    
+    # add a few people:
+    
+    addPerson Fox Ron Mr.;           # id 1
+    addPerson Cerizza Giordano Dr.;  # id 2
+    addPerson Liddick Sean Prof.;    # id3 3
+    
+}
+
+tcltest::test create_shift_1 {Creating an empty shift makes on in db.} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list];           # nobody in shift.
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    llength $shifts
+} -result 1
+
+tcltest::test create_shift_2 {Creating an empty shift makes an empty shift} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list];           # nobody in shift.
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set result [list [$shift name] [llength [$shift members]]]
+} -result [list aShift 0]
+
+tcltest::test create_shift_3 {Shift with members - right # members} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    foreach p $members {
+        $p destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list 1 3];    #Sean and I:
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set members [$shift members]
+    llength $members
+} -result 2
+
+tcltest::test create_shift_4 {shift with members get right members} \
+-setup {commonSetup1} -cleanup {
+    $l destroy
+    foreach shift $shifts {
+        $shift destroy
+    }
+    foreach p $members {
+        $p destroy
+    }
+    commonCleanup
+} \
+-body {
+    createShift aShift [list 1 3];    #Sean and I:
+    set l [logbook::logbook open $logbook]
+    set shifts [$l listShifts]
+    set shift [lindex $shifts 0]
+    set members [$shift members]
+    set result [list]
+    foreach member $members {
+        lappend result [$member lastName]
+    }
+    set result
+} -result [list Fox Liddick]
+
+tcltest::test current_shift_1 {No current shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    currentShift
+} -result ""
+
+tcltest::test current_shift_2 {Can set a current shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    createShift aShift [list 2];    #Giordano.
+    setCurrentShift aShift
+    currentShift
+} -result aShift
+
+tcltest::test list_members_1 {Empty shift has no members} \
+-setup {commonSetup1} -cleanup {commonCleanup}  \
+-body {
+    createShift aShift [list]
+    llength [listShiftMembers aShift]
+} -result 0
+    
+tcltest::test list_members_2 {Right number of members} \
+-setup {commonSetup1} -cleanup {commonCleanup}  \
+-body {
+    createShift aShift [list 1 2 3];    # All of us.
+    llength [listShiftMembers aShift]
+} -result 3
+
+tcltest::test list_members_3 {Right people} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    createShift aShift [list 2 3];   # Giordana/Sean.
+    set members [listShiftMembers aShift]
+    set result [list]
+    foreach member $members {
+        lappend result [dict get $member lastName]
+    }
+    set result
+} -result [list Cerizza Liddick]
+
+tcltest::test list_shifts_1 {No shift} \
+-setup {commonSetup1} -cleanup {commonCleanup} \
+-body {
+    llength [listShifts]
+} -result 0
+
+tcltest::test list_shifts_2 {There are shifts -- right number} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1 2] ;   #Giordano and I
+    createShift shift2 [list 2 3];    #Giordano and Sean.
+    createShift shift3 [list 1 3];    # Sean and I.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    llength [listShifts]
+} -result 3
+
+tcltest::test list_shifts_3 {There are shifts -- right names} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1 2] ;   #Giordano and I
+    createShift shift2 [list 2 3];    #Giordano and Sean.
+    createShift shift3 [list 1 3];    # Sean and I.
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    listShifts
+} -result [list shift1 shift2 shift3]
+
+
+## We added two new procs: addMembersToShift,
+# and removeMemberFromShift. here are tests for them.
+
+tcltest::test add_members_1 {Add members with empty list} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list]
+    listShiftMembers shift1
+    
+} -result [list]
+
+tcltest::test add_members_2 {Good add of a single member}  \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 1]
+    listShiftMembers shift1
+} -result [list [dict create                           \
+     id 1 lastName Fox firstName Ron salutation Mr.    \
+]]
+
+
+tcltest::test add_members_3 {Add member for bad shift name} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift2 [list 1]
+} -returnCodes error -result * -match glob
+
+tcltest::test add_members_4 {add no such member} \
+-setup {
+    commonSetup1
+    createShift shift1 [list]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 10]
+} -result * -match glob -returnCodes error
+
+tcltest::test add_members_4 {Adding duplicate does nothing} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    addMembersToShift shift1 [list 1];    # Try to add 1 again.
+    listShiftMembers shift1
+} -result [list [dict create                           \
+     id 1 lastName Fox firstName Ron salutation Mr.    \
+]]
+
+
+tcltest::test remove_members_1 {Remove nonexistent members} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    removeMemberFromShift shift1 [list 2]
+} -returnCodes error -result * -match glob
+
+tcltest::test remove_members_2 {Remove existing member does that} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    removeMemberFromShift shift1 [list 1]
+    listShiftMembers shift1
+} -result [list]
+
+tcltest::test remove_members_3 {Remove members from no such shift.} \
+-setup {
+    commonSetup1
+    createShift shift1 [list 1]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    removeMemberFromShift shift2 [list 1]
+} -returnCodes error -result * -match glob
+
+#-----------------------------------------------------------
+# Setup for run tests needs a shift that's current.
+# Note we know the underlying C+++ API enforces the constraints
+# because we've unit-tested that separately
+#
+proc commonSetup2 {} {
+    commonSetup1;      # Makes the people
+    createShift onShift [list 1 2 3];   # Put everyone on shift.
+    setCurrentShift onShift;            # make it current.
+}
+
+tcltest::test begin_1 {Creates a new run} \
+-setup {commonSetup2} \
+-cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    llength $runs
+} -result 1
+
+tcltest::test begin_2 {The run is current} \
+-setup {commonSetup2} \
+-cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set current [$l currentRun]
+    if {$current eq ""} {error "no current run"}
+    expr {[$run id] == [$current id]};    # current run is the same.
+} -result 1
+
+
+tcltest::test begin_3 {the run title is correctly captured} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    $current title
+} -result {Title of the run}
+
+tcltest::test begin_4 {The run number is correctly captured} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    $current number
+} -result 1
+
+tcltest::test begin_5 {The  run has a single transition} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    llength $transitions
+} -result 1
+
+
+tcltest::test begin_7 {the run's transition is begin} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    set t [lindex $transitions 0]
+    dict get $t transitionName
+} -result BEGIN
+
+tcltest::test begin_8 {The run's transition captures the remark} \
+-setup {commonSetup2} \
+-cleanup {
+    $current destroy
+    $l   destroy
+    foreach transition $transitions {
+        set shift [dict get $transition shift]
+        $shift destroy
+    }
+    commonCleanup
+} \
+-body {
+    beginRun 1 {Title of the run} {Some silly remark}
+    set l [logbook::logbook open $logbook]
+    set current [$l currentRun]
+    set transitions [$current transitions]
+    set t [lindex $transitions 0]
+    dict get $t transitionComment
+} -result {Some silly remark}
+
+tcltest::test current_run_1 {There's no current run} \
+-setup {commonSetup2} -cleanup {commonCleanup} \
+-body {
+    currentRun
+} -result {}
+
+tcltest::test current_run_2 {After begin that run is current} \
+-setup {
+    commonSetup2
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set title [dict get $runInfo title]
+    set run   [dict get $runInfo number]
+    set active [dict get $runInfo isActive]
+    list $title $run $active
+    
+} -result {{Title of the run} 1 1}
+
+tcltest::test current_run_3 {The current run dict has a transition} \
+-setup {
+    commonSetup2
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set transitions [dict get $runInfo transitions]
+    llength $transitions
+} -result 1
+
+tcltest::test current_run_4 {The current run has good data in the transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set runInfo [currentRun]
+    set transitions [dict get $runInfo transitions]
+    set begin [lindex $transitions 0]
+    set type [dict get $begin transitionName]
+    set comment [dict get $begin transitionComment]
+    set shift   [dict get $begin shift]
+    set stopOk [expr {([dict get $begin transitionTime] - $startTime) <= 1}]
+    list $type $comment $shift $stopOk
+} -result {BEGIN {Some silly remark} onShift 1}
+
+tcltest::test end_1     {Ending a run adds a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    llength $transitions
+} -result 2
+
+tcltest::test end_2     {transtion type added is END} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    dict get $t transitionName
+} -result END
+    
+
+tcltest::test end_3     {transition captures remark} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        [dict get $t shift] destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    dict get $t transitionComment
+} -result {End run remark}
+
+tcltest::test  end_4    {ending means there's no current Run} \
+\
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    commonCleanup
+    
+} \
+-body {
+    currentRun
+} -result {}
+
+tcltest::test end_5 {Ending means run is not active} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    endRun  {End run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l destroy
+    commonCleanup
+    
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    $run isActive
+} -result 0
+
+tcltest::test pause_1 {The paused run is still current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    if {$r eq ""} {
+        error "Pause did not leave a current run"
+    }
+    list [dict get $r number] [dict get $r title] [dict get $r isActive]
+} -result [list 1 {Title of the run} 1]
+
+tcltest::test pause_2 {Pause adds a a transition}  \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    llength [dict get $r transitions]
+} -result 2
+
+tcltest::test pause_3 {The transition added has correct stuff} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    set t [lindex [dict get $r transitions] 1]
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [dict get $t shift]
+} -result [list PAUSE {Pause run remark} onShift]
+
+tcltest::test resume_1 {Resumed runs are still current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    dict get $r title
+} -result {Title of the run}
+
+
+tcltest::test resume_2 {Resume adds a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    llength [dict get $r transitions]
+} -result 3
+
+
+tcltest::test resume_3 {Resume transition has correct stuff} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    pauseRun {Pause run remark}
+    resumeRun {Resume run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+    set transitions [dict get $r transitions]
+    set t [lindex $transitions 2];   # the pause.
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [dict get $t shift]
+} -result [list RESUME {Resume run remark} onShift]
+
+
+tcltest::test emend_1 {Emergency ended runs are not current} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set r [currentRun]
+} -result {}
+
+tcltest::test emend_2 {Emergency ended runs are not active} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    $run isActive
+} -result 0
+
+tcltest::test emend_3 {Emergency ended runs get a transition} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    llength [$run transitions]
+} -result 2
+
+tcltest::test emend_4 {Emergency ended run transitions are right} \
+-setup {
+    commonSetup2
+    set startTime [clock seconds]
+    beginRun  1 {Title of the run} {Some silly remark}
+    emergencyEndRun {EMERGENCY END run remark}
+} -cleanup {
+    foreach run $runs {
+        $run destroy
+    }
+    foreach t $transitions {
+        set shift [dict get $t shift]
+        $shift destroy
+    }
+    $l destroy
+    commonCleanup
+} \
+-body {
+    set l [logbook::logbook open $logbook]
+    set runs [$l listRuns]
+    set run [lindex $runs 0]
+    set transitions [$run transitions]
+    set t [lindex $transitions 1]
+    set shift [dict get $t shift]
+    list [dict get $t transitionName] \
+        [dict get $t transitionComment] [$shift name]
+} -result [list EMERGENCY_END {EMERGENCY END run remark} {onShift}]
+
+# For the listRuns and findRun tests we'll consider that
+# we've already exercised the dict creation perfectly well
+# so we can just use it to determine if we've gotten the
+# right runs in the lists.
+
+
+tcltest::test list_runs_1 {No runs is an empty list} \
+-setup {commonSetup2} -cleanup {commonCleanup} \
+-body {
+    listRuns
+} -result [list]
+
+proc commonSetup3 { } {
+    commonSetup2
+    
+    # Make some runs:
+    
+    beginRun 1 {This is run 1}
+    endRun
+    
+    beginRun 2 {This is run 2}
+    endRun
+    
+    beginRun 3 {This is run 3}
+    endRun
+}
+tcltest::test list_runs_2 {Correct number of runs} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    llength [listRuns]
+} -result 3
+
+tcltest::test list_runs_3 {Correct runs are present.} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    set runs [listRuns]
+    foreach run $runs {
+        lappend titles [dict get $run title]
+    }
+    set titles
+    # The -result assumes stuff come sout in PK order.
+} -result [list {This is run 1} {This is run 2} {This is run 3}]
+
+tcltest::test find_run_1 {no match} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    findRun 4
+} -result [dict create]
+
+
+tcltest::test find_run_2 {match} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    set run [findRun 2]
+    dict get $run title
+} -result {This is run 2}
+
+#-----------------------------------------------------------
+#  Note listing API.
+#
+
+tcltest::test getnote_1 {There's no note} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    getNote 1
+} -returnCodes error -result * -match glob
+
+tcltest::test getnote_2 {There's a single note} \
+-setup {
+    commonSetup3
+    
+    #  Make a note
+    
+    set log [logbook::logbook open $logbook]
+    set author [$log getPerson 1]
+    [$log createNote $author {some text}] destroy
+    $author destroy;              # Could do these in cleanup too.
+    $log    destroy
+} -cleanup {
+    commonCleanup
+} \
+-body {
+    set note [getNote 1]
+    set result [dict remove $note timestamp]
+} -result [dict create id 1 \
+    author [dict create id 1 lastName Fox firstName Ron salutation Mr.] \
+    ]
+
+proc commonSetup4 {} {
+    commonSetup3
+    set log [logbook::logbook open $::logbook]
+    set author [$log getPerson 1]
+    [$log createNote $author {some text}] destroy
+    
+    set run [$log findRun 1]
+    [$log createNote $author {Some other text} [list] [list] $run] destroy
+    [$log createNote $author "The title line\nMore text follows"] destroy
+    [$log createNote $author "This is a long line with more than 20 characters who's title is truncated"] destroy
+    $run    destroy
+    $author destroy;              # Could do these in cleanup too.
+    $log    destroy
+}
+
+tcltest::test notetext_1 {Get the text of a note.} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    set dict [getNote 2]
+    getNoteText $dict
+} -result {Some other text}
+
+tcltest::test notetitle_1 {Get simple note title with only one line} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 1]
+} -result {some text}
+
+tcltest::test notetitle_2 {Get note title text when there's more than one line} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 3]
+} -result {The title line}
+
+tcltest::test notetitle_3 {Get note title text when it needs truncating} \
+-setup {commonSetup4}  -cleanup {commonCleanup} \
+-body {
+    getNoteTitle [getNote 4]
+} -result [string range "This is a long line with more than 20 characters who's title is truncated" 0 20]...
+
+tcltest::test listall_1 {list notes when there are none} \
+-setup {commonSetup3} -cleanup {commonCleanup} \
+-body {
+    llength [listAllNotes]
+} -result 0
+
+tcltest::test listall_2 {I get the right note count} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listAllNotes]
+} -result 4
+
+proc stripTimestamps {dictlist} {;     #Strip timestamps from list of dicts.
+    set result [list]
+    foreach dict $dictlist {
+        lappend result [dict remove $dict timestamp]
+    }
+    return $result
+}
+tcltest::test listall_3 {The dicts are correct} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    stripTimestamps [listAllNotes]
+} -result [list                                   \
+    [dict create id 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]]  \
+    [dict create id 2 run 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 3 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 4 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+]
+
+tcltest::test listfromrun_1 {List from runs when there are no matches} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNotesForRun 3]
+} -result 0
+
+tcltest::test listfromrun_2 {List from no such run is an error?} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    listNotesForRun 100;             # No such run.
+} -result [list]
+
+tcltest::test listfromrun_3 {List from run 1 is a match} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNotesForRun 1]
+} -result 1
+
+tcltest::test listfromrun_4 {The listing of run 1 is good data} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    lindex [stripTimestamps [listNotesForRun 1]] 0
+} -result [dict create                                    \
+    id 2 run 1 \
+    author [dict create id 1 lastName Fox firstName Ron salutation Mr.] \
+]
+
+tcltest::test listnonrunnotes_1 {No notes to list} \
+-setup {commonSetup3; # NO NOTES} -cleanup {commonCleanup} \
+-body {
+    llength [listNonRunNotes]
+} -result 0
+tcltest::test listnonrunnotes_2 {Correct number listed} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    llength [listNonRunNotes]
+} -result 3
+tcltest::test listnonrunnotes_3 {correct contents listed.} \
+-setup {commonSetup4} -cleanup {commonCleanup} \
+-body {
+    stripTimestamps [listNonRunNotes]
+} -result [list                                                \
+    [dict create id 1 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 3 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+    [dict create id 4 author [dict create id 1 lastName Fox firstName Ron salutation Mr.]] \
+]
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

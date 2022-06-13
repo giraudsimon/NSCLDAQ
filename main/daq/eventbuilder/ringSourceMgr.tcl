@@ -106,20 +106,8 @@ proc ::RingSourceMgr::addSource [list source tstamplib {id ""} \
 # @returns the event orderer port number
 proc ::RingSourceMgr::getOrdererPort {} {
 
-  set portManager [::portAllocator create %AUTO%]
-  set allocations [$portManager listPorts]
-  set user $::tcl_platform(user)
-  set appName [::EVBC::getAppName]
-  set port ""
-  foreach allocation $allocations {
-    set name  [lindex $allocation 1]
-    set owner [lindex $allocation 2]
-    if {($name eq $appName) && ($owner eq $user)} {
-      set port [lindex $allocation 0]
-      break
-    }
-  }
-  $portManager destroy
+  set port [::EVBC::getOrdererPort]
+
 
   if {$port eq ""} {
     return -code error "RingSourceMgr::getOrdererPort Unable to locate the event builder service"
@@ -399,7 +387,11 @@ proc ::RingSourceMgr::_HandleDataSourceInput {fd info id} {
   if {[eof $fd]} {
     catch {close $fd} msg
     append text "exited: $msg"
-    ::EndrunMon::decEndRunCount;           # One less end run to wait for.
+      ::EndrunMon::decEndRunCount;           # One less end run to wait for.0
+      if {$Pending::pendingState ne "Halted"} {
+        tk_messageBox -type ok -icon error -title {Source exited} \
+          -message "The event builder source for $info ($id) exited unexpectedly"
+      }
     ::RingSourceMgr::_SourceDied  $fd;     # Do the book keeping for a dead source.
   } else {
     append text [gets $fd]
@@ -422,6 +414,7 @@ proc ::RingSourceMgr::_SourceDied {fd} {
   dict for {uri info} $::RingSourceMgr::sourceDict {
     set sourceFd [dict get $info fd]
     if {$sourceFd == $fd} {
+      
       dict set ::RingSourceMgr::sourceDict $uri fd  ""
       break;          # No need to go further.
     }
@@ -433,9 +426,7 @@ proc ::RingSourceMgr::_SourceDied {fd} {
 ##
 # @fn [private] EVBC::_Output
 #
-#  Outputs a message.
-#  TODO: While debugging this goes to stdout... later it needs to go to the
-#  output window of the readoutGUI.
+#  Outputs a message to the ReadoutGUI.
 #
 # @param msg - the message to output.
 #
@@ -454,28 +445,8 @@ proc ::RingSourceMgr::_Output msg {
 #
 proc ::RingSourceMgr::_waitForEventBuilder {} {
 
-# Figure out which port the event builder is listening on:
-  set ports [::portAllocator create %AUTO%]
-  set name [::EVBC::getAppName]
-  set port -1
-  set allocations [$ports listPorts]
-  foreach allocation $allocations {
-    set appName [lindex $allocation 1]
-    set user [lindex $allocation 2]
-    if {($appName eq $name) && ($user eq $::tcl_platform(user))} {
-      set port [lindex $allocation 0]
-      break
-    }
-  }
-  $ports destroy
-
-  #  Try to connect every 100ms until success:
-
-  while {[catch {socket localhost $port} fd]} {
-    after 100
-  }
-  close $fd
-}
-if {![::RingSourceMgr::isRegistered]} {
+  EVBC::_waitForEventBuilder 
+  if {![::RingSourceMgr::isRegistered]} {
     ::RingSourceMgr::register
+  }
 }

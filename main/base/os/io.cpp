@@ -330,4 +330,103 @@ writeDataVUnlimited(int fd, struct iovec* iov, int iovcnt)
     iovcnt -= n;
   }
 }
-}                             // namespace.
+//  These are factorizations of code fragments
+//   from various places daqdev/NSCLDAQ#700
+/**
+ * getReadableEnvFile
+ *    Translate an environment variable to a file and
+ *    return the path to the file.
+ * @param envName - name of the environment variable.
+ * @return std::string - Full path to file verified as readable.
+ * @retval "" - file either does not exist or is not readable.
+ */
+std::string
+getReadableEnvFile(const char* envName)
+{
+  std::string result;
+  const char* path = getenv(envName);
+  if (path && (access(path, R_OK) == 0) ) {
+
+    result = path;
+  }
+  return result;
+}
+/**
+ * getReadableFileFromHome
+ *    Return the full path to a readable file relative
+ *    to the home directory.  Note that the environment
+ *    variable "HOME" is used to determine the home dir
+ *    rather than asking the account system.
+ *
+ *  @param filename  file path relative to home
+ *  @return std::string  - full filename path
+ *  @retval "" - if the filename either does not exist or
+ *               is not readable.
+ */
+std::string
+getReadableFileFromHome(const char* file)
+{
+  std::string result;
+  const char* home = getenv("HOME");
+  if (home) {
+    std::string path(home);
+    path += file;
+    if (access(path.c_str(), R_OK) == 0) {
+      result = path;
+    }
+  }
+  return result;
+}
+/**
+ * getReadableFileFromWd
+ *    Get a readable file from the working directory
+ * @param filename - filename without the directory path.
+ * @return std::string - full file path.
+ * @retval "" if the file either does not exist or is not readable.
+ */
+std::string
+getReadableFileFromWd(const char* file)
+{
+  std::string result;
+  char here[PATH_MAX];
+  char* pResult = getcwd(here, PATH_MAX);
+  if (pResult) {
+    std::string path(here);
+    path += file;
+    if (access(path.c_str(), R_OK) == 0) {
+      result =  path;
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * getReadableFileFromEnvdir
+ *   Given an environment variable and a filename
+ *   if there's a readable file in that directory
+ *   return the full path.
+ * @param env - environment name.
+ * @param file  name of the file we're looking for in that dir.
+ * @return std::string - full path to file.
+ * @retval "" if there is no file or it's not readable...
+ *            or for that matter if env doesn't translate.
+ *            
+ */
+std::string getReadableFileFromEnvdir(const char* env, const char* file)
+{
+  std::string result;
+  const char* pDir = getenv(env);
+  if (pDir) {
+    std::string path = pDir;
+    path += "/";
+    path += file;
+    if (access(path.c_str(), R_OK) == 0) {
+      result = path;
+    }
+  }
+  
+  return result;
+}
+
+}

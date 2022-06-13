@@ -64,7 +64,7 @@ public:
 
 public:
   /*!
-   * \brief DEPRECATED - Read a full ring item from the source
+   * \brief  - Read a full ring item from the source
    *
    *  This blocks until the complete ring item has arrived.
    *  Caller receives ownership of object returned.

@@ -14,17 +14,16 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRESETCOMMAND_H
-#define __CRESETCOMMAND_H
+#ifndef CRESETCOMMAND_H
+#define CRESETCOMMAND_H
 
 /**
  * @file CResetCommand.h
  * @brief Define the processor for EVB::Reset - reset timestamps etc.
  */
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
+
 
 // Forward definitions.
 

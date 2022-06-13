@@ -138,7 +138,7 @@ void VarLTest::formatset()
 void VarLTest::specialchars()
 {
   m_pList->add("testing");
-  CTCLVariable t(m_pInterp, "testing", kfFALSE);
+  CTCLVariable t(m_pInterp, "testing", TCLPLUS::kfFALSE);
   t.Set("$abc[testig]");
   vector<string> values = m_pList->format();
   EQ(string("set testing {$abc[testig]}"), values[0]);

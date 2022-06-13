@@ -706,7 +706,7 @@ TclServer::Exit(Tcl_Event* pEvent, int flags)
 void
 TclServer::stackTrace()
 {
-  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", kfFALSE);
+  CTCLVariable errorInfo(m_pInterpreter, "errorInfo", TCLPLUS::kfFALSE);
   const char* msg = errorInfo.Get(TCL_GLOBAL_ONLY);
   
   std::cerr << msg << std::endl;

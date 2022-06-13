@@ -19,14 +19,14 @@
 #include <TCLResult.h>
 #include "CSIS3300Module.h"
 
-using namespace std;
 
 /*!
    Construct the class, we just need to construct the base class.
 */
-CSIS3300Creator::CSIS3300Creator(const string& type) :
-  CModuleCreator(type)
-{}
+CSIS3300Creator::CSIS3300Creator()
+{
+  m_helpText  =  "csis3300 - Struck (SIS) 3300/3301 flash adc";
+}
 
 /*!
    Destruction is a nooop supplied to complete the chain of
@@ -35,72 +35,15 @@ CSIS3300Creator::CSIS3300Creator(const string& type) :
 CSIS3300Creator::~CSIS3300Creator()
 {}
 
-/*!
-   Copy constructor.. .invoke the base class copy constr.
-*/
-CSIS3300Creator::CSIS3300Creator(const CSIS3300Creator& rhs) :
-  CModuleCreator(rhs)
-{}
-/*!
-   Assignment... invoke the base class assign.
-*/
-CSIS3300Creator&
-CSIS3300Creator::operator=(const CSIS3300Creator& rhs)
-{
-  if (this != &rhs) {
-    CModuleCreator::operator=(rhs);
-  }
-  return *this;
-}
-/*!
-   Equality compare.. done via base class.
-*/
-int
-CSIS3300Creator::operator==(const CSIS3300Creator& rhs) const
-{
-  return CModuleCreator::operator==(rhs);
-}
-/*!
-   Inequality by convention is always the logical inverse of equality.
-*/
-int
-CSIS3300Creator:: operator!=(const CSIS3300Creator& rhs) const
-{
-  return *this != rhs;
-}
-
-/*!
-   Provide a help string for those who care about it.
-*/
-string
-CSIS3300Creator::Help()
-{
-  return string( "Struck (SIS) 3300/3301 flash adc");
-}
-
-/*!
-   Create a new module
-*/
+/**
+ * Create
+ *    Creates a new instance.
+ * @param name - name of the module and its instance command.
+ * @param interp - interpreter the command is registered on.
+ * @return CReadoutObject* - pointer to new CSIS3300Module object.
+ */
 CReadableObject*
-CSIS3300Creator::Create(CTCLInterpreter& rInterp, CTCLResult& rResult,
-			int nArgs, char** pArgs)  
-{ 
-	assert(nArgs >= 2);
-	string mName(*pArgs);       // Module name.
-	nArgs --;
-	pArgs++;
-	assert(*pArgs == getModuleType());
-	nArgs--;
-	pArgs++;
-	
-	CSIS3300Module* pModule= new CSIS3300Module(mName, rInterp);
-	if(nArgs) {
-	  int status = pModule->Configure(rInterp, rResult, nArgs, pArgs);
-	  if(status != TCL_OK) { // Configure failed..
-	    delete pModule;	 //  Configure filled in result. 
-	    pModule = (CSIS3300Module*) NULL; 
-	  }
-	}
-	return pModule;
-	
-}  
+CSIS3300Creator::Create(const char* name, CTCLInterpreter& interp)
+{
+  return new CSIS3300Module(name, interp);
+}

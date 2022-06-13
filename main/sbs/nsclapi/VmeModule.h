@@ -40,15 +40,20 @@
 #define VMEMODULE_H
 
 #include <CVME.h>
-
-#ifndef _CRT_STDINT_H
-
 #include <stdint.h>
-#ifndef _CRT_STDINT_H
-#define _CRT_STDINT_H
-#endif
-#endif
 
+
+// Convenience macros:
+
+#define SOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint16_t)))
+#define LOffset(s,field) ((unsigned int)(((uint64_t)&(((s*)0)->field))/sizeof(uint32_t)))
+
+
+/**
+ * @class CVmeModule
+ *   Encapsulates a chunk of VME address space providing an imperative,
+ *   rather than data, interface to it.
+ */
 class CVmeModule
 {
  public:

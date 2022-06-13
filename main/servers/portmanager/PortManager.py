@@ -23,7 +23,7 @@
 
 import socket
 import getpass
-import Tkinter
+import tkinter as Tkinter
 
 
 #   Below is a Tcl interpreter object that is used by all connection objects
@@ -77,7 +77,7 @@ class PortManager:
         username = getpass.getuser()
         message = "GIMME %s %s\n" % (service, username)
         
-        self.socket.sendall(message)
+        self.socket.sendall(bytearray(message, 'utf-8'))
         reply = self.socket.recv(10000)
         
         #  The reply should be  string of one of the following forms:
@@ -108,7 +108,7 @@ class PortManager:
     #                * user    - Value is the username for the service.
     #
     def listPorts(self):
-        self.socket.sendall("LIST\n")
+        self.socket.sendall(bytearray("LIST\n", 'utf-8'))
         
         # We do the makefile so that we can use readline and do line based
         # processing.
@@ -176,5 +176,5 @@ class PortManager:
             user = criteria['user']
             ports = filter(lambda port: port['user'] == user, ports)
         
-        return ports
+        return list(ports)
         

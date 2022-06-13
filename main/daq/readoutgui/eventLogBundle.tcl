@@ -40,6 +40,8 @@ package require portAllocator
 package require DataSourceUI
 package require versionUtils
 package require StateManager
+package require dialogwrapper
+package require textprompter
 
 
 
@@ -220,6 +222,31 @@ proc ::EventLog::getLoggerPath {} {}
 # Utility methods
 
 ##
+# _getStartFile
+#   @return the path to the .started file.
+#
+proc ::EventLog::_getStartFile {} {
+  set run [ReadoutGUIPanel::getRun]
+  set destDir [::ExpFileSystem::getRunDir $run]
+      
+  set startFile [file join $destDir .started]
+  return $startFile
+}
+##
+# _getExitFile
+#    Get path to the current .exited file.
+#
+proc ::EventLog::_getExitFile {} {
+  
+
+  set run [ReadoutGUIPanel::getRun]
+  set destDir [::ExpFileSystem::getRunDir $run]
+  
+  set result [file join $destDir .exited]
+  return $result
+
+}
+#
 # ::EventLog::_extractEventLogVersion
 #
 # Given a path containing a path name, this will extract a version
@@ -240,7 +267,7 @@ proc ::EventLog::_getLoggerVersion {evtlogpath} {
     error "Cannot determine eventlog version"
   } else {
     if {[catch {close $pipe} msg]} {
-      puts "Exceptional exit of eventlog : $msg"
+      puts stderr "Exceptional exit of eventlog : $msg"
     }
   }
 
@@ -275,7 +302,7 @@ proc ::EventLog::_computeLoggerSwitches {{loggerVersion 1.0}} {
       set ring [::Experiment::spectrodaqURL localhost]
     }
   
-    # These are the default switches to use
+    # These are the initial switches to use
     set switches "--source=$ring --oneshot"
 
     if {[::DAQParameters::getUseChecksumFlag]} {
@@ -306,11 +333,35 @@ proc ::EventLog::_computeLoggerSwitches {{loggerVersion 1.0}} {
         $sm destroy
         append switches " --number-of-sources=$totsrc"
     }
-    # If requested get the run number from the GUI and force it:
     
-    # Generate run files in the current directory without cd'ing anywhere
-    append switches " --path=[::ExpFileSystem::getCurrentRunDir]"
+    #  If the event directory exists, that's an error.
+    #  Create the event directory and set it to be where
+    #  eventlog writes it's segments.
+    
 
+    set run [ReadoutGUIPanel::getRun]
+    set destDir [::ExpFileSystem::getRunDir $run]
+    if {[file exists $destDir]} {
+      return -code 1 \
+       "The directory for this run: $destDir already exists."
+        
+    }
+    # In order to create the directory, we'll need to
+    # set the permissions of the directory above it
+    # to allow write access by us... we'll save the current
+    # perms and restore them when done:
+    
+    set expDir [file dirname $destDir]
+    set originalPerms [file attributes $expDir -permissions]
+    file attributes $expDir -permissions u=rwx,g=rx
+    file mkdir $destDir
+    file attributes $expDir -permissions $originalPerms
+    
+    append switches " --path=$destDir"
+
+    # If requested, get the run number from the
+    # GUI rather than the event segments.
+    
     if {[DAQParameters::getRunNumberOverrideFlag]} {
         set run [::ReadoutGUIPanel::getRun]
         append switches " --run=$run"
@@ -321,10 +372,11 @@ proc ::EventLog::_computeLoggerSwitches {{loggerVersion 1.0}} {
     append switches " --segmentsize=[DAQParameters::getEventLoggerFileSegmentSize]g"
     
     # Set the --prefix flag  
-#    append switches " --prefix=[::DAQParameters::getRunFilePrefix]"
+    #    append switches " --prefix=[::DAQParameters::getRunFilePrefix]"
 
     return $switches
 }
+
 ##
 # ::EventLog::_startLogger
 #  Start the event logger and set it's pid in the loggerPid variable.
@@ -338,7 +390,7 @@ proc ::EventLog::_startLogger {} {
     set logger [DAQParameters::getEventLogger] 
     set loggerVsn [::EventLog::_getLoggerVersion $logger]
     set switches [::EventLog::_computeLoggerSwitches $loggerVsn]
-
+    
     set ::EventLog::loggerFd \
         [open "| $logger $switches" r]
     set ::EventLog::loggerPid [pid $::EventLog::loggerFd]
@@ -363,13 +415,16 @@ proc ::EventLog::_handleInput {} {
         fileevent $fd readable [list]
         catch {close $fd} msg
 
-        # Log to the output window and pop up and error.
+        # Log to the output window and pop up and error.  It's ok to exit
+        # at this time if we're expecting it or if the pending state is halted.
+        # This covers the idea that the end run passed through the eventlogger
+        # before we got a chance to expect it to here.
 
-        if {!$::EventLog::expectingExit} {
+        if {!$::EventLog::expectingExit && ($::Pending::pendingState ne "Halted")} {
             ::ReadoutGUIPanel::Log EventLogManager error "Unexpected event log error! $msg"
             ::Diagnostics::Error {The event logger exited unexpectedly check EventLogManager tab for errors.!!}
         } else {
-            ::EventLog::_finalizeRun;            # May need that if exit before wait.
+            # ::EventLog::_finalizeRun;            # May need that if exit before wait.
         }
         set ::EventLog::loggerFd [list]
         set ::EventLog::loggerPid -1
@@ -391,7 +446,6 @@ proc ::EventLog::_handleInput {} {
 #
 proc ::EventLog::_waitForFile {name waitTimeout pollInterval} {
     set waitTimeoutMs [expr {$waitTimeout * 1000}];   # Wait timeout in milliseconds
-    
     while {$waitTimeoutMs > 0} {
         if {[file exists $name]} {
             return 1
@@ -411,7 +465,12 @@ proc ::EventLog::_waitForFile {name waitTimeout pollInterval} {
 #  * Making symlinks for each event file segment in complete directory (event view).
 #  * Copying the metadata into the new run directory.
 #
-#
+# @note: daqdev/NSCLDAQ#1033 - Event files written with this bundle
+#        Go directly to the exeriment/runmmm directory.
+#        All we need to do is:
+#        1.   Destroy the links to event segments.
+#        2.   Do the copy.
+#        3.   Make links in the complete dir that point to the run dir.
 #
 proc ::EventLog::_finalizeRun {} {
     if {$::EventLog::needFinalization} {
@@ -421,50 +480,42 @@ proc ::EventLog::_finalizeRun {} {
         set run [ReadoutGUIPanel::getRun]
         set destDir [::ExpFileSystem::getRunDir $run]
         
-        # Make the run directory:
-        # and mv the event files into it... remembering the destination names.
+        #  IF the run dir does not exist there's a real problem here:
         
-        file attributes \
-            [file normalize [file join $destDir ..]] -permissions 0770;   # Let me write here.
-        file mkdir $destDir
+        if {![file isdirectory $destDir]} {
+          set msg "The run directory $destDir which should hold the event files \
+for $run either does not exist or is not a directory"
+          tk_messageBox -icon error -type ok -title "Error no event directory" \
+            -message $msg
+          return
+        }
+        
+        #  Remove any links to event files in the srcdir
+        
+        
         set  fileBaseName [::ExpFileSystem::genEventfileBasename $run]
         set  eventFiles [glob -nocomplain [file join $srcdir ${fileBaseName}*.evt]]
-        set  mvdNames [list]
-        set renameStatus [catch {
-            foreach eventFile $eventFiles {
-                set destFile [file join $destDir [file tail $eventFile]]
-                file rename -force $eventFile $destFile
-                lappend mvdNames $destFile
-            }
-        } msg]
-        if {$renameStatus} {
-            tk_messageBox -title {Rename failure} -icon error -type ok \
-                -message "Rename of event files to $destDir failed: $msg : fix problem and manually move the event files"
-            set ::EventLog::needFinalization 0
-            ReadoutGUIPanel::incrRun
-            return
+        foreach file $eventFiles {
+          catch {file delete -force $file}
         }
-        #
-        #  If there is a checksum file (there should be) move that to the experiment directory
-        #
-    
-        set cksumFile [file join $srcdir "${fileBaseName}.sha512"]
-        set destFile [file join $destDir [file tail $cksumFile]]
-        if {[file readable $cksumFile]} {
-          file rename -force $cksumFile $destFile
-        }
-    
-        #  If 
-        #  Make links in the complete directory for all mvdNames:
-        #  Ensure the directories are writable and restore fter the links
-        # are made.
+        # Now we make links for all event files (.evt) files in the event directory
+        # in the complete directory:
         
-        set perms [file attributes $completeDir -permissions]
-        file attributes $completeDir -permissions u+w
-        foreach file $mvdNames {
-            catch {exec ln -sr $file $completeDir}	    
+        set perms [file attributes $completeDir -permissions];    # Must set complete
+        file attributes $completeDir -permissions u+w;            # writeable.
+        
+        set eventFiles [glob -nocomplain [file join $destDir ${fileBaseName}*.evt]]
+        foreach file $eventFiles {
+
+          
+          set linkName [file join $completeDir [file tail $file]]
+          
+          if {[catch {exec ln -sr $file $linkName} msg]} { ;   # Want to force relative.
+
+            puts stderr "Could not link $linkName -> $file : $msg"
+          }
         }
-        file attributes $completeDir -permissions $perms
+        file attributes $completeDir -permissions $perms; # Restor prior perms.
         
         
         #  Now what's left gets recursively/link-followed copied to the destDir
@@ -479,6 +530,12 @@ proc ::EventLog::_finalizeRun {} {
             ReadoutGUIPanel::incrRun
             return
         }
+        #
+        #  Kill off the start file and exitfiles:
+        
+        ::EventLog::deleteStartFile
+        ::EventLog::deleteExitFile
+        
         # If required, protect the files:
         #   - The destDir is set to 0550
         #   - The parent dir is set to 0550.
@@ -504,21 +561,36 @@ proc ::EventLog::_finalizeRun {} {
 #
 # @return list first element is the number of event segments found, the second
 #              the total Mbytes of storage used.
+# @note If there are segments that don't have links in the current dir,
+#       they are created at this time.
 #
 proc ::EventLog::_getSegmentInfo {} {
-    set eventDir [ExpFileSystem::getCurrentRunDir]
+    set currentDir [ExpFileSystem::getCurrentRunDir]
     set run [::ReadoutGUIPanel::getRun]
+    set eventDir [::ExpFileSystem::getRunDir $run]
+    set  fileBaseName [::ExpFileSystem::genEventfileBasename $run]
     
-    set filename [format "run-%04d*.evt" $run]
-    set filepat [file join $eventDir $filename]
-
-    set    segments [glob -nocomplain $filepat]
-    set    size     0.0
+    # Which files exist:
+    
+    set segments [glob -nocomplain \
+          [file join $eventDir $fileBaseName*.evt]]
+        
+            
+   
     set    nsegments [llength $segments]
+    set size 0;             # For when there are no segments yet.
     foreach segment $segments {
-	if {![catch {file size $segment} segsize]} {
-	    set size [expr {$size + $segsize/1024.0}]
-	}
+        if {![catch {file size $segment} segsize]} {
+          set size [expr {$size + $segsize/1024.0}]
+        }
+        # Do I need to make a new link in the current dir:
+        
+        set baseName [file tail $segment]
+        set linkName [file join $currentDir $baseName]
+        if {![file exists $linkName]} {
+
+          catch {exec ln -sr $segment $linkName}
+        }
     }
     set size [format %.2f [expr {$size/1024.0}]]
     
@@ -552,7 +624,7 @@ proc ::EventLog::_setStatusLine repeatInterval {
 #
 proc ::EventLog::_dotStartedExists {} {
   set currentPath [::ExpFileSystem::getCurrentRunDir]
-  return [file exists [file join $currentPath .started]]
+  return [file exists [::EventLog::_getStartFile]]
 }
 
 ##
@@ -560,8 +632,8 @@ proc ::EventLog::_dotStartedExists {} {
 #   experiment/current directory
 #
 proc ::EventLog::_dotExitedExists {} {
-  set currentPath [::ExpFileSystem::getCurrentRunDir]
-  return [file exists [file join $currentPath .exited]]
+  
+  return [file exists [::EventLog::_getExitFile]]
 }
 
 ##
@@ -632,8 +704,12 @@ proc ::EventLog::correctFixableProblems {} {
 #   Kill off the .started file.
 #
 proc ::EventLog::deleteStartFile {} {
-    set startFile [file join [::ExpFileSystem::getCurrentRunDir] .started]
-    file delete -force $startFile 
+    set startFile [::EventLog::_getStartFile]
+    set dirname [file dirname $startFile]
+    set oldPerms [file attributes $dirname -permissions]
+    file attributes $dirname -permissions u=rwx
+    file delete -force $startFile
+    file attributes $dirname -permissions $oldPerms
     
 }
 ##
@@ -642,9 +718,13 @@ proc ::EventLog::deleteStartFile {} {
 #
 proc ::EventLog::deleteExitFile {} {
     
-    set exitFile [file join [::ExpFileSystem::getCurrentRunDir] .exited]
+    set exitFile [::EventLog::_getExitFile]
+    set dirname [file dirname $exitFile]
+    set oldPerms [file attributes $dirname -permissions]
+    file attributes $dirname -permissions u=rwx
     file delete -force $exitFile 
     
+    file attributes $dirname -permissions $oldPerms
 }
 #------------------------------------------------------------------------------
 # Actions:
@@ -673,7 +753,8 @@ proc ::EventLog::runStarting {} {
 
   if {[::ReadoutGUIPanel::recordData]} {
     
-    set startFile [file join [::ExpFileSystem::getCurrentRunDir] .started]
+        
+    set startFile [::EventLog::_getStartFile]
 
     ::EventLog::_startLogger
     ::EventLog::_waitForFile $startFile $::EventLog::startupTimeout \
@@ -695,9 +776,9 @@ proc ::EventLog::runStarting {} {
 #  @note - We let the file readable handler handle closing the fd.
 #
 proc ::EventLog::runEnding {} {
-    
-    set startFile [file join [::ExpFileSystem::getCurrentRunDir] .started]
-    set exitFile [file join [::ExpFileSystem::getCurrentRunDir] .exited]
+
+    set startFile [::EventLog::_getStartFile]
+    set exitFile [::EventLog::_getExitFile]
 
     # ne is used below because the logger could be a pipeline in which case
     # ::EventLog::loggerPid will be a list of pids which freaks out ==.
@@ -719,7 +800,7 @@ proc ::EventLog::runEnding {} {
         set oldValue $::EventLog::eventLogEnded;      # so we know if there was a timeout.
         vwait ::EventLog::eventLogEnded
         after cancel $timeoutId
-
+        
         if {$oldValue == $::EventLog::eventLogEnded} {
             
             # Wait timed out.
@@ -734,15 +815,13 @@ proc ::EventLog::runEnding {} {
             
             ::EventLog::_waitForFile $exitFile $::EventLog::shutdownTimeout \
                 $::EventLog::filePollInterval
-            ::StageareaValidation::deleteExitFile
+            
             
         }
-        puts "Enabling"
-        ::StageareaValidation::deleteExitFile
-        set ::EventLog::loggerPid -1
+        
+        set ::EventLog::loggerPid -1  
         ::EventLog::_finalizeRun
-        file delete -force $startFile;   # So it's not there next time!!
-        file delete -force $exitFile;   # So it's not there next time!!
+      
 
         #  Cancel the after that updates the event segments and set a new
         #  status line entry indicting the run ended.
@@ -770,7 +849,8 @@ proc ::EventLog::runEnding {} {
 # @param state - Current state.
 #
 proc ::EventLog::attach {state} {
-    
+
+    StageareaValidation::correctFixableProblems
 }
 
 ## 
@@ -799,29 +879,33 @@ proc ::EventLog::precheckTransitionForErrors {from to} {
 #   {Paused, Active} -> Halted.
 #
 proc ::EventLog::enter {from to} {
-    if {($from in [list Active Paused]) && ($to eq "Halted")} {
-      # if the start was aborted then we should not try to cleanup
-      if {! $::EventLog::failed} {
-        ::EventLog::runEnding
-      }
-    }
-    if {($from in [list Active Paused]) && ($to eq "NotReady")} {
-      # if the start was aborted then we should not try to cleanup
-      if {! $::EventLog::failed} {
-        # Kill of the event log program since it's not going to see ends:
-        foreach pid $::EventLog::loggerPid {
-            if {$pid != -1} {
-                catch {exec kill -9 $pid}
-            }
+  #  None of this needs to be done if the event log is off.
+  if {[::ReadoutGUIPanel::recordData]} {
+      if {($from in [list Active Paused]) && ($to eq "Halted")} {
+        # if the start was aborted then we should not try to cleanup
+        if {! $::EventLog::failed} {
+          ::EventLog::runEnding
         }
-        # Create the exit file:
-        set fd [open [file join [::ExpFileSystem::getCurrentRunDir] .exited] w]
-        puts $fd "dummy"
-        close $fd
-      	::EventLog::runEnding
-      } 
+      }
+      if {($from in [list Active Paused]) && ($to eq "NotReady")} {
+        # if the start was aborted then we should not try to cleanup
+        if {! $::EventLog::failed} {
+          # Kill of the event log program since it's not going to see ends:
+          foreach pid $::EventLog::loggerPid {
+              if {$pid != -1} {
+                  catch {exec kill -9 $pid}
+              }
+          }
+          # Create the exit file:
+          set fd [open [::EventLog::_getExitFile] w]
+          puts $fd "dummy"
+          close $fd
+          ::EventLog::runEnding
+        } 
+  
+      }
+  }
 
-    }
 }
 ##
 # ::EventLog::leave
@@ -833,20 +917,26 @@ proc ::EventLog::enter {from to} {
 # @param to   - State we will enter.
 #
 proc ::EventLog::leave {from to} {
-  if {($from eq "Halted") && ($to eq "Active")} {
-      if {[catch {::EventLog::runStarting} msg]} {
-        set ::EventLog::failed 1
-        ::ReadoutGUIPanel::Log EventLogManager error $msg
-        error $msg
-      }
-      # reset the failure state
-      set ::EventLog::failed 0
-  }
-  if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
-    if {! $::EventLog::failed} { 
-      set  ::EventLog::expectingExit 1
+  
+  # None of this needs to be done if we're not recording.
+  
+  if {[::ReadoutGUIPanel::recordData]} {
+    if {($from eq "Halted") && ($to eq "Active")} {
+        if {[catch {::EventLog::runStarting} msg]} {
+          set trace $::errorInfo
+          set ::EventLog::failed 1
+          ::ReadoutGUIPanel::Log EventLogManager error "$msg : $trace"
+          error "$msg : $trace"
+        }
+        # reset the failure state
+        set ::EventLog::failed 0
     }
-    set ::EventLog::failed 0
+    if {($from in [list "Active" "Paused"]) && ($to eq "Halted") } {
+      if {! $::EventLog::failed} { 
+        set  ::EventLog::expectingExit 1
+      }
+      set ::EventLog::failed 0
+    }
   }
 }
 
@@ -1076,19 +1166,23 @@ snit::widgetadaptor EventLog::ParameterPrompter {
         
 
         
-        ttk::label  $win.loglabel -text {Event log program}
-        ttk::entry  $win.logger       \
-            -textvariable [myvar options(-logger)] -width 40
+        #ttk::label  $win.loglabel -text {Event log program}
+        #ttk::entry  $win.logger       \
+        #    -textvariable [myvar options(-logger)] -width 40
+        textprompt $win.logger -text {Event log program} \
+          -textvariable [myvar options(-logger)] -width 40
         ttk::button $win.browselogger \
             -text {Browse...} -command [mymethod _browseLogger]
         
-        ttk::label $win.datasourcelabel -text {Data Source Ring URI}
-        ttk::entry $win.datasource    \
-            -textvariable [myvar options(-ring)] -width 40
+        #ttk::label $win.datasourcelabel -text {Data Source Ring URI}
+        #ttk::entry $win.datasource    \
+        #    -textvariable [myvar options(-ring)] -width 40
+        textprompt $win.datasource -text {Data Source Ring URI} \
+            -textvariable [myvar options(-ring)] -width 40 
         ttk::button $win.knownrings    \
             -text {Known Rings...} -command [mymethod _browseRings]
         
-        ttk::spinbox $win.segsize -width 5 -from 2 -to 200 -textvariable [myvar options(-segmentsize)]
+        ttk::spinbox $win.segsize -width 8 -from 2 -to 10000000 -textvariable [myvar options(-segmentsize)]
         ttk::label $win.seglabel -text {seg. size GB}
         
         message $win.help -text "
@@ -1123,19 +1217,23 @@ NSCLDAQ-11.0 eventlog program or later. "
         ttk::checkbutton $win.usechecksum -text {Compute checksum} \
             -variable [myvar options(-usechecksum)] -onvalue 1 -offvalue 0
 
-        ttk::label $win.stageareaLbl -text {Stagearea path} 
-        ttk::entry $win.stageareaEntry -textvariable [myvar options(-stagearea)] \
-                      -width 40
+        #ttk::label $win.stageareaLbl -text {Stagearea path} 
+        #ttk::entry $win.stageareaEntry -textvariable [myvar options(-stagearea)] \
+        #              
+        textprompt $win.stageareaEntry -text {Stagearea path} \
+              -textvariable [myvar options(-stagearea)] \
+              -width 40
         ttk::button $win.stageareaBrowse -text "Browse..." -command [mymethod _browseStagearea]
 
-        ttk::label $win.prefixLbl -text {Run file prefix} 
-        ttk::entry $win.prefixEntry -textvariable [myvar options(-prefix)] \
-                      -width 40
-
-        grid $win.loglabel $win.logger $win.browselogger -sticky w
-        grid $win.datasourcelabel $win.datasource $win.knownrings -sticky w
-        grid $win.stageareaLbl $win.stageareaEntry $win.stageareaBrowse -sticky w
-        grid $win.prefixLbl $win.prefixEntry -sticky e
+        #ttk::label $win.prefixLbl -text {Run file prefix} 
+        #ttk::entry $win.prefixEntry -textvariable [myvar options(-prefix)] \
+        #              -width 40
+        textprompt $win.prefixEntry -text {Run file prefix} \
+              -textvariable [myvar options(-prefix)] -width 40
+        grid $win.logger $win.browselogger -sticky w
+        grid $win.datasource $win.knownrings -sticky w
+        grid $win.stageareaEntry $win.stageareaBrowse -sticky w
+        grid $win.prefixEntry -sticky e
         grid $win.seglabel    -sticky e
         grid $win.segsize -row 4 -column 1 -sticky w
         grid $win.help -columnspan 3 -sticky ew
@@ -1264,7 +1362,7 @@ NSCLDAQ-11.0 eventlog program or later. "
         set dlg [DialogWrapper $win.ringbrowser.dialog]
         $dlg configure \
             -form [EventLog::RingBrowser [$dlg controlarea].f \
-                -rings [getRingUsage]]
+                -rings [ring usage]]
         pack $dlg
         set action [$win.ringbrowser.dialog modal]
 
@@ -1299,46 +1397,7 @@ NSCLDAQ-11.0 eventlog program or later. "
         return tcp://[lindex $ringInfo 1]/[lindex $ringInfo 0]
     }
     
-    ##
-    # getRingUsage
-    #
-    #  Get the rings used/known by a ringmaster.
-    #
-    # @param host - defaults to localhost Host for which to ask for this
-    #               information
-    #
-    # @return list - Returns the list from the LIST command to that ringmaster.
-    #
-    proc getRingUsage {{host localhost}} {
-        portAllocator create manager -hostname $host
-        set ports [manager listPorts]
-        manager destroy
     
-        set port -1
-        foreach item $ports {
-            set port [lindex $item 0]
-            set app  [lindex $item 1]
-            if {$app eq "RingMaster"} {
-                set port $port
-                break
-            }
-        }
-        if {$port == -1} {
-            error "No RingMaster server  on $host"
-        }
-    
-        set sock [socket $host $port]
-        fconfigure $sock -buffering line
-        puts $sock LIST
-        gets $sock OK
-        if {$OK ne "OK"} {
-            error "Expected OK from Ring master but got $OK"
-        }
-        gets $sock info
-        close $sock
-        return $info
-    }
-
 }
 ##
 # EventLog::promptParameters

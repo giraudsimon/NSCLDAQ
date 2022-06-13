@@ -100,7 +100,7 @@ CTheApplication::CTheApplication()
 {
   if (m_Exists) {
     cerr << "Attempted to create more than one instance of the application\n";
-    exit(EX_SOFTWARE);
+    Tcl_Exit(EX_SOFTWARE);
   }
   m_Exists = true;
   m_pInterpreter = static_cast<CTCLInterpreter*>(NULL);
@@ -182,7 +182,7 @@ int CTheApplication::operator()(int argc, char** argv)
 
   if (parsedArgs.enumerate_given) {
     enumerateVMUSB();
-    exit(EXIT_SUCCESS);
+    Tcl_Exit(EXIT_SUCCESS);
   }
   if (parsedArgs.init_script_given) {
     m_systemControl.setInitScript(string(parsedArgs.init_script_arg));
@@ -250,7 +250,7 @@ int CTheApplication::operator()(int argc, char** argv)
         if(end == portString.c_str()) {       // failed.
             std::cerr << "--port string must be either a number or 'managed'\n";
             cmdline_parser_print_help();
-            exit(EXIT_FAILURE);
+            Tcl_Exit(EXIT_FAILURE);
         } else {
             tclServerPort = port;
         }
@@ -453,6 +453,7 @@ CTheApplication::initializeLogging()
         daqlog::setLogLevel(daqlog::Debug);
         break;
       case 2:
+    case 3:
         daqlog::setLogLevel(daqlog::Trace);
         break;
       default:
@@ -461,6 +462,7 @@ CTheApplication::initializeLogging()
           << "Must be 0, 1, or 2\n";
         exit(EXIT_FAILURE);
     }
+    CVMUSB::m_logTransactions   = m_logLevel > 2;           // Export that to the full app.
   }
  
 }

@@ -22,6 +22,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <utils.h>
 
 namespace DAQ {
   namespace V10 {
@@ -405,22 +406,7 @@ CRingItem::newIfNecessary(size_t size)
   m_pCursor= m_pItem->s_body;
 
 }
-/*
-** Swap the bytes of a longword:
-*/
-uint32_t
-CRingItem::swal(uint32_t datum)
-{
-  union {
-    uint32_t along;
-    uint8_t  bytes[4];
-  } swapper;
-  swapper.along = datum;
 
-  uint32_t result = swapper.bytes[3] | (swapper.bytes[2] << 8) | 
-    (swapper.bytes[1] << 16) | (swapper.bytes[0] << 24);
-  return result;
-}
 /**
  * timeString
  *

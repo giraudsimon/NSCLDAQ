@@ -1,5 +1,5 @@
-#ifndef __CNULLTRIGGER_H
-#define __CNULLTRIGGER_H
+#ifndef CNULLTRIGGER_H
+#define CNULLTRIGGER_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -15,9 +15,8 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CEVENTTRIGGER_h
+
 #include <CEventTrigger.h>
-#endif
 
 
 /*!

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
+#include <io.h>
 
 
 // Standard creators:
@@ -105,28 +106,25 @@ CScriptedSegment::initialize()
     throw error;
   }
   catch(string msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    reportConfigFileFailure(
+        msg.c_str(), CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(const char* msg) {
-    string error = "Configuration file processing failed:\n";
-    error       += msg;
-    error       += "\nAt: \n";
-    error       += CTCLException::getTraceback(*m_pInterp);
-    throw error;
+    reportConfigFileFailure(
+      msg, CTCLException::getTraceback(*m_pInterp).c_str()
+    );
+    
   }
   catch(CTCLException& tclfail) {
-    string error = "Configuration file processing failed\n";
-    error       +=tclfail.ReasonText();
-    error       += "\nTraceback:\n";
-    error       += tclfail.getTraceback();
-    throw error;
+    reportConfigFileFailure(
+      tclfail.ReasonText(), tclfail.getTraceback().c_str()
+    );
+    
   }
   catch (...) {
-    throw "Configuration file processing failed";
+    throw std::string("Configuration file processing failed");
   }
   
 }
@@ -187,48 +185,13 @@ CScriptedSegment::read(void* pBuffer, size_t maxwords)
 
    @return std::string
    @throws CErrnoException for ENOENTRY if there is no a matching file.
-
+   @note daqdev/NSCLDAQ#700 This has had the penguin snot factored out of it.
 
 */
 string
 CScriptedSegment::getConfigurationFile()
 {
-
-  // HARDWARE_FILE:
-
-  const char* path = getenv("HARDWARE_FILE");
-  if (path && (access(path, R_OK) == 0) ) {
-
-    return string(path);
-  }
-
-  // ~/config/hardware.tcl
-
-  const char* home = getenv("HOME");
-  if (home) {
-    string path(home);
-    path += string("/config/hardware.tcl");
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-
-  }
-
-  //  cwd/hardware.tcl
-
-  char here[PATH_MAX];
-  char* pResult = getcwd(here, PATH_MAX);
-  if (pResult) {
-    string path(here);
-    path += "/hardware.tcl";
-    if (access(path.c_str(), R_OK) == 0) {
-      return path;
-    }
-  }
-  errno = ENOENT;
-  throw CErrnoException("Locating a configuration file");
-
-  
+  return locateConfigFile("HARDWARE_FILE", "hardware.tcl");
 
 }
 
@@ -236,13 +199,14 @@ CScriptedSegment::getConfigurationFile()
    Add a new module creator this is the mechanism a user written addUserWrittenCreators
    would use to add creators it instantiated into the set supported by the module
    command (For that matter, addStandardCrators uses it too).
+   @param type    - type of module to add.
    @param creator - reference to the module creator to add.
 
 */
 void
-CScriptedSegment::addCreator(CModuleCreator& creator)
+CScriptedSegment::addCreator(const char* type, CModuleCreator& creator)
 {
-  m_pBundle->addCreator(creator);
+  m_pBundle->addCreator(type, creator);
 }
 
 /*!
@@ -275,10 +239,67 @@ CScriptedSegment::addStandardCreators()
   // All creators are dynamically created ..presumably destruction of the
   // CModuleCommand will delete them ??!?
 
-  addCreator(*(new CCAENV775Creator()));
-  addCreator(*(new CCAENV785Creator()));
-  addCreator(*(new CCAENV792Creator()));
-  addCreator(*(new CCAENV830Creator()));
-  addCreator(*(new CSIS3300Creator()));
-  addCreator(*(new CV1x90Creator("v1x90")));
+  addCreator("caenv775", *(new CCAENV775Creator()));
+  addCreator("caenv785", *(new CCAENV785Creator()));
+  addCreator("caenv792", *(new CCAENV792Creator()));
+  addCreator("caenv830", *(new CCAENV830Creator()));
+  addCreator("sis3300", *(new CSIS3300Creator()));
+  addCreator("caenv1x90", *(new CV1x90Creator()));
+
 }
+
+/**
+ * reportConfigFileFailure
+ *   Formats and throws a string exception that indicates configuration
+ *   file processing failed:
+ * @param why - reason for the failure.
+ * @param where - traceback string that says where.
+ * @throw std::string
+ */
+void
+CScriptedSegment::reportConfigFileFailure(const char* why, const char* where)
+{
+  std::string msg("Configuration file processing failed:\n");
+  msg   += why;
+  msg   += "\nAt: \n";
+  msg   += where;
+  throw msg;
+
+}
+/**
+ * locateConfigFile
+ *    Locate a configuration file according to the search rules used by
+ *    this program.  This can also be used to locate scaler files.
+ *    hence it is public and static:
+ * @param envvar - environment variable that can hold the config file name.
+ * @param name   - Name of the file exclusive of any path.
+ *
+ * @return std::string - path to file.
+ * @throw std::CErrnoException with ENOENT if not found.\
+ * @note search order is envvar, $HOME/config/name, `pwd`/name.
+ */
+std::string
+CScriptedSegment::locateConfigFile(const char* envvar, const char* name)
+{
+  // SCALER_FILE:
+
+  std::string result = io::getReadableEnvFile(envvar);
+  if (result != "") return result;
+
+  // ~/config/scalers.tcl
+
+  result = "/config/";
+  result            += name;
+  result = io::getReadableFileFromHome(name);
+  if (result != "") return result;
+  
+
+  //  cwd/scalers.tcl
+
+  result = io::getReadableFileFromWd(name);
+  if (result != "") return result;
+  
+  errno = ENOENT;
+  throw CErrnoException("Locating a configuration file");  
+}
+

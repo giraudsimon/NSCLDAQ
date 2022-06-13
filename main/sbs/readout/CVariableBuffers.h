@@ -16,23 +16,9 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __TCL_H
 #include <tcl.h>
-#ifndef __TCL_H
-#define __TCL_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
-
-#ifndef __CDOCUMENTEDVARS_H
 #include "CDocumentedVars.h"
-#endif
 
 class CConditionVariable;
 class CMutex;

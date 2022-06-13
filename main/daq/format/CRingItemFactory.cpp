@@ -34,6 +34,7 @@
 #include <string>
 #include <string.h>
 #include <set>
+#include <sstream>
 
 static std::set<uint32_t> knownItemTypes;
 
@@ -131,15 +132,21 @@ CRingItem*
 CRingItemFactory::createRingItem(const void* pItem)
 {
   if (!isKnownItemType(pItem)) {
-    throw std::string("CRingItemFactory::createRingItem - unknown ring item type");
+    std::stringstream s;
+    const RingItem* p = reinterpret_cast<const RingItem*>(pItem);
+    s << "CRingItemFactory::createRingItem - unknown ring item type: "
+      << itemType(p) << std::endl;
+    std::string msg = s.str();
+    throw msg;
   }
   /* Make a 'vanilla' CRing item that we can pass into the other creator */
 
   const RingItem* pRitem = reinterpret_cast<const RingItem*>(pItem);
-  CRingItem baseItem(pRitem->s_header.s_type, pRitem->s_header.s_size);
+  uint32_t sItem = itemSize(pRitem);
+  CRingItem baseItem(itemType(pRitem), sItem);
   uint8_t*  pBody  = reinterpret_cast<uint8_t*>(baseItem.getItemPointer());
-  memcpy(pBody, pRitem, pRitem->s_header.s_size);
-  pBody += pRitem->s_header.s_size;
+  memcpy(pBody, pRitem, sItem);
+  pBody += sItem;
   baseItem.setBodyCursor(pBody);
   baseItem.updateSize();
 

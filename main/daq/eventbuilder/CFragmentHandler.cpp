@@ -149,7 +149,7 @@ CFragmentHandler::getInstance()
     // If needed, construct the object:
     
     if (!m_pInstance) {
-        new CFragmentHandler();    // Constructor sets m_pInstance.
+        m_pInstance = new CFragmentHandler();    // Constructor sets m_pInstance.
     }
     return m_pInstance;
 }
@@ -180,7 +180,7 @@ static bool first(true);
 
 
 void
-CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
+CFragmentHandler::addFragments(size_t nSize, const EVB::FlatFragment* pFragments)
 {
   
     m_nNow = time(NULL);
@@ -195,7 +195,7 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
    int frags = 0;
    int srcid = -1;
     while (nSize) {
-      EVB::pFragmentHeader pHeader = &(pFragments->s_header);
+      const EVB::FragmentHeader* pHeader = &(pFragments->s_header);
       frags++;
       srcid = pHeader->s_sourceId;
       size_t fragmentSize = totalFragmentSize(pHeader);
@@ -213,12 +213,12 @@ CFragmentHandler::addFragments(size_t nSize, EVB::pFlatFragment pFragments)
       
       // Point to the next fragment.
       
-      char* pNext = reinterpret_cast<char*>(pFragments);
+      const uint8_t* pNext = reinterpret_cast<const uint8_t*>(pFragments);
       lastHeader = *pHeader;
       first      = false;
 
       pNext      += fragmentSize;
-      pFragments  = reinterpret_cast<EVB::pFlatFragment>(pNext);
+      pFragments  = reinterpret_cast<const EVB::FlatFragment*>(pNext);
       nSize -= fragmentSize;
     }
   
@@ -888,22 +888,8 @@ CFragmentHandler::flushQueues(bool completely)
       }
       
       DequeueUntilStamp(partialSort, p->second.s_queue, mark);
-      XoffQueue(p->second);
-      XonQueue(p->second);
-      if (!partialSort.empty()) {
-        
-           if (partialSort.front().second->s_header.s_timestamp <
-                m_nMostRecentlyPopped) {
-            dataLate(*partialSort.front().second);
-          }
-          //updateQueueStatistics(p->second, partialSort);
-          statcopy.push_back({&(p->second), &partialSort});
-          pFrags->push_back(&partialSort);    
-      } else {
-      
-        delete &partialSort;
-      }
-      
+      handleDequeuedFragments(p, partialSort, pFrags, statcopy);
+     
       
     }
   } else {
@@ -926,19 +912,8 @@ CFragmentHandler::flushQueues(bool completely)
     for (auto p = m_FragmentQueues.begin(); p != m_FragmentQueues.end(); p++) {
       CSortThread::FragmentList& partialSort(*new CSortThread::FragmentList);
       DequeueUntilAbsTime(partialSort, p->second.s_queue, windowEnd);
-      XoffQueue(p->second);
-      XonQueue(p->second);
-      if (!partialSort.empty()) {
-        if (partialSort.front().second->s_header.s_timestamp <
-            m_nMostRecentlyPopped) {
-          dataLate(*partialSort.front().second);
-        }
-        statcopy.push_back({&(p->second), &partialSort});
-        //updateQueueStatistics(p->second, partialSort);
-        pFrags->push_back(&partialSort);
-      } else {
-        delete &partialSort;
-      }
+      handleDequeuedFragments(p, partialSort, pFrags, statcopy);
+      
       
     }   
 
@@ -1166,7 +1141,7 @@ CFragmentHandler::dataLate(const ::EVB::Fragment& fragment)
  *       timestamp says it is the newest fragment.
  */
 void
-CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
+CFragmentHandler::addFragment(const EVB::FlatFragment* pFragment)
 {
   
     bool     assigned            = false;
@@ -1176,7 +1151,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
 
     // Allocate the fragmentand copy it:
     
-    EVB::pFragmentHeader pHeader = &pFragment->s_header;
+    const EVB::FragmentHeader* pHeader = &pFragment->s_header;
     EVB::pFragment pFrag         = allocateFragment(pHeader); // Copies the header.
     uint64_t timestamp           = pHeader->s_timestamp;
     m_fBarrierPending           |= (pHeader->s_barrier != 0);   //Mark there's a barrier pending
@@ -1295,9 +1270,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
     
     // If appropriate, xoff  destqueue:
     
-    
-
-
+ 
 }
 /**
  * totalFragmentSize
@@ -1311,7 +1284,7 @@ CFragmentHandler::addFragment(EVB::pFlatFragment pFragment)
  * @retval total size of fragment descsribed by the header.
  */
 size_t
-CFragmentHandler::totalFragmentSize(EVB::pFragmentHeader pHeader)
+CFragmentHandler::totalFragmentSize(const EVB::FragmentHeader* pHeader)
 {
     return pHeader->s_size + sizeof(EVB::FragmentHeader);
 }
@@ -1746,29 +1719,16 @@ CFragmentHandler::IdlePoll(ClientData data)
   CFragmentHandler* pHandler = reinterpret_cast<CFragmentHandler*>(data);
   pHandler->m_nNow = time(NULL);	// Update tod.
   
-  // Only flush queues if none are xoffed.  If there's a global xoff
-  // we can still flush:
   
-  bool onexoffed = false;
-  bool allxoffed = true;
-  for (auto& qInfo : pHandler->m_FragmentQueues) {
-    auto q = qInfo.second;
-    if (q.s_xoffed) {
-      onexoffed = true;
-    } else {
-      allxoffed = false;
-    }
-  }
-  if (allxoffed || (!onexoffed) || (onexoffed && pHandler->noEmptyQueue()))  {
-      pHandler->flushQueues();
-  }
+  pHandler->flushQueues();   //  Do time window based flush.
+ 
   
   // Since it's possible that fragments have been output from
   // the buffer queue to the output thread while we've been
   // Xoffed -- and hence can't exactly receive data, this
   // allows that to accept data again:
 
-  pHandler->checkXon();
+  pHandler->checkXon();           // May be able to XON.
   // reschedule
 
   pHandler->m_timer = Tcl_CreateTimerHandler(1000*IdlePollInterval,  &CFragmentHandler::IdlePoll, pHandler);
@@ -2099,4 +2059,34 @@ CFragmentHandler::insertFragment(
   dest.s_lastTimestamp   = dest.s_queue.back().second->s_header.s_timestamp;
   
   
+}
+/**
+ * handleDequeuedFragments
+ *    Prepares a set of dequeued fragments to be passed on to the
+ *    full sort thread.
+ * @param p  - iterator selecting the source queue this all comes from.
+ * @param partialsort - the partially sorted set of entries  to pass.
+ * @param statcopy    - Statistics.
+ *
+ */
+void
+CFragmentHandler::handleDequeuedFragments(
+    Sources::iterator& p, EvbFragments& partialSort,
+    std::deque<EvbFragments*>* pFrags,
+    std::list<std::pair<SourceQueue*, EvbFragments*>>& statcopy
+  )
+{
+     XoffQueue(p->second);
+     XonQueue(p->second);
+     if (!partialSort.empty()) {
+       if (partialSort.front().second->s_header.s_timestamp <
+           m_nMostRecentlyPopped) {
+         dataLate(*partialSort.front().second);
+       }
+       statcopy.push_back({&(p->second), &partialSort});
+       //updateQueueStatistics(p->second, partialSort);
+       pFrags->push_back(&partialSort);
+     } else {
+       delete &partialSort;
+     }
 }

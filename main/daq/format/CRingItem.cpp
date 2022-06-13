@@ -14,6 +14,8 @@
 	     East Lansing, MI 48824-1321
 */
 
+// daqdev/NSCLDAQ#1030 changes implemented.
+
 #include <config.h>
 #include "CRingItem.h"
 #include "DataFormat.h"
@@ -59,10 +61,10 @@ CRingItem::CRingItem(uint16_t type, size_t maxBody) :
   // If necessary, dynamically allocate (big max item).
 
   newIfNecessary(maxBody);
-  m_pItem->s_header.s_type = type;
-  m_pItem->s_header.s_size = 0;
-  m_pItem->s_body.u_noBodyHeader.s_mbz = 0;
-  setBodyCursor(m_pItem->s_body.u_noBodyHeader.s_body);
+  uint32_t* pAfter = static_cast<uint32_t*>(fillRingHeader(m_pItem, 0, type)); 
+  *pAfter++ = sizeof(uint32_t);                 // NO body header.
+  
+  setBodyCursor(pAfter);
   updateSize();
   
 }
@@ -209,7 +211,7 @@ CRingItem::operator==(const CRingItem& rhs) const
 
   // Now there's nothing for it but to compare the contents:
 
-  return (memcmp(m_pItem, rhs.m_pItem, m_pItem->s_header.s_size) == 0);
+  return (memcmp(m_pItem, rhs.m_pItem, itemSize(m_pItem)) == 0);
 }
 /*!
   Inequality is just the logical inverse of equality.  This can take time, see
@@ -268,18 +270,8 @@ CRingItem::getBodyPointer() const
     // ring items are packed structs.
     
     
+    return bodyPointer(m_pItem);
     
-    
-    // Get the body header size:
-    
-    size_t bhdrSize = m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-    if (bhdrSize == 0) bhdrSize = sizeof(uint32_t);
-    
-    uint8_t* pBody =
-      reinterpret_cast<uint8_t*>(&m_pItem->s_body.u_noBodyHeader) + bhdrSize;
-    return pBody;
-  
-
 }
 /*!
    \return void*
@@ -302,7 +294,7 @@ CRingItem::getItemPointer()
 
 /*!
    \return void*
-   \retval Pointer to the body.  To be usually used by derived classes but...
+   \retval Pointer to the full ring item.  To be usually used by derived classes but...
 */
 const _RingItem*
 CRingItem::getItemPointer() const
@@ -316,13 +308,10 @@ CRingItem::getItemPointer() const
 uint32_t
 CRingItem::type() const
 {
-  uint32_t rawType = m_pItem->s_header.s_type;
-  if (mustSwap()) {
-    return swal(rawType);
-  }
-  else {
-    return rawType;
-  }
+  return itemType(m_pItem);
+  
+  uint32_t rawType = itemType(m_pItem);
+  return rawType;
 }
 /*!
    \return uint32_t
@@ -331,13 +320,10 @@ CRingItem::type() const
 uint32_t
 CRingItem::size() const
 {
-  uint32_t rawSize = m_pItem->s_header.s_size;
-  if (mustSwap()) {
-    return swal(rawSize);
-  }
-  else {
-    return rawSize;
-  }
+  
+  uint32_t rawSize = itemSize(m_pItem);
+  return rawSize;
+  
 }
 
 /**
@@ -348,8 +334,8 @@ CRingItem::size() const
 bool
 CRingItem::hasBodyHeader() const
 {
-  return (m_pItem->s_body.u_noBodyHeader.s_mbz != 0) && (m_pItem->s_body.u_noBodyHeader.s_mbz != sizeof(uint32_t));
-}
+    return ::hasBodyHeader(m_pItem);
+  }
 /**
  * getEventTimestamp
  *
@@ -362,8 +348,9 @@ CRingItem::getEventTimestamp() const
     throwIfNoBodyHeader(
         "Attempted to get a timestamp from an event that does not have one"
     );
-
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_timestamp;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_timestamp;
+    
 }
 /**
  * getSourceId
@@ -378,7 +365,8 @@ CRingItem::getSourceId() const
     throwIfNoBodyHeader(
         "Attempted to get the source ID from an event that does not have one"
     );
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_sourceId;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_sourceId;
 }
 /**
  * getBarrierType
@@ -392,7 +380,8 @@ CRingItem::getBarrierType() const
     throwIfNoBodyHeader(
         "Attempted to get the barrier type from an event that does not have one"
     );
-    return m_pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_barrier;
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    return b->s_barrier;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -416,11 +405,20 @@ CRingItem::setBodyCursor(void* pNewCursor)
 void
 CRingItem::updateSize()
 {
-  uint8_t* pStart = reinterpret_cast<uint8_t*>(m_pItem);
-  uint8_t* pEnd   = reinterpret_cast<uint8_t*>(m_pCursor);
-  size_t s = pEnd - pStart;
-  m_pItem->s_header.s_size = s;
-
+  size_t s = sizeof(RingItemHeader) + getBodySize();
+  
+  // That body size does not count the body header if it's there.
+  // We need to allow for body header extensions becuse it's possible this
+  // ring item came from a ring rather than being constructed by us:
+  
+  if (hasBodyHeader()) {
+    pRingItem p = getItemPointer();
+    const BodyHeader* b = reinterpret_cast<BodyHeader*>(bodyHeader(m_pItem));
+    s += b->s_size;   // Use the real body header size.
+    // s += sizeof(BodyHeader);
+  } else {
+    s += sizeof(uint32_t);
+  }
   m_pItem->s_header.s_size = s;
 }
 
@@ -443,29 +441,32 @@ void
 CRingItem::setBodyHeader(uint64_t timestamp, uint32_t sourceId,
     uint32_t barrierType)
 {
+    pBodyHeader pHeader(nullptr);
     if (!hasBodyHeader()) {
         // Make space for the body header.
         // sizeof(BodyHeder) is ok in this context because we're _creating_
         // the body header with no extension.
+        //  Have to do it this way because bodyHeader will return nullptr.
         
         uint8_t* pBody = (m_pItem->s_body.u_noBodyHeader.s_body);
         size_t moveSize = sizeof(BodyHeader) - sizeof(uint32_t);
-        m_pItem->s_header.s_size += moveSize;
-        size_t moveCount= m_pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(uint32_t);
+
+        size_t moveCount= itemSize(m_pItem) - sizeof(RingItemHeader) - sizeof(uint32_t);
         memmove(pBody + moveSize, pBody, moveCount);
         m_pCursor += moveSize;
-        pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-        pHeader->s_size = sizeof(BodyHeader);
+        pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+
+    } else {
+        pHeader =   reinterpret_cast<pBodyHeader>(bodyHeader(m_pItem));
     }
-    pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    
+    
     
     // Don't tamper with the existing size.  IF there was a body header there
     // before it may have an extension:
-
+    
+    fillBodyHeader(m_pItem, timestamp, sourceId, barrierType);
    
-    pHeader->s_timestamp = timestamp;
-    pHeader->s_sourceId  = sourceId;
-    pHeader->s_barrier   = barrierType;
     updateSize();
     
 }
@@ -496,11 +497,11 @@ CRingItem::commitToRing(CRingBuffer& ring)
       throw std::logic_error("Zero copy ring commit done on a different ring");
     }
     updateSize();
-    ring.skip(m_pItem->s_header.s_size);
+    ring.skip(itemSize(m_pItem));
   
   } else {
     updateSize();
-    ring.put(m_pItem, m_pItem->s_header.s_size);
+    ring.put(m_pItem, itemSize(m_pItem));
   }
 }
 
@@ -615,11 +616,8 @@ CRingItem::getFromRing(CRingBuffer& ring, CRingSelectionPredicate& predicate)
   ring.peek(&header, sizeof(header)); 
 
   bool otherOrder(false);
-  uint32_t size = header.s_size;
-  if ((header.s_type & 0xffff0000) != 0) {
-    otherOrder = true;
-    size = swal(size);
-  }
+  uint32_t size = itemSize(reinterpret_cast<pRingItem>(&header));
+  
   // Create the item and fill it in:
 
   CRingItem* pItem = new CRingItem(header.s_type, size);
@@ -663,8 +661,7 @@ CRingItem::copyIn(const CRingItem& rhs)
   newIfNecessary(m_storageSize);
   
   m_swapNeeded  = rhs.m_swapNeeded;
-  memcpy(m_pItem, rhs.m_pItem, 
-	 rhs.m_pItem->s_header.s_size); 
+  memcpy(m_pItem, rhs.m_pItem, itemSize(rhs.m_pItem));
 
   
   
@@ -672,7 +669,7 @@ CRingItem::copyIn(const CRingItem& rhs)
   // therefore when updating it we need to allow for that in the arithmetic below.
 
   m_pCursor    = reinterpret_cast<uint8_t*>(m_pItem);
-  m_pCursor   += m_pItem->s_header.s_size;
+  m_pCursor   += itemSize(m_pItem);
   m_fZeroCopy = false;
   m_pRingBuffer = nullptr;
   
@@ -708,22 +705,7 @@ CRingItem::newIfNecessary(size_t size)
   m_pCursor= reinterpret_cast<uint8_t*>(&(m_pItem->s_body));
 
 }
-/*
-** Swap the bytes of a longword:
-*/
-uint32_t
-CRingItem::swal(uint32_t datum)
-{
-  union {
-    uint32_t along;
-    uint8_t  bytes[4];
-  } swapper;
-  swapper.along = datum;
 
-  uint32_t result = swapper.bytes[3] | (swapper.bytes[2] << 8) | 
-    (swapper.bytes[1] << 16) | (swapper.bytes[0] << 24);
-  return result;
-}
 /**
  * bodyHeaderToString
  *
@@ -738,7 +720,7 @@ CRingItem::bodyHeaderToString() const
     std::stringstream result;
     
     if (hasBodyHeader()) {
-        pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+        pBodyHeader pHeader = reinterpret_cast<pBodyHeader>(bodyHeader(m_pItem));
         result << "Body Header:\n";
         result << "Timestamp:    " << pHeader->s_timestamp << std::endl;
         result << "SourceID:     " << pHeader->s_sourceId  << std::endl;
@@ -823,7 +805,7 @@ CRingItem::timeString(time_t theTime)
 void
 CRingItem::throwIfNoBodyHeader(std::string msg) const
 {
-    if (m_pItem->s_body.u_noBodyHeader.s_mbz == 0) {
+    if (!hasBodyHeader()) {
         throw msg;
     }
 }
@@ -843,20 +825,16 @@ CRingItem::initItem(
   uint32_t barrierType
 )
 {
-  m_pItem->s_header.s_type = type;
-  m_pItem->s_header.s_size = 0;
+  fillRingHeader(m_pItem, 0, type);
   
   // We're making the body header so sizeof(BodyHeader) is ok here.
+  // bodyHeader will give a null here.
   
-  pBodyHeader pHeader = &(m_pItem->s_body.u_hasBodyHeader.s_bodyHeader);
-  pHeader->s_size      = sizeof(BodyHeader);
-  pHeader->s_timestamp = timestamp;
-  pHeader->s_sourceId  = sourceId;
-  pHeader->s_barrier   = barrierType;
+  void* pCursor = fillBodyHeader(m_pItem, timestamp, sourceId, barrierType);
   
   // This use of u_hasBodyHeader.s_body is ok because we're making a body
   // header that has no extension.
   
-  setBodyCursor(m_pItem->s_body.u_hasBodyHeader.s_body);
+  setBodyCursor(pCursor);
   updateSize();  
 }

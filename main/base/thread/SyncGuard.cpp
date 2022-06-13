@@ -75,12 +75,14 @@ SyncGuard::SyncGuard(Synchronizable& aSync,bool justtry) : syncer(aSync)
 * @param None
 * @return None 
 */      
-SyncGuard::~SyncGuard() { 
+SyncGuard::~SyncGuard() {
   if (syncer.sync != NULL) {
     dshwrapthread_mutex_lock(&(syncer.sync->__monitor_mutex__));
 
+
+
     // Require that I actually own the mutex:
-    if ((syncer.sync->__lock_depth__ > 0)&&(syncer.sync->__guard_mutex__.lastmod == dshwrapthread_self())) {
+    if (owner()) {
       syncer.sync->__lock_depth__--;
       if(syncer.sync->__lock_depth__ <= 0) {  // Release mutex if completely unlocked.
 #ifdef DEBUG_SYNCGUARD
@@ -104,7 +106,7 @@ SyncGuard::~SyncGuard() {
 * @return The owning thread id.
 */      
 dshwrapthread_t SyncGuard::getOwner() {
-  if (syncer.sync == NULL) syncer.sync = Synchronizable::_create_sync(syncer.sync);
+  createIfNeeded();
   return syncer.sync->__guard_mutex__.lastmod;
 }
 
@@ -118,11 +120,10 @@ dshwrapthread_t SyncGuard::getOwner() {
 * @return None
 */      
 void SyncGuard::lock() {
-  if (syncer.sync == NULL) syncer.sync = Synchronizable::_create_sync(syncer.sync);
-
+  createIfNeeded();
   dshwrapthread_mutex_lock(&(syncer.sync->__monitor_mutex__));
 
-  if ((syncer.sync->__lock_depth__ > 0)&&(syncer.sync->__guard_mutex__.lastmod == dshwrapthread_self())) {
+  if (owner()) {
     syncer.sync->__lock_depth__++;
   } else {
     dshwrapthread_mutex_unlock(&(syncer.sync->__monitor_mutex__));
@@ -148,11 +149,11 @@ void SyncGuard::lock() {
 * @return None
 */      
 void SyncGuard::trylock() {
-  if (syncer.sync == NULL) syncer.sync = Synchronizable::_create_sync(syncer.sync);
-
+  
+  createIfNeeded();
   dshwrapthread_mutex_lock(&(syncer.sync->__monitor_mutex__));
 
-  if ((syncer.sync->__lock_depth__ > 0)&&(syncer.sync->__guard_mutex__.lastmod == dshwrapthread_self())) {
+  if (owner()) {
     syncer.sync->__lock_depth__++;
   } else {
     // Compete for the lock with the owner of the lock.
@@ -167,4 +168,15 @@ void SyncGuard::trylock() {
 
   dshwrapthread_mutex_unlock(&(syncer.sync->__monitor_mutex__));
 }
-
+void SyncGuard::createIfNeeded()
+{
+  if (syncer.sync == NULL) syncer.sync =
+    Synchronizable::_create_sync(syncer.sync);
+}
+bool
+SyncGuard::owner()
+{
+  return
+    (syncer.sync->__lock_depth__ > 0)  &&
+    (syncer.sync->__guard_mutex__.lastmod == dshwrapthread_self());
+}

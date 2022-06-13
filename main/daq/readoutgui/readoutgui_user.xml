@@ -933,7 +933,9 @@
         </formalpara>
         <para>
             The top of the directory subtree that is managed by Readout Gui is
-            determined by a symbolic link; <filename>~/stagearea</filename>.
+            determined by a symbolic link; <filename>~/stagearea</filename> or,
+            alternatively, the <literal>EVENTS</literal> environment variable
+            if it is defined.
             <footnote>
                 <para>
                     Environment variables can override this link however and are
@@ -945,7 +947,7 @@
             and should point to the event area that you were assigned.
         </para>
         <para>
-            When Readout GUI runs the first time it will create the directory
+            When Readout GUI runs the first time it will, if necessary, create the directory
             structure it need underneath the directory pointed to by
             <filename>~/stagearea</filename>.
         </para>
@@ -962,41 +964,47 @@ stagearea +
           |                +---> run2
           ...             ...
           +----> complete
-          +----> current
+        
             ]]>
             </literallayout>
         </figure>
         <para>
-            Let's start with the <filename>~/stagearea/current</filename> directory.
-            The Readout GUI arranges for the event file set currently being
-            accumulated to be written in this directory.  Event files have the name
-            <literal>run-nnnn-ss.evt</literal> where <literal>nnnn</literal> is a
-            zero filled run number (e.g. <literal>0001</literal>), and
-            <literal>ss</literal> is a zero filled event segment.
+            Let's start with <filename>stagearea/experiment</filename>.
+            The <filename>current</filename> directory is one location
+            you can put the <filename>ReadoutCallouts.tcl</filename> customization
+            file.   (new behavior in 12.0x) When event recording begins, the
+            readout Gui creates a run directory with the same name as the
+            requested run number.  Events are recorded in that directory.
         </para>
         <para>
-            The event data from each run are segmented into files that are no
-            more than 2GBytes long.  The segments number from 00.  Segmenting
-            runs into file that are no larger than 2Gbytes avoids problems
-            with file size limitations on some types of file systems.
+            In 11.x, event files were segmented into approximately 2Gbyte
+            chunks.  This was done to meet maximum file size requirements
+            of older file systems that are no longer prevalent.  In 12.x the
+            default segment size is 1,000 Tbytes which is effectively unlimited.
+            In 11.x, event files were recorded in <filename>stagearea/experiment/current</filename>.
+            In 12.x they are recorded directly in their run directories. 
         </para>
         <para>
-            The <filename>~/stagearea/experiment</filename> subdirectory tree
-            provides the run view of the data.  Within that directory are
-            subdirectories for each recorded run.  At the end of a run,
-            the Readout GUI moves the event data files from the
-            <filename>~/stagearea/current</filename> directory into the
-            associated run directory.  The data in
-            <filename>~stagearea/experiment/current</filename> is copied into
-            the run directory as well.  Files or directories pointed to by
-            symoblic links in the <filename>experiment/current</filename> subtree
-            are copied rather than the links themselves.
+            To retain compatiblity with 11.x software that assumes the structure
+            of the stage area, while event recording is underway, event files
+            in the current run directory are given symbolic links in the
+            <filename>stagearea/experiment/current</filename> directory.
+            These links are removed at the end of the run.  
         </para>
         <para>
-            Finally, the <filename>complete</filename> directory provides the
-            events view of the experiment.  At the end of a run, after the
-            event file segments copied to <filename>~stagearea/experiment/runn</filename>,
-            a symbolic link to each event file segment is created here.
+            When event recording is completed for a run, the symbolic links to
+            event files are removed from <filename>stagearea/experiment/current</filename>.
+            Furthermore a link following copy of the files in that directory are
+            made into the run directory allowing you to associate arbitrary
+            data with each run.  Link followed copy means that if there are symbolic
+            links, the item those links point to are copied rather than the links.
+            This allows you a hook to copy data that isn't in the stagearea
+            directory tree.
+        </para>
+        <para>
+            Finally, when all this copying is done, the events view is updated
+            by creating symbolic links to the run directory event files in
+            <filename>stagearea/complete</filename>.  
         </para>
     </section>
     <section id='customizing_readoutshell'>
@@ -1134,7 +1142,7 @@ stagearea +
                             <entry>~/stagearea</entry>
                             <entry>The root of the directory tree that
                             ReadoutGUI will use to manage the event and related
-                            data.
+                            data.  
                             </entry>
                         </row>
                     </tbody>
@@ -1149,6 +1157,17 @@ stagearea +
                     variable.   This variable is now ignored and that the
                     <filename>experiment</filename> directory will always live in the
                     <filename>stagearea</filename> directory tree.
+                </para>
+                <para>
+                    Note that in 12.x the <literal>EVENTS</literal>environment variable
+                    is processed early enough in the initialization process
+                    that any ReadoutCallouts.tcl in
+                    <filename>$EVENTS/experiment/current</filename> will be
+                    sourced.  This is a change in behavior from 11.x and
+                    earlier which
+                    always read the file in ~/stagearea/experiment/current
+                    if it existed regardless of the value of the
+                    <literal>EVENTS</literal> environment variable.
                 </para>
             </note>
             <para>
@@ -1227,7 +1246,11 @@ stagearea +
                     <para>
                         <filename>~/stagearea/experiment/current</filename> The
                         location the metadata associated with the current run is
-                        stored.
+                        stored.  Note that in 12.x if you've defined
+                        the <literal>EVENTS</literal> environment variable to
+                        specify a stage area, the
+                        <filename>$EVENTS/experiment/current/ReadoutCallouts.tcl</filename>
+                        will be read instead.
                     </para>
                 </listitem>
                 <listitem>
@@ -1785,9 +1808,9 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
       </para>
       <informalexample>
         <programlisting>
-          package require ReadoutGuiRemoteControl   <co id='remote_control_package' />
+package require ReadoutGuiRemoteControl   <co id='remote_control_package' />
 
-          RemoteControlClient::initialize <co id='remote_control_initialize' />
+RemoteControlClient::initialize <replaceable>?control-service output-service?</replaceable> <co id='remote_control_initialize' />
         </programlisting>
       </informalexample>
       <calloutlist>
@@ -1810,6 +1833,37 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
           </para>
         </callout>
       </calloutlist>
+          <para>
+            The remote control software advertises two services with the NSCL
+            port manager. the first, by default named  <literal>ReadoutGUIRemoteControlService</literal>
+            is used by the master (the system controlling the GUI) to send
+            commands to the slave (the system that specifies it can be controlled).
+            The second, by default named <literal>ReadoutGUIOutput</literal> is used
+            to echo output from the slave to the master. 
+          </para>
+          <para>
+            More than one slave can be started per user in the
+            same system by explicitly specifying the names of these two services
+            to the <command>RemoteControlClient::initialize</command> command.
+            In the master, when setting up the remote controlled data source,
+            just override the default values for these service names.
+          </para>
+          <para>
+            For example:
+          </para>
+          <informalexample>
+            <programlisting>
+package require ReadoutGuiRemoteControl  
+
+RemoteControlClient::initialize control output
+            </programlisting>
+          </informalexample>
+          <para>
+            Specifies the remote control service wil be advertized as
+            <literal>control</literal> and the output  relay service
+            advertised as <literal>output</literal>.
+          </para>
+
       <para>
         To use a slave UI, you must run a readout shell and add data sources
         with the RemoteGUI data source provider for each slave you want your master
@@ -1819,9 +1873,10 @@ ReadoutGuiApp  r                                  <co id='custom_readoutgui_inst
         for the master ReadoutGUI to enslave it.  
       </para>
       <para>
-        At this time you can only have a single master control panel control
-        any single slave control panel.  This restriction might be lifted in the
-        future.
+        While a slave can only be controlled by a single master, as of
+        NSCLDAQ-12.0, several slaves can be controlled by a master and several
+        slaves can be run by thesame user in a single node by specifying the
+        adverised service names as described in the text above.
       </para>
     </section>
 

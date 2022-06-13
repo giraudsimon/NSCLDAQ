@@ -19,9 +19,10 @@
 # @author Jeromy Tompkins
 #
 
-package provide S800_Provider 1.0
+package provide S800_Provider 1.1
 package require s800
 package require ReadoutGUIPanel
+package require Bundles
 
 # Establish the namespace in which the methods and state live and
 # define the state variables.
@@ -69,7 +70,6 @@ proc ::S800::start params {
     set host    [dict get $params host]
     set port    [dict get $params port]
     
-    # >> This needs to be changed if this becomes multi server capable.
      
     ## Check if the source id exists already. If not, make a new entry.
     if {![dict exists $::S800::sourceParams $sid]} { 
@@ -117,6 +117,9 @@ proc ::S800::check id {
     set bad [catch {$rctl getState} value]
     if {$bad} {
         ::S800::_failed $id
+        set bundles [BundleManager getInstance]
+        set host [dict get $::S800::sourceParams $id host]
+        $bundles invoke remotecontrol OnSlaveConnectionLost $host
         return 0
     }  else {
         return 1

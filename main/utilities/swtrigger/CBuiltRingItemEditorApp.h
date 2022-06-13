@@ -22,7 +22,7 @@
 #ifndef CBUILTRINGITEMEDITORAPP_H
 #define CBUILTRINGITEMEDITORAPP_H
 
-#include "eventeditor.h"
+#include "swtriggerflags.h"
 #include "CBuiltRingItemEditor.h"
 
 typedef CBuiltRingItemEditor::BodyEditor Editor, *pEditor;
@@ -51,7 +51,7 @@ public:
     { }
     ~CBuiltRingItemEditorApp() {}
     virtual void operator()() = 0;
-protected:
+public:
     EditorFactory getEditorFactory();
 };
 #endif

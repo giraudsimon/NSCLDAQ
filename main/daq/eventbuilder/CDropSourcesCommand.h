@@ -20,12 +20,11 @@
  * @brief Define the class that implements the dropSources command.
  */
 
-#ifndef __CDROPSOURCESCOMMAND_H
-#define __CDROPSOURCESCOMMAND_H
+#ifndef CDROPSOURCESCOMMAND_H
+#define CDROPSOURCESCOMMAND_H
 
-#ifndef __TCLOBJECTPROCESSOR_H
 #include <TCLObjectProcessor.h>
-#endif
+
 
 
 class CTCLInterpreter;

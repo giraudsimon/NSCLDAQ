@@ -8,15 +8,17 @@ libCAENDPP_PSD_la_LDFLAGS=$(CAENLDFLAGS) @top_builddir@/sbs/readout/libSBSProduc
 
 libCAENDPP_PSD_la_SOURCES=CCompoundTrigger.cpp  CDPpPsdEventSegment.cpp \
 	COneOnlyEventSegment.cpp  CPsdCompoundEventSegment.cpp  \
-	CPsdTrigger.cpp  PSDParameters.cpp
+	CPsdTrigger.cpp  PSDParameters.cpp CPSDMaker.cpp
 
 
 include_HEADERS=CCompoundTrigger.h  CDPpPsdEventSegment.h  \
 	COneOnlyEventSegment.h  CPsdCompoundEventSegment.h \
-	CPsdTrigger.h  PSDParameters.h
+	CPsdTrigger.h  PSDParameters.h CPSDMaker.h
 
 install-exec-hook:
 	$(mkinstalldirs) @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @srcdir@/skel/*.cpp @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @srcdir@/skel/*.h   @prefix@/skeletons/dpp-psd
 	$(INSTALL_DATA) @builddir@/skel/Makefile @prefix@/skeletons/dpp-psd
+
+EXTRA_DIST=@srcdir@/skel/*.cpp @srcdir@/skel/*.h @srcdir@/skel/Makefile.in

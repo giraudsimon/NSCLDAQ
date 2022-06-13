@@ -30,26 +30,18 @@
 //
 // Copyright 
 
-#ifndef __CCAENV785CREATOR_H  //Required for current class
-#define __CCAENV785CREATOR_H
+#ifndef CCAENV785CREATOR_H  //Required for current class
+#define CCAENV785CREATOR_H
 
 //
 // Include files:
 //
 
                                //Required for base classes
-#ifndef __CMODULECREATOR_H     //CModuleCreator
 #include "CModuleCreator.h"
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
-
+class CReadableObject;
  
 
 class CCAENV785Creator  : public CModuleCreator        
@@ -57,22 +49,11 @@ class CCAENV785Creator  : public CModuleCreator
 public:
 	//   Constructors and other cannonical operations.
 	
-  CCAENV785Creator (const char* recognize="caenv785");
-  ~CCAENV785Creator ( );
-  CCAENV785Creator (const CCAENV785Creator& aCCAENV785Creator );
-  CCAENV785Creator& operator= (const CCAENV785Creator& aCCAENV785Creator);
-  int operator== (const CCAENV785Creator& rhs) const;
-  int operator!= (const CCAENV785Creator& rhs) const;
+  CCAENV785Creator ();
+  ~CCAENV785Creator ();
 
-  // Class operations:
-
-public:
-
-   virtual   CReadableObject* Create (CTCLInterpreter& rInterp, 
-						   CTCLResult& rResult, 
-						   int nArgs, char** pArgs)   ; 
-   virtual   std::string  Help (); 
-
+   virtual   CReadableObject* Create (const char* name, CTCLInterpreter& rInterp);
+						   
 };
 
 #endif

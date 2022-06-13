@@ -38,4 +38,8 @@ exec tclsh "$0" ${1+"$@"}
 #
 
 set DDAS_INSTDIR @DDAS_INSTDIR@
+<<<<<<< HEAD
 set DAQ_INSTDIR @prefix@
+=======
+set DAQ_INSTDIR @prefix
+>>>>>>> origin/12.0-pre5

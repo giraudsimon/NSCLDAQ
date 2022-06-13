@@ -164,13 +164,15 @@ CEventFilterApp::getClassification(void* pEvent)
     
     // Be sure we have a body header:
     
-    uint32_t bHeaderSize =
-        pItem->s_body.u_hasBodyHeader.s_bodyHeader.s_size;
-    if (bHeaderSize == 0) {
+    
+    if (!hasBodyHeader(pItem)) {
         throw std::invalid_argument(
             "Physcics event has no body header"
         );
     }
+    pBodyHeader pBh = static_cast<pBodyHeader>(bodyHeader(pItem));
+    uint32_t bHeaderSize = pBh->s_size;
+    
     // sizeof(BodyHeader) ok here because we want to know if the actual
     // body header is bigger than this...
     
@@ -180,7 +182,7 @@ CEventFilterApp::getClassification(void* pEvent)
             "Physics event body header does not have a classification."
         );
     }
-    pBodyHeader pBh = &(pItem->s_body.u_hasBodyHeader.s_bodyHeader);
+    
     pBh++;                      // Points to the classification.
     uint32_t* pClassification = reinterpret_cast<uint32_t*>(pBh);
     return *pClassification;
@@ -193,8 +195,8 @@ CEventFilterApp::getClassification(void* pEvent)
 uint32_t
 CEventFilterApp::type(void* pEvent)
 {
-    pRingItemHeader ph = static_cast<pRingItemHeader>(pEvent);
-    return ph->s_type;
+    pRingItem ph = static_cast<pRingItem>(pEvent);
+    return itemType(ph);
 }
 /**
  * send
@@ -207,6 +209,6 @@ CEventFilterApp::type(void* pEvent)
 void
 CEventFilterApp::send(CSender* pSender, void* pData)
 {
-    pRingItemHeader ph = static_cast<pRingItemHeader>(pData);
-    pSender->sendMessage(pData, ph->s_size);
+    pRingItem ph = static_cast<pRingItem>(pData);
+    pSender->sendMessage(pData, itemSize(ph));
 }

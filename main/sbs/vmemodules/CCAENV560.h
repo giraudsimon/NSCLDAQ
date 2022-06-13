@@ -15,22 +15,12 @@
 */
 
 
-#ifndef __CCAENV560_H
-#define __CCAENV560_H
+#ifndef CCAENV560_H
+#define CCAENV560_H
 
-#ifndef __STL_STRING
 #include <string>
-#define __STL_STRING
-#endif
-
 #include <VmeModule.h>
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 // Forward definitions:
 

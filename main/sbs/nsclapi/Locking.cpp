@@ -52,6 +52,29 @@ union semun {
 static int semid = -1;		// This will be the id of the locking semaphore
 static int semkey= 0x564d4520;  // "VME " :-).
 
+/**
+ * doSemop
+ *    Utility static function to perform a semaphore operation
+ *    retrying if interrupted by signal
+ *  @param semid - sempahore id.
+ *  @param buf references the semaphore buffer.
+ *  @throw CErrnoException if semop failed.
+ */
+static void
+doSemop(int semid, sembuf& buf)
+{
+ while (1) {			// In case of signal...
+    int stat = semop(semid, &buf, 1);
+
+    if(stat == 0) break;
+
+    if(errno != EINTR) {	// Bad errno:
+      throw CErrnoException("CVMEInterface::Lock semop gave bad status");
+    }
+    // On EINTR try again.
+  }
+}
+
 /*!
    This internal function is used to establish the semaphore:
    - If the semaphore exists, it's id is just stored in semid.
@@ -159,17 +182,8 @@ CVMEInterface::Lock(int semnum)
   buf.sem_num = semnum;		
   buf.sem_op  = -1;		// Want to take the semaphore.
   buf.sem_flg = SEM_UNDO;	// For process exit.
-
-  while (1) {			// In case of signal...
-    int stat = semop(semid, &buf, 1);
-
-    if(stat == 0) break;
-
-    if(errno != EINTR) {	// Bad errno:
-      throw CErrnoException("CVMEInterface::Lock semop gave bad status");
-    }
-    // On EINTR try again.
-  }
+	doSemop(semid, buf);
+  
   return;
 }
 /*!
@@ -192,15 +206,8 @@ CVMEInterface::Unlock(int semnum)
   buf.sem_num = semnum;
   buf.sem_op  = 1;
   buf.sem_flg= SEM_UNDO;	// Undoes the locking undo.
-
-  while(1) {			// IN case of signal though not likely.
-    int stat = semop(semid, &buf, 1);
-    if(stat == 0) break;	// Got the job done!!
-    if(errno != EINTR) {
-      throw CErrnoException("CVMEInterface::Unlock semop gave bad status");
-    }
-    // on EINTR try again.
-  }
+	doSemop(semid, buf);
+  
   return;
 }
 
@@ -231,6 +238,8 @@ CVMEInterface::TryLock(int semnum, int nTimeoutSeconds) {
     } else {
       // failure observed...
 
+			// Interruption is taken to mean the trylock failed.
+			
       if ((errno == EAGAIN) || (errno == EINTR)) {
         // interrupted by signal or we were unable to take the semaphore
         success = false;

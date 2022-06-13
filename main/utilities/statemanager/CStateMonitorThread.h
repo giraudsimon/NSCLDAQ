@@ -19,26 +19,13 @@
 # @brief  Defines mechanisms for putting a state monitor in a thread
 # @author <fox@nscl.msu.edu>
 */
+#ifndef CSTATEMONITORTHREAD_H
+#define CSTATEMONITORTHREAD_H
 
-#ifndef __THREAD_H
 #include <Thread.h>
-#endif
-
-#ifndef __SYNCHRONIZABLE_H
 #include <Synchronizable.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
-
-
-#ifndef __CSTATEMONITOR_H
 #include <CStateMonitor.h>
-#endif
 
 
 
@@ -90,3 +77,4 @@ public:
         
     
 };
+#endif

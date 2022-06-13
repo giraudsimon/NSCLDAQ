@@ -21,11 +21,7 @@ exec tclsh ${0} ${@}
 package require Tk
 
 set scriptDir [file dirname [info script]]
-set libDir    [file join $scriptDir .. TclLibs]
-set wd [pwd]
-cd $libDir
-set libDir [pwd]
-cd $wd
+set libDir    [file normalize [file join $scriptDir .. TclLibs]]
 
 if {[lsearch -exact $auto_path $libDir] == -1} {
     set auto_path [concat $libDir $auto_path]

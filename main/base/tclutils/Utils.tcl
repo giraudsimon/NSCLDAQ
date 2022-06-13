@@ -70,4 +70,53 @@ namespace eval Utils {
     }
     return $res
   }
+  ##
+  # formatDeltaTime
+  #   Formats a time interval
+  #
+  # @param delta - number of seconds in the interval.
+  # @return string of the form "%d-%02d:%02d:%02d"
+  #
+  proc formatDeltaTime {delta} {
+    set whole [expr {int($delta)}]
+    set frac  [expr {$delta - $whole}]
+    set delta $whole
+    
+    set seconds [expr {$delta % 60} + $frac]
+    set delta   [expr {$delta/60}]
+    set minutes [expr {$delta % 60}]
+    set delta   [expr {$delta / 60}]
+    set hours   [expr {$delta % 24}]
+    set days    [expr {$delta / 24}]
+  
+    set display [format "%d-%02d:%02d:%04.2f" $days $hours $minutes $seconds]
+    return $display    
+  }
+  ##
+  # nonemptyString
+  #   @param name - string value to check.
+  #   @return bool - nonzero if name is a nonempty string after
+  #                  blank removal.
+  #
+  proc nonemptyString {name} {
+   set name [string trim $name]
+   return [expr [string length $name]!=0] 
+  }
+  ##
+  # runGlobally
+  #   Given a list of input lines, runs them as Tcl Commands
+  #   at the global level.
+  #
+  # @param lines -the lines to run.
+  # @note as in the original, eval is used rather than just
+  #       the uplevel command itself.
+  #
+  proc runGlobally lines {
+    foreach line $lines {
+      uplevel #0 eval $line
+    }
+  }
+
+
+
 }

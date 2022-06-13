@@ -36,22 +36,16 @@
  * @param pBody       - Pointer to payload.
  * @param barrier     - Barrier type (defaults to 0 which is not a barrier).
  */
-CRingFragmentItem::CRingFragmentItem(uint64_t timestamp, uint32_t source, uint32_t payloadSize, 
-				     const void* pBody, uint32_t barrier) :
-  CRingItem(EVB_FRAGMENT, timestamp, source, barrier, bodySize(payloadSize)) 
-
+CRingFragmentItem::CRingFragmentItem(
+			uint64_t timestamp, uint32_t source, uint32_t payloadSize, 
+			const void* pBody, uint32_t barrier
+) : CRingItem(EVB_FRAGMENT, timestamp, source, barrier, bodySize(payloadSize)) 
 {
   init(payloadSize);
-  pEventBuilderFragment pFrag =
-    reinterpret_cast<pEventBuilderFragment>(getBodyPointer());
-  pBodyHeader pHeader = &(pFrag->s_bodyHeader);
-  
+ 
   // This is fine because we're constructing the body header.
-  
-  pHeader->s_size        = sizeof(BodyHeader);   
-  pHeader->s_timestamp   = timestamp;
-  pHeader->s_sourceId    = source;
-  pHeader->s_barrier = barrier;
+ 
+	fillBodyHeader(getItemPointer(), timestamp, source, barrier); 
   
   copyPayload(pBody, payloadSize);
   updateSize();
@@ -178,11 +172,16 @@ CRingFragmentItem::source() const
 size_t
 CRingFragmentItem::payloadSize() 
 {
-  pEventBuilderFragment pItem =
-    reinterpret_cast<pEventBuilderFragment>(getItemPointer());
-    
-  return pItem->s_header.s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
-
+	pRingItem pItem = getItemPointer();
+	size_t result =  itemSize(pItem) - sizeof(RingItemHeader);
+	if (::hasBodyHeader(pItem)) {
+		pBodyHeader pH = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
+		result -= pH->s_size;
+	} else {
+		result -= sizeof(uint32_t);
+	}
+	
+	return result;
 }
 /**
  * Return a const pointer to the payload.
@@ -192,16 +191,9 @@ CRingFragmentItem::payloadSize()
 void*
 CRingFragmentItem::payloadPointer()
 {
-	return getBodyPointer();
-	pEventBuilderFragment pFrag =
-			reinterpret_cast<pEventBuilderFragment>(getItemPointer());
-	return pFrag->s_body;
-  //pEventBuilderFragment pItem =
-   // reinterpret_cast<pEventBuilderFragment>(getItemPointer());
-
-  //return pItem->s_body;  
-
+  return bodyPointer(getItemPointer());
 }
+
 /**
  * return the barrier type:
  *
@@ -249,7 +241,8 @@ CRingFragmentItem::toString() const
     // Make a low level base class ring item and then invoke the factory
     // to make it the right type of object:
     const _RingItemHeader* pHeader = reinterpret_cast<const _RingItemHeader*>(This->payloadPointer());
-    CRingItem       rawItem(pHeader->s_type, pHeader->s_size);
+    const RingItem* pRawItem = reinterpret_cast<const RingItem*>(pHeader);
+    CRingItem       rawItem(itemType(pRawItem), itemSize(pRawItem));
 
     uint8_t* pBody = reinterpret_cast<uint8_t*>(rawItem.getBodyCursor());
     memcpy(pBody, pHeader+1, pHeader->s_size - sizeof(RingItemHeader));
@@ -270,7 +263,7 @@ CRingFragmentItem::toString() const
     for (int i = 0; i < This->payloadSize(); i++) {
       out << *p++ << ' ';
       if (((i % perLine) == 0) && (i != 0)) {
-	out << std::endl;
+				out << std::endl;
       }
     }
     if (This->payloadSize() % perLine) {
@@ -298,6 +291,9 @@ CRingFragmentItem::toString() const
 size_t
 CRingFragmentItem::bodySize(size_t payloadSize) const
 {
+	// Leave this for now -- there might be a cleaner way in terms of
+	// DataFormat.h methods but that will involve a pile of casting away
+	// const-ness
   return sizeof(EventBuilderFragment) + (payloadSize-sizeof(uint32_t)) -
     sizeof(RingItemHeader);
 }

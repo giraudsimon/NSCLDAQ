@@ -537,7 +537,7 @@ void rbchunkTest::nextchunk_5()
   uint32_t* pChunk = static_cast<uint32_t*>(c.getStorage());
   EQ(uint32_t(itemSize), pChunk[0]);
   EQ(PHYSICS_EVENT, pChunk[1]);
-  EQ(uint32_t(0),   pChunk[2]);       // mbz for no body header.
+  EQ(uint32_t(sizeof(uint32_t)),   pChunk[2]);       // daqdev/NSCLDAQ#1030
   EQ(uint32_t(0x12345678), pChunk[3]);
   EQ(uint32_t(0xa5a5a5a5), pChunk[4]);
   EQ(uint32_t(0x5a5a5a5a), pChunk[5]);

@@ -17,19 +17,16 @@
 
 */
 
-#ifndef __CSINKCREATOR_H  //Required for current class
-#define __CSINKCREATOR_H
+#ifndef CSINKCREATOR_H  //Required for current class
+#define CSINKCREATOR_H
 
 //
 // Include files:
 //
 
-#ifndef __STL_STRING
+#include <CCreator.h>        // Generic factory.
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
+#include <utility>
 
 // Forward definitions:
 
@@ -37,30 +34,29 @@ class CSink;
 
 // The CSinkCreator:
 
-class CSinkCreator      
+class CSinkCreator : public CCreator<CSink>
 {
 public:
 
   CSinkCreator () {}		//!< Constructor.
-  virtual  ~ CSinkCreator ( ) {} //!< Destructor.
-  CSinkCreator (const CSinkCreator& rSource ) {} //!< Copy construction.
-  CSinkCreator& operator= (const CSinkCreator& rhs) { //!< Assignment.
-    return *this;
-  }
-  int operator== (const CSinkCreator& rhs) const { //!< == comparison.
-    return (int)true;
-  }
-  int operator!= (const CSinkCreator& rhs) const { //!< != comparison.
-    return !(operator==(rhs));
-  }
+  
 
 // Class operations:
 
 public:
-  
+  virtual CSink*  operator()(void* pUserData) {
+    // adaptor to Create:
+    
+    std::pair<const char*, const char*>* userData =
+      reinterpret_cast<std::pair<const char*, const char*>*>(pUserData);
+    std::string sCommand = userData->first;
+    std::string sName    = userData->second;
+    if (!isNameLegal(sName)) return nullptr;
+    return Create(sCommand, sName);
+  }
   virtual   bool   isNameLegal (std::string sName)   = 0 ; 
   virtual   CSink* Create (std::string sCommand, std::string sName)   = 0 ; 
-  
+  virtual   std::string describe() const = 0;
 
   
 };

@@ -1,5 +1,5 @@
-#ifndef __CRINGSCALERITEM_H
-#define __CRINGSCALERITEM_H
+#ifndef CRINGSCALERITEM_H
+#define CRINGSCALERITEM_H
 /*
     This software is Copyright by the Board of Trustees of Michigan
     State University (c) Copyright 2005.
@@ -16,40 +16,12 @@
 	     East Lansing, MI 48824-1321
 */
 
-
-
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"
-#endif
-
-#ifndef __DATAFORMAT_H
 #include "DataFormat.h"
-#endif
-
-#ifndef __STL_VECTOR
 #include <vector>
-#ifndef __STL_VECTOR
-#define __STL_VECTOR
-#endif
-#endif
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
-
-#ifndef __RANGEERROR_H
 #include <RangeError.h>
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 /*!
    This class derived from CRingItem and represents a set of scalers that have been 
@@ -107,6 +79,7 @@ public:
   std::vector<uint32_t> getScalers() const;
 
   uint32_t getScalerCount() const;
+  uint32_t getOriginalSourceId() const;
 
   // Virtual methods overriddent:
 

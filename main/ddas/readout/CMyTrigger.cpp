@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 
+
 #define TRIGGER_TIMEOUT_SECS 5        // If no triggers in 5 seconds, auto-trigger.
 
 //#ifdef HAVE_STD_NAMESPACE

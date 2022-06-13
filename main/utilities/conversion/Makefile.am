@@ -30,13 +30,14 @@ include_HEADERS = CTransformMediator.h \
 
 #                           CTransform11p0to11p0.h
 
-libConversion_la_CXXFLAGS = -I@srcdir@ \
+libConversion_la_CPPFLAGS = -I@srcdir@ \
                             -I@top_srcdir@/utilities/format \
                             -I@top_srcdir@/utilities/filter \
                             -I@top_srcdir@/daq/IO \
                             -I@top_srcdir@/utilities/FormattedIO \
                             -I@top_srcdir@/utilities/Buffer \
                             -I@top_srcdir@/base/headers \
+				-I@top_srcdir@/base/factories \
                             @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 libConversion_la_LIBADD = @top_builddir@/utilities/format/V8/libdataformatv8.la \
@@ -77,6 +78,7 @@ unittests_CPPFLAGS= -I@srcdir@ \
                     -I@top_srcdir@/utilities/FormattedIO \
                     -I@top_srcdir@/utilities/format \
                     -I@top_srcdir@/base/headers \
+			-I@top_srcdir@/base/factories \
                     @CPPUNIT_CFLAGS@ \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
@@ -116,7 +118,8 @@ format_converter_CPPFLAGS = -I@srcdir@ \
 		    -I@top_srcdir@/daq/IO \
 		    -I@top_srcdir@/utilities/FormattedIO \
 		    -I@top_srcdir@/utilities/format \
-		    -I@top_srcdir@/base/headers @PIXIE_CPPFLAGS@
+		    -I@top_srcdir@/base/headers	\
+			-I@top_srcdir@/base/factories @PIXIE_CPPFLAGS@
 
 EXTRA_DIST = format_converter_options.ggo \
 	 convert_format.py

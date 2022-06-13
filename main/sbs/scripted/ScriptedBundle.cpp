@@ -91,10 +91,11 @@ ScriptedBundle::processHardwareFile(const char* pFilename, CTCLInterpreter& rInt
 /*!
   Add a module creator to the bundle.  Adding a module creator makes support for the
   module type known to the interpreter that processes the configuration file:
+  @param type     - module type string.
   @param creator  - Reference to the module creator to add.
 */
 void
-ScriptedBundle::addCreator(CModuleCreator& creator)
+ScriptedBundle::addCreator(const char* type, CModuleCreator& creator)
 {
-  m_pModuleCommand->AddCreator(&creator);
+  m_pModuleCommand->AddCreator(type, &creator);
 }

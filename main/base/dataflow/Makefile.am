@@ -28,7 +28,7 @@ libDataFlow_la_LIBADD  = @top_builddir@/servers/portmanager/libPortManager.la \
 			$(THREADLD_FLAGS)
 
 
-libDataFlow_la_CXXFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
+libDataFlow_la_CPPFLAGS = $(THREADCXX_FLAGS) $(AM_CXXFLAGS) $(COMPILATION_FLAGS)
 
 libRingBuffer_la_SOURCES = ringPackage.cpp CRingCommand.cpp
 libRingBuffer_la_DEPENDENCIES = libDataFlow.la
@@ -40,7 +40,7 @@ libRingBuffer_la_LDFLAGS = 	@LIBTCLPLUS_LDFLAGS@ $(TCL_LDFLAGS) \
 				-Wl,"-rpath-link=$(libdir)"	\
 				$(THREADLD_FLAGS) -lrt
 
-libRingBuffer_la_CXXFLAGS	=	$(THREADCXX_FLAGS) \
+libRingBuffer_la_CPPFLAGS	=	$(THREADCXX_FLAGS) \
 					$(AM_CXXFLAGS) $(COMPILATION_FLAGS)
 
 
@@ -50,7 +50,7 @@ libRingBuffer_la_CXXFLAGS	=	$(THREADCXX_FLAGS) \
 
 bin_PROGRAMS 	= ringtostdout stdintoring
 
-ringtostdout_SOURCES = ringtostdout.cpp  
+ringtostdout_SOURCES = ringtostdout.cpp  stdintoringUtils.cpp
 nodist_ringtostdout_SOURCES = ringtostdoutsw.c ringtostdoutsw.h
 
 ringtostdout_DEPENDENCIES =  libDataFlow.la 
@@ -74,8 +74,6 @@ ringtostdout_LDADD	=  @builddir@/libDataFlow.la \
 			@top_builddir@/base/os/libdaqshm.la	\
 			$(THREADLD_FLAGS) -lrt
 
-ringtostdout_CPPFLAGS	= $(COMPILATION_FLAGS) \
-	$(AM_CXXFLAGS) $(THREADCXX_FLAGS) 
 
 stdintoring_SOURCES = stdintoring.cpp stdintoringUtils.h stdintoringUtils.cpp
 nodist_stdintoring_SOURCES=stdintoringsw.c stdinringtosw.h
@@ -132,7 +130,7 @@ TESTS=./unittests
 
 EXTRA_DIST=ringprimitives.xml ringbuffer_user.xml ringbuffer_man.xml ringlib.xml ringmaster.xml ringpipes.xml tclring.xml \
 	RingMaster.tcl ringbuffer.tcl \
-	ringtostdoutsw.ggo stdintoringsw.ggo 
+	ringtostdoutsw.ggo stdintoringsw.ggo ringutils.tcl
 
 #-------------- My installation... includes tcl scripts/packages.
 
@@ -141,5 +139,8 @@ install-exec-local:
 	$(mkinstalldirs)  @prefix@/TclLibs
 	$(INSTALL_SCRIPT) @builddir@/.libs/libRingBuffer.* @prefix@/TclLibs
 	echo "pkg_mkIndex -verbose @prefix@/TclLibs *.so" | $(TCLSH_CMD)
+	$(mkinstalldirs) @prefix@/TclLibs/ring
+	$(INSTALL_SCRIPT) @srcdir@/ringutils.tcl @prefix@/TclLibs/ring
+	echo "pkg_mkIndex -verbose @prefix@/TclLibs/ring *.tcl" | $(TCLSH_CMD)
 	$(INSTALL_SCRIPT) @srcdir@/ringbuffer.tcl @bindir@/ringbuffer
 

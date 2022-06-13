@@ -27,14 +27,23 @@ package require RunstateMachine
 
 ##
 # This version only supports a single server
-# TODO:  support multiple servers/sources.
+#
 #
 
 namespace eval ::RemoteGUI {
-    variable host
-    variable user
-    variable sourceid
-    variable outputMonitor
+    
+    
+    #  Each data source has a dict that contains the following
+    #  -  host - host we're connected to.
+    #  -  user - User we're connected to.
+    #  -  controlService - the remote control service name.
+    #  -  outputService - The output forwarding service name.
+    #  -  outputMonitor  - The output monitor object.
+    #  -  id             - the source id.
+    #   These dicts are kept in the dict below, indexed
+    #   by source id:
+    
+    variable sourceInfo [dict create]
 }
 
 ##
@@ -44,44 +53,68 @@ namespace eval ::RemoteGUI {
 #    - user  - Username under which the readoutGUI is running
 #
 proc ::RemoteGUI::parameters {} {
-    return [dict create host [list {Host Name}] user [list {User name}]]
+    puts "Parameters called."
+    return [dict create \
+        host [list {Host Name}] user [list {User name}]  \
+        remoteControlService [list {Remote control service} ReadoutGUIRemoteControl]    \
+        remoteOutputService  [list {Remote output Relay} ReadoutGUIOutput]      \
+    ]
 }
 ##
 # start
 #    Start the data source.  This means
 #    - Locating the run control port
 #    - Locating the monitor port.
-#    - Settint up to monitor output
+#    - Setting up to monitor output
 #    - delegating the start to the s800::start.
 #
-# @param params - Parameterization of the source.
+# @param params - Parameterization of the source as a dict
+# @note  The code starting us also sets a sourceid parameter
+#        which identifies which source is starting.
 #
 proc ::RemoteGUI::start params {
-    variable host
-    variable user
-    variable sourceid
-    variable outputMonitor
+    variable sourceInfo
+    
     ::ReadoutGUIPanel::Log RemoteGUI output "start '$params'"
+    
+    # Extract the parameters:
+    
+    set sid  [dict get $params sourceid]
     set host [dict get $params host]
     set user [dict get $params user]
-
-    set sourceid [dict get $params sourceid]
+    set controlService [dict get $params remoteControlService]
+    set outputService  [dict get $params remoteOutputService]
+    errorIfDuplicate $sid;           # Sids must be unique.
     
     # Locate the s800 data source port, and attempt to start the data source
     # that will complain if there's already one.
                   
-    set port [readoutGUIControlPort $host $user]
+    set port [readoutGUIControlPort $host $controlService $user ]
     if {$port eq ""} {
-        error "Unable to find a readout GUI in $host run by $user"
+        error "Unable to find a readout GUI in $host run by $user advertising on $controlService"
     }
-    S800::start [dict create port $port host $host sourceid $sourceid]
+    S800::start [dict create \
+            port $port host $host sourceid $sid    \
+    ]
     
     # Attempt to locate the output window and connect to it as well:
+
     
     set outputMonitor [ReadoutGUIOutputClient %AUTO% -host $host -user $user \
                         -outputcmd ::RemoteGUI::_handleOutput \
-                        -closecmd ::RemoteGUI::_outserverClosed]
+                        -closecmd [list ::RemoteGUI::_outserverClosed $sid] \
+                        -service $outputService]
     $outputMonitor connect
+    
+    # Create the source description dict and add it to the
+    # set we know about.
+    
+    set sourceDict [dict create \
+        host $host user $user controlService $controlService \
+        outputService $outputService outputMonitor $outputMonitor \
+        id $sid                                              \
+    ]
+    dict append sourceInfo $sid $sourceDict
 }
 ##
 # check - See if we are still alive:
@@ -89,7 +122,8 @@ proc ::RemoteGUI::start params {
 # @param id - the source id.
 #
 proc ::RemoteGUI::check id {
-    return [S800::check $id]
+    set info [getSourceInfo $id];   # Errors if invalid sourceid.
+    return [S800::check $id];             # sid will be the same.
 }
 ##
 # stop - stop the source by stopping the s800 and destroying the output
@@ -97,8 +131,15 @@ proc ::RemoteGUI::check id {
 # @param id - source id.
 #
 proc ::RemoteGUI::stop id {
-    variable outputMonitor
+    variable sourceInfo
+    set info [getSourceInfo $id]
+    
+    # Stop output monitoring:
+    
+    set outSvc [dict get $info outputMonitor]
     ::ReadoutGUIPanel::Log RemoteGUI output "stop $id"
+    catch {$outSvc destroy};   # Might have been destroyed already 
+    
     # If still alive and necessary stop the run.
     set rctl [::S800::_getConnectionObject $id]
     set state [::S800::_getState $id]
@@ -124,8 +165,12 @@ proc ::RemoteGUI::stop id {
     if {$rctl in [::s800rctl info instances]} {
       $rctl destroy
     }
-    $outputMonitor destroy
     
+    # Now remove our source from the source dictionary.
+    # - Forgetting the state of the source and
+    # - Allowing the re-use of the source id by our clients.
+    
+    set sourceInfo [dict remove $sourceInfo $id]
 }
 ##
 # begin - start a run.
@@ -134,6 +179,8 @@ proc ::RemoteGUI::stop id {
 # @param title
 #
 proc ::RemoteGUI::begin {id run title} {
+    set info [getSourceInfo $id];    # Error if bad id.
+    
     ::ReadoutGUIPanel::Log RemoteGUI output "begin $id $run $title"
     ::S800::begin $id $run $title
 
@@ -144,6 +191,7 @@ proc ::RemoteGUI::begin {id run title} {
 # @param id - the source id
 #
 proc ::RemoteGUI::end id {
+    set info [getSourceInfo $id]
     ::ReadoutGUIPanel::Log RemoteGUI output "End $id"
     ::S800::end $id
 }
@@ -154,6 +202,7 @@ proc ::RemoteGUI::end id {
 # @param id - the source id
 #
 proc ::RemoteGUI::init id {
+    set info [getSourceInfo $id]
     ::ReadoutGUIPanel::Log RemoteGUI output "Init $id"
     ::S800::init $id
 }
@@ -188,12 +237,16 @@ proc ::RemoteGUI::_handleOutput output {
 #  away.
 #   *  destroy the connection object and complain to the output log.
 #   *  Start a transition to notready:
+# @param id - id of the source who's output server closed.
 #
-proc ::RemoteGUI::_outserverClosed {} {
+proc ::RemoteGUI::_outserverClosed {id} {
     
     #  Log the disconnecty
     
-    variable outputMonitor
+    
+    set sourceInfo [getSourceInfo $id]
+    set outputMonitor [dict get $sourceInfo outputMonitor]
+    
     $outputMonitor destroy
     
     set ow [::Output::getInstance]
@@ -204,4 +257,33 @@ proc ::RemoteGUI::_outserverClosed {} {
     
     forceFailure;            # in RunstateMachine pkg.
 
+}
+##
+# errorIfDuplicate
+#    Throws an errro if the source id given is already known
+#
+# @param id - source id to check
+#
+proc ::RemoteGUI::errorIfDuplicate {id} {
+    variable sourceInfo
+    if {[dict exists $sourceInfo $id]} {
+        error "RemoteGUI source manager; duplicate source id $id"
+    }
+}
+##
+# getSourceInfo
+#     Return the dict that provides information about the
+#     specified data source. The error is controlled so that
+#     any error text is meaningful rather than a dict key not found.
+#
+# @param id - id of the source to lookup.
+# @return dict - the source description dict.
+#
+proc ::RemoteGUI::getSourceInfo {id} {
+    variable sourceInfo
+    if {[dict exists $sourceInfo $id]} {
+        return [dict get $sourceInfo $id]
+    } else {
+        error "RemoteGUI Source manager; no such source id $id"
+    }
 }

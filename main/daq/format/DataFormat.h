@@ -110,7 +110,8 @@ typdef union Body {
     so that decoders know what format the ring is in.
 */
 
-static const uint16_t FORMAT_MAJOR  = 11;  /* nscldaq-12. */
+
+static const uint16_t FORMAT_MAJOR  = 12;  /* nscldaq-12. */
 static const uint16_t FORMAT_MINOR  =  0;  /* nscldaq-x.0 */
 
 /* state change item type codes: */
@@ -118,8 +119,8 @@ static const uint16_t FORMAT_MINOR  =  0;  /* nscldaq-x.0 */
 static const uint32_t BEGIN_RUN  = 1;
 static const uint32_t END_RUN    = 2;
 static const uint32_t PAUSE_RUN  = 3;
-#ifdef RESUME_RUN                     // config.h e.g.
-#undef RESUME_RUN
+#ifdef RESUME_RUN
+#undef RESUME_RUN             // E.g. in config.h
 #endif
 static const uint32_t RESUME_RUN = 4;
 

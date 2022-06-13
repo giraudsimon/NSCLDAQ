@@ -21,17 +21,12 @@
 
 
 
-#ifndef __CMONITOREDPROGRAM_H  //Required for current class
-#define __CMONITOREDPROGRAM_H
+#ifndef CMONITOREDPROGRAM_H  //Required for current class
+#define CMONITOREDPROGRAM_H
 
 // Headers:
 
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward class references:
 class CSink;

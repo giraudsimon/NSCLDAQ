@@ -1,4 +1,190 @@
+Release 12.0-pre1
 
+Note: From now on the Changelog/release notes will be in reverse chronological
+      order so that those porting can see what they need without going down to
+	  the bottom of the file.
+      Furthermore, the log will be based on gitlab issues which will be classified
+	  roughly as maintenance, defect and features.  At the top of the release
+	  we will collect the changes that are known to be needed in user code.
+
+Full Issue list closed for this release:
+
+Issue   Classification
+44      Maintenance
+	High precision computations of relative time have been factored out into
+	CElapsedTime.
+510		Maintenance
+	Several specialized instances that look like extensible factories have been
+	rewritten to use the CExtensibleFactory template base class.
+535     Maintenance
+    The C++ standard forbids application code use of preprocessor definitions
+	that begin with underscores.  These were used, among other things, as
+	include gaurd symbols.  Underscores have been removed from those symbols.
+659     New Feature
+    If a readout GUI state transition fails, the callout bundles that executed
+    successfully will, if they define it, have a "failure" proc called with the
+	same parameters the bundle call was handed. These will be called in reverse
+	order with the idea that this allows what they've done to be rolled back,
+	if necessary.
+700		Maintenance
+	Several Tcl/Tk packages that had been distributed throughout the TclLibs
+	installation subdirectory tree were centralized into more generic libraries.
+704  	Cancelled
+    This called for the data conversion package to be re-implemented in terms
+	of the filter framework.  This may  happen at a later date but the entire
+	conversion package needs a re-think.
+711		New Feature
+	Adds callouts (at the bundle and ReadoutCallouts level) for changes in what
+	happens in the master slave relationship of a GUI.  These are optional so no
+	changes to existing ReadoutCallouts.tcl and callback bundles are required
+	if hese capabilities are not used.
+	The callback bundle alows for an optional new proc: remotecontrol which takes
+	two parametes. The first describes what is being done and the second is the
+	host involved.  The names of the optional ReadoutCallouts.tcl procs are the
+	same as the names as the actions and the second remotecontrol parameter
+	(the host involved) is passed as a parameter.  The actions are:
+	OnEnslaving  (called in master) - the Gui in the host is being enslave.
+	OnEnslaved   (called in slave)  - The Gui is being enslaved by the host.
+	OnFreeing    (called in master) - The master is freeing the host.
+	OnEmanicpation (called in slvae) - The slave has been freed by the host.
+	OnSlaveConnectionLost (called in master) - the slave 'host' has dropped the connectionn.
+	Note that the current remote control interface does not support freeing an
+	enslaved host other than by exiting.  If the master connection is lost,
+	the slave naturally emancipates and calls OnEmancipation.  The OnFreeing method,
+	at this point never gets called.
+722		Maintenance
+	libTcl++ has data type definitions.  These have been moved from
+	daqdatatypes.h to libtclplus.h and are now encapsulated  within the TCLPLUS
+	namespace.  If user code makes use of this library (e.g. to implement a Tcl
+	command extension in a readout framework), it must:
+	*  Change references to daqdatatypes.h in Tcl code to libtclplusdatatypes.h
+	*  Change references to types defined in that header so that they are
+	   qualified by the TCLPLUS namespace e.g. Int_t becomes TCLPLUS::Int_t
+804    	New Feature
+	Provide support for filter programs to return more than one ring item
+	per filter processor element call.  This is done by providing a
+	putRingItem method in CFilterMain.  User filters can be constructed with a
+	pointer or reference to CFilterMain and then use that refrence to emit
+	as many ring items as desired before returning the final one to the caller.
+848		Feature/Defect
+	*	Enslaved GUIs did not call their active transition precheck bundle method.
+	    this has been corrected.
+	*   If an enslaved GUI fails precheck this is now communicated to the master
+		which now reacts by putting all the slaves into the NotReady state.  Futher
+		work on this should be expected to provide a more graceful reaction to
+		precheck and other failures.
+876		Defect (build)
+	If the system was being bult with --enable-docs=no which should disable all
+	documentation builds, the new scaler display documentation would get built anyway.
+895		Defect
+	It was possible for the action package to throw an error.  The error would be
+	triggered by ordinary output that just happened to start with an action keyword.
+	Action keyword lines were expected to be of the form:
+	  keyword byte-count byte-count worth of characterdata.
+	If the action package now sees a keyword that is not followed by a number,
+	the size of the remaining line is computed and interpolated as the byte-count
+	for the action keyword.
+908		Defect
+	Stage area structure documentation was incorrect and in any event had to be
+	updated to match the changes in the way event data are now recorded diretly
+	into the run directories.
+949		Defect
+	ReadoutGUI did not handle subprocess unexpected exist gracefully. I believe
+	it should now.
+969		Defect
+	NSCLDAQ Version 10 to Version 11 format converer had segfaulted.
+970		Maintenance
+	Build configuration detection of libZMQ and the switches needed to compile and
+	link to it are now using stock tests rather than home-brew tests.
+992		Defect
+	CAMAC operations in xxUSBReadout init could fail because the controller object
+	was not available or not valid.  The controller is valid and available now
+	for init scripts.
+993		Defect/Feature
+	The lack of a traceback in errors detected and reported for XXUSBReadout
+	daq configuration and control configuration scripts could make locating these
+	problems difficult. Now traceback information is included in the error messages.
+1011	Defect
+	Fix segfault in VMUSBReadout on exit from using the --enumerate option to list
+	the controllers attached to the system.
+1012	Defect/Feature
+	ReadoutGUI data source failure messages did not include a traceback so locating
+	them in the code could be difficult and, therefore impeded diagnosis.
+1013	Defect
+	When reporting errors from callout bundles for emergency end runs, failing
+	bundles mis-report the failing source.
+1015	Feature
+	The eventlog 2Gbyte file segment size is an obsolete choice based on NFS
+	file size restrictions that since have disappeared.  12.0 sets the default
+	event file segment size to essentially infinite.  It is still possible to
+	set a smaller event segment file size if there is a need.
+1016	Feature/Defect
+	Some ring item types were not well handled by the event builder output stage
+	(glom). Specifically, in order to support subsequent event building stages,
+	scalers, run state changes and other non physics data ring items had source
+	ids that were rewritten with the sourceid assigned to the event builder.
+	This is problematic because the original source id actually assigns meaning
+	to the ring item (which source emitted the scaler data?).  V12.0 adds a field
+	to many ring items that carries the original source id and is not modified
+	by glom.  This, along with methods to access it provide a means to determine
+	which source emitted the item.  All Readout frameworks now fill that field
+	in properly.
+1018	Defect
+	Errors in the constructors and other canonicals of zero copy ring items made
+	their use unsafe.  These have been corrected.
+1024	Feature
+	The XON/XOFF status of the input stage of the event builder is now shown on
+	all pages of the tabbed notebook that makes up the event builder GUI.
+1026	Feature
+	The driver for the DDASReadout/Sorter now has additional options:
+	infinity - if true/provided infinity clock is selected.
+	clockmultiplier -parameter must be numeric and is the value the external clock
+		is multiplied by before setting it into the body header timestamp.  for
+		now this is ignored but in pre2 this will be used.
+1027	Feature
+	Changes to the protocol fragment sources use to communicate with the orderer
+	were made to enhance performance by reducing the number of reads required to
+	transfer data.
+1029	Feature/Defect
+	Using multiple stageareas was somewhat problematic wrt to placement of
+	ReadoutCallouts.tcl.  This was because the EVENTS environment variable was
+	not used to locate ReadoutCallouts.tcl in the experiment/current directory
+	relative to the stagearea designated by that environment variable.  This has
+	been fixed.  Users can define EVENTS for various ReadoutGui's in the same
+	account and the GUI will look for ReadoutCallouts in each of the resulting
+	stagearea experiment/current subdirectories.
+1030	Feature/Defect
+	To be consistent the mbz field for ring items that have no body header is
+	just the body header size in bytes inclusive.  This means that ring items
+	without a body header fill this with sizeof(uint32_t).  Code in 12.0 is
+	backwards compatible, in that it will properly handle either 0 or sizeof(uint32_t)
+	in this field as without body header.
+1031	Feature
+	ReadoutShell multilog package provides progress indication to let you now
+	which eventlogs in multilog have exited and which ones we're still waiting on.
+1033	Feature
+	Event logging now happens directly into the stagearea's experiment/runM
+	directory for run number M.  Links are made and destroyed in experiment/current
+	to provide a backwards compatible view.  This change makes mirroring the event
+	data via e.g. globus or rsync more efficient since data are never moved between
+	directories.
+1035	Feature/Maintenance
+	Add formatting and access functions to DataFormat.h  These are now used by
+	the ring buffer classes which usd to duplicate code.
+1037	Maintenance
+	Fix dependencies in build that prevented parallel make from properly working.
+1038	Defect
+	Fixed errors in copy constructor in RawChannel that caused tests to segfault.
+    and could well cause other code to segfault.
+1039	Defect
+	Fix functions that are declared to return values so that they always return
+	value. Was causing buster segfaults.
+1044	Defect/Documentation
+	There were comments in code that indicated interfaces were deprecated that
+	were not.  Those comments have been removed.
+
+--------------------------------------------------------------------------------
+>>>>>>> Update change log from the issue list for 12.0-pre1.
 Dec 16, 2010 
       - Fix error in CRingItem copy construction ... if there was a
 	payload, the m_pCursor member was not being set to point to the

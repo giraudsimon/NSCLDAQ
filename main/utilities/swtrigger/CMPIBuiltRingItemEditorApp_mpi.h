@@ -23,7 +23,8 @@
 
 #include "CBuiltRingItemEditorApp.h"
 
-class CProcessingElement;
+class CMPIAppStrategy;
+
 /**
  * @class CMPIBuiltRingItemEditor
  *   This just has to select the correct processing element
@@ -31,17 +32,14 @@ class CProcessingElement;
  */
 class CMPIBuiltRingItemEditorApp : public CBuiltRingItemEditorApp
 {
+private:
+    CMPIAppStrategy* m_strategy;
 public:
     CMPIBuiltRingItemEditorApp(int argc, char** argv, gengetopt_args_info& args);
     virtual ~CMPIBuiltRingItemEditorApp();
     
     virtual void operator()();
-private:
-    CProcessingElement* createProcessingElement();
-    CProcessingElement* createDataSource();        // Rank 0
-    CProcessingElement* createWorker();            // Rank >=3
-    CProcessingElement* createSorter();            // Rank 1
-    CProcessingElement* createSink();              // Rank 2     
+
 };
 
 

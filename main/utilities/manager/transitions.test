@@ -1,0 +1,449 @@
+#!/bin/sh
+# -*- tcl -*-
+# The next line is executed by /bin/sh, but not tcl \
+exec tclsh "$0" ${1+"$@"}
+
+#    This software is Copyright by the Board of Trustees of Michigan
+#    State University (c) Copyright 2014.
+#
+#    You may use this software under the terms of the GNU public license
+#    (GPL).  The terms of this license are described at:
+#
+#     http://www.gnu.org/licenses/gpl.txt
+#
+#    Authors:
+#             Ron Fox
+#             Giordano Cerriza
+#	     NSCL
+#	     Michigan State University
+#	     East Lansing, MI 48824-1321
+
+
+##
+# @file   transitions.test
+# @brief  Test the actual transition parts of the sequence package.
+# @author Ron Fox <fox@nscl.msu.edu>
+#
+package require tcltest
+package require sequence
+package require programs
+package require sqlite3
+package require snit
+
+variable dbfile
+variable dbfd
+proc commonSetup { } {
+    set ::dbfd [file tempfile ::dbfile]
+    exec [file join $::env(DAQBIN) mg_mkconfig] $::dbfile
+    sqlite3 db $::dbfile
+    
+    # Make some programs to use in sequences.
+        
+    ::program::add db echo /bin/echo Transitory localhost [dict create \
+        parameters [list Hello world]                                   \
+    ]
+    ::program::add db echo2 /bin/echo Transitory localhost [dict create \
+        parameters [list This is echo]]
+    ::program::add db criticalEcho /bin/echo Critical localhost [dict create \
+        parameters [list Hello from critical]                       \
+    ]
+    ::program::add db list /bin/ls Transitory localhost [dict create directory ~]
+    ::program::add db failure /this/does/not/exist Transitory localhost [dict create]
+    
+}
+
+proc commonCleanup {} {
+    close $::dbfd
+    db close
+    if {[file exists $::dbfile]} {
+        file delete $::dbfile
+    }
+    
+    array unset ::sequence::StepMonitors *
+    if {$::sequence::currentTransitionManager ne ""} {
+        $::sequence::currentTransitionManager destroy
+        set ::sequence::currentTransitionManager [list]
+    }
+}
+
+#-------------------------------------------------------------------------------
+#  Monitor tests.
+
+tcltest::test addmonitor_1 {Add a monitor when  there's none returns empty.} \
+-setup {
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo 0 0]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    
+    set retval [::sequence::addMonitor db testing $step junk]
+    
+} \
+-result {}
+
+tcltest::test addmonitor_2 {Add monitor creates a new monitor array element:} \
+-setup {
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo  0 0]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::addMonitor db testing $step junk
+    set seqid [::sequence::_getSeqId db testing]
+    set monitorIndex [::sequence::_monitorIndex $seqid $step]
+    set ::sequence::StepMonitors($monitorIndex)
+} -result junk
+
+tcltest::test addmonitor_3 {Adding a monitor returns any prior one.} \
+-setup {
+    commonSetup
+    sequence::add db testing SHUTDOWN
+    set step [sequence::addStep db testing echo  0 0]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::addMonitor db testing $step junk
+    set result [::sequence::addMonitor db testing $step trash]
+} -result junk
+
+#-----------------------------------------------------------------------------
+#  runSequence tests.
+
+tcltest::test runseq_1 {Run an empty sequence - should be successful.} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    set completion ""
+    proc testing_ended {runner status {text {}}} {
+        set ::completion $status
+        $runner destroy
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::runSequence db testing testing_ended
+    vwait completion
+    set completion;                  # Immediate completion without event loop
+} -result OK
+
+tcltest::test runseq_2 {Run an sequence with a single transient step} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    ::sequence::addStep db testing echo 0 0
+    proc testing_ended {runner status {text {}}} {
+        set ::completion $status
+        $runner destroy
+        if {$status ne "OK"} {
+            puts "Step failed: $text"
+        }
+    }
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    ::sequence::runSequence db testing testing_ended
+    vwait completion
+    set completion
+} -result OK
+
+tcltest::test runseq_3 {Sequence with Monitor on the single step} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    set output ""
+    set step [::sequence::addStep db testing echo 1 2]
+    snit::type runseq3Monitor {
+        method onOutput {db program fd} {
+            
+            lappend ::output [gets $fd]
+            
+            
+        }
+        method onExit {db programInfo fd} {
+            
+            set ::exited [dict get $programInfo name]
+        }
+    }
+    set mymon [runseq3Monitor %AUTO%]
+    ::sequence::addMonitor db testing $step $mymon
+} \
+-cleanup {
+    commonCleanup
+    $mymon destroy
+    $sequence destroy
+} \
+-body {
+    set sequence [::sequence::runSequence db testing]
+    
+    vwait exited
+    
+    list $output $exited
+} -result [list [list "Hello world" ""] echo]
+
+tcltest::test runseq_4 {Multi-step sequence.} \
+-setup {
+    commonSetup
+    ::sequence::add db testing SHUTDOWN
+    set step1 [::sequence::addStep db testing echo 1 2]
+    set step2 [::sequence::addStep db testing criticalEcho 0 0 ]
+    set exited 0
+    snit::type runseq4Monitor {
+        variable output
+        method onOutput {db program fd} {
+            lappend output [gets $fd]
+        }
+        method onExit {db programinfo fd} {
+            incr ::exited
+        }
+        method getOutput {} {return $output}
+    }
+    set mon1 [runseq4Monitor %AUTO%]
+    set mon2 [runseq4Monitor %AUTO%]
+    
+    sequence::addMonitor db testing $step1 $mon1
+    sequence::addMonitor db testing $step2 $mon2
+    
+} \
+-cleanup {
+    commonCleanup
+    $mon1 destroy
+    $mon2 destroy
+    $sequence destroy
+} \
+-body {
+    set sequence [::sequence::runSequence db testing]
+    vwait ::exited
+    vwait ::exited
+    
+    set o1 [$mon1 getOutput]
+    set o2 [$mon2 getOutput]
+    list $o1 $o2
+} -result [list [list "Hello world" ""] [list "Hello from critical" ""]]
+
+tcltest::test runseq_5 {Bad sequence.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::runSequence db testing
+} -result * -match glob -returnCodes error
+
+#-------------------------------------------------------------------------------
+#  Tests of transitions.
+
+tcltest::test transition_1 {Transition SHUTDOWN->SHUTDOWN} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::transition db SHUTDOWN
+} -result -1
+
+tcltest::test transition_2 {Transition SHUTDOWN->BOOT with no sequences.} \
+-setup {
+    commonSetup
+    set endstatus ""
+    proc transition_1 {db obj status} {
+        set ::endstatus $status
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    sequence::transition db BOOT transition_1
+    vwait endstatus
+    set endstatus
+} -result OK
+
+tcltest::test transition_3 {SHUTDOWN->BOOT with an empty sequence.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set endstatus ""
+    proc tend_3 {db obj status} {
+        set ::endstatus $status
+    }
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT tend_3
+    vwait endstatus
+    set endstatus
+} -result OK
+
+tcltest::test transition_4 {SHUTDOWN->BOOT with a sequence with a step.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set step [::sequence::addStep db Boot echo 0 1];   # Post delay allows output.
+    catch {unset output}
+    set output [list]
+    set echodone [list]
+    snit::type mont_1 {
+        method onOutput {db name fd} {
+            set o [gets $fd]
+            lappend ::output $o
+        }
+        method onExit {db program fd} {
+            set ::echodone 1
+        }
+    }
+    set t4mon [mont_1 %AUTO%]
+    ::sequence::addMonitor db Boot $step $t4mon
+    
+    set t4end ""
+    proc t4done {db obj status} {
+        set ::t4end $status
+    }
+    
+} \
+-cleanup {
+    $t4mon destroy
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT t4done
+    vwait t4end
+    set output
+} -result [list "Hello world" ""]
+
+tcltest::test transition_5 {SHUTDOWN->BOOT with a sequence that has more than one step.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot BOOT
+    set step1 [::sequence::addStep db Boot echo 0 1]
+    set step2 [::sequence::addStep db Boot echo2 0 1]
+    
+    catch {unset output}
+    array set output [list]
+    
+    snit::type mont_5 {
+        method onOutput {db name fd} {
+            lappend ::output($name) [gets $fd]
+        }
+        method onExit {db program fd} {}
+    }
+    set smon [mont_5 %AUTO%]
+    ::sequence::addMonitor db Boot $step1 $smon
+    ::sequence::addMonitor db Boot $step2 $smon
+    
+    set t5end ""
+    proc t5done {db obj status} {
+        set ::t5end $status
+    }
+} \
+-cleanup {
+    $smon destroy
+    commonCleanup
+
+} \
+-body {
+    ::sequence::transition db BOOT t5done
+    
+    vwait t5end
+    list $output(echo) $output(echo2) $t5end
+} -result [list [list "Hello world" ""] [list "This is echo" ""] OK]
+
+tcltest::test transition_6 {SHUTDOWN->BOOT with two sequences.} \
+-setup {
+    commonSetup
+    ::sequence::add db Boot1 BOOT
+    ::sequence::add db Boot2 BOOT
+    set step1 [::sequence::addStep db Boot1 echo 0 1]
+    set step2 [::sequence::addStep db Boot2 echo2 0 1]
+    
+    catch {array unset output *}
+    array set output [list]
+    set smon [mont_5 %AUTO%]
+    ::sequence::addMonitor db Boot1 $step1 $smon
+    ::sequence::addMonitor db Boot2 $step2 $smon
+    
+    set t6end ""
+    proc t6done {db obj status} {
+        set ::t6end $status
+    }
+} \
+-cleanup {
+    $smon destroy
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BOOT t6done
+    vwait t6end
+    list $output(echo) $output(echo2) $t6end
+} -result [list [list "Hello world" ""] [list "This is echo" ""] OK]
+
+tcltest::test transition_7 {SHUTDOWN -> BEGIN Is an illegal transition.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BEGIN
+} -result * -match glob -returnCodes error
+
+tcltest::test transition_8 {Transition when in progress is an error.} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    ::sequence::transition db BEGIN
+    ::sequence::transition db BEGIN
+} -result * -match glob -returnCodes error
+
+tcltest::test transition_9 {SHUTDOWN is always ok.} \
+-setup {
+    commonSetup
+    set done 0
+    proc t9done {db object status} {
+        set ::done $status
+    }
+} \
+-cleanup {
+    commonCleanup
+
+} \
+-body {
+    ::sequence::transition db BOOT
+    ::sequence::transition db SHUTDOWN t9done
+    
+} -result -1
+#----------------------------------------------------
+
+proc tcltest::cleanupTestHook {} {
+    variable numTests
+    set ::exitCode [expr {$numTests(Failed) > 0}]
+}
+
+
+tcltest::cleanupTestHook
+tcltest::cleanupTests
+exit $::exitCode

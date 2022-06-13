@@ -29,9 +29,11 @@ nscldaq10_HEADERS = CRingItem.h \
 
 libdataformatv10_la_CXXFLAGS = -I@srcdir@/.. \
                                -I@top_srcdir@/utilities/Buffer \
+				-I@top_srcdir@/base/os	\
                                @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
 
 libdataformatv10_la_LDFLAGS = @top_builddir@/utilities/Buffer/libbuffer.la \
+				@top_builddir@/base/os/libdaqshm.la	\
                               @LIBTCLPLUS_LDFLAGS@
 
 noinst_PROGRAMS = unittests
@@ -44,6 +46,7 @@ unittests_SOURCES	= TestRunner.cpp \
 unittests_LDADD	= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
                         @top_builddir@/utilities/Buffer/libbuffer.la \
 			@builddir@/libdataformatv10.la	\
+			@top_builddir@/base/os/libdaqshm.la \
                         @LIBEXCEPTION_LDFLAGS@
 
 unittests_CPPFLAGS= -I@srcdir@/.. \
@@ -51,7 +54,8 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
                     @LIBTCLPLUS_CFLAGS@ \
                     @TCL_FLAGS@ \
                     -I@top_srcdir@/utilities/Buffer \
-                    -I@top_srcdir@/base/testutils @PIXIE_CPPFLAGS@
+                    -I@top_srcdir@/base/testutils \
+			-I@top_srcdir@/base/os/ @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \
                             @TCL_LDFLAGS@ \

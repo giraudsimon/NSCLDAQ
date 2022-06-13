@@ -1,8 +1,8 @@
-#ifndef __CCOMPOUNDEVENTSEGMENT_H
-#define __CCOMPOUNDEVENTSEGMENT_H
+#ifndef CCOMPOUNDEVENTSEGMENT_H
+#define CCOMPOUNDEVENTSEGMENT_H
 
 
-#endif
+
 
 /*
     This software is Copyright by the Board of Trustees of Michigan
@@ -19,27 +19,10 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CCOMPOSITE_H
 #include "CComposite.h"
-#endif
-
-#ifndef __CEVENTSEGMENT_H
 #include <CEventSegment.h>
-#endif
-
-#ifndef __CRT_STDDEF_H
 #include <stddef.h>
-#ifndef __CRT_STDDEF_H
-#define __CRT_STDDEF_H
-#endif
-#endif
-
-#ifndef __CRT_STDINT_H
 #include <stdint.h>
-#ifndef __CRT_STDINT_H
-#define __CRT_STDINT_H
-#endif
-#endif
 
 /*!
   CCompound event segment is a CEventSegment that is also a Composite.
@@ -87,3 +70,4 @@ public:
   void visit(CVisitor& visitor);
   
 };
+#endif

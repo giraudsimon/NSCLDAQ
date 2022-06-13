@@ -13,25 +13,17 @@
 	     Michigan State University
 	     East Lansing, MI 48824-1321
 */
-#ifndef __CCOMPLETEBARRIERCALLBACK_H
-#define __CCOMPLETEBARRIERCALLBACK_H
+#ifndef CCOMPLETEBARRIERCALLBACK_H
+#define CCOMPLETEBARRIERCALLBACK_H
 
 /**
  * @file CCompleteBarrierCallback.h
  * @brief Define an observer that provides the ability to call a
  *        tcl script on a complete barrier.
  */
-#ifndef __CFRAGMENTHANDLER_H
+
 #include "CFragmentHandler.h"
-#endif
-
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 // Forward definitions:
 

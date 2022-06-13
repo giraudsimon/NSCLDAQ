@@ -7,6 +7,8 @@ COMPILATION_FLAGS =  $(VMEBUILDEADERS) \
 	-I@top_srcdir@/sbs/nsclapi 	\
 	-I@top_srcdir@/sbs/vmemodules\
 	-I@top_srcdir@/sbs/readout   \
+	-I@top_srcdir@/base/os      \
+	-I@top_srcdir@/base/factories \
 	-DVME $(TCL_FLAGS) \
 	-DINSTDIR=\"@prefix@\" -g -pthread @PIXIE_CPPFLAGS@
 
@@ -148,3 +150,36 @@ install-exec-local:
 		@prefix@/skeletons/scriptedReadout/skel/Makefile
 	$(INSTALL_DATA) @srcdir@/scriptedreadout_Makefile.include \
 	        @prefix@/etc
+
+##
+#  Tests
+#
+
+noinst_PROGRAMS = unittests
+unittests_SOURCES = TestRunner.cpp factorytests.cpp \
+	CModuleCommand.cpp  CDigitizerDictionary.cpp \
+	CModuleCreator.cpp \
+	CCAENModule.cpp CCAENV775.cpp CCAENV775Creator.cpp \
+	CCAENV785.cpp CCAENV785Creator.cpp \
+	CCAENV792.cpp CCAENV792Creator.cpp \
+	CCAENV830Module.cpp CCAENV830Creator.cpp \
+	CV1x90Module.cpp CV1x90Creator.cpp \
+	CSIS3300Module.cpp CSIS3300Creator.cpp \
+	CDigitizerModule.cpp CReadableObject.cpp CReadOrder.cpp \
+	CReadException.cpp \
+	CConfigurableObject.cpp CConfigurationParameter.cpp \
+	CEnumParameter.cpp CIntArrayParam.cpp CIntConfigParam.cpp \
+	CStringArrayparam.cpp CStringConfigParam.cpp CBoolConfigParam.cpp
+
+unittests_CPPFLAGS=$(COMPILATION_FLAGS) @CPPUNIT_CFLAGS@ \
+	@LIBTCLPLUS_CFLAGS@ @TCL_CPPFLAGS@
+unittests_LDFLAGS= @CPPUNIT_LDFLAGS@  \
+	@top_builddir@/sbs/readout/libSBSProductionReadout.la		\
+	@top_builddir@/sbs/vmemodules/libSBSDeviceSupport.la    \
+        @top_builddir@/sbs/nsclapi/libSBSVmeAPI.la              \
+        @top_builddir@/base/thread/libdaqthreads.la     \
+        @top_builddir@/base/os/libdaqshm.la     \
+        @LIBTCLPLUS_LDFLAGS@ @TCL_LIBS@ 
+
+
+TESTS=unittests

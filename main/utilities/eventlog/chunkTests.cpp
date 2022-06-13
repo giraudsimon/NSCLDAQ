@@ -94,7 +94,7 @@ void chunkTest::chunk_1()
     item.setBodyCursor(p);
     item.updateSize();
     pRingItem pRaw = item.getItemPointer();
-    totalSize += pRaw->s_header.s_size;
+    totalSize += itemSize(pRaw);
     item.commitToRing(*pRing);
   }
   Chunk data;
@@ -110,25 +110,25 @@ void chunkTest::chunk_1()
   size_t nBytes = data.s_nBytes;
   uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
   while (nBytes) {
-    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(p);
-    uint32_t itemSize = pHeader->s_size;
-    EQ(PHYSICS_EVENT, pHeader->s_type);
+    pRingItem pItem = reinterpret_cast<pRingItem>(p);
+    uint32_t size = itemSize(pItem);
+    EQ(uint16_t(PHYSICS_EVENT), itemType(pItem));
     
-    pBodyHeader pBh = reinterpret_cast<pBodyHeader>(pHeader+1);
+    pBodyHeader pBh = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
     EQ(uint64_t(n), pBh->s_timestamp);
     EQ(uint32_t(10-n), pBh->s_sourceId);
     EQ(uint32_t(0), pBh->s_barrier);
     
-    size_t bodySize = itemSize - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    size_t bodySize = size - sizeof(RingItemHeader) - sizeof(BodyHeader);
     EQ(size_t(256), bodySize);
-    uint8_t* pBody = reinterpret_cast<uint8_t*>(pBh+1);
+    uint8_t* pBody = reinterpret_cast<uint8_t*>(bodyPointer(pItem));
     
     for (int i =0; i < bodySize; i++) {
       EQ(uint8_t(n + i ), pBody[i]);  
     }
     
-    p += itemSize;
-    nBytes -= itemSize;
+    p += size;
+    nBytes -= size;
     n++;
   }
   EQ(10, n);             // 10 items.
@@ -156,7 +156,7 @@ void chunkTest::chunk_2()
     item.setBodyCursor(p);
     item.updateSize();
     pRingItem pRaw = item.getItemPointer();
-    totalSize += pRaw->s_header.s_size;
+    totalSize += itemSize(pRaw);
     item.commitToRing(*pRing);
   }
   // Make a ring item header and put it in the ring with a size that's
@@ -183,25 +183,25 @@ void chunkTest::chunk_2()
   size_t nBytes = data.s_nBytes;
   uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
   while (nBytes) {
-    pRingItemHeader pHeader = reinterpret_cast<pRingItemHeader>(p);
-    uint32_t itemSize = pHeader->s_size;
-    EQ(PHYSICS_EVENT, pHeader->s_type);
+    pRingItem pItem = reinterpret_cast<pRingItem>(p);
+    uint32_t size = itemSize(pItem);
+    EQ(uint16_t(PHYSICS_EVENT), itemType(pItem));
     
-    pBodyHeader pBh = reinterpret_cast<pBodyHeader>(pHeader+1);
+    pBodyHeader pBh = reinterpret_cast<pBodyHeader>(bodyHeader(pItem));
     EQ(uint64_t(n), pBh->s_timestamp);
     EQ(uint32_t(10-n), pBh->s_sourceId);
     EQ(uint32_t(0), pBh->s_barrier);
     
-    size_t bodySize = itemSize - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    size_t bodySize = size - sizeof(RingItemHeader) - sizeof(BodyHeader);
     EQ(size_t(256), bodySize);
-    uint8_t* pBody = reinterpret_cast<uint8_t*>(pBh+1);
+    uint8_t* pBody = reinterpret_cast<uint8_t*>(bodyPointer(pItem));
     
     for (int i =0; i < bodySize; i++) {
       EQ(uint8_t(n + i ), pBody[i]);  
     }
     
-    p += itemSize;
-    nBytes -= itemSize;
+    p += size;
+    nBytes -= size;
     n++;
   }
   EQ(10, n);             // 10 items.
@@ -240,7 +240,7 @@ void chunkTest::chunk_3()
     item.setBodyCursor(p);
     item.updateSize();
     pRingItem pRaw = item.getItemPointer();
-    totalSize += pRaw->s_header.s_size;
+    totalSize += itemSize(pRaw);
     item.commitToRing(*pRing);
   }
   ASSERT(m_pTestObj->nextItemWraps());
@@ -248,22 +248,22 @@ void chunkTest::chunk_3()
   //  Look at the wrapped item:
   
   CRingItem* pWrappedItem = CRingItem::getFromRing(*pConsumer, pred);
-  pRingItemHeader pr =
-    reinterpret_cast<pRingItemHeader>(pWrappedItem->getItemPointer());
-  EQ(PHYSICS_EVENT, pr->s_type);
+  pRingItem pr =
+    reinterpret_cast<pRingItem>(pWrappedItem->getItemPointer());
+  EQ(uint16_t(PHYSICS_EVENT), itemType(pr));
   
-  pBodyHeader pB = reinterpret_cast<pBodyHeader>(pr+1);
+  pBodyHeader pB = reinterpret_cast<pBodyHeader>(bodyHeader(pr));
   EQ(uint64_t(0), pB->s_timestamp);
   EQ(uint32_t(10), pB->s_sourceId);
   EQ(uint32_t(0),  pB->s_barrier);
   uint8_t* pData = reinterpret_cast<uint8_t*>(pB+1);
-  size_t   dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+  size_t   dataSize = itemSize(pr) - sizeof(RingItemHeader) - sizeof(BodyHeader);
   EQ(size_t(256), dataSize);
   for (int i = 0; i < dataSize; i++) {
     EQ(uint8_t(i), pData[i]);
   }
   
-  size_t   nBytes = pr->s_size;
+  size_t   nBytes = itemSize(pr);
   int      nItems = 1;
   Chunk    data;
   delete pWrappedItem;
@@ -276,22 +276,22 @@ void chunkTest::chunk_3()
   size_t nRemaining = data.s_nBytes;
   uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
   while (nRemaining) {
-    pr = reinterpret_cast<pRingItemHeader>(p);
-    EQ(PHYSICS_EVENT, pr->s_type);
+    pr = reinterpret_cast<pRingItem>(p);
+    EQ(uint16_t(PHYSICS_EVENT), itemType(pr));
     
-    pB = reinterpret_cast<pBodyHeader>(pr+1);
+    pB = reinterpret_cast<pBodyHeader>(bodyHeader(pr));
     EQ(uint64_t(nItems), pB->s_timestamp);
     EQ(uint32_t(10-nItems), pB->s_sourceId);
     EQ(uint32_t(0), pB->s_barrier);
     pData   = reinterpret_cast<uint8_t*>(pB+1);
-    dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    dataSize = itemSize(pr) - sizeof(RingItemHeader) - sizeof(BodyHeader);
     EQ(size_t(256), dataSize);
     for (int i =0; i < dataSize; i++) {
       EQ(uint8_t(nItems+i), pData[i]);
     }
     
-    nRemaining -= pr->s_size;
-    p          += pr->s_size;
+    nRemaining -= itemSize(pr);
+    p          += itemSize(pr);
     nItems++;
   }
   EQ(10, nItems);
@@ -318,7 +318,7 @@ void chunkTest::chunk_4()
     item.setBodyCursor(p);
     item.updateSize();
     pRingItem pRaw = item.getItemPointer();
-    totalSize += pRaw->s_header.s_size;
+    totalSize += itemSize(pRaw);
     item.commitToRing(*pRing);
   }
   ASSERT(m_pTestObj->nextItemWraps());
@@ -326,22 +326,22 @@ void chunkTest::chunk_4()
   //  Look at the wrapped item:
   
   CRingItem* pWrappedItem = CRingItem::getFromRing(*pConsumer, pred);
-  pRingItemHeader pr =
-    reinterpret_cast<pRingItemHeader>(pWrappedItem->getItemPointer());
-  EQ(PHYSICS_EVENT, pr->s_type);
+  pRingItem pr =
+    reinterpret_cast<pRingItem>(pWrappedItem->getItemPointer());
+  EQ(PHYSICS_EVENT, uint32_t(itemType(pr)));
   
-  pBodyHeader pB = reinterpret_cast<pBodyHeader>(pr+1);
+  pBodyHeader pB = reinterpret_cast<pBodyHeader>(bodyHeader(pr));
   EQ(uint64_t(0), pB->s_timestamp);
   EQ(uint32_t(10), pB->s_sourceId);
   EQ(uint32_t(0),  pB->s_barrier);
-  uint8_t* pData = reinterpret_cast<uint8_t*>(pB+1);
-  size_t   dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+  uint8_t* pData = reinterpret_cast<uint8_t*>(bodyPointer(pr));
+  size_t   dataSize = itemSize(pr) - sizeof(RingItemHeader) - sizeof(BodyHeader);
   EQ(size_t(256), dataSize);
   for (int i = 0; i < dataSize; i++) {
     EQ(uint8_t(i), pData[i]);
   }
   
-  size_t   nBytes = pr->s_size;
+  size_t   nBytes = itemSize(pr);
   int      nItems = 1;
   Chunk    data;
   delete pWrappedItem;
@@ -354,22 +354,22 @@ void chunkTest::chunk_4()
   size_t nRemaining = data.s_nBytes;
   uint8_t* p = static_cast<uint8_t*>(data.s_pStart);
   while (nRemaining) {
-    pr = reinterpret_cast<pRingItemHeader>(p);
-    EQ(PHYSICS_EVENT, pr->s_type);
+    pr = reinterpret_cast<pRingItem>(p);
+    EQ(uint16_t(PHYSICS_EVENT), itemType(pr));
     
-    pB = reinterpret_cast<pBodyHeader>(pr+1);
+    pB = reinterpret_cast<pBodyHeader>(bodyHeader(pr));
     EQ(uint64_t(nItems), pB->s_timestamp);
     EQ(uint32_t(10-nItems), pB->s_sourceId);
     EQ(uint32_t(0), pB->s_barrier);
     pData   = reinterpret_cast<uint8_t*>(pB+1);
-    dataSize = pr->s_size - sizeof(RingItemHeader) - sizeof(BodyHeader);
+    dataSize = itemSize(pr) - sizeof(RingItemHeader) - sizeof(BodyHeader);
     EQ(size_t(256), dataSize);
     for (int i =0; i < dataSize; i++) {
       EQ(uint8_t(nItems+i), pData[i]);
     }
     
-    nRemaining -= pr->s_size;
-    p          += pr->s_size;
+    nRemaining -= itemSize(pr);
+    p          += itemSize(pr);
     nItems++;
   }
   EQ(10, nItems); 

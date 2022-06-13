@@ -1,5 +1,5 @@
-#ifndef __CRINGPHYSICSEVENTCOUNTERITEM_H
-#define __CRINGPHYSICSEVENTCOUNTERITEM_H
+#ifndef CRINGPHYSICSEVENTCOUNTERITEM_H
+#define CRINGPHYSICSEVENTCOUNTERITEM_H
 
 
 /*
@@ -18,35 +18,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#ifndef __CRINGITEM_H
 #include "CRingItem.h"
-#endif
-
-#ifndef __DATAFORMAT_H
 #include "DataFormat.h"
-#endif
-
-#ifndef __CRT_TIME_H
 #include <time.h>
-#ifndef __CRT_TIME_H
-#define __CRT_TIME_H
-#endif
-#endif
-
-
-#ifndef __CPPRTL_TYPEINFO
 #include <typeinfo>
-#ifndef __CPPRTL_TYPEINFO
-#define __CPPRTL_TYPEINFO
-#endif
-#endif
-
-#ifndef __STL_STRING
 #include <string>
-#ifndef __STL_STRING
-#define __STL_STRING
-#endif
-#endif
 
 
 /*!
@@ -97,6 +73,8 @@ public:
 
   uint64_t getEventCount() const;
   void     setEventCount(uint64_t count);
+  
+  uint32_t getOriginalSourceId() const;
 
 
   // Virtual method overrides:
@@ -107,7 +85,7 @@ public:
 
 
 private:
-  void init();
+
 };
 
 #endif
