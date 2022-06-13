@@ -6,12 +6,7 @@ COMPILATION_FLAGS		= \
 				@TCL_FLAGS@ \
 				@USBSWITCHES@ \
 				@THREADCXX_FLAGS@ \
-<<<<<<< HEAD
-				-I@top_srcdir@/base/tcpip @PIXIE_CPPFLAGS@
-=======
 				-I@top_srcdir@/base/tcpip  @PIXIE_CPPFLAGS@
->>>>>>> origin/12.0-pre5
-
 
 
 libCCUSB_la_SOURCES	= CCCUSB.cpp \
@@ -102,11 +97,7 @@ tests_SOURCES = TestRunner.cpp \
 tests_LDADD = $(CPPUNIT_LDFLAGS) @builddir@/libCCUSB.la \
 		@TCL_LDFLAGS@ \
 		@LIBTCLPLUS_LDFLAGS@
-<<<<<<< HEAD
-tests_CXXFLAGS = -I@top_srcdir@/base/thread $(AM_CXXFLAGS) @PIXIE_CPPFLAGS@
-=======
 tests_CPPFLAGS = -I@top_srcdir@/base/thread $(AM_CXXFLAGS)  @PIXIE_CPPFLAGS@
->>>>>>> origin/12.0-pre5
 tests_LDFLAGS =  @top_builddir@/base/thread/libdaqthreads.la        \
 			@top_builddir@/base/tcpip/libTcp.la         \
 			@LIBTCLPLUS_LDFLAGS@                        \
@@ -120,11 +111,7 @@ tests_LDFLAGS =  @top_builddir@/base/thread/libdaqthreads.la        \
 remotetests_SOURCES = TestRunner.cpp \
 			remoteRegTests.cpp
 remotetests_LDADD = @builddir@/libCCUSB.la        \
-<<<<<<< HEAD
-		  $(CPPUNIT_LDFLAGS)		\
-=======
 		  $(CPPUNIT_LDFLAGS)			\
->>>>>>> origin/12.0-pre5
 			@top_builddir@/base/tcpip/libTcp.la         \
 			@top_builddir@/base/thread/libdaqthreads.la \
 			@LIBTCLPLUS_LDFLAGS@                        \

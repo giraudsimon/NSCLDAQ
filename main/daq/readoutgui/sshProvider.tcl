@@ -106,18 +106,10 @@ proc ::SSHPipe::start params {
     
     #  Start the ssh pipeline:
    
-
-<<<<<<< HEAD
-    set pipeinfo [::ssh::sshpid $host "$starter $wd \"$program $cmdparams\""]
-    puts " $program : $pipeinfo"
-    puts "Full pipe: [pid [lindex $pipeinfo 1]]" 
-    
-=======
    set pipeinfo [::ssh::sshpid $host "$starter $wd \"$program $cmdparams\""]
     puts " $program : $pipeinfo"
     puts "Full pipe: [pid [lindex $pipeinfo 1]]"    
 
->>>>>>> origin/12.0-pre5
     # Set up our context entry in activeProviders:
     
     set ::SSHPipe::activeProviders($sid) [dict create \
@@ -169,11 +161,7 @@ proc ::SSHPipe::stop source {
         ::SSHPipe::_attemptEnd $source
     }
     ::SSHPipe::_send $source exit
-<<<<<<< HEAD
-    # For good measure kill the beast
-=======
     #  For good measure and in case we can't do an end, kill-9 it
->>>>>>> origin/12.0-pre5
     
     catch {exec kill -9 [dict get $::SSHPipe::activeProviders($source) sshpid]}
     Wait -pid [dict get $::SSHPipe::activeProviders($source) sshpid]

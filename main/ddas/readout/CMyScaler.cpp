@@ -82,7 +82,6 @@ vector<uint32_t> CMyScaler::read()
 {
   try{
 
-<<<<<<< HEAD
     int retval;
 #if XIAAPI_VERSION >= 3
     std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(),0);
@@ -114,38 +113,6 @@ vector<uint32_t> CMyScaler::read()
     double ChanEvents[16] = {0}; 
     double FastPeaks[16] = {0};
     unsigned long OutputScalerData[33] = {0};
-=======
-  int retval;
-  unsigned int statistics[448] = {0};
-  
-  retval = Pixie16ReadStatisticsFromModule(statistics, moduleNumber);
-  if (retval < 0) {
-    cout << "Error accessing scaler statistics from module " 
-	 << moduleNumber << endl;
-  } else {
-    // cout << "Accessing statistics for module " 
-    //      << moduleNumber << endl;
-  }
-
-
-
-  /* Now we need to calculate the # of events from the last
-     read of the scalers -- NSCL scaler buffers just expect
-     the # events since the last read.  However, Pixie16 statistics
-     cannot be cleared, so we need to do some math */
-  
-  // Input Counts are the triggers and Output Counts the accepted triggers.
-  
-  double ICR[16] = {0};
-  double OCR[16] = {0};
-  double LiveTime[16] = {0};
-  double RealTime = 0;
-  double Counts[16] = {0};
-  double CountsLive[16] = {0};
-  double ChanEvents[16] = {0}; 
-  double FastPeaks[16] = {0};
-  unsigned long OutputScalerData[33] = {0};
->>>>>>> origin/12.0-pre5
   
     /* Compute module RealTime */
     RealTime = Pixie16ComputeRealTime(statistics.data(), moduleNumber);
@@ -166,11 +133,16 @@ vector<uint32_t> CMyScaler::read()
       // are based on real time >sigh<  - XIA issue 702 asks for an API element
       // to deliver the raw values of the counters.
     
-<<<<<<< HEAD
-      Counts[i] = Pixie16ComputeInputCountRate(statistics.data(), moduleNumber, i) * LiveTime[i];
-      CountsLive[i]  = Pixie16ComputeOutputCountRate(statistics.data(), moduleNumber, i) * RealTime;
-   
-  
+      ChanEvents[i] = Pixie16ComputeOutputCountRate(statistics.data(), moduleNumber, i);
+      FastPeaks[i]  = Pixie16ComputeInputCountRate(statistics.data(), moduleNumber, i);
+
+      /* Now compute total events for each channel, and total "live"
+	 events for each channel. */
+      //    Counts[i] = (unsigned long)ICR[i]*LiveTime[i];
+      //    CountsLive[i] = (unsigned long)OCR[i]*RealTime;
+      Counts[i] = FastPeaks[i] * RealTime;
+      CountsLive[i] = ChanEvents[i] * RealTime;
+    
       /* Finally compute the events since the last scaler read! */
       OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - 
 						     PreviousCounts[i]);
@@ -190,68 +162,29 @@ vector<uint32_t> CMyScaler::read()
     }
 
     /* Copy scaler information into the output vector */
-    scalers.clear(); //SNL added for new readout -- This is questionable if there are other event segments?
+    scalers.clear(); //SNL added for new readout
     scalers.insert(scalers.end(), OutputScalerData, OutputScalerData+33);
   
+    //  Figure out the statistics by summing over the OutputScalerData (it's
+    // incremental so we can just add it all in).
+  
+    int chb(1);
+    for (int i =0; i < 16; i++) {
+      m_Statistics.s_cumulative.s_nTriggers += OutputScalerData[chb];
+      m_Statistics.s_perRun.s_nTriggers     += OutputScalerData[chb];
+    
+      m_Statistics.s_cumulative.s_nAcceptedTriggers += OutputScalerData[chb+1];
+      m_Statistics.s_perRun.s_nAcceptedTriggers     += OutputScalerData[chb+1];
+    
+      chb += 2;
+    }
+  
     return scalers;
-=======
-    ChanEvents[i] = Pixie16ComputeOutputCountRate(statistics, moduleNumber, i);
-    FastPeaks[i]  = Pixie16ComputeInputCountRate(statistics, moduleNumber, i);
-
-    /* Now compute total events for each channel, and total "live"
-       events for each channel. */
-    //    Counts[i] = (unsigned long)ICR[i]*LiveTime[i];
-    //    CountsLive[i] = (unsigned long)OCR[i]*RealTime;
-    Counts[i] = FastPeaks[i] * RealTime;
-    CountsLive[i] = ChanEvents[i] * RealTime;
-    
-    /* Finally compute the events since the last scaler read! */
-    OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - 
-						   PreviousCounts[i]);
-    OutputScalerData[(2*i + 2)] = (unsigned long) (CountsLive[i] - 
-						   PreviousCountsLive[i]);
-
-    //    if (i == 15 && crateID == 0 && moduleNumber == 0) {
-    //      cout << ICR[i] << " " << OCR[i] << " " << LiveTime[i] << " " 
-    //	   << RealTime << " " << Counts[i] << " " << PreviousCounts[i] 
-    //	   << " " << CountsLive[i] << " " << PreviousCountsLive[i] << " " 
-    //	   << ChanEvents << " " << FastPeaks << endl; 
-    //    }
-
-    PreviousCounts[i] = Counts[i];
-    PreviousCountsLive[i] = CountsLive[i];
-
-  }
-
-  /* Copy scaler information into the output vector */
-  scalers.clear(); //SNL added for new readout
-  scalers.insert(scalers.end(), OutputScalerData, OutputScalerData+33);
-  
-  //  Figure out the statistics by summing over the OutputScalerData (it's
-  // incremental so we can just add it all in).
-  
-  int chb(1);
-  for (int i =0; i < 16; i++) {
-    m_Statistics.s_cumulative.s_nTriggers += OutputScalerData[chb];
-    m_Statistics.s_perRun.s_nTriggers     += OutputScalerData[chb];
-    
-    m_Statistics.s_cumulative.s_nAcceptedTriggers += OutputScalerData[chb+1];
-    m_Statistics.s_perRun.s_nAcceptedTriggers     += OutputScalerData[chb+1];
-    
-    chb += 2;
-  }
-  
-  return scalers;
->>>>>>> origin/12.0-pre5
 
   }
   catch(...){
     cout << "exception in scaler " << endl;
-<<<<<<< HEAD
-    throw;
-=======
     return scalers;
->>>>>>> origin/12.0-pre5
   }
   
 }

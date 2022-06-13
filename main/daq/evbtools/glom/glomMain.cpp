@@ -46,11 +46,6 @@ static uint64_t outputEvents(0);
 static bool     firstEvent(true);
 static io::CBufferedOutput* outputter;
 
-<<<<<<< HEAD
-static CEventAccumulatorSimple* pAccumulator;
-
-=======
->>>>>>> origin/12.0-pre5
 // We don't need threadsafe event fragment pools so:
 
 namespace EVB {
@@ -60,30 +55,7 @@ namespace EVB {
 static const unsigned BUFFER_SIZE=1024*1024;
 
 /**
-<<<<<<< HEAD
- * policyFromEnum
- *    @param timestamp policy enum value from gengetopt.
- *    @return CEventAccumulator::TimestampPolicy - corresponding policy value.
- */
-CEventAccumulatorSimple::TimestampPolicy
-policyFromEnum(enum_timestamp_policy policy)
-{
-    switch (policy) {
-    case timestamp_policy_arg_earliest:
-        return CEventAccumulatorSimple::first;
-    case timestamp_policy_arg_latest:
-        return CEventAccumulatorSimple::last;
-    case timestamp_policy_arg_average:
-        return CEventAccumulatorSimple::average;
-    }
-    throw std::invalid_argument("Invalid timestamp enumerator value.");
-}
-
-/**
- *  The next items are used to minimize  dynamic storage manipulations
-=======
  *  The next items are used to minimize the dynamic storage manipulations
->>>>>>> origin/12.0-pre5
  *  requred by Glom as profiling shows the realloc of pAccumulatedEvent
  *  to have been a significant part of the glom time:
  *
@@ -481,14 +453,6 @@ main(int argc, char**  argv)
   outputter = new io::CBufferedOutput(STDOUT_FILENO, BUFFER_SIZE);
   outputter->setTimeout(2);    // Flush every two sec if data rate is slow.
   
-<<<<<<< HEAD
-    pAccumulator = new CEventAccumulatorSimple(
-        STDOUT_FILENO, 2, BUFFER_SIZE, maxFragments,
-        policyFromEnum(timestampPolicy)
-    );
-  
-=======
->>>>>>> origin/12.0-pre5
   outputEventFormat();
   
 
@@ -517,39 +481,6 @@ main(int argc, char**  argv)
   bool firstBarrier(true);
   bool consecutiveBarrier(false);
   try {
-<<<<<<< HEAD
-        while (1) {
-          const EVB::pFlatFragment p = reader.getFragment();
-          
-          // If error or EOF flush the event and break from
-          // the loop:
-          
-          if (!p) {
-            flushEvent();
-            pAccumulator->flushEvents();
-            std::cerr << "glom: EOF on input\n";
-                if(stateChangeNesting) {
-                    emitAbnormalEnd();
-                }
-            break;
-          }
-          // We have a fragment:
-          
-          if (p->s_header.s_barrier) {
-            flushEvent();
-            pAccumulator->flushEvents();
-            outputBarrier(p);
-            
-            
-            // Barrier type of 1 is a begin run.
-            // First begin run barrier will result in
-            // emitting a glom parameter record.
-    
-            
-            if(firstBarrier && (p->s_header.s_barrier == 1)) {
-                outputGlomParameters(dtInt, !nobuild);
-                firstBarrier = false;
-=======
     while (1) {
       EVB::pFragment p = CFragIO::readFragment(STDIN_FILENO);
       
@@ -561,7 +492,6 @@ main(int argc, char**  argv)
         std::cerr << "glom: EOF on input\n";
             if(stateChangeNesting) {
                 emitAbnormalEnd();
->>>>>>> origin/12.0-pre5
             }
         break;
       }

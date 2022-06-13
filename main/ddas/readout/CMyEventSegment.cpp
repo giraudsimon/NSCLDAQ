@@ -69,9 +69,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
 
     NumModules = m_config.getNumberOfModules();
 
-    auto modEvtLengths = m_config.getModuleEventLengths();
-    m_idToSlots = m_config.getHardwareMap();
-    
+    auto modEvtLengths = m_config.getModuleEventLengths();    
     ModEventLen = new unsigned int[NumModules+1];
     std::copy(modEvtLengths.begin(), modEvtLengths.end(), ModEventLen);
     std::cout << "Module event lengths: ";
@@ -183,13 +181,6 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
    
     
 }
-/**
- * Test constructor.
- */
-CMyEventSegment::CMyEventSegment() :
-    m_debug(true),
-    m_debugStream(*(new std::stringstream))
-{}
 
 CMyEventSegment::~CMyEventSegment()
 {
@@ -242,8 +233,6 @@ void CMyEventSegment::initialize(){
 
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
-  bool debug = m_debug;
-  
   //memset(rBuffer, 0, maxwords);            // See what's been read.
     
     // This loop finds the first module that has at least one event in it

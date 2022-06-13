@@ -96,18 +96,11 @@ UNITTEST_MODULES = @srcdir@/TestRunner.cpp \
 noinst_PROGRAMS = unittests
 unittests_SOURCES = $(UNITTEST_MODULES)
 
-<<<<<<< HEAD
-unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include $(CPPUNIT_INCLUDES) $(COMPILATION_FLAGS)
-unittests_LDADD = $(CPPUNIT_LDFLAGS) \
-			@builddir@/libVMUSB.la  \
-			@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
-=======
 unittests_CPPFLAGS = -I@srcdir@ -I@prefix@/include \
 	$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
 unittests_LDADD = $(CPPUNIT_LDFLAGS) \
 	 	@builddir@/libVMUSB.la  \
 		@TCL_LDFLAGS@ @LIBTCLPLUS_LDFLAGS@
->>>>>>> origin/12.0-pre5
 unittests_LDFLAGS = -Wl,"-rpath=@prefix@/lib"
 
 installcheck-local: unittests

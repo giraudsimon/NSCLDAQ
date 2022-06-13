@@ -88,11 +88,7 @@ unittests_CPPFLAGS = \
 	    -I@top_srcdir@/usb/common/configurableobject \
 			@TCL_FLAGS@ \
 			@LIBTCLPLUS_CFLAGS@ \
-<<<<<<< HEAD
-			$(CPPUNIT_INCLUDES) @PIXIE_CPPFLAGS@
-=======
 			$(CPPUNIT_INCLUDES)  @PIXIE_CPPFLAGS@
->>>>>>> origin/12.0-pre5
 
 unittests_LDADD = \
 	@builddir@/libCCUSBCtlConfig.la \

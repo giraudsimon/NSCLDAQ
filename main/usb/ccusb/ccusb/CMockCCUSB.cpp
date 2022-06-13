@@ -158,11 +158,7 @@ int CMockCCUSB::usbRead(void* data, size_t bufferSize, size_t* transferCount,
   m_formatter << dec << timeout << ")";
 
   m_record.push_back(m_formatter.str());
-<<<<<<< HEAD
-  return 0;
-=======
   return 0;                  // ??
->>>>>>> origin/12.0-pre5
 }
 
 

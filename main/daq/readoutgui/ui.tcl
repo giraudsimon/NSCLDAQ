@@ -3207,10 +3207,6 @@ snit::widgetadaptor ReadoutGUI {
         grid columnconfigure $win 0 -weight 1
         grid columnconfigure $win 1 -weight 1
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/12.0-pre5
 	bind $win <Destroy> [mymethod _OnDestroy %W]
 	
         # configure
