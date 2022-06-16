@@ -32,7 +32,7 @@
  *  - We need to construct m_pCompleteStats
  *  - We need to construct m_pIncompleteStats.
  *
- * @param interp[in,out] - reference to an encpasulated Tcl interpreter object.
+ * @param interp[in,out] - reference to an encapsulated Tcl interpreter object.
  * @param commandName[in] - String that will be used to invoke the command.
  *
  */
