@@ -19,4 +19,4 @@ install-exec-hook:
 	echo "pkg_mkIndex -verbose @prefix@/TclLibs/evb-lite *.tcl" | @TCLSH_CMD@
 
 
-EXTRA_DIST=evblitePackage.tcl evbtagger.ggo evblite-docs.xml
+EXTRA_DIST=evblitePackage.tcl evbtagger.ggo evblite-docs.xml config.h

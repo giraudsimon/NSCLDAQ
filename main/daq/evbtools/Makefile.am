@@ -1,1 +1,1 @@
-SUBDIRS = ringsource teering glom unglom offlineorderer evts2frags
+SUBDIRS = ringsource teering glom unglom offlineorderer evts2frags evblite
