@@ -7481,12 +7481,14 @@ mdpp32qdc cget <replaceable>name</replaceable>
                                          Use the value provided with <option>-irqdatathreshold</option> as
                                          the IRQ threshold.
                                      </para>
+				     
                                  </listitem>
                              </varlistentry>
-                             <para>
-                                 By default, the value is <literal>data</literal>
-                             </para>
                          </variablelist>
+			 <para>
+                           By default, the value is <literal>data</literal>
+                         </para>
+
                      </listitem>
                  </varlistentry>
                  <varlistentry>
@@ -7522,8 +7524,10 @@ mdpp32qdc cget <replaceable>name</replaceable>
                      <listitem>
                          <variablelist>
                              <varlistentry>
-                                 <term><literal>numevents</literal></term>
+                               <term><literal>numevents</literal></term>
+			       <listitem>
                                  <para>Show number of events in FIFO</para>
+			       </listitem>
                              </varlistentry>
                          </variablelist>
                          <para>
@@ -7719,28 +7723,36 @@ mdpp32qdc cget <replaceable>name</replaceable>
                      <listitem>
                          <variablelist>
                              <varlistentry>
-                                 <term><literal>0</literal></term>
+                               <term><literal>0</literal></term>
+			       <listitem>
                                  <para>
                                      Time and long integral
                                  </para>
+			       </listitem>
                              </varlistentry>
                              <varlistentry>
-                                 <term><literal>1</literal></term>
+                               <term><literal>1</literal></term>
+			       <listitem>
                                  <para>
                                      Long integral only (QDC mode)
                                  </para>
+			       </listitem>
                              </varlistentry>
                              <varlistentry>
-                                 <term><literal>2</literal></term>
+                               <term><literal>2</literal></term>
+			       <listitem>
                                  <para>
                                      Time only (TDC mode)
                                  </para>
+			       </listitem>
                              </varlistentry>
                              <varlistentry>
-                                 <term><literal>3</literal></term>
+                               <term><literal>3</literal></term>
+			       <listitem>
                                  <para>
                                      Long integral, short integral and time
                                  </para>
+			       </listitem>
                              </varlistentry>
                          </variablelist>
                          <para>
@@ -7858,9 +7870,6 @@ mdpp32qdc cget <replaceable>name</replaceable>
                      </listitem>
                  </varlistentry>
                  <varlistentry>
-                     </listitem>
-                 </varlistentry>
-                 <varlistentry>
                      <term>
                          <option>-intshort</option>
                          <replaceable>int[8] 1-127</replaceable>
@@ -7881,9 +7890,6 @@ mdpp32qdc cget <replaceable>name</replaceable>
                              which is 2 (2*12.5=25ns) for all channels.
                          </para>
                      </listitem>
-                 </varlistentry>
-             <varlistentry>
-             </listitem>
                  </varlistentry>
                  <varlistentry>
                      <term><option>-threshold</option> <replaceable>int[32] 0-65535</replaceable></term>
@@ -7917,22 +7923,28 @@ mdpp32qdc cget <replaceable>name</replaceable>
                      <listitem>
                          <variablelist>
                              <varlistentry>
-                                 <term><literal>none</literal></term>
+                               <term><literal>none</literal></term>
+			       <listitem>
                                  <para>
                                      No change with the amplitude in a spectrum
                                  </para>
+			       </listitem>
                              </varlistentry>
                              <varlistentry>
-                                 <term><literal>div4</literal></term>
+                               <term><literal>div4</literal></term>
+			       <listitem>
                                  <para>
                                      Decrease the gain by the factor of 4 affecting the amplitude in a spectrum
                                  </para>
+			       </listitem>
                              </varlistentry>
                              <varlistentry>
-                                 <term><literal>mult4</literal></term>
+                               <term><literal>mult4</literal></term>
+			       <listitem>
                                  <para>
                                      Increase the gain by the factor of 4 affecting the amplitude in a spectrum
                                  </para>
+			       </listitem>
                              </varlistentry>
                          </variablelist>
                          <para>
