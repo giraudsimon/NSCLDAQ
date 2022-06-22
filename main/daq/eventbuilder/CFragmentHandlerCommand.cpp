@@ -32,7 +32,7 @@
 
 /**
  * Construct the object:
- * @param interp - reference to an encpasulated interpreter.
+ * @param interp - reference to an encapsulated interpreter.
  * @param name   - Name to give to the command.
  * @param registerMe - Optional parameter which if true (default) autoregisters the command.
  * 
@@ -58,7 +58,7 @@ CFragmentHandlerCommand::~CFragmentHandlerCommand() {
  * - Drain the message body from the channel
  *
  * @param interp - reference to the encapsulated interpreter.
- * @param objv   - reference to a vetor of encpasulated Tcl_Obj*'s.
+ * @param objv   - reference to a vetor of encapsulated Tcl_Obj*'s.
  *
  * The first command object is the socket -  used by the fragment handler.
  * The second the message body containing the fragments.

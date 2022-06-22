@@ -47,7 +47,7 @@
         </para>
         <para>
             If you think of the event orderer as a set of Tcl commands that
-            encpasulate the C/C++ core you'll have a good picture of the
+            encapsulate the C/C++ core you'll have a good picture of the
             final structure.
         </para>
     </section>

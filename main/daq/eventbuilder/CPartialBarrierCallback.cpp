@@ -153,7 +153,7 @@ CPartialBarrierCallback::makeCommand(const std::vector<std::pair<uint32_t, uint3
  *
  * @param barrierTypes - The set of barrier types received.
  *
- * @return CTCLOBject* - pointer to the dynamically created list encpasulated in a CTCLObject*
+ * @return CTCLOBject* - pointer to the dynamically created list encapsulated in a CTCLObject*
  *                       the caller must delete this explicitly.
  */
 CTCLObject*
