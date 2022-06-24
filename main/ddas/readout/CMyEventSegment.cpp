@@ -233,8 +233,8 @@ void CMyEventSegment::initialize(){
 
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
-  //memset(rBuffer, 0, maxwords);            // See what's been read.
-    
+  memset(rBuffer, 0, maxwords);            // See what's been read.
+  
     // This loop finds the first module that has at least one event in it
     // since the trigger fired.  We read the minimum of all complete events
     // and the number of complete events that fit in that buffer
@@ -268,19 +268,34 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
             // Read the data right into the ring item:
             
             //std::cerr << "Going to read " << readSize
-            //    << "(" << words[i] <<") " << " from " << i << std::endl;
-           int stat = Pixie16ReadDataFromExternalFIFO(
+            //    << " (I think " << words[i] <<" remain) " << " from module " << i << std::endl;
+	    auto prewords = words[i];
+	    unsigned int preread;
+	    Pixie16CheckExternalFIFOStatus(&preread, i);
+	    //std::cerr << "--> Pre-read: FIFO module " << i << " contains " << remaining << " words" << std::endl;
+
+	    int stat = Pixie16ReadDataFromExternalFIFO(
                 reinterpret_cast<unsigned int*>(p), (unsigned long)readSize, (unsigned short)i
             );
-            if (stat != 0) {
+	    if (stat != 0) {
                 std::cerr << "Read failed from module " << i << std::endl;
                 m_pExperiment->haveMore();
                 reject();
                 return 0;
             }
-            m_pExperiment->haveMore();      // until we fall through the loop
+
+	    unsigned int postread;
+	    Pixie16CheckExternalFIFOStatus(&postread, i);
+	    //std::cerr << "--> Post-read: FIFO module " << i << " contains " << remaining << " words" << std::endl;
+
+	    
+	    m_pExperiment->haveMore();      // until we fall through the loop
             words[i] -= readSize;           // count down words still to read.
-            
+
+	    //if(remaining != words[i]) {
+	    //  std::cerr << "I think " << words[i] << " remain but the FIFO contains " << remaining << std::endl;
+	    //}
+	    
             // maintain statistics and 
             // Return 16 bit words in the ring item body.
             
@@ -292,7 +307,10 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
         }
     }
     // If we got here nobody had enough data left since the last trigger:
-    //std::cerr << "Not enough data to read (" << words[0] << ") since last trigger" << std::endl;
+    //std::cerr << "Not enough data to read since last trigger:" << std::endl;
+    //for(int i=0; i<NumModules; i++) {
+    //  std::cout << words[i] << std::endl;
+    //}
     mytrigger->Reset();
     reject();
     return 0;

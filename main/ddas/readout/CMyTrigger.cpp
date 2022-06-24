@@ -105,16 +105,18 @@ bool CMyTrigger::operator()()
                    pixie16app_defs.h */
 
                 if(nFIFOWords > m_fifoThreshold){
-		  //std::cerr << "---- CMyTrigger.cpp: " << nFIFOWords << " > " << m_fifoThreshold << " ----" << std::endl;
+
+		  std::cout << "CMyTrigger:: trig satisfied...mod=" << i
+			    << " nwords=" << nFIFOWords << std::endl;
 #ifdef PRINTQUEINFO
 		  std::cout << "CMyTrigger:: trig satisfied...mod=" << i
-                      << " nwords=" << nFIFOWords << std::endl;
+			    << " nwords=" << nFIFOWords << std::endl;
 #endif
-                    m_retrigger = true;
-                    thresholdMade =  true;   // Once polling is done, trigger.
-		    //std::cerr << "---- CMyTrigger.cpp: m_retrigger " << m_retrigger << " thesholdMade: " << thresholdMade << " ---- " << std::endl;
+		  m_retrigger = true;
+		  thresholdMade =  true;   // Once polling is done, trigger.
+		  //std::cerr << "---- CMyTrigger.cpp: m_retrigger " << m_retrigger << " thesholdMade: " << thresholdMade << " ---- " << std::endl;
                 }
-
+		
             } // end module loop
             if (thresholdMade) {
               m_lastTriggerTime = time(nullptr);   // Record the trigger time.

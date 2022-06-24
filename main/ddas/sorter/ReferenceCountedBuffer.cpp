@@ -112,8 +112,9 @@ ReferenceCountedBuffer::resize(size_t newSize)
         s_pData = nullptr;              // prevent double free on throw/destruct.
         s_pData = malloc(newSize);
         if (!s_pData) {
-            throw std::bad_alloc();       
-        }
+	  std::cout << "bad_alloc() of size " << newSize << std::endl;
+	  throw std::bad_alloc();       
+        } 
         s_size = newSize;
     }
 }

@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 
-AC_INIT(nscldaq,12.0-pre5-xiaapi3-dev, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,12.0-pre5-xiaapi3, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
