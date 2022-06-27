@@ -440,7 +440,7 @@ proc unglom eventfiles {
     
     #  Create the command as a cat eventfile |unglom | capture stdout/err.
     
-    set command "cat $eventfiles | $::bindir/unglom - |& cat"
+    set command "cat $eventfiles | $::bindir/Unglom - |& cat"
     
     set fd [open "| $command" r]
     
