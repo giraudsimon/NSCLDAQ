@@ -214,7 +214,7 @@ void CMyEventSegment::initialize(){
         cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
             << endl << flush;
     } else {
-        cout << "List Mode started OK " << retval << endl << flush;
+      cout << "List Mode started OK " << retval << " mode " << std::hex << std::showbase << LIST_MODE_RUN << std::dec << " " << NEW_RUN << endl << flush;
     }
     m_nBytesPerRun = 0;                // New run presumably.
     usleep(100000); // Delay for the DSP boot 
@@ -287,15 +287,10 @@ size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 	    unsigned int postread;
 	    Pixie16CheckExternalFIFOStatus(&postread, i);
 	    //std::cerr << "--> Post-read: FIFO module " << i << " contains " << remaining << " words" << std::endl;
-
 	    
 	    m_pExperiment->haveMore();      // until we fall through the loop
             words[i] -= readSize;           // count down words still to read.
-
-	    //if(remaining != words[i]) {
-	    //  std::cerr << "I think " << words[i] << " remain but the FIFO contains " << remaining << std::endl;
-	    //}
-	    
+	    	    
             // maintain statistics and 
             // Return 16 bit words in the ring item body.
             
