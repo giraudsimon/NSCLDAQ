@@ -1,4 +1,4 @@
-bin_PROGRAMS=unglom timecheck reglom
+bin_PROGRAMS=Unglom timecheck reglom
 
 
 common_cxxflags=-I@top_srcdir@/daq/eventbuilder -I@top_srcdir@/daq/format -I@top_srcdir@/daq/IO @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
@@ -6,9 +6,9 @@ common_ldflags=@top_builddir@/daq/eventbuilder/libFragmentIndex.la @top_builddir
 	@top_builddir@/daq/IO/libdaqio.la @top_builddir@/base/dataflow/libDataFlow.la \
 	@top_builddir@/base/uri/liburl.la @LIBEXCEPTION_LDFLAGS@ -Wl,"-rpath=@libdir@"
 
-unglom_SOURCES=Unglom.cpp CUnglom.cpp CUnglom.h CRingItemDecoder.h Main.cpp
-unglom_CPPFLAGS=$(common_cxxflags)
-unglom_LDFLAGS=$(common_ldflags)
+Unglom_SOURCES=Unglom.cpp CUnglom.cpp CUnglom.h CRingItemDecoder.h Main.cpp
+Unglom_CPPFLAGS=$(common_cxxflags)
+Unglom_LDFLAGS=$(common_ldflags)
 
 
 timecheck_SOURCES=Timecheck.cpp CTimeChecker.cpp CTimeChecker.h CRingItemDecoder.h Main.cpp

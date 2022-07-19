@@ -55,7 +55,7 @@ CSortThread::~CSortThread()
 /**
  * run
  *   Thread entry point
- *   Locic is pretty simple:
+ *   Logic is pretty simple:
  *   - get a set of fragments from the buffer queue
  *   - merge those fragments into a single fragment list
  *   - Queue that single fragment list to the output thread
@@ -137,7 +137,7 @@ CSortThread::merge(FragmentList& result, Fragments& lists)
   }
   
   // Build the minheap for the merge.  Note that the timestamp is a minimum
-  // at the front of each queeu.  We make the minheap a map keyed on the
+  // at the front of each queue.  We make the minheap a map keyed on the
   // timestamp that contains a pointer to the dequeue from which the
   // timestamp came.
 

@@ -232,8 +232,7 @@ snit::widgetadaptor PromptDataSource {
                 $win.field$fieldno insert end $default
             }
             
-            grid $win.label$fieldno -row $fieldno -column 0 -sticky e
-            grid $win.field$fieldno -row $fieldno -column 1 -sticky w
+            grid $win.field$fieldno -sticky e
             
             dict set formDescription $param [list $prompt $win.field$fieldno]
             
