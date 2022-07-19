@@ -322,7 +322,8 @@ AC_SUBST(LIBEXCEPTION_LDFLAGS)
 #  We use that /usr/lib/tclx.y has tclConfig
 #  and /usr/include/tclx.y     has the headers.
 
-tcl_basename=`basename ${TCLSH}`
+#tcl_basename=`basename ${TCLSH}`
+tcl_basename=tcl${TCL_VERSION}
 tcl_configdir="/usr/lib/$tcl_basename"
 tcl_incdir="/usr/include/$tcl_basename"
 
