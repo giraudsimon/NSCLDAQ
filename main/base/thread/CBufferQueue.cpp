@@ -14,7 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#include <config.h>
+//#include <config.h>
 #define COMPILINGCBUFFERQUEUE
 #ifndef __CBUFFERQUEUE_H
 #include "CBufferQueue.h"

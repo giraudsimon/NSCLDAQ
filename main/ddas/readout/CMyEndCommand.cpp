@@ -1,6 +1,7 @@
 /* Null trigger */
 
 #include <config.h>
+#include <config_pixie16api.h>
 #include <iostream>
 #include <fstream>
 #include <cmath>

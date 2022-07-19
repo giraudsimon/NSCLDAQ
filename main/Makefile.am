@@ -57,7 +57,8 @@ install-data-local:
 
 
 
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks tclhttpd3.5.1
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks \
+	tclhttpd3.5.1 config_pixie16api.h
 
 #check-TESTS:
 #	@top_srcdir@/dotests $(SUBDIRS)

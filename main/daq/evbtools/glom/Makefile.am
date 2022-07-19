@@ -22,4 +22,4 @@ glom.h: @srcdir@/glom.ggo
 	@GENGETOPT@ --input=@srcdir@/glom.ggo \
 		--output-dir=@builddir@ --file-name=glom
 
-EXTRA_DIST=glom.ggo glom.xml
+EXTRA_DIST=glom.ggo glom.xml config.h

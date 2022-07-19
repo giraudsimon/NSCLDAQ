@@ -22,4 +22,4 @@ BUILT_SOURCES = @srcdir@/cmdline.c @srcdir@/cmdline.h
 	@GENGETOPT@ --input=@srcdir@/cmdline.ggo \
 		--output-dir=@srcdir@
 
-EXTRA_DIST=cmdline.ggo unglom.xml
+EXTRA_DIST=cmdline.ggo unglom.xml config.h

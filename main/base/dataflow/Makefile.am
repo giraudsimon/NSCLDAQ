@@ -133,7 +133,7 @@ TESTS=./unittests
 
 EXTRA_DIST=ringprimitives.xml ringbuffer_user.xml ringbuffer_man.xml ringlib.xml ringmaster.xml ringpipes.xml tclring.xml \
 	RingMaster.tcl ringbuffer.tcl \
-	ringtostdoutsw.ggo stdintoringsw.ggo ringutils.tcl
+	ringtostdoutsw.ggo stdintoringsw.ggo ringutils.tcl config.h
 
 #-------------- My installation... includes tcl scripts/packages.
 
