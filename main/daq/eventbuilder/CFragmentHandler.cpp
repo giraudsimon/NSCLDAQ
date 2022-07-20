@@ -53,8 +53,8 @@ static time_t timeOfFirstSubmission(UINT64_MAX); //
 static const  size_t defaultXonLimit( 3000000);     // Default total fragment count at which we can xon
 static const  size_t defaultXoffLimit(4000000);    /// Default total fragment count
 
-static const size_t perQXoffLimit(400000);
-static const size_t perQXonLimit(50000);
+static const size_t defaultPerQXoffLimit(400000);  // Default number of fragment count per source queue for xoff
+static const size_t defaultPerQXonLimit  (50000);  // Default number of fragment count per source queue for xon
 
 /*---------------------------------------------------------------------
  * Debugging
@@ -121,6 +121,8 @@ CFragmentHandler::CFragmentHandler() :
     
     m_nXonLimit  = defaultXonLimit;
     m_nXoffLimit = defaultXoffLimit;
+    m_nPerQXonLimit = defaultPerQXonLimit;
+    m_nPerQXoffLimit = defaultPerQXoffLimit;
     m_fXoffed    = false;
     m_nTotalFragmentSize = 0;
 }
@@ -304,6 +306,32 @@ CFragmentHandler::setXonThreshold(size_t nBytes) {
 void
 CFragmentHandler::setXoffThreshold(size_t nBytes) {
     m_nXoffLimit = nBytes;
+}
+
+/**
+ * setPerQXonThreshold
+ *    Sets the low watermark for flow control with the number of Fragments in queue.
+ *    If the number of queued Fragments is smaller than this value while the system
+ *    is Xoffed, the Xon observers will be fired.
+ *
+ * @param nSize nSize new level
+ */
+void
+CFragmentHandler::setPerQXonThreshold(size_t nSize) {
+    m_nPerQXonLimit = nSize;
+}
+
+/**
+ * setPerQXoffThreshold
+ *    Sets the high watermark for flow control with the number of Fragments in queue.
+ *    If the number of queued Fragments is greater than this value while the system
+ *    is not Xoffed, the Xoff observers will be fired.
+ *
+ * @param nSize nSize new level
+ */
+void
+CFragmentHandler::setPerQXoffThreshold(size_t nSize) {
+    m_nPerQXoffLimit = nSize;
 }
 
 /**
@@ -1963,14 +1991,14 @@ CFragmentHandler::updateQueueStatistics(
 /**
  * XoffQueue
  *    If appropriate xoff the queue.  Appropriate means:
- *    -   The queue depth is at least perQXoffLimit
+ *    -   The queue depth is at least m_nPerQXoffLimit
  *    -   The queue is not already xoffed.
  * @param q - references the source queue to check.k
  */
 void
 CFragmentHandler::XoffQueue(SourceQueue& q)
 {
-  if ((q.s_queue.size() >= perQXoffLimit) && (!q.s_xoffed)) {
+  if ((q.s_queue.size() >= m_nPerQXoffLimit) && (!q.s_xoffed)) {
     std::string sock = q.s_qid;
     for (auto p : m_flowControlObservers) {
       p->Xoff(sock);    
@@ -1982,7 +2010,7 @@ CFragmentHandler::XoffQueue(SourceQueue& q)
  * XonQueue
  *    If appropriate xons a queue.
  *    Appropriate means:
- *    -  There are frewer than perQXonLimit fragments in the queue.
+ *    -  There are frewer than m_nPerQXonLimit fragments in the queue.
  *    -  The queue is currently xoffed.
  *
  * @param q -the queue to operate on.
@@ -1990,7 +2018,7 @@ CFragmentHandler::XoffQueue(SourceQueue& q)
 void
 CFragmentHandler::XonQueue(SourceQueue& q)
 {
-  if ((q.s_queue.size() < perQXonLimit) && (q.s_xoffed)) {
+  if ((q.s_queue.size() < m_nPerQXonLimit) && (q.s_xoffed)) {
     std::string sock = q.s_qid;
     for (auto p : m_flowControlObservers) {
       p->Xon(sock);    

@@ -160,6 +160,16 @@ CConfigure::Set(CTCLInterpreter& interp, std::string name, CTCLObject& value)
     int size = value;
     pHandler->setXonThreshold(size);
     
+  } else if (name == "perQXoffThreshold") {
+
+    int size = value;
+    pHandler->setPerQXoffThreshold(size);
+
+  } else if (name == "perQXonThreshold") {
+
+    int size = value;
+    pHandler->setPerQXonThreshold(size);
+
   
   } else {
     std::string errorMsg = "Illegal configuration parametr name: ";

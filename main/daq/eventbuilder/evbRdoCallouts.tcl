@@ -76,6 +76,9 @@ namespace eval ::EVBC {
     
     variable XoffThreshold      ""
     variable XonThreshold       ""
+
+    variable perQXoffThreshold  ""
+    variable perQXonThreshold   ""
 }
 
 
@@ -317,7 +320,7 @@ proc EVBC::start args {
     
     # If any parameters have been set push those out now:
     
-    foreach param [list window XoffThreshold XonThreshold] {
+    foreach param [list window XoffThreshold XonThreshold perQXoffThreshold perQXonThreshold] {
         set value [set ::EVBC::$param]
         if {$value ne ""} {
             EVBC::configParams $param $value
@@ -673,6 +676,8 @@ proc EVBC::onEnd {} {
 #                    * window set number of seconds in the build window.
 #                    * XoffThreshold - set the number of queued bytes before xoffing.
 #                    * XonThreshold  - set then umber of queued bytes at which XON
+#                    * perQXoffThreshold - set the number of Fragments in a queue for xoff
+#                    * perQXonThreshold  - set the number of Fragments in a queue for xon
 # @param value    - A new positive integer value (all config parameters above take
 #                   positive integers).
 #
@@ -684,7 +689,7 @@ proc EVBC::configParams {parameter value} {
     
     # Validate the parameter name:
     
-    set configParams [list window XoffThreshold XonThreshold]
+    set configParams [list window XoffThreshold XonThreshold perQXoffThreshold perQXonThreshold]
     if {$parameter ni $configParams} {
         error "EVBC::configure $parameter must be one of [join $configParams {, }]"
     }
