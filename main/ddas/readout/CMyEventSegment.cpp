@@ -233,7 +233,7 @@ void CMyEventSegment::initialize(){
 
 size_t CMyEventSegment::read(void* rBuffer, size_t maxwords)
 {
-  memset(rBuffer, 0, maxwords);            // See what's been read.
+  // memset(rBuffer, 0, maxwords);            // See what's been read.
   
     // This loop finds the first module that has at least one event in it
     // since the trigger fired.  We read the minimum of all complete events
