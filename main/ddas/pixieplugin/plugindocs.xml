@@ -443,7 +443,6 @@ Successful reply:
                        </informalexample>
                     </listitem>
                 </varlistentry>
-<<<<<<< HEAD
                 <varlistentry>
                    <term><literal>AdjustOffsets</literal> <replaceable>module-number</replaceable></term>
                    <listitem>
@@ -465,8 +464,6 @@ Successful reply:
                      </programlisting>
                    </informalexample>
                 </varlistentry>
-=======
->>>>>>> origin/12.0-pre5
             </variablelist>
         </refsect2>
     </refsect1>
