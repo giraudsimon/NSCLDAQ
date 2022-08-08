@@ -1123,6 +1123,29 @@ EVBC::configParams parname value
                         </para>
                     </listitem>
                 </varlistentry>
+                <varlistentry>
+                    <term><literal>perQXoffThreshold</literal></term>
+                    <listitem>
+                        <para>
+                            Sets the number of Fragments in a queue inside the
+                            event builder before the event builder stops
+                            accepting data (flow control) by exerting back pressure.
+                            This value must be larger than
+                            <literal>perQXonThreshold</literal>.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><literal>perQXonThreshold</literal></term>
+                    <listitem>
+                        <para>
+                            Sets the number of Fragments in a queue at which the
+                            event builder resumes accepting data from data sources.
+                            This value must be smaller than
+                            <literal>perQXoffThreshold</literal>.
+                        </para>
+                    </listitem>
+                </varlistentry>
             </variablelist>
         </refsect1>
     

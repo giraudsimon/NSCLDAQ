@@ -252,6 +252,8 @@ private:
   
   size_t                       m_nXonLimit;
   size_t                       m_nXoffLimit;
+  size_t                       m_nPerQXonLimit;
+  size_t                       m_nPerQXoffLimit;
   bool                         m_fXoffed;
   size_t                       m_nTotalFragmentSize;
 
@@ -291,6 +293,9 @@ public:
   
   void setXoffThreshold(size_t nBytes);
   void setXonThreshold(size_t nBytes);
+
+  void setPerQXoffThreshold(size_t nSize);
+  void setPerQXonThreshold(size_t nSize);
   
   
   // Observer management:
