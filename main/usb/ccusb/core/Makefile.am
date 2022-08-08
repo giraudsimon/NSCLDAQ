@@ -17,6 +17,7 @@ libCCUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
 				CGetCommand.cpp  \
 				CSetCommand.cpp  \
 				CUpdateCommand.cpp  \
+				CRunStateCommand.cpp \
 				tclUtil.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
@@ -38,6 +39,7 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 			CSetCommand.h  \
 			CUpdateCommand.h  \
 			tclUtil.h \
+			CRunStateCommand.h \
 			Events.h
 
 libCCUSBCore_la_CPPFLAGS = \
