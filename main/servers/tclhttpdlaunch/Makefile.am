@@ -6,6 +6,6 @@ install-exec-local:
 	$(mkinstalldirs) @prefix@/TclLibs/embeddedhttpd
 	$(INSTALL_PROGRAM) @srcdir@/embeddedLaunch.tcl \
 		@prefix@/TclLibs/embeddedhttpd
-	DAQSHARE=@datarootdir@ echo pkg_mkIndex -verbose @prefix@/TclLibs/embeddedhttpd embeddedLaunch.tcl | @TCLSH_CMD@
+	echo pkg_mkIndex -verbose @prefix@/TclLibs/embeddedhttpd embeddedLaunch.tcl |DAQSHARE=@datarootdir@  @TCLSH_CMD@
 
 
