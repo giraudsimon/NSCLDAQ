@@ -188,8 +188,7 @@ void
 CExperiment::Start(bool resume)
 {
   CReadoutMain* pMain = CReadoutMain::getInstance();
-  pMain->logProgress("CExperiment::Start entered");
-  
+ 
   // The run must be in the correct state:
   
   if (resume && (m_pRunState->m_state != RunState::paused)) {
@@ -257,6 +256,7 @@ CExperiment::Start(bool resume)
       
       m_nEventsEmitted  = 0;
       m_runTime.start();
+      m_nLastScalerTime = 0;
       clearCounters(m_statistics.s_perRun);
     }
     if (resume) {
@@ -280,8 +280,10 @@ CExperiment::Start(bool resume)
 
     if (m_pReadout) {
       if (resume) {
+	pMain->logProgress("Calling onResume in the event segment");
         m_pReadout->onResume();
       } else {
+	pMain->logProgress("Calling onBegin in the event segment");
         m_pReadout->onBegin();
       }
     }
@@ -611,8 +613,8 @@ CExperiment::readScalers()
   uint32_t         startTime = m_nLastScalerTime * 1000;
   m_nLastScalerTime          = m_runTime.measure();
   uint32_t         endTime   = m_nLastScalerTime * 1000;
-  
-  // can only do scaler readout if we have a root scaler bank:
+
+    // can only do scaler readout if we have a root scaler bank:
 
   if (m_pScalers) {
     

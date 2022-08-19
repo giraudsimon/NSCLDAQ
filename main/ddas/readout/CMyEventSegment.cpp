@@ -190,7 +190,6 @@ CMyEventSegment::~CMyEventSegment()
 
 void CMyEventSegment::initialize(){
 
-
     // Initialize unless there is an INFINITY_CLOCK environment variable
     // with the value "YES"
     // NOTE: This is not threadsafe as C++ does not require getenvto be
@@ -208,21 +207,65 @@ void CMyEventSegment::initialize(){
     }
     // @todo - flush the fifos?
 
-    /***** Start list mode run *****/
-    int retval = Pixie16StartListModeRun (NumModules, LIST_MODE_RUN, NEW_RUN);
-    if (retval < 0) {
-        cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
-            << endl << flush;
-    } else {
-      cout << "List Mode started OK " << retval << " mode " << std::hex << std::showbase << LIST_MODE_RUN << std::dec << " " << NEW_RUN << endl << flush;
-    }
-    m_nBytesPerRun = 0;                // New run presumably.
-    usleep(100000); // Delay for the DSP boot 
-
-
-
+    // /***** Start list mode run *****/
+    // int retval = Pixie16StartListModeRun (NumModules, LIST_MODE_RUN, NEW_RUN);
+    // if (retval < 0) {
+    //   char buf[1024];
+    //   memset(buf,0,sizeof(buf));
+    //   PixieGetReturnCodeText(retval,buf,sizeof(buf));
+    //     cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
+    // 	     << ": " << buf << endl << flush;
+    // } else {
+    //   cout << "List Mode started OK " << retval << " mode " << std::hex << std::showbase << LIST_MODE_RUN << std::dec << " " << NEW_RUN << endl << flush;
+    // }
+    // m_nBytesPerRun = 0;                // New run presumably.
+    // usleep(100000); // Delay for the DSP boot
 }
 
+/* Start command, begin the list mode run with NEW_RUN (=1) run mode.
+   If the start fails, display the return value of Pixie16StartListModeRun
+   and the error code text. Overrides CExperiment onBegin() function. */
+void
+CMyEventSegment::onBegin()
+{
+  int retval = Pixie16StartListModeRun(NumModules, LIST_MODE_RUN, NEW_RUN);
+    
+  if (retval < 0) {
+    string msg;
+    msg.resize(1024);
+    PixieGetReturnCodeText(retval, &msg[0], msg.size());
+    cout << "*ERROR* Pixie16StartListModeRun failed "
+	 << retval << ": " << msg << endl << flush;
+  } else {
+    cout << "List Mode started OK " << retval << " mode "
+	 << std::hex << std::showbase << LIST_MODE_RUN
+	 << std::dec << " " << NEW_RUN << endl << flush;
+  }
+    
+  m_nBytesPerRun = 0; // New run presumably.
+  usleep(100000); // Delay for the DSP boot
+}
+
+/* Resume command, resume the list mode run with RESUME_RUN (=1) run mode.
+   If the resume fails, display the return value of Pixie16StartListModeRun
+   and the error code text. Overrides CExperiment onResume() function. */
+void
+CMyEventSegment::onResume()
+{
+  int retval = Pixie16StartListModeRun(NumModules, LIST_MODE_RUN, RESUME_RUN);
+    
+  if (retval < 0) {
+    string msg;
+    msg.resize(1024);
+    PixieGetReturnCodeText(retval, &msg[0], msg.size());
+    cout << "*ERROR* Pixie16StartListModeRun failed "
+	 << retval << ": " << msg << endl << flush;
+  } else {
+    cout << "List Mode started OK " << retval << " mode "
+	 << std::hex << std::showbase << LIST_MODE_RUN
+	 << std::dec << " " << RESUME_RUN << endl << flush;
+  }    
+}
 
 /* Pixie16 has triggered.  There are greater than  EXTFIFO_READ_THRESH 
    words in the output FIFO of a particular Pixie16 module.  Read out 

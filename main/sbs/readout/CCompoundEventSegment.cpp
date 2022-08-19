@@ -17,7 +17,6 @@
 #include "CCompoundEventSegment.h"
 #include <RangeError.h>
 
-
 // Local visitor classes:
 
 /*  Initialization */

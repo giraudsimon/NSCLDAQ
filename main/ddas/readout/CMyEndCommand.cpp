@@ -190,14 +190,13 @@ int CMyEndCommand::readOutRemainingData()
         nFIFOWords[k] += mod_numwordsread;
 #endif
         /* Get final statistics information */
-        int retval;
 #if XIAAPI_VERSION >= 3
 	std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(),0);
 #else
 	std::vector<unsigned int> statistics(448,0); // see any v11.3
 #endif	
 
-        retval = Pixie16ReadStatisticsFromModule(statistics.data(), k);
+        int retval = Pixie16ReadStatisticsFromModule(statistics.data(), k);
         if (retval < 0) {
             cout << "Error accessing scaler statistics from module " 
                 << k << endl;

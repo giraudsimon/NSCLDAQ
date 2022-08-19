@@ -100,6 +100,7 @@ void
 CEventSegment::onPause()
 {
 }
+
 /**
  * onResume
  *    Invoked just after emitting a resume event. This is done before
@@ -107,7 +108,8 @@ CEventSegment::onPause()
  */
 void
 CEventSegment::onResume()
-{}
+{
+}
 
 /*!
    Event segments are not composites:

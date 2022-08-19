@@ -30,7 +30,6 @@
 #include "CInitCommand.h"
 #include <TCLTimer.h>
 
-
 using namespace std;
 
 /*------------------------------------------------
@@ -188,7 +187,7 @@ CRunControlPackage::resume()
   CReadoutMain* pMain = CReadoutMain::getInstance();
 
   if (m_pTheState->m_state == RunState::paused) {
-    pMain->logProgress("Asking the experiment to Start");  
+    pMain->logProgress("Asking the experiment to Start");
     m_pTheExperiment->Start(true);
     m_pTimer = new RunTimer(m_pInterp);
     pMain->logProgress("Created a new experiment run timer");

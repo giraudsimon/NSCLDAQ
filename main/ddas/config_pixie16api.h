@@ -23,6 +23,10 @@
 #define NEW_RUN 1
 #endif
 
+#ifndef RESUME_RUN
+#define RESUME_RUN 0
+#endif
+
 /* Readout programs need this to decide when to start reading */
 #ifndef EXTFIFO_READ_THRESH
 #define EXTFIFO_READ_THRESH   1024
@@ -42,7 +46,7 @@
 
 #ifndef DSP_CLOCK_MHZ
 #define DSP_CLOCK_MHZ 100
-#endif
+#endif    	     
 
 #ifndef CFDSCALE_MAX
 #define CFDSCALE_MAX 7
