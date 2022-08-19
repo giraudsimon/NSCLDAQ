@@ -71,32 +71,63 @@ vector<uint32_t> CMyScaler::read()
 	   << moduleNumber << endl;
     }
     
+    // // API 3+ this is much easier...
+    // double Counts[16] = {0};
+    // double CountsLive[16] = {0};
+    // unsigned long OutputScalerData[33] = {0};  
+    // OutputScalerData[0] = (unsigned long)crateID;
+    // for (int i=0; i<16; i++) {
+    //   // Raw input counts (number of fast triggers seen by FPGA)
+    //   Counts[i] = Pixie16ComputeRawInputCount(statistics.data(), moduleNumber, i);
+    //   // Raw output counts (validated events handled by DSP, "live" counts)
+    //   CountsLive[i] = Pixie16ComputeRawOutputCount(statistics.data(), moduleNumber, i);    
+    //   /* Finally compute the events since the last scaler read! */
+    //   OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - PreviousCounts[i]);
+    //   OutputScalerData[(2*i + 2)] = (unsigned long) (CountsLive[i] - PreviousCountsLive[i]);      
+    //   PreviousCounts[i] = Counts[i];
+    //   PreviousCountsLive[i] = CountsLive[i];
+    // }
+
     /* Now we need to calculate the # of events from the last
        read of the scalers -- NSCL scaler buffers just expect
        the # events since the last read.  However, Pixie16 statistics
        cannot be cleared, so we need to do some math */
-
+    double ICR[16] = {0};
+    double OCR[16] = {0};
+    double LiveTime[16] = {0};
+    double RealTime = 0;
     double Counts[16] = {0};
     double CountsLive[16] = {0};
+    double ChanEvents[16] = {0}; 
+    double FastPeaks[16] = {0};
     unsigned long OutputScalerData[33] = {0};
-  
-    OutputScalerData[0] = (unsigned long)crateID;
 
     for (int i=0; i<16; i++) {
-      // Raw input counts (number of fast triggers seen by FPGA)
-      Counts[i] = Pixie16ComputeRawInputCount(statistics.data(), moduleNumber, i);
+      /* Compute input count rate in counts/second for each channel */  
+      ICR[i] = Pixie16ComputeInputCountRate (statistics.data(), moduleNumber, i);
+      /* Compute output count rate in counts/second for each channel */
+      OCR[i] = Pixie16ComputeOutputCountRate (statistics.data(), moduleNumber, i);
+      /* Compute LiveTime for each channel */    
+      LiveTime[i] = Pixie16ComputeLiveTime (statistics.data(), moduleNumber, i);
 
-      // Raw output counts (validated events handled by DSP, "live" counts)
-      CountsLive[i] = Pixie16ComputeRawOutputCount(statistics.data(), moduleNumber, i);
+      ChanEvents[i] = Pixie16ComputeOutputCountRate(statistics.data(), moduleNumber, i);
+      FastPeaks[i]  = Pixie16ComputeInputCountRate(statistics.data(), moduleNumber, i);
+
+      /* Now compute total events for each channel, and total "live"
+	 events for each channel. */
+      Counts[i] = FastPeaks[i] * LiveTime[i];
+      CountsLive[i] = ChanEvents[i] * RealTime;
     
       /* Finally compute the events since the last scaler read! */
-      OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - PreviousCounts[i]);
-      OutputScalerData[(2*i + 2)] = (unsigned long) (CountsLive[i] - PreviousCountsLive[i]);
+      OutputScalerData[(2*i + 1)] = (unsigned long) (Counts[i] - 
+						     PreviousCounts[i]);
+      OutputScalerData[(2*i + 2)] = (unsigned long) (CountsLive[i] - 
+						     PreviousCountsLive[i]);
 
       PreviousCounts[i] = Counts[i];
       PreviousCountsLive[i] = CountsLive[i];
     }
-
+    
     /* Copy scaler information into the output vector */
     scalers.clear(); //SNL added for new readout
     scalers.insert(scalers.end(), OutputScalerData, OutputScalerData+33);

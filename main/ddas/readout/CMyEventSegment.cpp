@@ -231,11 +231,16 @@ CMyEventSegment::onBegin()
   int retval = Pixie16StartListModeRun(NumModules, LIST_MODE_RUN, NEW_RUN);
     
   if (retval < 0) {
+#if XIAAPI_VERSION >= 3
     string msg;
     msg.resize(1024);
     PixieGetReturnCodeText(retval, &msg[0], msg.size());
     cout << "*ERROR* Pixie16StartListModeRun failed "
 	 << retval << ": " << msg << endl << flush;
+# else
+    cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
+	 << endl << flush;
+#endif
   } else {
     cout << "List Mode started OK " << retval << " mode "
 	 << std::hex << std::showbase << LIST_MODE_RUN
@@ -255,11 +260,16 @@ CMyEventSegment::onResume()
   int retval = Pixie16StartListModeRun(NumModules, LIST_MODE_RUN, RESUME_RUN);
     
   if (retval < 0) {
+#if XIAAPI_VERSION >= 3
     string msg;
     msg.resize(1024);
     PixieGetReturnCodeText(retval, &msg[0], msg.size());
     cout << "*ERROR* Pixie16StartListModeRun failed "
 	 << retval << ": " << msg << endl << flush;
+#else
+    cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
+	 << endl << flush;
+#endif
   } else {
     cout << "List Mode started OK " << retval << " mode "
 	 << std::hex << std::showbase << LIST_MODE_RUN
