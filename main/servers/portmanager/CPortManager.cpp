@@ -157,9 +157,8 @@ CPortManager::allocatePort(string application)
 	// Build up the command and send it.
 	
 	string command("GIMME ");
-	command    += "{";
 	command    += application;
-	command    += "} ";
+	command    += " ";
 	command    += GetUsername();
 	command    += '\n';
 	

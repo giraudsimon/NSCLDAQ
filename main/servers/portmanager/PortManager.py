@@ -118,7 +118,6 @@ class PortManager:
         
         status = _tcl.call('lindex', info, 0)
         data   = _tcl.call('lindex', info, 1)
-        
         result = []
         lines = int(data)
         for l in range(0, lines):
