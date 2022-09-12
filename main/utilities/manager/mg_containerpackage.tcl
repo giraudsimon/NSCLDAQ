@@ -64,6 +64,28 @@ namespace eval ::container {
     #  Ensures the ~/.daqmanager directory exists:
     #
     variable tempdir [file normalize [file join ~ .daqmanager]]
+    variable singularity "";      # Container activation command.
+    
+    #
+    #  At some point the singularity command is replaced by
+    #  the apptainer command:
+    #
+    
+    proc _containerCommand {} {
+      set path [split $::env(PATH) :];      #Path as a tcl list.
+      set result singularity;               #if apptainer cmd not found.
+      foreach dir $path {
+         set command [file join $dir apptainer]
+         if {[file executable $command]} {
+            set result apptainer
+         }
+      }
+      return $result
+    }
+    set singularity [_containerCommand]
+    
+    
+    
     
     # Making this a separate proc also allows for testing.
     
@@ -281,7 +303,7 @@ proc container::activate {db name host} {
     #
     #   Start the container in the remote host using ssh.
     # puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
-    set fd [open "|ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
+    set fd [open "|ssh $host $singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }
 ##
@@ -295,7 +317,7 @@ proc container::activate {db name host} {
 # @return fd      - File descriptor to receive command's stdout/stderr.
 #
 proc ::container::run {name host command} {
-    return [open "|ssh $host singularity run instance://$name $command |& cat" w+]
+    return [open "|ssh $host $singularity run instance://$name $command |& cat" w+]
 }
 ##
 #  ::container::deactivate
@@ -306,7 +328,7 @@ proc ::container::run {name host command} {
 # @param name - container name.
 #
 proc ::container::deactivate {host name} {
-    catch {exec ssh  $host singularity instance stop $name}
+    catch {exec ssh  $host $singularity instance stop $name}
 }
 
 
