@@ -42,28 +42,39 @@ namespace eval  ssh {
 	#
 	# getSingularityBindings
 	#
+	#   Since we only get these in the container environmen, there are
+	#   two possibilities:
+	#   1.   APPTAINER_BIND is defined - this is the value of the --bind
+	#      option to use.
+	#   2. If not, ~/.singularity_bindpoints contains the bindings.
+	#
+	#
 	#   @return string
 	#      This is either --bind bind1,bind2,...
-	#   if there are bindings or an empty string if there are none.
+	#      if there are bindings or an empty string if there are none.
 	#
 	proc getSingularityBindings {} {
-		set bindings [list]
-		set status [catch {file readlink ~/stagearea} value]
-		if {!$status} {
-			lappend bindings $value;                  # stagearea link auto-binds.
-		}
-		if {[file readable ~/.singularity_bindpoints]} {
-			# User has additional bind points:
-			
-			set fd [open ~/.singularity_bindpoints r]
-			while {![eof $fd]} {
-				set line [string trim [gets $fd]]
-				if {$line ne ""} {
-					lappend bindings $line
-				}
+		if {[array names ::env APPTAINER_BIND] ne ""} {
+			set bindings $::env(APPTAINER_BIND)
+		} else {
+			set bindings [list]
+			set status [catch {file readlink ~/stagearea} value]
+			if {!$status} {
+				lappend bindings $value;                  # stagearea link auto-binds.
 			}
-			
-			close $fd
+			if {[file readable ~/.singularity_bindpoints]} {
+				# User has additional bind points:
+				
+				set fd [open ~/.singularity_bindpoints r]
+				while {![eof $fd]} {
+					set line [string trim [gets $fd]]
+					if {$line ne ""} {
+						lappend bindings $line
+					}
+				}
+				
+				close $fd
+			}
 		}
 		# If at the end of this we have any bindings we need to return a --bind
 		# option else an empty string
@@ -74,6 +85,27 @@ namespace eval  ssh {
 			return ""
 		}
 	}
+	##
+	# getContainerImage
+	#   Return the path to the container image file (full path).
+	#
+	#   There are a couple of possibilitites:
+	#   
+	#   1.  APPTAINER_CONTAINER - is defined - in that case that's the full image path.
+	#   2.  SING_IMAGE          - is defined - that's the full image path.
+	#   3.  None of the above -running natively.
+	#
+	#  @return string
+	#  @retval "" if running natively.
+	proc getContainerImage {} {
+		if {[array names ::env APPTAINER_CONTAINER] ne ""} {
+			return $::env(APPTAINER_CONTAINER)
+		}
+		if {[array names ::env SING_IMAGE] ne ""} {
+			return $::env(SING_IMAGE)
+		}
+		return ""
+	}
 	# actualCommand
 	#    If we are in a singularity container the command returned runs
 	#    the input command in the container See the NOTE comments above for what
@@ -82,7 +114,8 @@ namespace eval  ssh {
 	# @parma command - the plain old command we're trying to run.
 	#
 	proc actualCommand {command} {
-		if {[array names ::env SING_IMAGE] eq ""} {
+		set container [getContainerImage]
+		if {$container eq ""} {
 			# not in a container env.
 			
 			return $command
@@ -90,20 +123,18 @@ namespace eval  ssh {
 		#
 		#  We're in a container:
 		
-		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
 		return "SING_IMAGE=$container singularity exec $bindings $container bash -c $command"
 	}
 	proc shellCommand { } {
-        if {[array names ::env SING_IMAGE] eq ""} {
-			# not in a container env.
+		set container [getContainerImage]
+		if {$container eq ""} {
+		
+        	# not in a container env.
 			
 			return bash
 		}
-		#
-		#  We're in a container:
 		
-		set container $::env(SING_IMAGE)
 		set bindings  [ssh::getSingularityBindings]
 		return "SING_IMAGE=$container singularity shell --shell /bin/bash $bindings $container "
     }

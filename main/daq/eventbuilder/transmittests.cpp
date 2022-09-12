@@ -807,6 +807,7 @@ SimulatorThread* clienttest::setupSimulator()
 }
 void clienttest::cleanupSimulator(SimulatorThread* thread)
 {
+  thread->join();
     delete &(thread->m_rSimulator);    // We know it's dynamic.
     delete thread;
 

@@ -334,7 +334,9 @@ CPortManager::Connect()
     struct linger l;
     l.l_onoff = 0;    // off
     l.l_linger = 1;   // for a very short time anyway.
+    int keepalive = 1;
     setsockopt(m_nSocket, SOL_SOCKET, SO_LINGER, &l, sizeof(struct linger));
+    setsockopt(m_nSocket, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(int));
   }
   
 }
