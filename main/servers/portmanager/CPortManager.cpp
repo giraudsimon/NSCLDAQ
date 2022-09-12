@@ -329,6 +329,12 @@ CPortManager::Connect()
 				  CPortManagerException::ConnectionFailed,
 				  doing);
     }
+    // Set linger -> 0 but don't worry too much if it fails.
+    // the socket is still usable but will timewait.
+    struct linger l;
+    l.l_onoff = 0;    // off
+    l.l_linger = 1;   // for a very short time anyway.
+    setsockopt(m_nSocket, SOL_SOCKET, SO_LINGER, &l, sizeof(struct linger));
   }
   
 }
