@@ -197,7 +197,7 @@ private:
     CPortManager*  m_pPortManager;
     int            m_nPort;
     CEventOrderClient* m_pClient;
-
+  static int              m_seq;
 private:
     SimulatorThread* setupSimulator();
     void             cleanupSimulator(SimulatorThread* thread);
@@ -206,10 +206,13 @@ private:
 public:
     clienttest() :m_pPortManager(nullptr) {}
     void setUp() {
+      std::stringstream strservice;
+      strservice << "ORDERER:" << m_seq++;
+      std::string service = strservice.str();
         // If I don't have the port yet, allocate it.
         if (!m_pPortManager) {
             m_pPortManager = new CPortManager;
-            m_nPort        = m_pPortManager->allocatePort("ORDERER");
+            m_nPort        = m_pPortManager->allocatePort(service.c_str());
         }
         // make the client each time:
         
@@ -815,3 +818,4 @@ void clienttest::cleanupSimulator(SimulatorThread* thread)
 
 
 
+int clienttest::m_seq = 0;
