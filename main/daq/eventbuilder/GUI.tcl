@@ -76,14 +76,14 @@ snit::widgetadaptor EVB::StatusBar {
     # _xon
     #   Called when the event builder XON's its clients.
     #
-    method _xon {sock} {
+    method _xon {args} {
         set flowstate "Accepting Data"
     }
     ##
     # -xoff
     #   Called when the event builder XOFF"s its clients.
     #
-    method _xoff {sock} {
+    method _xoff {args} {
         set flowstate "Flow Control Active"
     }
 }
