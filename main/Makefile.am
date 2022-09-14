@@ -44,7 +44,8 @@ install-data-local:
 	$(mkinstalldirs) @prefix@/share/html/figures
 	echo "pkg_mkIndex @prefix@/TclLibs *.so" >makeindex.tcl
 	$(TCLSH_CMD) <makeindex.tcl
-	$(INSTALL_DATA) config.h @srcdir@/ddas/config_pixie16api.h @includedir@
+	$(INSTALL_SCRIPT) config.h @prefix@/include
+	$(INSTALL_SCRIPT) @top_srcdir@/config_pixie16api.h @prefix@/include
 	touch @prefix@/pythonLibs/nscldaq/__init__.py
 	echo "Version: "NSCLDAQ-$(VERSION) built on `hostname` `date` > @prefix@/VERSION
 	$(INSTALL_DATA) @srcdir@/ChangeLog @prefix@
@@ -54,8 +55,8 @@ install-data-local:
 	(cd @srcdir@/tclhttpd3.5.1; tar czf - .)|(cd @prefix@/share/tclhttpd; tar xzf -)
 	chmod a+x @prefix@/share/tclhttpd/bin/*
 
-
-EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks tclhttpd3.5.1 ddas/config_pixie16.h
+EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks \
+	tclhttpd3.5.1 config_pixie16api.h
 
 #check-TESTS:
 #	@top_srcdir@/dotests $(SUBDIRS)

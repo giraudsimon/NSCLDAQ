@@ -47,7 +47,7 @@
         </para>
         <para>
             If you think of the event orderer as a set of Tcl commands that
-            encpasulate the C/C++ core you'll have a good picture of the
+            encapsulate the C/C++ core you'll have a good picture of the
             final structure.
         </para>
     </section>
@@ -7003,6 +7003,26 @@ EVB::config get <replaceable>name</replaceable>
                                         the number of queued payload bytes drops below
                                         this value, flow control resume actions are
                                         initiated.
+                                    </para>
+                                </listitem>
+                            </varlistentry>
+                            <varlistentry>
+                                <term><literal>perQXoffThreshold</literal></term>
+                                <listitem>
+                                    <para>
+                                        Sets the number of Fragments of payload data
+                                        that can be queued before flow control stop
+                                        actions are initiated.
+                                    </para>
+                                </listitem>
+                            </varlistentry>
+                            <varlistentry>
+                                <term><literal>perQXonThreshold</literal></term>
+                                <listitem>
+                                    <para>
+                                        Sets the flow control low water mark.  When
+                                        the number of Fragments drops below this value,
+                                        flow control resume actions are initiated.
                                     </para>
                                 </listitem>
                             </varlistentry>

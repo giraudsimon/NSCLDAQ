@@ -14,7 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#include <config.h>
+//#include <config.h>
 #include <CGaurdedObject.h>
 #include <ErrnoException.h>
 #include <pthread.h>

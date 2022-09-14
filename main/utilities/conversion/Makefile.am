@@ -122,7 +122,7 @@ format_converter_CPPFLAGS = -I@srcdir@ \
 			-I@top_srcdir@/base/factories @PIXIE_CPPFLAGS@
 
 EXTRA_DIST = format_converter_options.ggo \
-	 convert_format.py
+	 convert_format.py config.h
 
 
 install-exec-local:

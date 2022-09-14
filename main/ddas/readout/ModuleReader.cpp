@@ -18,15 +18,14 @@
 /** @file:  ModuleReader.cpp
  *  @brief: Implement the ModuleReader
  */
-#include <config.h>
-#include <config_pixie16api.h>
 #include "ModuleReader.h"
 #include "ReferenceCountedBuffer.h"
 #include "ZeroCopyHit.h"
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
-
+#include <config.h>
+#include <config_pixie16api.h>
 #include <string.h>
 
 namespace DDASReadout {

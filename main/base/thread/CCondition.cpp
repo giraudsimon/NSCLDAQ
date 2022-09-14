@@ -14,7 +14,7 @@
 	     East Lansing, MI 48824-1321
 */
 
-#include <config.h>
+//#include <config.h>
 #include "CCondition.h"
 #include "CMutex.h"
 #include <ErrnoException.h>

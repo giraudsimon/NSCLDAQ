@@ -4,15 +4,14 @@
  H.L. Crawford 6/13/2010
 *********************************************************/
 
-#include <config.h>
-#include <config_pixie16api.h>
 #include "CMyScaler.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
 #include <string.h>
-
+#include <config.h>
+#include <config_pixie16api.h>
 
 extern unsigned int ChanEventsB_Address[];
 extern unsigned int ChanEventsA_Address[];

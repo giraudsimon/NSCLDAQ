@@ -15,7 +15,7 @@ ringFragmentSource_LDFLAGS=@top_builddir@/daq/eventbuilder/libEventBuilderClient
 
 BUILT_SOURCES = rfcmdline.c rfcmdline.h
 
-EXTRA_DIST=  options.ggo manpages.xml
+EXTRA_DIST=  options.ggo manpages.xml config.h
 
 
 rfcmdline.c: rfcmdline.h

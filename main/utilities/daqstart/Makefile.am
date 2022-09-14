@@ -31,7 +31,7 @@ cmdline.c: cmdline.h
 cmdline.h: daqstart.ggo
 	$(GENGETOPT) --unamed-opts <@top_srcdir@/utilities/daqstart/daqstart.ggo
 
-EXTRA_DIST=daqstart.ggo popup.tcl daqstart.xml Makefile.am
+EXTRA_DIST=daqstart.ggo popup.tcl daqstart.xml Makefile.am config.h
 
 
 install-exec-local:

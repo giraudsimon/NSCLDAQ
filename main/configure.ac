@@ -412,17 +412,6 @@ AC_SUBST(PIXIE_API_DIR)
 AC_SUBST(PIXIE_CPPFLAGS)
 AC_SUBST(PIXIE_LDFLAGS)
 
-AH_TOP([
-#ifndef NSCLDAQ_CONFIG_H
-#define NSCLDAQ_CONFIG_H
-])
-
-AH_BOTTOM([
-#endif
-])
-
-
-
    #  If --with-plx-sdk was provided we're done and that's that.
    #  If not:
    #
