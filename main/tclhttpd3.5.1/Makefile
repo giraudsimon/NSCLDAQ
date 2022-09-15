@@ -99,7 +99,7 @@ SHELL = /bin/bash
 
 srcdir = .
 top_srcdir = .
-prefix = /usr/opt/daq/12.0-pre5-xiaapi2/share/tclhttpd
+prefix = /usr/opt/daq/12.0-pre5-dev/share/tclhttpd
 exec_prefix = ${prefix}
 
 bindir = ${exec_prefix}/bin
