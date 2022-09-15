@@ -20,12 +20,10 @@ proc ReadLine {sock} {
 set ::servsock ""
 proc ClientConnect {sock host port} {
   if {$::servsock eq ""} {
-    puts "Accepting connection from $host:$port"
     chan configure $sock -blocking 1 -buffering line
     chan event $sock readable [list ReadLine $sock]
     set ::servsock $sock
   } else {
-    puts "Rejecting incoming connection from $host:$port"
     catch {close $sock}
   }
 }
@@ -37,10 +35,9 @@ proc setup {} {
   set remport [$pmanager allocatePort TEST]
   set ::serv [socket -server ClientConnect $remport]
   set ::pid [exec [file join $here fakeControlServer.tcl] $remport &]
-
   vwait ::servsock
-
-  set port [$pmanager findServer s800rctl]
+  set pm2 [portAllocator %AUTO%]
+  set port [$pm2  findServer s800rctl]
   set ::reqsock [socket localhost $port]
   chan configure $::reqsock -buffering line
   $pmanager destroy
@@ -59,6 +56,7 @@ tcltest::test receiveEnd-0 {Test that sending an end succeeds
 } -cleanup {
   tearDown
 } -body {
+
   puts $::reqsock "end"
   gets $::reqsock line
 

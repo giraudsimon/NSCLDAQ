@@ -86,12 +86,11 @@ test3()
 {
   cerr << "test3...";
 
-  CPortManager pm ("localhost");
-  int port1 = pm.allocatePort("test");
-  //cerr << "Got: " << port1;
-  int port2 = pm.allocatePort("test2");
-  //cerr << "Got: " << port2;
-     
+  CPortManager pm1 ("localhost");
+  CPortManager pm2 ("localhost");     // Rust one only allows one port per conn
+  int port1 = pm1.allocatePort("test");
+  int port2 = pm2.allocatePort("test2");
+
   if(port1 != port2) {
     cerr << "passed\n";
   }

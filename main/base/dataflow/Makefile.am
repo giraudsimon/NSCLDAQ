@@ -126,7 +126,7 @@ consumer_LDADD    = -L@prefix@/lib @builddir@/libDataFlow.la @top_builddir@/base
 
 consumer_LDFLAGS  = -Wl,"-rpath-link=$(libdir)"
 
-consuerm_CPPFLAGS=$(COMPILATION_FLAGS)
+consumer_CPPFLAGS=$(COMPILATION_FLAGS)
 
 TESTS=./unittests
 

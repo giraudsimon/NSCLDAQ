@@ -157,9 +157,8 @@ CPortManager::allocatePort(string application)
 	// Build up the command and send it.
 	
 	string command("GIMME ");
-	command    += "{";
 	command    += application;
-	command    += "} ";
+	command    += " ";
 	command    += GetUsername();
 	command    += '\n';
 	
@@ -330,6 +329,14 @@ CPortManager::Connect()
 				  CPortManagerException::ConnectionFailed,
 				  doing);
     }
+    // Set linger -> 0 but don't worry too much if it fails.
+    // the socket is still usable but will timewait.
+    struct linger l;
+    l.l_onoff = 0;    // off
+    l.l_linger = 1;   // for a very short time anyway.
+    int keepalive = 1;
+    setsockopt(m_nSocket, SOL_SOCKET, SO_LINGER, &l, sizeof(struct linger));
+    setsockopt(m_nSocket, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(int));
   }
   
 }

@@ -78,6 +78,6 @@ cpptest_CPPFLAGS = $(COMPILATION_FLAGS)
 check-TESTS: cpptest
 	@TCLSH_CMD@ @srcdir@/tclTests.tcl
 	@builddir@/cpptest
-	for f in $(PYTHON_TESTS); do PYTHONPATH=@prefix@/pythonLibs @PYTHON@ $$f; done
+	for f in $(PYTHON_TESTS); do PYTHONPATH=@prefix@/pythonLibs @PYTHON@ $$f ; done
 
 check: check-TESTS

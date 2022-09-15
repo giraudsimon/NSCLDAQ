@@ -155,13 +155,21 @@ class PortManagerTests(unittest.TestCase):
     #   a few and ensure the all are listed.
     #
     def test_list_afew(self):
+
+        pm2    = PortManager.PortManager('localhost', 30000)
+        pre    = pm2.listPorts()
+
         pm     = PortManager.PortManager('localhost', 30000)
-        pre    = pm.listPorts()
         myport = pm.getPort('myport')
-        theport= pm.getPort('theport')
-        iam    = getpass.getuser()
         
-        info   = pm.listPorts()
+        pm1    = PortManager.PortManager('localhost', 30000)
+        theport= pm1.getPort('theport')
+
+        pm3    = PortManager.PortManager('localhost', 30000)
+
+        iam    = getpass.getuser()
+
+        info   = pm3.listPorts()
         message = None
         if len(info) != (len(pre) +2):
             message = 'Number of ports... found ports {}'.format(info)
@@ -194,11 +202,13 @@ class PortManagerTests(unittest.TestCase):
     #
     def test_find_byservice(self):
         pm     = PortManager.PortManager('localhost', 30000)
+        pm1    = PortManager.PortManager('localhost', 30000)
+        pm2    = PortManager.PortManager('localhost', 30000)
         myport = pm.getPort('myport')
-        theport= pm.getPort('theport')
+        theport= pm1.getPort('theport')
         iam    = getpass.getuser()
         
-        info = pm.find(service = 'theport')
+        info = pm2.find(service = 'theport')
         self.assertEqual(1, len(info))
         pinfo = info[0]
         
@@ -213,11 +223,13 @@ class PortManagerTests(unittest.TestCase):
     #
     def test_find_bybeginswith(self):
         pm     = PortManager.PortManager('localhost', 30000)
+        pm1     = PortManager.PortManager('localhost', 30000)
+        pm2     = PortManager.PortManager('localhost', 30000)
         myport = pm.getPort('myport')
-        theport= pm.getPort('theport')
+        theport= pm1.getPort('theport')
         iam    = getpass.getuser()
         
-        info   = pm.find(beginswith = 'my')
+        info   = pm2.find(beginswith = 'my')
         self.assertEqual(1, len(info))
         pinfo = info[0]
         
@@ -233,11 +245,13 @@ class PortManagerTests(unittest.TestCase):
     #
     def test_find_byuser(self):
         pm     = PortManager.PortManager('localhost', 30000)
+        pm1     = PortManager.PortManager('localhost', 30000)
+        pm2     = PortManager.PortManager('localhost', 30000)
         myport = pm.getPort('myport')
-        theport= pm.getPort('theport')
+        theport= pm1.getPort('theport')
         iam    = getpass.getuser()
         
-        info = pm.find(user=iam)
+        info = pm2.find(user=iam)
         info = self._keyInfo(info)
         
         # We can assume that if the keys are there, the data are good.
