@@ -375,7 +375,9 @@ CTheApplication::startOutputThread(std::string ring)
 {
   COutputThread* router = new COutputThread(ring, m_systemControl);
   router->start();
+  m_pOutputThread = router;
   Os::usleep(500);
+
 
 }
 /* 

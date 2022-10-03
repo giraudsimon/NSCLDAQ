@@ -23,6 +23,8 @@
 #include <memory>
 #include <CSystemControl.h>
 
+class COutputThread;
+
 class CTCLInterpreter;
 struct Tcl_Interp;
 struct Tcl_Event;
@@ -61,6 +63,8 @@ private:
   std::string         m_logFile;
   unsigned            m_logLevel;
   bool                m_canQuickstart;
+  
+  COutputThread*     m_pOutputThread;
 
 public:
   // Canonicals
@@ -78,6 +82,7 @@ public:
   virtual int operator()(int argc, char** argv);
 
   const CSystemControl& getSystemControl() const { return m_systemControl;}
+  COutputThread* getOutputThread() {return m_pOutputThread;}
   static CTheApplication* getInstance();
 
   void logStateChangeRequest(const char* msg);           // info

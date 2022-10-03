@@ -111,7 +111,7 @@ CStatisticsCommand::formatCounters(
 )
 {
     result += (double)(counters.s_triggers);
-    result += (double)(counters.s_triggersAccepted);
+    result += (double)(counters.s_acceptedTriggers);
     result += (double)(counters.s_bytes);
 
 }

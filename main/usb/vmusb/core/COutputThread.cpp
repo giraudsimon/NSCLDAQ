@@ -106,7 +106,7 @@ COutputThread::COutputThread(std::string ring, CSystemControl& sysControl) :
   m_pBeginRunCallback(0),
   m_systemControl(sysControl)
 {
-  
+    memset(&m_statistics, 0, sizeof(m_statistics));
 }
 /*!
   Destructor...actually this is probably not called as the thread lifetime
@@ -131,6 +131,14 @@ COutputThread::run()
   operator()();
 }
 
+/**
+ * getStatistics
+ *    Return the current counters:
+ */
+const COutputThread::Statistics&
+COutputThread::getStatistics() const {
+    return m_statistics;
+}
 
 /*
    Thread entry point.  After attaching to the outputring,
@@ -192,6 +200,7 @@ COutputThread::operator()()
     }
 
   }
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -249,6 +258,7 @@ COutputThread::processBuffer(DataBuffer& buffer)
 {
   if (buffer.s_bufferType == TYPE_START) {
     startRun(buffer);
+    memset(&m_statistics.s_perRun, 0, sizeof(m_statistics.s_perRun)); // clear per run statistics.
   }
   else if (buffer.s_bufferType == TYPE_STOP) {
     endRun(buffer);
@@ -809,7 +819,8 @@ COutputThread::event(void* pData)
             PHYSICS_EVENT, m_nWordsInBuffer*sizeof(uint16_t) + 100
         ); // +100 really needed?
     }
-
+    
+     
     CRingItem& event(*pEvent);
     // Put the data in the event and figure out where the end pointer is.
 
@@ -822,11 +833,20 @@ COutputThread::event(void* pData)
     event.updateSize();
     event.commitToRing(*m_pRing);
     delete pEvent;
+    
+    m_statistics.s_perRun.s_triggers++;
+    m_statistics.s_perRun.s_acceptedTriggers++;
+    m_statistics.s_perRun.s_bytes += m_nWordsInBuffer*sizeof(uint16_t);
+    
+    m_statistics.s_cumulative.s_triggers++;
+    m_statistics.s_cumulative.s_acceptedTriggers++;
+    m_statistics.s_cumulative.s_bytes += m_nWordsInBuffer*sizeof(uint16_t);
     // Reset the cursor and word count in the assembly buffer:
 
     m_nWordsInBuffer = 0;
     m_pCursor        = m_pBuffer;
     
+        
     m_nEventsSeen++;
   }
 
