@@ -478,7 +478,7 @@ proc ::eventlog::_runBare {db def} {
     set scriptPath [::eventlog::_writeLoggerScript $db $def]
     set host [dict get $def host]
     
-    set fd [open "|ssh $host $scriptPath |& cat" w+]
+    set fd [open "|ssh -T  $host $scriptPath |& cat" w+]
     ::eventlog::_installLogger $def $db  $fd
 }
 

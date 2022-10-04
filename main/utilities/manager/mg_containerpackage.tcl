@@ -303,7 +303,7 @@ proc container::activate {db name host} {
     #
     #   Start the container in the remote host using ssh.
     # puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
-    set fd [open "|ssh $host $container::singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
+    set fd [open "|ssh -T $host $container::singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }
 ##
@@ -317,7 +317,7 @@ proc container::activate {db name host} {
 # @return fd      - File descriptor to receive command's stdout/stderr.
 #
 proc ::container::run {name host command} {
-    return [open "|ssh $host $container::singularity run instance://$name $command |& cat" w+]
+    return [open "|ssh -T $host $container::singularity run instance://$name $command |& cat" w+]
 }
 ##
 #  ::container::deactivate
@@ -328,7 +328,7 @@ proc ::container::run {name host command} {
 # @param name - container name.
 #
 proc ::container::deactivate {host name} {
-    catch {exec ssh  $host $container::singularity instance stop $name}
+    catch {exec ssh  -T $host $container::singularity instance stop $name}
 }
 
 
