@@ -50,7 +50,7 @@ if {![info exists Config(AuthGroupFile)]} {
     set Config(AuthGroupFile) default
 }
 if {![info exists Config(AuthDefaultFile)]} {
-    set Config(AuthDefaultFile) /tmp/tclhttpd.default
+    set Config(AuthDefaultFile) ~/tclhttpd.default
 }
 
 # Authentication bootstrap.

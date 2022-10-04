@@ -95,11 +95,11 @@ THREAD_VERSION=2.6
 # correct.
 #========================================================================
 
-SHELL = /bin/sh
+SHELL = /bin/bash
 
 srcdir = .
 top_srcdir = .
-prefix = /usr/opt/nscldaq/12.0-pre3/share/tclhttpd
+prefix = /usr/opt/daq/12.0-pre5/share/tclhttpd
 exec_prefix = ${prefix}
 
 bindir = ${exec_prefix}/bin
