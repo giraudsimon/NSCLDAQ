@@ -113,7 +113,7 @@ proc ::program::_typeId {db type} {
     #  The assumption is there will be 0 or 1 results:
     #
     set result [$db eval {                                   
-        SELECT id FROM program_type WHERe type=$type
+        SELECT id FROM program_type WHERE type=$type
     }]
     if {$result eq ""} {
         return -1
