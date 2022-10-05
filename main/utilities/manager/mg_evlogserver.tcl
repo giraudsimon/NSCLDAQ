@@ -331,4 +331,40 @@ proc loggerHandler {sock suffix} {
         ErrorReturn $sock "$suffix not implemented"
     }
 }
-    
+#------------------------------------------------------------------------------
+#  Stop containers that might be associated with event loggers:
+
+set opened 0
+if {[info commands db] eq ""} {
+    sqlite3 db $::env(DAQ_EXPCONFIG)
+    set opened 1
+}
+
+set loggers [eventlog::listLoggers db]
+
+# Sort the containers by host:
+
+array set containersByHost [list]
+foreach logger $loggers {
+   if {[dict get $logger container] ne ""} {
+       lappend containersByHost([dict get $logger host])   
+   }
+}
+
+# Before killing the containers in the host,
+# Uniquify the lists so we don't try to kill the same container twice.
+
+foreach host [array names containersByHost] {
+    array set containers [list]
+    foreach c $containersByHost($host) {
+        set containers($c) ""
+    }
+    set containerList [array names containers]
+    foreach c $containerList {
+       container::deactivate $host $c
+    }
+}
+
+if {$opened} {
+    db close
+}
