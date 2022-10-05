@@ -7183,5 +7183,754 @@ name destroy
       </variablelist>
     </refsect1>
 </refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>DAQ manager database schema</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>DAQ Manager schema</refname>
+      <refpurpose>Document database tables for manager.</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      
+         <programlisting>
+CREATE TABLE container  (
+            id         INTEGER PRIMARY KEY,
+            container  TEXT,
+            image_path TEXT,
+            init_script TEXT
+        );
+CREATE TABLE bindpoint (
+            id            INTEGER PRIMARY KEY,
+            container_id  INTEGER,    -- FK to container
+            path          TEXT,
+            mountpoint    TEXT DEFAULT NULL
+        );
+CREATE TABLE program_type (
+            id                INTEGER PRIMARY KEY,
+            type              TEXT
+        );
+CREATE TABLE program (
+            id           INTEGER PRIMARY KEY,
+            name         TEXT,      -- Name used to refer to the program.
+            path         TEXT,
+            type_id      INTEGER, -- FK to program_type
+            host         TEXT,
+            directory    TEXT,
+            container_id INTEGER, -- FK to container
+            initscript   TEXT,
+            service      TEXT
+        );
+CREATE TABLE program_option (
+                id          INTEGER PRIMARY KEY,
+                program_id  INTEGER,  -- FK to program
+                option      TEXT,
+                value       TEXT
+            );
+CREATE TABLE program_parameter (
+            id             INTEGER PRIMARY KEY,
+            program_id     INTEGER,   -- FK to program.
+            parameter      TEXT
+        );
+CREATE TABLE program_environment (
+                id         INTEGER PRIMARY KEY,
+                program_id INTEGER,
+                name       TEXT,
+                value      TEXT
+            );
+CREATE TABLE sequence (
+            id                INTEGER PRIMARY KEY,
+            name              TEXT,
+            transition_id     INTEGER -- FK to transition triggering seq.
+        );
+CREATE TABLE step (
+            id                       INTEGER PRIMARY KEY,
+            sequence_id              INTEGER, -- fk to sequence
+            step                     REAL,
+            program_id               INTEGER, -- fk to program table.
+            predelay                 INTEGER DEFAULT 0,
+            postdelay                INTEGER DEFAULT 0
+        );
+CREATE TABLE transition_name (
+            id        INTEGER PRIMARY KEY,
+            name      TEXT
+        );
+CREATE TABLE legal_transition (
+            id              INTEGER, PRIMARY KEY,
+            from_id         INTEGER,   -- FK in to transition_name
+            to_id           INTEGER    -- Also FK into transition_name
+        );
+CREATE TABLE last_transition (
+            state           INTEGER     -- FK to transition_name
+        );
+
+CREATE TABLE logger (
+            id                 INTEGER PRIMARY KEY,
+            daqroot            TEXT,
+            ring               TEXT,
+            host               TEXT,
+            partial            INTEGER DEFAULT 0,
+            destination        TEXT,
+            critical           INTEGER DEFAULT 1,
+            enabled            INTEGER DEFAULT 1,
+            container_id       INTEGER DEFAULT NULL -- FK to container tbl.
+        );
+CREATE TABLE recording (
+            state     INTEGER
+        );
+CREATE TABLE kvstore (
+            id        INTEGER PRIMARY KEY,
+            keyname   TEXT,
+            value     TEXT
+        );
+CREATE TABLE users (
+            id        INTEGER PRIMARY KEY,
+            username  TEXT
+        );
+CREATE TABLE roles (
+            id       INTEGER PRIMARY KEY,
+            role     TEXT
+        );
+CREATE TABLE user_roles (
+            user_id    INTEGER,
+            role_id    INTEGER
+        );
+            
+         </programlisting>
+      
+    </refsynopsisdiv>
+    <refsect1>
+             <title>INTRODUCTION</title>
+          <para>
+            The program manager maintains a DAQ instance configuration in an
+            SQLite3 database.  In addition some state is also maintained in that
+            database.   The purpose of this section is to describe the
+            tables and their relationships in this schema.
+          </para>
+          <para>
+            For the most part, the database tables make up subsystems of
+            roughly orthogonal table sets.  Each of these table sets will
+            be given section in the man page.  
+          </para>
+          <para>
+            All tables have an integer primary key field named <literal>id</literal>.
+            This will not be further described in the interest brevity.  When
+            a field is said to be a foreign key into another table, its value is
+            the value of the <literal>id</literal> field of a row in that other
+            table.  This is a normal way to make relationships between tables
+            in SQL databases.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>Users and Roles</title>
+      <para>
+         While at the time this is being written, the intended functionalit behind
+         these tables is not implemented, the eventual purpose is to allow for
+         a capability based system that constrains what each user can do.
+         The tables are probably pretty close to the final shape but there is
+         no code to implement the protections.
+      </para>
+      <para>
+         The concept of this table set is that users of the system must be defined.
+         Roles indicate the sorts of things a person is allowed to do within the
+         system and a user can be granted any set of roles which, in turn, describe
+         what that user can do within the system.
+      </para>
+      <para>
+         The <literal>users</literal> table defines the set of users known to the
+         system  the <literal>username</literal> field is the login name of
+         a system user.
+      </para>
+      <para>
+         Similarly, the <literal>roles</literal> table contains the set of
+         roles defined by the system.  The <literal>role</literal> field is the
+         name of a role that can be <firstterm>granted</firstterm> to a set of
+         users.
+      </para>
+      <para>
+         Finally, the <literal>user_roles</literal> table is a
+         <firstterm>join table</firstterm>.  It does not have or need a primary
+         key field.  It has two fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>user_id</literal></term>
+            <listitem>
+                <para>
+                  A foreign key into the <literal>users</literal> table which
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>role_id</literal></term>
+            <listitem>
+                <para>
+                  A foreign key into the <literal>roles</literal> table.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Thus each entry in the <literal>user_roles</literal> table defines
+         a role that has been granted to a specific user.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>Containers</title>
+      <para>
+         The database supports the definition of containers and bindpoints.
+         In addition an <firstterm>init script</firstterm> can be defined
+         that is run prior to running a program within the container.  Containers
+         can be activated on specific nodes in the network.  Once activated a
+         container persists and any number of programs can run within it.
+      </para>
+      <para>
+         The <literal>container</literal> table defines the containers and gives
+         names to each one.
+         <literal>container</literal>  field is the name of the container.
+            <literal>image_path</literal> is the path in the <emphasis>host system</emphasis>
+            to the container image.
+            <literal>init_script</literal> is a script that is run prior to running
+            any program in the container.  The field contains the script itself not
+            the path to a file containing that script.  If, however, the script
+            depends on other scripts, the must be referred to in a way that they
+            can be located within the container (e.g. located in a directory bound
+            into the running container).
+      </para>
+      <para>
+         Since each running container can have any number of bind points,
+         a separate table is needed to contain their definitions. The
+         <literal>bindpoint</literal> table is this table.  It contains
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>container_id</literal></term>
+            <listitem>
+                <para>
+                  A foreign key back into the <literal>container</literal>
+                  table that indicates which container this bind point
+                  belongs to.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>path</literal></term>
+            <listitem>
+                <para>
+                  The host system path to be bound into the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>mountpoint</literal></term>
+            <listitem>
+                <para>
+                  If not null, this is the location in the container's file system
+                  where <literal>path</literal> will be bound.  If this field is
+                  null, the <literal>path</literal> is bound into the same
+                  filesystem location in the container.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>Programs</title>
+      <para>
+         Programs are executables or shell scripts that are run by the manager.
+         Programs are run on a specific host and can either run in the native system
+         or inside a container that has been defined in the database.
+      </para>
+      <para>
+         Programs have a type, which determines what happens when it exits, options
+         (name value pairs e.g. <option>--ring</option> myring), parameters which are
+         an ordered set of values.  In addition programs can have a set of
+         name value pairs that are loaded into the environment prior to program
+         startup.  Note that programs started in containers will first have the
+         containers initialization script executed on their behalf.
+      </para>
+      <para>
+         The <literal>program_type</literal> table in the program table set
+         provides names for the types of programs the system recognizes.
+         This table is pre-loaded when the schema is created. A program's program
+         type determines the actions taken by the system when the program exits.
+      </para>
+      <para>
+         Possible values are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>Transitory</literal></term>
+            <listitem>
+                <para>
+                  The program is expected to run, do something and then exit.
+                  No action is taken when it exits.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>Persistent</literal></term>
+            <listitem>
+                <para>
+                  The program is intended to run and continue to run but is
+                  not critical to the functioning of the system.  For example
+                  a SpecTcl instance could be run under the program manager.
+                  SpecTcl is not intended to exit but data continues to flow
+                  and external SpecTcl instances can be attached to the system
+                  to monitor the data.
+               </para>
+               <para>
+                  If a persistent program exits, a note is sent to all output monitors
+                  but no other action is taken.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>Critical</literal></term>
+            <listitem>
+                <para>
+                  The continued operation of the program is critical to the
+                  system.  If a critical program exits, the manager makes a
+                  transition to <literal>SHUTDOWN</literal> stopping the system.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         The <literal>program</literal> table is the <firstterm>root table</firstterm>
+         of program definitions.  It has the following fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>name</literal></term>
+            <listitem>
+                <para>
+                  A name assigned to the program that can be used to reference
+                  the program when using the tools provided to configure the
+                  system.  This is <emphasis>not</emphasis> the program path.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>path</literal></term>
+            <listitem>
+                <para>
+                  Path to the executable or script that will run when the program
+                  is activated.  Note that if the program should be run in a container,
+                  this must be the path to the program as seen within the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>type_id</literal></term>
+            <listitem>
+                <para>
+                  A foreign key into the <literal>program_type</literal> table
+                  that indicates the type of program this is.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>host</literal></term>
+            <listitem>
+                <para>
+                  The IP address or DNS name of the host in which the program will
+                  be run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>directory</literal></term>
+            <listitem>
+                <para>
+                  The working directory that will be set for the program when it
+                  runs.  Again, if the program is containerized, this must be
+                  the path to the directory as seen within the container.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>container_id</literal></term> 
+            <listitem>
+                <para>
+                  If not null, the
+                  program will be run containerized and this is a foreign key into the
+                  <literal>container</literal> table that selects the container within
+                  which the program will run.  If null, the program runs in the native
+                  system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>initscript</literal></term>
+            <listitem>
+                <para>
+                  If not empty, this is a script that is run prior to program
+                  activation.  As with <literal>container</literal>, this contains
+                  the contents of a script not a path.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>service</literal></term>
+            <listitem>
+                <para>
+                  Not yet used by code.  The intent is that this field can encapsulate
+                  a service advertised in the host's port manager on which requests
+                  can be made to the program.  
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         The <literal>program_option</literal> table captures a list of option/value
+         pairs that will be passed to the program's command line.  The fields are
+         <literal>program_id</literal> a foreign key into the <literal>program</literal>
+         table indicating the program this belongs to, <literal>option</literal>
+         the option and <literal>value</literal> the option's value.
+         For example if <literal>option</literal> is <literal>--ring</literal>
+         and value is <literal>fox</literal>, <literal>--ring=fox</literal>
+         is passed to the program.
+      </para>
+      <para>
+         Similarly, <literal>program_parameter</literal> is an ordered list
+         of parameters that is passed to the program on startup.
+         <literal>program_id</literal> is the foreign key back to
+         <literal>program</literal> indicating the program this will be passed to and
+         <literal>parameter</literal> is the value that will be passed.
+         Parameters are given in the command line in order of their primary keys..
+      </para>
+      <para>
+         Finally, <literal>program_environment</literal>, is  a list of environment
+         variables and their values that will be set prior to running the
+         program.  <literal>program_id</literal> is, again, a foreign key
+         into the <literal>program</literal> that determines which program each
+         record belongs to. <literal>name</literal> is the environment variable name
+         and <literal>value</literal> its value. 
+      </para>
+      <para>
+         An implementation note of some interest:  Since the manager writes a
+         shell script and runs it to execute the program, all shell substitutions
+         will work in the option, parameter and environment tables.
+      </para>
+    </refsect1>
+    <refsect1>
+      <title>States and transitions</title>
+      <para>
+         At its heart the manager is just a state machine.  States are defined
+         in the database as are valid transitions from each state.  Each state
+         transition can trigger sequences of program executions.  While the set
+         of states is initially defined when the schema is created, the states
+         and valid transitions can be redefined using the configuration tools.
+         That is not recommended.   
+      </para>
+      <para>
+         This section describes states, transitions and sequences.
+      </para>
+      <para>
+         Since actions occur on transitions not within the states themselves,
+         the stae names are actually captured in the <literal>transition_name</literal>
+         table.  Other than its primary key, it consists of a single text field;
+         <literal>name</literal> that is the textual state of the
+         state-name/transition into the state.  Initially, this is stocked with 
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>SHUTDOWN</literal></term>
+            <listitem>
+                <para>
+                  The system is shutdown.  This is a special state in the
+                  sense that transitioning into  that state involves stoppping
+                  execution of all programs.  In addition failure of critical
+                  programs will cause an automatic transition to the <literal>SHUTDOWN</literal>
+                  state.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>BOOT</literal></term>
+            <listitem>
+                <para>
+                  The system is ready for use.  Often, for a DAQ system to be usable,
+                  a set of base programs (e.g. readout engines, event builders and their
+                  feeders) must be running.  Sequences attached to the transition
+                  to this state normally initiate that set of base programs.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>HWINIT</literal></term>
+            <listitem>
+                <para>
+                  Hardware is initialized.  This is normally done once after
+                  boot to ensure that the hardware has been  made ready to
+                  start/stop runs.  Any time consuming, one-time initialization is
+                  normally done here.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>BEGIN</literal></term>
+            <listitem>
+                <para>
+                  The system is taking data, a run has begun.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>END</literal></term>
+            <listitem>
+                <para>
+                  The system has finished taking data and is now ready to start
+                  the next run.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Legal transitions between states are defined in the <literal>legal_transition</literal>.
+         In addition to its primary key, it contains
+         a pair of foreign keys into the <literal>transition_name</literal> table:
+         <literal>from_id</literal> and <literal>to_id</literal> which define
+         a legal transition's initial and final states respectively.
+      </para>
+      <para>
+         The <literal>last_transition</literal> table captures the last
+         state of the system.  It is primarily used on system start up to know if
+         the manager has to transition to <literal>SHUTDOWN</literal>.  It's a
+         table with a single entry  and a single field <literal>state</literal>
+         which is a foreign key into <literal>legal_transition</literal> indicating
+         the current manager state.
+      </para>
+      <para>
+         The power of the manager system comes from being able to trigger
+         actions as a result of attempts to transition to another state of
+         the system.   These actions are called sequences and consist of
+         attempts to run a set of programs.  How programs are run depends on their
+         types.  If a program is transitory it is run and must complete before
+         the next step in a sequence is initiated.  If a program is either
+         Critical or Persistent it is started and then next step of the
+         sequence can be run.
+      </para>
+      <para>
+         From the previous paragraph, you have hopefully built a model that
+         a sequence has a transition trigger and an ordered series of steps
+         that run programs.  This model is captured in the
+         following tables:
+      </para>
+      <para>
+         The <literal>sequence</literal> table contains one entry per sequence.
+         The entry contains a <literal>name</literal>, which provides a name to
+         the sequencde and <literal>transition_id</literal> which is a foreign key
+         into the <literal>transition_name</literal> table indicating which
+         transition will trigger execution of the sequence.
+      </para>
+      <para>
+         Each sequence has a series of steps.  These are defined in the
+         <literal>step</literal> table which defines both the actions of each
+         step in the sequence as well as the ordering of the steps. The ordering
+         is captured in a way that allows steps to be inserted at any point in the
+         sequence when configuring the system.  The <literal>step</literal>
+         table contains the following fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>sequence_id</literal></term>
+            <listitem>
+                <para>
+                  Foreign key  into the <literal>sequence</literal> table
+                  that indicates the sequence to which this step belongs.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>step</literal></term>
+            <listitem>
+                <para>
+                  A real value that indicates the step ordering.  To determine step
+                  ordering for a sequence, the system retreives all steps that
+                  belong to that sequence and orders them by this field.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>program_id</literal></term>
+            <listitem>
+                <para>
+                  Foreign key into the <literal>program</literal>
+                  table that describes the program to be run in this step.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>predelay</literal></term>
+            <listitem>
+                <para>
+                  Number of seconds to delay prior to running this step.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>postdelay</literal></term>
+            <listitem>
+                <para>
+                  Number of seconds to delay after starting the program described
+                  by this step.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Note that several sequences can be given the same trigger.  This is useful
+         when buiding systems that consist of quasi-independent detector systems.
+         While there's no specification that defines the order in which sequences
+         are run, in practice their primary key determines that order.
+      </para>
+      <para>
+         One way to ensure that sequences are run in the order you want is to add
+         intermediate states to the system, and use external software to step
+         the system from desired initial state to desired final state along that
+         set of intermediate states.
+      </para>
+      
+    </refsect1>
+    <refsect1>
+      <title>Event Logging</title>
+      <para>
+         Event logging could have been captured as steps in sequences, however
+         the actions, and order in which they are taken are so critical, they
+         are separated out from that subsystem.  In NSCLDAQ prior to the manager,
+         there were two types of loggers, the primary logger managed a directory
+         tree that maintained run metadata and used symbolic links to provide
+         both and experiment and a run view of the event files.  Multiloggers just
+         put event files in a soup in a directory.
+      </para>
+      <para>
+         In NSCLDAQ prior to the manager you could have a single primary logger and
+         as many multiloggers as you wanted.  The manager allows any number of
+         any type of logger.  Loggers that look like multilogger are called
+         <firstterm>partial</firstterm> loggers.  Loggers can also be critical or not.
+         Failure of a critical logger results in a transition to <literal>SHUTDOWN</literal>.
+      </para>
+      <para>
+         Two tables describe and manage logger fucntionality <literal>recording</literal>
+         simply contains a single record with a single boolean field <literal>state</literal>
+         which is non-zero if logging should be done and zero if not.
+      </para>
+      <para>
+         The <literal>logger</literal> table defines the loggers themselves.  It
+         contains the following fields:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>daqroot</term>
+            <listitem>
+                <para>
+                  The directory tree that contains the event loggers. This should
+                  be the top leve of an NSCLDAQ installation either in a container
+                  (if the logger is run containerized), or the native system if not.
+                  The actual program run will be <filename>eventlog</filename> from
+                  the <filename>bin</filename> subdirectory of that tree.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>ring</term>
+            <listitem>
+                <para>
+                  This is the URL of the NSCLDAQ ring buffer from which event
+                  data will be logged.  This should be of the form:
+                  <literal>tcp://</literal><replaceable>host/ringname</replaceable>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>host</literal></term>
+            <listitem>
+                <para>
+                  Host in which the event logger should be run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>partial</literal></term>
+            <listitem>
+                <para>
+                  Non zero if the loggers is partial (multilogger style). If
+                  zero, the logger is a full logger and will maintain a directory
+                  tree in the same manner the primary logger of the
+                  ReadoutShell does.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>critical</literal></term>
+            <listitem>
+                <para>
+                  If nonzero, the logger is critial to the experiment function and the
+                  system should be <literal>SHUTDOWN</literal> if it fails/exits
+                  unexpectedly.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>enabled</literal></term>
+            <listitem>
+                <para>
+                  If nozero, the logger will record data when the
+                  <literal>recoring.state</literal> field is nonzero.
+                  This allows loggers to be turned off once system debugging
+                  is complete.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>container_id</literal></term>
+            <listitem>
+                <para>
+                  If non-null, the logger will be run containerized and this
+                  specifies the foreign key into the
+                  <literal>container</literal> table that specifies the
+                  container definition to use when containerizing the
+                  logger software.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>Key value store</title>
+      <para>
+         The key value store is used to hold miscellaneous data.  For example,
+         the Readout program control programs use this to store the run title
+         and run number.  The is simply a table that contains the fields:
+         <literal>keyname</literal> the name of an item.
+         <literal>value</literal> the value of that item.  User software can
+         also use this table to store arbitrary data.
+      </para>
+      <para>
+         $DAQBIN/mg_mkconfig adds two entries to this table when it is created:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term>Key: <literal>title</literal> Value: <literal>Set a new title</literal></term>
+            <listitem>
+                <para>
+                  The title Readout programs will use for their next run.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term>Key: <literal>run</literal> Value: <literal>0</literal></term>
+            <listitem>
+                <para>
+                  The run number readout programs will use for their next run.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+</refentry>
 
 <!-- /manpage -->
