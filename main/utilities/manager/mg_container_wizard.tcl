@@ -281,6 +281,16 @@ proc processIniFile {path} {
 #             for the usr opt that container has.
 #      -container - readonly retreives the selected container.
 #      -daqversion - reaodonly retrieves the selected daq version.
+#
+#  Events:
+#   *  <Double-1> on the container list:
+#       -   Loads the selected container
+#       -   Clears the selected-daq-verison
+#       -   Fills the versions listbox from the versions the model selected supports.
+#
+#   *  <Double-1> on the daq version list box; loads the selection in to
+#      selected-daq-version.
+# 
 # Note:
 #   Normally this widget is part of some larger thing that, when the user is
 #   happy with what they have goes on to allow them make changes to the container.
@@ -319,6 +329,12 @@ snit::widgetadaptor container::WizardChooser {
         grid $win.seldaq  -row 2 -column 2
         
         $self configurelist $args
+        
+        #  Bind double click on the two list boxes:
+        
+        bind $win.containerlist <Double-1> [mymethod _selectContainer]
+        bind $win.versionlist   <Double-1> [mymethod _selectVersion]
+        
     }
     ##
     #  cgetters:
@@ -367,6 +383,46 @@ snit::widgetadaptor container::WizardChooser {
             $win.containerlist insert end $container
             
         }
+    }
+    ##
+    #  event handling.
+    
+    
+    ##
+    # _selectContainer
+    #    Processes a double click on an element of the container list.
+    #
+    method _selectContainer {} {
+        set selection [$win.containerlist curselection]
+        if {[llength $selection] > 0} {
+            set selectedContainer [$win.containerlist get $selection]
+            $win.selcontainer configure -text $selectedContainer
+            $win.seldaq configure -text {}
+            
+            set versions [$self _getVersions $selectedContainer]
+            $win.versionlist delete 0  end
+            foreach version $versions {
+                $win.versionlist insert end $version
+            }
+        }
+    }
+    
+    ##
+    # Utilties:
+    
+    ##
+    # _getVersions
+    #   @param name   - container name.
+    #   @return list - versions of NSCLDAQ supporte according to the model.
+    #
+    method _getVersions name {
+        
+        set index [lsearch -exact -index 0 $options(-model) $name]
+        
+        if {$index == -1} {
+            error "BUG - no container match in model for $name"
+        }
+        return [lindex [lindex $options(-model) $index] 1]
     }
 }
  
