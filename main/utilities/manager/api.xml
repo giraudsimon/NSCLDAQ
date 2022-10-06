@@ -7932,5 +7932,183 @@ CREATE TABLE user_roles (
       </variablelist>
     </refsect1>
 </refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>Container Description File</refentrytitle>
+      <manvolnum>5daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Container Description File</refname>
+      <refpurpose>Describe containes to Manager configuration container wizard</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+      <programlisting>
+[CONFIG]
+native_tree=/location/of/opts/in/native/system
+container_tree=/location/of/opts/in/containerized/systems
 
+[container-name]
+path=/path/to/container
+usropt=usr-opt-for-that-container
+bindings=native,native:container...
+....
+
+      </programlisting>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>INTRODUCTION</title>
+          <para>
+            Configuring the manager for an experiment is a complex process
+            and the initial set of configuration tools is quite simplistic.
+            The container wizard allows users to define containers that can be
+            used to run programs and event loggers using a configuration
+            file to define the set of containers and how to specify them
+            and their bindings for <filename>/usr/opt</filename> as well
+            as other bindings that might be required to make that container
+            work correctly (e.g. bindings needed to make the module system
+            work within the container.
+          </para>
+          <para>
+            The wizard can use the information in this configuration file
+            to present options for the version of NSCLDAQ to setup within
+            the container as well as provide the option to make other
+            filesystem bindings.
+          </para>
+          <para>
+            See the <literal>ContainerWizard (1daq)</literal> man page for
+            more information about what the container wizard does, and where it
+            looks for its configuration file.
+          </para>
+    </refsect1>
+    <refsect1>
+      <title>Configuration file format</title>
+      <para>
+         The configuration file format used is .ini (or .toml if you prefer).
+         In that format the file has sections which are introduced by
+         [sectionname] and each section has a number of key=value pairs.
+      </para>
+      <para>
+         A mandatory [CONFIG] section describes where the /usr/opt directories
+         live in both native and containerized file systems.  This information
+         is used by the wizard to enumerate the versions of NSCLDAQ that are installed
+         to present them as options to the user.  The keys in this section
+         are mandatory and are:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>native_tree</literal></term>
+            <listitem>
+                <para>
+                  Where the /usr/opt directories live in the native file system.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>container_tree</literal></term>
+            <listitem>
+                <para>
+                  where the /usr/opt directories get mapped in the containerized
+                  systems.  Note that this binding will automatically
+                  be made by the wizard.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+      <para>
+         Subsequent sections are container names to present to the user.
+         These sections have both mandatory and optional keys:
+      </para>
+      <variablelist>
+         <varlistentry>
+            <term><literal>path</literal> (Mandatory)</term>
+            <listitem>
+                <para>
+                  The value of this key is the path to the container image in
+                  the host filesystem.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>usropt</literal> (Mandatory)</term>
+            <listitem>
+                <para>
+                  The directory that should be bound to /usr/opt in the
+                  container.  This binding will be made relative to the
+                  <literal>native_tree</literal> value in the
+                  <literal>[CONFIG]</literal> section.  For example,
+                  if <literal>native_tree</literal> is <filename>/usr/opt</filename>
+                  and <literal>usropt</literal> is <literal>opt-buster</literal>,
+                  if selected, the container will bind
+                  <literal>/usr/opt/opt-buster:/usr/opt</literal>.
+               </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><literal>bindings</literal> (Optional)</term>
+            <listitem>
+                <para>
+                  If specified these are additional bindings that will be made
+                  when the container is activated.  The value is a comma separated
+                  list of bindings.  Each binding is of the form
+                  <replaceable>nativepath</replaceable> or
+                  <replaceable>nativepath:containerpath</replaceable>.
+                  The first form will bind <replaceable>nativepath</replaceable>
+                  to the same location in the container filesystem.  The second form
+                  will bind <replaceable>nativepath</replaceable>
+                  to <replaceable>containerpath</replaceable> in the
+                  container filesystem.
+               </para>
+            </listitem>
+         </varlistentry>
+      </variablelist>
+    </refsect1>
+    <refsect1>
+      <title>EXAMPLE</title>
+      <para>
+         This example shows a configuration file that's part of the FRIB
+         configuration file:
+      </para>
+      <example>
+         <title>Sample Container Configuration File</title>
+         <programlisting>
+[CONFIG]
+native_tree=/usr/opt
+container_tree=/non-container
+
+[jessie]
+path=/usr/opt/nscl-jessie.img
+usropt=opt-jessie
+bindings=/usr/opt/include_modules-jessie.sh:/etc/profile.d/module.sh
+
+[buster]
+path=/usr/opt/nscl-buster.img
+usropt=opt-buster
+bindings=/mnt/misc/sw/indep,/mnt/misc/sw/x86_64/all,/usr/lib/x86_64-linux-gnu/modulecmd.tcl
+
+         </programlisting>
+      </example>
+      <para>
+         The <literal>[CONFIG]</literal> section specifies that the directory
+         that contains the container <filename>/usr/opt</filename> trees is
+         <filename>/usr/opt</filename> and that this will be mapped into all
+         containrs at <filename>/non-container</filename>.  Two containers
+         are defined: <literal>jessie</literal> and <literal>buster</literal>.
+      </para>
+      <para>
+         As an example, activating the <literal>buster</literal> container
+         will be done with a command like:
+      </para>
+      <informalexample>
+         <programlisting>
+singularity instance start --bind /usr/opt:/non-container \
+   --bind /usr/opt/opt-buster:/usr/opt \
+   --bind /mnt/misc/sw/indep \
+   --bind /mnt/misc/sw/x86_64/all \
+   --bind /usr/lib/x86_64-linux-gnu/modulecmd.tcl \
+       /usr/opt/nscl-buster.img buster
+       
+         </programlisting>
+      </informalexample>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
