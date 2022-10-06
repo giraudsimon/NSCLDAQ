@@ -257,6 +257,19 @@ proc processIniFile {path} {
     
     return $result
 }
+
+##
+# getContainer
+#   Given the dict of containers, returns the container definition
+#
+proc getContainer {containers container} {
+    foreach c [dict get $containers containers] {
+        if {$container eq [dict get $c name]} {
+            return $c
+        }
+    }
+    error "Could not find $container in containers  dicts"
+}
 #-----------------------------------------------------------------------------
 #  User interface items:
 #
@@ -497,7 +510,37 @@ proc createChooserModel {config} {
    return $result
 }
     
+#------------------------------------------------------------------------------
+#  Handling of stage one of the wizard - selected container and DAQ version.
+#
 
+
+
+##
+# containerSelected
+#    Ok in stage one - container selected.
+#
+# @param selector - widget which is the selector.
+# @param containers - container definitions in dict form
+#
+#  
+proc containerSelected {selector containers} {
+    
+    set container [$selector cget -container]
+    set daq       [$selector cget -daqversion]
+    
+    set containerDef [getContainer $containers $container]
+    
+    puts "Selected $container : $daq def: $containerDef"
+    
+}
+
+##
+# Cancel without doing anything
+#
+proc onCancel { } {
+    exit
+}
 
 #-------------------------------------------------------------------------------
 # Entry point
@@ -536,8 +579,8 @@ container::WizardChooser .chooser -model $model
 #  Add Ok/cancel buttons:
 
 ttk::frame .action -relief groove -borderwidth 3
-ttk::button .action.ok -text Ok
-ttk::button .action.cancel -text Cancel
+ttk::button .action.ok -text Ok  -command [list containerSelected .chooser $containers]
+ttk::button .action.cancel -text Cancel -command [list onCancel]
 grid .chooser
 grid .action -sticky ew
 grid .action.ok .action.cancel -sticky w
