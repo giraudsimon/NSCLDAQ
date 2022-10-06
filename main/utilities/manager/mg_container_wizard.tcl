@@ -512,7 +512,16 @@ if {[llength $argv] != 1} {
     usage "Invalid number of command line arguments"
 }
 
+if {![file readable $argv] | ![file writable $argv]} { 
+    usage "Configuration database file $argv is either not readable or not writable or both"
+}
+
+# Sadly until we operate on the database, we can't tell if it's not one:
+
 sqlite3 db $argv
+if {[catch {db eval {SELECT * from sqlite_master}} msg] } {
+    usage "Unable to open $argv as an sqlite3 database: $msg"
+}
 
 set inifile [locateIniFile]
 set containers [processIniFile $inifile]
