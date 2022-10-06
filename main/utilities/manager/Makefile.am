@@ -2,7 +2,7 @@ program_scripts=startServer.tcl mg_mkconfig.tcl mg_cfgcontainers.tcl \
 	mg_cfgprogram.tcl mg_stateedit.tcl mg_seqedit.tcl mg_loggeredit.tcl \
 	mg_kvedit.tcl mg_authedit.tcl mg_config.tcl mg_startManager.tcl \
 	mg_kvget.tcl mg_monitorOutput.tcl mg_shutdown.tcl mg_cfgEvlog.tcl \
-	mg_startloggers.tcl
+	mg_startloggers.tcl mg_container_wizard.tcl
 
 server_scripts=mg_statusserver.tcl  mg_programserver.tcl \
 	mg_kvserver.tcl mg_evlogserver.tcl

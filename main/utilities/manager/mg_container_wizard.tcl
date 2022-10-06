@@ -132,6 +132,77 @@ proc processConfigSection {ini} {
         
     
 }
+##
+# decodeBindings
+#   Given a bindings value from the configuration file,
+#   decode it into the expected list.
+#
+# @param bindings - raw bindings value from the file.
+# @return list of bindings.
+#
+proc decodeBindings {bindings} {
+    set result [list]
+    set bindingsList [split $bindings ,];   # list of bindings
+    foreach binding $bindingsList {
+        lappend result [split $binding :]
+    }
+    return $result
+}
+##
+#  processContainer
+#     Process a container section.  This has mandatory keys:
+#
+#     - path - the host path to the container image.
+#     - usropt - the path to the directory to be bound into /usr/opt relative to
+#                native_tree in the [CONFIG] section
+#
+#  Additionally an optional section:
+#
+#    - bindings - can provide additonal bindings in the form recognized by
+#      sigularity's --bind  option.
+#
+# @param ini - handle open on the ini file.
+# @param name - container/section name.
+# @return dict with the following keys:
+#     -   name - section/container name.
+#     -   path - container path.
+#     -   usropt - path to /usr/opt.
+#     -   bindings a possbly empty list of bindings 
+# @note if manadtory key(s) are missing usage is called to abort the program.
+#
+proc processContainer {ini name} {
+    #  Ensure all mandatory keys are present in the section:
+    
+    set missing [list]
+    set mandatory [list path usropt]
+    foreach key $mandatory {
+        if {![ini::exists $ini $name $key]} {
+            lappend missing $key
+        }
+    }
+    if {[llength $missing] > 0} {
+        usage "Config file [ini::filename $ini] definition of container $name is missing mandatory keys: '$missing'"
+    }
+    
+    # Marshall the mandatory keys and name into the result:
+    
+    set result [dict create                   \
+        name $name                            \
+        path [ini::value $ini $name path]     \
+        usropt [ini::value $ini $name usropt] \
+    ]
+    # If there's a bindings key get it and marshall it into a list of bindings:
+    
+    set bindings [list]
+    if {[ini::exists $ini $name bindings]} {
+        set rawBindings [ini::value $ini $name bindings]
+        set bindings [decodeBindings $rawBindings]
+    }
+    
+
+    dict set result bindings $bindings
+    return $result
+}
 
     
 
@@ -148,7 +219,10 @@ proc processConfigSection {ini} {
 #  -   name  - container name (section name).
 #  -   path  - path to the container image.
 #  -   usropt - Path to usropt within the specified tree.
-#  -   bindings - list of any additional bindings.
+#  -   bindings - list of any additional bindings.  Each element is a one or
+#       two element list - one element if the bindpoint is the same as the
+#       host path, two elements if not and the second element is the bind point for
+#       the first.
 #
 # @param path - path to the ini file.
 # @return ini file dict as describeda above.
@@ -166,11 +240,18 @@ proc processIniFile {path} {
     if {$configIndex == -1} {
         usage "Config file: $path is mising mandatory CONFIG sections"
     }
-    set containerSections [lreplace $keys $configIndex $configIndex]
     set configContents [processConfigSection $ini]
     dict set result native_tree [lindex $configContents 0]
     dict set result container_tree [lindex $configContents 1]
     
+    # Process the containers now:
+    
+    set containerSections [lreplace $keys $configIndex $configIndex]
+    foreach container $containerSections {
+        set containerDict [processContainer $ini $container]
+        dict lappend result containers $containerDict
+        
+    }
     
     ini::close $ini
     
