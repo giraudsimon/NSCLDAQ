@@ -401,11 +401,15 @@ proc ::eventlog::_handleOutput {def db fd} {
     
     set host [dict get $def host]
     set dest [dict get $def destination]
+    set isCritical [dict get $def critical]
     set status [catch {
     if {[eof $fd] } {
         ::eventlog::Log "Event logger in $host -> $dest exited."
         close $fd
         ::eventlog::_unregisterLogger $db $def
+        if {$isCritical} {
+            catch {::sequence::transition $db SHUTDOWN}
+        }
     } else {
         set line [gets $fd]    
         ::eventlog::Log "Event logger in $host -> $dest :  $line"
