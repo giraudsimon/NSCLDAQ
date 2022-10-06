@@ -406,6 +406,16 @@ snit::widgetadaptor container::WizardChooser {
             }
         }
     }
+    ##
+    # _selectVersion
+    #    Process a double click in the version box
+    #
+    method _selectVersion {} {
+        set selection [$win.versionlist curselection]
+        if {[llength $selection] > 0} {
+            $win.seldaq configure -text [$win.versionlist get $selection]
+        }
+    }
     
     ##
     # Utilties:
@@ -436,7 +446,29 @@ snit::widgetadaptor container::WizardChooser {
 # @note we don't probe subdirectories that contain experimental DAQ systems.
 #
 proc probeDaqVersions {hosttree containertree path} {
-    return [list]
+    set result [list]
+    
+    #which of hosttree/containertree have a daq directory/link
+    
+    set daqdir [file join $hosttree $path daq]
+    if {![file isdirectory $daqdir]} {
+        set daqdir [file join $containertree $path daq]
+    }
+    if {[file isdirectory $daqdir]} {
+        if {[catch {glob [file  join $daqdir *]} listing] == 0} {
+            foreach item $listing {
+                if {[file isdirectory $item]  && [file readable [file join $item daqsetup.bash]]} {
+                    set name [file tail $item]
+                    
+                    lappend result [file tail $item]
+                    
+                }
+            }
+        }
+    }
+    
+    
+    return $result
 }
     
  
@@ -456,7 +488,7 @@ proc createChooserModel {config} {
    
    foreach container [dict get $config containers] {
         set name [dict get $container name]
-        set path [dict get $container path]
+        set path [dict get $container usropt]
         set versions [probeDaqVersions $hosttree $ctree $path]
         
         lappend result [list $name $versions]
@@ -486,12 +518,17 @@ set inifile [locateIniFile]
 set containers [processIniFile $inifile]
 
 
-#  Make the model for the wiaard chooser:
+#  Make the model for the wizard chooser:
 
 set model [createChooserModel $containers]
 
 container::WizardChooser .chooser -model $model
-pack .chooser
 
+#  Add Ok/cancel buttons:
 
-    
+ttk::frame .action -relief groove -borderwidth 3
+ttk::button .action.ok -text Ok
+ttk::button .action.cancel -text Cancel
+grid .chooser
+grid .action -sticky ew
+grid .action.ok .action.cancel -sticky w
