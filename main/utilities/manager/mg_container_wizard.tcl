@@ -257,6 +257,158 @@ proc processIniFile {path} {
     
     return $result
 }
+#-----------------------------------------------------------------------------
+#  User interface items:
+#
+
+##
+# @class container::WizardChooser
+# Select container and NSCLDAQ version:
+#
+#  +----------------------------------------------+
+#  |  container                  nscldaq          |
+#  | +----------------+   +--------------------+  |
+#  | |  container list|   | DAQ version list   |  |
+#  | |  ...           |   |                    |  |
+#  | +----------------+   +--------------------+  |
+#  |  selected-container   selected-daq-version   |
+#  +----------------------------------------------+
+#
+# Options:
+# *    -model - contains the data used to drive the widget.  This is a
+#             list of pairs.  The first item in each pair is the name of a container
+#             The second item in the list is a list of the NSCLDAQ versions found
+#             for the usr opt that container has.
+#      -container - readonly retreives the selected container.
+#      -daqversion - reaodonly retrieves the selected daq version.
+# Note:
+#   Normally this widget is part of some larger thing that, when the user is
+#   happy with what they have goes on to allow them make changes to the container.
+#
+snit::widgetadaptor container::WizardChooser {
+    option -container -readonly 1 -cgetmethod _getvalue
+    option -daqversion -readonly 1 -cgetmethod _getvalue
+    option -model -default list -configuremethod _stockcontainer
+    constructor {args} {
+        installhull using ttk::frame
+        
+        ttk::label $win.containers -text Containers:
+        ttk::label $win.daqversions -text {NSCLDAQ versions:}
+        
+        ::listbox $win.containerlist  \
+            -yscrollcommand [list $win.containerscroll set] \
+            -selectmode single
+            
+        ttk::scrollbar $win.containerscroll -orient vertical -command [list $win.containerlist yview]
+        ::listbox $win.versionlist \
+            -yscrollcommand [list $win.versionscroll set] \
+            -selectmode single
+        ttk::scrollbar $win.versionscroll -orient vertical -command [list $win.versionlist yview]
+        
+        ttk::label $win.selcontainer -text {}
+        ttk::label $win.seldaq       -text {}
+        
+        grid $win.containers -row 0 -column 0
+        grid $win.daqversions -row 0 -column 2
+        
+        grid $win.containerlist $win.containerscroll \
+            $win.versionlist $win.versionscroll \
+                    -sticky nsew -padx 2
+        
+        grid $win.selcontainer -row 2 -column 0
+        grid $win.seldaq  -row 2 -column 2
+        
+        $self configurelist $args
+    }
+    ##
+    #  cgetters:
+    #
+    
+    ##
+    # _getvalue
+    #  @param cname -configuration  name- must be one of -container or -daqversion.
+    # @return value in the specified text field.
+    #
+    method _getvalue {cname} {
+        if {$cname eq "-container"} {
+            return [$win.selcontainer cget -text]
+        } elseif {$cname eq "-daqversion"} {
+            return [$win.seldaq cget -text]
+        } else {
+            error "invalid cget in _getvalue"
+        }
+    }
+    ##
+    # csetters:
+    
+    ##
+    # _stockcontainer
+    #   Called when the model is reconfigured.  Clear both list boxes
+    #   and both selection.  Stock $win.containerlist with the list of
+    #   containers in the model.
+    #
+    # @param cname - "-model"
+    # @param value  - new model.
+    #
+    method _stockcontainer {cname value} {
+        set options($cname) $value ;     # So cget works inter-alia.
+        
+        # Clear the UI:
+        
+        $win.containerlist delete 0 end
+        $win.versionlist delete 0 end
+        $win.selcontainer configure -text {}
+        $win.seldaq configure -text {}
+        
+        #  Stock containers:
+        
+        foreach item $value {
+            set container [lindex $item 0]
+            $win.containerlist insert end $container
+            
+        }
+    }
+}
+ 
+##
+# probeDaqVersions
+#    Determine the set of versions of NSCLDAQ a container's /usr/opt has
+# @param hosttree  - tree containing the /usr/opt dirs in native system.
+# @param containertree - where hosttree is bound into the running container.
+# @param path     - Path inside either hosttree or container_tree that has daq.
+# @return list of daq version directories.
+# @note we don't probe subdirectories that contain experimental DAQ systems.
+#
+proc probeDaqVersions {hosttree containertree path} {
+    return [list]
+}
+    
+ 
+##
+# createChooserModel
+#   Given the configuration dict, create the model that describes the
+#   containers and their DAQ systems for the WizardChooser.
+#
+# @param config  - the configuration dict.
+# @return list   - see WizardChooser for the shape of this list.
+#
+proc createChooserModel {config} {
+   set hosttree [dict get $config native_tree]
+   set ctree    [dict get $config container_tree]
+   
+   set result [list]
+   
+   foreach container [dict get $config containers] {
+        set name [dict get $container name]
+        set path [dict get $container path]
+        set versions [probeDaqVersions $hosttree $ctree $path]
+        
+        lappend result [list $name $versions]
+   }
+   
+   return $result
+}
+    
 
 
 #-------------------------------------------------------------------------------
@@ -277,8 +429,13 @@ sqlite3 db $argv
 set inifile [locateIniFile]
 set containers [processIniFile $inifile]
 
-puts $containers
 
-db close
+#  Make the model for the wiaard chooser:
+
+set model [createChooserModel $containers]
+
+container::WizardChooser .chooser -model $model
+pack .chooser
+
 
     
