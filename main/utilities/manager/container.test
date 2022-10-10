@@ -195,7 +195,7 @@ tcltest::test container_activate_2 {Minimal definition should be able to see it.
     container::add db test [file normalize ~/minimal.img] "" ""
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     commonCleanup
     
 } \
@@ -218,7 +218,7 @@ tcltest::test container_activate_3 {Activate can run a command} \
 -cleanup {
     exec kill {*}[pid $singfd]
     catch {close $singfd}
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     commonCleanup
 } \
 -body {
@@ -244,7 +244,7 @@ echo hello there
     
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     exec kill {*}[pid $fd]
     catch {close $fd}
     tcltest::removeFile $testscript
@@ -305,7 +305,7 @@ export CONTAINER_TEST
     
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     exec kill {*}[pid $fd]
     catch {close $fd}
     tcltest::removeFile $initscript
@@ -349,9 +349,16 @@ export CONTAINER_TEST
     
     # Note instance list returns 1 if there are no containers.
     
-    set status  [catch {exec ssh localhost singularity instance list test} msg] 
+    set status  [catch {exec ssh localhost singularity instance list test 2> /dev/null} msg] 
     set resultlist [split $msg "\n"]
     set result [lindex $resultlist 1]
+    
+    # Apptainer
+    if {$status == 0} {
+        if {[llength [split $msg "\n"]] == 1} {
+            set status 1
+        }
+    }
     
     list $status $result
     
