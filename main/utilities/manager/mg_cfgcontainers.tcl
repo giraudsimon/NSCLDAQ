@@ -21,6 +21,8 @@ exec tclsh "$0" ${1+"$@"}
 # Assume we're installed in DAQBIN and TclLibs is one dir above us
 
 set libdir [file normalize [file join [file dirname [info script]] .. TclLibs]]
+set bindir [file dirname [info script]]
+
 lappend auto_path $libdir
 
 ##
@@ -56,36 +58,20 @@ proc Usage {msg} {
 
 ##
 # createContainer
-#    The user has asked us to create a new container definition.
-#    - Fish the definition out of the editor.
-#    - Attempt to make a new container definition.
-#    - (report errors)
-#    - on success, reload the definitions into the editor.
 #
-# @param - editor -the editor widget.
-# @param - db     - the database command.
-# @param - def    - The new container defintion dict.
+#    Spin off the container creation wizard.
 #
-proc createContainer {editor db def} {
-    set name [dict get $def name]
-    set image [dict get $def image]
-    set bindings [dict get $def bindings]
-    set initfile ""
-    if {[dict exists $def scriptfile ]} {
-        set initfile [dict get $def scriptfile]
-    }
+# @param - dbfile - database filename.
+# @param - editor - top level editor widget.
+# @param - db     - database handle.
+#
+proc createContainer {dbfile editor db} {
+    exec [file join $::bindir mg_container_wizard] $dbfile
     
-    set status [catch {
-        container::add $db $name $image $initfile $bindings
-    } msg]
+    #  Now update the container defs:
     
-    if {$status} {
-        tk_messageBox -title "Creation failed" -icon error -type ok -message $msg
-    } else {
-        # Update the editor:
-        
-        $editor configure -containers [container::listDefinitions $db]
-    }
+    $editor configure -containers [container::listDefinitions $db]
+    
 }
 ##
 # replaceContainer
@@ -105,7 +91,14 @@ proc replaceContainer {editor db def} {
     if {[container::exists $db $name]} {
         container::remove $db $name
     }
-    createContainer $editor $db $def
+    #   recreate the new container:
+    
+    container::add $db $name \
+        [dict get $def image] [dict get $def init] [dict get $def bindings]
+    
+    $editor configure -containers [container::listDefinitions $db]
+    
+    
 }
 #------------------------------------------------------------------------------
 #  Entry point.
@@ -132,7 +125,7 @@ if {![file writable $dbfile]} {
 sqlite3 db $dbfile
 set existingContainers [container::listDefinitions db]
 container::Editor .editor -containers $existingContainers \
-    -newcommand [list createContainer .editor db]        \
+    -newcommand [list createContainer $dbfile .editor db]        \
     -replacecommand [list replaceContainer .editor db]
 
 ttk::frame .actions

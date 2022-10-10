@@ -626,17 +626,9 @@ snit::widgetadaptor container::Editor {
     #    non-modal editing dialog.
     #
     method _onNew {} {
-        if {[winfo exists $win.containereditor]} {
-            return
+        if {$options(-newcommand) ne ""} {
+            uplevel #0 $options(-newcommand)
         }
-        toplevel $win.containereditor
-        container::Creator $win.containereditor.editor \
-            -okscript [mymethod _acceptContainer -newcommand] -cancelscript [mymethod _cancelEditor]
-        pack $win.containereditor.editor
-        bind $win.containereditor <Destroy> [mymethod _editorKilled %W]
-        
-        $win.actionarea.new  configure -state disable
-        $win.actionarea.edit configure -state disable
         
     }
     ##
