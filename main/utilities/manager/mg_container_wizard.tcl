@@ -569,27 +569,30 @@ proc containerSelected {selector containers} {
     # and any bindings in the container def.
         
     set bindings [list [list [file join [dict get $containers native_tree] [dict get $containerDef usropt]] /usr/opt]]
-    foreach binding [split [dict get $containerDef bindings] ,] {
-        lappend bindings [split $binding :]
+    
+    foreach binding [dict get $containerDef bindings] {
+        lappend bindings $binding
     }
     
     #  Fire up stage 2 of the wizard:
     
-    
-    container::Creator .step2 -name  $container \
+    wm withdraw .
+    toplevel .next
+    container::Creator .next.step2 -name  $container \
         -image [dict get $containerDef path]    \
         -bindings $bindings \
         -initscript [loadInitScript \
             [dict get $containers native_tree] \
             [dict get $containers container_tree] [dict get $containerDef usropt] \
-            $daq]
+            $daq] \
+        -cancelscript  exit -okscript [list defineContainer $.step2]
 
-    grid .step2 -row 0 -column 0
-    
-    
-    
-    
+    grid .next.step2 -sticky nsew
+    bind .next <Destroy> exit
 }
+#------------------------------------------------------------------------------
+#  handling of stage 2 of the wizard.
+#
 
 ##
 # Cancel without doing anything
