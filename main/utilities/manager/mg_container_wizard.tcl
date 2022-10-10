@@ -514,6 +514,30 @@ proc createChooserModel {config} {
 #  Handling of stage one of the wizard - selected container and DAQ version.
 #
 
+##
+# loadInitScript
+#   Load the initialization script for a specific version of NSCLDAQ.
+#  @param native  - native base of /usr/opt trees.
+#  @param containerized - containerized base of /usr/opt trees.
+#  @param opt    - /usr/opt selection.
+#  @param version  - DAQ version
+#  @return contents of daqsetup.bash of specified NSCLDAQ version.
+#
+proc loadInitScript {native containerized opt version} {
+    set path [file join $native $opt daq $version daqsetup.bash]
+    if {![file readable $path]} {
+        set path [file join $containerized $opt daq $version daqsetup.bash]
+    }
+    
+    set fd [open $path r]
+    set result [read $fd]
+    close $fd
+    
+    return $result
+}
+    
+
+
 
 
 ##
@@ -528,9 +552,13 @@ proc containerSelected {selector containers} {
     set container [$selector cget -container]
     set daq       [$selector cget -daqversion]
     
-    set containerDef [getContainer $containers $container]
+    if {$container eq "" || $daq eq ""} {
+        tk_messageBox -icon info -type ok -title "Incomplete" \
+            -message {You must choose both a container and a DAQ version}
+        return
+    }
     
-    puts "Selected $container : $daq def: $containerDef"
+    set containerDef [getContainer $containers $container]
     
     #  On to the next step of the wizard:
     
@@ -550,7 +578,12 @@ proc containerSelected {selector containers} {
     
     container::Creator .step2 -name  $container \
         -image [dict get $containerDef path]    \
-        -bindings $bindings
+        -bindings $bindings \
+        -initscript [loadInitScript \
+            [dict get $containers native_tree] \
+            [dict get $containers container_tree] [dict get $containerDef usropt] \
+            $daq]
+
     grid .step2 -row 0 -column 0
     
     
