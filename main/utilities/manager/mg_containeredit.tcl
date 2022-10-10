@@ -154,6 +154,7 @@ snit::widgetadaptor container::BindingsList {
 #    -initfile   - Initialization file.
 #    -okscript   - Script to execute on ok.
 #    -cancelscript - Script to execute on cancel.
+#    -enabletop   - Allows or disallows some editing
 #
 #
 #          
@@ -164,6 +165,7 @@ snit::widgetadaptor container::Creator {
     option -initfile -default [list] -readonly 1 -configuremethod _configDisallow
     option -okscript -default [list]
     option -cancelscript -default [list]
+    option -enabletop -default 1 -configuremethod _setTopState
     
     component bindings
     delegate option -bindings to bindings
@@ -218,6 +220,24 @@ snit::widgetadaptor container::Creator {
     }
     #---------------------------------------------------------------------------
     #  Configuration handlers.
+    
+    ##
+    # _setTopState
+    #    Used to enable/disable the container name and image text entries.
+    #
+    method _setTopState {name value} {
+        set options($name) $value
+        if {$value} {
+            set state normal
+        } else {
+            set state disabled
+        }
+        $win.name configure -state $state
+        $win.image configure -state $state
+        $win.imagebrowse configure -state $state
+        $win.initscript configure -state $state
+        $win.browseinit configure -state $state
+    }
     
     ##
     # _configInitScript
