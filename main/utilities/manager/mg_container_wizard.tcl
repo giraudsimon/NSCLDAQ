@@ -522,7 +522,6 @@ proc createChooserModel {config} {
 #
 # @param selector - widget which is the selector.
 # @param containers - container definitions in dict form
-#
 #  
 proc containerSelected {selector containers} {
     
@@ -532,6 +531,30 @@ proc containerSelected {selector containers} {
     set containerDef [getContainer $containers $container]
     
     puts "Selected $container : $daq def: $containerDef"
+    
+    #  On to the next step of the wizard:
+    
+    destroy $selector
+    destroy .action
+    
+    # Figure out the full set of bindings.  This is the binding of /usr/opt
+    # and any bindings in the container def.
+        
+    set bindings [list [list [file join [dict get $containers native_tree] [dict get $containerDef usropt]] /usr/opt]]
+    foreach binding [split [dict get $containerDef bindings] ,] {
+        lappend bindings [split $binding :]
+    }
+    
+    #  Fire up stage 2 of the wizard:
+    
+    
+    container::Creator .step2 -name  $container \
+        -image [dict get $containerDef path]    \
+        -bindings $bindings
+    grid .step2 -row 0 -column 0
+    
+    
+    
     
 }
 
