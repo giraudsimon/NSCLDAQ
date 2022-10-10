@@ -559,6 +559,7 @@ proc containerSelected {selector containers} {
     }
     
     set containerDef [getContainer $containers $container]
+    set name $container-$daq
     
     #  On to the next step of the wizard:
     
@@ -578,7 +579,7 @@ proc containerSelected {selector containers} {
     
     wm withdraw .
     toplevel .next
-    container::Creator .next.step2 -name  $container \
+    container::Creator .next.step2 -name  $name \
         -image [dict get $containerDef path]    \
         -bindings $bindings \
         -initscript [loadInitScript \
@@ -599,6 +600,16 @@ proc containerSelected {selector containers} {
 #
 proc onCancel { } {
     exit
+}
+##
+# defineContainer
+#   The user clicked ok in the final wizard editor.
+#   We just need to define the final container.
+#
+# @param editor - editor widget
+#
+proc defineContainer {editor} {
+    
 }
 
 #-------------------------------------------------------------------------------
