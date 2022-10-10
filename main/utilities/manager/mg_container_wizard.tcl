@@ -586,7 +586,8 @@ proc containerSelected {selector containers} {
             [dict get $containers native_tree] \
             [dict get $containers container_tree] [dict get $containerDef usropt] \
             $daq] \
-        -cancelscript  exit -okscript [list defineContainer $.step2]
+        -enabletop 0 \
+        -cancelscript  exit -okscript [list defineContainer .next.step2] 
 
     grid .next.step2 -sticky nsew
     bind .next <Destroy> exit
@@ -609,7 +610,17 @@ proc onCancel { } {
 # @param editor - editor widget
 #
 proc defineContainer {editor} {
+    set name [$editor cget -name]
+    set image [$editor cget -image]
+    set bindings [$editor cget -bindings]
+    set initscript [$editor cget -initfile]
     
+    if {[catch {container::add db $name $image $initscript $bindings} msg]} {
+        tk_messageBox -icon error -type ok -title {Create falied} \
+            -message "Failed to make container: $msg"
+        exit -1
+    }
+    exit 0
 }
 
 #-------------------------------------------------------------------------------
