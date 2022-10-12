@@ -133,6 +133,54 @@ snit::widgetadaptor NameValueList {
           
           $self configurelist $args
       }
+      #-------------------------------------------------------------------------
+      #  Configuration methods.
+      #
+      
+      ##
+      # _stockList
+      #   Called to configure the items.  Each item is a one or two element
+      #   List.  If two elements we put quotations around the second element
+      #   to ensure that the list is valid.
+      #
+      method _stockList {name value} {
+           
+           set w $win.list.listbox
+           
+           $w delete  0 end
+           foreach item $value {
+               set optname [lindex $item 0]
+               set v ""
+               set item [lrange $item 1 end]
+               if {$item ne ""} {
+                 set v "\"$item\""
+               }
+               $w insert end "$optname $v"
+           }
+           
+      }
+      ##
+      # _getList
+      #    Returns the value of the list.
+      #
+      method _getList {name} {
+           set w $win.list.listbox
+           
+           set contents [$w get 0 end]
+           set result [list]
+           foreach entry $contents {
+              if {[llength $entry] == 1} {
+                  lappend result $entry
+              } else {
+                 set pair [list [lindex $entry 0] [lrange $entry 1 end]]
+                 lappend result $pair
+              }
+           }
+            
+           
+           
+           return $result
+      }
 }
       
 
