@@ -308,7 +308,7 @@ snit::widgetadaptor OrderedValueList {
         ttk::frame $win.entry
         ttk::entry $win.entry.entry
         ttk::label $win.entry.label -text Value
-        ttk::button $win.entry.add -text Add
+        ttk::button $win.entry.add -text Add  -command [mymethod _addItem]
         ttk::button $win.entry.replace -text Replace
         
         grid $win.entry.entry $win.entry.label -sticky nsew
@@ -344,6 +344,20 @@ snit::widgetadaptor OrderedValueList {
     method _cgetValues {name} {
         
         return [$win.list.listbox get 0 end]
+    }
+    #-------------------------------------------------------------------------
+    # Event handling.
+    
+    ##
+    # _addItem
+    #    Add an item from the text entry box to the end of the list.
+    #
+    method _addItem {} {
+        set item [string trim [$win.entry.entry get]]
+        if {$item ne ""} {
+           $win.list.listbox insert end $item
+           $win.entry.entry delete 0 end
+        }
     }
 }
 
