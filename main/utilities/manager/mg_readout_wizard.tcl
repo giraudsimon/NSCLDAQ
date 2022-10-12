@@ -370,7 +370,7 @@ snit::widgetadaptor OrderedValueList {
         
         set value [string trim [$win.entry.entry get]]
         if {$value eq ""} {
-            tk_messagBox -icon info -type ok -title "No value" \
+            tk_messageBox -icon info -type ok -title "No value" \
                 -message {Need a value to replace} -parent $win
             return
         }
