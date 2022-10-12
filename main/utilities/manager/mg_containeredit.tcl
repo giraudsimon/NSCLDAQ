@@ -430,6 +430,12 @@ snit::widgetadaptor container::Creator {
     # $param name name of the option that holds the script to run.
     #
     method _dispatch {name} {
+        if {$options(-initfile) ne ""} {
+            set fd [open $options(-initfile) r]
+            set options(-initscript) [read $fd]
+            close $fd
+        }
+        parray options
         set script $options($name)
         if {$script ne ""} {
             uplevel #0 $script
@@ -704,10 +710,12 @@ snit::widgetadaptor container::Editor {
             set image [$win.containereditor.editor cget -image]
             set bindings [$win.containereditor.editor cget -bindings]
             set scriptfile [$win.containereditor.editor cget -initfile]
+            
             set info [dict create name $name image $image bindings $bindings]
             if {$scriptfile ne ""} {
                 dict set info scriptfile $scriptfile
                 dict set info init  [$win.containereditor.editor cget -initscript]
+
             }
             # We must do the [list] below as uplevel unravles one level of listiness
             # (I think) and we want to keep the dict intact (dicts look like lists)

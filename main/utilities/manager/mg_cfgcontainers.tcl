@@ -20,6 +20,7 @@ exec tclsh "$0" ${1+"$@"}
 
 # Assume we're installed in DAQBIN and TclLibs is one dir above us
 
+
 set libdir [file normalize [file join [file dirname [info script]] .. TclLibs]]
 set bindir [file dirname [info script]]
 
@@ -86,6 +87,7 @@ proc createContainer {dbfile editor db} {
 # @param - def    - The new container defintion dict.
 #
 proc replaceContainer {editor db def} {
+    
     set name [dict get $def name]
     
     if {[container::exists $db $name]} {
@@ -94,7 +96,7 @@ proc replaceContainer {editor db def} {
     #   recreate the new container:
     
     container::add $db $name \
-        [dict get $def image] [dict get $def init] [dict get $def bindings]
+        [dict get $def image] [dict get $def scriptfile] [dict get $def bindings]
     
     $editor configure -containers [container::listDefinitions $db]
     
