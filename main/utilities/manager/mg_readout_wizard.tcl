@@ -273,7 +273,79 @@ snit::widgetadaptor NameValueList {
       }
 }
       
-
+##
+# OrderedValueList
+#
+#   As the name implies, this widget provides a mechanism to enter, and edit
+#   a list of values where order important.
+#
+#  OPTIONS
+#  *  -values list of values in the listbox (set/get).
+#
+snit::widgetadaptor OrderedValueList {
+    option -values -default [list] -configuremethod _cfgValues \
+           -cgetmethod _cgetValues
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        # List box and scrollbars.
+        
+        ttk::frame $win.list
+        listbox    $win.list.listbox   -selectmode single    \
+            -xscrollcommand [list $win.list.hscroll set]     \
+            -yscrollcommand [list $win.list.vscroll set]
+        ttk::scrollbar $win.list.vscroll -orient vertical  \
+            -command [list $win.list.listbox yview]
+        ttk::scrollbar $win.list.hscroll -orient horizontal \
+            -command [list $win.list.listbox xview]
+        
+        grid $win.list.listbox $win.list.vscroll -sticky nsew
+        grid $win.list.hscroll                   -stick new
+        
+        #entry and buttons:
+        
+        ttk::frame $win.entry
+        ttk::entry $win.entry.entry
+        ttk::label $win.entry.label -text Value
+        ttk::button $win.entry.add -text Add
+        ttk::button $win.entry.replace -text Replace
+        
+        grid $win.entry.entry $win.entry.label -sticky nsew
+        grid $win.entry.add $win.entry.replace -sticky nsw
+        
+        grid $win.list
+        grid $win.entry
+        
+        $self configurelist $args
+    }
+    #--------------------------------------------------------------------------
+    # Configuration handling:
+    
+    ##
+    # _cfgValues
+    #     New list of values
+    # @param name -configuration option name.
+    # @param value - New values.
+    #
+    method _cfgValues {name value} {
+        set l $win.list.listbox
+        $l delete 0 end
+        foreach item $value {
+            $l insert end $item
+        }
+    }
+    ##
+    # _cgetValues
+    #    Return the list of values in the list box.
+    #
+    # @param name - configuration option name.
+    #
+    method _cgetValues {name} {
+        
+        return [$win.list.listbox get 0 end]
+    }
+}
 
  #==============================================================================
  #     The Main GUI has several components:
