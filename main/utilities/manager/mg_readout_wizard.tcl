@@ -325,7 +325,7 @@ snit::widgetadaptor OrderedValueList {
         menu $win.context -tearoff 0
         $win.context add command -label Delete -command [mymethod _delete]
         $win.context add command -label {Move up} -command [mymethod _moveUp]
-        $win.context add command -label {Move down}
+        $win.context add command -label {Move down} -command [mymethod _moveDown]
         
         bind  $win.list.listbox <Button-3> [mymethod _contextMenu %x %y %X %Y]
     }
@@ -440,6 +440,22 @@ snit::widgetadaptor OrderedValueList {
           $l insert [incr sel -1] $text
           
        }
+    }
+    ##
+    # _moveDown
+    #     Move the selected item down one slot in the list box.
+    #
+    method _moveDown {} {
+       set l $win.list.listbox
+       
+       set sel [$l curselection]
+       set n   [$l size]
+       if {$sel ne "" && $sel < ($n-1)} {
+            set text [$l get $sel $sel]
+            $l delete $sel
+            $l insert [incr sel]  $text
+       }
+       
     }
     
 }
