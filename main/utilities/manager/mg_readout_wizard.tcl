@@ -122,7 +122,7 @@ snit::widgetadaptor NameValueList {
           ttk::label $win.entries.namelabel -text Name
           ttk::entry $win.entries.value
           ttk::label $win.entries.valuelabel -text Value
-          ttk::button $win.entries.add -text Add
+          ttk::button $win.entries.add -text Add -command [mymethod _addItem]
           
           grid $win.entries.name $win.entries.namelabel   -padx 3 -sticky nsew
           grid $win.entries.value $win.entries.valuelabel -padx 3 -sticky nsew
@@ -180,6 +180,31 @@ snit::widgetadaptor NameValueList {
            
            
            return $result
+      }
+      #------------------------------------------------------------------------
+      # Event handling.
+      
+      ##
+      # _addItem
+      #   Called when the add button is clicked.  There must be a name
+      #   if there is a value then a two element list is added to the list box.
+      #
+      method _addItem {} {
+           set l $win.list.listbox
+           set n $win.entries.name
+           set v $win.entries.value
+           
+           set name [string trim [$n get]]
+           set value [string trim [$v get]]
+           
+           
+           if {$name ne ""} {
+               set item [list $name]
+               if {$value ne ""} {
+                   lappend item $value
+               }
+               $l insert end $item
+           }
       }
 }
       
