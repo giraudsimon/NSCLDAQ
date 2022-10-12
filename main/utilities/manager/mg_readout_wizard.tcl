@@ -108,7 +108,8 @@ snit::widgetadaptor NameValueList {
           ttk::frame $win.list
           listbox    $win.list.listbox    \
               -xscrollcommand [list $win.list.hscroll set]     \
-              -yscrollcommand [list $win.list.vscroll set]
+              -yscrollcommand [list $win.list.vscroll set]     \
+              -selectmode single
           ttk::scrollbar $win.list.vscroll -orient vertical \
               -command [list $win.list.listbox yview] 
           ttk::scrollbar $win.list.hscroll -orient horizontal \
@@ -116,6 +117,8 @@ snit::widgetadaptor NameValueList {
           
           grid $win.list.listbox $win.list.vscroll -sticky nsew
           grid $win.list.hscroll              -sticky ew
+          
+          # The entries and add button.
           
           ttk::frame $win.entries
           ttk::entry $win.entries.name
@@ -130,6 +133,15 @@ snit::widgetadaptor NameValueList {
           
           grid $win.list  -sticky nsew
           grid $win.entries -sticky nsew
+          
+          # The context menu which posts on <Button-3>
+          
+          menu $win.context -tearoff 0
+          $win.context add command -label Delete -command [mymethod _deleteEntry]
+          $win.context add command -label Edit   -command [mymethod _editEntry]
+          
+          bind $win.list.listbox <Button-3> [mymethod _contextMenu %x %y %X %Y]
+          
           
           $self configurelist $args
       }
@@ -205,6 +217,59 @@ snit::widgetadaptor NameValueList {
                }
                $l insert end $item
            }
+      }
+      
+      ##
+      # _contextMenu
+      #   In response to a right click.
+      #   - If the mouse is over an entry, select it and pop up the
+      #     menu.
+      #   -  Otherwise do notyhing
+      #
+      # @param x - window relative pointer x.
+      # @param y - window relative pointer y.
+      # @param X,Y - screen relative pointer x/y
+      #
+      method _contextMenu {x y X Y} {
+           set l $win.list.listbox
+           set index [$l nearest $y]
+           
+           $l selection clear 0 end
+           $l selection set $index $index
+           $win.context post $X $Y
+      }
+      ##
+      # _deleteEntry
+      #    Delete the selected element...and unpoast the context menu.
+      #
+      method _deleteEntry {} {
+           set l $win.list.listbox
+           set selIndex [$l curselection]
+           if {$selIndex ne ""} {
+              $l delete $selIndex $selIndex
+           }
+           $win.context unpost
+      }
+      ##
+      # _editEntry
+      #   Edits the selected entry.  The entry is loaded into the
+      #   Name, and value entries and then deleted from the list.
+      #   Note that the menu is unposted.
+      method _editEntry {} {
+           set l $win.list.listbox
+           
+           set selindex [$l curselection]
+           if {$selindex ne ""} {
+               set selection [$l get $selindex]
+               $win.entries.name delete 0 end
+               $win.entries.value delete 0 end
+               
+               $win.entries.name  insert 0 [lindex $selection 0]
+               $win.entries.value insert 0 [lrange $selection 1 end]
+               
+               $l delete $selindex $selindex
+           }
+           $win.context unpost
       }
 }
       
