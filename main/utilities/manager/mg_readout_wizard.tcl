@@ -323,8 +323,8 @@ snit::widgetadaptor OrderedValueList {
         #  Allows repositioning and deletion:
         
         menu $win.context -tearoff 0
-        $win.context add command -label Delete
-        $win.context add command -label {Move up}
+        $win.context add command -label Delete -command [mymethod _delete]
+        $win.context add command -label {Move up} -command [mymethod _moveUp]
         $win.context add command -label {Move down}
         
         bind  $win.list.listbox <Button-3> [mymethod _contextMenu %x %y %X %Y]
@@ -407,9 +407,40 @@ snit::widgetadaptor OrderedValueList {
     # @param X,Y - screen relativel pointer coords.
     #
     method _contextMenu {x y X Y} {
+       set l $win.list.listbox
+       set index [$l nearest $y]
+       
+       $l selection clear 0 end
+       $l selection set $index $index
+       
        $win.context post $X $Y 
     }
-         
+    ##
+    # _delete
+    #    Delete the selected item, if there is one.
+    #
+    method _delete {} {
+        set l $win.list.listbox
+        set sel [$l curselection]
+        if {$sel ne ""} {
+           $l delete $sel $sel
+        }
+    }
+    ##
+    # _moveUp
+    #   Move the selected item up one slot in the list box.
+    #
+    method _moveUp {} {
+       set l $win.list.listbox
+       
+       set sel [$l curselection]
+       if {$sel ne "" && $sel > 0} {
+          set text [$l get $sel $sel]
+          $l delete $sel
+          $l insert [incr sel -1] $text
+          
+       }
+    }
     
 }
 
