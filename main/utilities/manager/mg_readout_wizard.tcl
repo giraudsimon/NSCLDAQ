@@ -318,6 +318,16 @@ snit::widgetadaptor OrderedValueList {
         grid $win.entry
         
         $self configurelist $args
+        
+        # context menu (right click on item).
+        #  Allows repositioning and deletion:
+        
+        menu $win.context -tearoff 0
+        $win.context add command -label Delete
+        $win.context add command -label {Move up}
+        $win.context add command -label {Move down}
+        
+        bind  $win.list.listbox <Button-3> [mymethod _contextMenu %x %y %X %Y]
     }
     #--------------------------------------------------------------------------
     # Configuration handling:
@@ -388,6 +398,19 @@ snit::widgetadaptor OrderedValueList {
         $win.list.listbox insert $sel $value
         
     }
+    ##
+    # _contextMenu
+    #   Select the item under the mouse and provide a pop up menu to
+    #   manipuate that item.
+    #
+    # @param x,y - window relative pointer coords.
+    # @param X,Y - screen relativel pointer coords.
+    #
+    method _contextMenu {x y X Y} {
+       $win.context post $X $Y 
+    }
+         
+    
 }
 
  #==============================================================================
