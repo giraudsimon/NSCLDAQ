@@ -309,7 +309,7 @@ snit::widgetadaptor OrderedValueList {
         ttk::entry $win.entry.entry
         ttk::label $win.entry.label -text Value
         ttk::button $win.entry.add -text Add  -command [mymethod _addItem]
-        ttk::button $win.entry.replace -text Replace
+        ttk::button $win.entry.replace -text Replace -command [mymethod _replaceItem]
         
         grid $win.entry.entry $win.entry.label -sticky nsew
         grid $win.entry.add $win.entry.replace -sticky nsw
@@ -358,6 +358,35 @@ snit::widgetadaptor OrderedValueList {
            $win.list.listbox insert end $item
            $win.entry.entry delete 0 end
         }
+    }
+    ##
+    # _replaceItem
+    #    Replace the selected item with the entry.
+    #    - There must be a new value.
+    #    - There must be a selection.
+    #
+    method _replaceItem {} {
+        # Get the value it must be nonempty:
+        
+        set value [string trim [$win.entry.entry get]]
+        if {$value eq ""} {
+            tk_messagBox -icon info -type ok -title "No value" \
+                -message {Need a value to replace} -parent $win
+            return
+        }
+        #  Get the selection - it too must be non empty:
+        
+        set sel [$win.list.listbox curselection]
+        if {$sel eq ""} {
+             tk_messageBox  -icon info -type ok -title "No selection" \
+                 -message {No item selected for replacement} \
+                 -parent $win
+                    
+             return
+        }
+        $win.list.listbox delete $sel
+        $win.list.listbox insert $sel $value
+        
     }
 }
 
