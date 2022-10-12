@@ -228,7 +228,7 @@ proc processContainer {ini name} {
 # @return ini file dict as describeda above.
 #
 proc processIniFile {path} {
-    set ini [ini::open $path]
+    set ini [ini::open $path r]
     set result [dict create]
     #  There must be a config section - process it to get the
     #  native_tree and container_tree values:
