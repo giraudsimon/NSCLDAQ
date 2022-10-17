@@ -1152,7 +1152,25 @@ proc usage {msg} {
     exit -1
     
 }
+#-----------------------------------------------------------------------------
+#  Action handlers:
+#
 
+##
+# makeReadout
+#   Ok was plinked - so create the new readout and its sattelite programs.
+#
+#  @param form - the formt that describes the Readout.
+# @param  db   - Database command that accesses the configuration.
+#
+#   On success, we're going to exit. On handled errors, we'll be
+#   leaving the form up for the user to try again.
+#
+proc makeReadout {form dbcmd} {
+    puts "Making"
+    
+    exit 0
+}
 
 ######## ENTRY
 ##
@@ -1165,6 +1183,6 @@ if {[llength $argv] != 1} {
 
 sqlite3 db $argv
 
-rdo::ReadoutPrompter .prompt
+rdo::ReadoutPrompter .prompt  -okcommand [list makeReadout .prompt db] -cancelcommand exit
 pack .prompt
 
