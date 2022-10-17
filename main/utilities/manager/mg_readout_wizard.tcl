@@ -1290,6 +1290,27 @@ proc usage {msg} {
     exit -1
     
 }
+#----------------------------------------------------------------------------
+#  Common attributes
+#
+#
+
+##
+# getCommonAttributes
+#   Returns a dict of the common attributes
+#
+proc getCommonAttributes {widget} {
+    
+}
+##
+# checkCommonMandatories
+#   Returns a list of missing common fields (Hopefully empty).
+#
+# @param atttributes
+#
+proc checkMissingMandatories {attributes} {
+    
+}
 #-----------------------------------------------------------------------------
 #  Action handlers:
 #
@@ -1307,7 +1328,23 @@ proc usage {msg} {
 proc makeReadout {form dbcmd} {
     
     #  The creation of the Readout results in:
-    #  The creation of the specific program itself 
+    #  The creation of the specific program itself
+    #  The creation of program helpers that need to be run on state changes.
+    #  The creation and stockage of statechange triggered sequences:
+    
+    
+    #  Get the common attributes and highlight any missing ones with an error.
+    
+    set attributes [getCommonAttributes $form]
+    set missingCommonMandatories [checkCommonMandatories $attributes]
+    if {[llength $missingCommonMandatories] != 0} {
+        foreach f $missingCommonMandatories {
+            $form highlightCommonField $f
+        }
+        tk_messageBox -icon error -type ok -title {Missing common} \
+            -message {The following mandatory fields are empty:  $missingCommonMandatories}
+        return
+    }
     
     exit 0
 }
