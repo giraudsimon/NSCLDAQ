@@ -470,6 +470,7 @@ snit::widgetadaptor OrderedValueList {
  #  Form to allow the input of common attributes;
  #
  # *   - -type -  one of: {ddas, vmusb, ccusb, custom}
+ # *   - -name - Readout name.
  # *   - -container  If not an empty string the container that will run the readout.
  # *   - -host    Host in which the Readout will run.
  # *   - -directory - working directory in which the Readout will run.
@@ -497,6 +498,13 @@ snit::widgetadaptor OrderedValueList {
     
     constructor args {
         installhull using ttk::frame
+        
+        #  Name of this:
+        
+        ttk::labelframe $win.name -text {Readout name}
+        ttk::entry      $win.name.name -textvariable [myvar options(-name)] \
+            -width 32
+        grid $win.name.name -sticky ew
         
         #  The Readout types
         
@@ -548,6 +556,7 @@ snit::widgetadaptor OrderedValueList {
         
         #  Grid the top level frames:
         
+        grid $win.name  -columnspan 2 -sticky ew
         grid $win.types $win.container -sticky ew
         grid $win.dir $win.sid -sticky ew
         grid $win.ring $win.service -sticky ew
@@ -968,6 +977,7 @@ snit::widgetadaptor rdo::ReadoutWizard {
     
     #  Delegate the common attributes back out to the component
     
+    delegate option -name       to common
     delegate option -readouttype to common as -type
     delegate option -containers to common
     delegate option -container  to common
@@ -1167,7 +1177,9 @@ proc usage {msg} {
 #   leaving the form up for the user to try again.
 #
 proc makeReadout {form dbcmd} {
-    puts "Making"
+    
+    #  The creation of the Readout results in:
+    #  The creation of the specific program itself 
     
     exit 0
 }
@@ -1185,4 +1197,13 @@ sqlite3 db $argv
 
 rdo::ReadoutPrompter .prompt  -okcommand [list makeReadout .prompt db] -cancelcommand exit
 pack .prompt
+
+# Stock the containers list
+
+set containerDefs [container::listDefinitions db]
+set containers [list]
+foreach c $containerDefs {
+    lappend containers [dict get $c name]
+}
+.prompt configure -containers $containers
 

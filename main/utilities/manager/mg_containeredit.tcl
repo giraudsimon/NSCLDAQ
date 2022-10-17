@@ -435,7 +435,7 @@ snit::widgetadaptor container::Creator {
             set options(-initscript) [read $fd]
             close $fd
         }
-        parray options
+        
         set script $options($name)
         if {$script ne ""} {
             uplevel #0 $script
