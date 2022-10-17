@@ -900,6 +900,10 @@ snit::widgetadaptor rdo::CustomAttributes {
     option -options -default [list]
     option -environment -default [list]
     option -parameters  -default [list]
+    
+    component programOptions
+    component programEnvironment
+    component programParameters
 
     constructor args {
         installhull using ttk::frame
@@ -914,9 +918,23 @@ snit::widgetadaptor rdo::CustomAttributes {
         ttk::label      $win.parameters.note \
             -text {NOTE: General options will set options and environment variables as well} \
             -foreground DarkOrange3
+    
+        ttk::labelframe $win.parameters.options -text {Program Options}
+        NameValueList   $win.parameters.options.options 
+        grid $win.parameters.options.options -sticky nsew
+    
+        ttk::labelframe $win.parameters.parameters -text {Program parameters}
+        OrderedValueList $win.parameters.parameters.parameters
+        grid $win.parameters.parameters.parameters -sticky new
         
-        grid $win.parameters.note
+        ttk::labelframe $win.parameters.environment -text {Environmnent}
+        NameValueList   $win.parameters.environment.environment
+        grid $win.parameters.environment.environment -sticky nsew
         
+        grid $win.parameters.note -columnspan 3
+        grid $win.parameters.options \
+            $win.parameters.parameters \
+            $win.parameters.environment -sticky nsew
         grid $win.program -sticky ew
         grid $win.parameters -sticky ew
         
