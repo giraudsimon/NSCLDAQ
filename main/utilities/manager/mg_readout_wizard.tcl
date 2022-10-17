@@ -34,6 +34,7 @@ package require snit
 package require programs
 package require sequence
 package require containers
+package require sqlite3
 
 ##
 # Provides a wizard that creates all of the stuff to make a readout program work.
@@ -951,21 +952,66 @@ snit::widgetadaptor rdo::CustomAttributes {
 #----------------------------------------------------------------------------
 
 ##
-# @class rdo::ProgramWizard
+# @class rdo::ReadoutWizard
 #    The UI for the program wizard is a paned window of which at most
 #    two panes are visible at any given time.  The rdo::CommonAttributes
 #    widget is always visible and then, depending on the type selected,
 #    the pane that corresponds to the detailed options for that readout
 #    type is visible.
 #
-snit::widgetadaptor rdo::ProgramWizard {
+snit::widgetadaptor rdo::ReadoutWizard {
     component common
     component xia
     component usb
     component custom
     
     
+    #  Delegate the common attributes back out to the component
+    
+    delegate option -readouttype to common as -type
+    delegate option -containers to common
+    delegate option -container  to common
+    delegate option -host       to common
+    delegate option -cwd        to common as -directory
+    delegate option -sourceid   to common
+    delegate option -ring       to common
+    delegate option -restservice to common as -service
+    
+    
+    #  XIA options:
+    
+    delegate option -sorthost to xia
+    delegate option -sortring to xia
+    delegate option -sortwindow to xia
+    delegate option -fifolthreshold to xia
+    delegate option -buffersize to xia
+    delegate option -infinityclock to xia
+    delegate option -clockmultiplier to xia
+    delegate option -scalerperiod to xia
+    
+    #  XXUSB attributes:
+    
+    delegate option -byserial    to usb
+    delegate option -seriastring to usb
+    delegate option -daqconfig   to usb
+    delegate option -ctlconfig   to usb
+    delegate option -ctlport     to usb as -port
+    delegate option -enablelogging to usb
+    delegate option -logfile     to usb
+    delegate option -logverbosity to usb
+    
+    #  Custom attributes:
+    
+    delegate option -program   to custom
+    delegate option -options   to custom
+    delegate option -environment to custom
+    delegate option -parameters to custom
+    
+    
+    #  The paned window is the catch all method handler:
+    
     delegate method * to hull
+    delegate option * to hull
     
     #  Array which says which component to show depending on the
     #  type:
@@ -1007,6 +1053,9 @@ snit::widgetadaptor rdo::ProgramWizard {
         install custom using rdo::CustomAttributes $win.custom
         $hull add $custom
         $hull paneconfigure $custom -hide 1
+
+        $self configurelist $args
+
         
         #  show the right pane:
         
@@ -1036,5 +1085,86 @@ snit::widgetadaptor rdo::ProgramWizard {
         }
     }
 }
+#-------------------------------------------------------------------------------
+
+##
+# @class rdo::ReadoutPrompter
+#   Wrapt the readout wizard in action buttons:
+#
+snit::widgetadaptor rdo::ReadoutPrompter {
+    option -okcommand     -default [list]
+    option -cancelcommand -default [list]
     
+    component form
+    delegate method * to form
+    delegate option * to form
+    
+    constructor args {
+        installhull using ttk::frame
+        
+        install form using rdo::ReadoutWizard $win.form
+        
+        ttk::frame $win.action
+        ttk::button $win.action.ok -text Ok \
+            -command [mymethod _dispatch -okcommand]
+        ttk::button $win.action.cancel -text Cancel \
+            -command [mymethod _dispatch -cancelcommand]
+        
+        grid $win.action.ok $win.action.cancel
+        grid $win.form -sticky nsew
+        grid $win.action -sticky ew
+        
+        
+        
+        $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # Event handling
+    
+    
+    ##
+    # _dispatch
+    #   Dispatch to the script in the option passed in.
+    #
+    # @param name - name of the option holding the script.
+    #
+    method _dispatch name {
+        set command $options($name)
+        if {$command ne ""} {
+            uplevel #0 $command
+        }
+    }
+}
+#------------------------------------------------------------------------------
+#  The wizard itself.
+
+##
+# Usage
+#   Provide program usage:
+#  @param msg - error message.
+#
+proc usage {msg} {
+    puts stderr $msg
+    puts stderr "Usage:"
+    puts stderr "    mg_readout_wizard  config-database"
+    puts stderr "Where:"
+    puts stderr "   config-database - is a configuration database"
+    exit -1
+    
+}
+
+
+######## ENTRY
+##
+# Ensure we have a database file and open it:
+
+
+if {[llength $argv] != 1} {
+    usage {Incorrect number of command line parameters}
+}
+
+sqlite3 db $argv
+
+rdo::ReadoutPrompter .prompt
+pack .prompt
 
