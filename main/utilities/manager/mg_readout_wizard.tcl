@@ -896,15 +896,18 @@ snit::widgetadaptor rdo::XXUSBAttributes {
 #
 #
 snit::widgetadaptor rdo::CustomAttributes {
-    option -program -default ""
-    option -options -default [list]
-    option -environment -default [list]
-    option -parameters  -default [list]
+    option -program -default
     
     component programOptions
     component programEnvironment
     component programParameters
 
+    
+    delegate option -options to programOptions as -items
+    delegate option -environment to programEnvironment as -items
+    delegate option -parameters  to programParameters as -values
+    
+    
     constructor args {
         installhull using ttk::frame
         
@@ -920,15 +923,18 @@ snit::widgetadaptor rdo::CustomAttributes {
             -foreground DarkOrange3
     
         ttk::labelframe $win.parameters.options -text {Program Options}
-        NameValueList   $win.parameters.options.options 
+        install programOptions using NameValueList   \
+            $win.parameters.options.options 
         grid $win.parameters.options.options -sticky nsew
     
         ttk::labelframe $win.parameters.parameters -text {Program parameters}
-        OrderedValueList $win.parameters.parameters.parameters
+        install programParameters using OrderedValueList \
+            $win.parameters.parameters.parameters
         grid $win.parameters.parameters.parameters -sticky new
         
         ttk::labelframe $win.parameters.environment -text {Environmnent}
-        NameValueList   $win.parameters.environment.environment
+        install programEnvironment using NameValueList   \
+            $win.parameters.environment.environment
         grid $win.parameters.environment.environment -sticky nsew
         
         grid $win.parameters.note -columnspan 3
@@ -942,6 +948,6 @@ snit::widgetadaptor rdo::CustomAttributes {
     }
 } 
 
-    
+#----------------------------------------------------------------------------
 
 
