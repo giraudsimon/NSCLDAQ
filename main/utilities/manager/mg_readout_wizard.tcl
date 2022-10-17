@@ -496,6 +496,8 @@ snit::widgetadaptor OrderedValueList {
     
     variable daqtypes [list XIA VMUSB CCUSB Custom]
     
+    variable fields -array [list]
+    
     constructor args {
         installhull using ttk::frame
         
@@ -504,7 +506,9 @@ snit::widgetadaptor OrderedValueList {
         ttk::labelframe $win.name -text {Readout name}
         ttk::entry      $win.name.name -textvariable [myvar options(-name)] \
             -width 32
-        grid $win.name.name -sticky ew
+        ttk::label      $win.name.label -text {Readout Name}
+        grid $win.name.name $win.name.label
+        set fields(name) $win.name.label
         
         #  The Readout types
         
@@ -527,13 +531,17 @@ snit::widgetadaptor OrderedValueList {
         ttk::entry $win.container.host -textvariable [myvar options(-host)]
         ttk::label $win.container.hostlabel -text Host
         grid $win.container.container  $win.container.host $win.container.hostlabel
+        set fields(host) $win.container.hostlabel
         
         # directory, sourceid
         
         ttk::labelframe $win.dir -text {Directory}
+        ttk::label $win.dir.label -text Dir: 
         ttk::entry $win.dir.dir -textvariable [myvar options(-directory)]
         ttk::button $win.dir.browse -text {Browse...} -command [mymethod _browsedir]
-        grid $win.dir.dir $win.dir.browse -sticky ew
+        grid $win.dir.label $win.dir.dir $win.dir.browse -sticky ew
+        set fields(directory) $win.dir.label
+        
     
         ttk::labelframe $win.sid -text {Source Id}
         ttk::spinbox $win.sid.sid \
@@ -542,17 +550,20 @@ snit::widgetadaptor OrderedValueList {
         ttk::label $win.sid.label -text {Source Id}
         grid $win.sid.sid $win.sid.label -sticky ew
         
+        
         # ring and REST service.
         
         ttk::labelframe $win.ring -text {Output Ring}
         ttk::entry $win.ring.ring -textvariable [myvar options(-ring)]
         ttk::label $win.ring.label -text {Ring name}
         grid $win.ring.ring $win.ring.label -sticky ew
+        set fields(ring) $win.ring.label
         
         ttk::labelframe $win.service -text {REST service name}
         ttk::entry $win.service.name -textvariable [myvar options(-service)]
         ttk::label $win.service.label -text {Service}
         grid $win.service.name $win.service.label -sticky ew
+        set fields(service) $win.service.label
         
         #  Grid the top level frames:
         
@@ -564,6 +575,30 @@ snit::widgetadaptor OrderedValueList {
          
         $self configurelist $args 
         
+    }
+    #--------------------------------------------------------------------------
+    #  Public methods:
+    
+    ##
+    # highlightField
+    #   sets the backgroun of the specified field to red.
+    #   The field names are those in the fields array
+    #
+    method highlightField name {
+        if {[array names fields $name] ne ""} {
+            $fields($name) configure -foreground red
+        } else {
+            error "Invalid field name"
+        }
+    }
+    ##
+    # resetHighlights
+    #   Turns  off the highlight on all fields.
+    #
+    method resetHighlights {} {
+        foreach f [array names fields] {
+            $fields($f) configure -foreground black
+        }
     }
     #--------------------------------------------------------------------------
     #
@@ -637,6 +672,8 @@ snit::widgetadaptor OrderedValueList {
     option -clockmultiplier -default 1
     option -scalerperiod    -default 2
     
+    variable fields -array [list]
+    
     constructor args {
         installhull using ttk::frame
         #  Title:
@@ -649,6 +686,7 @@ snit::widgetadaptor OrderedValueList {
         ttk::entry $win.host.host -textvariable [myvar options(-sorthost)]
         ttk::label $win.host.label -text {Sort Host}
         grid $win.host.host $win.host.label -sticky ew
+        set fields(sorthost) $win.host.label
         
         # Sort ring
         
@@ -656,6 +694,7 @@ snit::widgetadaptor OrderedValueList {
         ttk::entry $win.ring.ring -textvariable [myvar options(-sortring)]
         ttk::label $win.ring.label -text {Output Ring}
         grid $win.ring.ring $win.ring.label -sticky ew
+        set fields(sortring) $win.ring.label
         
         #  sort window
         
@@ -665,6 +704,7 @@ snit::widgetadaptor OrderedValueList {
             -textvariable [myvar options(-sortwindow)]
         ttk::label $win.sortwin.label -text {Seconds}
         grid $win.sortwin.window $win.sortwin.label -sticky ew
+        set fields(sortwindow) $win.sortwin.label
         
         #  FIFO Threshold
         
@@ -674,6 +714,7 @@ snit::widgetadaptor OrderedValueList {
             -textvariable [myvar options(-fifothreshold)]
         ttk::label $win.fifo.label -text {FIFO Threshold}
         grid $win.fifo.fifo $win.fifo.label -sticky ew
+        set fields(fifothreshold) $win.fifo.label
  
         # Buffer size
         
@@ -682,6 +723,7 @@ snit::widgetadaptor OrderedValueList {
             -textvariable [myvar options(-buffersize)]
         ttk::label $win.bsize.label -text {Readout Buffersize}
         grid $win.bsize.bsize $win.bsize.label -sticky ew
+        set fields(buffersize) $win.bsize.label
         
         #clock parameters
         
@@ -698,7 +740,6 @@ snit::widgetadaptor OrderedValueList {
         ttk::spinbox $win.scaler.period -from 2 -to 3600 -increment 1 \
             -textvariable [myvar options(-scalerperiod)]
         ttk::label $win.scaler.label -text {Readout period}
-        
         grid $win.scaler.period $win.scaler.label -sticky ew
         
         grid $win.title -sticky w
@@ -709,6 +750,27 @@ snit::widgetadaptor OrderedValueList {
         
         
         $self configurelist $args
+    }
+    #---------------------------------------------------------------------------
+    # public methods
+    
+    ##
+    # highlightField
+    #   Set the foreground of the specified field identifier to red.
+    #
+    # @param name - Name of the field - index in fields array.
+    #
+    method highlightField {name} {
+        if {[array names fields $name] ne ""} {
+            $fields($name) configure -foreground red
+        } else {
+            error "Invalid field name '$name'"
+        }
+    }
+    method resetHighlights {} {
+        foreach field [array names fields] {
+            $fields($field) configure -foreground black
+        }
     }
      
  }
@@ -740,6 +802,8 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     option -logfile
     option -logverbosity -default 0
     
+    variable fields -array [list]
+    
     constructor args {
         installhull using ttk::frame
         ttk::label $win.title -text {XXUSBReadout attributes}
@@ -747,9 +811,11 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         # DAQ Config file.
         
         ttk::labelframe $win.daqconfig -text {DAQ configuration}
+        ttk::label $win.daqconfig.label -text {daqconfig}
         ttk::entry $win.daqconfig.config -textvariable [myvar options(-daqconfig)]
         ttk::button $win.daqconfig.browse -text {Browse...} -command [mymethod _browseDAQFile]
-        grid $win.daqconfig.config $win.daqconfig.browse -sticky ew
+        grid $win.daqconfig.label $win.daqconfig.config $win.daqconfig.browse -sticky ew
+        set fields(daqconfig) $win.daqconfig.label
         
         # Control configuration :
         
@@ -769,6 +835,8 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         grid $win.ctlconfig.ctlconfig $win.ctlconfig.filelbl \
              $win.ctlconfig.browse $win.ctlconfig.port $win.ctlconfig.plabel \
              -sticky ew
+        set fields(ctlconfig) $win.ctlconfig.filelbl
+        set fields(ctlport)    $win.ctlconfig.plabel
         
         # Logging configuration:
         
@@ -786,6 +854,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         grid $win.logging.enable -sticky w
         grid $win.logging.file $win.logging.label $win.logging.browse -sticky ew
         grid $win.logging.level $win.logging.levellabel -sticky w
+        set fields(logfile) $win.logging.label
         
         grid $win.title     -sticky w
         grid $win.daqconfig -sticky ew
@@ -796,6 +865,28 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         $self _controlOptions
         $self _loggingOptions
     }
+    #---------------------------------------------------------------------------
+    # public methods
+    
+    ##
+    # highlightField
+    #   Set the foreground of the specified field identifier to red.
+    #
+    # @param name - Name of the field - index in fields array.
+    #
+    method highlightField {name} {
+        if {[array names fields $name] ne ""} {
+            $fields($name) configure -foreground red
+        } else {
+            error "Invalid field name '$name'"
+        }
+    }
+    method resetHighlights {} {
+        foreach field [array names fields] {
+            $fields($field) configure -foreground black
+        }
+    }
+     
     #---------------------------------------------------------------------------
     # Configuration handling.
     
@@ -917,15 +1008,17 @@ snit::widgetadaptor rdo::CustomAttributes {
     delegate option -environment to programEnvironment as -items
     delegate option -parameters  to programParameters as -values
     
-    
+    variable fields -array [list]
     constructor args {
         installhull using ttk::frame
         
         ttk::labelframe $win.program -text {Readout Program}
+        ttk::label      $win.program.label -text {Program}
         ttk::entry      $win.program.entry -textvariable [myvar options(-program)]
         ttk::button     $win.program.browse -text {Browse...}
+        set fields(program) $win.program.label
         
-        grid $win.program.entry $win.program.browse -sticky ew
+        grid $win.program.label $win.program.entry $win.program.browse -sticky ew
         
         ttk::labelframe $win.parameters -text {Parameters and environment}
         ttk::label      $win.parameters.note \
@@ -956,6 +1049,28 @@ snit::widgetadaptor rdo::CustomAttributes {
         
         $self configurelist $args
     }
+    #---------------------------------------------------------------------------
+    # public methods
+    
+    ##
+    # highlightField
+    #   Set the foreground of the specified field identifier to red.
+    #
+    # @param name - Name of the field - index in fields array.
+    #
+    method highlightField {name} {
+        if {[array names fields $name] ne ""} {
+            $fields($name) configure -foreground red
+        } else {
+            error "Invalid field name '$name'"
+        }
+    }
+    method resetHighlights {} {
+        foreach field [array names fields] {
+            $fields($field) configure -foreground black
+        }
+    }
+     
 } 
 
 #----------------------------------------------------------------------------
@@ -1017,6 +1132,19 @@ snit::widgetadaptor rdo::ReadoutWizard {
     delegate option -environment to custom
     delegate option -parameters to custom
     
+    # Re-expose the individual highlightField and resetHighlight methods:
+    
+    delegate method highlightCommonField to common as highlightField
+    delegate method resetCommonHighlights to common as resetHighlights
+    
+    delegate method highlightXIAField to xia as highlightField
+    delegate method resetXIAHighlights to xia as resetHighlights
+    
+    delegate method highlightUSBField to usb as highlightField
+    delegate method resetUSBHighlights to usb as resetHighlights
+    
+    delegate method highlightCustomField to custom as highlightField
+    delegate method resetCustomHighlights to custom as resetHighlights
     
     #  The paned window is the catch all method handler:
     
@@ -1188,6 +1316,9 @@ proc makeReadout {form dbcmd} {
 ##
 # Ensure we have a database file and open it:
 
+# Support incremental/interactive testing:
+
+if {[info globals norun] eq ""} {
 
 if {[llength $argv] != 1} {
     usage {Incorrect number of command line parameters}
@@ -1207,3 +1338,4 @@ foreach c $containerDefs {
 }
 .prompt configure -containers $containers
 
+}
