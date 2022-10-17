@@ -482,7 +482,7 @@ snit::widgetadaptor OrderedValueList {
  #        change.
  #
  snit::widgetadaptor rdo::CommonAttributes {
-    option -type
+    option -type   -default XIA 
     option -containers  -default [list] -configuremethod _configContainers;       # Containers to chose between
     option -container;        # Selected container.
     option -host
@@ -950,4 +950,91 @@ snit::widgetadaptor rdo::CustomAttributes {
 
 #----------------------------------------------------------------------------
 
+##
+# @class rdo::ProgramWizard
+#    The UI for the program wizard is a paned window of which at most
+#    two panes are visible at any given time.  The rdo::CommonAttributes
+#    widget is always visible and then, depending on the type selected,
+#    the pane that corresponds to the detailed options for that readout
+#    type is visible.
+#
+snit::widgetadaptor rdo::ProgramWizard {
+    component common
+    component xia
+    component usb
+    component custom
+    
+    
+    delegate method * to hull
+    
+    #  Array which says which component to show depending on the
+    #  type:
+    
+    variable shownPane -array [list              \
+        XIA    xia                               \
+        VMUSB  usb                               \
+        CCUSB  usb                               \
+        Custom custom                            \
+    ]
+    
+    constructor args {
+        installhull using panedwindow -orient vertical
+        
+        # The top pane is the common attributes:
+        
+        install common using rdo::CommonAttributes $win.common \
+            -typeselectcommand [mymethod _displayDetailsPane]
+        $hull add $common
+        
+        # The other panes are hidden initially until we figure out our
+        # Type and then we unhide the appropriate pane:
+        
+        
+        # XIA.
+        
+        install xia using rdo::XIAAttributes $win.xia
+        $hull add $xia
+        $hull paneconfigure $xia -hide 1
+        
+        # XXUSBB:
+        
+        install  usb using rdo::XXUSBAttributes $win.xxusb
+        $hull add $usb
+        $hull paneconfigure $usb -hide 1
+        
+        #  Custom:
+        
+        install custom using rdo::CustomAttributes $win.custom
+        $hull add $custom
+        $hull paneconfigure $custom -hide 1
+        
+        #  show the right pane:
+        
+        $self _displayDetailsPane
+    }
+    #--------------------------------------------------------------------------
+    #  utilties
+    
+    ##
+    # _displayDetailsPane
+    #
+    #   Pulls the current type of readout and displays its pane:
+    #
+    method _displayDetailsPane args {
+        set rdoType [$common cget -type]
+        set paneComponent $shownPane($rdoType)
+        set paneWindow [set $paneComponent]
+        
+        foreach pane [array names shownPane] {
+            set paneName $shownPane($pane)
+            if {$paneName eq $paneComponent} {
+                $hull paneconfigure $paneWindow -hide 0
+            } else {
+                set window [set $paneName]
+                $hull paneconfigure $window -hide 1
+            }
+        }
+    }
+}
+    
 
