@@ -816,7 +816,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
             -variable [myvar options(-byserial)] -text {By serial} -command [mymethod _controlSerial]
         ttk::entry $win.selection.serial -textvariable [myvar options(-serialstring)]
         ttk::label $win.selection.label -text {Serial string}
-        set fields(serialstring) $win.selection.serial
+        set fields(serialstring) $win.selection.label
         grid $win.selection.byserial $win.selection.serial $win.selection.label
         
         # DAQ Config file.
@@ -1150,8 +1150,9 @@ snit::widgetadaptor rdo::ReadoutWizard {
     #  XXUSB attributes:
     
     delegate option -byserial    to usb
-    delegate option -seriastring to usb
+    delegate option -serialstring to usb
     delegate option -daqconfig   to usb
+    delegate option -usectlserver to  usb
     delegate option -ctlconfig   to usb
     delegate option -ctlport     to usb as -port
     delegate option -enablelogging to usb
@@ -1459,6 +1460,66 @@ proc makeXIAReadout {widget commonAttributes} {
 # @return dict containing the following keys:
 #   *   byserial - boolean true if a specific serial string is used to locate the XXUSB.
 #   *   serialstring - the serial string to use if byserial
+#   *   daqconfig    - The DAQ config file path.
+#   *   usectlserver - True if the control server will be used.
+#   *   ctlconfig    - path to the control configuration file.
+#   *   ctlport      - Control server port.
+#   *   enablelogging - True if logging is enabled.
+#   *   logfile       - path to logfile.
+#   *   logverbosity  - Log file verbosity.
+#
+proc getUSBAttributes {widget} {
+    set result [dict create]
+    foreach \
+    key [list byserial serialstring daqconfig usectlserver ctlconfig ctlport \
+         enablelogging logfile logverbosity] \
+    opt [list -byserial -serialstring -daqconfig -usectlserver -ctlconfig \
+         -ctlport -enablelogging -logfile -logverbosity] {
+        dict set result $key [$widget cget $opt]
+    }
+    return $result
+}
+##
+#  checkUSBAttributes
+#  Check the USB attributes to see if all of the necessary bits and pieces are
+#  nonempty.  Note that in the case of XXUSBreadout, there are some fields that
+#  are conditionally mandatory, for exampl, the serialstring field is only
+#  mandatory if byserial is true.
+#
+# @param attributes - the USB attributes dictionary.
+# @return list      - list of the missing fields.
+#
+proc checkUSBAttributes {attributes} {
+    set unconditionals [list daqconfig]
+    set serial         [list serialstring]
+    set ctlserver      [list ctlconfig ctlport]
+    set logging        [list logfile]
+    
+    # Now compute that actual required strings:
+    
+    set mandatory $unconditionals
+    if {[dict get $attributes byserial]} {
+        set mandatory [concat $mandatory $serial]
+    }
+    if {[dict get $attributes usectlserver]} {
+        set mandatory [concat $mandatory $ctlserver]
+    }
+    if {[dict get $attributes enablelogging]} {
+        set mandatory [concat $mandatory $logging]
+    }
+    set result [list]
+    
+    foreach field $mandatory {
+        if {[dict get $attributes $field] eq ""} {
+            lappend result $field
+        }
+    }
+    
+    return $result
+}
+    
+
+    
 
 
 ##
