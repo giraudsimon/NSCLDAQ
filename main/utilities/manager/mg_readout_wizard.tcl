@@ -1030,7 +1030,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
 #
 #
 snit::widgetadaptor rdo::CustomAttributes {
-    option -program -default
+    option -program -default [list]
     
     component programOptions
     component programEnvironment
@@ -1518,10 +1518,6 @@ proc checkUSBAttributes {attributes} {
     return $result
 }
     
-
-    
-
-
 ##
 # makeUSBReadout
 #   The only difference between CCUSB and VMUSB readouts is the actual
@@ -1548,7 +1544,79 @@ proc makeUSBReadout {widget commonAttributes program} {
     
     return 0
 }
+#------------------------------------------------------------------------------
+#  Custom readouts:
 
+##
+# getCustomAttributes
+#   Return a dict with the custom attributes:
+# @param widget - the wizard widget.
+# @return dict with the keys:
+#  *    program - path to the Readout program.
+#  *    options - Command line options as a list of option or option/value pairs.
+#  *    environment - environment name or name/value pairs.
+#  *    parameters - list of command parameters
+#
+proc getCustomAttributes {widget} {
+    set result [dict create]
+    
+    foreach \
+        key [list program options environment parameters] \
+        opt [list -program -options -environment -parameters] {
+        dict set result $key [$widget cget $opt]
+    }
+    
+    return $result
+}  
+##
+# checkCustomAttibutes
+#   @param attributes - the readout attributes.
+#   @return list - of missing required attributes.
+#
+proc checkCustomAttributes {attributes} {
+    set required [list program]
+    set result [list]
+    
+    foreach key $required {
+        if {[dict get $attributes $key] eq ""} {
+            lappend result $key
+        }
+    }
+    
+    return $result
+}
+
+##
+# makeCustomReadout
+#   Pull the parameters for a custom readout and
+#   make that into a program + ancillary stuff.
+#
+# @param widget - the wizard form.
+# @param commonAttributes - the common attributes.
+# @return int - 0 all ok 1 retry form entry.
+proc makeCustomReadout {widget commonAttributes} {
+    set customAttributes [getCustomAttributes $widget]
+    set missing [checkCustomAttributes $customAttributes]
+    
+    if {[llength $missing] > 0} {
+        foreach field $missing {
+            $widget highlightCustomField $field
+        }
+        tk_messageBox -icon error -type ok -title "Missing custom fields" \
+            -message "Required custom fields missing: $missing"
+        return 1
+    }
+    
+    set parameters [dict merge $commonAttributes $customAttributes]
+    puts "Custom parameterization:\n $parameters"
+    
+    return 0
+}
+    
+
+
+
+#------------------------------------------------------------------------------
 #  Action handlers:
 #
 
@@ -1610,7 +1678,9 @@ proc makeReadout {form dbcmd} {
         }
         
     } elseif {$rdotype eq "Custom"} {
-        
+        if {[makeCustomReadout $form $attributes]} {
+            return
+        }
     } else {
         tk_messageBox -icon error -type ok -title {Bad readout type} \
             -message "Invalid readout type: $rdotype"
