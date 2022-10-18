@@ -1109,7 +1109,7 @@ snit::widgetadaptor rdo::ReadoutWizard {
     delegate option -sorthost to xia
     delegate option -sortring to xia
     delegate option -sortwindow to xia
-    delegate option -fifolthreshold to xia
+    delegate option -fifothreshold to xia
     delegate option -buffersize to xia
     delegate option -infinityclock to xia
     delegate option -clockmultiplier to xia
@@ -1335,6 +1335,85 @@ proc checkCommonMandatories {attributes} {
     return $missing
 }
 #-----------------------------------------------------------------------------
+#  Build XIA readout.
+#-----------------------------------------------------------------------------
+
+##
+# getXIAAttributes
+#   Given the wizard widget produce a dict of the XIA specific attributes.
+#
+# @param widget - the wizard widget.
+# @return dict containing the keys:
+#   *   sorthost - the host in which the DDASSort program runs.
+#   *   sortring - the ring to which DDASSort writes.
+#   *   sortwindow - The sliding time window over which the sort is done.
+#   *   fifothreshold  - the FIFO threshold used by Readout to trigger readout.
+#   *   buffersize - The size of the readout buffer.
+#   *   infinityclock - (bool) true if infinity clock is enabled.
+#   *   clockmultiplier - Clock multiplication factor used in external clock mode.
+#   *   scalerperiod - Scaler readout period.
+#
+proc getXIAAttributes {widget} {
+    set result [dict create]
+    foreach \
+        opt [list -sorthost -sortring -sortwindow -fifothreshold -buffersize\
+               -infinityclock -clockmultiplier -scalerperiod]    \
+        key [list sorthost sortring sortwindow fifothreshold buffersize \
+             infinityclock clockmultiplier scalerperiod] {
+        dict set result $key [$widget cget $opt]
+    }
+    return $result
+    
+}
+
+##
+# checkXIAAttributes
+#    Return a list of any mandatory XIA attributes that are missing:
+#
+# @param params - dict of parameters (see getXIAAttributes)
+# @return list  - List of misssing mandatory fields.
+# @note we've cleverly chosen our dict keys so that the mandatory ones
+#      match the field names that can be highlighted.
+#
+proc checkXIAAttributes {params} {
+    set mandatory [list sorthost sortring sortwindow fifothreshold buffersize]
+    set result [list]
+    
+    foreach field $mandatory {
+        if {[dict get $params $field] eq ""} {
+            lappend result $field
+        }
+    }
+    
+    return $result
+}
+
+##
+# makeXIAReadout
+#    Do what's needed to make an XIA readout.  For the most part
+#    this means gathering the XIA specific commands,
+#     forming the readout information.
+#     Creating the appropriate program and squence entries.
+#
+# @param widget - the wizard form.
+# @param commonAttributes - attributes from the common section,.
+# @return int - 1 - failure retry 0 done.
+proc makeXIAReadout {widget commonAttributes} {
+    set xiaattributes [getXIAAttributes $widget]
+    set missing [checkXIAAttributes  $xiaattributes]
+    if {[llength $missing] != 0} {
+        foreach field $missing {
+            $widget highlightXIAField $field
+        }
+        tk_messageBox -icon error -type ok -title "Missing XIA" \
+            -message "The following mandatory XIA specific parameters are missing: $missing"
+        return 1;                       #Let the user fix this.
+    }
+    set parameters [dict merge $commonAttributes $xiaattributes]
+    
+    puts "XIA Parameterization:\n $parameters"
+    return 0
+}
 #  Action handlers:
 #
 
@@ -1349,6 +1428,14 @@ proc checkCommonMandatories {attributes} {
 #   leaving the form up for the user to try again.
 #
 proc makeReadout {form dbcmd} {
+    
+    # Reset any highlighted field labels back to normal and let validation
+    # re-highlight any appropriate ones.
+        
+    $form resetCommonHighlights
+    $form resetXIAHighlights
+    $form resetUSBHighlights
+    $form resetCustomHighlights
     
     #  The creation of the Readout results in:
     #  The creation of the specific program itself
@@ -1366,7 +1453,27 @@ proc makeReadout {form dbcmd} {
         }
         tk_messageBox -icon error -type ok -title {Missing common} \
             -message "The following mandatory fields are empty:  $missingCommonMandatories"
+        
         return
+    }
+    #  What we do next depends on the readout type...at least we know that
+    #  the required common parameters are present.
+    
+    set rdotype [dict get $attributes type]
+    if {$rdotype eq "XIA"} {
+        if {[makeXIAReadout $form $attributes]}  {
+            return
+        }
+    } elseif {$rdotype eq "VMUSB"} {
+        
+    } elseif {$rdotype eq "CCUSB"} {
+        
+    } elseif {$rdotype eq "Custom"} {
+        
+    } else {
+        tk_messageBox -icon error -type ok -title {Bad readout type} \
+            -message "Invalid readout type: $rdotype"
+        return;                    # Maybe given another chance???
     }
     
     exit 0
