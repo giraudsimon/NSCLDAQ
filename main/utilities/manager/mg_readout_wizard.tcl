@@ -218,6 +218,8 @@ snit::widgetadaptor NameValueList {
                }
                $l insert end $item
            }
+           $n delete 0 end
+           $v delete 0 end
       }
       
       ##
