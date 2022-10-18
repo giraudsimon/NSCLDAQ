@@ -790,7 +790,7 @@ snit::widgetadaptor OrderedValueList {
 #  -  -logverbosity - Verbosity of logfile.
 #
 snit::widgetadaptor rdo::XXUSBAttributes {
-    option -byserial -default 0
+    option -byserial -default 0 -configuremethod _setSerialVisibility
     option -serialstring
     
     option -daqconfig
@@ -808,6 +808,16 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     constructor args {
         installhull using ttk::frame
         ttk::label $win.title -text {XXUSBReadout attributes}
+        
+        #  Device selection:
+        
+        ttk::labelframe $win.selection -text {Device selection}
+        ttk::checkbutton $win.selection.byserial -onvalue 1 -offvalue 0 \
+            -variable [myvar options(-byserial)] -text {By serial} -command [mymethod _controlSerial]
+        ttk::entry $win.selection.serial -textvariable [myvar options(-serialstring)]
+        ttk::label $win.selection.label -text {Serial string}
+        set fields(serialstring) $win.selection.serial
+        grid $win.selection.byserial $win.selection.serial $win.selection.label
         
         # DAQ Config file.
         
@@ -858,11 +868,13 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         set fields(logfile) $win.logging.label
         
         grid $win.title     -sticky w
+        grid $win.selection -sticky ew
         grid $win.daqconfig -sticky ew
         grid $win.ctlconfig -sticky ew
         grid $win.logging  -sticky ew
         
         $self configurelist $args
+        $self _controlSerial
         $self _controlOptions
         $self _loggingOptions
     }
@@ -891,7 +903,14 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     #---------------------------------------------------------------------------
     # Configuration handling.
     
-    
+    ##
+    # _setSerialVisibility
+    #   Configure the -byserial flag and visibility of associated fields.
+    #
+    method _setSerialVisibility {name value} {
+        set options($name) $value
+        $self _controlSerial
+    }
     
     ##
     #  _setCtlServerVisibility
@@ -936,7 +955,20 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     method _browseLogfile {} {
          $self _browseForOption -logfile
     }
+    ##
+    # _controlSerial
+    #    Handle the state of the serial string entry depending on
+    #    the state of options(-byserial)
+    #
+    method _controlSerial {} {
         
+        if {$options(-byserial)} {
+            set state normal
+        } else {
+            set state disabled
+        }
+        $win.selection.serial configure -state $state
+    }
     
     
     ##
@@ -1414,6 +1446,48 @@ proc makeXIAReadout {widget commonAttributes} {
     puts "XIA Parameterization:\n $parameters"
     return 0
 }
+#------------------------------------------------------------------------------
+#  Build XXUSB Readouts
+
+
+##
+# getUSBAttributes
+#   Fetch the XXUSBReadout parameterization out of the USB part of the
+#   wizard widget:
+#
+# @param widget - wizard form object.
+# @return dict containing the following keys:
+#   *   byserial - boolean true if a specific serial string is used to locate the XXUSB.
+#   *   serialstring - the serial string to use if byserial
+
+
+##
+# makeUSBReadout
+#   The only difference between CCUSB and VMUSB readouts is the actual
+#   program name. so that gets passed in:
+#
+# @param widget          - the wizard form widget.
+# @param commonAttributes- the common attributes.
+# @param program         -  The program (assumed in $DAQBIN)
+# @return int 1 - if need to re-prompt, 0 if done.
+#
+proc makeUSBReadout {widget commonAttributes program} {
+    set usbAttributes [getUSBAttributes $widget]
+    set missing [checkUSBAttributes $usbAttributes]
+    if {[llength $missing] > 0} {
+        foreach field $missing {
+            $widget highlightUSBField $field
+        }
+        tk_messageBox -icon error -type ok -title "Mixxing USB" \
+            -message "The following mandatory XXUSB paramters are missing: $missing"
+        return 1
+    }
+    set parameters [dict merge $commonAttributes $usbAttributes]
+    puts "XXUSB: $program : parameterization $parameters"
+    
+    return 0
+}
+
 #  Action handlers:
 #
 
@@ -1465,8 +1539,14 @@ proc makeReadout {form dbcmd} {
             return
         }
     } elseif {$rdotype eq "VMUSB"} {
+        if {[makeUSBReadout $form $attributes VMUSBReadout]} {
+            return
+        }
         
     } elseif {$rdotype eq "CCUSB"} {
+        if {[makeUSBReadout $form $attributes CCUSBReadout]} {
+            return
+        }
         
     } elseif {$rdotype eq "Custom"} {
         
