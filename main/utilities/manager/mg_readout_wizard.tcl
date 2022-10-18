@@ -484,7 +484,8 @@ snit::widgetadaptor OrderedValueList {
  #        change.
  #
  snit::widgetadaptor rdo::CommonAttributes {
-    option -type   -default XIA 
+    option -type   -default XIA
+    option -name
     option -containers  -default [list] -configuremethod _configContainers;       # Containers to chose between
     option -container;        # Selected container.
     option -host
@@ -1299,17 +1300,39 @@ proc usage {msg} {
 # getCommonAttributes
 #   Returns a dict of the common attributes
 #
+# @param widget - the wizard widget.
+# @return a dict containing the following keys:
+#   *  type       - type of readout.
+#   *  name       - name of readout (used to derive program and squence defs).
+#   *  container  - Name of container the software should run in.
+#   *  host       - host in which the program should run.
+#   *  directory  - Working directory in which the software should run.
+#   *  sourceid   - Source id to emit.
+#   *  ring       - output ring buffer.
+#   *  service    - Rest service name.
+#   
 proc getCommonAttributes {widget} {
-    
+    dict create type [$widget cget -readouttype]    name [$widget cget -name] \
+        container [$widget cget -container]  host [$widget cget -host] \
+        directory [$widget cget -cwd]  sourceid [$widget cget -sourceid] \
+        ring [$widget cget -ring]            service [$widget cget -restservice]
 }
 ##
 # checkCommonMandatories
 #   Returns a list of missing common fields (Hopefully empty).
+#  
 #
 # @param atttributes
 #
-proc checkMissingMandatories {attributes} {
-    
+proc checkCommonMandatories {attributes} {
+    set mandatory [list name host directory ring service]
+    set missing [list]
+    foreach key $mandatory {
+        if {[dict get $attributes $key] eq ""} {
+            lappend missing $key
+        }
+    }
+    return $missing
 }
 #-----------------------------------------------------------------------------
 #  Action handlers:
@@ -1342,7 +1365,7 @@ proc makeReadout {form dbcmd} {
             $form highlightCommonField $f
         }
         tk_messageBox -icon error -type ok -title {Missing common} \
-            -message {The following mandatory fields are empty:  $missingCommonMandatories}
+            -message "The following mandatory fields are empty:  $missingCommonMandatories"
         return
     }
     
@@ -1353,7 +1376,15 @@ proc makeReadout {form dbcmd} {
 ##
 # Ensure we have a database file and open it:
 
-# Support incremental/interactive testing:
+# Support incremental/interactive testing;
+# If you want to incrementally/interactively test the widgets, fire up
+#  tclsh or wish,
+#  %  set norun 1;   # or anything
+#  %  source mg_readout_wizard.tcl
+#
+# and the main program won't run so you can test.
+    
+
 
 if {[info globals norun] eq ""} {
 
