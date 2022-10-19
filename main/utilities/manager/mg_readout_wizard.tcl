@@ -1422,6 +1422,29 @@ proc checkXIAAttributes {params} {
     
     return $result
 }
+##
+#  makeXIAReadoutOptions
+#   Given the parameterization creates the list of options that will be passed
+#   to ddasReadout.
+# @param params  - program parameterization.
+# @return list - of option/value pairs.  Note that simple flags are singlets.
+#
+proc makeXIAReadoutOptions {params} {
+    set result [list]
+    
+    foreach \
+        key [list host sourceid ring sorthost sortring sortwindow fifothreshold \
+             buffersize  clockmultiplier scalerperiod directory]   \
+        optname [list -readouthost -sourceid -readoutring -sorthost -sortring \
+                 -window -fifothreshold -buffersize -clockmultiplier -scalerseconds -cratedir] {
+        lappend result [list $optname [dict get $params $key]]
+    }
+    if {[dict get $params infinityclock]} {
+        lappend result -infinity on
+    }
+    
+    return $result  
+}
 
 ##
 # makeXIAReadout
@@ -1432,8 +1455,9 @@ proc checkXIAAttributes {params} {
 #
 # @param widget - the wizard form.
 # @param commonAttributes - attributes from the common section,.
+# @param dbcmd - database command.
 # @return int - 1 - failure retry 0 done.
-proc makeXIAReadout {widget commonAttributes} {
+proc makeXIAReadout {widget commonAttributes dbcmd} {
     set xiaattributes [getXIAAttributes $widget]
     set missing [checkXIAAttributes  $xiaattributes]
     if {[llength $missing] != 0} {
@@ -1445,6 +1469,28 @@ proc makeXIAReadout {widget commonAttributes} {
         return 1;                       #Let the user fix this.
     }
     set parameters [dict merge $commonAttributes $xiaattributes]
+    
+    # Make the main program
+    
+    set exe [file join {$DAQBIN} ddasReadout]
+    set opts [makeXIAReadoutOptions $parameters]
+    set name [dict get $parameters name]_readout
+    program::add $dbcmd $name $exe Critical [dict get $parameters host] \
+        [dict create                                                 \
+            options $opts                                            \
+            directory [dict get $parameters directory]              \
+            container [dict get $parameters container]              \
+            service   [dict get $parameters service]                \
+        ]
+    
+    
+    
+    
+    # Make the ancillary programs.
+    
+    #  If necessary make the sequences
+    
+    # Add the programs to the sequences.
     
     puts "XIA Parameterization:\n $parameters"
     return 0
@@ -1528,9 +1574,10 @@ proc checkUSBAttributes {attributes} {
 # @param widget          - the wizard form widget.
 # @param commonAttributes- the common attributes.
 # @param program         -  The program (assumed in $DAQBIN)
+# @param db              - databvase command
 # @return int 1 - if need to re-prompt, 0 if done.
 #
-proc makeUSBReadout {widget commonAttributes program} {
+proc makeUSBReadout {widget commonAttributes program dbcmd} {
     set usbAttributes [getUSBAttributes $widget]
     set missing [checkUSBAttributes $usbAttributes]
     if {[llength $missing] > 0} {
@@ -1595,8 +1642,9 @@ proc checkCustomAttributes {attributes} {
 #
 # @param widget - the wizard form.
 # @param commonAttributes - the common attributes.
+# @param database command
 # @return int - 0 all ok 1 retry form entry.
-proc makeCustomReadout {widget commonAttributes} {
+proc makeCustomReadout {widget commonAttributes dbcmd} {
     set customAttributes [getCustomAttributes $widget]
     set missing [checkCustomAttributes $customAttributes]
     
@@ -1666,21 +1714,21 @@ proc makeReadout {form dbcmd} {
     
     set rdotype [dict get $attributes type]
     if {$rdotype eq "XIA"} {
-        if {[makeXIAReadout $form $attributes]}  {
+        if {[makeXIAReadout $form $attributes  $dbcmd]}  {
             return
         }
     } elseif {$rdotype eq "VMUSB"} {
-        if {[makeUSBReadout $form $attributes VMUSBReadout]} {
+        if {[makeUSBReadout $form $attributes VMUSBReadout $dbcmd]} {
             return
         }
         
     } elseif {$rdotype eq "CCUSB"} {
-        if {[makeUSBReadout $form $attributes CCUSBReadout]} {
+        if {[makeUSBReadout $form $attributes CCUSBReadout $dbcmd]} {
             return
         }
         
     } elseif {$rdotype eq "Custom"} {
-        if {[makeCustomReadout $form $attributes]} {
+        if {[makeCustomReadout $form $attributes $dbcmd]} {
             return
         }
     } else {
