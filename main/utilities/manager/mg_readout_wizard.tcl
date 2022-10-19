@@ -1440,6 +1440,30 @@ proc ensureSequencesExist {db} {
     
 }
 
+##
+# addProgramsToSequences
+#  Adds the programs needed to do a Readout to the appropriate sequences.
+#  The sequences are assumed to already exist.
+#   @param db - database command.
+#   @param name - Readout name (program base name).
+#
+proc addProgramsToSequences {db name} {
+    # List of suffixes/sequences - in order of add
+    
+    set suffixes [list                          \
+        [list _readout bootreadouts]            \
+        [list _init     initreadouts]           \
+        [list _setrun   beginreadouts]          \
+        [list _settitle beginreadouts]          \
+        [list _beginrun beginreadouts]          \
+        [list _endrun   endreadouts]            \
+        [list _shutdown shutdownreadouts]      \
+    ]
+    foreach program $suffixes {
+        set fullname ${name}[lindex $program 0]
+        sequence::addStep $db [lindex $program 1] $fullname
+    }
+}
 #-----------------------------------------------------------------------------
 #  Build XIA readout.
 
@@ -1589,16 +1613,18 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
     makeRunControlProgram \
         $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
     makeRunControlProgram \
-        $dbcmd ${name}_begin [file join \$DAQBIN rdo_control] $parameters begin
+        $dbcmd ${name}_beginrun [file join \$DAQBIN rdo_control] $parameters begin
     makeRunControlProgram \
         $dbcmd ${name}_init [file join \$DAQBIN rdo_control] $parameters init
     makeRunControlProgram \
-        $dbcmd ${name}_end [file join \$DAQBIN rdo_control] $parameters end
+        $dbcmd ${name}_endrun [file join \$DAQBIN rdo_control] $parameters end
     makeRunControlProgram \
         $dbcmd ${name}_shutdown [file join \$DAQBIN rdo_control] $parameters shutdown
 
     
     # Add the programs to the sequences.
+    
+    addProgramsToSequences $dbcmd $name
     
     return 0
 }
