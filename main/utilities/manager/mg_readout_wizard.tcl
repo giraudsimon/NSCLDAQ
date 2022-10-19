@@ -1382,7 +1382,7 @@ proc checkCommonMandatories {attributes} {
 #  Common utilities that span program types.
     
 ##
-# make_runControlProgram
+# makeRunControlProgram
 #    Create a run control program.
 #
 # @param dbcmd - database command.
@@ -1391,8 +1391,8 @@ proc checkCommonMandatories {attributes} {
 # @param params - Program parameterization (need some common elements).
 # @Param args  - (optional) program after the host/user arguments.
 #
-proc make_runControlProgram {dbcmd name executable params args} {
-    puts "Parameterization: $params"
+proc makeRunControlProgram {dbcmd name executable params args} {
+
     set parameters [list [dict get $params host] [dict get $params manageruser] {*}$args]
     set env [list [list SERVICE_NAME [dict get $params service]]]
     
@@ -1402,6 +1402,42 @@ proc make_runControlProgram {dbcmd name executable params args} {
             environment $env                   \
             container [dict get $params container] \
         ]
+}
+
+##
+# ensureSequencesExist
+#   If any sequences are missing, create them:
+# @param db - database command.
+#
+proc ensureSequencesExist {db} {
+    # List of sequences required and their triggers:
+    
+    set required [list  \
+        [list bootreadouts BOOT]  \
+        [list initreadouts HWINIT] \
+        [list beginreadouts BEGIN] \
+        [list endreadouts END] \
+        [list shutdownreadouts SHUTDOWN] \
+    ]
+    set existing [sequence::listSequences $db]
+    
+    # Turn the list of existing sequences into a list of names we can lindex:
+    #
+    set existingnames [list]
+    foreach seq $existing {
+        lappend existingnames [dict get $seq name]
+    }
+    
+    #  Now make the ones that don't yet 
+    
+    foreach seq $required {
+        if {[lsearch -exact $existingnames [lindex $seq 0]] == -1} {
+            sequence::add $db [lindex $seq 0] [lindex $seq 1]
+        }
+    }
+    
+    
+    
 }
 
 #-----------------------------------------------------------------------------
@@ -1548,20 +1584,19 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
     
     set name [dict get $parameters name]
 
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $parameters
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_begin [file join \$DAQBIN rdo_control] $parameters begin
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_init [file join \$DAQBIN rdo_control] $parameters init
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_end [file join \$DAQBIN rdo_control] $parameters end
-    make_runControlProgram \
+    makeRunControlProgram \
         $dbcmd ${name}_shutdown [file join \$DAQBIN rdo_control] $parameters shutdown
 
-    #  If necessary make the sequences
     
     # Add the programs to the sequences.
     
@@ -1833,6 +1868,10 @@ if {[llength $argv] != 1} {
 }
 
 sqlite3 db $argv
+
+#  If necessary make the sequences
+
+ensureSequencesExist db
 
 rdo::ReadoutPrompter .prompt  -okcommand [list makeReadout .prompt db] -cancelcommand exit
 pack .prompt
