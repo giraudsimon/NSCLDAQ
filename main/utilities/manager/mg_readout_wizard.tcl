@@ -42,7 +42,7 @@ package require sqlite3
 # are needed to start it.  Each Readout program named xxx
 # will create the following programs.
 #
-#  -  xxx the readout itself.
+#  -  xxx_readout the readout itself.
 #  -  xxx_init - initializes the hardware.
 #  -  xxx_setrun - sets the run number from the KV store.
 #  -  xxx_settitle - sets the title from the KV Store.
@@ -52,12 +52,12 @@ package require sqlite3
 #
 #  If the following sequences don't exist they are created
 #
-#   -  bootreadout - triggered by the BOOT transition and xxx is added to that sequence.
-#   -  initreadout - triggered by the  HWINIT transition and xxx_init is added to that sequence.
-#   -  beginreadout- triggered by the BEGIN transition, xxx_setrun, xxx_settitle
+#   -  bootreadouts - triggered by the BOOT transition and xxx is added to that sequence.
+#   -  initreadouts - triggered by the  HWINIT transition and xxx_init is added to that sequence.
+#   -  beginreadouts- triggered by the BEGIN transition, xxx_setrun, xxx_settitle
 #                     and xxx_beginrun are added to that sequence.
-#   -  endreadout  - Triggered by the END transtion, xxx_endrun is added to it.
-#   -  shutdownreadout - Triggered by SHUTDOWN< xxx_shutdown is added to it.
+#   -  endreadouts  - Triggered by the END transtion, xxx_endrun is added to it.
+#   -  shutdownreadouts - Triggered by SHUTDOWN< xxx_shutdown is added to it.
 #
 #  For each Readout we need the following:
 #   *  Type of Readout - XIA/DDAS-12+, VMUSB, CCUSB, Customized
@@ -479,6 +479,7 @@ snit::widgetadaptor OrderedValueList {
  # *   - -sourceid - Event builder source id.
  # *   - -ring  - output ring buffer.
  # *   - -service - REST service name used to control the Readout.
+ # *   - -manageruser - user that will run manager.
  #
  #  Other OPTIONS:
  #    -containers - containers to select between.
@@ -496,6 +497,7 @@ snit::widgetadaptor OrderedValueList {
     option -ring -default $::tcl_platform(user)
     option -service -default ReadoutREST
     option -typeselectcommand -default [list]
+    option -manageruser -default $::tcl_platform(user)
     
     variable daqtypes [list XIA VMUSB CCUSB Custom]
     
@@ -565,8 +567,12 @@ snit::widgetadaptor OrderedValueList {
         ttk::labelframe $win.service -text {REST service name}
         ttk::entry $win.service.name -textvariable [myvar options(-service)]
         ttk::label $win.service.label -text {Service}
+        ttk::entry $win.service.user -textvariable [myvar options(-manageruser)]
+        ttk::Label $win.service.userlabel -text {User running manager}
         grid $win.service.name $win.service.label -sticky ew
+        grid $win.service.user $win.service.userlabel
         set fields(service) $win.service.label
+        set fields (manageruser) $win.service.userlabel
         
         #  Grid the top level frames:
         
@@ -1136,6 +1142,7 @@ snit::widgetadaptor rdo::ReadoutWizard {
     delegate option -sourceid   to common
     delegate option -ring       to common
     delegate option -restservice to common as -service
+    delegate option -manageruser to common
     
     
     #  XIA options:
@@ -1345,12 +1352,14 @@ proc usage {msg} {
 #   *  sourceid   - Source id to emit.
 #   *  ring       - output ring buffer.
 #   *  service    - Rest service name.
+#   *  manageruser - User running the manager.
 #   
 proc getCommonAttributes {widget} {
     dict create type [$widget cget -readouttype]    name [$widget cget -name] \
         container [$widget cget -container]  host [$widget cget -host] \
         directory [$widget cget -cwd]  sourceid [$widget cget -sourceid] \
-        ring [$widget cget -ring]            service [$widget cget -restservice]
+        ring [$widget cget -ring]            service [$widget cget -restservice] \
+        manageruser [$widget cget -manageruser]
 }
 ##
 # checkCommonMandatories
@@ -1360,7 +1369,7 @@ proc getCommonAttributes {widget} {
 # @param atttributes
 #
 proc checkCommonMandatories {attributes} {
-    set mandatory [list name host directory ring service]
+    set mandatory [list name host directory ring service manageruser]
     set missing [list]
     foreach key $mandatory {
         if {[dict get $attributes $key] eq ""} {
@@ -1440,11 +1449,28 @@ proc makeXIAReadoutOptions {params} {
         lappend result [list $optname [dict get $params $key]]
     }
     if {[dict get $params infinityclock]} {
-        lappend result -infinity on
+        lappend result [list -infinity on]
     }
+    lappend result \
+        [list -init-script [file join \$DAQSHARE scripts rest_init_script.tcl]]
     
     return $result  
 }
+##
+# makeXIAEnvironment
+#    Return environment variables needed for XIA reaodouts.
+#  @param params  - parameter dict.
+#  @return list - pairs of name/value.  We create:
+#     *    RDOREST_KEEPSTDIN = 1 so that ddasReadout doesn't think we're going to exit.
+#     *    SERVICE_NAME = params[service]
+#
+proc makeXIAEnvironment {params} {
+    return [list                                                \
+        [list RDOREST_KEEPSTDIN 1]                              \
+        [list SERVICE_NAME [dict get $params service]]          \
+    ]       
+}
+
 
 ##
 # makeXIAReadout
@@ -1474,6 +1500,7 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
     
     set exe [file join {$DAQBIN} ddasReadout]
     set opts [makeXIAReadoutOptions $parameters]
+    set env  [makeXIAEnvironment $parameters]
     set name [dict get $parameters name]_readout
     program::add $dbcmd $name $exe Critical [dict get $parameters host] \
         [dict create                                                 \
@@ -1482,11 +1509,21 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
             container [dict get $parameters container]              \
             service   [dict get $parameters service]                \
         ]
-    
-    
-    
-    
+
     # Make the ancillary programs.
+    #   These are
+    #   *    name_settitle  - Sets the title.
+    #   *    name_setrun    - sets the run number.
+    #   *    name_begin     - Begin a run.
+    #   *    name_init      - initialize hardware.
+    #   *    name_end       - end a run.
+    #   *    name_shutdown  - push exit.
+    
+    set host [dict get $parameters host]
+    set service [dict get $parameters service]
+    set user [dict get $parameters manageruser]
+    
+    
     
     #  If necessary make the sequences
     

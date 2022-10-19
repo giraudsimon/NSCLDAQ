@@ -79,5 +79,9 @@ kv destroy
 #  We can use the same user:
 
 ReadoutRESTClient rest -host $programHost -user $user
+if {[array names ::env SERVICE_NAME] ne ""} {
+    rest configure -service $::env[SERVICE_NAME]
+}
+
 rest setTitle $title
 rest destroy
