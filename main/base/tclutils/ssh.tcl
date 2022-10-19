@@ -124,7 +124,7 @@ namespace eval  ssh {
 		#  We're in a container:
 		
 		set bindings  [ssh::getSingularityBindings]
-		return "SING_IMAGE=$container singularity exec $bindings $container bash -c $command"
+		return "SING_IMAGE=$container singularity exec $bindings $container bash -c '$command'"
 	}
 	proc shellCommand { } {
 		set container [getContainerImage]
