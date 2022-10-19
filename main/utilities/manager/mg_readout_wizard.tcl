@@ -568,11 +568,11 @@ snit::widgetadaptor OrderedValueList {
         ttk::entry $win.service.name -textvariable [myvar options(-service)]
         ttk::label $win.service.label -text {Service}
         ttk::entry $win.service.user -textvariable [myvar options(-manageruser)]
-        ttk::Label $win.service.userlabel -text {User running manager}
+        ttk::label $win.service.userlabel -text {User running manager}
         grid $win.service.name $win.service.label -sticky ew
         grid $win.service.user $win.service.userlabel
         set fields(service) $win.service.label
-        set fields (manageruser) $win.service.userlabel
+        set fields(manageruser) $win.service.userlabel
         
         #  Grid the top level frames:
         
@@ -1379,8 +1379,34 @@ proc checkCommonMandatories {attributes} {
     return $missing
 }
 #-----------------------------------------------------------------------------
-#  Build XIA readout.
+#  Common utilities that span program types.
+    
+##
+# make_runControlProgram
+#    Create a run control program.
+#
+# @param dbcmd - database command.
+# @param name - program name.
+# @param executable - executable path.
+# @param params - Program parameterization (need some common elements).
+# @Param args  - (optional) program after the host/user arguments.
+#
+proc make_runControlProgram {dbcmd name executable params args} {
+    puts "Parameterization: $params"
+    set parameters [list [dict get $params host] [dict get $params manageruser] {*}$args]
+    set env [list [list SERVICE_NAME [dict get $params service]]]
+    
+    program::add $dbcmd $name $executable Transitory [dict get $params host] \
+        [dict create                           \
+            parameters $parameters             \
+            environment $env                   \
+            container [dict get $params container] \
+        ]
+}
+
 #-----------------------------------------------------------------------------
+#  Build XIA readout.
+
 
 ##
 # getXIAAttributes
@@ -1508,6 +1534,7 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
             directory [dict get $parameters directory]              \
             container [dict get $parameters container]              \
             service   [dict get $parameters service]                \
+            environment $env
         ]
 
     # Make the ancillary programs.
@@ -1519,17 +1546,25 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
     #   *    name_end       - end a run.
     #   *    name_shutdown  - push exit.
     
-    set host [dict get $parameters host]
-    set service [dict get $parameters service]
-    set user [dict get $parameters manageruser]
-    
-    
-    
+    set name [dict get $parameters name]
+
+    make_runControlProgram \
+        $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $parameters
+    make_runControlProgram \
+        $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
+    make_runControlProgram \
+        $dbcmd ${name}_begin [file join \$DAQBIN rdo_control] $parameters begin
+    make_runControlProgram \
+        $dbcmd ${name}_init [file join \$DAQBIN rdo_control] $parameters init
+    make_runControlProgram \
+        $dbcmd ${name}_end [file join \$DAQBIN rdo_control] $parameters end
+    make_runControlProgram \
+        $dbcmd ${name}_shutdown [file join \$DAQBIN rdo_control] $parameters shutdown
+
     #  If necessary make the sequences
     
     # Add the programs to the sequences.
     
-    puts "XIA Parameterization:\n $parameters"
     return 0
 }
 #------------------------------------------------------------------------------
