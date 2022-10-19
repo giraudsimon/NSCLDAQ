@@ -100,7 +100,7 @@ proc _makeClient {name host user} {
 	$result configure -service $::env(SERVICE_NAME)
     }
     return $result
-
+}
 
 ##
 # begin
