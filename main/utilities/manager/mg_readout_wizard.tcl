@@ -1923,6 +1923,45 @@ proc checkCustomAttributes {attributes} {
     
     return $result
 }
+##
+# makeCustomOptions
+#   These are just the options in the parameters withan --init-script
+#   --sourceid and --ring added from the common options.
+#
+# @param parameters - the parameterization dict.
+# @return list - list of optinos and their values if they have them.
+#
+proc makeCustomOptions parameters {
+    set result [dict get $parameters options]
+    
+    lappend result [list --sourceid [dict get $parameters sourceid]]
+    lappend result [list --ring [dict get $parameters ring]]
+    lappend result [list --init-script [file join {$DAQSHARE} scripts rest_init_script.tcl]]
+    
+    return $result                
+}
+##
+# makeCustomParams
+#   These are just the parameters key of the dict.
+#
+# @param parameters - the parameteization of the program
+# @return list (possibly empty ) of parameters.
+#
+proc makeCustomParams {parameters} {
+    return [dict get $parameters parameters]
+}
+##
+# makeCustomEnv
+#   This is the value  of the environment key of the dict with
+#   SERVICE_NAME appended to it.
+# @param parameters - program parameterization.
+# @return list of env/values.
+#
+proc makeCustomEnv {parameters} {
+    set  result [dict get $parameters environment]
+    lappend result [list SERVICE_NAME [dict get $parameters service]]
+    return $result
+}
 
 ##
 # makeCustomReadout
@@ -1947,7 +1986,36 @@ proc makeCustomReadout {widget commonAttributes dbcmd} {
     }
     
     set parameters [dict merge $commonAttributes $customAttributes]
-    puts "Custom parameterization:\n $parameters"
+    
+    # We make some assumptions about custom readouts:
+    #  - they are based on a Tcl interpreter/
+    #  - They support a --sourceid option.
+    #  - They support a --ring option
+    #  - They support an --init-script options.
+    #  - They support the command set and eventloop that allow the --init-script
+    #    to run the TCLHTTPD server to provide the REST interface.
+    #
+    #  If your readout does not meet these pre-requisites, then
+    #  you'll most likely need your own run control bits and will have to
+    #  construct this thing using individual programs and sequence entries anyway.
+    #
+    
+    set exe [dict get $parameters program]
+    set name [dict get $parameters name]
+    set opts [makeCustomOptions $parameters]
+    set params [makeCustomParams $parameters]
+    set env [makeCustomEnv $parameters]
+    
+    program::add $dbcmd ${name}_readout $exe Critical [dict get $parameters host] \
+        [dict create                                           \
+            options $opts  environment $env parameters $params  \
+            directory [dict get $parameters directory]        \
+            container [dict get $parameters container]         \
+            service   [dict get $parameters service]           \
+        ]
+    
+    makeRunControlPrograms $dbcmd $name $parameters
+    addProgramsToSequences $dbcmd $name
     
     return 0
 }
