@@ -1435,9 +1435,36 @@ proc ensureSequencesExist {db} {
             sequence::add $db [lindex $seq 0] [lindex $seq 1]
         }
     }
-    
-    
-    
+}
+##
+# makeRunControlPrograms
+#    Make all of the programs needed to control a readout over REST:
+#   These are
+#   *    name_settitle  - Sets the title.
+#   *    name_setrun    - sets the run number.
+#   *    name_begin     - Begin a run.
+#   *    name_init      - initialize hardware.
+#   *    name_end       - end a run.
+#   *    name_shutdown  - push exit.
+#
+# @param dbcmd - The database command.
+# @param name - the name of the readout program - will be used as the base
+#               name for the programs made.
+# @param parameters - the program parameterization.
+#
+proc makeRunControlPrograms {dbcmd name parameters} {
+    makeRunControlProgram \
+        $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $parameters
+    makeRunControlProgram \
+        $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
+    makeRunControlProgram \
+        $dbcmd ${name}_beginrun [file join \$DAQBIN rdo_control] $parameters begin
+    makeRunControlProgram \
+        $dbcmd ${name}_init [file join \$DAQBIN rdo_control] $parameters init
+    makeRunControlProgram \
+        $dbcmd ${name}_endrun [file join \$DAQBIN rdo_control] $parameters end
+    makeRunControlProgram \
+        $dbcmd ${name}_shutdown [file join \$DAQBIN rdo_control] $parameters shutdown
 }
 
 ##
@@ -1598,29 +1625,9 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
         ]
 
     # Make the ancillary programs.
-    #   These are
-    #   *    name_settitle  - Sets the title.
-    #   *    name_setrun    - sets the run number.
-    #   *    name_begin     - Begin a run.
-    #   *    name_init      - initialize hardware.
-    #   *    name_end       - end a run.
-    #   *    name_shutdown  - push exit.
     
     set name [dict get $parameters name]
-
-    makeRunControlProgram \
-        $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $parameters
-    makeRunControlProgram \
-        $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
-    makeRunControlProgram \
-        $dbcmd ${name}_beginrun [file join \$DAQBIN rdo_control] $parameters begin
-    makeRunControlProgram \
-        $dbcmd ${name}_init [file join \$DAQBIN rdo_control] $parameters init
-    makeRunControlProgram \
-        $dbcmd ${name}_endrun [file join \$DAQBIN rdo_control] $parameters end
-    makeRunControlProgram \
-        $dbcmd ${name}_shutdown [file join \$DAQBIN rdo_control] $parameters shutdown
-
+    makeRunControlPrograms $dbcmd $name $parameters
     
     # Add the programs to the sequences.
     
