@@ -969,7 +969,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     
     ##
     # _toggleTslibEntry
-    #   Called when the tslib checkbutton changes state.
+    #   Called when the tslib checkbstton changes state.
     #   If it is checked, enable the associated entry and browse button
     #   otherise disable them.
     #
@@ -1792,12 +1792,41 @@ proc makeXXUSBReadoutOptions {params} {
     
     # Many parameters have direct mappings to options:
     # This list is key/value of those that do:
-        
+    # These are al lmandatory options.
+    
     set optionMapping [list                         \
-       [list sourceid --sourceid]                   \
-       [list  ring     --ring]                       \
-        
+       [list  ring     --ring]                      \
+       [list  daqconfig --daqconfig]                \
     ]
+    foreach opt $optionMapping {
+        lappend result [list [lindex $opt 1] [dict get $params [lindex $opt 0]]]
+    }
+    #   set the init script to enable the REST server:
+    
+    lappend result \
+        [list --init-script [file join {$DAQSHARE} scripts rest_init_script.tcl]]
+    
+    #  some options are conditional on the true values of a parameter:
+    
+    if {[dict get $params byserial]} {
+        lappend result [list --serialno [dict get $params serialstring]]
+    }
+    
+    if  {[dict get $params usectlserver]} {
+        lappend result [list --ctlconfig [dict get $params ctlconfig]]
+        lappend result [list --port [dict get $params ctlport]]
+    } else {
+        lappend result [list --ctlconfig /dev/null]
+    }
+    
+    if {[dict get $params enablelogging]} {
+        lappend result [list --log [dict get $params logfile]]
+        lappend result [list --debug [dict get $params logverbosity]]
+    }
+    
+    if {[dict get $params usetimestamps]}  {
+        lappend result [list --timestamplib [dict get $params tslib]]
+    }
     
     return $result
 }
@@ -1822,7 +1851,7 @@ proc makeUSBReadout {widget commonAttributes program dbcmd} {
             $widget highlightUSBField $field
         }
         tk_messageBox -icon error -type ok -title "Mixxing USB" \
-            -message "The following mandatory XXUSB paramters are missing: $missing"
+            -message "The following mandatory XXUSB parameters are missing: $missing"
         return 1
     }
     set parameters [dict merge $commonAttributes $usbAttributes]
@@ -1834,13 +1863,13 @@ proc makeUSBReadout {widget commonAttributes program dbcmd} {
     set exe [file join {$DAQBIN} $program]
     set opts [makeXXUSBReadoutOptions $parameters]
     
-    program::add $dbcmd ${name}_readout Critical [dict get $parameters host] \
+    program::add $dbcmd ${name}_readout $exe Critical [dict get $parameters host] \
         [dict create                                                \
             options $opts                                           \
             directory [dict get $parameters directory]              \
-            container [dict get $paramters container]               \
+            container [dict get $parameters container]               \
             service   [dict get $parameters service]                \
-            environment [list [list SERVICE_NAME [dict get $paramters service]]] \
+            environment [list [list SERVICE_NAME [dict get $parameters service]]] \
         ]
     #  Make the ancillary programs:
     
