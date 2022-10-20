@@ -4434,4 +4434,295 @@ $DAQBIN/mg_kvget <replaceable>host user key</replaceable>
       </example>
     </refsect1>
 </refentry>
+
+<refentry id='daq1.mg_container_wizard'>
+   <refmeta>
+      <refentrytitle id='daq1.mg_container_wizard.title'></refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>Container creation wizard</refname>
+      <refpurpose>Make the creation of container definitions simpler</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/mg_container_wizard <replaceable>database-name</replaceable>
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            A container in the manager is a run-time environment.  A containzerized
+            run-time environment includes the following:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  The Linux version run-time environment (e.g.
+                  <literal>Buster</literal> or
+                  <literal>Jessie</literal>
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The appropriate <filename>/usr/opt</filename>
+                  file system for that version of the Linux run-time
+                  environment.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  A version of NSCLDAQ that will be set-up for programs running
+                  within the container.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  A set of bindings from the host system's filesystem into the
+                  filesystem seen by the container.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            The container wizard provides a simplified method to create new container
+            definitions in a manager configuration database.  It depends on a
+            configuration file to define the set of container images (linux run-times),
+            and where the /usr/opt filesystems live, and presents a list of the
+            names associated with those container images (in the configuration file).
+          </para>
+          <para>
+            Once a container image has been selected (by double clicking its name
+            in the list of containers), the /usr/opt/daq for that container is
+            probed for available NSCLDAQ versions.  Once one of thiose is selected
+            (by double-clicking it's installation directory from the list), the
+            user is presented with a subset of the 
+            <link linkend='daq1.mg_cfgcontainers' endterm='daq1.mg_cfgcontainers.title' />
+            container editor as is given the opportunity to add and remove
+            bindings from the filesystem the container sees.
+          </para>
+          <para>
+              Note that removing the binding that maps to <filename>/usr/opt</filename>
+              will likely make the containe fail unless a functioally equivalent
+              binding is used to replace it.
+          </para>
+          <para>
+            When the container file system has been configured appropriately
+            simplyy click <guibutton>Ok</guibutton> to enter the container into
+            the configuration database selected on the command line.
+          </para>
+          <para>
+            Note that the configuration editor initiated by the
+            main configuration menu;
+            <link linkend='daq1.mg_config' endterm='daq1.mg_config.title' /> has
+            been written so that it's <guibutton>New</guibutton> button will
+            run the container wizard.
+          </para>
+    </refsect1>
+    <refsect1>
+        <title>Container definition file</title>
+        <para>
+            For the wizard to work properly it needs:
+        </para>
+        <orderedlist>
+            <listitem>
+               <para>
+                   To have a configuration file that defines the available
+                   containers.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  To be able to see the /usr/opt file systems for all of the
+                  containers defined in the configuration file.
+               </para>
+            </listitem>
+        </orderedlist>
+        <para>
+            The configuration file must be named
+            <filename>containers.ini</filename> and is looked for in the
+            following directories in the following order (first find terminates the
+            search).
+        </para>
+        <itemizedlist>
+            <listitem>
+               <para>
+                  The directory pointed to by the
+                  <literal>CONTAINER_CONFIG</literal> environment variable.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The user's current working directory 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  The user's home directory 
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <filename>/usr/opt</filename>  at the FRIB, this is normally
+                  the directory in which the container <filename>/usr/opt</filename>
+                  directory trees are located.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  <filename>/non-container</filename>   At the FRIB, this is
+                  normally where <filename>/usr/opt</filename> is bound into
+                  container filesystems so that the container wizard can run
+                  properly withina container.
+               </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+            The <filename>containers.ini</filename> file is in the format of
+            an <firstterm>ini</firstterm> file or, more formally a
+            <firstterm>toml</firstterm> file.
+        </para>
+        <para>
+            Ini files are divided into sections.  Each section is introduced by
+            its name in square brackets.  For example a line containing:
+            <literal>[CONFIG]</literal> would introduce the <literal>CONFIG</literal>
+            section.
+        </para>
+        <para>
+            The lines in each section can contain several key/value pairs, one
+            per line.  These are of the form
+            <literal>key=value</literal>.  For example.
+            <literal>path=/scratch/nscl-bullseye.img</literal> gives the
+            <literal>path</literal> key the value <literal>/scratch/nscl-bullseye.img</literal>.
+            The keys within each section are indpendent of the keys in any other
+            section.  Thus you can think of a section as a namespace that holds
+            its keys.
+        </para>
+        <para>
+            The <filename>containers.ini</filename> file has one mandatory section
+            <literal>CONFIG</literal> and a section for each container image
+            it supports.  The section name for the containers is used as the
+            container's base name.  That is then qualified by the version of
+            NSCLDAQ selected to produce the container's name for the
+            manager database.  
+        </para>
+        <para>
+            The <literal>CONFIG</literal> section is mandatory.  It
+            <emphasis>must</emphasis> contain the following keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>native_tree</literal></term>
+               <listitem>
+                   <para>
+                    This is the location of the directory tree that contains
+                    all of the <filename>/usr/opt</filename> filesystems
+                    for the containers, in the native system.  At the FRIB,
+                    this has the value <filename>/usr/opt</filename>
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>container_tree</literal></term>
+               <listitem>
+                   <para>
+                    This is an alternate location at which the
+                    <filename>/usr/opt</filename> trees can be found.
+                    It is provided to allow the wizard to run within a container,
+                    which has a specific mapping to <filename>/usr/opt</filename>,
+                    while the wizard, nonetheless needs to see all of those
+                    trees to be able to probe the set of available NSCLDAQ
+                    versions.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            In addtion to the <literal>CONFIG</literal> section, the
+            configuration file must have one section for each supported
+            container image.  The name of each section is the base name of the
+            container (which will be qualified by the version of NSCLDAQ selected.
+            These sections have both mandatory and
+            optional keys:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>path</literal> (mandatory)</term>
+               <listitem>
+                   <para>
+                    The value of this key is a path relative to the value of
+                    <literal>native_tree</literal> or <literal>container_tree</literal>
+                    (both will be searched) for the singularity image of the
+                    container associated with this section.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>usropt</literal> (mandatory)</term>
+               <listitem>
+                   <para>
+                    The path, again relative to either <literal>native_tree</literal>
+                    or <literal>container_tree</literal> in which the
+                    <filename>/usr/opt</filename> directory tree for this
+                    container can be found.  This path, relative to
+                    <literal>native_tree</literal> will be bound to
+                    <filename>/usr/opt</filename>.  It will also be
+                    probed for NSCLDAQ versions.
+                   </para>
+                </listitem>
+               
+            </varlistentry>
+            <varlistentry>
+               <term><literal>bindings</literal> (optional)</term>
+               <listitem>
+                   <para>
+                    The value of this key, if it's supplied is a valid value to the
+                    --bind option to the <command>singularity</command>
+                    command, as such it can specify several comma separated bindings
+                    strings.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <refsect2>
+            <title>EXAMPLE</title>
+            <example>
+                <title>Sample containers.ini file</title>
+                <programlisting>
+[CONFIG]
+native_tree=/usr/opt
+container_tree=/non-container
+
+[buster]
+path=/usr/opt/nscl-buster.img
+usropt=opt-buster
+
+[jessie]
+path=/usr/opt/nscl-jessie.img
+usropt=opt-jessie
+
+[bullseye]
+path=/usr/opt/nscl-bullseye.img
+usropt=opt-bullseye
+bindings=/scratch,/projects/daq:/daq
+
+                </programlisting>
+            </example>
+        </refsect2>
+    </refsect1>
+    <refsect1>
+        <title>FILES</title>
+        <variablelist>
+            <varlistentry>
+               <term><filename>containers.ini</filename></term>
+               <listitem>
+                   <para>
+                    Container descdription file.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
 <!-- /manpage -->
