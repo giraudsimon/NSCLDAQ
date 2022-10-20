@@ -796,6 +796,8 @@ snit::widgetadaptor OrderedValueList {
 #  -  -enablelogging - True to turn on logging.
 #  -  -logfile     - Log file name.
 #  -  -logverbosity - Verbosity of logfile.
+#  -   -extracttimestamps - If timestamp extraction is to be done
+#  -  -timestamplib - Path to timestamp extraction library.
 #
 snit::widgetadaptor rdo::XXUSBAttributes {
     option -byserial -default 0 -configuremethod _setSerialVisibility
@@ -810,6 +812,9 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     option -enablelogging -default 0 -configuremethod _setLoggingVisibility
     option -logfile
     option -logverbosity -default 0
+    
+    option -extracttimestamps -default 1 -configuremethod _setTsLibVisibility
+    option -timestamplib -default ""
     
     variable fields -array [list]
     
@@ -833,8 +838,18 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         ttk::label $win.daqconfig.label -text {daqconfig}
         ttk::entry $win.daqconfig.config -textvariable [myvar options(-daqconfig)]
         ttk::button $win.daqconfig.browse -text {Browse...} -command [mymethod _browseDAQFile]
-        grid $win.daqconfig.label $win.daqconfig.config $win.daqconfig.browse -sticky ew
+        ttk::checkbutton $win.daqconfig.usets  \
+            -onvalue 1 -offvalue 0 -command [mymethod _toggleTslibEntry] \
+            -variable [myvar options(-extracttimestamps)]
+        ttk::label $win.daqconfig.tslabel -text {Extract Timestamps}
+        ttk::entry $win.daqconfig.tslib -textvariable [myvar options(-timestamplib)]
+        ttk::button  $win.daqconfig.browsetslib -text Browse... -command [mymethod _browseTSLib]
+        grid $win.daqconfig.label $win.daqconfig.config $win.daqconfig.browse   \
+            $win.daqconfig.usets $win.daqconfig.tslabel $win.daqconfig.tslib \
+            $win.daqconfig.browsetslib \
+            -sticky ew
         set fields(daqconfig) $win.daqconfig.label
+        set fields(tslib) $win.daqconfig.tslabel
         
         # Control configuration :
         
@@ -856,6 +871,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
              -sticky ew
         set fields(ctlconfig) $win.ctlconfig.filelbl
         set fields(ctlport)    $win.ctlconfig.plabel
+        
         
         # Logging configuration:
         
@@ -885,6 +901,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         $self _controlSerial
         $self _controlOptions
         $self _loggingOptions
+        $self _toggleTslibEntry
     }
     #---------------------------------------------------------------------------
     # public methods
@@ -939,8 +956,49 @@ snit::widgetadaptor rdo::XXUSBAttributes {
         set options($name) $value
         $self _loggingOptions
     }
+    ##
+    #  _setTsLibVisibility
+    #
+    method _setTsLibVisibility {name value} {
+        set options($name) $value
+        $self _toggleTslibEntry
+    }
+    
     #---------------------------------------------------------------------------
     # Event handlers:
+    
+    ##
+    # _toggleTslibEntry
+    #   Called when the tslib checkbutton changes state.
+    #   If it is checked, enable the associated entry and browse button
+    #   otherise disable them.
+    #
+    method _toggleTslibEntry {} {
+        if {$options(-extracttimestamps)  } {
+            set state normal
+        } else {
+            set state disabled
+        }
+        $win.daqconfig.tslib configure -state $state
+        $win.daqconfig.browsetslib configure -state $state
+    }
+    ##
+    # _browseTSLib
+    #   Browse the filesystem to set the timestamp library.
+    #
+    method _browseTSLib {} {
+        set result [tk_getOpenFile -parent $win -title "Timstamp Extractor"  \
+            -filetype [list                                                   \
+                {{Shared object}   .so }                                      \
+                {{All files}       *   }                                      \
+            ]                                                                 \
+        ]
+        if {$result ne ""}  {
+            $self configure -timestamplib $result
+        }
+    }
+        
+    
     
     ##
     #  _browseDAQfile
@@ -961,7 +1019,15 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     #    Browse for a logfile.
     #
     method _browseLogfile {} {
-         $self _browseForOption -logfile
+        set result [tk_getSaveFile -title Logfile -parent $win \
+            -filetypes [list                                     \
+                {{Log files}  .log}                              \
+                {{All files}   *  }                              \
+            ]                                                    \
+        ]
+        if {$result ne ""} {
+            $self configure -logfile $result
+        }
     }
     ##
     # _controlSerial
@@ -1013,7 +1079,7 @@ snit::widgetadaptor rdo::XXUSBAttributes {
     # Utils
     
     method _browseForOption {name} {
-       set file [tk_getOpenFile -parent $win -title "DAQ config file" \
+       set file [tk_getOpenFile -parent $win -title "Config file" \
             -filetypes [list                                           \
                     {{Tcl Scripts} .tcl}                               \
                     {{All Files}    *}                                  \
@@ -1167,6 +1233,8 @@ snit::widgetadaptor rdo::ReadoutWizard {
     delegate option -enablelogging to usb
     delegate option -logfile     to usb
     delegate option -logverbosity to usb
+    delegate option -extracttimestamps to usb
+    delegate option -timestamplib to usb
     
     #  Custom attributes:
     
@@ -1655,14 +1723,17 @@ proc makeXIAReadout {widget commonAttributes dbcmd} {
 #   *   enablelogging - True if logging is enabled.
 #   *   logfile       - path to logfile.
 #   *   logverbosity  - Log file verbosity.
+#   *   usetimestamps - A timestamp extraction library will be provided.
+#   *   tslib         - The timestamp library.
 #
 proc getUSBAttributes {widget} {
     set result [dict create]
     foreach \
     key [list byserial serialstring daqconfig usectlserver ctlconfig ctlport \
-         enablelogging logfile logverbosity] \
+         enablelogging logfile logverbosity usetimestamps tslib] \
     opt [list -byserial -serialstring -daqconfig -usectlserver -ctlconfig \
-         -ctlport -enablelogging -logfile -logverbosity] {
+         -ctlport -enablelogging -logfile -logverbosity  \
+         -extracttimestamps -timestamplib] {
         dict set result $key [$widget cget $opt]
     }
     return $result
@@ -1695,6 +1766,9 @@ proc checkUSBAttributes {attributes} {
     if {[dict get $attributes enablelogging]} {
         set mandatory [concat $mandatory $logging]
     }
+    if {[dict get $attributes usetimestamps]} {
+        lappend mandatory tslib
+    }
     set result [list]
     
     foreach field $mandatory {
@@ -1705,7 +1779,30 @@ proc checkUSBAttributes {attributes} {
     
     return $result
 }
+##
+# makeXXUSBReadoutOptions
+#    Given the program parameterization, make the options that will be passsed
+#    to the XXUSBReadout program.
+#  @param params - the parameterization of the readout from the wizard.
+#  @return list  - List of options.  If the list entry is a 2 element sublist it's
+#                   [list option value] if a single element the optin is a flag.
+#
+proc makeXXUSBReadoutOptions {params} {
+    set result [list]
     
+    # Many parameters have direct mappings to options:
+    # This list is key/value of those that do:
+        
+    set optionMapping [list                         \
+       [list sourceid --sourceid]                   \
+       [list  ring     --ring]                       \
+        
+    ]
+    
+    return $result
+}
+
+
 ##
 # makeUSBReadout
 #   The only difference between CCUSB and VMUSB readouts is the actual
@@ -1729,7 +1826,30 @@ proc makeUSBReadout {widget commonAttributes program dbcmd} {
         return 1
     }
     set parameters [dict merge $commonAttributes $usbAttributes]
-    puts "XXUSB: $program : parameterization $parameters"
+    
+    set name [dict get $parameters name]
+    
+    #  Create the readout  program
+    
+    set exe [file join {$DAQBIN} $program]
+    set opts [makeXXUSBReadoutOptions $parameters]
+    
+    program::add $dbcmd ${name}_readout Critical [dict get $parameters host] \
+        [dict create                                                \
+            options $opts                                           \
+            directory [dict get $parameters directory]              \
+            container [dict get $paramters container]               \
+            service   [dict get $parameters service]                \
+            environment [list [list SERVICE_NAME [dict get $paramters service]]] \
+        ]
+    #  Make the ancillary programs:
+    
+    makeRunControlPrograms $dbcmd $name $parameters
+    
+    # and add all to appropriate sequences:
+    
+    addProgramsToSequences $dbcmd $name
+    
     
     return 0
 }
