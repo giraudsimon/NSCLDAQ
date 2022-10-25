@@ -4718,7 +4718,619 @@ bindings=/scratch,/projects/daq:/daq
                <term><filename>containers.ini</filename></term>
                <listitem>
                    <para>
-                    Container descdription file.
+                    Container description file.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+</refentry>
+<refentry>
+   <refmeta>
+      <refentrytitle>mg_readout_wizard</refentrytitle>
+      <manvolnum>1daq</manvolnum>
+   </refmeta>
+   <refnamediv>
+      <refname>mg_readout_wizard</refname>
+      <refpurpose>Create managed readouts</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+           <command>
+$DAQBIN/mg_readout_wizard <replaceable>database-file</replaceable>        
+           </command>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+             <title>DESCRIPTION</title>
+          <para>
+            Creating a Readout that is managed by the experiment manager is
+            by hand is laborious.  In addition to starting the Readout itself
+            at experiment boot time you must:
+          </para>
+          <itemizedlist>
+            <listitem>
+               <para>
+                  Us an init script that loads the REST control interface into
+                  the Readout.
+               </para>
+            </listitem>
+            <listitem>
+               <para>
+                  Arrange for ancillary REST client control programs to run
+                  at appropriate state transitions.
+               </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            The <command>mg_readout_wizard</command> command allows you to specify
+            the characterisitcs of a Readout program and then takes care of all
+            of creating the programs and sequence entries needed to properly
+            define the Readout to the experiment manager.
+          </para>
+          <para>
+            The manager supports three types of readout:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term>XIA/DDAS</term>
+               <listitem>
+                   <para>
+                    This is the split XIA Readout/hit sorting readout system
+                    that was introduced in NSCLDAQ-11.4 and is in NSCLDAQ-12.0
+                    and later.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>XXUSB</term>
+               <listitem>
+                   <para>
+                    This is a readout program for either the VMUSB or CCUSB
+                    smart crate controllers.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Custom</term>
+               <listitem>
+                   <para>
+                    This is any readout program that can can load the
+                    tclhttpd to supply the REST interface and
+                    accepts the REST interface's commands.
+                   </para>
+                   <para>
+                    This is intended to supply legacy support for the SBS
+                    readout framework but also can work withthe readouts for the
+                    CAEN digitizers.
+                   </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            The readout wizard GUI is divided into three visible panes:
+          </para>
+          <variablelist>
+            <varlistentry>
+               <term>The Common pane</term>
+               <listitem>
+                   <para>
+                    The top pane prompts for information that is common to all
+                    readout types.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term>Type specific pane</term>
+               <listitem>
+                   <para>
+                    The contents of this pane vary dependingon the type of
+                    readout program selected (from the common pane).  It prompts
+                    for information needed by the specific readout program type
+                    you are using.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>Action pane</term>
+                <listitem>
+                    <para>
+                        Provides the buttons needed to decide what to do with the
+                        information in the form.  The
+                        <guibutton>Ok</guibutton> button accepts the information,
+                        validates it and makes the database entries needed to define
+                        the program.
+                        <guibutton>Cancel</guibutton> unpost the GUI and makes
+                        no database changes.
+                    </para>
+                </listitem>
+            </varlistentry>
+          </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>The GUI</title>
+        <para>
+            The subsections of this section will describe the information
+            different parts of the form can accept as input.  First we will
+            describe the common pane's inputs.  Then we will describe each
+            of the possible type specific panes and when they will appear.
+        </para>
+        <refsect2>
+            <title>The Common Pane</title>
+            <para>
+                The common pane provides the following inputs:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term>Readout Name</term>
+                   <listitem>
+                       <para>
+                        This is a name which will be used to derive the names
+                        of the program that will be created by the wizard.
+                        Program  names will be created by appending an
+                        underscore and a functional description.
+                       </para>
+                       <para>
+                        The following programs are created for a readout named
+                        <literal>xxx</literal>, and hopefully
+                        their names are self descriptive:
+                        <literal>xxx_readout, xxx_init, xxx_setrun, xxx_settitle,
+                        xxx_beginrun, xxx_endrun, xxx_shutdown</literal>.
+                        Where <literal>xxx_readout</literal> is the readout
+                        program itself and the other programs are REST
+                        control clients.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Program type</term>
+                   <listitem>
+                       <para>
+                        This is a radiobutton set that selects the readout program
+                        type.  Selecting a radio button selects the contents of
+                        the type specific pane.
+                        Selecting <literal>XIA</literal> selects the
+                        XIA/DDAS readout/sort program, both
+                        <literal>VMUSB</literal> and <literal>CCUSB</literal>
+                        select the XXUSB pane and use the appropriate
+                        readout program (<command>VMUSBReadout</command>
+                        or <command>CCUSBReadout</command>, respectively),
+                        and <literal>Custom</literal> selects the custom readout
+                        pane.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Container</term>
+                   <listitem>
+                       <para>
+                        The container part of the form allows you to select the
+                        container within which the programs are run and the
+                        host in which the programs are run. Not that to simplify,
+                        all programs created by the wizard will be run in the same
+                        container and same host.  If the container pulldown is
+                        left empty, the programs are run in the native environment.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Directory</term>
+                   <listitem>
+                       <para>
+                        Sets the current working directory for all of the programs.
+                        Note that if the programs are run in the containerized
+                        environment, this path must be valid within that
+                        environment.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Source Id</term>
+                   <listitem>
+                       <para>
+                        Selects the source Id that will tag the events produced
+                        by the readout. The source id of each data source must be
+                        unique for the event builder to function properly.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Output Ring</term>
+                   <listitem>
+                       <para>
+                        Name of the ring buffer that will receive events from
+                        the readout.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>REST Service name</term>
+                   <listitem>
+                       <para>
+                        Provides the name of the REST service you want the
+                        readout to advertise (and the clients to interact with),
+                        as well as the username under which the manager is run.
+                        In NSCLDAQ, service names are qualified by the user
+                        registering them and in the experiment manager, all programs
+                        are run under the username of the user sthat started the
+                        manager.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect2>
+        <refsect2>
+            <title>XIA specific pane</title>
+            <para>
+                This pane is visibible if the Common pane's <literal>XIA</literal>
+                radio button is checked.  It prompts for the additional parameters
+                needed to set up the XIA readout/hit sort pipeline.  It's important
+                to note that the output ring and host in the common pane will be
+                where the readout program itself will run and put data.
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term>Sort Host</term>
+                   <listitem>
+                       <para>
+                        The system in which the hit sorting program will run.
+                        Note that the common pane's container selection will
+                        determine if the program runs in a containerized
+                        environment and which container will be used if so.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Sort output ring</term>
+                   <listitem>
+                       <para>
+                        Determines the name of the ring buffer in which they
+                        hit sorter will write the sorted hits.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Sort Window</term>
+                   <listitem>
+                       <para>
+                        Determines the number of seconds in the sliding
+                        window within which hits can be emitted.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Readout Threshold</term>
+                   <listitem>
+                       <para>
+                        The number of words that must be in the FIFO of modules
+                        in order to trigger a readout.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Buffersize</term>
+                   <listitem>
+                       <para>
+                        The size of the ring item the readout will use to
+                        send hit aggregates o the sorter.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Clock parameters</term>
+                   <listitem>
+                       <para>
+                        If <literal>Infinity</literal> is checked  the
+                        readout will use infinity clock synchronization. That is
+                        clocks will be synchronized at boot but never again.
+                       </para>
+                       <para>
+                        If external clocks are selected in the readout, the
+                        values of the external clock are multiplied by the
+                        <literal>Multiplier</literal> to form the event timestamp.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Scalers</term>
+                   <listitem>
+                       <para>
+                        Specifies the number of seconds between scaler readouts.
+                        This should not be smaller than 2 as we've observed
+                        issues with the modules if it is.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </refsect2>
+        <refsect2>
+            <title>XXUSB specific pane</title>
+            <para>
+                This pane is visible if either the
+                <literal>VMUSB</literal> or <literal>CCUSB</literal>
+                radio buttons are checked in the common pane's readout type
+                radio button set.  It prompts for parameters needed by the
+                XXUSBReadout programs.
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term>Device Selection</term>
+                   <listitem>
+                       <para>
+                        If the <literal>By serial</literal> checkbutton is checked,
+                        the <literal>Serial String</literal> entry is enabled and
+                        you can type the serial string of the controller you
+                        want to use.  Note that if only a single VMUSB or CCUSB
+                        controller is attached to the system the readouts will
+                        connect to it.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>DAQConfiguration</term>
+                   <listitem>
+                       <para>
+                        Provides for the daqconfig file, which defines the
+                        modules, their parameterization and the stacks to
+                        configure for acquisition mode.
+                       </para>
+                       <para>
+                        If the <literal>Extract Timestamps</literal>
+                       checkbutton is checked, it's assumed you're using the
+                       readout in an event built environment and the
+                       entry to right allows you to supply a timestamp extraction
+                       shared object library file that can assign a timestamp
+                       to each event.  Note that the paths for the daqconfig
+                       and timestamp extraction library must be valid within whatever
+                       container you might have selected for the readout program.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                   <varlistentry>
+                      <term>Control configuration</term>
+                      <listitem>
+                          <para>
+                            If the <literal>Use Control Server</literal>
+                            checkbutton is checked the XXUSBReadout's slow control
+                            server is enabled.  You can then enter the control
+                            configuration file and the port on which
+                            the control server listens for connections.
+                       </para>
+                        <para>
+                            Note that the path to the slow control configuraion
+                            file must be valid within whatever container environment
+                            you've selected for the program.
+                        </para>
+                    </listitem>
+                   </varlistentry>
+                   <varlistentry>
+                      <term>Logging configuration</term>
+                      <listitem>
+                          <para>
+                            If the <literal>Enable</literal> checkbutton is selected,
+                            the debug logging and tracing are enabled. In that
+                            case, you must supply a log file and the verbosity
+                            level for the logging.
+                       </para>
+                    </listitem>
+                   </varlistentry>
+            </variablelist>
+        </refsect2>
+        <refsect2>
+            <title>Custom Readout specific pane</title>
+            <para>
+                In general this tab configures versions of the SBS readout framework
+                used either in legacy systems or with electronics that is not
+                in general use at the FRIB (such as CAEN digitizers and nextgen
+                CAEN digitizers) that have readout systems based on that framework.
+            </para>
+            <para>
+                The form for specifying the custom readout program allows you to
+                specify:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term>Program</term>
+                   <listitem>
+                       <para>
+                        The path to the program that will perform the readout
+                        (this path must be valid in whatever container environment
+                        you might have selected).
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Program options</term>
+                   <listitem>
+                       <para>
+                        These are option/value pairs which are passed to the
+                        program on the command line, prior to any parameters.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Program parameters</term>
+                   <listitem>
+                       <para>
+                        These are an ordered list of parameters that are
+                        passed on the command line after the options.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>Environment</term>
+                   <listitem>
+                       <para>
+                        These are environment variable name/value pairs
+                        that are defined prior to running the program.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Note that the common pane will also add several options
+                to the program.  The program must be able to accept them and
+                must be able to correctly interpret them:
+            </para>
+            <variablelist>
+                <varlistentry>
+                   <term><option>--sourceid</option></term>
+                   <listitem>
+                       <para>
+                        Sets the source id that events should be tagged with.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term><option>--ring</option></term>
+                   <listitem>
+                       <para>
+                        Specifies the ring buffer into which data will be
+                        written.
+                       </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                   <term>--init-script</term>
+                   <listitem>
+                       <para>
+                        This will have a value that specifies the initialization
+                        script that starts the REST server that allows the
+                        Readout to be remote-controlled.
+                       </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+            <para>
+                Note that if the readout program you have does not meet the
+                requirements of a custom program, you can always manually define
+                the program and what's needed to control it.
+            </para>
+        </refsect2>
+    </refsect1>
+    <refsect1>
+        <title>Database Objects created</title>
+        <para>
+            The readout wizard creates several database objects for readout programs
+            it defines.  It creates programs, if necessary, sequences and
+            populates those sequences with programs needed to orchestrate the
+            readout.
+        </para>
+        <para>
+            The following program definitions are created (<literal>xxx</literal>
+            is the program name in the common panel):
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>xxx_readout</literal></term>
+               <listitem>
+                   <para>
+                    The actual readout program itself.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_init</literal></term>
+               <listitem>
+                   <para>
+                    Requests a hardware initialization from the Readout.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_setrun</literal></term>
+               <listitem>
+                   <para>
+                    Reads the run number from the database KV store and
+                    asks the Readout program to set its run number
+                    to match.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_settitle</literal></term>
+               <listitem>
+                   <para>
+                    Readss the run title from the database KV store and asks
+                    the readout program to set its title to match.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_beginrun</literal></term>
+               <listitem>
+                   <para>
+                    Asks the readout program to start data taking.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_endrun</literal></term>
+               <listitem>
+                   <para>
+                    Asks the readout program to end data taking.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>xxx_shutdown</literal></term>
+               <listitem>
+                   <para>
+                    Asks the readout program to exit.
+                   </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+        <para>
+            The following sequences are created and maintained:
+        </para>
+        <variablelist>
+            <varlistentry>
+               <term><literal>bootreadouts</literal></term>
+               <listitem>
+                   <para>
+                    Triggered by the <literal>BOOT</literal> transition.
+                    This will have <literal>xxx_readout</literal>
+                    appended to it.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>initreadouts</literal></term>
+               <listitem>
+                   <para>
+                    Triggered by the <literal>HWINIT</literal> transition.
+                    This will have <literal>xxx_init</literal> appended to it.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>beginreadouts</literal></term>
+               <listitem>
+                   <para>
+                    Triggered by the <literal>BEGIN</literal> transition.
+                    In order,
+                    <literal>xxx_setrun, xxx_settitle</literal> and
+                    <literal>xxx_beginrun</literal> are appended to this
+                    sequence.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>endreadouts</literal></term>
+               <listitem>
+                   <para>
+                    Triggered by the <literal>END</literal> transition.
+                    <literal>xxx_endrun</literal> is appended to this sequence.
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><literal>shutdownreadouts</literal></term>
+               <listitem>
+                   <para>
+                    Triggered by the <literal>SHUTDOWN</literal> transition.
+                    <literal>xxx_shutdown</literal> is appended to this sequence.
                    </para>
                 </listitem>
             </varlistentry>
