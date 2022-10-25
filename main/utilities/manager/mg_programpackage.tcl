@@ -599,7 +599,7 @@ proc program::replace {db name newname path type host options} {
     set initscript [dict get $rootInfo initscript]
     set service [dict get $rootInfo service]
     
-    $db::transaction {
+    $db transaction {
         #  Update the root record:
         
         $db eval {
@@ -608,7 +608,7 @@ proc program::replace {db name newname path type host options} {
                                type_id=$typeid,
                                host=$host,
                                directory=$dir,
-                               container_id=$containerid
+                               container_id=$containerid,
                                initscript=$initscript,
                                service=$service
                     WHERE id = $id

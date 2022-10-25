@@ -804,6 +804,143 @@ tcltest::test kill_3 {Kill actually works.} \
     
     set exitstatus
 } -result 1
+
+##   Tests of program::replace
+    
+
+tcltest::test replace_1 {Replace no such is an error} \
+-setup {
+    commonSetup
+}                         \
+-cleanup {
+    commonCleanup 
+}        \
+-body {
+    program::replace db no-such dummy dummy dumy dummy [dict create]
+} -result * -match glob -returnCodes error
+
+tcltest::test replace_2 {Replace everything in the root record.} \
+-setup {
+    commonSetup
+    container::add db test1 [file normalize ~/minimal.img] "" ""
+    program::add db aname /some/program Critical genesis [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 1} {--ring fox} {--no-barrier}] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set oldid [dict get [program::getdef db aname] id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::replace db aname changed /some/other/program Transitory bresheet \
+        [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 1} {--ring fox} {--no-barrier}] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    
+    set data [program::getdef db changed]
+    
+    set newid [dict get $data id]
+    list [expr $newid == $oldid] [dict get $data name] [dict get $data path] \
+        [dict get $data type] [dict get $data host] [dict get $data directory] \
+        [dict get $data container_name] [dict get $data service]
+    
+} -result [list 1 changed /some/other/program Transitory bresheet /user/fox test1  aservice]
+
+tcltest::test replace_3 {Check options replaced} \
+-setup {
+    commonSetup
+    container::add db test1 [file normalize ~/minimal.img] "" ""
+    program::add db aname /some/program Critical genesis [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 1} {--ring fox} {--no-barrier}] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set oldid [dict get [program::getdef db aname] id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::replace db aname changed /some/other/program Transitory bresheet \
+        [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 2} {--ring foxy} ] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set data [program::getdef db changed]
+    dict get $data options
+} -result [list {--sourceid 2} {--ring foxy} ]
+
+tcltest::test replace_4 {CHeck parameters replaced} \
+-setup {
+    commonSetup
+    container::add db test1 [file normalize ~/minimal.img] "" ""
+    program::add db aname /some/program Critical genesis [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 1} {--ring fox} {--no-barrier}] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set oldid [dict get [program::getdef db aname] id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::replace db aname changed /some/other/program Transitory bresheet \
+        [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 2} {--ring foxy} ] \
+        parameters [list p2 p3 p5] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set data [program::getdef db changed]
+    dict get $data parameters
+} -result [list p2 p3 p5]
+
+tcltest::test replace_5 {Check environment replaced} \
+-setup {
+    commonSetup
+    container::add db test1 [file normalize ~/minimal.img] "" ""
+    program::add db aname /some/program Critical genesis [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 1} {--ring fox} {--no-barrier}] \
+        parameters [list p1 p2 p3] environment \
+            [list {a b} {c d}                       \
+        ] directory /user/fox                       \
+    ]
+    set oldid [dict get [program::getdef db aname] id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    program::replace db aname changed /some/other/program Transitory bresheet \
+        [dict create \
+        container test1  service aservice \
+        options [list {--sourceid 2} {--ring foxy} ] \
+        parameters [list p2 p3 p5] environment \
+            [list {e f} {g h} ]                      \
+         directory /user/fox                       \
+    ]
+    set data [program::getdef db changed]
+    dict get $data environment
+    
+} -result [list {e f} {g h} ]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
