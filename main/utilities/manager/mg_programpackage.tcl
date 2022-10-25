@@ -40,6 +40,7 @@ package require sqlite3
 #
 #  program::exists   - The named program has been defined.
 #  program::add      - Adds a new program definition to the database.
+#  program::replace  - Replace existing program with a new definition.
 #  program::remove   - Removes a program definition from the database.
 #  program::getdef    - Get program definition by name.
 #  program::listDefinitions    - List of dicts of program definitions.
@@ -412,6 +413,59 @@ proc ::program::_runInContainer {db def} {
     
     return [::container::run $container $host $fname]
 }
+##
+# _getRootRecordInfo
+#
+#  Given a program definition, returns the information needed to create/modify
+#  the root record of the program.
+#
+#   @param db   - database name.
+#   @param type - program type name.
+#   @param host - program host.
+#   @param options - addition options.
+#
+#  @return dict with the following keys:
+#    *   - typeid  - id corresponding to type.
+#    *   - containerid - id corresponding to container.
+#    *   - initscript  - initialization script contents.
+#    *   - dir         - working directory.
+#    *   - service     - The service it will advertise.
+#
+proc ::program::_getRootRecordInfo {db type host {options {}}} {
+    # Get the type id corresponsing to the program.
+    #
+    set typeId [program::_typeId $db $type]
+    if {$typeId == -1} {
+        error "$type is not a valid program type."
+    }
+    #  If there's a container in the options get its id:
+    
+    set containerId ""
+    
+    set cname [::program::_dictGetOrDefault $options container]
+    if {$cname ne ""} {
+        set def [container::listDefinitions $db $cname]
+        if {$def eq ""} {
+            error "There is no container named $cname"
+        }
+
+        set containerId [dict get $def id]
+    }
+    set initscript  [::program::_dictGetOrDefault $options initscript]
+    if {$initscript ne ""} {
+        set fd [open $initscript r]
+        set initscript [read $fd]
+        close $fd
+    }
+    
+    set workingDir [::program::_dictGetOrDefault $options directory]
+    set service    [::program::_dictGetOrDefault $options service]
+    
+    return [dict create                                                    \
+            typeid $typeId containerid $containerId initscript $initscript \
+            dir $workingDir service $service                               \
+    ]
+}
 #-------------------------------------------------------------------------------
 ##
 # program::exists
@@ -464,46 +518,28 @@ proc ::program::add {db name path type host {options {}}} {
     if {[program::exists $db $name]} {
         error "The program $name already has a definition"
     }
-    # Get the type id corresponsing to the program.
-    #
-    set typeId [program::_typeId $db $type]
-    if {$typeId == -1} {
-        error "$type is not a valid program type."
-    }
-    #  If there's a container in the options get its id:
     
-    set containerId ""
-    
-    set cname [::program::_dictGetOrDefault $options container]
-    if {$cname ne ""} {
-        set def [container::listDefinitions $db $cname]
-        if {$def eq ""} {
-            error "There is no container named $cname"
-        }
-
-        set containerId [dict get $def id]
-    }
-    set initscript  [::program::_dictGetOrDefault $options initscript]
-    if {$initscript ne ""} {
-        set fd [open $initscript r]
-        set initscript [read $fd]
-        close $fd
-    }
-    
-    set workingDir [::program::_dictGetOrDefault $options directory]
-    set service    [::program::_dictGetOrDefault $options service]
+    set rootInfo [_getRootRecordInfo $db $type $host $options]
     
     
     #  Now that we have everything we need to do the root record insertion,
     # we start the transaction and get to work shoving crap into the database.
     
+    set typeid [dict get $rootInfo typeid]
+    set dir [dict get $rootInfo dir]
+    set containerid [dict get $rootInfo containerid]
+    set initscript [dict get $rootInfo initscript]
+    set service [dict get $rootInfo service]
     $db transaction {
         $db eval {
             INSERT INTO program
                 (name, path, type_id, host, directory, container_id,
                  initscript, service)
-                VALUES ($name, $path, $typeId, $host, $workingDir,
-                        $containerId, $initscript, $service
+                VALUES ($name, $path, $typeid, $host, 
+                        $dir,
+                        $containerid ,   
+                        $initscript,   
+                        $service      
                 )
         }
         set pgmid [$db last_insert_rowid]
@@ -537,6 +573,90 @@ proc ::program::add {db name path type host {options {}}} {
         }
     }
 }
+##
+# program::replace
+#    Replace the definition of an existing program with something different.
+#    Note that this supports renaming the program.
+#    The main point is that the primary key of original definition remains
+#    and therefore references to the old definition refer to the new one.
+#
+# @param db  - database command name.
+# @param name - program name (existing).
+# @param newname - new program name
+# @param path  - Path to program.
+# @param type - program type string.
+# @param host  - host the program runs in.
+# @param options - see add for the contents of this dict.
+#
+proc program::replace {db name newname path type host options} {
+    set current [program::getdef $db $name];  # Error if no match.
+    set id [dict get $current id]
+
+    set rootInfo [_getRootRecordInfo $db  $type $host $options]
+    set typeid [dict get $rootInfo typeid]
+    set dir [dict get $rootInfo dir]
+    set containerid [dict get $rootInfo containerid]
+    set initscript [dict get $rootInfo initscript]
+    set service [dict get $rootInfo service]
+    
+    $db::transaction {
+        #  Update the root record:
+        
+        $db eval {
+            UPDATE program SET name=$newname,
+                               path=$path,
+                               type_id=$typeid,
+                               host=$host,
+                               directory=$dir,
+                               container_id=$containerid
+                               initscript=$initscript,
+                               service=$service
+                    WHERE id = $id
+                
+        }
+        #  Kill off the options, parameters and env and remake them:
+        
+        $db eval {
+            DELETE FROM program_option WHERE program_id = $id
+        }
+        $db eval {
+            DELETE FROM program_parameter WHERE program_id = $id
+        }
+        $db eval {
+            DELETE FROM program_environment WHERE program_id = $id
+        }
+        set opts [::program::_dictGetOrDefault $options options]
+        foreach option $opts {
+            set name [lindex $option 0]
+            set value [lindex $option 1]
+            $db eval {
+                INSERT INTO program_option (program_id, option, value)
+                VALUES ($id, $name, $value)
+            }
+        }
+    
+        set parameters [::program::_dictGetOrDefault $options parameters]
+        foreach parameter $parameters {
+            $db eval {
+                INSERT INTO program_parameter (program_id, parameter)
+                VALUES ($id, $parameter)
+            }
+        }
+        
+        set env [::program::_dictGetOrDefault $options environment]
+        foreach var $env {
+            set name [lindex $var 0]
+            set value [lindex $var 1]
+            $db eval {
+                INSERT INTO program_environment (program_id, name, value)
+                VALUES ($id, $name, $value)
+            }
+        }
+        
+    }
+}
+    
+
 ##
 # program::remove
 #   Remove an existing program from the database.
