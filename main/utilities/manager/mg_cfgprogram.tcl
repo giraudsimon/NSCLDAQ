@@ -249,6 +249,39 @@ proc _makeNewProgram {db form} {
     }
 }
 ##
+# replaces an existing program with the new definition
+#
+# @param db database command
+# @param form - the prompting form.
+# @param oldname - prior program name.
+#
+proc _replaceProgram {db form oldname} {
+    set host [$form cget -host]
+    set image [$form cget -image]
+    set name [$form cget -name]
+    
+    # Check that we have the minimal set of parameters:
+    
+    if {($name eq "") || ($host eq "") || ($image eq "")} {
+        tk_messageBox -parent $toplevel -title "Missing required" \
+        -icon error -type ok  \
+        -message "The program name, executable file and host are required parameters"
+    } else {
+        set container [$form cget -container]
+        set dir       [$form cget -directory]
+        set type      [$form cget -type]
+        set options   [$form cget -options]
+        set params    [$form cget -parameters]
+        set env       [$form cget -environment]
+        
+        program::replace $db  $oldname $name $image $type $host [dict create \
+            options $options parameters $params environment $env \
+            directory $dir container $container
+        ]
+    }
+    
+}
+##
 # _newDefinition
 #    Creates a new program definition: Brings up a program::View with no
 #    pre-loaded definition in a dialogwrapper with Ok and Cancel buttons.
@@ -301,11 +334,7 @@ proc _editDefinition {db def} {
     set answer [$dialog modal]
     if {$answer eq "Ok"} {
         set oldName [dict get $def name]
-        set newName [$form cget -name]
-        if {$oldName eq $newName} {
-            program::remove $db $oldName
-        }
-        _makeNewProgram $db $form
+        _replaceProgram $db $form  $oldName 
         .selection configure -programs [::program::listDefinitions $db]
     }
     
