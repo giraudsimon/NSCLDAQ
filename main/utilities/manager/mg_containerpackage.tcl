@@ -202,7 +202,7 @@ proc container::replace {db name newname image init mountpoints} {
         set initContents [read $fd]
         close $fd
     }
-    puts stderr $id
+    
     
     $db transaction {
         $db eval {

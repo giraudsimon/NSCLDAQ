@@ -464,6 +464,22 @@ tcltest::test container_replace_2 {Replace the root record} \
     
 } -result [list 1 test2 junk.img 0]
 
+
+tcltest::test container_replace_3 {remove bindings if none} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+    set oldid [dict get  [container::listDefinitions db test1]  id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 junk.img {} [list]
+    set def [container::listDefinitions test2]
+    dict exists $def bindings
+} -result 0
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
