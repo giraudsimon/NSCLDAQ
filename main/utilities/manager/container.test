@@ -430,7 +430,40 @@ tcltest::test container_list_3 {Container with mountpoints} \
         name test1 image $TestImage              \
         bindings [list {/a} {/c /d}] id 1         \
      ]                                            \
-] 
+]
+
+#--------------------------------------------------------------------
+#  Tests for container::replace
+
+tcltest::test container_replace_1 {Cannot replace a nonexistent container} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 [file join [file normalize ~] minimal.img] "" [list]
+} -result * -match glob -returnCodes error
+
+tcltest::test container_replace_2 {Replace the root record} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+    set oldid [dict get  [container::listDefinitions db test1]  id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 junk.img {} [list]
+    set match [container::listDefinitions db test2]
+    
+    list [expr $oldid == [dict get $match id]] [dict get $match name] \
+        [dict get $match image] [dict exists $match init]   \
+    
+} -result [list 1 test2 junk.img 0]
+
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {
