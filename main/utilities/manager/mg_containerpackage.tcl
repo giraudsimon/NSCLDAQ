@@ -222,7 +222,7 @@ proc container::replace {db name newname image init mountpoints} {
             if {[llength $binding] == 1} {
                 $db eval {
                     INSERT INTO bindpoint (container_id, path)
-                        VALUES ($pkey, $binding)
+                        VALUES ($id, $binding)
                 }
             } elseif {[llength $binding] == 2} {
                 set path [lindex $binding 0]
@@ -230,7 +230,7 @@ proc container::replace {db name newname image init mountpoints} {
                 
                 $db eval {
                     INSERT INTO bindpoint (container_id, path, mountpoint)
-                        VALUES ($pkey, $path, $mountpoint)
+                        VALUES ($id, $path, $mountpoint)
                 }
                 
             } else {
