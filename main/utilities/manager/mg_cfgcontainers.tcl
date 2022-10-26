@@ -87,19 +87,13 @@ proc createContainer {dbfile editor db} {
 # @param - def    - The new container defintion dict.
 #
 proc replaceContainer {editor db def} {
-    
+    set oldName [$editor getOriginalName]
     set name [dict get $def name]
     
-    if {[container::exists $db $name]} {
-        container::remove $db $name
-    }
-    #   recreate the new container:
-    
-    container::add $db $name \
-        [dict get $def image] [dict get $def scriptfile] [dict get $def bindings]
+    container::replace $db $oldName $name [dict get $def image] \
+        [dict get $def scriptfile] [dict get $def bindings]
     
     $editor configure -containers [container::listDefinitions $db]
-    
     
 }
 #------------------------------------------------------------------------------

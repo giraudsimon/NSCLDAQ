@@ -472,6 +472,7 @@ snit::widgetadaptor container::Editor {
     component currentbindings ;   # listbox with current bindings list.
     component initscript;         # Button to popup current init script if one.
     
+    variable originalName "";     # Name of an edited container prior to editing.
     constructor args {
         installhull using ttk::frame
         
@@ -519,7 +520,18 @@ snit::widgetadaptor container::Editor {
         
         $self configurelist $args
     }
+    #-------------------------------------------------------------------------
+    # Public methods:
+    #
     
+    ###
+    # getOriginalName
+    #   Get a containers name prior to editing.
+    #
+    #  @return string
+    method getOriginalName {}  {
+        return $originalName
+    }
     #--------------------------------------------------------------------------
     # Configuration:
     #
@@ -560,7 +572,7 @@ snit::widgetadaptor container::Editor {
             }
             $currentbindings configure -bindings $bindingsList
             
-            #  set the stae of the initscript button accordingly:
+            #  set the state of the initscript button accordingly:
             
             if {[dict exists $selected init]} {
                 $initscript configure -state normal
@@ -645,6 +657,7 @@ snit::widgetadaptor container::Editor {
     #    - The ok method dispatches to -replacecommand
     #
     method _onEdit {} {
+        
         if {[winfo exists $win.containeredit] } {
             return
         }
@@ -659,10 +672,11 @@ snit::widgetadaptor container::Editor {
         }
         
         toplevel $win.containereditor
+        set originalName [dict get $selected name]
         container::Creator $win.containereditor.editor \
             -okscript [mymethod _acceptContainer -replacecommand] \
             -cancelscript [mymethod _cancelEditor]                       \
-            -name [dict get $selected name] -image [dict get $selected image] \
+            -name $originalName -image [dict get $selected image] \
             -bindings $bindings
         
         if {[dict exists $selected init]} {
@@ -717,6 +731,7 @@ snit::widgetadaptor container::Editor {
                 dict set info init  [$win.containereditor.editor cget -initscript]
 
             }
+            
             # We must do the [list] below as uplevel unravles one level of listiness
             # (I think) and we want to keep the dict intact (dicts look like lists)
             #
