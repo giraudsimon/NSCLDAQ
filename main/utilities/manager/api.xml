@@ -3324,6 +3324,7 @@ package require containers
 
 container::exists db name
 container::add    db name image initfile mountpoints
+container::replace db oldname newname image initfile mountpoints
 container::remove db name
 set fd [container::activate db name host]
 set fd [container::run name host command]
@@ -3349,7 +3350,7 @@ set dictlist [container::listDefinitions db ?name?]
             those persistent containers.
           </para>
           <para>
-            Container definitions avhe the following attributes:
+            Container definitions have the following attributes:
           </para>
           <variablelist>
             <varlistentry>
@@ -3358,7 +3359,7 @@ set dictlist [container::listDefinitions db ?name?]
                    <para>
                     Each container definition has a unqique name. This
                     name is used to identify the container definition
-                    throughout the API>
+                    throughout the API.
                    </para>
                 </listitem>
             </varlistentry>
@@ -3461,6 +3462,24 @@ set dictlist [container::listDefinitions db ?name?]
                     native file system point to bind and the second is where to bind
                     it in the container (e.g.
                     <literal>--bind point:where</literal>).
+                   </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+               <term><command>container::replace <replaceable>db oldname newname image initfile mountpoints</replaceable></command></term>
+               <listitem>
+                   <para>
+                    Replaces the container named <parameter>oldname</parameter>
+                    with a container named <parameter>newname</parameter> and
+                    the definition described by the subsequent parameters
+                    that have the same meaning as for
+                    <command>container::add</command> above.
+                   </para>
+                   <para>
+                    The resulting container is referenced everywhere in the database
+                    that the old container was referenced.  This is accomplished because
+                    the new container definition retains the primary key of the
+                    root record of the container <parameter>oldname</parameter>.
                    </para>
                 </listitem>
             </varlistentry>
@@ -3674,6 +3693,7 @@ package require programs
 
 program::exists db name
 program::add    db name path type host options
+program::replace db oldname newname path type host options
 program::remove db name
 set def [program::getdef db name]
 set defs [program::listDefinitions db]
@@ -4032,6 +4052,23 @@ set fd [::program::run db name ?outputHandler?]
                   Note that when the program is run, a script is generated to run
                   the program.  As such, any shell substitutions can be
                   specified for any of the values used to start a program.
+                </para>
+            </listitem>
+         </varlistentry>
+         <varlistentry>
+            <term><command>program::replace <replaceable>db oldname newname path type host ?options?</replaceable> </command></term>
+            <listitem>
+                <para>
+                    Replaces the program named <parameter>oldname</parameter>
+                    with the program named <parameter>newname</parameter>
+                    that is defined by the remaining parameters.  These
+                    parameters have the same meaning as in
+                    <command>program::add</command> above.
+               </para>
+                <para>
+                    The new program definition retains the primary key of the
+                    root record of the old program.  This means that all references
+                    to the program are retained throughout the database.
                 </para>
             </listitem>
          </varlistentry>
