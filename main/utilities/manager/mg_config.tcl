@@ -39,6 +39,7 @@ set daqbin [file normalize [file dirname [info script]]];  # Where programs live
 set ApplicationMenu [dict create                                 \
     "Users and Roles"   [file join $daqbin mg_authedit]         \
     "Containers"        [file join $daqbin mg_cfgcontainers]    \
+    "Readout Wizard"    [file join $daqbin mg_readout_wizard]   \
     "Programs"          [file join $daqbin mg_cfgprogram]       \
     "Event logging"     [file join $daqbin mg_loggeredit]      \
     "State Machine"     [file join $daqbin mg_stateedit]        \

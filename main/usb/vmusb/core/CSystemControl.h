@@ -20,6 +20,7 @@ class CInit;
 class CExit;
 class CMonvarCommand;
 class CRunStateCommand;
+class CStatisticsCommand;
 
 /*! \brief Encapsulation of UI control 
  *
@@ -48,7 +49,7 @@ class CSystemControl
     static std::unique_ptr<CExit>      m_pExit;
     static std::unique_ptr<CMonvarCommand> m_pMonVar;
     static std::unique_ptr<CRunStateCommand> m_pStateCmd;
-  
+  static std::unique_ptr<CStatisticsCommand> m_pStatsCmd;
   public:
 
     /*! \brief Wrapper around Tcl_Main 

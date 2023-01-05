@@ -195,7 +195,7 @@ tcltest::test container_activate_2 {Minimal definition should be able to see it.
     container::add db test [file normalize ~/minimal.img] "" ""
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     commonCleanup
     
 } \
@@ -218,7 +218,7 @@ tcltest::test container_activate_3 {Activate can run a command} \
 -cleanup {
     exec kill {*}[pid $singfd]
     catch {close $singfd}
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     commonCleanup
 } \
 -body {
@@ -244,7 +244,7 @@ echo hello there
     
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     exec kill {*}[pid $fd]
     catch {close $fd}
     tcltest::removeFile $testscript
@@ -305,7 +305,7 @@ export CONTAINER_TEST
     
 } \
 -cleanup {
-    exec ssh localhost singularity instance stop test
+    exec ssh localhost singularity instance stop test >& /dev/null
     exec kill {*}[pid $fd]
     catch {close $fd}
     tcltest::removeFile $initscript
@@ -349,9 +349,16 @@ export CONTAINER_TEST
     
     # Note instance list returns 1 if there are no containers.
     
-    set status  [catch {exec ssh localhost singularity instance list test} msg] 
+    set status  [catch {exec ssh localhost singularity instance list test 2> /dev/null} msg] 
     set resultlist [split $msg "\n"]
     set result [lindex $resultlist 1]
+    
+    # Apptainer
+    if {$status == 0} {
+        if {[llength [split $msg "\n"]] == 1} {
+            set status 1
+        }
+    }
     
     list $status $result
     
@@ -423,7 +430,76 @@ tcltest::test container_list_3 {Container with mountpoints} \
         name test1 image $TestImage              \
         bindings [list {/a} {/c /d}] id 1         \
      ]                                            \
-] 
+]
+
+#--------------------------------------------------------------------
+#  Tests for container::replace
+
+tcltest::test container_replace_1 {Cannot replace a nonexistent container} \
+-setup {
+    commonSetup
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 [file join [file normalize ~] minimal.img] "" [list]
+} -result * -match glob -returnCodes error
+
+tcltest::test container_replace_2 {Replace the root record} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+    set oldid [dict get  [container::listDefinitions db test1]  id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 junk.img {} [list]
+    set match [container::listDefinitions db test2]
+    
+    list [expr $oldid == [dict get $match id]] [dict get $match name] \
+        [dict get $match image] [dict exists $match init]   \
+    
+} -result [list 1 test2 junk.img 0]
+
+
+tcltest::test container_replace_3 {remove bindings if none} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+    set oldid [dict get  [container::listDefinitions db test1]  id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 junk.img {} [list]
+    set def [container::listDefinitions db test2]
+   dict get $def bindings
+} -result {}
+
+tcltest::test container_replace_4 {New bindings} \
+-setup {
+    commonSetup    
+    container::add db test1 $TestImage {} [list {/a} {/c /d}]
+    set oldid [dict get  [container::listDefinitions db test1]  id]
+} \
+-cleanup {
+    commonCleanup
+} \
+-body {
+    container::replace db test1 test2 junk.img {} [list {/usr/opt/opt-buster /usr/opt} /etc/nscldaq]
+    set def [container::listDefinitions db test2]
+    set bindings [dict get $def bindings]
+    
+    # Order can permute so:
+    
+    set idx1 [lsearch -exact -index 0 $bindings /usr/opt/opt-buster]
+    set idx2 [lsearch -exact -index 0 $bindings /etc/nscldaq]
+    list [lindex $bindings $idx1] [lindex $bindings $idx2]
+} -result [list {/usr/opt/opt-buster /usr/opt} /etc/nscldaq]
 #----------------------------------------------------
 
 proc tcltest::cleanupTestHook {} {

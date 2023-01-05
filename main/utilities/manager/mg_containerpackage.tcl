@@ -33,6 +33,7 @@ package require sqlite3
 # This package provides an api to the container part of the
 # NSCLDAQ manager.   The following are API elements:
 #   container::add      - Adds a container entry to the database.
+#   container::replace  - Replace an existing container with a new definition.
 #   container::remove   - Remove a container.
 #   container::activate - Activates a container in a specific remote host.
 #   container::run      - Runs a command in a container
@@ -169,6 +170,78 @@ proc ::container::add {db name image init mountpoints} {
     };                    # Commit happens here or rollback on error.
 }
 ##
+# container::replace
+#     Replace an existing container with a new definition:
+#
+# @param db    - Sqlite3 database command.
+# @param name  - Container name.  Note that container wil be activated
+#                with that name.
+# @param newname - New name of the container
+# @param image - The container image file path.
+# @param init  - Filename containing the init script.  Note; the script
+#                contents are sucked into the database.
+# @param mountpoints  list of desired mount points.  Each mount point is
+#                a one or two element sublist.  If one element, the element
+#                is a filesystem point in the native filesystem that's mounted
+#                to the same position in the container (e.g. equivalent to
+#                --bind point).  If a two element list, the first element is the
+#                native file system point to bind and the second is where to bind
+#                it in the container (e.g. --bind point:where).
+#
+proc container::replace {db name newname image init mountpoints} {
+    # Container with the old name must exist and we get its id:
+    
+    set match [listDefinitions $db $name]
+    if {[llength $match] == 0} {
+        error "NO existing container named $name in replace"
+    }
+    set id [dict get $match id]
+    set initContents [list]
+    if {[file readable $init] } {
+        set fd [open $init r]
+        set initContents [read $fd]
+        close $fd
+    }
+    
+    
+    $db transaction {
+        $db eval {
+            UPDATE CONTAINER SET
+                 container=$newname,
+                 image_path=$image,
+                 init_script=$initContents
+            WHERE id=$id                 
+        }
+        #  Get rid of bindings from the old container
+        
+        $db eval {DELETE FROM bindpoint WHERE container_id=$id}
+        
+        #  Add the 'new' bindings back:
+        
+        foreach binding $mountpoints {
+            if {[llength $binding] == 1} {
+                $db eval {
+                    INSERT INTO bindpoint (container_id, path)
+                        VALUES ($id, $binding)
+                }
+            } elseif {[llength $binding] == 2} {
+                set path [lindex $binding 0]
+                set mountpoint [lindex $binding 1]
+                
+                $db eval {
+                    INSERT INTO bindpoint (container_id, path, mountpoint)
+                        VALUES ($id, $path, $mountpoint)
+                }
+                
+            } else {
+                error "mountpoint: '$binding' must be either 1 or 2 elements"
+            }
+        }
+    };                    # Commit happens here or rollback on error.
+    
+}
+
+##
 # container::remove
 #   Removes a container from the database.  This is currently the only
 #   way to edit a container definition, kill it off and replace it.
@@ -303,7 +376,7 @@ proc container::activate {db name host} {
     #
     #   Start the container in the remote host using ssh.
     # puts "set fd open |ssh $host singularity instance start $fsbindings $scriptbindings $image $name |& cat r"
-    set fd [open "|ssh $host $singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
+    set fd [open "|ssh -T $host $container::singularity instance start $fsbindings $scriptbindings $image $name |& cat" r]
     return $fd
 }
 ##
@@ -317,7 +390,7 @@ proc container::activate {db name host} {
 # @return fd      - File descriptor to receive command's stdout/stderr.
 #
 proc ::container::run {name host command} {
-    return [open "|ssh $host $singularity run instance://$name $command |& cat" w+]
+    return [open "|ssh -T $host $container::singularity run instance://$name $command |& cat" w+]
 }
 ##
 #  ::container::deactivate
@@ -328,7 +401,7 @@ proc ::container::run {name host command} {
 # @param name - container name.
 #
 proc ::container::deactivate {host name} {
-    catch {exec ssh  $host $singularity instance stop $name}
+    catch {exec ssh  -T $host $container::singularity instance stop $name}
 }
 
 

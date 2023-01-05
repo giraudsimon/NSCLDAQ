@@ -83,7 +83,25 @@ proc usage msg {
     puts stderr "   - getTitle - Get title (to stdout)"
     puts stderr "   - getStatistics - formats statistics nicely to stdout."
     exit -1
-}   
+}
+##
+# _makeClient
+#    Create the rest client:
+# @param name  - command name
+# @param host  - host on whicht the server is running
+# @param user  - user name on which the server is runing.
+# @return name
+# @note if the SERVICE_NAME env var is defined it sets the
+#       server sevice.
+#
+proc _makeClient {name host user} {
+    set result [ReadoutRESTClient $name -host $host -user $user]
+    if {[array names ::env SERVICE_NAME] ne ""} {
+	$result configure -service $::env(SERVICE_NAME)
+    }
+    return $result
+}
+
 ##
 # begin
 #   Begin a run.
@@ -95,7 +113,7 @@ proc begin {host user args} {
     if {[llength $args] != 0} {
         usage "begin subcommand must not have any addition command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     c begin
     c destroy
 }
@@ -111,7 +129,8 @@ proc end {host user args} {
     if {[llength $args] != 0} {
         usage "end subcommand must not have any addition command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
+
     c end
     c destroy
 }
@@ -161,7 +180,7 @@ proc incRun {host user args} {
     if {[llength $args] != 0} {
         usage "incrun subcommand must not have any addition command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     set run [c getRunNumber]
     incr run
     c setRunNumber $run
@@ -185,7 +204,7 @@ proc setRun {host user args} {
     if {[lindex $args 0] < 0} {
         usage "setRun's run  number must be at least 0"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     c setRunNumber [lindex $args 0]
     c destroy
 }
@@ -201,7 +220,7 @@ proc setTitle {host user args} {
     if {[llength $args] == 0} {
         usage "setTitle subcommand requires a title."
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     c setTitle "$args"
     c destroy
 }
@@ -217,7 +236,7 @@ proc getRun {host user args} {
     if  {[llength $args] != 0} {
         usage "getRun has no additional command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     puts [c getRunNumber]
     c destroy
 }
@@ -233,7 +252,7 @@ proc getTitle {host user args} {
     if {[llength $args] != 0} {
         usage "getTitle must not have any additional command parameters."
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     puts [c getTitle]
     c destroy
 }
@@ -249,7 +268,7 @@ proc getState {host user args} {
     if {[llength $args] != 0} {
         usage "getState must not have any additional command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     puts [c getState]
     c destroy
 }
@@ -265,7 +284,7 @@ proc getStatistics {host user args} {
     if {[llength $args] != 0} {
         usage "getStatistics must not have any additional command parameters"
     }
-    ReadoutRESTClient c -host $host -user $user
+    _makeClient  c  $host  $user
     set stats  [c getStatistics]
     c destroy
     

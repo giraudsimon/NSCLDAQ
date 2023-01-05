@@ -154,6 +154,7 @@ snit::widgetadaptor container::BindingsList {
 #    -initfile   - Initialization file.
 #    -okscript   - Script to execute on ok.
 #    -cancelscript - Script to execute on cancel.
+#    -enabletop   - Allows or disallows some editing
 #
 #
 #          
@@ -164,6 +165,7 @@ snit::widgetadaptor container::Creator {
     option -initfile -default [list] -readonly 1 -configuremethod _configDisallow
     option -okscript -default [list]
     option -cancelscript -default [list]
+    option -enabletop -default 1 -configuremethod _setTopState
     
     component bindings
     delegate option -bindings to bindings
@@ -218,6 +220,24 @@ snit::widgetadaptor container::Creator {
     }
     #---------------------------------------------------------------------------
     #  Configuration handlers.
+    
+    ##
+    # _setTopState
+    #    Used to enable/disable the container name and image text entries.
+    #
+    method _setTopState {name value} {
+        set options($name) $value
+        if {$value} {
+            set state normal
+        } else {
+            set state disabled
+        }
+        $win.name configure -state $state
+        $win.image configure -state $state
+        $win.imagebrowse configure -state $state
+        $win.initscript configure -state $state
+        $win.browseinit configure -state $state
+    }
     
     ##
     # _configInitScript
@@ -410,6 +430,12 @@ snit::widgetadaptor container::Creator {
     # $param name name of the option that holds the script to run.
     #
     method _dispatch {name} {
+        if {$options(-initfile) ne ""} {
+            set fd [open $options(-initfile) r]
+            set options(-initscript) [read $fd]
+            close $fd
+        }
+        
         set script $options($name)
         if {$script ne ""} {
             uplevel #0 $script
@@ -446,6 +472,7 @@ snit::widgetadaptor container::Editor {
     component currentbindings ;   # listbox with current bindings list.
     component initscript;         # Button to popup current init script if one.
     
+    variable originalName "";     # Name of an edited container prior to editing.
     constructor args {
         installhull using ttk::frame
         
@@ -493,7 +520,18 @@ snit::widgetadaptor container::Editor {
         
         $self configurelist $args
     }
+    #-------------------------------------------------------------------------
+    # Public methods:
+    #
     
+    ###
+    # getOriginalName
+    #   Get a containers name prior to editing.
+    #
+    #  @return string
+    method getOriginalName {}  {
+        return $originalName
+    }
     #--------------------------------------------------------------------------
     # Configuration:
     #
@@ -534,7 +572,7 @@ snit::widgetadaptor container::Editor {
             }
             $currentbindings configure -bindings $bindingsList
             
-            #  set the stae of the initscript button accordingly:
+            #  set the state of the initscript button accordingly:
             
             if {[dict exists $selected init]} {
                 $initscript configure -state normal
@@ -606,17 +644,9 @@ snit::widgetadaptor container::Editor {
     #    non-modal editing dialog.
     #
     method _onNew {} {
-        if {[winfo exists $win.containereditor]} {
-            return
+        if {$options(-newcommand) ne ""} {
+            uplevel #0 $options(-newcommand)
         }
-        toplevel $win.containereditor
-        container::Creator $win.containereditor.editor \
-            -okscript [mymethod _acceptContainer -newcommand] -cancelscript [mymethod _cancelEditor]
-        pack $win.containereditor.editor
-        bind $win.containereditor <Destroy> [mymethod _editorKilled %W]
-        
-        $win.actionarea.new  configure -state disable
-        $win.actionarea.edit configure -state disable
         
     }
     ##
@@ -627,6 +657,7 @@ snit::widgetadaptor container::Editor {
     #    - The ok method dispatches to -replacecommand
     #
     method _onEdit {} {
+        
         if {[winfo exists $win.containeredit] } {
             return
         }
@@ -641,10 +672,11 @@ snit::widgetadaptor container::Editor {
         }
         
         toplevel $win.containereditor
+        set originalName [dict get $selected name]
         container::Creator $win.containereditor.editor \
             -okscript [mymethod _acceptContainer -replacecommand] \
             -cancelscript [mymethod _cancelEditor]                       \
-            -name [dict get $selected name] -image [dict get $selected image] \
+            -name $originalName -image [dict get $selected image] \
             -bindings $bindings
         
         if {[dict exists $selected init]} {
@@ -692,11 +724,14 @@ snit::widgetadaptor container::Editor {
             set image [$win.containereditor.editor cget -image]
             set bindings [$win.containereditor.editor cget -bindings]
             set scriptfile [$win.containereditor.editor cget -initfile]
+            
             set info [dict create name $name image $image bindings $bindings]
             if {$scriptfile ne ""} {
                 dict set info scriptfile $scriptfile
                 dict set info init  [$win.containereditor.editor cget -initscript]
+
             }
+            
             # We must do the [list] below as uplevel unravles one level of listiness
             # (I think) and we want to keep the dict intact (dicts look like lists)
             #

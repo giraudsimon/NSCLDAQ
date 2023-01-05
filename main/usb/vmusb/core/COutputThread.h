@@ -101,6 +101,17 @@ class CSystemControl;
 
 class COutputThread  : public Thread
 {
+public:
+	typedef struct _Counters {
+		size_t s_triggers;
+		size_t s_acceptedTriggers;
+		size_t s_bytes;
+	} Counters;
+	typedef struct _Statistics {
+		Counters s_cumulative;
+		Counters s_perRun;
+	} Statistics;
+private:
    // Private data type:
    
    typedef uint64_t (*TimestampExtractor)(void*);
@@ -112,6 +123,7 @@ private:
 
   uint32_t    m_runNumber;	// Run number;
   std::string m_title;          // Run title
+	Statistics  m_statistics;
 
   // other data:
 private:
@@ -146,6 +158,7 @@ private:
 public:
 
   virtual void run();		/* Adapt between nextgen and spectrodaq threading model. */
+	const Statistics& getStatistics() const;
 
   // Thread operations are all non-public in fact.. don't want to call them4
   // from outside this class.. only from within the thread.. This includes the
@@ -154,6 +167,7 @@ public:
 protected:
 
   virtual int operator()(); //!< Entry point.
+	
 private:
 
   DataBuffer& getBuffer();		      // 

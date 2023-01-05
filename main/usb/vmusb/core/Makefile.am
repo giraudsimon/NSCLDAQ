@@ -19,6 +19,7 @@ libVMUSBCore_la_SOURCES	= CAcquisitionThread.cpp 	\
 			CGetCommand.cpp  \
 			CSetCommand.cpp  \
 			CUpdateCommand.cpp  \
+			CStatisticsCommand.cpp \
 			tclUtil.cpp
 
 noinst_HEADERS		= CAcquisitionThread.h		\
@@ -41,6 +42,7 @@ noinst_HEADERS		= CAcquisitionThread.h		\
 			CGetCommand.h  \
 			CSetCommand.h  \
 			CUpdateCommand.h  \
+			CStatisticsCommand.h \
 			tclUtil.h
 
 libVMUSBCore_la_CPPFLAGS = \

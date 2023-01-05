@@ -168,3 +168,51 @@ proc programHandler {sock suffix} {
         ErrorReturn $sock "$suffix subcommand not implemented"
     }
 }
+#-------------------------------------------------------------------------------
+#  Initialization:
+#   Get the containers and hosts associated with all programs.
+#   Use them to shutdown all containers that might be running.
+#
+
+set opened 0
+if {[info commands db] eq ""} {
+    sqlite3 db $::env(DAQ_EXPCONFIG)
+    set opened 1
+}
+set programs  [program::listDefinitions db]
+
+# Indexed by  host - list of containers  that can be in that host.
+#
+array set containerArray [list]
+
+foreach program $programs {
+    if {[dict exists $program container_name]} {
+        lappend containerArray([dict get $program host]) [dict get $program container_name]
+    }
+}
+#  for each  host that could have a container, uniquify the container names
+#  and stop the containers in that host using deactivate:
+
+foreach host [array names containerArray] {
+    array set containers [list]
+    foreach container $containerArray($host) {
+        set containers($container) ""
+    }
+    set containerList [array names containers]
+    
+    # Deactivate the containers:
+    
+    foreach c $containerList {
+        container::deactivate $host $c
+    }
+}
+    
+
+if {$opened} {
+    db close
+}
+
+    
+
+
+

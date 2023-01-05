@@ -124,7 +124,7 @@ namespace eval  ssh {
 		#  We're in a container:
 		
 		set bindings  [ssh::getSingularityBindings]
-		return "SING_IMAGE=$container singularity exec $bindings $container bash -c $command"
+		return "SING_IMAGE=$container singularity exec $bindings $container bash -c '$command'"
 	}
 	proc shellCommand { } {
 		set container [getContainerImage]
@@ -140,7 +140,8 @@ namespace eval  ssh {
     }
     #-------------------------------------------------------------------------
     proc ssh {host command} {
-		set command [ssh::actualCommand $command]
+	set command [ssh::actualCommand $command]
+	puts "Command will be '$command'"
 		set stat [catch {set output [eval exec ssh $host $command]} error]
 		if {$stat != 0} {
 			append output "\n"  $error
@@ -161,7 +162,7 @@ namespace eval  ssh {
 	    return $result
 			 
     }
-
+    
     #
     #   sshpid - Uses the Pipe command to open a pipe to the
     #            command.  The pipe has an input and an output end.
