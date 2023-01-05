@@ -6,7 +6,7 @@
 
 /*
   Need to include additional header for size_t because pixie16.h 
-  is not inclusive as of version 3.4.0
+  is not inclusive as of version 3.7.0
 */
 #include <cstddef>
 #include <pixie16/pixie16.h>
