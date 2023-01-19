@@ -22,7 +22,6 @@
 #include "CZMQBuiltRingItemEditorApp.h"
 #include "swtriggerflags.h"
 
-
 #include "CBuiltRingItemEditor.h"
 
 #include "CRingItemZMQSourceElement.h"
@@ -44,7 +43,6 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <errno.h>
-
 
 // Service numbers in the ZMQ transport file.
 
@@ -114,11 +112,11 @@ CZMQBuiltEditorStrategy::makeWorker(
  * @param args - the parsed parameters.
  *
  */
-CZMQBuiltRingItemEditorApp::CZMQBuiltRingItemEditorApp(gengetopt_args_info args) :
+CZMQBuiltRingItemEditorApp::CZMQBuiltRingItemEditorApp(gengetopt_args_info& args) :
     CBuiltRingItemEditorApp(args),
     m_strategy(nullptr)
 {
-    m_strategy = new CZMQBuiltEditorStrategy(args, getEditorFactory());        
+  m_strategy = new CZMQBuiltEditorStrategy(args, getEditorFactory());
 }
 
 /**
@@ -128,8 +126,7 @@ CZMQBuiltRingItemEditorApp::CZMQBuiltRingItemEditorApp(gengetopt_args_info args)
  */
 CZMQBuiltRingItemEditorApp::~CZMQBuiltRingItemEditorApp()
 {
-    delete m_strategy;
-        
+    delete m_strategy;        
 }
 
 /**
@@ -141,5 +138,5 @@ CZMQBuiltRingItemEditorApp::~CZMQBuiltRingItemEditorApp()
 void
 CZMQBuiltRingItemEditorApp::operator()()
 {
-    (*m_strategy)();
+  (*m_strategy)();
 }

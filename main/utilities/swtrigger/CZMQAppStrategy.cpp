@@ -62,6 +62,7 @@ CZMQAppStrategy::CZMQAppStrategy(gengetopt_args_info& args) :
     m_pSinkElement(nullptr), m_pSinkThread(nullptr),
     m_params(args)
 {}
+
 /**
  * destructor
  *    Get rid of all the transports we made and so on
@@ -102,6 +103,7 @@ CZMQAppStrategy::operator()()
     
     CZMQCommunicatorFactory commFactory;          // URL translation.
     std::string routerUri = commFactory.getUri(DISTRIBUTION_SERVICE);
+  
     m_pSourceElement =
         new CRingItemZMQSourceElement(
             m_params.source_arg, routerUri.c_str(), m_params.clump_size_arg
@@ -140,9 +142,7 @@ CZMQAppStrategy::operator()()
     m_pRingSender = new CSender(*m_pRingSink);
     m_pSinkElement = new CRingBlockDataSink(*m_pSortData, *m_pRingSender);
     m_pSinkThread  = new CThreadedProcessingElement(m_pSinkElement);
-    m_pSinkThread->start();
-
- 
+    m_pSinkThread->start(); 
     
     sleep(1);
     

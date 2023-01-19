@@ -52,7 +52,7 @@ private:
     CZMQAppStrategy* m_strategy;
     
 public:
-    CZMQBuiltRingItemEditorApp(gengetopt_args_info args);
+    CZMQBuiltRingItemEditorApp(gengetopt_args_info& args);
     virtual ~CZMQBuiltRingItemEditorApp();
     
     virtual void operator()();

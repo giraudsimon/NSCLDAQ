@@ -65,7 +65,7 @@ public:
     public:
         virtual std::vector<BodySegment> operator()(
             pRingItemHeader pHdr, pBodyHeader hdr, size_t bodySize, void* pBody
-        )  = 0;
+        ) = 0;
         virtual void free(iovec& item) = 0;
     };
     

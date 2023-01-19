@@ -87,7 +87,7 @@ private:
     CThreadedProcessingElement* m_pSinkThread;
     
     std::vector<CThreadedProcessingElement*> m_workers;
-    
+
     gengetopt_args_info& m_params;
 public:
     CZMQAppStrategy(gengetopt_args_info& args);
