@@ -362,15 +362,12 @@ CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
     pBodyHeader     pBHeader  = reinterpret_cast<pBodyHeader>(pRItemHdr+1);
     uint32_t bhdrSize = pBHeader->s_size;
     uint8_t* pBody    = reinterpret_cast<uint8_t*>(pBHeader) + bhdrSize;
-    uint32_t bodySize = pRItemHdr->s_size - bhdrSize;
+    uint32_t bodySize = pRItemHdr->s_size - bhdrSize - sizeof(pRItemHdr);
     
     // Make the first body segment which includes up through the
     // fragment's body header.
 
-    
-    
-
-    BodySegment hdr(                                               // Wrong if there's an extension.
+    BodySegment hdr( // Wrong if there's an extension.
         sizeof(EVB::FragmentHeader) + sizeof(RingItemHeader) +
         bhdrSize, pFrag
     );
@@ -378,13 +375,11 @@ CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
     
     // Produce the pointers needed by the user code and invoke it.
     
-    
     std::vector<BodySegment> segs =
         (*m_pEditor)(pRItemHdr, pBHeader, bodySize, pBody);
     result.insert(result.end(), segs.begin(), segs.end());
     
-    // Return the full set of body segment descriptors.
-    
+    // Return the full set of body segment descriptors.    
     
     return result;
 }

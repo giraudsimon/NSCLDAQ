@@ -70,6 +70,7 @@ CMPIAppStrategy::CMPIAppStrategy(int argc, char** argv, gengetopt_args_info& arg
         std::cerr << "This program needs at least 4 processes to run\n";
         throw std::invalid_argument("Too few processes");
     }
+    
     // If the # workers consistent with n procs then warn he user
     // that the n procs overrides... only warn in rank 1:
     
@@ -86,6 +87,7 @@ CMPIAppStrategy::CMPIAppStrategy(int argc, char** argv, gengetopt_args_info& arg
         std::cerr << nProcs << " workers will be used\n";
         
      }
+    
      // Note that this change in worker count is automatically
      // handled at run time by the selection of which ranks perform
      // which jobs.

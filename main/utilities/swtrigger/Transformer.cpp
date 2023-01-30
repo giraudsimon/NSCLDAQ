@@ -22,7 +22,6 @@
 #include "swtriggerflags.h"
 #include <stdlib.h>
 #include <string>
-#include <iostream>
 
 #include "CTransformerApp.h"
 #include "CZMQTransformerApp.h"

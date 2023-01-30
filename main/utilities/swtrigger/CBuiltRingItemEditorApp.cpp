@@ -24,6 +24,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <iostream>
+
 /**
  ** getEditorFactory
  **    Return the factory for editor objects from the user's
@@ -32,27 +34,27 @@
 EditorFactory
 CBuiltRingItemEditorApp::getEditorFactory()
 {
-     void* soHandle = dlopen(m_args.classifier_arg, RTLD_NOW |RTLD_GLOBAL);
-    if (!soHandle) {
-        std::string error = dlerror();
-        std::string msg   = "Failed to open shared library: ";
-        msg += m_args.classifier_arg;
-        msg += " ";
-        msg += error;
-        throw std::runtime_error(msg);
-    }
-    dlerror();                         // Clear errors (from manpage example).
-    void* rawFactory = dlsym(soHandle, "createEditor");
-    char* error = dlerror();
-    if (error != nullptr) {
-        std::string msg = "Unable to locate 'createEditor' in  ";
-        msg += m_args.classifier_arg;
-        msg += " ";
-        msg += error;
-        msg += " be sure it's delcared extern \"C\"";
-        throw std::runtime_error(msg);
-    }
+  void* soHandle = dlopen(m_args.classifier_arg, RTLD_NOW |RTLD_GLOBAL);
+  if (!soHandle) {
+    std::string error = dlerror();
+    std::string msg   = "Failed to open shared library: ";
+    msg += m_args.classifier_arg;
+    msg += " ";
+    msg += error;
+    throw std::runtime_error(msg);
+  }
+  dlerror(); // Clear errors (from manpage example).
+  void* rawFactory = dlsym(soHandle, "createEditor");
+  char* error = dlerror();
+  if (error != nullptr) {
+    std::string msg = "Unable to locate 'createEditor' in  ";
+    msg += m_args.classifier_arg;
+    msg += " ";
+    msg += error;
+    msg += " be sure it's delcared extern \"C\"";
+    throw std::runtime_error(msg);
+  }
 
-    EditorFactory result = reinterpret_cast<EditorFactory>(rawFactory);
-    return result;   
+  EditorFactory result = reinterpret_cast<EditorFactory>(rawFactory);
+  return result;   
 }
