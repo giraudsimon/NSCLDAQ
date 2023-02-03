@@ -27,14 +27,19 @@ package require cmdline
 package require Itcl 
 
 set options {
-  {-module.arg ""         "name of module registered to slow-controls server \[MANDATORY\]"}
-  {-host.arg "localhost"  "host running VMUSBReadout slow-controls server" }
-  {-port.arg  27000       "port the slow-controls server is listening on" }
-  {-ring.arg $::tcl_platform(user) "name of ring VMUSBReadout is filling" }
+  {module.arg ""         "name of module registered to slow-controls server \[MANDATORY\]"}
+  {host.arg "localhost"  "host running VMUSBReadout slow-controls server" }
+  {port.arg  27000       "port the slow-controls server is listening on" }
+  {ring.arg $::tcl_platform(user) "name of ring VMUSBReadout is filling" }
 }
 
 set usage " --module value ?option value? :"
 array set params [::cmdline::getoptions argv $options]
+foreach key [array names params] {
+  set params(-$key) $params($key)
+  array unset params $key
+}
+
 
 if {[lindex [array get params -module] 1] eq ""} {
   puts [::cmdline::usage $options $usage]

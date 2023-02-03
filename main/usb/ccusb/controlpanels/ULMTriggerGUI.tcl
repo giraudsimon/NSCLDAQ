@@ -20,13 +20,13 @@ package require Tk
 set argv $argv_tmp
 
 set options {
-  {-module.arg "ccusb"         "name of module registered to slow-controls server"}
-  {-slot.arg   -1         "slot ULM occupies \[MANDATORY\]" }
-  {-host.arg "localhost"  "host running VMUSBReadout slow-controls server" }
-  {-port.arg  27000       "port the slow-controls server is listening on" }
-  {-ring.arg "" "name of ring VMUSBReadout is filling <your username>" }
-  {-configfile.arg ""  "name of file to write GUI state to" }
-  {-nostartprompts.arg 0  "whether to prompt user at startup regarding ULM communication" }
+  {module.arg "ccusb"         "name of module registered to slow-controls server"}
+  {slot.arg   -1         "slot ULM occupies \[MANDATORY\]" }
+  {host.arg "localhost"  "host running VMUSBReadout slow-controls server" }
+  {port.arg  27000       "port the slow-controls server is listening on" }
+  {ring.arg "" "name of ring VMUSBReadout is filling <your username>" }
+  {configfile.arg ""  "name of file to write GUI state to" }
+  {nostartprompts.arg 0  "whether to prompt user at startup regarding ULM communication" }
 }
 
 set usage " --module value ?option value? :"
@@ -38,6 +38,11 @@ if {("-help" in $argv_tmp) || ("-?" in $argv_tmp)} {
 
 set res [catch {
   array set ::params [::cmdline::getoptions argv $options]
+  foreach key [array names ::params] {
+    set ::params(-$key) $::params($key)
+    array unset ::params $key
+  }
+
 } msg]
 if {$res == 1} {
   puts $msg
