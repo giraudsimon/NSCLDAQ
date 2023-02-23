@@ -24,8 +24,6 @@
 #include <string>
 #include <stdexcept>
 
-#include <iostream>
-
 /**
  ** getEditorFactory
  **    Return the factory for editor objects from the user's

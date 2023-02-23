@@ -24,7 +24,6 @@
 #include <DataFormat.h>
 #include <CSender.h>
 
-
 #include <stdlib.h>
 #include <new>
 #include <stdexcept>
@@ -43,6 +42,7 @@ CBuiltRingItemEditor::CBuiltRingItemEditor(
 ) : CBuiltItemWorker(fanin, sink, clientId), m_nId(clientId), m_pEditor(pEditor),
 m_nBlocks(0), m_pIoVectors(nullptr), m_nIoVectorCount(0), m_nUsedIoVectors(0)
 {}
+
 /**
  * destructor
  */
@@ -209,7 +209,7 @@ CBuiltRingItemEditor::resizeIoVecs(size_t n)
  */
 std::vector<CBuiltRingItemEditor::BodySegment>
 CBuiltRingItemEditor::editItem(pRingItemHeader pItem)
-{
+{ 
     std::vector<BodySegment> result;
     
     // Make the first extentand a pointer to the size of the
@@ -374,7 +374,6 @@ CBuiltRingItemEditor::editFragment(EVB::pFlatFragment pFrag)
     result.push_back(hdr);
     
     // Produce the pointers needed by the user code and invoke it.
-    
     std::vector<BodySegment> segs =
         (*m_pEditor)(pRItemHdr, pBHeader, bodySize, pBody);
     result.insert(result.end(), segs.begin(), segs.end());

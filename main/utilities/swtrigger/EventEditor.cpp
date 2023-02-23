@@ -29,7 +29,8 @@
 #endif
 
 #include <stdlib.h>
-#include <iostream>
+#include <string>
+
 /**
  * main
  *    Entry point.
@@ -59,7 +60,7 @@ main(int argc, char** argv)
     }
     
     // Run the app:
-    
+
     (*pApp)();
     
     exit(EXIT_SUCCESS);

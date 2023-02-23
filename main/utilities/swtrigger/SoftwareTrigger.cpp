@@ -38,21 +38,21 @@
  */
 int main(int argc, char** argv)
 {
-    gengetopt_args_info params;
-    cmdline_parser(argc, argv, &params);
-    std::string parallelizationStrategy= params.parallel_strategy_arg;
+  gengetopt_args_info params;
+  cmdline_parser(argc, argv, &params);
+  std::string parallelizationStrategy = params.parallel_strategy_arg;
     
-    if (parallelizationStrategy == "threaded") {
-        CZMQThreadedClassifierApp app(params);
-        exit(app());
-    }  else if (parallelizationStrategy == "mpi") {
+  if (parallelizationStrategy == "threaded") {
+    CZMQThreadedClassifierApp app(params);
+    exit(app());
+  }  else if (parallelizationStrategy == "mpi") {
 #ifdef HAVE_MPI
-        CMPIClassifierApp app(argc, argv, params);
-        int s = app();
-        return(s);
+    CMPIClassifierApp app(argc, argv, params);
+    int s = app();
+    return(s);
 #else
-        std::cerr << "This version of SoftwareTrigger does is not MPI enabled\n";
-        return(EXIT_FAILURE);
+    std::cerr << "This version of SoftwareTrigger is not MPI enabled\n";
+    return(EXIT_FAILURE);
 #endif
-    }
+  }
 }

@@ -35,8 +35,6 @@
 #include "CRingBlockDataSink.h"
 #include "CNullTransport.h"
 
-
-
 #include <stdlib.h>
 #include <stdexcept>
 #include <errno.h>
@@ -96,7 +94,7 @@ CZMQAppStrategy::~CZMQAppStrategy()
  */
 int
 CZMQAppStrategy::operator()()
-{
+{ 
     // Create the data source object and encapsulate it in a thread:
     // Note that since the router is a req/rep style deal it's not
     // going to start sending data until there's at least one worker.
