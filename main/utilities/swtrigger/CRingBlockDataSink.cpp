@@ -51,19 +51,24 @@ CRingBlockDataSink::~CRingBlockDataSink() {}
 void
 CRingBlockDataSink::process(void* pData, size_t nBytes)
 {
-    if(nBytes) {
-        size_t nItems = countRingItems(pData, nBytes);
-        iovec parts[nItems];
+  if(nBytes) {
+
+    size_t nItems = countRingItems(pData, nBytes);
+
+    // nItems can be large, so allocate storage on the heap:
+    
+    std::vector<iovec> parts(nItems);
         
-        CRingItemSorter::pItem p = static_cast<CRingItemSorter::pItem>(pData);
-        for (int i = 0; i < nItems; i++) {
-            parts[i].iov_base = &(p->s_item);
-            parts[i].iov_len  = p->s_item.s_header.s_size;
-            
-            p = static_cast<CRingItemSorter::pItem>(nextItem(p));
-        }
-        getSink()->sendMessage(parts, nItems);
+    CRingItemSorter::pItem p = static_cast<CRingItemSorter::pItem>(pData);
+    for (size_t i = 0; i < nItems; i++) {
+      parts[i].iov_base = &(p->s_item);
+      parts[i].iov_len  = p->s_item.s_header.s_size;            
+      p = static_cast<CRingItemSorter::pItem>(nextItem(p));
     }
+    
+    getSink()->sendMessage(parts.data(), parts.size());
+    
+  }
 }
 ////////////////////////////////////////////////////////////////////////////
 // Private methods:

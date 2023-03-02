@@ -88,22 +88,22 @@ void
 CMPIFanoutTransport::end()
 {
 #ifdef DEBUG
-    std::cerr << "MPI fanout transport end " << m_clients.size() << "clients to end\n";;
+  std::cerr << "MPI fanout transport end " << m_clients.size() << " clients to end\n";  
 #endif
-    while (!m_clients.empty()) {
-        getDataRequest();
+  while (!m_clients.empty()) {
+    getDataRequest();
 #ifdef DEBUG
     std::cerr << "End got request from " << getReceiver() << std::endl;
     std::cerr << m_clients.size() << " remaining\n";
 #endif
-        CMPITransport::end();
-        int client = setReceiver(-1);  // Gets set next getDataReq
+    CMPITransport::end();
+    int client = setReceiver(-1);  // Gets set next getDataReq
 #ifdef DEBUG
     std::cerr << "Removing " << client << std::endl;
 #endif
-        m_clients.remove(client);
-    }
-    std::cerr << " all ended\n";
+    m_clients.remove(client);
+  }
+  std::cerr << " all ended\n";
 }
 /////////////////////////////////////////////////////////////////
 // Private methods.
