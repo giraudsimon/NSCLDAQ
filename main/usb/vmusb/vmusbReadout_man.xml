@@ -2197,8 +2197,76 @@ sis3820 cget <replaceable>name</replaceable>
 sis3820 create scaler1 0x38000000
                </programlisting>
             </example>
-         </refsect1>
+            <example>
+               <title>Configuring an SIS3820 module as a timestamper</title>
+               <programlisting>
+sis3820 create timestamper 0x38000000
+sis3820 config timestamper -timestamp on
+               </programlisting>
+               <para>
+                 By configuring with -timestamp on, SIS3820 module is by
+                 default set to input mode <literal>LNEInhLNE</literal>
+                 and only accepts 2 inputs at channels 1 and 17
+                 to achieve 2 48-bit-wide counters.
+               </para>
+               <para> 
+                 Channel(s) 1 and/or 17 needs to have a clock signal.
+                 Whenever LEMO1 receives signal (LNE), both counter
+                 values are read and stored into the shadow registers
+                 independent to the actual trigger signal VME controller
+                 receives which reads out the recorded values.
+               </para>
+               <para>
+                 In most cases, LNE signal should be the same as VME
+                 controller trigger signal.
+               </para>
+               <para>
+                 Then, make sure to add the module as the first stack item,
+                 which adds 6 words item (96 bits) after the total data size
+                 item with format that can be extracted using the following
+                 timestamp extraction library:
+               </para>
+               <programlisting>
+#include <stdint.h>
+#include <DataFormat.h>
+#include <iostream>
 
+extern "C" {
+  uint64_t getEventTimestamp(void* item) {
+    uint16_t *body = reinterpret_cast<uint16_t*>(item);
+
+    body++; // Skipping size item
+
+    uint64_t tstamp1 = 0, tstamp2 = 0;
+
+    // Timestamp item format
+    // LOW1 MID1 LOW2 MID2 HIGH1 HIGH2
+    // tstamp1 for Channel 1 and tstamp2 for Channel 17
+    tstamp1 |= *body++;
+    tstamp1 |= static_cast<uint64_t>(*body++) << 16;
+
+    tstamp2 |= *body++;
+    tstamp2 |= static_cast<uint64_t>(*body++) << 16;
+
+    tstamp1 |= static_cast<uint64_t>(*body++) << 32;
+    tstamp2 |= static_cast<uint64_t>(*body++) << 32;
+
+    return tstamp1; // or tstamp2
+  }
+
+  uint64_t getScalerTimestamp(void *pBuffer) {
+    return 0xffffffffffffffff;
+  }
+}
+               </programlisting>
+               <para>
+                 Compile with the command below:
+               </para>
+               <programlisting>
+g++ -std=c++11 -fPIC -shared -I$DAQROOT/include -o libtstamp.so timestamp.cpp
+               </programlisting>
+            </example>
+         </refsect1>
       </refentry>
            
       <!-- v830 command - configure CAEN V830 32 channel latching scalers -->
