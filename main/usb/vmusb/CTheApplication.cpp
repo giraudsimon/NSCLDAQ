@@ -182,7 +182,7 @@ int CTheApplication::operator()(int argc, char** argv)
 
   if (parsedArgs.enumerate_given) {
     enumerateVMUSB();
-    Tcl_Exit(EXIT_SUCCESS);
+    exit(-1);
   }
   if (parsedArgs.init_script_given) {
     m_systemControl.setInitScript(string(parsedArgs.init_script_arg));

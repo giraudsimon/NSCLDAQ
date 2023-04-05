@@ -29,7 +29,13 @@ if {("-help" in $argv_tmp) || ("-?" in $argv_tmp)} {
 	exit
 }
 
-set res [catch {array set ::params [::cmdline::getoptions argv_tmp $::options]} msg]
+set res [catch {
+	array set ::params [::cmdline::getoptions argv_tmp $::options]
+	foreach key [array names ::params] {
+		set ::params(-$key) $::params($key)
+		array unset ::params $key
+	}
+} msg]
 if {$res == 1} {
 	puts $msg
 	exit

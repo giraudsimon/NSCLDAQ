@@ -31,10 +31,10 @@ package require mdgg16guiapp
 
 # Handle the options
 set options {
-  {-module.arg     ""          "name of module registered to slow-controls server"}
-  {-host.arg       "localhost" "host running VMUSBReadout slow-controls server" }
-  {-port.arg       27000       "port the slow-controls server is listening on" }
-  {-configfile.arg   ""        "configuration file"}
+  {module.arg     ""          "name of module registered to slow-controls server"}
+  {host.arg       "localhost" "host running VMUSBReadout slow-controls server" }
+  {port.arg       27000       "port the slow-controls server is listening on" }
+  {configfile.arg   ""        "configuration file"}
 }
 set usage " -module value ?option value? :"
 
@@ -51,6 +51,10 @@ if {"--module" ni $argv2} {
 
 set res [catch {
   array set ::params [::cmdline::getoptions argv2 $::options]
+  foreach key [array names ::params] {
+    set ::params(-$key) $::params($key)
+    array unset ::params $key
+  }
 } msg]
 if {$res == 1} {
   puts $msg

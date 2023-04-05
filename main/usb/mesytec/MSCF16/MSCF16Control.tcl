@@ -33,8 +33,8 @@ package require cmdline ;# for the command line option parsing
 
 # Handle the options
 set options {
-  {-serialfile.arg ""          "name of serial file (e.g. /dev/ttyUSB0) \[MANDATORY for USB\]"}
-  {-configfile.arg "MSCF16state.tcl"     "file name to load/save gui state"}
+  {serialfile.arg ""          "name of serial file (e.g. /dev/ttyUSB0) \[MANDATORY for USB\]"}
+  {configfile.arg "MSCF16state.tcl"     "file name to load/save gui state"}
 }
 set usage " --serialfile value ?option value? :"
 
@@ -50,6 +50,10 @@ if {("-help" in $argv_tmp) || ("-?" in $argv_tmp)} {
 #
 set res [catch {
   array set ::params [::cmdline::getoptions argv_tmp $::options]
+  foreach key [array names ::params] {
+    set ::params(-$key) $::params($key)
+    array unset ::params $key
+  }
 } msg]
 if {$res == 1} {
   puts $msg
