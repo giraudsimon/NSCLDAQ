@@ -3,7 +3,8 @@
 
 AC_PREREQ(2.61)
 
-AC_INIT(nscldaq,12.0-pre6dev, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+AC_INIT(nscldaq,12.0-pre6, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
+
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
 AC_CONFIG_HEADER([config.h])
@@ -151,6 +152,15 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
+# Additional checks from DDAS/main/configure.ac added for refactoring:
+# --ASC 4/6/23
+
+AC_TYPE_INT16_T
+AC_TYPE_INT64_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([ptrdiff_t])
+
+# End additional checks
 
 AX_CHECK_COMPILE_FLAG([-Wno-error=date-time], [NODATEWARN="-Wno-error=date-time"])
 AC_SUBST(NODATEWARN)
@@ -174,8 +184,15 @@ AC_CHECK_FUNCS([ftruncate munmap])
 AC_FUNC_MMAP
 AC_FUNC_STAT
 
-# Bits and pieces of NSCDAQ can do logging via boostlog.  This stuff tells us if that's present and if so,
-# how to incorporate it:
+# Additional checks from DDAS/main/configure.ac added for refactoring:
+# --ASC 4/6/23
+
+AC_CHECK_FUNCS([floor pow select sqrt strstr])
+
+# End additional checks
+
+# Bits and pieces of NSCDAQ can do logging via boostlog. This stuff tells us
+# if that's present and if so, how to incorporate it:
 
 AX_BOOST_BASE([], [BOOST_EXTRA_CPPFLAGS="-DBOOST_ALL_DYN_LINK"], [BOOST_EXTRA_CPPFLAGS=""])
 AX_BOOST_LOG
@@ -320,6 +337,7 @@ AC_SUBST(LIBEXCEPTION_LDFLAGS)
 #  Configure and install tclhttpd
 #  We use that /usr/lib/tclx.y has tclConfig
 #  and /usr/include/tclx.y     has the headers.
+
 tcl_basename=tcl${TCL_VERSION}
 tcl_configdir="/usr/lib/$tcl_basename"
 tcl_incdir="/usr/include/$tcl_basename"
@@ -355,93 +373,74 @@ else
 
 fi
 
+# The DDAS Software will only be built if --enable-ddas=yes is supplied by
+# the user. This will attempt to locate the PLX software but if that can't
+# be found, --with-plx-sdk can be used to provide it. What we provide to the
+# Makefiles:
 #
-#  The DDAS Software will only be built if --enable-ddas=ddas-install-dir
-#  is supplied by the user.  This will attempt to locate the plx software
-#  but if that can't be found, --with-plx-sdk can be used to provide it.
-#  What we provide to the makefiles:
-#
-#  BUILD_DDAS   - if this flag is provided that's defined
-#                  to allow the top level makefile
-#                  to enable the ddas support software build.
-
-#   
-#  DDAS_INSTDIR - the value provided to ddas-install-dir
-#  PLX_LDFLAGS   - The flags needed to build with the PLX driver support libraries.
+# BUILD_DDAS     - if this flag is provided that's defined to allow the top
+#                  level Makefile to enable the ddas support software build.
+# PIXIE_API_DIR  - installation directory of the XIA Pixie API
+# PIXIE_CPPFLAGS - compiler flags
+# PIXIE_LDFLAGS  - load flags
+# PLX_SDK_DIR    - installation directory of the PLX API library
+# PLX_CPPFLAGS   - compiler flags
+# PLX_LDFLAGS    - load flags
+# firmwaredir    - Pixie firmware installation directory
+# dspdir         - Pixie DSP load image installaion directory 
 
 BUILD_DDAS="no"
 AC_ARG_ENABLE([ddas],
-    AS_HELP_STRING([--enable-ddas=ddas-install-dir],
-                   [Build the DDAS SUpport software using libs etc in ddas-install-dir]),
-    [BUILD_DDAS="yes"
-    DDAS_INSTDIR="$enableval"]
+    AS_HELP_STRING([--enable-ddas=yes/no],
+                   [Build the DDAS support software (default no)]),
+    [BUILD_DDAS="yes"]
 )
-
 
 if test "x$BUILD_DDAS" == "xyes"
 then
-   AC_MSG_NOTICE([The XIA-DDAS Support software will be built support software in ${DDAS_INSTDIR}])
-
-   AC_DEFINE([USING_DDAS],[1],  [DDAS Support Enabled])
+AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
+   AC_DEFINE([USING_DDAS],[1],  [DDAS SUpport Enabled])
 
    AC_ARG_WITH([xiaapidir],
-	[    -with-xiaapidir=path - Path to the XIAAPI installation.],
+	[  --with-xiaapidir=path - Path to the XIAAPI installation. Required if --enable-ddas=yes.],
 	[xiaapidir=$withval])
    if test -n -d ${xiaapidir}
    then
-	AC_MSG_ERROR([Specify --with-xiaapidir -t point to the actual installation of the XIA API])
+	AC_MSG_ERROR([Specify --with-xiaapidir to point to the actual installation of the XIA API])
    fi
    PIXIE_API_DIR=${xiaapidir}
 
-#  If the xiaapidir/include/pixie16/pixie16.h exists we're using the XIAAPI_V3
-#  or higher stuff:
-PIXIE_CPPFLAGS="-I${xiaapidir}/include"
-AC_CHECK_FILE([${xiaapidir}/include/pixie16/pixie16.h], [
-PIXIE_CPPFLAGS="${PIXIE_CPPFLAGS} -DXIAAPI_V3"
-PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixie16Api -lm -Wl,-rpath=${xiaapidir}/lib"
-AC_DEFINE([XIAAPI_VERSION], [3], [Pixie16 version 3 api])
-], [
-PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -lm -Wl,-rpath=${xiaapidir}/lib"
-AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
-])
+   # If the xiaapidir/include/pixie16/pixie16.h exists we're using the
+   # XIAAPI_V3 or higher stuff:
+   
+   PIXIE_CPPFLAGS="-I${xiaapidir}/include"
+   AC_CHECK_FILE(
+   [${xiaapidir}/include/pixie16/pixie16.h],
+   [PIXIE_CPPFLAGS="${PIXIE_CPPFLAGS} -DXIAAPI_V3"
+   PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixie16Api -lm -Wl,-rpath=${xiaapidir}/lib"
+   AC_DEFINE([XIAAPI_VERSION], [3], [Pixie16 version 3 api])],
+   [PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -lm -Wl,-rpath=${xiaapidir}/lib"
+   AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
+   ])
 
-AC_SUBST(PIXIE_API_DIR)
-AC_SUBST(PIXIE_CPPFLAGS)
-AC_SUBST(PIXIE_LDFLAGS)
-
-   #  If --with-plx-sdk was provided we're done and that's that.
-   #  If not:
-   #
-   #  See if we can find PLX_SDK_DIR -- we try /usr/opt/plx and
-   #  $(prefix)/../../plx
-   #
-   #  If that fails, error out suggesting the user give us --with-plx-sdk
-   #
+   #  Specify the location of the Plx installation. This will default to /usr/opt/plx.
    
    AC_ARG_WITH([plx-sdk],
-      [ --with-plx-sdk=path-to-plx-sdk],
-      [PLX_SDK_DIR=$withval], [PLX_SKD_DIR=""]
-   )
-   
-   if test -z "$PLX_SDK_DIR"
-   then
-      for d in /usr/opt/plx $(prefix)/../../plx
-      do
-         if test -z "$PLX_SDK_DIR"
-         then
-            AC_CHECK_FILE([$d/PlxApi/Library/libPlxApi.a], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
-         fi
-      done
-   fi
+   [  --with-plx-sdk=path - path to the PLX software installation],
+   [PLX_SDK_DIR=$withval], [PLX_SDK_DIR=""])
 
-# do it again if empty and look for PlxApi.so from version 8.X??
    if test -z "$PLX_SDK_DIR"
    then
       for d in /usr/opt/plx $(prefix)/../../plx
       do
          if test -z "$PLX_SDK_DIR"
          then
-            AC_CHECK_FILE([$d/PlxApi/Library/PlxApi.so], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+
+	 # Its probably one of these:
+
+            AC_CHECK_FILE([$d/PlxApi/Library/libPlxApi.a], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+	    AC_CHECK_FILE([$d/PlxApi/Library/PlxApi.so], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+	    
          fi
       done
    fi
@@ -452,23 +451,50 @@ AC_SUBST(PIXIE_LDFLAGS)
    then
       AC_MSG_FAILURE([Could not locate the PLX SDK directory, use --with-plx-sdk to help me])
    fi
+
+   PLX_CPPFLAGS="-I${PLX_SDK_DIR}/Include -I${PLX_SDK_DIR}/PlxApi"
+
+   # Use the shared library PlxApi.so (plx 8+) otherwise libPlxApi.a:
    
-   #  If found then:
-   #PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"
-   # well its one or the other...
-   AC_CHECK_FILE([$PLX_SDK_DIR/PlxApi/Library/PlxApi.so],[
-   PLX_LDFLAGS="-L$PLX_SDK_DIR/PlxApi/Library -l:PlxApi.so -Wl,-rpath=$PLX_SDK_DIR/PlxApi/Library"
-   ], [
-   PLX_LDFLAGS="-L$PLX_SDK_DIR/PlxApi/Library -lPlxApi"
-   ])
+   AC_CHECK_FILE([${PLX_SDK_DIR}/PlxApi/Library/PlxApi.so],
+   [PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -l:PlxApi.so -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"],
+   [PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi"])
 
+   # Also need to know where the Pixie firmware is installed:
 
-#  Now export all the variables to the Makefile.
+   AC_ARG_WITH([firmwaredir],
+   [  --with-firmwaredir=path - Specify path to firmware directory tree. Required if --enable-ddas=yes.],
+   [firmwaredir=$withval])
 
+   if test x$firmwaredir = x
+   then
+	AC_MSG_ERROR([ --with-firmwaredir is a mandatory option])
+   fi
+
+   # Establish the dsp load image directory. These files are also not
+   # redistributable so the user must have licensed them and installed
+   # them somewhere.
+   
+   AC_ARG_WITH([dspdir],
+   [  --with-dspdir=path - Specify path to the DSP software directory tree. Required if --enable-ddas=yes.],
+   [dspdir=$withval])
+   
+   if test x$dspdir = x
+   then
+	AC_MSG_ERROR([--with-dspdir is a mandatory option])
+   fi
+
+   #  Now export all the variables to the Makefile.
    
    AM_CONDITIONAL([BUILD_DDAS], [true])
-   AC_SUBST(DDAS_INSTDIR)
+   AC_SUBST(PIXIE_API_DIR)
+   AC_SUBST(PIXIE_CPPFLAGS)
+   AC_SUBST(PIXIE_LDFLAGS)
+   AC_SUBST(PLX_SDK_DIR)
+   AC_SUBST(PLX_CPPFLAGS)
    AC_SUBST(PLX_LDFLAGS)
+   AC_SUBST(firmwaredir)
+   AC_SUBST(dspdir)
    
 else
    AM_CONDITIONAL([BUILD_DDAS],[false])
@@ -769,7 +795,12 @@ AC_CONFIG_FILES([Makefile
     docconfig/Makefile
     examples/Makefile
     examples/ReadNSCLDAQFiles/Makefile
-    ddas/Makefile ddas/readout/Makefile
+    ddas/Makefile
+    ddas/configuration/Makefile
+    ddas/xiatest/Makefile
+    ddas/booter/Makefile
+    ddas/readout/Makefile
+    ddas/readout/DDASFirmwareVersions.txt
     ddas/sorter/Makefile
     ddas/readoutdriver/Makefile
     ddas/pixieplugin/Makefile

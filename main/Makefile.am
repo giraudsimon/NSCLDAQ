@@ -1,9 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 AUTOMAKE_OPTIONS=subdir-objects
 
-
-
-
 if CAENSUPPORT
 CAENSUPPORTDIRS=caendigitizers
 endif
@@ -26,17 +23,17 @@ if BUILD_DDAS
   DDASDIR=ddas
 endif
 
-SUBDIRS =	 base caenfw-common servers  base/dataflow  \
-		daq utilities $(DOCDIR) \
-		sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) $(CAENSUPPORTDIRS) examples
+SUBDIRS = base caenfw-common servers  base/dataflow \
+	daq utilities $(DOCDIR) \
+	sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) $(CAENSUPPORTDIRS) examples
 
 DIST_SUBDIRS = base caenfw-common servers base/dataflow daq utilities \
-		 docbuild docconfig simplesetups sbs epics usb ddas  \
-		caendigitizers    \
-		examples
+	docbuild docconfig simplesetups sbs epics usb ddas \
+	caendigitizers examples
 
 INTROFIGURES = @srcdir@/figures/intro-data-flow-diagram.png \
-								@srcdir@/figures/intro-data-flow-diagram-diagnostics.png 
+	@srcdir@/figures/intro-data-flow-diagram-diagnostics.png
+
 install-data-local:
 	$(mkinstalldirs) @prefix@/TclLibs
 	$(mkinstalldirs) @includedir@
