@@ -1,0 +1,77 @@
+#
+#  Establish the compilers
+#
+
+CC=gcc
+CXX=g++
+CXXLD=g++
+CCLD=gcc
+
+#DAQHOME=/usr/opt/nscldaq/current
+DAQHOME=/usr/opt/nscldaq/10.2-108
+DAQLIB_DIR=$(DAQHOME)/lib
+
+#-I/usr/opt/daq/10.0/include/sbsreadout
+CXXFLAGS=-g -I. -I$(DAQHOME)/include  \
+        -I/usr/include/tcl8.5 -pthread -fPIC
+CCFLAGS=$(CXXFLAGS)
+
+ifdef LEGACY_MODE
+	CXXFLAGS+= -DLEGACY_MODE
+endif
+
+#-lSBSProductionReadout
+LDFLAGS=-L$(DAQLIB_DIR) -lException -ldaqthreads -ltclPlus  -lurl -ldataformat \
+                -L/usr/lib -ltk8.5  -ltcl8.5 -lpthread -lrt -Wl,"-rpath=$(DAQLIB_DIR)"
+
+ROOTCFLAGS   := $(shell ${ROOTSYS}/bin/root-config --cflags)
+ROOTGLIBS    := $(shell ${ROOTSYS}/bin/root-config --glibs)
+ROOTLDFLAGS  := $(shell ${ROOTSYS}/bin/root-config --ldflags)
+
+LIBS  = -lm $(ROOTGLIBS) -L$(DAQLIB_DIR) -L$(shell pwd) -lddaschannel
+
+CXXFLAGS+=$(ROOTCFLAGS)
+O_FILES = dumperargs.o BufdumpMain.o StringsToIntegers.o Converter.o RootConvert.o RootConverter2.o dumper.o
+
+all: libddaschannel.so ddasdumper
+
+ddasdumper: $(O_FILES) libddaschannel.so
+	$(CXXLD) -o ddasdumper $(O_FILES) $(LDFLAGS) $(LIBS) 
+
+#$(LIB_DIR)/libSeGA_DDAS.so : SeGA_DDAS.o SeGA_DDASDictionary.o
+#	$(CPP) -fPIC -shared -Wl,-soname,libSeGA_DDAS.so -o $@ $^ -lc
+
+#SeGA_DDASDictionary.o: SeGA_DDASDictionary.cc SeGA_DDASDictionary.h
+#	$(CPP) -fPIC $(CFLAGS) -c $<
+
+#SeGA_DDASDictionary.cc: SeGA_DDAS.h SeGA_DDASLinkDef.h 
+#	rm -f SeGA_DDASDictionary.cc SeGA_DDASDictionary.h
+#	rootcint -f $@ -c  SeGA_DDAS.h SeGA_DDASLinkDef.h 
+
+
+ddaschannelDictionary.cpp: ddaschannel.h DDASEvent.h LinkDef.h
+	rm -f ddaschannelDictionary.cpp ddaschannelDictionary.h
+	$(ROOTSYS)/bin/rootcint -f $@ -c -p ddaschannel.h DDASEvent.h LinkDef.h 
+
+ddaschannelDictionary.o: ddaschannelDictionary.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) $^
+
+libddaschannel.so: ddaschannelDictionary.o ddaschannel.o DDASEvent.o
+	$(CXX) -shared -Wl,-soname,$@ -o $@ $(ROOTGLIBS) $(CXXFLAGS) $^
+
+#%.o: %.cpp %.h
+#	$(CXX) -fPIC $(CXXFLAGS) -c $< -o $@
+
+depend:
+	makedepend $(CXXFLAGS) *.cpp *.c
+
+clean:
+	rm -f *.o ddasdumper* libddaschannel.so ddaschannelDictionary*
+# DO NOT DELETE
+
+print_env:
+	@echo $(ROOTSYS)
+	@echo $(ROOTCFLAGS)
+	@echo $(ROOTGLIBS)
+	@echo $(ROOTLDFLAGS)
+

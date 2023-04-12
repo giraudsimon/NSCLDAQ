@@ -14,7 +14,7 @@ lib_LTLIBRARIES=libddastimestampextractor.la
 SHAREDIR=@prefix@/share/ddasreadout
 
 DDASReadout_SOURCES=Skeleton.cpp Skeleton 			\
-	CMyEventSegment.cpp CMyEventSegment 			\
+	CMyEventSegment.cpp CMyEventSegment.h 			\
 	CMyTrigger.cpp CMyTrigger.h 				\
 	CMyBusy.cpp CMyBusy.h 					\
 	CMyScaler.cpp CMyScaler.h 				\
@@ -28,7 +28,6 @@ DDASReadout_SOURCES=Skeleton.cpp Skeleton 			\
 	ModuleReader.cpp ModuleReader.h 			\
 	CHitManager.cpp CHitManager.h 				\
 	CDDASStatisticsCommand.cpp CDDASStatisticsCommand.h
-
 
 DDASReadout_CPPFLAGS= \
 	-I@top_srcdir@ 							\

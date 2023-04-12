@@ -3,12 +3,20 @@
 
 AC_PREREQ(2.61)
 
-AC_INIT(nscldaq,12.0-pre6, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
-
+AC_INIT(nscldaq,12.0-refactor, [scientificsoftware@nscl.msu.edu],[], [http://www.sourceforge.net/projects/nscldaq])
 
 AC_CONFIG_SRCDIR([/base/dataflow/CRingBuffer.h])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+
+AH_TOP([
+#ifndef CONFIG_H
+#define CONFIG_H
+])
+
+AH_BOTTOM([
+#endif
+])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -155,11 +163,6 @@ AC_TYPE_UINT8_T
 # Additional checks from DDAS/main/configure.ac added for refactoring:
 # --ASC 4/6/23
 
-AC_TYPE_INT16_T
-AC_TYPE_INT64_T
-AC_TYPE_UINT64_T
-AC_CHECK_TYPES([ptrdiff_t])
-
 # End additional checks
 
 AX_CHECK_COMPILE_FLAG([-Wno-error=date-time], [NODATEWARN="-Wno-error=date-time"])
@@ -187,7 +190,12 @@ AC_FUNC_STAT
 # Additional checks from DDAS/main/configure.ac added for refactoring:
 # --ASC 4/6/23
 
+AC_TYPE_INT16_T
+AC_TYPE_INT64_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_FUNCS([floor pow select sqrt strstr])
+AC_CHECK_HEADERS([float.h values.h])
 
 # End additional checks
 
@@ -387,7 +395,12 @@ fi
 # PLX_CPPFLAGS   - compiler flags
 # PLX_LDFLAGS    - load flags
 # firmwaredir    - Pixie firmware installation directory
-# dspdir         - Pixie DSP load image installaion directory 
+# dspdir         - Pixie DSP load image installaion directory
+# UFMT_CPPFLAGS  - Unified format CPP flags
+# UFMT_LDFLAGS   - Unified format library flags
+# ROOTSYS        - ROOT installation to compile e.g. ddasdumper against
+# ROOT_CFLAGS    - ROOT cflags (automatically generated from ROOT config)
+# ROOT_LDFLAGS   - ROOT libraries (automatically generated from ROOT config)
 
 BUILD_DDAS="no"
 AC_ARG_ENABLE([ddas],
@@ -423,7 +436,12 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
    ])
 
-   #  Specify the location of the Plx installation. This will default to /usr/opt/plx.
+   AC_SUBST(PIXIE_API_DIR)
+   AC_SUBST(PIXIE_CPPFLAGS)
+   AC_SUBST(PIXIE_LDFLAGS)
+
+   # Specify the location of the Plx installation. This will default to
+   # /usr/opt/plx.
    
    AC_ARG_WITH([plx-sdk],
    [  --with-plx-sdk=path - path to the PLX software installation],
@@ -436,10 +454,13 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
          if test -z "$PLX_SDK_DIR"
          then
 
-	 # Its probably one of these:
+	    # Its probably one of these:
 
-            AC_CHECK_FILE([$d/PlxApi/Library/libPlxApi.a], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
-	    AC_CHECK_FILE([$d/PlxApi/Library/PlxApi.so], [PLX_SDK_DIR="$d"], [PLX_SDK_DIR=""])
+            AC_CHECK_FILE([$d/PlxApi/Library/libPlxApi.a],
+	    [PLX_SDK_DIR="$d"],[PLX_SDK_DIR=""])
+	    
+	    AC_CHECK_FILE([$d/PlxApi/Library/PlxApi.so],
+	    [PLX_SDK_DIR="$d"],[PLX_SDK_DIR=""])
 	    
          fi
       done
@@ -460,6 +481,10 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    [PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -l:PlxApi.so -Wl,-rpath=${PLX_SDK_DIR}/PlxApi/Library"],
    [PLX_LDFLAGS="-L${PLX_SDK_DIR}/PlxApi/Library -lPlxApi"])
 
+   AC_SUBST(PLX_SDK_DIR)
+   AC_SUBST(PLX_CPPFLAGS)
+   AC_SUBST(PLX_LDFLAGS)
+
    # Also need to know where the Pixie firmware is installed:
 
    AC_ARG_WITH([firmwaredir],
@@ -470,6 +495,8 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    then
 	AC_MSG_ERROR([ --with-firmwaredir is a mandatory option])
    fi
+
+   AC_SUBST(firmwaredir)
 
    # Establish the dsp load image directory. These files are also not
    # redistributable so the user must have licensed them and installed
@@ -484,18 +511,65 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
 	AC_MSG_ERROR([--with-dspdir is a mandatory option])
    fi
 
+   AC_SUBST(dspdir)
+
+   # Check that the unified format library has been incorporated into
+   # the source tree and configura/build it into $prefix/unifiedformat
+
+   AC_CHECK_PROG([havecmake], cmake, [1], [0])
+   if `test ${havcmake} = 0`
+   then
+	AC_MSG_ERROR([cmake must be in the path to build SpecTcl])
+   fi
+
+   AC_CHECK_FILE([${srcdir}/unifiedformat/CMakeLists.txt], [
+   rm -rf unifiedformat/build
+   mkdir -p unifiedformat/build
+   sourcedir="`realpath ${srcdir}`"
+   (cd unifiedformat/build;  cmake ${sourcedir}/unifiedformat -DCMAKE_INSTALL_PREFIX=${prefix}/unifiedformat; make all test install)
+   UFMT_CPPFLAGS="-I${prefix}/unifiedformat/include"
+   UFMT_LDFLAGS="-L${prefix}/unifiedformat/lib -lNSCLDAQFormat -lAbstractFormat -lV10Format -lV11Format -lV12Format -Wl,-rpath=${prefix}/unifiedformat/lib"
+   AC_SUBST(UFMT_CPPFLAGS)
+   AC_SUBST(UFMT_LDFLAGS)
+   ],
+   [AC_MSG_ERROR([You need to incorporate the unified format library with unifiedfmt-incorp.sh])
+   ])
+
+   #  Check for Root.  -- we're just going to add a --with-rootsys and 
+   #  use rootconfig to add the following to the Makefile macro set.
+   #
+   #  ROOT_CPPFLAGS
+   #  ROOT_LDFLAGS
+   #
+
+   rootdir=$ROOTSYS
+   AC_ARG_WITH([rootsys], 
+   [  --with-rootsys=path - path to the root installation to use],
+   [rootdir=$withval])
+   if test  x$rootdir = x 
+   then
+	AC_MSG_ERROR([Use --with-rootsys to specify where root is installed])
+   fi
+   if test ! -d $rootdir
+   then
+	AC_MSG_ERROR([ROOTSYS directory specified: $rootdir does not exist])
+   fi
+
+   ROOTSYS=$rootdir
+   ROOT_CFLAGS=`$rootdir/bin/root-config --cflags`
+   ROOT_LD1=`$rootdir/bin/root-config --glibs`
+   ROOT_LD2=`$rootdir/bin/root-config --ldflags`
+   ROOT_RPATH="-Wl,-rpath=`$rootdir/bin/root-config --libdir`"
+
+   ROOT_LDFLAGS="$ROOT_LD1 $ROOT_LD2 $ROOT_RPATH"
+
+   AC_SUBST(ROOTSYS)
+   AC_SUBST(ROOT_CFLAGS)
+   AC_SUBST(ROOT_LDFLAGS)
+
    #  Now export all the variables to the Makefile.
    
-   AM_CONDITIONAL([BUILD_DDAS], [true])
-   AC_SUBST(PIXIE_API_DIR)
-   AC_SUBST(PIXIE_CPPFLAGS)
-   AC_SUBST(PIXIE_LDFLAGS)
-   AC_SUBST(PLX_SDK_DIR)
-   AC_SUBST(PLX_CPPFLAGS)
-   AC_SUBST(PLX_LDFLAGS)
-   AC_SUBST(firmwaredir)
-   AC_SUBST(dspdir)
-   
+   AM_CONDITIONAL([BUILD_DDAS], [true])   
 else
    AM_CONDITIONAL([BUILD_DDAS],[false])
 fi
@@ -799,6 +873,8 @@ AC_CONFIG_FILES([Makefile
     ddas/configuration/Makefile
     ddas/xiatest/Makefile
     ddas/booter/Makefile
+    ddas/format/Makefile
+    ddas/ddasdumper/Makefile
     ddas/readout/Makefile
     ddas/readout/DDASFirmwareVersions.txt
     ddas/sorter/Makefile
