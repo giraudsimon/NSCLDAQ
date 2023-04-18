@@ -32,8 +32,7 @@ jobs:
       - name: Configuring
         working-directory: ./main/oot
         shell: bash
-        run: |
-          ../configure --prefix=$PWD/install \
+        run: ../configure --prefix=$PWD/install \
              --enable-usb=yes \
              --enable-caen-digitizer-support \
              --enable-docs \
