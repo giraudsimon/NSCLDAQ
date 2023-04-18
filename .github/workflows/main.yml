@@ -1,12 +1,12 @@
-name: CI test
+name: Refactor test
 on:
   push:
-    branches: [ "12.0-pre6" ]
+    branches: [ "12.0-refactor" ]
 jobs:
   container-test-job:
     runs-on: ubuntu-latest
     container:
-      image: fribdaq/frib-buster-ci:v3.7
+      image: fribdaq/frib-buster:v3.8
       options: --cpus 2
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
           eval `ssh-agent -s`
           
           echo "${{ secrets.LIBTCLPLUS }}" | ssh-add -
-          ./tcl++incorp libtclplus-v4.3-002
+          ./tcl++incorp libtclplus-v4.3-001
           ssh-add -D
           
           eval `ssh-agent -k`
@@ -33,19 +33,19 @@ jobs:
         working-directory: ./main/oot
         shell: bash
         run: |
-          # temporary fix for missing header
-          # cp ../config_pixie16api.h .
-          
           ../configure --prefix=$PWD/install \
              --enable-usb=yes \
              --enable-caen-digitizer-support \
              --enable-docs \
              --enable-epics-tools=yes \
-             --enable-ddas=/usr/opt/ddas/5.0-004 \
              --with-caen-digitizer-libroot=/usr/opt/caendigitizerlibs \
              --with-epics-rootdir=/usr/opt/epics \
-             --with-xiaapidir=/usr/opt/xiaapi/2.13.0/ \
-             --with-plx-sdk=/usr/opt/plx \
+	     --enable-ddas=yes \
+	     --with-xiaapidir=/usr/opt/xiaapi/2.13.0 \
+	     --with-plx-sdk=/usr/opt/plx \
+	     --with-firmwaredir=/usr/opt/ddas/firmware/2.2-000/firmware \
+	     --with-dspdir=/usr/opt/ddas/firmware/2.2-000/dsp \
+	     --with-rootsys=/usr/opt/root/root-6.24.06
              CXX=/usr/opt/mpi/openmpi-4.0.1/bin/mpicxx
       - name: Make
         working-directory: ./main/oot
