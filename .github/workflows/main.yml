@@ -13,7 +13,7 @@ jobs:
       - name: autoreconf
         working-directory: ./main
         run: autoreconf -if
-      - name: Configure tclc++
+      - name: Configure tcl++
         env:
           GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
         working-directory: ./main
@@ -32,20 +32,7 @@ jobs:
       - name: Configuring
         working-directory: ./main/oot
         shell: bash
-        run: ../configure --prefix=$PWD/install \
-             --enable-usb=yes \
-             --enable-caen-digitizer-support \
-             --enable-docs \
-             --enable-epics-tools=yes \
-             --with-caen-digitizer-libroot=/usr/opt/caendigitizerlibs \
-             --with-epics-rootdir=/usr/opt/epics \
-	     --enable-ddas=yes \
-	     --with-xiaapidir=/usr/opt/xiaapi/2.13.0 \
-	     --with-plx-sdk=/usr/opt/plx \
-	     --with-firmwaredir=/usr/opt/ddas/firmware/2.2-000/firmware \
-	     --with-dspdir=/usr/opt/ddas/firmware/2.2-000/dsp \
-	     --with-rootsys=/usr/opt/root/root-6.24.06
-             CXX=/usr/opt/mpi/openmpi-4.0.1/bin/mpicxx
+        run: ../configure --prefix=$PWD/install --enable-usb=yes  --enable-caen-digitizer-support --enable-docs --enable-epics-tools=yes --with-caen-digitizer-libroot=/usr/opt/caendigitizerlibs --with-epics-rootdir=/usr/opt/epics --enable-ddas=yes --with-xiaapidir=/usr/opt/xiaapi/2.13.0 --with-plx-sdk=/usr/opt/plx --with-firmwaredir=/usr/opt/ddas/firmware/2.2-000/firmware --with-dspdir=/usr/opt/ddas/firmware/2.2-000/dsp --with-rootsys=/usr/opt/root/root-6.24.06 CXX=/usr/opt/mpi/openmpi-4.0.1/bin/mpicxx
       - name: Make
         working-directory: ./main/oot
         run: make -j2 clean && make -j2 all && make -j2 install
