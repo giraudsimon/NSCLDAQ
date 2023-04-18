@@ -1,0 +1,115 @@
+*  We already have an implemented Module XML format.  This format is fine for
+   now.
+
+What we need is a crate definition.  A crate definition in DDAS must provide:
+
+ *  An id for the crate.
+ *  For each slot:
+    -   The slot number.
+    -   The anticipated event length in longs.
+    -   A module configuration file.
+
+Note that associated with each slot is an implied "Module ID"  This is just the
+position of the slot information in the file.
+
+Here's a potential sample crate file:
+
+<crate id="1">
+   <slot number="2" ... configfile="/user/fox/configs/Ge.xml" />
+   <slot number="5" ... configfile="/user/fox/configs/Ge-short-trace.xml />
+</crate>
+
+What this file says is that we have a crate who's crateId will be 1.
+That crate has modules in slots 2 and 5.  The module in slot 2 is expected only
+to give a header (evtlen="4").  It's configuration file is the XML in
+/user/fox/configs/Ge.xml
+
+
+The module in slot5, however is configured with
+/user/fox/configs/Ge-short-trace.xml which, presumably, turns on a trace
+turning the hit length from it to 50 longs (evtlen="50").
+
+The module in slot 2 is module ID 0 and the module in slot 5 is module id 1.
+
+Note:
+  I envision a few other attributes for the <crate> tag:
+  *  evtlen          - Length of events expected from this module.
+  *  fifo_threshold  - Replaces the "FIFO_THRESHOLD" env variable.
+  *  infinity_clock  - Replaces the INFINITY_CLOCK env variable.
+  *  timstamp_scale  - Replaces DDAS_TSTAMP_SCALE_FACTOR for external clock.
+  *  external_clock  - Claims we're using external clock.
+  
+  These would be written/processed by nscope (external_clock written others preserved) and readout
+
+Software:
+toxml  - Builds XML module files.  It could use a crate configuration to update
+the configuration files that are described by the crate configuration.
+
+loadxml - Load modules with XML based configuration given a crate definition.
+
+So we need:
+
+XML Module reader (We have that essentially).
+XML Module writer (we have that essentially).
+Crate reader - we have much of that.
+Pixie16 reader (we have that).
+Setfile reader (we have that).
+
+we need to inform all of these with the crate definition file.
+
+toxml:
+    --source=module|setfile
+    --crate=crate.xml   - Valid for both --source values...not modified
+    --file=setfile      - Valid only for --source=setfile.
+
+The --crate file describes which modules we care about and where to write
+their individual XML configuration files.
+
+loadxml:
+    --crate  - Provides crate definition file.  That's all we need.
+
+The internal module description is fine but we can take chunks of it and toss
+it.  More later.  We can have an internal representation of a crate as follows:
+
+struct Slot {
+   unsigned s_slotNum;
+   unsigned s_evtLen;
+   std::string s_configFile;
+   DDAS::ModuleSettings s_settings;
+};
+
+struct Crate {
+   unsigned s_crateId;
+   std::vecto<Slot> s_slots;
+};
+
+
+tosetfile:
+   Since digitizers take an ungodly long time to load (20 seconds/module) from
+   Pixie16WriteSglxxxPar calls we're going to add a file (tosetfile) that takes
+   a crate description and writes a setfile
+
+
+Options:
+  --xml     - crate xml file.
+  --setfile - set file
+  --msps    - MSPS overrides for slots in slot:Mhz format. Default speed is 250MHz
+
+Implementation strategy:
+
+If the set file does not yet exist it will be copied in from some place, likely
+@prefix@/share/readout/crate_1.set
+
+Once the set file exists, it can be mapped into memory and slot addressed.  Our
+CrateManager can be used to get us a VAR file that can provide us with
+parameter offsets for the parameters in ModuleSettings.
+
+Concerns - there may be dependent, hidden parameter values.. including those
+that are computed by the FPGA.  I need to see the API to know which these are
+and compute them internally to ensure that I make a consistent set file because
+I think the setfile loader in the XIA API assumes these are valid and
+consistent.
+
+Envision a setfile API that maps a set file into memory and, given provides
+access to set file slot/parameters much like WriteSglModPar and WriteSglChanPar
+do

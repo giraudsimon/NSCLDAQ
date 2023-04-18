@@ -1,0 +1,17 @@
+bin_PROGRAMS=dumpSetFile
+
+dumpSetFile_SOURCES = DescriptionParser.h DescriptionParser.cpp main.cpp \
+	DSPFileReader.h DSPFileReader.cpp
+
+dumpSetFile_CXXFLAGS=-I@top_srcdir@ @PIXIE_CPPFLAGS@
+
+noinst_PROGRAMS=unittests
+
+
+unittests_SOURCES=TestRunner.cpp Asserts.h descriptionparsetests.cpp \
+	DescriptionParser.cpp
+
+unittests_CXXFLAGS=-I@top_srcdir@ @CPPUNIT_CFLAGS@ @PIXIE_CPPFLAGS@
+unittests_LDFLAGS=@CPPUNIT_LIBS@
+
+TESTS=unittests

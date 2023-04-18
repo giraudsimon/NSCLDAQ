@@ -1,0 +1,10 @@
+##
+#  @file toxml.ggo
+#  @brief Provide command line option definitions for toxml program.
+package "ToXml"
+version "1.0"
+
+option "source" s "Where the data to write the XML comes from" values="setfile","modules" enum
+option "crate"  c "XML Crate file that describes where module data are written" string
+option "file"   f "Setfile with the data (valid only if --source=setfile)" optional string
+option "msps"   m "Only used with setfile: speeds of the modules form slot:MHz" optional multiple string

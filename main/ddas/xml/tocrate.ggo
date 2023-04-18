@@ -1,0 +1,13 @@
+##
+# @file  tocrate.ggo
+# @brief Command line options for XML/Setfile -> XIA crate
+
+package "tocrate"
+version "1.0"
+
+option "source" s "Where the data to load modules comes from" values="setfile","xml" enum
+option "file"   f "Set file or XML crate file depending on source" string
+option "fullboot" b "Perform a full boot of te modules before loading them" flag on
+option "crate"   c "ID of crate - only use this if source=setfile" short optional
+option "slot"    S "A slot to load - use as many times as there are slots" int optional multiple
+option "msps"    m "Speed specification of a digitizer (slot:mhz) default is 250MHz" string multiple optional

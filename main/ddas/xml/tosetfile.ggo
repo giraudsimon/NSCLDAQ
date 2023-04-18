@@ -1,0 +1,11 @@
+##
+# @file tosetfile.ggo
+# @brief Provide commandline options for tosetfile program.
+#
+
+package "ToSetfile"
+version "1.0"
+
+option "xml" x "Path to XML Crate definition file" string
+option "setfile" s "Path to output Set file" string
+option "msps" m "Slot speeds each in the form slot:speed defaults are 250MHz" optional multiple string

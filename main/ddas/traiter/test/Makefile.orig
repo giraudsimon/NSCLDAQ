@@ -1,0 +1,53 @@
+
+
+CPP = g++
+
+PKGNAME := traiter 
+INSTALLDIR := $(INSTDIR)/lib
+BUILDDIR := ../src/.libs
+SOURCEDIR := ../src
+
+LIBS := $(shell cppunit-config --libs)
+LIBS += -L$(BUILDDIR) -l$(PKGNAME)
+
+LIBS += $(shell root-config --libs)
+
+INCLUDES += -I$(SOURCEDIR) $(shell cppunit-config --cflags)
+CPPFLAGS += $(INCLUDES)
+
+CPPFLAGS += $(shell root-config --cflags) -fPIC
+
+CPPFLAGS += -g
+
+headers := TraceSTest.h BaseLineProcessorTest.h PeakFindProcessorTest.h \
+		   ThresholdTest.h	AmplitudeProcessorTest.h BasicIteratorTest.h \
+			BasicRangeIteratorTest.h \
+			SumIteratorTest.h TrapFilterTest.h RiseTimeProcessorTest.h \
+			CFDTest.h
+
+objs    := $(patsubst %.h, %.o, $(headers))
+
+OBJS := $(addprefix $(BUILDDIR)/, $(objs))
+
+
+.PHONEY : all setup build check
+
+build : setup TestMain
+
+all : build check
+	
+setup : 
+	@if [ ! -d $(BUILDDIR) ] ; then mkdir $(BUILDDIR) ; fi
+
+$(BUILDDIR)/%.o : %.cpp
+	$(CPP) $(CPPFLAGS) -c -o $@ $<
+
+TestMain:  $(BUILDDIR)/TestMain.o $(OBJS) 
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LIBS) 
+
+check:
+	./TestMain 
+
+clean :
+	rm -f $(OBJS) 
+

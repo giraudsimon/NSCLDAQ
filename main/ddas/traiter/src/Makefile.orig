@@ -1,0 +1,62 @@
+# library Makefile
+#
+# Author : Jeromy Tompkins
+# Date   : 8/14/2013
+
+CPP = g++
+
+PKGNAME := traiter
+VERSION := 3.0.0
+
+LIBNAME := lib$(PKGNAME).so.$(VERSION)
+INSTALLDIR := $(INSTDIR)/lib
+BUILDDIR := ../tmp-build
+
+LIBS := $(shell root-config --glibs)
+INCLUDES += $(shell root-config --cflags)
+CPPFLAGS += $(INCLUDES) -fPIC
+
+ifdef DEBUG
+	CPPFLAGS += -g
+endif
+
+SOURCES := $(wildcard *.cpp) dict${PKGNAME}.cpp
+
+libobjs := $(patsubst %.cpp, %.o, $(SOURCES))
+LIBOBJS := $(addprefix $(BUILDDIR)/, $(libobjs))
+
+TMPLSRC := $(wildcard *.hpp)
+HEADERS := $(filter-out dict* LinkDef.h, $(wildcard *.h))
+libheaders := $(TMPLSRC) $(HEADERS)
+
+.PHONEY : build check all install clean
+
+setup :
+	@if [ ! -d $(BUILDDIR) ] ; then mkdir $(BUILDDIR) ; fi
+
+build : setup $(BUILDDIR)/$(LIBNAME)
+
+$(BUILDDIR)/%.o : %.cpp
+	$(CPP) $(CPPFLAGS) -c -o $@ $<
+
+$(BUILDDIR)/$(LIBNAME) : $(LIBOBJS)
+	$(CPP) -Wl,-soname=$(LIBNAME) -shared -o $@ $^ $(LIBS)
+	@echo "Creating symlinked lib${PKGNAME}.so"
+	@rm -f $(BUILDDIR)/lib$(PKGNAME).so
+	@ln -s $(BUILDDIR)/$(LIBNAME) $(BUILDDIR)/lib$(PKGNAME).so
+
+dict$(PKGNAME).cpp : $(libheaders)
+	$(ROOTSYS)/bin/rootcint -f $@ -c -p $(INCLUDES) $(libheaders) LinkDef.h
+
+clean :
+	rm -f $(BUILDDIR)/*.o
+	rm -f dict*
+
+install :
+	@echo "Installing $(LIBNAME) --> $(INSTDIR)/lib"
+	@cp $(BUILDDIR)/$(LIBNAME) $(INSTDIR)/lib/.
+	@rm -f $(INSTDIR)/lib/lib$(PKGNAME).so
+	@ln -s $(INSTDIR)/lib/$(LIBNAME) $(INSTDIR)/lib/lib$(PKGNAME).so
+	@echo "Copying headers --> $(INSTDIR)/include"
+	@cp $(filter-out dict* LinkDef.h, $(libheaders)) $(INSTDIR)/include/.
+

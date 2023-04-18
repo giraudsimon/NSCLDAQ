@@ -1,0 +1,1008 @@
+/*!
+  \page singlecrate Single-crate System Setup Tutorial
+  \author Ron Fox and Jeromy Tompkins
+  \date   4/21/2016
+
+\tableofcontents
+
+\section singlecrate_intro Introduction
+
+This document describes the simplest DDAS setup:  A single PXI crate with one
+digitizer.  Throughout, there will be suggestions on how to expand this setup so
+that it has several digitizers.
+
+Other simple setup documents will describe
+
+-   How to setup multi-crate systems.
+-   How to interface DDAS with non-DDAS systems, specifically VM-USB or CC-USB
+    readout systems.
+
+This material is organized as follows:
+
+-   First an overview of the components of a single crate DDAS system is given.
+-   Second we provide a guide to setting up the hardware. A pulser will be
+    used as a signal source.
+-   The configuration files DDAS needs to run are described next.
+-   Nscope will be used to obtain an initial parameter setup.
+-   We will set up Readout so that data can be taken from the sample setup.
+    We'll also look at a dump of the data from the simple setup with
+    and without waveforms.
+-   We'll show how to set up the ReadoutGUI and event builder so that
+    data can be taken, built into events, recorded and made available for
+    online analysis.
+-   We will set up a simple SpecTcl tailoring for data with and without
+   waveforms.
+-  We will import the data into Root so that offline analysis can proceed with
+   that tool.
+  
+
+\section singlecrate_dataflow Overview of the components of a DDAS data taking system.
+
+DDAS data acquisition and online analysis rely on several hardware and
+software components.
+
+-   A PXI Crate;  Note that PXI is an extension to the compact PCI standard
+    that supports precision timing.
+-   One or more XIA digitizer cards.
+-   An interface between an NSCL SPDAQ system and the PXI crate or a crate
+    resident single board computer.  These two options will be referred to as
+    the data collection computer.
+-   A Readout program that runs in the data collection computer that reads data
+    from the digitizer cards and places them into a <em>raw ringbuffer</em>.
+    This readout program is the interface between the PXI crate and the NSCLDAQ
+    system.
+-   A ReadoutShell instance that manages Readout, event logging and:
+-   An event builder.  The event builder takes data from raw ring buffers,
+    builds events that satisfy a coincidence interval in the DDAS timestamp and
+    places those built events in a <em>final ring buffer</em>.
+    Note that while in principle the event builder is not necessary for single
+    crate systems, using it for those systems maintains a common event format
+    between single and multi-crate systems.
+-  A SpecTcl tailored to decode DDAS data and analyze it in an experiment
+    specific manner.
+
+The figure below shows a simple DDAS hardware configuration:
+
+\image html "DDAS_Hardware.jpeg"  "A DDAS Hardware configuration"
+
+The figure below shows a simple DDAS software configuration emphasizing the data
+flow.
+
+\image html softwarecomponents.jpeg "Software components in a single crate system"
+
+A few points are worth noting:
+
+-  The analysis computer is not strictly speaking necessary.
+   All of the software can be run in the data collection computer.
+-  In a normal configuration the only program that will run in the
+   readout computer is the Readout program.  The remainder of the programs
+   shown in the software diagram will normally run in one or more analysis
+   computers.
+-  For multi-crate systems, add additional crates to the hardware diagram
+   and additional readout programs to the software diagram.
+-  Adding digitizer cards to the configuration shown is simply a change to the
+   configuration files of the readout program (see e.g. \ref readout ) and below.
+  
+Finally a bit about where the DDAS support software is installed at the NSCL.
+The NSCL may have several versions of the DDAS software installed concurrently.
+In general these will be installed in
+
+\verbatim
+/usr/opt/ddas/version
+\endverbatim
+
+Where \em version above is a software version number of the form
+major.minor-editlevel  \em major, \em minor and \em editlevel are three
+numbers that are called the major version the minor version and the edit level.
+Edit level changes reflect defect fixes and very small enhancements.  minor
+version changes reflect enhancements and fixes that are somewhat more involved.
+Migrating to versions where only the minor version changed will at most require you to recompile without any need to modify your code. Major version changes very significant fixes and enhancements that may require
+recompilation of any user level code.
+
+In addition to these there is a symbolic link \c /usr/opt/ddas/current
+that points to the version of the DDAS software that is recommended for
+use.  This link will \em only change during significant accelerator shutdowns.
+
+Each version's top-level directory includes a script \c ddassetup.bash
+
+
+Source that script into your interpreter to setup  several environment variables:
+
+-  \c DDAS_ROOT - points to the top level ddas installation directory (that's
+   the directory that holds \c the ddassetup.bash script).
+-   \c DDAS_BIN - points to  \c $DDAS_ROOT/bin  this directory contains
+    all executable programs.
+-   \c DDAS_LIB - points to the \c $DDAS_ROOT/lib directory.  This contains all
+    of the link libraries DDAS applications might need to link against.
+-   \c DDAS_INC - points to \c $DDAS_ROOT/include  a directory that contains
+    all header files DDAS applicatons may need.
+-   \c DDAS_SHARE - points to \c $DDAS_ROOT/share this directory tree
+    contains documentation, program skeletons and scripts.
+-   \c EVENT_BUFFER_SIZE - sets a new event buffer size (default is 8192bytes).
+    if you are reading long traces you need to increase the event buffer size
+    if you get messages like "channel event too big for readout"
+
+The remainder of this document will assume that you have selected a DDAS
+version and sourced its ddassetup.bash script into your shell.
+
+\section ddas_ss1_loadModule_sec Loading the Plx 9054 Kernel Module
+
+Communication with the Pixie-16 modules requires communication over the PXI
+backplane. In any of the DDAS systems at the NSCL, whether using a fiber
+interface of embedded single board computer (SBC), a PLX 9054 chip is involved
+in this communication. There is a kernel module that must be loaded into the
+kernel prior to using this chip. You can load it by :
+
+\verbatim
+sudo /usr/opt/plx/Bin/Plx_load 9054
+\endverbatim
+
+You will be asked to enter you password and then on success you will get the
+following output written to the terminal
+
+\verbatim
+
+Install: Plx9054
+  Load module......... Ok (Plx9054.ko)
+  Verify load......... Ok
+  Get major number.... Ok (MajorID = 251)
+  Create node path.... Ok (/dev/plx)
+  Create nodes........ Ok (/dev/plx/Plx9054)
+
+\endverbatim
+
+The user must load the PLX kernel module before using DDAS after every time the
+computer is booted. 
+
+\warning In a multicrate system, the PLX kernel module must be loaded into
+_every_ computer attached to the PXI backplane (i.e. every spdaq in your system
+reading out DDAS modules).
+
+\section ddas_ss1_config  Configuration files
+
+Many of the DDAS software components require a set of configurations files
+to be in the current working directory.   These configuration files
+describe the configuration of modules in a crate and point at a settings file
+containing the parameters used by the digital pulse processing (DPP) algorithms for each module in use.
+
+These files are described in the documentation of \ref readout .  This section
+will summarize the files needed for nscope.   By convention a directory subtree
+is used to hold the configuration files for each crate.  The tree looks like this:
+
+\verbatim
+
+home-directory
+     |
+     +-- readout
+            |
+            +--- crate_1  (configuration for crate 1).
+            +--- crate_2  (configuration for crate 2 if needed).
+            ...
+            +--- crate_n  (configuration for last crate, n).
+
+\endverbatim
+
+Since we only have a single crate, this
+should look like:
+
+\verbatim
+Home directory
+   |
+   +---readout
+          |
+          +--- crate_1
+                 +--- cfgPixie16.txt
+                 +--- pxisys.ini
+                 +--- crate_1.set
+                 +--- modevtlen.txt
+
+\endverbatim
+
+
+
+The directory \c $DDAS_SHARE/readout/crate_1 has sample configuration files.
+Note, as of nscldaq 11.3, DDAS Readout and its examples are moved into
+NSCLDAQ.   file described above is in \c $DAQROOT/share/ddasreadout/crate_1
+DDAS readout itself is in \c $DAQBIN/DDASReadout if an external clock is used
+for timestamp, this file is \c $DAQBIN/DDASReadout_extcl
+
+-  \c cfgPixie16.txt - Indicates which modules are in which crates.
+-  \c pxisys.ini     - Describes the PCI layout of the crate for the XIA API.
+-  \c crate_1.set    - A parameter settings file.
+-  \c modevtlen.txt  - Describes the number of 32-bit words in an event for each module.
+
+Once you've created \c ~/readout/crate_1 finish making the structure below
+by
+\verbatim
+cp $DDAS_SHARE/readout/crate_1/* ~/readout/crate_1
+
+or
+
+cp $DAQBIN/share/ddasreadout/crate_1/* ~/readout/crate_1
+
+if you are using NSCLDAQ 11.3 or higher.
+\endverbatim
+
+Of these files:
+
+-   \c pxisys.ini must not be modified unless you are using a non-standard crate.
+-   \c cfgPixie16.txt  must be modified to reflect the layout of modules in your
+    crate and the actual desired name of the parameter settings file. The format of the file is described
+    in detail in \ref cfgPixie_format.
+    \c nscope and \c Readout both use this file.
+-   \c crate_1.set should be renamed to match the final settings file path name
+    in \cfgPixie16.txt  This settings file contains the DPP parameters
+    \c nscope and \c Readout load into the digitizers and is written by
+    \c nscope if desired.
+-   \c modevtlen.txt  must be modified to reflect the actual event sizes
+    selected for each module.  This must be modified to reflect the number
+    of modules in \c cfgPixie16.txt and the sizes must be modified
+    appropriately if waveforms are being acquired.
+
+\section ddas_ss1_hardware_setup Setting up the hardware
+
+To set up  the hardware of a DDAS single crate, single card system you  must
+
+-  Ensure there is a fiber interface in the left most slot of the PXI crate.  The
+   fiber must be connected to a corresponding PCI bridge board in an data collection computer.
+   Alternatively, a single board computer can be inserted in the leftmost
+   PXI slot and connected to the lab DAQ network.
+-  One of the Pixie-16 modules must be setup as the clock master.  This card
+   must be inserted in slot 2 of the crate.
+   Exactly one clock master must be configured or else very likely
+   the host system will fail spectacularly.
+-  Appropriate signals must be plugged into the digitizer inputs.
+   One of the nice things about digital data acquisition modules is that
+   only minimal signal conditioning is required and the modules themselves
+   handle triggering.  For this setup we're going to take singles data.
+   The  modules actually support very sophisticated internal triggering
+   modes as well as cross module trigger processing via a front panel
+   trigger bus.
+
+
+\section ddas_ss1_nscope Using Nscope to manage the DPP parameters
+
+The \c nscope program is used to view input waveforms and set digital signal
+processing parameters.  It should be run by
+
+-#  Setting your default directory to a directory that contains the
+    configuration of the crate nscope should operate on.
+-#  Invoking the command \c $DDAS_BIN/nscope
+
+The terminal window in which you run \c nscope will output a bunch of stuff.
+The main bits you want to look at are the crate map that is printed out.
+This will look something like
+
+\verbatim
+...
+Reading config file... cfgPixie16.txt
+
+7 modules, in slots: 2 3 4 5 6 7 8
+
+current working directory /scratch/fox/daq/DDAS/main/readout/crate_1
+...
+\endverbatim
+
+where the current working directory should confirm that you are in the correct
+directory for the crate you are working in and the module map should
+match the crate you are working in as well (in the example shown that you have
+7 modules in slots 2-8).
+
+\image html nscope-startup.jpg "nscope start screen"
+
+
+The minimum set of tasks you must perform are to:
+
+-  Configure your pulser to produce acceptable input signals.
+-  Configure the digitizer module(s) for nscope
+-  Boot the digitizers.
+-  Set the waveform signal conditioning parameters to make your signal acceptable
+   for digital signal processing.
+-  Set the trigger conditions for the module.
+-  Save the DPP parameters into a .set file
+
+Note that the nscope program controls many more parameters of the DPP algorithm.
+See \ref nscope for more information about what the nscope program can do.
+   
+\subsection ddas_ss1_pulsersetup  Setting up the pulser signal shape
+
+Set up your pulser to output pulses that rise quickly but have about a 50&mu;sec
+fall time.  The pulse polarity should be -- with an amplitude no larger than
+1V.  For our test we'll use a 0.5V signal with a rise time of -- and a fall
+time of 50&mu;sec.
+
+\subsection ddas_ss1_configmodule Setting up the module
+
+When using several DDAS cards it is important to synchronize the digitizer
+clocks between them.  This is done by setting the jumper block JP01
+appropriately.  The jumper block is just a set of pins located on the board
+near the backplane connectors. Configure the connections between these pins
+with jumpers. In case your setup consists of a single module, be sure to configure the jumpers to
+match the top diagram for PXI clock master.
+
+Note that in this configuration your module must be inserted in slot 2.  This
+configuration also allows the module to serve as the clock master for a
+multi-module singe crate system, as long as the other modules are configured to
+match the bottom configuration in the figure.
+
+\image html images/ss1crate_jumpers.png The jumper settings for a single crate system.
+
+In this mode, the digitizer drives the clock on the PXI backplane with its own internal clock, 
+and then reads it in from the backplane.
+
+If you have several modules you must:
+
+-   Use the top jumper configuration for the leftmost module,
+-   Use the bottom jumper configuration for all modules to the
+    right.  Furthermore in this jumper configuration, all modules must be
+    contiguous in the crate (no empty slots between modules).
+
+
+\subsection ddas_ss1_configfiles Setting up the cfgPixie16.txt config file.
+
+Our simple setup uses a single digitizer module in slot 2 of the PXI crate.
+We are also going to use the DPP settings file crate_1.set  This means our
+\c cfgPixie16.txt file will look like this:
+
+\verbatim
+1     # Crate number 1
+1     # One module.
+2     # slot we've loaded the module into.
+crate_1.set
+\endverbatim
+
+-  The first line of the file documents the crate number in use (Crate 1).
+   \c nscope ignores this line as it is an inherently single crate system.
+-  The second line says we have only one digitizer module.
+-  The third line says this digitizer is in slot 2.  If
+   you have additional
+   digitizers, the second line must be the number of digitizers you are using
+   in this crate and there must be a line of slot numbers for each
+   digitizer you are using.
+-  The final line says that \c nscope will load the settings contained in the
+   file \c crate_1.set to configure the Pixie-16 modules during the Boot sequence.
+
+
+Let's walk through the minimum steps required in nscope to set up the readout properly.
+
+First click the \c Boot button at the left of the user interface.  This
+
+-  Loads the firmware and DSP code into the digitizers and starts them.
+-  Loads the parameters in the .set file into the digitizers.
+
+Here is some sample output from a successful boot of our single module:
+
+\verbatim
+Booting all Pixie-16 modules...
+
+Booting Pixie-16 module #0, Rev=12, S/N=175, Bits=12, MSPS=100
+ComFPGAConfigFile:  /usr/opt/ddas/firmware/1.0-000/firmware/syspixie16_current_14b100m.bin
+SPFPGAConfigFile:   /usr/opt/ddas/firmware/1.0-000/firmware/fippixie16_current_14b100m.bin
+DSPCodeFile:        /usr/opt/ddas/firmware/1.0-000/dsp/Pixie16_current_14b100m.ldr
+DSPVarFile:         /usr/opt/ddas/firmware/1.0-000/dsp/Pixie16_current_14b100m.var
+--------------------------------------------------------
+
+Start to boot Communication FPGA in module 0
+Start to boot signal processing FPGA in module 0
+Start to boot DSP in module 0
+Boot all modules ok
+DSPParFile:        ./crate_1.set
+
+\endverbatim
+
+If the boot fails with an error, more detailed error messages will be written
+to  \c Pixie16msg.txt
+
+In order to set the waveform conditioning parameters, you must look at a
+waveform.  Click the \c Read \c WF button.  If the digitizer does not
+capture a full waveform, click it again until one is captured.
+
+For the pulser I used, here's a sample picture:
+
+\image html simple_1module_trace.jpeg "Raw pulser trace"
+
+There are two things wrong with this signal:
+-   It is a negative polarity signal and the DSP FPGA assumes the signal is positive.
+-   The signal is cut off.
+
+Click the \c UV_Setup->Analog \c Signal \c Conditioning menu entry.  This brings
+up a screen that looks like this:
+
+\image html nscope_analogsetup.jpg "The nscope analog signal setup panel"
+
+Our pulser is plugged into channel 0 which has the \c Sign set to \c +
+Using the pull down on that channel to set the sign to \c - (be sure to click
+\c Apply to write the setting into the module) and acquiring another
+trace gives:
+
+
+\image html  simple_1module_invertedtrace.jpg "Trace after setting sign to -"
+
+Our trace is still saturating the ADC.  We'll next adjust the trace baseline.
+Do this by clicking the \c Adjust \c Offsets button of the Analog Signal Setup
+control panel.
+
+Reading another waveform then gives:
+
+
+\image html  simple_1module_blset.jpg "Trace after setting its baseline."
+
+Our next step is setup the constant fraction (CFD).  nscope can compute
+the parameters it thinks are appropriate.  Click the \c Analyze \c WF button.
+The terminal window will output something like:
+
+\verbatim
+Filter parameters (From Modules):
+    ADC sample deltaT (ns): 60
+    Fast rise (ns):         500
+    Fast flat (ns):         100
+    Energy rise (ns):       6000
+    Energy flat (ns):       480
+    Tau (ns):               40320
+    CFD delay:              80
+    CFD scale:              0
+Trigger Filter Rise Time is NOT an integer number of dT.  Fixing Now.
+Trigger Filter Gap Time is NOT an integer numnber of dT. Fixing Now.
+Energy Filter Rise Time is NOT an integer number of dT.  Fixing Now.
+CFD Delay is NOT an integer numnber of dT. Fixing Now.
+Filter parameters used for ''Analyze Waveform''
+Note: Parameters have NOT been altered for the aquisition
+    Fast rise (ns):         540
+    Fast flat (ns):         120
+    Energy rise (ns):       6000
+    Energy flat (ns):       480
+    CFD delay (ns):         120
+Baseline: 410
+
+\endverbatim
+
+
+Since we chose a signal with a good rise and fall time initially, we only care
+about the computed CFD delay.  Click the \c UV_Setup->CFD to bring up the CFD
+control panel:
+
+\image html nscope_cfdpanel.jpg "nscope's CFD control panel"
+
+-  Set the CFD Delay(us) for channel 0 to the delay suggested by the waveform
+   analysis (120ns = .12usec).
+-  Set the CFD Scale to match the desired fraction. The delayed component of the 
+   CFD algorithm is scaled by (1/2)^(W+1), where W is the scale factor. 
+-  Set the FD Thres. (ADC) to be the LED threshold required to trigger the channel.
+   I'm going to use 1000.  In general this signal should be below the CFD fraction of
+   the smallest waveform you will take, because the CFD zero crossing must occur after
+   the LED is satisfied.
+  
+Apply the settings. Finally enable the CFD by selecting \c UV_Setup->CSRA and
+setting the \c CF bit in all of the channels for which you are going to use the
+CFD.
+
+
+Now that the trigger is set up, you can take data and look at
+the module histograms.  Use the menu entry \c Expert->Start \c Run to cause the
+module to start taking triggers and histogram the energies computed from the
+waveforms.  The \c Read \c Histo button will read and display the channel
+energy histogram accumulated by the module.  For my pulser I got:
+
+\image html simple_1module_histo.jpg "Histogram of a pulser"
+
+Stop data taking by clicking the \c End \c Run button.  Normally, you need to repeat
+the process described above for each channel you are using.
+
+Once all channels are set up, save the settings using the \c UV_Setup->Save2File
+menu command.  In the file selection dialog that pops up, choose the .set file
+you specified in your  \c cfgPixie16.txt file.  This file will be loaded into the
+modules automatically when they are booted next.
+
+\section ddas_ss1_readout  Using DDAS Readout
+
+Once you have a good settings file, you can take data with Readout.  In this
+section we will:
+
+-  Run the DDAS Readout program.
+-  Run an nscldaq dumper program.
+-  Take a little data and describe the format of raw DDAS data read by
+   Readout.
+   
+For full documentation of the Readout program, see \ref readout
+
+\subsection ddas_ss1_runningreadout Running Readout
+
+The DDAS readout program does not need to be modified by you. It uses
+a set of configuration files that are expected to live in the current
+working directory when Readout is run:
+
+The directory \c $DDAS_SHARE/readout/crate_1 has sample configuration files.
+If you are using NSCLDAQ/11.3 or higher, this example has been moved to
+\c $DAQBIN/share/ddasreadout/crate_1
+
+
+
+-  \c cfgPixie16.txt - Indicates which modules are in which crates.
+-  \c pxisys.ini     - Describes the PCI layout of the crate for the XIA API.
+-  \c crate_1.set    - A parameter settings file.
+-  \c modevtlen.txt  - Size of events from each module.
+
+
+
+
+The \c pxisys.ini file normally does not need to be changed.  The
+\c crate_1.set file was produced by \c nscope in the previous section.
+\c cfgPixie16.txt was edited to be correct in the previous section as well.
+The file \c modevtlen.txt must be edited to reflect the size of the event we
+expect from each module.
+
+We are using only a single module and not taking waveforms from that module.
+Since the \c modevtlen.txt file format is simply the size of an event, in 32-bit units, from each
+digitizer's channels, one digitizer per line, in the same order as the
+\c cfgPixie16.txt file, the contents of this file should be:
+
+\verbatim
+4
+\endverbatim
+
+Since we are not taking waveform data, there are only 4 longwords of data per channel.
+
+Now that all of the configuration files are correct, you can run the readout
+program:
+
+\verbatim
+cd ~/readout/crate_1
+
+$DDAS_BIN/Readout
+
+\endverbatim
+
+Note that if you are using NSCLDAQ-11.3 or higher run \c $DAQBIN/DDASReadout
+or, for externall clock; \c $DAQBIN/DDASReadout_extcl
+
+\subsection ddas_readout_env  Environment variables
+
+The Readout program supports a few environment variables:
+
+   Name                         | Purpose
+--------------------------------|----------------------------------------------
+  INFINITY_CLOCK                | If defined, clocks will not be cleared for each run        
+  DDAS_BOOT_WHEN_REQUESTED      | When  defined, the modules will not be booted for each run 
+  FIFO_THRESHOLD                | Number of longwords that must accumulate prior to read     
+
+
+
+\subsection ddas1_ss1_dumper  Starting the NSCLDAQ dumper program.
+
+When you ran the \c ddassetup.bash script to incorporate the DDAS environment
+variable in your shell, that script also ran the daqsetup.bash script
+for the version of NSCLDAQ against which the DDAS software was built.
+
+To run the dumper, therefore, you only need to open a new terminal window and
+type:
+
+\verbatim
+$DAQBIN/dumper  --count=50
+\endverbatim
+
+The \c --count=50 option limits the dumper to dump only the first 50 ring
+items it sees before exiting.
+
+\subsection ddas_ss1_dataformat  Taking data and looking at the format:
+
+Start taking data in Readout by switching to that window and typing:
+
+\verbatim
+begin
+\endverbatim
+
+The dumper window should output a lot of text and the dumper should exit
+back to the shell.  Once the dumper exits you can stop data taking by
+typing
+
+\verbatim
+end
+\endverbatim
+
+in the Readout terminal window.
+
+Let's look at a few events in the dumper terminal window.  Note that the
+actual contents of the event we analyze may be different from what
+you see in your test, we are only interested in explaining the structure
+of the event at this time.
+
+\verbatim
+...
+-----------------------------------------------------------
+Event 24 bytes long
+Body Header:
+Timestamp:    22366590
+SourceID:     0
+Barrier Type: 0
+000c 0000 0064 0c0c 4020 0008 20f3 0022
+0000 1bdc 296f 0000
+...
+\endverbatim
+
+
+First note that the timestamp has been set as the timestamp body header for the
+event,  It is monotonically increasing, as it should be.  We'll say more about
+how the timestamp is derived a bit later.
+
+The first two words of the event body \c 000c \c 0000 are the event size in
+\em little \em endian format in 16-bit words.
+This means that the first word is the least
+significant part while the second word is the most significant part.  The size
+of all events is 12 words long.  The event size includes itself, so the body
+of the event is 10 words long.   Note that data from the digitizer comes in 32-bit
+longwords.  Therefore each pair of values is a digitizer longword.  Looking
+at the last event in the listing above, the remaining words are therefore:
+
+\verbatim
+0x0c0c0064    - Module type identification
+0x00084020    - Event header.
+0x002220f3    - low order timestamp.
+0x1bdc0000    - High order timestamp (low 16 bits) and CFD interpolation.
+0x0000296f    - Energy and trace length.
+\endverbatim
+
+The following longword is the low order 32 bits of the 48-bit event
+timestamp.  Note that while the timestamp in the event body is a raw
+digitizer timestamp, the timestamp put in the body header (labelled by
+the text "Timestamp:" in the dump above is in nanoseconds.  This allows the
+event builder to compare timestamps between a heterogeneous set of digitizers
+in the system.
+
+For more information about the format of each of these see \ref dataformat
+
+\section ddas_ss1_readoutgui  Running Readout from the ReadoutGUI
+
+\subsection ddas_ss1_sshkeys Setting up ssh keys for password-less login
+
+ReadoutGui is built to allow you to run your experiment software distributed
+across several systems.  To do this, it runs your readout program on the
+end of an SSH pipeline.  Normally, starting SSH requires that you provide
+a password to the account it logs into in the  remote (or local) system.
+
+In this section we will describe how to avoid the need to provide a password
+everytime ReadoutGUI starts up an SSH session.  The process hinges on
+SSH's ability to not only use passwords to authenticate but also to use an asymmetric
+certificate, or key to identify and authenticate a login.
+
+In this section we'll go through the procedure to create and install what are
+called the private and public keys.  Once installed, these allow you to ssh
+to your account in any system that shared your home directory without provding
+a password.
+
+This process requires that you:
+
+-  Create public and private ssh keys.
+-  Install your public key into your authorized_keys file
+-  Ensure that directory permissions are set up to SSH's satisfaction.
+
+To create public and private key files, use ssh-keygen:
+
+\verbatim
+ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/a/.ssh/id_rsa): 
+Created directory '/home/a/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/a/.ssh/id_rsa.
+Your public key has been saved in /home/a/.ssh/id_rsa.pub.
+The key fingerprint is:
+3e:4f:05:79:3a:9f:96:7c:3b:ad:e9:58:37:bc:37:e4 a@A
+
+
+\endverbatim
+
+Note that we will use an empty passphrase in the dialog above.  Otherwise ssh
+will prompt us for the passphrase prior to using the keys, which leaves us no
+better off than before.
+
+ssh-keygen will generate a pair of file:  ~/.ssh/id_rsa and ~/.ssh/id_rsa.pub
+id_rsa.pub must be added to ~/.ssh/authorized_keys:
+
+\verbatim
+
+cat ~/.ssh/id_rsa.pub >>~/.ssh/authorized_keys
+
+\endverbatim
+
+We're almost there.  SSH wants to secure your account so that
+
+-  Your private key; ~/.ssh/id_rsa canot be stolen and
+-  Nobody can implant additional keys into ~/.ssh/authorized_keys.
+
+\verbatim
+
+chmod g-w,o-w ~
+chmod 0700 ~/.ssh
+chmod 0600 ~/.ssh/id_rsa
+chmod 0600 ~/.ssh/authorized_keys
+
+\endverbatim
+
+Finally test this at the NSCL:
+
+\verbatim
+
+ssh fishtank
+
+\endverbatim
+
+If you've followed this procedure properly, you should login to a fishtank
+system without being asked to give a password.
+
+
+We're going to set up the ReadoutShell so that it will later run the ReadoutGUI
+with the NSCL Event builder.  While strictly speaking, the event builder is not
+needed for a single module, normally it is used.  This makes the final event
+structure uniform.
+
+
+\subsection ddas_ss1_stagearea  Stage areas and recording data
+
+In addition to running and commanding the DDAS Readout program, ReadoutGUI
+can initiate data recording.   To do this, ReadoutGUI must be told where to
+record data.  ReadoutGUI expects a symbolic link in your home directory
+named stagearea.  This link points to a directory structure into which
+event data are logged.   For more information about the
+directory structure ReadoutGUI maintains, see the NSCLDAQ user guide section on
+the ReadoutGUI.
+
+<a href='http://docs.nscl.msu.edu/daq'>Click here for a link to the user's guide</a>
+
+\subsection  ddas_ss1_dsourcesetup Setting up the data sources
+
+First we'll setup the ddas Readout as a data source.   Data sources are
+programs that are managed by Readout and create data.  We're going to use
+the convention that Readout programs will produce raw data into rings named
+username_ddas_n  where n is the crate number.  In our example, the user is
+\c 0400x.
+
+-  Note that ddassetup.bash also set up the environment variables for its associated
+data acquisition system.
+-  Note that at present, ReadoutGUI is not aware of environment variables. Thus
+you need to determine what DDAS_BIN means.  For this example, we'll assume it
+translates to /usr/opt/ddas/1.0-000/bin
+
+Start ReadoutShell:
+
+\verbatim
+$DAQBIN/ReadoutShell
+\endverbatim
+
+
+-#   Use the \c Data \c Source->Add... menu entry to add a new data source.
+-#   From the data source type dialog select SSHPipe from the list of data source
+     types and click Ok
+-#   In the resulting dialog, Fill in the fields as follows:
+
+\verbatim
+ 
+   |  Field Name         |   Contents                           |
+   +-------------- ------+--------------------------------------+
+   | Host name:          | Name of the host in which Readout    |
+   |                     | will run (I used spdaq06).           |
+   +---------------------+--------------------------------------+
+   | Readout Program:    | ddas bin dir/Readout I used:         |
+   |                     | /usr/opt/ddas/1.0-000/bin/Readout    |
+   |                     |  or, if you are using nscldaq 11.3   |
+   |                     | or higher use                        |
+   |                     | $DAQBIN/DDASReadout or for external  |
+   |                     | timestamp clock                      |
+   |                     |   $DAQBIN/DDASReadout_extcl          |
+   |                     | Note: for $DAQBIN substitute the bin |
+   |                     | Subdirectory of the NSCLDAQ install  |
+   |                     | you are using                        |
+   +---------------------+--------------------------------------+
+   | Working Directory   | Set this to the directory with the   |
+   |                     | card configuration - uncheck         |
+   |                     | 'Same as readout' and browse to that |
+   |                     | directory                            |
+   +---------------------+--------------------------------------+
+   | Command line options| I used:                              |
+   |                     | --ring=0400x_ddas_1 --sourceid=0     |
+   +---------------------+--------------------------------------+
+   
+   
+
+
+\endverbatim
+
+Click the \c Start button to start your data source (Readout).
+
+Let's test check that all of this works. I ran the dumper as follows:
+
+\verbatim
+$DAQBIN/dumper --source=tcp://spdaq06/0400x_ddas_1 --count=50
+
+\endverbatim
+
+start a run by clicking the \c Begin button.  Make sure that data is emitted by
+the dumper.  End the run and exit the ReadoutShell.
+
+
+
+\subsection ddas_ss1_eventbuilder Setting up the event builder
+
+Starting the event builder is a matter of creating a ReadoutCallouts.tcl
+script which
+
+-  Incorporates the event builder API into the ReadoutGUI
+-  Adds an OnStart proc that starts and configures the event builder.
+-  Adds a startEVBSources proc that starts a feeder process from our
+   raw data ring (0400x_ddas_1) to the event builder.
+   
+Here is an example of a ReadoutCallouts.tcl script that does this for our case:
+
+\verbatim
+
+package require evbcallouts                   (1)
+
+
+proc OnStart {} {                            
+
+    EVBC::useEventBuilder                    (2)
+
+    EVBC::initialize -gui 1 -destring 0400x -glombuild 1 -glomdt 10 (3)
+}
+EVBC::registerRingSource tcp://spdaq06/0400x_ddas_1 \
+      ""  1 {Crate\ 1\ data} 1 0 (4)
+\endverbatim
+
+
+1.   This line incorporates the event builder API into the ReadoutGUI.
+2.   EVBC::useEventBuilder installs the event builder state change handlers
+     into the readout gui.  The state change handlers allow the event builder
+     API to take actions when the run state changes.
+3.   EVBC::initialize starts the event builder.  The parameter you'll want to
+     adjust is -glomdt, which specifies the event builder's coincidence window. 
+    Generally speaking, the units for this value are the same as the units
+    of the timestamp. If you are only dealing with a single DDAS Readout program, your coincidence
+    window will be in units of nanoseconds, because the timestamps are 
+    converted to units of nanoseconds prior to being outputted from the Readout
+    program.
+4.   EVBC::registerRingSource adds a ring data source to be started at the beginning of a run.  This is a feeder from
+     a ring buffer to an event builder that runs in the localhost.  The parameters
+     are, in order, the source ringbuffer URL, the timestamp extraction library
+     (which can be empty - see below)
+     the source id (must be the same as the --sourceid parameter for the Readout),
+     a comment that will be displayed in the event builder GUI, a flag that, if 1
+     indicates that the data will have timestamps in body headers (no timestamp
+     extractor is needed), a flag which, if true means the source will exit when
+     it sees an end of run.
+     Spaces in the comment must be escaped as shown..
+
+If we point a dumper to the 0400x ring (the output ring from the event builder),
+here's a typical event:
+
+\verbatim
+-----------------------------------------------------------
+Event 76 bytes long
+Body Header:
+Timestamp:    5991399620
+SourceID:     0
+Barrier Type: 0
+004c 0000 80c4 651d 0001 0000 0000 0000
+0034 0000 0000 0000 0034 0000 001e 0000
+0014 0000 80c4 651d 0001 0000 0000 0000
+0000 0000 000c 0000 0064 0c0c 4020 0008
+267a 23b6 0000 1ad3 2943 0000
+
+\endverbatim
+
+Let's pick apart the data  for this event.  Note that it is much bigger than before.
+This is because the data are framed with a fragment header which also
+encapsulates a ring item header that in turn wraps the event body.  To get
+on familiar territory, note that in the last lines:
+
+\verbatim
+0000 0000 000c 0000 0064 0c0c 4020 0008
+267a 23b6 0000 1ad3 2943 0000
+\endverbatim
+
+Our raw event begins at the word 0x000c.  We're going to pick apart the data
+prior to this, much of which is only relevant if you are using multiple crates.
+Here is the short summary of the information prior to the raw event:
+
+\verbatim
+0x0000004c (32 bits)          -- total event size in bytes.
+0x00000001651d80c4 (64 bits)  -- The event builder fragment timestamp.  This is 10x
+                                 the digitizer timestamp.
+0x00000000 (32 bits)          -- Data source id (value of --sourceid on readout).
+0x00000034 (32 bits)          -- Size of fragment payload (not self inclusive)
+
+Next is the ring item header:
+ 
+0x00000034 (32 bits)         -- Number of bytes in the ring item (self inclusive)
+0x0000001e (32 bits)         -- Ring item type (PHYSICS_EVENT).
+0x00000014 (32 bits)         -- Number of bytes in the body header.  The body
+                                header contains information used by the event
+                                builder.
+0x00000001651d80c4 (64 bits) -- Fragment timestamp.
+0x00000000 (32 bits)         -- Fragment source id.
+0x00000000 (32 bits)         -- Fragment body header
+
+0x0000000c (32 bits)         -- First word of the fragment.
+\endverbatim
+
+Note that if several fragments got glued together to create a single event (as will
+happen if you tee off your pulser into several channels), there will be a ring item
+in the fragment body for each fragment that made the coincidence requirement.
+
+===========================================================================
+\section ddas_1crate_spectcl  Analyzing the data with SpecTcl.
+
+SpecTcl is the lab-supported framework for analyzing data online.  The DDAS
+comes with some tools to use in unpacking DDAS data within the context of
+SpecTcl, DAQ::DDAS::DDASUnpacker and DAQ::DDAS::DDASBuiltUnpacker. These both
+provide support for parsing the raw data of DDAS for you. It is in your best
+interest to leverage these tools rather than writing your own parser. To learn
+how to use the DAQ::DDAS::DDASBuiltUnpacker in your SpecTcl, please refer to
+\ref ddas_spectcl.
+
+
+
+\section dataformat Appendix - data format
+
+This section describes the bit fields present in words of a DDAS event.
+This information is supplemental to the format information at:
+\ref ddas1_ss1_dumper  "Starting the NSCLDAQ dumper program."
+
+Values in the tables below refer to the following event:
+
+\verbatim
+...
+-----------------------------------------------------------
+Event 24 bytes long
+Body Header:
+Timestamp:    22366590
+SourceID:     0
+Barrier Type: 0
+000c 0000 0064 0c0c 4020 0008 20f3 0022
+0000 1bdc 296f 0000
+...
+\endverbatim
+
+
+The module type identification has the following fields:
+
+
+
+   |  bits         |  Meaning                | Value      |
+   |---------------|-------------------------|------------|
+   | 0-15          | Sampling freq in Mhz.   | 0x64 = 100 |
+   | 16-23         | Bit width of digitizer  | 0x0c = 12  |
+   | 24-31         | Module revision number  | 0x0c = 12  |
+   
+
+The key values from this word are that the digitizer runs at 100MHz and waveforms
+are acquired at 12 bits of precision.
+
+The event header has several bit fields.  The table below shows the
+bit fields and the values they have for this event.
+
+
+   | bits         |  Meaning                |  Value |
+   |--------------|-------------------------|--------|
+   | 0-3          | Channel number          |  0     |
+   | 4-7          | Slot Identifier         |  2     |
+   | 8-11         | Crate ID                |  0     |
+   | 12-16        | Header length           |  4     |
+   | 17-30        | Event length            |  4     |
+   | 31           | Finish code             |  0     |
+    
+
+-   The channel number is the number of the PXI channel we are pulsing, 0.
+-   The slot identifier ???
+-   The header length is the number of longwords prior to any trace data.
+    This is self inclusive.
+-   Event length is the total number of longwords in the
+    event.  Since we are not capturing trace data, this is
+    the same as the event header length.
+-   The most significant bit is 0 if the event was a good event and 1 if the event was a
+    pile-up event.
+    
+\note The interpretation of the CFD bits above pertain specifically to the 100 MSPS
+ Pixie-16 digitizers at the NSCL. The meanings of the bits changes slightly when working
+ with the 250 MSPS and 500 MSPS digitizers.
+
+*/

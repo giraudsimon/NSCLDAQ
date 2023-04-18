@@ -1,14 +1,3 @@
-#
-# This requires that DDAS_INSTDIR be defined
-# This gets defined with --enable-ddas=path-to-ddas-installation
-#
-# We also require PLX_LDFLAGS, PLX_CCFLAGS  be defined. If --enable-ddas can't
-# figure it out by knowing where fthe PLX_SDK_DIR is, the user
-# must help out with:
-#
-#  --with-plx-sdk=path-to-plx-directory-tree.
-#
-
 bin_PROGRAMS=DDASReadout
 lib_LTLIBRARIES=libddastimestampextractor.la
 SHAREDIR=@prefix@/share/ddasreadout

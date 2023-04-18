@@ -1,0 +1,543 @@
+
+/*!
+
+ \page   ddas_spectcl Analyzing DDAS Data in SpecTcl Tutorial
+ \author Jeromy Tompkins and Ron Fox
+ \date   8/24/2017
+
+ \tableofcontents
+
+ \section  ddas_spectcl_intro Introduction
+
+Every experiment is different and produces data in different format. For this
+reason, there is no precompiled version of SpecTcl provided to deal with DDAS
+data. Rather there are two unpackers that are provided to use,
+DAQ::DDAS::DDASUnpacker and DAQ::DDAS::DDASBuiltUnpacker. The difference
+between the two is that the latter unpacks data that has been built with the
+event builder. The former unpacks data as it would be outputted from the
+Readout program. Both provide consistent interfaces for interacting with the
+DDAS data. In this section, you will learn how to incorporate these into a
+SpecTcl. The source code of the final product is available installed at
+/usr/opt/ddas/VERSION/share/src/multicrate_src on NSCL spdaq machines. For other
+machines that choose to install to a different prefix, it is installed at 
+\@prefix\@/share/src/multicrate_src.
+
+Note that for versions of DDAS older than 2.0-003, if you plan to start from
+\@prefix\@/share/src/multicrate_src you will also need to grab a copy of
+SpecTclRC.tcl from the Skel directory of the SpecTcl distribution you are using.
+From 2.0-003 and on, this file is provided in the sample.
+
+The user does not have deal with the low-level raw data when building a
+SpecTcl. Rather, they just need to implement a class that uses the unpacked
+DDAS data to set TreeParameters for histogramming. In this way, the user from
+the details of the DDAS data structure. In fact, __you should never need to
+write your own DDAS event parser__. We provide tools for this for SpecTcl and
+other raw data. In any case, let's get down to business constructing a tailored
+SpecTcl.
+
+\section getting_started Getting Started
+
+First you need to copy the SpecTcl skeleton files into a directory where you
+will build your tailored SpecTcl. You can find the skeleton files at
+/usr/opt/spectcl/VERSION/Skel.
+This would be done with something like:
+
+\verbatim
+mkdir myDevelopmentDir
+cd myDevelopmentDir
+cp /usr/opt/spectcl/3.4-005/Skel/* .
+\endverbatim
+
+
+The source code for this simple example is being migrated into the
+SpecTcl source tree.
+
+   -   It is in the DDASSkel directory of 3.3 versions at least as new as 3.3-020.
+   -   It is in the DDASSkel directory of 3.4 versions at least as new as 3.4-013
+   -   It is in the DDASSkel directory of 3.5 versions at least as new as 3.5-008
+   -   It is in the DDASSkel directory of 4.0 versions at least as new as 4.0-006
+   -   It is in the DDASSkel directory of 5.0 versions at least as new as 5.0-005.
+
+For DDASDAQ versions as old or older than 2.2, there is a version of these
+example files at:
+
+\verbatim
+$DDAS_ROOT/share/src/multicrate_src
+\endverbatim
+
+In the discussion below some code is omitted for clarity.  You should
+start with  a copy of the full source code in the directory above e.g. assuming
+your default directory is still the development directory you copied
+the SpecTcl skeleton into:
+
+\verbatim
+cp $DDAS_ROOT/share/src/multicrate_src/* .
+\endverbatim
+
+Note that this will overwrite the Makefile from the skeleton with one that builds
+the example into SpecTcl.
+
+
+\section ddas_using_unpacker Using the Unpacker
+
+The unpacker provided understands how to navigate the fragments of event built
+data unpacking the hits into "hits". Each hit is represented by a DAQ::DDAS::DDASHit
+object.  In addition to time and energy, and potentially traces, this object
+identifies the channel the it comes from by crate, slot and channel.
+
+Using the unpacker is a matter of:
+
+*   Defining the set of parameters you want your system to produce.  Each channel
+    minimally produces a timestamp and an energy.
+*   Providing software to map the data in the vector of DDASHits extracted
+    from the event into specific SpecTcl parameters.
+
+\section ddas_spectcl_parameters Constructing the Parameter Tree
+    
+
+The first thing that you need to do is decide how we want to structure your
+SpecTcl parameters.  Note that how you structure your parameters may be very
+different than this example.  Ideally your parameters should be structured
+in a way that reflects the organization of detector parameters.
+
+SpecTcl TreeParameters are a useful mechanism that we will use to represent
+our parameters.  Refer to SpecTcl documentation for more information.  What
+we need to know now is that a TreeParameter wraps a SpecTcl raw parameter.
+Tree parameters also provide metadata that guide the user in creating spectra
+that are defined on those parameters.
+
+In this simple example,  we are going to concern ourselves with
+the energy and timestamp values for each channel as well as the
+multiplicity (number of hits).  In our example, we limit our
+setup to three modules,
+each module has sixteen channels.  Thus there are 48 channels we need to
+allocate TreeParameters for.  If you expand on this example, you will  most likely
+need to allocate fewer or more parameters.
+
+I will layout the structure of the data in a tree
+structure where there is a top-level event structure called MyParameters that
+holds the multiplicity information as well as all of the channel data objects as
+a flat array of energy time pairs.
+
+The code in the header file is (get the actual code from
+$DDAS_ROOT/share/src/multicrate_src/MyParameters.h) :
+
+\code
+#ifndef MYPARAMETERS_H
+#define MYPARAMETERS_H
+
+#include <config.h>
+#include <TreeParameter.h>
+#include <string>
+
+// The tree-like structure of data will be :
+// 
+//  MyParameters
+//  |
+//  +-- multiplicity
+//  |
+//  +-- ChannelData (chan[0])
+//  |   +-- energy
+//  |   \-- timestamp
+//  |
+//  +-- ChannelData (chan[1])
+//  |   +-- energy
+//  |   \-- timestamp
+//  |
+//  ... (45 more channel data objects)
+//  |
+//  \-- ChannelData (chan[47])
+//      +-- energy
+//      \-- timestamp
+//
+//
+struct ChannelData {
+
+  CTreeParameter energy;
+  CTreeParameter timestamp;
+
+  // Method to initialize the CTreeParameters
+  void Initialize(std::string name);
+};
+
+
+//____________________________________________________________
+// Struct for top-level events
+// 
+struct MyParameters {
+
+  ChannelData          chan[48];   ///!< data for each channel in system
+  CTreeParameter   multiplicity;   ///!< # of hits per event
+
+  // Constructor
+  MyParameters(std::string name);
+};
+#endif
+
+\endcode
+
+The implementation file is very simple
+(get the actual code from $DDAS_ROOT/share/src/multicrate_src/MyParameters.cpp):
+
+\code
+
+#include "MyParameters.h"
+
+void ChannelData::Initialize(string name) {
+  // Initialize the energy TreeParameter to hold a value between 0 and 4095
+  // with unit bin increments. Units for the parameters are given as "a.u."
+  // or "arbitrary units".
+  energy.Initialize(name + ".energy", 4096, 0, 4095, "a.u.");
+
+  // Initialize the timestamp TreeParameter. This is to hold a 48 bit timestamp.
+  timestamp.Initialize(name + ".timestamp", 48, 0, pow(2., 48), 
+                       "ns",true);
+}
+
+
+
+// Construct the top-level structure
+MyParameters::MyParameters(string name) 
+{
+
+ // For each of the 48 channels in the system, initialize each.
+  for (size_t i=0; i<48; ++i) {
+    chan[i].Initialize(name + to_string(i));
+  }
+
+  // Initialize the multiplicity TreeParameter to have 32 bins essentially between 0 and 31.
+  multiplicity.Initialize(name + ".mult", 32, -0.5, 30.5, "a.u.");
+}
+
+\endcode
+
+Note that the CTreeParameter::Initialie method provides the parameter
+name and other metadata associated with the parameter.  There are several
+overloads, our provide the recommended numbe of spectrum channels, the
+recommended low and high limits for spectrum axes and the parameter units
+of measure.  Note that in DDAS Readout, all timestamps are converted to
+nanoseconds regardless of the digitizer speed.  This makes the job of the
+event builder easy and also allows you to easily compare timestamps in
+heterogeneous events.
+
+\section ddas_spectcl_parammapper_sec Constructing the ParameterMapper
+
+The DDAS hit unpacker iterates over the fragments in events built by the event
+builder.  The hits from each fragment are decoded into a DDASHit object.
+Your next step is to determine what to do with the vector of DDASHit objects
+decoded from each event.
+
+Let's look at $DDAS_ROOT/share/src/multicrate_src/MyParameterMapper.h
+It has the following contents:
+
+\code
+
+#ifndef MYPARAMETERMAPPER_H
+#define MYPARAMETERMAPPER_H
+
+#include <ParameterMapper.h>
+
+#include <map>
+
+// SpecTcl event, we don't use it 
+class CEvent; 
+
+// The structure of tree parameters
+class MyParameters;
+
+
+// Class responsible for mapping DDAS hit data to SpecTcl TreeParameters
+//
+// It operates on a MyParameters structure containing TreeParameters but 
+// does not own it.
+class MyParameterMapper : public DAQ::DDAS::CParameterMapper
+{
+  private:
+    MyParameters& m_params;          // reference to the tree parameter structure
+    std::map<int, int> m_chanMap;    // global channel index for crates
+
+  public:
+    // Constructor.
+    //
+    //  \param params   the data structure
+    MyParameterMapper(MyParameters& params);
+
+    // Map raw hit data to TreeParameters
+    //
+    // \param channelData   the hit data
+    // \param rEvent        the SpecTcl event
+    virtual void mapToParameters(const std::vector<DAQ::DDAS::DDASHit>& channelData, 
+                                 CEvent& rEvent);
+
+    // Compute channel index from crate, slot, and channel information
+    //
+    // \param hit   the ddas hit
+    int computeGlobalIndex(const DAQ::DDAS::DDASHit& hit);
+};
+#endif
+
+\endcode
+
+Note that there is not much to this class. The class maintains a reference to
+our parameters and an m_chanMap data member, which we will talk about a
+little later.  This class is derived from the DAQ::DDAS::CParameterMapper base
+class. Concrete DAQ::DDAS::CParameterMapper classes are expected to
+provide a mapToParameters method that takes the hits and spectcl
+parameter and fills the parameters from the hits.
+
+In our case:
+
+*  We fill tree parameters so we don't need to refer directly to the
+   rEvent parameter.
+*  We add the method computeGlobalIndex which computes the index into the
+   array of eneregy, timestamp pairs.   Note that this method does
+   no range checking.  If you use this example in your system, be sure
+   that you've built your arrays big enough.
+
+So what does the mapToParameters() method do? Well, let's consider what is
+passed into the method as arguments. The most important of these is the first,
+which is a vector of DDASHit objects. A DDASHit
+object encapsulates the data contained in a single channel event. It has things
+like the energy, timestamp, raw data elements, geographic information, trace
+data, as well as QDC and energy sum / baseline data. It is essentially just a
+vehicle to access data elements at a higher level. The provided unpacker will
+parse the raw data and fill the vector with all of the data in each event. If
+more than one DDAS hit was in an event, there will be more than one DDASHit
+object in the vector.
+
+\note If you have experience with DDAS prior to its lab-supported
+reincarnation, then you should think of DDASHit as a ddaschannel object. In
+fact, it has the same interface for accessing data through methods. The
+differences are that it has no bindings to ROOT or SpecTcl and can be used
+easily in independent code. Furthermore, some refactoring has been done to
+separate raw data parsing into a separate class called
+DAQ::DDAS::DDASHitUnpacker.
+
+Here is the implementation of the mapToParameters() method
+(for the real code see $DAQ_ROOT/share/src/multicrate_src/MyParameterMapper.cpp):
+
+\code
+
+void MyParameterMapper::mapToParameters(const std::vector<DDASHit>& channelData,
+                                        CEvent& rEvent)
+{
+  size_t nHits = channelData.size();
+
+  // assign number of hits as event multiplicity
+  m_params.multiplicity = nHits;
+
+  // loop over all hits in event
+  for (size_t i=0; i<nHits; ++i) {
+
+    // convenience variable declared to refer to the i^th hit
+    auto& hit = channelData[i];
+
+    // Use the crate, slot, and channel to figure out the global
+    // channel index.
+    int globalChanIdx = computeGlobalIndex(hit);
+
+    // Assign values to appropriate channel
+    m_params.chan[globalChanIdx].energy    = hit.GetEnergy();
+    m_params.chan[globalChanIdx].timestamp = hit.GetTime();
+
+  }
+
+}
+
+\endcode
+
+Let's think a little about the computeGlobalIndex() method. The responsibility
+of this method is to map the hit to a global channel index, index in range [0,
+47], using the crate, module, and channel information. To do this, we need to
+input some information concerning the layout of the modules in the crates. What
+is most beneficial is to know the global index of the first channel of the
+first module in each crate. Now I set the crate id of my first crate as 0 and
+the second crate as 2. That is where the m_chanMap comes in. The first crate
+has 2 modules in it, so the first channel of the second crate will begin at 32.
+See how this is defined in the constructor:
+
+\code
+
+MyParameterMapper::MyParameterMapper(MyParameters& params) 
+  : m_params(params),
+   m_chanMap()
+{
+  // initialize the mapping to global channel index
+  m_chanMap[0] = 0;  
+  m_chanMap[2] = 32;
+}
+
+\endcode
+
+
+The mapToChannels method then uses this m_chanMap in the following way:
+
+\code
+
+int MyParameterMapper::computeGlobalIndex(const DDASHit& hit) 
+{
+  int crateId = hit.GetCrateID();
+  int slotIdx = hit.GetSlotID()-2;  // correct for fact that 1st card in crate is in slot 2 
+  int chanIdx = hit.GetChannelID();
+
+  const int nChanPerSlot = 16;
+
+  // compute the global index
+  return m_chanMap[crateId] + slotIdx*nChanPerSlot + chanIdx;
+}
+
+\endcode
+
+That is it for defining our parameters and mapping. We will now turn to
+incorporating this into SpecTcl. 
+
+\section ddas_spectcl_myspectclapp_sec Integrating Code into MySpecTclApp
+
+
+The MySpecTclApp.cpp and Makefiles both need to be modified.
+The MySpecTclApp.cpp in $DAQ_ROOT/share/src/multicrate_src has been appropriately
+modified.  In this section we'll describe the modifications that were
+performed.
+
+First we will
+consider the MySpecTclApp.cpp. In MySpecTclApp.cpp, locate the
+MySpecTclApp::CreateAnalysisPipeline() method, which will have an
+implementation already. We will replace the implementation with a simpler one
+that look like this:
+
+\code
+
+void 
+CMySpecTclApp::CreateAnalysisPipeline(CAnalyzer& rAnalyzer)  
+{ 
+    RegisterEventProcessor(Stage1, "Raw");
+}  
+
+\endcode
+
+We will also redefine the definition of "Stage1" in the global scope. Locate
+where it says:
+
+\code
+
+static CFixedEventUnpacker Stage1;
+static CAddFirst2          Stage2;
+
+\endcode
+
+Replace this with 
+
+\code
+
+// Create the structure of parameters
+MyParameters params("raw");
+
+// Create the unpacker and pass it our parameter mapper. Be aware that the 
+// parameter mapper was passed the parameters we just created.
+// Also tell the unpacker that it should only operate on fragments labeled with 
+// source ids 0, 1, or 2 and to ignore the rest.
+DAQ::DDAS::CDDASBuiltUnpacker Stage1( {0, 1, 2 }, *(new MyParameterMapper(params)));
+
+\endcode
+
+To round out our work on MySpecTclApp.cpp, you simply need to add some include directives to the top of the file. These 
+will bring the MyParameters, MyParameterMapper, DAQ::DDAS::CDDASBuiltUnpacker classes into scope. Add these lines to the top:
+
+\code
+
+#include "DDASBuiltUnpacker.h"
+#include "MyParameterMapper.h"
+#include "MyParameters.h"
+
+\endcode
+
+\section ddas_spectcl_make Building and Running SpecTcl
+
+The final work that needs to be done is to modify the Makefile.
+Once more, $DDAQ_ROOT/share/src/multicrate_src contains the modified
+Makefile.  In this section we'll go over the modifications.
+
+Add the MyParameters and MyParameterMapper class to the build by adding
+MyParameters.o and MyParameterMapper.o to the OBJECTS variable. It should look
+like this when you are done:
+
+\code
+
+OBJECTS=MySpecTclApp.o MyParameters.o MyParameterMapper.o
+
+\endcode
+
+Next the compiler needs to be told where to find the DDASBuiltUnpacker.h file.
+Furthermore, the unpacker code uses C++ language and library elements from
+the 2011 version of the C++ standard so we need to enable the use of those
+by the compiler.
+That is done by adding to the USERCXXFLAGS so it
+looks like this:
+
+\code
+
+USERCXXFLAGS=-std=c++11 -I/usr/opt/ddas/VERSION/include
+
+\endcode
+
+Finally, we need to tell the linker where the precompiled DDAS code is. Add to
+USERLDFLAGS so it looks like this:
+
+\code
+
+USERLDFLAGS=-L/usr/opt/ddas/VERSION/lib -lDDASUnpacker -lddasformat -Wl,-rpath=/usr/opt/ddas/VERSION/lib
+
+\endcode
+
+where VERSION is the same as in the very beginning of this tutorial.
+
+With those changes, you should be able to build your SpecTcl. This is
+accomplished by typing:
+
+\verbatim
+make 
+\endverbatim
+
+To run the compiled SpecTcl, execute the command:
+
+\verbatim
+./SpecTcl
+\endverbatim
+
+To remind you, the source code for the example can be found at
+/usr/opt/ddas/VERSION/share/src/multicrate_src.
+
+\section ddas_1crate_spectra Creating spectra
+
+The simplest way to create spectra is to run your tailored SpecTcl and use its
+user interface to create an array of spectra for the parameters we created.
+
+
+Here's the SpecTcl treeparameter user interface after we start our SpecTcl:
+
+\image html simple_1module_treegui.jpeg "The Tree parameter gui"
+
+-  Check the array box to tell the GUI we are creating an array of spectra
+-  Use the parameter pull down to select module-1.00 as the parameter.
+-  Set the Bins value to the 65536 for a full resolution spectrum.
+-  Type \c module-1 in the spectrum name entry to set the base spectrum name.
+-  Click the Create/Replace button.  The Spectrum list region should populate
+   with information about the spectra we just created.
+-  Use the \c File->Save... menu command to save these definitions.
+
+You can now attach SpecTcl to the online system using the \c Data \c Source->Online...
+Menu entry.  In the resulting dialog:
+
+-  Set the Host to the host in which the Readout program is running
+-  Select ring11 as the data format.
+-  If the event builder ring name does not match the default ring in the dialog
+  type in the event builder name.
+- Click Ok to attach SpecTcl to the online system.
+
+Start a run.  Once data starts making its way out of the event builder, you
+should be able to see counts in the histograms that have valid inputs.
+Here's a sample pulser spectrum from my tests:
+
+\image html simple_1module_spectrum.jpg "Pulser spectrum in Xamine"
+
+*/

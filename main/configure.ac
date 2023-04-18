@@ -232,7 +232,6 @@ AM_PATH_PYTHON([3.0], [], [AC_MSG_ERROR([Python 3.0  or higher is needed for NSC
 AX_PYQT
 PKG_CHECK_MODULES(PYTHON3, python3)
 
-
 # Ensure swig is installed: -- this is used to generate wrappers for the
 #  VMUSB and CCUSB libraries for use within Tcl drivers.
 #
@@ -875,12 +874,25 @@ AC_CONFIG_FILES([Makefile
     ddas/booter/Makefile
     ddas/format/Makefile
     ddas/ddasdumper/Makefile
+    ddas/ddasdumper/ddasdumper
+    ddas/nscope/Makefile
+    ddas/nscope/nscope
     ddas/readout/Makefile
     ddas/readout/DDASFirmwareVersions.txt
     ddas/sorter/Makefile
     ddas/readoutdriver/Makefile
     ddas/pixieplugin/Makefile
     ddas/pixieplugin/definitions.tcl
+    ddas/traiter/Makefile
+    ddas/traiter/src/Makefile
+    ddas/traiter/test/Makefile
+    ddas/dumpsetfile/Makefile
+    ddas/xml/tinyxml/Makefile
+    ddas/xml/Makefile
+    ddas/qtscope/Makefile
+    ddas/qtscope/qtscope
+    ddas/simple_setups/Makefile
+    ddas/tclconfig/Makefile
     caendigitizers/Makefile
     caendigitizers/dpp-pha/Makefile
     caendigitizers/dpp-pha/skel/Makefile

@@ -23,7 +23,7 @@ if BUILD_DDAS
   DDASDIR=ddas
 endif
 
-SUBDIRS = base caenfw-common servers  base/dataflow \
+SUBDIRS = base caenfw-common servers base/dataflow \
 	daq utilities $(DOCDIR) \
 	sbs $(EPICSDIRS) $(USBDIR) $(DDASDIR) $(CAENSUPPORTDIRS) examples
 
