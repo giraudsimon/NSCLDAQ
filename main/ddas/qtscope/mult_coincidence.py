@@ -1,0 +1,590 @@
+import numpy as np
+import inspect
+
+import bitarray as ba
+ver = [int(i) for i in ba.__version__.split(".")]
+if bool(ver[0] >= 1 or (ver[0] == 1 and ver[1] >= 6)):
+    from bitarray.util import ba2int, int2ba
+else:
+    from converters import ba2int, int2ba
+
+
+from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QRadioButton, QButtonGroup, QSpinBox, QGroupBox, QLineEdit, QCheckBox, QLabel, QSizePolicy
+
+import xia_constants as xia
+
+DEBUG = False
+
+class MultCoincidence(QWidget):
+    """
+    Multiplicity and coincidence tab widget (QWidget).
+
+    Tab QWidget for configuring multiplicity and coincidence settings, as well 
+    as toggle the necessary CSRA bits to enable coincidence triggering. The 
+    channel coincidence width is set here rather than on the TimingControl tab 
+    because the coincidence channel masking, multiplicity threshold, and 
+    coincidence width are set on the same page as the on/off. Note there is no 
+    copy_chan_dsp method for this class because settings are applied to all 
+    channels. There is, however, still a copy_mod_dsp method.
+
+    Attributes:
+        param_names (list): List of DSP parameter names.
+        module (int): Module number from subclass constructor.
+        nchannels (int): Number of channels per module.
+        has_extra_params (bool): Extra parameter flag.
+        rbgroup (QButtonGroup): Radio button group for channel coincidence mode.
+        mode_dict (dict): Dictionary of coincidence mode settings selectable 
+                          using rbgroup.
+        cb_enabled (QCheckBox): checkbox for setting all channel validation 
+                                CSRA bits to enable coincidences on the 
+                                selected module.
+        coinc_width (QLineEdit): channel coincidence width in microseconds set 
+                                 for all channels on the selected module.
+        multiplicity_threshold (QSpinBox): minimum multiplicity required to 
+                                           trigger for the selected channel 
+                                           coincidence mode set for all 
+                                           channels on the selected module.
+
+    Methods:
+        configure(): Initialize GUI.
+        update_dsp(): Update DSP from GUI.
+        display_dsp(): Display current DSP in GUI.
+        copy_mod_dsp(): Display copy_dsp in GUI.
+    """
+    
+    def __init__(self, module=None, nchannels=16, *args, **kwargs):
+        """
+        Multiplicity and coincidence class constructor.
+
+        Initialize the widget, set parameter validators and group configuration
+        settings into UI boxes. Note that settings on this tab apply to all 
+        channels on the selected module.
+
+        Arguments:
+            module (int): Module number from factory create method.
+            nchannels (int): Number of channels per module (optional, 
+                             default=16).
+        """
+        
+        super().__init__(*args, **kwargs)
+
+        self.param_names = [
+            "MultiplicityMaskL",
+            "MultiplicityMaskH",
+            "ChanTrigStretch",
+            "CHANNEL_CSRA"
+        ]
+        self.module = module
+        self.nchannels = nchannels
+        self.has_extra_params = False
+        
+        #
+        # Channel group box
+        #
+        
+        chan_group_box = QGroupBox("Channel grouping")
+
+        # Channel grouping widget and its subwidgets:
+        
+        chan_group_widget = QWidget()
+        rbgroup_layout = QVBoxLayout()
+        chan_group_widget.setLayout(rbgroup_layout)
+        self.rbgroup = QButtonGroup(chan_group_widget)
+
+        # The button group dictionary. Key is button id, dictionary containing
+        # channel grouping information is value. Channel grouping dicionary
+        # keys are the group name, the number of bits to shift, and the channel
+        # mask. Shift and mask for unknown is meaningless, and if coincidence
+        # is disabled, the mask should be equal to 0.
+        
+        self.mode_dict = {
+            0: {"name": "Off", "shift": 0, "mask": 0x0, "max_mult": 0},
+            1: {"name": "8 x 2", "shift": 2, "mask": 0x3, "max_mult": 2},
+            2: {"name": "5 x 3", "shift": 3, "mask": 0x7, "max_mult": 3},
+            3: {"name": "4 x 4", "shift": 4, "mask": 0xf, "max_mult": 4},
+            4: {"name": "2 x 8", "shift": 8, "mask": 0xff, "max_mult": 7},
+            5: {"name": "1 x 16", "shift": 16, "mask": 0xffff, "max_mult": 7},
+            6: {"name": "Unknown", "shift": None, "mask": None, "max_mult": 0}
+        }
+        
+        for idx, mode in self.mode_dict.items():
+            rb = QRadioButton(mode["name"])
+            self.rbgroup.addButton(rb, idx) # i.e. button, id.
+            rbgroup_layout.addWidget(rb)
+            
+            # User cannot select Unknown:
+            
+            if mode["name"] == "Unknown":
+                self.rbgroup.button(idx).setEnabled(False)
+
+        # Add subwidgets to the channel group box:
+        
+        vbox = QVBoxLayout()
+        vbox.addWidget(chan_group_widget)
+        chan_group_box.setLayout(vbox)
+
+        #
+        # Settings box
+        #
+        
+        settings_box = QGroupBox("Coincidence settings")
+        
+        # Settings widget and its subwidgets:
+        
+        settings_widget = QWidget()
+        settings_layout = QVBoxLayout()
+        settings_widget.setLayout(settings_layout)
+        
+        # CSRA channel validation enable checkbox:
+        
+        self.cb_enabled = QCheckBox("Enable channel validation")
+        settings_layout.addWidget(self.cb_enabled)
+        
+        # Channel coincidence width (shown on TimingControl):
+        
+        self.coinc_width = QLineEdit()
+        self.coinc_width.setValidator(
+            QDoubleValidator(
+                0, 999999, 3, notation=QDoubleValidator.StandardNotation
+            )
+        )
+        settings_layout.addWidget(QLabel("Channel coincidence width [us]"))
+        settings_layout.addWidget(self.coinc_width)
+        
+        # Multiplicity to trigger:
+        
+        self.multiplicity_threshold = QSpinBox()
+        settings_layout.addWidget(QLabel("Minimum multiplicity to trigger"))
+        settings_layout.addWidget(self.multiplicity_threshold)
+        
+        # Add subwidgets to the settings box:
+        
+        vbox = QVBoxLayout()
+        vbox.addWidget(settings_widget)
+        settings_box.setLayout(vbox)
+        
+        # Layout for all the consituent widgets above the toolbar:
+        
+        top_widget = QWidget()
+        hbox = QHBoxLayout()
+        hbox.addWidget(chan_group_box)
+        hbox.addWidget(settings_box)
+        hbox.addStretch()
+        top_widget.setLayout(hbox)
+
+        # Define layout:
+        
+        layout = QVBoxLayout()
+        layout.addWidget(top_widget)
+        layout.addStretch()
+        self.setLayout(layout)
+
+        #
+        # Signal connections
+        #
+        
+        self.rbgroup.buttonClicked.connect(
+            self._configure_multiplicity_threshold
+        )
+
+    def configure(self, mgr, mod):
+        """        
+        Initialize and display widget settings from the DSP dataframe. 
+
+        Ensures that channel validation CSRA bit, channel coincidence window 
+        and multiplicity threshold are the same for all channels on the module
+        and sets them equal to the value read from channel 0 if not. Warns the 
+        user that inconsistent values may indicate an error in the settings 
+        file.
+
+        Arguments:
+            mgr (DSPManager): Manager for internal DSP and interface for 
+                              XIA API read/write operations.
+            mod (int): Module number.
+
+        Raises:
+            ValueError: If the channel validation CSRA bits are inconsistent.
+            ValueError: If the channel trigger stretch (coincidence window 
+                        width) values are inconsistent.
+            ValueError: If the multiplicity thresholds are inconsistent.
+        """
+
+        # Read in channel validation, coincidence window, and multiplicity
+        # threshold values to check:
+        
+        enb_list = []
+        win_list = []
+        mult_list = []
+        for i in range(self.nchannels):
+            csra = int2ba(
+                int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
+            )
+            enb = csra[xia.CSRA_CHAN_VALIDATION]
+            
+            mask = int2ba(
+                int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
+                32, "little"
+            )
+            mult = mask[xia.MULT_OFFSET:xia.MULT_END]
+
+            enb_list.append(enb)
+            win_list.append(mgr.get_chan_par(mod, i, "ChanTrigStretch"))
+            mult_list.append(mult)
+
+        # Check the channel validation values:
+            
+        try:
+            if not all(enb == enb_list[0] for enb in enb_list):
+                raise ValueError("Inconsistent channel validation CSRA bits read on Mod. {}: read {}, expected {}".format(i, enb, enb_list[0]))
+        except ValueError as e:
+            print("{}:{}: Caught exception -- {}. Setting all channel validation CSRA bits to the channel validation CSRA bit value read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            for i in range(self.nchannels):
+                csra = int2ba(
+                    int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
+                )
+                csra[xia.CSRA_CHAN_VALIDATION] = enb_list[0]
+                mgr.set_chan_par(mod, i, "CHANNEL_CSRA", float(ba2int(csra)))
+
+        # Check the coincidence window values:
+        
+        try:
+            if not all (win == win_list[0] for win in win_list):
+                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}: read {}, expected {}".format(i, win, win_list[0]))
+        except ValueError as e:
+            print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            for i in range(self.nchannels):
+                mgr.set_chan_par(mod, i, "ChanTrigStretch", win_list[0])
+
+        # Check the threshold:
+                
+        try:
+            if not all(mult == mult_list[0] for mult in mult_list):
+                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}: read {}, expected {}".format(self.module, ba2int(mult), ba2int(mult_list[0])))
+        except ValueError as e:
+            print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            for i in range(self.nchannels):
+                mask = int2ba(
+                int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
+                    32, "little"
+                )
+                mask[xia.MULT_OFFSET:xia.MULT_END] = mult_list[0]
+                mgr.set_chan_par(
+                    mod, i, "MultiplicityMaskH", float(ba2int(mask))
+                )
+                
+        # Whatever happens, display the DSP:
+        
+        self.display_dsp(mgr, mod)
+            
+    def update_dsp(self, mgr, mod):
+        """
+        Update dataframe from GUI values.
+
+        Unlike many other update functions, because the bitmasks have to be 
+        configured for each channel based on the GUI settings, this updates 
+        parameters "by hand" (__for now__) rather than looping over param_names.
+
+        Arguments:
+            mgr (DSPManager): Manager for internal DSP and interface for 
+                              XIA API read/write operations.
+            mod (int): Module number.
+        """
+        
+        # Channel trigger validation and coincidence width are the same for
+        # all channels of the module based on what is set on this tab.
+        
+        enb = self.cb_enabled.isChecked()
+        width = float(self.coinc_width.text())
+
+        for i in range(self.nchannels):
+            csra = int2ba(
+                int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
+            )
+            csra[xia.CSRA_CHAN_VALIDATION] = enb
+            mgr.set_chan_par(mod, i, "CHANNEL_CSRA", float(ba2int(csra)))
+            mgr.set_chan_par(mod, i, "ChanTrigStretch", width)
+
+        # Set channel grouping from the low multiplicity mask:
+        
+        self._set_channel_group(mgr, mod)
+
+        # Set the multiplicity threshold from the high multiplicity mask: 
+        
+        mult_bits = int2ba(
+            self.multiplicity_threshold.value(),
+            xia.MULT_NBITS, "little"
+        )                
+        for i in range(self.nchannels):
+            mask = int2ba(
+                int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
+                32, "little"
+            )
+            mask[xia.MULT_OFFSET:xia.MULT_END] = mult_bits
+            mgr.set_chan_par(mod, i, "MultiplicityMaskH", float(ba2int(mask)))
+
+    def display_dsp(self, mgr, mod):
+        """
+        Update GUI with dataframe values.
+
+        Arguments:
+            mgr (DSPManager): Manager for internal DSP and interface for 
+                              XIA API read/write operations.
+            mod (int): Module number.
+        """
+        
+        # Channel trigger validation and coincidence width are the same for
+        # all channels of the module based on what is set on this tab.
+        # Setup channel validation checkbox from channel 0 CSRA.
+        
+        csra = int2ba(
+            int(mgr.get_chan_par(mod, 0, "CHANNEL_CSRA")), 32, "little"
+        )
+        enb = csra[xia.CSRA_CHAN_VALIDATION]        
+        self.cb_enabled.setChecked(enb)
+        
+        # Coincidence window from channel 0:
+        
+        val = np.format_float_positional(
+            mgr.get_chan_par(mod, 0, "ChanTrigStretch"),
+            precision=3,
+            unique=False
+        )
+        self.coinc_width.setText(val)
+        
+        # Get the channel multiplicity group mode and set the button:
+        
+        self.rbgroup.button(self._get_channel_group(mgr, mod)).setChecked(True)
+
+        # Different coincidence settings will have different maximum
+        # allowed multiplicity thresholds so the spin box has to be
+        # reconfigured every time the settings are changed. Order __matters__
+        # (coincidence grouping first!).
+        
+        self.multiplicity_threshold.setRange(
+            0, self.mode_dict[self.rbgroup.checkedId()]["max_mult"]
+        )
+        
+        # Once the group is known, parse the high multiplicity mask from
+        # channel 0 to extract the multiplicity threshold required to trigger:
+
+        mask = int2ba(
+            int(mgr.get_chan_par(mod, 0, "MultiplicityMaskH")), 32, "little"
+        )
+        mult = mask[xia.MULT_OFFSET:xia.MULT_END]
+        self.multiplicity_threshold.setValue(ba2int(mult))
+
+    #
+    # Private methods
+    #
+
+    def _get_channel_group(self, mgr, mod):
+        """
+        Get the channel group from the low multiplicity mask.
+    
+        Parses the low multiplicity mask and checks against known channel 
+        multiplicity mask settings to determine the type of channel coincidence
+        condition from the settings. 5 x 3 coincidence is handled as a special
+        case since the last channel on the module doesn't participate. If no 
+        known mode is encountered, the function will issue a warning and set 
+        the mode to Unknown.
+
+        Arugments:
+            mgr (DSPManager): Manager for internal DSP and interface for 
+                              XIA API read/write operations.
+            mod (int): Module number.
+
+        Returns:
+            int: Value corresponding to the button id of the identified 
+                 coincidence mode.
+        """
+        
+        for idx, mode in self.mode_dict.items():
+            found = True # Have we found the coincidence group mode yet?
+
+            # Only check for known configurations:
+            
+            if mode["name"] != "Unknown":
+                
+                # Multiplicity mask slice indices:
+                
+                shift = mode["shift"]
+                start = 0
+
+                for i in range(self.nchannels):
+                    channel_mask = int2ba(
+                        int(mgr.get_chan_par(mod, i, "MultiplicityMaskL")),
+                        32, "little"
+                    )
+
+                    # Mask for this channel for the current channel grouping.
+                    # We compare the read in channel_mask to this value.
+                    
+                    mask = ba.bitarray(32, "little")
+                    mask.setall(0) 
+                    
+                    # found == False except when the correct coincidence mode
+                    # is identified. found == True means all channels on the
+                    # module have the correct low mask for a given coincidence
+                    # mode (after proper shifts are applied). For each chunk
+                    # of shift channels the mask is shifted to the left by
+                    # shift more bits e.g. 000011 --> 001100 for a shift of 2.
+                    # 5 x 3 is handled as a special case since channel 15 does
+                    # not participate in the 5 x 3 coincidence mask.
+                    
+                    if shift > 0:                        
+                        if mode["name"] == "5 x 3" and i == 15:
+                            pass # Ignore it.
+                        else:
+                            
+                            # Update start every shift channels:
+                            
+                            if i > 0 and i%shift == 0:
+                                start = start + shift
+
+                            mask[start:start+shift] = int2ba(mode["mask"])   
+                            found = found and channel_mask == mask
+                    else:
+                        
+                        # Off mask is all zeroes:
+                        
+                        found = found and channel_mask == mask
+
+                if found:
+                    return idx
+
+        # If nothing was found, return the Unknown id value:
+        
+        print("{}.{}: Encountered unknown channel multiplicity state!".format(self.__class__.__name__, inspect.currentframe().f_code.co_name))
+
+        key_list = self.mode_dict.keys()
+        val_list = self.mode_dict.values()
+        return key_list(val_list.index("Unknown"))
+    
+    def _set_channel_group(self, mgr, mod):
+        """
+        Set the channel group from the selected GUI button.
+    
+        Set the channel coincidence group specified by the selected button. 
+        5 x 3 coincidence is handled as a special case since the last channel 
+        on the module doesn't participate.
+
+        Arugments:
+            mgr (DSPManager): Manager for internal DSP and interface for 
+                              XIA API read/write operations.
+            mod (int): Module number.
+        """
+        
+        # Get the configuration and its settings based on the selected button:
+        
+        mode = self.mode_dict[self.rbgroup.checkedId()]
+
+        try:            
+            if mode["name"] == "Unknown":
+                raise ValueError("Attempting to set multiplicity mask on Mod. {} for unknown channel multiplicity group".format(self.module))            
+        except ValueError as e:
+            print("{}.{}: Caught exception -- {}. Please select a known multiplicty group and click 'Apply' to update your settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+        else:
+            
+            # Multiplicity mask slice indices:
+            
+            shift = mode["shift"]
+            start_bit = 0
+            
+            for i in range(self.nchannels):
+                mask = ba.bitarray(32, "little")
+                mask.setall(0)                    
+                
+                # For each chunk of shift channels the mask is shifted to
+                # the left by shift more bits e.g. 000011 --> 001100 for a
+                # shift of 2. 5 x 3 is handled as a special case since
+                # channel 15 does not participate in the 5 x 3 coincidence.
+                
+                if shift > 0:                        
+                    if mode["name"] == "5 x 3" and i == 15:
+                        mask[15:16] = 1 # It is enabled
+                    else:
+                        
+                        # Update start and end every shift channels:
+                        
+                        if i > 0 and i%shift == 0:
+                            start_bit = start_bit + shift
+                            
+                        mask[start_bit:start_bit+shift] = int2ba(mode["mask"])
+
+                # Write the mask:
+
+                mgr.set_chan_par(
+                    mod, i, "MultiplicityMaskL", float(ba2int(mask))
+                )
+
+    def _configure_multiplicity_threshold(self):
+        """
+        Configure the multiplicity threshold spinbox.
+
+        The maximum threshold is based on the currently selected channel 
+        coincidence group. If the old threshold is greater than the new maximum
+        threshold for the selected channel grouping, raise an exception with a 
+        warning and set the new threshold to the maximum allowed value.
+
+        Raises:
+            Value Error: If the multiplicity threshold is greater than the 
+                         maxmimum multiplicity threshold for the selected 
+                         channel grouping.
+        """
+        
+        mult = self.multiplicity_threshold.value()
+        max_mult = self.mode_dict[self.rbgroup.checkedId()]["max_mult"]
+        
+        try:
+            self.multiplicity_threshold.setRange(0, max_mult)
+            
+            if mult > max_mult:
+                raise ValueError("Old multiplicity threshold value {} is greater than maximum allowed multiplicity threshold {} for mode {}".format(mult, max_mult, self.mode_dict[self.rbgroup.checkedId()]["name"], max_mult))            
+        except ValueError as e:
+            print("{}.{}: Caught exception -- {}. Setting maximum multiplicity to {}. Click 'Apply' to update your settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e, max_mult))
+            self.multiplicity_threshold.setValue(max_mult)
+            
+    def print(self, mgr, mod):
+        """Print the channel multiplicity and coincidence settings."""
+        
+        # Coincidence channel grouping and name:
+        
+        name = self.mode_dict[self.rbgroup.checkedId()]["name"]
+
+        # Grab the data from the dataframe:
+        
+        for i in range(self.nchannels):            
+            low_mask = int2ba(
+                int(mgr.get_chan_par(mod, i, "MultiplicityMaskL")),
+                32, "little"
+            )
+            high_mask = int2ba(
+                int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
+                32, "little"
+            )
+            width = float(self.coinc_width.text())
+            mult = ba2int(high_mask[xia.MULT_OFFSET:xia.MULT_END])
+
+            print("----- {}.{}: Mod. {}, Ch. {} -----".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, self.module, i))
+            print("Mask low:", low_mask)
+            print("Mask high:", high_mask)
+            print("Coincidence width:", width, "[us]") 
+            print("Mult. to trigger:", mult)
+            print("Mode:", name)
+
+class MultCoincidenceBuilder:
+    """Builder method for factory creation."""
+    
+    def __init__(self, *args, **kwargs):
+        """MultCoincidenceBuilder class constructor."""
+        
+    def __call__(self, *args, **kwargs):
+        """
+        Create an instance of the widget and return it to the caller.
+
+        Returns:
+            MultCoincidence: Instance of the DSP class widget.
+        """        
+            
+        return MultCoincidence(*args, **kwargs)
