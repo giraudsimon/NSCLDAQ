@@ -27,6 +27,20 @@ jobs:
           ssh-add -D
           
           eval `ssh-agent -k`
+      - name: Incorporate unified format
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+        working-directory: ./main
+        shell: bash
+        run: |
+          git config --global --add safe.directory '*'
+          eval `ssh-agent -s`
+          
+          echo "${{ secrets.UNIFIEDFMT }}" | ssh-add -
+          ./unifiedfmt-incorp.sh 1.1-005
+          ssh-add -D
+          
+          eval `ssh-agent -k`
       - name: Creating build directory
         run: mkdir main/oot
       - name: Configuring
