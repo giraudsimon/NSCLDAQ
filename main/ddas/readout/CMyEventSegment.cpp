@@ -56,7 +56,7 @@ CMyEventSegment::CMyEventSegment(CMyTrigger *trig, CExperiment& exp)
     // Initialize the Pixie16 modules
     cout << "Trying to initialize pixie16 " << endl << flush;
 
-    const char* fwFile =  FIRMWARE_FILE;   // Default.
+    const char* fwFile =  FIRMWARE_FILE;   // Default.    
     char* alternateFirmwareFile = getenv("FIRMWARE_FILE");
     if (alternateFirmwareFile) fwFile = alternateFirmwareFile;
  

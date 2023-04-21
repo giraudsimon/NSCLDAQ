@@ -15,7 +15,7 @@ libSystemBooter_la_LIBADD = @top_builddir@/ddas/configuration/libConfiguration.l
 boot_SOURCES = boot.cpp
 boot_CPPFLAGS = -I@srcdir@ -I@top_srcdir@ -I@top_srcdir@/ddas/configuration \
 	@PIXIE_CPPFLAGS@ \
-	-DFIRMWARE_FILE=\"@SHARDIR@/DDASFirmwareVersions.txt\"
+	-DFIRMWARE_FILE=\"${SHAREDIR}/DDASFirmwareVersions.txt\"
 boot_LDADD = @builddir@/libSystemBooter.la \
 	@top_builddir@/ddas/configuration/libConfiguration.la \
 	@PIXIE_LDFLAGS@ \
@@ -25,7 +25,7 @@ boot_LDADD = @builddir@/libSystemBooter.la \
 boot_extcl_SOURCES = boot.cpp
 boot_extcl_CPPFLAGS = -I@srcdir@ -I@top_srcdir@/ddas/configuration \
 	@PIXIE_CPPFLAGS@ \
-	-DFIRMWARE_FILE=\"@SHAREDIR@/DDASFirmwareVersions_ExtClock.txt\"
+	-DFIRMWARE_FILE=\"${SHAREDIR}/DDASFirmwareVersions_ExtClock.txt\"
 boot_extcl_LDADD = @builddir@/libSystemBooter.la \
 	@top_builddir@/ddas/configuration/libConfiguration.la \
 	@PIXIE_LDFLAGS@ \

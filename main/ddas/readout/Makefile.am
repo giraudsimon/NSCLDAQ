@@ -30,7 +30,7 @@ DDASReadout_CPPFLAGS= \
 	@PIXIE_CPPFLAGS@						\
 	@LIBTCLPLUS_CFLAGS@						\
 	@TCL_FLAGS@         						\
-	-fPIC -DFIRMWARE_FILE=\"@SHAREDIR@/DDASFirmwareVersions.txt\" \
+	-fPIC -DFIRMWARE_FILE=\"${SHAREDIR}/DDASFirmwareVersions.txt\" \
 	-DSORTING
 
 DDASReadout_LDFLAGS= \

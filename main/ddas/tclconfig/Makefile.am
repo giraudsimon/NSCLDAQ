@@ -21,7 +21,7 @@ libpixie16_la_CXXFLAGS = @TCL_CPPFLAGS@     \
 	-I@top_srcdir@                      \
 	@PIXIE_CPPFLAGS@                    \
 	-g                                  \
-	-DFIRMWARE_FILE=\"@SHAREDIR@/DDASFirmwareVersions.txt\"
+	-DFIRMWARE_FILE=\"${SHAREDIR}/DDASFirmwareVersions.txt\"
 
 libpixie16_la_LDFLAGS = @top_builddir@/ddas/configuration/libConfiguration.la \
 	@PIXIE_LDFLAGS@ @PLX_LDFLAGS@ @TCL_LIBS@                              \
