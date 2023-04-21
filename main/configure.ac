@@ -425,18 +425,22 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
 
    # If the xiaapidir/include/pixie16/pixie16.h exists we're using the
    # XIAAPI_V3 or higher stuff:
-   
+
+   xiaapiver=3
    PIXIE_CPPFLAGS="-I${xiaapidir}/include"
    AC_CHECK_FILE(
    [${xiaapidir}/include/pixie16/pixie16.h],
    [PIXIE_CPPFLAGS="${PIXIE_CPPFLAGS} -DXIAAPI_V3"
    PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixie16Api -lm -Wl,-rpath=${xiaapidir}/lib"
-   AC_DEFINE([XIAAPI_VERSION], [3], [Pixie16 version 3 api])],
+   AC_DEFINE([XIAAPI_VERSION], [3], [Pixie16 version 3 api])
+   ],
    [PIXIE_LDFLAGS="-L${xiaapidir}/lib -lPixieSDK -lm -Wl,-rpath=${xiaapidir}/lib"
    AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
+   xiaapiver=2
    ])
 
-   AC_SUBST(XIAAPI_VERSION) # Export for ddas subdirs conditional compilation.
+   AM_CONDITIONAL([USING_XIAAPI_V2], [test ${xiaapiver} -eq 2])
+
    AC_SUBST(PIXIE_API_DIR)
    AC_SUBST(PIXIE_CPPFLAGS)
    AC_SUBST(PIXIE_LDFLAGS)
@@ -515,7 +519,7 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    AC_SUBST(dspdir)
 
    # Check that the unified format library has been incorporated into
-   # the source tree and configura/build it into $prefix/unifiedformat
+   # the source tree and configure/build it into $prefix/unifiedformat
 
    AC_CHECK_PROG([havecmake], cmake, [1], [0])
    if `test ${havcmake} = 0`
