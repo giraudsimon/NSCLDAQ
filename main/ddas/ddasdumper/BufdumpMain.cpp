@@ -16,42 +16,49 @@
 
 #include "BufdumpMain.h"
 
-
-#include <URL.h>
-#include <CRingItem.h>
-#include <CRingStateChangeItem.h>
-#include <CRingTextItem.h>
-#include <CRingScalerItem.h>
-#include <CRingBuffer.h>
-#include <CPhysicsEventItem.h>
-#include "StringsToIntegers.h"
-#include "DataSource.h"
-//#include "RingDataSource.h"
-#include "FdDataSource.h"
-#include "StreamDataSource.h"
-#include "CRingPhysicsEventCountItem.h"
-#include <CRemoteAccess.h>
-#include <CRingBuffer.h>
-#include "dumperargs.h"
-
-
-#include "RootConverter2.h"
-
-#include <iostream>
-#include <iomanip>
 #include <string>
-#include <stdlib.h>
-#include <time.h>
+#include <stdexcept>
+#include <iostream>
+#include <cstdlib>
 #include <unistd.h>
-#include <pwd.h>
+#include <memory>
+#include <fstream>
+#include <vector>
+#include <map>
+#include <algorithm>
 #include <sys/types.h>
-#include <stdio.h>
+#include <pwd.h>
+
+// These are headers for the abstrct ring items we can get back from the
+// factory. As new ring items are added this set of #include's must be
+// updated as well as the switch statement in the processItem method.
+//
+
+#include <DataFormat.h>
 #include <NSCLDAQFormatFactorySelector.h>
 #include <RingItemFactoryBase.h>
-#include <fstream>
-#include <CRemoteAccess.h>
-#include <memory>
-#include <stdexcept>
+#include <CRingItem.h>
+#include <CAbnormalEndItem.h>
+#include <CDataFormatItem.h>
+#include <CGlomParameters.h>
+#include <CPhysicsEventItem.h>
+#include <CRingFragmentItem.h>
+#include <CRingPhysicsEventCountItem.h>
+#include <CRingScalerItem.h>
+#include <CRingTextItem.h>
+#include <CRingStateChangeItem.h>
+#include <CUnknownFragment.h>
+
+//
+
+#include <URL.h>
+
+#include "dumperargs.h"
+#include "StringsToIntegers.h"
+#include "RootConverter2.h"
+#include "DataSource.h"
+#include "FdDataSource.h"
+#include "StreamDataSource.h"
 
 using namespace std;
 
@@ -142,19 +149,16 @@ BufdumpMain::operator()(int argc, char** argv)
     for (int i = 0; i < e.size(); i++) {
       exclude.push_back(e[i]);
     }
-  }
-    
+  }   
 
   // figure out what sort of data source we have:
 
   string sourceName = defaultSource();
   if (parse.source_given) {
     sourceName = parse.source_arg;
-  }
-  
+  }  
 
-  enum_format version = format_arg_v11;
-  
+  enum_format version = format_arg_v12;  
   // Use the optional command flag to use the appropriate converter 
   if (parse.legacy_mode_given) {
     
@@ -172,7 +176,7 @@ BufdumpMain::operator()(int argc, char** argv)
 
   // Given the version string, create a an appopriate ring item factory.
   
-  enum FormatSelector::SupportedVersions selectedVersion = FormatSelector::v11;
+  enum FormatSelector::SupportedVersions selectedVersion = FormatSelector::v12;
   if (version  == format_arg_v10) {
     selectedVersion = FormatSelector::v10;
   } else if (version == format_arg_v11) { 
@@ -182,7 +186,7 @@ BufdumpMain::operator()(int argc, char** argv)
   } else {
     std::cerr << "Invalid format selector: " << parse.format_help << std::endl;
     return EXIT_FAILURE;
-  }
+  } 
   m_pRingItemFactory = &FormatSelector::selectFactory(selectedVersion);
   
   // check name
@@ -199,8 +203,6 @@ BufdumpMain::operator()(int argc, char** argv)
   m_prootconverter = new RootConverter2(m_pRingItemFactory);
   string filein = m_pDataSource->getPath();
   string fileout= parse.fileout_arg;
-  cout << " filename in main " << m_pDataSource->getPath() << endl;
-  cout << " filename out main " << fileout << endl;
   m_prootconverter->Initialize(filein, fileout);
 
   DataSource* pSource;
@@ -210,8 +212,10 @@ BufdumpMain::operator()(int argc, char** argv)
         std::cerr << "Note: --sample is deprecated!! \n";
         std::cerr << "To sample data from a ring use us in a pipeline with ringselector.\n";
     }
+    
     // File data sources are file:///path and file:///-  The latter opens
-    // STDIN_FILENO and makes an fd data source, the former a stream data source:
+    // STDIN_FILENO and makes an fd data source, the former a stream data
+    // source:
     
     if (m_pDataSource->getProto() == "file") {
       if (sourceName == "-") {                        // lazy.
@@ -230,7 +234,7 @@ BufdumpMain::operator()(int argc, char** argv)
       //CRingBuffer* pRing = CRingAccess::daqConsumeFrom(sourceName);
       //pSource = new RingDataSource(m_pRingItemFactory, *pRing);
 
-      std::cerr << "This version of ddasdumper has not been built with ringbuffer data source support.\nTo read data from a ringbuffer make a pipeline using ringselector | ddasdumper –\n";
+      std::cerr << "This version of ddasdumper has not been built with ringbuffer data source support.\nTo read data from a ringbuffer make a pipeline using ringselector | ddasdumper -\n";
       exit(EXIT_FAILURE);
     }
   }
@@ -240,9 +244,8 @@ BufdumpMain::operator()(int argc, char** argv)
       return EXIT_FAILURE;
   }
 
-  // We can now actually get stuff from the ring..but first we need to set the
-  // skip and item count:
-
+  // We can now actually get stuff from the ring... but first we need to set
+  // the skip and item count:
 
   if (parse.skip_given) {
     if (parse.skip_arg < 0) {
@@ -251,48 +254,40 @@ BufdumpMain::operator()(int argc, char** argv)
       return EXIT_FAILURE;
     }
     m_skipCount = parse.skip_arg;
-
   }
+  
   if (parse.count_given) {
     if (parse.count_arg < 0) {
       cerr << "--count value must be >= 0 but is "
 	   << parse.count_arg << endl;
       return EXIT_FAILURE;
     }
-
     m_itemCount = parse.count_arg;
   }
 
   // Skip any items that need to be skipped:
 
-
   while (m_skipCount) {
     std::unique_ptr<CRingItem> pSkip(pSource->getItem());
     m_skipCount--;
   }
-
-  cout << "count " << m_itemCount << endl;
+  
   size_t numToDo = m_itemCount;
   bool done = false;
   while (!done) {
-    //cout << "getting data " << endl;
     std::unique_ptr<CRingItem> pItem(pSource->getItem());
     if (pItem.get()) {
-      processItem(*(pItem.get()));
-      
-      numToDo--;
-      
+      processItem(*(pItem.get()));      
+      numToDo--;      
       if ((m_itemCount != 0) && (numToDo == 0)) done = true;
     } else {
       done = true;
     }
   }
 
-
   m_prootconverter->Close();
 
   return EXIT_SUCCESS;
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -321,60 +316,72 @@ BufdumpMain::processItem(const CRingItem& item)
 {
 
   try {
-    //cout << "-----------------------------------------------------------\n";
     switch (item.type()) {
     case RING_FORMAT:
+      {
+	// Dont bother to try anything else if the supplied format is wrong:	
+	try {
+	  std::unique_ptr<CDataFormatItem> ringFormat(m_pRingItemFactory->makeDataFormatItem(item));
+	  cout << ringFormat->toString() << endl;
+	}
+	catch (std::bad_cast e) {
+	  cerr << "Unable to dump a data format item... likely you've specified the wrong --format\n";
+	  m_prootconverter->Close(); // Clean this mess up
+	  exit(EXIT_FAILURE);
+	}
+      }
+      break; 
     case EVB_FRAGMENT:
     case EVB_UNKNOWN_PAYLOAD:
     case EVB_GLOM_INFO:
       break;
     case ABNORMAL_ENDRUN:
-        std::cout << "Run ended abnormally\n";
-        break;
+      std::cout << "Run ended abnormally\n";
+      break;
     case BEGIN_RUN:
     case END_RUN:
     case PAUSE_RUN:
     case RESUME_RUN:
-      // state change:
-      {
-        
+      {        
         std::unique_ptr<CRingStateChangeItem> stateChange(m_pRingItemFactory->makeStateChangeItem(item));
-        dumpStateChangeItem(cout, *(stateChange.get()));
-    
+	cout <<	stateChange->toString() << endl;
+        //dumpStateChangeItem(cout, *(stateChange.get()));
       }
       break;
      
     case PACKET_TYPES:
     case MONITORED_VARIABLES:
       {
-        std::unique_ptr<CRingTextItem> textItem(m_pRingItemFactory->makeTextItem(item));    
-        dumpStringListItem(cout, *(textItem.get()));
-    
+        std::unique_ptr<CRingTextItem> textItem(m_pRingItemFactory->makeTextItem(item));
+	cout << textItem->toString();
+        //dumpStringListItem(cout, *(textItem.get()));    
       }
       break;
   
     case PERIODIC_SCALERS:
       {
         std::unique_ptr<CRingScalerItem> scaler(m_pRingItemFactory->makeScalerItem(item));
-        dumpScalerItem(cout, *(scaler.get()));
+	cout << scaler->toString() << endl;
+        // dumpScalerItem(cout, *(scaler.get()));
       }
-      break;
-  
+      break;  
     case PHYSICS_EVENT:
       {
-        std::unique_ptr<CPhysicsEventItem> pitem(m_pRingItemFactory->makePhysicsEventItem(item));
-        dumpPhysicsItem(cout, *(pitem.get()));
-        break;
+	std::unique_ptr<CPhysicsEventItem> pitem(m_pRingItemFactory->makePhysicsEventItem(item));
+	dumpPhysicsItem(cout, *(pitem.get()));
       }
+      break;
     case PHYSICS_EVENT_COUNT:
       {
         std::unique_ptr<CRingPhysicsEventCountItem> eventCount(m_pRingItemFactory->makePhysicsEventCountItem(item));
-        dumpEventCountItem(cout, *(eventCount.get()));
+	cout << eventCount->toString();
+        //dumpEventCountItem(cout, *(eventCount.get()));
       }
       break;
     default:
       {
-        dumpUnknownItem(cout, item);
+	cout << item.toString() << endl;
+        //dumpUnknownItem(cout, item);
       }
     }
   }

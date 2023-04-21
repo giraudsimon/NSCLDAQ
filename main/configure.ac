@@ -387,6 +387,7 @@ fi
 #
 # BUILD_DDAS     - if this flag is provided that's defined to allow the top
 #                  level Makefile to enable the ddas support software build.
+# XIAAPI_VERSION - major version number of the XIA API we compile with
 # PIXIE_API_DIR  - installation directory of the XIA Pixie API
 # PIXIE_CPPFLAGS - compiler flags
 # PIXIE_LDFLAGS  - load flags
@@ -435,6 +436,7 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    AC_DEFINE([XIAAPI_VERSION], [2], [Pixie16 version 2 or lower])
    ])
 
+   AC_SUBST(XIAAPI_VERSION) # Export for ddas subdirs conditional compilation.
    AC_SUBST(PIXIE_API_DIR)
    AC_SUBST(PIXIE_CPPFLAGS)
    AC_SUBST(PIXIE_LDFLAGS)
@@ -525,7 +527,7 @@ AC_MSG_NOTICE([The XIA-DDAS Support software will be built])
    rm -rf unifiedformat/build
    mkdir -p unifiedformat/build
    sourcedir="`realpath ${srcdir}`"
-   (cd unifiedformat/build;  cmake ${sourcedir}/unifiedformat -DCMAKE_INSTALL_PREFIX=${prefix}/unifiedformat; make all test install)
+   (cd unifiedformat/build; cmake ${sourcedir}/unifiedformat -DCMAKE_INSTALL_PREFIX=${prefix}/unifiedformat; make all test install)
    UFMT_CPPFLAGS="-I${prefix}/unifiedformat/include"
    UFMT_LDFLAGS="-L${prefix}/unifiedformat/lib -lNSCLDAQFormat -lAbstractFormat -lV10Format -lV11Format -lV12Format -Wl,-rpath=${prefix}/unifiedformat/lib"
    AC_SUBST(UFMT_CPPFLAGS)

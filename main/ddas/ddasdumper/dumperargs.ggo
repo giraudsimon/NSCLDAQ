@@ -9,5 +9,5 @@ option "sample" S "*Deprecated* List of item types to sample" string optional
 option "exclude" e "List of item types to exclude from the dump" string optional
 option "fileout" f "Path of output file" string
 option "legacy-mode" l "*Deprecated* use --format* Legacy data format enabled. This is not a default setting" flag off
-option "format" F "Format of input data - replaces the legacy-mode flag" values="v12","v11","v10" enum default="v11" optional
+option "format" F "Format of input data - replaces the legacy-mode flag" values="v12","v11","v10" enum default="v12" optional
 

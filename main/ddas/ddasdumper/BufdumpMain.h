@@ -105,6 +105,7 @@ public:
 
 private:
   CRingItem* getItem(CRingBuffer& ring);
+  void processToString(CRingItem* pItem);
   void processItem(const CRingItem& item);
   void dumpStateChangeItem(std::ostream& out, const CRingStateChangeItem& item);
   void dumpStringListItem(std::ostream&  out, const CRingTextItem& item);

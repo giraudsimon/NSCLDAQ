@@ -61,7 +61,7 @@ struct gengetopt_args_info
   const char *fileout_help; /**< @brief Path of output file help description.  */
   int legacy_mode_flag;	/**< @brief *Deprecated* use --format* Legacy data format enabled. This is not a default setting (default=off).  */
   const char *legacy_mode_help; /**< @brief *Deprecated* use --format* Legacy data format enabled. This is not a default setting help description.  */
-  enum enum_format format_arg;	/**< @brief Format of input data - replaces the legacy-mode flag (default='v11').  */
+  enum enum_format format_arg;	/**< @brief Format of input data - replaces the legacy-mode flag (default='v12').  */
   char * format_orig;	/**< @brief Format of input data - replaces the legacy-mode flag original value given at command line.  */
   const char *format_help; /**< @brief Format of input data - replaces the legacy-mode flag help description.  */
   

@@ -14,13 +14,11 @@
 	     East Lansing, MI 48824-1321
 */
 
-#include "BufdumpMain.h"
-#include <Exception.h>
 #include <string>
 #include <iostream>
 #include <stdlib.h>
-#include <TCLApplication.h>
-CTCLApplication* gpTCLApplication(0);
+
+#include "BufdumpMain.h"
 
 int main(int argc, char** argv) 
 {
@@ -29,8 +27,8 @@ int main(int argc, char** argv)
   try {
     exit(app(argc, argv));
   }
-  catch (CException& e) {
-    std::cerr << "dumper main caught an exception: " << e.ReasonText() << std::endl;
+  catch (std::exception& e) {
+    std::cerr << "dumper main caught an exception: " << e.what() << std::endl;
     exit(EXIT_FAILURE);
   }
   catch (std::string msg) {

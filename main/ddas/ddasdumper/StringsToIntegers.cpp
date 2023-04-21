@@ -16,11 +16,13 @@
 
 
 #include "StringsToIntegers.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <DataFormat.h>
-
 #include <map>
+#include <string>
+
+#include <DataFormat.h>
 
 using namespace std;
 
@@ -39,7 +41,6 @@ static void initialize()
   textToInt["PERIODIC_SCALERS"]    = PERIODIC_SCALERS;
   textToInt["PHYSICS_EVENT"]       = PHYSICS_EVENT;
   textToInt["PHYSICS_EVENT_COUNT"] = PHYSICS_EVENT_COUNT;
-
 }
 
 // 
@@ -55,10 +56,8 @@ convertOne(string aNumber)
       return textToInt[aNumber];
     }
     else {
-      string whyBad  = " must be an integer or a symbolic item type but was ";
-      whyBad        += aNumber;
-      throw CInvalidArgumentException(aNumber, whyBad,
-				      string("Converting a list to integers"));
+      string errmsg = "Converting a list to integers: must be an integer or a symbolic item type but was " + aNumber;
+      throw std::invalid_argument(errmsg);
     }
   }
   return value;

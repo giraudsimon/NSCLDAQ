@@ -5,6 +5,7 @@ lib_LTLIBRARIES = libPixieUtilities.la
 
 qtscope_bin_SOURCES = qtscope.cpp
 qtscope_bin_CXXFLAGS = @PYTHON3_CFLAGS@ \
+	@PIXIE_CPPFLAGS@ \
 	-DPREFIX=\"@prefix@\"
 qtscope_bin_LDFLAGS = @PYTHON3_LIBS@
 

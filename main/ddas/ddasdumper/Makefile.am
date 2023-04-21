@@ -3,35 +3,22 @@ lib_LTLIBRARIES = libddaschannel.la
 
 BUILT_SOURCES = ddaschannelDictionary.h ddaschannelDictionary.cpp ddaschannelDictionary_rdict.pcm dumperargs.cpp
 
-ddasdumper_bin_SOURCES = BufdumpMain.cpp BufdumpMain.h \
-	dumperargs.cpp StringsToIntegers.cpp \
+include_HEADERS = DDASEvent.h ddaschannel.h 
+
+ddasdumper_bin_SOURCES = BufdumpMain.cpp \
+	dumperargs.cpp  StringsToIntegers.cpp \
 	Converter.cpp RootConverter2.cpp  dumper.cpp \
 	dumperargs.h BufdumpMain.h StringsToIntegers.h \
 	Converter.h RootConverter2.h  ddaschannel.cpp \
 	DataSource.h DataSource.cpp FdDataSource.cpp FdDataSource.h \
 	StreamDataSource.h StreamDataSource.cpp
-
-include_HEADERS = DDASEvent.h ddaschannel.h 
-
 ddasdumper_bin_CPPFLAGS = -I@top_srcdir@/ddas/format \
-	-I@top_srcdir@/base/dataflow \
-	-I@top_srcdir@/base/thread \
 	-I@top_srcdir@/base/uri \
-	-I@top_srcdir@/daq/format \
-	-I@top_srcdir@/daq/IO \
-	@LIBTCLPLUS_CFLAGS@ @ROOT_CFLAGS@ \
-	@TCL_CPPFLAGS@ -g @UFMT_CPPFLAGS@
-
+	@ROOT_CFLAGS@ @UFMT_CPPFLAGS@ -g
 ddasdumper_bin_LDADD = @builddir@/libddaschannel.la \
 	@top_builddir@/ddas/format/libddasformat.la \
-	@top_builddir@/base/dataflow/libDataFlow.la \
-	@top_builddir@/base/thread/libdaqthreads.la \
 	@top_builddir@/base/uri/liburl.la \
-	@top_builddir@/daq/format/libdataformat.la \
-	@top_builddir@/daq/IO/libdaqio.la \
-	@LIBTCLPLUS_LDFLAGS@ @ROOT_LDFLAGS@ \
-	@TCL_LIBS@
-
+	@ROOT_LDFLAGS@
 ddasdumper_bin_LDFLAGS = @UFMT_LDFLAGS@ -g
 
 install-exec-local:
