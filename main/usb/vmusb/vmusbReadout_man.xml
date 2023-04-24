@@ -7829,6 +7829,80 @@ mdpp32qdc cget <replaceable>name</replaceable>
                      </listitem>
                  </varlistentry>
                  <varlistentry>
+                     <term><option>-windowstart</option> <replaceable>int 0-32767 (0-0x7fff)</replaceable></term>
+                     <listitem>
+                         <para>
+                             (From MDPP-32 documentation) Unit: 1.56 ns (=25ns/16)
+                        </para>
+                        <para>
+                             Start window of interest: 0x0000 start at -25.56us, 0x7FFF start at +25.56us, 0x4000 = 16k no delay.
+                        </para>
+                        <para>
+                             < 16k, window starts before Trigger, > 16k, window is delayed.
+                        </para>
+                        <para>
+                             By default, this parameter is 0x3fc0(=16320).
+                        </para>
+                     </listitem>
+                 </varlistentry>
+                 <varlistentry>
+                     <term><option>-windowwidth</option> <replaceable>int 0-16383 (0-0x3fff)</replaceable></term>
+                     <listitem>
+                         <para>
+                             (From MDPP-32 documentation) Unit: 1.56 ns, max 16k = 25.56 us
+                        </para>
+                        <para>
+                             By default, this parameter is 0x20(=32).
+                        </para>
+                     </listitem>
+                 </varlistentry>
+                 <varlistentry>
+                     <term><option>-firsthit</option> <replaceable>0 | 1</replaceable></term>
+                     <listitem>
+                         <para>
+                             <listitem>
+                                 <variablelist>
+                                     <varlistentry>
+                                         <term><literal>0</literal></term>
+                                         <listitem>
+                                             <para>
+                                                 transmit all hits in the window
+                                             </para>
+                                         </listitem>
+                                         <term><literal>1</literal> (default)</term>
+                                         <listitem>
+                                             <para>
+                                                 only transmit first hit
+                                             </para>
+                                         </listitem>
+                                     </varlistentry>
+                                 </variablelit>
+                             </listitem>
+                        </para>
+                     </listitem>
+                 </varlistentry>
+                 <varlistentry>
+                     <term><option>-testpulser</option> <replaceable>0 | 1</replaceable></term>
+                     <listitem>
+                         <para>
+                             Switch for the internal test pulser.
+                        </para>
+                     </listitem>
+                 </varlistentry>
+                 <varlistentry>
+                     <term><option>-pulseramplitude</option> <replaceable>int 0-4095 (0-0xfff)</replaceable></term>
+                     <listitem>
+                         <para>
+                             (From MDPP-32 documentation) Max value corresponds to about 30% at gain=1.
+                             Gain jumpers are situated before pulser coupling,
+                             so have no effect on the pulser amplitude.
+                         </para>
+                         <para>
+                             This value has no effect unless <option>-testpulser</option> is set <literal>1</literal>.
+                         </para>
+                     </listitem>
+                 </varlistentry>
+                 <varlistentry>
                      <term>
                          <option>-signalwidth</option>
                          <replaceable>int[8] 0-1023 (FWHM value in ns)</replaceable>
@@ -8036,7 +8110,7 @@ mdpp32qdc cget <replaceable>name</replaceable>
                  <varlistentry>
                      <term>
                          <option>-gaincorrectionshort</option>
-                         <replaceable>int[8] none | div4 |mult4</replaceable>
+                         <replaceable>int[8] none | div4 | mult4</replaceable>
                      </term>
                      <listitem>
                          <para>
@@ -8076,6 +8150,11 @@ set threshold           [list 0xfff 0xfff 0xfff 0xfff  0xfff 0xfff 0xfff 0xfff \
 <!--set resetTime           [list 32 32 32 32  32 32 32 32]-->
 set longGainCorrection  [list div4 none none none  none none none none]
 set shortGainCorrection [list div4 none none none  none none none none]
+set windowStart         16368
+set windowWidth         32
+set firstHit            1
+set testPulser          1
+set pulserAmplitude     400
 
 mdpp32qdc create qdc -base 0x00030000
 mdpp32qdc config qdc -signalwidth $signalWidth \
@@ -8086,6 +8165,11 @@ mdpp32qdc config qdc -signalwidth $signalWidth \
                      -intlong $integrationLong \
                      -gaincorrectionlong $longGainCorrection \
                      -gaincorrectionshort $shortGainCorrection \
+                     -windowstart $windowStart \
+                     -windowwidth $windowWidth \
+                     -firsthit $firstHit \
+                     -testpulser $testPulser \
+                     -pulseramplitude $pulserAmplitude \
                      -printregisters 1
                  </programlisting>
              </example>
@@ -8094,6 +8178,10 @@ mdpp32qdc config qdc -signalwidth $signalWidth \
                  While many register values are defined with lists, not all of them are
                  used to configure the module (<literal>qdcJumper</literal>
                  is not used).
+             </para>
+             <para>
+                 If any of the parameters are not specified in <literal>config</literal>,
+                 it uses the default values.
              </para>
          </refsect1>
      </refentry>

@@ -118,6 +118,12 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration -> addEnumParameter("-tdcresolution", TDCResolutionStrings, TDCResolutionStrings[5]);
   m_pConfiguration -> addIntegerParameter("-outputformat",  0,  3, 3);
   m_pConfiguration -> addEnumParameter("-adcresolution", ADCResolutionStrings, ADCResolutionStrings[4]);
+
+  m_pConfiguration -> addIntegerParameter("-windowstart", 0, 0x7fff, 0x3fc0);
+  m_pConfiguration -> addIntegerParameter("-windowwidth", 0, 0x4000, 32);
+  m_pConfiguration -> addBooleanParameter("-firsthit", true);
+  m_pConfiguration -> addBooleanParameter("-testpulser", false);
+  m_pConfiguration -> addIntegerParameter("-pulseramplitude",  0,  0xfff, 400);
  
   m_pConfiguration -> addIntListParameter("-signalwidth",    0, 0x03ff,  8,  8,  8,   16);
   m_pConfiguration -> addIntListParameter("-inputamplitude", 0, 0xffff,  8,  8,  8, 1024);
@@ -129,7 +135,6 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration -> addIntListParameter("-resettime",      0, 0x03ff,  8,  8,  8,   32);
   m_pConfiguration -> addStringListParameter("-gaincorrectionlong",  8, GainCorrectionStrings[2]);
   m_pConfiguration -> addStringListParameter("-gaincorrectionshort", 8, GainCorrectionStrings[2]);
-
   m_pConfiguration -> addBooleanParameter("-printregisters", false);
 }
 /**
@@ -174,6 +179,13 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
 	uint16_t       tdcresolution       = TDCResolutionValues[m_pConfiguration -> getEnumParameter("-tdcresolution", TDCResolutionStrings)];
   uint16_t       outputformat        = m_pConfiguration -> getIntegerParameter("-outputformat");
 	uint16_t       adcresolution       = ADCResolutionValues[m_pConfiguration -> getEnumParameter("-adcresolution", ADCResolutionStrings)];
+
+  uint16_t       windowstart         = m_pConfiguration -> getIntegerParameter("-windowstart");
+  uint16_t       windowwidth         = m_pConfiguration -> getIntegerParameter("-windowwidth");
+  bool           firsthit            = m_pConfiguration -> getBoolParameter("-firsthit");
+  bool           testpulser          = m_pConfiguration -> getBoolParameter("-testpulser");
+  uint16_t       pulseramplitude     = m_pConfiguration -> getIntegerParameter("-pulseramplitude");
+
   vector<int>    signalwidths        = m_pConfiguration -> getIntegerList("-signalwidth");
   vector<int>    inputamplitude      = m_pConfiguration -> getIntegerList("-inputamplitude");
   vector<int>    jumperrange         = m_pConfiguration -> getIntegerList("-jumperrange");
@@ -195,6 +207,12 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
   list.addWrite16(base + TDCResolution,     initamod, tdcresolution);
   list.addWrite16(base + OutputFormat,      initamod, outputformat);
   list.addWrite16(base + ADCResolution,     initamod, adcresolution);
+
+  list.addWrite16(base + WindowStart,       initamod, windowstart);
+  list.addWrite16(base + WindowWidth,       initamod, windowwidth);
+  list.addWrite16(base + FirstHit,          initamod, firsthit);
+  list.addWrite16(base + TestPulser,        initamod, testpulser);
+  list.addWrite16(base + PulserAmplitude,   initamod, pulseramplitude);
 
   for (uint16_t channelPair = 0; channelPair < 8; channelPair++) {
     list.addWrite16(base + ChannelSelection,    initamod, channelPair);
@@ -560,6 +578,43 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
   } else {
     data = data&0x7;
     cout << setw(30) << "ADC resolution: " << data << " (" << (1 << 6 - data) << "k" << (data == 4 ? " [default])" : ")") << endl;
+  }
+
+  status = controller.vmeRead16(base + WindowStart, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    data = data&0x7fff;
+    cout << setw(30) << "Window Start: " << data << " (16384 - " << data << ") (*1.56 [ns]) = " << (16384 - data)*1.56 << " [ns]" << endl;
+  }
+
+  status = controller.vmeRead16(base + WindowWidth, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    data = data&0x3fff;
+    cout << setw(30) << "Window Width: " << data << " (*1.56 [ns]) = " << data*1.56 << " [ns]" << endl;
+  }
+
+  status = controller.vmeRead16(base + FirstHit, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    cout << setw(30) << "First Hit: " << data << endl;
+  }
+
+  status = controller.vmeRead16(base + TestPulser, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    cout << setw(30) << "Internal test pulser: " << (data ? "On" : "Off") << endl;
+  }
+
+  status = controller.vmeRead16(base + PulserAmplitude, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    cout << setw(30) << "Pulser amplitude: " << data << " (0x" << std::hex << data << std::dec << ")" << endl;
   }
   
   cout << endl;
