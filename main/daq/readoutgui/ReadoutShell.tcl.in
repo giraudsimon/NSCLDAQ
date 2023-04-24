@@ -19,10 +19,10 @@ package require Tk
 package require cmdline
 
 set options {
-	{-settingsfile.arg ".settings.tcl" "name of settings file in stagearea"}
+	{settingsfile.arg ".settings.tcl" "name of settings file in stagearea"}
 }
 
-set usage " ?--settingsfile value?"
+set usage " ?-settingsfile value?"
 
 if {("-help" in $argv_tmp) || ("-?" in $argv_tmp)} {
 	puts [cmdline::usage $options $usage]
