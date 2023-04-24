@@ -19,7 +19,7 @@ package require Tk
 package require cmdline
 
 set options {
-	{-settingsfile.arg ".settings.tcl" "name of settings file in stagearea"}
+	{settingsfile.arg ".settings.tcl" "name of settings file in stagearea"}
 }
 
 set usage " ?--settingsfile value?"
