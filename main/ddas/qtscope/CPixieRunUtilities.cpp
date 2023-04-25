@@ -12,23 +12,8 @@
 #include <vector>
 #include <algorithm>
 
-#if XIAAPI_VERSION >= 3
-// XIA API version 3+
-#include <cstddef>
-#include <pixie16/pixie16.h>
-#ifndef NEW_RUN   // This stuff will come from the pixie_config.h 
-#define NEW_RUN 1 // or whatever its called once its in actual DDAS?
-#endif
-#else
-// XIA API version 2
-#ifndef PLX_LINUX
-#define PLX_LINUX
-#endif
-#include <pixie16app_common.h>
-#include <pixie16app_defs.h>
-#include <pixie16app_export.h>
-#include <xia_common.h>
-#endif
+#include <config.h>
+#include <config_pixie16api.h>
 
 #include "CDataGenerator.h"
 

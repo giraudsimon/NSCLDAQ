@@ -11,20 +11,8 @@
 #include <bitset>
 #include <string>
 
-#if XIAAPI_VERSION >= 3
-// XIA API version 3+
-#include <cstddef>
-#include <pixie16/pixie16.h>
-#else
-// XIA API version 2
-#ifndef PLX_LINUX
-#define PLX_LINUX
-#endif
-#include <pixie16app_common.h>
-#include <pixie16app_defs.h>
-#include <pixie16app_export.h>
-#include <xia_common.h>
-#endif
+#include <config.h>
+#include <config_pixie16api.h>
 
 /**
  * @brief Constructor.

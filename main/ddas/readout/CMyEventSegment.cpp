@@ -1,6 +1,8 @@
+#include "CMyEventSegment.h"
+
 #include <config.h>
 #include <config_pixie16api.h>
-#include "CMyEventSegment.h"
+
 #include <CReadoutMain.h>
 #include "Configuration.h"
 #include <CExperiment.h> 
@@ -237,9 +239,15 @@ CMyEventSegment::onBegin()
     PixieGetReturnCodeText(retval, &msg[0], msg.size());
     cout << "*ERROR* Pixie16StartListModeRun failed "
 	 << retval << ": " << msg << endl << flush;
+    cout << NumModules << " "
+	 << std::hex << std::showbase << LIST_MODE_RUN
+	 << std::dec << " " << NEW_RUN << endl << flush;
 # else
     cout << "*ERROR* Pixie16StartListModeRun failed " << retval 
 	 << endl << flush;
+    cout << NumModules << " " 
+	 << std::hex << std::showbase << LIST_MODE_RUN
+	 << std::dec << " " << NEW_RUN << endl << flush;
 #endif
   } else {
     cout << "List Mode started OK " << retval << " mode "

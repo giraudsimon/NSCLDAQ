@@ -18,10 +18,9 @@ int main(int argc, char *argv[])
       PyRun_SimpleFile(file, filename.c_str());
     }
   }
-  catch (std::exception& e)
-    {
-      std::cout << e.what() << '\n';
-    }
+  catch (std::exception& e) {
+    std::cout << e.what() << '\n';
+  }
 
   return 0;
 }
