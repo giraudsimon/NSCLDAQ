@@ -47,7 +47,7 @@ private:
   std::vector<unsigned short> m_trace; //!< Single channel trace data.
 
   void AcquireADCTrace(int module, int channel);
-  template<typename T> double GetTraceMedian(std::vector<T> trace);
+  template<typename T> double GetMedianValue(std::vector<T> v);
 };
   
 extern "C" {

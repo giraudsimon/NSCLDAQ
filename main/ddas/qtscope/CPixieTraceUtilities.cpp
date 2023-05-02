@@ -59,12 +59,12 @@ CPixieTraceUtilities::ReadTrace(int module, int channel)
       // Median is more robust measure of baseline than mean for signals with
       // long decay time e.g. HPGe detectors, Si.
       
-      double median = GetTraceMedian(m_trace);
-      std::vector<double> traceMAD; // To hold the median avg. dev. values.
+      double median = GetMedianValue(m_trace);
+      std::vector<double> traceMAD; // To hold the median abs. dev. values.
       for (const auto &ele : m_trace) {
 	traceMAD.push_back(std::abs(ele-median));
       }
-      double mad = GetTraceMedian(traceMAD); // Median avg. deviation.
+      double mad = GetMedianValue(traceMAD); // Median abs. deviation.
       double sigma = 1.4826 * mad; // Estimate of std. dev.
 
       // iterators
@@ -197,26 +197,26 @@ CPixieTraceUtilities::AcquireADCTrace(int module, int channel)
 /**
  * @brief Calculate the median value from a trace.
  *
- * @param trace  Input trace vector of type T.
+ * @param v  Input vector of type T.
  *
  * @return double  Median value of the trace.
  *
  * @throws std::invalid_argument  If trace is empty (median is undefined).
  */
 template<typename T> double
-CPixieTraceUtilities::GetTraceMedian(std::vector<T> trace)
+CPixieTraceUtilities::GetMedianValue(std::vector<T> v)
 {  
-  if (trace.empty()) {
+  if (v.empty()) {
     std::stringstream errmsg;
-    errmsg << "CPixieTraceUtilities::GetTraceMedian() failed to calculate the median value: the trace is empty and the median is undefined";
+    errmsg << "CPixieTraceUtilities::GetMedianValue() failed to calculate the median value: the trace is empty and the median is undefined";
     throw std::invalid_argument(errmsg.str());
   }
   
-  const auto midItr = trace.begin() + trace.size()/2;
-  std::nth_element(trace.begin(), midItr, trace.end());
+  const auto midItr = v.begin() + v.size()/2;
+  std::nth_element(v.begin(), midItr, v.end());
   
-  if ((trace.size() % 2) == 0) { // Even number of samples (default 8192).
-    const auto leftItr = std::max_element(trace.begin(), midItr);
+  if ((v.size() % 2) == 0) { // Even number of samples (default 8192).
+    const auto leftItr = std::max_element(v.begin(), midItr);
     return 0.5*(*leftItr + *midItr);
   } else { // Odd number of samples, just in case someone changes it.
     return (double)(*midItr);
