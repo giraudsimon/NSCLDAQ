@@ -1,3 +1,4 @@
+import sys
 from ctypes import *
 import inspect
 
@@ -129,7 +130,7 @@ class SystemUtilities:
                 )
         except RuntimeError as e:
             print("{}.{}: Caught exception -- {}.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
-    
+            
     def save_set_file(self, name):
         """
         Wrapper function to save an XIA settings file.

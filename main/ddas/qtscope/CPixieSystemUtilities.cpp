@@ -91,7 +91,7 @@ CPixieSystemUtilities::Boot()
   // The hardware map is set up during boot time:
   
   std::vector<int> hdwrMap = m_config.getHardwareMap();
-  for (size_t i=0; i<hdwrMap.size(); i++) {
+  for (size_t i = 0; i < hdwrMap.size(); i++) {
     HR::HardwareSpecification spec = HR::getSpecification(hdwrMap.at(i));
     m_modADCMSPS.push_back(spec.s_adcFrequency);
     m_modADCBits.push_back(spec.s_adcResolution);

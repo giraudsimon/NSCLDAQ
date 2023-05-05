@@ -53,8 +53,9 @@ class SystemToolBar(QToolBar):
 
         # Set initial states:
         
-        self._init_disable()
-        
+        self.disable()
+        self.b_boot.setEnabled(True)
+                
     def disable(self):
         """Disable every child widget in the toolbar."""
         
@@ -63,6 +64,10 @@ class SystemToolBar(QToolBar):
                 c.setEnabled(False)
                 c.repaint()
 
+        # Exit button is always enabled:
+                
+        self.b_exit.setEnabled(True)
+
     def enable(self):
         """Enable every child widget in the toolbar."""
         
@@ -70,14 +75,7 @@ class SystemToolBar(QToolBar):
             if(c.isWidgetType()):
                 c.setEnabled(True)
                 c.repaint()
-    
-    def _init_disable(self):
-        """Set enabled buttons at program start (boot, exit)."""
         
-        self.disable()
-        self.b_boot.setEnabled(True)
-        self.b_exit.setEnabled(True)
-
 class SystemToolBarBuilder:
     """Builder method for factory creation."""
     

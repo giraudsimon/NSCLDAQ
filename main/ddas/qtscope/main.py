@@ -39,6 +39,9 @@ from gui import MainWindow
 def main():
     """QtScope main. Create factories and start the GUI."""
 
+    ver = int(sys.argv[0])
+    print("QtScope compiled with XIA API major version", ver)
+    
     # Create the factories:
 
     print ("Creating factory methods and registering builders...")
@@ -53,7 +56,7 @@ def main():
     print("Factory creation complete, starting GUI...")
 
     app = QtWidgets.QApplication(sys.argv)
-    gui = MainWindow(cdf, mdf, tbf, ftf)
+    gui = MainWindow(cdf, mdf, tbf, ftf, ver)
     gui.show()
     sys.exit(app.exec_())
 

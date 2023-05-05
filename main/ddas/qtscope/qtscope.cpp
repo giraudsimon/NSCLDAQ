@@ -4,13 +4,22 @@
 
 #include <Python.h>
 
+#include <config.h>
 #include "CPyHelper.h"
 
 int main(int argc, char *argv[])
-{
+{  
   CPyHelper pInstance;
+
+  wchar_t* version = Py_DecodeLocale(
+    std::to_string(XIAAPI_VERSION).c_str(), NULL
+  );
+  int pyargc = 1;
+  wchar_t* pyargv[1];
+  pyargv[0] = version;
   
   try {
+    PySys_SetArgv(pyargc, pyargv);
     std::string filename(PREFIX"/ddas/qtscope/main.py");
     PyObject *obj = Py_BuildValue("s", filename.c_str());    
     FILE *file = _Py_fopen_obj(obj, "r+");
@@ -19,7 +28,7 @@ int main(int argc, char *argv[])
     }
   }
   catch (std::exception& e) {
-    std::cout << e.what() << '\n';
+    std::cout << e.what() << std::endl;
   }
 
   return 0;

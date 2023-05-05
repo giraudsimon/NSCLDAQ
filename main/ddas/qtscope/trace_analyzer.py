@@ -86,34 +86,35 @@ class TraceAnalyzer:
         slow_risetime = self.dsp_mgr.get_chan_par(mod, chan, "ENERGY_RISETIME")
         slow_gap = self.dsp_mgr.get_chan_par(mod, chan, "ENERGY_FLATTOP")
         tau = self.dsp_mgr.get_chan_par(mod, chan, "TAU")
-
+        
         if DEBUG:
             ns = 1000
             print("{}.{}: Filter parameters\n\t XDT (ns): {:.0f}\n\t Trig. risetime (ns): {:.0f}\n\t Trig. gap (ns): {:.0f}\n\t CFD scale: {:.0f}\n\t CFD delay (ns): {:.0f}\n\t Ene. risetime (ns): {:.0f}\n\t Ene. gap (ns): {:.0f}\n\t Tau (ns): {:.0f}".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, xdt*ns, fast_risetime*ns, fast_gap*ns, cfd_scale, cfd_delay*ns, slow_risetime*ns, slow_gap*ns, tau*ns))
 
         # Since we're stuck with XDT binning, round the filter parameters to
         # the nearest integer multiple of the XDT value to convert to length
-        # in samples. Minimum of 1 sample for filter risetime and CFD delay.
-        # Triangular filters (gap = 0 samples) are allowed.
+        # in samples. Because channel DSP paramters are double we must convert
+        # explicitly to integers. Minimum of 1 sample for filter risetime and
+        # CFD delay. Triangular filters (gap = 0 samples) are allowed.
         
         if fast_risetime < xdt:
-            fast_risetime = 1
+            fast_risetime = int(1)
         else:
-            fast_risetime = round(fast_risetime/xdt)
-        fast_gap = round(fast_gap/xdt)
+            fast_risetime = int(round(fast_risetime/xdt))
+        fast_gap = int(round(fast_gap/xdt))
         if cfd_delay < xdt:
-            cfd_delay = 1
+            cfd_delay = int(1)
         else:
-            cfd_delay = round(cfd_delay/xdt)
+            cfd_delay = int(round(cfd_delay/xdt))
         if slow_risetime < xdt:
-            slow_risetime = 1
+            slow_risetime = int(1)
         else:
-            slow_risetime = round(slow_risetime/xdt)
-        slow_gap = round(slow_gap/xdt)
+            slow_risetime = int(round(slow_risetime/xdt))
+        slow_gap = int(round(slow_gap/xdt))
         if tau < xdt:
-            tau = 1
+            tau = int(1)
         else:
-            tau = round(tau/xdt)
+            tau = int(round(tau/xdt))
 
         ns = xdt*1000 # Convert from samples to time in ns.
         print("{}.{}: Filter calculation requires parameters to be an integer multiple of XDT.\nParameters haave not been changed for acquisition.\n\t XDT (ns): {:.0f}\n\t Trig. risetime (ns): {:.0f}\n\t Trig. gap (ns): {:.0f}\n\t CFD scale: {:.0f}\n\t CFD delay (ns): {:.0f}\n\t Ene. risetime (ns): {:.0f}\n\t Ene. gap (ns): {:.0f}\n\t Tau (ns): {:.0f}".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, ns, fast_risetime*ns, fast_gap*ns, cfd_scale, cfd_delay*ns, slow_risetime*ns, slow_gap*ns, tau*ns))

@@ -27,7 +27,7 @@ os.environ['NO_PROXY'] = ""
 os.environ['XDG_RUNTIME_DIR'] = os.environ.get("PWD")
 
 DEBUG = False
-OFFLINE_MODE = False
+OFFLINE_MODE = True
 
 # @todo Would like to run the system as per custom DSP parameter formatted
 # text file output -- as currently implemented the save DSP settings do not
@@ -48,6 +48,7 @@ class MainWindow(QMainWindow):
     channel traces and histograms.
 
     Attributes:
+        xia_api_version (int): XIA API version QtScope was compiled against.
         pool (QThreadPool): Global thread pool.
         dsp_mgr (DSPManager): Manager for internal DSP and interface for XIA 
                               API read/write operations.
@@ -75,7 +76,7 @@ class MainWindow(QMainWindow):
     def __init__(
             self,
             chan_dsp_factory, mod_dsp_factory, toolbar_factory, fit_factory,
-            *args, **kwargs
+            version, *args, **kwargs
     ):
         """
         GUI MainWindow constructor.
@@ -88,15 +89,18 @@ class MainWindow(QMainWindow):
             toolbar_factory (WidgetFactory): Factory for implemented toolbar 
                                              widgets.
             fit_factory (FitFactory): Factory for implemented fitting methods.
+            version (int): XIA API major version number.
         """
         
         super().__init__(*args, **kwargs)
             
-        self.setWindowTitle("QtScope (DEVEL) -- ''Just the goods, bare and plain.''")            
+        self.setWindowTitle("QtScope -- ''Just the goods, bare and plain.''")            
         self.resize(1280, 720)
         self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
         self.setMouseTracking(True)
+
+        self.xia_api_version = version
         
         # Access to global thread pool for this applicaition:
         
@@ -140,7 +144,7 @@ class MainWindow(QMainWindow):
 
         # Set initial run state information from the manager and toolbar:
         
-        self.run_active = self.run_utils.get_run_active() # Better be false...
+        self.run_active = False
         self.active_type = RunType.INACTIVE
 
         # Define the main layout and add widgets:
@@ -197,9 +201,9 @@ class MainWindow(QMainWindow):
     
     def _boot(self):
         """
-        Boots the system using the SystemUtilities to call the relavent XIA API 
-        functions. If the boot is successful, configure the DSP and DSP GUIs. 
-        Only attempt to boot if the system has not been booted already.
+        Boots the system using the SystemUtilities to call the relavent XIA
+        API  functions. If the boot is successful, configure the DSP and DSP 
+        GUIs. Only attempt to boot if the system has not been booted already.
         """
         
         # Access thread from global thread pool to boot:
@@ -209,15 +213,18 @@ class MainWindow(QMainWindow):
             worker.signals.running.connect(self.sys_toolbar.disable)
             worker.signals.running.connect(self.acq_toolbar.disable)
             worker.signals.finished.connect(self._on_boot)
-            worker.signals.finished.connect(self.sys_toolbar.enable)
-            worker.signals.finished.connect(self.acq_toolbar.enable)
             self.pool.start(worker)
-
+            
     def _on_boot(self):
         """System configuration on successful system boot."""
-        
+
         if self.sys_utils.get_boot_status() == True:
 
+            # Enable the toolbars only if the boot is successful:
+            
+            self.sys_toolbar.enable()
+            self.acq_toolbar.enable()
+            
             # Populate list of module MSPS. Length of list == number of
             # installed modules in the crate:
             
@@ -242,38 +249,57 @@ class MainWindow(QMainWindow):
             
             print("QtScope system configuration complete!")
 
-    # @todo (ASC 3/21/23): Assuming everything for now is binary .set file
-    # a la XIA API 2. Couple of issues: one, XIA API 3 saves files in JSON
-    # format which, while possibly called e.g. crate_1.set are _not_ backwards
-    # compatable with XIA API 2. Two, support for our own file format must be
-    # added. Problem one somewhat solves itself once we migrate to XIA API 3
-    # because binary .set files _are_ compatabile with XIA API 3+, and
-    # re-saving them will simply reformat as JSON. Which won't be an issue as
-    # long as there aren't any XIA API 2 legacy systems kicking around...
+    # @todo (ASC 3/21/23): Define another custom human-readable text format
+    # independent of the XIA API version.
     
     def _save_settings(self):
         """
-        Save DSP parameters to an XIA settings file.
-            
-        Raises:        
-            RuntimeError: If file format is unrecognized.
+        Save DSP parameters to an XIA settings file. XIA API 2 binary settings 
+        files are required to have the extension .set while XIA API 3 JSON 
+        settings files are required to have either one of .set or .json. 
+        Extensions are not case-sensitive.
+
+        Raises:
+            RuntimeError: If the file extension options differ from what is 
+                          expected from the API version.
+            RuntimeError: If the file extension is invalid for the API version.
         """
         
-        saved = False
-        fname, ext = self._save_dialog()
-        if fname and ext:
+        fname, opt = self._save_dialog()
+        fext = os.path.splitext(fname)[-1].lower()
+        if fname and opt:
             try:
-                if ext == "XIA settings file (*.set)":
-                    self.sys_utils.save_set_file(fname)
-                    saved = True
+                if self.xia_api_version >= 3:
+                    if opt != "XIA settings file (*.set, *.json)":
+                        raise RuntimeError("Unrecognized file extension format option '{}'".format(ext))
+                    elif fext != ".set" and fext != ".json":
+                        raise RuntimeError("Unsupported extension for settings file: '{}.'\n\tSupported extenstions are: .set or .json. Your settings file has not been saved".format(fext))
                 else:
-                    raise RuntimeError("Unrecognized file extension format '{}'".format(ext))
+                    if opt != "XIA settings file (*.set)":
+                        raise RuntimeError("Unrecognized file extension format option '{}'".format(ext))
+                    elif fext != ".set":
+                        raise RuntimeError("Unsupported extension for settings file: '{}.'\n\tSupported extension are: .set. Your settings file has not been saved".format(fext))                
             except RuntimeError as e:
                 print("{}.{}: Caught exception -- {}.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             else:
-                if saved:
-                    print("DSP parameter file saved to:", fname)
-    
+                self.sys_utils.save_set_file(fname)
+                print("DSP parameter file saved to:", fname)
+
+    def _check_settings_file_extension(self, fext, opt):
+        """
+        Check that the settings file extension is valid. 
+
+        Arguments:
+        fext (str): The file extension.
+        opt (str): The file extension options string for the API version 
+                   QtScope was compiled against.
+
+        Raises:
+        RuntimeError: If the file extension options differ from what is 
+                      expected from the API version.
+        RuntimeError: If the file extension is invalid for the API version.
+        """
+            
     def _load_settings(self):
         """
         Load DSP parameters from an XIA settings file.
@@ -282,13 +308,13 @@ class MainWindow(QMainWindow):
             RuntimeError: If file format is unrecognized.
         """
         
-        fname, ext = self._load_dialog()
-        if fname and ext:
+        fname, opt = self._load_dialog()
+        if fname and opt:
             try:
-                if ext == "XIA settings file (*.set)":
+                if opt == "XIA settings file (*.set)" or "XIA JSON settings file (*.json)":
                     self.sys_utils.load_set_file(fname)
                 else:
-                    raise RuntimeError("Unrecognized file extension format '{}'".format(ext))
+                    raise RuntimeError("Unrecognized file extension format option '{}'".format(ext))
             except RuntimeError:
                 print("{}.{}: Caught exception -- {}.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
 
@@ -308,18 +334,26 @@ class MainWindow(QMainWindow):
 
         Returns:        
             fname (str): the file name from QFileDialog.getSaveFileName.
-            ext (str): the file extension from QFileDialog.getSaveFileName.
+            opt (str): the file extension option 
+                       from QFileDialog.getSaveFileName.
         """
         
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fname, ext = QFileDialog.getSaveFileName(
-            self, "Save file", "",
-            "XIA settings file (*.set)",
-            options=options
+        if self.xia_api_version >= 3:
+            fname, opt = QFileDialog.getSaveFileName(
+                self, "Save file", "",
+                "XIA settings files (*.set, *.json)",
+                options=options
             )
-        if (fname, ext):
-            return fname, ext
+        else:
+            fname, opt = QFileDialog.getSaveFileName(
+                self, "Save file", "",
+                "XIA settings file (*.set)",
+                options=options
+            )
+        if (fname, opt):
+            return fname, opt
         else:
             return None, None
 
@@ -329,16 +363,26 @@ class MainWindow(QMainWindow):
 
         Returns:        
             fname (str): the file name from QFileDialog.getSaveFileName.
-            ext (str): the file extension from QFileDialog.getSaveFileName.
+            opt (str): the file extension option from 
+                       QFileDialog.getSaveFileName.
         """
         
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fname, ext = QFileDialog.getOpenFileName(
-            self,"Save file", "", "XIA settings file (*.set)", options=options
-        )
-        if (fname, ext):
-            return fname, ext
+        if self.xia_api_version >= 3:
+            fname, opt = QFileDialog.getOpenFileName(
+                self,"Load file", "",
+                "XIA settings file (*.set, *.json)",
+                options=options
+            )
+            
+        else:
+            fname, opt = QFileDialog.getOpenFileName(
+                self,"Load file", "", "XIA settings file (*.set)",
+                options=options
+            )
+        if (fname, opt):
+            return fname, opt
         else:
             return None, None
          

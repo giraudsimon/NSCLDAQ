@@ -1,6 +1,6 @@
 # Colors for use with Qt setStyleSheet(). Import this module where needed.
 
-RED_TEXT = "color: #de4152"          # Red for text.
+RED_TEXT = ":enabled { color: #de4152 }" # Red for text.
 RED = "background-color: #de4152"    # Red for backgrounds.
 ORANGE = "background-color: #f9bc0f" # Orange for backgrounds.
 YELLOW = "background-color: #f2d84c" # Yellow for backgrounds.

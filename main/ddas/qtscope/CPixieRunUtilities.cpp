@@ -268,7 +268,7 @@ CPixieRunUtilities::ReadModuleStats(int module)
   // Where to read the statistics into, size depends on XIA API version:
   
 #if XIAAPI_VERSION >= 3
-  std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(),0);
+  std::vector<unsigned int> statistics(Pixie16GetStatisticsSize(), 0);
 #else
   std::vector<unsigned int> statistics(448,0); // see any v11.3.
 #endif
