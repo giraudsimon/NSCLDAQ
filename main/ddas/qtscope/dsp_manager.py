@@ -316,9 +316,9 @@ class DSPManager:
                             if DEBUG:
                                 print("{}.{}: Write deps  {} {} {} {}".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, mod, i, dp, val))
                                 
-                        self._utils.write_chan_par(mod, i, dp, val)
-                        val = self._utils.read_chan_par(mod, i, dp)
-                        self.set_chan_par(mod, i, dp, val)
+                            self._utils.write_chan_par(mod, i, dp, val)
+                            val = self._utils.read_chan_par(mod, i, dp)
+                            self.set_chan_par(mod, i, dp, val)
                         
             else:
                 
@@ -350,19 +350,3 @@ class DSPManager:
         
         for mod in range(self._nmodules):
             self.read(mod, [*xia.CHAN_PARS, *xia.MOD_PARS])
-            
-    def _write_deps(self, mod, chan, pname):
-        """
-        Check and write dependant parameters. Dependant parameters are for 
-        now assumed to be channel parameters.
-
-        Arguments:
-            mod (int): Module number.
-            chan (int): Channel number on the module.
-            pname (str): DSP parameter name to check for dependants.
-        """
-
-        # Only check channel parameters for now:
-        
-
-                    
