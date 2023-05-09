@@ -2,7 +2,7 @@
 
 ##  Incorporate the unfied formatting library:
 
-# Most recently used version 1.1-005
+# Most recently used version 1.2
 
 REPOSITORY="git@github.com:FRIBDAQ/unifiedformat.git"
 TAG=$1
