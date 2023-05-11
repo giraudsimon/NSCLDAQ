@@ -56,7 +56,7 @@ using namespace std;
 
 
 static const unsigned DRAINTIMEOUTS(5); // # consecutive drain read timeouts before giving up.
-static const unsigned USBTIMEOUT(2);
+static const unsigned USBTIMEOUT(2003); // milliseconds try to avoid 2 second scaler failures
 
 static const unsigned ReadoutStackNum(0);
 static const unsigned ScalerStackNum(1);
@@ -277,7 +277,7 @@ CAcquisitionThread::mainLoop()
       size_t bytesRead;
       int status = m_pVme->usbRead(pBuffer->s_rawData, pBuffer->s_storageSize,
           &bytesRead,
-          USBTIMEOUT*1000 );
+          USBTIMEOUT );
       if (status == 0) {
         consecutiveTimeouts = 0;
         pBuffer->s_bufferSize = bytesRead;
