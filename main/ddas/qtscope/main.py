@@ -44,7 +44,7 @@ def main():
     
     # Create the factories:
 
-    print ("Creating factory methods and registering builders...")
+    print("Creating factory methods and registering builders...")
 
     cdf = create_chan_dsp_factory()
     mdf = create_mod_dsp_factory()

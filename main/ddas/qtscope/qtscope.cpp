@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <stdexcept>
 
 #include <Python.h>
 
@@ -22,13 +23,17 @@ int main(int argc, char *argv[])
     PySys_SetArgv(pyargc, pyargv);
     std::string filename(PREFIX"/ddas/qtscope/main.py");
     PyObject *obj = Py_BuildValue("s", filename.c_str());    
-    FILE *file = _Py_fopen_obj(obj, "r+");
+    FILE *file = _Py_fopen_obj(obj, "r");
     if(file != NULL) {
       PyRun_SimpleFile(file, filename.c_str());
+    } else {
+      std::string errmsg = "Cannot open QtScope main from: " + filename;
+      throw std::invalid_argument(errmsg);
     }
   }
   catch (std::exception& e) {
-    std::cout << e.what() << std::endl;
+    std::cout << "QtScope main caught an exception: " << e.what() << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   return 0;
