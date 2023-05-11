@@ -53,7 +53,7 @@ install-data-local:
 	chmod a+x @prefix@/share/tclhttpd/bin/*
 
 EXTRA_DIST=dotests introduction.xml libtcl $(INTROFIGURES) cookbooks \
-	tclhttpd3.5.1 config_pixie16api.h
+	tclhttpd3.5.1 config_pixie16api.h unifiedformat
 
 #check-TESTS:
 #	@top_srcdir@/dotests $(SUBDIRS)

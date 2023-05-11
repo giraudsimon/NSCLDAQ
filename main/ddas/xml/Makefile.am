@@ -6,7 +6,7 @@ COMMONCXXFLAGS=-I@srcdir@/tinyxml -I@top_srcdir@ @PIXIE_CPPFLAGS@ -g \
 	-DSOURCE_DIR=\"@srcdir@\" \
 	-DSETFILE_TEMPLATE=\"@prefix@/share/ddasreadout/crate_1/crate_1.set\" -g
 
-COMMONLDFLAGS = @builddir@/tinyxml/libTinyXml2.la \
+COMMONLDFLAGS = @top_builddir@/ddas/xml/tinyxml/libTinyXml2.la \
 	@PIXIE_LDFLAGS@ \
 	@top_builddir@/ddas/configuration/libConfiguration.la \
 	@PLX_LDFLAGS@ -ldl
@@ -82,7 +82,7 @@ unittests_CXXFLAGS=@CPPUNIT_CFLAGS@ $(toxml_CXXFLAGS) -I@srcdir@/tinyxml \
 	-DSRCDIR=\"@srcdir@\" @PIXIE_CPPFLAGS@ -g
 unittests_LDFLAGS=-g   @CPPUNIT_LIBS@ \
 	@top_builddir@/ddas/configuration/libConfiguration.la \
-	@builddir@/tinyxml/libTinyXml2.la	\
+	@top_builddir@/ddas/xml/tinyxml/libTinyXml2.la	\
 	@PIXIE_LDFLAGS@ \
 	@PLX_LDFLAGS@ -ldl -g
 

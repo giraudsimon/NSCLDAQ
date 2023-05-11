@@ -889,9 +889,6 @@ AC_CONFIG_FILES([Makefile
     ddas/readoutdriver/Makefile
     ddas/pixieplugin/Makefile
     ddas/pixieplugin/definitions.tcl
-    ddas/traiter/Makefile
-    ddas/traiter/src/Makefile
-    ddas/traiter/test/Makefile
     ddas/dumpsetfile/Makefile
     ddas/xml/tinyxml/Makefile
     ddas/xml/Makefile

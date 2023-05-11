@@ -60,4 +60,4 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/crate_1/* $(SHAREDIR)/crate_1
 	$(INSTALL_DATA) @srcdir@/envset $(SHAREDIR)
 
-EXTRA_DIST=DDASFirmwareVersions.txt.in envset README
+EXTRA_DIST=DDASFirmwareVersions.txt.in envset README crate_1
