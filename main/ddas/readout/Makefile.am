@@ -2,7 +2,7 @@ bin_PROGRAMS=DDASReadout
 lib_LTLIBRARIES=libddastimestampextractor.la
 SHAREDIR=@prefix@/share/ddasreadout
 
-DDASReadout_SOURCES=Skeleton.cpp Skeleton 			\
+DDASReadout_SOURCES=Skeleton.cpp Skeleton.h 			\
 	CMyEventSegment.cpp CMyEventSegment.h 			\
 	CMyTrigger.cpp CMyTrigger.h 				\
 	CMyBusy.cpp CMyBusy.h 					\
@@ -60,4 +60,4 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/crate_1/* $(SHAREDIR)/crate_1
 	$(INSTALL_DATA) @srcdir@/envset $(SHAREDIR)
 
-EXTRA_DIST=crate_1 DDASFirmwareVersions.txt.in envset README
+EXTRA_DIST=DDASFirmwareVersions.txt.in envset README

@@ -35,7 +35,7 @@ install-exec-hook:
 	$(INSTALL_DATA) @srcdir@/*.py @prefix@/ddas/qtscope
 
 EXTRA_DIST = acquisition_toolbar.py chan_dsp_widget.py energy_filter.py \
-	gui.py plot_toolbar.py trace.py analog_signal.py colors.py \
+	gui.py plot_toolbar.py analog_signal.py colors.py \
 	fit_exp_creator.py main.py qdclen.py trigconfig0.py baseline.py \
 	crate_id.py fit_factory.py mod_dsp_gui.py run_type.py \
 	trigger_filter.py cfd.py csra.py fit_gauss_creator.py \
