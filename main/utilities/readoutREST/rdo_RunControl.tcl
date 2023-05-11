@@ -870,7 +870,7 @@ snit::type SummaryTracker {
     #
     method _getReadoutState {host user} {
         set client [ReadoutRESTClient %AUTO% -user $user -host $host]
-	if {[array names ::env SERVICE_NAME]} {
+	if {[array names ::env SERVICE_NAME] ne ""} {
 	    $client configure -service $::env(SERVICE_NAME)
 	}
         if {[catch {$client getState} state]} {
@@ -1272,7 +1272,7 @@ snit::type RunController {
 			set newModel [ReadoutRESTClient %AUTO% \
                             -host $host -user [$options(-programmodel) cget -user] \
 			]
-			if {[array names ::env SERVICE_NAME] eq "" } {
+			if {[array names ::env SERVICE_NAME] ne "" } {
 			    $newModel configure -service $::env(SERVICE_NAME)
 			}
                         lappend readoutModels $newModel
