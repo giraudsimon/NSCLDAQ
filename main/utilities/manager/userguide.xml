@@ -4437,7 +4437,7 @@ $DAQBIN/mg_kvget <replaceable>host user key</replaceable>
 
 <refentry id='daq1.mg_container_wizard'>
    <refmeta>
-      <refentrytitle id='daq1.mg_container_wizard.title'></refentrytitle>
+      <refentrytitle id='daq1.mg_container_wizard.title'>mg_container_wizard</refentrytitle>
       <manvolnum>1daq</manvolnum>
    </refmeta>
    <refnamediv>
