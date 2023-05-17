@@ -30,7 +30,6 @@ class MultCoincidence(QWidget):
 
     Attributes:
         param_names (list): List of DSP parameter names.
-        module (int): Module number from subclass constructor.
         nchannels (int): Number of channels per module.
         has_extra_params (bool): Extra parameter flag.
         rbgroup (QButtonGroup): Radio button group for channel coincidence mode.
@@ -479,7 +478,7 @@ class MultCoincidence(QWidget):
 
         try:            
             if mode["name"] == "Unknown":
-                raise ValueError("Attempting to set multiplicity mask on Mod. {} for unknown channel multiplicity group".format(mod)            
+                raise ValueError("Attempting to set multiplicity mask on Mod. {} for unknown channel multiplicity group".format(mod))            
         except ValueError as e:
             print("{}.{}: Caught exception -- {}. Please select a known multiplicty group and click 'Apply' to update your settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
         else:
@@ -490,8 +489,7 @@ class MultCoincidence(QWidget):
             start_bit = 0
             
             for i in range(self.nchannels):
-                mask = ba.bitarray(32, "little")
-                mask.setall(0)                    
+                mask = zeros(32, "little")
                 
                 # For each chunk of shift channels the mask is shifted to
                 # the left by shift more bits e.g. 000011 --> 001100 for a
