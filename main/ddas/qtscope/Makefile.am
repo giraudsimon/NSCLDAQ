@@ -28,20 +28,23 @@ libPixieUtilities_la_LIBADD = \
 
 FIGURES = @srcdir@/figures/timing_diagram.png
 
-install-exec-hook:
-	$(mkinstalldirs) @prefix@/bin
+install-data-hook:
 	$(mkinstalldirs) @prefix@/ddas/qtscope
-	$(INSTALL_PROGRAM) qtscope @prefix@/bin
+	$(mkinstalldirs) @prefix@/ddas/qtscope/figures
+	for f in $(FIGURES) ; do $(INSTALL_DATA) $$f @prefix@/ddas/qtscope/figures/. ; done
 	$(INSTALL_DATA) @srcdir@/*.py @prefix@/ddas/qtscope
 
-EXTRA_DIST = acquisition_toolbar.py chan_dsp_widget.py energy_filter.py \
-	gui.py plot_toolbar.py analog_signal.py colors.py \
-	fit_exp_creator.py main.py qdclen.py trigconfig0.py baseline.py \
-	crate_id.py fit_factory.py mod_dsp_gui.py run_type.py \
-	trigger_filter.py cfd.py csra.py fit_gauss_creator.py \
-	mod_dsp_layout.py system_toolbar.py widget_factory.py \
-	chan_dsp_gui.py csrb.py fit_gauss_p1_creator.py mult_coincidence.py \
-	tau.py worker.py chan_dsp_layout.py dsp_manager.py \
-	fit_gauss_p2_creator.py pixie_utilities.py timing_control.py \
-	xia_constants.py chan_dsp_manager.py dsp_toolbar.py fit_panel.py \
-	plot.py trace_analyzer.py
+install-exec-hook:
+	$(mkinstalldirs) @prefix@/bin
+	$(INSTALL_PROGRAM) qtscope @prefix@/bin
+
+EXTRA_DIST = acquisition_toolbar.py adc_trace.py analog_signal.py baseline.py \
+	cfd.py chan_dsp_gui.py chan_dsp_layout.py chan_dsp_manager.py \
+	chan_dsp_widget.py colors.py converters.py crate_id.py csra.py csrb.py \
+	dsp_manager.py dsp_toolbar.py energy_filter.py fit_exp_creator.py \
+	fit_factory.py fit_gauss_creator.py fit_gauss_p1_creator.py \
+	fit_gauss_p2_creator.py fit_panel.py gui.py main.py mod_dsp_gui.py \
+	mod_dsp_layout.py mult_coincidence.py pixie_utilities.py plot.py \
+	plot_toolbar.py qdclen.py run_type.py system_toolbar.py tau.py \
+	timing_control.py trace_analyzer.py trigconfig0.py trigger_filter.py \
+	widget_factory.py worker.py xia_constants.py

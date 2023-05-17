@@ -84,6 +84,7 @@ class ChanDSPGUI(QMainWindow):
         path = os.path.dirname(__file__) + "/figures/timing_diagram.png"
         fig = QPixmap(path)
         self.timing_diagram = QLabel()
+        self.timing_diagram.setWindowTitle("Timing diagram")
         self.timing_diagram.setPixmap(fig)
         self.timing_diagram.setStyleSheet("padding :15px")
         
