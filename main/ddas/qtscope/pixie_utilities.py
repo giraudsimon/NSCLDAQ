@@ -746,7 +746,7 @@ class TraceUtilities:
         except RuntimeError as e:
             print("{}.{}: Caught exception -- {}.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))        
             
-    def read_fast_trace(self,module, channel):
+    def read_fast_trace(self, module, channel):
         """
         Wrapper to read a trace from a single channel without signal validation.
 

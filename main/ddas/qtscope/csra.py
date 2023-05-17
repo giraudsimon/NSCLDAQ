@@ -3,9 +3,9 @@ import inspect
 import bitarray as ba
 ver = [int(i) for i in ba.__version__.split(".")]
 if bool(ver[0] >= 1 or (ver[0] == 1 and ver[1] >= 6)):
-    from bitarray.util import ba2int, int2ba
+    from bitarray.util import ba2int, int2ba, zeros
 else:
-    from converters import ba2int, int2ba
+    from converters import ba2int, int2ba, zeros
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QVBoxLayout, QCheckBox, QFrame
@@ -24,7 +24,6 @@ class CSRA(QWidget):
         param_names (list): List of DSP parameter names.
         param_labels (dict): Dictionary of DSP parameter GUI column
                              titles and tooltips.
-        module (int): The module number.
         nchannels (int): Number of channels per module.
         has_extra_params (bool): Extra parameter flag.
         param_grid (QGridLayout): Grid of QWidgets to display DSP parameters.
@@ -52,7 +51,6 @@ class CSRA(QWidget):
         """
         super().__init__(*args, **kwargs)
         
-        self.module = module
         self.nchannels = nchannels
         self.has_extra_params = False
         self.param_names = ["CHANNEL_CSRA"]
@@ -164,8 +162,7 @@ class CSRA(QWidget):
         """
         
         for i in range(self.nchannels):
-            csra = ba.bitarray(32, "little")
-            csra.setall(0)
+            csra = zeros(32, "little")
             for bit in self.param_labels:
                 csra[bit] = self.param_grid.itemAtPosition(i+1, bit+1).widget().isChecked()
             mgr.set_chan_par(mod, i, "CHANNEL_CSRA", float(ba2int(csra)))

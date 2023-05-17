@@ -21,7 +21,6 @@ class ChanDSPWidget(QWidget):
     Attributes:
         param_names (list): List of DSP parameter names.
         param_labels (list): List of DSP parameter GUI column titles.
-        module (int): Module number from subclass constructor.
         nchannels (int): Number of channels per module.
         has_extra_params (bool): Extra parameter flag.
         param_grid (QGridLayout): Grid of QWidgets to display DSP parameters.

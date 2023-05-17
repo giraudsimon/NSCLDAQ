@@ -27,7 +27,6 @@ class AnalogSignal(QWidget):
     Attributes:
         param_names (list): List of DSP parameter names.
         param_labels (list): List of DSP parameter GUI column titles.
-        module (int): The module number.
         nchannels (int): Number of channels per module.
         has_extra_params (bool): Extra parameter flag.
         param_grid (QGridLayout): Grid of QWidgets to display DSP parameters
