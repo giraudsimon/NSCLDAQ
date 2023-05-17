@@ -27,7 +27,7 @@ os.environ['NO_PROXY'] = ""
 os.environ['XDG_RUNTIME_DIR'] = os.environ.get("PWD")
 
 DEBUG = False
-OFFLINE_MODE = True
+OFFLINE_MODE = False
 
 # @todo Would like to run the system as per custom DSP parameter formatted
 # text file output -- as currently implemented the save DSP settings do not
