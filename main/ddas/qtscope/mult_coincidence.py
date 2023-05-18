@@ -4,9 +4,9 @@ import inspect
 import bitarray as ba
 ver = [int(i) for i in ba.__version__.split(".")]
 if bool(ver[0] >= 1 or (ver[0] == 1 and ver[1] >= 6)):
-    from bitarray.util import ba2int, int2ba
+    from bitarray.util import ba2int, int2ba, zeros
 else:
-    from converters import ba2int, int2ba
+    from converters import ba2int, int2ba, zeros
 
 
 from PyQt5.QtGui import QDoubleValidator
@@ -30,7 +30,6 @@ class MultCoincidence(QWidget):
 
     Attributes:
         param_names (list): List of DSP parameter names.
-        module (int): Module number from subclass constructor.
         nchannels (int): Number of channels per module.
         has_extra_params (bool): Extra parameter flag.
         rbgroup (QButtonGroup): Radio button group for channel coincidence mode.
@@ -75,7 +74,6 @@ class MultCoincidence(QWidget):
             "ChanTrigStretch",
             "CHANNEL_CSRA"
         ]
-        self.module = module
         self.nchannels = nchannels
         self.has_extra_params = False
         
@@ -236,7 +234,7 @@ class MultCoincidence(QWidget):
             
         try:
             if not all(enb == enb_list[0] for enb in enb_list):
-                raise ValueError("Inconsistent channel validation CSRA bits read on Mod. {}: read {}, expected {}".format(i, enb, enb_list[0]))
+                raise ValueError("Inconsistent channel validation CSRA bits read on Mod. {}: read {}, expected {}".format(mod, enb, enb_list[0]))
         except ValueError as e:
             print("{}:{}: Caught exception -- {}. Setting all channel validation CSRA bits to the channel validation CSRA bit value read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
@@ -250,7 +248,7 @@ class MultCoincidence(QWidget):
         
         try:
             if not all (win == win_list[0] for win in win_list):
-                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}: read {}, expected {}".format(i, win, win_list[0]))
+                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}: read {}, expected {}".format(mod, win, win_list[0]))
         except ValueError as e:
             print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
@@ -260,7 +258,7 @@ class MultCoincidence(QWidget):
                 
         try:
             if not all(mult == mult_list[0] for mult in mult_list):
-                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}: read {}, expected {}".format(self.module, ba2int(mult), ba2int(mult_list[0])))
+                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}: read {}, expected {}".format(mod, ba2int(mult), ba2int(mult_list[0])))
         except ValueError as e:
             print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
@@ -420,8 +418,7 @@ class MultCoincidence(QWidget):
                     # Mask for this channel for the current channel grouping.
                     # We compare the read in channel_mask to this value.
                     
-                    mask = ba.bitarray(32, "little")
-                    mask.setall(0) 
+                    mask = zeros(32, "little")
                     
                     # found == False except when the correct coincidence mode
                     # is identified. found == True means all channels on the
@@ -481,7 +478,7 @@ class MultCoincidence(QWidget):
 
         try:            
             if mode["name"] == "Unknown":
-                raise ValueError("Attempting to set multiplicity mask on Mod. {} for unknown channel multiplicity group".format(self.module))            
+                raise ValueError("Attempting to set multiplicity mask on Mod. {} for unknown channel multiplicity group".format(mod))            
         except ValueError as e:
             print("{}.{}: Caught exception -- {}. Please select a known multiplicty group and click 'Apply' to update your settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
         else:
@@ -492,8 +489,7 @@ class MultCoincidence(QWidget):
             start_bit = 0
             
             for i in range(self.nchannels):
-                mask = ba.bitarray(32, "little")
-                mask.setall(0)                    
+                mask = zeros(32, "little")
                 
                 # For each chunk of shift channels the mask is shifted to
                 # the left by shift more bits e.g. 000011 --> 001100 for a
@@ -566,7 +562,7 @@ class MultCoincidence(QWidget):
             width = float(self.coinc_width.text())
             mult = ba2int(high_mask[xia.MULT_OFFSET:xia.MULT_END])
 
-            print("----- {}.{}: Mod. {}, Ch. {} -----".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, self.module, i))
+            print("----- {}.{}: Mod. {}, Ch. {} -----".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, mod, i))
             print("Mask low:", low_mask)
             print("Mask high:", high_mask)
             print("Coincidence width:", width, "[us]") 

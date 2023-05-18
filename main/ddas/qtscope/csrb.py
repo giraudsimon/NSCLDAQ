@@ -1,9 +1,9 @@
 import bitarray as ba
 ver = [int(i) for i in ba.__version__.split(".")]
 if bool(ver[0] >= 1 or (ver[0] == 1 and ver[1] >= 6)):
-    from bitarray.util import ba2int, int2ba
+    from bitarray.util import ba2int, int2ba, zeros
 else:
-    from converters import ba2int, int2ba
+    from converters import ba2int, int2ba, zeros
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QRadioButton, QPushButton, QButtonGroup, QGridLayout, QLabel, QCheckBox
@@ -173,8 +173,7 @@ class CSRB(QWidget):
         """
         
         for i in range(self.nmodules):
-            csrb = ba.bitarray(32, "little")
-            csrb.setall(0)
+            csrb = zeros(32, "little")
             for bit in self.param_labels:
                 csrb[bit] = self.param_grid.itemAtPosition(i+1, bit+1).widget().isChecked()
             mgr.set_mod_par(i, self.param_names[0], ba2int(csrb))

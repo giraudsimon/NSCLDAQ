@@ -210,7 +210,7 @@ AC_SUBST(BOOST_EXTRA_CPPFLAGS)
 
 # Automake:
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([tar-ustar foreign subdir-objects])
 
 # Makefile exports:
 

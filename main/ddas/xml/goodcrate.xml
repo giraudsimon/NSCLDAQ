@@ -1,3 +1,3 @@
 <crate id="1">
-  <slot number="2" evtlen="4" configfile="./bimdev_Module_00.xml" />
+  <slot number="2" evtlen="4" configfile="../../../ddas/xml/bimdev_Module_00.xml" />
 </crate>

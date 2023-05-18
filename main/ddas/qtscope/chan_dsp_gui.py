@@ -80,10 +80,11 @@ class ChanDSPGUI(QMainWindow):
         # Timing diagram. QLabel has a Pixmap, so we'll use that to display
         # the diagram and add some padding to the edges of the image because
         # its very tightly cropped:
-        
-        path = os.path.dirname(__file__) + "/figures/timing_diagram.png"
-        fig = QPixmap(path)
+
+        fig = QPixmap(str(os.environ.get("DAQROOT")) +
+                      "/ddas/qtscope/figures/timing_diagram.png")
         self.timing_diagram = QLabel()
+        self.timing_diagram.setWindowTitle("Timing diagram")
         self.timing_diagram.setPixmap(fig)
         self.timing_diagram.setStyleSheet("padding :15px")
         
