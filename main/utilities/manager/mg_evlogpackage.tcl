@@ -371,6 +371,7 @@ proc ::eventlog::_exitForbidden {db} {
 # @param def - logger definition.
 #
 proc ::eventlog::_unregisterLogger {db def} {
+    ::sequence::relayOutput "Unregister logger $def"
     set index [lsearch -exact $::eventlog::runningLoggers $def]
     if {$index ne -1} {
         set ::eventlog::runningLoggers \
@@ -381,6 +382,7 @@ proc ::eventlog::_unregisterLogger {db def} {
     # we need to know if it's actually ok that one exited.
     
     if {[dict get $def critical] && [::eventlog::_exitForbidden $db]} {
+	::sequence::relayOutput "----> Exit of $def was forbidden"
         set host [dict get $def host]
         set dest [dict get $def destination]
         ::sequence::relayOutput "Critical logger in $host -> $dest exited."
@@ -406,10 +408,8 @@ proc ::eventlog::_handleOutput {def db fd} {
     if {[eof $fd] } {
         ::eventlog::Log "Event logger in $host -> $dest exited."
         close $fd
+	::sequence::relayOutput "Calling unregister logger for $def"
         ::eventlog::_unregisterLogger $db $def
-        if {$isCritical} {
-            catch {::sequence::transition $db SHUTDOWN}
-        }
     } else {
         set line [gets $fd]    
         ::eventlog::Log "Event logger in $host -> $dest :  $line"

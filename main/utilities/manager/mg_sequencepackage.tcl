@@ -603,7 +603,9 @@ snit::type sequence::TransitionManager {
     # @param how - how the transition completed. (OK, ABORTED, SHUTDOWN)
     #
     method _completeTransition {how} {
-        
+	
+	::sequence::relayOutput "Completing transition: $how"
+	::sequence::relayOutput "----------------------------------------"
         # Run any user end transition script.
         
         set userscript $options(-endscript)
@@ -744,7 +746,7 @@ proc ::sequence::_outputHandler {db monitorIndex program fd} {
     #  
     
     if {[eof $fd]} {
-        ::program::_log "Sequence output handler sees EOF."
+        ::program::_log "Sequence output handler sees EOF. for $program"
         
         set programInfo [::program::getdef $db $program ]
         
@@ -1420,7 +1422,33 @@ proc ::sequence::runSequence {db name {endproc {}}} {
         -database $db -name $name -steps $seqSteps -endcommand $endproc]
     $result start
     return $result
-}    
+}
+
+##
+# ::sequence::callstack
+#    Return call trace info (debugging).
+#
+proc ::sequence::callstack {} {
+    set stack [list "Stacktrace:"]
+
+    for {set i 1} {$i < [info level]} {incr i} {
+        set level [info level -$i]
+        set frame [info frame -$i]
+
+        if {[dict exists $frame proc]} {
+            set pname [dict get $frame proc]
+            set pargs [lrange $level 1 end]
+            lappend stack " - $pname"
+            foreach arg $pargs {
+                lappend stack "   * $arg"
+            }
+        } else {
+            lappend stack " - **unknown stack item**: $level $frame"
+        }
+    }
+
+    return [join $stack "\n"]
+}
 ##
 # ::sequence::transition
 #     Run a transition.  Transitions are run semi-asynchronously (from the
@@ -1457,7 +1485,15 @@ proc ::sequence::runSequence {db name {endproc {}}} {
 #   @return int - 0 if the transition was started -1 if the transition was
 #                   redundant (e.g. SHUTDOWn when state was SHUTDOWN.)
 proc ::sequence::transition {db transition {endscript {}}} {
-    
+    ::sequence::relayOutput "======================================"
+    ::sequence::relayOutput "Asked to transition to $transition"
+
+    #
+    #   Additional diagnostics about how a shutdown was triggered.
+    #
+    if {$transition eq "SHUTDOWN"} {
+	::sequence::relayOutput [::sequence::callstack]
+    }
     #  If there's a shutdown in progress ignore it. Any other transition in
     #  progress is an error:
     
@@ -1475,6 +1511,7 @@ proc ::sequence::transition {db transition {endscript {}}} {
     #  abort it now:
     #
     if {$::sequence::currentTransitionManager ne ""} {
+
         catch {$::sequence::currentTransitionManager abort;}
         catch {$::sequence::currentTransitionManager destroy}
         set ::sequence::currentTransitionManager [list]

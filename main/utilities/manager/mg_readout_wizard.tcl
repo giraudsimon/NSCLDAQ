@@ -1462,6 +1462,9 @@ proc checkCommonMandatories {attributes} {
 proc makeRunControlProgram {dbcmd name executable params args} {
 
     set parameters [list [dict get $params host] [dict get $params manageruser] {*}$args]
+    if {[dict exists $params name]} {
+	lappend parameters [dict get $params name]
+    }
     set env [list [list SERVICE_NAME [dict get $params service]]]
     
     program::add $dbcmd $name $executable Transitory [dict get $params host] \
@@ -1521,10 +1524,12 @@ proc ensureSequencesExist {db} {
 # @param parameters - the program parameterization.
 #
 proc makeRunControlPrograms {dbcmd name parameters} {
+    set kvparams $parameters
+    dict set kvparams name ${name}_readout
     makeRunControlProgram \
-        $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $parameters
+        $dbcmd ${name}_settitle [file join \$DAQBIN rdo_titleFromKv] $kvparams
     makeRunControlProgram \
-        $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $parameters
+        $dbcmd ${name}_setrun [file join \$DAQBIN rdo_runFromKv] $kvparams
     makeRunControlProgram \
         $dbcmd ${name}_beginrun [file join \$DAQBIN rdo_control] $parameters begin
     makeRunControlProgram \

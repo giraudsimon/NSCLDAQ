@@ -80,7 +80,7 @@ kv destroy
 
 ReadoutRESTClient rest -host $programHost -user $user
 if {[array names ::env SERVICE_NAME] ne ""} {
-    rest configure -service $::env[SERVICE_NAME]
+    rest configure -service $::env(SERVICE_NAME)
 }
 
 rest setTitle $title
