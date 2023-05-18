@@ -27,7 +27,6 @@ os.environ['NO_PROXY'] = ""
 os.environ['XDG_RUNTIME_DIR'] = os.environ.get("PWD")
 
 DEBUG = False
-OFFLINE_MODE = False
 
 # @todo Would like to run the system as per custom DSP parameter formatted
 # text file output -- as currently implemented the save DSP settings do not
@@ -114,8 +113,14 @@ class MainWindow(QMainWindow):
         self.run_utils = RunUtilities()
         
         # Configure managers:
-        
-        if OFFLINE_MODE:
+
+        # If the environment variable QTSCOPE_OFFLINE exists and is set
+        # to some non-zero value, configure QtScope to run in offline mode.
+
+        if os.getenv("QTSCOPE_OFFLINE") and int(os.getenv("QTSCOPE_OFFLINE")):
+            print("\n-----------------------------------")
+            print("QtScope running in offline mode!!!")
+            print("-----------------------------------\n")
             self.sys_utils.set_boot_mode(1) # 1: offline, 0: online.
             self.trace_utils.set_use_generator(True) # Use generator data.
             self.run_utils.set_use_generator(True) # Use generator data.
