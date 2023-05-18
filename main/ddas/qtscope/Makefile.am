@@ -47,4 +47,4 @@ EXTRA_DIST = acquisition_toolbar.py adc_trace.py analog_signal.py baseline.py \
 	mod_dsp_layout.py mult_coincidence.py pixie_utilities.py plot.py \
 	plot_toolbar.py qdclen.py run_type.py system_toolbar.py tau.py \
 	timing_control.py trace_analyzer.py trigconfig0.py trigger_filter.py \
-	widget_factory.py worker.py xia_constants.py
+	widget_factory.py worker.py xia_constants.py figures
