@@ -92,5 +92,5 @@ TESTS=unittests                     # For now disable tests.
 
 EXTRA_DIST=bimdev_Module_00.xml test.var crate_1.set \
 	goodcrate.xml badcrate.xml README_toxxx.txt \
-	README_libDSPParameters.txt tinyxml \
+	README_libDSPParameters.txt  \
 	tocrate.ggo toxml.ggo tosetfile.ggo
