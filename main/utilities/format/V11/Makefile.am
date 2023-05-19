@@ -35,10 +35,11 @@ libdataformatv11_la_CPPFLAGS = -I@srcdir@/.. @PIXIE_CPPFLAGS@
 
 libdataformatv11_la_CXXFLAGS = -I@srcdir@/.. \
 				-I@top_srcdir@/base/os \
-                               @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@
+                               @LIBTCLPLUS_CFLAGS@ @PIXIE_CPPFLAGS@ 
+
 
 libdataformatv11_la_LDFLAGS = @top_builddir@/base/os/libdaqshm.la \
-	@LIBTCLPLUS_LDFLAGS@
+	@LIBTCLPLUS_LDFLAGS@ @TCL_LIBS@
 
 noinst_PROGRAMS = unittests
 
@@ -52,7 +53,7 @@ unittests_SOURCES	= TestRunner.cpp \
 unittests_LDADD	= -L$(libdir) $(CPPUNIT_LDFLAGS) 		\
 			@builddir@/libdataformatv11.la	\
 			@top_builddir@/base/os/libdaqshm.la \
-			@LIBEXCEPTION_LDFLAGS@
+			@LIBEXCEPTION_LDFLAGS@ @TCL_LIBS@
 
 unittests_CFLAGS= -I@srcdir@/..
 unittests_CPPFLAGS= -I@srcdir@/.. \
@@ -63,7 +64,7 @@ unittests_CPPFLAGS= -I@srcdir@/.. \
                     -I@top_srcdir@/base/testutils @PIXIE_CPPFLAGS@
 
 unittests_LDFLAGS	= @CPPUNIT_LDFLAGS@ \
-                            @TCL_LDFLAGS@ \
+                            @TCL_LIBS@ \
                           @LIBEXCEPTION_LDFLAGS@ \
                           -Wl,"-rpath-link=$(libdir)"
 

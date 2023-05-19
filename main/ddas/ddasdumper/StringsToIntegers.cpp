@@ -23,6 +23,7 @@
 #include <string>
 
 #include <DataFormat.h>
+#include <stdexcept>
 
 using namespace std;
 

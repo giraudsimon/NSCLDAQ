@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <tuple>
 #include <map>
-
+#include <string>
+#include <stdexcept>
 
 
 namespace HR = DAQ::DDAS::HardwareRegistry;
