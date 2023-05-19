@@ -1,3 +1,7 @@
+# I Saw a dependency? issue make parallel make fail here so for now:
+
+.NOTPARALLEL:
+
 lib_LTLIBRARIES=libLogbook.la libPyLogbook.la libTclLogbook.la
 
 libLogbook_la_SOURCES=LogBook.cpp LogBookPerson.cpp LogBookShift.cpp \

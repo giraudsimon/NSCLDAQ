@@ -232,6 +232,18 @@ AM_PATH_PYTHON([3.0], [], [AC_MSG_ERROR([Python 3.0  or higher is needed for NSC
 AX_PYQT
 PKG_CHECK_MODULES(PYTHON3, python3)
 
+
+# Also need to set compilation/link flags for qtnscope:
+#  Thanks to Giordano for figuring this portable way to  do it:
+
+PKG_CHECK_MODULES(PYTHON, [python3-embed], [PYTHON3_CFLAGS=`pkg-config --cflags python3-embed`; PYTHON3_LIBS=`pkg-config --libs pyth\
+on3-embed`],
+                          [PYTHON3_CFLAGS=`pkg-config python3 --cflags`, PYTHON3_LIBS=`pkg-config python3 --libs`])
+AC_SUBST(PYTHON3_CXXFLAGS)
+AC_SUBST(PYTHON3_LIBS)
+
+
+
 # Ensure swig is installed: -- this is used to generate wrappers for the
 #  VMUSB and CCUSB libraries for use within Tcl drivers.
 #
