@@ -247,10 +247,9 @@ class MultCoincidence(QWidget):
                 raise ValueError("Custom CSRA settings detected on Mod. {}".format(mod))
             if enb_list[0]:
                 self.status.setText("<b>Enabled</b>")
-                self.status.setStyleSheet(colors.GREEN_TEXT)
-                
+                self.status.setStyleSheet(colors.GREEN_TEXT)                
         except ValueError as e:
-            print("{}:{}: -- {}.\n\tThis may be intended, verify your CSRA and MultiplicityCoincidence settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            print("{}:{}: -- {}.\n\tThis may be intended, verify your CSRA and MultCoincidence settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             self.status.setText("<b>Custom</b>")
             self.status.setStyleSheet(colors.ORANGE_TEXT)
 
@@ -259,9 +258,9 @@ class MultCoincidence(QWidget):
         
         try:
             if not all (win == win_list[0] for win in win_list):
-                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}".format(mod, win, win_list[0]))
+                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}".format(mod))
         except ValueError as e:
-            print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' on the MultCoincidence tab to update the module parameters. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
                 mgr.set_chan_par(mod, i, "ChanTrigStretch", win_list[0])
 
@@ -269,9 +268,9 @@ class MultCoincidence(QWidget):
                 
         try:
             if not all(mult == mult_list[0] for mult in mult_list):
-                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}: read {}, expected {}".format(mod, ba2int(mult), ba2int(mult_list[0])))
+                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}".format(mod))
         except ValueError as e:
-            print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' on the MultCoincidence tab to the module parameters. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
                 mask = int2ba(
                 int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
