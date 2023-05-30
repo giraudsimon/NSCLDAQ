@@ -122,7 +122,7 @@ class ChanDSPGUI(QMainWindow):
         self.dsp_mgr = dsp_manager
 
         # Convieniently we know how many modules are installed from the length
-        # of the list of MSPS values:
+        # of the list of MSPS values.
         
         print("{}.{}: Configuring GUI for {} modules using {}".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, len(msps_list), self.dsp_mgr))
 

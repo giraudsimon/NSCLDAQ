@@ -73,7 +73,7 @@ class CSRA(QWidget):
             10: {"label": "CFD", "tooltip": "Enable (=1) or disable (=0) CFD"},
             11: {"label": "MTrV", "tooltip": "Enable (=1) or disable (=0) module validation trigger"},
             12: {"label": "ES", "tooltip": "Enable (=1) or disable (=0) energy sums"},
-            13: {"label": "CTrV", "tooltip": "Enable (=1) or disable (=0) channel validation trigger (set on MultCoincidence tab)"},
+            13: {"label": "CTrV", "tooltip": "Enable (=1) or disable (=0) channel validation trigger"},
             14: {"label": "HiG", "tooltip": "Gain (set on AnalogSignal tab)"},
             15: {"label": "PC1", "tooltip": "Pileup rejection, see manual Sec. 3.3.7, Table 3-2"},
             16: {"label": "PC2", "tooltip": "Inverse pileup rejection, see manual Sec. 3.3.7, Table 3-2"},
@@ -86,9 +86,7 @@ class CSRA(QWidget):
         
         # List of disabled bits by param_label:
         
-        disabled = [
-            "SPol", "HstE", "Trce", "CTrV", "HiG", "GTrS", "ECut", "EnTS"
-        ]
+        disabled = ["SPol", "HstE", "Trce", "HiG", "GTrS", "ECut"]
         
         # Subwidget configuration. Define the grid and add widgets. Each
         # configurable CSRA bit gets its own checkbox with the column given

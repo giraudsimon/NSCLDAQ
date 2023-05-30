@@ -8,11 +8,11 @@ if bool(ver[0] >= 1 or (ver[0] == 1 and ver[1] >= 6)):
 else:
     from converters import ba2int, int2ba, zeros
 
-
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QRadioButton, QButtonGroup, QSpinBox, QGroupBox, QLineEdit, QCheckBox, QLabel, QSizePolicy
 
 import xia_constants as xia
+import colors
 
 DEBUG = False
 
@@ -134,10 +134,17 @@ class MultCoincidence(QWidget):
         settings_layout = QVBoxLayout()
         settings_widget.setLayout(settings_layout)
         
-        # CSRA channel validation enable checkbox:
+        # CSRA channel validation display:
         
-        self.cb_enabled = QCheckBox("Enable channel validation")
-        settings_layout.addWidget(self.cb_enabled)
+        self.status = QLabel("<b>Disabled</b>")
+        self.status.setStyleSheet(colors.RED_TEXT)
+        status_text = QLabel("Channel validation is: ")
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(status_text)
+        status_layout.addWidget(self.status)
+        status_widget = QWidget()
+        status_widget.setLayout(status_layout)
+        settings_layout.addWidget(status_widget)
         
         # Channel coincidence width (shown on TimingControl):
         
@@ -230,37 +237,40 @@ class MultCoincidence(QWidget):
             win_list.append(mgr.get_chan_par(mod, i, "ChanTrigStretch"))
             mult_list.append(mult)
 
-        # Check the channel validation values:
+        # Check the channel validation values. It is possible that users may
+        # have a mix of coincidence-triggering channels and free triggering
+        # on the same module. Alert the user that this was noticed as it _may_
+        # not be their intention:
             
         try:
             if not all(enb == enb_list[0] for enb in enb_list):
-                raise ValueError("Inconsistent channel validation CSRA bits read on Mod. {}: read {}, expected {}".format(mod, enb, enb_list[0]))
+                raise ValueError("Custom CSRA settings detected on Mod. {}".format(mod))
+            if enb_list[0]:
+                self.status.setText("<b>Enabled</b>")
+                self.status.setStyleSheet(colors.GREEN_TEXT)                
         except ValueError as e:
-            print("{}:{}: Caught exception -- {}. Setting all channel validation CSRA bits to the channel validation CSRA bit value read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
-            for i in range(self.nchannels):
-                csra = int2ba(
-                    int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
-                )
-                csra[xia.CSRA_CHAN_VALIDATION] = enb_list[0]
-                mgr.set_chan_par(mod, i, "CHANNEL_CSRA", float(ba2int(csra)))
+            print("{}:{}: -- {}.\n\tThis may be intended, verify your CSRA and MultCoincidence settings.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            self.status.setText("<b>Custom</b>")
+            self.status.setStyleSheet(colors.ORANGE_TEXT)
 
-        # Check the coincidence window values:
+        # Check the coincidence window values. Coincidence windows _have_ to
+        # be the same across the entire module:
         
         try:
             if not all (win == win_list[0] for win in win_list):
-                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}: read {}, expected {}".format(mod, win, win_list[0]))
+                raise ValueError("Inconsistent channel coincidence width values read on Mod. {}".format(mod))
         except ValueError as e:
-            print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            print("{}:{}: Caught exception -- {}. Setting all channel coincidence window lengths to the channel coincidence window length read from Ch. 0. Click 'Apply' on the MultCoincidence tab to update the module parameters. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
                 mgr.set_chan_par(mod, i, "ChanTrigStretch", win_list[0])
 
-        # Check the threshold:
+        # Check the threshold. Thresholds _have_ to be the same as well:
                 
         try:
             if not all(mult == mult_list[0] for mult in mult_list):
-                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}: read {}, expected {}".format(mod, ba2int(mult), ba2int(mult_list[0])))
+                raise ValueError("Inconsistent multiplicity threshold values on Mod. {}".format(mod))
         except ValueError as e:
-            print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
+            print("{}.{}: Caught exception -- {}. Setting all mulitplicity thresholds to the multiplicity threshold from Ch. 0. Click 'Apply' on the MultCoincidence tab to the module parameters. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
             for i in range(self.nchannels):
                 mask = int2ba(
                 int(mgr.get_chan_par(mod, i, "MultiplicityMaskH")),
@@ -281,7 +291,7 @@ class MultCoincidence(QWidget):
 
         Unlike many other update functions, because the bitmasks have to be 
         configured for each channel based on the GUI settings, this updates 
-        parameters "by hand" (__for now__) rather than looping over param_names.
+        parameters "by hand" rather than looping over param_names.
 
         Arguments:
             mgr (DSPManager): Manager for internal DSP and interface for 
@@ -289,18 +299,11 @@ class MultCoincidence(QWidget):
             mod (int): Module number.
         """
         
-        # Channel trigger validation and coincidence width are the same for
-        # all channels of the module based on what is set on this tab.
+        # Coincidence width is the same for all channels of the module
+        # based on what is set on this tab.
         
-        enb = self.cb_enabled.isChecked()
         width = float(self.coinc_width.text())
-
         for i in range(self.nchannels):
-            csra = int2ba(
-                int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
-            )
-            csra[xia.CSRA_CHAN_VALIDATION] = enb
-            mgr.set_chan_par(mod, i, "CHANNEL_CSRA", float(ba2int(csra)))
             mgr.set_chan_par(mod, i, "ChanTrigStretch", width)
 
         # Set channel grouping from the low multiplicity mask:
@@ -335,11 +338,22 @@ class MultCoincidence(QWidget):
         # all channels of the module based on what is set on this tab.
         # Setup channel validation checkbox from channel 0 CSRA.
         
-        csra = int2ba(
-            int(mgr.get_chan_par(mod, 0, "CHANNEL_CSRA")), 32, "little"
-        )
-        enb = csra[xia.CSRA_CHAN_VALIDATION]        
-        self.cb_enabled.setChecked(enb)
+        enb_list = []
+        for i in range(self.nchannels):
+            csra = int2ba(
+                int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
+            )
+            enb_list.append(csra[xia.CSRA_CHAN_VALIDATION])
+
+        if not all(enb == enb_list[0] for enb in enb_list):
+            self.status.setText("<b>Custom</b>")
+            self.status.setStyleSheet(colors.ORANGE_TEXT)
+        elif enb_list[0]:
+            self.status.setText("<b>Enabled</b>")
+            self.status.setStyleSheet(colors.GREEN_TEXT)
+        else:
+            self.status.setText("<b>Disabled</b>")
+            self.status.setStyleSheet(colors.RED_TEXT)
         
         # Coincidence window from channel 0:
         
