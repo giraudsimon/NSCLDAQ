@@ -124,6 +124,8 @@ CMDPP32QDC::onAttach(CReadoutModule& configuration)
   m_pConfiguration -> addBooleanParameter("-firsthit", true);
   m_pConfiguration -> addBooleanParameter("-testpulser", false);
   m_pConfiguration -> addIntegerParameter("-pulseramplitude",  0,  0xfff, 400);
+  m_pConfiguration -> addIntegerParameter("-triggersource", 0, 0x3ff, 0x100);
+  m_pConfiguration -> addIntegerParameter("-triggeroutput", 0, 0x3ff, 0x100);
  
   m_pConfiguration -> addIntListParameter("-signalwidth",    0, 0x03ff,  8,  8,  8,   16);
   m_pConfiguration -> addIntListParameter("-inputamplitude", 0, 0xffff,  8,  8,  8, 1024);
@@ -185,6 +187,8 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
   bool           firsthit            = m_pConfiguration -> getBoolParameter("-firsthit");
   bool           testpulser          = m_pConfiguration -> getBoolParameter("-testpulser");
   uint16_t       pulseramplitude     = m_pConfiguration -> getIntegerParameter("-pulseramplitude");
+  uint16_t       triggersource       = m_pConfiguration -> getIntegerParameter("-triggersource");
+  uint16_t       triggeroutput       = m_pConfiguration -> getIntegerParameter("-triggeroutput");
 
   vector<int>    signalwidths        = m_pConfiguration -> getIntegerList("-signalwidth");
   vector<int>    inputamplitude      = m_pConfiguration -> getIntegerList("-inputamplitude");
@@ -213,6 +217,8 @@ CMDPP32QDC::Initialize(CVMUSB& controller)
   list.addWrite16(base + FirstHit,          initamod, firsthit);
   list.addWrite16(base + TestPulser,        initamod, testpulser);
   list.addWrite16(base + PulserAmplitude,   initamod, pulseramplitude);
+  list.addWrite16(base + TriggerSource,     initamod, triggersource);
+  list.addWrite16(base + TriggerOutput,     initamod, triggeroutput);
 
   for (uint16_t channelPair = 0; channelPair < 8; channelPair++) {
     list.addWrite16(base + ChannelSelection,    initamod, channelPair);
@@ -615,6 +621,20 @@ CMDPP32QDC::printRegisters(CVMUSB& controller)
     cerr << "Error in reading register" << endl;
   } else {
     cout << setw(30) << "Pulser amplitude: " << data << " (0x" << std::hex << data << std::dec << ")" << endl;
+  }
+
+  status = controller.vmeRead16(base + TriggerSource, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    cout << setw(30) << "Trigger Source: " << data << " (0x" << std::hex << data << std::dec << ")" << endl;
+  }
+
+  status = controller.vmeRead16(base + TriggerOutput, initamod, &data);
+  if (status < 0) {
+    cerr << "Error in reading register" << endl;
+  } else {
+    cout << setw(30) << "Trigger Output: " << data << " (0x" << std::hex << data << std::dec << ")" << endl;
   }
   
   cout << endl;

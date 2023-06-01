@@ -117,7 +117,7 @@ Const(WindowStart)          0x6050;
 Const(WindowWidth)          0x6054;
 Const(TriggerSource)        0x6058;
 Const(FirstHit)             0x605c;
-Const(TriggerOUtput)        0x605e;
+Const(TriggerOutput)        0x605e;
 
 Const(ECL3)                 0x6060;
 Const(ECL2)                 0x6062;
