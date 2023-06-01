@@ -8200,6 +8200,8 @@ set windowWidth         32
 set firstHit            1
 set testPulser          1
 set pulserAmplitude     400
+set triggerSource       0x100
+set triggerOutput       0x100
 
 mdpp32qdc create qdc -base 0x00030000
 mdpp32qdc config qdc -signalwidth $signalWidth \
@@ -8215,6 +8217,8 @@ mdpp32qdc config qdc -signalwidth $signalWidth \
                      -firsthit $firstHit \
                      -testpulser $testPulser \
                      -pulseramplitude $pulserAmplitude \
+                     -triggersource $triggerSource \
+                     -triggeroutput $triggerOutput \
                      -printregisters 1
                  </programlisting>
              </example>
