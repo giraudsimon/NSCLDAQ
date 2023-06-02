@@ -207,7 +207,7 @@ class AnalogSignal(QWidget):
             self.param_grid.itemAtPosition(i+1, 1).widget().setText(offset)
             self.param_grid.itemAtPosition(i+1, 2).widget().setCurrentIndex(gain)
             self.param_grid.itemAtPosition(i+1, 3).widget().setCurrentIndex(pol)
-
+            
 class AnalogSignalBuilder:
     """Builder method for factory creation."""
     
