@@ -89,15 +89,11 @@ class Trace(ChanDSPWidget):
 
         try:
             if not all(enb == enb_list[0] for enb in enb_list):
-                raise ValueError("Inconsistent trace enable CSRA bits read on Mod. {}: read {}, expected {}".format(mod, enb, enb_list[0]))
-        except ValueError as e:
-            print("{}:{}: Caught exception -- {}. Setting all trace enable CSRA bits to the trace enable CSRA bit value read from Ch. 0. Click 'Apply' to update settings. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
-            for i in range(self.nchannels):
-                csra = int2ba(
-                    int(mgr.get_chan_par(mod, i, "CHANNEL_CSRA")), 32, "little"
+                raise ValueError(
+                    f"Inconsistent trace enable CSRA bits read on Mod. {mod}"
                 )
-                csra[xia.CSRA_TRACE_ENABLE] = enb_list[0]
-                mgr.set_mod_par(mod, i, "CHANNEL_CSRA", ba2int(csra))
+        except ValueError as e:
+            print("{}:{}: Caught exception -- {}. Check your settings file, it may be corrupt.".format(self.__class__.__name__, inspect.currentframe().f_code.co_name, e))
         finally:
             super().configure(mgr, mod)
     

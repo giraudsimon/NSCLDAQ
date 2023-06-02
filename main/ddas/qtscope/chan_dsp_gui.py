@@ -30,6 +30,7 @@ class ChanDSPGUI(QMainWindow):
         mod_idx (int): Currently selected module index.
         par_idx (int): Currently selected DSP tab index.
         tab (QWidget): Currently selected DSP tab widget.
+        tab_name (str): Currently selected DSP tab widget name.
         timing_diagram (QLabel): Diagram of coincidence timing using the 
                                  pixmap feature of QLabel.
     
@@ -136,6 +137,7 @@ class ChanDSPGUI(QMainWindow):
         self.mod_idx = 0
         self.par_idx = 0
         self.tab = None
+        self.tab_name = ""
                   
         for i, msps in enumerate(msps_list):
                   
@@ -196,11 +198,19 @@ class ChanDSPGUI(QMainWindow):
         worker = Worker(
             lambda m=self.mod_idx, t=self.tab: self._write_chan_dsp(m, t)
         )
+        if self.tab_name == "AnalogSignal":
+            worker.signals.running.connect(
+                lambda enb=False: self.tab.b_adjust_offsets.setEnabled(enb)
+            )
         worker.signals.running.connect(self.toolbar.disable)
         worker.signals.finished.connect(
             lambda mgr=self.dsp_mgr, m=self.mod_idx:
             self.tab.display_dsp(mgr, m)
         )
+        if self.tab_name == "AnalogSignal":
+            worker.signals.finished.connect(
+                lambda enb=True: self.tab.b_adjust_offsets.setEnabled(enb)
+            )
         worker.signals.finished.connect(self.toolbar.enable)
         self.pool.start(worker)
         
@@ -220,11 +230,19 @@ class ChanDSPGUI(QMainWindow):
         worker = Worker(
             lambda m=self.mod_idx, t=self.tab: self._read_chan_dsp(m, t)
         )
+        if self.tab_name == "AnalogSignal":
+            worker.signals.running.connect(
+                lambda enb=False: self.tab.b_adjust_offsets.setEnabled(enb)
+            )
         worker.signals.running.connect(self.toolbar.disable)
         worker.signals.finished.connect(
             lambda mgr=self.dsp_mgr, m=self.mod_idx:
             self.tab.display_dsp(mgr, m)
         )
+        if self.tab_name == "AnalogSignal":
+            worker.signals.finished.connect(
+                lambda enb=True: self.tab.b_adjust_offsets.setEnabled(enb)
+            )
         worker.signals.finished.connect(self.toolbar.enable)
         self.pool.start(worker)
     
@@ -315,6 +333,7 @@ class ChanDSPGUI(QMainWindow):
         self.mod_idx = self.chan_params.currentIndex()
         self.par_idx = self.chan_params.widget(self.mod_idx).currentIndex()
         self.tab = self.chan_params.widget(self.mod_idx).widget(self.par_idx)
+        self.tab_name = self.chan_params.widget(self.mod_idx).tabText(self.par_idx)
         
     def _display_new_tab(self):
         """
@@ -385,4 +404,3 @@ class ChanDSPGUI(QMainWindow):
             self.dsp_mgr.read(mod, tab.extra_params)
                         
         self.dsp_mgr.read(mod, tab.param_names)
-        
