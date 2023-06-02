@@ -1,6 +1,5 @@
 import inspect
 import os
-import time
 
 from PyQt5.QtCore import Qt, QThreadPool
 from PyQt5.QtGui import QCloseEvent, QPixmap
@@ -188,7 +187,6 @@ class ChanDSPGUI(QMainWindow):
         """
         
         self._get_current_tab()
-        print(self.tab_name)
         
         # Copy parameters from GUI into dataframe:
         
